@@ -45,8 +45,6 @@ class Test_find_by_AA(unittest.TestCase):
         assert (find_AA(self.geom2frags.top, "LYS28")) == [5, 13] # getting multiple idxs,as expected
         assert (find_AA(self.geom2frags.top, "K28")) == [5, 13]
 
-if __name__ == '__main__':
-    unittest.main()
 
 
 class Test_top2residue_bond_matrix(unittest.TestCase):
@@ -65,20 +63,14 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
     def test_it_just_works_with_top2residue_bond_matrix(self):
         assert (top2residue_bond_matrix(self.geom.top) == self.res_bond_matrix).all()
 
-
-class Test_interactive_fragment_picker(unittest.TestCase):
+class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
 
     def setUp(self):
         self.geom = md.load("PDB/file_for_test.pdb")
-        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
         self.by_bonds_geom = get_fragments(self.geom.top,
-                                 verbose=True,
-                                 auto_fragment_names=True,
-                                 method='bonds')
-        self.by_bonds_geom2frags = get_fragments(self.geom2frags.top,
-                                 verbose=True,
-                                 auto_fragment_names=True,
-                                 method='bonds')
+                                           verbose=True,
+                                           auto_fragment_names=True,
+                                           method='bonds')
 
     def test_interactive_fragment_picker_by_AAresSeq_no_ambiguous(self):
         residues = ["GLU30", "GDP382"]
@@ -100,6 +92,16 @@ class Test_interactive_fragment_picker(unittest.TestCase):
         assert (resname2residx["Glu30"] == None)
         assert (resname2fragidx["Glu30"] == None)
 
+class __Test_interactive_fragment_picker_with_ambiguity(object):
+
+    def setUp(self):
+        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
+
+        self.by_bonds_geom2frags = get_fragments(self.geom2frags.top,
+                                                 verbose=True,
+                                                 auto_fragment_names=True,
+                                                 method='bonds')
+
 
     def test_interactive_fragment_picker_by_AAresSeq_pick_first_fragment(self):
         residues = ["GLU30"]
@@ -109,7 +111,6 @@ class Test_interactive_fragment_picker(unittest.TestCase):
 
         assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
         assert resname2fragidx["GLU30"] == 0  # GLU30 is in the 1st fragment
-
 
     def test_interactive_fragment_picker_by_AAresSeq_ambiguous(self):
         residues = ["GLU30", "GDP382"]
@@ -137,11 +138,11 @@ class Test_interactive_fragment_picker(unittest.TestCase):
         # NOTE:Just press Return for GLU30 when asked "input one fragment idx"
         # NOTE:Just press Return for VAL31, when asked to "input one fragment idx"
 
-        assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
-        assert (resname2fragidx["GLU30"]) == 0  # GLU30 is in the 1st fragment
+        assert (resname2residx["GLU30"]) == 8  # GLU30 is the 8th
+        assert (resname2fragidx["GLU30"]) == 4  # GLU30 is in the 4th fragment
 
-        assert (resname2residx["VAL31"]) == 1  # VAL31 is the 1st residue
-        assert (resname2fragidx["VAL31"]) == 0  # VAL31 is in the 1st fragment
+        assert (resname2residx["VAL31"]) == 9  # VAL31 is the 9th residue
+        assert (resname2fragidx["VAL31"]) == 4  # VAL31 is in the 4th fragment
 
 
     def test_interactive_fragment_picker_by_AAresSeq_fragment_name(self):
@@ -165,9 +166,6 @@ class Test_interactive_fragment_picker(unittest.TestCase):
 
         self.assertRaises((ValueError,AssertionError), interactive_fragment_picker_by_AAresSeq,
                           residues, self.by_bonds_geom2frags, self.geom2frags.top)
-
-
-
 
 class Test_get_fragments(unittest.TestCase):
     def setUp(self):
@@ -378,35 +376,5 @@ class Test_in_what_N_fragments(unittest.TestCase):
         wrong_idx = 11
         assert len(in_what_N_fragments(wrong_idx, self.fragments)) == 1
 
-class Test(unittest.TestCase):
-    def setUp(self):
-        self.geom = md.load("PDB/file_for_test.pdb")
-        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
-        self.by_bonds_geom = get_fragments(self.geom.top,
-                                 verbose=True,
-                                 auto_fragment_names=True,
-                                 method='bonds')
-        self.by_bonds_geom2frags = get_fragments(self.geom2frags.top,
-                                 verbose=True,
-                                 auto_fragment_names=True,
-                                 method='bonds')
-
-
-    @patch('sofi_functions.interactive_fragment_picker_by_AAresSeq', return_value=4)
-    def test_interactive_fragment_picker_by_AAresSeq_ambiguous(self, input):
-        residues = ["GLU30"]
-        resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq(residues,
-                                                                              self.by_bonds_geom2frags,
-                                                                              self.geom2frags.top)
-
-        # Checking if residue names gives the correct corresponding residue id
-        # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
-        # NOTE:Enter 3 for GDP382, when asked to "input one fragment idx"
-
-        assert (resname2residx["GLU30"]) == 8  # GLU30 is the 9th residue
-        #assert (resname2residx["GDP382"]) == 7  # GDP382 is the 8th residue
-
-        assert (resname2fragidx["GLU30"]) == 4  # Same as entered explicitly
-        #assert (resname2fragidx["GDP382"]) == 3  # Same as entered explicitly
-
-
+if __name__ == '__main__':
+    unittest.main()
