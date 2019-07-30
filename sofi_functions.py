@@ -412,7 +412,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                         answer = last_answer
                     try:
                         answer = int(answer)
-                        assert answer in cand_fragments
+                        assert answer in cand_fragments, "The answer '%s' is not in the candidate fragments %s"%(answer,cand_fragments)
                     except (ValueError, AssertionError):
                         print( "Your answer has to be an integer "
                                 "in the of the fragment list %s" % [int(cf) for cf in cand_fragments])
