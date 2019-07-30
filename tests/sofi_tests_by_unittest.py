@@ -17,8 +17,8 @@ class Test_find_by_AA(unittest.TestCase):
 
 
     def setUp(self):
-        self.geom = md.load("/Users/sofitiwari/work_Charite/PDB/file_for_test.pdb")
-        self.geom2frags = md.load("/Users/sofitiwari/work_Charite/PDB/file_for_test_repeated_fullresnames.pdb")
+        self.geom = md.load("PDB/file_for_test.pdb")
+        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
 
     def test_it_just_works_with_long_AA_code(self):
         assert (find_AA(self.geom.top, "GLU30")) == [0]
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 class Test_top2residue_bond_matrix(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load("/Users/sofitiwari/work_Charite/PDB/file_for_test.pdb")
+        self.geom = md.load("PDB/file_for_test.pdb")
         self.res_bond_matrix = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
                                           [1, 1, 1, 0, 0, 0, 0, 0],
                                           [0, 1, 1, 0, 0, 0, 0, 0],
@@ -69,8 +69,8 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
 class Test_interactive_fragment_picker(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load("/Users/sofitiwari/work_Charite/PDB/file_for_test.pdb")
-        self.geom2frags = md.load("/Users/sofitiwari/work_Charite/PDB/file_for_test_repeated_fullresnames.pdb")
+        self.geom = md.load("PDB/file_for_test.pdb")
+        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
         self.by_bonds_geom = get_fragments(self.geom.top,
                                  verbose=True,
                                  auto_fragment_names=True,
@@ -171,7 +171,7 @@ class Test_interactive_fragment_picker(unittest.TestCase):
 
 class Test_get_fragments(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load('/Users/sofitiwari/work_Charite/PDB/file_for_test.pdb')
+        self.geom = md.load('PDB/file_for_test.pdb')
 
     # Checking for "method" argument (which are resSeq and Bonds
     def test_get_fragments_method(self):
@@ -380,8 +380,8 @@ class Test_in_what_N_fragments(unittest.TestCase):
 
 class Test(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load("/Users/sofitiwari/work_Charite/PDB/file_for_test.pdb")
-        self.geom2frags = md.load("/Users/sofitiwari/work_Charite/PDB/file_for_test_repeated_fullresnames.pdb")
+        self.geom = md.load("PDB/file_for_test.pdb")
+        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
         self.by_bonds_geom = get_fragments(self.geom.top,
                                  verbose=True,
                                  auto_fragment_names=True,
