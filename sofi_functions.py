@@ -306,6 +306,10 @@ def get_fragments(top,
                                        if ii not in fragment_idxs_that_where_used_for_joining]
         fragments = new_fragments + surviving_initial_fragments
 
+        # Order wrt to the first index in each fragment
+        order = _np.argsort([ifrag[0] for ifrag in fragments])
+        fragments = [fragments[oo] for oo in order]
+
         print("Joined Fragments")
         for ii, iseg in enumerate(fragments):
             _print_frag(ii, top, iseg)
