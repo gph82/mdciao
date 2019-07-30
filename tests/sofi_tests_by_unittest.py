@@ -200,8 +200,8 @@ class Test_get_fragments(unittest.TestCase):
                                  verbose=True,
                                  auto_fragment_names=True,
                                  method='bonds')
-        assert _np.allclose(by_bonds[0], [3, 4, 5, 6])
-        assert _np.allclose(by_bonds[1], [0, 1, 2])
+        assert _np.allclose(by_bonds[0], [0, 1, 2])
+        assert _np.allclose(by_bonds[1], [3, 4, 5, 6])
         assert _np.allclose(by_bonds[2], [7])
 
     def test_get_fragments_join_fragments_special_cases(self):
@@ -212,8 +212,8 @@ class Test_get_fragments(unittest.TestCase):
                                  auto_fragment_names=True,
                                  method='bonds')
 
-        assert _np.allclose(by_bonds[0], [3, 4, 5, 6])
-        assert _np.allclose(by_bonds[1], [0, 1, 2])
+        assert _np.allclose(by_bonds[0], [0, 1, 2])
+        assert _np.allclose(by_bonds[1], [3, 4, 5, 6])
         assert _np.allclose(by_bonds[2], [7])
 
         # Checking for error from the overlapping ids in the argument "join_fragments"
