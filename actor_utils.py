@@ -661,9 +661,9 @@ def bonded_neighborlist_from_top(top, n=1):
 
     return neighbor_list
 
-from sofi_functions import find_by_AA
+from sofi_functions import find_AA
 
-def _find_by_AAresSeq(top, key):
+def __find_by_AAresSeq(top, key):
     return [rr.index for rr in top.residues if key == '%s%u' % (rr.code, rr.resSeq)]
 
 def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
