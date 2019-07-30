@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import mdtraj as md
 from matplotlib import pyplot as plt
-from os.path import splitext
+from os.path import splitext, split as psplit
 from json import load as jsonload
 
 
@@ -13,6 +13,7 @@ ctc_freq_reporter_by_residue_neighborhood, \
     interactive_fragment_picker_by_AAresSeq, dangerously_auto_fragments, \
     in_what_fragment, mycolors, bonded_neighborlist_from_top, _print_frag, _replace4latex, table2BW_by_AAcode, \
     guess_missing_BWs, _relabel_consensus, CGN_transformer, top2CGN_by_AAcode
+
 
 parser = argparse.ArgumentParser(description='Small residue-residue contact analysis tool, initially developed for the '
                                              'receptor-G-protein complex. The user has to provide "site" files in .json format')
@@ -121,7 +122,9 @@ def sitefile2site(sitefile):
     except:
         print("Malformed .json file for the site %s"%sitefile2site())
     if "sitename" not in idict.keys():
-        idict["name"]=splitext(sitefile)[0]
+        idict["name"]=splitext(psplit(sitefile)[-1])[0]
+    else:
+        idict["name"]=psplit(idict["sitename"])[-1]
     return idict
 
 sites = [sitefile2site(ff) for ff in a.site_files]
@@ -269,7 +272,7 @@ else:
         iax2.set_xlim(axbottom.get_xlim())
         iax2.set_xlabel(axbottom.get_xlabel())
 
-        fname = 'site.%s.%s.time_resolved.pdf'%(isite["name"],desc_out.strip("."))
+        fname = 'site.%s.%s.time_resolved.pdf'%(isite["name"].replace(" ","_"),desc_out.strip("."))
         plt.savefig(fname,bbox_inches="tight")
         plt.close(myfig)
         print(fname)
