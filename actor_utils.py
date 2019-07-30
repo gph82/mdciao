@@ -180,144 +180,9 @@ def _print_frag(ii, top,iseg,**print_kwargs):
         raise
     print(istr,**print_kwargs)
 
-def get_fragments(top,
-                  fragment_breaker_fullresname=None,
-                              atoms=False,
-                  join_fragments=None,
-                  verbose=True,
-                  auto_fragment_names=True,
-                  frag_breaker_to_pick_idx=None,
-                  method='resSeq',
-                  force_resSeq_breaks=False):
-    r"""
+from sofi_functions import get_fragments
 
-    :param top:
-    :param fragment_breaker_fullresname:
-    :param atoms:
-    :param join_fragments:
-    :param verbose:
-    :param method: either resSeq or bonds
-    :return:
-    """
-    fragnames=None
-    if auto_fragment_names:
-        fragnames=fragment_names
-    old = top.residue(0).resSeq
-    if method=='resSeq':
-        fragments = [[]]
-        for ii, rr in enumerate(top.residues):
-            delta = _np.abs(rr.resSeq - old)
-            #print(delta, ii, rr, end=" ")
-            if delta<=1:
-                #print("appending")
-                fragments[-1].append(ii)
-            else:
-                #print("new")
-                fragments.append([ii])
-            old = rr.resSeq
-    elif method=='bonds':
-        from msmtools.estimation import connected_sets as _connected_sets
-        residue_bond_matrix = _np.zeros((top.n_residues, top.n_residues))
-        bonds = list(top.bonds)
-        if len(bonds)==0:
-            top.create_standard_bonds()
-            bonds = list(top.bonds)
-        for ibond in bonds:
-            r1, r2 = ibond.atom1.residue.index, ibond.atom2.residue.index
-            rSeq1, rSeq2 = ibond.atom1.residue.resSeq, ibond.atom2.residue.resSeq
-            residue_bond_matrix[r1, r2] = 1
-            residue_bond_matrix[r2, r1] = 1
-            if force_resSeq_breaks and _np.abs(rSeq1-rSeq2)>1: # mdtrajs bond-making routine does not check for resSeq
-                residue_bond_matrix[r1,r2] = 0
-                residue_bond_matrix[r2,r1] = 0
-        fragments = _connected_sets(residue_bond_matrix)
-        fragments = [fragments[ii] for ii in _np.argsort([fr[0] for fr in fragments])]
-    if verbose:
-        print("Auto-detected fragments")
-        for ii, iseg in enumerate(fragments):
-            _print_frag(ii, top, iseg)
-
-
-
-    if join_fragments is not None:
-        assert len(join_fragments)>0
-        assert all([len(ijoin)>1 for ijoin in join_fragments])
-        print("yea")
-        print(_np.vstack(_np.triu_indices(len(join_fragments), k=1)).T)
-        #todo find out what the deal was with this triu_indices, see different implementation below
-        """
-        for pair in _np.vstack(_np.triu_indices(len(join_fragments), k=1)).T:
-            frag_pair = [join_fragments[pp] for pp in pair]
-            for ifrag in frag_pair:
-                assert len(ifrag)==len(_np.unique(ifrag)), "bad fragment %s"%ifrag
-            assert len(_np.intersect1d(*frag_pair))==0, "Some fragment groups contain share elements %s"%(frag_pair)
-            print(frag_pair)
-        """
-    if fragment_breaker_fullresname is not None:
-        if isinstance(fragment_breaker_fullresname,str):
-            fragment_breaker_fullresname=[fragment_breaker_fullresname]
-        for breaker in fragment_breaker_fullresname:
-            idx = [rr.index for rr in top.residues if str(rr)==breaker]
-            if len(idx)>0:
-                if len(idx)==1:
-                    idx = idx[0]
-                elif len(idx)>1:
-                    print("The fragment breaker %s appears in different places:"%breaker)
-                    for ii, jidx in enumerate(idx):
-                        print(ii,":",jidx, in_what_fragment(jidx,fragments, fragment_names=fragnames))
-                    if frag_breaker_to_pick_idx is None:
-                        idx2pick = int(input("Which index should I use (%s)?\n"%_np.arange(len(idx))))
-                        idx=idx[idx2pick]
-                    elif isinstance(frag_breaker_to_pick_idx,int):
-                        idx=idx[frag_breaker_to_pick_idx]
-                    else:
-                        raise NotImplementedError
-                ifrag = in_what_fragment(idx, fragments)
-
-                idx_split = _np.argwhere(idx == _np.array(fragments[ifrag])).squeeze()
-                #print('%s (index %s) found in position %s of frag %s %s' % (breaker, idx, idx_split, ifrag, fragments[ifrag]))
-                subfrags = [fragments[ifrag][:idx_split], fragments[ifrag][idx_split:]]
-                print("New fragments after breaker %s:" % breaker)
-                if idx_split>0:
-                    #print("now breaking up into", subfrags)
-                    fragments = fragments[:ifrag] + subfrags + fragments[ifrag + 1:]
-                    for ii, ifrag in enumerate(fragments):
-                        _print_frag(ii, top, ifrag)
-                else:
-                    print("Not using it since it already was a fragment breaker in frag %s"%ifrag)
-                print()
-
-            elif len(idx)==0:
-                print("The fragment breaker %s appears nowhere. Check input!" % breaker)
-                #raise ValueError
-            else:
-                raise ValueError(idx)
-
-    if not atoms:
-        return fragments
-    else:
-        return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in iseg]) for iseg in fragments]
-
-
-
-def in_what_fragment(residx,
-                    list_of_nonoverlapping_lists_of_residxs,
-                    fragment_names=None):
-    r"""
-
-    :param residx: integer
-    :param list_of_nonoverlapping_lists_of_residxs:
-    :param fragment_names: (optional)
-    :return: integer or string if fragment name is given
-    """
-    if fragment_names is not None:
-        assert len(fragment_names)==len(list_of_nonoverlapping_lists_of_residxs)
-    for ii, ilist in enumerate(list_of_nonoverlapping_lists_of_residxs):
-        if residx in ilist:
-            if fragment_names is None:
-                return ii
-            else:
-                return fragment_names[ii]
+from sofi_functions import in_what_fragment
 
 
 # from https://www.rosettacode.org/wiki/Range_expansion#Python
@@ -354,38 +219,10 @@ def re_warp_idxs(lengths):
         idxi += ll
     return idxs_out
 
-def in_what_N_fragments(idxs, fragments):
-    return _np.argwhere([_np.in1d(idxs, iseg).sum() for ii, iseg in enumerate(fragments)]).squeeze()
+from sofi_functions import in_what_N_fragments
 
-def unique_pairlist_by_tuple_hashing(ilist, return_idxs=False):
-    idxs_out = []
-    ilist_out = []
-    seen = []
-    for ii, pair in enumerate(ilist):
-        ih = hash(tuple(pair))
-        if ih not in seen:
-            ilist_out.append(pair)
-            idxs_out.append(ii)
-            seen.append(ih)
-    if not return_idxs:
-        return ilist_out
-    else:
-        return idxs_out
+from sofi_functions import unique_list_of_iterables_by_tuple_hashing
 
-def unique_list_by_tuple_hashing(ilist, return_idxs=False):
-    idxs_out = []
-    ilist_out = []
-    seen = []
-    for ii, sublist in enumerate(ilist):
-        ih = hash(tuple(sublist))
-        if ih not in seen:
-            ilist_out.append(sublist)
-            idxs_out.append(ii)
-            seen.append(ih)
-    if not return_idxs:
-        return ilist_out
-    else:
-        return idxs_out
 
 def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top, pick_first_fragment_by_default=False):
     resSeq2residxs = {}
@@ -436,67 +273,9 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top, pick_firs
 
     return resSeq2residxs, resSeq2segidxs
 
-def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
-                                            pick_first_fragment_by_default=False,
-                                            fragment_names=None, extra_string_info=''):
-    resSeq2residxs = {}
-    resSeq2segidxs = {}
-    last_answer = 0
 
-    for key in AAresSeq_idxs:
-        key_code = ''.join([ii for ii in key if ii.isalpha()])
-        if len(key_code)==1:
-            cands = _find_by_AAresSeq(top, key)
-        elif len(key_code)==3:
-            cands = [rr.index for rr in top.residues if key == '%s%u' % (rr.name, rr.resSeq)]
-        else:
-            print(key_code)
-            raise Exception
-        #cands = [rr.index for rr in top.residues if rr.resSeq == key]
-        # print(key)
-        cand_fragments = in_what_N_fragments(cands, fragments)
-        #TODO OUTSOURCE THIS?
-        if len(cands) == 0:
-            print("No residue found with resSeq %s"%key)
-        else:
-            if len(cands) == 1:
-                cands = cands[0]
-                answer = cand_fragments
-                # print(key,refgeom.top.residue(cands[0]), cand_fragments)
-            elif len(cands) > 1:
-                istr = "ambigous definition for resSeq %s" % key
-                istr += extra_string_info
-                print(istr)
-                for cc, ss in zip(cands, cand_fragments):
-                    istr = '%6s in fragment %2u with index %2u'%(top.residue(cc), ss, cc)
-                    if fragment_names is not None:
-                        istr += ' (%s)'%fragment_names[ss]
-                    print(istr)
-                if not pick_first_fragment_by_default:
-                    answer = input(
-                        "input one fragment idx (out of %s) and press enter. Leave empty and hit enter to repeat last option [%s]\n" % (cand_fragments, last_answer))
-                    if len(answer) == 0:
-                        answer = last_answer
-                    try:
-                        answer = int(answer)
-                    except:
-                        print("Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
-                        raise Exception
-                    assert answer in cand_fragments, (
-                                "Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
-                    cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-                    last_answer = answer
-                else:
-                    cands = cands[0]
-                    answer = cand_fragments[0]
-                    print("Automatically picked fragment %u"%answer)
-                # print(refgeom.top.residue(cands))
-                print()
 
-            resSeq2residxs[key] = cands
-            resSeq2segidxs[key] = answer
-
-    return resSeq2residxs, resSeq2segidxs
+from sofi_functions import interactive_fragment_picker_by_AAresSeq
 
 mycolors=[
          'lightblue',
@@ -638,20 +417,8 @@ def exclude_neighbors_from_residx_pairlist(pairlist, top, n_exclude,
     else:
         return idxs2exclude
 
-def exclude_same_fragments_from_residx_pairlist(pairlist, top,fragments=None,
-                                                return_excluded_idxs=False):
-    if fragments is None:
-        fragments = get_fragments(top)
-    idxs2exclude = [idx for idx, pair  in enumerate(pairlist) if
-                    _np.diff([in_what_fragment(ii, fragments) for ii in pair]) == 0]
 
-    #print("Idxs of same_fragments")
-    #print(idxs2exclude)
-
-    if not return_excluded_idxs:
-        return [pair for ii, pair in enumerate(pairlist) if ii not in idxs2exclude]
-    else:
-        return idxs2exclude
+from sofi_functions import exclude_same_fragments_from_residx_pairlist
 
 def my_RMSD(geom, ref, atom_indices=None,
             ref_atom_indices=None,
@@ -850,7 +617,10 @@ def geom2COMxyz(igeom):
     return COMs_time_res_coords
 
 # This is lifted from mdas, the original source shall remain there
-def top2bondmatrix(top, create_standard_bonds=True):
+
+from sofi_functions import top2residue_bond_matrix
+
+def _top2bondmatrix(top, create_standard_bonds=True):
     if len(top._bonds)==0:
         if create_standard_bonds:
             top.create_standard_bonds()
@@ -890,6 +660,8 @@ def bonded_neighborlist_from_top(top, n=1):
             assert ii in neighbor_list[nn]
 
     return neighbor_list
+
+from sofi_functions import find_by_AA
 
 def _find_by_AAresSeq(top, key):
     return [rr.index for rr in top.residues if key == '%s%u' % (rr.code, rr.resSeq)]
