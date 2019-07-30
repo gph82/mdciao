@@ -1,0 +1,26 @@
+import sofi_tests
+
+
+sofi_tests.test_is_iterable()
+sofi_tests.test_force_iterable()
+sofi_tests.test_does_not_contain_strings()
+sofi_tests.test_in_what_N_fragments()
+sofi_tests.test_in_what_fragment()
+sofi_tests.test_unique_list_of_iterables_by_tuple_hashing()
+sofi_tests.test_exclude_same_fragments_from_residx_pairlist()
+sofi_tests.test_top2residue_bond_matrix()
+sofi_tests.test_get_fragments_method()
+sofi_tests.test_get_fragments_join_fragments_normal()
+sofi_tests.test_get_fragments_join_fragments_special_cases()
+sofi_tests.test_get_fragments_break_fragments_just_works()
+sofi_tests.test_get_fragments_break_fragments_special_cases()
+sofi_tests.test_find_by_AA()
+sofi_tests.test_interactive_fragment_picker_by_AAresSeq_no_ambiguous()
+sofi_tests.test_interactive_fragment_picker_by_AAresSeq_not_present()
+sofi_tests.test_interactive_fragment_picker_by_AAresSeq_pick_first_fragment()
+sofi_tests.test_interactive_fragment_picker_by_AAresSeq_ambiguous()
+sofi_tests.test_interactive_fragment_picker_by_AAresSeq_pick_last_answer()
+sofi_tests.test_interactive_fragment_picker_by_AAresSeq_fragment_name()
+sofi_tests.test_interactive_fragment_picker_by_AAresSeq_bad_answer()
+
+
