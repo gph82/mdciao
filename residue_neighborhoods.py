@@ -305,7 +305,7 @@ else:
             iax2.set_xlim(axbottom.get_xlim())
             iax2.set_xlabel(axbottom.get_xlabel())
 
-            fname = 'neighborhood.%s.time_resolved.%s'%(res_and_fragment_str.replace('*',""), a.ext)
+            fname = 'neighborhood.%s.time_resolved.%s'%(res_and_fragment_str.replace('*',""), a.ext.strip("."))
             plt.savefig(fname,bbox_inches="tight")
             plt.close(myfig)
             print(fname)
