@@ -450,9 +450,9 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                         print( "Your answer has to be an integer "
                                 "in the of the fragment list %s, but you gave %s" % ([int(cf) for cf in cand_fragments], default_fragment_idx))
                         raise
-                    cands = cands[default_fragment_idx]
-                    answer = cand_fragments[default_fragment_idx]
-                    print("Automatically picked fragment %u"%answer)
+                    cands = default_fragment_idx
+                    answer = cand_fragments[_np.argwhere(cands==default_fragment_idx).squeeze()]
+                    print("Automatically picked fragment %u"%default_fragment_idx)
                 # print(refgeom.top.residue(cands))
                 print()
 
