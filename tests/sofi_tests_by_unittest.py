@@ -184,6 +184,7 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
 class Test_get_fragments(unittest.TestCase):
     def setUp(self):
         self.geom = md.load('PDB/file_for_test.pdb')
+        self.geom_force_resSeq_breaks = md.load("PDB/file_for_test_force_resSeq_breaks_is_true.pdb")
 
     # Checking for "method" argument (which are resSeq and Bonds
     def test_get_fragments_method(self):
@@ -289,6 +290,28 @@ class Test_get_fragments(unittest.TestCase):
         assert _np.allclose(by_bonds[1], [3, 4, 5])
         assert _np.allclose(by_bonds[2], [6])
         assert _np.allclose(by_bonds[3], [7])
+
+    def test_get_fragments_method_is_both(self):
+        by_both = get_fragments(self.geom_force_resSeq_breaks.top, verbose=True, #the file has GLU27 and then LYS99 instead of LYS28
+                      auto_fragment_names=True,
+                      method='both') #method is both
+
+        assert _np.allclose(by_both[0], [0, 1, 2])
+        assert _np.allclose(by_both[1], [3, 4])
+        assert _np.allclose(by_both[2], [5])
+        assert _np.allclose(by_both[3], [6])
+        assert _np.allclose(by_both[4], [7])
+
+    def test_get_fragments_dont_know_method(self):
+        failed_assertion = False
+        try:
+            get_fragments(self.geom.top,verbose=True,
+                                 auto_fragment_names=True,
+                                 method='xyz')
+        except ValueError:
+            failed_assertion = True
+        assert failed_assertion
+
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
