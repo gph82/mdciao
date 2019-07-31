@@ -438,7 +438,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                         assert answer in cand_fragments, "The answer '%s' is not in the candidate fragments %s"%(answer,cand_fragments)
                     except (ValueError, AssertionError):
                         print( "Your answer has to be an integer "
-                                "in the of the fragment list %s, but you gave %s" % [int(cf) for cf in cand_fragments],answer)
+                                "in the of the fragment list %s, but you gave %s" % ([int(cf) for cf in cand_fragments],answer))
                         raise
                     cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
                     last_answer = answer
@@ -454,7 +454,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                     # answer = cand_fragments[_np.argwhere(cands==default_fragment_idx).squeeze()]
                     answer = default_fragment_idx
                     cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-                    
+
                     print("Automatically picked fragment %u"%default_fragment_idx)
                 # print(refgeom.top.residue(cands))
                 print()
