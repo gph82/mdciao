@@ -181,9 +181,8 @@ def _print_frag(ii, top,iseg,**print_kwargs):
     print(istr,**print_kwargs)
 
 from sofi_functions import get_fragments
-
 from sofi_functions import in_what_fragment
-
+from sofi_functions import top2residue_bond_matrix
 
 # from https://www.rosettacode.org/wiki/Range_expansion#Python
 def rangeexpand(txt):
@@ -634,7 +633,7 @@ def _top2bondmatrix(top, create_standard_bonds=True):
     return residue_bond_matrix
 
 def bonded_neighborlist_from_top(top, n=1):
-    residue_bond_matrix = top2bondmatrix(top)
+    residue_bond_matrix = top2residue_bond_matrix(top)
     neighbor_list = [[ii] for ii in range(residue_bond_matrix.shape[0])]
     for kk in range(n):
         for ridx, ilist in enumerate(neighbor_list):
