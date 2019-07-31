@@ -378,18 +378,20 @@ def find_AA(top, AA):
 
 
 def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
-                                            pick_first_fragment_by_default=False,
+                                            default_fragment_idx=None,
                                             fragment_names=None, extra_string_info=''):
     r"""
     This function returns the fragment idxs and the residue idxs based on residue name.
     If a residue is present in multiple fragments, the function asks the user to choose the fragment, for which
     the residue idxs is reporte
 
-    :param AAresSeq_idxs: string or list of of strings of AAs of the form of "GLU30" or "E30", can be mixed
-    :param fragments: Residue fragments
-    :param top: Topology object obtained using the mdTraj module
-    :param pick_first_fragment_by_default: If passed as True, the program will pick the first fragment
-        instead of asking the user for a choice, in case of ambiguity
+    :param AAresSeq_idxs: string or list of of strings
+           AAs of the form of "GLU30" or "E30", can be mixed
+    :param fragments: iterable of iterables of integers
+            The integers in the iterables of 'fragments' represent residue indices of that fragment
+    :param top: mdtraj.Topology object
+    :param default_fragment_idx: None or integer.
+            Pick this fragment withouth asking in case of ambiguity. If None, the user will we prompted
     :param fragment_names: list of strings providing informative names for the input fragments
     :param extra_string_info: string with any additional info to be printed in case of ambiguity
     :return: two dictionaries, residuenames2residxs and residuenames2fragidxs. If the AA is not found then the
@@ -399,6 +401,8 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
     residuenames2fragidxs = {}
     last_answer = 0
 
+    #TODO break the iteration in this method into a separate method. Same AAcode in different fragments will overwrite
+    # each other
     if isinstance(AAresSeq_idxs, str):
         AAresSeq_idxs = [AAresSeq_idxs]
 
@@ -424,7 +428,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                     if fragment_names is not None:
                         istr += ' (%s)'%fragment_names[ss]
                     print(istr)
-                if not pick_first_fragment_by_default:
+                if default_fragment_idx is None:
                     answer = input(
                         "input one fragment idx (out of %s) and press enter. Leave empty and hit enter to repeat last option [%s]\n" % ([int(cf) for cf in cand_fragments], last_answer))
                     if len(answer) == 0:
@@ -439,9 +443,15 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                     cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
                     last_answer = answer
 
-                else:
-                    cands = cands[0]
-                    answer = cand_fragments[0]
+                elif isinstance(default_fragment_idx,int):
+                    try:
+                        assert default_fragment_idx in cand_fragments, "The answer '%s' is not in the candidate fragments %s"%(default_fragment_idx,cand_fragments)
+                    except AssertionError:
+                        print( "Your answer has to be an integer "
+                                "in the of the fragment list %s, but you gave %s" % ([int(cf) for cf in cand_fragments], default_fragment_idx))
+                        raise
+                    cands = cands[default_fragment_idx]
+                    answer = cand_fragments[default_fragment_idx]
                     print("Automatically picked fragment %u"%answer)
                 # print(refgeom.top.residue(cands))
                 print()
