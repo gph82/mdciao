@@ -115,7 +115,7 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
                                                  method='bonds')
 
 
-    def test_interactive_fragment_picker_by_AAresSeq_pick_first_fragment(self):
+    def _test_interactive_fragment_picker_by_AAresSeq_pick_first_fragment(self):
         residues = ["GLU30"]
         resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq(residues, self.by_bonds_geom2frags,
                                                                                   self.geom2frags.top,
@@ -123,6 +123,28 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
 
         assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
         assert resname2fragidx["GLU30"] == 0  # GLU30 is in the 1st fragment
+
+    @patch('builtins.input', lambda *args: '4')
+    def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_none(self):
+        residues = ["GLU30"]
+        resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq(residues, self.by_bonds_geom2frags,
+                                                                                  self.geom2frags.top)
+
+        # Checking if residue names gives the correct corresponding residue id
+        # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
+        assert (resname2residx["GLU30"]) == 8  # GLU30 is the 1st residue
+        assert resname2fragidx["GLU30"] == 4 # GLU30 is in the 1st fragment
+
+    def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_passed(self):
+        residues = ["GLU30"]
+        resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq(residues, self.by_bonds_geom2frags,
+                                                                                  self.geom2frags.top,default_fragment_idx=4)
+
+        # Checking if residue names gives the correct corresponding residue id
+        # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
+        assert (resname2residx["GLU30"]) == 8  # GLU30 is the 8th residue
+        assert (resname2fragidx["GLU30"]) == 4 # GLU30 is in the 4th fragment
+
 
     @patch('builtins.input', lambda *args: '4')
     def test_interactive_fragment_picker_by_AAresSeq_ambiguous(self):
