@@ -46,22 +46,34 @@ class Test_find_by_AA(unittest.TestCase):
         assert (find_AA(self.geom2frags.top, "K28")) == [5, 13]
 
 
-
 class Test_top2residue_bond_matrix(unittest.TestCase):
 
     def setUp(self):
         self.geom = md.load("PDB/file_for_test.pdb")
-        self.res_bond_matrix = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
-                                          [1, 1, 1, 0, 0, 0, 0, 0],
-                                          [0, 1, 1, 0, 0, 0, 0, 0],
-                                          [0, 0, 0, 1, 1, 0, 0, 0],
-                                          [0, 0, 0, 1, 1, 1, 0, 0],
-                                          [0, 0, 0, 0, 1, 1, 0, 0],
-                                          [0, 0, 0, 0, 0, 0, 0, 0],
-                                          [0, 0, 0, 0, 0, 0, 0, 0]])
+        self.geom_force_resSeq_breaks = md.load("PDB/file_for_test_force_resSeq_breaks_is_true.pdb")
 
     def test_it_just_works_with_top2residue_bond_matrix(self):
-        assert (top2residue_bond_matrix(self.geom.top) == self.res_bond_matrix).all()
+        res_bond_matrix = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
+                                    [1, 1, 1, 0, 0, 0, 0, 0],
+                                    [0, 1, 1, 0, 0, 0, 0, 0],
+                                    [0, 0, 0, 1, 1, 0, 0, 0],
+                                    [0, 0, 0, 1, 1, 1, 0, 0],
+                                    [0, 0, 0, 0, 1, 1, 0, 0], #LYS28 has a bond with GLU27
+                                    [0, 0, 0, 0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0, 0, 0, 0]])
+        assert (top2residue_bond_matrix(self.geom.top) == res_bond_matrix).all()
+
+    def test_works_with_force_resSeq_breaks_is_true(self):
+        res_bond_matrix = _np.array([ [1, 1, 0, 0, 0, 0, 0, 0],
+                                      [1, 1, 1, 0, 0, 0, 0, 0],
+                                      [0, 1, 1, 0, 0, 0, 0, 0],
+                                      [0, 0, 0, 1, 1, 0, 0, 0],
+                                      [0, 0, 0, 1, 1, 0, 0, 0],
+                                      [0, 0, 0, 0, 0, 1, 0, 0], #LYS28 has been changed to LYS99 in the test file, so no bond with GLU27
+                                      [0, 0, 0, 0, 0, 0, 0, 0],
+                                      [0, 0, 0, 0, 0, 0, 0, 0]])
+
+        assert (top2residue_bond_matrix(self.geom_force_resSeq_breaks.top, force_resSeq_breaks=True) == res_bond_matrix).all()
 
 class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
 
