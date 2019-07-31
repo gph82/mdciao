@@ -157,6 +157,7 @@ def exclude_same_fragments_from_residx_pairlist(pairlist,
 
 # This is lifted from mdas, the original source shall remain there
 def top2residue_bond_matrix(top, create_standard_bonds=True,
+                            force_resSeq_breaks=False,
                             verbose=True):
     r"""
     :param top: md.Topology object
@@ -173,8 +174,12 @@ def top2residue_bond_matrix(top, create_standard_bonds=True,
     residue_bond_matrix = _np.zeros((top.n_residues, top.n_residues), dtype=int)
     for ibond in top._bonds:
         r1, r2 = ibond.atom1.residue.index, ibond.atom2.residue.index
+        rSeq1, rSeq2 = ibond.atom1.residue.resSeq, ibond.atom2.residue.resSeq
         residue_bond_matrix[r1, r2] = 1
         residue_bond_matrix[r2, r1] = 1
+        if force_resSeq_breaks and _np.abs(rSeq1 - rSeq2) > 1:  # mdtrajs bond-making routine does not check for resSeq
+            residue_bond_matrix[r1, r2] = 0
+            residue_bond_matrix[r2, r1] = 0
     for ii, row in enumerate(residue_bond_matrix):
         if row.sum()==0 and verbose:
             print("Residue with index %u (%s) has no bonds whatsoever"%(ii,top.residue(ii)))
