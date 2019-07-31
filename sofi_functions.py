@@ -454,7 +454,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                     # answer = cand_fragments[_np.argwhere(cands==default_fragment_idx).squeeze()]
                     answer = default_fragment_idx
                     cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-
+                    
                     print("Automatically picked fragment %u"%default_fragment_idx)
                 # print(refgeom.top.residue(cands))
                 print()
