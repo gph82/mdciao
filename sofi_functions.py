@@ -80,6 +80,7 @@ def in_what_fragment(residx,
     :return: integer or string if fragment name is given
     """
 
+    # TODO deal with np.int64 etc
     assert type(residx) == int, "Incorrect input: residx should be int, and not %s" % type(residx)
     assert does_not_contain_strings(list_of_nonoverlapping_lists_of_residxs)
 
