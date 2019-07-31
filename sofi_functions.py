@@ -234,7 +234,8 @@ def get_fragments(top,
                   verbose=True,
                   auto_fragment_names=True,
                   frag_breaker_to_pick_idx=None,
-                  method='resSeq'):
+                  method='resSeq', #Whatever comes after this(**) will be passed as named argument to interactive_segment_picker
+                  **kwargs_interactive_segment_picker):
     r"""
     Returns the list of arrays containing the residues that are contained in a fragment
 
@@ -247,7 +248,7 @@ def get_fragments(top,
                         One fragment idx cannot appear in more than one inner list, otherwise program throws an error)
 
     :param verbose: Default is True
-    :param method: either resSeq or bonds, which will be the basis for creating fragments
+    :param method: either "resSeq" or "bonds", or "both" which will be the basis for creating fragments
     :return: List of integer array. Each array within the list has the residue ids that combine to form a fragment
     """
 
@@ -267,11 +268,18 @@ def get_fragments(top,
                 # print("new")
                 fragments.append([ii])
             old = rr.resSeq
-    elif method == 'bonds':
+    elif method in ['bonds','both']:
         from msmtools.estimation import connected_sets as _connected_sets
-        residue_bond_matrix = top2residue_bond_matrix(top, verbose=False)
+        if method=='bonds':
+            residue_bond_matrix = top2residue_bond_matrix(top, verbose=False, force_resSeq_breaks=False)
+        elif method=='both':
+            residue_bond_matrix = top2residue_bond_matrix(top, verbose=False, force_resSeq_breaks=True)
         fragments = _connected_sets(residue_bond_matrix)
         fragments = [fragments[ii] for ii in _np.argsort([fr[0] for fr in fragments])]
+
+    else:
+        raise ValueError("Don't know what method '%s' is"%method)
+
     if verbose:
         print("Auto-detected fragments")
         for ii, iseg in enumerate(fragments):
@@ -318,7 +326,8 @@ def get_fragments(top,
         if isinstance(fragment_breaker_fullresname,str):
             fragment_breaker_fullresname=[fragment_breaker_fullresname]
         for breaker in fragment_breaker_fullresname:
-            resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq(breaker,fragments, top)
+            resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq(breaker,fragments, top,
+                                                                                      **kwargs_interactive_segment_picker)
             idx = resname2residx[breaker]
             ifrag = resname2fragidx[breaker]
             if idx is None:
