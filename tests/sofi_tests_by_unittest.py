@@ -9,7 +9,7 @@ from ddt import ddt, data, unpack
 from sofi_functions import find_AA, top2residue_bond_matrix, get_fragments, \
     interactive_fragment_picker_by_AAresSeq,exclude_same_fragments_from_residx_pairlist,\
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment,does_not_contain_strings, force_iterable, \
-    is_iterable, in_what_N_fragments
+    is_iterable, in_what_N_fragments, int_from_AA_code
 
 #OR import sofi_functions
 
@@ -139,6 +139,7 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
         assert resname2fragidx["GLU30"] == 0 # GLU30 is in the 1st fragment
 
     #TODO JUST TRYING
+
     # def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_none_last_answer(self):
     #     with mock.patch('builtins.input',return_value = '4'):
     #         resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq("GLU30", self.by_bonds_geom2frags,
@@ -478,6 +479,15 @@ class Test_in_what_N_fragments(unittest.TestCase):
     def test_in_what_N_fragments_for_wrong_idx(self):
         wrong_idx = 11
         assert len(in_what_N_fragments(wrong_idx, self.fragments)) == 1
+
+class Test_int_from_AA_code(unittest.TestCase):
+    def test_int_from_AA_code_just_works(self):
+        assert (int_from_AA_code("GLU30") == 30)
+        assert (int_from_AA_code("E30") == 30)
+        assert (int_from_AA_code("glu30") == 30)
+        assert (int_from_AA_code("30glu40") == 3040)
+
+
 
 if __name__ == '__main__':
     unittest.main()
