@@ -464,6 +464,9 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
 
     return residuenames2residxs, residuenames2fragidxs
 
+def int_from_AA_code(key):
+    return int(''.join([ii for ii in key if ii.isnumeric()]))
+
 
 
 
