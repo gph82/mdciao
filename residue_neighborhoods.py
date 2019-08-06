@@ -4,7 +4,6 @@ import numpy as np
 import mdtraj as md
 from matplotlib import pyplot as plt
 from json import load as jsonload
-import os
 
 from actor_utils import get_fragments, \
 ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode,\
@@ -45,10 +44,10 @@ parser.set_defaults(pbc=True)
 parser.add_argument('--ask_fragment',    dest='ask', action='store_true', help="Interactively ask for fragment assignemnt when input matches more than one resSeq")
 parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
 parser.set_defaults(ask=True)
-parser.add_argument('--output_npy',   type=str, help="Name of the output.npy file for storing this runs' results", default='output.npy')
-parser.add_argument('--output_ascii', type=str, help="Extension for ascii files (.dat, .txt etc). Default is 'none', which does not write anything.", default=None)
+parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results", default='output.npy')
+parser.add_argument('--output_ext', type=str, help="Extension of the output graphics, default is .pdf", default='.pdf')
 
-parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf", default='.pdf')
+
 parser.add_argument('--fragment_names', type=str,
                     help="Name of the fragments. Leave empty if you want them automatically named."
                          " Otherwise, give a quoted list of strings separated by commas, e.g. "
@@ -57,9 +56,8 @@ parser.add_argument('--fragment_names', type=str,
 parser.add_argument("--BW_file", type=str, help="Json file with info about the Ballesteros-Weinstein definitions as downloaded from the GPRCmd", default='None')
 parser.add_argument("--CGN_PDB", type=str, help="PDB code for a consensus G-protein nomenclature", default='None')
 
-
 a  = parser.parse_args()
-a.ext = a.graphic_ext
+a.ext = a.output_ext
 
 xtcs = sorted(a.trajectories)
 print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n"%("\n  ".join(xtcs),a.stride))
@@ -195,7 +193,6 @@ else:
     panelsize2font=3.5
     histofig, histoax = plt.subplots(n_rows,n_cols, sharex=True, sharey=True, figsize=(n_cols*panelsize*2, n_rows*panelsize), squeeze=False)
     list_of_axes = list(histoax.flatten())
-    for_ascii_output = {}
     for jax, residx in zip(list_of_axes, resSeq2residxs.values()):# in np.unique([ctc_idxs_small[ii] for ii in final_look]):
         toplot=final_look[residx]
         anchor_cons_label = _relabel_consensus(residx, [BW,CGN])
@@ -218,7 +215,6 @@ else:
         jax.legend(fontsize=panelsize * panelsize2font)
         #toplot=[kk for kk in final_look if residx in ctc_idxs_small[kk]]
 
-        for_ascii_output[res_and_fragment_str]=[{} for __ in xtcs]
         if len(toplot)>0:
             myfig, myax = plt.subplots(len(toplot), 1, sharex=True, sharey=True,
                                        figsize=(10,len(toplot)*panelheight))
@@ -243,8 +239,6 @@ else:
                              refgeom.top.residue(idx1),labels_frags[0],
                              refgeom.top.residue(idx2),labels_frags[1])
                 for jj, jxtc in enumerate(xtcs):
-                    for_ascii_output[res_and_fragment_str][jj]["time / ns"] = time_array[jj] / 1e3
-                    for_ascii_output[res_and_fragment_str][jj][ctc_label] = ctcs_trajs[jj][:, oo]*10
                     plt.plot(time_array[jj] / 1e3, ctcs_trajs[jj][:, oo]*10,
                              label='%s (%u%%)'%(jxtc, np.mean(ctcs_trajs[jj][:, oo] < a.ctc_cutoff_Ang / 10) * 100))
                 plt.legend(loc=1)
@@ -310,20 +304,12 @@ else:
             iax2.set_xticklabels(axbottom.get_xticklabels())
             iax2.set_xlim(axbottom.get_xlim())
             iax2.set_xlabel(axbottom.get_xlabel())
-            fname = 'neighborhood.%s.time_resolved.%s' % (res_and_fragment_str.replace('*', ""), a.ext.strip("."))
+
+            fname = 'neighborhood.%s.time_resolved.%s'%(res_and_fragment_str.replace('*',""), a.ext.strip("."))
             plt.savefig(fname,bbox_inches="tight")
             plt.close(myfig)
             print(fname)
-            if str(a.output_ascii).lower()!='none' and str(a.output_ascii).lower().strip(".") in ["dat","txt"]:
-                aext = str(a.output_ascii).lower().strip(".")
-                for ii, ixtc in enumerate(xtcs):
-                    traj_name = os.path.splitext(ixtc)[0]
-                    savename = "neighborhood.%s.%s.%s"%(res_and_fragment_str.replace('*', ""), traj_name, aext)
-                    np.savetxt(savename, np.vstack(list(for_ascii_output[res_and_fragment_str][ii].values())).T,
-                           ' '.join(["%6.3f" for __ in for_ascii_output[res_and_fragment_str][ii].values()]),
-                               header=' '.join(["%6s"%key for key in for_ascii_output[res_and_fragment_str][ii].keys()]))
-                    print(savename)
-            print()
+            #plt.show()
 
 
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
