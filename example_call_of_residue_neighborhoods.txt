@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 python residue_neighborhoods.py prot1.pdb run1.xtc --resSeq_idxs "139, 376, 358, 381-394, 130, 131, 267, 270"  --CGN_PDB 3SN6 --BW_file BW.json --n_nearest 2
+=======
+python residue_neighborhoods.py prot1.pdb run1.xtc run2.xtc --resSeq_idxs "139, 376, 358, 381-394, 130, 131, 267, 270"  --CGN_PDB 3SN6 --BW_file BW.json --n_nearest 2
+>>>>>>> 341381442aeea026dae183eceee5ee870631d703
