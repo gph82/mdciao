@@ -9,7 +9,7 @@ from ddt import ddt, data, unpack
 from sofi_functions import find_AA, top2residue_bond_matrix, get_fragments, \
     interactive_fragment_picker_by_AAresSeq,exclude_same_fragments_from_residx_pairlist,\
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment,does_not_contain_strings, force_iterable, \
-    is_iterable, in_what_N_fragments, int_from_AA_code
+    is_iterable, in_what_N_fragments, int_from_AA_code, bonded_neighborlist_from_top
 
 #OR import sofi_functions
 
