@@ -487,6 +487,14 @@ class Test_int_from_AA_code(unittest.TestCase):
         assert (int_from_AA_code("glu30") == 30)
         assert (int_from_AA_code("30glu40") == 3040)
 
+class Test_bonded_neighborlist_from_top(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load("PDB/file_for_test.pdb")
+
+    def test_bonded_neighborlist_from_top_just_works(self):
+       neighbors_from_function =  bonded_neighborlist_from_top(self.geom.top)
+       actual_neighbors = [[1], [0, 2], [1], [4], [3, 5], [4], [], []]
+       assert neighbors_from_function == actual_neighbors
 
 
 if __name__ == '__main__':
