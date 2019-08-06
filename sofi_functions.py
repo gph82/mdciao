@@ -467,7 +467,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
 def int_from_AA_code(key):
     return int(''.join([ii for ii in key if ii.isnumeric()]))
 
-#FIXME Trying to integrate both AAresseq and resseq functions in one
+#FIXME Trying to integrate both AAresseq and resseq functions in one, if Guillermo agrees, add the test also
 def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
                                             default_fragment_idx=None,
                                             fragment_names=None, extra_string_info=''):
@@ -560,4 +560,39 @@ def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
 
     return residuenames2residxs, residuenames2fragidxs
 
+def bonded_neighborlist_from_top(top, n=1):
+    """
+
+    :param top: mdTraj Topology object
+    :param n:
+    :return: returns the neighbor of each residue as a list of list
+            Each residue will have a corresponding neighbor list(if neighbors exists), or an empty list(if no neighbor exists)
+            A neighbor exists between i and j residues if residue_bond_matrix has a 1 at position ij
+    """
+    residue_bond_matrix = top2residue_bond_matrix(top)
+    neighbor_list = [[ii] for ii in range(residue_bond_matrix.shape[0])]
+    for kk in range(n):
+        for ridx, ilist in enumerate(neighbor_list):
+            new_neighborlist = [ii for ii in ilist]
+            #print("Iteration %u in residue %u"%(kk, ridx))
+            for rn in ilist:
+                row = residue_bond_matrix[rn]
+                bonded = _np.argwhere(row == 1).squeeze()
+                if _np.ndim(bonded)==0:
+                    bonded=[bonded]
+                toadd = [nn for nn in bonded if nn not in ilist and nn!=ridx]
+                if len(toadd):
+                    #print("neighbor %u adds new neighbor %s:"%(rn, toadd))
+                    new_neighborlist += toadd
+                    #print("so that the new neighborlist is: %s"%new_neighborlist)
+
+            neighbor_list[ridx] = [ii for ii in _np.unique(new_neighborlist) if ii!=ridx]
+            #break
+
+    # Check that the neighborlist works both ways
+    for ii, ilist in enumerate(neighbor_list):
+        for nn in ilist:
+            assert ii in neighbor_list[nn]
+
+    return neighbor_list
 
