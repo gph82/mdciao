@@ -596,6 +596,25 @@ def bonded_neighborlist_from_top(top, n=1):
 
     return neighbor_list
 
+# from https://www.rosettacode.org/wiki/Range_expansion#Python
+def rangeexpand(txt):
+    """
+    This function takes in integer range or multiple integer ranges and returns a list of individual integers
+    Example- "1-2,3-4" will return [1,2,3,4]
+
+    :param txt: string of integers or integer range separated by ","
+    :return: list of integers
+    """
+    lst = []
+    for r in txt.split(','):
+        if '-' in r[1:]:
+            r0, r1 = r[1:].split('-', 1)
+            lst += range(int(r[0] + r0), int(r1) + 1)
+        else:
+            lst.append(int(r))
+    return lst
+
+
 
 
 
