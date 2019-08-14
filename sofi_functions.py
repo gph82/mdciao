@@ -615,6 +615,66 @@ def rangeexpand(txt):
     return lst
 
 
+def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragments, ctc_residxs_pairs, top,
+                                              n_ctcs=5, select_by_resSeq=None,
+                                              silent=False,
+                                              ):
+    order = _np.argsort(ctcs_mean)[::-1]
+    assert len(ctcs_mean)==len(ctc_residxs_pairs)
+    final_look = {}
+    if select_by_resSeq is None:
+        select_by_resSeq=list(resSeq2residxs.keys())
+    elif isinstance(select_by_resSeq, int):
+        select_by_resSeq=[select_by_resSeq]
+    for key, val in resSeq2residxs.items():
+        if key in select_by_resSeq:
+            order_mask = _np.array([ii for ii in order if val in ctc_residxs_pairs[ii]])
+            print("#idx    Freq  contact             segA-segB residxA   residxB   ctc_idx")
+
+            isum=0
+            seen_ctcs = []
+            for ii, oo in enumerate(order_mask[:n_ctcs]):
+                pair = ctc_residxs_pairs[oo]
+                if pair[0]!=val and pair[1]==val:
+                    pair=pair[::-1]
+                elif pair[0]==val and pair[1]!=val:
+                    pass
+                else:
+                    print(pair)
+                    raise Exception
+                idx1 = pair[0]
+                idx2 = pair[1]
+                s1 = in_what_fragment(idx1, fragments)
+                s2 = in_what_fragment(idx2, fragments)
+                imean = ctcs_mean[oo]
+                isum += imean
+                seen_ctcs.append(imean)
+                print("%-6s %3.2f %8s-%-8s    %5u-%-5u %7u %7u %7u %3.2f" % ('%u:'%(ii+1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
+            if not silent:
+                try:
+                    answer = input("How many do you want to keep (Hit enter for None)?\n")
+                except KeyboardInterrupt:
+                    break
+                if len(answer) == 0:
+                    pass
+                else:
+                    answer = _np.arange(_np.min((int(answer),n_ctcs)))
+                    final_look[val] = order_mask[answer]
+            else:
+                seen_ctcs = _np.array(seen_ctcs)
+                n_nonzeroes = (seen_ctcs>0).astype(int).sum()
+                answer=_np.arange(_np.min((n_nonzeroes,n_ctcs)))
+                final_look[val]= order_mask[answer]
+
+    # TODO think about what's best to return here
+    return final_look
+    # These were moved from the method to the API
+    final_look = _np.unique(_np.hstack(final_look))
+    final_look = final_look[_np.argsort(ctcs_mean[final_look])][::-1]
+    return final_look
+
+
+
 
 
 
