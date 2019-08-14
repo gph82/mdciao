@@ -9,7 +9,8 @@ from ddt import ddt, data, unpack
 from sofi_functions import find_AA, top2residue_bond_matrix, get_fragments, \
     interactive_fragment_picker_by_AAresSeq,exclude_same_fragments_from_residx_pairlist,\
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment,does_not_contain_strings, force_iterable, \
-    is_iterable, in_what_N_fragments, int_from_AA_code, bonded_neighborlist_from_top, rangeexpand
+    is_iterable, in_what_N_fragments, int_from_AA_code, bonded_neighborlist_from_top, rangeexpand,\
+    ctc_freq_reporter_by_residue_neighborhood
 
 #OR import sofi_functions
 
@@ -503,6 +504,40 @@ class Test_rangeexpand(unittest.TestCase):
         assert (rangeexpand("1-2, 3,4") == [1, 2, 3, 4])
         assert (rangeexpand("1-2, 03, 4") == [1, 2, 3, 4])
 
+class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load("PDB/file_for_test.pdb")
+        self.by_bonds_geom = get_fragments(self.geom.top,
+                                                     verbose=True,
+                                                     auto_fragment_names=True,
+                                                     method='bonds')
+        self.residues = ["GLU30", "VAL31"]
+        self.resname2residx, self.resname2fragidx = interactive_fragment_picker_by_AAresSeq(self.residues,
+                                                                                                 self.by_bonds_geom,
+                                                                                                 self.geom.top)
+
+    def test_ctc_freq_reporter_by_residue_neighborhood(self):
+        ctcs_mean = [30, 5]
+        ctc_residxs_pairs = [[0, 1], [2, 1]]
+
+        input_values = (val for val in ["1", "1"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):#Checking against the input 1 and 1
+            ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
+                                                             self.geom.top,
+                                                             n_ctcs=5, select_by_resSeq=None,
+                                                             silent=False)
+            assert ctc_freq[0] == 0
+            assert ctc_freq[1] == 0
+
+
+        input_values = (val for val in ["1", "2"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)): #Checking against the input 1 and 2
+            ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
+                                                            self.geom.top,
+                                                             n_ctcs=5, select_by_resSeq=None,
+                                                             silent=False)
+            assert ctc_freq[0] == 0
+            assert (_np.array_equal(ctc_freq[1],[0, 1]))
 
 if __name__ == '__main__':
     unittest.main()
