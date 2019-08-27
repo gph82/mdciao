@@ -724,6 +724,79 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
         return out_dict
 
 
+def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
+
+    guessed_BWs = {}
+    if restrict_to_residxs is None:
+        restrict_to_residxs = [residue.index for residue in top.residues]
+
+    """
+    seq = ''.join([top._residues    [ii].code for ii in restrict_to_residxs])
+    seq_BW =  ''.join([key[0] for key in input_BW_dict.keys()])
+    ref_seq_idxs = [int_from_AA_code(key) for key in input_BW_dict.keys()]
+    for alignmt in pairwise2.align.globalxx(seq, seq_BW)[:1]:
+        alignment_dict = alignment_result_to_list_of_dicts(alignmt, top,
+                                                            ref_seq_idxs,
+                                                            #res_top_key="target_code",
+                                                           #resname_key='target_resname',
+                                                           #resSeq_key="target_resSeq",
+                                                           #idx_key='ref_resSeq',
+                                                           #re_merge_skipped_entries=False
+                                                            )
+        print(alignment_dict)
+    return
+    """
+    out_dict = {ii:None for ii in range(top.n_residues)}
+    for rr in restrict_to_residxs:
+        residue = top.residue(rr)
+        key = '%s%s'%(residue.code,residue.resSeq)
+        try:
+            (key, input_BW_dict[key])
+            #print(key, input_BW_dict[key])
+            out_dict[residue.index] = input_BW_dict[key]
+        except KeyError:
+            resSeq = int_from_AA_code(key)
+            try:
+                key_above = [key for key in input_BW_dict.keys() if int_from_AA_code(key)>resSeq][0]
+                resSeq_above = int_from_AA_code(key_above)
+                delta_above = int(_np.abs([resSeq - resSeq_above]))
+            except IndexError:
+                delta_above = 0
+            try:
+                key_below = [key for key in input_BW_dict.keys() if int_from_AA_code(key)<resSeq][-1]
+                resSeq_below = int_from_AA_code(key_below)
+                delta_below = int(_np.abs([resSeq-resSeq_below]))
+            except IndexError:
+                delta_below = 0
+
+            if delta_above<=delta_below:
+                closest_BW_key = key_above
+                delta = -delta_above
+            elif delta_above>delta_below:
+                closest_BW_key = key_below
+                delta = delta_below
+            else:
+                print(delta_above, delta_below)
+                raise Exception
+
+            if residue.index in restrict_to_residxs:
+                closest_BW=input_BW_dict[closest_BW_key]
+                base, exp = [int(ii) for ii in closest_BW.split('.')]
+                new_guessed_val = '%s.%u*'%(base,exp+delta)
+                #guessed_BWs[key] = new_guessed_val
+                out_dict[residue.index] = new_guessed_val
+                #print(key, new_guessed_val, residue.index, residue.index in restrict_to_residxs)
+            else:
+                pass
+                #new_guessed_val = None
+
+            # print("closest",closest_BW_key,closest_BW, key, new_guessed_val )
+
+    #input_BW_dict.update(guessed_BWs)
+
+    return out_dict
+
+
 
 
 
