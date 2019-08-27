@@ -10,7 +10,7 @@ from sofi_functions import find_AA, top2residue_bond_matrix, get_fragments, \
     interactive_fragment_picker_by_AAresSeq,exclude_same_fragments_from_residx_pairlist,\
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment,does_not_contain_strings, force_iterable, \
     is_iterable, in_what_N_fragments, int_from_AA_code, bonded_neighborlist_from_top, rangeexpand,\
-    ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode
+    ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode, guess_missing_BWs
 
 #OR import sofi_functions
 
@@ -545,15 +545,36 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
 
     def test_table2BW_by_AAcode_just_works(self):
         table2BW = table2BW_by_AAcode(tablefile = self.file)
-        assert (table2BW == {'Q26': '1.25', 'E27': '1.26', 'R28': '1.27', 'F264': '1.28'})
+        self.assertDictEqual(table2BW, {'Q26': '1.25', 'E27': '1.26', 'R28': '1.27', 'F264': '1.28'})
 
     def test_table2BW_by_AAcode_keep_AA_code_test(self): #dictionary keys will only have AA id
         table2BW = table2BW_by_AAcode(tablefile = self.file, keep_AA_code=False)
-        assert (table2BW == {26: '1.25', 27: '1.26', 28: '1.27', 264: '1.28'})
+        self.assertDictEqual(table2BW, {26: '1.25', 27: '1.26', 28: '1.27', 264: '1.28'})
 
     def test_table2BW_by_AAcode_return_defs_test(self):
         table2BW = table2BW_by_AAcode(tablefile=self.file, return_defs=True)
         assert (table2BW == ({'Q26': '1.25', 'E27': '1.26', 'R28': '1.27', 'F264': '1.28'}, ['TM1']))
+
+class Test_guess_missing_BWs(unittest.TestCase):
+    def setUp(self):
+        self.file = "GPCRmd_B2AR_nomenclature_test.xlsx"
+        self.geom = md.load("PDB/file_for_test.pdb")
+
+    def test_guess_missing_BWs_just_works(self):
+        table2BW = table2BW_by_AAcode(tablefile=self.file)
+        guess_BW = guess_missing_BWs(table2BW, self.geom.top, restrict_to_residxs=None)
+        self.assertDictEqual(guess_BW,
+                             {0: '1.29*',
+                              1: '1.30*',
+                              2: '1.31*',
+                              3: '1.27*',
+                              4: '1.26',
+                              5: '1.27*',
+                              6: '1.28*',
+                              7: '1.28*'}
+                             )
+
+
 
 if __name__ == '__main__':
     unittest.main()
