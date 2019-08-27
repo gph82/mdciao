@@ -545,15 +545,56 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
 
     def test_table2BW_by_AAcode_just_works(self):
         table2BW = table2BW_by_AAcode(tablefile = self.file)
-        self.assertDictEqual(table2BW, {'Q26': '1.25', 'E27': '1.26', 'R28': '1.27', 'F264': '1.28'})
+        self.assertDictEqual(table2BW,
+                             {'Q26': '1.25',
+                              'E27': '1.26',
+                              'R28': '1.27',
+                              'F264': '1.28',
+                              'M40': '1.39',
+                              'S41': '1.40',
+                              'L42': '1.41',
+                              'I43': '1.42',
+                              'V44': '1.43',
+                              'L45': '1.44',
+                              'A46': '1.45',
+                              'I47': '1.46',
+                              'V48': '1.47'})                             )
 
     def test_table2BW_by_AAcode_keep_AA_code_test(self): #dictionary keys will only have AA id
         table2BW = table2BW_by_AAcode(tablefile = self.file, keep_AA_code=False)
-        self.assertDictEqual(table2BW, {26: '1.25', 27: '1.26', 28: '1.27', 264: '1.28'})
+        self.assertDictEqual(table2BW,
+                             {26: '1.25',
+                              27: '1.26',
+                              28: '1.27',
+                              264: '1.28',
+                              40: '1.39',
+                              41: '1.40',
+                              42: '1.41',
+                              43: '1.42',
+                              44: '1.43',
+                              45: '1.44',
+                              46: '1.45',
+                              47: '1.46',
+                              48: '1.47'})
 
     def test_table2BW_by_AAcode_return_defs_test(self):
         table2BW = table2BW_by_AAcode(tablefile=self.file, return_defs=True)
-        assert (table2BW == ({'Q26': '1.25', 'E27': '1.26', 'R28': '1.27', 'F264': '1.28'}, ['TM1']))
+        self.assertEqual(table2BW,
+                         ({'Q26': '1.25',
+                           'E27': '1.26',
+                           'R28': '1.27',
+                           'F264': '1.28',
+                           'M40': '1.39',
+                           'S41': '1.40',
+                           'L42': '1.41',
+                           'I43': '1.42',
+                           'V44': '1.43',
+                           'L45': '1.44',
+                           'A46': '1.45',
+                           'I47': '1.46',
+                           'V48': '1.47'},
+                          ['TM1']))
+
 
 class Test_guess_missing_BWs(unittest.TestCase):
     def setUp(self):
