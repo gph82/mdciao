@@ -558,7 +558,7 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                               'L45': '1.44',
                               'A46': '1.45',
                               'I47': '1.46',
-                              'V48': '1.47'})                             )
+                              'V48': '1.47'})
 
     def test_table2BW_by_AAcode_keep_AA_code_test(self): #dictionary keys will only have AA id
         table2BW = table2BW_by_AAcode(tablefile = self.file, keep_AA_code=False)
