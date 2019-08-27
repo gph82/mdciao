@@ -674,6 +674,56 @@ def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragmen
     return final_look
 
 
+def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
+                       modifications={"S262":"F264"},
+                       keep_AA_code=True,
+                       return_defs=False,
+                       ):
+    """
+
+    :param tablefile: GPCRmd_B2AR nomenclature file in excel format
+    :param modifications: Dictionary to store the modifications required in amino acid name
+                        Parameter should be passed as a dictionary of the form {old name:new name}
+    :param keep_AA_code: True if amino acid letter code is required else False. Default is True
+                        If True then output dictionary will have key of the form "Q26" else "26"
+    :param return_defs: if defs are required then True else False. Default is true
+    :return: Dictionary if return_defs=false else dictionary and a list
+    """
+    out_dict = {}
+    import pandas
+    df = pandas.read_excel(tablefile, header=None)
+
+    # Locate definition lines and use their indices
+    defs = []
+    for ii, row in df.iterrows():
+        if row[0].startswith("TM") or row[0].startswith("H8"):
+            defs.append(row[0])
+
+        else:
+            out_dict[row[2]] = row[1]
+
+    # Replace some keys
+    __ = {}
+    for key, val in out_dict.items():
+        for patt, sub in modifications.items():
+            key = key.replace(patt,sub)
+        __[key] = str(val)
+    out_dict = __
+
+    # Make proper BW notation as string with trailing zeros
+    out_dict = {key:'%1.2f'%float(val) for key, val in out_dict.items()}
+
+    if keep_AA_code:
+        pass
+    else:
+        out_dict =  {int(key[1:]):val for key, val in out_dict.items()}
+
+    if return_defs:
+        return out_dict, defs
+    else:
+        return out_dict
+
+
 
 
 
