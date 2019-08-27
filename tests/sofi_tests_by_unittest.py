@@ -597,6 +597,7 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
 
 
 class Test_guess_missing_BWs(unittest.TestCase):
+    #TODO need to attain 100% coverage
     def setUp(self):
         self.file = "GPCRmd_B2AR_nomenclature_test.xlsx"
         self.geom = md.load("PDB/file_for_test.pdb")
@@ -612,10 +613,7 @@ class Test_guess_missing_BWs(unittest.TestCase):
                               4: '1.26',
                               5: '1.27*',
                               6: '1.28*',
-                              7: '1.28*'}
-                             )
-
-
+                              7: '1.28*'})
 
 if __name__ == '__main__':
     unittest.main()
