@@ -9,7 +9,7 @@ from sofi_functions import find_AA, top2residue_bond_matrix, get_fragments, \
     interactive_fragment_picker_by_AAresSeq,exclude_same_fragments_from_residx_pairlist,\
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment,does_not_contain_strings, force_iterable, \
     is_iterable, in_what_N_fragments, int_from_AA_code, bonded_neighborlist_from_top, rangeexpand,\
-    ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode, guess_missing_BWs, CGN_transformer
+    ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode, guess_missing_BWs, CGN_transformer, top2CGN_by_AAcode
 
 #OR import sofi_functions
 
@@ -618,9 +618,27 @@ class Test_CGN_transformer(unittest.TestCase):
     def setUp(self):
         self.cgn = CGN_transformer()
 
-    def test_CGN_transformer_just_Wors(self):
+    def test_CGN_transformer_just_works(self):
         self.assertEqual(len(self.cgn.seq), len(self.cgn.seq_idxs))
         self.assertEqual(len(self.cgn.seq), len(self.cgn.AA2CGN))
+
+class Test_top2CGN_by_AAcode(unittest.TestCase):
+    def setUp(self):
+        self.cgn = CGN_transformer()
+        self.geom = md.load("PDB/file_for_test.pdb")
+
+    def test_top2CGN_by_AAcode_just_works(self):
+        top2CGN = top2CGN_by_AAcode(self.geom.top, self.cgn)
+        self.assertDictEqual(top2CGN,
+                             {0: 'G.HN.27',
+                              1: 'G.HN.53',
+                              2: 'H.HC.11',
+                              3: 'H.hdhe.4',
+                              4: 'G.S2.3',
+                              5: 'G.S2.5',
+                              6: None,
+                              7: 'G.S2.6'})
+
 
 if __name__ == '__main__':
     unittest.main()
