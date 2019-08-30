@@ -832,6 +832,77 @@ class CGN_transformer(object):
         #return seq_ref, seq_idxs, self._dict
 
 
+def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
+                      restrict_to_residxs=None):
+
+    # TODO this lazy import will bite back
+    from Gunnar_utils import alignment_result_to_list_of_dicts
+    from Bio import pairwise2
+
+
+    if restrict_to_residxs is None:
+        restrict_to_residxs = [residue.index for residue in top.residues]
+
+    #out_dict = {ii:None for ii in range(top.n_residues)}
+    #for ii in restrict_to_residxs:
+    #    residue = top.residue(ii)
+    #    AAcode = '%s%s'%(residue.code,residue.resSeq)
+    #    try:
+    #        out_dict[ii]=ref_CGN_tf.AA2CGN[AAcode]
+    #    except KeyError:
+    #        pass
+    #return out_dict
+    seq = ''.join([str(top.residue(ii).code).replace("None", "X") for ii in restrict_to_residxs])
+    #
+    res_idx2_PDB_resSeq = {}
+    for alignmt in pairwise2.align.globalxx(seq, ref_CGN_tf.seq)[:1]:
+        list_of_alignment_dicts = alignment_result_to_list_of_dicts(alignmt, top,
+                                                            ref_CGN_tf.seq_idxs,
+                                                            res_top_key="Nour_code",
+                                                            resname_key='Nour_resname',
+                                                            resSeq_key="Nour_resSeq",
+                                                            res_ref_key='3SN6_code',
+                                                            idx_key='3SN6_resSeq',
+                                                            subset_of_residxs=restrict_to_residxs,
+                                                            #re_merge_skipped_entries=False
+                                                           )
+
+        #import pandas as pd
+        #with pd.option_context('display.max_rows', None, 'display.max_columns',
+        #                       None):  # more options can be specified also
+        #    for idict in list_of_alignment_dicts:
+        #        idict["match"] = False
+        #        if idict["Nour_code"]==idict["3SN6_code"]:
+        #            idict["match"]=True
+        #    print(DataFrame.from_dict(list_of_alignment_dicts))
+
+        res_idx_array=iter(restrict_to_residxs)
+        for idict in list_of_alignment_dicts:
+             if '~' not in idict["Nour_resname"]:
+                 idict["target_residx"]=\
+                 res_idx2_PDB_resSeq[next(res_idx_array)]='%s%s'%(idict["3SN6_code"],idict["3SN6_resSeq"])
+    out_dict = {}
+    for ii in range(top.n_residues):
+        try:
+            out_dict[ii] = ref_CGN_tf.AA2CGN[res_idx2_PDB_resSeq[ii]]
+        except KeyError:
+            out_dict[ii] = None
+
+    return out_dict
+    # for key, equiv_at_ref_PDB in res_idx2_PDB_resSeq.items():
+    #     if equiv_at_ref_PDB in ref_CGN_tf.AA2CGN.keys():
+    #         iCGN = ref_CGN_tf.AA2CGN[equiv_at_ref_PDB]
+    #     else:
+    #         iCGN = None
+    #     #print(key, top.residue(key), iCGN)
+    #     out_dict[key]=iCGN
+    # if keep_AA_code:
+    #     return out_dict
+    # else:
+    #     return {int(key[1:]):val for key, val in out_dict.items()}
+
+
+
 
 
 
