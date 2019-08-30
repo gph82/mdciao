@@ -796,6 +796,41 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
 
     return out_dict
 
+class CGN_transformer(object):
+    def __init__(self, ref_PDB='3SN6'):
+        # Create dataframe with the alignment
+        from pandas import read_table as _read_table
+        self._ref_PDB = ref_PDB
+
+        self._DF = _read_table('CGN_%s.txt'%ref_PDB)
+        #TODO find out how to properly do this with pandas
+
+        self._dict = {key: self._DF[self._DF[ref_PDB] == key]["CGN"].to_list()[0] for key in self._DF[ref_PDB].to_list()}
+
+        self._top =_md.load(ref_PDB+'.pdb').top
+        seq_ref = ''.join([str(rr.code).replace("None","X") for rr in self._top.residues])[:len(self._dict)]
+        seq_idxs = _np.hstack([rr.resSeq for rr in self._top.residues])[:len(self._dict)]
+        keyval = [{key:val} for key,val in self._dict.items()]
+        #for ii, (iseq_ref, iseq_idx) in enumerate(zip(seq_ref, seq_idxs)):
+        #print(ii, iseq_ref, iseq_idx )
+
+        self._seq_ref  = seq_ref
+        self._seq_idxs = seq_idxs
+
+    @property
+    def seq(self):
+        return self._seq_ref
+
+    @property
+    def seq_idxs(self):
+        return self._seq_idxs
+
+    @property
+    def AA2CGN(self):
+        return self._dict
+
+        #return seq_ref, seq_idxs, self._dict
+
 
 
 
