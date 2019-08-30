@@ -616,10 +616,11 @@ class Test_guess_missing_BWs(unittest.TestCase):
 
 class Test_CGN_transformer(unittest.TestCase):
     def setUp(self):
-        self.cgn = CGN_transformer('../examples/')
+        self.cgn = CGN_transformer()
 
     def test_CGN_transformer_just_Wors(self):
-        self.assertEquals(len(self.cgn.seq), len(self.cgn.seq_idxs), len(self.cgn.AA2CGN))
+        self.assertEqual(len(self.cgn.seq), len(self.cgn.seq_idxs))
+        self.assertEqual(len(self.cgn.seq), len(self.cgn.AA2CGN))
 
 if __name__ == '__main__':
     unittest.main()
