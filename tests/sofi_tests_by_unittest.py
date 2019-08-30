@@ -4,13 +4,12 @@ import unittest
 import numpy as _np
 from unittest.mock import patch
 import mock
-from ddt import ddt, data, unpack
 
 from sofi_functions import find_AA, top2residue_bond_matrix, get_fragments, \
     interactive_fragment_picker_by_AAresSeq,exclude_same_fragments_from_residx_pairlist,\
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment,does_not_contain_strings, force_iterable, \
     is_iterable, in_what_N_fragments, int_from_AA_code, bonded_neighborlist_from_top, rangeexpand,\
-    ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode, guess_missing_BWs
+    ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode, guess_missing_BWs, CGN_transformer
 
 #OR import sofi_functions
 
@@ -614,6 +613,13 @@ class Test_guess_missing_BWs(unittest.TestCase):
                               5: '1.27*',
                               6: '1.28*',
                               7: '1.28*'})
+
+class Test_CGN_transformer(unittest.TestCase):
+    def setUp(self):
+        self.cgn = CGN_transformer('../examples/')
+
+    def test_CGN_transformer_just_Wors(self):
+        self.assertEquals(len(self.cgn.seq), len(self.cgn.seq_idxs), len(self.cgn.AA2CGN))
 
 if __name__ == '__main__':
     unittest.main()
