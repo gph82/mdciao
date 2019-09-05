@@ -529,7 +529,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
             assert ctc_freq[1] == 0
 
 
-        input_values = (val for val in ["1", "2"])
+        input_values = (val for val in ["1", "2"]) # input_values = ("1","2")
         with mock.patch('builtins.input', lambda *x: next(input_values)): #Checking against the input 1 and 2
             ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
                                                             self.geom.top,
