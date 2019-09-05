@@ -9,7 +9,8 @@ from sofi_functions import find_AA, top2residue_bond_matrix, get_fragments, \
     interactive_fragment_picker_by_AAresSeq,exclude_same_fragments_from_residx_pairlist,\
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment,does_not_contain_strings, force_iterable, \
     is_iterable, in_what_N_fragments, int_from_AA_code, bonded_neighborlist_from_top, rangeexpand,\
-    ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode, guess_missing_BWs, CGN_transformer, top2CGN_by_AAcode
+    ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode, guess_missing_BWs, CGN_transformer, \
+    top2CGN_by_AAcode, xtcs2ctcs
 
 #OR import sofi_functions
 
@@ -529,7 +530,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
             assert ctc_freq[1] == 0
 
 
-        input_values = (val for val in ["1", "2"]) # input_values = ("1","2")
+        input_values = (val for val in ["1", "2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)): #Checking against the input 1 and 2
             ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
                                                             self.geom.top,
@@ -562,7 +563,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
                                                              silent=True)
             ctc_test = {0: _np.array([0]), 1: _np.array([0, 1])}
             self.assertEqual(ctc_freq[0], ctc_test[0])
-            self.assertEqual(ctc_freq[1].all(), ctc_test[1].all())
+            assert(ctc_freq[1] == ctc_test[1]).all()
 
 
 class Test_table2BW_by_AAcode(unittest.TestCase):
@@ -666,6 +667,16 @@ class Test_top2CGN_by_AAcode(unittest.TestCase):
                               6: None,
                               7: 'G.S2.6'})
 
+class Test_xtcs2ctcs(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load("prot1.pdb.gz")
+        self.xtcs = ['run1_stride_100.xtc']
+
+    def test_xtcs2ctcs_just_works(self):
+        ctcs_trajs, time_array = xtcs2ctcs(self.xtcs, geom.top, [[1, 6]],  # stride=a.stride,
+                                           # chunksize=a.chunksize_in_frames,
+                                           return_time=True,
+                                           consolidate=False)
 
 if __name__ == '__main__':
     unittest.main()
