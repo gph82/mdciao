@@ -550,6 +550,20 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
                                                              silent=False)
             assert ctc_freq == {}
 
+    def test_ctc_freq_reporter_by_residue_neighborhood_silent_is_true(self):
+        ctcs_mean = [30, 5]
+        ctc_residxs_pairs = [[0, 1], [2, 1]]
+
+        input_values = (val for val in ["1", "1"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):#Checking against the input 1 and 1
+            ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
+                                                             self.geom.top,
+                                                             n_ctcs=5, select_by_resSeq=None,
+                                                             silent=True)
+            ctc_test = {0: _np.array([0]), 1: _np.array([0, 1])}
+            self.assertEqual(ctc_freq[0], ctc_test[0])
+            self.assertEqual(ctc_freq[1].all(), ctc_test[1].all())
+
 
 class Test_table2BW_by_AAcode(unittest.TestCase):
     def setUp(self):
