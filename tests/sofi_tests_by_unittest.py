@@ -561,9 +561,8 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
                                                              self.geom.top,
                                                              n_ctcs=5, select_by_resSeq=None,
                                                              silent=True)
-            ctc_test = {0: _np.array([0]), 1: _np.array([0, 1])}
-            self.assertEqual(ctc_freq[0], ctc_test[0])
-            assert(ctc_freq[1] == ctc_test[1]).all()
+            assert (_np.array_equal(ctc_freq[0], [0]))
+            assert (_np.array_equal(ctc_freq[1], [0, 1]))
 
 
 class Test_table2BW_by_AAcode(unittest.TestCase):
