@@ -21,7 +21,6 @@ def in_what_N_fragments(idxs, fragments):
     result = (_np.vstack([_np.in1d(idxs, iseg) for ii, iseg in enumerate(fragments)])).T
     return [_np.argwhere(row).squeeze() for row in result]
 
-
 def is_iterable(var):
     r"""
     Checks if var is iterable, returns True if iterable else False
@@ -55,11 +54,10 @@ def force_iterable(var):
 
 
 def does_not_contain_strings(iterable):
-    r"""
-   Checks if iterable has any string element, returns False if it contains atleast one string
+    r"""Checks if iterable has any string element, returns False if it contains atleast one string
 
-   :param iterable : integer, float, string or any combination thereof
-   :return : True if iterable does not contain any string, else False
+   :param iterable: integer, float, string or any combination thereof
+   :return: True if iterable does not contain any string, else False
 
    """
 
@@ -138,8 +136,8 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
 def exclude_same_fragments_from_residx_pairlist(pairlist,
                                                 fragments,
                                                 return_excluded_idxs=False):
-    r"""
-    If the members of the pair belong to the same fragment, exclude them from pairlist
+    r"""If the members of the pair belong to the same fragment, exclude them from pairlist
+
     :param pairlist: list of iterables(each iterable within the list should be a pair)
     :param fragments: list of iterables
     :param return_excluded_idxs: True if index of excluded pair is needed as an output
@@ -334,7 +332,7 @@ def find_AA(top, AA):
     r"""
     This function is used to query the index of residue based on residue name
 
-    :param top: Topology object obtained using the mdTraj module
+    :param top: :obj:`mdtraj.Topology` object
     :param AA: Valid residue name to be passed as a string, example "GLU30" or "E30"
     :return: list of res_idxs where the residue is present, so that top.residue(idx) would return the wanted AA
     """
@@ -531,11 +529,11 @@ def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
     return residuenames2residxs, residuenames2fragidxs
 
 def bonded_neighborlist_from_top(top, n=1):
-    """
+    """TODO: description of method in one line
 
     :param top: mdTraj Topology object
-    :param n:
-    :return: returns the neighbor of each residue as a list of list
+    :param n: number of bonds between bonded neighbors
+    :return: neighbor of each residue as a list of list
             Each residue will have a corresponding neighbor list(if neighbors exists), or an empty list(if no neighbor exists)
             A neighbor exists between i and j residues if residue_bond_matrix has a 1 at position ij
     """
@@ -589,6 +587,23 @@ def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragmen
                                               n_ctcs=5, select_by_resSeq=None,
                                               silent=False,
                                               ):
+    """TODO one line description of method
+
+    Parameters
+    ----------
+    ctcs_mean
+    resSeq2residxs
+    fragments
+    ctc_residxs_pairs
+    top
+    n_ctcs
+    select_by_resSeq
+    silent
+
+    Returns
+    -------
+
+    """
     order = _np.argsort(ctcs_mean)[::-1]
     assert len(ctcs_mean)==len(ctc_residxs_pairs)
     final_look = {}
