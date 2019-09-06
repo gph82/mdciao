@@ -672,10 +672,64 @@ class Test_xtcs2ctcs(unittest.TestCase):
         self.xtcs = ['run1_stride_100.xtc']
 
     def test_xtcs2ctcs_just_works(self):
-        ctcs_trajs, time_array = xtcs2ctcs(self.xtcs, geom.top, [[1, 6]],  # stride=a.stride,
+        ctcs_trajs, time_array = xtcs2ctcs(self.xtcs, self.geom.top, [[1, 6]],  #stride=a.stride,
                                            # chunksize=a.chunksize_in_frames,
                                            return_time=True,
                                            consolidate=False)
+        test_ctcs_trajs = _np.array([[0.4707409],
+                                     [0.44984677],
+                                     [0.49991393],
+                                     [0.53672814],
+                                     [0.53126746],
+                                     [0.49817562],
+                                     [0.46696925],
+                                     [0.4860978],
+                                     [0.4558717],
+                                     [0.4896131]])
+        test_time_array = _np.array([    0., 10000., 20000., 30000., 40000., 50000., 60000., 70000.,
+       80000., 90000.])
+
+        _np.testing.assert_array_almost_equal(ctcs_trajs[0][:10], test_ctcs_trajs, 4)
+        assert(_np.array_equal(time_array[0][:10],test_time_array))
+
+    def test_xtcs2ctcs_return_time_is_false(self):
+        ctcs_trajs = xtcs2ctcs(self.xtcs, self.geom.top, [[1, 6]],  #stride=a.stride,
+                                           # chunksize=a.chunksize_in_frames,
+                                           return_time=False,
+                                           consolidate=False)
+        test_ctcs_trajs = _np.array([[0.4707409],
+                                     [0.44984677],
+                                     [0.49991393],
+                                     [0.53672814],
+                                     [0.53126746],
+                                     [0.49817562],
+                                     [0.46696925],
+                                     [0.4860978],
+                                     [0.4558717],
+                                     [0.4896131]])
+        _np.testing.assert_array_almost_equal(ctcs_trajs[0][:10], test_ctcs_trajs, 4)
+
+    def test_xtcs2ctcs_consolidate_is_true(self):
+        ctcs_trajs, time_array = xtcs2ctcs(self.xtcs, self.geom.top, [[1, 6]],  # stride=a.stride,
+                                               # chunksize=a.chunksize_in_frames,
+                                               return_time=True,
+                                               consolidate=False)
+        test_ctcs_trajs = _np.array([[0.4707409],
+                                         [0.44984677],
+                                         [0.49991393],
+                                         [0.53672814],
+                                         [0.53126746],
+                                         [0.49817562],
+                                         [0.46696925],
+                                         [0.4860978],
+                                         [0.4558717],
+                                         [0.4896131]])
+        test_time_array = _np.array([0., 10000., 20000., 30000., 40000., 50000., 60000., 70000.,
+                                         80000., 90000.])
+
+        _np.testing.assert_array_almost_equal(ctcs_trajs[0][:10], test_ctcs_trajs, 4)
+        assert (_np.array_equal(time_array[0][:10], test_time_array))
+
 
 if __name__ == '__main__':
     unittest.main()
