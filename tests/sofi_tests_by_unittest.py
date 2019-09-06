@@ -713,7 +713,7 @@ class Test_xtcs2ctcs(unittest.TestCase):
         ctcs_trajs, time_array = xtcs2ctcs(self.xtcs, self.geom.top, [[1, 6]],  # stride=a.stride,
                                                # chunksize=a.chunksize_in_frames,
                                                return_time=True,
-                                               consolidate=False)
+                                               consolidate=True)
         test_ctcs_trajs = _np.array([[0.4707409],
                                          [0.44984677],
                                          [0.49991393],
