@@ -727,8 +727,8 @@ class Test_xtcs2ctcs(unittest.TestCase):
         test_time_array = _np.array([0., 10000., 20000., 30000., 40000., 50000., 60000., 70000.,
                                          80000., 90000.])
 
-        _np.testing.assert_array_almost_equal(ctcs_trajs[0][:10], test_ctcs_trajs, 4)
-        assert (_np.array_equal(time_array[0][:10], test_time_array))
+        _np.testing.assert_array_almost_equal(ctcs_trajs[:10], test_ctcs_trajs, 4)
+        assert (_np.array_equal(time_array[:10], test_time_array))
 
 
 class Test_interactive_fragment_picker_no_ambiguity_wip(unittest.TestCase):
