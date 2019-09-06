@@ -850,7 +850,7 @@ class Test_interactive_fragment_picker_with_ambiguity_wip(unittest.TestCase):
         assert (resname2residx[30]) == 8  # GLU30 is the 8th residue
         assert (resname2fragidx[30]) == 4 # GLU30 is in the 4th fragment
 
-    def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_passed_special_case(self):
+    def test_interactive_fragment_picker_default_fragment_idx_is_passed_special_case(self):
 
         failed_assertion = False
         try:
@@ -911,6 +911,16 @@ class Test_interactive_fragment_picker_with_ambiguity_wip(unittest.TestCase):
             assert resname2fragidx["GLU30"] == 0  # GLU30 is in the 1st fragment
             assert (resname2residx[30]) == 0  # GLU30 is the 1st residue
             assert resname2fragidx[30] == 0  # GLU30 is in the 1st fragment
+
+    def test_interactive_fragment_picker_idx_not_present(self):
+
+        resname2residx, resname2fragidx = interactive_fragment_picker_wip(["GLU99",99], self.by_bonds_geom2frags,
+                                                                              self.geom2frags.top,
+                                                                              default_fragment_idx=99)
+        assert(resname2residx["GLU99"] == None)
+        assert (resname2residx[99] == None)
+        assert (resname2fragidx["GLU99"] == None)
+        assert (resname2fragidx[99] == None)
 
 
 if __name__ == '__main__':
