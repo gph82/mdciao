@@ -10,7 +10,7 @@ from sofi_functions import find_AA, top2residue_bond_matrix, get_fragments, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment,does_not_contain_strings, force_iterable, \
     is_iterable, in_what_N_fragments, int_from_AA_code, bonded_neighborlist_from_top, rangeexpand,\
     ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode, guess_missing_BWs, CGN_transformer, \
-    top2CGN_by_AAcode, xtcs2ctcs
+    top2CGN_by_AAcode, xtcs2ctcs, interactive_fragment_picker_wip
 
 #OR import sofi_functions
 
@@ -729,6 +729,188 @@ class Test_xtcs2ctcs(unittest.TestCase):
 
         _np.testing.assert_array_almost_equal(ctcs_trajs[0][:10], test_ctcs_trajs, 4)
         assert (_np.array_equal(time_array[0][:10], test_time_array))
+
+
+class Test_interactive_fragment_picker_no_ambiguity_wip(unittest.TestCase):
+
+    def setUp(self):
+        self.geom = md.load("PDB/file_for_test.pdb")
+        self.by_bonds_geom = get_fragments(self.geom.top,
+                                           verbose=True,
+                                           auto_fragment_names=True,
+                                           method='bonds')
+
+    def test_interactive_fragment_picker_wip_no_ambiguous(self):
+        residues = ["GLU30", "GDP382", 30, 382]
+        resname2residx, resname2fragidx = interactive_fragment_picker_wip(residues, self.by_bonds_geom,
+                                                                                  self.geom.top)
+        # Checking if residue names gives the correct corresponding residue id
+        assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
+        assert (resname2residx[30]) == 0
+        assert (resname2residx["GDP382"]) == 7  # GDP382 is the 8th residue
+        assert (resname2residx[382]) == 7  # GDP382 is the 8th residue
+
+        # Checking if the residue name give the correct corresponding fragment id
+        assert (resname2fragidx["GLU30"]) == 0  # GLU30 is in the 1st fragment
+        assert (resname2fragidx[30]) == 0  # GLU30 is in the 1st fragment
+        assert (resname2fragidx["GDP382"]) == 3  # GDP382 is in the 4th fragment
+        assert (resname2fragidx[382]) == 3  # GDP382 is in the 4th fragment
+
+
+
+class Test_interactive_fragment_picker_with_ambiguity_wip(unittest.TestCase):
+
+    def setUp(self):
+        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
+
+        self.by_bonds_geom2frags = get_fragments(self.geom2frags.top,
+                                                 verbose=True,
+                                                 auto_fragment_names=True,
+                                                 method='bonds')
+
+    def test_interactive_fragment_picker_default_fragment_idx_is_none(self):
+        residues = ["GLU30",30]
+        input_values = (val for val in ["4", "4"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            resname2residx, resname2fragidx = interactive_fragment_picker_wip(residues, self.by_bonds_geom2frags,
+                                                                                      self.geom2frags.top)
+
+            # Checking if residue names gives the correct corresponding residue id
+            # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
+            assert (resname2residx["GLU30"]) == 8  # GLU30 is the 8th residue
+            assert resname2fragidx["GLU30"] == 4 # GLU30 is in the 4th fragment
+
+            assert (resname2residx[30]) == 8  # GLU30 is the 8th residue
+            assert resname2fragidx[30] == 4 # GLU30 is in the 4th fragment
+
+    def _test_interactive_fragment_picker_default_fragment_idx_is_none_last_answer(self):
+        residues = ["GLU30",30]
+        input_values = (val for val in ["\n", "\n"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            resname2residx, resname2fragidx = interactive_fragment_picker_wip(residues, self.by_bonds_geom2frags,
+                                                                                      self.geom2frags.top)
+
+            # Checking if residue names gives the correct corresponding residue id
+            # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
+            assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
+            assert resname2fragidx["GLU30"] == 0 # GLU30 is in the 1st fragment
+            assert (resname2residx[30]) == 0  # GLU30 is the 1st residue
+            assert resname2fragidx[30] == 0 # GLU30 is in the 1st fragment
+
+    def test_interactive_fragment_picker_default_fragment_idx_is_none_ans_should_be_int(self):
+        input_values = (val for val in ["xyz"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            failed_assertion = False
+            try:
+                interactive_fragment_picker_wip("GLU30", self.by_bonds_geom2frags, self.geom2frags.top)
+            except (ValueError,AssertionError):
+                failed_assertion = True
+            assert failed_assertion
+
+        input_values = (val for val in ["xyz"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            failed_assertion = False
+            try:
+                interactive_fragment_picker_wip(30, self.by_bonds_geom2frags, self.geom2frags.top)
+            except (ValueError, AssertionError):
+                failed_assertion = True
+            assert failed_assertion
+
+    def test_interactive_fragment_picker_default_fragment_idx_is_none_ans_should_be_in_list(self):
+
+        input_values = (val for val in ["123"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            failed_assertion = False
+            try:
+                interactive_fragment_picker_wip("GLU30", self.by_bonds_geom2frags,self.geom2frags.top)
+
+            except (ValueError,AssertionError):
+                failed_assertion = True
+            assert failed_assertion
+
+        input_values = (val for val in ["123"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            failed_assertion = False
+            try:
+                interactive_fragment_picker_wip("30", self.by_bonds_geom2frags,self.geom2frags.top)
+            except (ValueError,AssertionError):
+                failed_assertion = True
+            assert failed_assertion
+
+
+    def test_interactive_fragment_picker_default_fragment_idx_is_passed(self):
+        residues = ["GLU30", 30]
+        resname2residx, resname2fragidx = interactive_fragment_picker_wip(residues, self.by_bonds_geom2frags,
+                                                                                  self.geom2frags.top,default_fragment_idx=4)
+
+        # Checking if residue names gives the correct corresponding residue id
+        # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
+        assert (resname2residx["GLU30"]) == 8  # GLU30 is the 8th residue
+        assert (resname2fragidx["GLU30"]) == 4 # GLU30 is in the 4th fragment
+        assert (resname2residx[30]) == 8  # GLU30 is the 8th residue
+        assert (resname2fragidx[30]) == 4 # GLU30 is in the 4th fragment
+
+    def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_passed_special_case(self):
+
+        failed_assertion = False
+        try:
+            resname2residx, resname2fragidx = interactive_fragment_picker_wip("GLU30", self.by_bonds_geom2frags,
+                                                                                  self.geom2frags.top,default_fragment_idx=99)
+        except (ValueError,AssertionError):
+            failed_assertion = True
+        assert failed_assertion
+
+        failed_assertion = False
+        try:
+            resname2residx, resname2fragidx = interactive_fragment_picker_wip(30, self.by_bonds_geom2frags,
+                                                                              self.geom2frags.top,
+                                                                              default_fragment_idx=99)
+        except (ValueError, AssertionError):
+            failed_assertion = True
+        assert failed_assertion
+
+
+    def test_interactive_fragment_picker_ambiguous(self):
+
+        input_values = (val for val in ["4", "4"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            residues = ["GLU30", 30]
+            resname2residx, resname2fragidx = interactive_fragment_picker_wip(residues,
+                                                                                      self.by_bonds_geom2frags,
+                                                                                      self.geom2frags.top)
+
+            assert (resname2residx["GLU30"]) == 8  # GLU30 is the 8th
+            assert (resname2fragidx["GLU30"]) == 4  # GLU30 is in the 4th fragment
+            assert (resname2residx[30]) == 8  # GLU30 is the 8th
+            assert (resname2fragidx[30]) == 4  # GLU30 is in the 4th fragment
+
+        input_values = (val for val in ["3", "3"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            residues = ["GDP382", 382]
+            resname2residx, resname2fragidx = interactive_fragment_picker_wip(residues,
+                                                                                      self.by_bonds_geom2frags,
+                                                                                      self.geom2frags.top)
+
+            assert (resname2residx["GDP382"]) == 7  # GDP382 is the 7th residue
+            assert (resname2fragidx["GDP382"]) == 3  # GDP382 is the 3rd fragment
+            assert (resname2residx[382]) == 7  # GDP382 is the 7th residue
+            assert (resname2fragidx[382]) == 3  # GDP382 is the 3rd fragment
+
+    def test_interactive_fragment_picker_fragment_name(self):
+        residues = ["GLU30", 30]
+        input_values = (val for val in ["0", "0"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            resname2residx, resname2fragidx = interactive_fragment_picker_wip(residues, self.by_bonds_geom2frags,
+                                                                                      self.geom2frags.top,
+                                                                                      fragment_names=["A", "B", "C", "D",
+                                                                                                      "E", "F", "G", "H"])
+            # Checking if residue names gives the correct corresponding residue id
+            # NOTE:Enter 0 for GLU30 when asked "input one fragment idx"
+
+            assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
+            assert resname2fragidx["GLU30"] == 0  # GLU30 is in the 1st fragment
+            assert (resname2residx[30]) == 0  # GLU30 is the 1st residue
+            assert resname2fragidx[30] == 0  # GLU30 is in the 1st fragment
 
 
 if __name__ == '__main__':
