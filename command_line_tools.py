@@ -8,6 +8,16 @@ ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode,\
     CGN_transformer,top2CGN_by_AAcode,_relabel_consensus,guess_missing_BWs,\
     xtcs2ctcs, rangeexpand, unique_list_of_iterables_by_tuple_hashing, interactive_fragment_picker_by_resSeq, \
     in_what_fragment, mycolors, bonded_neighborlist_from_top, dangerously_auto_fragments, _print_frag \
+    
+def _inform_of_parser(parser):
+    # TODO find out where the keys are hiding in parser...
+    a = parser.parse_args()
+    for key, __ in a._get_kwargs():
+        dval = parser.get_default(key)
+        fmt = '%s=%s,'
+        if isinstance(dval, str):
+            fmt = '%s="%s",'
+        print(fmt % (key, dval))
 
 def residue_neighborhoods(a):
 
