@@ -5,6 +5,10 @@ from matplotlib import pyplot as _plt
 
 from sofi_functions.tested_utils import get_fragments, in_what_fragment, top2residue_bond_matrix, \
     exclude_same_fragments_from_residx_pairlist, in_what_N_fragments
+
+#Import needed for the command line scripts
+from sofi_functions.tested_utils import unique_list_of_iterables_by_tuple_hashing
+
 """
 fragment 0 with 203 AAs GLU30-LYS232 NT-TM5
 fragment 1 with  78 AAs PHE264-CYSP341 TM6-CT
