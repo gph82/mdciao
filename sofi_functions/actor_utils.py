@@ -943,7 +943,7 @@ def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
                       restrict_to_residxs=None):
 
     # TODO this lazy import will bite back
-    from Gunnar_utils import alignment_result_to_list_of_dicts
+    from .Gunnar_utils import alignment_result_to_list_of_dicts
     from Bio import pairwise2
 
 
