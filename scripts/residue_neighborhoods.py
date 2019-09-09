@@ -5,11 +5,13 @@ import mdtraj as md
 from matplotlib import pyplot as plt
 from json import load as jsonload
 
-from actor_utils import get_fragments, \
+from sofi_functions.actor_utils import get_fragments, \
 ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode,\
     CGN_transformer,top2CGN_by_AAcode,_relabel_consensus,guess_missing_BWs,\
-    xtcs2ctcs, rangeexpand, unique_list_of_iterables_by_tuple_hashing, interactive_fragment_picker_by_resSeq, \
-    in_what_fragment, mycolors, bonded_neighborlist_from_top, dangerously_auto_fragments, _print_frag \
+    xtcs2ctcs, rangeexpand, \
+    interactive_fragment_picker_by_resSeq, \
+    in_what_fragment, mycolors, bonded_neighborlist_from_top, dangerously_auto_fragments, _print_frag, \
+    unique_list_of_iterables_by_tuple_hashing \
 
 parser = argparse.ArgumentParser(description='Small residue-residue contact analysis tool, initially developed for the '
                                              'receptor-G-protein complex. The provides the residue indices')
