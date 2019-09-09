@@ -2,6 +2,7 @@ import numpy as np
 import mdtraj as md
 from matplotlib import pyplot as plt
 from json import load as jsonload
+from os import path, mkdir
 
 from sofi_functions.actor_utils import get_fragments, \
 ctc_freq_reporter_by_residue_neighborhood, table2BW_by_AAcode,\
@@ -36,7 +37,17 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           output_ext=".pdf",
                           BW_file="None",
                           CGN_PDB="None",
+                          output_dir='.'
                           ):
+
+    if not path.isdir(output_dir):
+        answer = input("\nThe directory '%s' does not exist. Create it on the fly [y/n]?\nDefault [y]: "%output_dir)
+        if len(answer)==0 or answer.lower().startswith("y"):
+            mkdir(output_dir)
+        else:
+            print("Stopping. Please check your variable 'output_dir' and try again")
+            return
+
     resSeq_idxs = rangeexpand(resSeq_idxs)
     if sort:
         resSeq_idxs = sorted(resSeq_idxs)
@@ -44,8 +55,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     xtcs = sorted(trajectories)
     print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
         "\n  ".join(xtcs), stride))
-
-    fragment_names = fragment_names
 
     refgeom = md.load(topology)
     if fragmentify:
@@ -291,6 +300,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
                 fname = 'neighborhood.%s.time_resolved.%s' % (
                 res_and_fragment_str.replace('*', ""), output_ext.strip("."))
+                fname = path.join(output_dir,fname)
                 plt.savefig(fname, bbox_inches="tight")
                 plt.close(myfig)
                 print(fname)
@@ -299,6 +309,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
         fname = "neighborhoods_overall.%s" % output_ext.strip(".")
+        fname = path.join(output_dir,fname)
         histofig.savefig(fname)
         print(fname)
 
