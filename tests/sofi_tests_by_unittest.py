@@ -4,6 +4,7 @@ import unittest
 import numpy as _np
 from unittest.mock import patch
 import mock
+from os import path
 
 from sofi_functions.tested_utils import find_AA, top2residue_bond_matrix, get_fragments, \
     interactive_fragment_picker_by_AAresSeq,exclude_same_fragments_from_residx_pairlist,\
@@ -13,11 +14,9 @@ from sofi_functions.tested_utils import find_AA, top2residue_bond_matrix, get_fr
     top2CGN_by_AAcode, xtcs2ctcs, interactive_fragment_picker_wip
 
 #OR import sofi_functions
+#and then you call evertying as sofi_functions.tested_utils.xxxx
 
-#and then you call evertying as sofi_functions.xxxx
 class Test_find_by_AA(unittest.TestCase):
-
-
     def setUp(self):
         self.geom = md.load("PDB/file_for_test.pdb")
         self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
@@ -643,7 +642,11 @@ class Test_guess_missing_BWs(unittest.TestCase):
 
 class Test_CGN_transformer(unittest.TestCase):
     def setUp(self):
-        self.cgn = CGN_transformer()
+        # TODO remember the right way of doing this
+        from sofi_functions import __path__ as sfpath
+        assert len(sfpath) == 1
+        sfpath = path.split(sfpath[0])[0]
+        self.cgn = CGN_transformer(ref_path=path.join(sfpath,'examples'))
 
     def test_CGN_transformer_just_works(self):
         self.assertEqual(len(self.cgn.seq), len(self.cgn.seq_idxs))
@@ -651,7 +654,11 @@ class Test_CGN_transformer(unittest.TestCase):
 
 class Test_top2CGN_by_AAcode(unittest.TestCase):
     def setUp(self):
-        self.cgn = CGN_transformer()
+        # TODO remember the right way of doing this
+        from sofi_functions import __path__ as sfpath
+        assert len(sfpath) == 1
+        sfpath = path.split(sfpath[0])[0]
+        self.cgn = CGN_transformer(ref_path=path.join(sfpath,'examples'))
         self.geom = md.load("PDB/file_for_test.pdb")
 
     def test_top2CGN_by_AAcode_just_works(self):
@@ -668,8 +675,14 @@ class Test_top2CGN_by_AAcode(unittest.TestCase):
 
 class Test_xtcs2ctcs(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load("prot1.pdb.gz")
-        self.xtcs = ['run1_stride_100.xtc']
+        # TODO remember the right way of doing this
+        from sofi_functions import __path__ as sfpath
+        assert len(sfpath)==1
+        sfpath=path.split(sfpath[0])[0]
+        file_geom = path.join(sfpath,"examples","prot1.pdb.gz")
+        file_xtc = path.join(sfpath,"examples","run1_stride_100.xtc")
+        self.geom = md.load(file_geom)
+        self.xtcs = [file_xtc]
 
     def test_xtcs2ctcs_just_works(self):
         ctcs_trajs, time_array = xtcs2ctcs(self.xtcs, self.geom.top, [[1, 6]],  #stride=a.stride,
