@@ -34,9 +34,9 @@ parser.add_argument('--fragments',    dest='fragmentify', action='store_true', h
 parser.add_argument('--no-fragments', dest='fragmentify', action='store_false')
 parser.set_defaults(fragmentify=True)
 
-parser.add_argument('--order',    dest='order', action='store_true', help="Order the resSeq_idxs list. Defaut is True")
-parser.add_argument('--no-order', dest='order', action='store_false')
-parser.set_defaults(order=True)
+parser.add_argument('--sort',    dest='sort', action='store_true', help="Sort the resSeq_idxs list. Defaut is True")
+parser.add_argument('--no-sort', dest='sort', action='store_false')
+parser.set_defaults(sort=True)
 
 parser.add_argument('--pbc',    dest='pbc', action='store_true', help="Consider periodic boundary conditions when computing distances."
                                                                       " Defaut is True")
