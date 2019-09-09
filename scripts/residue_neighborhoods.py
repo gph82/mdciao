@@ -1,7 +1,7 @@
 #!/home/perezheg/miniconda3/bin/python
 import argparse
 import numpy as np
-from command_line_tools import residue_neighborhoods
+from sofi_functions.command_line_tools import residue_neighborhoods
 
 parser = argparse.ArgumentParser(description='Small residue-residue contact analysis tool, initially developed for the '
                                              'receptor-G-protein complex. The provides the residue indices')
