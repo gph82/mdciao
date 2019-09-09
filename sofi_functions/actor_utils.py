@@ -217,10 +217,6 @@ def re_warp_idxs(lengths):
         idxi += ll
     return idxs_out
 
-# TODO find out why we are not using this anymore
-from sofi_functions import unique_list_of_iterables_by_tuple_hashing
-
-
 def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top, pick_first_fragment_by_default=False):
     resSeq2residxs = {}
     resSeq2segidxs = {}
@@ -269,10 +265,6 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top, pick_firs
             resSeq2segidxs[key] = answer
 
     return resSeq2residxs, resSeq2segidxs
-
-
-# TODO find out why we are not using this anymore
-from sofi_functions import interactive_fragment_picker_by_AAresSeq
 
 mycolors=[
          'lightblue',
@@ -653,9 +645,6 @@ def bonded_neighborlist_from_top(top, n=1):
             assert ii in neighbor_list[nn]
 
     return neighbor_list
-
-# TODO find why this is not being used at the moment
-from sofi_functions import find_AA
 
 def __find_by_AAresSeq(top, key):
     return [rr.index for rr in top.residues if key == '%s%u' % (rr.code, rr.resSeq)]
