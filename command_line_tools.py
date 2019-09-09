@@ -19,22 +19,36 @@ def _inform_of_parser(parser):
             fmt = '%s="%s",'
         print(fmt % (key, dval))
 
-def residue_neighborhoods(a):
 
-    resSeq_idxs = rangeexpand(a.resSeq_idxs)
-    if a.order:
+def residue_neighborhoods(topology, trajectories, resSeq_idxs,
+                          ctc_cutoff_Ang=3,
+                          stride=1,
+                          n_ctcs=5,
+                          n_nearest=4,
+
+                          chunksize_in_frames=10000,
+                          nlist_cutoff_Ang=15,
+                          ask=True,
+                          sort=True,
+                          pbc=True,
+                          fragmentify=True,
+                          fragment_names="",
+                          output_ext=".pdf",
+                          BW_file="None",
+                          CGN_PDB="None",
+                          ):
+    resSeq_idxs = rangeexpand(resSeq_idxs)
+    if sort:
         resSeq_idxs = sorted(resSeq_idxs)
 
-    a.ext = a.output_ext
-
-    xtcs = sorted(a.trajectories)
+    xtcs = sorted(trajectories)
     print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
-    "\n  ".join(xtcs), a.stride))
+        "\n  ".join(xtcs), stride))
 
-    fragment_names = a.fragment_names
+    fragment_names = fragment_names
 
-    refgeom = md.load(a.topology)
-    if a.fragmentify:
+    refgeom = md.load(topology)
+    if fragmentify:
         fragments = get_fragments(refgeom.top)
     else:
         raise NotImplementedError("This feature is not yet implemented")
@@ -47,7 +61,7 @@ def residue_neighborhoods(a):
             fragment_names = [ff.strip(" ") for ff in fragment_names.split(",")]
             assert len(fragment_names) == len(
                 fragments), "Mismatch between nr. fragments and fragment names %s vs %s (%s)" % (
-            len(fragments), len(fragment_names), fragment_names)
+                len(fragments), len(fragment_names), fragment_names)
         else:
             fragments, fragment_names = dangerously_auto_fragments(refgeom.top,
                                                                    method="bonds",
@@ -61,10 +75,10 @@ def residue_neighborhoods(a):
                 _print_frag(ifrag_idx, refgeom.top, ifrag, end='')
                 print(" ", frag_name)
     # todo this is code repetition from sites.py
-    if a.BW_file == 'None':
+    if BW_file == 'None':
         BW = [None for __ in range(refgeom.top.n_residues)]
     else:
-        with open(a.BW_file, "r") as f:
+        with open(BW_file, "r") as f:
             idict = jsonload(f)
         BW = table2BW_by_AAcode(idict["file"])
         try:
@@ -75,10 +89,10 @@ def residue_neighborhoods(a):
         restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
         BW = guess_missing_BWs(BW, refgeom.top, restrict_to_residxs=restrict_to_residxs)
 
-    if a.CGN_PDB == 'None':
+    if CGN_PDB == 'None':
         CGN = [None for __ in range(refgeom.top.n_residues)]
     else:
-        CGN_tf = CGN_transformer(a.CGN_PDB)
+        CGN_tf = CGN_transformer(CGN_PDB)
         answer = input("Which fragments are succeptible of a CGN-numbering?(Can be in a format 1,2-6,10,20-25)\n")
         restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
         CGN = top2CGN_by_AAcode(refgeom.top, CGN_tf, restrict_to_residxs=restrict_to_residxs)
@@ -88,10 +102,10 @@ def residue_neighborhoods(a):
 
     print("\nWill compute neighborhoods for the residues with resid")
     print("%s" % resSeq_idxs)
-    print("excluding %u nearest neighbors\n" % a.n_nearest)
+    print("excluding %u nearest neighbors\n" % n_nearest)
 
     resSeq2residxs, _ = interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, refgeom.top,
-                                                              pick_first_fragment_by_default=not a.ask,
+                                                              pick_first_fragment_by_default=not ask,
                                                               )
 
     print('%10s  %6s  %7s  %10s' % tuple(("residue  residx    fragment  input_resSeq".split())))
@@ -99,7 +113,7 @@ def residue_neighborhoods(a):
         print('%10s  %6u  %7u  %10u' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key))
 
     # Create a neighborlist
-    nl = bonded_neighborlist_from_top(refgeom.top, n=a.n_nearest)
+    nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
 
     # Use it to prune the contact indices
     ctc_idxs = np.vstack(
@@ -108,30 +122,30 @@ def residue_neighborhoods(a):
 
     print(
         "\nPre-computing likely neighborhoods by reducing the neighbor-list to %u Angstrom in the reference geom %s..." % (
-        a.nlist_cutoff_Ang, a.topology), end="", flush=True)
-    ctcs, ctc_idxs = md.compute_contacts(refgeom, np.vstack(ctc_idxs), periodic=a.pbc)
+            nlist_cutoff_Ang, topology), end="", flush=True)
+    ctcs, ctc_idxs = md.compute_contacts(refgeom, np.vstack(ctc_idxs), periodic=pbc)
     print("done!")
 
-    ctc_idxs_small = np.argwhere(ctcs[0] < a.nlist_cutoff_Ang / 10).squeeze()
+    ctc_idxs_small = np.argwhere(ctcs[0] < nlist_cutoff_Ang / 10).squeeze()
     _, ctc_idxs_small = md.compute_contacts(refgeom, ctc_idxs[ctc_idxs_small])
     ctc_idxs_small = unique_list_of_iterables_by_tuple_hashing(ctc_idxs_small)
 
     print("From %u potential distances, the neighborhoods have been reduced to only %u potential contacts.\nIf this "
           "number is still too high (i.e. the computation is too slow), consider using a smaller nlist_cutoff_Ang " % (
-          len(ctc_idxs), len(ctc_idxs_small)))
+              len(ctc_idxs), len(ctc_idxs_small)))
 
-    ctcs_trajs, time_array = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=a.stride,
-                                       chunksize=a.chunksize_in_frames, return_time=True,
+    ctcs_trajs, time_array = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+                                       chunksize=chunksize_in_frames, return_time=True,
                                        consolidate=False
                                        )
     actcs = np.vstack(ctcs_trajs)
-    ctcs_mean = np.mean(actcs < a.ctc_cutoff_Ang / 10, 0)
+    ctcs_mean = np.mean(actcs < ctc_cutoff_Ang / 10, 0)
 
     final_look = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs,
                                                            fragments, ctc_idxs_small,
                                                            refgeom.top,
                                                            silent=True,
-                                                           n_ctcs=a.n_ctcs)
+                                                           n_ctcs=n_ctcs)
 
     # print("Will take a look at:")
     split_by_neighborhood = True
@@ -143,13 +157,14 @@ def residue_neighborhoods(a):
             print([refgeom.top.residue(jj) for jj in pair])
             plt.sca(myax[ii])
             plt.plot(time_array / 1e3, actcs[:, oo],
-                     label='%s-%s (%u)' % (refgeom.top.residue(pair[0]), refgeom.top.residue(pair[1]), ctcs_mean[oo] * 100))
+                     label='%s-%s (%u)' % (
+                     refgeom.top.residue(pair[0]), refgeom.top.residue(pair[1]), ctcs_mean[oo] * 100))
             plt.legend()
             # plt.yscale('log')
             plt.ylabel('A / $\\AA$')
             plt.ylim([0, 1])
             iax = plt.gca()
-            iax.axhline(a.ctc_cutoff_Ang / 10, color='r')
+            iax.axhline(ctc_cutoff_Ang / 10, color='r')
         iax.set_xlabel('t / ns')
         plt.show()
     else:
@@ -174,7 +189,7 @@ def residue_neighborhoods(a):
             res_and_fragment_str = '%s@%s' % (refgeom.top.residue(residx), anchor_frag_label)
 
             jax.set_title(
-                "Contact frequency @%2.1f $\AA$\n%u nearest bonded neighbors excluded" % (a.ctc_cutoff_Ang, a.n_nearest))
+                "Contact frequency @%2.1f $\AA$\n%u nearest bonded neighbors excluded" % (ctc_cutoff_Ang, n_nearest))
             jax.set_ylim([0, 1])
             jax.set_xlim([-.5, len(toplot) + 1 - .5])
             jax.set_xticks([])
@@ -211,14 +226,14 @@ def residue_neighborhoods(a):
                         refgeom.top.residue(idx2), labels_frags[1])
                     for jj, jxtc in enumerate(xtcs):
                         plt.plot(time_array[jj] / 1e3, ctcs_trajs[jj][:, oo] * 10,
-                                 label='%s (%u%%)' % (jxtc, np.mean(ctcs_trajs[jj][:, oo] < a.ctc_cutoff_Ang / 10) * 100))
+                                 label='%s (%u%%)' % (jxtc, np.mean(ctcs_trajs[jj][:, oo] < ctc_cutoff_Ang / 10) * 100))
                     plt.legend(loc=1)
                     # plt.yscale('log')
                     plt.ylabel('A / $\\AA$')
                     plt.ylim([0, 10])
                     iax = plt.gca()
                     iax.text(np.mean(iax.get_xlim()), 1, ctc_label, ha='center')
-                    iax.axhline(a.ctc_cutoff_Ang, color='r')
+                    iax.axhline(ctc_cutoff_Ang, color='r')
                     if residx == idx1:
                         partner, partnerseg, partnercons = idx2, s2, labels_consensus[1]
                     else:
@@ -250,8 +265,8 @@ def residue_neighborhoods(a):
                     ipatch.set_color(icol)
                     """
                     isegs.append(iseg[0])
-    
-    
+
+
                     isegs = _np.unique(isegs)
                     _empty_legend(iax,
                                   [binary_ctcs2flare_kwargs["fragment_names"][ii] for ii in isegs],
@@ -274,7 +289,8 @@ def residue_neighborhoods(a):
                 iax2.set_xlim(axbottom.get_xlim())
                 iax2.set_xlabel(axbottom.get_xlabel())
 
-                fname = 'neighborhood.%s.time_resolved.%s' % (res_and_fragment_str.replace('*', ""), a.ext.strip("."))
+                fname = 'neighborhood.%s.time_resolved.%s' % (
+                res_and_fragment_str.replace('*', ""), output_ext.strip("."))
                 plt.savefig(fname, bbox_inches="tight")
                 plt.close(myfig)
                 print(fname)
@@ -282,12 +298,11 @@ def residue_neighborhoods(a):
 
         histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
-        fname = "neighborhoods_overall.%s" % a.ext.strip(".")
+        fname = "neighborhoods_overall.%s" % output_ext.strip(".")
         histofig.savefig(fname)
         print(fname)
 
-    return  {"args": a,
-                    "ctc_idxs": ctc_idxs_small,
-                    'ctcs': actcs,
-                    'time_array': time_array}
+    return {"ctc_idxs": ctc_idxs_small,
+            'ctcs': actcs,
+            'time_array': time_array}
 
