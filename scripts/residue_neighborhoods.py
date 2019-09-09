@@ -38,7 +38,7 @@ parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
 parser.set_defaults(ask=True)
 parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results", default='output.npy')
 parser.add_argument('--output_ext', type=str, help="Extension of the output graphics, default is .pdf", default='.pdf')
-
+parser.add_argument('--output_dir', type=str, help="directory to which the results are written. Default is '.'", default='.')
 
 parser.add_argument('--fragment_names', type=str,
                     help="Name of the fragments. Leave empty if you want them automatically named."
@@ -57,8 +57,9 @@ for key in ["topology","trajectories","resSeq_idxs","output_npy"]:
 
 out_dict = residue_neighborhoods(a.topology, a.trajectories, a.resSeq_idxs, **b)
 
-fname = a.output_npy
-if not fname.endswith(".npy"):
-    fname += ".npy"
-np.save(fname,out_dict)
-print(fname)
+if out_dict is not None:
+    fname = a.output_npy
+    if not fname.endswith(".npy"):
+        fname += ".npy"
+    np.save(fname,out_dict)
+    print(fname)
