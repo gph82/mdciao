@@ -782,17 +782,18 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
     return out_dict
 
 class CGN_transformer(object):
-    def __init__(self, ref_PDB='3SN6'):
+    def __init__(self, ref_PDB='3SN6', ref_path='.'):
         # Create dataframe with the alignment
         from pandas import read_table as _read_table
+        from os import path as _path
         self._ref_PDB = ref_PDB
 
-        self._DF = _read_table('CGN_%s.txt'%ref_PDB)
+        self._DF = _read_table(_path.join(ref_path, 'CGN_%s.txt'%ref_PDB))
         #TODO find out how to properly do this with pandas
 
         self._dict = {key: self._DF[self._DF[ref_PDB] == key]["CGN"].to_list()[0] for key in self._DF[ref_PDB].to_list()}
 
-        self._top =_md.load(ref_PDB+'.pdb').top
+        self._top =_md.load(_path.join(ref_path, ref_PDB+'.pdb')).top
         seq_ref = ''.join([str(rr.code).replace("None","X") for rr in self._top.residues])[:len(self._dict)]
         seq_idxs = _np.hstack([rr.resSeq for rr in self._top.residues])[:len(self._dict)]
         keyval = [{key:val} for key,val in self._dict.items()]
