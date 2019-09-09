@@ -2,6 +2,9 @@ import numpy as _np
 import mdtraj as _md
 from scipy.spatial.distance import pdist
 from matplotlib import pyplot as _plt
+
+from sofi_functions.tested_utils import get_fragments, in_what_fragment, top2residue_bond_matrix, \
+    exclude_same_fragments_from_residx_pairlist, in_what_N_fragments
 """
 fragment 0 with 203 AAs GLU30-LYS232 NT-TM5
 fragment 1 with  78 AAs PHE264-CYSP341 TM6-CT
@@ -180,10 +183,6 @@ def _print_frag(ii, top,iseg,**print_kwargs):
         raise
     print(istr,**print_kwargs)
 
-from sofi_functions import get_fragments
-from sofi_functions import in_what_fragment
-from sofi_functions import top2residue_bond_matrix
-
 # from https://www.rosettacode.org/wiki/Range_expansion#Python
 def rangeexpand(txt):
     lst = []
@@ -218,8 +217,7 @@ def re_warp_idxs(lengths):
         idxi += ll
     return idxs_out
 
-from sofi_functions import in_what_N_fragments
-
+# TODO find out why we are not using this anymore
 from sofi_functions import unique_list_of_iterables_by_tuple_hashing
 
 
@@ -273,7 +271,7 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top, pick_firs
     return resSeq2residxs, resSeq2segidxs
 
 
-
+# TODO find out why we are not using this anymore
 from sofi_functions import interactive_fragment_picker_by_AAresSeq
 
 mycolors=[
@@ -415,9 +413,6 @@ def exclude_neighbors_from_residx_pairlist(pairlist, top, n_exclude,
         return [pair for ii, pair in enumerate(pairlist) if ii not in idxs2exclude]
     else:
         return idxs2exclude
-
-
-from sofi_functions import exclude_same_fragments_from_residx_pairlist
 
 def my_RMSD(geom, ref, atom_indices=None,
             ref_atom_indices=None,
@@ -615,10 +610,9 @@ def geom2COMxyz(igeom):
     COMs_time_res_coords = _np.swapaxes(_np.array(COMs_res_time_coords),0,1)
     return COMs_time_res_coords
 
+# TODO find out if this is still valid
+
 # This is lifted from mdas, the original source shall remain there
-
-from sofi_functions import top2residue_bond_matrix
-
 def _top2bondmatrix(top, create_standard_bonds=True):
     if len(top._bonds)==0:
         if create_standard_bonds:
@@ -660,6 +654,7 @@ def bonded_neighborlist_from_top(top, n=1):
 
     return neighbor_list
 
+# TODO find why this is not being used at the moment
 from sofi_functions import find_AA
 
 def __find_by_AAresSeq(top, key):
