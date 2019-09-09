@@ -17,6 +17,7 @@ setup(
     ],
     tests_require=[
     "mock"
-    ]
+    ],
+    scripts=['scripts/residue_neighborhoods.py']
 )
 
