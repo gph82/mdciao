@@ -16,10 +16,35 @@ from sofi_functions.tested_utils import find_AA, top2residue_bond_matrix, get_fr
 #OR import sofi_functions
 #and then you call evertying as sofi_functions.tested_utils.xxxx
 
+class filenames(object):
+    def __init__(self):
+        # Check
+        # https://docs.python.org/3.7/tutorial/modules.html#packages-in-multiple-directories
+        from sofi_functions import __path__ as sfpath
+        assert len(sfpath) == 1
+        sfpath = path.split(sfpath[0])[0]
+        self.examples_path = path.join(sfpath, 'examples')
+        test_data_path = path.join(sfpath,"tests","data")
+
+        self.file_for_test_pdb = path.join(test_data_path,
+                                           "file_for_test.pdb")
+        self.file_for_test_repeated_fullresnames_pdb = path.join(test_data_path,
+                                                                 "file_for_test_repeated_fullresnames.pdb")
+
+        self.file_for_test_force_resSeq_breaks_is_true_pdb = path.join(test_data_path,
+                                                                       "file_for_test_force_resSeq_breaks_is_true.pdb")
+
+        self.prot1_pdb = path.join(self.examples_path,"prot1.pdb.gz")
+        self.run1_stride_100_xtc = path.join(self.examples_path,"run1_stride_100.xtc")
+
+        self.GPCRmd_B2AR_nomenclature_test_xlsx = path.join(test_data_path,"GPCRmd_B2AR_nomenclature_test.xlsx")
+
+test_filenames = filenames()
+
 class Test_find_by_AA(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load("PDB/file_for_test.pdb")
-        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
+        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom2frags = md.load(test_filenames.file_for_test_repeated_fullresnames_pdb)
 
     def test_it_just_works_with_long_AA_code(self):
         assert (find_AA(self.geom.top, "GLU30")) == [0]
@@ -50,8 +75,8 @@ class Test_find_by_AA(unittest.TestCase):
 class Test_top2residue_bond_matrix(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load("PDB/file_for_test.pdb")
-        self.geom_force_resSeq_breaks = md.load("PDB/file_for_test_force_resSeq_breaks_is_true.pdb")
+        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom_force_resSeq_breaks = md.load(test_filenames.file_for_test_force_resSeq_breaks_is_true_pdb)
 
     def test_it_just_works_with_top2residue_bond_matrix(self):
         res_bond_matrix = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
@@ -79,7 +104,7 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
 class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load("PDB/file_for_test.pdb")
+        self.geom = md.load(test_filenames.file_for_test_pdb)
         self.by_bonds_geom = get_fragments(self.geom.top,
                                            verbose=True,
                                            auto_fragment_names=True,
@@ -108,7 +133,7 @@ class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
 class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
 
     def setUp(self):
-        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
+        self.geom2frags = md.load(test_filenames.file_for_test_repeated_fullresnames_pdb)
 
         self.by_bonds_geom2frags = get_fragments(self.geom2frags.top,
                                                  verbose=True,
@@ -250,8 +275,8 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
 
 class Test_get_fragments(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load('PDB/file_for_test.pdb')
-        self.geom_force_resSeq_breaks = md.load("PDB/file_for_test_force_resSeq_breaks_is_true.pdb")
+        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom_force_resSeq_breaks = md.load(test_filenames.file_for_test_force_resSeq_breaks_is_true_pdb)
 
     # Checking for "method" argument (which are resSeq and Bonds
     def test_get_fragments_method(self):
@@ -490,7 +515,7 @@ class Test_int_from_AA_code(unittest.TestCase):
 
 class Test_bonded_neighborlist_from_top(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load("PDB/file_for_test.pdb")
+        self.geom = md.load(test_filenames.file_for_test_pdb)
 
     def test_bonded_neighborlist_from_top_just_works(self):
        neighbors_from_function =  bonded_neighborlist_from_top(self.geom.top)
@@ -505,7 +530,7 @@ class Test_rangeexpand(unittest.TestCase):
 
 class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load("PDB/file_for_test.pdb")
+        self.geom = md.load(test_filenames.file_for_test_pdb)
         self.by_bonds_geom = get_fragments(self.geom.top,
                                                      verbose=True,
                                                      auto_fragment_names=True,
@@ -566,7 +591,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
 
 class Test_table2BW_by_AAcode(unittest.TestCase):
     def setUp(self):
-        self.file = "GPCRmd_B2AR_nomenclature_test.xlsx"
+        self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
 
     def test_table2BW_by_AAcode_just_works(self):
         table2BW = table2BW_by_AAcode(tablefile = self.file)
@@ -624,8 +649,8 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
 class Test_guess_missing_BWs(unittest.TestCase):
     #TODO need to attain 100% coverage
     def setUp(self):
-        self.file = "GPCRmd_B2AR_nomenclature_test.xlsx"
-        self.geom = md.load("PDB/file_for_test.pdb")
+        self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
+        self.geom = md.load(test_filenames.file_for_test_pdb)
 
     def test_guess_missing_BWs_just_works(self):
         table2BW = table2BW_by_AAcode(tablefile=self.file)
@@ -642,11 +667,7 @@ class Test_guess_missing_BWs(unittest.TestCase):
 
 class Test_CGN_transformer(unittest.TestCase):
     def setUp(self):
-        # TODO remember the right way of doing this
-        from sofi_functions import __path__ as sfpath
-        assert len(sfpath) == 1
-        sfpath = path.split(sfpath[0])[0]
-        self.cgn = CGN_transformer(ref_path=path.join(sfpath,'examples'))
+        self.cgn = CGN_transformer(ref_path=test_filenames.examples_path)
 
     def test_CGN_transformer_just_works(self):
         self.assertEqual(len(self.cgn.seq), len(self.cgn.seq_idxs))
@@ -654,12 +675,8 @@ class Test_CGN_transformer(unittest.TestCase):
 
 class Test_top2CGN_by_AAcode(unittest.TestCase):
     def setUp(self):
-        # TODO remember the right way of doing this
-        from sofi_functions import __path__ as sfpath
-        assert len(sfpath) == 1
-        sfpath = path.split(sfpath[0])[0]
-        self.cgn = CGN_transformer(ref_path=path.join(sfpath,'examples'))
-        self.geom = md.load("PDB/file_for_test.pdb")
+        self.cgn = CGN_transformer(ref_path=test_filenames.examples_path)
+        self.geom = md.load(test_filenames.file_for_test_pdb)
 
     def test_top2CGN_by_AAcode_just_works(self):
         top2CGN = top2CGN_by_AAcode(self.geom.top, self.cgn)
@@ -675,12 +692,8 @@ class Test_top2CGN_by_AAcode(unittest.TestCase):
 
 class Test_xtcs2ctcs(unittest.TestCase):
     def setUp(self):
-        # TODO remember the right way of doing this
-        from sofi_functions import __path__ as sfpath
-        assert len(sfpath)==1
-        sfpath=path.split(sfpath[0])[0]
-        file_geom = path.join(sfpath,"examples","prot1.pdb.gz")
-        file_xtc = path.join(sfpath,"examples","run1_stride_100.xtc")
+        file_geom = test_filenames.prot1_pdb
+        file_xtc =  test_filenames.run1_stride_100_xtc
         self.geom = md.load(file_geom)
         self.xtcs = [file_xtc]
 
@@ -747,7 +760,7 @@ class Test_xtcs2ctcs(unittest.TestCase):
 class Test_interactive_fragment_picker_no_ambiguity_wip(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load("PDB/file_for_test.pdb")
+        self.geom = md.load(test_filenames.file_for_test_pdb)
         self.by_bonds_geom = get_fragments(self.geom.top,
                                            verbose=True,
                                            auto_fragment_names=True,
@@ -774,7 +787,7 @@ class Test_interactive_fragment_picker_no_ambiguity_wip(unittest.TestCase):
 class Test_interactive_fragment_picker_with_ambiguity_wip(unittest.TestCase):
 
     def setUp(self):
-        self.geom2frags = md.load("PDB/file_for_test_repeated_fullresnames.pdb")
+        self.geom2frags = md.load(test_filenames.file_for_test_repeated_fullresnames_pdb)
 
         self.by_bonds_geom2frags = get_fragments(self.geom2frags.top,
                                                  verbose=True,
