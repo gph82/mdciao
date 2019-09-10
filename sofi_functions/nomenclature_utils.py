@@ -136,7 +136,10 @@ class CGN_transformer(object):
 
         self._dict = {key: self._DF[self._DF[ref_PDB] == key]["CGN"].to_list()[0] for key in self._DF[ref_PDB].to_list()}
 
-        self._top =_md.load(_path.join(ref_path, ref_PDB+'.pdb')).top
+        try:
+            self._top =_md.load(_path.join(ref_path, ref_PDB+'.pdb')).top
+        except (OSError,FileNotFoundError):
+            self._top = _md.load(_path.join(ref_path, ref_PDB + '.pdb.gz')).top
         seq_ref = ''.join([str(rr.code).replace("None","X") for rr in self._top.residues])[:len(self._dict)]
         seq_idxs = _np.hstack([rr.resSeq for rr in self._top.residues])[:len(self._dict)]
         keyval = [{key:val} for key,val in self._dict.items()]
