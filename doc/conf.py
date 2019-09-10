@@ -30,7 +30,8 @@ author = 'Guillermo Perez-Hernandez, Sofi Tiwari'
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon"
+    "sphinx.ext.napoleon",
+    "sphinxarg.ext",
 ]
 
 autodoc_mock_imports = ["mdtraj"]
