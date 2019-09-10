@@ -1,1 +1,1 @@
-residue_neighborhoods.py prot1.pdb.gz run1_stride_100.xtc run2_stride_100.xtc --resSeq_idxs "139, 376, 358, 381-394, 130, 131, 267, 270"  --CGN_PDB 3SN6 --BW_file BW.json --n_nearest 2 --output_dir results
+residue_neighborhoods.py prot1.pdb.gz run1_stride_200.xtc run2_stride_200.xtc --resSeq_idxs "139, 376, 358, 381-394, 130, 131, 267, 270"  --CGN_PDB 3SN6 --BW_file BW.json --n_nearest 2 --output_dir results
