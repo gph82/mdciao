@@ -18,7 +18,7 @@ class filenames(object):
                                                                        "file_for_test_force_resSeq_breaks_is_true.pdb")
 
         self.prot1_pdb = path.join(self.examples_path,"prot1.pdb.gz")
-        self.run1_stride_100_xtc = path.join(self.examples_path,"run1_stride_100.xtc")
+        self.run1_stride_100_xtc = path.join(self.examples_path,"run1_stride_200.xtc")
 
         self.GPCRmd_B2AR_nomenclature_test_xlsx = path.join(test_data_path,"GPCRmd_B2AR_nomenclature_test.xlsx")
 
