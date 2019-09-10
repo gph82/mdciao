@@ -3,11 +3,14 @@ import mdtraj as _md
 from scipy.spatial.distance import pdist
 from matplotlib import pyplot as _plt
 
-from sofi_functions.tested_utils import get_fragments, in_what_fragment, top2residue_bond_matrix, \
-    exclude_same_fragments_from_residx_pairlist, in_what_N_fragments
+from sofi_functions.fragments import get_fragments
+
+#from in_what_fragment, top2residue_bond_matrix, \
+#    exclude_same_fragments_from_residx_pairlist, in_what_N_fragments
+from sofi_functions.list_utils import in_what_N_fragments, in_what_fragment, exclude_same_fragments_from_residx_pairlist
 
 #Import needed for the command line scripts
-from sofi_functions.tested_utils import unique_list_of_iterables_by_tuple_hashing
+#from sofi_functions.tested_utils import unique_list_of_iterables_by_tuple_hashing
 
 """
 fragment 0 with 203 AAs GLU30-LYS232 NT-TM5
@@ -653,7 +656,7 @@ def bonded_neighborlist_from_top(top, n=1):
 def __find_by_AAresSeq(top, key):
     return [rr.index for rr in top.residues if key == '%s%u' % (rr.code, rr.resSeq)]
 
-def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
+def _table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        modifications={"S262":"F264"},
                        keep_AA_code=True,
                        return_defs=False,
@@ -848,7 +851,7 @@ def _replace4latex(istr):
         istr = '$%s$'%istr
     return istr
 
-def int_from_AA_code(key):
+def _int_from_AA_code(key):
     return int(''.join([ii for ii in key if ii.isnumeric()]))
 
 def _relabel_consensus(idx, input_dicts, no_key="NA"):
@@ -860,7 +863,7 @@ def _relabel_consensus(idx, input_dicts, no_key="NA"):
     except IndexError:
         return no_key
 
-def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
+def _guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
 
     guessed_BWs = {}
     if restrict_to_residxs is None:
