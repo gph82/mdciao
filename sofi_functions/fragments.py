@@ -1,7 +1,7 @@
 import numpy as _np
 from .aa_utils import find_AA
 from .bond_utils import top2residue_bond_matrix
-from .list_utils import in_what_N_fragments
+from .list_utils import in_what_N_fragments as _in_what_N_fragments
 
 def _print_frag(ii, top, iseg, **print_kwargs):
     """
@@ -202,7 +202,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
 
     for key in AAresSeq_idxs:
         cands = find_AA(top, key)
-        cand_fragments = in_what_N_fragments(cands, fragments)
+        cand_fragments = _in_what_N_fragments(cands, fragments)
         # TODO OUTSOURCE THIS?
         if len(cands) == 0:
             print("No residue found with resSeq %s"%key)
@@ -295,7 +295,7 @@ def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
         elif isinstance(key, int):
             cands = [rr.index for rr in top.residues if rr.resSeq == key]
 
-        cand_fragments = in_what_N_fragments(cands, fragments)
+        cand_fragments = _in_what_N_fragments(cands, fragments)
         # TODO OUTSOURCE THIS?
         if len(cands) == 0:
             print("No residue found with resSeq %s"%key)
