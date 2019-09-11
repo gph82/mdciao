@@ -8,14 +8,29 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        return_defs=False,
                        ):
     """
+    Returns a dictionary of the residues and their corresponding BW notation from the excel file.
 
-    :param tablefile: GPCRmd_B2AR nomenclature file in excel format
-    :param modifications: Dictionary to store the modifications required in amino acid name
-                        Parameter should be passed as a dictionary of the form {old name:new name}
-    :param keep_AA_code: True if amino acid letter code is required else False. Default is True
-                        If True then output dictionary will have key of the form "Q26" else "26"
-    :param return_defs: if defs are required then True else False. Default is true
-    :return: Dictionary if return_defs=false else dictionary and a list
+    Parameters
+    ----------
+    tablefile : xlsx file
+        GPCRmd_B2AR nomenclature file in excel format, optional
+    modifications : dictionary
+        Pass the modifications required in the residue name.
+        Parameter should be passed as a dictionary of the form {old name:new name}.
+    keep_AA_code : boolean
+        'True' if amino acid letter code is required. (Default is True).
+        If True then output dictionary will have key of the form "Q26" else "26".
+    return_defs : boolean
+        'True' if definition lines from the file are required then. (Default is True).
+
+    Returns
+    -------
+
+    Dictionary, list(optional)
+        Dictionary with residues as key and their corresponding BW notation.
+        if return_defs=false else dictionary(residue and their BW notation),
+        and a list of the definition lines from the excel.
+
     """
     out_dict = {}
     import pandas
@@ -53,6 +68,23 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
 
 
 def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
+    """
+    Interpolates the BW for residues which are not present in the nomenclature file.
+
+    Parameters
+    ----------
+    input_BW_dict : dictionary
+        BW dictionary with residue names as the key and their corresponding BW notation
+    top : :obj:`mdtraj.Topology` object
+    restrict_to_residxs: list, optional
+        residue indexes for which the BW needs to be estimated. (Default value is None).
+
+    Returns
+    -------
+    Dictionary
+        Dictionary where the missing values are estimated. It also retains all the values from the input dictionary.
+
+    """
 
     guessed_BWs = {}
     if restrict_to_residxs is None:
@@ -125,6 +157,10 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
     return out_dict
 
 class CGN_transformer(object):
+    """
+    Class to convert the residues in the 3SN6.pdb file to its corresponding CGN numbering.
+
+    """
     def __init__(self, ref_PDB='3SN6', ref_path='.'):
         # Create dataframe with the alignment
         from pandas import read_table as _read_table
@@ -166,6 +202,24 @@ class CGN_transformer(object):
 
 def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
                       restrict_to_residxs=None):
+    """
+    Transforms each residue in the topology file to its corresponding CGN numbering.
+
+    Parameters
+    ----------
+    top : :obj:`mdtraj.Topology` object
+    ref_CGN_tf : :obj: 'nomenclature_utils.CGN_transformer' object
+    keep_AA_code : boolean, optional
+    restrict_to_residxs: list, optional
+        residue indexes for which the BW needs to be estimated. (Default value is None).
+
+    Returns
+    -------
+    Dictionary
+        For each residue in the topology file, returns the corresponding CGN numbering.
+        Example - {0: 'G.HN.27',1: 'G.HN.53'}
+
+    """
 
     # TODO this lazy import will bite back
     from .Gunnar_utils import alignment_result_to_list_of_dicts

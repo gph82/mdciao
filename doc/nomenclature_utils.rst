@@ -1,7 +1,7 @@
 nomenclature_utils
 ==================
 
-Utils for handling nomenclature related
+Utils for handling nomenclature related functionality. Currently handles BW and CGN nomenclature.
 
 .. currentmodule:: sofi_functions.nomenclature_utils
 
