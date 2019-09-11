@@ -4,13 +4,30 @@ import numpy as _np
 def top2residue_bond_matrix(top, create_standard_bonds=True,
                             force_resSeq_breaks=False,
                             verbose=True):
-    r"""
-    :param top: md.Topology object
-    :param create_standard_bonds: boolean. Force the method to create bonds if there are not upon reading (e.g.
-    because the topology comes from a .gro-file instead of a .pdb-file.
+    '''
+    This function creates a bond matrix from the topology file.
+    The entries in the bond matrix will have either 1 or 0, where 1 signifies a bond is present.
 
-    :return: symmetric adjacency matrix with entries ij=1 and ji=1 if there is a bond between atom i and atom j
-    """
+    Parameters
+    ----------
+    top : :obj: `mdtraj.Topology` object
+    create_standard_bonds : boolean
+        'True' will force the method to create bonds if there are not upon reading, because the topology 
+        comes from a .gro-file instead of a .pdb-file. (Default is True).
+    force_resSeq_breaks : boolean
+        'True' will force the methods to break bonds,if two residue index are not next to each other.
+        (Default is False).
+    verbose : boolean
+        'True' will print a statement if residue index has no bonds. (Default is True).
+        
+    Returns
+    -------
+    numpy matrix
+        Returns a symmetric adjacency matrix with entries ij=1 and ji=1,
+        if there is a bond between atom i and atom j.
+
+    '''
+
     if len(top._bonds) == 0:
         if create_standard_bonds:
             top.create_standard_bonds()
@@ -32,14 +49,23 @@ def top2residue_bond_matrix(top, create_standard_bonds=True,
     return residue_bond_matrix
 
 def bonded_neighborlist_from_top(top, n=1):
-    """TODO: description of method in one line
+    '''
+    This function returns the bonded neighbors of all the residues in the topology file.
 
-    :param top: mdTraj Topology object
-    :param n: number of bonds between bonded neighbors
-    :return: neighbor of each residue as a list of list
-            Each residue will have a corresponding neighbor list(if neighbors exists), or an empty list(if no neighbor exists)
-            A neighbor exists between i and j residues if residue_bond_matrix has a 1 at position ij
-    """
+    Parameters
+    ----------
+    top : :obj: `mdtraj.Topology` object
+    n : int
+        Number of iterations in the residue. (Default is 1).
+
+    Returns
+    -------
+    list of list
+        For each residue in the topology file, the corresponding inner list will be the neighbors of
+        the corresponding residue.
+
+    '''
+
     residue_bond_matrix = top2residue_bond_matrix(top)
     neighbor_list = [[ii] for ii in range(residue_bond_matrix.shape[0])]
     for kk in range(n):
