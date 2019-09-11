@@ -57,6 +57,12 @@ recommended at the moment except for advanced users.
 
    residue_neighborhoods
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Submodules:
+
+   aa_utils
+   bond_utils
 Indices and tables
 ==================
 
