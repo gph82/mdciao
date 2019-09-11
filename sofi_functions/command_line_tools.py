@@ -17,6 +17,7 @@ from sofi_functions.actor_utils import mycolors, dangerously_auto_fragments, _re
 def _inform_of_parser(parser):
     # TODO find out where the keys are hiding in parser...
     a = parser.parse_args()
+    print("Here I am")
     for key, __ in a._get_kwargs():
         dval = parser.get_default(key)
         fmt = '%s=%s,'
@@ -58,8 +59,13 @@ def my_parser():
     parser.add_argument('--ask_fragment',    dest='ask', action='store_true', help="Interactively ask for fragment assignemnt when input matches more than one resSeq")
     parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
     parser.set_defaults(ask=True)
-    parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results", default='output.npy')
-    parser.add_argument('--output_ext', type=str, help="Extension of the output graphics, default is .pdf", default='.pdf')
+    parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
+                        default='output.npy')
+    parser.add_argument('--output_ascii', type=str,
+                        help="Extension for ascii files (.dat, .txt etc). Default is 'none', which does not write anything.",
+                        default=None)
+    parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
+                        default='.pdf')
     parser.add_argument('--output_dir', type=str, help="directory to which the results are written. Default is '.'", default='.')
 
     parser.add_argument('--fragment_names', type=str,
@@ -85,7 +91,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           pbc=True,
                           fragmentify=True,
                           fragment_names="",
-                          output_ext=".pdf",
+                          graphic_ext=".pdf",
+                          output_ascii=None,
                           BW_file="None",
                           CGN_PDB="None",
                           output_dir='.'
@@ -238,6 +245,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
                                          figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
         list_of_axes = list(histoax.flatten())
+        for_ascii_output = {}
         for jax, residx in zip(list_of_axes,
                                resSeq2residxs.values()):  # in np.unique([ctc_idxs_small[ii] for ii in final_look]):
             toplot = final_look[residx]
@@ -261,6 +269,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             jax.legend(fontsize=panelsize * panelsize2font)
             # toplot=[kk for kk in final_look if residx in ctc_idxs_small[kk]]
 
+            for_ascii_output[res_and_fragment_str] = [{} for __ in xtcs]
             if len(toplot) > 0:
                 myfig, myax = plt.subplots(len(toplot), 1, sharex=True, sharey=True,
                                            figsize=(10, len(toplot) * panelheight))
@@ -285,6 +294,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                         refgeom.top.residue(idx1), labels_frags[0],
                         refgeom.top.residue(idx2), labels_frags[1])
                     for jj, jxtc in enumerate(xtcs):
+                        for_ascii_output[res_and_fragment_str][jj]["time / ns"] = time_array[jj] / 1e3
+                        for_ascii_output[res_and_fragment_str][jj][ctc_label] = ctcs_trajs[jj][:, oo] * 10
                         plt.plot(time_array[jj] / 1e3, ctcs_trajs[jj][:, oo] * 10,
                                  label='%s (%u%%)' % (jxtc, np.mean(ctcs_trajs[jj][:, oo] < ctc_cutoff_Ang / 10) * 100))
                     plt.legend(loc=1)
@@ -350,16 +361,26 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                 iax2.set_xlabel(axbottom.get_xlabel())
 
                 fname = 'neighborhood.%s.time_resolved.%s' % (
-                res_and_fragment_str.replace('*', ""), output_ext.strip("."))
+                    res_and_fragment_str.replace('*', ""), graphic_ext.strip("."))
                 fname = path.join(output_dir,fname)
                 plt.savefig(fname, bbox_inches="tight")
                 plt.close(myfig)
                 print(fname)
-                # plt.show()
-
+                if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt"]:
+                    aext = str(output_ascii).lower().strip(".")
+                    for ii, ixtc in enumerate(xtcs):
+                        traj_name = path.splitext(ixtc)[0]
+                        savename = "neighborhood.%s.%s.%s" % (res_and_fragment_str.replace('*', ""), traj_name, aext)
+                        savename = path.join(output_dir,savename)
+                        np.savetxt(savename, np.vstack(list(for_ascii_output[res_and_fragment_str][ii].values())).T,
+                                   ' '.join(["%6.3f" for __ in for_ascii_output[res_and_fragment_str][ii].values()]),
+                                   header=' '.join(
+                                       ["%6s" % key for key in for_ascii_output[res_and_fragment_str][ii].keys()]))
+                        print(savename)
+                    print()
         histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
-        fname = "neighborhoods_overall.%s" % output_ext.strip(".")
+        fname = "neighborhoods_overall.%s" % graphic_ext.strip(".")
         fname = path.join(output_dir,fname)
         histofig.savefig(fname)
         print(fname)
