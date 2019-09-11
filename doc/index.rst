@@ -37,8 +37,8 @@ These submodules depend themselves on more specific methods are packaged into th
    * aa_utils.py
    * nomenclature_utils.py
 
-which have to be imported explicitely (e.g., from sofi_tools import list_utils), although it is not
-recommended at the moment except for advanced users.
+Finally, there is the submodule actor_utils.py, which is still containing important **but untested**
+methods. These methods will gradually be refactored into the any of the above submodules.
 
 .. note::
    **This library is still under heavy development
