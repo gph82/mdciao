@@ -76,7 +76,7 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
     Returns
     -------
     list
-    list of unique iterables or indices of 'ilist' where the unique entries are
+        list of unique iterables or indices of 'ilist' where the unique entries are
 
     """
 

@@ -64,6 +64,7 @@ recommended at the moment except for advanced users.
    aa_utils
    bond_utils
    list_utils
+   nomenclature_utils
 
 Indices and tables
 ==================
