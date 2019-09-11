@@ -1,7 +1,7 @@
 list_utils
 ==========
 
-Utils for simple operations with bonds between the amino acids
+Utils for operations on list
 
 .. currentmodule:: sofi_functions.list_utils
 
