@@ -4,6 +4,19 @@ from .bond_utils import top2residue_bond_matrix
 from .list_utils import in_what_N_fragments
 
 def _print_frag(ii, top, iseg, **print_kwargs):
+    """
+
+    Parameters
+    ----------
+    ii
+    top
+    iseg
+    print_kwargs
+
+    Returns
+    -------
+
+    """
     try:
         istr = "fragment %u with %3u AAs %s(%u)-%s(%u)" % (ii, len(iseg),
                                                            top.residue(iseg[0]),
@@ -28,20 +41,33 @@ def get_fragments(top,
                   frag_breaker_to_pick_idx=None,
                   method='resSeq', #Whatever comes after this(**) will be passed as named argument to interactive_segment_picker
                   **kwargs_interactive_segment_picker):
-    r"""
+    """
     Returns the list of arrays containing the residues that are contained in a fragment
 
-    :param top: Topology object obtained using the mdTraj module
-    :param fragment_breaker_fullresname: list of full residue names, e.g. GLU30 that will be used to
-            break fragments, so that [R1, R2, ... GLU30,...R10, R11] will be broken into [R1, R2, ...], [GLU30,...,R10,R11],
-    :param atoms:
-    :param join_fragments: List of lists of integer fragment idxs which are to be joined together.
-                        Duplicate entries in any inner list will be removed
-                        One fragment idx cannot appear in more than one inner list, otherwise program throws an error)
+    Parameters
+    ----------
+    top : :obj:`mdtraj.Topology` object
+    fragment_breaker_fullresname : list
+        list of full residue names. Example - GLU30 that will be used to break fragments,
+        so that [R1, R2, ... GLU30,...R10, R11] will be broken into [R1, R2, ...], [GLU30,...,R10,R11]
+    atoms : boolean, optional
+    join_fragments : list of lists
+        List of lists of integer fragment idxs which are to be joined together.
+        Duplicate entries in any inner list will be removed.
+        One fragment idx cannot appear in more than one inner list, otherwise program throws an error.
+    verbose : boolean, optional
+    auto_fragment_names : not used in the function
+    frag_breaker_to_pick_idx : not used in the function
+    method : 'resSeq' or or 'bonds' or 'both
+        The method passed will be the basis for creating fragments
+    kwargs_interactive_segment_picker : optional
+        additional arguments
 
-    :param verbose: Default is True
-    :param method: either "resSeq" or "bonds", or "both" which will be the basis for creating fragments
-    :return: List of integer array. Each array within the list has the residue ids that combine to form a fragment
+    Returns
+    -------
+    List of integer array
+        Each array within the list has the residue ids that combine to form a fragment.
+
     """
 
     # fragnames=None
@@ -237,12 +263,12 @@ def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
                                             default_fragment_idx=None,
                                             fragment_names=None, extra_string_info=''):
     r"""
-    This function returns the fragment idxs and the residue idxs based on residue name.
+    This function returns the fragment idxs and the residue idxs based on residue name/residue index.
     If a residue is present in multiple fragments, the function asks the user to choose the fragment, for which
     the residue idxs is reporte
 
     :param AAresSeq_idxs: string or list of of strings
-           AAs of the form of "GLU30" or "E30", can be mixed
+           AAs of the form of "GLU30" or "E30" or 30, can be mixed
     :param fragments: iterable of iterables of integers
             The integers in the iterables of 'fragments' represent residue indices of that fragment
     :param top: mdtraj.Topology object

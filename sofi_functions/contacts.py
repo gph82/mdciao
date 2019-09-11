@@ -14,10 +14,11 @@ def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragmen
     resSeq2residxs
     fragments
     ctc_residxs_pairs
-    top
-    n_ctcs
+    top : :obj:`mdtraj.Topology` object
+    n_ctcs : integer
+        Default is 5.
     select_by_resSeq
-    silent
+    silent : boolean, optional
 
     Returns
     -------
