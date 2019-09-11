@@ -2,7 +2,7 @@ def find_AA(top, AA):
     r"""
     This function is used to query the index of residue based on residue name
 
-    :param top: :obj:`mdtraj.Topology` object
+    :param top: :py:class:`mdtraj.Topology`
     :param AA: Valid residue name to be passed as a string, example "GLU30" or "E30"
     :return: list of res_idxs where the residue is present, so that top.residue(idx) would return the wanted AA
     """

@@ -75,7 +75,7 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
     ----------
     input_BW_dict : dictionary
         BW dictionary with residue names as the key and their corresponding BW notation
-    top : :obj:`mdtraj.Topology` object
+    top : :py:class:`mdtraj.Topology`
     restrict_to_residxs: list, optional
         residue indexes for which the BW needs to be estimated. (Default value is None).
 
@@ -207,7 +207,7 @@ def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
 
     Parameters
     ----------
-    top : :obj:`mdtraj.Topology` object
+    top : :py:class:`mdtraj.Topology`
     ref_CGN_tf : :obj: 'nomenclature_utils.CGN_transformer' object
     keep_AA_code : boolean, optional
     restrict_to_residxs: list, optional

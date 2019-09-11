@@ -14,7 +14,7 @@ def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragmen
     resSeq2residxs
     fragments
     ctc_residxs_pairs
-    top : :obj:`mdtraj.Topology` object
+    top : :py:class:`mdtraj.Topology`
     n_ctcs : integer
         Default is 5.
     select_by_resSeq
@@ -90,7 +90,7 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     xtcs : list of strings
         list of filenames with trajectory data. Typically xtcs,
         but can be any type of file readable by :obj:mdtraj
-    top : str or :obj:mdtraj.Topology
+    top : str or :py:class:`mdtraj.Topology`
         Topology that matches :obj:xtcs
     ctc_residxs_pairs : iterable
         List of (zero-indexed) residue pairs

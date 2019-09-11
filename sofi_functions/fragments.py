@@ -46,7 +46,7 @@ def get_fragments(top,
 
     Parameters
     ----------
-    top : :obj:`mdtraj.Topology` object
+    top : :py:class:`mdtraj.Topology`
     fragment_breaker_fullresname : list
         list of full residue names. Example - GLU30 that will be used to break fragments,
         so that [R1, R2, ... GLU30,...R10, R11] will be broken into [R1, R2, ...], [GLU30,...,R10,R11]
@@ -183,7 +183,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
            AAs of the form of "GLU30" or "E30", can be mixed
     :param fragments: iterable of iterables of integers
             The integers in the iterables of 'fragments' represent residue indices of that fragment
-    :param top: mdtraj.Topology object
+    :param top: :py:class:`mdtraj.Topology`
     :param default_fragment_idx: None or integer.
             Pick this fragment withouth asking in case of ambiguity. If None, the user will we prompted
     :param fragment_names: list of strings providing informative names for the input fragments
@@ -271,7 +271,7 @@ def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
            AAs of the form of "GLU30" or "E30" or 30, can be mixed
     :param fragments: iterable of iterables of integers
             The integers in the iterables of 'fragments' represent residue indices of that fragment
-    :param top: mdtraj.Topology object
+    :param top: :py:class:`mdtraj.Topology`
     :param default_fragment_idx: None or integer.
             Pick this fragment withouth asking in case of ambiguity. If None, the user will we prompted
     :param fragment_names: list of strings providing informative names for the input fragments

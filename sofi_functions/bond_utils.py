@@ -10,7 +10,7 @@ def top2residue_bond_matrix(top, create_standard_bonds=True,
 
     Parameters
     ----------
-    top : :obj: `mdtraj.Topology` object
+    top : :py:class:`mdtraj.Topology`
     create_standard_bonds : boolean
         'True' will force the method to create bonds if there are not upon reading, because the topology 
         comes from a .gro-file instead of a .pdb-file. (Default is True).
@@ -54,7 +54,7 @@ def bonded_neighborlist_from_top(top, n=1):
 
     Parameters
     ----------
-    top : :obj: `mdtraj.Topology` object
+    top : :py:class:`mdtraj.Topology`
     n : int
         Number of iterations in the residue. (Default is 1).
 

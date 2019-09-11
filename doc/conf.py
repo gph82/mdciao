@@ -32,7 +32,10 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinxarg.ext",
+    "sphinx.ext.intersphinx",
 ]
+
+intersphinx_mapping = {'mdtraj': ('http://mdtraj.org/1.9.3/', None)}
 
 autodoc_mock_imports = ["mdtraj"]
 
