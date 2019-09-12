@@ -1,5 +1,38 @@
 import numpy as _np
 
+#taken from molpx
+def re_warp(array_in, lengths):
+    """Return iterable ::py:obj:array_in as a list of arrays, each
+     one with the length specified in lengths
+
+    Parameters
+    ----------
+
+    array_in: any iterable
+        Iterable to be re_warped
+
+    lengths : int or iterable of integers
+        Lengths of the individual elements of the returned array. If only one int is parsed, all lengths will
+        be that int. Special cases:
+            * more lengths than needed are parsed: the last elements of the returned value are empty
+            until all lengths have been used
+            * less lengths than array_in could take: only the lenghts specified are returned in the
+            warped list, the rest is unreturned
+    Returns
+    -------
+    warped: list
+    """
+
+    if _np.ndim(lengths)==0:
+        lengths = [lengths] * int(_np.ceil(len(array_in) / lengths))
+
+    warped = []
+    idxi = 0
+    for ii, ll in enumerate(lengths):
+        warped.append(array_in[idxi:idxi+ll])
+        idxi += ll
+    return warped
+
 def is_iterable(var):
     """
     This function checks if the input is an iterable or not
