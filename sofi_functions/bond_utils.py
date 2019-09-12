@@ -75,8 +75,8 @@ def bonded_neighborlist_from_top(top, n=1):
             for rn in ilist:
                 row = residue_bond_matrix[rn]
                 bonded = _np.argwhere(row == 1).squeeze()
-                if _np.ndim(bonded)==0:
-                    bonded=[bonded]
+                # if _np.ndim(bonded)==0:   #This case is not happening, Guillermo said we can comment it
+                #     bonded=[bonded]
                 toadd = [nn for nn in bonded if nn not in ilist and nn!=ridx]
                 if len(toadd):
                     #print("neighbor %u adds new neighbor %s:"%(rn, toadd))

@@ -192,8 +192,8 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
         assert (resname2residx["GLU30"]) == 8  # GLU30 is the 8th residue
         assert resname2fragidx["GLU30"] == 4 # GLU30 is in the 4th fragment
 
-    @patch('builtins.input', lambda *args: "\n")
-    def _test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_none_last_answer(self):
+    @patch('builtins.input', lambda *args: "")
+    def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_none_last_answer(self):
         residues = ["GLU30"]
         resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq(residues, self.by_bonds_geom2frags,
                                                                                   self.geom2frags.top)
@@ -362,9 +362,9 @@ class Test_interactive_fragment_picker_with_ambiguity_wip(unittest.TestCase):
             assert (resname2residx[30]) == 8  # GLU30 is the 8th residue
             assert resname2fragidx[30] == 4 # GLU30 is in the 4th fragment
 
-    def _test_interactive_fragment_picker_default_fragment_idx_is_none_last_answer(self):
+    def test_interactive_fragment_picker_default_fragment_idx_is_none_last_answer(self):
         residues = ["GLU30",30]
-        input_values = (val for val in ["\n", "\n"])
+        input_values = (val for val in ["", ""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             resname2residx, resname2fragidx = interactive_fragment_picker_wip(residues, self.by_bonds_geom2frags,
                                                                                       self.geom2frags.top)
