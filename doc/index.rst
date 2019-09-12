@@ -7,8 +7,15 @@ Welcome to sofi_functions's documentation!
 ==========================================
 
 The main goal of this Python library is to provide the command-line
-tools to analyze molecular simulation data using residue-residue contacts. It ows
-most of its functionality to the molecular dynamics analysis library
+tools to analyze molecular simulation data using residue-residue contacts.
+
+The starting point for these tools are the files typically generated in
+the context of molecular dynamics (MD) simulations, i.e.
+
+ * topology files, like prot.gro or prot.pdb
+ * trajectory files, like traj1.xtc, traj2.xtc
+
+Most of its functionality to the molecular dynamics analysis library
 `mdtraj <http://mdtraj.org/>`_.
 
 At the moment, these command line tools are:
