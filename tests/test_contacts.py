@@ -1,9 +1,7 @@
 
 import mdtraj as md
 import unittest
-from unittest.mock import Mock, patch
-import mock
-import builtins
+from unittest.mock import Mock
 import numpy as _np
 import mock
 from filenames import filenames
@@ -55,6 +53,18 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
             ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
                                                              self.geom.top,
                                                              n_ctcs=5, select_by_resSeq=1,
+                                                             silent=False)
+            assert ctc_freq == {}
+
+    def test_ctc_freq_reporter_by_residue_neighborhood_hit_enter(self):
+        ctcs_mean = [30, 5]
+        ctc_residxs_pairs = [[0, 1], [2, 1]]
+
+        input_values = (val for val in ["", ""])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
+                                                             self.geom.top,
+                                                             n_ctcs=5, select_by_resSeq=None,
                                                              silent=False)
             assert ctc_freq == {}
 
