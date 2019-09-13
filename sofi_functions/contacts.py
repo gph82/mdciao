@@ -1,6 +1,6 @@
 import numpy as _np
 import mdtraj as _md
-from .list_utils import in_what_fragment
+from .list_utils import in_what_fragment, re_warp
 
 def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragments, ctc_residxs_pairs, top,
                                               n_ctcs=5, select_by_resSeq=None,
@@ -114,17 +114,22 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     """
     ctcs = []
     times = []
-    inform = lambda ixtc, ii, running_f: print("Analysing %20s in chunks of "
-                                               "%3u frames. chunks %4u frames %8u" %
-                                               (ixtc, chunksize, ii, running_f), end="\r", flush=True)
+
+    if isinstance(xtcs[0],_md.Trajectory):
+        iterate = lambda ixtc : [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride],chunksize)]
+        inform = lambda ixtc, ii, running_f: print("Analysing a trajectory object")
+    else:
+        iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
+        inform = lambda ixtc, ii, running_f: print("Analysing %20s in chunks of "
+                                                   "%3u frames. chunks %4u frames %8u" %
+                                                   (ixtc, chunksize, ii, running_f), end="\r", flush=True)
+
     for ii, ixtc in enumerate(xtcs):
         ictcs = []
         running_f = 0
         inform(ixtc, 0, running_f)
         itime = []
-        for jj, igeom in enumerate(_md.iterload(ixtc, top=top, stride=stride,
-                                                chunk=_np.round(chunksize / stride)
-                                                )):
+        for jj, igeom in enumerate(iterate(ixtc)):
             running_f += igeom.n_frames
             inform(ixtc, jj, running_f)
             itime.append(igeom.time)
