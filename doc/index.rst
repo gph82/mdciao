@@ -18,7 +18,7 @@ the context of molecular dynamics (MD) simulations, i.e.
 Most of its functionality to the molecular dynamics analysis library
 `mdtraj <http://mdtraj.org/>`_.
 
-At the moment, these command line tools are:
+At the moment, these command-line tools are:
 
  * residue_neighborhoods.py (tested and documented)
       Analyzes most frequent interaction partners for any chosen residue via summaries
@@ -28,16 +28,23 @@ At the moment, these command line tools are:
       their frequencies and time-trances.
 
 
-These commandline tools work with methods contained in the modules
+These command-line tools work with methods contained in the submodules:
 
  * contacts
+      For the computation residue-residue contacts and their presentation as time-traces
+      or summarized probabilities (=frequencies).
  * fragments
+      For the identification and handling (=joining, splitting, naming) of fragments in
+      the molecular topology.
+
  * command_line_tools
+      The residue_neighborhoods.py and sites.py are just wrappers
+      around the methods contained in the submodule command_line_tools.
+      This way, the user can also use the command-line
+      tools in any interactive session, e.g. a in
+      the IPython terminal and/or the JuPyter notebooks.
 
-which are also exposed by sofi_tools after import into interactive
-IPython terminal sessions and JuPyter notebooks.
-
-These submodules depend themselves on more specific methods are packaged into the *_utils files
+The lowest level modules are more specicif and are packed into the *_utils files:
 
    * list_utils.py
    * bond_utils.py
