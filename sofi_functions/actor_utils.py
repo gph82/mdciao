@@ -190,17 +190,6 @@ def _print_frag(ii, top,iseg,**print_kwargs):
         raise
     print(istr,**print_kwargs)
 
-# from https://www.rosettacode.org/wiki/Range_expansion#Python
-def rangeexpand(txt):
-    lst = []
-    for r in txt.split(','):
-        if '-' in r[1:]:
-            r0, r1 = r[1:].split('-', 1)
-            lst += range(int(r[0] + r0), int(r1) + 1)
-        else:
-            lst.append(int(r))
-    return lst
-
 def re_warp_idxs(lengths):
     """Return iterable with the indexes to reshape a vector
     in the shapes specified in in lengths
@@ -608,50 +597,6 @@ def geom2COMxyz(igeom):
             zip(igeom.top.residues, masses)]
     COMs_time_res_coords = _np.swapaxes(_np.array(COMs_res_time_coords),0,1)
     return COMs_time_res_coords
-
-# TODO find out if this is still valid
-
-# This is lifted from mdas, the original source shall remain there
-def _top2bondmatrix(top, create_standard_bonds=True):
-    if len(top._bonds)==0:
-        if create_standard_bonds:
-            top.create_standard_bonds()
-        else:
-            raise ValueError("The parsed topology does not contain bonds! Aborting...")
-    residue_bond_matrix = _np.zeros((top.n_residues, top.n_residues))
-    for ibond in top._bonds:
-        r1, r2 = ibond.atom1.residue.index, ibond.atom2.residue.index
-        residue_bond_matrix[r1, r2] = 1
-        residue_bond_matrix[r2, r1] = 1
-    return residue_bond_matrix
-
-def bonded_neighborlist_from_top(top, n=1):
-    residue_bond_matrix = top2residue_bond_matrix(top)
-    neighbor_list = [[ii] for ii in range(residue_bond_matrix.shape[0])]
-    for kk in range(n):
-        for ridx, ilist in enumerate(neighbor_list):
-            new_neighborlist = [ii for ii in ilist]
-            #print("Iteration %u in residue %u"%(kk, ridx))
-            for rn in ilist:
-                row = residue_bond_matrix[rn]
-                bonded = _np.argwhere(row == 1).squeeze()
-                if _np.ndim(bonded)==0:
-                    bonded=[bonded]
-                toadd = [nn for nn in bonded if nn not in ilist and nn!=ridx]
-                if len(toadd):
-                    #print("neighbor %u adds new neighbor %s:"%(rn, toadd))
-                    new_neighborlist += toadd
-                    #print("so that the new neighborlist is: %s"%new_neighborlist)
-
-            neighbor_list[ridx] = [ii for ii in _np.unique(new_neighborlist) if ii!=ridx]
-            #break
-
-    # Check that the neighborlist works both ways
-    for ii, ilist in enumerate(neighbor_list):
-        for nn in ilist:
-            assert ii in neighbor_list[nn]
-
-    return neighbor_list
 
 def __find_by_AAresSeq(top, key):
     return [rr.index for rr in top.residues if key == '%s%u' % (rr.code, rr.resSeq)]
