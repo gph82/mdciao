@@ -71,12 +71,13 @@ def bonded_neighborlist_from_top(top, n=1):
     for kk in range(n):
         for ridx, ilist in enumerate(neighbor_list):
             new_neighborlist = [ii for ii in ilist]
-            #print("Iteration %u in residue %u"%(kk, ridx))
             for rn in ilist:
                 row = residue_bond_matrix[rn]
                 bonded = _np.argwhere(row == 1).squeeze()
-                # if _np.ndim(bonded)==0:   #This case is not happening, Guillermo said we can comment it
-                #     bonded=[bonded]
+                # TODO look closer at corner cases
+                # todo is it worth importing force_iterable from list_utils?
+                if _np.ndim(bonded)==0: # Some special case residue like GLH might not produce bonds
+                     bonded=[bonded]
                 toadd = [nn for nn in bonded if nn not in ilist and nn!=ridx]
                 if len(toadd):
                     #print("neighbor %u adds new neighbor %s:"%(rn, toadd))
