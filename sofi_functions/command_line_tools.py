@@ -10,6 +10,7 @@ from sofi_functions.nomenclature_utils import table2BW_by_AAcode, CGN_transforme
 from sofi_functions.contacts import ctc_freq_reporter_by_residue_neighborhood, xtcs2ctcs
 from sofi_functions.list_utils import rangeexpand, unique_list_of_iterables_by_tuple_hashing, in_what_fragment
 from sofi_functions.bond_utils import bonded_neighborlist_from_top
+from sofi_functions.actor_utils import _replace4latex
 
 from sofi_functions.actor_utils import mycolors, dangerously_auto_fragments, _relabel_consensus, \
     interactive_fragment_picker_by_resSeq
@@ -79,11 +80,11 @@ def my_parser():
     return parser
 
 def residue_neighborhoods(topology, trajectories, resSeq_idxs,
+                          res_idxs=False,
                           ctc_cutoff_Ang=3,
                           stride=1,
                           n_ctcs=5,
                           n_nearest=4,
-
                           chunksize_in_frames=10000,
                           nlist_cutoff_Ang=15,
                           ask=True,
@@ -95,7 +96,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           output_ascii=None,
                           BW_file="None",
                           CGN_PDB="None",
-                          output_dir='.'
+                          output_dir='.',
+                          color_by_fragment=True,
                           ):
 
     if not path.isdir(output_dir):
@@ -105,16 +107,25 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         else:
             print("Stopping. Please check your variable 'output_dir' and try again")
             return
-
-    resSeq_idxs = rangeexpand(resSeq_idxs)
+    _resSeq_idxs = rangeexpand(resSeq_idxs)
+    if len(_resSeq_idxs)==0:
+        raise ValueError("Please check your input indices, they do not make sense %s"%resSeq_idxs)
+    else:
+        resSeq_idxs = _resSeq_idxs
     if sort:
         resSeq_idxs = sorted(resSeq_idxs)
 
     xtcs = sorted(trajectories)
-    print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
-        "\n  ".join(xtcs), stride))
+    try:
+        print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
+            "\n  ".join(xtcs), stride))
+    except:
+        pass
 
-    refgeom = md.load(topology)
+    if isinstance(topology,str):
+        refgeom = md.load(topology)
+    else:
+        refgeom = topology
     if fragmentify:
         fragments = get_fragments(refgeom.top)
     else:
@@ -163,17 +174,27 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         answer = input("Which fragments are succeptible of a CGN-numbering?(Can be in a format 1,2-6,10,20-25)\n")
         restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
         CGN = top2CGN_by_AAcode(refgeom.top, CGN_tf, restrict_to_residxs=restrict_to_residxs)
-    mycolors.extend(mycolors)
-    mycolors.extend(mycolors)
+    fragcolors = [cc for cc in mycolors]
+    fragcolors.extend(fragcolors)
+    fragcolors.extend(fragcolors)
+    if isinstance(color_by_fragment, bool) and not color_by_fragment:
+        fragcolors = ['blue' for cc in fragcolors]
+    elif isinstance(color_by_fragment,str):
+        fragcolors = [color_by_fragment for cc in fragcolors]
     # mycolors = {key:mycolors[ii] for ii, key in enumerate(fragment_names)}
 
+    if res_idxs:
+        resSeq2residxs = {refgeom.top.residue(ii).resSeq:ii for ii in resSeq_idxs}
+        print("\nInterpreting input indices as zero-indexed residue indexes")
+    else:
+        resSeq2residxs, _ = interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, refgeom.top,
+                                                                  pick_first_fragment_by_default=not ask,
+                                                                  )
     print("\nWill compute neighborhoods for the residues with resid")
     print("%s" % resSeq_idxs)
     print("excluding %u nearest neighbors\n" % n_nearest)
 
-    resSeq2residxs, _ = interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, refgeom.top,
-                                                              pick_first_fragment_by_default=not ask,
-                                                              )
+
 
     print('%10s  %6s  %7s  %10s' % tuple(("residue  residx    fragment  input_resSeq".split())))
     for key, val in resSeq2residxs.items():
@@ -259,13 +280,13 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             jax.set_title(
                 "Contact frequency @%2.1f $\AA$\n%u nearest bonded neighbors excluded" % (ctc_cutoff_Ang, n_nearest))
             jax.set_ylim([0, 1])
-            jax.set_xlim([-.5, len(toplot) + 1 - .5])
+            jax.set_xlim([-.5, n_ctcs + 1 - .5])
             jax.set_xticks([])
             jax.set_yticks([.25, .50, .75, 1])
             # jax.set_yticklabels([])
             [jax.axhline(ii, color="k", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
 
-            jax.plot(-1, -1, 'o', color=mycolors[anchor_frag_idx], label=res_and_fragment_str)
+            jax.plot(-1, -1, 'o', color=fragcolors[anchor_frag_idx], label=_replace4latex(res_and_fragment_str))
             jax.legend(fontsize=panelsize * panelsize2font)
             # toplot=[kk for kk in final_look if residx in ctc_idxs_small[kk]]
 
@@ -294,10 +315,13 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                         refgeom.top.residue(idx1), labels_frags[0],
                         refgeom.top.residue(idx2), labels_frags[1])
                     for jj, jxtc in enumerate(xtcs):
+                        trjlabel = jxtc
+                        if not isinstance(trjlabel,str):
+                            trjlabel = 'md.Trajectory object nr. %u'%jj
                         for_ascii_output[res_and_fragment_str][jj]["time / ns"] = time_array[jj] / 1e3
                         for_ascii_output[res_and_fragment_str][jj][ctc_label] = ctcs_trajs[jj][:, oo] * 10
                         plt.plot(time_array[jj] / 1e3, ctcs_trajs[jj][:, oo] * 10,
-                                 label='%s (%u%%)' % (jxtc, np.mean(ctcs_trajs[jj][:, oo] < ctc_cutoff_Ang / 10) * 100))
+                                 label='%s (%u%%)' % (trjlabel, np.mean(ctcs_trajs[jj][:, oo] < ctc_cutoff_Ang / 10) * 100))
                     plt.legend(loc=1)
                     # plt.yscale('log')
                     plt.ylabel('A / $\\AA$')
@@ -314,7 +338,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     else:
                         ipartnerlab = fragment_names[partnerseg]
                     partner_labels.append('%s@%s' % (refgeom.top.residue(partner), ipartnerlab))
-                    partner_colors.append(mycolors[partnerseg])
+                    partner_colors.append(fragcolors[partnerseg])
                 # TODO re-use code from mdas.visualize represent vicinities
                 patches = jax.bar(xvec[:len(toplot)], ctcs_mean[toplot],
                                   # label=res_and_fragment_str,
@@ -325,14 +349,13 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     iy += .01
                     if iy > .65:
                         iy = .65
-                    jax.text(ix, iy, ilab,
+                    jax.text(ix, iy, _replace4latex(ilab)   ,
                              va='bottom',
                              ha='left',
                              rotation=45,
                              fontsize=panelsize * panelsize2font,
                              backgroundcolor="white"
                              )
-
                     ipatch.set_color(icol)
                     """
                     isegs.append(iseg[0])
