@@ -3,7 +3,7 @@ import mdtraj as _md
 from scipy.spatial.distance import pdist
 from matplotlib import pyplot as _plt
 
-from sofi_functions.fragments import get_fragments
+from sofi_functions.fragments import get_fragments as _get_fragments, _print_frag
 
 #from in_what_fragment, top2residue_bond_matrix, \
 #    exclude_same_fragments_from_residx_pairlist, in_what_N_fragments
@@ -177,18 +177,6 @@ def find_B_residues_in_A_using_fragment_info(
             #common_frags_traj_residxs.append(_np.array(ft))
         # print()
     return residxB_to_residxA_dict
-
-def _print_frag(ii, top,iseg,**print_kwargs):
-    try:
-        istr="fragment %u with %3u AAs %s(%u)-%s(%u)"%(ii, len(iseg),
-                                                       top.residue(iseg[0]),
-                                                       top.residue(iseg[0]).index,
-                                                       top.residue(iseg[-1]),
-                                                       top.residue(iseg[-1]).index)
-    except:
-        print(iseg)
-        raise
-    print(istr,**print_kwargs)
 
 def re_warp_idxs(lengths):
     """Return iterable with the indexes to reshape a vector
@@ -387,7 +375,7 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1,consolidate=True,
 def exclude_neighbors_from_residx_pairlist(pairlist, top, n_exclude,
                                            return_excluded_idxs=False,
                                            ):
-    fragments = get_fragments(top, verbose=False)
+    fragments = _get_fragments(top, verbose=False)
     fragment_list = [in_what_fragment(ii, fragments) for ii in range(top.n_residues)]
     idx2keep_anyway = _np.array([idx for idx, pair in enumerate(pairlist) if
                                  fragment_list[pair[0]] != fragment_list[pair[1]]])
@@ -601,6 +589,8 @@ def geom2COMxyz(igeom):
 def __find_by_AAresSeq(top, key):
     return [rr.index for rr in top.residues if key == '%s%u' % (rr.code, rr.resSeq)]
 
+from .nomenclature_utils import table2BW_by_AAcode
+# TODO check if I can deleted this already
 def _table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        modifications={"S262":"F264"},
                        keep_AA_code=True,
@@ -773,7 +763,7 @@ def dangerously_auto_fragments(itop, with_receptor=True, **get_fragments_kwargs)
             "THR190",
             "ALA352"
         ]
-    fragments = get_fragments(itop,
+    fragments = _get_fragments(itop,
                               #verbose=True,
                               fragment_breaker_fullresname=extra_breakers+breakers,
                               auto_fragment_names=False,
