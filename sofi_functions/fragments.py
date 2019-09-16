@@ -1,9 +1,10 @@
 import numpy as _np
 from .aa_utils import find_AA
 from .bond_utils import top2residue_bond_matrix
-from .list_utils import in_what_N_fragments as _in_what_N_fragments
+from .list_utils import in_what_N_fragments as _in_what_N_fragments, join_lists as _join_lists
 
 def _print_frag(ii, top, iseg, **print_kwargs):
+    # TODO document
     """
 
     Parameters
@@ -20,11 +21,8 @@ def _print_frag(ii, top, iseg, **print_kwargs):
     try:
         istr = "fragment %u with %3u AAs %s(%u)-%s(%u)" % (ii, len(iseg),
                                                            top.residue(iseg[0]),
-
                                                            top.residue(iseg[0]).index,
-
                                                            top.residue(iseg[-1]),
-
                                                            top.residue(iseg[-1]).index)
     except:
         print(iseg)
@@ -98,44 +96,14 @@ def get_fragments(top,
     else:
         raise ValueError("Don't know what method '%s' is"%method)
 
+    # Inform of the first result
     if verbose:
         print("Auto-detected fragments")
         for ii, iseg in enumerate(fragments):
             _print_frag(ii, top, iseg)
-
+    # Join if necessary
     if join_fragments is not None:
-        # Removing the redundant entries in each list
-        join_fragments = [_np.unique(jo) for jo in join_fragments]
-        # Nested loops feasible here because the number of fragments will never become too large
-        for ii, jo in enumerate(join_fragments):
-            for jj, id in enumerate(join_fragments):
-                if (ii != jj):
-                    assert (len(
-                        _np.intersect1d(join_fragments[ii], join_fragments[jj]))) == 0, 'join fragment id overlaps!'
-
-        new_fragments = []
-        fragment_idxs_that_where_used_for_joining = []
-
-        for ii, jo in enumerate(join_fragments):
-            # print(ii,jo)
-            this_new_frag = []
-            fragment_idxs_that_where_used_for_joining.extend(jo)
-            for frag_idx in jo:
-                # print(frag_idx)
-                this_new_frag.extend(fragments[frag_idx])
-            # print(this_new_frag)
-            new_fragments.append(_np.array(this_new_frag))
-
-        # fragment_idxs_that_where_used_for_joining = _np.hstack(join_orders)
-        # TODO: THIS is only good programming bc the lists are very very small, otherwise np.delete is the way to go
-        surviving_initial_fragments = [ifrag for ii, ifrag in enumerate(fragments)
-                                       if ii not in fragment_idxs_that_where_used_for_joining]
-        fragments = new_fragments + surviving_initial_fragments
-
-        # Order wrt to the first index in each fragment
-        order = _np.argsort([ifrag[0] for ifrag in fragments])
-        fragments = [fragments[oo] for oo in order]
-
+        fragments = _join_lists(fragments, join_fragments)
         print("Joined Fragments")
         for ii, iseg in enumerate(fragments):
             _print_frag(ii, top, iseg)
@@ -224,7 +192,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                     print(istr)
                 if default_fragment_idx is None:
                     answer = input(
-                        "input one fragment idx (out of %s) and press enter. Leave empty and hit enter to repeat last option [%s]\n" % ([int(cf) for cf in cand_fragments], last_answer))
+                        "input one fragment idx (out of %s) and press enter.\nLeave empty and hit enter to repeat last option [%s]\n" % ([int(cf) for cf in cand_fragments], last_answer))
                     if len(answer) == 0:
                         answer = last_answer
                     try:

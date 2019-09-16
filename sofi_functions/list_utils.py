@@ -261,3 +261,42 @@ def exclude_same_fragments_from_residx_pairlist(pairlist,
         return [pair for ii, pair in enumerate(pairlist) if ii not in idxs2exclude]
     else:
         return idxs2exclude
+
+def join_lists(lists, idxs_of_lists_to_join):
+    #todo document and test
+    # Removing the redundant entries in each list and sorting them
+    idxs_of_lists_to_join = [_np.unique(jo) for jo in idxs_of_lists_to_join]
+
+    # Assert the join_fragments do not overlap
+    assert_no_intersection(idxs_of_lists_to_join)
+    joined_lists = []
+    lists_idxs_used_for_joining = []
+    for ii, jo in enumerate(idxs_of_lists_to_join):
+        # print(ii,jo)
+        this_new_frag = []
+        lists_idxs_used_for_joining.extend(jo)
+        for frag_idx in jo:
+            # print(frag_idx)
+            this_new_frag.extend(lists[frag_idx])
+        # print(this_new_frag)
+        joined_lists.append(_np.array(this_new_frag))
+
+    # TODO: THIS is only good programming bc the lists are very very small, otherwise np.delete is the way to go
+    surviving_initial_fragments = [ifrag for ii, ifrag in enumerate(lists)
+                                   if ii not in lists_idxs_used_for_joining]
+    lists = joined_lists + surviving_initial_fragments
+
+    # Order wrt to the first index in each fragment
+    order = _np.argsort([ifrag[0] for ifrag in lists])
+    lists = [lists[oo] for oo in order]
+
+    return lists
+
+def assert_no_intersection(list_of_lists_of_integers):
+    #todo document and test
+    # Nested loops feasible here because the number of fragments will never become too large
+    for ii, l1 in enumerate(list_of_lists_of_integers):
+        for jj, l2 in enumerate(list_of_lists_of_integers):
+            if (ii != jj):
+                assert (len(
+                    _np.intersect1d(l1, l2)) == 0, 'join fragment id overlaps!')
