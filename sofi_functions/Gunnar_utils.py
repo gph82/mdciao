@@ -330,123 +330,6 @@ def mix_alignments(subset,
 
     return output
 
-
-def alignment_result_to_list_of_dicts(ialg, target_top, refseq_idxs,
-                                      res_top_key="res_top",
-                                      res_ref_key="res_ref",
-                                      resSeq_key="resSeq",
-                                      idx_key="idx",
-                                      resname_key='fullname',
-                                      subset_of_residxs=None,
-                                      re_merge_skipped_entries=True,
-                                      verbose=True
-                                      ):
-
-    # TODO refactor this so that the alignment is somehow clear
-    if subset_of_residxs is None:
-        subset_of_residxs = _np.arange(target_top.n_residues)
-        #subset_of_residxs = _np.arange(_np.max((ialg[0], ialg[1])))
-
-
-    top_resSeq_iterator = iter([target_top.residue(ii).resSeq for ii in subset_of_residxs])
-    refseq_idxs_iterator = iter(refseq_idxs)
-    resname_iterator = iter([str(target_top.residue(ii)) for ii in subset_of_residxs])
-    itop_seq, iref_seq = ialg[0], ialg[1]
-    assert len(itop_seq) == len(iref_seq)
-    alignment_dict = []
-    for rt, rr in zip(itop_seq, iref_seq):
-        alignment_dict.append({res_top_key: rt,
-                               res_ref_key: rr,
-                               resSeq_key: '~',
-                               resname_key:'~',
-                               idx_key:    '~'})
-
-        if rt.isalpha():
-            alignment_dict[-1][resSeq_key] = next(top_resSeq_iterator)
-            alignment_dict[-1][resname_key] = next(resname_iterator)
-
-        if rr.isalpha():
-            alignment_dict[-1][idx_key] = next(refseq_idxs_iterator)
-
-    if re_merge_skipped_entries:
-        pairs_to_merge, list_of_new_merged_dicts = find_mergeable_positions(alignment_dict,
-                                                                            res_ref_key=res_ref_key,
-                                                                            res_top_key=res_top_key,
-                                                                            resSeq_key=resSeq_key,
-                                                                            idx_key=idx_key,
-                                                                            resname_key=resname_key,
-                                                                            verbose=verbose,
-                                                                            context=5,
-                                                                            )
-
-        alignment_dict = insert_mergeable_positions(alignment_dict, pairs_to_merge, list_of_new_merged_dicts)
-        if verbose:
-            print("\nFinal alignment after merging")
-            order = [idx_key, res_ref_key, res_top_key, resSeq_key, resname_key]
-            print(_DF(alignment_dict)[order].to_string())
-
-    for idict in alignment_dict:
-        idict["match"] = False
-        if idict[res_top_key]==idict[res_ref_key]:
-           idict["match"]=True
-
-    return alignment_dict
-
-def find_mergeable_positions(list_of_alignment_dicts,
-                             idx_key="idx",
-                             resSeq_key="resSeq",
-                             res_top_key="res_top",
-                             res_ref_key="res_ref",
-                             resname_key='fullname',
-                             verbose=False,
-                             context=2,
-                             ):
-    dict_pairs_to_merge = []
-    pairs_to_merge = []
-    for ii, idict in enumerate(list_of_alignment_dicts):
-        if idict[idx_key] == '~' and idict[res_ref_key] == '-':
-            idict_next = list_of_alignment_dicts[ii + 1]
-            if idict_next[resname_key] == '~' and idict_next[resSeq_key] == '~' and idict_next[res_top_key] == '-':
-                pairs_to_merge.append([ii, ii + 1])
-                dict_pairs_to_merge.append([idict, idict_next])
-
-
-    # TODO: creating the DF structure two times here just for vis purposes
-    dataframevis = _DF.from_dict(list_of_alignment_dicts)
-    order = [res_ref_key, res_top_key, resSeq_key, resname_key]
-    #print(dataframevis)
-    if verbose:
-        print("The following merges will take place:")
-    list_of_merged_dicts_for_insertion = []
-    for pair_idxs, (idict, idict_next) in zip(pairs_to_merge, dict_pairs_to_merge):
-        new_dict = {resname_key: idict[resname_key],
-                    idx_key: idict_next[idx_key],
-                    resSeq_key: idict[resSeq_key],
-                    res_ref_key: idict_next[res_ref_key],
-                    res_top_key: idict[res_top_key],
-                    }
-        df2print = _DF.from_dict([new_dict])[order].to_string()
-        list_of_merged_dicts_for_insertion.append(new_dict)
-        if verbose:
-            print("old:")
-            print(dataframevis[pair_idxs[0]-context:pair_idxs[1]+1+context][order].to_string())
-            print("new:")
-            print(df2print)
-        print()
-
-    return pairs_to_merge, list_of_merged_dicts_for_insertion
-
-def insert_mergeable_positions(list_of_alignment_dicts, pairs_to_merge, list_of_merged_dicts_for_insertion):
-    list_of_alignment_dicts_new = [ii for ii in list_of_alignment_dicts]
-
-    for counter, ((ii, ii_next), new_dict) in enumerate(zip(pairs_to_merge, list_of_merged_dicts_for_insertion)):
-        ii -= counter
-        ii_next -= counter
-        list_of_alignment_dicts_new = list_of_alignment_dicts_new[:ii] + [new_dict] + list_of_alignment_dicts_new[
-                                                                                      ii_next + 1:]
-
-    return list_of_alignment_dicts_new
-
 def _homogenize_str(istr, verbose=False, replacement_dict=None):
     #new = istr.replace("_"," ")
     new = istr[:]
@@ -488,3 +371,5 @@ def dataframe2seqlists(dataframe_in, exclude_chars=['~']):
         else:
             print("*")
     return seqlist
+
+def myfasta
