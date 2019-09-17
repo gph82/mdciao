@@ -286,3 +286,13 @@ def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
     #     return out_dict
     # else:
     #     return {int(key[1:]):val for key, val in out_dict.items()}
+
+
+def _relabel_consensus(idx, input_dicts, no_key="NA"):
+    labels  = [idict[idx] for idict in input_dicts]
+    good_label = [ilab for ilab in labels if str(ilab).lower()!="none"]
+    assert len(good_label)<=1, "There can only be one good label, but for residue %u found %s"%(idx, good_label)
+    try:
+        return good_label[0]
+    except IndexError:
+        return no_key
