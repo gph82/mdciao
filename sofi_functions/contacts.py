@@ -82,7 +82,7 @@ def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragmen
 
 
 def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
-              chunksize=1000, return_time=False):
+              chunksize=1000, return_time=False,**mdcontacts_kwargs):
     """Returns the time-dependent traces of residue-residue contacts from a list of trajectory files
 
     Parameters
@@ -117,7 +117,9 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 
     if isinstance(xtcs[0],_md.Trajectory):
         iterate = lambda ixtc : [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride],chunksize)]
-        inform = lambda ixtc, ii, running_f: print("Analysing a trajectory object")
+        inform = lambda ixtc, ii, running_f: print("Analysing a trajectory object in chunks of "
+                                                   "%3u frames. chunks %4u frames %8u"%
+                                                   (chunksize, ii, running_f), end="\r", flush=True)
     else:
         iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
         inform = lambda ixtc, ii, running_f: print("Analysing %20s in chunks of "
@@ -133,7 +135,10 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
             running_f += igeom.n_frames
             inform(ixtc, jj, running_f)
             itime.append(igeom.time)
-            ictcs.append(_md.compute_contacts(igeom, ctc_residxs_pairs)[0])
+            jctcs, jidx_pairs = _md.compute_contacts(igeom, ctc_residxs_pairs,**mdcontacts_kwargs)
+            # TODO do proper list comparison and do it only once
+            assert len(jidx_pairs)==len(ctc_residxs_pairs)
+            ictcs.append(jctcs)
             # if jj==10:
             #    break
 
