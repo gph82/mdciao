@@ -262,10 +262,27 @@ def exclude_same_fragments_from_residx_pairlist(pairlist,
     else:
         return idxs2exclude
 
+def assert_min_len(input_iterable, min_len=2):
+    for ii, element in enumerate(input_iterable):
+        if _np.ndim(element)==0 or _np.ndim(element) >= min_len:
+            aerror = 'The %u-th element has too few elements (min %u): %u' % (ii, min_len, element)
+            raise AssertionError(aerror)
+
 def join_lists(lists, idxs_of_lists_to_join):
+    r"""
+
+    :param lists:
+    :param idxs_of_lists_to_join:
+    :return:
+    """
     #todo document and test
+    assert_min_len(idxs_of_lists_to_join)
+
     # Removing the redundant entries in each list and sorting them
     idxs_of_lists_to_join = [_np.unique(jo) for jo in idxs_of_lists_to_join]
+
+
+
 
     # Assert the join_fragments do not overlap
     assert_no_intersection(idxs_of_lists_to_join)
