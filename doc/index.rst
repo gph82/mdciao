@@ -79,6 +79,7 @@ methods. These methods will gradually be refactored into the any of the above su
    bond_utils
    list_utils
    nomenclature_utils
+   sequence_utils
 
 Indices and tables
 ==================
