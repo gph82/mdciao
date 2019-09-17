@@ -6,13 +6,14 @@ from os import path, mkdir
 import argparse
 
 from sofi_functions.fragments import get_fragments, _print_frag
-from sofi_functions.nomenclature_utils import table2BW_by_AAcode, CGN_transformer,top2CGN_by_AAcode, guess_missing_BWs
+from sofi_functions.nomenclature_utils import table2BW_by_AAcode, CGN_transformer, \
+    top2CGN_by_AAcode, guess_missing_BWs, _relabel_consensus
 from sofi_functions.contacts import ctc_freq_reporter_by_residue_neighborhood, xtcs2ctcs
 from sofi_functions.list_utils import rangeexpand, unique_list_of_iterables_by_tuple_hashing, in_what_fragment
 from sofi_functions.bond_utils import bonded_neighborlist_from_top
 from sofi_functions.actor_utils import _replace4latex
 
-from sofi_functions.actor_utils import mycolors, dangerously_auto_fragments, _relabel_consensus, \
+from sofi_functions.actor_utils import mycolors, dangerously_auto_fragments, \
     interactive_fragment_picker_by_resSeq
 
 def _inform_of_parser(parser):
