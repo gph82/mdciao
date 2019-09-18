@@ -264,8 +264,8 @@ def exclude_same_fragments_from_residx_pairlist(pairlist,
 
 def assert_min_len(input_iterable, min_len=2):
     for ii, element in enumerate(input_iterable):
-        if _np.ndim(element)==0 or _np.ndim(element) >= min_len:
-            aerror = 'The %u-th element has too few elements (min %u): %u' % (ii, min_len, element)
+        if _np.ndim(element)==0 or len(element) < min_len:
+            aerror = 'The %s-th element has too few elements (min %s): %s' % (ii, min_len, element)
             raise AssertionError(aerror)
 
 def join_lists(lists, idxs_of_lists_to_join):
@@ -315,5 +315,17 @@ def assert_no_intersection(list_of_lists_of_integers):
     for ii, l1 in enumerate(list_of_lists_of_integers):
         for jj, l2 in enumerate(list_of_lists_of_integers):
             if (ii != jj):
-                assert (len(
-                    _np.intersect1d(l1, l2)) == 0, 'join fragment id overlaps!')
+                assert len(_np.intersect1d(l1, l2)) == 0, 'join fragment id overlaps!'
+
+# todo document and test
+# TODO consider using np.delete in the code originally?
+def pull_one_up_at_this_pos(iterable_in, idx, padding='~',
+                            verbose=False):
+
+    iterable_out = [ii for ii in iterable_in[:idx]]
+    iterable_out += iterable_in[idx + 1:]
+    iterable_out.append(padding)
+    if verbose:
+        for ii, (old, new) in enumerate(zip(iterable_in, iterable_out)):
+            print(ii, old, new)
+    return iterable_out
