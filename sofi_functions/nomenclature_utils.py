@@ -1,6 +1,6 @@
 import mdtraj as _md
 import numpy as _np
-from .aa_utils import int_from_AA_code
+from .aa_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
 
 def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        modifications={"S262":"F264"},
@@ -67,7 +67,7 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
         return out_dict
 
 
-def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
+def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
     """
     Interpolates the BW for residues which are not present in the nomenclature file.
 
@@ -86,7 +86,6 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
 
     """
 
-    guessed_BWs = {}
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
 
@@ -106,7 +105,9 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
         print(alignment_dict)
     return
     """
-    out_dict = {ii:None for ii in range(top.n_residues)}
+    #TODO keep this until we are sure there are no consquences
+    #out_dict = {ii:None for ii in range(top.n_residues)}
+    out_dict = {}
     for rr in restrict_to_residxs:
         residue = top.residue(rr)
         key = '%s%s'%(residue.code,residue.resSeq)
@@ -115,16 +116,16 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
             #print(key, input_BW_dict[key])
             out_dict[residue.index] = input_BW_dict[key]
         except KeyError:
-            resSeq = int_from_AA_code(key)
+            resSeq = _int_from_AA_code(key)
             try:
-                key_above = [key for key in input_BW_dict.keys() if int_from_AA_code(key)>resSeq][0]
-                resSeq_above = int_from_AA_code(key_above)
+                key_above = [key for key in input_BW_dict.keys() if _int_from_AA_code(key)>resSeq][0]
+                resSeq_above = _int_from_AA_code(key_above)
                 delta_above = int(_np.abs([resSeq - resSeq_above]))
             except IndexError:
                 delta_above = 0
             try:
-                key_below = [key for key in input_BW_dict.keys() if int_from_AA_code(key)<resSeq][-1]
-                resSeq_below = int_from_AA_code(key_below)
+                key_below = [key for key in input_BW_dict.keys() if _int_from_AA_code(key)<resSeq][-1]
+                resSeq_below = _int_from_AA_code(key_below)
                 delta_below = int(_np.abs([resSeq-resSeq_below]))
             except IndexError:
                 delta_below = 0
@@ -154,7 +155,19 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
 
     #input_BW_dict.update(guessed_BWs)
 
-    return out_dict
+    if keep_keys:
+        guessed_BWs = {}
+        used_keys = []
+        for res_idx, val in out_dict.items():
+            new_key = _shorten_AA(top.residue(res_idx))
+            if new_key in input_BW_dict.keys():
+                assert val==input_BW_dict[new_key],"This should not have happened %s %s %s"%(val, new_key, input_BW_dict[new_key])
+            assert new_key not in used_keys
+            guessed_BWs[new_key]=val
+            used_keys.append(new_key)
+        return guessed_BWs
+    else:
+        return out_dict
 
 class CGN_transformer(object):
     """
@@ -297,8 +310,14 @@ def _relabel_consensus(idx, input_dicts, no_key="NA"):
     except IndexError:
         return no_key
 
-def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True):
-    segment_resSeq_dict = table2TMdefs_resSeq()
+def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True,
+                              tablefile=None,
+                              reorder_by_AA_names=False):
+    # TODO pass this directly as kwargs?
+    kwargs = {}
+    if tablefile is not None:
+        kwargs = {"tablefile": tablefile}
+    segment_resSeq_dict = table2TMdefs_resSeq(**kwargs)
     resseq_list = [rr.resSeq for rr in itop.residues]
     if not keep_first_resSeq:
         raise NotImplementedError
@@ -315,6 +334,15 @@ def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True)
 
     if complete_loops:
         segment_dict = add_loop_definitions_to_TM_residx_dict(segment_dict)
+        #for key, val in segment_dict.items():
+            #print('%4s %s'%(key, val))
+
+    if reorder_by_AA_names:
+        _segment_dict = {}
+        for iseg_key, (ilim, jlim) in segment_dict.items():
+            for ii in _np.arange(ilim, jlim+1):
+                _segment_dict[_shorten_AA(itop.residue(ii))]=iseg_key
+        segment_dict = _segment_dict
     return segment_dict
 
 def add_loop_definitions_to_TM_residx_dict(segment_dict, not_present=["ICL3"], start_with='ICL'):
