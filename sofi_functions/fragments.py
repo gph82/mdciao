@@ -3,15 +3,15 @@ from .aa_utils import find_AA
 from .bond_utils import top2residue_bond_matrix
 from .list_utils import in_what_N_fragments as _in_what_N_fragments, join_lists as _join_lists
 
-def _print_frag(ii, top, iseg, **print_kwargs):
+def _print_frag(frag_idx, top, fragment, return_string=False, **print_kwargs):
     # TODO document
     """
 
     Parameters
     ----------
-    ii
+    frag_idx
     top
-    iseg
+    fragment
     print_kwargs
 
     Returns
@@ -19,15 +19,18 @@ def _print_frag(ii, top, iseg, **print_kwargs):
 
     """
     try:
-        istr = "fragment %u with %3u AAs %s(%u)-%s(%u)" % (ii, len(iseg),
-                                                           top.residue(iseg[0]),
-                                                           top.residue(iseg[0]).index,
-                                                           top.residue(iseg[-1]),
-                                                           top.residue(iseg[-1]).index)
+        istr = "fragment %u with %3u AAs %s(%u)-%s(%u)" % (frag_idx, len(fragment),
+                                                           top.residue(fragment[0]),
+                                                           top.residue(fragment[0]).index,
+                                                           top.residue(fragment[-1]),
+                                                           top.residue(fragment[-1]).index)
     except:
-        print(iseg)
+        print(fragment)
         raise
-    print(istr, **print_kwargs)
+    if return_string:
+        return istr
+    else:
+        print(istr, **print_kwargs)
 
 
 def get_fragments(top,
