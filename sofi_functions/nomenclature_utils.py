@@ -1,6 +1,8 @@
 import mdtraj as _md
 import numpy as _np
 from .aa_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
+from .sequence_utils import alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, _my_bioalign
+
 
 def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        modifications={"S262":"F264"},
@@ -176,12 +178,11 @@ class CGN_transformer(object):
     """
     def __init__(self, ref_PDB='3SN6', ref_path='.'):
         # Create dataframe with the alignment
-        from pandas import read_table as _read_table
+        from pandas import read_table as _read_table, read_csv as _read_csv
         from os import path as _path
         self._ref_PDB = ref_PDB
 
-        self._DF = _read_table(_path.join(ref_path, 'CGN_%s.txt'%ref_PDB))
-        #TODO find out how to properly do this with pandas
+        self._DF = _read_csv(_path.join(ref_path, 'CGN_%s.txt'%ref_PDB), delimiter='\t')
 
         self._dict = {key: self._DF[self._DF[ref_PDB] == key]["CGN"].to_list()[0] for key in self._DF[ref_PDB].to_list()}
 
@@ -198,6 +199,8 @@ class CGN_transformer(object):
         self._seq_ref  = seq_ref
         self._seq_idxs = seq_idxs
 
+        self._ref_PDB = ref_PDB
+
     @property
     def seq(self):
         return self._seq_ref
@@ -210,11 +213,15 @@ class CGN_transformer(object):
     def AA2CGN(self):
         return self._dict
 
+    @property
+    def ref_PDB(self):
+        return self._ref_PDB
+
         #return seq_ref, seq_idxs, self._dict
 
-
 def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
-                      restrict_to_residxs=None):
+                      restrict_to_residxs=None,
+                      verbose=False):
     """
     Transforms each residue in the topology file to its corresponding CGN numbering.
 
@@ -235,7 +242,6 @@ def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
     """
 
     # TODO this lazy import will bite back
-    from .Gunnar_utils import alignment_result_to_list_of_dicts
     from Bio import pairwise2
 
 
@@ -254,32 +260,41 @@ def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
     seq = ''.join([str(top.residue(ii).code).replace("None", "X") for ii in restrict_to_residxs])
     #
     res_idx2_PDB_resSeq = {}
-    for alignmt in pairwise2.align.globalxx(seq, ref_CGN_tf.seq)[:1]:
-        list_of_alignment_dicts = alignment_result_to_list_of_dicts(alignmt, top,
-                                                            ref_CGN_tf.seq_idxs,
-                                                            res_top_key="Nour_code",
-                                                            resname_key='Nour_resname',
-                                                            resSeq_key="Nour_resSeq",
-                                                            res_ref_key='3SN6_code',
-                                                            idx_key='3SN6_resSeq',
-                                                            subset_of_residxs=restrict_to_residxs,
-                                                            #re_merge_skipped_entries=False
-                                                           )
+    AA_code_seq_0_key = "AA_input"
+    full_resname_seq_0_key = 'resname_input'
+    resSeq_seq_0_key = "resSeq_input"
+    AA_code_seq_1_key = 'AA_ref(%s)' % ref_CGN_tf.ref_PDB
+    idx_seq_1_key = 'resSeq_ref(%s)' % ref_CGN_tf.ref_PDB
+    idx_seq_0_key = 'idx_input'
+    for alignmt in _my_bioalign(seq, ref_CGN_tf.seq)[:1]:
+        #TODO this fucntion has been changed and this transformer will not work anymore
+        # major bug
 
-        #import pandas as pd
-        #with pd.option_context('display.max_rows', None, 'display.max_columns',
-        #                       None):  # more options can be specified also
-        #    for idict in list_of_alignment_dicts:
-        #        idict["match"] = False
-        #        if idict["Nour_code"]==idict["3SN6_code"]:
-        #            idict["match"]=True
-        #    print(DataFrame.from_dict(list_of_alignment_dicts))
+        list_of_alignment_dicts = _alignment_result_to_list_of_dicts(alignmt, top,
+                                                                     restrict_to_residxs,
+                                                                     ref_CGN_tf.seq_idxs,
+                                                                     AA_code_seq_0_key=AA_code_seq_0_key,
+                                                                     full_resname_seq_0_key=full_resname_seq_0_key,
+                                                                     resSeq_seq_0_key=resSeq_seq_0_key,
+                                                                     AA_code_seq_1_key=AA_code_seq_1_key,
+                                                                     idx_seq_1_key=idx_seq_1_key,
+                                                                     idx_seq_0_key=idx_seq_0_key,
+                                                                     )
 
-        res_idx_array=iter(restrict_to_residxs)
+        if verbose:
+            import pandas as pd
+            from IPython.display import display
+            with pd.option_context('display.max_rows', None, 'display.max_columns',
+                                   None):  # more options can be specified also
+                display(pd.DataFrame.from_dict(list_of_alignment_dicts))
+
         for idict in list_of_alignment_dicts:
-             if '~' not in idict["Nour_resname"]:
-                 idict["target_residx"]=\
-                 res_idx2_PDB_resSeq[next(res_idx_array)]='%s%s'%(idict["3SN6_code"],idict["3SN6_resSeq"])
+            if idict["match"]==True:
+                res_idx_input = idict[idx_seq_0_key]
+                if res_idx_input in restrict_to_residxs:
+                    match_name = '%s%s'%(idict[AA_code_seq_1_key],idict[idx_seq_1_key])
+                    #print(res_idx_input,"res_idx_input",match_name)
+                    res_idx2_PDB_resSeq[res_idx_input]=match_name
     out_dict = {}
     for ii in range(top.n_residues):
         try:
