@@ -371,5 +371,3 @@ def dataframe2seqlists(dataframe_in, exclude_chars=['~']):
         else:
             print("*")
     return seqlist
-
-def myfasta

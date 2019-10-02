@@ -94,6 +94,7 @@ def shorten_AA(AA, substitute_fail=None):
         except:
             key_not_found=True
             #raise NotImplementedError
+
     if key_not_found:
         if substitute_fail is None:
             raise KeyError("There is no short version for your input %s (%s)"%(AA, type(AA)))
