@@ -13,3 +13,6 @@ Utils for handling nomenclature related functionality. Currently handles BW and 
 
 .. automodule:: sofi_functions.nomenclature_utils
    :members:
+
+.. autoclass:: sofi_functions.nomenclature_utils.CGN_transformer
+   :members:

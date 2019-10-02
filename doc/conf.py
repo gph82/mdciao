@@ -35,6 +35,9 @@ extensions = [
     "sphinx.ext.intersphinx",
 ]
 
+# Napoleon Settings for showing class documentation's init doc
+napoleon_include_init_with_doc = True
+
 intersphinx_mapping = {'mdtraj': ('http://mdtraj.org/1.9.3/', None)}
 
 autodoc_mock_imports = ["mdtraj"]
