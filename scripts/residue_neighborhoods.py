@@ -1,9 +1,10 @@
 #!/home/perezheg/miniconda3/bin/python
 import numpy as np
-from sofi_functions.command_line_tools import residue_neighborhoods, my_parser
+from sofi_functions.parsers import parser_for_rn
+from sofi_functions.command_line_tools import residue_neighborhoods
 
 # Get and instantiate parser
-parser = my_parser()
+parser = parser_for_rn()
 a  = parser.parse_args()
 
 # Make a dictionary out ot of it and pop the positional keywords
