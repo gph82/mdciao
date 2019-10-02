@@ -11,13 +11,17 @@ setup(
     "numpy",
     "msmtools",
     "scipy",
-    "Bio",
+    "biopython",
     "ipython", # These two are for one call to Gunnar_utils
     "XlsxWriter", # 
     ],
     tests_require=[
     "mock"
     ],
-    scripts=['scripts/residue_neighborhoods.py']
+    scripts=['scripts/residue_neighborhoods.py',
+             'scripts/sites.py',
+             'scripts/interface_ctc_analyzer.py',
+             'scripts/density_by_sites.py',
+             'scripts/CARDS.py']
 )
 
