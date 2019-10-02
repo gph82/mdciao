@@ -189,7 +189,8 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                 istr += extra_string_info
                 print(istr)
                 for cc, ss in zip(cands, cand_fragments):
-                    istr = '%6s in fragment %2u with residue index %2u'%(top.residue(cc), ss, cc)
+                    istr = '%6s (res_idx %2u) in %s'%(top.residue(cc), cc, _print_frag(ss, top, fragments[ss], return_string=True))
+
                     if fragment_names is not None:
                         istr += ' (%s)'%fragment_names[ss]
                     print(istr)
