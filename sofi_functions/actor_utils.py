@@ -223,7 +223,7 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top, pick_firs
                     print(top.residue(cc), 'in fragment ', ss, "with index", cc)
                 if not pick_first_fragment_by_default:
                     answer = input(
-                        "input one fragment idx (out of %s) and press enter. Leave empty and hit enter to repeat last option [%s]\n" % (cand_fragments, last_answer))
+                        "input one fragment idx (out of %s) and press enter.\nLeave empty and hit enter to repeat last option [%s]\n" % ([int(ii) for ii in cand_fragments], last_answer))
                     if len(answer) == 0:
                         answer = last_answer
                     try:
@@ -489,7 +489,7 @@ def xtcs2mindists(xtcs, top,
 
     #TODO avoid code repetition with xtcs2ctcs
     inform = lambda ixtc, ii, running_f: print(
-        "Analysing %20s in chunks of %3u frames. chunks read %4u. frames read %8u" % (ixtc, chunksize, ii, running_f),
+        "Analysing %20s with stride %u in chunks of %3u frames. chunks read %4u. frames read %8u" % (ixtc, stride, chunksize, ii, running_f),
         end="\r", flush=True)
 
     ctc_mins, ctc_pairs = [],[]
