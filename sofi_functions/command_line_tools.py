@@ -2,8 +2,9 @@ import numpy as np
 import mdtraj as md
 from matplotlib import pyplot as plt
 from json import load as jsonload
+from os.path import splitext, split as psplit
 from os import path, mkdir
-import argparse
+from sofi_functions.fragments import interactive_fragment_picker_by_AAresSeq as _interactive_fragment_picker_by_AAresSeq
 
 from sofi_functions.fragments import get_fragments, _print_frag
 from sofi_functions.nomenclature_utils import table2BW_by_AAcode, CGN_transformer, \
@@ -16,6 +17,7 @@ from sofi_functions.actor_utils import _replace4latex
 from sofi_functions.actor_utils import mycolors, dangerously_auto_fragments, \
     interactive_fragment_picker_by_resSeq
 
+from tempfile import TemporaryDirectory as _TD
 def _inform_of_parser(parser):
     # TODO find out where the keys are hiding in parser...
     a = parser.parse_args()
@@ -27,58 +29,71 @@ def _inform_of_parser(parser):
             fmt = '%s="%s",'
         print(fmt % (key, dval))
 
-def my_parser():
-    parser = argparse.ArgumentParser(description='Small residue-residue contact analysis tool, initially developed for the '
-                                                 'receptor-G-protein complex.')
-
-    parser.add_argument('topology',    type=str,help='Topology file')
-    parser.add_argument('trajectories',type=str,help='trajectory file(s)', nargs='+')
-    parser.add_argument('--resSeq_idxs',type=str,help='the resSeq idxs of interest (in VMD these are called "resid"). Can be in a format 1,2-6,10,20-25')
-    parser.add_argument("--ctc_cutoff_Ang",type=float, help="The cutoff distance between two residues for them to be considered in contact. Default is 3 Angstrom.", default=3)
-    parser.add_argument("--stride", type=int, help="Stride down the input trajectoy files by this factor. Default is 1.", default=1)
-    parser.add_argument("--n_ctcs", type=int, help="Only the first n_ctcs most-frequent contacts will be written to the ouput. Default is 5.", default=5)
-    parser.add_argument("--n_nearest", type=int, help="Ignore this many nearest neighbors when computing neighbor lists. 'Near' means 'connected by this many bonds'. Default is 4.", default=4)
-    parser.add_argument("--chunksize_in_frames", type=int, help="Trajectories are read in chunks of this size (helps with big files and memory problems). Default is 10000", default=10000)
-    parser.add_argument("--nlist_cutoff_Ang", type=float, help="Cutoff for the initial neighborlist. Only atoms that are within this distance in the original reference "
-                                                              "(the topology file) are considered potential neighbors of the residues in resSeq_idxs, s.t. "
-                                                              "non-necessary distances (e.g. between N-terminus and G-protein) are not even computed. "
-                                                              "Default is 15 Angstrom.", default=15)
+def _offer_to_create_dir(output_dir):
+    if not path.isdir(output_dir):
+        answer = input("\nThe directory '%s' does not exist. Create it on the fly [y/n]?\nDefault [y]: " % output_dir)
+        if len(answer) == 0 or answer.lower().startswith("y"):
+            mkdir(output_dir)
+        else:
+            print("Stopping. Please check your variable 'output_dir' and try again")
+            return
 
 
-    parser.add_argument('--fragments',    dest='fragmentify', action='store_true', help="Auto-detect fragments (i.e. breaks) in the peptide-chain. Default is true.")
-    parser.add_argument('--no-fragments', dest='fragmentify', action='store_false')
-    parser.set_defaults(fragmentify=True)
+def _parse_BW_option(BW_file, top, fragments):
+    if BW_file == 'None':
+        BW = [None for __ in range(top.n_residues)]
+    else:
+        with open(BW_file, "r") as f:
+            idict = jsonload(f)
+        BW = table2BW_by_AAcode(idict["file"])
+        try:
+            assert idict["guess_BW"]
+        except:
+            raise NotImplementedError("The BW json file has to contain the guess_BW=True")
+        answer = input("Which fragments are succeptible of a BW-numbering?(Can be in a format 1,2-6,10,20-25)\n")
+        restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
+        BW = guess_missing_BWs(BW, top, restrict_to_residxs=restrict_to_residxs)
 
-    parser.add_argument('--sort',    dest='sort', action='store_true', help="Sort the resSeq_idxs list. Defaut is True")
-    parser.add_argument('--no-sort', dest='sort', action='store_false')
-    parser.set_defaults(sort=True)
+    return BW
 
-    parser.add_argument('--pbc',    dest='pbc', action='store_true', help="Consider periodic boundary conditions when computing distances."
-                                                                          " Defaut is True")
-    parser.add_argument('--no-pbc', dest='pbc', action='store_false')
-    parser.set_defaults(pbc=True)
 
-    parser.add_argument('--ask_fragment',    dest='ask', action='store_true', help="Interactively ask for fragment assignemnt when input matches more than one resSeq")
-    parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
-    parser.set_defaults(ask=True)
-    parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
-                        default='output.npy')
-    parser.add_argument('--output_ascii', type=str,
-                        help="Extension for ascii files (.dat, .txt etc). Default is 'none', which does not write anything.",
-                        default=None)
-    parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
-                        default='.pdf')
-    parser.add_argument('--output_dir', type=str, help="directory to which the results are written. Default is '.'", default='.')
+def _parse_CGN_option(CGN_PDB, top, fragments):
+    if CGN_PDB == 'None':
+        CGN = [None for __ in range(top.n_residues)]
+    else:
+        CGN_tf = CGN_transformer(CGN_PDB)
+        answer = input("Which fragments are succeptible of a CGN-numbering?(Can be in a format 1,2-6,10,20-25)\n")
+        restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
+        CGN = top2CGN_by_AAcode(top, CGN_tf, restrict_to_residxs=restrict_to_residxs)
 
-    parser.add_argument('--fragment_names', type=str,
-                        help="Name of the fragments. Leave empty if you want them automatically named."
-                             " Otherwise, give a quoted list of strings separated by commas, e.g. "
-                             "'TM1, TM2, TM3,'",
-                        default="")
-    parser.add_argument("--BW_file", type=str, help="Json file with info about the Ballesteros-Weinstein definitions as downloaded from the GPRCmd", default='None')
-    parser.add_argument("--CGN_PDB", type=str, help="PDB code for a consensus G-protein nomenclature", default='None')
+    return CGN
 
-    return parser
+
+def _parse_fragment_naming_options(fragment_names, fragments, top):
+    if fragment_names == '':
+        fragment_names = ['frag%u' % ii for ii in range(len(fragments))]
+    else:
+        assert isinstance(fragment_names, str), "Argument --fragment_names invalid: %s" % fragment_names
+        if 'danger' not in fragment_names.lower():
+            fragment_names = [ff.strip(" ") for ff in fragment_names.split(",")]
+            assert len(fragment_names) == len(
+                fragments), "Mismatch between nr. fragments and fragment names %s vs %s (%s)" % (
+                len(fragments), len(fragment_names), fragment_names)
+        else:
+            fragments, fragment_names = dangerously_auto_fragments(top,
+                                                                   method="bonds",
+                                                                   verbose=False,
+                                                                   force_resSeq_breaks=True,
+                                                                   frag_breaker_to_pick_idx=0,
+                                                                   )
+            fragment_names.extend(top.residue(ifrag[0]).name for ifrag in fragments[len(fragment_names):])
+
+            for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
+                _print_frag(ifrag_idx, top, ifrag, end='')
+                print(" ", frag_name)
+
+    return fragment_names, fragments
+
 
 def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           res_idxs=False,
@@ -88,6 +103,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           n_nearest=4,
                           chunksize_in_frames=10000,
                           nlist_cutoff_Ang=15,
+                          n_smooth_hw=0,
                           ask=True,
                           sort=True,
                           pbc=True,
@@ -99,18 +115,13 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           CGN_PDB="None",
                           output_dir='.',
                           color_by_fragment=True,
+                          output_desc='neighborhood'
                           ):
+    _offer_to_create_dir(output_dir)
 
-    if not path.isdir(output_dir):
-        answer = input("\nThe directory '%s' does not exist. Create it on the fly [y/n]?\nDefault [y]: "%output_dir)
-        if len(answer)==0 or answer.lower().startswith("y"):
-            mkdir(output_dir)
-        else:
-            print("Stopping. Please check your variable 'output_dir' and try again")
-            return
     _resSeq_idxs = rangeexpand(resSeq_idxs)
-    if len(_resSeq_idxs)==0:
-        raise ValueError("Please check your input indices, they do not make sense %s"%resSeq_idxs)
+    if len(_resSeq_idxs) == 0:
+        raise ValueError("Please check your input indices, they do not make sense %s" % resSeq_idxs)
     else:
         resSeq_idxs = _resSeq_idxs
     if sort:
@@ -123,69 +134,34 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     except:
         pass
 
-    if isinstance(topology,str):
+    if isinstance(topology, str):
         refgeom = md.load(topology)
     else:
         refgeom = topology
     if fragmentify:
-        fragments = get_fragments(refgeom.top)
+        fragments = get_fragments(refgeom.top,method='bonds')
     else:
         raise NotImplementedError("This feature is not yet implemented")
 
-    if fragment_names == '':
-        fragment_names = ['frag%u' % ii for ii in range(len(fragments))]
-    else:
-        assert isinstance(fragment_names, str), "Argument --fragment_names invalid: %s" % fragment_names
-        if 'danger' not in fragment_names.lower():
-            fragment_names = [ff.strip(" ") for ff in fragment_names.split(",")]
-            assert len(fragment_names) == len(
-                fragments), "Mismatch between nr. fragments and fragment names %s vs %s (%s)" % (
-                len(fragments), len(fragment_names), fragment_names)
-        else:
-            fragments, fragment_names = dangerously_auto_fragments(refgeom.top,
-                                                                   method="bonds",
-                                                                   verbose=False,
-                                                                   force_resSeq_breaks=True,
-                                                                   frag_breaker_to_pick_idx=0,
-                                                                   )
-            fragment_names.extend(refgeom.top.residue(ifrag[0]).name for ifrag in fragments[len(fragment_names):])
+    fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
 
-            for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
-                _print_frag(ifrag_idx, refgeom.top, ifrag, end='')
-                print(" ", frag_name)
-    # todo this is code repetition from sites.py
-    if BW_file == 'None':
-        BW = [None for __ in range(refgeom.top.n_residues)]
-    else:
-        with open(BW_file, "r") as f:
-            idict = jsonload(f)
-        BW = table2BW_by_AAcode(idict["file"])
-        try:
-            assert idict["guess_BW"]
-        except:
-            raise NotImplementedError("The BW json file has to contain the guess_BW=True")
-        answer = input("Which fragments are succeptible of a BW-numbering?(Can be in a format 1,2-6,10,20-25)\n")
-        restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
-        BW = guess_missing_BWs(BW, refgeom.top, restrict_to_residxs=restrict_to_residxs)
+    # Do we want BW definitions
+    BW = _parse_BW_option(BW_file, refgeom.top, fragments)
 
-    if CGN_PDB == 'None':
-        CGN = [None for __ in range(refgeom.top.n_residues)]
-    else:
-        CGN_tf = CGN_transformer(CGN_PDB)
-        answer = input("Which fragments are succeptible of a CGN-numbering?(Can be in a format 1,2-6,10,20-25)\n")
-        restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
-        CGN = top2CGN_by_AAcode(refgeom.top, CGN_tf, restrict_to_residxs=restrict_to_residxs)
+    # Dow we want CGN definitions:
+    CGN = _parse_CGN_option(CGN_PDB, refgeom.top, fragments)
+
     fragcolors = [cc for cc in mycolors]
     fragcolors.extend(fragcolors)
     fragcolors.extend(fragcolors)
     if isinstance(color_by_fragment, bool) and not color_by_fragment:
         fragcolors = ['blue' for cc in fragcolors]
-    elif isinstance(color_by_fragment,str):
+    elif isinstance(color_by_fragment, str):
         fragcolors = [color_by_fragment for cc in fragcolors]
     # mycolors = {key:mycolors[ii] for ii, key in enumerate(fragment_names)}
 
     if res_idxs:
-        resSeq2residxs = {refgeom.top.residue(ii).resSeq:ii for ii in resSeq_idxs}
+        resSeq2residxs = {refgeom.top.residue(ii).resSeq: ii for ii in resSeq_idxs}
         print("\nInterpreting input indices as zero-indexed residue indexes")
     else:
         resSeq2residxs, _ = interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, refgeom.top,
@@ -194,8 +170,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     print("\nWill compute neighborhoods for the residues with resid")
     print("%s" % resSeq_idxs)
     print("excluding %u nearest neighbors\n" % n_nearest)
-
-
 
     print('%10s  %6s  %7s  %10s' % tuple(("residue  residx    fragment  input_resSeq".split())))
     for key, val in resSeq2residxs.items():
@@ -247,7 +221,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             plt.sca(myax[ii])
             plt.plot(time_array / 1e3, actcs[:, oo],
                      label='%s-%s (%u)' % (
-                     refgeom.top.residue(pair[0]), refgeom.top.residue(pair[1]), ctcs_mean[oo] * 100))
+                         refgeom.top.residue(pair[0]), refgeom.top.residue(pair[1]), ctcs_mean[oo] * 100))
             plt.legend()
             # plt.yscale('log')
             plt.ylabel('A / $\\AA$')
@@ -315,14 +289,30 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     ctc_label = '%s@%s-%s@%s' % (
                         refgeom.top.residue(idx1), labels_frags[0],
                         refgeom.top.residue(idx2), labels_frags[1])
+                    icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
                     for jj, jxtc in enumerate(xtcs):
                         trjlabel = jxtc
-                        if not isinstance(trjlabel,str):
-                            trjlabel = 'md.Trajectory object nr. %u'%jj
+                        if not isinstance(trjlabel, str):
+                            trjlabel = 'md.Trajectory object nr. %u' % jj
                         for_ascii_output[res_and_fragment_str][jj]["time / ns"] = time_array[jj] / 1e3
                         for_ascii_output[res_and_fragment_str][jj][ctc_label] = ctcs_trajs[jj][:, oo] * 10
+                        ilabel='%s (%u%%)' % (
+                                 trjlabel, np.mean(ctcs_trajs[jj][:, oo] < ctc_cutoff_Ang / 10) * 100)
+                        alpha = 1
+                        icolor = next(icol)
+                        if n_smooth_hw>0:
+                            from aGPCR_utils import window_average as _wav
+                            alpha = .2
+                            itime_smooth, _ = _wav(time_array[jj], half_window_size=n_smooth_hw)
+                            ictc_smooth, _ = _wav(ctcs_trajs[jj][:, oo], half_window_size=n_smooth_hw)
+                            plt.plot(itime_smooth / 1e3,
+                                     ictc_smooth * 10,
+                                     label=ilabel,
+                                     color=icolor)
+                            ilabel=None
+
                         plt.plot(time_array[jj] / 1e3, ctcs_trajs[jj][:, oo] * 10,
-                                 label='%s (%u%%)' % (trjlabel, np.mean(ctcs_trajs[jj][:, oo] < ctc_cutoff_Ang / 10) * 100))
+                                 label=ilabel,alpha=alpha)
                     plt.legend(loc=1)
                     # plt.yscale('log')
                     plt.ylabel('A / $\\AA$')
@@ -350,7 +340,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     iy += .01
                     if iy > .65:
                         iy = .65
-                    jax.text(ix, iy, _replace4latex(ilab)   ,
+                    jax.text(ix, iy, _replace4latex(ilab),
                              va='bottom',
                              ha='left',
                              rotation=45,
@@ -384,9 +374,9 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                 iax2.set_xlim(axbottom.get_xlim())
                 iax2.set_xlabel(axbottom.get_xlabel())
 
-                fname = 'neighborhood.%s.time_resolved.%s' % (
+                fname = '%s.%s.time_resolved.%s' % (output_desc,
                     res_and_fragment_str.replace('*', ""), graphic_ext.strip("."))
-                fname = path.join(output_dir,fname)
+                fname = path.join(output_dir, fname)
                 plt.savefig(fname, bbox_inches="tight")
                 plt.close(myfig)
                 print(fname)
@@ -394,8 +384,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     aext = str(output_ascii).lower().strip(".")
                     for ii, ixtc in enumerate(xtcs):
                         traj_name = path.splitext(ixtc)[0]
-                        savename = "neighborhood.%s.%s.%s" % (res_and_fragment_str.replace('*', ""), traj_name, aext)
-                        savename = path.join(output_dir,savename)
+                        savename = "%.%s.%s.%s" % (output_desc, res_and_fragment_str.replace('*', ""), traj_name, aext)
+                        savename = path.join(output_dir, savename)
                         np.savetxt(savename, np.vstack(list(for_ascii_output[res_and_fragment_str][ii].values())).T,
                                    ' '.join(["%6.3f" for __ in for_ascii_output[res_and_fragment_str][ii].values()]),
                                    header=' '.join(
@@ -404,8 +394,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     print()
         histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
-        fname = "neighborhoods_overall.%s" % graphic_ext.strip(".")
-        fname = path.join(output_dir,fname)
+        fname = "%s_overall.%s" % (output_desc, graphic_ext.strip("."))
+        fname = path.join(output_dir, fname)
         histofig.savefig(fname)
         print(fname)
 
@@ -413,3 +403,304 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             'ctcs': actcs,
             'time_array': time_array}
 
+
+def sitefile2site(sitefile):
+    with open(sitefile, "r") as f:
+        idict = jsonload(f)
+    try:
+        idict["bonds"]["AAresSeq"] = [item.split("-") for item in idict["bonds"]["AAresSeq"] if item[0] != '#']
+        idict["n_bonds"] = len(idict["bonds"]["AAresSeq"])
+    except:
+        print("Malformed .json file for the site %s" % sitefile2site())
+    if "sitename" not in idict.keys():
+        idict["name"] = splitext(psplit(sitefile)[-1])[0]
+    else:
+        idict["name"] = psplit(idict["sitename"])[-1]
+    return idict
+
+
+def sites(topology,
+          trajectories,
+          site_files,
+          ctc_cutoff_Ang=3,
+          stride=1,
+          chunksize_in_frames=10000,
+          n_smooth_hw=0,
+          pbc=True,
+          BW_file="None",
+          CGN_PDB="None",
+          default_fragment_index=None,
+          fragment_names="",
+          fragmentify=True,
+          output_npy="output_sites",
+          output_dir='.',
+          graphic_ext=".pdf",
+          ):
+    _offer_to_create_dir(output_dir)
+
+    # Prepare naming
+    desc_out = output_npy
+    desc_out = desc_out.rstrip(".")
+
+    # Inform about trajectories
+    xtcs = sorted(trajectories)
+
+    print("Will compute the sites\n %s\nin the trajectories:\n  %s\n with a stride of %u frames.\n" % (
+        "\n ".join(site_files),
+        "\n  ".join(xtcs), stride))
+    # Inform about fragments
+    refgeom = md.load(topology)
+    if fragmentify:
+        fragments = get_fragments(refgeom.top, verbose=False)
+    else:
+        raise NotImplementedError("This feature is not yet implemented")
+
+    fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
+
+
+    for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
+        _print_frag(ifrag_idx, refgeom.top, ifrag, end='')
+        print(" ", frag_name)
+
+    # Do we want BW definitions
+    BW = _parse_BW_option(BW_file, refgeom.top, fragments)
+
+    # Dow we want CGN definitions:
+    CGN = _parse_CGN_option(CGN_PDB, refgeom.top, fragments)
+
+    sites = [sitefile2site(ff) for ff in site_files]
+
+    AAresSeqs = [ss["bonds"]["AAresSeq"] for ss in sites]
+    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+
+    resSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, refgeom.top,
+                                                                 default_fragment_idx=default_fragment_index,
+                                                                 fragment_names=fragment_names
+                                                                 )
+    if None in resSeq2residxs.values():
+        raise ValueError("These residues of your input have not been found. Please revise it:\n%s" % (
+            '\n'.join([key for key, val in resSeq2residxs.items() if val is None])))
+    print('%10s  %6s  %7s  %10s' % tuple(("residue  residx    fragment  input_resSeq".split())))
+    for key, val in resSeq2residxs.items():
+        print('%10s  %6u  %7u  %s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key))
+
+    ctc_idxs_small = np.array([resSeq2residxs[key] for key in AAresSeqs]).reshape(-1, 2)
+    ctcs, time_array = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+                                 chunksize=chunksize_in_frames,
+                                 return_time=True, consolidate=False, periodic=pbc)
+
+    # Slap the contact values, res_pairs and idxs onto the site objects, so that they're more standalone
+    ctc_pairs_iterators = iter(ctc_idxs_small)
+    ctc_value_idx = iter(np.arange(len(ctc_idxs_small)))  # there has to be a better way
+    for isite in sites:
+        isite["res_idxs"] = []
+        isite["ctc_idxs"] = []
+        for __ in range(isite["n_bonds"]):
+            isite["res_idxs"].append(next(ctc_pairs_iterators))
+            isite["ctc_idxs"].append(next(ctc_value_idx))
+        isite["res_idxs"] = np.vstack(isite["res_idxs"])
+        isite["ctc_idxs"] = np.array(isite["ctc_idxs"])
+        # print(isite["res_idxs"])
+        # print(isite["ctc_idxs"])
+        isite["ctcs"] = []
+        for ctc_traj in ctcs:
+            isite["ctcs"].append(ctc_traj[:, isite["ctc_idxs"]])
+        # print()
+
+    print("The following files have been created")
+    panelheight = 3
+    xvec = np.arange(np.max([ss["n_bonds"] for ss in sites]))
+    n_cols = np.min((4, len(sites)))
+    n_rows = np.ceil(len(sites) / n_cols).astype(int)
+    panelsize = 4
+    panelsize2font = 3.5
+    histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
+                                     figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
+    list_of_axes = list(histoax.flatten())
+    for jax, isite in zip(list_of_axes, sites):  # in np.unique([ctc_idxs_small[ii] for ii in final_look]):
+        j_av_ctcs = np.vstack(isite["ctcs"])
+        ctcs_mean = np.mean(j_av_ctcs < ctc_cutoff_Ang / 10, 0)
+        patches = jax.bar(np.arange(isite["n_bonds"]), ctcs_mean,
+                          # label=res_and_fragment_str,
+                          width=.25)
+        jax.set_title(
+            "Contact frequency @%2.1f $\AA$\n of site '%s'" % (ctc_cutoff_Ang, isite["name"]))
+        jax.set_ylim([0, 1])
+        jax.set_xlim([-.5, xvec[-1] + 1 - .5])
+        jax.set_xticks([])
+        jax.set_yticks([.25, .50, .75, 1])
+        # jax.set_yticklabels([])
+        [jax.axhline(ii, color="k", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
+        # jax.legend(fontsize=panelsize * panelsize2font)
+
+        # Also, prepare he timedep plot, since it'll also iterate throuth the pairs
+        myfig, myax = plt.subplots(isite["n_bonds"], 1, sharex=True, sharey=True,
+                                   figsize=(10, isite["n_bonds"] * panelheight))
+
+        myax = np.array(myax, ndmin=1)
+        myax[0].set_title("site: %s" % (isite["name"]))
+
+        # Loop over the pairs to attach labels to the bars
+        for ii, (iy, ipair) in enumerate(zip(ctcs_mean, isite["res_idxs"])):
+            labels_consensus = [_relabel_consensus(jj, [BW, CGN]) for jj in ipair]
+            # TODO this .item() is to comply to
+            labels_frags = [in_what_fragment(idx.item(), fragments, fragment_names=fragment_names) for idx in ipair]
+            for jj, jcons in enumerate(labels_consensus):
+                if str(jcons).lower() != "na":
+                    labels_frags[jj] = jcons
+
+            ilab = '%s@%s-\n%s@%s' % (
+                refgeom.top.residue(ipair[0]), labels_frags[0],
+                refgeom.top.residue(ipair[1]), labels_frags[1],
+            )
+
+            ilab = _replace4latex(ilab)
+            ix = ii
+            iy += .01
+            if iy > .65:
+                iy = .65
+            jax.text(ix - .05, iy, ilab,
+                     va='bottom',
+                     ha='left',
+                     rotation=45,
+                     fontsize=panelsize * panelsize2font,
+                     backgroundcolor="white"
+                     )
+
+            # Now the trajectory loops
+            # Loop over trajectories
+            icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
+            for itime, ixtc, ictc in zip(time_array, xtcs, isite["ctcs"]):
+                plt.sca(myax[ii])
+
+                ilabel = '%s (%u %s)' % (ixtc, (ictc[:, ii] < ctc_cutoff_Ang / 10).mean() * 100, '%')
+                alpha = 1
+                icolor = next(icol)
+                if n_smooth_hw > 0:
+                    from aGPCR_utils import window_average as _wav
+                    alpha = .2
+                    itime_smooth, _ = _wav(itime, half_window_size=n_smooth_hw)
+                    ictc_smooth, _ = _wav(ictc[:, ii], half_window_size=n_smooth_hw)
+                    plt.plot(itime_smooth / 1e3,
+                             ictc_smooth * 10,
+                             label=ilabel,
+                             color=icolor)
+                    ilabel = None
+
+                plt.plot(itime / 1e3,
+                         ictc[:, ii] * 10,
+                         alpha=alpha,
+                         label=ilabel,
+                         color=icolor,
+                         )
+                plt.legend(loc=1)
+
+                plt.ylabel('d / Ang')
+                plt.ylim([0, 10])
+                iax = plt.gca()
+                iax.axhline(ctc_cutoff_Ang, color='r')
+            myax[ii].text(np.mean(iax.get_xlim()), .5, ilab.replace("\n", "") + ' (%u %%)' % (iy * 100), ha='center')
+
+        iax.set_xlabel('t / ns')
+        myfig.tight_layout(h_pad=0, w_pad=0, pad=0)
+
+        axtop, axbottom = myax[0], myax[-1]
+        iax2 = axtop.twiny()
+        iax2.set_xticks(axbottom.get_xticks())
+        iax2.set_xticklabels(axbottom.get_xticklabels())
+        iax2.set_xlim(axbottom.get_xlim())
+        iax2.set_xlabel(axbottom.get_xlabel())
+
+        fname = 'site.%s.%s.time_resolved.%s' % (
+        isite["name"].replace(" ", "_"), desc_out.strip("."), graphic_ext.strip("."))
+        fname = path.join(output_dir, fname)
+        plt.savefig(fname, bbox_inches="tight")
+        plt.close(myfig)
+        print(fname)
+        # plt.show()
+
+    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
+    fname = "sites_overall.%s.%s" % (desc_out.rstrip("."), graphic_ext.strip("."))
+    fname = path.join(output_dir, fname)
+    histofig.savefig(fname)
+    print(fname)
+
+
+def density_by_sites(topology,
+          trajectories,
+          site_files,
+          default_fragment_index=None,
+          desc_out="density",
+          output_dir='.',
+                     stride=1,
+          ):
+
+    from subprocess import check_output as _co, STDOUT as _STDOUT, CalledProcessError
+
+    _offer_to_create_dir(output_dir)
+
+    # Prepare naming
+    desc_out = desc_out.rstrip(".")
+
+    # Inform about trajectories
+    xtcs = sorted(trajectories)
+
+    print("Will compute the densities for sites\n %s\nin the trajectories:\n  %s" % (
+        "\n ".join(site_files),
+        "\n  ".join(xtcs)))
+    # Inform about fragments
+    refgeom = md.load(topology)
+    fragments = get_fragments(refgeom.top)
+
+    sites = [sitefile2site(ff) for ff in site_files]
+
+    with _TD() as tmpdirname:
+        tocat=xtcs
+        if stride > 1:
+            tocat=[]
+            for ii, ixtc in enumerate(xtcs):
+                strided_file = path.join(tmpdirname,'%u.strided.%u.xtc'%(ii,stride))
+                tocat.append(strided_file)
+                cmd = "gmx trjconv -f %s -o %s -skip %u"%(ixtc, strided_file,stride)
+                # OMG SUPER DANGEROUS
+                try:
+                    _co(cmd.split())
+                except:
+                    pass
+        trjcatted_tmp='trjcatted.xtc'
+        trjcatted_tmp=path.join(tmpdirname,trjcatted_tmp)
+        cmd = "gmx trjcat -f %s -o %s -cat"%(' '.join(tocat),trjcatted_tmp)
+        _co(cmd.split())
+
+        for ss in sites:
+            #print(ss["name"])
+            AAresSeqs = ss["bonds"]["AAresSeq"]
+            AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+            #AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+
+            resSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, refgeom.top,
+                                                                     default_fragment_idx=default_fragment_index,
+                                                                     )
+
+            aa_in_sites = np.unique(np.hstack([[aa.index for aa in refgeom.top.residue(ii).atoms] for ii in resSeq2residxs.values()]))
+            aa_in_sites_gmx = aa_in_sites+1
+            atom_in_sites_gmx_str=','.join([str(ii) for ii in aa_in_sites_gmx])
+            if False:
+                for ixtc in xtcs:
+                    outfile = '%s.site.%s'%(splitext(ixtc)[0],ss["name"])
+                    outfile = path.join(output_dir,outfile)
+
+                    cmd = "gmx_gromaps maptide -spacing .1 -f %s -s %s -mo %s -select 'atomnr %s'"%(ixtc,topology,outfile,atom_in_sites_gmx_str)
+                    print(cmd)
+                    out = _co(cmdstr2cmdtuple(cmd))#, stderr=_STDOUT)  # this should, in principle, work
+                    #cmd = (gmxbin, "check", "-f", fname)
+
+            outfile = '%s.site.%s'%(desc_out,ss["name"])
+            outfile = path.join(output_dir,outfile)
+            cmd = "gmx_gromaps maptide -spacing .1 -f %s -s %s -mo %s -select 'atomnr %s'"%(trjcatted_tmp,topology,outfile,atom_in_sites_gmx_str)
+            print(cmd)
+            out = _co(cmdstr2cmdtuple(cmd))
+
+def cmdstr2cmdtuple(cmd):
+    return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
