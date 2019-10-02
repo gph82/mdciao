@@ -173,12 +173,28 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
 
 class CGN_transformer(object):
     """
-    Class to convert the residues in the 3SN6.pdb file to its corresponding CGN numbering.
+    Class to convert the residues in the 3SN6.pdb file to its corresponding common-Gprotein-nomenclature numbering.
+    See here https://www.mrc-lmb.cam.ac.uk/CGN/faq.html for more info
+    This object needs to read the files
+
+    * 3SN6.pdb
+    * CGN_3SNG.txt
+
+    or equivalent files for other PDB codes
 
     """
     def __init__(self, ref_PDB='3SN6', ref_path='.'):
+        r"""
+
+        Parameters
+        ----------
+        ref_PDB: str, default is '3SN6'
+            The PDB four letter code that will be used for CGN purposes
+        ref_path: str,default is '.'
+            The path where the needed files are
+        """
         # Create dataframe with the alignment
-        from pandas import read_table as _read_table, read_csv as _read_csv
+        from pandas import read_csv as _read_csv
         from os import path as _path
         self._ref_PDB = ref_PDB
 
@@ -203,18 +219,26 @@ class CGN_transformer(object):
 
     @property
     def seq(self):
+        r""" Sequence of AAs (one-letter codes) in the reference pdb file.
+        If an AA has no one-letter, the letter X is used"""
         return self._seq_ref
 
     @property
     def seq_idxs(self):
+        r""" Indices contained in the original PDB as sequence indices.
+        In an :obj:`mdtraj.Topology.Residue`, this index is called 'ResSeq'"""
         return self._seq_idxs
 
     @property
     def AA2CGN(self):
+        r"""Dictionary with AA-codes as keys, so that "G.HN.42" = AA2CGN["K25"].
+        If an AA does not have a CGN-name, it is not present in the keys. """
         return self._dict
 
     @property
     def ref_PDB(self):
+        r""" Return the PDB code used for instantiation"""
+
         return self._ref_PDB
 
         #return seq_ref, seq_idxs, self._dict
@@ -237,13 +261,10 @@ def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
     -------
     Dictionary
         For each residue in the topology file, returns the corresponding CGN numbering.
-        Example - {0: 'G.HN.27',1: 'G.HN.53'}
+        Example:    {0: 'G.HN.27',1: 'G.HN.53'}
+
 
     """
-
-    # TODO this lazy import will bite back
-    from Bio import pairwise2
-
 
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
