@@ -174,7 +174,8 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
 class CGN_transformer(object):
     """
     Class to convert the residues in the 3SN6.pdb file to its corresponding common-Gprotein-nomenclature numbering.
-    See here https://www.mrc-lmb.cam.ac.uk/CGN/faq.html for more info
+    See here_ for more info.
+     .. _here: https://www.mrc-lmb.cam.ac.uk/CGN/faq.html
     This object needs to read the files
 
     * 3SN6.pdb
