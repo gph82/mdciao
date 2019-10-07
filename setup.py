@@ -23,6 +23,7 @@ setup(
              'scripts/site_figures.py',
              'scripts/interface_ctc_analyzer.py',
              'scripts/density_by_sites.py',
-             'scripts/CARDS.py']
+             #'scripts/CARDS.py'
+             ]
 )
 
