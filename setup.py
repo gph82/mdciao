@@ -20,6 +20,7 @@ setup(
     ],
     scripts=['scripts/residue_neighborhoods.py',
              'scripts/sites.py',
+             'scripts/site_figures.py',
              'scripts/interface_ctc_analyzer.py',
              'scripts/density_by_sites.py',
              'scripts/CARDS.py']

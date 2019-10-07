@@ -1,6 +1,6 @@
 import argparse
 
-def _parser_base(description=None):
+def _parser_top_traj(description=None):
     r"""
     Instantiate the basic parsers which can take topology and trajectories
 
@@ -14,9 +14,15 @@ def _parser_base(description=None):
 
     """
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('topology', type=str, help='Topology file')
-    parser.add_argument('trajectories', type=str, help='trajectory file(s)', nargs='+')
+    _parser_add_topology(parser)
+    _parser_add_trajectories(parser)
     return parser
+
+def _parser_add_trajectories(parser):
+    parser.add_argument('trajectories', type=str, help='trajectory file(s)', nargs='+')
+
+def _parser_add_topology(parser):
+    parser.add_argument('topology', type=str, help='Topology file')
 
 def _parser_add_cutoff(parser):
     parser.add_argument("--ctc_cutoff_Ang", type=float,
@@ -85,7 +91,7 @@ def _parser_add_fragment_names(parser):
 
 def parser_for_sites():
     #todo THIS WILL BREARK PARSER FOR SITES!!!!
-    parser = _parser_base(description='Small residue-residue contact analysis tool, initially developed for the '
+    parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
                                       'receptor-G-protein complex. The user has to provide "site" files in .json format')
 
     _parser_add_sites(parser)
@@ -104,7 +110,7 @@ def parser_for_sites():
 
 
 def parser_for_densities():
-    parser = _parser_base("For densities")
+    parser = _parser_top_traj("For densities")
     _parser_add_sites(parser)
     _parser_add_output_dir(parser)
     _parser_add_stride(parser,help='Stride down the data by this factor. Default is 1.')
@@ -117,7 +123,7 @@ def _parser_add_n_ctcs(parser, default=5):
                         default=default)
 
 def parser_for_rn():
-    parser = _parser_base(description='Small residue-residue contact analysis tool, initially developed for the '
+    parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
                                       'receptor-G-protein complex.')
 
 
@@ -169,7 +175,7 @@ def parser_for_rn():
     return parser
 
 def parser_for_interface():
-    parser = _parser_base(description='Small residue-residue contact analysis tool, initially developed for the '
+    parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
                                       'receptor-G-protein complex.\nContacts are computed between the group_1 '
                                       '(e.g. the receptor) and group_2 (e.g. the G-protein).\n '
                                       'To automate the identifaction of the residue indices corresponding to '
