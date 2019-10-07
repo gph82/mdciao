@@ -386,7 +386,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     aext = str(output_ascii).lower().strip(".")
                     for ii, ixtc in enumerate(xtcs):
                         traj_name = path.splitext(ixtc)[0]
-                        savename = "%.%s.%s.%s" % (output_desc, res_and_fragment_str.replace('*', ""), traj_name, aext)
+                        savename = "%s.%s.%s.%s" % (output_desc, res_and_fragment_str.replace('*', ""), traj_name, aext)
                         savename = path.join(output_dir, savename)
                         np.savetxt(savename, np.vstack(list(for_ascii_output[res_and_fragment_str][ii].values())).T,
                                    ' '.join(["%6.3f" for __ in for_ascii_output[res_and_fragment_str][ii].values()]),
