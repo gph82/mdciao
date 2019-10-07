@@ -340,7 +340,8 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
                 res_idx_input = restrict_to_residxs[idict[idx_seq_0_key]]
                 match_name = '%s%s'%(idict[AA_code_seq_1_key],idict[idx_seq_1_key])
                 iCGN = ref_CGN_tf.AA2CGN[match_name]
-                print(res_idx_input,"res_idx_input",match_name, iCGN)
+                if verbose:
+                    print(res_idx_input,"res_idx_input",match_name, iCGN)
                 list_out[res_idx_input]=iCGN
 
         if verbose:
