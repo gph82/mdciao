@@ -64,7 +64,9 @@ def _parse_CGN_option(CGN_PDB, top, fragments):
         CGN_tf = CGN_transformer(CGN_PDB)
         answer = input("Which fragments are succeptible of a CGN-numbering?(Can be in a format 1,2-6,10,20-25)\n")
         restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
-        CGN = top2CGN_by_AAcode(top, CGN_tf, restrict_to_residxs=restrict_to_residxs)
+        CGN = top2CGN_by_AAcode(top, CGN_tf, restrict_to_residxs=restrict_to_residxs,
+                              #  verbose=True
+                                )
 
     return CGN
 
@@ -404,14 +406,14 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             'time_array': time_array}
 
 
-def sitefile2site(sitefile):
+def _sitefile2site(sitefile):
     with open(sitefile, "r") as f:
         idict = jsonload(f)
     try:
         idict["bonds"]["AAresSeq"] = [item.split("-") for item in idict["bonds"]["AAresSeq"] if item[0] != '#']
         idict["n_bonds"] = len(idict["bonds"]["AAresSeq"])
     except:
-        print("Malformed .json file for the site %s" % sitefile2site())
+        print("Malformed .json file for the site %s" % _sitefile2site())
     if "sitename" not in idict.keys():
         idict["name"] = splitext(psplit(sitefile)[-1])[0]
     else:
@@ -468,24 +470,20 @@ def sites(topology,
     # Dow we want CGN definitions:
     CGN = _parse_CGN_option(CGN_PDB, refgeom.top, fragments)
 
-    sites = [sitefile2site(ff) for ff in site_files]
 
-    AAresSeqs = [ss["bonds"]["AAresSeq"] for ss in sites]
-    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
-    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+    #TODO PACKAGE THIS SOMEHOW BETTER
+    sites = [_sitefile2site(ff) for ff in site_files]
+    AAresSeq2residxs = _sites_to_AAresSeqdict(sites, refgeom.top, fragments,
+                                              default_fragment_idx=default_fragment_index,
+                                              fragment_names=fragment_names)
 
-    resSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, refgeom.top,
-                                                                 default_fragment_idx=default_fragment_index,
-                                                                 fragment_names=fragment_names
-                                                                 )
-    if None in resSeq2residxs.values():
-        raise ValueError("These residues of your input have not been found. Please revise it:\n%s" % (
-            '\n'.join([key for key, val in resSeq2residxs.items() if val is None])))
-    print('%10s  %6s  %7s  %10s' % tuple(("residue  residx    fragment  input_resSeq".split())))
-    for key, val in resSeq2residxs.items():
-        print('%10s  %6u  %7u  %s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key))
 
-    ctc_idxs_small = np.array([resSeq2residxs[key] for key in AAresSeqs]).reshape(-1, 2)
+    print('%10s  %10s  %10s  %10s %10s' % tuple(("residue  residx fragment fragment_name CGN ".split())))
+    for key, val in AAresSeq2residxs.items():
+
+        print('%10s  %10u  %10u  %10s %10s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key, CGN[val]))
+
+    ctc_idxs_small = _sites_to_ctc_idxs(sites,AAresSeq2residxs)
     ctcs, time_array = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                  chunksize=chunksize_in_frames,
                                  return_time=True, consolidate=False, periodic=pbc)
@@ -544,6 +542,8 @@ def sites(topology,
         # Loop over the pairs to attach labels to the bars
         for ii, (iy, ipair) in enumerate(zip(ctcs_mean, isite["res_idxs"])):
             labels_consensus = [_relabel_consensus(jj, [BW, CGN]) for jj in ipair]
+            print(labels_consensus)
+
             # TODO this .item() is to comply to
             labels_frags = [in_what_fragment(idx.item(), fragments, fragment_names=fragment_names) for idx in ipair]
             for jj, jcons in enumerate(labels_consensus):
@@ -653,7 +653,7 @@ def density_by_sites(topology,
     refgeom = md.load(topology)
     fragments = get_fragments(refgeom.top)
 
-    sites = [sitefile2site(ff) for ff in site_files]
+    sites = [_sitefile2site(ff) for ff in site_files]
 
     with _TD() as tmpdirname:
         tocat=xtcs
@@ -691,16 +691,86 @@ def density_by_sites(topology,
                     outfile = '%s.site.%s'%(splitext(ixtc)[0],ss["name"])
                     outfile = path.join(output_dir,outfile)
 
-                    cmd = "gmx_gromaps maptide -spacing .1 -f %s -s %s -mo %s -select 'atomnr %s'"%(ixtc,topology,outfile,atom_in_sites_gmx_str)
+                    cmd = "gmx_gromaps maptide -spacing .05 -f %s -s %s -mo %s -select 'atomnr %s'"%(ixtc,topology,outfile,atom_in_sites_gmx_str)
                     print(cmd)
-                    out = _co(cmdstr2cmdtuple(cmd))#, stderr=_STDOUT)  # this should, in principle, work
+                    out = _co(_cmdstr2cmdtuple(cmd))#, stderr=_STDOUT)  # this should, in principle, work
                     #cmd = (gmxbin, "check", "-f", fname)
 
-            outfile = '%s.site.%s'%(desc_out,ss["name"])
+            outfile = '%s.site.%s.stride.%02u.'%(desc_out,ss["name"],stride)
             outfile = path.join(output_dir,outfile)
             cmd = "gmx_gromaps maptide -spacing .1 -f %s -s %s -mo %s -select 'atomnr %s'"%(trjcatted_tmp,topology,outfile,atom_in_sites_gmx_str)
             print(cmd)
-            out = _co(cmdstr2cmdtuple(cmd))
+            out = _co(_cmdstr2cmdtuple(cmd))
 
-def cmdstr2cmdtuple(cmd):
+def site_figures(topology,
+          site_files,
+                 BW_file="None",
+                 CGN_PDB="None",
+          ):
+
+
+    print("Will print VMD lines for sites\n %s"%(
+        "\n ".join(site_files)))
+    # Inform about fragments
+    refgeom = md.load(topology)
+    fragments = get_fragments(refgeom.top)
+
+    sites = [_sitefile2site(ff) for ff in site_files]
+
+    # Dow we want CGN definitions:
+
+    CGN = _parse_CGN_option(CGN_PDB, refgeom.top, fragments)
+    #for key, val in CGN.items():
+    #    print(key,val)
+    for ss in sites:
+        #print(ss["name"])
+        AAresSeqs = ss["bonds"]["AAresSeq"]
+        AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+
+        resSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, refgeom.top)
+        ctc_idxs = _sites_to_ctc_idxs([ss],resSeq2residxs)
+        title="\nsite: %s"%ss["name"]
+        if "info" in ss.keys():
+            title+= ' (%s)'%ss["info"]
+        print(title)
+        if "best run" in ss.keys():
+            vmd_cmd =  "mol new %s\n"%topology
+            vmd_cmd += "mol addfile %s waitfor all\n"%(ss["best run"])
+            vmd_cmd += 'mol addfile figs/density.site.%s.ccp4\n'%ss["name"]
+            print(vmd_cmd[:-1])
+        from .aa_utils import shorten_AA as _shorten_AA
+        for r1,r2 in ctc_idxs:
+            r1 = refgeom.top.residue(r1)
+            r2 = refgeom.top.residue(r2)
+            print("(resname %s and resid %s or resname %s and resid %s) and noh and not name O N "%(r1.name,r1.resSeq, r2.name,r2.resSeq))
+            print('%s-%s'%(_shorten_AA(r1), _shorten_AA(r2)))
+            print('%s-%s'%(CGN[r1.index], CGN[r2.index]))
+
+
+        input()
+
+
+
+def _cmdstr2cmdtuple(cmd):
     return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
+
+def _sites_to_AAresSeqdict(sites, top, fragments,
+                           raise_if_not_found=True,
+                           **interactive_fragment_picker_by_AAresSeq_kwargs):
+
+
+    AAresSeqs = [ss["bonds"]["AAresSeq"] for ss in sites]
+    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+
+    AAresSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, top,
+                                                                 **interactive_fragment_picker_by_AAresSeq_kwargs)
+
+    if None in AAresSeq2residxs.values() and raise_if_not_found:
+        raise ValueError("These residues of your input have not been found. Please revise it:\n%s" % (
+            '\n'.join([key for key, val in AAresSeq2residxs.items() if val is None])))
+
+    return AAresSeq2residxs
+
+def _sites_to_ctc_idxs(sites,AAresSeq2residxs):
+    return np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in sites]))
