@@ -303,7 +303,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                         alpha = 1
                         icolor = next(icol)
                         if n_smooth_hw>0:
-                            from aGPCR_utils import window_average as _wav
+                            from .list_utils import window_average as _wav
                             alpha = .2
                             itime_smooth, _ = _wav(time_array[jj], half_window_size=n_smooth_hw)
                             ictc_smooth, _ = _wav(ctcs_trajs[jj][:, oo], half_window_size=n_smooth_hw)
@@ -578,7 +578,7 @@ def sites(topology,
                 alpha = 1
                 icolor = next(icol)
                 if n_smooth_hw > 0:
-                    from aGPCR_utils import window_average as _wav
+                    from .list_utils import window_average as _wav
                     alpha = .2
                     itime_smooth, _ = _wav(itime, half_window_size=n_smooth_hw)
                     ictc_smooth, _ = _wav(ictc[:, ii], half_window_size=n_smooth_hw)
