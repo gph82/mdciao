@@ -542,7 +542,6 @@ def sites(topology,
         # Loop over the pairs to attach labels to the bars
         for ii, (iy, ipair) in enumerate(zip(ctcs_mean, isite["res_idxs"])):
             labels_consensus = [_relabel_consensus(jj, [BW, CGN]) for jj in ipair]
-            print(labels_consensus)
 
             # TODO this .item() is to comply to
             labels_frags = [in_what_fragment(idx.item(), fragments, fragment_names=fragment_names) for idx in ipair]
