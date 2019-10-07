@@ -8,7 +8,7 @@ from sofi_functions.fragments import get_fragments
 from sofi_functions.list_utils import in_what_fragment, rangeexpand
 from sofi_functions.contacts import xtcs2ctcs
 from sofi_functions.parsers import parser_for_interface
-from aGPCR_utils import window_average as _wav
+from sofi_functions.list_utils import window_average as _wav
 
 #fragment_names_short
 
