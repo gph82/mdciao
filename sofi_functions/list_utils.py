@@ -142,6 +142,51 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
     else:
         return idxs_out
 
+#Lifted from my own aGPCR utils
+def window_average(input_array_y, half_window_size=2):
+    r"""
+    like a convolution but returns also the std inside the window
+    :param input_array_y:
+    :param window_size:
+    :param input_array_x:
+    :return:
+    """
+    array_out_mean = []
+    array_out_std = []
+    for ii in range(half_window_size, len(input_array_y) - half_window_size):
+        idxs = _np.hstack([_np.arange(ii - half_window_size, ii),
+                           ii,
+                           _np.arange(ii + 1, ii + half_window_size + 1)])
+        #print(idxs.shape)
+        array_out_mean.append(_np.average(input_array_y[idxs]))
+        array_out_std.append(_np.std(input_array_y[idxs]))
+    array_out_mean = _np.array(array_out_mean)
+    array_out_std = _np.array(array_out_std)
+
+    return array_out_mean, array_out_std
+
+def window_average_vec(input_array_y, half_window_size=2):
+    r"""
+    like a convolution but returns also the std inside the window
+    :param input_array_y:
+    :param window_size:
+    :param input_array_x:
+    :return:
+    """
+    array_out_mean = []
+    array_out_std = []
+    for ii in range(half_window_size, len(input_array_y) - half_window_size):
+        idxs = _np.hstack([_np.arange(ii - half_window_size, ii),
+                           ii,
+                           _np.arange(ii + 1, ii + half_window_size + 1)])
+        print(idxs.shape)
+        array_out_mean.append(_np.average(input_array_y[idxs, :], axis=0))
+        array_out_std.append(_np.std(input_array_y[idxs, :],axis=0))
+    array_out_mean = _np.array(array_out_mean)
+    array_out_std = _np.array(array_out_std)
+
+    return array_out_mean, array_out_std
+
 # from https://www.rosettacode.org/wiki/Range_expansion#Python
 def rangeexpand(txt):
     """
