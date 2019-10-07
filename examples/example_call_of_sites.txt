@@ -1,0 +1,1 @@
+sites.py prot1.pdb.gz *.xtc --site_files site_F.json --output_dir figs --n_smooth 10 --fragment B2AR,B2AR,Galpha,Galpha,Gbeta,Ggamma,lig --CGN_PDB 3SN6
