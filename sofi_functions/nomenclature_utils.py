@@ -243,44 +243,38 @@ class CGN_transformer(object):
 
         #return seq_ref, seq_idxs, self._dict
 
-def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
+def top2CGN_by_AAcode(top, ref_CGN_tf,
                       restrict_to_residxs=None,
                       verbose=False):
     """
-    Transforms each residue in the topology file to its corresponding CGN numbering.
+    Returns a dictionary of CGN (Common G-protein Nomenclature) labelling for each residue.
+    The keys are zero-indexed residue indices
+
+    TODO if the length of the dictionary is always top.n_residues, consider simply returning a list
 
     Parameters
     ----------
     top : :py:class:`mdtraj.Topology`
     ref_CGN_tf : :obj: 'nomenclature_utils.CGN_transformer' object
-    keep_AA_code : boolean, optional
-    restrict_to_residxs: list, optional
-        residue indexes for which the BW needs to be estimated. (Default value is None).
+    restrict_to_residxs: list, optional, default is None
+        residue indexes for which the CGN needs to be found out. Default behaviour is for all
+        residues in the :obj:`top`.
 
     Returns
     -------
-    Dictionary
-        For each residue in the topology file, returns the corresponding CGN numbering.
-        Example:    {0: 'G.HN.27',1: 'G.HN.53'}
-
+    CGN_list : list
+        list of length obj:`top.n_residues` containing the CGN numbering (if found), None otherwise
 
     """
 
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
 
-    #out_dict = {ii:None for ii in range(top.n_residues)}
-    #for ii in restrict_to_residxs:
-    #    residue = top.residue(ii)
-    #    AAcode = '%s%s'%(residue.code,residue.resSeq)
-    #    try:
-    #        out_dict[ii]=ref_CGN_tf.AA2CGN[AAcode]
-    #    except KeyError:
-    #        pass
-    #return out_dict
+
     seq = ''.join([str(top.residue(ii).code).replace("None", "X") for ii in restrict_to_residxs])
-    #
-    res_idx2_PDB_resSeq = {}
+
+
+    # As complicated as this seems, it's just cosmetics for the alignment dictionaries
     AA_code_seq_0_key = "AA_input"
     full_resname_seq_0_key = 'resname_input'
     resSeq_seq_0_key = "resSeq_input"
@@ -289,7 +283,7 @@ def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
     idx_seq_0_key = 'idx_input'
     for alignmt in _my_bioalign(seq, ref_CGN_tf.seq)[:1]:
         #TODO this fucntion has been changed and this transformer will not work anymore
-        # major bug
+        # major bug (still?)
 
         list_of_alignment_dicts = _alignment_result_to_list_of_dicts(alignmt, top,
                                                                      restrict_to_residxs,
@@ -306,35 +300,26 @@ def top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
             import pandas as pd
             from IPython.display import display
             with pd.option_context('display.max_rows', None, 'display.max_columns',
-                                   None):  # more options can be specified also
+                                   None,
+                                   'display.width', 1000):  # more options can be specified also
                 display(pd.DataFrame.from_dict(list_of_alignment_dicts))
+            input("This is the alignment. Hit enter to continue")
 
+        # TODO learn to tho dis with pandas
+        list_out = [None for __ in top.residues]
         for idict in list_of_alignment_dicts:
             if idict["match"]==True:
-                res_idx_input = idict[idx_seq_0_key]
-                if res_idx_input in restrict_to_residxs:
-                    match_name = '%s%s'%(idict[AA_code_seq_1_key],idict[idx_seq_1_key])
-                    #print(res_idx_input,"res_idx_input",match_name)
-                    res_idx2_PDB_resSeq[res_idx_input]=match_name
-    out_dict = {}
-    for ii in range(top.n_residues):
-        try:
-            out_dict[ii] = ref_CGN_tf.AA2CGN[res_idx2_PDB_resSeq[ii]]
-        except KeyError:
-            out_dict[ii] = None
+                res_idx_input = restrict_to_residxs[idict[idx_seq_0_key]]
+                match_name = '%s%s'%(idict[AA_code_seq_1_key],idict[idx_seq_1_key])
+                iCGN = ref_CGN_tf.AA2CGN[match_name]
+                print(res_idx_input,"res_idx_input",match_name, iCGN)
+                list_out[res_idx_input]=iCGN
 
-    return out_dict
-    # for key, equiv_at_ref_PDB in res_idx2_PDB_resSeq.items():
-    #     if equiv_at_ref_PDB in ref_CGN_tf.AA2CGN.keys():
-    #         iCGN = ref_CGN_tf.AA2CGN[equiv_at_ref_PDB]
-    #     else:
-    #         iCGN = None
-    #     #print(key, top.residue(key), iCGN)
-    #     out_dict[key]=iCGN
-    # if keep_AA_code:
-    #     return out_dict
-    # else:
-    #     return {int(key[1:]):val for key, val in out_dict.items()}
+        if verbose:
+            for idx, iCGN in enumerate(list_out):
+                print(idx, iCGN, top.residue(idx))
+            input("This is the actual return value. Hit enter to continue")
+    return list_out
 
 
 def _relabel_consensus(idx, input_dicts, no_key="NA"):
