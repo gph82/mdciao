@@ -3,7 +3,6 @@ import numpy as _np
 from .aa_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
 from .sequence_utils import alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, _my_bioalign
 
-
 def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        modifications={"S262":"F264"},
                        keep_AA_code=True,
@@ -184,7 +183,7 @@ class CGN_transformer(object):
     or equivalent files for other PDB codes
 
     """
-    def __init__(self, ref_PDB='3SN6', ref_path='.'):
+    def __init__(self, ref_PDB='3SN6', ref_path='.', try_web_lookup=True):
         r"""
 
         Parameters
@@ -192,21 +191,49 @@ class CGN_transformer(object):
         ref_PDB: str, default is '3SN6'
             The PDB four letter code that will be used for CGN purposes
         ref_path: str,default is '.'
-            The path where the needed files are
+            The local path where the needed files are
+
+        try_web_lookup: bool, default is True
+            If the local files are not found, try automatically a web lookup at
+            * www.mrc-lmb.cam.ac.uk (for CGN)
+            * rcsb.org (for the PDB)
         """
         # Create dataframe with the alignment
         from pandas import read_csv as _read_csv
         from os import path as _path
         self._ref_PDB = ref_PDB
 
-        self._DF = _read_csv(_path.join(ref_path, 'CGN_%s.txt'%ref_PDB), delimiter='\t')
+        try:
+            self._DF = _read_csv(_path.join(ref_path, 'CGN_%s.txt'%ref_PDB), delimiter='\t')
+        except FileNotFoundError:
+            print("No local file of CGN numbering %s found"%ref_PDB,end="")
+            if try_web_lookup:
+                web_address="www.mrc-lmb.cam.ac.uk"
+                print(", checking online in %s ..."%web_address,end="")
+                self._DF = _read_csv("https://%s/CGN/lookup_results/%s.txt"%(web_address,ref_PDB), delimiter='\t')
+                print("found! Continuing normally")
+            else:
+                raise
 
         self._dict = {key: self._DF[self._DF[ref_PDB] == key]["CGN"].to_list()[0] for key in self._DF[ref_PDB].to_list()}
 
         try:
-            self._top =_md.load(_path.join(ref_path, ref_PDB+'.pdb')).top
+            pdbfile = ref_PDB+'.pdb'
+            self._top =_md.load(_path.join(ref_path, pdbfile)).top
         except (OSError,FileNotFoundError):
-            self._top = _md.load(_path.join(ref_path, ref_PDB + '.pdb.gz')).top
+            try:
+                pdbfile = ref_PDB + '.pdb.gz'
+                self._top = _md.load(_path.join(ref_path, pdbfile)).top
+            except (OSError, FileNotFoundError):
+                print("No local PDB file for %s found"%ref_PDB, end="")
+                if try_web_lookup:
+                    web_address="https://files.rcsb.org/download"
+                    print(", checking online in %s ..."%web_address, end="")
+                    self._top = _md.load_pdb("%s/%s" %(web_address, pdbfile)).top
+                    print("found! Continuing normally")
+                else:
+                    raise
+
         seq_ref = ''.join([str(rr.code).replace("None","X") for rr in self._top.residues])[:len(self._dict)]
         seq_idxs = _np.hstack([rr.resSeq for rr in self._top.residues])[:len(self._dict)]
         keyval = [{key:val} for key,val in self._dict.items()]
