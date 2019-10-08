@@ -1,5 +1,4 @@
 #!/home/perezheg/miniconda3/bin/python
-import argparse
 import numpy as np
 import mdtraj as md
 from itertools import product
@@ -9,9 +8,7 @@ from sofi_functions.list_utils import in_what_fragment, rangeexpand
 from sofi_functions.contacts import xtcs2ctcs
 from sofi_functions.parsers import parser_for_interface
 from sofi_functions.list_utils import window_average as _wav
-
-#fragment_names_short
-
+from sofi_functions.command_line_tools import _parse_BW_option, _parse_CGN_option
 from matplotlib import pyplot as plt
 
 parser = parser_for_interface()
@@ -25,14 +22,15 @@ group_2 = a.frag_idxs_group_2
 
 refgeom = md.load(a.topology)
 
-
-if isinstance(a.fragments,str):
-    if a.fragments.lower()=='resseq':
+if isinstance(a.fragments[0],str):
+    if a.fragments[0].lower() in ['resseq','ask']:
         fragments = get_fragments(refgeom.top)
-        print(len(fragments))
         assert len(fragments)>=2, ("You need more than one chain in your topology if you are going to auto-dectect fragments! Aborting.")
+
+"""
 else:
     fragments = []
+    # TODO did I loose this optarg at some point
     for ifrag in a.fragments_resSeq:
         if ifrag.endswith("-"):
             ifrag+=str(refgeom.top.residue(-1).resSeq)
@@ -40,18 +38,56 @@ else:
         fragments.append(np.unique([rr.index for rr in refgeom.topology.residues if rr.resSeq in ifrag]))
 #else:
 #    raise NotImplementedError("This feature is not yet implemented")
+"""
 
-if len(fragments)==2:
-    print("Only two fragments detected. Overriding inputs for -frag_idxs_group_1/2 with [0] and [1].")
-    group_1 = [0]
-    group_2 = [1]
+BW, BWtf = _parse_BW_option(a.BW_file, refgeom.top, fragments,return_tf=True)
+BWCGN_defs = {}
+if str(a.BW_file).lower()!='none':
+    print("INFO: these are the BW fragments mapped onto your topology")
+    BWCGN_defs.update(BWtf.top2defs(refgeom.top, return_defs=True))
+    input("Hit enter to continue!\n")
+CGN, CGNtf = _parse_CGN_option(a.CGN_PDB, refgeom.top, fragments, return_tf=True)
+if str(a.CGN_PDB).lower()!='none':
+    print("INFO: these are the CGN fragments mapped onto your topology")
+    BWCGN_defs.update(CGNtf.top2defs(refgeom.top, return_defs=True))
+    input("Hit enter to continue!\n")
+groups=[]
+group_idxs=[]
+if a.fragments[0].lower()=="ask":
+    for ii in [1,2]:
+        groups.append([])
+        group_idxs.append([])
+        answer = input("GROUP %u:\nType a list or posix-expression (or both),e.g.,'TM*,H8'\n"%ii).replace(" ","").strip("'").strip('"')
+        from fnmatch import fnmatch
+        include = [pattern for pattern in answer.split(",") if not pattern.startswith("-")]
+        exclude = [pattern[1:] for pattern in answer.split(",") if pattern.startswith("-")]
+        match = lambda key, pattern : fnmatch(key, pattern) and all([not fnmatch(key,negpat) for negpat in exclude])
+        for pattern in include:
+            for tf in [BWtf, CGNtf]:
+                try:
+                    for key in tf.fragment_names:
+                        print(pattern, key, match(key,pattern))
+                        if match(key,pattern):
+                            groups[-1].append(key)
+                            group_idxs[-1].extend(BWCGN_defs[key])
+                except KeyError:
+                    pass
+        print(groups[-1])
+if len(groups)==0:
+    if len(fragments)==2:
+        print("Only two fragments detected. Overriding inputs for -frag_idxs_group_1/2 with [0] and [1].")
+        group_1 = [0]
+        group_2 = [1]
 
-print("\nComputing distances in the interface between fragments %s and %s.\n"
-      "The interface is defined by the residues within %3.1f Angstrom of each other in the reference topology.\n"
-      "Computing interface..."
-      % (group_1, group_2, a.interface_cutoff_Ang),end="")
+    print("\nComputing distances in the interface between fragments %s and %s.\n"
+          "The interface is defined by the residues within %3.1f Angstrom of each other in the reference topology.\n"
+          "Computing interface..."
+          % (group_1, group_2, a.interface_cutoff_Ang),end="")
 
-ctc_idxs = np.hstack([[list(product(fragments[ii], fragments[jj])) for ii in group_1] for jj in group_2])
+    ctc_idxs = np.hstack([[list(product(fragments[ii], fragments[jj])) for ii in group_1] for jj in group_2])
+else:
+    ctc_idxs = np.vstack(list(product(group_idxs[0], group_idxs[1])))
+
 ctcs, ctc_idxs = md.compute_contacts(refgeom, np.vstack(ctc_idxs))
 print("done!")
 
@@ -151,88 +187,79 @@ for ii, ifrag in enumerate(fragments):
 
 order = np.argsort(ctc_frequency)[::-1]
 print("")
-print("#Freq  resA  resB  fragA-fragB   residxA   residxB   ctc_idx")
+istr = "#Freq  resA  resB  fragA-fragB   residxA   residxB   ctc_idx"
+if a.CGN_PDB is not None or a.BW_file is not None:
+    istr += 'BW/CGN naming'
+print()
+from sofi_functions.nomenclature_utils import _relabel_consensus
+# TODO compute labels just once and be done with it!
+# todo: ideas create a contact class?
 for oo in order[:a.n_ctcs]:
     pair = ctc_idxs_receptor_Gprot[oo]
-    idx1 = pair[0]
-    idx2 = pair[1]
-    s1 = in_what_fragment(idx1, fragments)
-    s2 = in_what_fragment(idx2, fragments)
-
+    idx1, idx2 = pair
+    s1, s2 = [in_what_fragment(idx, fragments) for idx in pair]
     imean = ctc_frequency[oo]
     print("%3.2f %s-%s  %3u-%-3u      %3u %3u %3u"%(imean, refgeom.top.residue(idx1), refgeom.top.residue(idx2), s1, s2, idx1, idx2,oo))
 
 panelheight=5
-panelheight2fontsize=a.n_ctcs*panelheight*4
+panelheight2fontsize=a.n_ctcs*panelheight*6
 myfig, myax = plt.subplots(a.n_ctcs, 1, sharex=True, sharey=True,
                            figsize=(5*panelheight, a.n_ctcs*panelheight ))
 from matplotlib import rcParams
 #rcParams["font.size"]=max(myfig.get_size_inches())/10  #fudging a bit
 for ii, oo in enumerate(order[:a.n_ctcs]):
     pair = ctc_idxs_receptor_Gprot[oo]
-    idx1 = pair[0]
-    idx2 = pair[1]
-    s1 = in_what_fragment(idx1, fragments)
-    s2 = in_what_fragment(idx2, fragments)
-    #print([refgeom.top.residue(jj) for jj in pair])
+    idx1, idx2 = pair
+    r1,r2 = [refgeom.top.residue(ii) for ii in pair]
+    s1, s2 = [in_what_fragment(idx, fragments) for idx in pair]
+    lc1, lc2 = [_relabel_consensus(ii, [CGN, BW], no_key=None) for ii in pair]
+    frag1, frag2 = [in_what_fragment(idx, fragments) for idx in pair]
+    if lc1 is None:
+        lc1 = frag1
+    if lc2 is None:
+        lc2 = frag2
+
     plt.sca(myax[ii])
     iax = myax[ii]
-    if a.consolidate_opt:
-        fragname1='frag%u'%s1
-        #fragname1=fragment_names_short[s1]
-        fragname2='frag%u'%s2
-        #fragname2 =fragment_names_short[s2]
-        plt.plot(time_array/1e3, actcs[:, oo],
-                 label='%s@%s-%s@%s (%u%%)' % (refgeom.top.residue(idx1),
-                                                     fragname1,
-                                                     refgeom.top.residue(idx2),
-                                                     fragname2,
-                                               ctc_frequency[oo] * 100))
-    else:
-        icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
-        for ictc, itime, ixtc in zip(ctcs, times, xtcs):
-            imean = np.mean(ictc < a.ctc_cutoff_Ang/10, 0)
-            ilabel = '%s (%u %s)' % (ixtc, (ictc[:, oo] < a.ctc_cutoff_Ang/10).mean() * 100, '%')
-            alpha = 1
-            icolor = next(icol)
-            if a.n_smooth_hw > 0:
-                alpha = .2
-                itime_smooth, _ = _wav(itime, half_window_size=a.n_smooth_hw)
-                ictc_smooth, _ = _wav(ictc[:, oo], half_window_size=a.n_smooth_hw)
-                plt.plot(itime_smooth / 1e3,
-                         ictc_smooth*10,
-                         label=ilabel,
-                         color=icolor)
-                ilabel = None
+    icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
+    for ictc, itime, ixtc in zip(ctcs, times, xtcs):
+        imean = np.mean(ictc < a.ctc_cutoff_Ang/10, 0)
+        ilabel = '%s (%u %s)' % (ixtc, (ictc[:, oo] < a.ctc_cutoff_Ang/10).mean() * 100, '%')
+        alpha = 1
+        icolor = next(icol)
+        if a.n_smooth_hw > 0:
+            alpha = .2
+            itime_smooth, _ = _wav(itime, half_window_size=a.n_smooth_hw)
+            ictc_smooth, _ = _wav(ictc[:, oo], half_window_size=a.n_smooth_hw)
+            plt.plot(itime_smooth / 1e3,
+                     ictc_smooth*10,
+                     label=ilabel,
+                     color=icolor)
+            ilabel = None
 
-            plt.plot(itime / 1e3, ictc[:, oo]*10,
-                     alpha=alpha,
-                     label= ilabel,
-                     color=icolor,
-                     )
+        plt.plot(itime / 1e3, ictc[:, oo]*10,
+                 alpha=alpha,
+                 label= ilabel,
+                 color=icolor,
+                 )
 
-            plt.legend()
-        xt, yt = np.mean(itime / 1e3), 1
-        ilabel = '%s-%s (%u%% $\pm$ %u%% in all trajs)'%(refgeom.top.residue(pair[0]), refgeom.top.residue(pair[1]),
-                                                                   ctc_frequency[oo] * 100, ctcs_trajectory_std[oo]*100)
-        plt.text(xt,yt,ilabel, ha='center')
+        plt.legend()
+    xt, yt = np.mean(itime / 1e3), 1
+    ilabel = '%s@%s-%s@%s (%u%% $\pm$ %u%% in all trajs)'%(r1, lc1, r2, lc2,
+                                                           ctc_frequency[oo] * 100, ctcs_trajectory_std[oo]*100)
+    plt.text(xt,yt,ilabel, ha='center')
 
-        plt.ylabel('d / Ang')
-        plt.ylim([0, 10])
-
-    if a.consolidate_opt:
-        iax.legend(fontsize=rcParams["font.size"]*1.5,
-                   ncol=1)
-
-    # plt.yscale('log')
-
+    plt.ylabel('d / Ang')
+    plt.ylim([0, 10])
 
     iax.axhline(a.ctc_cutoff_Ang, color='r')
 
 iax.set_xlabel('t / ns')
 myfig.tight_layout(h_pad=2, w_pad=0, pad=0)
 myfig.tight_layout(h_pad=0,w_pad=0,pad=0)
-myfig.savefig('test.pdf',bbox_inches="tight")
+fname = '%s_vs_time.%s'%(a.output_desc.strip("."),a.graphic_ext.strip("."))
+myfig.savefig(fname,bbox_inches="tight")
+print("Saved %s!"%fname)
 plt.close()
 
 plt.figure()
@@ -262,8 +289,14 @@ for ii, (itime, ixtc) in enumerate(zip(times, xtcs)):
 plt.ylabel("# interface contacts")
 plt.xlabel("t / ns")
 plt.legend()
-plt.savefig("contacs_vs_time.pdf")
-np.savetxt("contacs_vs_time.dat", n_ctcs_out,
-           fmt='%4s',
-           header=' '.join(xtcs)
-           )
+fname = "ncontacts_%s_vs_time.%s"%(a.output_desc.strip("."),a.graphic_ext.strip("."))
+plt.savefig(fname)
+print("Saved %s!"%fname)
+
+if str(a.output_ascii).lower()!="none":
+    fname = "ncontacts_%s_vs_time.%s" % (a.output_desc.strip("."), a.output_ascii.strip("."))
+    np.savetxt(fname, n_ctcs_out,
+               fmt='%4s',
+               header=' '.join(xtcs)
+               )
+    print("Saved %s!" % fname)
