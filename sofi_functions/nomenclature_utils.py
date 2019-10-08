@@ -229,6 +229,18 @@ class CGN_transformer(object):
 
         self._ref_PDB = ref_PDB
 
+        self._fragment_names = []
+        for key in self.AA2CGN.values():
+            new_key = '.'.join(key.split(".")[:-1])
+            #print(new_key)
+            if new_key not in self._fragment_names:
+                self._fragment_names.append(new_key)
+                #print("yes")
+
+    @property
+    def fragment_names(self):
+        return self._fragment_names
+
     @property
     def seq(self):
         r""" Sequence of AAs (one-letter codes) in the reference pdb file.
@@ -255,8 +267,19 @@ class CGN_transformer(object):
 
         #return seq_ref, seq_idxs, self._dict
 
-    def map2top(self, top, restrict_to_residxs=None):
-        return _map2top(self.AA2CGN, top, restrict_to_residxs=restrict_to_residxs)
+    def top2map(self, top, restrict_to_residxs=None):
+        return _top2map(self.AA2CGN, top, restrict_to_residxs=restrict_to_residxs)
+
+    def top2defs(self, top, return_defs=False):
+        map = self.top2map(top)
+        defs = _map2defs(map,'CGN')
+        from sofi_functions.fragments import _print_frag
+        for ii, (key, val) in enumerate(defs.items()):
+            istr = _print_frag('%s' % key, top, val, fragment_desc='', return_string=True)
+            print(istr, '%s-%s' % (map[val[0]], map[val[-1]]))
+
+        if return_defs:
+            return defs
 
 #TODO CONSIDER CHANGING THE NAME "TRANSFORMER"
 class BW_transformer(object):
@@ -321,10 +344,21 @@ class BW_transformer(object):
         r""" Sequence of the AA found in this BW transformer"""
         return ''.join(self._seq_fragments.values())
 
-    def map2top(self,top, restrict_to_residxs=None):
-        return _map2top(self.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
+    def top2map(self, top, restrict_to_residxs=None):
+        return _top2map(self.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
 
-def _map2top(AAcode2BW, top, restrict_to_residxs=None):
+    def top2defs(self, top, return_defs=False):
+        map = self.top2map(top)
+        defs = _map2defs(map,'BW')
+        defs = {('TM%s'%key).replace('TM8','H8'):val for key, val in defs.items()}
+        from sofi_functions.fragments import _print_frag
+        for ii, (key, val) in enumerate(defs.items()):
+            istr = _print_frag(key, top, val, fragment_desc='', return_string=True)
+            print(istr, '%s-%s' % (map[val[0]], map[val[-1]]))
+        if return_defs:
+            return defs
+
+def _top2map(AAcode2BW, top, restrict_to_residxs=None):
     r"""
 
     Parameters
@@ -432,7 +466,6 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
             input("This is the actual return value. Hit enter to continue")
     return list_out
 
-
 def _relabel_consensus(idx, input_dicts, no_key="NA"):
     labels  = [idict[idx] for idict in input_dicts]
     good_label = [ilab for ilab in labels if str(ilab).lower()!="none"]
@@ -476,6 +509,8 @@ def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True,
                 _segment_dict[_shorten_AA(itop.residue(ii))]=iseg_key
         segment_dict = _segment_dict
     return segment_dict
+
+
 
 def add_loop_definitions_to_TM_residx_dict(segment_dict, not_present=["ICL3"], start_with='ICL'):
     loop_idxs={"ICL":1,"ECL":1}
@@ -527,9 +562,9 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
 
     AA_dict = {}
     for idef, ii, ff in zip(names, breaks[:-1], breaks[1:]):
-        #print(idef, keyvals[ii], keyvals[ff - 1])
+        #print(idef, keyvals[ii], keyvals[pattern - 1])
         AA_dict[idef]=[keyvals[ii][0], keyvals[ff-1][0]]
-    #print(names[-1], keyvals[ff], keyvals[-1])
+    #print(names[-1], keyvals[pattern], keyvals[-1])
     AA_dict[names[-1]] = [keyvals[ff][0], keyvals[-1][0]]
     #print(AA_dict)
 
@@ -542,7 +577,7 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
     return AA_dict
 
 def _guess_nomenclature_fragments(BWtf, top, fragments, cutoff=.75, verbose=False):
-    aligned_BWs = BWtf.map2top(top)
+    aligned_BWs = BWtf.top2map(top)
     guess = []
     for ii, ifrag in enumerate(fragments):
         hits = [aligned_BWs[jj] for jj in ifrag if aligned_BWs[jj] is  not None]
@@ -552,3 +587,19 @@ def _guess_nomenclature_fragments(BWtf, top, fragments, cutoff=.75, verbose=Fals
             print(ii, len(hits)/len(ifrag))
 
     return guess
+
+def _map2defs(indict,conv_type):
+    from collections import defaultdict
+    defs = defaultdict(list)
+    for ii, key in enumerate(indict):
+        if key is not None:
+            if conv_type=='BW':
+                new_key =key.split(".")[0]
+            elif conv_type=='CGN':
+                new_key = '.'.join(key.split(".")[:-1])
+            else:
+                raise Exception
+            defs[new_key].append(ii)
+
+    # TODO there has to be a better way for defdict->dict
+    return {key: val for key, val in defs.items()}
