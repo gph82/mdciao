@@ -3,7 +3,8 @@ from .aa_utils import find_AA
 from .bond_utils import top2residue_bond_matrix
 from .list_utils import in_what_N_fragments as _in_what_N_fragments, join_lists as _join_lists
 
-def _print_frag(frag_idx, top, fragment, return_string=False, **print_kwargs):
+def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
+                return_string=False, **print_kwargs):
     # TODO document
     """
 
@@ -19,7 +20,7 @@ def _print_frag(frag_idx, top, fragment, return_string=False, **print_kwargs):
 
     """
     try:
-        istr = "fragment %u with %3u AAs %s(%u)-%s(%u)" % (frag_idx, len(fragment),
+        istr = "%s %6s with %3u AAs %7s(%4u)-%-7s(%-4u)" % (fragment_desc, str(frag_idx), len(fragment),
                                                            top.residue(fragment[0]),
                                                            top.residue(fragment[0]).index,
                                                            top.residue(fragment[-1]),
