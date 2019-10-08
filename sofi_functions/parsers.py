@@ -74,7 +74,7 @@ def _parser_add_pbc(parser):
     parser.set_defaults(pbc=True)
 
 def _parser_add_output_desc(parser, default='output_sites'):
-    parser.add_argument('--output_desc', type=str, help="Descriptor for output files",
+    parser.add_argument('--output_desc', type=str, help="Descriptor for output files. Default is %s"%default,
                         default=default)
     return parser
 
@@ -162,9 +162,7 @@ def parser_for_rn():
     parser.set_defaults(ask=True)
     parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
                         default='output.npy')
-    parser.add_argument('--output_ascii', type=str,
-                        help="Extension for ascii files (.dat, .txt etc). Default is 'none', which does not write anything.",
-                        default=None)
+    _parser_add_ascii(parser)
     parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
                         default='.pdf')
 
@@ -173,6 +171,12 @@ def parser_for_rn():
     _parser_add_output_desc(parser, default='neighborhoods')
 
     return parser
+
+def _parser_add_ascii(parser):
+    parser.add_argument('--output_ascii', type=str,
+                        help="Extension for ascii files (.dat, .txt etc). Default is 'none', which does not write anything.",
+                        default=None)
+
 
 def parser_for_interface():
     parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
@@ -211,10 +215,13 @@ def parser_for_interface():
 
     _parser_add_fragment_names(parser)
 
-    parser.add_argument('--consolidate', dest='consolidate_opt', action='store_true',
-                        help="Treat all trajectories as fragments of one single trajectory. Default is True")
-    parser.add_argument('--dont_consolidate', dest='consolidate_opt', action='store_false')
-    parser.set_defaults(consolidate_opt=True)
+    #parser.add_argument('--consolidate', dest='consolidate_opt', action='store_true',
+    #                    help="Treat all trajectories as fragments of one single trajectory. Default is True")
+    #parser.add_argument('--dont_consolidate', dest='consolidate_opt', action='store_false')
+    #parser.set_defaults(consolidate_opt=True)
+    _parser_add_nomenclature(parser)
     _parser_add_chunk(parser)
-
+    _parser_add_output_desc(parser,'interface')
+    _parser_add_graphic_ext(parser)
+    _parser_add_ascii(parser)
     return parser
