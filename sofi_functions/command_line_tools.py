@@ -39,9 +39,10 @@ def _offer_to_create_dir(output_dir):
             return
 
 
-def _parse_BW_option(BW_file, top, fragments):
+def _parse_BW_option(BW_file, top, fragments, return_tf=False):
     if BW_file == 'None':
         BW = [None for __ in range(top.n_residues)]
+        BWtf = None
     else:
         if BW_file.lower().endswith(".json"):
             with open(BW_file, "r") as f:
@@ -61,7 +62,10 @@ def _parse_BW_option(BW_file, top, fragments):
         # TODO put this in the tf-class?
         BW = guess_missing_BWs(BWtf.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
 
-    return BW
+    if not return_tf:
+        return BW
+    else:
+        return BW, BWtf
 
 def _parse_fragment_answer(Ntf, top, fragments, name='BW',**guess_kwargs):
     guess = _guess_nomenclature_fragments(Ntf, top, fragments,**guess_kwargs)
@@ -73,9 +77,10 @@ def _parse_fragment_answer(Ntf, top, fragments, name='BW',**guess_kwargs):
 
     return answer
 
-def _parse_CGN_option(CGN_PDB, top, fragments):
+def _parse_CGN_option(CGN_PDB, top, fragments, return_tf=False):
     if CGN_PDB == 'None':
         CGN = [None for __ in range(top.n_residues)]
+        CGN_tf = None
     else:
         CGN_tf = CGN_transformer(CGN_PDB)
 
@@ -87,7 +92,10 @@ def _parse_CGN_option(CGN_PDB, top, fragments):
                               #  verbose=True
                                 )
 
-    return CGN
+    if not return_tf:
+        return CGN
+    else:
+        return CGN, CGN_tf
 
 def _parse_fragment_naming_options(fragment_names, fragments, top):
     if fragment_names == '':
@@ -265,7 +273,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
         jax.plot(-1, -1, 'o', color=fragcolors[anchor_frag_idx], label=_replace4latex(res_and_fragment_str))
         jax.legend(fontsize=panelsize * panelsize2font)
-
+        interactive_fragment_picker_by_resSeq
         for_ascii_output[res_and_fragment_str] = [{} for __ in xtcs]
         if len(toplot) > 0:
             myfig, myax = plt.subplots(len(toplot), 1, sharex=True, sharey=True,
@@ -693,7 +701,7 @@ def density_by_sites(topology,
                     out = _co(_cmdstr2cmdtuple(cmd))#, stderr=_STDOUT)  # this should, in principle, work
                     #cmd = (gmxbin, "check", "-f", fname)
 
-            outfile = '%s.site.%s.stride.%02u.'%(desc_out,ss["name"],stride)
+            outfile = '%s.site.%s.stride.%02u'%(desc_out.strip("."),ss["name"].strip("."),stride)
             outfile = path.join(output_dir,outfile)
             cmd = "gmx_gromaps maptide -spacing .1 -f %s -s %s -mo %s -select 'atomnr %s'"%(trjcatted_tmp,topology,outfile,atom_in_sites_gmx_str)
             print(cmd)
