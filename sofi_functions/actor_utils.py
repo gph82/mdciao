@@ -201,7 +201,9 @@ def re_warp_idxs(lengths):
         idxi += ll
     return idxs_out
 
-def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top, pick_first_fragment_by_default=False):
+def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
+                                          pick_first_fragment_by_default=False,
+                                          additional_naming_dicts=None):
     resSeq2residxs = {}
     resSeq2segidxs = {}
     last_answer = 0
@@ -220,7 +222,15 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top, pick_firs
             elif len(cands) > 1:
                 print("ambigous definition for resSeq %s" % key)
                 for cc, ss in zip(cands, cand_fragments):
-                    print(top.residue(cc), 'in fragment ', ss, "with index", cc)
+                    istr = '%10s in fragment %2u with index %6u'%(top.residue(cc), ss,cc)
+                    if additional_naming_dicts is not None:
+                        extra=''
+                        for key1, val1 in additional_naming_dicts.items():
+                            if val1[cc] is not None:
+                                extra +='%s: %s '%(key1,val1[cc])
+                        if len(extra)>0:
+                            istr = istr + ' (%s)'%extra.rstrip(" ")
+                    print(istr)
                 if not pick_first_fragment_by_default:
                     answer = input(
                         "input one fragment idx (out of %s) and press enter.\nLeave empty and hit enter to repeat last option [%s]\n" % ([int(ii) for ii in cand_fragments], last_answer))
@@ -855,7 +865,7 @@ def _top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
     # else:
     #     return {int(key[1:]):val for key, val in out_dict.items()}
 
-class CGN_transformer(object):
+class _CGN_transformer(object):
     def __init__(self, ref_PDB='3SN6'):
         # Create dataframe with the alignment
         from pandas import read_table as _read_table
