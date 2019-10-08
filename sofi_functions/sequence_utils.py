@@ -4,7 +4,9 @@ from Bio.pairwise2 import align as _Bioalign
 
 def _print_verbose_dataframe(idf):
     import pandas as _pd
-    with _pd.option_context('display.max_rows', None, 'display.max_columns', None):
+    with _pd.option_context('display.max_rows', None,
+                            'display.max_columns', None,
+                            'display.width', 1000):
         print(idf)
 
 def _my_bioalign(seq1,seq2):
@@ -91,9 +93,9 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
             idict["match"]=True
 
     if verbose:
-        print("\nAlignment dicts:")
-        order = [idx_seq_1_key, AA_code_seq_1_key, AA_code_seq_0_key, resSeq_seq_0_key, full_resname_seq_0_key, "match"]
-        print(_DF(alignment_dict)[order].to_string())
+        print("\nAlignment")
+        order = [idx_seq_1_key, AA_code_seq_1_key, AA_code_seq_0_key, resSeq_seq_0_key, full_resname_seq_0_key, idx_seq_0_key, "match"]
+        _print_verbose_dataframe(_DF(alignment_dict)[order])
 
     return alignment_dict
 import numpy as _np
