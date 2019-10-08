@@ -2,14 +2,14 @@ import mdtraj as _md
 import numpy as _np
 from .aa_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
 from .sequence_utils import alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, _my_bioalign
-
+from pandas import DataFrame as _DF
 def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        modifications={"S262":"F264"},
                        keep_AA_code=True,
                        return_defs=False,
                        ):
     """
-    Returns a dictionary of the residues and their corresponding BW notation from the excel file.
+    Reads an excel table and returns a dictionary AAcodes so that e.g. '3.50' = self.AAcode2BW[R131]
 
     Parameters
     ----------
@@ -27,13 +27,14 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
     Returns
     -------
 
-    Dictionary, list(optional)
+    AAcode2BW : dictionary
         Dictionary with residues as key and their corresponding BW notation.
-        if return_defs=false else dictionary(residue and their BW notation),
-        and a list of the definition lines from the excel.
+
+    defs : list (optional)
+        if return_defs=false, a list containing the name of the fragments according to the excel file
 
     """
-    out_dict = {}
+    AAcode2BW = {}
     import pandas
     df = pandas.read_excel(tablefile, header=None)
 
@@ -44,28 +45,28 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
             defs.append(row[0])
 
         else:
-            out_dict[row[2]] = row[1]
+            AAcode2BW[row[2]] = row[1]
 
     # Replace some keys
     __ = {}
-    for key, val in out_dict.items():
+    for key, val in AAcode2BW.items():
         for patt, sub in modifications.items():
             key = key.replace(patt,sub)
         __[key] = str(val)
-    out_dict = __
+    AAcode2BW = __
 
     # Make proper BW notation as string with trailing zeros
-    out_dict = {key:'%1.2f'%float(val) for key, val in out_dict.items()}
+    AAcode2BW = {key:'%1.2f'%float(val) for key, val in AAcode2BW.items()}
 
     if keep_AA_code:
         pass
     else:
-        out_dict =  {int(key[1:]):val for key, val in out_dict.items()}
+        AAcode2BW =  {int(key[1:]):val for key, val in AAcode2BW.items()}
 
     if return_defs:
-        return out_dict, defs
+        return AAcode2BW, defs
     else:
-        return out_dict
+        return AAcode2BW
 
 
 def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
@@ -78,44 +79,27 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
         BW dictionary with residue names as the key and their corresponding BW notation
     top : :py:class:`mdtraj.Topology`
     restrict_to_residxs: list, optional
-        residue indexes for which the BW needs to be estimated. (Default value is None).
+        residue indexes for which the BW needs to be estimated. (Default value is None, which means all).
 
     Returns
     -------
-    Dictionary
-        Dictionary where the missing values are estimated. It also retains all the values from the input dictionary.
+    BW : list
+        list of len=top.n_residues including estimated missing BW-names, it also retains all the values from the input dictionary.
 
     """
 
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
 
-    """
-    seq = ''.join([top._residues    [ii].code for ii in restrict_to_residxs])
-    seq_BW =  ''.join([key[0] for key in input_BW_dict.keys()])
-    ref_seq_idxs = [int_from_AA_code(key) for key in input_BW_dict.keys()]
-    for alignmt in pairwise2.align.globalxx(seq, seq_BW)[:1]:
-        alignment_dict = alignment_result_to_list_of_dicts(alignmt, top,
-                                                            ref_seq_idxs,
-                                                            #res_top_key="target_code",
-                                                           #resname_key='target_resname',
-                                                           #resSeq_key="target_resSeq",
-                                                           #idx_key='ref_resSeq',
-                                                           #re_merge_skipped_entries=False
-                                                            )
-        print(alignment_dict)
-    return
-    """
     #TODO keep this until we are sure there are no consquences
-    #out_dict = {ii:None for ii in range(top.n_residues)}
-    out_dict = {}
+    out_list = [None for __ in top.residues]
     for rr in restrict_to_residxs:
         residue = top.residue(rr)
         key = '%s%s'%(residue.code,residue.resSeq)
         try:
             (key, input_BW_dict[key])
             #print(key, input_BW_dict[key])
-            out_dict[residue.index] = input_BW_dict[key]
+            out_list[residue.index] = input_BW_dict[key]
         except KeyError:
             resSeq = _int_from_AA_code(key)
             try:
@@ -146,7 +130,7 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
                 base, exp = [int(ii) for ii in closest_BW.split('.')]
                 new_guessed_val = '%s.%u*'%(base,exp+delta)
                 #guessed_BWs[key] = new_guessed_val
-                out_dict[residue.index] = new_guessed_val
+                out_list[residue.index] = new_guessed_val
                 #print(key, new_guessed_val, residue.index, residue.index in restrict_to_residxs)
             else:
                 pass
@@ -159,7 +143,7 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
     if keep_keys:
         guessed_BWs = {}
         used_keys = []
-        for res_idx, val in out_dict.items():
+        for res_idx, val in enumerate(out_list):
             new_key = _shorten_AA(top.residue(res_idx))
             if new_key in input_BW_dict.keys():
                 assert val==input_BW_dict[new_key],"This should not have happened %s %s %s"%(val, new_key, input_BW_dict[new_key])
@@ -168,7 +152,7 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
             used_keys.append(new_key)
         return guessed_BWs
     else:
-        return out_dict
+        return out_list
 
 class CGN_transformer(object):
     """
@@ -271,6 +255,107 @@ class CGN_transformer(object):
 
         #return seq_ref, seq_idxs, self._dict
 
+    def map2top(self, top, restrict_to_residxs=None):
+        return _map2top(self.AA2CGN, top, restrict_to_residxs=restrict_to_residxs)
+
+#TODO CONSIDER CHANGING THE NAME "TRANSFORMER"
+class BW_transformer(object):
+    """
+    Class to manage Ballesteros-Weinstein notation
+
+    """
+    def __init__(self, tablefile="GPCRmd_B2AR_nomenclature.xlsx", ref_path='.'):
+        r"""
+
+        Parameters
+        ----------
+        tablefile: str, default is 'GPCRmd_B2AR_nomenclature'
+            The PDB four letter code that will be used for CGN purposes
+        ref_path: str,default is '.'
+            The local path where the needed files are
+
+        """
+
+        self._tablefile = tablefile
+
+        self._AAcode2BW, self._defs = table2BW_by_AAcode(tablefile,return_defs=True)
+
+        self._fragments = {key: [] for key in self._defs}
+        for AArS, iBW in self._AAcode2BW.items():
+            intBW = int(iBW[0])
+            if intBW<8:
+                key= 'TM%u'%intBW
+            else:
+                key = 'H%u' % intBW
+            self._fragments[key].append(AArS)
+        from . aa_utils import name_from_AA as _name_from_AA
+        self._seq_fragments = {key:''.join([_name_from_AA(AA) for AA in val]) for key, val in self._fragments.items()}
+
+    @property
+    def tablefile(self):
+        r""" The file used to instantiate this transformer"""
+        return self._tablefile
+
+    @property
+    def AAcode2BW(self):
+        r""" Dictionary AA-codes as keys, so that e.g. '3.50' = self.AAcode2BW[R131]"""
+        return self._AAcode2BW
+
+    @property
+    def fragment_names(self):
+        r""" List of the available fragments, e.g. ["TM1","TM2"]. Can also contain loops if the user asked for it"""
+        return self._defs
+
+    @property
+    def fragments(self):
+        r""" Dictionary of BW fragment definitions, keys are self.fragment_names"""
+        return self._fragments
+
+    @property
+    def seq_fragments(self):
+        r""" Dictionary of sequences for each fragment in self.fragments"""
+        return self._seq_fragments
+
+    @property
+    def seq(self):
+        r""" Sequence of the AA found in this BW transformer"""
+        return ''.join(self._seq_fragments.values())
+
+    def map2top(self,top, restrict_to_residxs=None):
+        return _map2top(self.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
+
+def _map2top(AAcode2BW, top, restrict_to_residxs=None):
+    r"""
+
+    Parameters
+    ----------
+    tf : transformer, CGN or BW
+    top
+    restrict_to_residxs
+
+    Returns
+    -------
+
+    """
+
+    if restrict_to_residxs is None:
+        restrict_to_residxs = [residue.index for residue in top.residues]
+    seq = ''.join([_shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
+    from sofi_functions.aa_utils import name_from_AA as _name_from_AA
+    seqBW= ''.join([_name_from_AA(key) for key in AAcode2BW.keys()])
+    alignment = _alignment_result_to_list_of_dicts(_my_bioalign(seq, seqBW)[0],
+                                                   top,
+                                                   restrict_to_residxs,
+                                                   [_int_from_AA_code(key) for key in AAcode2BW],
+                                                   #verbose=True
+                                                   )
+    alignment = _DF(alignment)
+    alignment = alignment[alignment["match"] == True]
+    out_list = [None for __ in top.residues]
+    for idx, resSeq, AA in alignment[["idx_0","idx_1", "AA_1"]].values:
+        out_list[int(idx)]=AAcode2BW[AA + str(resSeq)]
+    return out_list
+
 def top2CGN_by_AAcode(top, ref_CGN_tf,
                       restrict_to_residxs=None,
                       verbose=False):
@@ -326,11 +411,8 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
 
         if verbose:
             import pandas as pd
-            from IPython.display import display
-            with pd.option_context('display.max_rows', None, 'display.max_columns',
-                                   None,
-                                   'display.width', 1000):  # more options can be specified also
-                display(pd.DataFrame.from_dict(list_of_alignment_dicts))
+            from .sequence_utils import _print_verbose_dataframe
+            _print_verbose_dataframe(pd.DataFrame.from_dict(list_of_alignment_dicts))
             input("This is the alignment. Hit enter to continue")
 
         # TODO learn to tho dis with pandas
@@ -424,10 +506,11 @@ def add_loop_definitions_to_TM_residx_dict(segment_dict, not_present=["ICL3"], s
     return out_dict
 
 def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
-                        modifications={"S262":"F264"},
+                        #modifications={"S262":"F264"},
                         reduce_to_resSeq=True):
 
-    all_defs, names = table2BW_by_AAcode(tablefile, modifications=modifications,
+    all_defs, names = table2BW_by_AAcode(tablefile,
+                                         #modifications=modifications,
                                          return_defs=True)
 
     # First pass
@@ -457,3 +540,15 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
         AA_dict = {key: [int(ival) for ival in val] for key, val in
                    AA_dict.items()}
     return AA_dict
+
+def _guess_nomenclature_fragments(BWtf, top, fragments, cutoff=.75, verbose=False):
+    aligned_BWs = BWtf.map2top(top)
+    guess = []
+    for ii, ifrag in enumerate(fragments):
+        hits = [aligned_BWs[jj] for jj in ifrag if aligned_BWs[jj] is  not None]
+        if len(hits)/len(ifrag)>=cutoff:
+            guess.append(ii)
+        if verbose:
+            print(ii, len(hits)/len(ifrag))
+
+    return guess
