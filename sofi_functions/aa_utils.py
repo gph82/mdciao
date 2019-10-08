@@ -46,18 +46,20 @@ def name_from_AA(key):
 
     Parameters
     ----------
-    key : string
-        Residue name passed as a string, example "GLU30"
+    key : string or obj:`mdtraj.Topology.Residue` object
+        Residue name passed as a string, example "GLU30" or as residue object
 
     Returns
     -------
     name: str
-        Name of the residue, like "GLU" or "E" for "GLU30" or "E30", respectively
+        Name of the residue, like "GLU" for "GLU30" or "E" for "E30"
 
     """
-    return ''.join([ii for ii in key if ii.isalpha()])
 
-def shorten_AA(AA, substitute_fail=None):
+
+    return ''.join([ii for ii in str(key) if ii.isalpha()])
+
+def shorten_AA(AA, substitute_fail=None, keep_index=False):
     r"""
     return the short name of an AA, e.g. TRP30 to Y30 by trying to
     use either the :obj:`mdtraj.Topology.Residue.code' attribute
@@ -71,10 +73,11 @@ def shorten_AA(AA, substitute_fail=None):
     substitute_fail: str, default is None
         If there is no .code  attribute, different options are there
         depending on the value of this parameter
-
+        * None : throw an exception when no short code is found (default)
         * 'long' : keep the residue's long name, i.e. do nothing
         * 'c': any alphabetic character, as long as it is of len=1
-        * None: throw an exception when no short code is found
+        * 0 : the first alphabetic character in the residue's name
+
 
     Returns
     -------
@@ -82,27 +85,32 @@ def shorten_AA(AA, substitute_fail=None):
         A string representing this AA using the short code
 
     """
-    key_not_found = False
+
     if isinstance(AA,str):
         try:
-            return '%s%u'%(_AMINO_ACID_CODES[name_from_AA(AA)],int_from_AA_code(AA))
+            res = '%s%u'%(_AMINO_ACID_CODES[name_from_AA(AA)], int_from_AA_code(AA))
         except KeyError:
-            key_not_found=True
+            res = None
     else:
-        try:
-            return '%s%u'%(AA.code,AA.resSeq)
-        except:
-            key_not_found=True
-            #raise NotImplementedError
+        res = '%s%u'%(AA.code,AA.resSeq)
 
-    if key_not_found:
+    #print(res, AA, substitute_fail)
+    if "none" in str(res).lower():
         if substitute_fail is None:
             raise KeyError("There is no short version for your input %s (%s)"%(AA, type(AA)))
         elif isinstance(substitute_fail,str):
             if substitute_fail.lower()=="long":
-                return str(AA)
+                res = str(AA)
             elif len(substitute_fail)==1:
-                return '%s%u'%(substitute_fail,int_from_AA_code(str(AA)))
+                res = '%s%u'%(substitute_fail,int_from_AA_code(str(AA)))
             else:
                 raise ValueError("Cannot understand your input. Please refer to the docs.")
+        elif isinstance(substitute_fail,int) and substitute_fail==0:
+            res = '%s%u' % (str(AA)[0], int_from_AA_code(str(AA)))
+        else:
+            raise ValueError("Cannot understand your input. Please refer to the docs.")
 
+    if keep_index:
+        return res
+    else:
+        return name_from_AA(res)
