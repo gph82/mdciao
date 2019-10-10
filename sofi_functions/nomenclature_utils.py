@@ -156,16 +156,9 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
 
 class CGN_transformer(object):
     """
-    Class to convert the residues in the 3SN6.pdb file to its corresponding common-Gprotein-nomenclature numbering.
+    Class to abstract, handle, and use common-Gprotein-nomenclature.
     See here_ for more info.
      .. _here: https://www.mrc-lmb.cam.ac.uk/CGN/faq.html
-    This object needs to read the files
-
-    * 3SN6.pdb
-    * CGN_3SNG.txt
-
-    or equivalent files for other PDB codes
-
     """
     def __init__(self, ref_PDB='3SN6', ref_path='.', try_web_lookup=True):
         r"""
@@ -174,28 +167,38 @@ class CGN_transformer(object):
         ----------
         ref_PDB: str, default is '3SN6'
             The PDB four letter code that will be used for CGN purposes
-        ref_path: str,default is '.'
-            The local path where the needed files are
+        ref_path: str, default is '.'
+            The local path where these files exist
+             * 3SN6_CGN.txt
+             * 3SN6.pdb
 
         try_web_lookup: bool, default is True
             If the local files are not found, try automatically a web lookup at
-            * www.mrc-lmb.cam.ac.uk (for CGN)
-            * rcsb.org (for the PDB)
+             * www.mrc-lmb.cam.ac.uk (for CGN)
+             * rcsb.org (for the PDB)
         """
         # Create dataframe with the alignment
         from pandas import read_csv as _read_csv
         from os import path as _path
         self._ref_PDB = ref_PDB
-
+        self._CGN_file = 'CGN_%s.txt' % ref_PDB
         try:
-            self._DF = _read_csv(_path.join(ref_path, 'CGN_%s.txt'%ref_PDB), delimiter='\t')
+
+            self._DF = _read_csv(_path.join(ref_path, self._CGN_file), delimiter='\t')
         except FileNotFoundError:
-            print("No local file of CGN numbering %s found"%ref_PDB,end="")
+            print("No local file %s numbering found"%self._CGN_file,end="")
             if try_web_lookup:
                 web_address="www.mrc-lmb.cam.ac.uk"
-                print(", checking online in %s ..."%web_address,end="")
-                self._DF = _read_csv("https://%s/CGN/lookup_results/%s.txt"%(web_address,ref_PDB), delimiter='\t')
-                print("found! Continuing normally")
+                url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, ref_PDB)
+                print(", checking online in\n%s ..."%url,end="")
+                import urllib
+                try:
+                    self._DF = _read_csv(url, delimiter='\t')
+                    print("found! Continuing normally")
+                except urllib.error.HTTPError as e:
+                    print(e)
+                    print("Aborting.")
+                    return
             else:
                 raise
 
@@ -239,6 +242,7 @@ class CGN_transformer(object):
 
     @property
     def fragment_names(self):
+        r"""Name of the fragments according to the CGN numbering"""
         return self._fragment_names
 
     @property
@@ -255,8 +259,8 @@ class CGN_transformer(object):
 
     @property
     def AA2CGN(self):
-        r"""Dictionary with AA-codes as keys, so that "G.HN.42" = AA2CGN["K25"].
-        If an AA does not have a CGN-name, it is not present in the keys. """
+        r"""Dictionary with AA-codes as keys, so that AA2CGN["K25"] -> G.HN.42"""
+        #If an AA does not have a CGN-name, it is not present in the keys. """
         return self._dict
 
     @property
@@ -268,6 +272,22 @@ class CGN_transformer(object):
         #return seq_ref, seq_idxs, self._dict
 
     def top2map(self, top, restrict_to_residxs=None):
+        r""" Align the sequence of :obj:`top` to the transformers sequence
+        and return a list of CGN numbering for each residue in :obj:`top`.
+        If no CGN numbering is found after the alignment, the entry will be None
+
+        Parameters
+        ----------
+        top : obj:`mdtraj.Topology` object
+        restrict_to_residxs: iterable of integers, default is None
+            You can select a segment of the top that aligns best to the CGN numbering
+            to improve the quality of the alignment. The return list will still
+            be of length= top.n_residues
+
+        Returns
+        -------
+        map : list
+        """
         return _top2map(self.AA2CGN, top, restrict_to_residxs=restrict_to_residxs)
 
     def top2defs(self, top, return_defs=False):
@@ -358,36 +378,44 @@ class BW_transformer(object):
         if return_defs:
             return defs
 
-def _top2map(AAcode2BW, top, restrict_to_residxs=None):
+# TODO TEST
+def _top2map(consensus_dict, top, restrict_to_residxs=None):
     r"""
+    Align the sequence of :obj:`top` to dictionary's sequence and return a
+    list of consensus numbering for each residue in :obj:`top`. If no CGN numbering
+    is found after the alignment, the entry will be None
 
     Parameters
     ----------
-    tf : transformer, CGN or BW
-    top
-    restrict_to_residxs
+    consensus_dict : dictionary
+        AA-codes as keys and nomenclature as values, e.g. AA2CGN["K25"] -> G.HN.42
+    top : obj:`mdtraj.Topology` object
+    restrict_to_residxs: iterable of integers, default is None
+        You can select a segment of the top that aligns best to the CGN numbering
+        to improve the quality of the alignment.
 
     Returns
     -------
-
+    map : list
+        list of length top.n_residues containing CGN numberings
     """
 
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
     seq = ''.join([_shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
     from sofi_functions.aa_utils import name_from_AA as _name_from_AA
-    seqBW= ''.join([_name_from_AA(key) for key in AAcode2BW.keys()])
+    seqBW= ''.join([_name_from_AA(key) for key in consensus_dict.keys()])
     alignment = _alignment_result_to_list_of_dicts(_my_bioalign(seq, seqBW)[0],
                                                    top,
                                                    restrict_to_residxs,
-                                                   [_int_from_AA_code(key) for key in AAcode2BW],
+                                                   [_int_from_AA_code(key) for key in consensus_dict],
                                                    #verbose=True
                                                    )
     alignment = _DF(alignment)
     alignment = alignment[alignment["match"] == True]
     out_list = [None for __ in top.residues]
     for idx, resSeq, AA in alignment[["idx_0","idx_1", "AA_1"]].values:
-        out_list[int(idx)]=AAcode2BW[AA + str(resSeq)]
+        out_list[int(idx)]=consensus_dict[AA + str(resSeq)]
     return out_list
 
 def top2CGN_by_AAcode(top, ref_CGN_tf,
