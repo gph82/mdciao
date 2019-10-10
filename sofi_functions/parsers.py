@@ -106,6 +106,7 @@ def parser_for_sites():
     _parser_add_stride(parser)
     _parser_add_smooth(parser)
     _parser_add_fragment_names(parser)
+    _parser_add_cutoff(parser)
     return parser
 
 
