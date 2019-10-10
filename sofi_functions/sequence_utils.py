@@ -4,10 +4,11 @@ from Bio.pairwise2 import align as _Bioalign
 
 def _print_verbose_dataframe(idf):
     import pandas as _pd
+    from IPython.display import display as _display
     with _pd.option_context('display.max_rows', None,
                             'display.max_columns', None,
                             'display.width', 1000):
-        print(idf)
+        _display(idf)
 
 def _my_bioalign(seq1,seq2):
     return _Bioalign.globalxs(seq1, seq2, -1,0)
