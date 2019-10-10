@@ -382,7 +382,7 @@ class BW_transformer(object):
 def _top2map(consensus_dict, top, restrict_to_residxs=None):
     r"""
     Align the sequence of :obj:`top` to dictionary's sequence and return a
-    list of consensus numbering for each residue in :obj:`top`. If no CGN numbering
+    list of consensus numbering for each residue in :obj:`top`. If no consensus numbering
     is found after the alignment, the entry will be None
 
     Parameters
