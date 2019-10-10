@@ -53,11 +53,12 @@ if str(a.CGN_PDB).lower()!='none':
     input("Hit enter to continue!\n")
 groups=[]
 group_idxs=[]
+# TODO MAKE A METHOD OUT OF THIS!!!
 if a.fragments[0].lower()=="ask":
     for ii in [1,2]:
         groups.append([])
         group_idxs.append([])
-        answer = input("GROUP %u:\nType a list or posix-expression (or both),e.g.,'TM*,H8'\n"%ii).replace(" ","").strip("'").strip('"')
+        answer = input("group%u:\nInput a list of posix-expressions like 'TM*,-TM2,H8' (TM2 will be avoided)\n"%ii).replace(" ","").strip("'").strip('"')
         from fnmatch import fnmatch
         include = [pattern for pattern in answer.split(",") if not pattern.startswith("-")]
         exclude = [pattern[1:] for pattern in answer.split(",") if pattern.startswith("-")]
@@ -66,7 +67,7 @@ if a.fragments[0].lower()=="ask":
             for tf in [BWtf, CGNtf]:
                 try:
                     for key in tf.fragment_names:
-                        print(pattern, key, match(key,pattern))
+                        #print(pattern, key, match(key,pattern))
                         if match(key,pattern):
                             groups[-1].append(key)
                             group_idxs[-1].extend(BWCGN_defs[key])
