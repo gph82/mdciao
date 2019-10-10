@@ -3,6 +3,9 @@ import numpy as _np
 from .aa_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
 from .sequence_utils import alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, _my_bioalign
 from pandas import DataFrame as _DF
+from collections import defaultdict as _defdict
+
+
 def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        modifications={"S262":"F264"},
                        keep_AA_code=True,
@@ -265,14 +268,14 @@ class CGN_transformer(object):
 
     @property
     def ref_PDB(self):
-        r""" Return the PDB code used for instantiation"""
+        r""" PDB code used for instantiation"""
 
         return self._ref_PDB
 
         #return seq_ref, seq_idxs, self._dict
 
-    def top2map(self, top, restrict_to_residxs=None):
-        r""" Align the sequence of :obj:`top` to the transformers sequence
+    def top2map(self, top, restrict_to_residxs=None, fill_gaps=True):
+        r""" Align the sequence of :obj:`top` to the transformer's sequence
         and return a list of CGN numbering for each residue in :obj:`top`.
         If no CGN numbering is found after the alignment, the entry will be None
 
@@ -280,19 +283,39 @@ class CGN_transformer(object):
         ----------
         top : obj:`mdtraj.Topology` object
         restrict_to_residxs: iterable of integers, default is None
-            You can select a segment of the top that aligns best to the CGN numbering
+            You can select a segment of the top that aligns best to self.ref_PDB sequence
             to improve the quality of the alignment. The return list will still
-            be of length= top.n_residues
+            be of length=top.n_residues
+        fill_gaps: bool, True
+            Try to fill CGN gaps in the sub-domains
 
         Returns
         -------
-        map : list
+        map : list of len = top.n_residues with the CGN numbering entries
         """
-        return _top2map(self.AA2CGN, top, restrict_to_residxs=restrict_to_residxs)
+        return _top2consensus_map(self.AA2CGN, top,
+                                  restrict_to_residxs=restrict_to_residxs,
+                                  keep_consensus=fill_gaps)
 
     def top2defs(self, top, return_defs=False):
+        r"""
+        Print the CGN transformer's definitions for the subdomains, e.g. H5 or S1,
+        in terms of residue indices of the input :obj:`top`
+
+        Parameters
+        ----------
+        top: obj:`mdtraj.Topology`
+        return_defs: boolean, default is False
+            If True, appart from printing the definitions,
+            they are returned as a dictionary
+
+        Returns
+        -------
+        defs : dictionary (if return_defs is True)
+            Dictionary with subdomain names as keys and lists of indices as values
+        """
         map = self.top2map(top)
-        defs = _map2defs(map,'CGN')
+        defs = _map2defs(map)
         from sofi_functions.fragments import _print_frag
         for ii, (key, val) in enumerate(defs.items()):
             istr = _print_frag('%s' % key, top, val, fragment_desc='', return_string=True)
@@ -365,7 +388,7 @@ class BW_transformer(object):
         return ''.join(self._seq_fragments.values())
 
     def top2map(self, top, restrict_to_residxs=None):
-        return _top2map(self.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
+        return _top2consensus_map(self.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
 
     def top2defs(self, top, return_defs=False):
         map = self.top2map(top)
@@ -379,10 +402,16 @@ class BW_transformer(object):
             return defs
 
 # TODO TEST
-def _top2map(consensus_dict, top, restrict_to_residxs=None):
+def _top2consensus_map(consensus_dict, top,
+                       restrict_to_residxs=None,
+                       keep_consensus=False,
+                       verbose=False,
+                       ):
     r"""
-    Align the sequence of :obj:`top` to dictionary's sequence and return a
-    list of consensus numbering for each residue in :obj:`top`. If no consensus numbering
+    Align the sequence of :obj:`top` to consensus
+    dictionary's sequence (typically CGN_tf.AA2CGN))
+    and return a list of consensus numbering for each residue
+     in :obj:`top`. If no consensus numbering
     is found after the alignment, the entry will be None
 
     Parameters
@@ -391,8 +420,17 @@ def _top2map(consensus_dict, top, restrict_to_residxs=None):
         AA-codes as keys and nomenclature as values, e.g. AA2CGN["K25"] -> G.HN.42
     top : obj:`mdtraj.Topology` object
     restrict_to_residxs: iterable of integers, default is None
-        You can select a segment of the top that aligns best to the consensus numbering
+        You can select a segment of the input top that aligns best to the consensus numbering
         to improve the quality of the alignment.
+    keep_consensus : boolean default is False
+        Even if there is a consensus mismatch with the sequence of the input
+        :obj:`consensus_dict`, try to relabel automagically, s.t.
+        * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
+        will be grouped relabeled as
+        * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
+
+    verbose: boolean, default is False
+        be verbose
 
     Returns
     -------
@@ -409,14 +447,84 @@ def _top2map(consensus_dict, top, restrict_to_residxs=None):
                                                    top,
                                                    restrict_to_residxs,
                                                    [_int_from_AA_code(key) for key in consensus_dict],
-                                                   #verbose=True
+                                                   verbose=verbose
                                                    )
     alignment = _DF(alignment)
     alignment = alignment[alignment["match"] == True]
     out_list = [None for __ in top.residues]
+
     for idx, resSeq, AA in alignment[["idx_0","idx_1", "AA_1"]].values:
         out_list[int(idx)]=consensus_dict[AA + str(resSeq)]
+
+    if keep_consensus:
+        #todo this only works with CGN, will fail with BW
+        out_list = _fill_CGN_gaps(out_list, top)
     return out_list
+
+# TODO test
+def _fill_CGN_gaps(consensus_list, top, verbose=False):
+    r""" Try to fill CGN consensus nomenclature gaps based on adjacent labels
+
+    The idea is to fill gaps of the sort:
+     * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
+      to
+     * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
+
+    The size of the gap is variable, it just has to match the length of
+    the consensus labels, i.e. 28-26=1 which is the number of "None" the
+    input list had
+
+    Parameters
+    ----------
+    consensus_list: list
+        List of length top.n_residues with the original consensus labels
+        Supossedly, it contains some "None" entries inside sub-domains
+    top : obj:`mdtraj.Topology` object
+    verbose : boolean, default is False
+
+    Returns
+    -------
+    consensus_list: list
+        The same as the input :obj:`consensus_list` with guessed missing entries
+    """
+
+    defs = _map2defs(consensus_list)
+    for key, val in defs.items():
+
+        # Identify problem cases
+        if len(val)!=val[-1]-val[0]+1:
+            if verbose:
+                print(key)
+
+            # Initialize residue_idxs_wo_consensus_labels control variables
+            offset = int(consensus_list[val[0]].split(".")[-1])
+            consensus_kept=True
+            suggestions = []
+            residue_idxs_wo_consensus_labels=[]
+
+            # Check whether we can predict the consensus labels correctly
+            for ii in _np.arange(val[0],val[-1]+1):
+                suggestions.append('%s.%u'%(key,offset))
+                if consensus_list[ii] is None:
+                    residue_idxs_wo_consensus_labels.append(ii)
+                else: # meaning, we have a consensus label, check it against suggestion
+                    consensus_kept *= suggestions[-1]==consensus_list[ii]
+                if verbose:
+                    print(ii, top.residue(ii),consensus_list[ii], suggestions[-1], consensus_kept)
+                offset += 1
+            if verbose:
+                print()
+            if consensus_kept:
+                if verbose:
+                    print("The consensus was kept, I am relablling these:")
+                for idx, res_idx in enumerate(_np.arange(val[0],val[-1]+1)):
+                    if res_idx in residue_idxs_wo_consensus_labels:
+                        consensus_list[res_idx] = suggestions[idx]
+                        if verbose:
+                            print(suggestions[idx])
+            if verbose:
+                print()
+    return consensus_list
 
 def top2CGN_by_AAcode(top, ref_CGN_tf,
                       restrict_to_residxs=None,
@@ -616,18 +724,41 @@ def _guess_nomenclature_fragments(BWtf, top, fragments, cutoff=.75, verbose=Fals
 
     return guess
 
-def _map2defs(indict,conv_type):
-    from collections import defaultdict
-    defs = defaultdict(list)
-    for ii, key in enumerate(indict):
+def _map2defs(cons_list):
+    r"""
+    Regroup a list of consensus labels into their subdomains. The indices of the list
+    are interpreted as residue indices in the topology used to generate :obj:`cons_list`
+    in the first place, e.g. by using :obj:`nomenclature_utils._top2consensus_map`
+
+    Note:
+    -----
+     The method will guess automagically whether this is a CGN or BW label by
+     checking the type of the first character (numeric is BW, 3.50, alpha is CGN, G.H5.1)
+
+    Parameters
+    ----------
+    cons_list: list
+        Contains consensus labels for a given topology, s.t. indices of
+        the list map to residue indices of a given topology, s.t.
+        cons_list[10] has the consensus label of top.residue(10)
+
+    allow_jumps: boolean, default is False
+        Allow interruptions of the domains in case not all of its elements
+
+    Returns
+    -------
+    map : dictionary
+        dictionary with subdomains as keys and lists of consesus labels as values
+    """
+    defs = _defdict(list)
+    for ii, key in enumerate(cons_list):
         if key is not None:
-            if conv_type=='BW':
+            if key[0].isnumeric(): # it means it is BW
                 new_key =key.split(".")[0]
-            elif conv_type=='CGN':
+            elif key[0].isalpha(): # it means it CGN
                 new_key = '.'.join(key.split(".")[:-1])
             else:
-                raise Exception
+                raise Exception(new_key)
             defs[new_key].append(ii)
 
-    # TODO there has to be a better way for defdict->dict
-    return {key: val for key, val in defs.items()}
+    return {key: _np.array(val) for key, val in defs.items()}
