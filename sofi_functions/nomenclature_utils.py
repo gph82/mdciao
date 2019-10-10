@@ -12,7 +12,7 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        return_defs=False,
                        ):
     """
-    Reads an excel table and returns a dictionary AAcodes so that e.g. '3.50' = self.AAcode2BW[R131]
+    Reads an excel table and returns a dictionary AAcodes so that e.g. '3.50' self.AAcode2BW[R131] --> '3.50'
 
     Parameters
     ----------
@@ -74,7 +74,7 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
 
 def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
     """
-    Interpolates the BW for residues which are not present in the nomenclature file.
+    Estimates the BW for residues which are not present in the nomenclature file.
 
     Parameters
     ----------
@@ -281,7 +281,8 @@ class CGN_transformer(object):
 
         Parameters
         ----------
-        top : obj:`mdtraj.Topology` object
+        top :
+            :py:class:`mdtraj.Topology` object
         restrict_to_residxs: iterable of integers, default is None
             You can select a segment of the top that aligns best to self.ref_PDB sequence
             to improve the quality of the alignment. The return list will still
@@ -306,7 +307,7 @@ class CGN_transformer(object):
         ----------
         top: obj:`mdtraj.Topology`
         return_defs: boolean, default is False
-            If True, appart from printing the definitions,
+            If True, apart from printing the definitions,
             they are returned as a dictionary
 
         Returns
@@ -364,7 +365,7 @@ class BW_transformer(object):
 
     @property
     def AAcode2BW(self):
-        r""" Dictionary AA-codes as keys, so that e.g. '3.50' = self.AAcode2BW[R131]"""
+        r""" Dictionary AA-codes as keys, so that e.g. self.AAcode2BW[R131] -> '3.50' """
         return self._AAcode2BW
 
     @property
@@ -388,9 +389,43 @@ class BW_transformer(object):
         return ''.join(self._seq_fragments.values())
 
     def top2map(self, top, restrict_to_residxs=None):
+        r""" Align the sequence of :obj:`top` to the transformer's sequence
+        and return a list of BW numbering for each residue in :obj:`top`.
+        If no BW numbering is found after the alignment, the entry will be None
+
+        Parameters
+        ----------
+        top :
+            :py:class:`mdtraj.Topology` object
+        restrict_to_residxs: iterable of integers, default is None
+            You can select a segment of the top that aligns best to self.ref_PDB sequence
+            to improve the quality of the alignment. The return list will still
+            be of length=top.n_residues
+
+        Returns
+        -------
+        map : list of len = top.n_residues with the BW numbering entries
+        """
         return _top2consensus_map(self.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
 
     def top2defs(self, top, return_defs=False):
+        r"""
+        Print the BW transformer's definitions for the subdomains,
+        in terms of residue indices of the input :obj:`top`
+
+        Parameters
+        ----------
+        top:
+            :py:class:`mdtraj.Topology` object
+        return_defs: boolean, default is False
+            If True, apart from printing the definitions,
+            they are returned as a dictionary
+
+        Returns
+        -------
+        defs : dictionary (if return_defs is True)
+            Dictionary with subdomain names as keys and lists of indices as values
+        """
         map = self.top2map(top)
         defs = _map2defs(map,'BW')
         defs = {('TM%s'%key).replace('TM8','H8'):val for key, val in defs.items()}
@@ -418,7 +453,8 @@ def _top2consensus_map(consensus_dict, top,
     ----------
     consensus_dict : dictionary
         AA-codes as keys and nomenclature as values, e.g. AA2CGN["K25"] -> G.HN.42
-    top : obj:`mdtraj.Topology` object
+    top :
+        :py:class:`mdtraj.Topology` object
     restrict_to_residxs: iterable of integers, default is None
         You can select a segment of the input top that aligns best to the consensus numbering
         to improve the quality of the alignment.
@@ -479,7 +515,8 @@ def _fill_CGN_gaps(consensus_list, top, verbose=False):
     consensus_list: list
         List of length top.n_residues with the original consensus labels
         Supossedly, it contains some "None" entries inside sub-domains
-    top : obj:`mdtraj.Topology` object
+    top :
+        :py:class:`mdtraj.Topology` object
     verbose : boolean, default is False
 
     Returns
@@ -537,8 +574,10 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
 
     Parameters
     ----------
-    top : :py:class:`mdtraj.Topology`
-    ref_CGN_tf : :obj: 'nomenclature_utils.CGN_transformer' object
+    top :
+        :py:class:`mdtraj.Topology` object
+    ref_CGN_tf :
+        :class:`CGN_transformer` object
     restrict_to_residxs: list, optional, default is None
         residue indexes for which the CGN needs to be found out. Default behaviour is for all
         residues in the :obj:`top`.
@@ -603,6 +642,24 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
     return list_out
 
 def _relabel_consensus(idx, input_dicts, no_key="NA"):
+    """
+    Assigns labels based on the residue index
+    Parameters
+    ----------
+    idx : int
+        index for which the relabeling is needed
+    input_dicts : list
+        each item in the list should be a dictionary. The keys of each dictionary should be the residue idxs,
+        and the corresponding value should be the label.
+    no_key : str
+        output message if there is no label for the residue idx in any of the dictionaries.
+
+    Returns
+    -------
+    string
+        label of the residue idx if present else "NA"
+
+    """
     labels  = [idict[idx] for idict in input_dicts]
     good_label = [ilab for ilab in labels if str(ilab).lower()!="none"]
     assert len(good_label)<=1, "There can only be one good label, but for residue %u found %s"%(idx, good_label)
@@ -614,6 +671,20 @@ def _relabel_consensus(idx, input_dicts, no_key="NA"):
 def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True,
                               tablefile=None,
                               reorder_by_AA_names=False):
+    """
+
+    Parameters
+    ----------
+    itop
+    keep_first_resSeq
+    complete_loops
+    tablefile
+    reorder_by_AA_names
+
+    Returns
+    -------
+
+    """
     # TODO pass this directly as kwargs?
     kwargs = {}
     if tablefile is not None:
@@ -649,6 +720,18 @@ def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True,
 
 
 def add_loop_definitions_to_TM_residx_dict(segment_dict, not_present=["ICL3"], start_with='ICL'):
+    """
+
+    Parameters
+    ----------
+    segment_dict
+    not_present
+    start_with
+
+    Returns
+    -------
+
+    """
     loop_idxs={"ICL":1,"ECL":1}
     loop_type=start_with
     keys_out = []
@@ -679,6 +762,17 @@ def add_loop_definitions_to_TM_residx_dict(segment_dict, not_present=["ICL3"], s
 def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                         #modifications={"S262":"F264"},
                         reduce_to_resSeq=True):
+    """
+
+    Parameters
+    ----------
+    tablefile
+    reduce_to_resSeq
+
+    Returns
+    -------
+
+    """
 
     all_defs, names = table2BW_by_AAcode(tablefile,
                                          #modifications=modifications,
@@ -713,6 +807,23 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
     return AA_dict
 
 def _guess_nomenclature_fragments(BWtf, top, fragments, cutoff=.75, verbose=False):
+    """
+
+    Parameters
+    ----------
+    BWtf:
+        :class:`BW_transformer` object
+    top:
+        :py:class:`mdtraj.Topology` object
+    fragments : 
+    cutoff
+    verbose: boolean
+        prints message if True else no output message (Default is False).
+
+    Returns
+    -------
+
+    """
     aligned_BWs = BWtf.top2map(top)
     guess = []
     for ii, ifrag in enumerate(fragments):
