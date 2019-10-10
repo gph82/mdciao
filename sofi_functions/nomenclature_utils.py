@@ -391,7 +391,7 @@ def _top2map(consensus_dict, top, restrict_to_residxs=None):
         AA-codes as keys and nomenclature as values, e.g. AA2CGN["K25"] -> G.HN.42
     top : obj:`mdtraj.Topology` object
     restrict_to_residxs: iterable of integers, default is None
-        You can select a segment of the top that aligns best to the CGN numbering
+        You can select a segment of the top that aligns best to the consensus numbering
         to improve the quality of the alignment.
 
     Returns
