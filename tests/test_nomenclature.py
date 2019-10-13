@@ -3,7 +3,7 @@ import mdtraj as md
 import numpy as _np
 from os import path
 from sofi_functions.nomenclature_utils import *
-from sofi_functions.nomenclature_utils import _map2defs
+from sofi_functions.nomenclature_utils import _map2defs, _guess_nomenclature_fragments
 from filenames import filenames
 
 test_filenames = filenames()
@@ -46,9 +46,9 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                               48: '1.47'})
 
     def test_table2BW_by_AAcode_return_defs_test(self):
-        table2BW = table2BW_by_AAcode(tablefile=self.file, return_defs=True)
+        table2BW, defs = table2BW_by_AAcode(tablefile=self.file, return_defs=True)
         self.assertEqual(table2BW,
-                         ({'Q26': '1.25',
+                         {'Q26': '1.25',
                            'E27': '1.26',
                            'R28': '1.27',
                            'F264': '1.28',
@@ -60,8 +60,9 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                            'L45': '1.44',
                            'A46': '1.45',
                            'I47': '1.46',
-                           'V48': '1.47'},
-                          ['TM1']))
+                           'V48': '1.47'})
+
+        self.assertEqual(defs,['TM1'])
 
 class Test_guess_missing_BWs(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
@@ -117,6 +118,9 @@ class Test_map2defs(unittest.TestCase):
         assert (_np.array_equal(map2defs['3'], [0]))
         assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
         assert (_np.array_equal(map2defs['5'], [3]))
+
+# class Test_table2TMdefs_resSeq(unittest.TestCase):
+
 
 if __name__ == '__main__':
     unittest.main()
