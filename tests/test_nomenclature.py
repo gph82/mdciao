@@ -146,7 +146,8 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
 # #TODO test to be completed after clarifying from Guillermo
 
 
-class Test_top2consensus_map(unittest.TestCase):
+# class Test_top2consensus_map(unittest.TestCase):
+#TODO
 
 
 if __name__ == '__main__':
