@@ -3,7 +3,7 @@ import mdtraj as md
 import numpy as _np
 from os import path
 from sofi_functions.nomenclature_utils import *
-from sofi_functions.nomenclature_utils import _map2defs, _guess_nomenclature_fragments
+from sofi_functions.nomenclature_utils import _map2defs, _top2consensus_map
 from filenames import filenames
 
 test_filenames = filenames()
@@ -118,13 +118,6 @@ class Test_map2defs(unittest.TestCase):
         assert (_np.array_equal(map2defs['3'], [0]))
         assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
         assert (_np.array_equal(map2defs['5'], [3]))
-#
-# class Test_table2TMdefs_resSeq(unittest.TestCase):
-#     def setUp(self):
-#         self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
-#
-#     def table2TMdefs_resSeq_just_works(self):
-#         table2TMdefs = table2TMdefs_resSeq(tablefile=self.file, return_defs=True)
 
 class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
     def setUp(self):
@@ -138,6 +131,23 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
         self.assertEqual(add_defs['ICL2'], [49, 49])
         self.assertEqual(add_defs['ECL2'], [57, 59])
         self.assertEqual(add_defs['ECL3'], [71, 79])
+
+#
+# class Test_table2TMdefs_resSeq(unittest.TestCase):
+#TODO test to be completed after clarifying from Guillermo
+
+#     def setUp(self):
+#         self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
+#
+#     def table2TMdefs_resSeq_just_works(self):
+#         table2TMdefs = table2TMdefs_resSeq(tablefile=self.file, return_defs=True)
+
+# class Test_csv_table2TMdefs_res_idxs(unittest.TestCase):
+# #TODO test to be completed after clarifying from Guillermo
+
+
+class Test_top2consensus_map(unittest.TestCase):
+
 
 if __name__ == '__main__':
     unittest.main()
