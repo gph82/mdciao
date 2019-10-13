@@ -12,7 +12,7 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                        return_defs=False,
                        ):
     """
-    Reads an excel table and returns a dictionary AAcodes so that e.g. '3.50' self.AAcode2BW[R131] --> '3.50'
+    Reads an excel table and returns a dictionary AAcodes so that e.g. self.AAcode2BW[R131] -> '3.50'
 
     Parameters
     ----------
@@ -87,7 +87,8 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
     Returns
     -------
     BW : list
-        list of len=top.n_residues including estimated missing BW-names, it also retains all the values from the input dictionary.
+        list of len=top.n_residues including estimated missing BW-names,
+        it also retains all the values from the input dictionary.
 
     """
 
@@ -815,7 +816,7 @@ def _guess_nomenclature_fragments(BWtf, top, fragments, cutoff=.75, verbose=Fals
         :class:`BW_transformer` object
     top:
         :py:class:`mdtraj.Topology` object
-    fragments : 
+    fragments :
     cutoff
     verbose: boolean
         prints message if True else no output message (Default is False).
@@ -852,9 +853,6 @@ def _map2defs(cons_list):
         Contains consensus labels for a given topology, s.t. indices of
         the list map to residue indices of a given topology, s.t.
         cons_list[10] has the consensus label of top.residue(10)
-
-    allow_jumps: boolean, default is False
-        Allow interruptions of the domains in case not all of its elements
 
     Returns
     -------
