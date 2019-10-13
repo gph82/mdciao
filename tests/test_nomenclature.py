@@ -118,9 +118,26 @@ class Test_map2defs(unittest.TestCase):
         assert (_np.array_equal(map2defs['3'], [0]))
         assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
         assert (_np.array_equal(map2defs['5'], [3]))
-
+#
 # class Test_table2TMdefs_resSeq(unittest.TestCase):
+#     def setUp(self):
+#         self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
+#
+#     def table2TMdefs_resSeq_just_works(self):
+#         table2TMdefs = table2TMdefs_resSeq(tablefile=self.file, return_defs=True)
 
+class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
+    def setUp(self):
+        self.segment_dict = {'TM1': [20, 21, 22], 'TM2': [30, 33, 34], 'TM3': [40, 48], 'TM4': [50, 56],
+                             'TM5': [60, 61],'TM6': [70], 'TM7': [80, 81, 82, 83, 89], 'H8': [90, 91, 92, 93, 94, 95]}
+
+    def test_add_loop_definitions_to_TM_residx_dict_just_works(self):
+        add_defs = add_loop_definitions_to_TM_residx_dict(self.segment_dict)
+        self.assertEqual(add_defs['ICL1'],[23, 29])
+        self.assertEqual(add_defs['ECL1'], [35, 39])
+        self.assertEqual(add_defs['ICL2'], [49, 49])
+        self.assertEqual(add_defs['ECL2'], [57, 59])
+        self.assertEqual(add_defs['ECL3'], [71, 79])
 
 if __name__ == '__main__':
     unittest.main()
