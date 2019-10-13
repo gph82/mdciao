@@ -722,15 +722,30 @@ def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True,
 
 def add_loop_definitions_to_TM_residx_dict(segment_dict, not_present=["ICL3"], start_with='ICL'):
     """
+    Adds the intra- and extracellular loop definitions on the existing TM residue index dictionary.
+    Example - If there are TM1-TM7 definitions with there corresponding indexes then the output will be-
+        *ICL1 is added between TM1 and TM2
+        *ECL1 is added between TM2 and TM3
+        *ICL2 is added between TM3 and TM4
+        *ECL2 is added between TM4 and TM5
+        *ECL3 is added between TM6 and TM7
+
+    Note- "ICL3" is not being explicitly added
 
     Parameters
     ----------
-    segment_dict
-    not_present
-    start_with
+    segment_dict : dict
+        TM definition as the keys and the residue idx list as values of the dictionary
+    not_present : list
+        definitions which should not be added to the existing TM definitions
+    start_with : str
+        only the string part the first definition that should be added to the existing TM definitions
 
     Returns
     -------
+    dict
+    updated dictionary with the newly added loop definitions as keys and the corresponding residue index list,
+    as values. The original key-value pairs of the TM definition remains intact.
 
     """
     loop_idxs={"ICL":1,"ECL":1}
@@ -764,14 +779,20 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                         #modifications={"S262":"F264"},
                         reduce_to_resSeq=True):
     """
+    Returns a dictionary with the TM number as key and their corresponding amino acid resSeq range as values,
+    based on the BW nomenclature excel file
 
     Parameters
     ----------
-    tablefile
+    tablefile : xlsx file
+        GPCRmd_B2AR nomenclature file in excel format, optional
     reduce_to_resSeq
 
     Returns
     -------
+    dictionary
+    with the TM definitions as the keys and the first and the last amino acid resSeq number as values.
+    example- if amino acid Q26 corresponds to TM1, the output will be {'TM1' : [26, 26]}
 
     """
 
