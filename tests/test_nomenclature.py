@@ -1,7 +1,9 @@
 import unittest
 import mdtraj as md
+import numpy as _np
 from os import path
 from sofi_functions.nomenclature_utils import *
+from sofi_functions.nomenclature_utils import _map2defs
 from filenames import filenames
 
 test_filenames = filenames()
@@ -105,6 +107,16 @@ class Test_top2CGN_by_AAcode(unittest.TestCase):
                               5: 'G.S2.5',
                               6: None,
                               7: 'G.S2.6'})
+
+class Test_map2defs(unittest.TestCase):
+    def setUp(self):
+        self.cons_list =  ['3.67','G.H5.1','G.H5.6','5.69']
+
+    def test_map2defs_just_works(self):
+        map2defs = _map2defs(self.cons_list)
+        assert (_np.array_equal(map2defs['3'], [0]))
+        assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
+        assert (_np.array_equal(map2defs['5'], [3]))
 
 if __name__ == '__main__':
     unittest.main()
