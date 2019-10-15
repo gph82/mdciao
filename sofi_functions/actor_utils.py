@@ -405,6 +405,31 @@ def my_RMSD(geom, ref, atom_indices=None,
             weights='masses',
             check_same_atoms=False,
             per_residue=True):
+    r"""
+    Compute the RMSD of a given :obj:`geom` wrt to a given :obj:`ref`.
+    There is no pre-orienting of the geometries for maximum overlap
+
+    Parameters
+    ----------
+    geom : obj:`mdtraj.Trajectory`
+    ref : obj:`mdtraj.Trajectory`
+    atom_indices : iterable of integers, default is None
+        The group of atom indices for which to compute the RMSD, default is all
+    ref_atom_indices: iterable of integers, default is None
+        If :obj:`geom` and :obj:`ref` don't share atom indices, use this parameter
+        to pass a map of :obj:`atom_indices` in :obj:`ref`. The default behaviour
+        is to use the same indexing.
+    weights : str, default is "masses
+        How the average is weighted
+    check_same_atoms : boolean, default is False :
+        Check that the atoms chosen by :obj:`atom_indices` in :obj:`geom` and
+        obj:`ref_atom_indices` in :obj:`ref` have the same name.
+    per_residue: boolean, default is True
+
+    Returns
+    -------
+
+    """
     if atom_indices is None:
         atom_indices = _np.arange(geom.n_atoms)
 
@@ -414,42 +439,39 @@ def my_RMSD(geom, ref, atom_indices=None,
     if check_same_atoms:
         for aa_idx_geom, aa_idx_ref in zip(atom_indices,
                                            ref_atom_indices):
-            err_msg = 'geom %s is not equal ref %s (idxs %u vs %u)'%(
-                    str(geom.top.atom(aa_idx_geom)), str(ref.top.atom(aa_idx_ref)),
-                    aa_idx_geom, aa_idx_ref)
+            geom_res, ref_res =     geom.top.atom(aa_idx_geom).residue, ref.top.atom(aa_idx_ref).residue
+            geom_aname, ref_aname = geom.top.atom(aa_idx_geom).name,    ref.top.atom(aa_idx_ref).name
 
-            assert str(geom.top.atom(aa_idx_geom)) == str(ref.top.atom(aa_idx_ref)), err_msg
+            err_msg = 'geom %s is not equal ref %s (idxs %u vs %u)'%\
+                      (geom_res, geom_res, aa_idx_geom, aa_idx_ref)
+
+            assert '%s-%s'%(geom_res.name, geom_aname) == '%s-%s'%(ref_res.name, ref_aname), err_msg
     if weights != 'masses':
         raise NotImplementedError
-    masses = _np.hstack([[aa.element.mass for aa in rr.atoms] for rr in geom.top.residues])
-    masses = masses[atom_indices]
-    assert len(masses)==len(atom_indices), masses
+    masses = _np.zeros(geom.n_atoms)
+    masses[atom_indices] = [geom.top.atom(ii).element.mass for ii in atom_indices]
 
-    delta = _np.linalg.norm(geom.xyz[:,atom_indices,:]-ref.xyz[0,ref_atom_indices,:], axis=2)
+    delta_per_frame_per_atom = _np.zeros((geom.n_frames, geom.n_atoms))
+    delta_per_frame_per_atom[:,atom_indices] =_np.linalg.norm(geom.xyz[:,atom_indices,:]-ref.xyz[0,ref_atom_indices,:], axis=2)
+
+    # I am summing and averaging over a lot of zeroes here,
+    # but it makes for code readability
+    rmsd = _np.sqrt(_np.average(delta_per_frame_per_atom** 2,
+                                axis=1, weights=masses))
 
     if per_residue:
-
-        atom_idx_2_position = _np.zeros(geom.n_atoms+1, dtype=int)
-        atom_idx_2_position[_np.argwhere(_np.in1d(_np.arange(geom.n_atoms), atom_indices)).squeeze()]=_np.arange(len(atom_indices))
-        atom_indices_per_residue=[[aa.index for aa in rr.atoms if aa.index in atom_indices] for rr in geom.top.residues]
-        atom_indices_per_residue=[ilist for ilist in atom_indices_per_residue if len(ilist)>0]
-        delta2_per_residue=[]
-        weight_per_residue=[]
-        residue_idxs = []
-        for idxs in atom_indices_per_residue:
-            residue_idxs.append(geom.top.atom(idxs[0]).residue.index)
-            idxs=atom_idx_2_position[idxs]
-            delta2_per_residue.append(_np.average(delta[:,idxs]**2,
-                                                weights=masses[idxs],
-                                                axis=1))
-            weight_per_residue.append(masses[idxs].sum())
+        delta2_per_residue = _np.zeros((geom.n_frames, geom.n_residues))
+        weight_per_residue = _np.zeros(geom.n_residues)
+        residue_idxs = _np.unique([geom.top.atom(ii).residue.index for ii in atom_indices])
+        for res_idx in residue_idxs:
+            rr = geom.top.residue(res_idx)
+            rr_aa_idxs = [aa.index for aa in rr.atoms]
+            delta2_per_residue[:,res_idx] = _np.average(delta_per_frame_per_atom[:,rr_aa_idxs]**2,
+                                                weights=masses[rr_aa_idxs],
+                                                axis=1)
+            weight_per_residue[res_idx] = masses[rr_aa_idxs].sum()
 
 
-        delta2_per_residue = _np.vstack(delta2_per_residue).T
-        weight_per_residue = _np.array(weight_per_residue)
-        residue_idxs= _np.array(residue_idxs)
-    rmsd = _np.sqrt(_np.average(delta**2,
-                              axis=1, weights=masses))
     if not per_residue:
         return rmsd
     else:
