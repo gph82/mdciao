@@ -392,7 +392,7 @@ class BW_transformer(object):
 
     def top2defs(self, top, return_defs=False):
         map = self.top2map(top)
-        defs = _map2defs(map,'BW')
+        defs = _map2defs(map)
         defs = {('TM%s'%key).replace('TM8','H8'):val for key, val in defs.items()}
         from sofi_functions.fragments import _print_frag
         for ii, (key, val) in enumerate(defs.items()):
