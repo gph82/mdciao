@@ -46,6 +46,11 @@ def _parser_add_smooth(parser):
                         help="Number of frames one half of the averaging window for the time-traces. Default is 0, which means no averaging.",
                         default=0)
 
+def _parser_add_t_unit(parser):
+    parser.add_argument("--t_unit", type=str,
+                        help="Unit used for the temporal axis, default is ns.",
+                        default="ns")
+
 def _parser_add_fragments(parser):
     parser.add_argument('--fragments', dest='fragmentify', action='store_true',
                         help="Auto-detect fragments (i.e. breaks) in the peptide-chain. Default is true.")
@@ -107,6 +112,8 @@ def parser_for_sites():
     _parser_add_smooth(parser)
     _parser_add_fragment_names(parser)
     _parser_add_cutoff(parser)
+    _parser_add_t_unit(parser)
+    _parser_add_graphic_ext(parser)
     return parser
 
 
