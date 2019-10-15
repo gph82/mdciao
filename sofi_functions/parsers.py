@@ -233,3 +233,73 @@ def parser_for_interface():
     _parser_add_graphic_ext(parser)
     _parser_add_ascii(parser)
     return parser
+
+def fnmatch_ex(patterns_as_csv, list_of_keys):
+    r"""
+    Match the keys of the input dictionary against some naming patterns
+    using Unix filename pattern matching TODO include link:  https://docs.python.org/3/library/fnmatch.html
+
+    This method also allows for exclusions (grep -e)
+
+    TODO: find out if regular expression re.findall() is better
+
+    Parameters
+    ----------
+    patterns_as_csv : str
+        Patterns to include or exclude, separated by commas, e.g.
+        * "H*,-H8" will include all TMs but not H8
+        * "G.S*" will include all beta-sheets
+    list_of_keys : list
+        Keys against which to match the patterns, e.g.
+        * ["H1","ICL1", "H2"..."ICL3","H6", "H7", "H8"]
+
+    Returns
+    -------
+    matching_keys : list
+
+    """
+    from fnmatch import fnmatch
+    include_patterns = [pattern for pattern in patterns_as_csv.split(",") if not pattern.startswith("-")]
+    exclude_patterns = [pattern[1:] for pattern in patterns_as_csv.split(",") if pattern.startswith("-")]
+    #print(include_patterns)
+    #print(exclude_patterns)
+    match = lambda key, pattern: fnmatch(key, pattern) and all([not fnmatch(key, negpat) for negpat in exclude_patterns])
+    outgroup = []
+    for pattern in include_patterns:
+        for key in list_of_keys:
+            #print(pattern, key, match(key,pattern))
+            if match(key, pattern):
+                outgroup.append(key)
+    return outgroup
+
+
+def match_dict_by_patterns(patterns_as_csv, index_dict, verbose=False):
+    r"""
+    Joins all the values in an input dictionary if their key matches
+    some patterns. This method also allows for exclusions (grep -e)
+
+    TODO: find out if regular expression re.findall() is better
+
+    Parameters
+    ----------
+    patterns_as_csv : str
+        Comma-separated patterns to include or exclude, separated by commas, e.g.
+        * "H*,-H8" will include all TMs but not H8
+        * "G.S*" will include all beta-sheets
+    index_dict : dictionary
+        It is expected to contain iterable of ints or floats or anything that
+        is "joinable" via np.hstack. Typically, something like:
+        * {"H1":[0,1,...30], "ICL1":[31,32,...40],...}
+
+    Returns
+    -------
+    matching_keys, matching_values : list, array of joined values
+
+    """
+    matching_keys =   fnmatch_ex(patterns_as_csv, index_dict.keys())
+    if verbose:
+        print(matching_keys)
+    import numpy as _np
+
+    matching_values = _np.hstack([index_dict[key] for key in matching_keys])
+    return matching_keys, matching_values
