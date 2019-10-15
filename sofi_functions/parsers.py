@@ -177,6 +177,7 @@ def parser_for_rn():
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
     _parser_add_output_desc(parser, default='neighborhoods')
+    _parser_add_t_unit(parser)
 
     return parser
 

@@ -149,8 +149,18 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           CGN_PDB="None",
                           output_dir='.',
                           color_by_fragment=True,
-                          output_desc='neighborhood'
+                          output_desc='neighborhood',
+                          t_unit='ns',
                           ):
+    # todo use a proper unit module
+    # like this https://pypi.org/project/units/
+    if t_unit == 'ns':
+        dt = 1e-3
+    elif t_unit == 'mus':
+        dt = 1e-6
+    else:
+        raise ValueError("Time unit not known ", t_unit)
+
     _offer_to_create_dir(output_dir)
 
     _resSeq_idxs = rangeexpand(resSeq_idxs)
@@ -279,7 +289,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
         jax.plot(-1, -1, 'o', color=fragcolors[anchor_frag_idx], label=_replace4latex(res_and_fragment_str))
         jax.legend(fontsize=panelsize * panelsize2font)
-        interactive_fragment_picker_by_resSeq
+
         for_ascii_output[res_and_fragment_str] = [{} for __ in xtcs]
         if len(toplot) > 0:
             myfig, myax = plt.subplots(len(toplot)+1, 1, sharex=True,
@@ -314,7 +324,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     trjlabel = jxtc
                     if not isinstance(trjlabel, str):
                         trjlabel = 'md.Trajectory object nr. %u' % jj
-                    for_ascii_output[res_and_fragment_str][jj]["time / ns"] = time_array[jj] / 1e3
+                    for_ascii_output[res_and_fragment_str][jj]["time / %s"%t_unit] = time_array[jj] * dt
                     for_ascii_output[res_and_fragment_str][jj][ctc_label] = ctcs_trajs[jj][:, oo] * 10
                     ilabel='%s (%u%%)' % (
                              trjlabel, np.mean(ctcs_trajs[jj][:, oo] < ctc_cutoff_Ang / 10) * 100)
@@ -325,13 +335,13 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                         alpha = .2
                         itime_smooth, _ = _wav(time_array[jj], half_window_size=n_smooth_hw)
                         ictc_smooth, _ = _wav(ctcs_trajs[jj][:, oo], half_window_size=n_smooth_hw)
-                        plt.plot(itime_smooth / 1e3,
+                        plt.plot(itime_smooth * dt,
                                  ictc_smooth * 10,
                                  label=ilabel,
                                  color=icolor)
                         ilabel=None
 
-                    plt.plot(time_array[jj] / 1e3, ctcs_trajs[jj][:, oo] * 10,
+                    plt.plot(time_array[jj] * dt, ctcs_trajs[jj][:, oo] * 10,
                              label=ilabel,alpha=alpha)
                 plt.legend(loc=1)
                 # plt.yscale('log')
@@ -407,17 +417,17 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     alpha = .2
                     itime_smooth, _ = _wav(itime, half_window_size=n_smooth_hw)
                     ictc_smooth, _ = _wav(n_ctcs_t, half_window_size=n_smooth_hw)
-                    myax[-1].plot(itime_smooth / 1e3,
+                    myax[-1].plot(itime_smooth * dt,
                              ictc_smooth,
                              label=ilabel,
                              color=icolor)
                     ilabel = None
 
-                myax[-1].plot(itime / 1e3, n_ctcs_t,
+                myax[-1].plot(itime * dt , n_ctcs_t,
                          label=ilabel, alpha=alpha)
             myax[-1].set_ylabel('# $\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
             myax[-1].legend()
-            myax[-1].set_xlabel('t / ns')
+            myax[-1].set_xlabel('t / %s'%t_unit)
             plt.savefig(fname, bbox_inches="tight")
             plt.close(myfig)
 
