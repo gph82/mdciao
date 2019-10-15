@@ -13,6 +13,7 @@ from sofi_functions.contacts import ctc_freq_reporter_by_residue_neighborhood, x
 from sofi_functions.list_utils import rangeexpand, unique_list_of_iterables_by_tuple_hashing, in_what_fragment
 from sofi_functions.bond_utils import bonded_neighborlist_from_top
 from sofi_functions.actor_utils import _replace4latex
+from sofi_functions.aa_utils import shorten_AA as _shorten_AA
 
 from sofi_functions.actor_utils import mycolors, dangerously_auto_fragments, \
     interactive_fragment_picker_by_resSeq
@@ -60,7 +61,9 @@ def _parse_BW_option(BW_file, top, fragments, return_tf=False):
         restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
 
         # TODO put this in the tf-class?
-        BW = guess_missing_BWs(BWtf.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
+        #BW = guess_missing_BWs(BWtf.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
+        # TODO implementing the above TODO, not guessing any BWs at the moment
+        BW = BWtf.top2map(top, restrict_to_residxs=restrict_to_residxs)
 
     if not return_tf:
         return BW
@@ -100,6 +103,8 @@ def _parse_CGN_option(CGN_PDB, top, fragments, return_tf=False):
 def _parse_fragment_naming_options(fragment_names, fragments, top):
     if fragment_names == '':
         fragment_names = ['frag%u' % ii for ii in range(len(fragments))]
+    elif fragment_names.lower()=="none":
+        fragment_names = [None for __ in fragments]
     else:
         assert isinstance(fragment_names, str), "Argument --fragment_names invalid: %s" % fragment_names
         if 'danger' not in fragment_names.lower():
@@ -107,7 +112,8 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
             assert len(fragment_names) == len(
                 fragments), "Mismatch between nr. fragments and fragment names %s vs %s (%s)" % (
                 len(fragments), len(fragment_names), fragment_names)
-        else:
+
+        elif 'danger' in fragment_names.lower():
             fragments, fragment_names = dangerously_auto_fragments(top,
                                                                    method="bonds",
                                                                    verbose=False,
@@ -276,8 +282,9 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         interactive_fragment_picker_by_resSeq
         for_ascii_output[res_and_fragment_str] = [{} for __ in xtcs]
         if len(toplot) > 0:
-            myfig, myax = plt.subplots(len(toplot), 1, sharex=True, sharey=True,
-                                       figsize=(10, len(toplot) * panelheight))
+            myfig, myax = plt.subplots(len(toplot)+1, 1, sharex=True,
+                                       #sharey=True,
+                                       figsize=(10, (len(toplot)+1) * panelheight))
             myax = np.array(myax, ndmin=1)
             myax[0].set_title(res_and_fragment_str)
             partner_labels = []
@@ -295,10 +302,14 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
                 # print([refgeom.top.residue(jj) for jj in pair])
                 plt.sca(myax[ii])
+                myax[ii].set_ylabel('A / $\\AA$', rotation=90)
+                myax[ii].set_ylim([0, 10])
                 ctc_label = '%s@%s-%s@%s' % (
                     refgeom.top.residue(idx1), labels_frags[0],
                     refgeom.top.residue(idx2), labels_frags[1])
                 icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
+                #icol = iter(["red","purple","gold","darkorange"])
+
                 for jj, jxtc in enumerate(xtcs):
                     trjlabel = jxtc
                     if not isinstance(trjlabel, str):
@@ -324,8 +335,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                              label=ilabel,alpha=alpha)
                 plt.legend(loc=1)
                 # plt.yscale('log')
-                plt.ylabel('A / $\\AA$')
-                plt.ylim([0, 10])
                 iax = plt.gca()
                 iax.text(np.mean(iax.get_xlim()), 1, ctc_label, ha='center')
                 iax.axhline(ctc_cutoff_Ang, color='r')
@@ -373,7 +382,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             # plt.show()
             # plt.close()
 
-            iax.set_xlabel('t / ns')
             myfig.tight_layout(h_pad=0, w_pad=0, pad=0)
 
             axtop, axbottom = myax[0], myax[-1]
@@ -386,8 +394,35 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             fname = '%s.%s.time_resolved.%s' % (output_desc,
                 res_and_fragment_str.replace('*', ""), graphic_ext.strip("."))
             fname = path.join(output_dir, fname)
+
+            #Plot ncontacts in the last frame
+            icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
+            for ictcs, itime, traj_name in zip(ctcs_trajs,time_array,xtcs):
+                n_ctcs_t = (ictcs <= ctc_cutoff_Ang/10).sum(1)
+                ilabel = traj_name
+                alpha = 1
+                icolor = next(icol)
+                if n_smooth_hw > 0:
+                    from .list_utils import window_average as _wav
+                    alpha = .2
+                    itime_smooth, _ = _wav(itime, half_window_size=n_smooth_hw)
+                    ictc_smooth, _ = _wav(n_ctcs_t, half_window_size=n_smooth_hw)
+                    myax[-1].plot(itime_smooth / 1e3,
+                             ictc_smooth,
+                             label=ilabel,
+                             color=icolor)
+                    ilabel = None
+
+                myax[-1].plot(itime / 1e3, n_ctcs_t,
+                         label=ilabel, alpha=alpha)
+            myax[-1].set_ylabel('# $\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
+            myax[-1].legend()
+            myax[-1].set_xlabel('t / ns')
             plt.savefig(fname, bbox_inches="tight")
             plt.close(myfig)
+
+
+            # Plotting has finished
             print(fname)
             if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt"]:
                 aext = str(output_ascii).lower().strip(".")
@@ -409,7 +444,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     print(fname)
 
     return {"ctc_idxs": ctc_idxs_small,
-            'ctcs': actcs,
+            'ctcs_trajs': ctcs_trajs,
             'time_array': time_array}
 
 
@@ -444,7 +479,22 @@ def sites(topology,
           output_npy="output_sites",
           output_dir='.',
           graphic_ext=".pdf",
+          t_unit='ns'
           ):
+    # todo use a proper unit module
+    # like this https://pypi.org/project/units/
+    if t_unit=='ns':
+        dt = 1e-3
+    elif t_unit=='mus':
+        dt = 1e-6
+    else:
+        raise ValueError("Time unit not known ",t_unit)
+
+    # todo this is an ad-hoc for a powerpoint presentation
+    from matplotlib import rcParams
+    rcParams["xtick.labelsize"] = np.round(rcParams["font.size"]*2)
+    rcParams["ytick.labelsize"] = np.round(rcParams["font.size"]*2)
+    rcParams["font.size"] = np.round(rcParams["font.size"] * 2)
     _offer_to_create_dir(output_dir)
 
     # Prepare naming
@@ -556,9 +606,14 @@ def sites(topology,
                     labels_frags[jj] = jcons
 
             ilab = '%s@%s-\n%s@%s' % (
-                refgeom.top.residue(ipair[0]), labels_frags[0],
-                refgeom.top.residue(ipair[1]), labels_frags[1],
+                _shorten_AA(refgeom.top.residue(ipair[0]), substitute_fail="long", keep_index=True),
+                labels_frags[0],
+                _shorten_AA(refgeom.top.residue(ipair[1]), substitute_fail="long", keep_index=True),
+                labels_frags[1]
+                #refgeom.top.residue(ipair[0]), labels_frags[0],
+                #refgeom.top.residue(ipair[1]), labels_frags[1],
             )
+            ilab = ilab.replace("@None","").replace("-",":")
 
             ilab = _replace4latex(ilab)
             ix = ii
@@ -576,6 +631,8 @@ def sites(topology,
             # Now the trajectory loops
             # Loop over trajectories
             icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
+            icol = iter(["red","purple","gold","darkorange"])
+
             for itime, ixtc, ictc in zip(time_array, xtcs, isite["ctcs"]):
                 plt.sca(myax[ii])
 
@@ -587,27 +644,29 @@ def sites(topology,
                     alpha = .2
                     itime_smooth, _ = _wav(itime, half_window_size=n_smooth_hw)
                     ictc_smooth, _ = _wav(ictc[:, ii], half_window_size=n_smooth_hw)
-                    plt.plot(itime_smooth / 1e3,
+                    plt.plot(itime_smooth * dt,
                              ictc_smooth * 10,
                              label=ilabel,
                              color=icolor)
                     ilabel = None
 
-                plt.plot(itime / 1e3,
+                plt.plot(itime * dt,
                          ictc[:, ii] * 10,
                          alpha=alpha,
                          label=ilabel,
                          color=icolor,
                          )
-                plt.legend(loc=1)
-
-                plt.ylabel('d / Ang')
+                plt.legend(loc=1, fontsize=np.round(rcParams["font.size"]/2))
+                plt.ylabel('$\\AA$  ', rotation=0, ha='right')
                 plt.ylim([0, 10])
                 iax = plt.gca()
-                iax.axhline(ctc_cutoff_Ang, color='r')
-            myax[ii].text(np.mean(iax.get_xlim()), .5, ilab.replace("\n", "") + ' (%u %%)' % (iy * 100), ha='center')
-
-        iax.set_xlabel('t / ns')
+                iax.axhline(ctc_cutoff_Ang, color='k')
+            myax[ii].text(np.mean(iax.get_xlim()), .5, ilab.replace("\n", "") + ' (%u %%)' % (iy * 100), ha='center',
+                          fontsize=np.round(rcParams["font.size"]/1.5))
+        myax[-1].set_yticks([2, 4, 6, 8])
+        myax[-1].set_yticklabels(["2", "4", "6", "8"])
+        myax[-1].set_xlim(0, np.max(np.hstack(time_array))*dt)
+        iax.set_xlabel('t / %s'%t_unit.replace("mu","$\\mu$"))
         myfig.tight_layout(h_pad=0, w_pad=0, pad=0)
 
         axtop, axbottom = myax[0], myax[-1]
