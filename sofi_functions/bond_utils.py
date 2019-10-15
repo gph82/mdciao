@@ -44,7 +44,7 @@ def top2residue_bond_matrix(top, create_standard_bonds=True,
             residue_bond_matrix[r2, r1] = 0
     for ii, row in enumerate(residue_bond_matrix):
         if row.sum()==0 and verbose:
-            print("Residue with index %u (%s) has no bonds whatsoever"%(ii,top.residue(ii)))
+            print("Residue with index %u (%s) has no bonds to other residues"%(ii,top.residue(ii)))
 
     return residue_bond_matrix
 
