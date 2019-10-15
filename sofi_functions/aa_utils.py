@@ -61,7 +61,7 @@ def name_from_AA(key):
 
 def shorten_AA(AA, substitute_fail=None, keep_index=False):
     r"""
-    return the short name of an AA, e.g. TRP30 to Y30 by trying to
+    return the short name of an AA, e.g. TRP30 to Y by trying to
     use either the :obj:`mdtraj.Topology.Residue.code' attribute
     or :obj:`mdtraj` internals AA dictionary
 
@@ -77,6 +77,9 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
         * 'long' : keep the residue's long name, i.e. do nothing
         * 'c': any alphabetic character, as long as it is of len=1
         * 0 : the first alphabetic character in the residue's name
+
+    keep_index : bool, default is False
+        If True return "Y30" for "TRP30", instead of returning just "Y"
 
 
     Returns
