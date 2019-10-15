@@ -1,7 +1,9 @@
 import unittest
 import mdtraj as md
+import numpy as _np
 from os import path
 from sofi_functions.nomenclature_utils import *
+from sofi_functions.nomenclature_utils import _map2defs, _top2consensus_map
 from filenames import filenames
 
 test_filenames = filenames()
@@ -44,9 +46,9 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                               48: '1.47'})
 
     def test_table2BW_by_AAcode_return_defs_test(self):
-        table2BW = table2BW_by_AAcode(tablefile=self.file, return_defs=True)
+        table2BW, defs = table2BW_by_AAcode(tablefile=self.file, return_defs=True)
         self.assertEqual(table2BW,
-                         ({'Q26': '1.25',
+                         {'Q26': '1.25',
                            'E27': '1.26',
                            'R28': '1.27',
                            'F264': '1.28',
@@ -58,8 +60,9 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                            'L45': '1.44',
                            'A46': '1.45',
                            'I47': '1.46',
-                           'V48': '1.47'},
-                          ['TM1']))
+                           'V48': '1.47'})
+
+        self.assertEqual(defs,['TM1'])
 
 class Test_guess_missing_BWs(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
@@ -105,6 +108,47 @@ class Test_top2CGN_by_AAcode(unittest.TestCase):
                               5: 'G.S2.5',
                               6: None,
                               7: 'G.S2.6'})
+
+class Test_map2defs(unittest.TestCase):
+    def setUp(self):
+        self.cons_list =  ['3.67','G.H5.1','G.H5.6','5.69']
+
+    def test_map2defs_just_works(self):
+        map2defs = _map2defs(self.cons_list)
+        assert (_np.array_equal(map2defs['3'], [0]))
+        assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
+        assert (_np.array_equal(map2defs['5'], [3]))
+
+class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
+    def setUp(self):
+        self.segment_dict = {'TM1': [20, 21, 22], 'TM2': [30, 33, 34], 'TM3': [40, 48], 'TM4': [50, 56],
+                             'TM5': [60, 61],'TM6': [70], 'TM7': [80, 81, 82, 83, 89], 'H8': [90, 91, 92, 93, 94, 95]}
+
+    def test_add_loop_definitions_to_TM_residx_dict_just_works(self):
+        add_defs = add_loop_definitions_to_TM_residx_dict(self.segment_dict)
+        self.assertEqual(add_defs['ICL1'],[23, 29])
+        self.assertEqual(add_defs['ECL1'], [35, 39])
+        self.assertEqual(add_defs['ICL2'], [49, 49])
+        self.assertEqual(add_defs['ECL2'], [57, 59])
+        self.assertEqual(add_defs['ECL3'], [71, 79])
+
+#
+# class Test_table2TMdefs_resSeq(unittest.TestCase):
+#TODO test to be completed after clarifying from Guillermo
+
+#     def setUp(self):
+#         self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
+#
+#     def table2TMdefs_resSeq_just_works(self):
+#         table2TMdefs = table2TMdefs_resSeq(tablefile=self.file, return_defs=True)
+
+# class Test_csv_table2TMdefs_res_idxs(unittest.TestCase):
+# #TODO test to be completed after clarifying from Guillermo
+
+
+# class Test_top2consensus_map(unittest.TestCase):
+#TODO
+
 
 if __name__ == '__main__':
     unittest.main()
