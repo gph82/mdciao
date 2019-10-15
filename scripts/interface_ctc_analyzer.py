@@ -41,38 +41,26 @@ else:
 """
 
 BW, BWtf = _parse_BW_option(a.BW_file, refgeom.top, fragments,return_tf=True)
-BWCGN_defs = {}
+fragment_defs = {}
 if str(a.BW_file).lower()!='none':
     print("INFO: these are the BW fragments mapped onto your topology")
-    BWCGN_defs.update(BWtf.top2defs(refgeom.top, return_defs=True))
+    fragment_defs.update(BWtf.top2defs(refgeom.top, return_defs=True))
     input("Hit enter to continue!\n")
 CGN, CGNtf = _parse_CGN_option(a.CGN_PDB, refgeom.top, fragments, return_tf=True)
 if str(a.CGN_PDB).lower()!='none':
     print("INFO: these are the CGN fragments mapped onto your topology")
-    BWCGN_defs.update(CGNtf.top2defs(refgeom.top, return_defs=True))
+    fragment_defs.update(CGNtf.top2defs(refgeom.top, return_defs=True))
     input("Hit enter to continue!\n")
 groups=[]
 group_idxs=[]
-# TODO MAKE A METHOD OUT OF THIS!!!
+
+from sofi_functions.parsers import match_dict_by_patterns as _match_dict_by_patterns
 if a.fragments[0].lower()=="ask":
     for ii in [1,2]:
-        groups.append([])
-        group_idxs.append([])
         answer = input("group%u:\nInput a list of posix-expressions like 'TM*,-TM2,H8' (TM2 will be avoided)\n"%ii).replace(" ","").strip("'").strip('"')
-        from fnmatch import fnmatch
-        include = [pattern for pattern in answer.split(",") if not pattern.startswith("-")]
-        exclude = [pattern[1:] for pattern in answer.split(",") if pattern.startswith("-")]
-        match = lambda key, pattern : fnmatch(key, pattern) and all([not fnmatch(key,negpat) for negpat in exclude])
-        for pattern in include:
-            for tf in [BWtf, CGNtf]:
-                try:
-                    for key in tf.fragment_names:
-                        #print(pattern, key, match(key,pattern))
-                        if match(key,pattern):
-                            groups[-1].append(key)
-                            group_idxs[-1].extend(BWCGN_defs[key])
-                except KeyError:
-                    pass
+        igroup, igroup_idxs = _match_dict_by_patterns(answer, fragment_defs)
+        groups.append(igroup)
+        group_idxs.append(igroup_idxs)
         print(groups[-1])
 if len(groups)==0:
     if len(fragments)==2:
