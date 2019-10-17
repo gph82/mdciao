@@ -128,6 +128,7 @@ def parser_for_sites():
     _parser_add_graphic_ext(parser)
     _parser_add_curve_colort(parser)
     _parser_add_gray_backgroud(parser)
+    _parser_add_graphic_dpi(parser)
     return parser
 
 
@@ -194,8 +195,13 @@ def parser_for_rn():
     _parser_add_t_unit(parser)
     _parser_add_curve_colort(parser)
     _parser_add_gray_backgroud(parser)
-
+    _parser_add_graphic_dpi(parser)
     return parser
+
+def _parser_add_graphic_dpi(parser):
+    parser.add_argument('--graphic_dpi', type=int,
+                        help="Dots per Inch (DPI) of the graphic output. Only has an effect for bitmap outputs. Default is 150.",
+                        default=150)
 
 def _parser_add_ascii(parser):
     parser.add_argument('--output_ascii', type=str,
