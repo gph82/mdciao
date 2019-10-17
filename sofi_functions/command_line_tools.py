@@ -151,6 +151,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           color_by_fragment=True,
                           output_desc='neighborhood',
                           t_unit='ns',
+                          curve_color="auto",
+                          gray_background=False,
                           ):
     # todo use a proper unit module
     # like this https://pypi.org/project/units/
@@ -317,8 +319,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                 ctc_label = '%s@%s-%s@%s' % (
                     refgeom.top.residue(idx1), labels_frags[0],
                     refgeom.top.residue(idx2), labels_frags[1])
-                icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
-                #icol = iter(["red","purple","gold","darkorange"])
+                if curve_color.lower()=="peter":
+                    icol = iter(["red", "purple", "gold", "darkorange"])
+                else:
+                    icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
 
                 for jj, jxtc in enumerate(xtcs):
                     trjlabel = jxtc
@@ -341,8 +345,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                  color=icolor)
                         ilabel=None
 
+                    if gray_background:
+                        icolor="gray"
                     plt.plot(time_array[jj] * dt, ctcs_trajs[jj][:, oo] * 10,
-                             label=ilabel,alpha=alpha)
+                             label=ilabel,alpha=alpha, icolor=icolor)
                 plt.legend(loc=1)
                 # plt.yscale('log')
                 iax = plt.gca()
@@ -489,7 +495,9 @@ def sites(topology,
           output_npy="output_sites",
           output_dir='.',
           graphic_ext=".pdf",
-          t_unit='ns'
+          t_unit='ns',
+          curve_color="auto",
+          gray_background=False,
           ):
     # todo use a proper unit module
     # like this https://pypi.org/project/units/
@@ -640,8 +648,10 @@ def sites(topology,
 
             # Now the trajectory loops
             # Loop over trajectories
-            icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
-            icol = iter(["red","purple","gold","darkorange"])
+            if curve_color.lower()=="peter":
+                icol = iter(["red", "purple", "gold", "darkorange"])
+            else:
+                icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
 
             for itime, ixtc, ictc in zip(time_array, xtcs, isite["ctcs"]):
                 plt.sca(myax[ii])
@@ -659,6 +669,9 @@ def sites(topology,
                              label=ilabel,
                              color=icolor)
                     ilabel = None
+
+                if gray_background:
+                    icolor="gray"
 
                 plt.plot(itime * dt,
                          ictc[:, ii] * 10,
