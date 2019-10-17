@@ -51,6 +51,18 @@ def _parser_add_t_unit(parser):
                         help="Unit used for the temporal axis, default is ns.",
                         default="ns")
 
+def _parser_add_curve_colort(parser):
+    parser.add_argument("--curve_color", type=str,
+                        help="Type of color used for the curves. Default is auto. Alternative is 'Peter'.",
+                        default="auto")
+
+def _parser_add_gray_backgroud(parser):
+    parser.add_argument('--gray-background', dest='gray_background', action='store_true',
+                        help="Use gray background when using smoothing windows"
+                             " Defaut is False")
+    parser.add_argument('--no-gray-background', dest='gray_background', action='store_false')
+    parser.set_defaults(gray_background=False)
+
 def _parser_add_fragments(parser):
     parser.add_argument('--fragments', dest='fragmentify', action='store_true',
                         help="Auto-detect fragments (i.e. breaks) in the peptide-chain. Default is true.")
@@ -264,11 +276,11 @@ def fnmatch_ex(patterns_as_csv, list_of_keys):
     exclude_patterns = [pattern[1:] for pattern in patterns_as_csv.split(",") if pattern.startswith("-")]
     #print(include_patterns)
     #print(exclude_patterns)
-    match = lambda key, pattern: fnmatch(key, pattern) and all([not fnmatch(key, negpat) for negpat in exclude_patterns])
+    match = lambda key, pattern: fnmatch(str(key), pattern) and all([not fnmatch(str(key), negpat) for negpat in exclude_patterns])
     outgroup = []
     for pattern in include_patterns:
         for key in list_of_keys:
-            #print(pattern, key, match(key,pattern))
+            #print(key, pattern, match(key,pattern))
             if match(key, pattern):
                 outgroup.append(key)
     return outgroup
