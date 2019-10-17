@@ -153,7 +153,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           t_unit='ns',
                           curve_color="auto",
                           gray_background=False,
-                          ):
+                          graphic_dpi=150,
+):
     # todo use a proper unit module
     # like this https://pypi.org/project/units/
     if t_unit == 'ns':
@@ -434,7 +435,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             myax[-1].set_ylabel('# $\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
             myax[-1].legend()
             myax[-1].set_xlabel('t / %s'%t_unit)
-            plt.savefig(fname, bbox_inches="tight")
+            plt.savefig(fname, bbox_inches="tight",dpi=graphic_dpi)
             plt.close(myfig)
 
 
@@ -456,7 +457,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     fname = "%s_overall.%s" % (output_desc, graphic_ext.strip("."))
     fname = path.join(output_dir, fname)
-    histofig.savefig(fname)
+    histofig.savefig(fname, dpi=graphic_dpi)
     print(fname)
 
     return {"ctc_idxs": ctc_idxs_small,
@@ -498,6 +499,7 @@ def sites(topology,
           t_unit='ns',
           curve_color="auto",
           gray_background=False,
+          graphic_dpi=150
           ):
     # todo use a proper unit module
     # like this https://pypi.org/project/units/
@@ -702,7 +704,7 @@ def sites(topology,
         fname = 'site.%s.%s.time_resolved.%s' % (
         isite["name"].replace(" ", "_"), desc_out.strip("."), graphic_ext.strip("."))
         fname = path.join(output_dir, fname)
-        plt.savefig(fname, bbox_inches="tight")
+        plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
         plt.close(myfig)
         print(fname)
         # plt.show()
@@ -710,7 +712,7 @@ def sites(topology,
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "sites_overall.%s.%s" % (desc_out.rstrip("."), graphic_ext.strip("."))
     fname = path.join(output_dir, fname)
-    histofig.savefig(fname)
+    histofig.savefig(fname,dpi=graphic_dpi)
     print(fname)
 
 
