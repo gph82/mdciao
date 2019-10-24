@@ -437,7 +437,6 @@ class BW_transformer(object):
         if return_defs:
             return defs
 
-# TODO TEST
 def _top2consensus_map(consensus_dict, top,
                        restrict_to_residxs=None,
                        keep_consensus=False,
@@ -498,7 +497,6 @@ def _top2consensus_map(consensus_dict, top,
         out_list = _fill_CGN_gaps(out_list, top)
     return out_list
 
-# TODO test
 def _fill_CGN_gaps(consensus_list, top, verbose=False):
     r""" Try to fill CGN consensus nomenclature gaps based on adjacent labels
 
