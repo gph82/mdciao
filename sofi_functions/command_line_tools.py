@@ -320,10 +320,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                 ctc_label = '%s@%s-%s@%s' % (
                     refgeom.top.residue(idx1), labels_frags[0],
                     refgeom.top.residue(idx2), labels_frags[1])
-                if curve_color.lower()=="peter":
-                    icol = iter(["red", "purple", "gold", "darkorange"])
-                else:
-                    icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
+
+                icol = iter(_my_color_schemes(curve_color))
 
                 for jj, jxtc in enumerate(xtcs):
                     trjlabel = jxtc
@@ -650,14 +648,9 @@ def sites(topology,
 
             # Now the trajectory loops
             # Loop over trajectories
-            if curve_color.lower()=="peter":
-                icol = iter(["red", "purple", "gold", "darkorange"])
-            else:
-                icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
-
+            icol = iter(_my_color_schemes(curve_color))
             for itime, ixtc, ictc in zip(time_array, xtcs, isite["ctcs"]):
                 plt.sca(myax[ii])
-
                 ilabel = '%s (%u %s)' % (ixtc, (ictc[:, ii] < ctc_cutoff_Ang / 10).mean() * 100, '%')
                 alpha = 1
                 icolor = next(icol)
@@ -869,3 +862,9 @@ def _sites_to_ctc_idxs(sites, top,**kwargs):
 
 def _sites_to_ctc_idxs_old(sites, AAresSeq2residxs):
     return np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in sites]))
+
+
+def _my_color_schemes(istr):
+    return {"peter": ["red", "purple", "gold", "darkorange"],
+            "hobat": ["m", "darkgreen", "darkorange", "navy"],
+            "auto":  plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]

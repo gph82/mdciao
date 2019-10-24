@@ -51,9 +51,9 @@ def _parser_add_t_unit(parser):
                         help="Unit used for the temporal axis, default is ns.",
                         default="ns")
 
-def _parser_add_curve_colort(parser):
+def _parser_add_curve_color(parser):
     parser.add_argument("--curve_color", type=str,
-                        help="Type of color used for the curves. Default is auto. Alternative is 'Peter'.",
+                        help="Type of color used for the curves. Default is auto. Alternatives are 'Peter' or 'Hobat'",
                         default="auto")
 
 def _parser_add_gray_backgroud(parser):
@@ -126,7 +126,7 @@ def parser_for_sites():
     _parser_add_cutoff(parser)
     _parser_add_t_unit(parser)
     _parser_add_graphic_ext(parser)
-    _parser_add_curve_colort(parser)
+    _parser_add_curve_color(parser)
     _parser_add_gray_backgroud(parser)
     _parser_add_graphic_dpi(parser)
     return parser
@@ -139,6 +139,8 @@ def parser_for_densities():
     _parser_add_stride(parser,help='Stride down the data by this factor. Default is 1.')
 
     return parser
+
+
 
 def _parser_add_n_ctcs(parser, default=5):
     parser.add_argument("--n_ctcs", type=int,
@@ -193,7 +195,7 @@ def parser_for_rn():
     _parser_add_output_dir(parser)
     _parser_add_output_desc(parser, default='neighborhoods')
     _parser_add_t_unit(parser)
-    _parser_add_curve_colort(parser)
+    _parser_add_curve_color(parser)
     _parser_add_gray_backgroud(parser)
     _parser_add_graphic_dpi(parser)
     return parser
