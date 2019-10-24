@@ -146,9 +146,37 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
 # #TODO test to be completed after clarifying from Guillermo
 
 
-# class Test_top2consensus_map(unittest.TestCase):
-#TODO
+class Test_top2consensus_map(unittest.TestCase):
+    def setUp(self):
+        self.cgn = CGN_transformer(ref_path=test_filenames.examples_path)
+        self.geom = md.load(test_filenames.file_for_top2consensus_map)
+        self.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
+        self.cons_list_keep_consensus = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', 'G.hfs2.4',
+                                         'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
 
+    def test_top2consensus_map_just_works(self): #generally works
+        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2CGN, top=self.geom.top)
+
+        count = 1
+        cons_list_out = []
+        for ii, val in enumerate(cons_list):
+            if val is not None:
+                cons_list_out.append(val)
+                count += 1
+            if count > 5: #testing for the first 5 entries in the pdb file which have a valid CGN name
+                break
+        self.assertEqual(cons_list_out, self.cons_list_test)
+
+    def test_top2consensus_map_keep_consensus_is_true(self):
+        #In the output below, instead of None, None, it will be 'G.hfs2.4' and 'G.hfs2.5'
+        # ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', None, None, 'G.hfs2.6', 'G.hfs2.7']
+        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2CGN, top=self.geom.top, keep_consensus=True)
+        cons_list_out = []
+
+        for ii, val in enumerate(cons_list):
+            if (ii > 434 and ii < 442):
+                cons_list_out.append(val)
+        self.assertEqual(cons_list_out, self.cons_list_keep_consensus)
 
 if __name__ == '__main__':
     unittest.main()
