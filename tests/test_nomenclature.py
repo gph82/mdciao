@@ -3,7 +3,7 @@ import mdtraj as md
 import numpy as _np
 from os import path
 from sofi_functions.nomenclature_utils import *
-from sofi_functions.nomenclature_utils import _map2defs, _top2consensus_map
+from sofi_functions.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps
 from filenames import filenames
 
 test_filenames = filenames()
@@ -177,6 +177,18 @@ class Test_top2consensus_map(unittest.TestCase):
             if (ii > 434 and ii < 442):
                 cons_list_out.append(val)
         self.assertEqual(cons_list_out, self.cons_list_keep_consensus)
+
+class Test_fill_CGN_gaps(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load(test_filenames.file_for_top2consensus_map)
+        self.cons_list_in = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', None,
+                          None, 'G.hfs2.6', 'G.hfs2.7']
+        self.cons_list_out = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', 'G.hfs2.4',
+                                         'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
+
+    def test_fill_CGN_gaps_just_works(self):
+        fill_cgn = _fill_CGN_gaps(self.cons_list_in, self.geom.top)
+        self.assertEqual(fill_cgn,self.cons_list_out)
 
 if __name__ == '__main__':
     unittest.main()
