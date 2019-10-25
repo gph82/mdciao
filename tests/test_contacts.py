@@ -28,9 +28,9 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
         input_values = (val for val in ["1", "1"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):#Checking against the input 1 and 1
             ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                             self.geom.top,
-                                                             n_ctcs=5, select_by_resSeq=None,
-                                                             silent=False)
+                                                                 self.geom.top,
+                                                                 n_ctcs=5, restrict_to_resSeq=None,
+                                                                 interactive=True)
             assert ctc_freq[0] == 0
             assert ctc_freq[1] == 0
 
@@ -38,9 +38,9 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
         input_values = (val for val in ["1", "2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)): #Checking against the input 1 and 2
             ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                            self.geom.top,
-                                                             n_ctcs=5, select_by_resSeq=None,
-                                                             silent=False)
+                                                                 self.geom.top,
+                                                                 n_ctcs=5, restrict_to_resSeq=None,
+                                                                 interactive=True)
             assert ctc_freq[0] == 0
             assert (_np.array_equal(ctc_freq[1],[0, 1]))
 
@@ -51,9 +51,9 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
         input_values = (val for val in ["1", "1"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):#Checking against the input 1 and 1
             ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                             self.geom.top,
-                                                             n_ctcs=5, select_by_resSeq=1,
-                                                             silent=False)
+                                                                 self.geom.top,
+                                                                 n_ctcs=5, restrict_to_resSeq=1,
+                                                                 interactive=True)
             assert ctc_freq == {}
 
     def test_ctc_freq_reporter_by_residue_neighborhood_hit_enter(self):
@@ -63,9 +63,9 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
         input_values = (val for val in ["", ""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                             self.geom.top,
-                                                             n_ctcs=5, select_by_resSeq=None,
-                                                             silent=False)
+                                                                 self.geom.top,
+                                                                 n_ctcs=5, restrict_to_resSeq=None,
+                                                                 interactive=True)
             assert ctc_freq == {}
 
     def test_ctc_freq_reporter_by_residue_neighborhood_silent_is_true(self):
@@ -73,9 +73,9 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
         ctc_residxs_pairs = [[0, 1], [2, 1]]
 
         ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                         self.geom.top,
-                                                         n_ctcs=5, select_by_resSeq=None,
-                                                         silent=True)
+                                                             self.geom.top,
+                                                             n_ctcs=5, restrict_to_resSeq=None,
+                                                             interactive=False)
         assert (_np.array_equal(ctc_freq[0], [0]))
         assert (_np.array_equal(ctc_freq[1], [0, 1]))
 
@@ -90,9 +90,9 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
 
 
             ctc_freq = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                     self.geom.top,
-                                                     n_ctcs=5, select_by_resSeq=None,
-                                                     silent=False)
+                                                                 self.geom.top,
+                                                                 n_ctcs=5, restrict_to_resSeq=None,
+                                                                 interactive=True)
             assert ctc_freq == {}
 
 

@@ -2,37 +2,50 @@ import numpy as _np
 import mdtraj as _md
 from .list_utils import in_what_fragment, re_warp
 
-def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragments, ctc_residxs_pairs, top,
-                                              n_ctcs=5, select_by_resSeq=None,
-                                              silent=False,
+def ctc_freq_reporter_by_residue_neighborhood(ctc_freqs, resSeq2residxs, fragments, ctc_residxs_pairs, top,
+                                              n_ctcs=5, restrict_to_resSeq=None,
+                                              interactive=False,
                                               ):
-    """TODO one line description of method
+    """Prints a formatted summary of contact frequencies AND
+       returns a dictionary of neighborhoods
 
     Parameters
     ----------
-    ctcs_mean
-    resSeq2residxs
-    fragments
-    ctc_residxs_pairs
+    ctc_freqs: iterable of floats
+        Contact frequencies between 0 and 1
+    resSeq2residxs: dictionary
+        Dictionary mapping residue sequence numbers (resSeq) to residue idxs
+    fragments: iterable of integers
+        Fragments of the topology defined as list of non-overlapping residue indices
+    ctc_residxs_pairs: iterable of integer pairs
+        The residue pairs for which the contact frequencies in :obj:`ctc_freqs`
+        were computed.
     top : :py:class:`mdtraj.Topology`
-    n_ctcs : integer
-        Default is 5.
-    select_by_resSeq
-    silent : boolean, optional
+    n_ctcs : integer, default is 5
+        Number of contacts to report per residue.
+    restrict_to_resSeq: int, default is None
+        Produce the report only for the residue with this resSeq index. Default
+        behaviour is to produce for all residues in :obj:`resSeq2residxs`
+    interactive : boolean, default is False
+        After reporting each neighborhood up to :obj:`n_ctcs` partners,
+        ask the user how many should be kept
 
     Returns
     -------
-
+    neighborhood : dictionary
+       neighborhood[300] = [100,101,102,200,201]
+       means that residue 300 has residues [100,101,102,200,201]
+       as most frequent neighbors (up to n_ctcs or less, see option 'interactive')
     """
-    order = _np.argsort(ctcs_mean)[::-1]
-    assert len(ctcs_mean) == len(ctc_residxs_pairs)
-    final_look = {}
-    if select_by_resSeq is None:
-        select_by_resSeq = list(resSeq2residxs.keys())
-    elif isinstance(select_by_resSeq, int):
-        select_by_resSeq = [select_by_resSeq]
+    order = _np.argsort(ctc_freqs)[::-1]
+    assert len(ctc_freqs) == len(ctc_residxs_pairs)
+    neighborhood = {}
+    if restrict_to_resSeq is None:
+        restrict_to_resSeq = list(resSeq2residxs.keys())
+    elif isinstance(restrict_to_resSeq, int):
+        restrict_to_resSeq = [restrict_to_resSeq]
     for key, val in resSeq2residxs.items():
-        if key in select_by_resSeq:
+        if key in restrict_to_resSeq:
             order_mask = _np.array([ii for ii in order if val in ctc_residxs_pairs[ii]])
             print("#idx    Freq  contact             segA-segB residxA   residxB   ctc_idx")
 
@@ -51,12 +64,12 @@ def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragmen
                 idx2 = pair[1]
                 s1 = in_what_fragment(idx1, fragments)
                 s2 = in_what_fragment(idx2, fragments)
-                imean = ctcs_mean[oo]
+                imean = ctc_freqs[oo]
                 isum += imean
                 seen_ctcs.append(imean)
                 print("%-6s %3.2f %8s-%-8s    %5u-%-5u %7u %7u %7u %3.2f" % (
                  '%u:' % (ii + 1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
-            if not silent:
+            if interactive:
                 try:
                     answer = input("How many do you want to keep (Hit enter for None)?\n")
                 except KeyboardInterrupt:
@@ -65,20 +78,16 @@ def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragmen
                     pass
                 else:
                     answer = _np.arange(_np.min((int(answer), n_ctcs)))
-                    final_look[val] = order_mask[answer]
+                    neighborhood[val] = order_mask[answer]
             else:
                 seen_ctcs = _np.array(seen_ctcs)
                 n_nonzeroes = (seen_ctcs > 0).astype(int).sum()
                 answer = _np.arange(_np.min((n_nonzeroes, n_ctcs)))
-                final_look[val] = order_mask[answer]
-
+                neighborhood[val] = order_mask[answer]
     # TODO think about what's best to return here
-    return final_look
+    # TODO think about making a pandas dataframe with all the above info
+    return neighborhood
 
-    # These were moved from the method to the API
-    final_look = _np.unique(_np.hstack(final_look))
-    final_look = final_look[_np.argsort(ctcs_mean[final_look])][::-1]
-    return final_look
 
 
 def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
