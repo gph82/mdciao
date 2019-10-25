@@ -90,6 +90,13 @@ def _parser_add_pbc(parser):
     parser.add_argument('--no-pbc', dest='pbc', action='store_false')
     parser.set_defaults(pbc=True)
 
+def _parser_add_short_AA_names(parser):
+    parser.add_argument('--short_AAs', dest='short_AA_names', action='store_true',
+                        help="Use one-letter aminoacid names when possible, e.g. K145 insted of Lys145."
+                             " Defaut is False")
+    parser.add_argument('--no-short_AAs', dest='short_AA_names', action='store_false')
+    parser.set_defaults(short_AA_names=False)
+
 def _parser_add_output_desc(parser, default='output_sites'):
     parser.add_argument('--output_desc', type=str, help="Descriptor for output files. Default is %s"%default,
                         default=default)
@@ -196,6 +203,7 @@ def parser_for_rn():
     _parser_add_curve_colort(parser)
     _parser_add_gray_backgroud(parser)
     _parser_add_graphic_dpi(parser)
+    _parser_add_short_AA_names(parser)
     return parser
 
 def _parser_add_graphic_dpi(parser):

@@ -154,7 +154,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           curve_color="auto",
                           gray_background=False,
                           graphic_dpi=150,
-):
+                          short_AA_names=False,
+                          ):
     # todo use a proper unit module
     # like this https://pypi.org/project/units/
     if t_unit == 'ns':
@@ -198,6 +199,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     # Dow we want CGN definitions:
     CGN = _parse_CGN_option(CGN_PDB, refgeom.top, fragments)
 
+    # TODO find a consistent way for coloring fragments
     fragcolors = [cc for cc in mycolors]
     fragcolors.extend(fragcolors)
     fragcolors.extend(fragcolors)
@@ -317,9 +319,16 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                 plt.sca(myax[ii])
                 myax[ii].set_ylabel('A / $\\AA$', rotation=90)
                 myax[ii].set_ylim([0, 10])
+                r1_name = refgeom.top.residue(idx1)
+                r2_name = refgeom.top.residue(idx2)
+                if short_AA_names:
+                    r1_name, r2_name = [_shorten_AA(rr, substitute_fail="long", keep_index=True) for rr in [r1_name,r2_name]]
                 ctc_label = '%s@%s-%s@%s' % (
-                    refgeom.top.residue(idx1), labels_frags[0],
-                    refgeom.top.residue(idx2), labels_frags[1])
+                    r1_name,
+                    labels_frags[0],
+                    r2_name,
+                    labels_frags[1])
+
                 if curve_color.lower()=="peter":
                     icol = iter(["red", "purple", "gold", "darkorange"])
                 else:
@@ -349,7 +358,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     if gray_background:
                         icolor="gray"
                     plt.plot(time_array[jj] * dt, ctcs_trajs[jj][:, oo] * 10,
-                             label=ilabel,alpha=alpha, icolor=icolor)
+                             label=ilabel,alpha=alpha, color=icolor)
                 plt.legend(loc=1)
                 # plt.yscale('log')
                 iax = plt.gca()
@@ -363,7 +372,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     ipartnerlab = partnercons
                 else:
                     ipartnerlab = fragment_names[partnerseg]
-                partner_labels.append('%s@%s' % (refgeom.top.residue(partner), ipartnerlab))
+                partner_res = refgeom.top.residue(partner)
+                if short_AA_names:
+                    partner_res = _shorten_AA(partner_res, substitute_fail="long", keep_index=True)
+                partner_labels.append('%s@%s' % (partner_res, ipartnerlab))
                 partner_colors.append(fragcolors[partnerseg])
             # TODO re-use code from mdas.visualize represent vicinities
             patches = jax.bar(xvec[:len(toplot)], ctcs_mean[toplot],
@@ -383,21 +395,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                          backgroundcolor="white"
                          )
                 ipatch.set_color(icol)
-                """
-                isegs.append(iseg[0])
 
-
-                isegs = _np.unique(isegs)
-                _empty_legend(iax,
-                              [binary_ctcs2flare_kwargs["fragment_names"][ii] for ii in isegs],
-                              [_mycolors[ii] for ii in isegs],
-                              'o' * len(isegs),
-                              loc='upper right',
-                              fontsize=panelsize * panelsize2font,
-                              )
-                """
-            # plt.show()
-            # plt.close()
 
             myfig.tight_layout(h_pad=0, w_pad=0, pad=0)
 
