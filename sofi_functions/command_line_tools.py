@@ -169,7 +169,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     _resSeq_idxs = rangeexpand(resSeq_idxs)
     if len(_resSeq_idxs) == 0:
-        raise ValueError("Please check your input indices, they do not make sense %s" % resSeq_idxs)
+        raise ValueError("Please check your input indices, "
+                         "they do not make sense %s" % resSeq_idxs)
     else:
         resSeq_idxs = _resSeq_idxs
     if sort:
@@ -177,7 +178,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     xtcs = sorted(trajectories)
     try:
-        print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
+        print("Will compute contact frequencies for the files:\n"
+              "%s\n with a stride of %u frames.\n" % (
             "\n  ".join(xtcs), stride))
     except:
         pass
@@ -259,7 +261,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     final_look = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs,
                                                            fragments, ctc_idxs_small,
                                                            refgeom.top,
-                                                           silent=True,
+                                                           interactive=False,
                                                            n_ctcs=n_ctcs)
 
     print("The following files have been created")
@@ -275,7 +277,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     for_ascii_output = {}
     for jax, residx in zip(list_of_axes,
                            resSeq2residxs.values()):  # in np.unique([ctc_idxs_small[ii] for ii in final_look]):
-        toplot = final_look[residx]
         anchor_cons_label = _relabel_consensus(residx, [BW, CGN])
         anchor_frag_idx = in_what_fragment(residx, fragments)
         anchor_frag_label = fragment_names[anchor_frag_idx]
@@ -296,6 +297,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         jax.legend(fontsize=panelsize * panelsize2font)
 
         for_ascii_output[res_and_fragment_str] = [{} for __ in xtcs]
+        toplot = final_look[residx]
         if len(toplot) > 0:
             myfig, myax = plt.subplots(len(toplot)+1, 1, sharex=True,
                                        #sharey=True,
@@ -323,14 +325,11 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                 r2_name = refgeom.top.residue(idx2)
                 if short_AA_names:
                     r1_name, r2_name = [_shorten_AA(rr, substitute_fail="long", keep_index=True) for rr in [r1_name,r2_name]]
-                ctc_label = '%s@%s-%s@%s' % (
-                    r1_name,
-                    labels_frags[0],
-                    r2_name,
-                    labels_frags[1])
+
+                ctc_label = '%s@%s-%s@%s' % (r1_name,labels_frags[0],
+                                             r2_name,labels_frags[1])
 
                 icol = iter(_my_color_schemes(curve_color))
-
                 for jj, jxtc in enumerate(xtcs):
                     trjlabel = jxtc
                     if not isinstance(trjlabel, str):
