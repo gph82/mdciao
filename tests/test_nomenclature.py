@@ -3,7 +3,7 @@ import mdtraj as md
 import numpy as _np
 from os import path
 from sofi_functions.nomenclature_utils import *
-from sofi_functions.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps
+from sofi_functions.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps, _fill_BW_gaps
 from filenames import filenames
 
 test_filenames = filenames()
@@ -147,6 +147,7 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
 
 
 class Test_top2consensus_map(unittest.TestCase):
+    #TODO add test for special case restrict_to_residxs
     def setUp(self):
         self.cgn = CGN_transformer(ref_path=test_filenames.examples_path)
         self.geom = md.load(test_filenames.file_for_top2consensus_map)
@@ -189,6 +190,17 @@ class Test_fill_CGN_gaps(unittest.TestCase):
     def test_fill_CGN_gaps_just_works(self):
         fill_cgn = _fill_CGN_gaps(self.cons_list_in, self.geom.top)
         self.assertEqual(fill_cgn,self.cons_list_out)
+
+class Test_fill_BW_gaps(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load(test_filenames.file_for_top2consensus_map)
+        self.cons_list_in = ['1.25', '1.26', None, '1.28']
+        self.cons_list_out = ['1.25', '1.26', '1.27', '1.28']
+
+    def test_fill_BW_gaps_just_works(self):
+        fill_bw = _fill_BW_gaps(self.cons_list_in, self.geom.top)
+        self.assertEqual(fill_bw,self.cons_list_out)
+
 
 if __name__ == '__main__':
     unittest.main()
