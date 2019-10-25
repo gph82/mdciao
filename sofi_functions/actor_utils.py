@@ -877,18 +877,38 @@ def _guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
 
     return out_dict
 
-def reorder_geometry(iref,new_order_of_res_idxs):
+def reorder_geometry(itraj, new_order_of_res_idxs):
+    r"""
+
+    Parameters
+    ----------
+    itraj : :obj:`mdtraj.Trajectory` object
+        Trajectory to reordered
+    new_order_of_res_idxs : iterable of integers
+        New order of residues
+
+    Warning
+    -------
+        The PBC elements are lost in this re-ordering
+
+    Returns
+    -------
+    jtraj : :obj:`mdtraj.Trajectory`
+        Trajectory with the residues ordered according to
+        :obj:`new_order_of_res_idxs`
+
+    """
     itop = _md.Topology()
     ixyz = []
     ichain = itop.add_chain()
     for ii, idx in enumerate(new_order_of_res_idxs):
-        rr = iref.top.residue(idx)
+        rr = itraj.top.residue(idx)
         rr.index = ii
         itop.add_residue(rr.name, rr.chain, resSeq=rr.resSeq)
         for aa in rr.atoms:
             itop.add_atom(aa.name, aa.element, itop.residue(ii))
 
-        ixyz.append([iref.xyz[:, aa.index, :] for aa in rr.atoms])
+        ixyz.append([itraj.xyz[:, aa.index, :] for aa in rr.atoms])
         ichain._residues.append(itop.residue(ii))
         # break
 
