@@ -3,7 +3,7 @@ import mdtraj as md
 import numpy as _np
 from os import path
 from sofi_functions.nomenclature_utils import *
-from sofi_functions.nomenclature_utils import _map2defs, _top2consensus_map
+from sofi_functions.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps, _fill_BW_gaps
 from filenames import filenames
 
 test_filenames = filenames()
@@ -146,8 +146,60 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
 # #TODO test to be completed after clarifying from Guillermo
 
 
-# class Test_top2consensus_map(unittest.TestCase):
-#TODO
+class Test_top2consensus_map(unittest.TestCase):
+    #TODO add test for special case restrict_to_residxs
+    def setUp(self):
+        self.cgn = CGN_transformer(ref_path=test_filenames.examples_path)
+        self.geom = md.load(test_filenames.file_for_top2consensus_map)
+        self.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
+        self.cons_list_keep_consensus = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', 'G.hfs2.4',
+                                         'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
+
+    def test_top2consensus_map_just_works(self): #generally works
+        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2CGN, top=self.geom.top)
+
+        count = 1
+        cons_list_out = []
+        for ii, val in enumerate(cons_list):
+            if val is not None:
+                cons_list_out.append(val)
+                count += 1
+            if count > 5: #testing for the first 5 entries in the pdb file which have a valid CGN name
+                break
+        self.assertEqual(cons_list_out, self.cons_list_test)
+
+    def test_top2consensus_map_keep_consensus_is_true(self):
+        #In the output below, instead of None, None, it will be 'G.hfs2.4' and 'G.hfs2.5'
+        # ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', None, None, 'G.hfs2.6', 'G.hfs2.7']
+        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2CGN, top=self.geom.top, keep_consensus=True)
+        cons_list_out = []
+
+        for ii, val in enumerate(cons_list):
+            if (ii > 434 and ii < 442):
+                cons_list_out.append(val)
+        self.assertEqual(cons_list_out, self.cons_list_keep_consensus)
+
+class Test_fill_CGN_gaps(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load(test_filenames.file_for_top2consensus_map)
+        self.cons_list_in = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', None,
+                          None, 'G.hfs2.6', 'G.hfs2.7']
+        self.cons_list_out = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', 'G.hfs2.4',
+                                         'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
+
+    def test_fill_CGN_gaps_just_works(self):
+        fill_cgn = _fill_CGN_gaps(self.cons_list_in, self.geom.top)
+        self.assertEqual(fill_cgn,self.cons_list_out)
+
+class Test_fill_BW_gaps(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load(test_filenames.file_for_top2consensus_map)
+        self.cons_list_in = ['1.25', '1.26', None, '1.28']
+        self.cons_list_out = ['1.25', '1.26', '1.27', '1.28']
+
+    def test_fill_BW_gaps_just_works(self):
+        fill_bw = _fill_BW_gaps(self.cons_list_in, self.geom.top)
+        self.assertEqual(fill_bw,self.cons_list_out)
 
 
 if __name__ == '__main__':

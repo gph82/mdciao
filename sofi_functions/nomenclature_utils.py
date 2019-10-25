@@ -437,7 +437,6 @@ class BW_transformer(object):
         if return_defs:
             return defs
 
-# TODO TEST
 def _top2consensus_map(consensus_dict, top,
                        restrict_to_residxs=None,
                        keep_consensus=False,
@@ -498,7 +497,6 @@ def _top2consensus_map(consensus_dict, top,
         out_list = _fill_CGN_gaps(out_list, top)
     return out_list
 
-# TODO test
 def _fill_CGN_gaps(consensus_list, top, verbose=False):
     r""" Try to fill CGN consensus nomenclature gaps based on adjacent labels
 
@@ -563,6 +561,73 @@ def _fill_CGN_gaps(consensus_list, top, verbose=False):
             if verbose:
                 print()
     return consensus_list
+
+
+def _fill_BW_gaps(consensus_list, top, verbose=False):
+    r""" Try to fill BW consensus nomenclature gaps based on adjacent labels
+
+    The idea is to fill gaps of the sort:
+     * ['1.25', '1.26', None, '1.28']
+      to
+     * ['1.25', '1.26', '1.27, '1.28']
+
+    The size of the gap is variable, it just has to match the length of
+    the consensus labels, i.e. 28-26=1 which is the number of "None" the
+    input list had
+
+    Parameters
+    ----------
+    consensus_list: list
+        List of length top.n_residues with the original consensus labels
+        Supossedly, it contains some "None" entries inside sub-domains
+    top :
+        :py:class:`mdtraj.Topology` object
+    verbose : boolean, default is False
+
+    Returns
+    -------
+    consensus_list: list
+        The same as the input :obj:`consensus_list` with guessed missing entries
+    """
+
+    defs = _map2defs(consensus_list)
+    for key, val in defs.items():
+
+        # Identify problem cases
+        if len(val)!=val[-1]-val[0]+1:
+            if verbose:
+                print(key)
+
+            # Initialize residue_idxs_wo_consensus_labels control variables
+            offset = int(consensus_list[val[0]].split(".")[-1])
+            consensus_kept=True
+            suggestions = []
+            residue_idxs_wo_consensus_labels=[]
+
+            # Check whether we can predict the consensus labels correctly
+            for ii in _np.arange(val[0],val[-1]+1):
+                suggestions.append('%s.%u'%(key,offset))
+                if consensus_list[ii] is None:
+                    residue_idxs_wo_consensus_labels.append(ii)
+                else: # meaning, we have a consensus label, check it against suggestion
+                    consensus_kept *= suggestions[-1]==consensus_list[ii]
+                if verbose:
+                    print(ii, top.residue(ii),consensus_list[ii], suggestions[-1], consensus_kept)
+                offset += 1
+            if verbose:
+                print()
+            if consensus_kept:
+                if verbose:
+                    print("The consensus was kept, I am relablling these:")
+                for idx, res_idx in enumerate(_np.arange(val[0],val[-1]+1)):
+                    if res_idx in residue_idxs_wo_consensus_labels:
+                        consensus_list[res_idx] = suggestions[idx]
+                        if verbose:
+                            print(suggestions[idx])
+            if verbose:
+                print()
+    return consensus_list
+
 
 def top2CGN_by_AAcode(top, ref_CGN_tf,
                       restrict_to_residxs=None,
