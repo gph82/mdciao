@@ -2,6 +2,8 @@ from pandas import DataFrame as _DF
 
 from Bio.pairwise2 import align as _Bioalign
 
+import mdtraj
+
 def _print_verbose_dataframe(idf):
     import pandas as _pd
     from IPython.display import display as _display
@@ -9,7 +11,42 @@ def _print_verbose_dataframe(idf):
                             'display.max_columns', None,
                             'display.width', 1000):
         _display(idf)
+def _align_tops(top0, top1, substitutions=None):
+    r"""
+    Provided to :obj:`mdtraj.Topology` objects,
+    return their alignment as a :obj:`pandas.DataFrame`
 
+    Parameters
+    ----------
+    top0 : :obj:`mdtraj.Topology`
+    top1 : :obj:`mdtraj.Topology`
+    substitutions : dictionary
+        dictionary of patterns and replacements,
+        in case some AAs of the topologies
+
+    Returns
+    -------
+    align : :obj:`pandas.DataFrame`
+        See :obj:`alignment_result_to_list_of_dicts` for more info
+
+
+    """
+    top0_seq = ''.join([str(rr.code).upper() for rr in top0.residues])
+    top1_seq = ''.join([str(rr.code).upper() for rr in top1.residues])
+
+    my_subs = {"NONE":"X"}
+    if substitutions is not None:
+        my_subs.update(substitutions)
+    for key, val in my_subs.items():
+        top0_seq = top0_seq.replace(key,val)
+        top1_seq = top1_seq.replace(key,val)
+        #print(key,val)
+    return _DF(alignment_result_to_list_of_dicts(_my_bioalign(top0_seq, top1_seq)[0],
+
+                                             top0,
+                                             range(top0.n_residues),
+                                             range(top1.n_residues)
+                                             ))
 def _my_bioalign(seq1,seq2):
     return _Bioalign.globalxs(seq1, seq2, -1,0)
 

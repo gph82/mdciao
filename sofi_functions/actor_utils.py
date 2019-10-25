@@ -3,10 +3,8 @@ import mdtraj as _md
 from scipy.spatial.distance import pdist
 from matplotlib import pyplot as _plt
 
-from sofi_functions.fragments import get_fragments as _get_fragments, _print_frag
+from sofi_functions.fragments import get_fragments as _get_fragments
 
-#from in_what_fragment, top2residue_bond_matrix, \
-#    exclude_same_fragments_from_residx_pairlist, in_what_N_fragments
 from sofi_functions.list_utils import in_what_N_fragments, in_what_fragment, exclude_same_fragments_from_residx_pairlist
 
 #Import needed for the command line scripts
@@ -400,6 +398,68 @@ def exclude_neighbors_from_residx_pairlist(pairlist, top, n_exclude,
     else:
         return idxs2exclude
 
+def mean_geometry(list_of_trajs, reference=None,
+                  atom_indices=None,
+                  ref_atom_indices=None,
+                  image_molecule=False):
+    r"""
+    Return the mean geometry for a list of :obj:`mdtraj.Trajectory` objects.
+    The unitcell info will be either the one in the first frame of the
+    trajectories or in the reference trajectory if it is provided
+
+
+    Parameters
+    ----------
+    list_of_trajs : list of :obj:`mdtraj.Trajectory` objects
+    reference : :obj:`mdtraj.Trajectory`, default is None
+        If provided, the trajectories in :obj:`list_of_trajs` will be
+        oriented to this reference before taking the mean.
+        Warning
+        -------
+        This will alter the input trajectoies!
+    atom_indices : iterable of integers, default is None
+        If provided, these atoms will be used for the orienting
+        the trajectories to the reference
+    ref_atom_indices : iterable of integers, default is None
+        In case the reference trajectory needs has different
+        atom indexing
+    image_molecule : boolean, default is False
+        Make molecules whole in the PBC-box before orienting and averaging
+        Can be very time consuming, it is recommended to perform this
+        operation in a pre-processing step
+
+    Returns
+    -------
+    mean_traj : :obj:`mdtraj.Trajectory`
+        An trajectory with the mean xyz coordinates
+
+    """
+
+    if atom_indices is not None:
+        assert reference is not None, ValueError("This input is impossible")
+    if image_molecule:
+        raise NotImplementedError("This is not yet implemented")
+
+    mean_xyz = []
+    for ii, itraj in enumerate(list_of_trajs):
+        if reference is not None:
+            itraj.superpose(reference,atom_indices=atom_indices,
+                            ref_atom_indices=ref_atom_indices)
+        if ii ==0 and reference is None:
+            unitcell_angles = itraj._unitcell_angles[0]
+            unitcell_lenghts = itraj._unitcell_lenghts[0]
+        mean_xyz.append(itraj.xyz)
+
+    mean_xyz = _np.vstack(mean_xyz).mean(0)
+
+    if reference is not None:
+        unitcell_angles =  reference._unitcell_angles[0]
+        unitcell_lenghts = reference._unitcell_lengths[0]
+
+    return _md.Trajectory(mean_xyz, topology=itraj.topology,
+                          unitcell_lengths=unitcell_lenghts,
+                          unitcell_angles=unitcell_angles)
+
 def my_RMSD(geom, ref, atom_indices=None,
             ref_atom_indices=None,
             weights='masses',
@@ -460,13 +520,13 @@ def my_RMSD(geom, ref, atom_indices=None,
                                 axis=1, weights=masses))
 
     if per_residue:
-        delta2_per_residue = _np.zeros((geom.n_frames, geom.n_residues))
+        average_delta2_per_residue = _np.zeros((geom.n_frames, geom.n_residues))
         weight_per_residue = _np.zeros(geom.n_residues)
         residue_idxs = _np.unique([geom.top.atom(ii).residue.index for ii in atom_indices])
         for res_idx in residue_idxs:
             rr = geom.top.residue(res_idx)
             rr_aa_idxs = [aa.index for aa in rr.atoms]
-            delta2_per_residue[:,res_idx] = _np.average(delta_per_frame_per_atom[:,rr_aa_idxs]**2,
+            average_delta2_per_residue[:,res_idx] = _np.average(delta_per_frame_per_atom[:,rr_aa_idxs]**2,
                                                 weights=masses[rr_aa_idxs],
                                                 axis=1)
             weight_per_residue[res_idx] = masses[rr_aa_idxs].sum()
@@ -475,7 +535,7 @@ def my_RMSD(geom, ref, atom_indices=None,
     if not per_residue:
         return rmsd
     else:
-        return rmsd, delta2_per_residue, weight_per_residue, residue_idxs
+        return rmsd, average_delta2_per_residue, weight_per_residue, residue_idxs
 
 def xtcs2contactpairs_auto(xtcs, top, cutoff_in_Ang,
                            stride=1,
@@ -817,107 +877,44 @@ def _guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None):
 
     return out_dict
 
-#TODO check that this is reptition from nomenclature_utils
-def _top2CGN_by_AAcode(top, ref_CGN_tf, keep_AA_code=True,
-                      restrict_to_residxs=None):
+def reorder_geometry(itraj, new_order_of_res_idxs):
+    r"""
 
-    # TODO this lazy import will bite back
-    from .Gunnar_utils import alignment_result_to_list_of_dicts
-    from Bio import pairwise2
+    Parameters
+    ----------
+    itraj : :obj:`mdtraj.Trajectory` object
+        Trajectory to reordered
+    new_order_of_res_idxs : iterable of integers
+        New order of residues
 
+    Warning
+    -------
+        The PBC elements are lost in this re-ordering
 
-    if restrict_to_residxs is None:
-        restrict_to_residxs = [residue.index for residue in top.residues]
+    Returns
+    -------
+    jtraj : :obj:`mdtraj.Trajectory`
+        Trajectory with the residues ordered according to
+        :obj:`new_order_of_res_idxs`
 
-    #out_dict = {ii:None for ii in range(top.n_residues)}
-    #for ii in restrict_to_residxs:
-    #    residue = top.residue(ii)
-    #    AAcode = '%s%s'%(residue.code,residue.resSeq)
-    #    try:
-    #        out_dict[ii]=ref_CGN_tf.AA2CGN[AAcode]
-    #    except KeyError:
-    #        pass
-    #return out_dict
-    seq = ''.join([str(top.residue(ii).code).replace("None", "X") for ii in restrict_to_residxs])
-    #
-    res_idx2_PDB_resSeq = {}
-    for alignmt in pairwise2.align.globalxx(seq, ref_CGN_tf.seq)[:1]:
-        list_of_alignment_dicts = alignment_result_to_list_of_dicts(alignmt, top,
-                                                            ref_CGN_tf.seq_idxs,
-                                                            res_top_key="Nour_code",
-                                                            resname_key='Nour_resname',
-                                                            resSeq_key="Nour_resSeq",
-                                                            res_ref_key='3SN6_code',
-                                                            idx_key='3SN6_resSeq',
-                                                            subset_of_residxs=restrict_to_residxs,
-                                                            #re_merge_skipped_entries=False
-                                                           )
+    """
+    itop = _md.Topology()
+    ixyz = []
+    ichain = itop.add_chain()
+    for ii, idx in enumerate(new_order_of_res_idxs):
+        rr = itraj.top.residue(idx)
+        rr.index = ii
+        itop.add_residue(rr.name, rr.chain, resSeq=rr.resSeq)
+        for aa in rr.atoms:
+            itop.add_atom(aa.name, aa.element, itop.residue(ii))
 
-        #import pandas as pd
-        #with pd.option_context('display.max_rows', None, 'display.max_columns',
-        #                       None):  # more options can be specified also
-        #    for idict in list_of_alignment_dicts:
-        #        idict["match"] = False
-        #        if idict["Nour_code"]==idict["3SN6_code"]:
-        #            idict["match"]=True
-        #    print(DataFrame.from_dict(list_of_alignment_dicts))
+        ixyz.append([itraj.xyz[:, aa.index, :] for aa in rr.atoms])
+        ichain._residues.append(itop.residue(ii))
+        # break
 
-        res_idx_array=iter(restrict_to_residxs)
-        for idict in list_of_alignment_dicts:
-             if '~' not in idict["Nour_resname"]:
-                 idict["target_residx"]=\
-                 res_idx2_PDB_resSeq[next(res_idx_array)]='%s%s'%(idict["3SN6_code"],idict["3SN6_resSeq"])
-    out_dict = {}
-    for ii in range(top.n_residues):
-        try:
-            out_dict[ii] = ref_CGN_tf.AA2CGN[res_idx2_PDB_resSeq[ii]]
-        except KeyError:
-            out_dict[ii] = None
-
-    return out_dict
-    # for key, equiv_at_ref_PDB in res_idx2_PDB_resSeq.items():
-    #     if equiv_at_ref_PDB in ref_CGN_tf.AA2CGN.keys():
-    #         iCGN = ref_CGN_tf.AA2CGN[equiv_at_ref_PDB]
-    #     else:
-    #         iCGN = None
-    #     #print(key, top.residue(key), iCGN)
-    #     out_dict[key]=iCGN
-    # if keep_AA_code:
-    #     return out_dict
-    # else:
-    #     return {int(key[1:]):val for key, val in out_dict.items()}
-
-class _CGN_transformer(object):
-    def __init__(self, ref_PDB='3SN6'):
-        # Create dataframe with the alignment
-        from pandas import read_table as _read_table
-        self._ref_PDB = ref_PDB
-
-        self._DF = _read_table('CGN_%s.txt'%ref_PDB)
-        #TODO find out how to properly do this with pandas
-
-        self._dict = {key: self._DF[self._DF[ref_PDB] == key]["CGN"].to_list()[0] for key in self._DF[ref_PDB].to_list()}
-
-        self._top =_md.load(ref_PDB+'.pdb').top
-        seq_ref = ''.join([str(rr.code).replace("None","X") for rr in self._top.residues])[:len(self._dict)]
-        seq_idxs = _np.hstack([rr.resSeq for rr in self._top.residues])[:len(self._dict)]
-        keyval = [{key:val} for key,val in self._dict.items()]
-        #for ii, (iseq_ref, iseq_idx) in enumerate(zip(seq_ref, seq_idxs)):
-        #print(ii, iseq_ref, iseq_idx )
-
-        self._seq_ref  = seq_ref
-        self._seq_idxs = seq_idxs
-
-    @property
-    def seq(self):
-        return self._seq_ref
-
-    @property
-    def seq_idxs(self):
-        return self._seq_idxs
-
-    @property
-    def AA2CGN(self):
-        return self._dict
-
-        #return seq_ref, seq_idxs, self._dict
+    ixyz = _np.vstack(ixyz).squeeze()
+    #print(itop.n_residues)
+    #print(itop.n_atoms)
+    #print(ixyz.shape)
+    igeom = _md.Trajectory([ixyz], topology=itop)
+    return igeom
