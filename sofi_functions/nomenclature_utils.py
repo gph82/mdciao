@@ -707,14 +707,14 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
             input("This is the actual return value. Hit enter to continue")
     return list_out
 
-def _relabel_consensus(idx, input_dicts, no_key="NA"):
+def _relabel_consensus(idx, consensus_dicts, no_key="NA"):
     """
     Assigns labels based on the residue index
     Parameters
     ----------
     idx : int
         index for which the relabeling is needed
-    input_dicts : list
+    consensus_dicts : list
         each item in the list should be a dictionary. The keys of each dictionary should be the residue idxs,
         and the corresponding value should be the label.
     no_key : str
@@ -726,7 +726,7 @@ def _relabel_consensus(idx, input_dicts, no_key="NA"):
         label of the residue idx if present else "NA"
 
     """
-    labels  = [idict[idx] for idict in input_dicts]
+    labels  = [idict[idx] for idict in consensus_dicts]
     good_label = [ilab for ilab in labels if str(ilab).lower()!="none"]
     assert len(good_label)<=1, "There can only be one good label, but for residue %u found %s"%(idx, good_label)
     try:
