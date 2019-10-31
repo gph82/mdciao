@@ -14,6 +14,8 @@ from sofi_functions.list_utils import rangeexpand, unique_list_of_iterables_by_t
 from sofi_functions.bond_utils import bonded_neighborlist_from_top
 from sofi_functions.actor_utils import _replace4latex
 from sofi_functions.aa_utils import shorten_AA as _shorten_AA
+from sofi_functions.contacts import contact_group, contact_pair
+from matplotlib import rcParams as _rcParams
 
 from sofi_functions.actor_utils import mycolors, dangerously_auto_fragments, \
     interactive_fragment_picker_by_resSeq
@@ -209,7 +211,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         fragcolors = ['blue' for cc in fragcolors]
     elif isinstance(color_by_fragment, str):
         fragcolors = [color_by_fragment for cc in fragcolors]
-    # mycolors = {key:mycolors[ii] for ii, key in enumerate(fragment_names)}
 
     if res_idxs:
         resSeq2residxs = {refgeom.top.residue(ii).resSeq: ii for ii in resSeq_idxs}
@@ -264,194 +265,81 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                                            interactive=False,
                                                            n_ctcs=n_ctcs)
 
-    print("The following files have been created")
+
+    neighborhoods = {}
+    for key, val in final_look.items():
+        neighborhoods[key] = []
+        for idx in val:
+            pair = ctc_idxs_small[idx]
+            consensus_labels = [_relabel_consensus(idx, [BW, CGN]) for idx in pair]
+            fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
+            neighborhoods[key].append(contact_pair(pair,
+                                                   [itraj[:, idx] for itraj in ctcs_trajs],
+                                                   time_array,
+                                                   top=refgeom.top,
+                                                   anchor_residue_idx=key,
+                                                   consensus_labels=consensus_labels,
+                                                   trajs=xtcs,
+                                                   fragment_idxs=fragment_idxs,
+                                                   fragment_names=[fragment_names[idx] for idx in fragment_idxs],
+                                                   fragment_colors=[fragcolors[idx] for idx in fragment_idxs]
+                                                   ))
+        neighborhoods[key] = contact_group(neighborhoods[key])
+
     panelheight = 3
-    xvec = np.arange(np.max([len(val) for val in final_look.values()]))
     n_cols = np.min((4, len(resSeq2residxs)))
     n_rows = np.ceil(len(resSeq2residxs) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
     histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
                                      figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
-    list_of_axes = list(histoax.flatten())
-    for_ascii_output = {}
-    for jax, residx in zip(list_of_axes,
-                           resSeq2residxs.values()):  # in np.unique([ctc_idxs_small[ii] for ii in final_look]):
-        anchor_cons_label = _relabel_consensus(residx, [BW, CGN])
-        anchor_frag_idx = in_what_fragment(residx, fragments)
-        anchor_frag_label = fragment_names[anchor_frag_idx]
-        if anchor_cons_label not in [None, "None", "NA"]:
-            anchor_frag_label = anchor_cons_label
-        res_and_fragment_str = '%s@%s' % (refgeom.top.residue(residx), anchor_frag_label)
 
-        jax.set_title(
-            "Contact frequency @%2.1f $\AA$\n%u nearest bonded neighbors excluded" % (ctc_cutoff_Ang, n_nearest))
-        jax.set_ylim([0, 1])
-        jax.set_xlim([-.5, n_ctcs + 1 - .5])
-        jax.set_xticks([])
-        jax.set_yticks([.25, .50, .75, 1])
-        # jax.set_yticklabels([])
-        [jax.axhline(ii, color="k", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
+    # One loop for the histograms
+    _rcParams["font.size"]=panelsize*panelsize2font
+    for jax, ihood in zip(histoax.flatten(),
+                                   neighborhoods.values()):
 
-        jax.plot(-1, -1, 'o', color=fragcolors[anchor_frag_idx], label=_replace4latex(res_and_fragment_str))
-        jax.legend(fontsize=panelsize * panelsize2font)
-
-        for_ascii_output[res_and_fragment_str] = [{} for __ in xtcs]
-        toplot = final_look[residx]
-        if len(toplot) > 0:
-            myfig, myax = plt.subplots(len(toplot)+1, 1, sharex=True,
-                                       #sharey=True,
-                                       figsize=(10, (len(toplot)+1) * panelheight))
-            myax = np.array(myax, ndmin=1)
-            myax[0].set_title(res_and_fragment_str)
-            partner_labels = []
-            partner_colors = []
-            for ii, oo in enumerate(toplot):
-                idx1, idx2 = ctc_idxs_small[oo]
-                s1 = in_what_fragment(idx1, fragments)
-                s2 = in_what_fragment(idx2, fragments)
-                labels_consensus = [_relabel_consensus(jj, [BW, CGN]) for jj in [idx1, idx2]]
-                labels_frags = [fragment_names[ss] for ss in [s1, s2]]
-
-                for jj, jcons in enumerate(labels_consensus):
-                    if str(jcons).lower() != "na":
-                        labels_frags[jj] = jcons
-
-                # print([refgeom.top.residue(jj) for jj in pair])
-                plt.sca(myax[ii])
-                myax[ii].set_ylabel('A / $\\AA$', rotation=90)
-                myax[ii].set_ylim([0, 10])
-                r1_name = refgeom.top.residue(idx1)
-                r2_name = refgeom.top.residue(idx2)
-                if short_AA_names:
-                    r1_name, r2_name = [_shorten_AA(rr, substitute_fail="long", keep_index=True) for rr in [r1_name,r2_name]]
-
-                ctc_label = '%s@%s-%s@%s' % (r1_name,labels_frags[0],
-                                             r2_name,labels_frags[1])
-
-                icol = iter(_my_color_schemes(curve_color))
-                for jj, jxtc in enumerate(xtcs):
-                    trjlabel = jxtc
-                    if not isinstance(trjlabel, str):
-                        trjlabel = 'md.Trajectory object nr. %u' % jj
-                    for_ascii_output[res_and_fragment_str][jj]["time / %s"%t_unit] = time_array[jj] * dt
-                    for_ascii_output[res_and_fragment_str][jj][ctc_label] = ctcs_trajs[jj][:, oo] * 10
-                    ilabel='%s (%u%%)' % (
-                             trjlabel, np.mean(ctcs_trajs[jj][:, oo] < ctc_cutoff_Ang / 10) * 100)
-                    alpha = 1
-                    icolor = next(icol)
-                    if n_smooth_hw>0:
-                        from .list_utils import window_average as _wav
-                        alpha = .2
-                        itime_smooth, _ = _wav(time_array[jj], half_window_size=n_smooth_hw)
-                        ictc_smooth, _ = _wav(ctcs_trajs[jj][:, oo], half_window_size=n_smooth_hw)
-                        plt.plot(itime_smooth * dt,
-                                 ictc_smooth * 10,
-                                 label=ilabel,
-                                 color=icolor)
-                        ilabel=None
-
-                    if gray_background:
-                        icolor="gray"
-                    plt.plot(time_array[jj] * dt, ctcs_trajs[jj][:, oo] * 10,
-                             label=ilabel,alpha=alpha, color=icolor)
-                plt.legend(loc=1)
-                # plt.yscale('log')
-                iax = plt.gca()
-                iax.text(np.mean(iax.get_xlim()), 1, ctc_label, ha='center')
-                iax.axhline(ctc_cutoff_Ang, color='r')
-                if residx == idx1:
-                    partner, partnerseg, partnercons = idx2, s2, labels_consensus[1]
-                else:
-                    partner, partnerseg, partnercons = idx1, s1, labels_consensus[0]
-                if partnercons not in [None, "NA"]:
-                    ipartnerlab = partnercons
-                else:
-                    ipartnerlab = fragment_names[partnerseg]
-                partner_res = refgeom.top.residue(partner)
-                if short_AA_names:
-                    partner_res = _shorten_AA(partner_res, substitute_fail="long", keep_index=True)
-                partner_labels.append('%s@%s' % (partner_res, ipartnerlab))
-                partner_colors.append(fragcolors[partnerseg])
-            # TODO re-use code from mdas.visualize represent vicinities
-            patches = jax.bar(xvec[:len(toplot)], ctcs_mean[toplot],
-                              # label=res_and_fragment_str,
-                              width=.25)
-
-            for ix, iy, ilab, ipatch, icol in zip(xvec, ctcs_mean[toplot], partner_labels,
-                                                  patches.get_children(), partner_colors):
-                iy += .01
-                if iy > .65:
-                    iy = .65
-                jax.text(ix, iy, _replace4latex(ilab),
-                         va='bottom',
-                         ha='left',
-                         rotation=45,
-                         fontsize=panelsize * panelsize2font,
-                         backgroundcolor="white"
-                         )
-                ipatch.set_color(icol)
-
-            myfig.tight_layout(h_pad=0, w_pad=0, pad=0)
-
-            axtop, axbottom = myax[0], myax[-1]
-            iax2 = axtop.twiny()
-            iax2.set_xticks(axbottom.get_xticks())
-            iax2.set_xticklabels(axbottom.get_xticklabels())
-            iax2.set_xlim(axbottom.get_xlim())
-            iax2.set_xlabel(axbottom.get_xlabel())
-
-            fname = '%s.%s.time_resolved.%s' % (output_desc,
-                res_and_fragment_str.replace('*', ""), graphic_ext.strip("."))
-            fname = path.join(output_dir, fname)
-
-            #Plot ncontacts in the last frame
-            icol = iter(plt.rcParams['axes.prop_cycle'].by_key()["color"])
-            for ictcs, itime, traj_name in zip(ctcs_trajs,time_array,xtcs):
-                n_ctcs_t = (ictcs <= ctc_cutoff_Ang/10).sum(1)
-                ilabel = traj_name
-                alpha = 1
-                icolor = next(icol)
-                if n_smooth_hw > 0:
-                    from .list_utils import window_average as _wav
-                    alpha = .2
-                    itime_smooth, _ = _wav(itime, half_window_size=n_smooth_hw)
-                    ictc_smooth, _ = _wav(n_ctcs_t, half_window_size=n_smooth_hw)
-                    myax[-1].plot(itime_smooth * dt,
-                             ictc_smooth,
-                             label=ilabel,
-                             color=icolor)
-                    ilabel = None
-
-                myax[-1].plot(itime * dt , n_ctcs_t,
-                         label=ilabel, alpha=alpha)
-            myax[-1].set_ylabel('# $\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
-            myax[-1].legend()
-            myax[-1].set_xlabel('t / %s'%t_unit)
-            plt.savefig(fname, bbox_inches="tight",dpi=graphic_dpi)
-            plt.close(myfig)
+        ihood.histo_neighborhood(ctc_cutoff_Ang, n_nearest,
+                                 jax=jax,
+                                 xlim=n_ctcs,
+                                 label_fontsize_factor=panelsize2font/panelsize,
+                                 shorten_AAs=short_AA_names
+                                 )
 
 
-            # Plotting has finished
-            print(fname)
-            if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt"]:
-                aext = str(output_ascii).lower().strip(".")
-                for ii, ixtc in enumerate(xtcs):
-                    traj_name = path.splitext(ixtc)[0]
-                    savename = "%s.%s.%s.%s" % (output_desc, res_and_fragment_str.replace('*', ""), traj_name, aext)
-                    savename = path.join(output_dir, savename)
-                    np.savetxt(savename, np.vstack(list(for_ascii_output[res_and_fragment_str][ii].values())).T,
-                               ' '.join(["%6.3f" for __ in for_ascii_output[res_and_fragment_str][ii].values()]),
-                               header=' '.join(
-                                   ["%6s" % key for key in for_ascii_output[res_and_fragment_str][ii].keys()]))
-                    print(savename)
-                print()
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-
-    fname = "%s_overall.%s" % (output_desc, graphic_ext.strip("."))
+    fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
     fname = path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi)
+    print("The following files have been created")
     print(fname)
+
+    # One loop for the time resolved neighborhoods
+    for ihood in neighborhoods.values():
+        fname = '%s.%s.time_resolved.%s' % (output_desc,
+                                            ihood.anchor_res_and_fragment_str.replace('*', ""),
+                                            graphic_ext.strip("."))
+        fname = path.join(output_dir, fname)
+        myfig = ihood.plot_timedep_ctcs(panelheight, _my_color_schemes(curve_color),
+                                        ctc_cutoff_Ang,
+                                        n_smooth_hw, dt,
+                                        t_unit,
+                                        gray_background,
+                                        shorten_AAs=short_AA_names)
+
+        ihood.plot_timedep_Nctcs(myfig.axes[ihood.n_ctcs],
+                                 _my_color_schemes(curve_color),
+                                 ctc_cutoff_Ang,
+                                 n_smooth_hw, dt, t_unit,
+                                 gray_background, )
+
+        myfig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+        plt.close(myfig)
+        print(fname)
+        if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt", "xlsx"]:
+            ext = str(output_ascii).lower().strip(".")
+            ihood.save_trajs(output_desc,ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
+        print()
 
     return {"ctc_idxs": ctc_idxs_small,
             'ctcs_trajs': ctcs_trajs,
