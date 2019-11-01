@@ -793,7 +793,7 @@ _G_fragnames = [
     ]
 
 def _replace4latex(istr):
-    for gl in ['alpha','beta','gamma']:
+    for gl in ['alpha','beta','gamma', 'mu']:
         istr = istr.replace(gl,'$\\'+gl+'$')
 
     if '$' not in istr and any([char in istr for char in ["_"]]):
