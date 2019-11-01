@@ -265,7 +265,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                                            interactive=False,
                                                            n_ctcs=n_ctcs)
 
-
+    # Create the neighborhoods as groups of contact_pair objects
     neighborhoods = {}
     for key, val in final_look.items():
         neighborhoods[key] = []
@@ -321,18 +321,20 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             graphic_ext.strip("."))
         fname = path.join(output_dir, fname)
         myfig = ihood.plot_timedep_ctcs(panelheight, _my_color_schemes(curve_color),
-                                        ctc_cutoff_Ang,
-                                        n_smooth_hw, dt,
-                                        t_unit,
-                                        gray_background,
-                                        shorten_AAs=short_AA_names)
+                                        ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                        n_smooth_hw=n_smooth_hw,
+                                        dt=dt,
+                                        t_unit=t_unit,
+                                        gray_background=gray_background,
+                                        shorten_AAs=short_AA_names,
+                                        plot_N_ctcs=True)
 
-        ihood.plot_timedep_Nctcs(myfig.axes[ihood.n_ctcs],
-                                 _my_color_schemes(curve_color),
-                                 ctc_cutoff_Ang,
-                                 n_smooth_hw, dt, t_unit,
-                                 gray_background, )
-
+        # One title for all axes on top
+        title = ihood.anchor_res_and_fragment_str
+        if short_AA_names:
+            title = ihood.anchor_res_and_fragment_str_short
+        myfig.axes[0].set_title(title)
+        myfig.tight_layout(h_pad=0,w_pad=0,pad=0)
         myfig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
         plt.close(myfig)
         print(fname)
@@ -380,7 +382,9 @@ def sites(topology,
           t_unit='ns',
           curve_color="auto",
           gray_background=False,
-          graphic_dpi=150
+          graphic_dpi=150,
+          output_desc="sites",
+          short_AA_names=False,
           ):
     # todo use a proper unit module
     # like this https://pypi.org/project/units/
@@ -445,153 +449,79 @@ def sites(topology,
                                  chunksize=chunksize_in_frames,
                                  return_time=True, consolidate=False, periodic=pbc)
 
-    # Slap the contact values, res_pairs and idxs onto the site objects, so that they're more standalone
+    # Abstract each site to a group of contacts
+    site_as_gc = {}
     ctc_pairs_iterators = iter(ctc_idxs_small)
     ctc_value_idx = iter(np.arange(len(ctc_idxs_small)))  # there has to be a better way
     for isite in sites:
-        isite["res_idxs"] = []
-        isite["ctc_idxs"] = []
+        key = isite["name"]
+        site_as_gc[key] = []
         for __ in range(isite["n_bonds"]):
-            isite["res_idxs"].append(next(ctc_pairs_iterators))
-            isite["ctc_idxs"].append(next(ctc_value_idx))
-        isite["res_idxs"] = np.vstack(isite["res_idxs"])
-        isite["ctc_idxs"] = np.array(isite["ctc_idxs"])
-        # print(isite["res_idxs"])
-        # print(isite["ctc_idxs"])
-        isite["ctcs"] = []
-        for ctc_traj in ctcs:
-            isite["ctcs"].append(ctc_traj[:, isite["ctc_idxs"]])
-        # print()
+            pair = next(ctc_pairs_iterators)
+            idx = next(ctc_value_idx)
+            consensus_labels = [_relabel_consensus(idx, [BW, CGN]) for idx in pair]
+            fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
+            site_as_gc[key].append(contact_pair(pair,
+                                               [itraj[:, idx] for itraj in ctcs],
+                                               time_array,
+                                               top=refgeom.top,
+                                               consensus_labels=consensus_labels,
+                                               trajs=xtcs,
+                                               fragment_idxs=fragment_idxs,
+                                               fragment_names=[fragment_names[idx] for idx in fragment_idxs],
+                                               #fragment_colors=[fragcolors[idx] for idx in fragment_idxs]
+                                               ))
+        site_as_gc[key] = contact_group(site_as_gc[key])
 
     print("The following files have been created")
     panelheight = 3
-    xvec = np.arange(np.max([ss["n_bonds"] for ss in sites]))
     n_cols = np.min((4, len(sites)))
     n_rows = np.ceil(len(sites) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
     histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
                                      figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
-    list_of_axes = list(histoax.flatten())
-    for jax, isite in zip(list_of_axes, sites):  # in np.unique([ctc_idxs_small[ii] for ii in final_look]):
-        j_av_ctcs = np.vstack(isite["ctcs"])
-        ctcs_mean = np.mean(j_av_ctcs < ctc_cutoff_Ang / 10, 0)
-        patches = jax.bar(np.arange(isite["n_bonds"]), ctcs_mean,
-                          # label=res_and_fragment_str,
-                          width=.25)
-        jax.set_title(
-            "Contact frequency @%2.1f $\AA$\n of site '%s'" % (ctc_cutoff_Ang, isite["name"]))
-        jax.set_ylim([0, 1])
-        jax.set_xlim([-.5, xvec[-1] + 1 - .5])
-        jax.set_xticks([])
-        jax.set_yticks([.25, .50, .75, 1])
-        # jax.set_yticklabels([])
-        [jax.axhline(ii, color="k", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
-        # jax.legend(fontsize=panelsize * panelsize2font)
 
-        # Also, prepare he timedep plot, since it'll also iterate throuth the pairs
-        myfig, myax = plt.subplots(isite["n_bonds"], 1, sharex=True, sharey=True,
-                                   figsize=(10, isite["n_bonds"] * panelheight))
-
-        myax = np.array(myax, ndmin=1)
-        myax[0].set_title("site: %s" % (isite["name"]))
-
-        # Loop over the pairs to attach labels to the bars
-        for ii, (iy, ipair) in enumerate(zip(ctcs_mean, isite["res_idxs"])):
-            labels_consensus = [_relabel_consensus(jj, [BW, CGN]) for jj in ipair]
-
-            # TODO this .item() is to comply to
-            labels_frags = [in_what_fragment(idx.item(), fragments, fragment_names=fragment_names) for idx in ipair]
-            for jj, jcons in enumerate(labels_consensus):
-                if str(jcons).lower() != "na":
-                    labels_frags[jj] = jcons
-
-            ilab = '%s@%s-\n%s@%s' % (
-                _shorten_AA(refgeom.top.residue(ipair[0]), substitute_fail="long", keep_index=True),
-                labels_frags[0],
-                _shorten_AA(refgeom.top.residue(ipair[1]), substitute_fail="long", keep_index=True),
-                labels_frags[1]
-                #refgeom.top.residue(ipair[0]), labels_frags[0],
-                #refgeom.top.residue(ipair[1]), labels_frags[1],
-            )
-            ilab = ilab.replace("@None","").replace("-",":")
-
-            ilab = _replace4latex(ilab)
-            ix = ii
-            iy += .01
-            if iy > .65:
-                iy = .65
-            jax.text(ix - .05, iy, ilab,
-                     va='bottom',
-                     ha='left',
-                     rotation=45,
-                     fontsize=panelsize * panelsize2font,
-                     backgroundcolor="white"
-                     )
-
-            # Now the trajectory loops
-            # Loop over trajectories
-            icol = iter(_my_color_schemes(curve_color))
-            for itime, ixtc, ictc in zip(time_array, xtcs, isite["ctcs"]):
-                plt.sca(myax[ii])
-
-                ilabel = '%s (%u %s)' % (ixtc, (ictc[:, ii] < ctc_cutoff_Ang / 10).mean() * 100, '%')
-                alpha = 1
-                icolor = next(icol)
-                if n_smooth_hw > 0:
-                    from .list_utils import window_average as _wav
-                    alpha = .2
-                    itime_smooth, _ = _wav(itime, half_window_size=n_smooth_hw)
-                    ictc_smooth, _ = _wav(ictc[:, ii], half_window_size=n_smooth_hw)
-                    plt.plot(itime_smooth * dt,
-                             ictc_smooth * 10,
-                             label=ilabel,
-                             color=icolor)
-                    ilabel = None
-
-                if gray_background:
-                    icolor="gray"
-
-                plt.plot(itime * dt,
-                         ictc[:, ii] * 10,
-                         alpha=alpha,
-                         label=ilabel,
-                         color=icolor,
+    # One loop for the histograms
+    _rcParams["font.size"] = panelsize * panelsize2font
+    for jax, (site_name, isite_nh) in zip(histoax.flatten(),
+                                       site_as_gc.items()):
+        isite_nh.histo_site(ctc_cutoff_Ang, site_name,
+                         jax=jax,
+                         xlim=np.max([ss["n_bonds"] for ss in sites]),
+                         label_fontsize_factor=panelsize2font / panelsize,
+                         shorten_AAs=short_AA_names
                          )
-                plt.legend(loc=1, fontsize=np.round(rcParams["font.size"]/2))
-                plt.ylabel('$\\AA$  ', rotation=0, ha='right')
-                plt.ylim([0, 10])
-                iax = plt.gca()
-                iax.axhline(ctc_cutoff_Ang, color='k')
-            myax[ii].text(np.mean(iax.get_xlim()), .5, ilab.replace("\n", "") + ' (%u %%)' % (iy * 100), ha='center',
-                          fontsize=np.round(rcParams["font.size"]/1.5))
-        myax[-1].set_yticks([2, 4, 6, 8])
-        myax[-1].set_yticklabels(["2", "4", "6", "8"])
-        myax[-1].set_xlim(0, np.max(np.hstack(time_array))*dt)
-        iax.set_xlabel('t / %s'%t_unit.replace("mu","$\\mu$"))
-        myfig.tight_layout(h_pad=0, w_pad=0, pad=0)
 
-        axtop, axbottom = myax[0], myax[-1]
-        iax2 = axtop.twiny()
-        iax2.set_xticks(axbottom.get_xticks())
-        iax2.set_xticklabels(axbottom.get_xticklabels())
-        iax2.set_xlim(axbottom.get_xlim())
-        iax2.set_xlabel(axbottom.get_xlabel())
 
+    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
+    fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
+    fname = path.join(output_dir, fname)
+    histofig.savefig(fname, dpi=graphic_dpi)
+    plt.close(histofig)
+    print("The following files have been created")
+    print(fname)
+    for site_name, isite_nh in site_as_gc.items():
         fname = 'site.%s.%s.time_resolved.%s' % (
-        isite["name"].replace(" ", "_"), desc_out.strip("."), graphic_ext.strip("."))
+            site_name.replace(" ", "_"), desc_out.strip("."), graphic_ext.strip("."))
         fname = path.join(output_dir, fname)
+        myfig = isite_nh.plot_timedep_ctcs(panelheight,
+                                           _my_color_schemes(curve_color),
+                                           ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                           n_smooth_hw=n_smooth_hw,
+                                           dt=dt,
+                                           t_unit=t_unit,
+                                           gray_background=gray_background,
+                                           shorten_AAs=short_AA_names,
+                                           plot_N_ctcs=False
+                                           )
+        # One title for all axes on top
+        myfig.axes[0].set_title("site: %s" % (isite["name"]))
         plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
         plt.close(myfig)
         print(fname)
-        # plt.show()
 
-    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "sites_overall.%s.%s" % (desc_out.rstrip("."), graphic_ext.strip("."))
-    fname = path.join(output_dir, fname)
-    histofig.savefig(fname,dpi=graphic_dpi)
-    print(fname)
-
+    return
 
 def density_by_sites(topology,
           trajectories,
