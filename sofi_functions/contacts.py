@@ -394,6 +394,40 @@ class contact_group(object):
         [jax.axhline(ii, color="k", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
         return jax
 
+    def histo_site(self,
+                   ctc_cutoff_Ang,
+                   site_name,
+                   xlim=None,
+                   jax=None,
+                   shorten_AAs=False,
+                   label_fontsize_factor=1):
+
+        # Base plot
+        jax = self.histo(ctc_cutoff_Ang,
+                         jax=jax)
+        # Cosmetics
+        jax.set_title(
+            "Contact frequency @%2.1f $\AA$ of site '%s'\n"
+            % (ctc_cutoff_Ang, site_name))
+
+        label_bars = [ictc.ctc_label for ictc in self._contacts]
+        if shorten_AAs:
+            label_dotref = self.anchor_res_and_fragment_str_short
+            label_bars = [ictc.ctc_label_short for ictc in self._contacts]
+
+        label_bars = [ilab.replace("@None","") for ilab in label_bars]
+
+        self.add_tilted_labels_to_patches(jax,
+                                          label_bars,
+                                          label_fontsize_factor=label_fontsize_factor
+                                          )
+
+        #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
+        if xlim is not None:
+            jax.set_xlim([-.5, xlim + 1 - .5])
+
+        return jax
+
     def histo_neighborhood(self, ctc_cutoff_Ang,
                            n_nearest,
                            xlim=None,
@@ -424,7 +458,7 @@ class contact_group(object):
                                           label_bars,
                                           label_fontsize_factor=label_fontsize_factor)
 
-        jax.legend()
+        jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
         if xlim is not None:
             jax.set_xlim([-.5, xlim + 1 - .5])
 
@@ -445,43 +479,29 @@ class contact_group(object):
                      backgroundcolor="white"
                      )
 
-    def plot_timedep_ctcs(self, panelheight, color_scheme, ctc_cutoff_Ang,
-                          n_smooth_hw, dt, t_unit,
-                          gray_background,
-                          shorten_AAs=False,
-                          myfig=None):
+    def plot_timedep_ctcs(self, panelheight,
+                          color_scheme,
+                          plot_N_ctcs=True,
+                          **plot_contact_kwargs,
+                          ):
         if self.n_ctcs > 0:
-            if myfig is None:
-                myfig, myax = _plt.subplots(self.n_ctcs+1, 1,
-                                            #sharex=True,
-                                           #sharey=True,
-                                           figsize=(10, (self.n_ctcs+1) * panelheight))
-            else:
-                # TODO test this
-                myax = myfig.axes
-            #myax = _np.array(myax, ndmin=1)
-
-            # One title for all axes on top
-            title=self.anchor_res_and_fragment_str
-            if shorten_AAs:
-                title = self.anchor_res_and_fragment_str_short
-            myax[0].set_title(title)
+            n_rows = self.n_ctcs
+            if plot_N_ctcs:
+                n_rows +=1
+            myfig, myax = _plt.subplots(n_rows, 1,
+                                        figsize=(10, n_rows * panelheight))
 
             # Plot individual contacts
             for ictc, iax in zip(self._contacts, myax[:self.n_ctcs]):
                 plot_contact(ictc,iax,
                              color_scheme,
-                             ctc_cutoff_Ang,
-                             n_smooth_hw,
-                             dt,
-                             gray_background,
-                             shorten_AAs=shorten_AAs
+                             **plot_contact_kwargs
                              )
 
             # Cosmetics
             [iax.set_xticklabels([]) for iax in myax[:self.n_ctcs-1]]
-            [iax.set_xlim([0, self.time_max*dt]) for iax in myax[:self.n_ctcs]]
-            myax[self.n_ctcs-1].set_xlabel('t / %s' % t_unit)
+            [iax.set_xlabel('') for iax in myax[:self.n_ctcs - 1]]
+
 
             # TODO figure out how to put xticklabels on top
             axtop, axbottom = myax[0], myax[self.n_ctcs-1]
@@ -491,14 +511,28 @@ class contact_group(object):
             iax2.set_xlim(axtop.get_xlim())
             iax2.set_xlabel(axbottom.get_xlabel())
 
+        if plot_N_ctcs \
+                and "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
+                and plot_contact_kwargs["ctc_cutoff_Ang"] > 0:
+            ctc_cutoff_Ang = plot_contact_kwargs.pop("ctc_cutoff_Ang")
+            plot_contact_kwargs.pop("shorten_AAs")
+            self.plot_timedep_Nctcs(myfig.axes[self.n_ctcs],
+                                    color_scheme,
+                                    ctc_cutoff_Ang,
+                                    **plot_contact_kwargs,
+                                    )
+
+
         myfig.tight_layout(pad=0, h_pad=0, w_pad=0)
         return myfig
 
     def plot_timedep_Nctcs(self,
                            iax,
-                           color_scheme, ctc_cutoff_Ang,
-                           n_smooth_hw, dt, t_unit,
-                           gray_background,
+                           color_scheme,
+                           ctc_cutoff_Ang,
+                           dt=1, t_unit="ps",
+                           n_smooth_hw=0,
+                           gray_background=False,
                            ):
         #Plot ncontacts in the last frame
         icol = iter(color_scheme)
@@ -512,7 +546,7 @@ class contact_group(object):
         iax.set_ylabel('$\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
         iax.set_xlabel('t / %s'%t_unit)
         iax.set_xlim([0,self.time_max*dt])
-        iax.legend()
+        iax.legend(fontsize=_rcParams["font.size"]*.75)
 
     def to_dicts_for_saving(self, dt=1, t_unit="ps"):
         dicts = []
@@ -555,11 +589,12 @@ class contact_group(object):
 
 def plot_contact(ictc, iax,
                  color_scheme,
-                 ctc_cutoff_Ang,
-                 n_smooth_hw,
-                 dt,
-                 gray_background,
+                 ctc_cutoff_Ang=0,
+                 n_smooth_hw=1,
+                 dt=1,
+                 gray_background=False,
                  shorten_AAs=False,
+                 t_unit='ps',
                  ):
     iax.set_ylabel('D / $\\AA$', rotation=90)
     iax.set_ylim([0, 10])
@@ -568,8 +603,9 @@ def plot_contact(ictc, iax,
                                                                 ictc.time_arrays,
                                                                 ictc.trajlabels)):
 
-        ilabel = '%s (%u%%)' % (
-            trjlabel, ictc.frequency_per_traj(ctc_cutoff_Ang)[traj_idx] * 100)
+        ilabel = '%s'%trjlabel
+        if ctc_cutoff_Ang > 0:
+            ilabel += ' (%u%%)' % (ictc.frequency_per_traj(ctc_cutoff_Ang)[traj_idx] * 100)
 
         plot_w_smoothing_auto(iax, itime * dt, ictc_traj * 10,
                               ilabel,
@@ -577,12 +613,16 @@ def plot_contact(ictc, iax,
                               gray_background=gray_background,
                               n_smooth_hw=n_smooth_hw)
 
-    iax.legend(loc=1)
+    iax.legend(loc=1, fontsize=_rcParams["font.size"]*.75)
     ctc_label = ictc.ctc_label
     if shorten_AAs:
         ctc_label = ictc.ctc_label_short
+    ctc_label = ctc_label.replace("@None","")
     iax.text(_np.mean(iax.get_xlim()), 1, ctc_label, ha='center')
-    iax.axhline(ctc_cutoff_Ang, color='k', zorder=10)
+    if ctc_cutoff_Ang>0:
+        iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
+    iax.set_xlabel('t / %s' % _replace4latex(t_unit))
+    iax.set_xlim([0, ictc.time_max * dt])
 
 
 def plot_w_smoothing_auto(iax, x, y,
@@ -634,7 +674,7 @@ class contact_pair(object):
         self._n_trajs = len(ctc_trajs)
         assert self._n_trajs == len(time_arrays)
         assert all([len(itraj)==len(itime) for itraj, itime in zip(ctc_trajs, time_arrays)])
-        self._time_max = _np.max(time_arrays)
+        self._time_max = _np.max(_np.hstack(time_arrays))
 
         self._anchor_residue_index = anchor_residue_idx
         self._partner_residue_index = None
