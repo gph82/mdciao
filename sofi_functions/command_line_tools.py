@@ -1,26 +1,43 @@
 import numpy as np
 import mdtraj as md
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt,rcParams as _rcParams
+
+
 from json import load as jsonload
 from os.path import splitext, split as psplit
+from textwrap import wrap as _twrap
+from itertools import product
 from os import path, mkdir
-from sofi_functions.fragments import interactive_fragment_picker_by_AAresSeq as _interactive_fragment_picker_by_AAresSeq
+from tempfile import TemporaryDirectory as _TD
 
-from sofi_functions.fragments import get_fragments, _print_frag
-from sofi_functions.nomenclature_utils import CGN_transformer, BW_transformer,\
-    top2CGN_by_AAcode, guess_missing_BWs, _relabel_consensus, _guess_nomenclature_fragments
-from sofi_functions.contacts import ctc_freq_reporter_by_residue_neighborhood, xtcs2ctcs
-from sofi_functions.list_utils import rangeexpand, unique_list_of_iterables_by_tuple_hashing, in_what_fragment
-from sofi_functions.bond_utils import bonded_neighborlist_from_top
-from sofi_functions.actor_utils import _replace4latex
-from sofi_functions.aa_utils import shorten_AA as _shorten_AA
-from sofi_functions.contacts import contact_group, contact_pair
-from matplotlib import rcParams as _rcParams
 
-from sofi_functions.actor_utils import mycolors, dangerously_auto_fragments, \
+from sofi_functions.fragments import \
+    interactive_fragment_picker_by_AAresSeq as _interactive_fragment_picker_by_AAresSeq, \
+    get_fragments, _print_frag
+
+from sofi_functions.nomenclature_utils import \
+    CGN_transformer, BW_transformer,\
+    _relabel_consensus, _guess_nomenclature_fragments
+
+from sofi_functions.contacts import \
+    ctc_freq_reporter_by_residue_neighborhood, \
+    xtcs2ctcs,contact_group, contact_pair
+
+from sofi_functions.list_utils import \
+    rangeexpand, \
+    unique_list_of_iterables_by_tuple_hashing, \
+    in_what_fragment
+
+from sofi_functions.bond_utils import \
+    bonded_neighborlist_from_top
+
+from sofi_functions.actor_utils import \
+    mycolors, dangerously_auto_fragments, \
     interactive_fragment_picker_by_resSeq
 
-from tempfile import TemporaryDirectory as _TD
+from sofi_functions.parsers import \
+    match_dict_by_patterns as _match_dict_by_patterns
+
 def _inform_of_parser(parser):
     # TODO find out where the keys are hiding in parser...
     a = parser.parse_args()
@@ -42,37 +59,28 @@ def _offer_to_create_dir(output_dir):
             return
 
 
-def _parse_BW_option(BW_file, top, fragments, return_tf=False):
-    if BW_file == 'None':
-        BW = [None for __ in range(top.n_residues)]
-        BWtf = None
-    else:
-        if BW_file.lower().endswith(".json"):
-            with open(BW_file, "r") as f:
-                idict = jsonload(f)
-                BW_tablefile = idict["file"]
-                try:
-                    assert idict["guess_BW"]
-                except:
-                    raise NotImplementedError("The BW json file has to contain the guess_BW=True")
-        elif BW_file.lower().endswith("xlsx"):
-            BW_tablefile = BW_file # todo ugly, consider rewriting BW_file = xxx
+def _parse_consensus_option(identifier, type,
+                            top, fragments,
+                            return_tf=False,
+                            **tf_kwargs):
 
-        BWtf = BW_transformer(BW_tablefile)
-        answer = _parse_fragment_answer(BWtf, top, fragments)
+    if str(identifier).lower() == 'none':
+        map_out = [None for __ in range(top.n_residues)]
+        tf_out = None
+    else:
+        tf_out = {"BW": BW_transformer,
+                  "CGN":CGN_transformer}[type](identifier,**tf_kwargs)
+        answer = _parse_fragment_answer(tf_out, top, fragments, type)
         restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
-
-        # TODO put this in the tf-class?
-        #BW = guess_missing_BWs(BWtf.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
-        # TODO implementing the above TODO, not guessing any BWs at the moment
-        BW = BWtf.top2map(top, restrict_to_residxs=restrict_to_residxs)
-
+        map_out = tf_out.top2map(top,
+                                 restrict_to_residxs=restrict_to_residxs
+                                 )
     if not return_tf:
-        return BW
+        return map_out
     else:
-        return BW, BWtf
+        return map_out, tf_out
 
-def _parse_fragment_answer(Ntf, top, fragments, name='BW',**guess_kwargs):
+def _parse_fragment_answer(Ntf, top, fragments, name,**guess_kwargs):
     guess = _guess_nomenclature_fragments(Ntf, top, fragments,**guess_kwargs)
     answer = input("Which fragments are succeptible of %s-numbering?"
                    "(Can be in a format 1,2-6,10,20-25)\n"
@@ -81,26 +89,6 @@ def _parse_fragment_answer(Ntf, top, fragments, name='BW',**guess_kwargs):
         answer = ','.join(['%s' % ii for ii in guess])
 
     return answer
-
-def _parse_CGN_option(CGN_PDB, top, fragments, return_tf=False):
-    if CGN_PDB == 'None':
-        CGN = [None for __ in range(top.n_residues)]
-        CGN_tf = None
-    else:
-        CGN_tf = CGN_transformer(CGN_PDB)
-
-        answer =  _parse_fragment_answer(CGN_tf, top, fragments, name='CGN',
-                                         #verbose=True
-                                         )
-        restrict_to_residxs = np.hstack([fragments[ii] for ii in rangeexpand(answer)])
-        CGN = top2CGN_by_AAcode(top, CGN_tf, restrict_to_residxs=restrict_to_residxs,
-                              #  verbose=True
-                                )
-
-    if not return_tf:
-        return CGN
-    else:
-        return CGN, CGN_tf
 
 def _parse_fragment_naming_options(fragment_names, fragments, top):
     if fragment_names == '':
@@ -198,10 +186,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
 
     # Do we want BW definitions
-    BW = _parse_BW_option(BW_file, refgeom.top, fragments)
+    BW = _parse_consensus_option(BW_file, 'BW', refgeom.top, fragments)
 
     # Dow we want CGN definitions:
-    CGN = _parse_CGN_option(CGN_PDB, refgeom.top, fragments)
+    CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
 
     # TODO find a consistent way for coloring fragments
     fragcolors = [cc for cc in mycolors]
@@ -427,10 +415,10 @@ def sites(topology,
         print(" ", frag_name)
 
     # Do we want BW definitions
-    BW = _parse_BW_option(BW_file, refgeom.top, fragments)
+    BW = _parse_consensus_option(BW_file, 'BW', refgeom.top, fragments)
 
     # Dow we want CGN definitions:
-    CGN = _parse_CGN_option(CGN_PDB, refgeom.top, fragments)
+    CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
 
 
     #TODO PACKAGE THIS SOMEHOW BETTER
@@ -615,7 +603,7 @@ def site_figures(topology,
 
     # Dow we want CGN definitions:
 
-    CGN = _parse_CGN_option(CGN_PDB, refgeom.top, fragments)
+    CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
     #for key, val in CGN.items():
     #    print(key,val)
     for ss in sites:
@@ -645,7 +633,224 @@ def site_figures(topology,
 
         input()
 
+def interface(
+    topology=None,
+    trajectories=None,
+    BW_file="None",
+    CGN_PDB="None",
+    chunksize_in_frames=10000,
+    ctc_cutoff_Ang=3,
+    curve_color="auto",
+    frag_idxs_group_1=None,
+    frag_idxs_group_2=None,
+    fragments=['resSeq'],
+    graphic_dpi=150,
+    graphic_ext=".pdf",
+    gray_background=False,
+    interface_cutoff_Ang=35,
+    n_ctcs=10,
+    n_smooth_hw=0,
+    output_desc="interface",
+    output_dir=".",
+    short_AA_names=False,
+    stride=1,
+    t_unit="ns",
+):
+    # todo use a proper unit module
+    # like this https://pypi.org/project/units/
+    if t_unit == 'ns':
+        dt = 1e-3
+    elif t_unit == 'mus':
+        dt = 1e-6
+    else:
+        raise ValueError("Time unit not known ", t_unit)
 
+    xtcs = sorted(trajectories)
+    print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
+    "\n  ".join(xtcs), stride))
+
+    group_1 = frag_idxs_group_1
+    group_2 = frag_idxs_group_2
+
+    refgeom = md.load(topology)
+    frag_cons = False
+    auto_fragments = get_fragments(refgeom.top)
+    if isinstance(fragments, list):
+        if isinstance(fragments[0], str):
+            if fragments[0] in ['resSeq']:
+                assert len(auto_fragments) >= 2, ("You need more than one chain in "
+                                             "your topology if you are going to "
+                                             "auto-dectect fragments! Aborting.")
+            elif fragments[0] == 'consensus':
+                frag_cons = True
+            else:
+                raise ValueError("Cannot understand your --fragments option", fragments)
+        else:
+            auto_fragments = []
+            assert len(fragments) >= 2, ("You need to input more than "
+                                           "two fragments! Aborting.")
+            print("User input")
+            for ii, ifrag in enumerate(auto_fragments):
+                ifrag = rangeexpand(ifrag)
+                auto_fragments.append(ifrag)
+                _print_frag(ii, refgeom.top, ifrag)
+    else:
+        raise Exception("Cannot understand your --fragments option %s" % fragments)
+
+    # TODO THIS RENAMING HERE FOR CONSISTENCY WITH PARSERS WILL BE A PROBLEM LATER
+    fragments = auto_fragments
+
+    BW, BWtf = _parse_consensus_option(BW_file, 'BW', refgeom.top, fragments, return_tf=True)
+    fragment_defs = {}
+    if str(BW_file).lower() != 'none':
+        print("INFO: these are the BW fragments mapped onto your topology")
+        fragment_defs.update(BWtf.top2defs(refgeom.top, return_defs=True))
+        input("Hit enter to continue!\n")
+    CGN, CGNtf = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments, return_tf=True)
+    if str(CGN_PDB).lower() != 'none':
+        print("INFO: these are the CGN fragments mapped onto your topology")
+        fragment_defs.update(CGNtf.top2defs(refgeom.top, return_defs=True))
+        input("Hit enter to continue!\n")
+
+    groups = []
+    group_idxs = []
+    if frag_cons:
+        for ii in [1, 2]:
+            print("group %u: " % ii, end='')
+            # TODO mange this vars better
+            istr = str([None,
+                        frag_idxs_group_1,
+                        frag_idxs_group_2][ii])
+            if istr.lower() != 'none':
+                # TODO we're calling this method twice but I don't see a way around it RN
+                igroup, igroup_idxs = _match_dict_by_patterns(istr, fragment_defs)
+                if len(igroup) == len(igroup_idxs) == 0:
+                    raise ValueError("Your input '%s' does not match any fragment groups" % istr)
+                else:
+                    answer = istr
+            else:
+                answer = input(
+                    "Input a list of posix-expressions like 'TM*,-TM2,H8' (TM2 will be avoided)\n").replace(
+                    " ", "").strip("'").strip('"')
+            igroup, igroup_idxs = _match_dict_by_patterns(answer, fragment_defs)
+            groups.append(igroup)
+            group_idxs.append(igroup_idxs)
+            print(', '.join(groups[-1]))
+        group_1, group_2 = groups
+        fragments = list(fragment_defs.values())
+        fragment_names = list(fragment_defs.keys())
+
+    if len(groups) == 0:
+        if len(fragments) == 2:
+            print("Only two fragments detected. Overriding inputs for -frag_idxs_group_1/2 with [0] and [1].")
+            group_1 = [0]
+            group_2 = [1]
+        else:
+            group_1 = rangeexpand(group_1)
+            group_2 = rangeexpand(group_2)
+        ctc_idxs = np.hstack([[list(product(fragments[ii], fragments[jj])) for ii in group_1] for jj in group_2])
+    else:
+        ctc_idxs = np.vstack(list(product(group_idxs[0], group_idxs[1])))
+
+    print("\nComputing distances in the interface between fragments\n%s\nand\n%s.\n"
+          "The interface is defined by the residues within %3.1f "
+          "Angstrom of each other in the reference topology.\n"
+          "Computing interface..."
+          % ('\n'.join(_twrap(', '.join(['%s' % gg for gg in group_1]))),
+             '\n'.join(_twrap(', '.join(['%s' % gg for gg in group_2]))),
+             interface_cutoff_Ang), end="")
+
+    ctcs, ctc_idxs = md.compute_contacts(refgeom, np.vstack(ctc_idxs))
+    print("done!")
+
+    ctc_idxs_receptor_Gprot = np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()
+    _, ctc_idxs_receptor_Gprot = md.compute_contacts(refgeom, ctc_idxs[ctc_idxs_receptor_Gprot])
+
+    print()
+    print(
+        "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
+        "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
+        len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
+
+    ctcs, times = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot, stride=stride, return_time=True,
+                            consolidate=False,
+                            chunksize=chunksize_in_frames)
+
+    # Stack all data
+    actcs = np.vstack(ctcs)
+
+    # Get frequencies so that we don't create unnecessary ctc objects
+    ctcs_bin = (actcs <= ctc_cutoff_Ang / 10).astype("int").sum(0)
+    ctc_frequency = ctcs_bin / actcs.shape[0]
+    order = np.argsort(ctc_frequency)[::-1]
+    #ctcs_trajectory_std = np.vstack([np.mean(ictcs < ctc_cutoff_Ang / 10, 0) for ictcs in ctcs]).std(0)
+
+    ctc_objs = []
+    for idx in order[:n_ctcs]:
+        ifreq = ctc_frequency[idx]
+        if ifreq > 0:
+            pair = ctc_idxs_receptor_Gprot[idx]
+            consensus_labels = [_relabel_consensus(idx, [BW, CGN]) for idx in pair]
+            fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
+            ctc_objs.append(contact_pair(pair,
+                                         [itraj[:, idx] for itraj in ctcs],
+                                         times,
+                                         top=refgeom.top,
+                                         consensus_labels=consensus_labels,
+                                         trajs=xtcs,
+                                         fragment_idxs=fragment_idxs,
+                                         # fragment_names=fragment_names,#[fragment_names[idx] for idx in fragment_idxs],
+                                         # fragment_colors=[fragcolors[idx] for idx in fragment_idxs]
+                                          ))
+
+    neighborhood = contact_group(ctc_objs)
+    print(neighborhood.frequency_report(ctc_cutoff_Ang))
+    panelheight = 3
+    n_cols = 1
+    n_rows = 1
+    panelsize = 4
+    panelsize2font = 3.5
+    fudge = 7
+    histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
+                                     figsize=(n_cols * panelsize * np.ceil(neighborhood.n_ctcs/fudge),
+                                              n_rows * panelsize),
+                                     )
+
+    # One loop for the histograms
+    _rcParams["font.size"] = panelsize * panelsize2font
+    neighborhood.histo_site(ctc_cutoff_Ang,
+                            'interface',
+                            jax=histoax,
+                            xlim=n_ctcs,
+                            label_fontsize_factor=panelsize2font / panelsize,
+                            shorten_AAs=short_AA_names
+                            )
+    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
+    fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
+    fname = path.join(output_dir, fname)
+    histofig.savefig(fname, dpi=graphic_dpi)
+    print("The following files have been created")
+    print(fname)
+
+    fname = '%s.time_resolved.%s' % (output_desc,
+                                     graphic_ext.strip("."))
+    fname = path.join(output_dir, fname)
+    myfig = neighborhood.plot_timedep_ctcs(panelheight, _my_color_schemes(curve_color),
+                                           ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                           n_smooth_hw=n_smooth_hw,
+                                           dt=dt,
+                                           t_unit=t_unit,
+                                           gray_background=gray_background,
+                                           shorten_AAs=short_AA_names,
+                                           plot_N_ctcs=True)
+
+    # One title for all axes on top
+    myfig.axes[0].set_title("site: %s" % (output_desc))
+    plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+    plt.close(myfig)
+    print(fname)
+
+    return neighborhood
 
 def _cmdstr2cmdtuple(cmd):
     return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
