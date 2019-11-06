@@ -2,25 +2,23 @@ import mdtraj as _md
 import numpy as _np
 from .aa_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
 from .sequence_utils import alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, _my_bioalign
-from pandas import DataFrame as _DF
+from pandas import DataFrame as _DF, read_json as _read_json, read_excel as _read_excel
 from collections import defaultdict as _defdict
+from os import path as _path
+import requests as _requests
 
 
-def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
-                       modifications={"S262":"F264"},
+def table2BW_by_AAcode(tablefile,
                        keep_AA_code=True,
-                       return_defs=False,
+                       return_fragments=False,
                        ):
     """
-    Reads an excel table and returns a dictionary AAcodes so that e.g. self.AAcode2BW[R131] -> '3.50'
+    Reads an excel table and returns a dictionary AAcodes so that e.g. self.AA2BW[R131] -> '3.50'
 
     Parameters
     ----------
-    tablefile : xlsx file
-        GPCRmd_B2AR nomenclature file in excel format, optional
-    modifications : dictionary
-        Pass the modifications required in the residue name.
-        Parameter should be passed as a dictionary of the form {old name:new name}.
+    tablefile : xlsx file or pandas dataframe
+        Ballesteros-Weinstein nomenclature file in excel format, optional
     keep_AA_code : boolean
         'True' if amino acid letter code is required. (Default is True).
         If True then output dictionary will have key of the form "Q26" else "26".
@@ -30,44 +28,33 @@ def table2BW_by_AAcode(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
     Returns
     -------
 
-    AAcode2BW : dictionary
+    AA2BW : dictionary
         Dictionary with residues as key and their corresponding BW notation.
 
-    defs : list (optional)
-        if return_defs=false, a list containing the name of the fragments according to the excel file
-
+    fragments : dict (optional)
+        if return_fragments=True, a dictionary containing the fragments according to the excel file
     """
-    AAcode2BW = {}
-    import pandas
-    df = pandas.read_excel(tablefile, header=None)
 
+    if isinstance(tablefile,str):
+        df = _read_excel(tablefile, header=None)
+    else:
+        df = tablefile
+
+    # This is the most important
+    AAcode2BW = {key: val for key, val in df[["AAresSeq", "BW"]].values}
     # Locate definition lines and use their indices
-    defs = []
-    for ii, row in df.iterrows():
-        if row[0].startswith("TM") or row[0].startswith("H8"):
-            defs.append(row[0])
-
-        else:
-            AAcode2BW[row[2]] = row[1]
-
-    # Replace some keys
-    __ = {}
-    for key, val in AAcode2BW.items():
-        for patt, sub in modifications.items():
-            key = key.replace(patt,sub)
-        __[key] = str(val)
-    AAcode2BW = __
-
-    # Make proper BW notation as string with trailing zeros
-    AAcode2BW = {key:'%1.2f'%float(val) for key, val in AAcode2BW.items()}
+    fragments = _defdict(list)
+    for key, AArS in df[["protein_segment", "AAresSeq"]].values:
+        fragments[key].append(AArS)
+    fragments = {key:val for key, val in fragments.items()}
 
     if keep_AA_code:
         pass
     else:
         AAcode2BW =  {int(key[1:]):val for key, val in AAcode2BW.items()}
 
-    if return_defs:
-        return AAcode2BW, defs
+    if return_fragments:
+        return AAcode2BW, fragments
     else:
         return AAcode2BW
 
@@ -158,181 +145,16 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
     else:
         return out_list
 
-class CGN_transformer(object):
+class consensus_labeler(object):
     """
-    Class to abstract, handle, and use common-Gprotein-nomenclature.
-    See here_ for more info.
-     .. _here: https://www.mrc-lmb.cam.ac.uk/CGN/faq.html
-    """
-    def __init__(self, ref_PDB='3SN6', ref_path='.', try_web_lookup=True):
-        r"""
+    Class to manage consensus notations like
+    * Ballesteros-Weinstein (BW)
+    * Common-Gprotein-nomenclature
 
-        Parameters
-        ----------
-        ref_PDB: str, default is '3SN6'
-            The PDB four letter code that will be used for CGN purposes
-        ref_path: str, default is '.'
-            The local path where these files exist
-             * 3SN6_CGN.txt
-             * 3SN6.pdb
-
-        try_web_lookup: bool, default is True
-            If the local files are not found, try automatically a web lookup at
-             * www.mrc-lmb.cam.ac.uk (for CGN)
-             * rcsb.org (for the PDB)
-        """
-        # Create dataframe with the alignment
-        from pandas import read_csv as _read_csv
-        from os import path as _path
-        self._ref_PDB = ref_PDB
-        self._CGN_file = 'CGN_%s.txt' % ref_PDB
-        try:
-
-            self._DF = _read_csv(_path.join(ref_path, self._CGN_file), delimiter='\t')
-        except FileNotFoundError:
-            print("No local file %s numbering found"%self._CGN_file,end="")
-            if try_web_lookup:
-                web_address="www.mrc-lmb.cam.ac.uk"
-                url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, ref_PDB)
-                print(", checking online in\n%s ..."%url,end="")
-                import urllib
-                try:
-                    self._DF = _read_csv(url, delimiter='\t')
-                    print("found! Continuing normally")
-                except urllib.error.HTTPError as e:
-                    print(e)
-                    print("Aborting.")
-                    return
-            else:
-                raise
-
-        self._dict = {key: self._DF[self._DF[ref_PDB] == key]["CGN"].to_list()[0] for key in self._DF[ref_PDB].to_list()}
-
-        try:
-            pdbfile = ref_PDB+'.pdb'
-            self._top =_md.load(_path.join(ref_path, pdbfile)).top
-        except (OSError,FileNotFoundError):
-            try:
-                pdbfile = ref_PDB + '.pdb.gz'
-                self._top = _md.load(_path.join(ref_path, pdbfile)).top
-            except (OSError, FileNotFoundError):
-                print("No local PDB file for %s found"%ref_PDB, end="")
-                if try_web_lookup:
-                    web_address="https://files.rcsb.org/download"
-                    print(", checking online in %s ..."%web_address, end="")
-                    self._top = _md.load_pdb("%s/%s" %(web_address, pdbfile)).top
-                    print("found! Continuing normally")
-                else:
-                    raise
-
-        seq_ref = ''.join([str(rr.code).replace("None","X") for rr in self._top.residues])[:len(self._dict)]
-        seq_idxs = _np.hstack([rr.resSeq for rr in self._top.residues])[:len(self._dict)]
-        keyval = [{key:val} for key,val in self._dict.items()]
-        #for ii, (iseq_ref, iseq_idx) in enumerate(zip(seq_ref, seq_idxs)):
-        #print(ii, iseq_ref, iseq_idx )
-
-        self._seq_ref  = seq_ref
-        self._seq_idxs = seq_idxs
-
-        self._ref_PDB = ref_PDB
-
-        self._fragment_names = []
-        for key in self.AA2CGN.values():
-            new_key = '.'.join(key.split(".")[:-1])
-            #print(new_key)
-            if new_key not in self._fragment_names:
-                self._fragment_names.append(new_key)
-                #print("yes")
-
-    @property
-    def fragment_names(self):
-        r"""Name of the fragments according to the CGN numbering"""
-        return self._fragment_names
-
-    @property
-    def seq(self):
-        r""" Sequence of AAs (one-letter codes) in the reference pdb file.
-        If an AA has no one-letter, the letter X is used"""
-        return self._seq_ref
-
-    @property
-    def seq_idxs(self):
-        r""" Indices contained in the original PDB as sequence indices.
-        In an :obj:`mdtraj.Topology.Residue`, this index is called 'ResSeq'"""
-        return self._seq_idxs
-
-    @property
-    def AA2CGN(self):
-        r"""Dictionary with AA-codes as keys, so that AA2CGN["K25"] -> G.HN.42"""
-        #If an AA does not have a CGN-name, it is not present in the keys. """
-        return self._dict
-
-    @property
-    def ref_PDB(self):
-        r""" PDB code used for instantiation"""
-
-        return self._ref_PDB
-
-        #return seq_ref, seq_idxs, self._dict
-
-    def top2map(self, top, restrict_to_residxs=None, fill_gaps=True):
-        r""" Align the sequence of :obj:`top` to the transformer's sequence
-        and return a list of CGN numbering for each residue in :obj:`top`.
-        If no CGN numbering is found after the alignment, the entry will be None
-
-        Parameters
-        ----------
-        top :
-            :py:class:`mdtraj.Topology` object
-        restrict_to_residxs: iterable of integers, default is None
-            You can select a segment of the top that aligns best to self.ref_PDB sequence
-            to improve the quality of the alignment. The return list will still
-            be of length=top.n_residues
-        fill_gaps: bool, True
-            Try to fill CGN gaps in the sub-domains
-
-        Returns
-        -------
-        map : list of len = top.n_residues with the CGN numbering entries
-        """
-        return _top2consensus_map(self.AA2CGN, top,
-                                  restrict_to_residxs=restrict_to_residxs,
-                                  keep_consensus=fill_gaps)
-
-    def top2defs(self, top, return_defs=False):
-        r"""
-        Print the CGN transformer's definitions for the subdomains, e.g. H5 or S1,
-        in terms of residue indices of the input :obj:`top`
-
-        Parameters
-        ----------
-        top: obj:`mdtraj.Topology`
-        return_defs: boolean, default is False
-            If True, apart from printing the definitions,
-            they are returned as a dictionary
-
-        Returns
-        -------
-        defs : dictionary (if return_defs is True)
-            Dictionary with subdomain names as keys and lists of indices as values
-        """
-        map = self.top2map(top)
-        defs = _map2defs(map)
-        from sofi_functions.fragments import _print_frag
-        for ii, (key, val) in enumerate(defs.items()):
-            istr = _print_frag('%s' % key, top, val, fragment_desc='', return_string=True)
-            print(istr, '%s-%s' % (map[val[0]], map[val[-1]]))
-
-        if return_defs:
-            return defs
-
-#TODO CONSIDER CHANGING THE NAME "TRANSFORMER"
-class BW_transformer(object):
-    """
-    Class to manage Ballesteros-Weinstein notation
+    The consensus labels are abbreviated to 'conlab' throughout
 
     """
-    def __init__(self, tablefile="GPCRmd_B2AR_nomenclature.xlsx", ref_path='.'):
+    def __init__(self):
         r"""
 
         Parameters
@@ -342,22 +164,42 @@ class BW_transformer(object):
         ref_path: str,default is '.'
             The local path where the needed files are
 
+        try_web_lookup: bool, default is True
+            If the local files are not found, try automatically a web lookup at
+             * www.mrc-lmb.cam.ac.uk (for CGN)
+             * rcsb.org (for the PDB)
+
         """
 
-        self._tablefile = tablefile
+        self._conlab2AA = {val: key for key, val in self.AA2conlab.items()}
+        self._fragment_names = list(self.fragments.keys())
+        self._fragments_as_conlabs = {key: [self.AA2conlab[AA] for AA in val]
+                                      for key, val in self.fragments.items()}
 
-        self._AAcode2BW, self._defs = table2BW_by_AAcode(tablefile,return_defs=True)
+    @property
+    def conlab2AA(self):
+        return self._conlab2AA
 
-        self._fragments = {key: [] for key in self._defs}
-        for AArS, iBW in self._AAcode2BW.items():
-            intBW = int(iBW[0])
-            if intBW<8:
-                key= 'TM%u'%intBW
-            else:
-                key = 'H%u' % intBW
-            self._fragments[key].append(AArS)
-        from . aa_utils import name_from_AA as _name_from_AA
-        self._seq_fragments = {key:''.join([_name_from_AA(AA) for AA in val]) for key, val in self._fragments.items()}
+    @property
+    def fragment_names(self):
+        r"""Name of the fragments according to the CGN numbering"""
+        return self._fragment_names
+
+    @property
+    def seq(self):
+        return self._seq
+
+    @property
+    def fragments(self):
+        return self._fragments
+
+    @property
+    def fragments_as_conlabs(self):
+        return self._fragments_as_conlabs
+
+    @property
+    def dataframe(self):
+        return self._dataframe
 
     @property
     def tablefile(self):
@@ -365,19 +207,9 @@ class BW_transformer(object):
         return self._tablefile
 
     @property
-    def AAcode2BW(self):
-        r""" Dictionary AA-codes as keys, so that e.g. self.AAcode2BW[R131] -> '3.50' """
-        return self._AAcode2BW
-
-    @property
-    def fragment_names(self):
-        r""" List of the available fragments, e.g. ["TM1","TM2"]. Can also contain loops if the user asked for it"""
-        return self._defs
-
-    @property
-    def fragments(self):
-        r""" Dictionary of BW fragment definitions, keys are self.fragment_names"""
-        return self._fragments
+    def AA2conlab(self):
+        r""" Dictionary AA-codes as keys, so that e.g. self.AA2BW[R131] -> '3.50' """
+        return self._AA2conlab
 
     @property
     def seq_fragments(self):
@@ -389,7 +221,7 @@ class BW_transformer(object):
         r""" Sequence of the AA found in this BW transformer"""
         return ''.join(self._seq_fragments.values())
 
-    def top2map(self, top, restrict_to_residxs=None):
+    def top2map(self, top, restrict_to_residxs=None, fill_gaps=True):
         r""" Align the sequence of :obj:`top` to the transformer's sequence
         and return a list of BW numbering for each residue in :obj:`top`.
         If no BW numbering is found after the alignment, the entry will be None
@@ -407,7 +239,19 @@ class BW_transformer(object):
         -------
         map : list of len = top.n_residues with the BW numbering entries
         """
-        return _top2consensus_map(self.AAcode2BW, top, restrict_to_residxs=restrict_to_residxs)
+        return _top2consensus_map(self.AA2conlab, top,
+                                  restrict_to_residxs=restrict_to_residxs,
+                                  keep_consensus=fill_gaps,
+                                  )
+
+    def conlab2residx(self,top, restrict_to_residxs=None):
+        map = _top2consensus_map(self.AA2conlab, top,
+                                 restrict_to_residxs=restrict_to_residxs,keep_consensus=True)
+        out_dict = {}
+        for ii,imap in enumerate(map):
+            if imap is not None:
+                out_dict[imap]=ii
+        return out_dict
 
     def top2defs(self, top, return_defs=False):
         r"""
@@ -428,14 +272,159 @@ class BW_transformer(object):
             Dictionary with subdomain names as keys and lists of indices as values
         """
         map = self.top2map(top)
-        defs = _map2defs(map)
-        defs = {('TM%s'%key).replace('TM8','H8'):val for key, val in defs.items()}
+        conlab2residx = self.conlab2residx(top)
+        defs = _defdict(list)
+        for key, ifrag in self.fragments_as_conlabs.items():
+            for iBW in ifrag:
+                if iBW in conlab2residx.keys():
+                    defs[key].append(conlab2residx[iBW])
+
         from sofi_functions.fragments import _print_frag
         for ii, (key, val) in enumerate(defs.items()):
             istr = _print_frag(key, top, val, fragment_desc='', return_string=True)
             print(istr, '%s-%s' % (map[val[0]], map[val[-1]]))
         if return_defs:
             return defs
+
+def CGN_finder(identifier,
+               format='CGN_%s.txt',
+               ref_path='.',
+               try_web_lookup=True):
+    from pandas import read_csv as _read_csv
+    import urllib
+
+    file2read = format%identifier
+    _path.join(ref_path, file2read)
+    try:
+        _DF = _read_csv(file2read, delimiter='\t')
+        return_name = file2read
+    except FileNotFoundError:
+        print("No local file %s found" % file2read, end="")
+        if try_web_lookup:
+            web_address = "www.mrc-lmb.cam.ac.uk"
+            url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
+            print(", checking online in\n%s ..." % url, end="")
+            try:
+                _DF = _read_csv(url, delimiter='\t')
+                print("found! Continuing normally")
+                return_name = url
+            except urllib.error.HTTPError as e:
+                print(e)
+                print("Aborting.")
+                return
+        else:
+            raise
+    return _DF, return_name
+
+def PDB_finder(ref_PDB, ref_path='.', try_web_lookup=True):
+    try:
+        file2read = _path.join(ref_path, ref_PDB + '.pdb')
+        _top = _md.load(file2read).top
+        return_file = file2read
+    except (OSError, FileNotFoundError):
+        try:
+            file2read = _path.join(ref_path, ref_PDB + '.pdb.gz')
+            _top = _md.load(file2read).top
+            return_file = file2read
+        except (OSError, FileNotFoundError):
+            print("No local PDB file for %s found" % ref_PDB, end="")
+            if try_web_lookup:
+                web_address = "https://files.rcsb.org/download"
+                url = '%s/%s.pdb'%(web_address,ref_PDB)
+                print(", checking online in \n%s ..." % url, end="")
+                _top = _md.load_pdb(url).top
+                print("found! Continuing normally")
+                return_file = url
+            else:
+                raise
+    return _top, return_file
+
+
+class CGN_transformer(consensus_labeler):
+    """
+    Class to abstract, handle, and use common-Gprotein-nomenclature.
+    See here_ for more info.
+     .. _here: https://www.mrc-lmb.cam.ac.uk/CGN/faq.html
+    """
+
+    def __init__(self, ref_PDB='3SN6',
+                 ref_path='.',
+                 try_web_lookup=True):
+        r"""
+
+        Parameters
+        ----------
+        ref_PDB: str, default is '3SN6'
+            The PDB four letter code that will be used for CGN purposes
+        ref_path: str, default is '.'
+            The local path where these files exist
+             * 3SN6_CGN.txt
+             * 3SN6.pdb
+
+        try_web_lookup: bool, default is True
+            If the local files are not found, try automatically a web lookup at
+             * www.mrc-lmb.cam.ac.uk (for CGN)
+             * rcsb.org (for the PDB)
+        """
+
+        self._dataframe, self._CGN_file = CGN_finder(ref_PDB,
+                                                     ref_path=ref_path,
+                                                     try_web_lookup=try_web_lookup)
+        self._top, self._PDB_file = PDB_finder(ref_PDB,
+                                               ref_path=ref_path,
+                                               try_web_lookup=try_web_lookup)
+        self._AA2conlab = {key: self._dataframe[self._dataframe[ref_PDB] == key]["CGN"].to_list()[0]
+                           for key in self._dataframe[ref_PDB].to_list()}
+        self._ref_PDB = ref_PDB
+
+        self._fragments = _defdict(list)
+        for ires, key in self.AA2conlab.items():
+            new_key = '.'.join(key.split(".")[:-1])
+            #print(key,new_key)
+            self._fragments[new_key].append(ires)
+                #print("yes")
+        #print(self.fragments)
+        consensus_labeler.__init__(self)
+
+    def ref_PDB(self):
+        r""" PDB code used for instantiation"""
+        return self._ref_PDB
+
+    def CGN_file(self):
+        r""" CGN_file used for instantiation"""
+        return self._CGN_file
+
+class BW_transformer(consensus_labeler):
+    """
+    Class to manage Ballesteros-Weinstein notation
+
+    """
+    def __init__(self, uniprot_name):
+        r"""
+
+        Parameters
+        ----------
+        tablefile: str, default is 'GPCRmd_B2AR_nomenclature'
+            The PDB four letter code that will be used for CGN purposes
+        ref_path: str,default is '.'
+            The local path where the needed files are
+
+        try_web_lookup: bool, default is True
+            If the local files are not found, try automatically a web lookup at
+             * www.mrc-lmb.cam.ac.uk (for CGN)
+             * rcsb.org (for the PDB)
+
+        """
+        xlsxname = '%s.xlsx'%uniprot_name
+        if _path.exists(xlsxname):
+            self._dataframe = _read_excel(xlsxname, converters={"BW":str}).replace({_np.nan:None})
+        else:
+            self._dataframe = _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name)
+            self._dataframe.to_excel(xlsxname)
+            print("wrote %s for future use"%xlsxname)
+        self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
+        # TODO can we do this using super?
+        consensus_labeler.__init__(self)
 
 def _top2consensus_map(consensus_dict, top,
                        restrict_to_residxs=None,
@@ -478,8 +467,8 @@ def _top2consensus_map(consensus_dict, top,
         restrict_to_residxs = [residue.index for residue in top.residues]
     seq = ''.join([_shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
     from sofi_functions.aa_utils import name_from_AA as _name_from_AA
-    seqBW= ''.join([_name_from_AA(key) for key in consensus_dict.keys()])
-    alignment = _alignment_result_to_list_of_dicts(_my_bioalign(seq, seqBW)[0],
+    seq_consensus= ''.join([_name_from_AA(key) for key in consensus_dict.keys()])
+    alignment = _alignment_result_to_list_of_dicts(_my_bioalign(seq, seq_consensus)[0],
                                                    top,
                                                    restrict_to_residxs,
                                                    [_int_from_AA_code(key) for key in consensus_dict],
@@ -488,14 +477,33 @@ def _top2consensus_map(consensus_dict, top,
     alignment = _DF(alignment)
     alignment = alignment[alignment["match"] == True]
     out_list = [None for __ in top.residues]
-
     for idx, resSeq, AA in alignment[["idx_0","idx_1", "AA_1"]].values:
         out_list[int(idx)]=consensus_dict[AA + str(resSeq)]
 
     if keep_consensus:
-        #todo this only works with CGN, will fail with BW
         out_list = _fill_CGN_gaps(out_list, top)
     return out_list
+
+def _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name,
+                                     GPCRmd="https://gpcrdb.org/services/residues/extended"):
+    url = "%s/%s"%(GPCRmd,uniprot_name)
+    print("requesting %s ..."%url,end="")
+    a = _requests.get(url)
+    print("done!")
+    df =_read_json(a.text)
+    mydict = df.T.to_dict()
+    for key, val in mydict.items():
+        try:
+            for idict in val["alternative_generic_numbers"]:
+                #print(key, idict["scheme"], idict["label"])
+                val[idict["scheme"]]=idict["label"]
+            val.pop("alternative_generic_numbers")
+            val["AAresSeq"]='%s%s'%(val["amino_acid"],val["sequence_number"])
+        except IndexError:
+            pass
+    DFout = _DF.from_dict(mydict, orient="index").replace({_np.nan:None})
+    return DFout[["protein_segment", "AAresSeq","BW", "GPCRdb(A)", "display_generic_number"]]
+
 
 def _fill_CGN_gaps(consensus_list, top, verbose=False):
     r""" Try to fill CGN consensus nomenclature gaps based on adjacent labels
@@ -893,29 +901,34 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                    AA_dict.items()}
     return AA_dict
 
-def _guess_nomenclature_fragments(BWtf, top, fragments, cutoff=.75, verbose=False):
+def _guess_nomenclature_fragments(CLtf, top, fragments,
+                                  min_hit_rate=.6,
+                                  verbose=False):
     """
 
     Parameters
     ----------
-    BWtf:
-        :class:`BW_transformer` object
+    CLtf:
+        :class:`consensus_labeler` object
     top:
         :py:class:`mdtraj.Topology` object
     fragments :
-    cutoff
+    min_hit_rate: float, default is .75
+        return only fragments with hit rates higher than this
     verbose: boolean
-        prints message if True else no output message (Default is False).
+        be verbose
 
     Returns
     -------
+    guess: list
+        indices of the fragments with higher hit-rate than :obj:`cutoff`
 
     """
-    aligned_BWs = BWtf.top2map(top)
+    aligned_BWs = CLtf.top2map(top)
     guess = []
     for ii, ifrag in enumerate(fragments):
         hits = [aligned_BWs[jj] for jj in ifrag if aligned_BWs[jj] is  not None]
-        if len(hits)/len(ifrag)>=cutoff:
+        if len(hits)/len(ifrag)>=min_hit_rate:
             guess.append(ii)
         if verbose:
             print(ii, len(hits)/len(ifrag))
