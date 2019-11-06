@@ -244,7 +244,6 @@ class contact_group(object):
 
     def __init__(self, list_of_contact_objects,
                  top=None):
-
         self._contacts = list_of_contact_objects
         self._n_ctcs  = len(list_of_contact_objects)
 
@@ -303,6 +302,10 @@ class contact_group(object):
                              " should have the same topology, but %s"%top)
 
     @property
+    def res_idxs_pairs(self):
+        return _np.vstack([ictc.res_idxs_pair for ictc in self._contacts])
+
+    @property
     def n_trajs(self):
         return self._n_trajs
 
@@ -355,15 +358,27 @@ class contact_group(object):
     def topology(self):
         return self._top
 
-    # todo expose this?
-    def _all_freqs(self, ctc_cutoff_Ang):
+    def frequency_overall(self, ctc_cutoff_Ang):
         return [ictc.frequency_overall(ctc_cutoff_Ang) for ictc in self._contacts]
 
-    def timedep_n_ctcs(self, ctc_cutoff_Ang):
+    def binarize_trajs(self, ctc_cutoff_Ang, order='contact'):
         bintrajs = [ictc.binarize_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
+        if order=='contact':
+            return bintrajs
+        elif order=='traj':
+            _bintrajs = []
+            for ii in range(self.n_trajs):
+                _bintrajs.append(_np.vstack([itraj[ii] for itraj in bintrajs]).T)
+            bintrajs = _bintrajs
+        else:
+            raise ValueError(order)
+        return bintrajs
+
+    def timedep_n_ctcs(self, ctc_cutoff_Ang):
+        bintrajs = self.binarize_trajs(ctc_cutoff_Ang,order='traj')
         _n_ctcs_t = []
-        for ii in range(self.n_trajs):
-            _n_ctcs_t.append(_np.vstack([itraj[ii] for itraj in bintrajs]).T.sum(1))
+        for itraj in bintrajs:
+            _n_ctcs_t.append(itraj  .sum(1))
         return _n_ctcs_t
 
     def histo(self, ctc_cutoff_Ang,
@@ -383,7 +398,7 @@ class contact_group(object):
         if jax is None:
             _plt.figure()
             jax = _plt.gca()
-        freqs = self._all_freqs(ctc_cutoff_Ang)
+        freqs = self.frequency_overall(ctc_cutoff_Ang)
         xvec = _np.arange(len(freqs))
         patches = jax.bar(xvec, freqs,
                           # label=res_and_fragment_str,
@@ -412,7 +427,6 @@ class contact_group(object):
 
         label_bars = [ictc.ctc_label for ictc in self._contacts]
         if shorten_AAs:
-            label_dotref = self.anchor_res_and_fragment_str_short
             label_bars = [ictc.ctc_label_short for ictc in self._contacts]
 
         label_bars = [ilab.replace("@None","") for ilab in label_bars]
@@ -515,7 +529,10 @@ class contact_group(object):
                 and "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
                 and plot_contact_kwargs["ctc_cutoff_Ang"] > 0:
             ctc_cutoff_Ang = plot_contact_kwargs.pop("ctc_cutoff_Ang")
-            plot_contact_kwargs.pop("shorten_AAs")
+            try:
+                plot_contact_kwargs.pop("shorten_AAs")
+            except KeyError:
+                pass
             self.plot_timedep_Nctcs(myfig.axes[self.n_ctcs],
                                     color_scheme,
                                     ctc_cutoff_Ang,
@@ -548,7 +565,7 @@ class contact_group(object):
         iax.set_xlim([0,self.time_max*dt])
         iax.legend(fontsize=_rcParams["font.size"]*.75)
 
-    def to_dicts_for_saving(self, dt=1, t_unit="ps"):
+    def to_per_traj_dicts_for_saving(self, dt=1, t_unit="ps"):
         dicts = []
         for ii in range(self.n_trajs):
             labels = ['time / %s'%t_unit]
@@ -563,12 +580,15 @@ class contact_group(object):
                          )
         return dicts
 
+    def frequency_report(self,ctc_cutoff_Ang):
+        return _DF([ictc.frequency_dict(ctc_cutoff_Ang) for ictc in self._contacts])
+
     def save_trajs(self, output_desc, ext,
                    output_dir='.',
                    dt=1,
                    t_unit="ps",
                    verbose=False):
-        dicts = self.to_dicts_for_saving(dt=dt, t_unit=t_unit)
+        dicts = self.to_per_traj_dicts_for_saving(dt=dt, t_unit=t_unit)
         for idict, ixtc in zip(dicts, self.trajlabels):
             traj_name = _path.splitext(ixtc)[0]
             savename = "%s.%s.%s.%s" % (
@@ -618,7 +638,9 @@ def plot_contact(ictc, iax,
     if shorten_AAs:
         ctc_label = ictc.ctc_label_short
     ctc_label = ctc_label.replace("@None","")
-    iax.text(_np.mean(iax.get_xlim()), 1, ctc_label, ha='center')
+    iax.text(_np.mean(iax.get_xlim()), 1, '%s (%u%%)' %
+             (ctc_label, ictc.frequency_overall(ctc_cutoff_Ang)*100),
+             ha='center')
     if ctc_cutoff_Ang>0:
         iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
     iax.set_xlabel('t / %s' % _replace4latex(t_unit))
@@ -654,7 +676,7 @@ def plot_w_smoothing_auto(iax, x, y,
 class contact_pair(object):
     r"""Class for storing everything related to a contact"""
     #todo consider packing some of this stuff in the site_obj class
-    def __init__(self, res_idx_pair,
+    def __init__(self, res_idxs_pair,
                  ctc_trajs,
                  time_arrays,
                  top=None,
@@ -665,7 +687,7 @@ class contact_pair(object):
                  anchor_residue_idx=None,
                  consensus_labels=None):
 
-        self._res_idx_pair = res_idx_pair
+        self._res_idxs_pair = res_idxs_pair
         self._ctc_trajs = ctc_trajs
         self._top = top
         self._trajs = trajs
@@ -683,9 +705,9 @@ class contact_pair(object):
         self._anchor_residue = None
         self._partner_residue = None
         if self._anchor_residue_index is not None:
-            assert self._anchor_residue_index in self.res_idx_pair
-            self._anchor_index  = _np.argwhere(self.res_idx_pair == self.anchor_residue_index).squeeze()
-            self._partner_index = _np.argwhere(self.res_idx_pair != self.anchor_residue_index).squeeze()
+            assert self._anchor_residue_index in self.res_idxs_pair
+            self._anchor_index  = _np.argwhere(self.res_idxs_pair == self.anchor_residue_index).squeeze()
+            self._partner_index = _np.argwhere(self.res_idxs_pair != self.anchor_residue_index).squeeze()
             self._partner_residue_index = self.res_idxs_pair[self.partner_index]
             if self.top is not None:
                 self._anchor_residue  = self.top.residue(self.anchor_residue_index)
@@ -693,12 +715,24 @@ class contact_pair(object):
 
         self._consensus_labels = consensus_labels
         self._fragment_idxs  = fragment_idxs
-        self._fragment_names = fragment_names
+        if fragment_names is None:
+            assert self.fragment_idxs is not None
+            self._fragment_names = self._fragment_idxs
+        else:
+            self._fragment_names = fragment_names
         self._fragment_colors = fragment_colors
 
     #TODO many of these properties will fail if partner nor anchor are None
     # todo many of these properties could be simply methods with options
     # to reduce code
+
+    @property
+    def fragment_names(self):
+        return self._fragment_names
+
+    @property
+    def fragment_idxs(self):
+        return self._fragment_idxs
 
     @property
     def time_max(self):
@@ -728,8 +762,8 @@ class contact_pair(object):
         return self._partner_residue
 
     @property
-    def res_idx_pair(self):
-        return self._res_idx_pair
+    def res_idxs_pair(self):
+        return self._res_idxs_pair
 
     @property
     def anchor_residue_index(self):
@@ -831,10 +865,6 @@ class contact_pair(object):
         return self._fragment_colors
 
     @property
-    def res_idxs_pair(self):
-        return self._res_idx_pair
-
-    @property
     def fragment_names(self):
         return self._fragment_names
 
@@ -862,6 +892,11 @@ class contact_pair(object):
         result = [itraj < ctc_cutoff_Ang / 10 for itraj in self._ctc_trajs]
         #print([ires.shape for ires in result])
         return result
+
+    def frequency_dict(self, ctc_cutoff_Ang):
+        return {"freq":self.frequency_overall(ctc_cutoff_Ang),
+                "residue idxs":'%u %u'%tuple(self.res_idxs_pair),
+                "label":'%-15s - %-15s'%tuple(self.ctc_label_short.split('-'))}
 
     def frequency_overall(self, ctc_cutoff_Ang):
         return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang)))
