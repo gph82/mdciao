@@ -363,7 +363,7 @@ def sites(topology,
           chunksize_in_frames=10000,
           n_smooth_hw=0,
           pbc=True,
-          BW_file="None",
+          BW_uniprot="None",
           CGN_PDB="None",
           default_fragment_index=None,
           fragment_names="",
@@ -412,7 +412,7 @@ def sites(topology,
         print(" ", frag_name)
 
     # Do we want BW definitions
-    BW = _parse_consensus_option(BW_file, 'BW', refgeom.top, fragments)
+    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments)
 
     # Dow we want CGN definitions:
     CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
