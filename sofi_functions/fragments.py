@@ -60,7 +60,7 @@ def get_fragments(top,
     verbose : boolean, optional
     auto_fragment_names : not used in the function
     frag_breaker_to_pick_idx : not used in the function
-    method : 'resSeq' or or 'bonds' or 'both
+    method : 'resSeq' or or 'bonds' (or 'both') or 'chains'
         The method passed will be the basis for creating fragments
     kwargs_interactive_segment_picker : optional
         additional arguments
@@ -96,7 +96,8 @@ def get_fragments(top,
             residue_bond_matrix = top2residue_bond_matrix(top, verbose=False, force_resSeq_breaks=True)
         fragments = _connected_sets(residue_bond_matrix)
         fragments = [fragments[ii] for ii in _np.argsort([fr[0] for fr in fragments])]
-
+    elif method in ["chains"]:
+        fragments = [[rr.index for rr in ichain.residues] for ichain in top.chains]
     else:
         raise ValueError("Don't know what method '%s' is"%method)
 
