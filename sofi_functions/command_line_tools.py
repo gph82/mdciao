@@ -80,13 +80,18 @@ def _parse_consensus_option(identifier, type,
     else:
         return map_out, tf_out
 
-def _parse_fragment_answer(Ntf, top, fragments, name,**guess_kwargs):
+def _parse_fragment_answer(Ntf, top, fragments, name, return_str=True, **guess_kwargs):
     guess = _guess_nomenclature_fragments(Ntf, top, fragments,**guess_kwargs)
     answer = input("Which fragments are succeptible of %s-numbering?"
                    "(Can be in a format 1,2-6,10,20-25)\n"
-                   "Leave empty to accept our guess %s\n" % (name, guess))
+                   "Leave empty to accept our guess %s %s-%s\n" % (name, guess,
+                                                                   top.residue(fragments[guess[0]][0]),
+                                                                   top.residue(fragments[guess[-1]][-1])))
     if answer is '':
-        answer = ','.join(['%s' % ii for ii in guess])
+        if return_str:
+            answer = ','.join(['%s' % ii for ii in guess])
+        else:
+            answer = guess
 
     return answer
 
@@ -135,7 +140,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           fragment_names="",
                           graphic_ext=".pdf",
                           output_ascii=None,
-                          BW_file="None",
+                          BW_uniprot="None",
                           CGN_PDB="None",
                           output_dir='.',
                           color_by_fragment=True,
@@ -146,14 +151,12 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           graphic_dpi=150,
                           short_AA_names=False,
                           ):
-    # todo use a proper unit module
-    # like this https://pypi.org/project/units/
-    if t_unit == 'ns':
-        dt = 1e-3
-    elif t_unit == 'mus':
-        dt = 1e-6
-    else:
-        raise ValueError("Time unit not known ", t_unit)
+
+    if resSeq_idxs is None:
+        print("You have to provide some residue indices via the --resSeq_idxs option")
+        return None
+
+    dt = _t_unit2dt(t_unit)
 
     _offer_to_create_dir(output_dir)
 
@@ -186,7 +189,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
 
     # Do we want BW definitions
-    BW = _parse_consensus_option(BW_file, 'BW', refgeom.top, fragments)
+    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments)
 
     # Dow we want CGN definitions:
     CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
@@ -374,14 +377,7 @@ def sites(topology,
           output_desc="sites",
           short_AA_names=False,
           ):
-    # todo use a proper unit module
-    # like this https://pypi.org/project/units/
-    if t_unit=='ns':
-        dt = 1e-3
-    elif t_unit=='mus':
-        dt = 1e-6
-    else:
-        raise ValueError("Time unit not known ",t_unit)
+    dt = _t_unit2dt(t_unit)
 
     # todo this is an ad-hoc for a powerpoint presentation
     from matplotlib import rcParams
@@ -656,14 +652,7 @@ def interface(
     stride=1,
     t_unit="ns",
 ):
-    # todo use a proper unit module
-    # like this https://pypi.org/project/units/
-    if t_unit == 'ns':
-        dt = 1e-3
-    elif t_unit == 'mus':
-        dt = 1e-6
-    else:
-        raise ValueError("Time unit not known ", t_unit)
+    dt = _t_unit2dt(t_unit)
 
     xtcs = sorted(trajectories)
     print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
@@ -887,3 +876,16 @@ def _my_color_schemes(istr):
     return {"peter": ["red", "purple", "gold", "darkorange"],
             "hobat": ["m", "darkgreen", "darkorange", "navy"],
             "auto":  plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]
+
+def _t_unit2dt(t_unit):
+    # todo use a proper unit module
+    # like this https://pypi.org/project/units/
+    if t_unit == 'ns':
+        dt = 1e-3
+    elif t_unit == 'mus':
+        dt = 1e-6
+    elif t_unit == 'ps':
+        dt = 1
+    else:
+        raise ValueError("Time unit not known ", t_unit)
+    return dt
