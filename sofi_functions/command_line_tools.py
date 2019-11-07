@@ -632,7 +632,7 @@ def site_figures(topology,
 def interface(
     topology=None,
     trajectories=None,
-    BW_file="None",
+    BW_uniprot="None",
     CGN_PDB="None",
     chunksize_in_frames=10000,
     ctc_cutoff_Ang=3,
@@ -652,6 +652,9 @@ def interface(
     stride=1,
     t_unit="ns",
 ):
+
+    _offer_to_create_dir(output_dir)
+
     dt = _t_unit2dt(t_unit)
 
     xtcs = sorted(trajectories)
@@ -689,9 +692,9 @@ def interface(
     # TODO THIS RENAMING HERE FOR CONSISTENCY WITH PARSERS WILL BE A PROBLEM LATER
     fragments = auto_fragments
 
-    BW, BWtf = _parse_consensus_option(BW_file, 'BW', refgeom.top, fragments, return_tf=True)
+    BW, BWtf = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments, return_tf=True)
     fragment_defs = {}
-    if str(BW_file).lower() != 'none':
+    if str(BW_uniprot).lower() != 'none':
         print("INFO: these are the BW fragments mapped onto your topology")
         fragment_defs.update(BWtf.top2defs(refgeom.top, return_defs=True))
         input("Hit enter to continue!\n")
