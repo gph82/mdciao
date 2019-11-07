@@ -200,6 +200,13 @@ def parser_for_rn():
     parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
                         default='.pdf')
 
+    parser.add_argument('--serial_idxs', dest='res_idxs', action='store_true',
+                        help='Interpret the indices of --resSeq_idxs '
+                             'not as sequence idxs (e.g. 30 for GLU30), but as '
+                             'their order in the topology (e.g. 0 for GLU30 if '
+                             'GLU30 is the first residue in the topology). Default is False')
+    parser.set_defaults(res_idxs=False)
+
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
     _parser_add_output_desc(parser, default='neighborhoods')
