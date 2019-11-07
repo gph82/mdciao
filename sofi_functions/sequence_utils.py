@@ -104,7 +104,7 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
     # Create needed iterators
     top_0_resSeq_iterator = iter([topology_0.residue(ii).resSeq for ii in seq_0_res_idxs])
     seq_1_res_idxs_iterator = iter(seq_1_res_idxs)
-    idx_seq_0_iterator = iter(_np.arange(len(seq_0_res_idxs)))
+    idx_seq_0_iterator = iter(seq_0_res_idxs)
     resname_top_0_iterator = iter([str(topology_0.residue(ii)) for ii in seq_0_res_idxs])
 
     alignment_dict = []
