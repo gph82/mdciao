@@ -898,19 +898,34 @@ def reorder_geometry(itraj, new_order_of_res_idxs):
         :obj:`new_order_of_res_idxs`
 
     """
+    from mdtraj.core.topology import Bond as _Bond
     itop = _md.Topology()
     ixyz = []
     ichain = itop.add_chain()
+    aaold2new = {}
+    oldtop = itraj.topology.copy()
     for ii, idx in enumerate(new_order_of_res_idxs):
-        rr = itraj.top.residue(idx)
+        rr = oldtop.residue(idx)
         rr.index = ii
         itop.add_residue(rr.name, rr.chain, resSeq=rr.resSeq)
         for aa in rr.atoms:
             itop.add_atom(aa.name, aa.element, itop.residue(ii))
+            aaold2new[aa.index]=itop.n_atoms-1
 
         ixyz.append([itraj.xyz[:, aa.index, :] for aa in rr.atoms])
         ichain._residues.append(itop.residue(ii))
         # break
+
+    # Migrate bonds
+    for bond in itraj.top._bonds:
+        idx1, idx2 = bond.atom1.index, bond.atom2.index
+
+        if idx1 in aaold2new.keys() and\
+           idx2 in aaold2new.keys():
+            #print(bond)
+            nbond = _Bond(itop.atom(aaold2new[idx1]), itop.atom(aaold2new[idx2]))
+            #print(nbond)
+            itop._bonds.append(nbond)
 
     ixyz = _np.vstack(ixyz).squeeze()
     #print(itop.n_residues)
