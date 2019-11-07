@@ -432,15 +432,17 @@ class BW_transformer(consensus_labeler):
                  ref_PDB=None,
                  ref_path=".",
                  verbose=True,
-                 try_web_lookup=True):
+                 try_web_lookup=True,
+                 write_to_disk=False):
 
         xlsxname = '%s.xlsx'%uniprot_name
         if _path.exists(xlsxname):
             self._dataframe = _read_excel(xlsxname, converters={"BW":str}).replace({_np.nan:None})
         else:
             self._dataframe = _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name, verbose=verbose)
-            self._dataframe.to_excel(xlsxname)
-            print("wrote %s for future use"%xlsxname)
+            if write_to_disk:
+                self._dataframe.to_excel(xlsxname)
+                print("wrote %s for future use"%xlsxname)
         self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
         # TODO can we do this using super?
         consensus_labeler.__init__(self,ref_PDB,
@@ -954,7 +956,7 @@ def _guess_nomenclature_fragments(CLtf, top, fragments,
     aligned_BWs = CLtf.top2map(top)
     guess = []
     for ii, ifrag in enumerate(fragments):
-        hits = [aligned_BWs[jj] for jj in ifrag if aligned_BWs[jj] is  not None]
+        hits = [aligned_BWs[jj] for jj in ifrag if aligned_BWs[jj] is not None]
         if len(hits)/len(ifrag)>=min_hit_rate:
             guess.append(ii)
         if verbose:

@@ -74,9 +74,10 @@ def _parser_add_output_dir(parser):
                         default='.')
 
 def _parser_add_nomenclature(parser):
-    parser.add_argument("--BW_file", type=str,
-                        help="Json file with info about the Ballesteros-Weinstein definitions "
-                             "as downloaded from the GPRCmd. Default is None.",
+    parser.add_argument("--BW_uniprot", type=str,
+                        help="Look for Ballesteros-Weinstein definitions in the GPRCmd using a uniprot code, "
+                             "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
+                             "Default is None.",
                         default='None')
     parser.add_argument("--CGN_PDB", type=str, help="PDB code for a consensus G-protein nomenclature", default='None')
 

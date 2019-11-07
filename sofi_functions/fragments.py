@@ -20,11 +20,12 @@ def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
     """
     try:
-        istr = "%s %6s with %3u AAs %7s(%4u)-%-7s(%-4u)" % (fragment_desc, str(frag_idx), len(fragment),
-                                                           top.residue(fragment[0]),
-                                                           top.residue(fragment[0]).index,
-                                                           top.residue(fragment[-1]),
-                                                           top.residue(fragment[-1]).index)
+        istr = "%s %6s with %3u AAs %7s(%4u)-%-7s(%-4u) (%s) " % (fragment_desc, str(frag_idx), len(fragment),
+                                                                   top.residue(fragment[0]),
+                                                                   top.residue(fragment[0]).index,
+                                                                   top.residue(fragment[-1]),
+                                                                   top.residue(fragment[-1]).index,
+                                                                   str(frag_idx))
     except:
         print(fragment)
         raise
