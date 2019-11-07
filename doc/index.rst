@@ -44,7 +44,7 @@ These command-line tools work with methods contained in the submodules:
       tools in any interactive session, e.g. a in
       the IPython terminal and/or the JuPyter notebooks.
 
-The lowest level modules are more specicif and are packed into the *_utils files:
+The lowest level modules are more specific and are packed into the *_utils files:
 
    * list_utils.py
    * bond_utils.py
@@ -70,6 +70,8 @@ methods. These methods will gradually be refactored into the any of the above su
    :caption: Command Line Tools:
 
    residue_neighborhoods
+   sites
+   interface_ctc_analyzer
 
 .. toctree::
    :maxdepth: 2
