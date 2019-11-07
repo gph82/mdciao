@@ -154,7 +154,7 @@ class consensus_labeler(object):
     The consensus labels are abbreviated to 'conlab' throughout
 
     """
-    def __init__(self):
+    def __init__(self, ref_PDB=None, **PDB_finder_kwargs):
         r"""
 
         Parameters
@@ -170,11 +170,33 @@ class consensus_labeler(object):
              * rcsb.org (for the PDB)
 
         """
+        self._geom = None
+        self._top = None
+        self._ref_PDB = ref_PDB
+        if ref_PDB is not None:
+            self._geom, self._PDB_file = PDB_finder(ref_PDB,
+                                                    **PDB_finder_kwargs,
+                                                    )
+
+            self._top = self._geom.top
 
         self._conlab2AA = {val: key for key, val in self.AA2conlab.items()}
         self._fragment_names = list(self.fragments.keys())
         self._fragments_as_conlabs = {key: [self.AA2conlab[AA] for AA in val]
                                       for key, val in self.fragments.items()}
+
+    @property
+    def ref_PDB(self):
+        r""" PDB code used for instantiation"""
+        return self._ref_PDB
+
+    @property
+    def geom(self):
+        return self._geom
+
+    @property
+    def top(self):
+        return self._top
 
     @property
     def conlab2AA(self):
@@ -184,10 +206,6 @@ class consensus_labeler(object):
     def fragment_names(self):
         r"""Name of the fragments according to the CGN numbering"""
         return self._fragment_names
-
-    @property
-    def seq(self):
-        return self._seq
 
     @property
     def fragments(self):
@@ -210,16 +228,6 @@ class consensus_labeler(object):
     def AA2conlab(self):
         r""" Dictionary AA-codes as keys, so that e.g. self.AA2BW[R131] -> '3.50' """
         return self._AA2conlab
-
-    @property
-    def seq_fragments(self):
-        r""" Dictionary of sequences for each fragment in self.fragments"""
-        return self._seq_fragments
-
-    @property
-    def seq(self):
-        r""" Sequence of the AA found in this BW transformer"""
-        return ''.join(self._seq_fragments.values())
 
     def top2map(self, top, restrict_to_residxs=None, fill_gaps=True):
         r""" Align the sequence of :obj:`top` to the transformer's sequence
@@ -289,7 +297,9 @@ class consensus_labeler(object):
 def CGN_finder(identifier,
                format='CGN_%s.txt',
                ref_path='.',
-               try_web_lookup=True):
+               try_web_lookup=True,
+               verbose=True,
+               dont_fail=False):
     from pandas import read_csv as _read_csv
     import urllib
 
@@ -299,24 +309,38 @@ def CGN_finder(identifier,
         _DF = _read_csv(file2read, delimiter='\t')
         return_name = file2read
     except FileNotFoundError:
-        print("No local file %s found" % file2read, end="")
+        if verbose:
+            print("No local file %s found" % file2read, end="")
         if try_web_lookup:
             web_address = "www.mrc-lmb.cam.ac.uk"
             url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
-            print(", checking online in\n%s ..." % url, end="")
+            if verbose:
+                print(", checking online in\n%s ..." % url, end="")
             try:
                 _DF = _read_csv(url, delimiter='\t')
-                print("found! Continuing normally")
+                if verbose:
+                    print("found! Continuing normally")
                 return_name = url
             except urllib.error.HTTPError as e:
-                print(e)
-                print("Aborting.")
-                return
+                print('CGN online db:',e)
+                if dont_fail:
+                    pass
+                else:
+                    raise
         else:
             raise
+
+    if len(_DF)<=1:
+        if dont_fail:
+            pass
+        else:
+            print('CGN lookup returned empty')
+            raise ValueError(identifier)
     return _DF, return_name
 
-def PDB_finder(ref_PDB, ref_path='.', try_web_lookup=True):
+def PDB_finder(ref_PDB, ref_path='.',
+               try_web_lookup=True,
+               verbose=True):
     try:
         file2read = _path.join(ref_path, ref_PDB + '.pdb')
         _top = _md.load(file2read).top
@@ -324,20 +348,23 @@ def PDB_finder(ref_PDB, ref_path='.', try_web_lookup=True):
     except (OSError, FileNotFoundError):
         try:
             file2read = _path.join(ref_path, ref_PDB + '.pdb.gz')
-            _top = _md.load(file2read).top
+            _geom = _md.load(file2read)
             return_file = file2read
         except (OSError, FileNotFoundError):
-            print("No local PDB file for %s found" % ref_PDB, end="")
+            if verbose:
+                print("No local PDB file for %s found" % ref_PDB, end="")
             if try_web_lookup:
                 web_address = "https://files.rcsb.org/download"
                 url = '%s/%s.pdb'%(web_address,ref_PDB)
-                print(", checking online in \n%s ..." % url, end="")
-                _top = _md.load_pdb(url).top
-                print("found! Continuing normally")
+                if verbose:
+                    print(", checking online in \n%s ..." % url, end="")
+                _geom = _md.load_pdb(url)
+                if verbose:
+                    print("found! Continuing normally")
                 return_file = url
             else:
                 raise
-    return _top, return_file
+    return _geom, return_file
 
 
 class CGN_transformer(consensus_labeler):
@@ -347,14 +374,15 @@ class CGN_transformer(consensus_labeler):
      .. _here: https://www.mrc-lmb.cam.ac.uk/CGN/faq.html
     """
 
-    def __init__(self, ref_PDB='3SN6',
+    def __init__(self, ref_PDB,
                  ref_path='.',
-                 try_web_lookup=True):
+                 try_web_lookup=True,
+                 verbose=True):
         r"""
 
         Parameters
         ----------
-        ref_PDB: str, default is '3SN6'
+        ref_PDB: str
             The PDB four letter code that will be used for CGN purposes
         ref_path: str, default is '.'
             The local path where these files exist
@@ -369,27 +397,28 @@ class CGN_transformer(consensus_labeler):
 
         self._dataframe, self._CGN_file = CGN_finder(ref_PDB,
                                                      ref_path=ref_path,
-                                                     try_web_lookup=try_web_lookup)
-        self._top, self._PDB_file = PDB_finder(ref_PDB,
-                                               ref_path=ref_path,
-                                               try_web_lookup=try_web_lookup)
+                                                     try_web_lookup=try_web_lookup,
+                                                     verbose=verbose)
+
         self._AA2conlab = {key: self._dataframe[self._dataframe[ref_PDB] == key]["CGN"].to_list()[0]
                            for key in self._dataframe[ref_PDB].to_list()}
-        self._ref_PDB = ref_PDB
 
         self._fragments = _defdict(list)
         for ires, key in self.AA2conlab.items():
-            new_key = '.'.join(key.split(".")[:-1])
+            try:
+                new_key = '.'.join(key.split(".")[:-1])
+            except:
+                print(key)
             #print(key,new_key)
             self._fragments[new_key].append(ires)
                 #print("yes")
         #print(self.fragments)
-        consensus_labeler.__init__(self)
+        consensus_labeler.__init__(self, ref_PDB=ref_PDB,
+                                   ref_path=ref_path,
+                                   try_web_lookup=try_web_lookup,
+                                   verbose=verbose)
 
-    def ref_PDB(self):
-        r""" PDB code used for instantiation"""
-        return self._ref_PDB
-
+    @property
     def CGN_file(self):
         r""" CGN_file used for instantiation"""
         return self._CGN_file
@@ -399,32 +428,25 @@ class BW_transformer(consensus_labeler):
     Class to manage Ballesteros-Weinstein notation
 
     """
-    def __init__(self, uniprot_name):
-        r"""
+    def __init__(self, uniprot_name,
+                 ref_PDB=None,
+                 ref_path=".",
+                 verbose=True,
+                 try_web_lookup=True):
 
-        Parameters
-        ----------
-        tablefile: str, default is 'GPCRmd_B2AR_nomenclature'
-            The PDB four letter code that will be used for CGN purposes
-        ref_path: str,default is '.'
-            The local path where the needed files are
-
-        try_web_lookup: bool, default is True
-            If the local files are not found, try automatically a web lookup at
-             * www.mrc-lmb.cam.ac.uk (for CGN)
-             * rcsb.org (for the PDB)
-
-        """
         xlsxname = '%s.xlsx'%uniprot_name
         if _path.exists(xlsxname):
             self._dataframe = _read_excel(xlsxname, converters={"BW":str}).replace({_np.nan:None})
         else:
-            self._dataframe = _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name)
+            self._dataframe = _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name, verbose=verbose)
             self._dataframe.to_excel(xlsxname)
             print("wrote %s for future use"%xlsxname)
         self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
         # TODO can we do this using super?
-        consensus_labeler.__init__(self)
+        consensus_labeler.__init__(self,ref_PDB,
+                                   ref_path=ref_path,
+                                   try_web_lookup=try_web_lookup,
+                                   verbose=verbose)
 
 def _top2consensus_map(consensus_dict, top,
                        restrict_to_residxs=None,
@@ -485,11 +507,16 @@ def _top2consensus_map(consensus_dict, top,
     return out_list
 
 def _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name,
-                                     GPCRmd="https://gpcrdb.org/services/residues/extended"):
+                                     GPCRmd="https://gpcrdb.org/services/residues/extended",
+                                     verbose=True):
     url = "%s/%s"%(GPCRmd,uniprot_name)
-    print("requesting %s ..."%url,end="")
+    if verbose:
+        print("requesting %s ..."%url,end="",flush=True)
     a = _requests.get(url)
-    print("done!")
+    if a.text=='[]':
+        raise ValueError('Uniprot name %s yields nothing'%uniprot_name)
+    if verbose:
+        print("done!")
     df =_read_json(a.text)
     mydict = df.T.to_dict()
     for key, val in mydict.items():
