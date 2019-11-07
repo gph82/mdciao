@@ -88,11 +88,12 @@ def _parse_fragment_answer(Ntf, top, fragments, name, return_str=True, **guess_k
                                                                    top.residue(fragments[guess[0]][0]),
                                                                    top.residue(fragments[guess[-1]][-1])))
     if answer is '':
-        if return_str:
-            answer = ','.join(['%s' % ii for ii in guess])
-        else:
-            answer = guess
+        answer = ','.join(['%s' % ii for ii in guess])
+    else:
+        answer = rangeexpand(answer)
 
+    if isinstance(answer[0],str) and not return_str:
+        answer = [int(ii) for ii in answer.split(",")]
     return answer
 
 def _parse_fragment_naming_options(fragment_names, fragments, top):
@@ -738,6 +739,10 @@ def interface(
             group_1 = [0]
             group_2 = [1]
         else:
+            if group_1 is None:
+                group_1 = input('Input group_1: ')
+            if group_2 is None:
+                group_2 = input('Input group_2: ')
             group_1 = rangeexpand(group_1)
             group_2 = rangeexpand(group_2)
         ctc_idxs = np.hstack([[list(product(fragments[ii], fragments[jj])) for ii in group_1] for jj in group_2])

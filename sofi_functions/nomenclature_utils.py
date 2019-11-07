@@ -252,9 +252,12 @@ class consensus_labeler(object):
                                   keep_consensus=fill_gaps,
                                   )
 
-    def conlab2residx(self,top, restrict_to_residxs=None):
+    def conlab2residx(self,top,
+                      restrict_to_residxs=None,
+                      keep_consensus=True):
         map = _top2consensus_map(self.AA2conlab, top,
-                                 restrict_to_residxs=restrict_to_residxs,keep_consensus=True)
+                                 restrict_to_residxs=restrict_to_residxs,
+                                 keep_consensus=keep_consensus)
         out_dict = {}
         for ii,imap in enumerate(map):
             if imap is not None:
