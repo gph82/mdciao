@@ -2,6 +2,7 @@ import numpy as _np
 import mdtraj as _md
 from os import path as _path
 from .list_utils import in_what_fragment, re_warp
+from collections import defaultdict
 
 import matplotlib.pyplot as _plt
 from matplotlib import rcParams as _rcParams
@@ -242,11 +243,13 @@ class contact_group(object):
     r"""Class for containing contact objects, ideally
     it can be used for vicinities, sites, interfaces etc"""
 
-    def __init__(self, list_of_contact_objects,
+    def __init__(self,
+                 list_of_contact_objects,
+                 interface_residxs=None,
                  top=None):
         self._contacts = list_of_contact_objects
         self._n_ctcs  = len(list_of_contact_objects)
-
+        self._interface_residxs = interface_residxs
         if top is None:
             self._top = self._unique_topology_from_ctcs()
         else:
@@ -268,11 +271,125 @@ class contact_group(object):
         self._n_frames = ref_ctc.n_frames
 
         # All contatcs have the same trajlabels
+        already_printed = False
         for ictc in self._contacts[1:]:
-            # Todo this will fail if tlab,rlab are not strings?
-            assert all([rlab == tlab for rlab, tlab in zip(ref_ctc.trajlabels, ictc.trajlabels)])
+            try:
+                assert all([rlab.__hash__() == tlab.__hash__()
+                            for rlab, tlab in zip(ref_ctc.trajlabels, ictc.trajlabels)])
+            except AttributeError:
+                if not already_printed:
+                    print("Trajectories unhashable, could not verify they are the same")
+                    already_printed = True
+                else:
+                    pass
 
         self._trajlabels = ref_ctc.trajlabels
+
+        self._cons2resname = {}
+        for key, val in zip(_np.hstack(self.consensus_labels),
+                            _np.hstack(self.residue_names_short)):
+            if str(key).lower() in ["na","none"]:
+                key = val
+            if key not in self._cons2resname.keys():
+                self._cons2resname[key]=val
+            else:
+                assert self._cons2resname[key]==val,(self._cons2resname[key],key,val)
+
+        self._resname2cons = {val: key for key, val in self._cons2resname.items()}
+
+    #todo there is redundant code for generating interface labels!
+    @property
+    def cons2resname(self):
+        return self._cons2resname
+
+    @property
+    def resname2cons(self):
+        return self._resname2cons
+
+    def frequency_dict_by_consensus_labels(self, ctc_cutoff_Ang,
+                                           return_as_triplets=False,
+                                           sort_by_interface=False):
+        dict_out = defaultdict(dict)
+        for (key1, key2), ifreq in zip(self.consensus_labels,
+                                       self.frequency_overall(ctc_cutoff_Ang)):
+
+            dict_out[key1][key2] = ifreq
+        dict_out = {key:val for key,val in dict_out.items()}
+
+        if sort_by_interface:
+            _dict_out = {key:dict_out[key] for key in self.interface_labels_consensus[0] if key in dict_out.keys()}
+            assert len(_dict_out)==len(dict_out)
+            dict_out = _dict_out
+            _dict_out = {key:{key2:val[key2] for key2 in self.interface_labels_consensus[1] if key2 in val.keys()} for key,val in dict_out.items()}
+            assert all([len(val1)==len(val2) for val1, val2 in zip(dict_out.values(), _dict_out.values())])
+            dict_out = _dict_out
+
+        if return_as_triplets:
+            _dict_out = []
+            for key, val in dict_out.items():
+                for key2, val2 in val.items():
+                    _dict_out.append([key, key2, val2])
+            dict_out = _dict_out
+        return dict_out
+
+    @property
+    def interface_residxs(self):
+        res = None
+        if self._interface_residxs is not None:
+            res = []
+            for ig in self._interface_residxs:
+                res.append(sorted(set(ig).intersection(_np.unique(self.res_idxs_pairs,
+                                 #return_index=True
+                                 ))))
+        return res
+
+    @property
+    def consensus_labels(self):
+        return [ictc.consensus_labels for ictc in self._contacts]
+
+    @property
+    def residue_names_short(self):
+        return [ictc.residue_names_short for ictc in self._contacts]
+
+    @property
+    def interface_labels_consensus(self):
+        if self._interface_residxs is not None\
+                and not hasattr(self,"_interface_labels_consensus"):
+            labs = [[],[]]
+            for ii, ig in enumerate(self.interface_residxs):
+                for idx in ig:
+                    ctc_idx, res_idx = self.residx2ctcidx(idx)[0]
+                    labs[ii].append(self.consensus_labels[ctc_idx][res_idx])
+
+            return labs
+        elif hasattr(self,"_interface_labels_consensus"):
+            return self._interface_labels_consensus
+
+    @property
+    def interface_orphaned_labels(self):
+        return [[AA for AA in conlabs if "." not in AA] for conlabs in
+                self.interface_labels_consensus]
+
+    def interface_relabel_orphans(self):
+        labs_out =[[],[]]
+        for ii, labels in enumerate(self.interface_labels_consensus):
+            for jlab in labels:
+                if jlab in self._orphaned_residues_new_label.keys():
+                    new_lab = self._orphaned_residues_new_label[jlab]
+                    print(jlab, new_lab)
+                    labs_out[ii].append(new_lab)
+                else:
+                    labs_out[ii].append(jlab)
+
+        self._interface_labels_consensus=labs_out
+        #return labs_out
+
+    def residx2ctcidx(self,idx):
+        res = []
+        for ii, pair in enumerate(self.res_idxs_pairs):
+            if idx in pair:
+                res.append([ii,_np.argwhere(pair==idx).squeeze()])
+        return _np.vstack(res)
 
     @property
     def n_frames(self):
@@ -302,6 +419,14 @@ class contact_group(object):
                              " should have the same topology, but %s"%top)
 
     @property
+    def ctc_labels(self):
+        return [ictc.ctc_label for ictc in self._contacts]
+
+    @property
+    def ctc_labels_short(self):
+        return [ictc.ctc_label_short for ictc in self._contacts]
+
+    @property
     def res_idxs_pairs(self):
         return _np.vstack([ictc.res_idxs_pair for ictc in self._contacts])
 
@@ -324,7 +449,6 @@ class contact_group(object):
         else:
             return None
 
-    # TODO many of these things could be re-factored into the contact object!!!
     @property
     def anchor_res_and_fragment_str(self):
         assert self.shared_anchor_residue is not None
@@ -359,7 +483,7 @@ class contact_group(object):
         return self._top
 
     def frequency_overall(self, ctc_cutoff_Ang):
-        return [ictc.frequency_overall(ctc_cutoff_Ang) for ictc in self._contacts]
+        return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts])
 
     def binarize_trajs(self, ctc_cutoff_Ang, order='contact'):
         bintrajs = [ictc.binarize_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
@@ -382,7 +506,9 @@ class contact_group(object):
         return _n_ctcs_t
 
     def histo(self, ctc_cutoff_Ang,
-              jax=None):
+              jax=None,
+              truncate_at=None,
+              bar_width_in_inches=.75):
         r"""
         Base method for histogramming contact frequencies of the contacts
         contained in this class
@@ -395,11 +521,15 @@ class contact_group(object):
         -------
         jax:
         """
-        if jax is None:
-            _plt.figure()
-            jax = _plt.gca()
+
         freqs = self.frequency_overall(ctc_cutoff_Ang)
+        if truncate_at is not None:
+            freqs = freqs[freqs>truncate_at]
         xvec = _np.arange(len(freqs))
+        if jax is None:
+            _plt.figure(figsize=(_np.max((7,bar_width_in_inches*len(freqs))),5))
+            jax = _plt.gca()
+
         patches = jax.bar(xvec, freqs,
                           # label=res_and_fragment_str,
                           width=.25)
@@ -415,11 +545,12 @@ class contact_group(object):
                    xlim=None,
                    jax=None,
                    shorten_AAs=False,
-                   label_fontsize_factor=1):
+                   label_fontsize_factor=1,
+                   truncate_at=0):
 
         # Base plot
         jax = self.histo(ctc_cutoff_Ang,
-                         jax=jax)
+                         jax=jax, truncate_at=truncate_at)
         # Cosmetics
         jax.set_title(
             "Contact frequency @%2.1f $\AA$ of site '%s'\n"
@@ -432,7 +563,7 @@ class contact_group(object):
         label_bars = [ilab.replace("@None","") for ilab in label_bars]
 
         self.add_tilted_labels_to_patches(jax,
-                                          label_bars,
+                                          label_bars[:(jax.get_xlim()[1]).astype(int)+1],
                                           label_fontsize_factor=label_fontsize_factor
                                           )
 
@@ -494,7 +625,6 @@ class contact_group(object):
                      )
 
     def plot_timedep_ctcs(self, panelheight,
-                          color_scheme,
                           plot_N_ctcs=True,
                           **plot_contact_kwargs,
                           ):
@@ -508,7 +638,6 @@ class contact_group(object):
             # Plot individual contacts
             for ictc, iax in zip(self._contacts, myax[:self.n_ctcs]):
                 plot_contact(ictc,iax,
-                             color_scheme,
                              **plot_contact_kwargs
                              )
 
@@ -534,7 +663,6 @@ class contact_group(object):
             except KeyError:
                 pass
             self.plot_timedep_Nctcs(myfig.axes[self.n_ctcs],
-                                    color_scheme,
                                     ctc_cutoff_Ang,
                                     **plot_contact_kwargs,
                                     )
@@ -545,13 +673,15 @@ class contact_group(object):
 
     def plot_timedep_Nctcs(self,
                            iax,
-                           color_scheme,
                            ctc_cutoff_Ang,
+                           color_scheme=None,
                            dt=1, t_unit="ps",
                            n_smooth_hw=0,
                            gray_background=False,
                            ):
         #Plot ncontacts in the last frame
+        if color_scheme is None:
+            color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
         icol = iter(color_scheme)
         for n_ctcs_t, itime, traj_name in zip(self.timedep_n_ctcs(ctc_cutoff_Ang),
                                               self.time_arrays,
@@ -564,6 +694,61 @@ class contact_group(object):
         iax.set_xlabel('t / %s'%t_unit)
         iax.set_xlim([0,self.time_max*dt])
         iax.legend(fontsize=_rcParams["font.size"]*.75)
+
+    # TODO document this to say that these labels are already ordered bc
+    # within one given contact_group object/interface, the
+    # residues can be sorted according to their order
+    @property
+    def interface_reslabels_short(self):
+        if self._interface_residxs is not None:
+            labs = [[], []]
+            for ii, ig in enumerate(self.interface_residxs):
+                for idx in ig:
+                    ctc_idx, res_idx = self.residx2ctcidx(idx)[0]
+                    labs[ii].append(self.residue_names_short[ctc_idx][res_idx])
+
+            return labs
+
+    def plot_interface_matrix(self,ctc_cutoff_Ang,
+                              transpose=False,
+                              label_type='consensus',
+                              **plot_mat_kwargs,
+                              #label_type='residue',
+                              #label_type='both'
+                              ):
+        mat = self.interface_matrix(ctc_cutoff_Ang)
+        if label_type=='consensus':
+            labels = self.interface_labels_consensus
+        elif label_type=='residue':
+            labels = self.interface_reslabels_short
+        elif label_type=='both':
+            labels = [['%8s %8s'%(ilab,jlab) for ilab, jlab in zip(conlabs,reslabs)]
+                      for conlabs, reslabs in zip(
+                    self.interface_reslabels_short,
+                    self.interface_labels_consensus
+                )
+                      ]
+
+        iax, __ = _plot_interface_matrix(mat,labels,
+                               transpose=transpose,
+                                         **plot_mat_kwargs,
+                               )
+        return iax.figure, iax
+
+    # TODO would it be better to make use of self.frequency_dict_by_consensus_labels
+    def interface_matrix(self,ctc_cutoff_Ang):
+        mat = None
+        if self._interface_residxs is not None:
+            mat = _np.zeros((len(self.interface_residxs[0]),
+                             len(self.interface_residxs[1])))
+            freqs = self.frequency_overall(ctc_cutoff_Ang)
+            for ii, idx1 in enumerate(self.interface_residxs[0]):
+                for jj, idx2 in enumerate(self.interface_residxs[1]):
+                    for kk, pair in enumerate(self.res_idxs_pairs):
+                        if _np.allclose(sorted(pair),sorted([idx1,idx2])):
+                            mat[ii,jj]=freqs[kk]
+
+        return mat
 
     def to_per_traj_dicts_for_saving(self, dt=1, t_unit="ps"):
         dicts = []
@@ -608,14 +793,16 @@ class contact_group(object):
                 print(savename)
 
 def plot_contact(ictc, iax,
-                 color_scheme,
+                 color_scheme=None,
                  ctc_cutoff_Ang=0,
-                 n_smooth_hw=1,
+                 n_smooth_hw=0,
                  dt=1,
                  gray_background=False,
                  shorten_AAs=False,
                  t_unit='ps',
                  ):
+    if color_scheme is None:
+        color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
     iax.set_ylabel('D / $\\AA$', rotation=90)
     iax.set_ylim([0, 10])
     icol = iter(color_scheme)
@@ -638,8 +825,11 @@ def plot_contact(ictc, iax,
     if shorten_AAs:
         ctc_label = ictc.ctc_label_short
     ctc_label = ctc_label.replace("@None","")
-    iax.text(_np.mean(iax.get_xlim()), 1, '%s (%u%%)' %
-             (ctc_label, ictc.frequency_overall(ctc_cutoff_Ang)*100),
+    if ctc_cutoff_Ang>0:
+        ctc_label += " (%u%%)"%(ictc.frequency_overall_trajs(ctc_cutoff_Ang) * 100)
+
+    iax.text(_np.mean(iax.get_xlim()), 1,
+             ctc_label,
              ha='center')
     if ctc_cutoff_Ang>0:
         iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
@@ -802,7 +992,10 @@ class contact_pair(object):
     def anchor_fragment_name(self):
         r"""
         """
-        return self.fragment_names[self.anchor_index]
+        if self.anchor_index is not None:
+            return self.fragment_names[self.anchor_index]
+        else:
+            return None
 
     @property
     def partner_fragment_name(self):
@@ -821,17 +1014,26 @@ class contact_pair(object):
 
     @property
     def anchor_fragment_name_consensus(self):
-        return self.consensus_labels[self.anchor_index]
+        if self.anchor_index is not None:
+            return self.consensus_labels[self.anchor_index]
+        else:
+            return None
 
     @property
     def anchor_fragment_name_best(self):
-        return pick_best_label(self.anchor_fragment_name,
-                               self.anchor_fragment_name_consensus)
+        if self.anchor_index is not None:
+            return pick_best_label(self.anchor_fragment_name,
+                                   self.anchor_fragment_name_consensus)
+        else:
+            return None
 
     @property
     def anchor_res_and_fragment_str(self):
-        return '%s@%s' % (self.anchor_residue,
-                          self.anchor_fragment_name_best)
+        if self.anchor_index is not None:
+            return '%s@%s' % (self.anchor_residue,
+                              self.anchor_fragment_name_best)
+        else:
+            return None
 
     @property
     def anchor_res_and_fragment_str_short(self):
@@ -894,11 +1096,11 @@ class contact_pair(object):
         return result
 
     def frequency_dict(self, ctc_cutoff_Ang):
-        return {"freq":self.frequency_overall(ctc_cutoff_Ang),
+        return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang),
                 "residue idxs":'%u %u'%tuple(self.res_idxs_pair),
                 "label":'%-15s - %-15s'%tuple(self.ctc_label_short.split('-'))}
 
-    def frequency_overall(self, ctc_cutoff_Ang):
+    def frequency_overall_trajs(self, ctc_cutoff_Ang):
         return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang)))
 
     def frequency_per_traj(self, ctc_cutoff_Ang):
@@ -911,5 +1113,192 @@ class contact_pair(object):
         out += "\nFor %u trajectories"%self.n_trajs
         for var in dir(self):
             if not var.startswith("_"):
-                out += '\n%s: %s'%(var, getattr(self,'%s'%var))
+                try_print=True
+                if var.startswith("anchor") and self.anchor_index is None:
+                    try_print=False
+                if var.startswith("partner") and self.partner_index is None:
+                    try_print=False
+                if try_print:
+                    out += '\n%s: %s'%(var, getattr(self,'%s'%var))
         return out
+
+class group_of_interfaces(object):
+    def __init__(self, dict_of_interfaces):
+        self._interfaces = dict_of_interfaces
+
+
+    @property
+    def n_interfaces(self):
+        return len(self.interfaces)
+
+    @property
+    def conlab2matidx(self):
+        return [{key:ii for ii, key in enumerate(conlabs)} for conlabs in self.interface_labels_consensus]
+
+    def interface_matrix(self,ctc_cutoff_Ang):
+        labels = self.interface_labels_consensus
+        mat = _np.zeros((len(labels[0]),len(labels[1])))
+        conlab2matidx = self.conlab2matidx
+        for key, iint in self.interfaces.items():
+            idict = iint.frequency_dict_by_consensus_labels(ctc_cutoff_Ang)
+            print(key)
+            for key1, val in idict.items():
+                for key2, val2 in val.items():
+                    if key1 not in conlab2matidx[0]:
+                        key1 = iint._orphaned_residues_new_label[key1]
+                    ii, jj = conlab2matidx[0][key1], conlab2matidx[1][key2]
+                    #print(key1,key2,val2)
+                    mat[ii,jj] += val2
+
+        mat = mat / self.n_interfaces
+
+        return mat
+
+    def frequency_dict_by_consensus_labels(self, ctc_cutoff_Ang,
+                                           return_as_triplets=False,
+                                           ):
+        mat = self.interface_matrix(ctc_cutoff_Ang)
+        dict_out = defaultdict(dict)
+        for ii, jj in _np.argwhere(mat > 0):
+            key1, key2 = self.interface_labels_consensus[0][ii], self.interface_labels_consensus[1][jj]
+            dict_out[key1][key2] = mat[ii, jj]
+
+        # Make a normal dictionary
+        dict_out = {key: val for key, val in dict_out.items()}
+
+        dict_pairs = []
+        for key, val in dict_out.items():
+            for key2,val2 in val.items():
+                #print(key,key2,val2.round(2))
+                dict_pairs.append((key,key2,val2))
+        if return_as_triplets:
+            return dict_pairs
+        else:
+            return dict_out
+
+    def frequency_table(self,ctc_cutoff_Ang):
+        return self.frequency_dict_by_consensus_labels(ctc_cutoff_Ang, return_as_triplets=True)
+
+    @property
+    def interfaces(self):
+        return self._interfaces
+
+    @property
+    def interface_labels_consensus(self):
+        _interface_labels_consensus = [[], []]
+        for key, interface in self.interfaces.items():
+            for ii, ilabs in enumerate(interface.interface_labels_consensus):
+                for jlab in ilabs:
+                    if jlab not in _interface_labels_consensus[ii]:
+                        _interface_labels_consensus[ii].append(jlab)
+        from .nomenclature_utils import order_BW, order_CGN
+        _interface_labels_consensus[0] = order_BW(_interface_labels_consensus[0])
+        _interface_labels_consensus[1] = order_CGN(_interface_labels_consensus[1])
+        return _interface_labels_consensus
+
+    def plot_interface_matrix(self,ctc_cutoff_Ang,
+                              annotate=True,
+                              **kwargs_plot_interface_matrix):
+        mat = self.interface_matrix(ctc_cutoff_Ang)
+        iax, pixelsize = _plot_interface_matrix(mat,
+                                                self.interface_labels_consensus,
+                                     **kwargs_plot_interface_matrix)
+        offset=8*pixelsize
+        padding=pixelsize*2
+
+        if annotate:
+            n_x = len(self.interface_labels_consensus[1])
+            for ii, (pdb, iint) in enumerate(self.interfaces.items()):
+                xlabels = []
+                for key in self.interface_labels_consensus[0]:
+                    if key in iint.cons2resname.keys():
+                        xlabels.append(iint.cons2resname[key])
+                    elif hasattr(iint,"_orphaned_residues_new_label") and key in iint._orphaned_residues_new_label.values():
+                        xlabels.append({val:key for key, val in iint._orphaned_residues_new_label.items()}[key])
+                    else:
+                        xlabels.append("-")
+                ylabels = []
+                for key in self.interface_labels_consensus[1]:
+                    if key in iint.cons2resname.keys():
+                        ylabels.append(iint.cons2resname[key])
+                    else:
+                        ylabels.append("-")
+                y =  offset+ii+n_x+padding*ii
+                x = -offset-ii    -padding*ii
+                # todo transpose x,y,xlabels ylabels when needed accoding to kwargs
+                iax.text(0-1, y,
+                         pdb,
+                         fontsize=pixelsize*20,
+                         ha="right", va="bottom")
+                iax.text(x,0-1,pdb,
+                         fontsize=pixelsize*20)
+                for jj, ilab in enumerate(xlabels):
+                    pass
+                    iax.text(jj, y,ilab,
+                             fontsize=pixelsize*20,
+                             rotation=90,
+                             ha="center")
+                for jj, ilab in enumerate(ylabels):
+                    iax.text(x, jj, ilab,
+                             fontsize=pixelsize*20,
+                             va="center"
+                             )
+
+        return iax.figure, iax
+
+    @property
+    def PDBs(self):
+        return list(self.interfaces.keys())
+
+
+    def rename_orphaned_residues_foreach_interface(self,
+                                                   alignment_as_DF,
+                                                   interface_idx=0):
+
+        assert interface_idx==0,NotImplementedError(interface_idx)
+
+        long2short = lambda istr: ['@'.join(ival.split('@')[:2]) for ival in istr.split("_") if ival != 'None'][0]
+        orphan_residues_by_short_label = defaultdict(dict)
+        for pdb, iint in self.interfaces.items():
+            iint._orphaned_residues_new_label = {}
+            for AA in iint.interface_orphaned_labels[interface_idx]:
+                line = self.dict_same_orphan_labels_by_alignemntDF(AA,alignment_as_DF,pdb)
+                line = {key:line[key] for key in self.PDBs}
+                long_key  = '_'.join([str(ival) for ival in line.values()])
+                short_key = long2short(long_key)
+                #print(pdb, AA, short_key)
+                #print(long_key)
+                iint._orphaned_residues_new_label [AA] = short_key
+                assert pdb not in orphan_residues_by_short_label[short_key].keys()
+                orphan_residues_by_short_label[short_key][pdb]=line[pdb]
+                iint.interface_relabel_orphans()
+        self._orphans_renamed = {key:val for key,val in orphan_residues_by_short_label.items()}
+
+    @property
+    def orphans_renamed(self):
+        return self._orphans_renamed
+
+    #todo move this outside?
+    def dict_same_orphan_labels_by_alignemntDF(self,AA,aDF,pdb):
+        hit = [(val, ii) for ii, val in enumerate(aDF[pdb].values) if str(val).split('@')[0] == AA]
+        assert len(hit) == 1, hit
+        hit = hit[0]
+        return aDF.iloc[hit[1]].to_dict()
+
+def _plot_interface_matrix(mat,labels,pixelsize=1,
+                           transpose=False, grid=False):
+    if transpose:
+        mat = mat.T
+        labels = labels[::-1]
+
+    _plt.figure(figsize = _np.array(mat.shape)*pixelsize)
+    _plt.imshow(mat,cmap="binary",)
+    _plt.ylim([len(labels[0])-.5, -.5])
+    _plt.xlim([-.5, len(labels[1])-.5])
+    _plt.yticks(_np.arange(len(labels[0])),labels[0],fontsize=pixelsize*20)
+    _plt.xticks(_np.arange(len(labels[1])), labels[1],fontsize=pixelsize*20,rotation=90)
+    if grid:
+        _plt.hlines(_np.arange(len(labels[0]))+.5,-.5,len(labels[1]),ls='--',lw=.5, color='gray', zorder=10)
+        _plt.vlines(_np.arange(len(labels[1])) + .5, -.5, len(labels[0]), ls='--', lw=.5,  color='gray', zorder=10)
+
+    return _plt.gca(), pixelsize
