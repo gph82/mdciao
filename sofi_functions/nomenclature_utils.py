@@ -229,7 +229,8 @@ class consensus_labeler(object):
         r""" Dictionary AA-codes as keys, so that e.g. self.AA2BW[R131] -> '3.50' """
         return self._AA2conlab
 
-    def top2map(self, top, restrict_to_residxs=None, fill_gaps=True):
+    def top2map(self, top, restrict_to_residxs=None, fill_gaps=False,
+                verbose=False):
         r""" Align the sequence of :obj:`top` to the transformer's sequence
         and return a list of BW numbering for each residue in :obj:`top`.
         If no BW numbering is found after the alignment, the entry will be None
@@ -239,9 +240,8 @@ class consensus_labeler(object):
         top :
             :py:class:`mdtraj.Topology` object
         restrict_to_residxs: iterable of integers, default is None
-            You can select a segment of the top that aligns best to self.ref_PDB sequence
-            to improve the quality of the alignment. The return list will still
-            be of length=top.n_residues
+            Use only these residues for alignment and labelling options.
+            The return list will still be of length=top.n_residues
 
         Returns
         -------
@@ -250,21 +250,26 @@ class consensus_labeler(object):
         return _top2consensus_map(self.AA2conlab, top,
                                   restrict_to_residxs=restrict_to_residxs,
                                   keep_consensus=fill_gaps,
+                                  verbose=verbose,
                                   )
 
     def conlab2residx(self,top,
                       restrict_to_residxs=None,
-                      keep_consensus=True):
-        map = _top2consensus_map(self.AA2conlab, top,
-                                 restrict_to_residxs=restrict_to_residxs,
-                                 keep_consensus=keep_consensus)
+                      map=None,
+                      keep_consensus=False):
+        if map is None:
+            map = _top2consensus_map(self.AA2conlab, top,
+                                     restrict_to_residxs=restrict_to_residxs,
+                                     keep_consensus=keep_consensus)
         out_dict = {}
         for ii,imap in enumerate(map):
             if imap is not None:
                 out_dict[imap]=ii
         return out_dict
 
-    def top2defs(self, top, return_defs=False):
+    def top2defs(self, top, return_defs=False,
+                 fragments=None,
+                 map=None):
         r"""
         Print the BW transformer's definitions for the subdomains,
         in terms of residue indices of the input :obj:`top`
@@ -282,18 +287,41 @@ class consensus_labeler(object):
         defs : dictionary (if return_defs is True)
             Dictionary with subdomain names as keys and lists of indices as values
         """
-        map = self.top2map(top)
-        conlab2residx = self.conlab2residx(top)
+        from sofi_functions.list_utils import in_what_fragment
+        from sofi_functions.fragments import _print_frag
+
+        if map is None:
+            print("creating a temporary map, this is dangerous")
+            map = self.top2map(top)
+
+        conlab2residx = self.conlab2residx(top, map=map)
         defs = _defdict(list)
         for key, ifrag in self.fragments_as_conlabs.items():
             for iBW in ifrag:
                 if iBW in conlab2residx.keys():
                     defs[key].append(conlab2residx[iBW])
 
-        from sofi_functions.fragments import _print_frag
+        new_defs = {}
         for ii, (key, val) in enumerate(defs.items()):
             istr = _print_frag(key, top, val, fragment_desc='', return_string=True)
-            print(istr, '%s-%s' % (map[val[0]], map[val[-1]]))
+            if fragments is not None:
+                ifrags = [in_what_fragment(idx, fragments) for idx in val]
+                if ifrags[0]!=ifrags[-1]:
+                    #todo AVOID ASKING THE USER
+                    print(istr, '%s-%s' % (map[val[0]], map[val[-1]]))
+                    answr = input("more than 1 fragments present. Input the ones to keep %s" % (_np.unique(ifrags)))
+                    from sofi_functions.command_line_tools import rangeexpand
+                    answr = rangeexpand(answr)
+                    tokeep = [idx for ii, idx in enumerate(val) if ifrags[ii] in answr]
+                    new_defs[key] = tokeep
+
+        for key, val in new_defs.items():
+            defs[key]=val
+
+        for ii, (key, val) in enumerate(defs.items()):
+            istr = _print_frag(key, top, val, fragment_desc='', return_string=True)
+            print(istr)
+
         if return_defs:
             return defs
 
@@ -346,7 +374,7 @@ def PDB_finder(ref_PDB, ref_path='.',
                verbose=True):
     try:
         file2read = _path.join(ref_path, ref_PDB + '.pdb')
-        _top = _md.load(file2read).top
+        _geom = _md.load(file2read)
         return_file = file2read
     except (OSError, FileNotFoundError):
         try:
@@ -472,8 +500,7 @@ def _top2consensus_map(consensus_dict, top,
     top :
         :py:class:`mdtraj.Topology` object
     restrict_to_residxs: iterable of integers, default is None
-        You can select a segment of the input top that aligns best to the consensus numbering
-        to improve the quality of the alignment.
+        Use only these residues for alignment and labelling purposes
     keep_consensus : boolean default is False
         Even if there is a consensus mismatch with the sequence of the input
         :obj:`consensus_dict`, try to relabel automagically, s.t.
@@ -508,7 +535,7 @@ def _top2consensus_map(consensus_dict, top,
         out_list[int(idx)]=consensus_dict[AA + str(resSeq)]
 
     if keep_consensus:
-        out_list = _fill_CGN_gaps(out_list, top)
+        out_list = _fill_CGN_gaps(out_list, top, verbose=True)
     return out_list
 
 def _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name,
@@ -586,7 +613,7 @@ def _fill_CGN_gaps(consensus_list, top, verbose=False):
                 else: # meaning, we have a consensus label, check it against suggestion
                     consensus_kept *= suggestions[-1]==consensus_list[ii]
                 if verbose:
-                    print(ii, top.residue(ii),consensus_list[ii], suggestions[-1], consensus_kept)
+                    print('%6u %8s %10s %10s %s'%(ii, top.residue(ii),consensus_list[ii], suggestions[-1], consensus_kept))
                 offset += 1
             if verbose:
                 print()
@@ -598,6 +625,9 @@ def _fill_CGN_gaps(consensus_list, top, verbose=False):
                         consensus_list[res_idx] = suggestions[idx]
                         if verbose:
                             print(suggestions[idx])
+            else:
+                if verbose:
+                    print("Consensus wasn't kept. Nothing done!")
             if verbose:
                 print()
     return consensus_list
@@ -956,7 +986,9 @@ def _guess_nomenclature_fragments(CLtf, top, fragments,
         indices of the fragments with higher hit-rate than :obj:`cutoff`
 
     """
-    aligned_BWs = CLtf.top2map(top)
+    aligned_BWs = CLtf.top2map(top, fill_gaps=False)
+    #for ii, iBW in enumerate(aligned_BWs):
+    #    print(ii, iBW, top.residue(ii))
     guess = []
     for ii, ifrag in enumerate(fragments):
         hits = [aligned_BWs[jj] for jj in ifrag if aligned_BWs[jj] is not None]
@@ -1002,3 +1034,61 @@ def _map2defs(cons_list):
             defs[new_key].append(ii)
 
     return {key: _np.array(val) for key, val in defs.items()}
+
+
+def order_BW(labels):
+    return order_frags("1 12 2 23 3 34 ICL2 4 45 5 56 ICL3 6 67 7 78 8".split(), labels)
+
+def order_frags(fragment_names, consensus_labels):
+    from natsort import natsorted
+    labs_out = []
+    for ifrag in fragment_names:
+        if 'CL' in ifrag:
+            toappend = natsorted([ilab for ilab in consensus_labels if ilab.endswith(ifrag)])
+        else:
+            toappend = natsorted([ilab for ilab in consensus_labels if ilab.startswith(ifrag)])
+        if len(toappend) > 0:
+            labs_out.extend(toappend)
+    for ilab in consensus_labels:
+        if ilab not in labs_out:
+            labs_out.append(ilab)
+    return labs_out
+
+def order_CGN(labels):
+    CGN_fragments = ['G.HN',
+                     'G.hns1',
+                     'G.S1',
+                     'G.s1h1',
+                     'G.H1',
+                     'H.HA',
+                     'H.hahb',
+                     'H.HB',
+                     'H.hbhc',
+                     'H.HC',
+                     'H.hchd',
+                     'H.HD',
+                     'H.hdhe',
+                     'H.HE',
+                     'H.hehf',
+                     'H.HF',
+                     'G.hfs2',
+                     'G.S2',
+                     'G.s2s3',
+                     'G.S3',
+                     'G.s3h2',
+                     'G.H2',
+                     'G.h2s4',
+                     'G.S4',
+                     'G.s4h3',
+                     'G.H3',
+                     'G.h3s5',
+                     'G.S5',
+                     'G.s5hg',
+                     'G.HG',
+                     'G.hgh4',
+                     'G.H4',
+                     'G.h4s6',
+                     'G.S6',
+                     'G.s6h5',
+                     'G.H5']
+    return order_frags(CGN_fragments,labels)
