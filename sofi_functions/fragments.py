@@ -61,7 +61,7 @@ def get_fragments(top,
     verbose : boolean, optional
     auto_fragment_names : not used in the function
     frag_breaker_to_pick_idx : not used in the function
-    method : 'resSeq' or or 'bonds' (or 'both') or 'chains'
+    method : 'resSeq' or or 'bonds' (or 'both') or 'chains' or 'monotonic'
         The method passed will be the basis for creating fragments
     kwargs_interactive_segment_picker : optional
         additional arguments
@@ -73,40 +73,91 @@ def get_fragments(top,
 
     """
 
-    # fragnames=None
-    # if auto_fragment_names:
-    #    fragnames=fragment_names
+    # Auto detect fragments by resSeq
     old = top.residue(0).resSeq
-    if method == 'resSeq':
-        fragments = [[]]
-        for ii, rr in enumerate(top.residues):
-            delta = _np.abs(rr.resSeq - old)
-            # print(delta, ii, rr, end=" ")
-            if delta <= 1:
-                # print("appending")
-                fragments[-1].append(ii)
-            else:
-                # print("new")
-                fragments.append([ii])
-            old = rr.resSeq
-    elif method in ['bonds','both']:
-        from msmtools.estimation import connected_sets as _connected_sets
-        if method=='bonds':
-            residue_bond_matrix = top2residue_bond_matrix(top, verbose=False, force_resSeq_breaks=False)
-        elif method=='both':
-            residue_bond_matrix = top2residue_bond_matrix(top, verbose=False, force_resSeq_breaks=True)
+    fragments_resSeq = [[]]
+    for ii, rr in enumerate(top.residues):
+        delta = _np.abs(rr.resSeq - old)
+        # print(delta, ii, rr, end=" ")
+        if delta <= 1:
+            # print("appending")
+            fragments_resSeq[-1].append(ii)
+        else:
+            # print("new")
+            fragments_resSeq.append([ii])
+        old = rr.resSeq
+
+    from msmtools.estimation import connected_sets as _connected_sets
+    if method=="resSeq":
+        fragments = fragments_resSeq
+    elif method=='resSeq_bonds':
+        residue_bond_matrix = top2residue_bond_matrix(top, verbose=False, force_resSeq_breaks=True)
+        fragments = _connected_sets(residue_bond_matrix)
+    elif method=='bonds':
+        residue_bond_matrix = top2residue_bond_matrix(top, verbose=False, force_resSeq_breaks=False)
         fragments = _connected_sets(residue_bond_matrix)
         fragments = [fragments[ii] for ii in _np.argsort([fr[0] for fr in fragments])]
-    elif method in ["chains"]:
+    elif method == "chains":
         fragments = [[rr.index for rr in ichain.residues] for ichain in top.chains]
+    elif method == 'molecules':
+        fragments = [_np.unique([aa.residue.index for aa in iset]) for iset in top.find_molecules()]
+    elif method == 'molecules_resSeq+':
+        _molecules = top.find_molecules()
+        _fragments = [_np.unique([aa.residue.index for aa in iset]) for iset in _molecules]
+        _resSeqs =   [[top.residue(idx).resSeq for idx in ifrag] for ifrag in _fragments]
+        _negjumps =  [_np.diff(_iresSeq) for _iresSeq in _resSeqs]
+        fragments = []
+        for ii, (ifrag, ijumps) in enumerate(zip(_fragments, _negjumps)):
+            if all(ijumps>0):
+                fragments.append(ifrag)
+            else:
+                offset = 0
+                for kk, jj in enumerate(_np.argwhere(ijumps<0)):
+                    print(ii, jj)
+                    jj = int(jj)
+                    #print(top.residue(ifrag[jj]), top.residue(ifrag[jj+1]))
+                    offset+=jj
+                    fragments.append(ifrag[:jj+1])
+                    fragments.append(ifrag[jj+1:])
+                    if kk>1:
+                        raise Exception
+        #print(_negjumps)
+
+
+    elif method == "resSeq+":
+        fragments = []
+        to_join = [[0]]
+        for ii, ifrag in enumerate(fragments_resSeq[:-1]):
+            r1 = top.residue(ifrag[-1])
+            r2 = top.residue(fragments_resSeq[ii+1][0])
+            if r1.resSeq<r2.resSeq:
+                to_join[-1].append(ii+1)
+            else:
+                to_join.append([ii+1])
+
+        if False:
+            print("Fragments by ascending resSeq")
+            for idx, tj in enumerate(to_join):
+                for ii in tj:
+                    istr = _print_frag(idx, top, fragments_resSeq[ii],
+                                       return_string=True)
+                    print(istr)
+                print(''.join(["-" for __ in range(len(istr))]))
+        fragments = _join_lists(fragments_resSeq, [tj for tj in to_join if len(tj)>1])
+
     else:
         raise ValueError("Don't know what method '%s' is"%method)
 
     # Inform of the first result
     if verbose:
-        print("Auto-detected fragments")
+        print("Auto-detected fragments with method %s"%str(method))
         for ii, iseg in enumerate(fragments):
-            _print_frag(ii, top, iseg)
+            end='\n'
+            ri, rj = [top.residue(ii) for ii in [iseg[0],iseg[-1]]]
+            if rj.resSeq-ri.resSeq!=len(iseg)-1:
+                #print(ii, rj.resSeq-ri.resSeq, len(iseg)-1)
+                end='resSeq jumps\n'
+            _print_frag(ii, top, iseg, end=end)
     # Join if necessary
     if join_fragments is not None:
         fragments = _join_lists(fragments, join_fragments)
