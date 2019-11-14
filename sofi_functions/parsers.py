@@ -242,17 +242,21 @@ def parser_for_interface():
     _parser_add_smooth(parser)
     _parser_add_n_ctcs(parser, default=10)
 
-    parser.add_argument('--fragments', default=['resSeq'], nargs="+",
-                        help="How to detect fragments (i.e. breaks) in the peptide-chain. "
-                             "Default is 'resSeq' so that the topology is split at "
-                             "the jumps in the residue sequence. \n"
-                             "First alternative is 'consensus', which will ask the user "
-                             "for definitions using the input of the consensus nomenclature.\n"
-                             "Second alternative is to input arbitary fragments via "
+    parser.add_argument('--fragments', default='resSeq',nargs='+',
+                        help="How to sub-divide the topology. Options are:"
+                             "'resSeq'   breaks at jumps in resSeq entry, e.g  [...-K29-D30-],[-D35-...-W50],[A1...]"
+                             "'resSeq+'  breaks only at negative jumps in resSeq, e.g. [..-D30-D35-...-W50],[A1....]"
+                             "'bonds':   breaks when AAs are not connected by bonds, ignores resSeq [..-D30],[D35-...-W50],[A1...]"
+                             "'resSeq_bonds': breaks at resSeq jumps or absence of bond"
+                             "'chains',  follow the chain attribute of the PDB file/entry"                             
+                             "If any consensus nomenclature is provided, "
+                             "One can use also 'consensus', which will ask the user "
+                             "for definitions using the respective labels\n"
+                             "Finally, one can input arbitary fragments via "
                              "their zero indexed residue indices"
                              " using space as separator using the following format, e.g.:"
                              "--fragments 1-10,15,14 20,21,30-50 \n"
-                             "This last alternative is not recommended because "
+                             "This is not recommended because "
                              "important parts of the protein might be ommitted.")
 
     parser.add_argument("--frag_idxs_group_1", type=str,
