@@ -88,10 +88,6 @@ def _parse_consensus_option(identifier, type,
                                  fill_gaps=True,
                                  # verbose=True,
                                  )
-
-    #for ii, imap in enumerate(map_out):
-    #    print(ii, imap, top.residue(ii))
-
     if not return_tf:
         return map_out
     else:
@@ -681,9 +677,6 @@ def interface(
         accept_guess=False,
         interactive=True,
 ):
-
-    _offer_to_create_dir(output_dir)
-
     dt = _t_unit2dt(t_unit)
 
     if isinstance(trajectories,str):
