@@ -337,14 +337,15 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             ihood.anchor_res_and_fragment_str.replace('*', ""),
                                             graphic_ext.strip("."))
         fname = path.join(output_dir, fname)
-        myfig = ihood.plot_timedep_ctcs(panelheight, _my_color_schemes(curve_color),
+        myfig = ihood.plot_timedep_ctcs(panelheight, True,
+                                        color_scheme = _my_color_schemes(curve_color),
                                         ctc_cutoff_Ang=ctc_cutoff_Ang,
                                         n_smooth_hw=n_smooth_hw,
                                         dt=dt,
                                         t_unit=t_unit,
                                         gray_background=gray_background,
                                         shorten_AAs=short_AA_names,
-                                        plot_N_ctcs=True)
+                                        )
 
         # One title for all axes on top
         title = ihood.anchor_res_and_fragment_str
