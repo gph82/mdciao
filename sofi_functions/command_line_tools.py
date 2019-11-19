@@ -172,6 +172,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           gray_background=False,
                           graphic_dpi=150,
                           short_AA_names=False,
+                          same_fragment=True
                           ):
 
     if resSeq_idxs is None:
@@ -250,6 +251,12 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     ctc_idxs = np.vstack(
         [[np.sort([val, ii]) for ii in range(refgeom.top.n_residues) if ii not in nl[val] and ii != val] for val in
          resSeq2residxs.values()])
+
+    # Can we have same-fragment contacts
+    if not same_fragment:
+        fragment_idxs = [[in_what_fragment(idx, fragments) for idx in pair] for pair in ctc_idxs]
+        ctc_idxs = [ctc_idxs[ii] for (ii,pair) in enumerate(fragment_idxs) if pair[0]!=pair[1]]
+
 
     print(
         "\nPre-computing likely neighborhoods by reducing the neighbor-list to %u Angstrom in the reference geom %s..." % (
@@ -333,7 +340,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             ihood.anchor_res_and_fragment_str.replace('*', ""),
                                             graphic_ext.strip("."))
         fname = path.join(output_dir, fname)
-        myfig = ihood.plot_timedep_ctcs(panelheight, True,
+        myfig = ihood.plot_timedep_ctcs(panelheight,
+                                        plot_N_ctcs=True,
                                         color_scheme = _my_color_schemes(curve_color),
                                         ctc_cutoff_Ang=ctc_cutoff_Ang,
                                         n_smooth_hw=n_smooth_hw,

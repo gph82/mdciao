@@ -85,6 +85,14 @@ def _parser_add_graphic_ext(parser):
     parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
                         default='.pdf')
 
+def _parser_add_no_fragfrag(parser):
+    parser.add_argument('--same_fragment', dest='same_fragment', action='store_true',
+                        help="Allow contact partners in the same fragment, default is True"
+                             " Defaut is True")
+    parser.add_argument('--no-same_fragment', dest='same_fragment', action='store_false')
+    parser.set_defaults(same_fragment=True)
+
+
 def _parser_add_pbc(parser):
     parser.add_argument('--pbc', dest='pbc', action='store_true',
                         help="Consider periodic boundary conditions when computing distances."
@@ -215,6 +223,7 @@ def parser_for_rn():
     _parser_add_gray_backgroud(parser)
     _parser_add_graphic_dpi(parser)
     _parser_add_short_AA_names(parser)
+    _parser_add_no_fragfrag(parser)
     return parser
 
 def _parser_add_graphic_dpi(parser):
