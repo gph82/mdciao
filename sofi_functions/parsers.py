@@ -29,6 +29,12 @@ def _parser_add_cutoff(parser):
                         help="The cutoff distance between two residues for them to be considered in contact. Default is 3 Angstrom.",
                         default=3)
 
+def _parser_add_n_neighbors(parser, default=4):
+    parser.add_argument("--n_nearest", type=int,
+                        help="Ignore this many nearest neighbors when computing neighbor lists."
+                             " 'Near' means 'connected by this many bonds'. Default is %u."%default,
+                        default=default)
+
 def _parser_add_stride(parser,
                        help="Stride down the input trajectoy files by this factor. Default is 1." ):
     parser.add_argument("--stride", type=int,
@@ -112,6 +118,12 @@ def _parser_add_output_desc(parser, default='output_sites'):
                         default=default)
     return parser
 
+def _parser_add_n_jobs(parser):
+    parser.add_argument("--n_jobs", type=int, default=1, help="Number of processors to use. "
+                                                              "The parallelization is done over trajectories and "
+                                                              "not over contacts, beyond n_jobs>n_trajs "
+                                                              "parallelization will not have any effect.")
+
 def _parser_add_sites(parser):
     parser.add_argument('--site_files', type=str, nargs='+',
                         help='site file(s) in json format containing site information, i.e., which bonds correspond to each site')
@@ -175,9 +187,7 @@ def parser_for_rn():
     _parser_add_cutoff(parser)
     _parser_add_stride(parser)
     _parser_add_n_ctcs(parser)
-    parser.add_argument("--n_nearest", type=int,
-                        help="Ignore this many nearest neighbors when computing neighbor lists. 'Near' means 'connected by this many bonds'. Default is 4.",
-                        default=4)
+    _parser_add_n_neighbors(parser)
     _parser_add_chunk(parser)
     _parser_add_smooth(parser)
     parser.add_argument("--nlist_cutoff_Ang", type=float,
@@ -250,6 +260,8 @@ def parser_for_interface():
     _parser_add_stride(parser)
     _parser_add_smooth(parser)
     _parser_add_n_ctcs(parser, default=10)
+    _parser_add_n_neighbors(parser, default=0)
+    _parser_add_n_jobs(parser)
 
     parser.add_argument('--fragments', default='resSeq',nargs='+',
                         help="How to sub-divide the topology. Options are:"
