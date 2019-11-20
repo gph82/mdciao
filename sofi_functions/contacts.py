@@ -778,7 +778,7 @@ class contact_group(object):
 
     def frequency_report(self,ctc_cutoff_Ang):
         idf = _DF([ictc.frequency_dict(ctc_cutoff_Ang) for ictc in self._contacts])
-        return idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))[[""]]
+        return idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
 
     def save_trajs(self, output_desc, ext,
                    output_dir='.',
