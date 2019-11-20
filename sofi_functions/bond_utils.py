@@ -66,6 +66,8 @@ def bonded_neighborlist_from_top(top, n=1):
 
     '''
 
+    #todo this is very slow and a bit of overkill if one is only interested in the
+    #neighbors of one particular residue
     residue_bond_matrix = top2residue_bond_matrix(top)
     neighbor_list = [[ii] for ii in range(residue_bond_matrix.shape[0])]
     for kk in range(n):
