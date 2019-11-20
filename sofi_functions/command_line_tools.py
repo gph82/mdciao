@@ -685,6 +685,8 @@ def interface(
         plot_timedep=True,
         accept_guess=False,
         interactive=True,
+        n_jobs=1,
+        n_nearest=0,
 ):
     dt = _t_unit2dt(t_unit)
 
@@ -712,7 +714,7 @@ def interface(
         print("User input by residue index")
         _fragments = []
         for ii, ifrag in enumerate(fragments):
-            ifrag = rangeexpand(ifrag)
+            ifrag = rangeexpand(ifrag.strip(","))
             _fragments.append(ifrag)
             _print_frag(ii, refgeom.top, ifrag)
         fragments = _fragments
@@ -758,7 +760,7 @@ def interface(
             print(', '.join(interface_fragments[-1]))
 
     if len(interface_fragments) == 0:
-        if len(fragments) == 2:
+        if len(fragments) == 2 and frag_idxs_group_1 is None and frag_idxs_group_2 is None:
             print("Only two fragments detected. Overriding inputs for -frag_idxs_group_1/2 with [0] and [1].")
             interface_fragments=[[0],[1]]
         else:
@@ -774,6 +776,12 @@ def interface(
         interface_residx_long = [np.hstack([fragments[ii] for ii in iint]) for iint in interface_fragments]
 
     ctc_idxs = np.vstack(list(product(interface_residx_long[0], interface_residx_long[1])))
+
+    # Create a neighborlist
+    if n_nearest>0:
+        print("Excluding contacts between %u nearest neighbors"%n_nearest)
+        nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
+        ctc_idxs = np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
 
     print("\nComputing distances in the interface between fragments\n%s\nand\n%s.\n"
           "The interface is defined by the residues within %3.1f "
@@ -801,9 +809,11 @@ def interface(
         "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
         len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
 
-    ctcs, times = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot, stride=stride, return_time=True,
+    ctcs, times = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
+                            stride=stride, return_time=True,
                             consolidate=False,
-                            chunksize=chunksize_in_frames)
+                            chunksize=chunksize_in_frames,
+                            n_jobs=n_jobs)
 
     # Stack all data
     actcs = np.vstack(ctcs)
