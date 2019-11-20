@@ -7,6 +7,7 @@ from collections import defaultdict
 import matplotlib.pyplot as _plt
 from matplotlib import rcParams as _rcParams
 from pandas import DataFrame as _DF
+from joblib import Parallel as _Parallel, delayed as _delayed
 
 
 def ctc_freq_reporter_by_residue_neighborhood(ctc_freqs, resSeq2residxs, fragments,
@@ -103,7 +104,9 @@ def ctc_freq_reporter_by_residue_neighborhood(ctc_freqs, resSeq2residxs, fragmen
 
 
 def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
-              chunksize=1000, return_time=False,**mdcontacts_kwargs):
+              chunksize=1000, return_time=False,
+              n_jobs=1,
+              **mdcontacts_kwargs):
     """Returns the time-dependent traces of residue-residue contacts from a list of trajectory files
 
     Parameters
@@ -124,6 +127,9 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         How many frames will be read into memory for
         computation of the contact time-traces. The higher the number,
         the higher the memory requirements
+    n_jobs : int, default is 1
+        to how many processors to parallellize
+
     return_time : boolean, default is False
         Return also the time array in ps
 
@@ -133,41 +139,14 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     ctcs, time_arrays if return_time=True
 
     """
+
+    ictcs_itimes = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc)(top, ixtc, ctc_residxs_pairs,chunksize,stride,**mdcontacts_kwargs)
+                                            for ii, ixtc in enumerate(xtcs))
     ctcs = []
     times = []
-
-    if isinstance(xtcs[0],_md.Trajectory):
-        iterate = lambda ixtc : [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride],chunksize)]
-        inform = lambda ixtc, ii, running_f: print("Analysing a trajectory object in chunks of "
-                                                   "%3u frames. chunks %4u frames %8u"%
-                                                   (chunksize, ii, running_f), end="\r", flush=True)
-    else:
-        iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
-        inform = lambda ixtc, ii, running_f: print("Analysing %20s in chunks of "
-                                                   "%3u frames. chunks %4u frames %8u" %
-                                                   (ixtc, chunksize, ii, running_f), end="\r", flush=True)
-
-    for ii, ixtc in enumerate(xtcs):
-        ictcs = []
-        running_f = 0
-        inform(ixtc, 0, running_f)
-        itime = []
-        for jj, igeom in enumerate(iterate(ixtc)):
-            running_f += igeom.n_frames
-            inform(ixtc, jj, running_f)
-            itime.append(igeom.time)
-            jctcs, jidx_pairs = _md.compute_contacts(igeom, ctc_residxs_pairs,**mdcontacts_kwargs)
-            # TODO do proper list comparison and do it only once
-            assert len(jidx_pairs)==len(ctc_residxs_pairs)
-            ictcs.append(jctcs)
-            # if jj==10:
-            #    break
-
-        times.append(_np.hstack(itime))
-        ictcs = _np.vstack(ictcs)
-        # print("\n", ii, ictcs.shape, "shape ictcs")
+    for ictcs, itimes in ictcs_itimes:
         ctcs.append(ictcs)
-        print()
+        times.append(itimes)
 
     if consolidate:
         try:
@@ -186,6 +165,37 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     else:
         return actcs, times
 
+def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
+                **mdcontacts_kwargs):
+
+    if isinstance(ixtc, _md.Trajectory):
+        iterate = lambda ixtc: [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride], chunksize)]
+        inform = lambda ixtc, ii, running_f: print("Analysing a trajectory object in chunks of "
+                                                   "%3u frames. chunks %4u frames %8u" %
+                                                   (chunksize, ii, running_f), end="\r", flush=True)
+    else:
+        iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
+        inform = lambda ixtc, ii, running_f: print("Analysing %20s in chunks of "
+                                                   "%3u frames. chunks %4u frames %8u" %
+                                                   (ixtc, chunksize, ii, running_f), end="\r", flush=True)
+
+    ictcs = []
+    running_f = 0
+    inform(ixtc, 0, running_f)
+    itime = []
+    for jj, igeom in enumerate(iterate(ixtc)):
+        running_f += igeom.n_frames
+        inform(ixtc, jj, running_f)
+        itime.append(igeom.time)
+        jctcs, jidx_pairs = _md.compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
+        # TODO do proper list comparison and do it only once
+        assert len(jidx_pairs) == len(ctc_residxs_pairs)
+        ictcs.append(jctcs)
+
+    itime = _np.hstack(itime)
+    ictcs = _np.vstack(ictcs)
+
+    return ictcs, itime
 
 def contact_matrix(trajectories, cutoff_Ang=3,
                       n_frames_per_traj=20, **mdcontacts_kwargs):
@@ -682,6 +692,7 @@ class contact_group(object):
         #Plot ncontacts in the last frame
         if color_scheme is None:
             color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
+        color_scheme = _np.tile(color_scheme, _np.ceil(self.n_trajs / len(color_scheme)).astype(int) + 1)
         icol = iter(color_scheme)
         for n_ctcs_t, itime, traj_name in zip(self.timedep_n_ctcs(ctc_cutoff_Ang),
                                               self.time_arrays,
@@ -803,9 +814,9 @@ def plot_contact(ictc, iax,
                  ):
     if color_scheme is None:
         color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
+    color_scheme = _np.tile(color_scheme, _np.ceil(ictc.n_trajs/len(color_scheme)).astype(int)+1)
     iax.set_ylabel('D / $\\AA$', rotation=90)
     iax.set_ylim([0, 10])
-    icol = iter(color_scheme)
     for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(ictc.ctc_trajs,
                                                                 ictc.time_arrays,
                                                                 ictc.trajlabels)):
@@ -816,10 +827,9 @@ def plot_contact(ictc, iax,
 
         plot_w_smoothing_auto(iax, itime * dt, ictc_traj * 10,
                               ilabel,
-                              next(icol),
+                              color_scheme[traj_idx],
                               gray_background=gray_background,
                               n_smooth_hw=n_smooth_hw)
-
     iax.legend(loc=1, fontsize=_rcParams["font.size"]*.75)
     ctc_label = ictc.ctc_label
     if shorten_AAs:
