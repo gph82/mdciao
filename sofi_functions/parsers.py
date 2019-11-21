@@ -173,7 +173,8 @@ def parser_for_densities():
 
 def _parser_add_n_ctcs(parser, default=5):
     parser.add_argument("--n_ctcs", type=int,
-                        help="Only the first n_ctcs most-frequent contacts will be written to the ouput. Default is 5.",
+                        help="Only the first n_ctcs most-frequent contacts "
+                             "will be written to the ouput. Default is %u."%default,
                         default=default)
 
 def parser_for_rn():
