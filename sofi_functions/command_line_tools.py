@@ -761,7 +761,8 @@ def interface(
 
     if len(interface_fragments) == 0:
         if len(fragments) == 2 and frag_idxs_group_1 is None and frag_idxs_group_2 is None:
-            print("Only two fragments detected. Overriding inputs for -frag_idxs_group_1/2 with [0] and [1].")
+            print("Only two fragments detected with no values for frag_idxs_group_1 and frag_idxs_group_2.\n"
+                  "Setting frag_idxs_group_1=0 and frag_idxs_group_2=1")
             interface_fragments=[[0],[1]]
         else:
             interface_fragments = [frag_idxs_group_1,frag_idxs_group_2]
