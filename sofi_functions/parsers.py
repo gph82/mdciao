@@ -248,28 +248,19 @@ def _parser_add_ascii(parser):
 
 
 def parser_for_interface():
-    parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
-                                      'receptor-G-protein complex.\nContacts are computed between the group_1 '
-                                      '(e.g. the receptor) and group_2 (e.g. the G-protein).\n '
-                                      'To automate the identifaction of the residue indices corresponding to '
-                                      'receptor and G-protein, the peptide-chain in the input topology '
-                                      'is automatically broken down '
-                                      'into fragments wherever there are jumps in the residue resSeq-indexing')
+    parser = _parser_top_traj(description='Residue-residue contact analysis-tool where contacts are computed '
+                                          ' between two groups of residues specified by the user.'                                          
+                                          ' To help in the identification of these two groups of residues, '
+                                          'the peptide-chain in the input topology '
+                                          'can be automatically broken down into fragments and use them directly.')
 
-    _parser_add_cutoff(parser)
-    _parser_add_stride(parser)
-    _parser_add_smooth(parser)
-    _parser_add_n_ctcs(parser, default=10)
-    _parser_add_n_neighbors(parser, default=0)
-    _parser_add_n_jobs(parser)
-
-    parser.add_argument('--fragments', default='resSeq',nargs='+',
+    parser.add_argument('--fragments', default=['resSeq'], nargs='+',
                         help="How to sub-divide the topology. Options are:"
-                             "'resSeq'   breaks at jumps in resSeq entry, e.g  [...-K29-D30-],[-D35-...-W50],[A1...]"
-                             "'resSeq+'  breaks only at negative jumps in resSeq, e.g. [..-D30-D35-...-W50],[A1....]"
-                             "'bonds':   breaks when AAs are not connected by bonds, ignores resSeq [..-D30],[D35-...-W50],[A1...]"
-                             "'resSeq_bonds': breaks at resSeq jumps or absence of bond"
-                             "'chains',  follow the chain attribute of the PDB file/entry"                             
+                             " 'resSeq'   breaks at jumps in resSeq entry, e.g  [...-K29-D30-],[-D35-...-W50],[A1...]"
+                             " 'resSeq+'  breaks only at negative jumps in resSeq, e.g. [..-D30-D35-...-W50],[A1....]"
+                             " 'bonds':   breaks when AAs are not connected by bonds, ignores resSeq [..-D30],[D35-...-W50],[A1...]"
+                             " 'resSeq_bonds': breaks at resSeq jumps or absence of bond"
+                             " 'chains',  follow the chain attribute of the PDB file/entry"
                              "If any consensus nomenclature is provided, "
                              "One can use also 'consensus', which will ask the user "
                              "for definitions using the respective labels\n"
@@ -288,13 +279,18 @@ def parser_for_interface():
                         help="Indices of the fragments that belong to the group_2. "
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [1]", default=None)
+    _parser_add_cutoff(parser)
+    _parser_add_n_ctcs(parser, default=10)
     parser.add_argument("--interface_cutoff_Ang", type=float,
-                        help="The interface between group_1 and group_2 is defined as the set of group_1-group_2-"
+                        help="The interface between both groups is defined as the set of group_1-group_2-"
                              "distances that are within this "
                              "cutoff in the reference topology. Otherwise, a large number of "
                              "non-necessary distances (e.g. between N-terminus and G-protein) are computed. Default is 35.",
                         default=35)
-
+    _parser_add_n_neighbors(parser, default=0)
+    _parser_add_stride(parser)
+    _parser_add_smooth(parser)
+    _parser_add_n_jobs(parser)
     #_parser_add_fragment_names(parser)
 
     #parser.add_argument('--consolidate', dest='consolidate_opt', action='store_true',
