@@ -11,8 +11,9 @@ setup(
     "numpy",
     "msmtools",
     "scipy",
+    "joblib"
     "biopython",
-    "ipython", # These two are for one call to Gunnar_utils
+    "ipython",
     "XlsxWriter", # 
     ],
     tests_require=[
