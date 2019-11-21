@@ -196,6 +196,65 @@ def get_fragments(top,
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms]])]
 
+def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
+                                          pick_first_fragment_by_default=False,
+                                          additional_naming_dicts=None):
+    resSeq2residxs = {}
+    resSeq2segidxs = {}
+    last_answer = 0
+    auto_last_answer_flag=False
+    for key in resSeq_idxs:
+        cands = [rr.index for rr in top.residues if rr.resSeq == key]
+        # print(key)
+        cand_fragments = _in_what_N_fragments(cands, fragments)
+        if len(cands) == 0:
+            print("No residue found with resSeq %s"%key)
+        else:
+            if len(cands) == 1:
+                cands = cands[0]
+                answer = cand_fragments
+                # print(key,refgeom.top.residue(cands[0]), cand_fragments)
+            elif len(cands) > 1:
+                print("ambigous definition for resSeq %s" % key)
+                for cc, ss in zip(cands, cand_fragments):
+                    istr = '%10s in fragment %2u with index %6u'%(top.residue(cc), ss,cc)
+                    if additional_naming_dicts is not None:
+                        extra=''
+                        for key1, val1 in additional_naming_dicts.items():
+                            if val1[cc] is not None:
+                                extra +='%s: %s '%(key1,val1[cc])
+                        if len(extra)>0:
+                            istr = istr + ' (%s)'%extra.rstrip(" ")
+                    print(istr)
+                if not pick_first_fragment_by_default:
+                    answer = input(
+                        "input one fragment idx (out of %s) and press enter.\nLeave empty and hit enter to repeat last option [%s]\n" % ([int(ii) for ii in cand_fragments], last_answer))
+                    if len(answer) == 0:
+                        answer = last_answer
+                    try:
+                        answer = int(answer)
+                    except:
+                        #TODO implent k for keeping this answer from now on
+                        if isinstance(answer,str) and answer=='k':
+                            pass
+                        print("Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
+                        raise Exception
+                    assert answer in cand_fragments, (
+                                "Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
+                    cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
+                    last_answer = answer
+                else:
+                    cands = cands[0]
+                    answer = cand_fragments[0]
+                    print("Automatically picked fragment %u"%answer)
+                # print(refgeom.top.residue(cands))
+                print()
+
+            resSeq2residxs[key] = cands
+            resSeq2segidxs[key] = answer
+
+    return resSeq2residxs, resSeq2segidxs
+
 def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                                             default_fragment_idx=None,
                                             fragment_names=None, extra_string_info=''):
@@ -378,5 +437,14 @@ def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
     return residuenames2residxs, residuenames2fragidxs
 
 
-
-
+my_frag_colors=[
+         'magenta',
+         'yellow',
+         'lime',
+         'maroon',
+         'navy',
+         'olive',
+         'orange',
+         'purple',
+         'teal',
+]
