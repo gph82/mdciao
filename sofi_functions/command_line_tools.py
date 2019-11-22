@@ -881,6 +881,9 @@ def interface(
     histofig.savefig(fname, dpi=graphic_dpi, bbox_inches="tight")
     print("The following files have been created")
     print(fname)
+    fname_excel = fname.replace(graphic_ext.strip("."),".xlsx")
+    print(fname_excel)
+    neighborhood.frequency_table(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}).to_excel(fname_excel)
     if plot_timedep:
         fname = '%s.time_resolved.%s' % (output_desc,
                                          graphic_ext.strip("."))
