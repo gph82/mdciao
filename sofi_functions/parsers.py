@@ -1,7 +1,6 @@
-import argparse, textwrap
+import argparse
 
 # https://stackoverflow.com/questions/3853722/python-argparse-how-to-insert-newline-in-the-help-text
-
 class SmartFormatter(argparse.HelpFormatter):
 
     def _split_lines(self, text, width):
