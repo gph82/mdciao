@@ -321,7 +321,7 @@ class contact_group(object):
                                            sort_by_interface=False):
         dict_out = defaultdict(dict)
         for (key1, key2), ifreq in zip(self.consensus_labels,
-                                       self.frequency_overall(ctc_cutoff_Ang)):
+                                       self.frequency_per_contact(ctc_cutoff_Ang)):
 
             dict_out[key1][key2] = ifreq
         dict_out = {key:val for key,val in dict_out.items()}
@@ -352,6 +352,16 @@ class contact_group(object):
                                  #return_index=True
                                  ))))
         return res
+
+    @property
+    def interface_labels(self):
+        labs_out = [[],[]]
+        for ii, ints in enumerate(self.interface_residxs):
+            for idx in ints:
+                ctc_idx, pair_idx = self.residx2ctcidx(idx)[0]
+                labs_out[ii].append(self.ctc_labels[ctc_idx].split("-")[pair_idx])
+
+        return labs_out
 
     @property
     def consensus_labels(self):
@@ -492,7 +502,7 @@ class contact_group(object):
     def topology(self):
         return self._top
 
-    def frequency_overall(self, ctc_cutoff_Ang):
+    def frequency_per_contact(self, ctc_cutoff_Ang):
         return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts])
 
     def binarize_trajs(self, ctc_cutoff_Ang, order='contact'):
@@ -532,7 +542,7 @@ class contact_group(object):
         jax:
         """
 
-        freqs = self.frequency_overall(ctc_cutoff_Ang)
+        freqs = self.frequency_per_contact(ctc_cutoff_Ang)
         if truncate_at is not None:
             freqs = freqs[freqs>truncate_at]
         xvec = _np.arange(len(freqs))
@@ -752,7 +762,7 @@ class contact_group(object):
         if self._interface_residxs is not None:
             mat = _np.zeros((len(self.interface_residxs[0]),
                              len(self.interface_residxs[1])))
-            freqs = self.frequency_overall(ctc_cutoff_Ang)
+            freqs = self.frequency_per_contact(ctc_cutoff_Ang)
             for ii, idx1 in enumerate(self.interface_residxs[0]):
                 for jj, idx2 in enumerate(self.interface_residxs[1]):
                     for kk, pair in enumerate(self.res_idxs_pairs):
@@ -776,9 +786,46 @@ class contact_group(object):
                          )
         return dicts
 
-    def frequency_report(self,ctc_cutoff_Ang):
+    def frequency_table(self, ctc_cutoff_Ang):
         idf = _DF([ictc.frequency_dict(ctc_cutoff_Ang) for ictc in self._contacts])
         return idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
+
+    def frequency_per_residue_idx(self, ctc_cutoff_Ang):
+        dict_sum = defaultdict(list)
+        for (idx1,idx2), ifreq in zip(self.res_idxs_pairs,
+                                      self.frequency_per_contact(ctc_cutoff_Ang)):
+            dict_sum[idx1].append(ifreq)
+            dict_sum[idx2].append(ifreq)
+        dict_sum = {key:_np.sum(val) for key, val in dict_sum.items()}
+        return dict_sum
+
+    def frequency_per_residue(self, ctc_cutoff_Ang, sort=True,
+                              list_by_interface=False):
+        freqs = self.frequency_per_residue_idx(ctc_cutoff_Ang)
+        dict_out = {}
+        keys = list(freqs.keys())
+        if sort:
+            keys = [keys[ii] for ii in _np.argsort(list(freqs.values()))[::-1]]
+        for idx in keys:
+            ifreq = freqs[idx]
+            ctc_idx, pair_idx = self.residx2ctcidx(idx)[0]
+            dict_out[self.ctc_labels[ctc_idx].split("-")[pair_idx]]=ifreq
+
+        if list_by_interface:
+            _dict_out = [{},{}]
+            for ii, ilabs in enumerate(self.interface_labels):
+                #print(ilabs)
+                if sort:
+                    for idx in dict_out.keys():
+                        if idx in ilabs:
+                            _dict_out[ii][idx]=dict_out[idx]
+                else:
+                    for jlab in ilabs:
+                       _dict_out[ii][jlab]=dict_out[jlab]
+            dict_out = _dict_out
+        return dict_out
+
+
 
     def save_trajs(self, output_desc, ext,
                    output_dir='.',
