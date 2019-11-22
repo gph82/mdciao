@@ -629,13 +629,73 @@ class contact_group(object):
 
         return jax
 
-    def add_tilted_labels_to_patches(self, jax, labels, label_fontsize_factor=1):
+    def histo_summary(self,
+                      ctc_cutoff_Ang,
+                      site_name,
+                      xlim=None,
+                      jax=None,
+                      shorten_AAs=False,
+                      label_fontsize_factor=1,
+                      truncate_at=0,
+                      bar_width_in_inches=.75,
+                      list_by_interface=False):
+
+        # Base dict
+        freqs_dict = self.frequency_per_residue(ctc_cutoff_Ang,
+                                                sort=True,
+                                                list_by_interface=list_by_interface)
+        if list_by_interface:
+            label_bars = list(freqs_dict[0].keys())+list(freqs_dict[1].keys())
+            freqs = _np.array(list(freqs_dict[0].values())+list(freqs_dict[1].values()))
+        else:
+            label_bars, freqs = list(freqs_dict.keys()),list(freqs_dict.values())
+
+        # Truncate
+        label_bars = [label_bars[ii] for ii in _np.argwhere(freqs>truncate_at).squeeze()]
+        freqs = freqs[freqs>truncate_at]
+
+        xvec = _np.arange(len(freqs))
+        if jax is None:
+            _plt.figure(figsize=(_np.max((7, bar_width_in_inches * len(freqs))), 5))
+            jax = _plt.gca()
+
+        patches = jax.bar(xvec, freqs,
+                          width=.25)
+        yticks = _np.arange(.25,_np.max(freqs), .25)
+        jax.set_yticks(yticks)
+        #jax.set_xticks([])
+        [jax.axhline(ii, color="k", linestyle="--", zorder=-1) for ii in yticks]
+
+        # Cosmetics
+        jax.set_title(
+            "Average nr. contacts @%2.1f $\AA$ \nper residue of site '%s'"
+            % (ctc_cutoff_Ang, site_name))
+
+
+        label_bars = [ilab.replace("@None", "") for ilab in label_bars]
+
+        self.add_tilted_labels_to_patches(jax,
+                                          label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
+                                          label_fontsize_factor=label_fontsize_factor,
+                                          trunc_y_labels_at=.65*_np.max(freqs)
+                                          )
+
+        # jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
+        if xlim is not None:
+            jax.set_xlim([-.5, xlim + 1 - .5])
+
+
+        return jax
+
+    def add_tilted_labels_to_patches(self, jax, labels,
+                                     label_fontsize_factor=1,
+                                     trunc_y_labels_at=.65):
         for ii, (ipatch, ilab) in enumerate(zip(jax.patches, labels)):
             ix = ii
             iy = ipatch.get_height()
             iy += .01
-            if iy > .65:
-                iy = .65
+            if iy > trunc_y_labels_at:
+                iy = trunc_y_labels_at
             jax.text(ix, iy, _replace4latex(ilab),
                      va='bottom',
                      ha='left',

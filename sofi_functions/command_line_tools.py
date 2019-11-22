@@ -797,10 +797,6 @@ def interface(
     print("done!")
 
     ctc_idxs_receptor_Gprot = ctc_idxs[np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
-    #TODO why did I have this here?
-    #_, ctc_idxs_receptor_Gprot = md.compute_contacts(refgeom,
-    #                                                 ctc_idxs[ctc_idxs_receptor_Gprot],
-    #                                                 ignore_nonprotein=False)
 
     interface_residx_short = [set(ctc_idxs_receptor_Gprot[:,0]).intersection(interface_residx_long[0]),
                               set(ctc_idxs_receptor_Gprot[:,1]).intersection(interface_residx_long[1])]
@@ -847,14 +843,16 @@ def interface(
 
     neighborhood = contact_group(ctc_objs,
                                  interface_residxs=interface_residx_short)
-    print(neighborhood.frequency_report(ctc_cutoff_Ang))
+    print()
+    print(neighborhood.frequency_table(ctc_cutoff_Ang).round({"freq":2,"sum":2}))
+
     panelheight = 3
     n_cols = 1
-    n_rows = 1
+    n_rows = 2
     panelsize = 4
     panelsize2font = 3.5
     fudge = 7
-    histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
+    histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=False,
                                      figsize=(n_cols * panelsize * np.ceil(neighborhood.n_ctcs/fudge),
                                               n_rows * panelsize),
                                      )
@@ -862,19 +860,27 @@ def interface(
     # One loop for the histograms
     _rcParams["font.size"] = panelsize * panelsize2font
     neighborhood.histo_site(ctc_cutoff_Ang,
-                            'interface',
-                            jax=histoax,
+                            output_desc.strip("."),
+                            jax=histoax[0],
                             xlim=np.min((n_ctcs,neighborhood.n_ctcs)),
                             label_fontsize_factor=panelsize2font / panelsize,
-                            shorten_AAs=short_AA_names
+                            shorten_AAs=short_AA_names,
+                            truncate_at=.05,
                             )
+
+    neighborhood.histo_summary(ctc_cutoff_Ang,
+                               output_desc.strip('.'),
+                               jax=histoax[1],
+                               list_by_interface=True,
+                               label_fontsize_factor=panelsize2font / panelsize,
+                               truncate_at=.05
+                               )
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
     fname = path.join(output_dir, fname)
-    histofig.savefig(fname, dpi=graphic_dpi)
+    histofig.savefig(fname, dpi=graphic_dpi, bbox_inches="tight")
     print("The following files have been created")
     print(fname)
-
     if plot_timedep:
         fname = '%s.time_resolved.%s' % (output_desc,
                                          graphic_ext.strip("."))
