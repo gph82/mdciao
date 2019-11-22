@@ -13,7 +13,8 @@ from glob import glob as _glob
 
 from sofi_functions.fragments import \
     interactive_fragment_picker_by_AAresSeq as _interactive_fragment_picker_by_AAresSeq, \
-    get_fragments, _print_frag
+    get_fragments, _print_frag, \
+    interactive_fragment_picker_by_resSeq as _interactive_fragment_picker_by_resSeq
 
 from sofi_functions.nomenclature_utils import \
     CGN_transformer, BW_transformer,\
@@ -31,9 +32,7 @@ from sofi_functions.list_utils import \
 from sofi_functions.bond_utils import \
     bonded_neighborlist_from_top
 
-from sofi_functions.actor_utils import \
-    mycolors, dangerously_auto_fragments, \
-    interactive_fragment_picker_by_resSeq
+from sofi_functions.fragments import my_frag_colors as mycolors
 
 from sofi_functions.parsers import \
     match_dict_by_patterns as _match_dict_by_patterns
@@ -131,6 +130,8 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
                 len(fragments), len(fragment_names), fragment_names)
 
         elif 'danger' in fragment_names.lower():
+            raise NotImplementedError
+            """
             fragments, fragment_names = dangerously_auto_fragments(top,
                                                                    method="bonds",
                                                                    verbose=False,
@@ -142,7 +143,7 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
             for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
                 _print_frag(ifrag_idx, top, ifrag, end='')
                 print(" ", frag_name)
-
+            """
     return fragment_names, fragments
 
 
@@ -230,7 +231,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         resSeq2residxs = {refgeom.top.residue(ii).resSeq: ii for ii in resSeq_idxs}
         print("\nInterpreting input indices as zero-indexed residue indexes")
     else:
-        resSeq2residxs, _ = interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, refgeom.top,
+        resSeq2residxs, _ = _interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, refgeom.top,
                                                                   pick_first_fragment_by_default=not ask,
                                                                   additional_naming_dicts={"BW":BW,"CGN":CGN}
                                                                   )
