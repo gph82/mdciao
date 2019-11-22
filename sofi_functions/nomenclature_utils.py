@@ -6,7 +6,7 @@ from pandas import DataFrame as _DF, read_json as _read_json, read_excel as _rea
 from collections import defaultdict as _defdict
 from os import path as _path
 import requests as _requests
-
+from .list_utils import rangeexpand as _rangeexpand
 
 def table2BW_by_AAcode(tablefile,
                        keep_AA_code=True,
@@ -310,8 +310,7 @@ class consensus_labeler(object):
                     #todo AVOID ASKING THE USER
                     print(istr, '%s-%s' % (map[val[0]], map[val[-1]]))
                     answr = input("more than 1 fragments present. Input the ones to keep %s" % (_np.unique(ifrags)))
-                    from sofi_functions.command_line_tools import rangeexpand
-                    answr = rangeexpand(answr)
+                    answr = _rangeexpand(answr)
                     tokeep = [idx for ii, idx in enumerate(val) if ifrags[ii] in answr]
                     new_defs[key] = tokeep
 
@@ -1092,3 +1091,12 @@ def order_CGN(labels):
                      'G.s6h5',
                      'G.H5']
     return order_frags(CGN_fragments,labels)
+
+# Not necessarily nomenclature but has do to with names and formats
+def _replace4latex(istr):
+    for gl in ['alpha','beta','gamma', 'mu']:
+        istr = istr.replace(gl,'$\\'+gl+'$')
+
+    if '$' not in istr and any([char in istr for char in ["_"]]):
+        istr = '$%s$'%istr
+    return istr

@@ -240,7 +240,7 @@ def contact_matrix(trajectories, cutoff_Ang=3,
     return mat
 
 
-from .actor_utils import _replace4latex
+from .nomenclature_utils import _replace4latex
 
 
 def pick_best_label(fallback, test, exclude=[None, "None", "NA", "na"]):
