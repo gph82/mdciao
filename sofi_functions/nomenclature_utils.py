@@ -618,7 +618,7 @@ def _fill_CGN_gaps(consensus_list, top, verbose=False):
                 print()
             if consensus_kept:
                 if verbose:
-                    print("The consensus was kept, I am relablling these:")
+                    print("The consensus was kept, I am relabelling these:")
                 for idx, res_idx in enumerate(_np.arange(val[0],val[-1]+1)):
                     if res_idx in residue_idxs_wo_consensus_labels:
                         consensus_list[res_idx] = suggestions[idx]
@@ -687,7 +687,7 @@ def _fill_BW_gaps(consensus_list, top, verbose=False):
                 print()
             if consensus_kept:
                 if verbose:
-                    print("The consensus was kept, I am relablling these:")
+                    print("The consensus was kept, I am relabelling these:")
                 for idx, res_idx in enumerate(_np.arange(val[0],val[-1]+1)):
                     if res_idx in residue_idxs_wo_consensus_labels:
                         consensus_list[res_idx] = suggestions[idx]
