@@ -61,7 +61,7 @@ def name_from_AA(key):
 
 def shorten_AA(AA, substitute_fail=None, keep_index=False):
     r"""
-    return the short name of an AA, e.g. TRP30 to Y by trying to
+    return the short name of an AA, e.g. TRP30 to W by trying to
     use either the :obj:`mdtraj.Topology.Residue.code' attribute
     or :obj:`mdtraj` internals AA dictionary
 
