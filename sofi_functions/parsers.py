@@ -1,4 +1,14 @@
-import argparse
+import argparse, textwrap
+
+# https://stackoverflow.com/questions/3853722/python-argparse-how-to-insert-newline-in-the-help-text
+
+class SmartFormatter(argparse.HelpFormatter):
+
+    def _split_lines(self, text, width):
+        if text.startswith('R|'):
+            return text[2:].splitlines()
+        # this is the RawTextHelpFormatter._split_lines
+        return argparse.HelpFormatter._split_lines(self, text, width)
 
 def _parser_top_traj(description=None):
     r"""
@@ -13,7 +23,7 @@ def _parser_top_traj(description=None):
     -------
 
     """
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, formatter_class=SmartFormatter)
     _parser_add_topology(parser)
     _parser_add_trajectories(parser)
     return parser
@@ -256,21 +266,31 @@ def parser_for_interface():
                                           'can be automatically broken down into fragments and use them directly.')
 
     parser.add_argument('--fragments', default=['resSeq'], nargs='+',
-                        help="How to sub-divide the topology. Options are:"
-                             " 'resSeq'   breaks at jumps in resSeq entry, e.g  [...-K29-D30-],[-D35-...-W50],[A1...]"
-                             " 'resSeq+'  breaks only at negative jumps in resSeq, e.g. [..-D30-D35-...-W50],[A1....]"
-                             " 'bonds':   breaks when AAs are not connected by bonds, ignores resSeq [..-D30],[D35-...-W50],[A1...]"
-                             " 'resSeq_bonds': breaks at resSeq jumps or absence of bond"
-                             " 'chains',  follow the chain attribute of the PDB file/entry"
-                             "If any consensus nomenclature is provided, "
-                             "One can use also 'consensus', which will ask the user "
-                             "for definitions using the respective labels\n"
-                             "Finally, one can input arbitary fragments via "
-                             "their zero indexed residue indices"
-                             " using space as separator using the following format, e.g.:"
-                             "--fragments 1-10,15,14 20,21,30-50 \n"
-                             "This is not recommended because "
-                             "important parts of the protein might be ommitted.")
+                        help=("R|How to sub-divide the topology into fragments.\n"
+                              "Several options possible. Taking the example sequence:\n"
+                              "...-A27,Lig28,K29-...-W40,D45-...-W50,GDP1\n"
+                              " - 'resSeq'\n"
+                              "     breaks at jumps in resSeq entry:\n"
+                              "     [...A27,Lig28,K29,...,W40],[D45,...,W50],[GDP1]\n"
+                              " - 'resSeq+'\n"
+                              "     breaks only at negative jumps in resSeq:\n"
+                              "     [...A27,Lig28,K29,...,W40,D45,...,W50],[GDP1]\n"
+                              " - 'bonds'\n"
+                              "     breaks when AAs are not connected by bonds,\n"
+                              "     ignores resSeq:\n"
+                              "     [...A27][Lig28],[K29,...,W40],[D45,...,W50],[GDP1]\n"
+                              " - 'resSeq_bonds'\n"
+                              "     breaks both at resSeq jumps or missing bond\n"
+                              " - 'chains'\n"
+                              "     breaks into chains of the PDB file/entry\n"
+                              " - 'consensus'\n"
+                              "     If any consensus nomenclature is provided,\n"
+                              "     ask the user for definitions using\n"
+                              "     consensus labels\n"
+                              " - 0-10,15,14 20,21,30-50 51 (example, advanced users only)\n" 
+                              "     Input arbitary fragments via their\n"
+                              "     residue serial indices (zero-indexed) using space as\n"
+                              "     separator. Not recommended\n"))
 
     parser.add_argument("--frag_idxs_group_1", type=str,
                         help="Indices of the fragments that belong to the group_1. "
