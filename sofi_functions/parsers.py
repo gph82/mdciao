@@ -60,6 +60,11 @@ def _parser_add_smooth(parser):
     parser.add_argument("--n_smooth_hw", type=int,
                         help="Number of frames one half of the averaging window for the time-traces. Default is 0, which means no averaging.",
                         default=0)
+def _parser_add_scheme(parser):
+    parser.add_argument("--scheme",type=str, default='closest-heavy',
+                        help="Type for scheme for computing distance between residues. Choices are "
+                             "{'ca', 'closest', 'closest-heavy', 'sidechain', 'sidechain-heavy'}. "
+                             "See mdtraj documentation for more info")
 
 def _parser_add_t_unit(parser):
     parser.add_argument("--t_unit", type=str,
@@ -155,7 +160,7 @@ def parser_for_sites():
                              " one time in the topology, e.g. in case of a dimer, the user can\n"
                              " pass which fragment/monomer should be chosen by default. The\n"
                              " default behaviour (None) will prompt the user when necessary")
-
+    _parser_add_scheme(parser)
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
     _parser_add_stride(parser)
