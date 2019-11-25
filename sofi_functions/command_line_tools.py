@@ -104,7 +104,7 @@ def _guess_by_nomenclature(Ntf, top, fragments, nomenclature_name,
     if accept_guess:
         answer = ','.join(['%s' % ii for ii in guess])
     else:
-        answer = input("Hit enter to accept or input alternative in a format 1,2-6,10,20-25)")
+        answer = input("Hit enter to accept or input alternative in a format 1,2-6,10,20-25")
 
 
     if answer is '':
@@ -391,6 +391,7 @@ def sites(topology,
           site_files,
           ctc_cutoff_Ang=3,
           stride=1,
+          scheme="closest-heavy",
           chunksize_in_frames=10000,
           n_smooth_hw=0,
           pbc=True,
@@ -463,7 +464,8 @@ def sites(topology,
     ctc_idxs_small = _sites_to_ctc_idxs_old(sites, AAresSeq2residxs)
     ctcs, time_array = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                  chunksize=chunksize_in_frames,
-                                 return_time=True, consolidate=False, periodic=pbc)
+                                 return_time=True, consolidate=False, periodic=pbc,
+                                 scheme=scheme)
 
     # Abstract each site to a group of contacts
     site_as_gc = {}
@@ -517,10 +519,16 @@ def sites(topology,
     plt.close(histofig)
     print("The following files have been created")
     print(fname)
+    if scheme!="closest-heavy":
+        scheme_desc='.%s.'%scheme
+    else:
+        scheme_desc=''
     for site_name, isite_nh in site_as_gc.items():
-        fname = 'site.%s.%s.time_resolved.%s' % (
-            site_name.replace(" ", "_"), desc_out.strip("."), graphic_ext.strip("."))
+        fname = 'site.%s.%s.%stime_resolved.%s' % (
+            site_name.replace(" ", "_"), desc_out.strip("."),
+            scheme_desc, graphic_ext.strip("."))
         fname = path.join(output_dir, fname)
+
         myfig = isite_nh.plot_timedep_ctcs(panelheight,
                                            color_scheme=_my_color_schemes(curve_color),
                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
@@ -811,7 +819,9 @@ def interface(
                             stride=stride, return_time=True,
                             consolidate=False,
                             chunksize=chunksize_in_frames,
-                            n_jobs=n_jobs)
+                            n_jobs=n_jobs,
+                           # scheme=scheme
+                            )
 
     # Stack all data
     actcs = np.vstack(ctcs)
@@ -882,8 +892,8 @@ def interface(
     print("The following files have been created")
     print(fname)
     fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
+    neighborhood.table_summary(ctc_cutoff_Ang, fname_excel)
     print(fname_excel)
-    neighborhood.frequency_table(ctc_cutoff_Ang)[["freq","label","sum"]].to_excel(fname_excel)
     if plot_timedep:
         fname = '%s.time_resolved.%s' % (output_desc,
                                          graphic_ext.strip("."))
