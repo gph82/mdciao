@@ -644,6 +644,7 @@ class contact_group(object):
         freqs_dict = self.frequency_per_residue(ctc_cutoff_Ang,
                                                 sort=True,
                                                 list_by_interface=list_by_interface)
+        # TODO this code is repeated in table_by_residue
         if list_by_interface:
             label_bars = list(freqs_dict[0].keys())+list(freqs_dict[1].keys())
             freqs = _np.array(list(freqs_dict[0].values())+list(freqs_dict[1].values()))
@@ -713,8 +714,9 @@ class contact_group(object):
             if plot_N_ctcs:
                 n_rows +=1
             myfig, myax = _plt.subplots(n_rows, 1,
-                                        figsize=(10, n_rows * panelheight))
-
+                                        figsize=(10, n_rows * panelheight),
+                                        squeeze=False)
+            myax = myax[:,0]
             # Plot individual contacts
             for ictc, iax in zip(self._contacts, myax[:self.n_ctcs]):
                 plot_contact(ictc,iax,
