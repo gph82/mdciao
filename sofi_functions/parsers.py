@@ -94,6 +94,13 @@ def _parser_add_nomenclature(parser):
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                              "Default is None.",
                         default='None')
+    parser.add_argument("--BW_write",dest='write_to_disk_BW',action="store_true",
+                        help='Write the BW definitions to disk so that it can be acessed locally in later uses. '
+                             'Default is False',
+                        default=False)
+    parser.add_argument("--no-BW_write", dest='write_to_disk_BW', action="store_false",
+                        default=True)
+    parser.set_defaults(write_to_disk_BW=False)
     parser.add_argument("--CGN_PDB", type=str, help="PDB code for a consensus G-protein nomenclature", default='None')
 
 def _parser_add_graphic_ext(parser):
