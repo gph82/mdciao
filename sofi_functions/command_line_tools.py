@@ -522,7 +522,7 @@ def sites(topology,
             site_name.replace(" ", "_"), desc_out.strip("."), graphic_ext.strip("."))
         fname = path.join(output_dir, fname)
         myfig = isite_nh.plot_timedep_ctcs(panelheight,
-                                           _my_color_schemes(curve_color),
+                                           color_scheme=_my_color_schemes(curve_color),
                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
                                            n_smooth_hw=n_smooth_hw,
                                            dt=dt,
