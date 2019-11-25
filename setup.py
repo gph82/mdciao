@@ -11,7 +11,8 @@ setup(
     "numpy",
     "msmtools",
     "scipy",
-    "joblib"
+    "joblib",
+        "xlrd",
     "biopython",
     "ipython",
     "XlsxWriter", # 
