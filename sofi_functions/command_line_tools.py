@@ -696,6 +696,7 @@ def interface(
         interactive=True,
         n_jobs=1,
         n_nearest=0,
+        write_to_disk_BW=False
 ):
     dt = _t_unit2dt(t_unit)
 
@@ -730,7 +731,8 @@ def interface(
 
     BW, BWtf = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments,
                                        return_tf=True,
-                                       accept_guess=accept_guess)
+                                       accept_guess=accept_guess,
+                                       write_to_disk=write_to_disk_BW)
     fragment_defs = {}
     if str(BW_uniprot).lower() != 'none':
         print("INFO: these are the BW fragments mapped onto your topology")
