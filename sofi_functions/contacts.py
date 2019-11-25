@@ -688,6 +688,46 @@ class contact_group(object):
 
         return jax
 
+    def table_summary(self,ctc_cutoff_Ang,
+                      fname_excel,
+                      offset=0):
+
+
+        from pandas import ExcelWriter as _ExcelWriter
+        writer = _ExcelWriter(fname_excel, engine='xlsxwriter')
+        workbook = writer.book
+        worksheet = workbook.add_worksheet('Result')
+        writer.sheets['Result'] = worksheet
+
+        worksheet.write_string(0, offset, 'Contacts by frequency')
+        offset+=1
+        self.frequency_table(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}).to_excel(writer,
+                                                                                   index=False,
+                                                                                   sheet_name='Result',
+                                                                                   startrow=offset,
+                                                                                   startcol=0,
+                                                                                   columns=["label",
+                                                                                            "freq",
+                                                                                            "sum"],
+                                                                                     )
+        offset+=self.n_ctcs+4
+        worksheet.write_string(self.n_ctcs + offset, 0, 'Av. # ctcs by residue')
+        offset+=1
+        per_residue_dict = self.frequency_table_by_residue(ctc_cutoff_Ang,
+                                                           list_by_interface=True)
+
+        _DF(per_residue_dict).round({"freq": 2, "label": 2}).to_excel(writer,
+                                                                      sheet_name='Result',
+                                                                      startrow=offset,
+                                                                      startcol=0,
+                                                                      columns=[
+                                                                          "label",
+                                                                          "freq"],
+                                                                      index=False
+                                                                      )
+
+        writer.save()
+
     def add_tilted_labels_to_patches(self, jax, labels,
                                      label_fontsize_factor=1,
                                      trunc_y_labels_at=.65):
@@ -847,6 +887,20 @@ class contact_group(object):
                           }
                          )
         return dicts
+
+    def frequency_table_by_residue(self, ctc_cutoff_Ang,
+                                   list_by_interface=False):
+        dict_list = self.frequency_per_residue(ctc_cutoff_Ang,
+                                               list_by_interface=list_by_interface)
+
+        if list_by_interface:
+            label_bars = list(dict_list[0].keys()) + list(dict_list[1].keys())
+            freqs = _np.array(list(dict_list[0].values()) + list(dict_list[1].values()))
+        else:
+            label_bars, freqs = list(dict_list.keys()), list(dict_list.values())
+
+        return _DF({"label":label_bars,
+                    "freq":freqs})
 
     def frequency_table(self, ctc_cutoff_Ang):
         idf = _DF([ictc.frequency_dict(ctc_cutoff_Ang) for ictc in self._contacts])
