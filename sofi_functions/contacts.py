@@ -187,9 +187,14 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
         running_f += igeom.n_frames
         inform(ixtc, jj, running_f)
         itime.append(igeom.time)
-        jctcs, jidx_pairs = _md.compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
-        # TODO do proper list comparison and do it only once
-        assert len(jidx_pairs) == len(ctc_residxs_pairs)
+            #TODO make lambda out of this if
+        if 'scheme' in mdcontacts_kwargs.keys() and mdcontacts_kwargs["scheme"].upper()=='COM':
+            jctcs = geom2COMdist(igeom, ctc_residxs_pairs)
+        else:
+            jctcs, jidx_pairs = _md.compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
+            # TODO do proper list comparison and do it only once
+            assert len(jidx_pairs) == len(ctc_residxs_pairs)
+
         ictcs.append(jctcs)
 
     itime = _np.hstack(itime)
