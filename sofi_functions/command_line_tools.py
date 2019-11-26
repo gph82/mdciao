@@ -96,7 +96,6 @@ def _guess_by_nomenclature(Ntf, top, fragments, nomenclature_name,
                            return_str=True, accept_guess=False,
                            **guess_kwargs):
     guess = _guess_nomenclature_fragments(Ntf, top, fragments,**guess_kwargs)
-    print(guess)
     print("%s-numbering aligns best with fragments: %s (first-last: %s-%s)."
           % (nomenclature_name,str(guess),
              top.residue(fragments[guess[0]][0]),
@@ -409,6 +408,7 @@ def sites(topology,
           graphic_dpi=150,
           output_desc="sites",
           short_AA_names=False,
+          write_to_disk_BW=False,
           ):
     dt = _t_unit2dt(t_unit)
 
@@ -444,7 +444,8 @@ def sites(topology,
         print(" ", frag_name)
 
     # Do we want BW definitions
-    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments)
+    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments,
+                                 write_to_disk=write_to_disk_BW)
 
     # Dow we want CGN definitions:
     CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
@@ -698,6 +699,7 @@ def interface(
         n_nearest=0,
         write_to_disk_BW=False
 ):
+    output_desc = output_desc.strip(".")
     dt = _t_unit2dt(t_unit)
 
     if isinstance(trajectories,str):
@@ -840,6 +842,7 @@ def interface(
         if ifreq > 0:
             pair = ctc_idxs_receptor_Gprot[idx]
             consensus_labels = [_relabel_consensus(idx, [BW, CGN], no_key=shorten_AA(refgeom.top.residue(idx),
+                                                                                     substitute_fail=0,
                                                                                      keep_index=True)) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
             ctc_objs.append(contact_pair(pair,
@@ -872,7 +875,7 @@ def interface(
     # One loop for the histograms
     _rcParams["font.size"] = panelsize * panelsize2font
     neighborhood.histo_site(ctc_cutoff_Ang,
-                            output_desc.strip("."),
+                            output_desc,
                             jax=histoax[0],
                             xlim=np.min((n_ctcs,neighborhood.n_ctcs)),
                             label_fontsize_factor=panelsize2font / panelsize,
@@ -881,7 +884,7 @@ def interface(
                             )
 
     neighborhood.histo_summary(ctc_cutoff_Ang,
-                               output_desc.strip('.'),
+                               output_desc,
                                jax=histoax[1],
                                list_by_interface=True,
                                label_fontsize_factor=panelsize2font / panelsize,
