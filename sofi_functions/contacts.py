@@ -1072,12 +1072,18 @@ def plot_contact(ictc, iax,
                  gray_background=False,
                  shorten_AAs=False,
                  t_unit='ps',
+                 ylim_Ang=10,
                  ):
     if color_scheme is None:
         color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
     color_scheme = _np.tile(color_scheme, _np.ceil(ictc.n_trajs/len(color_scheme)).astype(int)+1)
     iax.set_ylabel('D / $\\AA$', rotation=90)
-    iax.set_ylim([0, 10])
+    if isinstance(ylim_Ang, (int, float)):
+        iax.set_ylim([0, ylim_Ang])
+    elif isinstance(ylim_Ang, str) and ylim_Ang.lower()== 'auto':
+        pass
+    else:
+        raise ValueError("Cannot understand your ylim value %s of type %s" % (ylim_Ang,type(ylim_Ang)))
     for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(ictc.ctc_trajs,
                                                                 ictc.time_arrays,
                                                                 ictc.trajlabels)):
@@ -1099,13 +1105,15 @@ def plot_contact(ictc, iax,
     if ctc_cutoff_Ang>0:
         ctc_label += " (%u%%)"%(ictc.frequency_overall_trajs(ctc_cutoff_Ang) * 100)
 
-    iax.text(_np.mean(iax.get_xlim()), 1,
+    iax.text(_np.mean(iax.get_xlim()), 1*10/_np.max((10, iax.get_ylim()[1])), #fudge factor for labels
              ctc_label,
              ha='center')
     if ctc_cutoff_Ang>0:
         iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
+
     iax.set_xlabel('t / %s' % _replace4latex(t_unit))
     iax.set_xlim([0, ictc.time_max * dt])
+    iax.set_ylim([0,iax.get_ylim()[1]])
 
 
 def plot_w_smoothing_auto(iax, x, y,

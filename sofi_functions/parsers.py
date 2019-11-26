@@ -73,6 +73,11 @@ def _parser_add_scheme(parser):
                              "{'ca', 'closest', 'closest-heavy', 'sidechain', 'sidechain-heavy'}. "
                              "See mdtraj documentation for more info")
 
+def _parser_add_ylim_Ang(parser):
+    parser.add_argument("--ylim_Ang",type=str, default="10",
+                        help="Limit in Angstrom of the y-axis of the time-traces. Default is 10. "
+                             "Switch to any other float or 'auto' for automatic scaling")
+
 def _parser_add_t_unit(parser):
     parser.add_argument("--t_unit", type=str,
                         help="Unit used for the temporal axis, default is ns.",
@@ -186,6 +191,7 @@ def parser_for_sites():
     _parser_add_curve_color(parser)
     _parser_add_gray_backgroud(parser)
     _parser_add_graphic_dpi(parser)
+    _parser_add_ylim_Ang(parser)
     return parser
 
 

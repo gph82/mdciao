@@ -409,8 +409,11 @@ def sites(topology,
           output_desc="sites",
           short_AA_names=False,
           write_to_disk_BW=False,
+          ylim_Ang=10,
           ):
     dt = _t_unit2dt(t_unit)
+    if not isinstance(ylim_Ang,str):
+        ylim_Ang = np.float(ylim_Ang)
 
     # todo this is an ad-hoc for a powerpoint presentation
     from matplotlib import rcParams
@@ -538,7 +541,8 @@ def sites(topology,
                                            t_unit=t_unit,
                                            gray_background=gray_background,
                                            shorten_AAs=short_AA_names,
-                                           plot_N_ctcs=False
+                                           plot_N_ctcs=False,
+                                           ylim_Ang=ylim_Ang,
                                            )
         # One title for all axes on top
         myfig.axes[0].set_title("site: %s" % (isite["name"]))
