@@ -690,41 +690,56 @@ class contact_group(object):
 
     def table_summary(self,ctc_cutoff_Ang,
                       fname_excel,
+                      sort=False,
                       offset=0):
 
 
         from pandas import ExcelWriter as _ExcelWriter
         writer = _ExcelWriter(fname_excel, engine='xlsxwriter')
         workbook = writer.book
-        worksheet = workbook.add_worksheet('Result')
-        writer.sheets['Result'] = worksheet
-
-        worksheet.write_string(0, offset, 'Contacts by frequency')
+        writer.sheets["pairs by frequency"] = workbook.add_worksheet('pairs by frequency')
+        writer.sheets["pairs by frequency"].write_string(0, offset,
+                                      'pairs by frequency')
         offset+=1
         self.frequency_table(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}).to_excel(writer,
                                                                                    index=False,
-                                                                                   sheet_name='Result',
+                                                                                   sheet_name='pairs by frequency',
                                                                                    startrow=offset,
                                                                                    startcol=0,
                                                                                    columns=["label",
                                                                                             "freq",
                                                                                             "sum"],
                                                                                      )
-        offset+=self.n_ctcs+4
-        worksheet.write_string(self.n_ctcs + offset, 0, 'Av. # ctcs by residue')
+        offset = 0
+        writer.sheets["residues by frequency"] = workbook.add_worksheet('residues by frequency')
+        writer.sheets["residues by frequency"].write_string(offset, 0, 'Av. # ctcs by residue')
         offset+=1
-        per_residue_dict = self.frequency_table_by_residue(ctc_cutoff_Ang,
-                                                           list_by_interface=True)
 
-        _DF(per_residue_dict).round({"freq": 2, "label": 2}).to_excel(writer,
-                                                                      sheet_name='Result',
-                                                                      startrow=offset,
-                                                                      startcol=0,
-                                                                      columns=[
-                                                                          "label",
-                                                                          "freq"],
-                                                                      index=False
-                                                                      )
+        per_residue_dict = self.frequency_per_residue(ctc_cutoff_Ang,
+                                                      sort=sort,
+                                                      list_by_interface=True)
+        idfs = [_DF({"label":list(per_residue_dict[ii].keys()),
+                     "freq": list(per_residue_dict[ii].values())}) for ii in [0,1]]
+
+        idfs[0].round({"freq": 2}).to_excel(writer,
+                                              sheet_name='residues by frequency',
+                                              startrow=offset,
+                                              startcol=0,
+                                              columns=[
+                                                  "label",
+                                                  "freq"],
+                                              index=False
+                                              )
+        #Undecided about best placement for thise
+        idfs[1].round({"freq": 2}).to_excel(writer,
+                                                 sheet_name='residues by frequency',
+                                                 startrow=offset,
+                                                 startcol=2+1,
+                                                 columns=[
+                                                     "label",
+                                                     "freq"],
+                                                 index=False
+                                                 )
 
         writer.save()
 
