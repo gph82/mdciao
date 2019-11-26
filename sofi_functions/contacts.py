@@ -715,11 +715,11 @@ class contact_group(object):
         writer.sheets["residues by frequency"].write_string(offset, 0, 'Av. # ctcs by residue')
         offset+=1
 
-        per_residue_dict = self.frequency_per_residue(ctc_cutoff_Ang,
-                                                      sort=sort,
-                                                      list_by_interface=True)
-        idfs = [_DF({"label":list(per_residue_dict[ii].keys()),
-                     "freq": list(per_residue_dict[ii].values())}) for ii in [0,1]]
+        idfs = self.frequency_per_residue(ctc_cutoff_Ang,
+                                          sort=sort,
+                                          list_by_interface=True,
+                                          return_as_dataframe=True)
+
 
         idfs[0].round({"freq": 2}).to_excel(writer,
                                               sheet_name='residues by frequency',
@@ -930,8 +930,10 @@ class contact_group(object):
         dict_sum = {key:_np.sum(val) for key, val in dict_sum.items()}
         return dict_sum
 
-    def frequency_per_residue(self, ctc_cutoff_Ang, sort=True,
-                              list_by_interface=False):
+    def frequency_per_residue(self, ctc_cutoff_Ang,
+                              sort=True,
+                              list_by_interface=False,
+                              return_as_dataframe=False):
         freqs = self.frequency_per_residue_idx(ctc_cutoff_Ang)
         dict_out = {}
         keys = list(freqs.keys())
@@ -954,6 +956,16 @@ class contact_group(object):
                     for jlab in ilabs:
                        _dict_out[ii][jlab]=dict_out[jlab]
             dict_out = _dict_out
+
+            if return_as_dataframe:
+                dict_out = [_DF({"label": list(dict_out[ii].keys()),
+                                 "freq":  list(dict_out[ii].values())}) for ii in [0, 1]]
+        else:
+            if return_as_dataframe:
+                _DF({"label": list(dict_out.keys()),
+                     "freq": list(dict_out.values())})
+
+
         return dict_out
 
 
