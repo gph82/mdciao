@@ -275,6 +275,7 @@ def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragmen
     final_look = final_look[_np.argsort(ctcs_mean[final_look])][::-1]
     return final_look
 
+# TODO DON'T I HAVE A COPY OF THIS IN .contacs?
 def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1,consolidate=True,
               chunksize=1000, return_time=False, c=True):
     ctcs = []
@@ -581,7 +582,7 @@ def igeom2mindist_COMdist_truncation(igeom,
                                      res_COM_cutoff_Ang=25,
                                      ):
 
-
+    from sofi_functions.contacts import geom2COMxyz
     COMs_xyz = geom2COMxyz(igeom)
 
     COMs_dist_triu = _np.array([pdist(ixyz) for ixyz in COMs_xyz])
@@ -610,39 +611,6 @@ def COM_n_from_COM_dist_triu(COM_dist_triu,
     assert _np.ndim(COM_dist_triu)==2
     COM_dist_bool_int = (COM_dist_triu<=cutoff_nm).astype("int")
     return COM_dist_bool_int
-
-
-def geom2COMxyz(igeom, residue_idxs=None):
-    r"""
-    Returns the time trace of the mass-weighted,
-    per-residue center-of-mass (COM) in cartesian coordinates
-
-    Parameters
-    ----------
-    igeom : :obj:`mdtraj.Trajectory`
-
-    residue_idxs : iterable, default is None
-        Residues for which the center of mass will be computed. Default
-        is to compute all residues. The excluded residues will appear
-        as np.nans in the returned value, which has the same shape
-        regardless of the input
-
-    Returns
-    -------
-    rCOMs : numpy.ndarray of shape (igeom.n_frames, igeom.n_residues,3)
-
-    """
-
-    if residue_idxs is None:
-        residue_idxs=_np.arange(igeom.top.n_residues)
-    masses = [_np.hstack([aa.element.mass for aa in rr.atoms]) for rr in
-              igeom.top.residues]
-    COMs_res_time_coords = _np.zeros((igeom.n_residues,igeom.n_frames,3))
-    COMs_res_time_coords[:,:,:] = _np.nan
-    COMs_res_time_coords[residue_idxs] = [_np.average(igeom.xyz[:, [aa.index for aa in igeom.top.residue(index).atoms], :], axis=1, weights=masses[index])
-                            for index in residue_idxs]
-    COMs_time_res_coords = _np.swapaxes(_np.array(COMs_res_time_coords),0,1)
-    return COMs_time_res_coords
 
 def __find_by_AAresSeq(top, key):
     return [rr.index for rr in top.residues if key == '%s%u' % (rr.code, rr.resSeq)]
