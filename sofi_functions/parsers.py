@@ -56,6 +56,13 @@ def _parser_add_chunk(parser,help="Trajectories are read in chunks of this size 
                         help=help,
                         default=default)
 
+def _parser_add_time_traces(parser):
+    parser.add_argument('--time-trace', dest="plot_timedep", action='store_true',
+                        help='Plot time-traces of the contacts, default is True')
+    parser.add_argument('--no-time-trace', dest="plot_timedep", action='store_false',
+                       )
+    parser.set_defaults(plot_timedep=True)
+
 def _parser_add_smooth(parser):
     parser.add_argument("--n_smooth_hw", type=int,
                         help="Number of frames one half of the averaging window for the time-traces. Default is 0, which means no averaging.",
@@ -322,6 +329,7 @@ def parser_for_interface():
     _parser_add_n_neighbors(parser, default=0)
     _parser_add_stride(parser)
     _parser_add_smooth(parser)
+    _parser_add_time_traces(parser)
     _parser_add_n_jobs(parser)
     #_parser_add_fragment_names(parser)
 
