@@ -463,11 +463,13 @@ class BW_transformer(consensus_labeler):
                  ref_path=".",
                  verbose=True,
                  try_web_lookup=True,
+                 #todo write to disk should be moved to the superclass at some point
                  write_to_disk=False):
 
         xlsxname = '%s.xlsx'%uniprot_name
         if _path.exists(xlsxname):
             self._dataframe = _read_excel(xlsxname, converters={"BW":str}).replace({_np.nan:None})
+            print("read %s locally."%xlsxname)
         else:
             self._dataframe = _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name, verbose=verbose)
             if write_to_disk:
