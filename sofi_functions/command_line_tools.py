@@ -513,17 +513,17 @@ def sites(topology,
                          )
 
 
+    if scheme!="closest-heavy":
+        scheme_desc='%s.'%scheme
+    else:
+        scheme_desc=''
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
+    fname = "%s.overall.%s%s" % (output_desc, scheme_desc, graphic_ext.strip("."))
     fname = path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi)
     plt.close(histofig)
     print("The following files have been created")
     print(fname)
-    if scheme!="closest-heavy":
-        scheme_desc='.%s.'%scheme
-    else:
-        scheme_desc=''
     for site_name, isite_nh in site_as_gc.items():
         fname = 'site.%s.%s.%stime_resolved.%s' % (
             site_name.replace(" ", "_"), desc_out.strip("."),
