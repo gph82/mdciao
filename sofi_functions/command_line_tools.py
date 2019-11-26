@@ -860,7 +860,13 @@ def interface(
                                  interface_residxs=interface_residx_short)
     print()
     print(neighborhood.frequency_table(ctc_cutoff_Ang).round({"freq":2,"sum":2}))
-
+    print()
+    dfs = neighborhood.frequency_per_residue(ctc_cutoff_Ang,
+                                             list_by_interface=True,
+                                             return_as_dataframe=True)
+    print(dfs[0].round({"freq":2}))
+    print()
+    print(dfs[1].round({"freq":2}))
     panelheight = 3
     n_cols = 1
     n_rows = 2
