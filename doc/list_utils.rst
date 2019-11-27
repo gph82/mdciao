@@ -3,7 +3,7 @@ list_utils
 
 Utils for operations on list
 
-.. currentmodule:: sofi_functions.list_utils
+.. currentmodule:: mdciao.list_utils
 
 .. autosummary::
     is_iterable
@@ -15,5 +15,5 @@ Utils for operations on list
     in_what_fragment
     exclude_same_fragments_from_residx_pairlist
 
-.. automodule:: sofi_functions.list_utils
+.. automodule:: mdciao.list_utils
    :members:

@@ -1,7 +1,7 @@
 #!/home/perezheg/miniconda3/bin/python
 
-from sofi_functions.command_line_tools import site_figures
-from sofi_functions.parsers import _parser_add_topology, _parser_add_sites, _parser_add_nomenclature
+from mdciao.command_line_tools import site_figures
+from mdciao.parsers import _parser_add_topology, _parser_add_sites, _parser_add_nomenclature
 import argparse
 
 # Get and instantiate parser

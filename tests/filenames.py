@@ -3,7 +3,7 @@ class filenames(object):
     def __init__(self):
         # Check
         # https://docs.python.org/3.7/tutorial/modules.html#packages-in-multiple-directories
-        from sofi_functions import __path__ as sfpath
+        from mdciao import __path__ as sfpath
         assert len(sfpath) == 1
         sfpath = path.split(sfpath[0])[0]
         self.examples_path = path.join(sfpath, 'examples')

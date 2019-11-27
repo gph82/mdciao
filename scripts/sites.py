@@ -1,7 +1,7 @@
 #!/home/perezheg/miniconda3/bin/python
 
-from sofi_functions.command_line_tools import sites
-from sofi_functions.parsers import parser_for_sites
+from mdciao.command_line_tools import sites
+from mdciao.parsers import parser_for_sites
 
 # Get and instantiate parser
 parser = parser_for_sites()

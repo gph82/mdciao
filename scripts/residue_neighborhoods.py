@@ -1,7 +1,7 @@
 #!/home/perezheg/miniconda3/bin/python
 import numpy as np
-from sofi_functions.parsers import parser_for_rn
-from sofi_functions.command_line_tools import residue_neighborhoods
+from mdciao.parsers import parser_for_rn
+from mdciao.command_line_tools import residue_neighborhoods
 
 # Get and instantiate parser
 parser = parser_for_rn()

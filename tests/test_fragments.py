@@ -4,7 +4,7 @@ import unittest
 import numpy as _np
 from unittest.mock import patch
 import mock
-from sofi_functions.fragments import get_fragments, \
+from mdciao.fragments import get_fragments, \
     interactive_fragment_picker_by_AAresSeq, interactive_fragment_picker_wip
 from filenames import filenames
 

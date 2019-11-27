@@ -2,7 +2,7 @@ import mdtraj as md
 import unittest
 import numpy as _np
 from filenames import filenames
-from sofi_functions.bond_utils import top2residue_bond_matrix, bonded_neighborlist_from_top
+from mdciao.bond_utils import top2residue_bond_matrix, bonded_neighborlist_from_top
 
 test_filenames = filenames()
 

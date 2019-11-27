@@ -1,7 +1,7 @@
 import unittest
 import numpy as _np
 
-from sofi_functions.list_utils import exclude_same_fragments_from_residx_pairlist, \
+from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
     does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand
 

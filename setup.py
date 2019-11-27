@@ -1,8 +1,7 @@
 from setuptools import setup, find_packages
 setup(
-    name="sofi_functions",
+    name="mdciao",
     version="0.1",
-    #packages="sofi_functions", # find_packages() is not really needed for now
     packages=find_packages(),
     install_requires=[
     "pandas",

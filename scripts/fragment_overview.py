@@ -1,6 +1,6 @@
 #!/home/perezheg/miniconda3/bin/python
-from sofi_functions.parsers import parser_for_frag_overview
-from sofi_functions.fragments import get_fragments
+from mdciao.parsers import parser_for_frag_overview
+from mdciao.fragments import get_fragments
 import mdtraj as _md
 import argparse
 

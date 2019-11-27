@@ -1,7 +1,7 @@
 import mdtraj as md
 import unittest
 from filenames import filenames
-from sofi_functions.aa_utils import find_AA, int_from_AA_code, name_from_AA, shorten_AA
+from mdciao.aa_utils import find_AA, int_from_AA_code, name_from_AA, shorten_AA
 
 test_filenames = filenames()
 

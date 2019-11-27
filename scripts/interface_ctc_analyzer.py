@@ -1,9 +1,9 @@
 #!/home/perezheg/miniconda3/bin/python
-from sofi_functions.command_line_tools import interface
-from sofi_functions.parsers import parser_for_interface
+from mdciao.command_line_tools import interface
+from mdciao.parsers import parser_for_interface
 parser = parser_for_interface()
 a  = parser.parse_args()
-#from sofi_functions.command_line_tools import _inform_of_parser
+#from mdciao.command_line_tools import _inform_of_parser
 #_inform_of_parser(parser)
 
 # Make a dictionary out ot of it and pop the positional keywords

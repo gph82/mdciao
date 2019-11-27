@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'sofi_functions'
+project = 'mdciao'
 copyright = '2019, Guillermo Perez-Hernandez, Sofi Tiwari'
 author = 'Guillermo Perez-Hernandez, Sofi Tiwari'
 

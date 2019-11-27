@@ -287,8 +287,8 @@ class consensus_labeler(object):
         defs : dictionary (if return_defs is True)
             Dictionary with subdomain names as keys and lists of indices as values
         """
-        from sofi_functions.list_utils import in_what_fragment
-        from sofi_functions.fragments import _print_frag
+        from mdciao.list_utils import in_what_fragment
+        from mdciao.fragments import _print_frag
 
         if map is None:
             print("creating a temporary map, this is dangerous")
@@ -521,7 +521,7 @@ def _top2consensus_map(consensus_dict, top,
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
     seq = ''.join([_shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
-    from sofi_functions.aa_utils import name_from_AA as _name_from_AA
+    from mdciao.aa_utils import name_from_AA as _name_from_AA
     seq_consensus= ''.join([_name_from_AA(key) for key in consensus_dict.keys()])
     alignment = _alignment_result_to_list_of_dicts(_my_bioalign(seq, seq_consensus)[0],
                                                    top,

@@ -5,12 +5,12 @@ from unittest.mock import Mock
 import numpy as _np
 import mock
 from filenames import filenames
-from sofi_functions.contacts import ctc_freq_reporter_by_residue_neighborhood, xtcs2ctcs
+from mdciao.contacts import ctc_freq_reporter_by_residue_neighborhood, xtcs2ctcs
 
 test_filenames = filenames()
 class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
     def setUp(self):
-        from sofi_functions.fragments import get_fragments, interactive_fragment_picker_by_AAresSeq
+        from mdciao.fragments import get_fragments, interactive_fragment_picker_by_AAresSeq
         self.geom = md.load(test_filenames.file_for_test_pdb)
         self.by_bonds_geom = get_fragments(self.geom.top,
                                                      verbose=True,
@@ -81,7 +81,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
 
 
     def test_ctc_freq_reporter_by_residue_neighborhood_keyboard_interrupt(self):
-        from sofi_functions.fragments import interactive_fragment_picker_by_AAresSeq
+        from mdciao.fragments import interactive_fragment_picker_by_AAresSeq
         ctcs_mean = [30, 5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
         with unittest.mock.patch('builtins.input', side_effect=KeyboardInterrupt):

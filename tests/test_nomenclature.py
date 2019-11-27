@@ -2,8 +2,8 @@ import unittest
 import mdtraj as md
 import numpy as _np
 from os import path
-from sofi_functions.nomenclature_utils import *
-from sofi_functions.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps, _fill_BW_gaps
+from mdciao.nomenclature_utils import *
+from mdciao.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps, _fill_BW_gaps
 from filenames import filenames
 
 test_filenames = filenames()

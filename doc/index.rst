@@ -1,9 +1,9 @@
-.. sofi_functions documentation master file, created by
+.. mdciao documentation master file, created by
    sphinx-quickstart on Fri Sep  6 11:54:24 2019.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to sofi_functions's documentation!
+Welcome to mdciao's documentation!
 ==========================================
 
 The main goal of this Python library is to provide the command-line

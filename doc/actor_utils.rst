@@ -12,5 +12,5 @@ with them. These methods are used in the command line tools
 * residue_neighborhoods.py
 * sites.py
 
-.. automodule:: sofi_functions.actor_utils
+.. automodule:: mdciao.actor_utils
    :members:

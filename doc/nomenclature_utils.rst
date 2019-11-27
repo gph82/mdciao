@@ -6,7 +6,7 @@ Utils for handling nomenclature related functionality. Currently handles:
  * Common G-protein nomenclature (CGN) (https://www.mrc-lmb.cam.ac.uk/CGN/index.html)
 
 
-.. currentmodule:: sofi_functions.nomenclature_utils
+.. currentmodule:: mdciao.nomenclature_utils
 
 .. autosummary::
     CGN_transformer
@@ -16,8 +16,8 @@ Utils for handling nomenclature related functionality. Currently handles:
 
     top2CGN_by_AAcode
 
-.. automodule:: sofi_functions.nomenclature_utils
+.. automodule:: mdciao.nomenclature_utils
    :members:
 
-.. autoclass:: sofi_functions.nomenclature_utils.CGN_transformer
+.. autoclass:: mdciao.nomenclature_utils.CGN_transformer
    :members:

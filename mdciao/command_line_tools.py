@@ -11,30 +11,30 @@ from os import path, mkdir
 from tempfile import TemporaryDirectory as _TD
 from glob import glob as _glob
 
-from sofi_functions.fragments import \
+from mdciao.fragments import \
     interactive_fragment_picker_by_AAresSeq as _interactive_fragment_picker_by_AAresSeq, \
     get_fragments, _print_frag, \
     interactive_fragment_picker_by_resSeq as _interactive_fragment_picker_by_resSeq
 
-from sofi_functions.nomenclature_utils import \
+from mdciao.nomenclature_utils import \
     CGN_transformer, BW_transformer,\
     _relabel_consensus, _guess_nomenclature_fragments
 
-from sofi_functions.contacts import \
+from mdciao.contacts import \
     ctc_freq_reporter_by_residue_neighborhood, \
     xtcs2ctcs,contact_group, contact_pair
 
-from sofi_functions.list_utils import \
+from mdciao.list_utils import \
     rangeexpand, \
     unique_list_of_iterables_by_tuple_hashing, \
     in_what_fragment
 
-from sofi_functions.bond_utils import \
+from mdciao.bond_utils import \
     bonded_neighborlist_from_top
 
-from sofi_functions.fragments import my_frag_colors as mycolors
+from mdciao.fragments import my_frag_colors as mycolors
 
-from sofi_functions.parsers import \
+from mdciao.parsers import \
     match_dict_by_patterns as _match_dict_by_patterns
 
 def _inform_of_parser(parser):

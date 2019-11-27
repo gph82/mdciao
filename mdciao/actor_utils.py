@@ -3,9 +3,9 @@ import mdtraj as _md
 from scipy.spatial.distance import pdist
 from matplotlib import pyplot as _plt
 
-from sofi_functions.fragments import get_fragments as _get_fragments
+from mdciao.fragments import get_fragments as _get_fragments
 
-from sofi_functions.list_utils import in_what_N_fragments, in_what_fragment, exclude_same_fragments_from_residx_pairlist
+from mdciao.list_utils import in_what_N_fragments, in_what_fragment, exclude_same_fragments_from_residx_pairlist
 
 #Import needed for the command line scripts
 #from sofi_functions.tested_utils import unique_list_of_iterables_by_tuple_hashing
@@ -582,7 +582,7 @@ def igeom2mindist_COMdist_truncation(igeom,
                                      res_COM_cutoff_Ang=25,
                                      ):
 
-    from sofi_functions.contacts import geom2COMxyz
+    from mdciao.contacts import geom2COMxyz
     COMs_xyz = geom2COMxyz(igeom)
 
     COMs_dist_triu = _np.array([pdist(ixyz) for ixyz in COMs_xyz])
