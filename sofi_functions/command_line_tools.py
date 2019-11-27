@@ -172,7 +172,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           gray_background=False,
                           graphic_dpi=150,
                           short_AA_names=False,
-                          same_fragment=True
+                          same_fragment=True,
+                          write_to_disk_BW=False,
                           ):
 
     if resSeq_idxs is None:
@@ -212,7 +213,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
 
     # Do we want BW definitions
-    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments)
+    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments, write_to_disk=write_to_disk_BW)
 
     # Dow we want CGN definitions:
     CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
