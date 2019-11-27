@@ -49,8 +49,9 @@ def _parser_add_stride(parser,
     parser.add_argument("--stride", type=int,
                         help=help, default=1)
 
-def _parser_add_chunk(parser,help="Trajectories are read in chunks of this size "
-                                  "(helps with big files and memory problems). Default is 10000",
+def _parser_add_chunk(parser,help="Trajectories are read in chunks of this size. "
+                                  "Helps with big files and/or large number of contacts"
+                                  " when you run into memory problems. Default is 10000",
                       default=10000):
     parser.add_argument("--chunksize_in_frames", type=int,
                         help=help,
