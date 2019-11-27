@@ -72,6 +72,7 @@ methods. These methods will gradually be refactored into the any of the above su
    residue_neighborhoods
    sites
    interface_ctc_analyzer
+   fragment_overview
 
 .. toctree::
    :maxdepth: 2

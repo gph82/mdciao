@@ -315,7 +315,10 @@ def parser_for_interface():
                               " - 0-10,15,14 20,21,30-50 51 (example, advanced users only)\n" 
                               "     Input arbitary fragments via their\n"
                               "     residue serial indices (zero-indexed) using space as\n"
-                              "     separator. Not recommended\n"))
+                              "     separator. Not recommended\n."
+                              "If you are unsure of any of these options, use \n"
+                              "the command line tool fragment_overview.py on \n"
+                              "your topology file."))
 
     parser.add_argument("--frag_idxs_group_1", type=str,
                         help="Indices of the fragments that belong to the group_1. "
@@ -436,3 +439,15 @@ def match_dict_by_patterns(patterns_as_csv, index_dict, verbose=False):
         matching_values = _np.hstack([index_dict[key] for key in matching_keys])
 
     return matching_keys, matching_values
+
+def parser_for_frag_overview():
+    parser = argparse.ArgumentParser(description='Provides overview of '
+                                                 'fragments by different methods')
+    parser.add_argument('--methods', help='What methods to test. '
+                                          'Default is all.',
+                        nargs='+',
+                        type=str,
+                        default=['all']
+                        )
+    _parser_add_topology(parser)
+    return parser
