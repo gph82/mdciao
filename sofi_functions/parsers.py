@@ -354,6 +354,12 @@ def parser_for_interface():
     _parser_add_t_unit(parser)
     _parser_add_gray_backgroud(parser)
     _parser_add_short_AA_names(parser)
+    parser.add_argument('--sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_true',
+                        help="When presenting the results summarized by residue, "
+                             " sort by sum of frequencies (~average number of contacts)."
+                             " Defaut is True.")
+    parser.add_argument('--no-sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_false')
+    parser.set_defaults(sort_by_av_ctcs=True)
     return parser
 
 def fnmatch_ex(patterns_as_csv, list_of_keys):

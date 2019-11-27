@@ -702,7 +702,8 @@ def interface(
         interactive=True,
         n_jobs=1,
         n_nearest=0,
-        write_to_disk_BW=False
+        write_to_disk_BW=False,
+        sort_by_av_ctcs=True,
 ):
     output_desc = output_desc.strip(".")
     dt = _t_unit2dt(t_unit)
@@ -868,7 +869,8 @@ def interface(
     print()
     dfs = neighborhood.frequency_per_residue(ctc_cutoff_Ang,
                                              list_by_interface=True,
-                                             return_as_dataframe=True)
+                                             return_as_dataframe=True,
+                                             sort=sort_by_av_ctcs)
     print(dfs[0].round({"freq":2}))
     print()
     print(dfs[1].round({"freq":2}))
@@ -908,7 +910,7 @@ def interface(
     print("The following files have been created")
     print(fname)
     fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
-    neighborhood.table_summary(ctc_cutoff_Ang, fname_excel)
+    neighborhood.table_summary(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
     print(fname_excel)
     if plot_timedep:
         fname = '%s.time_resolved.%s' % (output_desc,
