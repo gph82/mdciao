@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import numpy as _np
 import mock
 from filenames import filenames
-from mdciao.contacts import ctc_freq_reporter_by_residue_neighborhood, xtcs2ctcs
+from mdciao.contacts import ctc_freq_reporter_by_residue_neighborhood, xtcs2ctcs, pick_best_label
 
 test_filenames = filenames()
 class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
@@ -150,6 +150,16 @@ class Test_xtcs2ctcs(unittest.TestCase):
 
         _np.testing.assert_array_almost_equal(ctcs_trajs[:5], self.test_ctcs_trajs[::2], 4)
         assert (_np.array_equal(time_array[:5], self.test_time_array[::2]))
+
+class Test_pick_best_label(unittest.TestCase):
+    def test_pick_best_label_just_works(self):
+        assert (pick_best_label(fallback = "Print this instead",test = "Print this" ) == "Print this")
+
+    def test_pick_best_label_exclude_works(self):
+        assert(pick_best_label(fallback = "Print this instead",test = None) == "Print this instead")
+        assert(pick_best_label(fallback = "Print this instead",test = "None" ) == "Print this instead")
+        assert(pick_best_label(fallback = "Print this instead",test = "NA" ) == "Print this instead")
+        assert(pick_best_label(fallback = "Print this instead",test = "na" ) == "Print this instead")
 
 if __name__ == '__main__':
     unittest.main()
