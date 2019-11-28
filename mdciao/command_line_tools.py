@@ -706,6 +706,7 @@ def interface(
         sort_by_av_ctcs=True,
 ):
     output_desc = output_desc.strip(".")
+    _offer_to_create_dir(output_dir)
     dt = _t_unit2dt(t_unit)
 
     if isinstance(trajectories,str):
