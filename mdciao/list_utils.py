@@ -375,3 +375,11 @@ def pull_one_up_at_this_pos(iterable_in, idx, padding='~',
         for ii, (old, new) in enumerate(zip(iterable_in, iterable_out)):
             print(ii, old, new)
     return iterable_out
+
+def _replace4latex(istr):
+    for gl in ['alpha','beta','gamma', 'mu']:
+        istr = istr.replace(gl,'$\\'+gl+'$')
+
+    if '$' not in istr and any([char in istr for char in ["_"]]):
+        istr = '$%s$'%istr
+    return istr

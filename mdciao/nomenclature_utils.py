@@ -1036,10 +1036,6 @@ def _map2defs(cons_list):
 
     return {key: _np.array(val) for key, val in defs.items()}
 
-
-def order_BW(labels):
-    return order_frags("1 12 2 23 3 34 ICL2 4 45 5 56 ICL3 6 67 7 78 8".split(), labels)
-
 def order_frags(fragment_names, consensus_labels):
     from natsort import natsorted
     labs_out = []
@@ -1055,6 +1051,8 @@ def order_frags(fragment_names, consensus_labels):
             labs_out.append(ilab)
     return labs_out
 
+def order_BW(labels):
+    return order_frags("1 12 2 23 3 34 ICL2 4 45 5 56 ICL3 6 67 7 78 8".split(), labels)
 def order_CGN(labels):
     CGN_fragments = ['G.HN',
                      'G.hns1',
@@ -1093,12 +1091,3 @@ def order_CGN(labels):
                      'G.s6h5',
                      'G.H5']
     return order_frags(CGN_fragments,labels)
-
-# Not necessarily nomenclature but has do to with names and formats
-def _replace4latex(istr):
-    for gl in ['alpha','beta','gamma', 'mu']:
-        istr = istr.replace(gl,'$\\'+gl+'$')
-
-    if '$' not in istr and any([char in istr for char in ["_"]]):
-        istr = '$%s$'%istr
-    return istr

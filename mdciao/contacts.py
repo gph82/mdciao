@@ -1,7 +1,7 @@
 import numpy as _np
 import mdtraj as _md
 from os import path as _path
-from .list_utils import in_what_fragment, re_warp
+from .list_utils import in_what_fragment, re_warp, _replace4latex
 from collections import defaultdict
 
 import matplotlib.pyplot as _plt
@@ -308,10 +308,6 @@ def contact_matrix(trajectories, cutoff_Ang=3,
             mat[jj][ii] = actcs[idx]
 
     return mat
-
-
-from .nomenclature_utils import _replace4latex
-
 
 def pick_best_label(fallback, test, exclude=[None, "None", "NA", "na"]):
     if test not in exclude:
