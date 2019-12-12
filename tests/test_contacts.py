@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import numpy as _np
 import mock
 from filenames import filenames
-from mdciao.contacts import ctc_freq_reporter_by_residue_neighborhood, xtcs2ctcs, pick_best_label
+from mdciao.contacts import ctc_freq_reporter_by_residue_neighborhood, xtcs2ctcs, pick_best_label, contact_pair
 
 test_filenames = filenames()
 class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
@@ -160,6 +160,73 @@ class Test_pick_best_label(unittest.TestCase):
         assert(pick_best_label(fallback = "Print this instead",test = "None" ) == "Print this instead")
         assert(pick_best_label(fallback = "Print this instead",test = "NA" ) == "Print this instead")
         assert(pick_best_label(fallback = "Print this instead",test = "na" ) == "Print this instead")
+
+class Test_contact_pair(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load(test_filenames.file_for_test_pdb)
+
+    def test_contact_pair_just_works(self):
+        contact_pair_test = contact_pair(res_idxs_pair = [0, 1],
+                                                  ctc_trajs = [[1.0, 1.1, 1.3]],
+                                                  time_arrays = [[0, 1, 2]],
+                                                  # top=None,
+                                                  # trajs=None,
+                                                  # fragment_idxs=None,
+                                                  # fragment_names=None,
+                                                  # fragment_colors=None,
+                                                  # anchor_residue_idx=None,
+                                                  # consensus_labels=None
+                                                  )
+        #Checking all the passed arguments
+        assert (contact_pair_test.res_idxs_pair == [0, 1])
+        assert _np.allclose(contact_pair_test.ctc_trajs, [1.0, 1.1, 1.3])
+        assert (contact_pair_test.time_arrays == [[0, 1, 2]])
+        assert (contact_pair_test.n_frames == [3])
+        assert (contact_pair_test.n_trajs == 1)
+        assert (contact_pair_test.time_max == 2)
+        assert (contact_pair_test.trajlabels == ['traj 0'])
+        assert _np.allclose(contact_pair_test.binarize_trajs(12), [True, True, False])
+        assert(round(contact_pair_test.frequency_overall_trajs(12),2) == 0.67)
+        assert list(_np.around(_np.array(contact_pair_test.frequency_per_traj(12)),2) == [0.67])
+
+        assert (contact_pair_test.anchor_fragment_name == None)
+        assert (contact_pair_test.anchor_fragment_name_best == None)
+        assert (contact_pair_test.anchor_fragment_name_consensus == None)
+        assert (contact_pair_test.anchor_index == None)
+        assert (contact_pair_test.anchor_res_and_fragment_str == None)
+        assert (contact_pair_test.anchor_residue == None)
+        assert (contact_pair_test.anchor_residue_index == None)
+        assert (contact_pair_test.consensus_labels == None)
+        assert (contact_pair_test.fragment_colors == None)
+        assert (contact_pair_test.fragment_idxs == None)
+        assert (contact_pair_test.fragment_names == None)
+        assert (contact_pair_test.partner_fragment_name==None)
+        assert (contact_pair_test.partner_fragment_name_best == None)
+        assert (contact_pair_test.partner_fragment_name_consensus == None)
+        assert (contact_pair_test.partner_index == None)
+        assert (contact_pair_test.partner_res_and_fragment_str == 'None@None')
+        assert (contact_pair_test.partner_residue == None)
+        assert (contact_pair_test.partner_residue_index == None)
+        assert (contact_pair_test.top == None)
+        assert (contact_pair_test.topology == None)
+        assert (contact_pair_test.trajs == None)
+
+    def test_contact_pair_with_top(self):
+        contact_pair_test = contact_pair(res_idxs_pair = [0, 1],
+                                                  ctc_trajs = [[1.0, 1.1, 1.3]],
+                                                  time_arrays = [[0, 1, 2]],
+                                                  top = self.geom.top,
+                                                  # trajs=None,
+                                                  # fragment_idxs=None,
+                                                  # fragment_names=None,
+                                                  # fragment_colors=None,
+                                                  # anchor_residue_idx=None,
+                                                  # consensus_labels=None
+                                                  )
+        assert (contact_pair_test.residue_names == ['GLU30', 'VAL31'])
+        assert (contact_pair_test.residue_names_short == ['E30', 'V31'])
+
+
 
 if __name__ == '__main__':
     unittest.main()
