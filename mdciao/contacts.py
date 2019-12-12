@@ -765,7 +765,7 @@ class contact_group(object):
         workbook = writer.book
         writer.sheets["pairs by frequency"] = workbook.add_worksheet('pairs by frequency')
         writer.sheets["pairs by frequency"].write_string(0, offset,
-                                      'pairs by frequency')
+                                      'pairs by contact frequency at %2.1f Angstrom'%ctc_cutoff_Ang)
         offset+=1
         self.frequency_table(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}).to_excel(writer,
                                                                                    index=False,
@@ -778,7 +778,7 @@ class contact_group(object):
                                                                                      )
         offset = 0
         writer.sheets["residues by frequency"] = workbook.add_worksheet('residues by frequency')
-        writer.sheets["residues by frequency"].write_string(offset, 0, 'Av. # ctcs by residue')
+        writer.sheets["residues by frequency"].write_string(offset, 0, 'Av. # ctcs (<%2.1f Ang) by residue '%ctc_cutoff_Ang)
         offset+=1
 
         idfs = self.frequency_per_residue(ctc_cutoff_Ang,

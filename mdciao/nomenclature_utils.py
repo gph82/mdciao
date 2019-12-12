@@ -171,14 +171,12 @@ class consensus_labeler(object):
 
         """
         self._geom = None
-        self._top = None
+        self._ref_top = None
         self._ref_PDB = ref_PDB
         if ref_PDB is not None:
             self._geom, self._PDB_file = PDB_finder(ref_PDB,
                                                     **PDB_finder_kwargs,
                                                     )
-
-            self._top = self._geom.top
 
         self._conlab2AA = {val: key for key, val in self.AA2conlab.items()}
         self._fragment_names = list(self.fragments.keys())
@@ -196,11 +194,17 @@ class consensus_labeler(object):
 
     @property
     def top(self):
-        return self._top
+        return self._geom.top
 
     @property
     def conlab2AA(self):
+        r""" Dictionary with consensus labels as keys, so that e.g. self.AA2BW["3.50"] -> 'R131' """
         return self._conlab2AA
+
+    @property
+    def AA2conlab(self):
+        r""" Dictionary with AA-codes as keys, so that e.g. self.AA2BW[R131] -> '3.50' """
+        return self._AA2conlab
 
     @property
     def fragment_names(self):
@@ -224,35 +228,6 @@ class consensus_labeler(object):
         r""" The file used to instantiate this transformer"""
         return self._tablefile
 
-    @property
-    def AA2conlab(self):
-        r""" Dictionary AA-codes as keys, so that e.g. self.AA2BW[R131] -> '3.50' """
-        return self._AA2conlab
-
-    def top2map(self, top, restrict_to_residxs=None, fill_gaps=False,
-                verbose=False):
-        r""" Align the sequence of :obj:`top` to the transformer's sequence
-        and return a list of BW numbering for each residue in :obj:`top`.
-        If no BW numbering is found after the alignment, the entry will be None
-
-        Parameters
-        ----------
-        top :
-            :py:class:`mdtraj.Topology` object
-        restrict_to_residxs: iterable of integers, default is None
-            Use only these residues for alignment and labelling options.
-            The return list will still be of length=top.n_residues
-
-        Returns
-        -------
-        map : list of len = top.n_residues with the BW numbering entries
-        """
-        return _top2consensus_map(self.AA2conlab, top,
-                                  restrict_to_residxs=restrict_to_residxs,
-                                  keep_consensus=fill_gaps,
-                                  verbose=verbose,
-                                  )
-
     def conlab2residx(self,top,
                       restrict_to_residxs=None,
                       map=None,
@@ -267,9 +242,38 @@ class consensus_labeler(object):
                 out_dict[imap]=ii
         return out_dict
 
-    def top2defs(self, top, return_defs=False,
+    def top2map(self, top, restrict_to_residxs=None, fill_gaps=False,
+                verbose=False):
+        r""" Align the sequence of :obj:`top` to the transformer's sequence
+        and return a list of BW numbering for each residue in :obj:`top`.
+        If no BW numbering is found after the alignment, the entry will be None
+
+        Parameters
+        ----------
+        top :
+            :py:class:`mdtraj.Topology` object
+        restrict_to_residxs: iterable of integers, default is None
+            Use only these residues for alignment and labelling options.
+            The return list will still be of length=top.n_residues
+        fill_gaps: boolean, default is False
+            Try to fill gaps in the consensus nomenclature by calling
+            :obj:`_fill_CGN_gaps`
+
+        Returns
+        -------
+        map : list of len = top.n_residues with the BW numbering entries
+        """
+        return _top2consensus_map(self.AA2conlab, top,
+                                  restrict_to_residxs=restrict_to_residxs,
+                                  keep_consensus=fill_gaps,
+                                  verbose=verbose,
+                                  )
+
+    def top2defs(self, top, map=None,
+                 return_defs=False,
                  fragments=None,
-                 map=None):
+                 fill_gaps=False,
+                 ):
         r"""
         Print the BW transformer's definitions for the subdomains,
         in terms of residue indices of the input :obj:`top`
@@ -278,9 +282,22 @@ class consensus_labeler(object):
         ----------
         top:
             :py:class:`mdtraj.Topology` object
+        map:  list, default is None
+            The user can parse an exisiting "top2map" map, otherwise this
+            method will generate one on the fly. It is recommended (but
+            not needed) to pre-compute and pass such a map in critical
+            cases when naming errors are likely.
         return_defs: boolean, default is False
             If True, apart from printing the definitions,
             they are returned as a dictionary
+        fragments: iterable of integers, default is None
+            The user can parse an existing list of fragment-definitions,
+            to check whether these definitions are broken in the new ones.
+            An interactive prompt will appear in this case
+        fill_gaps: boolean, default is False
+            Try to fill gaps in the consensus nomenclature by calling
+            :obj:`_fill_CGN_gaps`. It has no effect if the user inputs
+            the map
 
         Returns
         -------
@@ -292,7 +309,7 @@ class consensus_labeler(object):
 
         if map is None:
             print("creating a temporary map, this is dangerous")
-            map = self.top2map(top)
+            map = self.top2map(top, fill_gaps=fill_gaps, verbose=False)
 
         conlab2residx = self.conlab2residx(top, map=map)
         defs = _defdict(list)
@@ -593,6 +610,7 @@ def _fill_CGN_gaps(consensus_list, top, verbose=False):
     """
 
     defs = _map2defs(consensus_list)
+    #todo decrease verbosity
     for key, val in defs.items():
 
         # Identify problem cases
