@@ -1143,7 +1143,7 @@ class contact_pair(object):
     #todo consider packing some of this stuff in the site_obj class
     def __init__(self, res_idxs_pair,
                  ctc_trajs,
-                 time_arrays,
+                     time_arrays,
                  top=None,
                  trajs=None,
                  fragment_idxs=None,
@@ -1151,9 +1151,25 @@ class contact_pair(object):
                  fragment_colors=None,
                  anchor_residue_idx=None,
                  consensus_labels=None):
+        """
+
+        Parameters
+        ----------
+        res_idxs_pair : list of residue index pair. The list will have only two values, each corresponding to the
+                        serial number of the residue index.
+        ctc_trajs : list of list, the code converts it into a list of array
+        time_arrays : list of list,
+        top : :py:class:`mdtraj.Topology`
+        trajs:
+        fragment_idxs :
+        fragment_names :
+        fragment_colors :
+        anchor_residue_idx :
+        consensus_labels :
+        """
 
         self._res_idxs_pair = res_idxs_pair
-        self._ctc_trajs = ctc_trajs
+        self._ctc_trajs = [_np.array(itraj) for itraj in ctc_trajs]
         self._top = top
         self._trajs = trajs
 
@@ -1181,8 +1197,13 @@ class contact_pair(object):
         self._consensus_labels = consensus_labels
         self._fragment_idxs  = fragment_idxs
         if fragment_names is None:
-            assert self.fragment_idxs is not None
-            self._fragment_names = self._fragment_idxs
+            # assert self.fragment_idxs is not None
+            # self._fragment_names = self._fragment_idxs
+
+            if self.fragment_idxs is not None:
+                self._fragment_names = self._fragment_idxs
+            else:
+                self._fragment_names = None
         else:
             self._fragment_names = fragment_names
         self._fragment_colors = fragment_colors
@@ -1193,18 +1214,47 @@ class contact_pair(object):
 
     @property
     def fragment_names(self):
+        """
+
+        Returns
+        -------
+        list of list, Fragment names if passed, else fragment idxs. If both are not available then None(default)
+
+        """
         return self._fragment_names
 
     @property
     def fragment_idxs(self):
+        """
+
+        Returns
+        -------
+        list of list, Fragment idxs if passed, else None(default)
+
+        """
         return self._fragment_idxs
 
     @property
     def time_max(self):
+        """
+
+        Returns
+        -------
+        int or float, maximum time from list of list of time
+
+        """
         return self._time_max
 
     @property
     def trajlabels(self):
+        """
+
+        Returns
+        -------
+        list, list of labels for each trajectory if passed.
+        If labels are not passed then labels like 'traj 0','traj 1' and so on are assigned
+
+        """
         if self.trajs is None:
             return ['traj %u'%ii for ii in range(self.n_trajs)]
         else:
@@ -1212,43 +1262,115 @@ class contact_pair(object):
 
     @property
     def n_trajs(self):
+        """
+
+        Returns
+        -------
+        int, total number of trajectories that were passed.
+
+        """
         return self._n_trajs
 
     @property
     def n_frames(self):
+        """
+
+        Returns
+        -------
+        list, list of frames in each trajectory.
+
+        """
         return [len(itraj) for itraj in self.ctc_trajs]
 
     @property
     def anchor_residue(self):
+        """
+
+        Returns
+        -------
+        str, anchor residue if anchor residue index is provided else None
+
+        """
         return self._anchor_residue
 
     @property
     def partner_residue(self):
+        """
+
+        Returns
+        -------
+        str, partner residue if partner residue index is provided else None
+
+        """
         return self._partner_residue
 
     @property
     def res_idxs_pair(self):
+        """
+
+        Returns
+        -------
+        list of residue index pair passed
+
+        """
         return self._res_idxs_pair
 
     @property
     def anchor_residue_index(self):
+        """
+
+        Returns
+        -------
+        int, anchor residue index if passed else None(default)
+
+        """
         return self._anchor_residue_index
 
     @property
     def partner_residue_index(self):
+        """
+
+        Returns
+        -------
+        int, partner residue if passed else (default)
+
+        """
         return self._partner_residue_index
 
     @property
     def residue_names(self):
+        """
+
+        Returns
+        -------
+        list, for each residue index in the residue contact pair, the corresponding residue name from the topology file.
+        example : ['GLU30','VAL212']
+
+        """
         return [str(self.topology.residue(ii)) for ii in self.res_idxs_pair]
 
     @property
     def residue_names_short(self):
+        """
+
+        Returns
+        -------
+        list, for each residue name in the residue contact pair, the corresponding short residue name from the topology file.
+        example : ['E30', 'V212']
+
+        """
         from .aa_utils import shorten_AA as _shorten_AA
         return [_shorten_AA(rr, substitute_fail="long", keep_index=True) for rr in self.residue_names]
 
     @property
     def ctc_label(self):
+        """
+
+        Returns
+        -------
+        str,
+
+        """
         ctc_label = '%s@%s-%s@%s' % (self.residue_names[0],
                                      pick_best_label(self.fragment_names[0], self.consensus_labels[0]),
                                      self.residue_names[1],
@@ -1257,6 +1379,13 @@ class contact_pair(object):
 
     @property
     def ctc_label_short(self):
+        """
+
+        Returns
+        -------
+        str,
+
+        """
         ctc_label = '%s@%s-%s@%s' % (self.residue_names_short[0],
                                      pick_best_label(self.fragment_names[0], self.consensus_labels[0]),
                                      self.residue_names_short[1],
@@ -1265,7 +1394,13 @@ class contact_pair(object):
 
     @property
     def anchor_fragment_name(self):
-        r"""
+        """
+
+        Returns
+        -------
+        str, fragment name in which the anchor residue is present.
+            If no anchor_index is provided then returns None(default)
+
         """
         if self.anchor_index is not None:
             return self.fragment_names[self.anchor_index]
@@ -1274,21 +1409,55 @@ class contact_pair(object):
 
     @property
     def partner_fragment_name(self):
-        r"""
         """
-        return self.fragment_names[self.partner_index]
+
+        Returns
+        -------
+        str, fragment name in which the partner residue is present
+
+        """
+        if self.partner_index is not None:
+            return self.fragment_names[self.partner_index]
+        else:
+            return None
 
     @property
     def partner_fragment_name_consensus(self):
-        return self.consensus_labels[self.partner_index]
+        """
+
+        Returns
+        -------
+        consensus label of the partner residue
+
+        """
+        if self.partner_index is not None:
+            return self.consensus_labels[self.partner_index]
+        else:
+            return None
 
     @property
     def partner_fragment_name_best(self):
-        return pick_best_label(self.partner_fragment_name,
-                               self.partner_fragment_name_consensus)
+        """
+
+        Returns
+        -------
+
+        """
+        if self.partner_index is not None:
+            return pick_best_label(self.partner_fragment_name,
+                                   self.partner_fragment_name_consensus)
+        else:
+            return None
 
     @property
     def anchor_fragment_name_consensus(self):
+        """
+
+        Returns
+        -------
+        consensus label of the anchor residue. If no anchor_index is present then returns None
+
+        """
         if self.anchor_index is not None:
             return self.consensus_labels[self.anchor_index]
         else:
@@ -1296,6 +1465,12 @@ class contact_pair(object):
 
     @property
     def anchor_fragment_name_best(self):
+        """
+
+        Returns
+        -------
+
+        """
         if self.anchor_index is not None:
             return pick_best_label(self.anchor_fragment_name,
                                    self.anchor_fragment_name_consensus)
@@ -1304,6 +1479,12 @@ class contact_pair(object):
 
     @property
     def anchor_res_and_fragment_str(self):
+        """
+
+        Returns
+        -------
+
+        """
         if self.anchor_index is not None:
             return '%s@%s' % (self.anchor_residue,
                               self.anchor_fragment_name_best)
@@ -1312,73 +1493,191 @@ class contact_pair(object):
 
     @property
     def anchor_res_and_fragment_str_short(self):
+        """
+
+        Returns
+        -------
+
+        """
         return '%s@%s' % (self.residue_names_short[self.anchor_index],
                           self.anchor_fragment_name_best)
 
     @property
     def partner_res_and_fragment_str(self):
+        """
+
+        Returns
+        -------
+
+        """
         return '%s@%s' % (self.partner_residue,
                           self.partner_fragment_name_best)
 
     @property
     def partner_res_and_fragment_str_short(self):
+        """
+
+        Returns
+        -------
+
+        """
         return '%s@%s' % (self.residue_names_short[self.partner_index],
                           self.partner_fragment_name_best)
 
     @property
     def time_arrays(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._time_arrays
 
     @property
     def ctc_trajs(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._ctc_trajs
 
     @property
     def trajs(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._trajs
 
     @property
     def fragment_colors(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._fragment_colors
 
     @property
     def fragment_names(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._fragment_names
 
     @property
     def anchor_index(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._anchor_index
 
     @property
     def partner_index(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._partner_index
 
     @property
     def top(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._top
 
     @property
     def topology(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._top
 
     @property
     def consensus_labels(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self._consensus_labels
 
     def binarize_trajs(self, ctc_cutoff_Ang):
+        """
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+
+        """
         result = [itraj < ctc_cutoff_Ang / 10 for itraj in self._ctc_trajs]
         #print([ires.shape for ires in result])
         return result
 
     def frequency_dict(self, ctc_cutoff_Ang):
+        """
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+
+        """
         return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang),
                 "residue idxs":'%u %u'%tuple(self.res_idxs_pair),
                 "label":'%-15s - %-15s'%tuple(self.ctc_label_short.split('-'))}
 
     def frequency_overall_trajs(self, ctc_cutoff_Ang):
+        """
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+
+        """
         return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang)))
 
     def frequency_per_traj(self, ctc_cutoff_Ang):
+        """
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+
+        """
         return [_np.mean(itraj) for itraj in self.binarize_trajs(ctc_cutoff_Ang)]
 
     def __str__(self):
