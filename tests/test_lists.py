@@ -1,9 +1,13 @@
 import unittest
 import numpy as _np
+from unittest import mock
+from unittest.mock import patch
+import io
 
 from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
-    does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand
+    does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand, \
+    pull_one_up_at_this_pos
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
@@ -109,6 +113,17 @@ class Test_rangeexpand(unittest.TestCase):
         assert (rangeexpand("1-2, 3-4") == [1, 2, 3, 4])
         assert (rangeexpand("1-2, 3,4") == [1, 2, 3, 4])
         assert (rangeexpand("1-2, 03, 4") == [1, 2, 3, 4])
+
+class Test_pull_one_up_at_this_pos(unittest.TestCase):
+    def test_pull_one_up_at_this_pos_just_works(self):
+        assert(pull_one_up_at_this_pos([1,2,3],1,"~") == [1, 3, '~'])
+        assert(pull_one_up_at_this_pos("string",1,"~") == ['s', 'r', 'i', 'n', 'g', '~'])
+        assert(pull_one_up_at_this_pos([1,2,3],1,10) == [1, 3, 10])
+        assert(pull_one_up_at_this_pos([1,2,3],1,[99]) == [1, 3, [99]])
+
+    def test_pull_one_up_at_this_pos_verbose_works(self):
+        assert(pull_one_up_at_this_pos([1,2,3],1,"~",verbose=True) == [1, 3, '~'])
+
 
 if __name__ == '__main__':
     unittest.main()
