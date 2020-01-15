@@ -711,7 +711,10 @@ def interface(
 
     if isinstance(trajectories,str):
         trajectories = _glob(trajectories)
-    xtcs = sorted(trajectories)
+    if isinstance(trajectories[0],str):
+        xtcs = sorted(trajectories)
+    else:
+        xtcs = trajectories
     print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
     "\n  ".join([str(ixtc) for ixtc in xtcs]), stride))
 
@@ -831,6 +834,7 @@ def interface(
                             consolidate=False,
                             chunksize=chunksize_in_frames,
                             n_jobs=n_jobs,
+                            progressbar=True,
                            # scheme=scheme
                             )
 
