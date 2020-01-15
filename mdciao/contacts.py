@@ -1,7 +1,7 @@
 import numpy as _np
 import mdtraj as _md
 from os import path as _path
-from .list_utils import in_what_fragment, re_warp, _replace4latex
+from .list_utils import in_what_fragment, _replace4latex, iterate_and_inform_lambdas
 from collections import defaultdict
 
 import matplotlib.pyplot as _plt
@@ -106,6 +106,7 @@ def ctc_freq_reporter_by_residue_neighborhood(ctc_freqs, resSeq2residxs, fragmen
 def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
               chunksize=1000, return_time=False,
               n_jobs=1,
+              progressbar=False,
               **mdcontacts_kwargs):
     """Returns the time-dependent traces of residue-residue contacts from a list of trajectory files
 
@@ -140,8 +141,14 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 
     """
 
-    ictcs_itimes = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc)(top, ixtc, ctc_residxs_pairs,chunksize,stride,**mdcontacts_kwargs)
-                                            for ii, ixtc in enumerate(xtcs))
+    from tqdm import tqdm
+
+    if progressbar:
+        iterfunct = lambda a : tqdm(a)
+    else:
+        iterfunct = lambda a : a
+    ictcs_itimes = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc)(top, ixtc, ii, ctc_residxs_pairs,chunksize,stride,**mdcontacts_kwargs)
+                                            for ii, ixtc in enumerate(iterfunct(xtcs)))
     ctcs = []
     times = []
     for ictcs, itimes in ictcs_itimes:
@@ -165,27 +172,20 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     else:
         return actcs, times
 
+
+
 def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
+                traj_idx,
                 **mdcontacts_kwargs):
 
-    if isinstance(ixtc, _md.Trajectory):
-        iterate = lambda ixtc: [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride], chunksize)]
-        inform = lambda ixtc, ii, running_f: print("Analysing a trajectory object in chunks of "
-                                                   "%3u frames. chunks %4u frames %8u" %
-                                                   (chunksize, ii, running_f), end="\r", flush=True)
-    else:
-        iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
-        inform = lambda ixtc, ii, running_f: print("Analysing %20s in chunks of "
-                                                   "%3u frames. chunks %4u frames %8u" %
-                                                   (ixtc, chunksize, ii, running_f), end="\r", flush=True)
-
+    iterate, inform = iterate_and_inform_lambdas(ixtc,stride, chunksize, top=top)
     ictcs = []
     running_f = 0
-    inform(ixtc, 0, running_f)
+    inform(ixtc, traj_idx, 0, running_f)
     itime = []
     for jj, igeom in enumerate(iterate(ixtc)):
         running_f += igeom.n_frames
-        inform(ixtc, jj, running_f)
+        inform(ixtc, traj_idx, jj, running_f)
         itime.append(igeom.time)
             #TODO make lambda out of this if
         if 'scheme' in mdcontacts_kwargs.keys() and mdcontacts_kwargs["scheme"].upper()=='COM':

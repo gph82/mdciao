@@ -1,5 +1,5 @@
 import numpy as _np
-
+import mdtraj as _md
 #taken from molpx
 def re_warp(array_in, lengths):
     """Return iterable ::py:obj:array_in as a list of arrays, each
@@ -383,3 +383,16 @@ def _replace4latex(istr):
     if '$' not in istr and any([char in istr for char in ["_"]]):
         istr = '$%s$'%istr
     return istr
+
+def iterate_and_inform_lambdas(ixtc,stride,chunksize, top=None):
+    if isinstance(ixtc, _md.Trajectory):
+        iterate = lambda ixtc: [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride], chunksize)]
+        inform = lambda ixtc, traj_idx, chunk_idx, running_f: print("Analysing trajectory object nr. %3u in chunks of "
+                                                   "%3u frames. chunknr %4u frames %8u" %
+                                                   (traj_idx, chunksize, chunk_idx, running_f), end="\r", flush=True)
+    else:
+        iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
+        inform = lambda ixtc, traj_idx, chunk_idx, running_f: print("Analysing %20s (nr. %3u) in chunks of "
+                                                   "%3u frames. chunknr %4u frames %8u" %
+                                                   (ixtc, traj_idx, chunksize, chunk_idx, running_f), end="\r", flush=True)
+    return iterate, inform
