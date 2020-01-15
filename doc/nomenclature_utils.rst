@@ -13,11 +13,12 @@ Utils for handling nomenclature related functionality. Currently handles:
     BW_transformer
     table2BW_by_AAcode
     guess_missing_BWs
-
     top2CGN_by_AAcode
 
-.. automodule:: mdciao.nomenclature_utils
-   :members:
 
 .. autoclass:: mdciao.nomenclature_utils.CGN_transformer
    :members:
+
+.. autoclass:: mdciao.nomenclature_utils.BW_transformer
+    :members:
+    :inherited-members:
