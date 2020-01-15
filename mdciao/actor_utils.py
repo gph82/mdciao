@@ -4,8 +4,10 @@ from scipy.spatial.distance import pdist
 from matplotlib import pyplot as _plt
 
 from mdciao.fragments import get_fragments as _get_fragments
-
+from joblib import Parallel as _Parallel, delayed as _delayed
 from mdciao.list_utils import in_what_N_fragments, in_what_fragment, exclude_same_fragments_from_residx_pairlist
+
+from collections import defaultdict as _defdict
 
 #Import needed for the command line scripts
 #from sofi_functions.tested_utils import unique_list_of_iterables_by_tuple_hashing
@@ -276,7 +278,7 @@ def ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs, fragmen
     return final_look
 
 # TODO DON'T I HAVE A COPY OF THIS IN .contacs?
-def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1,consolidate=True,
+def _xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1,consolidate=True,
               chunksize=1000, return_time=False, c=True):
     ctcs = []
     print()
@@ -402,6 +404,45 @@ def mean_geometry(list_of_trajs, reference=None,
                           unitcell_lengths=unitcell_lenghts,
                           unitcell_angles=unitcell_angles)
 
+#TODO check overlap with my_RMSD
+def my_RMSF(list_of_xyzs,
+          mean_xyz=None,
+          n_jobs=1,
+          top_for_residue_average=None):
+
+    from joblib import Parallel as _Parallel, delayed as _delayed
+    from tqdm import tqdm
+    nts = [len(ixyz) for ixyz in list_of_xyzs]
+    if mean_xyz is None:
+        mean_xyz = _np.average([ixyz.mean(0) for ixyz in list_of_xyzs],
+                              axis=0,
+                              weights=[nt for nt in nts])
+
+    sum_delta_per_traj = lambda ixyz: _np.sum((ixyz - mean_xyz) ** 2, 0).sum(1)
+    sum_all_delta2 = _Parallel(n_jobs=n_jobs)(_delayed(sum_delta_per_traj)(ixyz) for ixyz in tqdm(list_of_xyzs))
+    sum_all_delta2 = _np.sum(sum_all_delta2, 0)
+    ave_all_delta2 = sum_all_delta2 / _np.sum(nts)
+    iRMSF = _np.sqrt(ave_all_delta2)
+    if top_for_residue_average:
+        iRMSF = atomvec2residueav(iRMSF, top_for_residue_average)
+    return iRMSF, mean_xyz
+
+def atomvec2residueav(vec, top, weight='masses'):
+    r"""
+    Atom vector to residue average
+    :param vec:
+    :param top:
+    :param weight:
+    :return:
+    """
+    if weight.lower()!='masses':
+        raise NotImplementedError
+    assert top.n_atoms == len(vec)
+    masses = [[aa.element.mass for aa in rr.atoms] for rr in top.residues]
+    vec = [_np.average(vec[[aa.index for aa in rr.atoms]], weights=masses[rr.index])
+            for rr in top.residues]
+    return _np.array(vec)
+
 def my_RMSD(geom, ref, atom_indices=None,
             ref_atom_indices=None,
             weights='masses',
@@ -483,16 +524,26 @@ def xtcs2contactpairs_auto(xtcs, top, cutoff_in_Ang,
                            stride=1,
                            chunksize=500,
                            exclude_nearest_neighbors=2,
-                           fragments=True):
+                           fragments=True,
+                           n_jobs=1):
 
     if isinstance(top,str):
         top = _md.load(top).top
 
+    sparse_dict = _defdict(list)
+    from tqdm import tqdm
 
-    ctc_mins, ctc_pairs = xtcs2mindists(xtcs, top, chunksize=chunksize, stride=stride)
-
-    ctc_pairs_cutoff = select_ctcmins_by_cutoff(ctc_mins, ctc_pairs,
-                                                cutoff_in_Ang)
+    list_of_results = _Parallel(n_jobs=n_jobs)(_delayed(xtcs2mindists)([ixtc], top, chunksize=chunksize, stride=stride) for ixtc in xtcs)
+    for ires in list_of_results:
+        imins, ipairs = ires[0][0], ires[1][0]
+        for imin, ipair in zip(imins, ipairs):
+            key = '%u %u' % tuple(sorted(ipair))
+            # print(key)
+            sparse_dict[key].append(imin)
+    sparse_dict = {key: _np.min(val) for key, val in sparse_dict.items()}
+    ctc_mins = _np.array(list(sparse_dict.values()))
+    ctc_pairs = _np.vstack([[int(ii) for ii in ipair.split()] for ipair in sparse_dict.keys()])
+    ctc_pairs_cutoff = ctc_pairs[ctc_mins<=cutoff_in_Ang/10]
     #print("Before neighbors")
     #for pair in ctc_pairs_cutoff:
     #    print(pair)
@@ -520,20 +571,18 @@ def xtcs2contactpairs_auto(xtcs, top, cutoff_in_Ang,
 def xtcs2mindists(xtcs, top,
                   stride=1,
                   chunksize=1000, **COM_kwargs):
+    from .list_utils import iterate_and_inform_lambdas
 
-    #TODO avoid code repetition with xtcs2ctcs
-    inform = lambda ixtc, ii, running_f: print(
-        "Analysing %20s with stride %u in chunks of %3u frames. chunks read %4u. frames read %8u" % (ixtc, stride, chunksize, ii, running_f),
-        end="\r", flush=True)
+    iterate, inform = iterate_and_inform_lambdas(xtcs[0], stride, chunksize, top=top)
 
     ctc_mins, ctc_pairs = [],[]
     for ii, ixtc in enumerate(xtcs):
         running_f = 0
-        inform(ixtc, 0, running_f)
+        inform(ixtc, ii, 0, running_f)
         ires = {}
-        for jj, igeom in enumerate(_md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize/stride))):
+        for jj, igeom in enumerate(iterate(ixtc)):
             running_f += igeom.n_frames
-            inform(ixtc, jj, running_f)
+            inform(ixtc, ii, jj, running_f)
             mins, pairs, pair_idxs = igeom2mindist_COMdist_truncation(igeom, **COM_kwargs)
             for imin, ipair, idx in zip(mins, pairs, pair_idxs):
                 try:
@@ -542,16 +591,13 @@ def xtcs2mindists(xtcs, top,
                     ires[idx] = {"val":imin,
                                  "pair":ipair}
 
-            #if jj==5:
-            #   break
-
         pair_idxs = sorted(ires.keys())
         ctc_mins.append( _np.array([ires[idx]["val"] for idx in pair_idxs]))
         ctc_pairs.append(_np.array([ires[idx]["pair"] for idx in pair_idxs]))
     print()
     return ctc_mins, ctc_pairs
 
-def select_ctcmins_by_cutoff(ctc_mins, ctc_idxs, cutoff_in_Ang):
+def _select_ctcmins_by_cutoff(ctc_mins, ctc_idxs, cutoff_in_Ang):
     r"""
     Provided a list of values (ctc_mins) and a list of idx_pairs (ctc_idxs),
     return the
@@ -580,11 +626,24 @@ def select_ctcmins_by_cutoff(ctc_mins, ctc_idxs, cutoff_in_Ang):
 
 def igeom2mindist_COMdist_truncation(igeom,
                                      res_COM_cutoff_Ang=25,
+                                     #CA_switch=True,
+                                     CA_switch=False
                                      ):
 
     from mdciao.contacts import geom2COMxyz
-    COMs_xyz = geom2COMxyz(igeom)
+    if CA_switch:
+        CA_idxs = [[aa.index for aa in list(rr.atoms_by_name("CA"))[:1]] for rr in igeom.top.residues]
+        no_CAs = [ii for ii, ia in enumerate(CA_idxs) if len(ia)==0]
+        for ii in no_CAs:
+            atoms = [aa for aa in igeom.top.residue(ii).atoms]
+            masses = [aa.element.mass for aa in atoms]
+            CA_idxs[ii] = [atoms[_np.argmax(masses)].index]
+        CA_idxs = _np.hstack(CA_idxs)
+        assert len(CA_idxs)==igeom.n_residues,(len(CA_idxs),igeom.n_residues)
 
+        COMs_xyz = igeom.xyz[:,CA_idxs]
+    else:
+        COMs_xyz = geom2COMxyz(igeom)
     COMs_dist_triu = _np.array([pdist(ixyz) for ixyz in COMs_xyz])
 
 
@@ -593,6 +652,7 @@ def igeom2mindist_COMdist_truncation(igeom,
 
     COMs_under_cutoff_pair_idxs = _np.argwhere(COMs_under_cutoff.sum(0) >= 1).squeeze()
     pairs = _np.vstack(_np.triu_indices(igeom.n_residues, 1)).T[COMs_under_cutoff_pair_idxs]
+
     try:
         ctcs, ctc_idxs_dummy = _md.compute_contacts(igeom, pairs)
     except MemoryError:
