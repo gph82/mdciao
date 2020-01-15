@@ -363,10 +363,25 @@ def assert_no_intersection(list_of_lists_of_integers):
             if (ii != jj):
                 assert len(_np.intersect1d(l1, l2)) == 0, 'join fragment id overlaps!'
 
-# todo document and test
 # TODO consider using np.delete in the code originally?
 def pull_one_up_at_this_pos(iterable_in, idx, padding='~',
                             verbose=False):
+    """
+
+    Parameters
+    ----------
+    iterable_in : iterable
+    idx : int or None
+        index which needs to be removed (zero-based index), or None if nothing needs to be replaced
+    padding : replacement to be appended to the end of iterable. Could be string, int, iterable and so on
+    verbose : boolean
+            be verbose
+
+    Returns
+    -------
+    iterable without the element at the position idx on iterable_in
+
+    """
 
     iterable_out = [ii for ii in iterable_in[:idx]]
     iterable_out += iterable_in[idx + 1:]
