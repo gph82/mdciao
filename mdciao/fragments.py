@@ -194,8 +194,29 @@ def get_fragments(top,
     if not atoms:
         return fragments
     else:
-        return [_np.hstack([[aa.index for aa in top.residue(ii).atoms]])]
+        return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
 
+# todo document
+def overview(topology,
+             methods=['all'],
+             all_methods = ['resSeq',
+                            'resSeq+',
+                            'bonds',
+                            'resSeq_bonds',
+                            'chains']):
+
+    if methods[0].lower() == 'all':
+        try_methods = all_methods
+    else:
+        for imethd in methods:
+            assert imethd in all_methods, ('input method %s is not known. ' \
+                                           'Know methods are %s ' % (imethd, all_methods))
+        try_methods = methods
+
+    for method in try_methods:
+        get_fragments(topology,
+                      method=method)
+        print()
 def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
                                           pick_first_fragment_by_default=False,
                                           additional_naming_dicts=None):
