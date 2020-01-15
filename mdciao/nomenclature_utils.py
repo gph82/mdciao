@@ -401,19 +401,30 @@ def PDB_finder(ref_PDB, ref_path='.',
             if verbose:
                 print("No local PDB file for %s found" % ref_PDB, end="")
             if try_web_lookup:
-                web_address = "https://files.rcsb.org/download"
-                url = '%s/%s.pdb'%(web_address,ref_PDB)
-                if verbose:
-                    print(", checking online in \n%s ..." % url, end="")
-                _geom = _md.load_pdb(url)
+                _geom, return_file = md_load_rscb(ref_PDB,
+                                                  verbose=verbose,
+                                                  return_url=True)
                 if verbose:
                     print("found! Continuing normally")
-                return_file = url
+
             else:
                 raise
+
     return _geom, return_file
 
-
+#todo document and refactor to better place?
+def md_load_rscb(PDB,
+                 web_address = "https://files.rcsb.org/download",
+                 verbose=False,
+                 return_url=False):
+    url = '%s/%s.pdb' % (web_address, PDB)
+    if verbose:
+        print(", checking online in \n%s ..." % url, end="")
+    igeom = _md.load_pdb(url)
+    if return_url:
+        igeom, url
+    else:
+        return igeom
 class CGN_transformer(consensus_labeler):
     """
     Class to abstract, handle, and use common-Gprotein-nomenclature.
