@@ -200,6 +200,7 @@ def parser_for_sites():
     _parser_add_gray_backgroud(parser)
     _parser_add_graphic_dpi(parser)
     _parser_add_ylim_Ang(parser)
+    _parser_add_n_jobs(parser)
     return parser
 
 
