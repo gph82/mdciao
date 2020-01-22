@@ -64,6 +64,13 @@ def _parser_add_time_traces(parser):
                        )
     parser.set_defaults(plot_timedep=True)
 
+def _parser_add_distro(parser):
+    parser.add_argument('--distribution', dest="distro", action='store_true',
+                        help='Plot distance distributions instead of contact bar plots. Default is False.')
+    parser.add_argument('--no-distribution', dest="distro", action='store_false',
+                       )
+    parser.set_defaults(distro=False)
+
 def _parser_add_smooth(parser):
     parser.add_argument("--n_smooth_hw", type=int,
                         help="Number of frames one half of the averaging window for the time-traces. Default is 0, which means no averaging.",
@@ -270,7 +277,15 @@ def parser_for_rn():
     _parser_add_graphic_dpi(parser)
     _parser_add_short_AA_names(parser)
     _parser_add_no_fragfrag(parser)
+    _parser_add_time_traces(parser)
+    _parser_add_distro(parser)
+    _parser_add_n_cols(parser)
+
     return parser
+
+def _parser_add_n_cols(parser):
+    parser.add_argument("--n_cols", type=int, help="number of columns of the overall plot. Default is 4",
+                        default=4)
 
 def _parser_add_graphic_dpi(parser):
     parser.add_argument('--graphic_dpi', type=int,
@@ -364,6 +379,8 @@ def parser_for_interface():
                              " Defaut is True.")
     parser.add_argument('--no-sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_false')
     parser.set_defaults(sort_by_av_ctcs=True)
+    _parser_add_scheme(parser)
+
     return parser
 
 def fnmatch_ex(patterns_as_csv, list_of_keys):
@@ -450,4 +467,15 @@ def parser_for_frag_overview():
                         default=['all']
                         )
     _parser_add_topology(parser)
+    return parser
+
+def parser_for_BW_overview():
+    parser = argparse.ArgumentParser(description='Provides overview of '
+                                                 'BW nomenclature for a given topology')
+
+    _parser_add_topology(parser)
+    parser.add_argument("BW_uniprot", type=str,
+                        help="Look for Ballesteros-Weinstein definitions in the GPRCmd using a uniprot code, "
+                             "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
+                        )
     return parser
