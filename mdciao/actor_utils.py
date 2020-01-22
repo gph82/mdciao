@@ -384,7 +384,7 @@ def mean_geometry(list_of_trajs, reference=None,
     if image_molecule:
         raise NotImplementedError("This is not yet implemented")
 
-    mean_xyz = []
+    mean_xyz = _np.zeros((len(list_of_trajs),list_of_trajs[0].n_atoms,3))
     for ii, itraj in enumerate(list_of_trajs):
         if reference is not None:
             itraj.superpose(reference,atom_indices=atom_indices,
@@ -392,9 +392,11 @@ def mean_geometry(list_of_trajs, reference=None,
         if ii ==0 and reference is None:
             unitcell_angles = itraj._unitcell_angles[0]
             unitcell_lenghts = itraj._unitcell_lenghts[0]
-        mean_xyz.append(itraj.xyz)
+        mean_xyz[ii,:,:] = itraj.xyz.mean(0)
 
-    mean_xyz = _np.vstack(mean_xyz).mean(0)
+    mean_xyz = _np.average(mean_xyz,
+                           weights=[itraj.n_frames for itraj in list_of_trajs],
+                           axis = 0)
 
     if reference is not None:
         unitcell_angles =  reference._unitcell_angles[0]
@@ -450,7 +452,24 @@ def my_RMSD(geom, ref, atom_indices=None,
             per_residue=True):
     r"""
     Compute the RMSD of a given :obj:`geom` wrt to a given :obj:`ref`.
-    There is no pre-orienting of the geometries for maximum overlap
+
+    There is no pre-orienting of the geometries for maximum overlap.
+    The output :obj:`rmsd` is computed as a mean over all atoms in
+    :obj:`atom_indices` with their masses as weights.
+
+    When :obj:`per_residue` is True, these quantities are also:
+    * :obj:`rmsd_per_residue`
+        The atom indices of :obj:`atom_indices` are grouped into
+        their residues and a per-residue rmsd is returned (without further computation)
+    * :obj:`average_delta2_per_residue`
+        This is a control variable. One can check that
+        sqrt(average_delta2_per_residue)==rmsd_per_residue for any given residue
+    * :obj:`mass_per_residue`
+        This is a control variable. One can check that
+        sqrt(average(average_delta2_per_residue,weights=mass_per_residue)==rmsd
+    * :obj:`residue_idxs`
+
+
 
     Parameters
     ----------
@@ -461,7 +480,7 @@ def my_RMSD(geom, ref, atom_indices=None,
     ref_atom_indices: iterable of integers, default is None
         If :obj:`geom` and :obj:`ref` don't share atom indices, use this parameter
         to pass a map of :obj:`atom_indices` in :obj:`ref`. The default behaviour
-        is to use the same indexing.
+        is to use the same as :obj:`atom_indices`.
     weights : str, default is "masses
         How the average is weighted
     check_same_atoms : boolean, default is False :
@@ -471,6 +490,11 @@ def my_RMSD(geom, ref, atom_indices=None,
 
     Returns
     -------
+    rmsd: array of len(geom.n_frames) with the mean square deviation, computed as
+        sqrt(average(delta_per_frame_per_atom**2,weights=masses))
+
+    if per_residue is True
+    rmsd, average_delta2_per_residue, mass_per_residue, residue_idxs
 
     """
     if atom_indices is None:
@@ -504,7 +528,7 @@ def my_RMSD(geom, ref, atom_indices=None,
 
     if per_residue:
         average_delta2_per_residue = _np.zeros((geom.n_frames, geom.n_residues))
-        weight_per_residue = _np.zeros(geom.n_residues)
+        mass_per_residue = _np.zeros(geom.n_residues)
         residue_idxs = _np.unique([geom.top.atom(ii).residue.index for ii in atom_indices])
         for res_idx in residue_idxs:
             rr = geom.top.residue(res_idx)
@@ -512,13 +536,13 @@ def my_RMSD(geom, ref, atom_indices=None,
             average_delta2_per_residue[:,res_idx] = _np.average(delta_per_frame_per_atom[:,rr_aa_idxs]**2,
                                                 weights=masses[rr_aa_idxs],
                                                 axis=1)
-            weight_per_residue[res_idx] = masses[rr_aa_idxs].sum()
+            mass_per_residue[res_idx] = masses[rr_aa_idxs].sum()
 
-
+        rmsd_per_residue = _np.sqrt(average_delta2_per_residue)
     if not per_residue:
         return rmsd
     else:
-        return rmsd, average_delta2_per_residue, weight_per_residue, residue_idxs
+        return rmsd, rmsd_per_residue, average_delta2_per_residue, mass_per_residue, residue_idxs
 
 def xtcs2contactpairs_auto(xtcs, top, cutoff_in_Ang,
                            stride=1,
