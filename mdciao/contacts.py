@@ -147,7 +147,8 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         iterfunct = lambda a : tqdm(a)
     else:
         iterfunct = lambda a : a
-    ictcs_itimes = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc)(top, ixtc, ii, ctc_residxs_pairs,chunksize,stride,**mdcontacts_kwargs)
+    ictcs_itimes = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc)(top, ixtc, ctc_residxs_pairs,chunksize,stride,ii,
+                                                                  **mdcontacts_kwargs)
                                             for ii, ixtc in enumerate(iterfunct(xtcs)))
     ctcs = []
     times = []
@@ -336,42 +337,46 @@ class contact_group(object):
 
         # All contacts have the same number of trajs
         self._n_trajs =_np.unique([ictc.n_trajs for ictc in self._contacts])
-        assert len(self._n_trajs)==1
-        self._n_trajs=self._n_trajs[0]
+        if self.n_ctcs==0:
+            raise NotImplementedError("This contact group has no contacts!")
+        else:
+            assert len(self._n_trajs)==1, (self.n_trajs, [ictc.n_trajs for ictc in self._contacts])
 
-        # All trajs have the same times
-        ref_ctc = self._contacts[0]
-        assert all([_np.allclose(ref_ctc.n_frames, ictc.n_frames) for ictc in self._contacts[1:]])
-        self._time_arrays=ref_ctc.time_arrays
-        self._time_max = ref_ctc.time_max
-        self._n_frames = ref_ctc.n_frames
+            self._n_trajs=self._n_trajs[0]
 
-        # All contatcs have the same trajlabels
-        already_printed = False
-        for ictc in self._contacts[1:]:
-            try:
-                assert all([rlab.__hash__() == tlab.__hash__()
-                            for rlab, tlab in zip(ref_ctc.trajlabels, ictc.trajlabels)])
-            except AttributeError:
-                if not already_printed:
-                    print("Trajectories unhashable, could not verify they are the same")
-                    already_printed = True
+            # All trajs have the same times
+            ref_ctc = self._contacts[0]
+            assert all([_np.allclose(ref_ctc.n_frames, ictc.n_frames) for ictc in self._contacts[1:]])
+            self._time_arrays=ref_ctc.time_arrays
+            self._time_max = ref_ctc.time_max
+            self._n_frames = ref_ctc.n_frames
+
+            # All contatcs have the same trajlabels
+            already_printed = False
+            for ictc in self._contacts[1:]:
+                try:
+                    assert all([rlab.__hash__() == tlab.__hash__()
+                                for rlab, tlab in zip(ref_ctc.trajlabels, ictc.trajlabels)])
+                except AttributeError:
+                    if not already_printed:
+                        print("Trajectories unhashable, could not verify they are the same")
+                        already_printed = True
+                    else:
+                        pass
+
+            self._trajlabels = ref_ctc.trajlabels
+
+            self._cons2resname = {}
+            for key, val in zip(_np.hstack(self.consensus_labels),
+                                _np.hstack(self.residue_names_short)):
+                if str(key).lower() in ["na","none"]:
+                    key = val
+                if key not in self._cons2resname.keys():
+                    self._cons2resname[key]=val
                 else:
-                    pass
+                    assert self._cons2resname[key]==val,(self._cons2resname[key],key,val)
 
-        self._trajlabels = ref_ctc.trajlabels
-
-        self._cons2resname = {}
-        for key, val in zip(_np.hstack(self.consensus_labels),
-                            _np.hstack(self.residue_names_short)):
-            if str(key).lower() in ["na","none"]:
-                key = val
-            if key not in self._cons2resname.keys():
-                self._cons2resname[key]=val
-            else:
-                assert self._cons2resname[key]==val,(self._cons2resname[key],key,val)
-
-        self._resname2cons = {val: key for key, val in self._cons2resname.items()}
+            self._resname2cons = {val: key for key, val in self._cons2resname.items()}
 
     #todo there is redundant code for generating interface labels!
     @property
@@ -571,6 +576,9 @@ class contact_group(object):
     def frequency_per_contact(self, ctc_cutoff_Ang):
         return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts])
 
+    def distro_per_contact(self, nbins=10):
+        return [ictc.distro_overall_trajs(bins=nbins) for ictc in self._contacts]
+
     def binarize_trajs(self, ctc_cutoff_Ang, order='contact'):
         bintrajs = [ictc.binarize_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
         if order=='contact':
@@ -622,7 +630,7 @@ class contact_group(object):
         jax.set_yticks([.25, .50, .75, 1])
         jax.set_ylim([0, 1])
         jax.set_xticks([])
-        [jax.axhline(ii, color="k", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
+        [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
         return jax
 
     def histo_site(self,
@@ -695,6 +703,50 @@ class contact_group(object):
 
         return jax
 
+    def distro_neighborhood(self,
+                            nbins=10,
+                           xlim=None,
+                           jax=None,
+                           shorten_AAs=False,
+                            ctc_cutoff_Ang=None,
+                            n_nearest=None,
+                           label_fontsize_factor=1):
+
+
+        label_dotref = self.anchor_res_and_fragment_str
+        label_bars = self.partner_res_and_fragment_labels
+        if shorten_AAs:
+            label_dotref = self.anchor_res_and_fragment_str_short
+            label_bars = self.partner_res_and_fragment_labels_short
+
+        # Cosmetics
+        title_str = "distribution for %s"%_replace4latex(label_dotref)
+        if ctc_cutoff_Ang is not None:
+            title_str += "\nclosest residues <= @%2.1f $\AA$"%(ctc_cutoff_Ang)
+            jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
+        if n_nearest is not None:
+            title_str += "\n%u nearest bonded neighbors excluded" % (n_nearest)
+        jax.set_title(title_str)
+
+        # Base plot
+        for ii, ((h, x), label) in enumerate(zip(self.distro_per_contact(nbins=nbins), label_bars)):
+            if ctc_cutoff_Ang is not None:
+                if ii==0:
+                    freqs = self.frequency_per_contact(ctc_cutoff_Ang)
+                label+=" (%u%%)"%(freqs[ii]*100)
+            jax.plot(x[:-1] * 10, h, label=label)
+            jax.fill_between(x[:-1]*10, h, alpha=.15)
+        if xlim is not None:
+            jax.set_xlim(xlim)
+
+        jax.set_xlabel("D / $\AA$")
+        jax.set_ylabel("counts ")
+        jax.set_ylim([0,jax.get_ylim()[1]])
+        jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
+
+
+        return jax
+
     def histo_summary(self,
                       ctc_cutoff_Ang,
                       site_name,
@@ -704,11 +756,12 @@ class contact_group(object):
                       label_fontsize_factor=1,
                       truncate_at=0,
                       bar_width_in_inches=.75,
-                      list_by_interface=False):
+                      list_by_interface=False,
+                      sort=True):
 
         # Base dict
         freqs_dict = self.frequency_per_residue(ctc_cutoff_Ang,
-                                                sort=True,
+                                                sort=sort,
                                                 list_by_interface=list_by_interface)
         # TODO this code is repeated in table_by_residue
         if list_by_interface:
@@ -728,10 +781,10 @@ class contact_group(object):
 
         patches = jax.bar(xvec, freqs,
                           width=.25)
-        yticks = _np.arange(.25,_np.max(freqs), .25)
+        yticks = _np.arange(.5,_np.max(freqs), .5)
         jax.set_yticks(yticks)
         #jax.set_xticks([])
-        [jax.axhline(ii, color="k", linestyle="--", zorder=-1) for ii in yticks]
+        [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in yticks]
 
         # Cosmetics
         jax.set_title(
@@ -808,6 +861,16 @@ class contact_group(object):
                                                  )
 
         writer.save()
+
+    def contact_map(self,
+                    ctc_cutoff_Ang):
+        mat = _np.zeros((self.top.n_residues, self.top.n_residues))
+        mat[:,:] = _np.nan
+        for (ii, jj), freq in zip(self.res_idxs_pairs, self.frequency_per_contact(ctc_cutoff_Ang)):
+            mat[ii,jj] = freq
+            mat[jj,ii] = freq
+
+        return mat
 
     def add_tilted_labels_to_patches(self, jax, labels,
                                      label_fontsize_factor=1,
@@ -1667,6 +1730,22 @@ class contact_pair(object):
         """
         return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang)))
 
+    def distro_overall_trajs(self, bins=10):
+        """
+
+        Parameters
+        ----------
+        bins
+
+        Returns
+        -------
+        x, h
+
+        """
+        return _np.histogram(_np.hstack(self._ctc_trajs),
+                             bins=bins)
+
+
     def frequency_per_traj(self, ctc_cutoff_Ang):
         """
 
@@ -1860,13 +1939,15 @@ class group_of_interfaces(object):
         return aDF.iloc[hit[1]].to_dict()
 
 def _plot_interface_matrix(mat,labels,pixelsize=1,
-                           transpose=False, grid=False):
+                           transpose=False, grid=False,
+                           cmap="binary",
+                           colorbar=False):
     if transpose:
         mat = mat.T
         labels = labels[::-1]
 
     _plt.figure(figsize = _np.array(mat.shape)*pixelsize)
-    _plt.imshow(mat,cmap="binary",)
+    im = _plt.imshow(mat,cmap=cmap)
     _plt.ylim([len(labels[0])-.5, -.5])
     _plt.xlim([-.5, len(labels[1])-.5])
     _plt.yticks(_np.arange(len(labels[0])),labels[0],fontsize=pixelsize*20)
@@ -1874,5 +1955,9 @@ def _plot_interface_matrix(mat,labels,pixelsize=1,
     if grid:
         _plt.hlines(_np.arange(len(labels[0]))+.5,-.5,len(labels[1]),ls='--',lw=.5, color='gray', zorder=10)
         _plt.vlines(_np.arange(len(labels[1])) + .5, -.5, len(labels[0]), ls='--', lw=.5,  color='gray', zorder=10)
+
+    if colorbar:
+        _plt.gcf().colorbar(im, ax=ax)
+        im.set_clim(0.0, 1.0)
 
     return _plt.gca(), pixelsize
