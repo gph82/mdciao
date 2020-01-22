@@ -427,10 +427,10 @@ def sites(topology,
           short_AA_names=False,
           write_to_disk_BW=False,
           ylim_Ang=10,
+          n_jobs=1,
           ):
     dt = _t_unit2dt(t_unit)
-    if not isinstance(ylim_Ang,str):
-        ylim_Ang = np.float(ylim_Ang)
+    ylim_Ang = np.float(ylim_Ang)
 
     # todo this is an ad-hoc for a powerpoint presentation
     from matplotlib import rcParams
@@ -486,7 +486,8 @@ def sites(topology,
     ctcs, time_array = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                  chunksize=chunksize_in_frames,
                                  return_time=True, consolidate=False, periodic=pbc,
-                                 scheme=scheme)
+                                 scheme=scheme,
+                                 n_jobs=n_jobs)
 
     # Abstract each site to a group of contacts
     site_as_gc = {}
