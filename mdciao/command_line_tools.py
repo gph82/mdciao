@@ -174,6 +174,9 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           short_AA_names=False,
                           same_fragment=True,
                           write_to_disk_BW=False,
+                          plot_timedep=True,
+                          n_cols=4,
+                          distro=False,
                           ):
 
     if resSeq_idxs is None:
@@ -280,6 +283,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     actcs = np.vstack(ctcs_trajs)
     ctcs_mean = np.mean(actcs < ctc_cutoff_Ang / 10, 0)
 
+    print()
     final_look = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs,
                                                            fragments, ctc_idxs_small,
                                                            refgeom.top,
@@ -308,11 +312,13 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         neighborhoods[key] = contact_group(neighborhoods[key])
 
     panelheight = 3
-    n_cols = np.min((4, len(resSeq2residxs)))
+    n_cols = np.min((n_cols, len(resSeq2residxs)))
     n_rows = np.ceil(len(resSeq2residxs) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
-    histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
+    histofig, histoax = plt.subplots(n_rows, n_cols,
+                                     sharex=True,
+                                     sharey=True,
                                      figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
 
     # One loop for the histograms
@@ -320,12 +326,21 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     for jax, ihood in zip(histoax.flatten(),
                                    neighborhoods.values()):
 
-        ihood.histo_neighborhood(ctc_cutoff_Ang, n_nearest,
-                                 jax=jax,
-                                 xlim=n_ctcs,
-                                 label_fontsize_factor=panelsize2font/panelsize,
-                                 shorten_AAs=short_AA_names
-                                 )
+        if distro:
+            ihood.distro_neighborhood(nbins=20,
+                                      jax=jax,
+                                      label_fontsize_factor=panelsize2font/panelsize,
+                                      shorten_AAs=short_AA_names,
+                                      ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                      n_nearest= n_nearest
+                                      )
+        else:
+            ihood.histo_neighborhood(ctc_cutoff_Ang, n_nearest,
+                                     jax=jax,
+                                     xlim=n_ctcs,
+                                     label_fontsize_factor=panelsize2font / panelsize,
+                                     shorten_AAs=short_AA_names
+                                     )
 
 
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
@@ -336,35 +351,36 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     print(fname)
 
     # One loop for the time resolved neighborhoods
-    for ihood in neighborhoods.values():
-        fname = '%s.%s.time_resolved.%s' % (output_desc,
-                                            ihood.anchor_res_and_fragment_str.replace('*', ""),
-                                            graphic_ext.strip("."))
-        fname = path.join(output_dir, fname)
-        myfig = ihood.plot_timedep_ctcs(panelheight,
-                                        plot_N_ctcs=True,
-                                        color_scheme = _my_color_schemes(curve_color),
-                                        ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                        n_smooth_hw=n_smooth_hw,
-                                        dt=dt,
-                                        t_unit=t_unit,
-                                        gray_background=gray_background,
-                                        shorten_AAs=short_AA_names,
-                                        )
+    if plot_timedep:
+        for ihood in neighborhoods.values():
+            fname = '%s.%s.time_resolved.%s' % (output_desc,
+                                                ihood.anchor_res_and_fragment_str.replace('*', ""),
+                                                graphic_ext.strip("."))
+            fname = path.join(output_dir, fname)
+            myfig = ihood.plot_timedep_ctcs(panelheight,
+                                            plot_N_ctcs=True,
+                                            color_scheme = _my_color_schemes(curve_color),
+                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                            n_smooth_hw=n_smooth_hw,
+                                            dt=dt,
+                                            t_unit=t_unit,
+                                            gray_background=gray_background,
+                                            shorten_AAs=short_AA_names,
+                                            )
 
-        # One title for all axes on top
-        title = ihood.anchor_res_and_fragment_str
-        if short_AA_names:
-            title = ihood.anchor_res_and_fragment_str_short
-        myfig.axes[0].set_title(title)
-        myfig.tight_layout(h_pad=0,w_pad=0,pad=0)
-        myfig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-        plt.close(myfig)
-        print(fname)
-        if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt", "xlsx"]:
-            ext = str(output_ascii).lower().strip(".")
-            ihood.save_trajs(output_desc,ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
-        print()
+            # One title for all axes on top
+            title = ihood.anchor_res_and_fragment_str
+            if short_AA_names:
+                title = ihood.anchor_res_and_fragment_str_short
+            myfig.axes[0].set_title(title)
+            myfig.tight_layout(h_pad=0,w_pad=0,pad=0)
+            myfig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+            plt.close(myfig)
+            print(fname)
+            if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt", "xlsx"]:
+                ext = str(output_ascii).lower().strip(".")
+                ihood.save_trajs(output_desc,ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
+            print()
 
     return {"ctc_idxs": ctc_idxs_small,
             'ctcs_trajs': ctcs_trajs,
@@ -704,6 +720,7 @@ def interface(
         n_nearest=0,
         write_to_disk_BW=False,
         sort_by_av_ctcs=True,
+        scheme="closest-heavy",
 ):
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
@@ -828,14 +845,14 @@ def interface(
         "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
         "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
         len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
-
+    print()
     ctcs, times = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
                             stride=stride, return_time=True,
                             consolidate=False,
                             chunksize=chunksize_in_frames,
                             n_jobs=n_jobs,
                             progressbar=True,
-                           # scheme=scheme
+                            scheme=scheme
                             )
 
     # Stack all data
@@ -906,7 +923,8 @@ def interface(
                                jax=histoax[1],
                                list_by_interface=True,
                                label_fontsize_factor=panelsize2font / panelsize,
-                               truncate_at=.05
+                               truncate_at=.05,
+                               sort=sort_by_av_ctcs,
                                )
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
