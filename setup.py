@@ -24,7 +24,8 @@ setup(
              'scripts/site_figures.py',
              'scripts/interface_ctc_analyzer.py',
              'scripts/density_by_sites.py',
-             'scripts/fragment_overview.py'
+             'scripts/fragment_overview.py',
+             'scripts/BW_overview.py',
              #'scripts/CARDS.py'
              ]
 )
