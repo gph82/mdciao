@@ -1182,10 +1182,10 @@ def plot_w_smoothing_auto(iax, x, y,
                           n_smooth_hw=0):
     alpha = 1
     if n_smooth_hw > 0:
-        from .list_utils import window_average as _wav
+        from .list_utils import window_average_fast as _wav
         alpha = .2
-        x_smooth, _ = _wav(x, half_window_size=n_smooth_hw)
-        y_smooth, _ = _wav(y, half_window_size=n_smooth_hw)
+        x_smooth = _wav(x, half_window_size=n_smooth_hw)
+        y_smooth = _wav(y, half_window_size=n_smooth_hw)
         iax.plot(x_smooth,
                  y_smooth,
                  label=ilabel,
