@@ -141,6 +141,16 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
         return ilist_out
     else:
         return idxs_out
+def window_average_fast(input_array_y, half_window_size=2):
+    r"""
+    Window average using numpy's convolve function
+    :param input_array_y:
+    :param window_size:
+    :return:
+    """
+    input_array_y = (input_array_y).astype(float)
+    window = _np.ones(2*half_window_size+1)
+    return _np.convolve(input_array_y, window, mode="valid")/len(window)
 
 #Lifted from my own aGPCR utils
 def window_average(input_array_y, half_window_size=2):
