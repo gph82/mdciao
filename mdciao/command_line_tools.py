@@ -177,6 +177,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           plot_timedep=True,
                           n_cols=4,
                           distro=False,
+                          n_jobs=1
                           ):
 
     if resSeq_idxs is None:
@@ -278,7 +279,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     ctcs_trajs, time_array = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                        chunksize=chunksize_in_frames, return_time=True,
-                                       consolidate=False
+                                       consolidate=False,
+                                       n_jobs=n_jobs
                                        )
     actcs = np.vstack(ctcs_trajs)
     ctcs_mean = np.mean(actcs < ctc_cutoff_Ang / 10, 0)
