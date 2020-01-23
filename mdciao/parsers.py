@@ -281,7 +281,7 @@ def parser_for_rn():
     _parser_add_time_traces(parser)
     _parser_add_distro(parser)
     _parser_add_n_cols(parser)
-
+    _parser_add_n_jobs(parser)
     return parser
 
 def _parser_add_n_cols(parser):
@@ -479,4 +479,15 @@ def parser_for_BW_overview():
                         help="Look for Ballesteros-Weinstein definitions in the GPRCmd using a uniprot code, "
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                         )
+    return parser
+
+
+def parser_for_CGN_overview():
+    parser = argparse.ArgumentParser(description='Provides overview of '
+                                                 'CGN nomenclature for a given topology')
+
+    _parser_add_topology(parser)
+    parser.add_argument("CGN_PDB", type=str,
+                        help="Look for CGN definitions in a database using a PDB code, "
+                             "e.g. 3SN6. see www.mrc-lmb.cam.ac.uk")
     return parser

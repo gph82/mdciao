@@ -26,6 +26,7 @@ setup(
              'scripts/density_by_sites.py',
              'scripts/fragment_overview.py',
              'scripts/BW_overview.py',
+             'scripts/CGN_overview.py',
              #'scripts/CARDS.py'
              ]
 )
