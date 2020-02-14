@@ -391,7 +391,7 @@ def mean_geometry(list_of_trajs, reference=None,
                             ref_atom_indices=ref_atom_indices)
         if ii ==0 and reference is None:
             unitcell_angles = itraj._unitcell_angles[0]
-            unitcell_lenghts = itraj._unitcell_lenghts[0]
+            unitcell_lengths = itraj._unitcell_lenghts[0]
         mean_xyz[ii,:,:] = itraj.xyz.mean(0)
 
     mean_xyz = _np.average(mean_xyz,
@@ -400,10 +400,10 @@ def mean_geometry(list_of_trajs, reference=None,
 
     if reference is not None:
         unitcell_angles =  reference._unitcell_angles[0]
-        unitcell_lenghts = reference._unitcell_lengths[0]
+        unitcell_lengths = reference._unitcell_lengths[0]
 
     return _md.Trajectory(mean_xyz, topology=itraj.topology,
-                          unitcell_lengths=unitcell_lenghts,
+                          unitcell_lengths=unitcell_lengths,
                           unitcell_angles=unitcell_angles)
 
 #TODO check overlap with my_RMSD
@@ -910,10 +910,11 @@ def reorder_geometry(itraj, new_order_of_res_idxs):
     """
     from mdtraj.core.topology import Bond as _Bond
     itop = _md.Topology()
-    ixyz = []
+
     ichain = itop.add_chain()
     aaold2new = {}
     oldtop = itraj.topology.copy()
+    new_order_of_atom_idxs = []
     for ii, idx in enumerate(new_order_of_res_idxs):
         rr = oldtop.residue(idx)
         rr.index = ii
@@ -921,10 +922,12 @@ def reorder_geometry(itraj, new_order_of_res_idxs):
         for aa in rr.atoms:
             itop.add_atom(aa.name, aa.element, itop.residue(ii))
             aaold2new[aa.index]=itop.n_atoms-1
+            new_order_of_atom_idxs.append(aa.index)
 
-        ixyz.append([itraj.xyz[:, aa.index, :] for aa in rr.atoms])
         ichain._residues.append(itop.residue(ii))
         # break
+    new_order_of_atom_idxs = _np.hstack(new_order_of_atom_idxs)
+
 
     # Migrate bonds
     for bond in itraj.top._bonds:
@@ -937,9 +940,12 @@ def reorder_geometry(itraj, new_order_of_res_idxs):
             #print(nbond)
             itop._bonds.append(nbond)
 
-    ixyz = _np.vstack(ixyz).squeeze()
     #print(itop.n_residues)
     #print(itop.n_atoms)
     #print(ixyz.shape)
-    igeom = _md.Trajectory([ixyz], topology=itop)
+    igeom = _md.Trajectory(itraj.xyz[:,new_order_of_atom_idxs,:],
+                           topology=itop, time=itraj.time,
+                           unitcell_lengths=itraj.unitcell_lengths,
+                           unitcell_angles=itraj.unitcell_angles
+                           )
     return igeom
