@@ -673,6 +673,7 @@ class contact_group(object):
                            jax=None,
                            shorten_AAs=False,
                            label_fontsize_factor=1,
+                           sum_neighbors=True
                            ):
 
         # Base plot
@@ -689,6 +690,10 @@ class contact_group(object):
         if shorten_AAs:
             label_dotref = self.anchor_res_and_fragment_str_short
             label_bars = self.partner_res_and_fragment_labels_short
+
+        if sum_neighbors:
+            # HACK to avoid re-computing the frequencies
+            label_dotref +='\n$\Sigma$ = %2.1f'%_np.sum([ipatch.get_height() for ipatch in jax.patches])
 
         jax.plot(-1, -1, 'o',
                  color=self.anchor_fragment_color,
