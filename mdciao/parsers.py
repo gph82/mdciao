@@ -226,7 +226,8 @@ def parser_for_rn():
 
 
     parser.add_argument('--resSeq_idxs', type=str,
-                        help='the resSeq idxs of interest (in VMD these are called "resid"). Can be in a format 1,2-6,10,20-25')
+                        help='the resSeq idxs of interest (in VMD these are called "resid"). '
+                             'Can be in a format 1,2-6,10,20-25. No spaces are allowed.')
 
     _parser_add_cutoff(parser)
     _parser_add_stride(parser)
