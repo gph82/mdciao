@@ -672,7 +672,8 @@ class contact_group(object):
                            xlim=None,
                            jax=None,
                            shorten_AAs=False,
-                           label_fontsize_factor=1):
+                           label_fontsize_factor=1,
+                           ):
 
         # Base plot
         jax = self.histo(ctc_cutoff_Ang,
@@ -944,6 +945,7 @@ class contact_group(object):
                            dt=1, t_unit="ps",
                            n_smooth_hw=0,
                            gray_background=False,
+                           max_handles_per_row=4,
                            ):
         #Plot ncontacts in the last frame
         if color_scheme is None:
@@ -960,7 +962,11 @@ class contact_group(object):
         iax.set_ylabel('$\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
         iax.set_xlabel('t / %s'%t_unit)
         iax.set_xlim([0,self.time_max*dt])
-        iax.legend(fontsize=_rcParams["font.size"]*.75)
+        iax.set_ylim([0,iax.get_ylim()[1]])
+        iax.legend(fontsize=_rcParams["font.size"]*.75,
+                   ncol=_np.ceil(self.n_trajs / max_handles_per_row).astype(int),
+                   loc=1,
+                   )
 
     # TODO document this to say that these labels are already ordered bc
     # within one given contact_group object/interface, the
@@ -1132,6 +1138,7 @@ def plot_contact(ictc, iax,
                  shorten_AAs=False,
                  t_unit='ps',
                  ylim_Ang=10,
+                 max_handles_per_row=4,
                  ):
     if color_scheme is None:
         color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
@@ -1156,7 +1163,9 @@ def plot_contact(ictc, iax,
                               color_scheme[traj_idx],
                               gray_background=gray_background,
                               n_smooth_hw=n_smooth_hw)
-    iax.legend(loc=1, fontsize=_rcParams["font.size"]*.75)
+    iax.legend(loc=1, fontsize=_rcParams["font.size"]*.75,
+               ncol=_np.ceil(ictc.n_trajs/max_handles_per_row).astype(int)
+               )
     ctc_label = ictc.ctc_label
     if shorten_AAs:
         ctc_label = ictc.ctc_label_short
