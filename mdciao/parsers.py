@@ -285,6 +285,70 @@ def parser_for_rn():
     _parser_add_n_jobs(parser)
     return parser
 
+def parser_for_dih():
+    parser = _parser_top_traj(description='Small analysis tool for computation of residue dihedrals, backbone and sidechains.')
+
+
+    parser.add_argument('--resSeq_idxs', type=str,
+                        help='the resSeq idxs of interest (in VMD these are called "resid"). '
+                             'Can be in a format 1,2-6,10,20-25. No spaces are allowed.')
+    parser.add_argument('--types',type=str,default='all', help='Types of dihedral angles to be computed. It can be '
+                                                               'an "all", "backbone", or "sidechain"')
+    _parser_add_stride(parser)
+    _parser_add_chunk(parser)
+    _parser_add_smooth(parser)
+    _parser_add_fragments(parser)
+    _parser_add_fragment_names(parser)
+
+    parser.add_argument('--sort', dest='sort', action='store_true', help="Sort the resSeq_idxs list. Defaut is True")
+    parser.add_argument('--no-sort', dest='sort', action='store_false')
+    parser.set_defaults(sort=True)
+
+    #parser.add_argument('--pbc', dest='pbc', action='store_true',
+    #                    help="Consider periodic boundary conditions when computing distances."
+    #                         " Defaut is True")
+    #parser.add_argument('--no-pbc', dest='pbc', action='store_false')
+    #parser.set_defaults(pbc=True)
+
+    parser.add_argument('--ask_fragment', dest='ask', action='store_true',
+                        help="Interactively ask for fragment assignemnt when input matches more than one resSeq")
+    parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
+    parser.set_defaults(ask=True)
+    parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
+                        default='output.npy')
+    _parser_add_ascii(parser)
+    parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
+                        default='.pdf')
+
+    parser.add_argument('--serial_idxs', dest='res_idxs', action='store_true',
+                        help='Interpret the indices of --resSeq_idxs '
+                             'not as sequence idxs (e.g. 30 for GLU30), but as '
+                             'their order in the topology (e.g. 0 for GLU30 if '
+                             'GLU30 is the first residue in the topology). Default is False')
+    parser.set_defaults(res_idxs=False)
+
+    _parser_add_nomenclature(parser)
+    _parser_add_output_dir(parser)
+    _parser_add_output_desc(parser, default='dih')
+    _parser_add_t_unit(parser)
+    _parser_add_curve_color(parser)
+    _parser_add_gray_backgroud(parser)
+    _parser_add_graphic_dpi(parser)
+    _parser_add_short_AA_names(parser)
+    _parser_add_time_traces(parser)
+    _parser_add_n_cols(parser)
+    _parser_add_n_jobs(parser)
+
+    parser.add_argument('--degrees',   dest='use_deg', action="store_true")
+    parser.add_argument('--no-degrees',dest='use_deg', action="store_false")
+    parser.set_defaults(use_deg=True)
+
+    parser.add_argument('--cos',   dest='use_cos', action="store_true")
+    parser.add_argument('--no-cos',dest='use_cos', action="store_false")
+    parser.set_defaults(use_cos=True)
+
+    return parser
+
 def _parser_add_n_cols(parser):
     parser.add_argument("--n_cols", type=int, help="number of columns of the overall plot. Default is 4",
                         default=4)
