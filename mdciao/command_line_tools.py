@@ -188,6 +188,13 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     _offer_to_create_dir(output_dir)
 
+    # String comparison to allow for command line argparse-use directly
+    if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt", "xlsx"]:
+        ascii_ext = str(output_ascii).lower().strip(".")
+    else:
+        ascii_ext = None
+
+
     _resSeq_idxs = rangeexpand(resSeq_idxs)
     if len(_resSeq_idxs) == 0:
         raise ValueError("Please check your input indices, "
@@ -277,15 +284,15 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
           "number is still too high (i.e. the computation is too slow), consider using a smaller nlist_cutoff_Ang " % (
               len(ctc_idxs), len(ctc_idxs_small)))
 
-    ctcs_trajs, time_array = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
-                                       chunksize=chunksize_in_frames, return_time=True,
-                                       consolidate=False,
-                                       n_jobs=n_jobs
-                                       )
+    ctcs_trajs, time_array, at_pair_trajs = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+                                                      chunksize=chunksize_in_frames, return_time=True,
+                                                      consolidate=False,
+                                                      n_jobs=n_jobs,
+                                                      )
+    print() # to make sure we don't overwrite outut
     actcs = np.vstack(ctcs_trajs)
     ctcs_mean = np.mean(actcs < ctc_cutoff_Ang / 10, 0)
 
-    print()
     final_look = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs,
                                                            fragments, ctc_idxs_small,
                                                            refgeom.top,
@@ -309,8 +316,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                                    trajs=xtcs,
                                                    fragment_idxs=fragment_idxs,
                                                    fragment_names=[fragment_names[idx] for idx in fragment_idxs],
-                                                   fragment_colors=[fragcolors[idx] for idx in fragment_idxs]
+                                                   fragment_colors=[fragcolors[idx] for idx in fragment_idxs],
+                                                   atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
                                                    ))
+
         neighborhoods[key] = contact_group(neighborhoods[key])
 
     panelheight = 3
@@ -346,18 +355,39 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
 
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
+    fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
     fname = path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi)
     print("The following files have been created")
     print(fname)
+    # TDOO undecided about this
+    if ascii_ext is not None:
+        for ihood in neighborhoods.values():
+            fname = '%s.%s@%2.1f_Ang.%s' % (output_desc,
+                                            ihood.anchor_res_and_fragment_str.replace('*', ""),
+                                            ctc_cutoff_Ang,
+                                            ascii_ext.strip("."))
+            istr = (ihood.frequency_table(ctc_cutoff_Ang,
+                                          breakdown=True,
+                                          #AA_format="long",
+                                          lb_format="join").round(
+                {"freq": 2, "sum": 2})).to_string(index=False ,header=False,
+                                                  justify='left',
+                                                  #justify = 'right'
+                                                  )
+            #istr[0] = '#'
+            istr += '\n'
+            with open(fname, 'w') as f:
+                f.write(istr)
+            print(fname)
 
     # One loop for the time resolved neighborhoods
     if plot_timedep:
         for ihood in neighborhoods.values():
-            fname = '%s.%s.time_resolved.%s' % (output_desc,
-                                                ihood.anchor_res_and_fragment_str.replace('*', ""),
-                                                graphic_ext.strip("."))
+            fname = '%s.%s.time_resolved@%2.1f_Ang.%s' % (output_desc,
+                                                          ihood.anchor_res_and_fragment_str.replace('*', ""),
+                                                          ctc_cutoff_Ang,
+                                                          graphic_ext.strip("."))
             fname = path.join(output_dir, fname)
             myfig = ihood.plot_timedep_ctcs(panelheight,
                                             plot_N_ctcs=True,
@@ -379,9 +409,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             myfig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
             plt.close(myfig)
             print(fname)
-            if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt", "xlsx"]:
-                ext = str(output_ascii).lower().strip(".")
-                ihood.save_trajs(output_desc,ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
+            ihood.save_trajs(output_desc,ascii_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
             print()
 
     return {"ctc_idxs": ctc_idxs_small,
