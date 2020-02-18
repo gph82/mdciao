@@ -2,6 +2,7 @@ import numpy as _np
 import mdtraj as _md
 from os import path as _path
 from .list_utils import in_what_fragment, _replace4latex, iterate_and_inform_lambdas
+from .plots import plot_w_smoothing_auto, plot_contact
 from collections import defaultdict
 
 import matplotlib.pyplot as _plt
@@ -147,14 +148,16 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         iterfunct = lambda a : tqdm(a)
     else:
         iterfunct = lambda a : a
-    ictcs_itimes = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc)(top, ixtc, ctc_residxs_pairs,chunksize,stride,ii,
+    ictcs_itimes_iaps = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc)(top, ixtc, ctc_residxs_pairs,chunksize,stride,ii,
                                                                   **mdcontacts_kwargs)
                                             for ii, ixtc in enumerate(iterfunct(xtcs)))
     ctcs = []
     times = []
-    for ictcs, itimes in ictcs_itimes:
+    aps = []
+    for ictcs, itimes, iaps in ictcs_itimes_iaps:
         ctcs.append(ictcs)
         times.append(itimes)
+        aps.append(iaps)
 
     if consolidate:
         try:
@@ -171,19 +174,16 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     if not return_time:
         return actcs
     else:
-        return actcs, times
-
-
+        return actcs, times, aps
 
 def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
                 traj_idx,
                 **mdcontacts_kwargs):
 
     iterate, inform = iterate_and_inform_lambdas(ixtc,stride, chunksize, top=top)
-    ictcs = []
+    ictcs, itime, iaps = [],[],[]
     running_f = 0
     inform(ixtc, traj_idx, 0, running_f)
-    itime = []
     for jj, igeom in enumerate(iterate(ixtc)):
         running_f += igeom.n_frames
         inform(ixtc, traj_idx, jj, running_f)
@@ -192,16 +192,18 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
         if 'scheme' in mdcontacts_kwargs.keys() and mdcontacts_kwargs["scheme"].upper()=='COM':
             jctcs = geom2COMdist(igeom, ctc_residxs_pairs)
         else:
-            jctcs, jidx_pairs = _md.compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
+            jctcs, jidx_pairs, j_atompairs = compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
             # TODO do proper list comparison and do it only once
             assert len(jidx_pairs) == len(ctc_residxs_pairs)
 
         ictcs.append(jctcs)
+        iaps.append(j_atompairs)
 
     itime = _np.hstack(itime)
     ictcs = _np.vstack(ictcs)
+    iatps = _np.vstack(j_atompairs)
 
-    return ictcs, itime
+    return ictcs, itime, iatps
 
 def geom2COMdist(igeom, residue_pairs):
     r"""
@@ -377,6 +379,10 @@ class contact_group(object):
                     assert self._cons2resname[key]==val,(self._cons2resname[key],key,val)
 
             self._resname2cons = {val: key for key, val in self._cons2resname.items()}
+
+    #def
+    #import inspect
+    #>> > inspect.getmembers(MyClass, lambda a: not (inspect.isroutine(a)))
 
     #todo there is redundant code for generating interface labels!
     @property
@@ -1057,9 +1063,18 @@ class contact_group(object):
         return _DF({"label":label_bars,
                     "freq":freqs})
 
-    def frequency_table(self, ctc_cutoff_Ang):
-        idf = _DF([ictc.frequency_dict(ctc_cutoff_Ang) for ictc in self._contacts])
-        return idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
+    def frequency_table(self, ctc_cutoff_Ang,
+                        breakdown=False,
+                        **ctc_fd_kwargs):
+        idf = _DF([ictc.frequency_dict(ctc_cutoff_Ang, **ctc_fd_kwargs) for ictc in self._contacts])
+        df2return = idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
+
+        if breakdown:
+            idf = [ictc.frequency_dict_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
+            idf = ['(%s)'%(', '.join(['%2u%% %s'%(val*100,key) for key, val in idict.items()])) for idict in idf]
+            df2return = df2return.join(_DF.from_dict({"breakdown": idf}))
+
+        return df2return
 
     def frequency_per_residue_idx(self, ctc_cutoff_Ang):
         dict_sum = defaultdict(list)
@@ -1134,87 +1149,6 @@ class contact_group(object):
             if verbose:
                 print(savename)
 
-def plot_contact(ictc, iax,
-                 color_scheme=None,
-                 ctc_cutoff_Ang=0,
-                 n_smooth_hw=0,
-                 dt=1,
-                 gray_background=False,
-                 shorten_AAs=False,
-                 t_unit='ps',
-                 ylim_Ang=10,
-                 max_handles_per_row=4,
-                 ):
-    if color_scheme is None:
-        color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
-    color_scheme = _np.tile(color_scheme, _np.ceil(ictc.n_trajs/len(color_scheme)).astype(int)+1)
-    iax.set_ylabel('D / $\\AA$', rotation=90)
-    if isinstance(ylim_Ang, (int, float)):
-        iax.set_ylim([0, ylim_Ang])
-    elif isinstance(ylim_Ang, str) and ylim_Ang.lower()== 'auto':
-        pass
-    else:
-        raise ValueError("Cannot understand your ylim value %s of type %s" % (ylim_Ang,type(ylim_Ang)))
-    for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(ictc.ctc_trajs,
-                                                                ictc.time_arrays,
-                                                                ictc.trajlabels)):
-
-        ilabel = '%s'%trjlabel
-        if ctc_cutoff_Ang > 0:
-            ilabel += ' (%u%%)' % (ictc.frequency_per_traj(ctc_cutoff_Ang)[traj_idx] * 100)
-
-        plot_w_smoothing_auto(iax, itime * dt, ictc_traj * 10,
-                              ilabel,
-                              color_scheme[traj_idx],
-                              gray_background=gray_background,
-                              n_smooth_hw=n_smooth_hw)
-    iax.legend(loc=1, fontsize=_rcParams["font.size"]*.75,
-               ncol=_np.ceil(ictc.n_trajs/max_handles_per_row).astype(int)
-               )
-    ctc_label = ictc.ctc_label
-    if shorten_AAs:
-        ctc_label = ictc.ctc_label_short
-    ctc_label = ctc_label.replace("@None","")
-    if ctc_cutoff_Ang>0:
-        ctc_label += " (%u%%)"%(ictc.frequency_overall_trajs(ctc_cutoff_Ang) * 100)
-
-    iax.text(_np.mean(iax.get_xlim()), 1*10/_np.max((10, iax.get_ylim()[1])), #fudge factor for labels
-             ctc_label,
-             ha='center')
-    if ctc_cutoff_Ang>0:
-        iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
-
-    iax.set_xlabel('t / %s' % _replace4latex(t_unit))
-    iax.set_xlim([0, ictc.time_max * dt])
-    iax.set_ylim([0,iax.get_ylim()[1]])
-
-
-def plot_w_smoothing_auto(iax, x, y,
-                          ilabel,
-                          icolor,
-                          gray_background=False,
-                          n_smooth_hw=0):
-    alpha = 1
-    if n_smooth_hw > 0:
-        from .list_utils import window_average_fast as _wav
-        alpha = .2
-        x_smooth = _wav(x, half_window_size=n_smooth_hw)
-        y_smooth = _wav(y, half_window_size=n_smooth_hw)
-        iax.plot(x_smooth,
-                 y_smooth,
-                 label=ilabel,
-                 color=icolor)
-        ilabel = None
-
-        if gray_background:
-            icolor = "gray"
-
-    iax.plot(x, y,
-             label=ilabel,
-             alpha=alpha,
-             color=icolor)
-
-
 class contact_pair(object):
     r"""Class for storing everything related to a contact"""
     #todo consider packing some of this stuff in the site_obj class
@@ -1223,6 +1157,7 @@ class contact_pair(object):
                      time_arrays,
                  top=None,
                  trajs=None,
+                 atom_pair_trajs=None,
                  fragment_idxs=None,
                  fragment_names=None,
                  fragment_colors=None,
@@ -1249,7 +1184,7 @@ class contact_pair(object):
         self._ctc_trajs = [_np.array(itraj) for itraj in ctc_trajs]
         self._top = top
         self._trajs = trajs
-
+        self._atom_pair_trajs = atom_pair_trajs
         self._time_arrays = time_arrays
         self._n_trajs = len(ctc_trajs)
         assert self._n_trajs == len(time_arrays)
@@ -1285,9 +1220,63 @@ class contact_pair(object):
             self._fragment_names = fragment_names
         self._fragment_colors = fragment_colors
 
+    # TODO reorder so that anchor_residue always comes first??
+
     #TODO many of these properties will fail if partner nor anchor are None
     # todo many of these properties could be simply methods with options
     # to reduce code
+
+    @property
+    def atom_pair_trajs(self):
+        return self._atom_pair_trajs
+
+    def count_formed_atom_pairs(self, ctc_cutoff_Ang,
+                                sort=True):
+                                #use_atom_names=False):
+        bintrajs = self.binarize_trajs(ctc_cutoff_Ang)
+
+        formed_atom_pair_trajs = [atraj[itraj==1] for atraj, itraj in zip(self.atom_pair_trajs, bintrajs)]
+        formed_atom_pairs = _np.vstack(formed_atom_pair_trajs)
+        formed_atom_pairs_hashes = _np.zeros_like(formed_atom_pairs, dtype=_np.int64)
+
+        hash2pair = {}
+        for ii, fap in enumerate(formed_atom_pairs):
+            ihash = hash(tuple(fap))
+            formed_atom_pairs_hashes[ii]= ihash
+            if ihash not in hash2pair.keys():
+                hash2pair[ihash]=fap
+
+        counts = []
+        for ihash, ipair in hash2pair.items():
+            counts.append((formed_atom_pairs_hashes == ihash).sum())
+        keys = list(hash2pair.values())
+        if sort:
+            keys = [keys[ii] for ii in _np.argsort(counts)[::-1]]
+            counts=sorted(counts)[::-1]
+
+        return keys, counts
+
+
+    def frequency_dict_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang,
+                                                keep_resname=False,
+                                                consolidate=True,
+                                                min_percentage=5):
+        keys, counts = self.count_formed_atom_pairs(ctc_cutoff_Ang)
+
+        if consolidate:
+            keys = ['-'.join([_atom_type(self.top.atom(ii)) for ii in key]) for key in keys]
+            dict_out = {key:0 for key in keys}
+            for key, count in zip(keys, counts):
+                dict_out[key] += count
+            return  {key: val / _np.sum(counts) for key, val in dict_out.items() if val / _np.sum(counts) > min_percentage / 100}
+
+        else:
+            if keep_resname:
+                keys = ['-'.join([str(self.top.atom(ii)) for ii in key]) for key in keys]
+            else:
+                keys = ['-'.join([str(self.top.atom(ii)).name for ii in key]) for key in keys]
+            return {key:count for key, count in zip(keys, counts)}
+
 
     @property
     def fragment_names(self):
@@ -1612,6 +1601,14 @@ class contact_pair(object):
         return self._time_arrays
 
     @property
+    def feat_trajs(self):
+        return self.ctc_trajs
+
+    @property
+    def label(self):
+        return self.ctc_label
+
+    @property
     def ctc_trajs(self):
         """
 
@@ -1716,7 +1713,9 @@ class contact_pair(object):
         #print([ires.shape for ires in result])
         return result
 
-    def frequency_dict(self, ctc_cutoff_Ang):
+    def frequency_dict(self, ctc_cutoff_Ang,
+                       AA_format='short',
+                       lb_format='split'):
         """
 
         Parameters
@@ -1727,9 +1726,23 @@ class contact_pair(object):
         -------
 
         """
+        if AA_format== 'short':
+            label = self.ctc_label_short
+        elif AA_format== 'long':
+            label = self.ctc_label
+        else:
+            raise ValueError(AA_format)
+
+        if lb_format=='split':
+            label= '%-15s - %-15s'%tuple(label.split('-'))
+        elif lb_format=='join':
+            pass
+        else:
+            raise ValueError(lb_format)
+
         return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang),
                 "residue idxs":'%u %u'%tuple(self.res_idxs_pair),
-                "label":'%-15s - %-15s'%tuple(self.ctc_label_short.split('-'))}
+                "label":label}
 
     def frequency_overall_trajs(self, ctc_cutoff_Ang):
         """
@@ -1971,7 +1984,211 @@ def _plot_interface_matrix(mat,labels,pixelsize=1,
         _plt.vlines(_np.arange(len(labels[1])) + .5, -.5, len(labels[0]), ls='--', lw=.5,  color='gray', zorder=10)
 
     if colorbar:
-        _plt.gcf().colorbar(im, ax=ax)
+        _plt.gcf().colorbar(im, ax=_plt.gcf())
         im.set_clim(0.0, 1.0)
 
     return _plt.gca(), pixelsize
+
+def _atom_type(aa, no_BB_no_SC='X'):
+    if aa.is_backbone:
+        return 'BB'
+    elif aa.is_sidechain:
+        return 'SC'
+    else:
+        return no_BB_no_SC
+
+from mdtraj.utils import ensure_type
+import itertools
+from mdtraj.utils.six import string_types
+from mdtraj.utils.six.moves import xrange
+from mdtraj.core import element
+def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonprotein=True, periodic=True,
+                     soft_min=False, soft_min_beta=20):
+    """Compute the distance between pairs of residues in a trajectory.
+
+    Parameters
+    ----------
+    traj : md.Trajectory
+        An mdtraj trajectory. It must contain topology information.
+    contacts : array-like, ndim=2 or 'all'
+        An array containing pairs of indices (0-indexed) of residues to
+        compute the contacts between, or 'all'. The string 'all' will
+        select all pairs of residues separated by two or more residues
+        (i.e. the i to i+1 and i to i+2 pairs will be excluded).
+    scheme : {'ca', 'closest', 'closest-heavy', 'sidechain', 'sidechain-heavy'}
+        scheme to determine the distance between two residues:
+            'ca' : distance between two residues is given by the distance
+                between their alpha carbons
+            'closest' : distance is the closest distance between any
+                two atoms in the residues
+            'closest-heavy' : distance is the closest distance between
+                any two non-hydrogen atoms in the residues
+            'sidechain' : distance is the closest distance between any
+                two atoms in residue sidechains
+            'sidechain-heavy' : distance is the closest distance between
+                any two non-hydrogen atoms in residue sidechains
+    ignore_nonprotein : bool
+        When using `contact==all`, don't compute contacts between
+        "residues" which are not protein (i.e. do not contain an alpha
+        carbon).
+    periodic : bool, default=True
+        If periodic is True and the trajectory contains unitcell information,
+        we will compute distances under the minimum image convention.
+    soft_min : bool, default=False
+        If soft_min is true, we will use a diffrentiable version of
+        the scheme. The exact expression used
+         is d = \frac{\beta}{log\sum_i{exp(\frac{\beta}{d_i}})} where
+         beta is user parameter which defaults to 20nm. The expression
+         we use is copied from the plumed mindist calculator.
+         http://plumed.github.io/doc-v2.0/user-doc/html/mindist.html
+    soft_min_beta : float, default=20nm
+        The value of beta to use for the soft_min distance option.
+        Very large values might cause small contact distances to go to 0.
+
+    Returns
+    -------
+    distances : np.ndarray, shape=(n_frames, n_pairs), dtype=np.float32
+        Distances for each residue-residue contact in each frame
+        of the trajectory
+    residue_pairs : np.ndarray, shape=(n_pairs, 2), dtype=int
+        Each row of this return value gives the indices of the residues
+        involved in the contact. This argument mirrors the `contacts` input
+        parameter. When `all` is specified as input, this return value
+        gives the actual residue pairs resolved from `all`. Furthermore,
+        when scheme=='ca', any contact pair supplied as input corresponding
+        to a residue without an alpha carbon (e.g. HOH) is ignored from the
+        input contacts list, meanings that the indexing of the
+        output `distances` may not match up with the indexing of the input
+        `contacts`. But the indexing of `distances` *will* match up with
+        the indexing of `residue_pairs`
+
+    Examples
+    --------
+    >>> # To compute the contact distance between residue 0 and 10 and
+    >>> # residues 0 and 11
+    >>> _md.compute_contacts(t, [[0, 10], [0, 11]])
+
+    >>> # the itertools library can be useful to generate the arrays of indices
+    >>> group_1 = [0, 1, 2]
+    >>> group_2 = [10, 11]
+    >>> pairs = list(itertools.product(group_1, group_2))
+    >>> print(pairs)
+    [(0, 10), (0, 11), (1, 10), (1, 11), (2, 10), (2, 11)]
+    >>> _md.compute_contacts(t, pairs)
+
+    See Also
+    --------
+    mdtraj.geometry.squareform : turn the result from this function
+        into a square "contact map"
+    Topology.residue : Get residues from the topology by index
+    """
+    if traj.topology is None:
+        raise ValueError('contact calculation requires a topology')
+
+    if isinstance(contacts, string_types):
+        if contacts.lower() != 'all':
+            raise ValueError('(%s) is not a valid contacts specifier' % contacts.lower())
+
+        residue_pairs = []
+        for i in xrange(traj.n_residues):
+            residue_i = traj.topology.residue(i)
+            if ignore_nonprotein and not any(a for a in residue_i.atoms if a.name.lower() == 'ca'):
+                continue
+            for j in xrange(i+3, traj.n_residues):
+                residue_j = traj.topology.residue(j)
+                if ignore_nonprotein and not any(a for a in residue_j.atoms if a.name.lower() == 'ca'):
+                    continue
+                if residue_i.chain == residue_j.chain:
+                    residue_pairs.append((i, j))
+
+        residue_pairs = _np.array(residue_pairs)
+        if len(residue_pairs) == 0:
+            raise ValueError('No acceptable residue pairs found')
+
+    else:
+        residue_pairs = ensure_type(_np.asarray(contacts), dtype=_np.int, ndim=2, name='contacts',
+                                    shape=(None, 2), warn_on_cast=False)
+        if not _np.all((residue_pairs >= 0) * (residue_pairs < traj.n_residues)):
+            raise ValueError('contacts requests a residue that is not in the permitted range')
+
+    # now the bulk of the function. This will calculate atom distances and then
+    # re-work them in the required scheme to get residue distances
+    scheme = scheme.lower()
+    if scheme not in ['ca', 'closest', 'closest-heavy', 'sidechain', 'sidechain-heavy']:
+        raise ValueError('scheme must be one of [ca, closest, closest-heavy, sidechain, sidechain-heavy]')
+
+    if scheme == 'ca':
+        if soft_min:
+            import warnings
+            warnings.warn("The soft_min=True option with scheme=ca gives"
+                          "the same results as soft_min=False")
+        filtered_residue_pairs = []
+        atom_pairs = []
+
+        for r0, r1 in residue_pairs:
+            ca_atoms_0 = [a.index for a in traj.top.residue(r0).atoms if a.name.lower() == 'ca']
+            ca_atoms_1 = [a.index for a in traj.top.residue(r1).atoms if a.name.lower() == 'ca']
+            if len(ca_atoms_0) == 1 and len(ca_atoms_1) == 1:
+                atom_pairs.append((ca_atoms_0[0], ca_atoms_1[0]))
+                filtered_residue_pairs.append((r0, r1))
+            elif len(ca_atoms_0) == 0 or len(ca_atoms_1) == 0:
+                # residue does not contain a CA atom, skip it
+                if contacts != 'all':
+                    # if the user manually asked for this residue, and didn't use "all"
+                    import warnings
+                    warnings.warn('Ignoring contacts pair %d-%d. No alpha carbon.' % (r0, r1))
+            else:
+                raise ValueError('More than 1 alpha carbon detected in residue %d or %d' % (r0, r1))
+
+        residue_pairs = _np.array(filtered_residue_pairs)
+        distances = _md.compute_distances(traj, atom_pairs, periodic=periodic)
+
+
+    elif scheme in ['closest', 'closest-heavy', 'sidechain', 'sidechain-heavy']:
+        if scheme == 'closest':
+            residue_membership = [[atom.index for atom in residue.atoms]
+                                  for residue in traj.topology.residues]
+        elif scheme == 'closest-heavy':
+            # then remove the hydrogens from the above list
+            residue_membership = [[atom.index for atom in residue.atoms if not (atom.element == element.hydrogen)]
+                                  for residue in traj.topology.residues]
+        elif scheme == 'sidechain':
+            residue_membership = [[atom.index for atom in residue.atoms if atom.is_sidechain]
+                                  for residue in traj.topology.residues]
+        elif scheme == 'sidechain-heavy':
+            # then remove the hydrogens from the above list
+            residue_membership = [[atom.index for atom in residue.atoms if atom.is_sidechain and not (atom.element == element.hydrogen)]
+                                  for residue in traj.topology.residues]
+
+        residue_lens = [len(ainds) for ainds in residue_membership]
+
+        atom_pairs = []
+        n_atom_pairs_per_residue_pair = []
+        for pair in residue_pairs:
+            atom_pairs.extend(list(itertools.product(residue_membership[pair[0]], residue_membership[pair[1]])))
+            n_atom_pairs_per_residue_pair.append(residue_lens[pair[0]] * residue_lens[pair[1]])
+
+        atom_distances = _md.compute_distances(traj, atom_pairs, periodic=periodic)
+
+        # now squash the results based on residue membership
+        n_residue_pairs = len(residue_pairs)
+        distances = _np.zeros((len(traj), n_residue_pairs), dtype=_np.float32)
+        n_atom_pairs_per_residue_pair = _np.asarray(n_atom_pairs_per_residue_pair)
+
+        aa_pairs = []
+        for i in xrange(n_residue_pairs):
+            index = int(_np.sum(n_atom_pairs_per_residue_pair[:i]))
+            n = n_atom_pairs_per_residue_pair[i]
+            if not soft_min:
+                idx_min = atom_distances[:, index : index + n].argmin(axis=1)
+                aa_pairs.append(_np.array(atom_pairs[index: index + n])[idx_min])
+                distances[:, i] = atom_distances[:, index : index + n].min(axis=1)
+            else:
+                distances[:, i] = soft_min_beta / \
+                                  _np.log(_np.sum(_np.exp(soft_min_beta /
+                                                       atom_distances[:, index : index + n]), axis=1))
+
+    else:
+        raise ValueError('This is not supposed to happen!')
+
+    return distances, residue_pairs, _np.hstack(aa_pairs)
