@@ -1,5 +1,6 @@
 import numpy as _np
 from matplotlib import rcParams as _rcParams
+import matplotlib.pyplot as _plt
 from .list_utils import _replace4latex
 
 def plot_contact(ictc, iax,
@@ -80,3 +81,122 @@ def plot_w_smoothing_auto(iax, x, y,
              label=ilabel,
              alpha=alpha,
              color=icolor)
+
+def compare_neighborhoods(filedict,
+                          anchor,
+                          colordict, width=.2, figsize=(10, 5),
+                          fontsize=16,
+                          substitutions=["MG", "GDP"],
+                          mutations = {},
+                          plot_singles=False, stop_at=.1, scale_fig=False):
+
+    from matplotlib import rcParams as _rcParams
+
+    freqs = {key: {} for key in filedict.keys()}
+    assert len(filedict) == 2
+    for key, ifile in filedict.items():
+        for iline in open(ifile).read().splitlines():
+            try:
+                iline = iline.split()
+                freq, names = iline[0],iline[1]
+                freq = float(freq)
+                names = names.split("-")
+                name = [name for name in names if anchor not in name]
+                assert len(name)==1,name
+                name = name[0]
+                for isub in substitutions:
+                    if name.startswith(isub):
+                        name = isub
+                        break
+                for exp, pat in mutations.items():
+                    name = name.replace(pat,exp)
+                freqs[key][name] = freq
+            except ValueError:
+                print(iline)
+                raise
+
+    for key, val in freqs.items():
+        print(key)
+        for key, val in val.items():
+            print(key,val)
+        print()
+
+    if plot_singles:
+        myfig, myax = _plt.subplots(1, 2, sharey=True, figsize=(figsize[0] * 2, figsize[1]))
+        for iax, (key, ifreq) in zip(myax, freqs.items()):
+            for ii, (jkey, jfreq) in enumerate(ifreq.items()):
+                # if ii==0:
+                #    label=skey
+                # else:
+                #    label=None
+                _plt.sca(iax)
+                _plt.bar(ii, jfreq, width=width,
+                        color=colordict[key],
+                        #        label=label
+                        )
+                _plt.text(ii, 1.05, jkey, rotation=45)
+            _plt.gca().text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom")
+            _plt.ylim(0, 1)
+            _plt.xlim(0 - width, ii + width)
+            _plt.yticks([0, .25, .50, .75, 1])
+            [_plt.gca().axhline(ii, ls=":", color="k", zorder=-1) for ii in [.25, .5, .75]]
+        myfig.tight_layout()
+
+    diffs = {}
+    not_common = []
+    common = []
+    for idict1 in freqs.values():
+        for idict2 in freqs.values():
+            if not idict1 is idict2:
+                not_common += list(set(idict1.keys()).difference(idict2.keys()))
+                common += list(set(idict1.keys()).intersection(idict2.keys()))
+
+    common = list(_np.unique(common))
+    not_common = list(_np.unique(not_common))
+    all_keys = common + not_common
+
+    print("These interaction partners are not shared:", not_common)
+    for ifreq in freqs.values():
+        for key in not_common:
+            if key not in ifreq.keys():
+                ifreq[key] = 0
+
+    _rcParams["font.size"] = 16
+
+    delta = {}
+    for ii, key in enumerate(filedict.keys()):
+        delta[key] = width * ii
+
+    mean = []
+    for key in all_keys:
+        imean = []
+        for idict in freqs.values():
+            imean.append(idict[key])
+        mean.append(_np.mean(imean))
+
+    _rcParams["font.size"] = fontsize
+    _plt.figure(figsize=figsize)
+    for ii, idx in enumerate(_np.argsort(mean)[::-1]):
+        key = all_keys[idx]
+        # print(mean[idx], key)
+        for jj, (skey, sfreq) in enumerate(freqs.items()):
+            if ii == 0:
+                label = skey
+            else:
+                label = None
+            _plt.bar(ii + delta[skey], sfreq[key], width=width,
+                    color=colordict[skey],
+                    label=label
+                    )
+            if jj == 0:
+                _plt.text(ii, 1.05, key, rotation=45)
+        if mean[idx] <= stop_at:
+            break
+    _plt.text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom")
+    _plt.legend()
+    _plt.xticks([])
+    _plt.ylim(0, 1)
+    _plt.xlim(0 - width, ii + width * 2)
+    _plt.yticks([0, .25, .50, .75, 1])
+    [_plt.gca().axhline(ii, ls=":", color="k", zorder=-1) for ii in [.25, .5, .75]]
+    _plt.gcf().tight_layout()
