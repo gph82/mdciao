@@ -5,6 +5,25 @@ from matplotlib import rcParams as _rcParams
 
 from joblib import Parallel as _Parallel, delayed as _delayed
 
+from os import path as _path
+
+from mdciao.fragments import \
+    get_fragments, \
+    interactive_fragment_picker_by_resSeq as _interactive_fragment_picker_by_resSeq
+
+from mdciao.nomenclature_utils import \
+    _relabel_consensus
+
+from mdciao.list_utils import iterate_and_inform_lambdas,\
+    rangeexpand, \
+    in_what_fragment, \
+    _replace4latex
+
+from mdciao.plots import plot_w_smoothing_auto
+
+from mdciao.fragments import my_frag_colors as mycolors
+
+
 def xtcs2dihs(xtcs, top, dih_idxs, stride=1, consolidate=True,
               chunksize=1000, return_time=False,
               n_jobs=1,
@@ -459,3 +478,279 @@ def plot_ramachandran(phi, psi, iax=None, panelsize=5, bins=72):
             iax=_plt.gca()
             h, x, y = _np.histogram2d(_np.hstack((phi,psi)))
 
+def residue_dihedrals(topology, trajectories, resSeq_idxs,
+                      res_idxs=False,
+                      stride=1,
+                      chunksize_in_frames=10000,
+                      n_smooth_hw=0,
+                      ask=True,
+                      sort=True,
+                      fragmentify=True,
+                      fragment_names="",
+                      graphic_ext=".pdf",
+                      output_ascii=None,
+                      BW_uniprot="None",
+                      CGN_PDB="None",
+                      output_dir='.',
+                      color_by_fragment=True,
+                      output_desc='dih',
+                      t_unit='ns',
+                      curve_color="auto",
+                      gray_background=False,
+                      graphic_dpi=150,
+                      short_AA_names=False,
+                      write_to_disk_BW=False,
+                      plot_timedep=True,
+                      n_cols=4,
+                      types='all',
+                      n_jobs=1,
+                      use_deg=True,
+                      use_cos=False,
+                      ):
+    ang2plotfac = 1
+    ang_u = 'rad'
+    bins = 72
+    ang_lambda = lambda x : x
+    xlim =_np.array([-_np.pi, +_np.pi])
+    if use_deg:
+        ang_lambda = lambda x : (180 / _np.pi) * x
+        ang_u = 'deg'
+        xlim = ang_lambda(xlim)
+    if use_cos:
+        ang_lambda = lambda x :_np.abs(_np.cos(x))
+        ang_u = 'arb. u.'
+        bins = 50
+        xlim = [0,1]
+
+    if resSeq_idxs is None:
+        print("You have to provide some residue indices via the --resSeq_idxs option")
+        return None
+
+    dt = _t_unit2dt(t_unit)
+
+    _offer_to_create_dir(output_dir)
+
+    # String comparison to allow for command line argparse-use directly
+    if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt", "xlsx"]:
+        ascii_ext = str(output_ascii).lower().strip(".")
+    else:
+        ascii_ext = None
+
+
+    _resSeq_idxs = rangeexpand(resSeq_idxs)
+    if len(_resSeq_idxs) == 0:
+        raise ValueError("Please check your input indices, "
+                         "they do not make sense %s" % resSeq_idxs)
+    else:
+        resSeq_idxs = _resSeq_idxs
+    if sort:
+        resSeq_idxs = sorted(resSeq_idxs)
+
+    xtcs = sorted(trajectories)
+    try:
+        print("Will compute contact frequencies for the files:\n"
+              "%s\n with a stride of %u frames.\n" % (
+            "\n  ".join(xtcs), stride))
+    except:
+        pass
+
+    if isinstance(topology, str):
+        refgeom = _md.load(topology)
+    else:
+        refgeom = topology
+    if fragmentify:
+        fragments = get_fragments(refgeom.top,method='bonds')
+    else:
+        raise NotImplementedError("This feature is not yet implemented")
+
+    fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
+
+    # Do we want BW definitions
+    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments, write_to_disk=write_to_disk_BW)
+
+    # Dow we want CGN definitions:
+    CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
+
+    # TODO find a consistent way for coloring fragments
+    fragcolors = [cc for cc in mycolors]
+    fragcolors.extend(fragcolors)
+    fragcolors.extend(fragcolors)
+    if isinstance(color_by_fragment, bool) and not color_by_fragment:
+        fragcolors = ['blue' for cc in fragcolors]
+    elif isinstance(color_by_fragment, str):
+        fragcolors = [color_by_fragment for cc in fragcolors]
+
+    if res_idxs:
+        resSeq2residxs = {refgeom.top.residue(ii).resSeq: ii for ii in resSeq_idxs}
+        print("\nInterpreting input indices as zero-indexed residue indexes")
+    else:
+        resSeq2residxs, _ = _interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, refgeom.top,
+                                                                  pick_first_fragment_by_default=not ask,
+                                                                  additional_naming_dicts={"BW":BW,"CGN":CGN}
+                                                                  )
+
+    print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
+    for key, val in resSeq2residxs.items():
+        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments),
+                                                  key,
+                                                  BW[val], CGN[val]))
+
+    quad_dict_by_res_idxs = _dih_idxs_for_residue(resSeq2residxs.values(),refgeom)
+    if types.lower()=='backbone':
+        quad_dict_by_res_idxs={key:{key2:val2 for key2, val2 in val.items() if key2.lower() in ["phi","psi"]} for key, val in quad_dict_by_res_idxs.items()}
+    elif types.lower()=='sidechain':
+        quad_dict_by_res_idxs = {key: {key2: val2 for key2, val2 in val.items() if key2.lower() not in ["phi", "psi"]} for
+                                 key, val in quad_dict_by_res_idxs.items()}
+    elif types.lower()=='all':
+        pass
+    else:
+        raise ValueError(types)
+    dih_idxs =_np.vstack([[val2 for val2 in val.values()] for val in quad_dict_by_res_idxs.values()])
+    dih_trajs, time_array = xtcs2dihs(xtcs, refgeom.top, dih_idxs , stride=stride,
+                                       chunksize=chunksize_in_frames, return_time=True,
+                                       consolidate=False,
+                                       n_jobs=n_jobs,
+
+                                       )
+    print()
+    # Create per-residue dicts with angle objects
+    angles = {}
+    idx_iter = iter(range(len(dih_idxs)))
+    for res_idx, quad_dict in quad_dict_by_res_idxs.items():
+        angles[res_idx] = []
+        for ang_type, iquad in quad_dict.items():
+            consensus_label = _relabel_consensus(res_idx, [BW, CGN])
+            fragment_idx =    in_what_fragment(res_idx, fragments)
+            idx = next(idx_iter)
+            angles[res_idx].append(angle(iquad,
+                                         [itraj[:, idx] for itraj in dih_trajs],
+                                         time_array,
+                                        res_idx=res_idx,
+                                         ang_type=ang_type,
+                                         top=refgeom.top,
+                                         consensus_label=consensus_label,
+                                         trajs=xtcs,
+                                         fragment_idx=fragment_idx,
+                                         fragment_name=fragment_names[fragment_idx],
+                                         fragment_color=fragcolors[fragment_idx],
+                                         ))
+
+    panelheight = 3
+    n_cols =_np.min((n_cols, len(resSeq2residxs)))
+    n_rows =_np.ceil(len(resSeq2residxs) / n_cols).astype(int)
+    panelsize = 4
+    panelsize2font = 3.5
+    histofig, histoax = plt.subplots(n_rows, n_cols,
+                                     sharex=True,
+                                     sharey=True,
+                                     figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
+
+    # One loop for the histograms
+    _rcParams["font.size"]=panelsize*panelsize2font
+    for jax, res_idx in zip(histoax.flatten(),
+                            angles.keys()):
+        for idih in angles[res_idx]:
+            h, x = _np.histogram(ang_lambda(_np.hstack(idih.dih_trajs)),
+                                 bins=bins)
+            jax.plot(x[:-1]*ang2plotfac,h,label=idih.dih_label_short_latex)
+            jax.legend()
+        jax.set_title(idih.residue_name)
+    jax.set_xlim(xlim)
+    [jax.set_xlabel('dih / %s'%ang_u) for jax in histoax[-1]]
+    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
+    fname = "%s.overall.%s" % (output_desc.strip("."), graphic_ext.strip("."))
+    fname = _path.join(output_dir, fname)
+    histofig.savefig(fname, dpi=graphic_dpi)
+    print("The following files have been created")
+    print(fname)
+
+    # One loop for the time resolved neighborhoods
+    if plot_timedep:
+        for res_idx, res_dihs in angles.items():
+            fname = '%s.%s.time_resolved.%s' % (output_desc.strip("."),
+                                                idih.residue_name,
+                                                graphic_ext.strip("."))
+            fname = _path.join(output_dir, fname)
+            n_rows=len(res_dihs)
+            myfig, myax = plt.subplots(n_rows, 1,
+                                        figsize=(10, n_rows * panelheight),
+                                        squeeze=False)
+            myax = myax[:, 0]
+            for iax, idih in zip(myax, res_dihs):
+
+                # Plot individual angles
+                from .contacts import plot_dih
+                plot_dih(idih, iax,
+                         color_scheme=_my_color_schemes(curve_color),
+                         n_smooth_hw=n_smooth_hw,
+                         dt=dt,
+                         t_unit=t_unit,
+                         gray_background=gray_background,
+                         #shorten_AAs=short_AA_names,
+                         lambda_ang=ang_lambda,
+                             )
+
+            # One title for all axes on top
+            title = idih.residue_name
+            if short_AA_names:
+                title = idih.residue_name
+            myfig.axes[0].set_title(title)
+
+            myfig.tight_layout(h_pad=0,w_pad=0,pad=0)
+            myfig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+            plt.close(myfig)
+            print(fname)
+            #ihood.save_trajs(output_desc,ascii_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
+            print()
+
+    return None
+
+def _get_dih_idxs(geom):
+    methods = {
+        "phi" : 'compute_phi',
+        "psi":  'compute_psi',
+        "chi1": 'compute_chi1',
+        "chi2": 'compute_chi2',
+        "chi3": 'compute_chi3',
+        "chi4": 'compute_chi4',
+        "chi5": 'compute_chi5',
+    }
+    idxs = {}
+    for key, imeth in methods.items():
+        idxs[key] = getattr(_md, imeth)(geom[0])[0]
+    return idxs
+
+def _angle_quadruplet2residx(quadruplets, top, max_residues_per_quad=1):
+    r"""
+
+    :param quadruplets:
+    :param top:
+    :param max_residues_per_quad:
+    :return:
+    """
+    allow_only_complimentary = 4 - _np.arange(max_residues_per_quad)
+    rowidx2residx = []
+    for row in quadruplets:
+        res_row = _np.array([top.atom(ii).residue.index for ii in row])
+
+        # Because the bincount is done on integers representing the
+        # true residue index as they appears in the topology,
+        # these idxs are true idxs and robust towards omission
+        # (e.g. the residue in question did not have computable angles)
+        bc = _np.bincount(res_row)
+        if _np.max(bc) in allow_only_complimentary:
+            rowidx2residx.append(_np.argmax(bc))
+        else:
+            raise ValueError("Cannot assign quad %s (res_idxs %s) when only %u residues are allowed per quad"%(row,res_row,max_residues_per_quad))
+            #rowidx2residx.append(None)
+
+    return _np.array(rowidx2residx)
+
+def _dih_idxs_for_residue(res_idxs, geom):
+    quads = _get_dih_idxs(geom)
+    quad_idxs_2_res_idxs = {key:_angle_quadruplet2residx(val, geom.top, max_residues_per_quad=2) for key, val in quads.items()}
+    dict_out = {}
+    for ii in res_idxs:
+        quad_idx = {key:_np.argwhere(val==ii).squeeze() for key, val in quad_idxs_2_res_idxs.items()}
+        dict_out[ii] = {key:quads[key][val] for key, val in quad_idx.items() if _np.size(val)>0}
+    return dict_out
