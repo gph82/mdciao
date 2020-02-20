@@ -259,7 +259,7 @@ def parser_for_rn():
     parser.set_defaults(ask=True)
     parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
                         default='output.npy')
-    _parser_add_ascii(parser)
+    _parser_add_table_ext(parser)
     parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
                         default='.pdf')
 
@@ -316,7 +316,7 @@ def parser_for_dih():
     parser.set_defaults(ask=True)
     parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
                         default='output.npy')
-    _parser_add_ascii(parser)
+    _parser_add_table_ext(parser)
     parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
                         default='.pdf')
 
@@ -339,11 +339,11 @@ def parser_for_dih():
     _parser_add_n_cols(parser)
     _parser_add_n_jobs(parser)
 
-    parser.add_argument('--degrees',   dest='use_deg', action="store_true")
+    parser.add_argument('--degrees',   dest='use_deg', action="store_true", help='Use degrees (default) or radians')
     parser.add_argument('--no-degrees',dest='use_deg', action="store_false")
     parser.set_defaults(use_deg=True)
 
-    parser.add_argument('--cos',   dest='use_cos', action="store_true")
+    parser.add_argument('--cos',   dest='use_cos', action="store_true", help="Use the cosine of the angle instead of the angle. Default is not to use cosine")
     parser.add_argument('--no-cos',dest='use_cos', action="store_false")
     parser.set_defaults(use_cos=True)
 
@@ -358,9 +358,9 @@ def _parser_add_graphic_dpi(parser):
                         help="Dots per Inch (DPI) of the graphic output. Only has an effect for bitmap outputs. Default is 150.",
                         default=150)
 
-def _parser_add_ascii(parser):
-    parser.add_argument('--output_ascii', type=str,
-                        help="Extension for ascii files (.dat, .txt etc). Default is 'none', which does not write anything.",
+def _parser_add_table_ext(parser):
+    parser.add_argument('--table_ext', type=str,
+                        help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
                         default=None)
 
 
