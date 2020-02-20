@@ -192,6 +192,7 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
         if 'scheme' in mdcontacts_kwargs.keys() and mdcontacts_kwargs["scheme"].upper()=='COM':
             jctcs = geom2COMdist(igeom, ctc_residxs_pairs)
         else:
+            _md.compute_contacts()
             jctcs, jidx_pairs, j_atompairs = compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
             # TODO do proper list comparison and do it only once
             assert len(jidx_pairs) == len(ctc_residxs_pairs)
@@ -819,12 +820,19 @@ class contact_group(object):
 
         return jax
 
-    def table_summary(self,ctc_cutoff_Ang,
-                      fname_excel,
-                      sort=False,
-                      offset=0):
+    def table_summary_to_excel(self, ctc_cutoff_Ang,
+                               fname_excel,
+                               sort=False,
+                               write_interface=True,
+                               offset=0,
+                               **freq_tab_kwargs):
 
-
+        columns = ["label",
+                   "freq",
+                   "sum",
+                   ]
+        if "breakdown" in freq_tab_kwargs.keys() and freq_tab_kwargs["breakdown"]:
+            columns += ["breakdown"]
         from pandas import ExcelWriter as _ExcelWriter
         writer = _ExcelWriter(fname_excel, engine='xlsxwriter')
         workbook = writer.book
@@ -832,45 +840,44 @@ class contact_group(object):
         writer.sheets["pairs by frequency"].write_string(0, offset,
                                       'pairs by contact frequency at %2.1f Angstrom'%ctc_cutoff_Ang)
         offset+=1
-        self.frequency_table(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}).to_excel(writer,
+        self.frequency_table(ctc_cutoff_Ang, **freq_tab_kwargs).round({"freq": 2, "sum": 2}).to_excel(writer,
                                                                                    index=False,
                                                                                    sheet_name='pairs by frequency',
                                                                                    startrow=offset,
                                                                                    startcol=0,
-                                                                                   columns=["label",
-                                                                                            "freq",
-                                                                                            "sum"],
+                                                                                   columns=columns,
                                                                                      )
         offset = 0
         writer.sheets["residues by frequency"] = workbook.add_worksheet('residues by frequency')
         writer.sheets["residues by frequency"].write_string(offset, 0, 'Av. # ctcs (<%2.1f Ang) by residue '%ctc_cutoff_Ang)
-        offset+=1
+        if write_interface:
+            offset+=1
 
-        idfs = self.frequency_per_residue(ctc_cutoff_Ang,
-                                          sort=sort,
-                                          list_by_interface=True,
-                                          return_as_dataframe=True)
+            idfs = self.frequency_per_residue(ctc_cutoff_Ang,
+                                              sort=sort,
+                                              list_by_interface=True,
+                                              return_as_dataframe=True)
 
 
-        idfs[0].round({"freq": 2}).to_excel(writer,
-                                              sheet_name='residues by frequency',
-                                              startrow=offset,
-                                              startcol=0,
-                                              columns=[
-                                                  "label",
-                                                  "freq"],
-                                              index=False
-                                              )
-        #Undecided about best placement for thise
-        idfs[1].round({"freq": 2}).to_excel(writer,
-                                                 sheet_name='residues by frequency',
-                                                 startrow=offset,
-                                                 startcol=2+1,
-                                                 columns=[
-                                                     "label",
-                                                     "freq"],
-                                                 index=False
-                                                 )
+            idfs[0].round({"freq": 2}).to_excel(writer,
+                                                  sheet_name='residues by frequency',
+                                                  startrow=offset,
+                                                  startcol=0,
+                                                  columns=[
+                                                      "label",
+                                                      "freq"],
+                                                  index=False
+                                                  )
+            #Undecided about best placement for these
+            idfs[1].round({"freq": 2}).to_excel(writer,
+                                                     sheet_name='residues by frequency',
+                                                     startrow=offset,
+                                                     startcol=2+1,
+                                                     columns=[
+                                                         "label",
+                                                         "freq"],
+                                                     index=False
+                                                     )
 
         writer.save()
 
@@ -1997,6 +2004,7 @@ def _atom_type(aa, no_BB_no_SC='X'):
     else:
         return no_BB_no_SC
 
+# todo check that mdtraj's license allows for this
 from mdtraj.utils import ensure_type
 import itertools
 from mdtraj.utils.six import string_types
@@ -2182,6 +2190,7 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
             if not soft_min:
                 idx_min = atom_distances[:, index : index + n].argmin(axis=1)
                 aa_pairs.append(_np.array(atom_pairs[index: index + n])[idx_min])
+                # TODO do not call the min function again here, call idx_min
                 distances[:, i] = atom_distances[:, index : index + n].min(axis=1)
             else:
                 distances[:, i] = soft_min_beta / \
