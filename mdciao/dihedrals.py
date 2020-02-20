@@ -3,6 +3,12 @@ import mdtraj as _md
 import matplotlib.pyplot as _plt
 from matplotlib import rcParams as _rcParams
 
+# careful do not introduce circ deps
+from .command_line_tools import _t_unit2dt, \
+    _offer_to_create_dir, \
+    _parse_fragment_naming_options, \
+    _parse_consensus_option
+
 from joblib import Parallel as _Parallel, delayed as _delayed
 
 from os import path as _path
@@ -508,7 +514,7 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
                       use_cos=False,
                       ):
     ang2plotfac = 1
-    ang_u = 'rad'
+    xlabel, ang_u = 'dih', 'rad'
     bins = 72
     ang_lambda = lambda x : x
     xlim =_np.array([-_np.pi, +_np.pi])
@@ -517,10 +523,11 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
         ang_u = 'deg'
         xlim = ang_lambda(xlim)
     if use_cos:
-        ang_lambda = lambda x :_np.abs(_np.cos(x))
+        ang_lambda = lambda x : _np.cos(x)
         ang_u = 'arb. u.'
-        bins = 50
-        xlim = [0,1]
+        xlabel = '$cos(dih)$'
+        bins = 100
+        xlim = [-1,1]
 
     if resSeq_idxs is None:
         print("You have to provide some residue indices via the --resSeq_idxs option")
@@ -640,10 +647,10 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
     n_rows =_np.ceil(len(resSeq2residxs) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
-    histofig, histoax = plt.subplots(n_rows, n_cols,
-                                     sharex=True,
-                                     sharey=True,
-                                     figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
+    histofig, histoax = _plt.subplots(n_rows, n_cols,
+                                      sharex=True,
+                                      sharey=True,
+                                      figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
 
     # One loop for the histograms
     _rcParams["font.size"]=panelsize*panelsize2font
@@ -656,7 +663,7 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
             jax.legend()
         jax.set_title(idih.residue_name)
     jax.set_xlim(xlim)
-    [jax.set_xlabel('dih / %s'%ang_u) for jax in histoax[-1]]
+    [jax.set_xlabel('%s / %s'%(xlabel, ang_u)) for jax in histoax[-1]]
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall.%s" % (output_desc.strip("."), graphic_ext.strip("."))
     fname = _path.join(output_dir, fname)
@@ -672,7 +679,7 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
                                                 graphic_ext.strip("."))
             fname = _path.join(output_dir, fname)
             n_rows=len(res_dihs)
-            myfig, myax = plt.subplots(n_rows, 1,
+            myfig, myax = _plt.subplots(n_rows, 1,
                                         figsize=(10, n_rows * panelheight),
                                         squeeze=False)
             myax = myax[:, 0]
@@ -698,7 +705,7 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
 
             myfig.tight_layout(h_pad=0,w_pad=0,pad=0)
             myfig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-            plt.close(myfig)
+            _plt.close(myfig)
             print(fname)
             #ihood.save_trajs(output_desc,ascii_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
             print()
