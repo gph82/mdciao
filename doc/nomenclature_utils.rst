@@ -9,10 +9,20 @@ Utils for handling nomenclature related functionality. Currently handles:
 .. currentmodule:: mdciao.nomenclature_utils
 
 .. autosummary::
-    CGN_transformer
+    add_loop_definitions_to_TM_residx_dict
     BW_transformer
-    table2BW_by_AAcode
+    CGN_finder
+    CGN_transformer
+    consensus_labeler
+    csv_table2TMdefs_res_idxs
     guess_missing_BWs
+    md_load_rscb
+    order_BW
+    order_CGN
+    order_frags
+    PDB_finder
+    table2BW_by_AAcode
+    table2TMdefs_resSeq
     top2CGN_by_AAcode
 
 

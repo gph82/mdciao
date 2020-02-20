@@ -35,7 +35,7 @@ def re_warp(array_in, lengths):
 
 def is_iterable(var):
     """
-    This function checks if the input is an iterable or not
+    Checks if the input is an iterable or not
 
     Parameters
     ----------
@@ -58,7 +58,7 @@ def is_iterable(var):
 
 def force_iterable(var):
     """
-    This function forces var to be iterable, if not already
+    Forces var to be iterable, if not already
 
     Parameters
     ----------
@@ -200,7 +200,7 @@ def window_average_vec(input_array_y, half_window_size=2):
 # from https://www.rosettacode.org/wiki/Range_expansion#Python
 def rangeexpand(txt):
     """
-    This function takes in integer range or multiple integer ranges and returns a list of individual integers.
+    For a given integer range or multiple integer ranges, returns a list of individual integers.
     Example- "1-2,3-4" will return [1,2,3,4]
 
     Parameters
