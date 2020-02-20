@@ -27,7 +27,7 @@ setup(
              'scripts/fragment_overview.py',
              'scripts/BW_overview.py',
              'scripts/CGN_overview.py',
-             'scripts/residue_diherals.py',
+             'scripts/residue_dihedrals.py',
              #'scripts/CARDS.py'
              ]
 )
