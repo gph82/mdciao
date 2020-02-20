@@ -161,7 +161,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           fragmentify=True,
                           fragment_names="",
                           graphic_ext=".pdf",
-                          output_ascii=None,
+                          table_ext=None,
                           BW_uniprot="None",
                           CGN_PDB="None",
                           output_dir='.',
@@ -189,10 +189,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     _offer_to_create_dir(output_dir)
 
     # String comparison to allow for command line argparse-use directly
-    if str(output_ascii).lower() != 'none' and str(output_ascii).lower().strip(".") in ["dat", "txt", "xlsx"]:
-        ascii_ext = str(output_ascii).lower().strip(".")
+    if str(table_ext).lower() != 'none' and str(table_ext).lower().strip(".") in ["dat", "txt", "xlsx"]:
+        table_ext = str(table_ext).lower().strip(".")
     else:
-        ascii_ext = None
+        table_ext = None
 
 
     _resSeq_idxs = rangeexpand(resSeq_idxs)
@@ -361,24 +361,32 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     print("The following files have been created")
     print(fname)
     # TDOO undecided about this
-    if ascii_ext is not None:
+    if table_ext is not None:
         for ihood in neighborhoods.values():
             fname = '%s.%s@%2.1f_Ang.%s' % (output_desc,
                                             ihood.anchor_res_and_fragment_str.replace('*', ""),
                                             ctc_cutoff_Ang,
-                                            ascii_ext.strip("."))
-            istr = (ihood.frequency_table(ctc_cutoff_Ang,
-                                          breakdown=True,
-                                          #AA_format="long",
-                                          lb_format="join").round(
-                {"freq": 2, "sum": 2})).to_string(index=False ,header=False,
-                                                  justify='left',
-                                                  #justify = 'right'
-                                                  )
-            #istr[0] = '#'
-            istr += '\n'
-            with open(fname, 'w') as f:
-                f.write(istr)
+                                            table_ext)
+            if table_ext=='xlsx':
+                ihood.table_summary_to_excel(ctc_cutoff_Ang, fname,
+                                             write_interface=False,
+                                             breakdown=True,
+                                             # AA_format="long",
+                                             lb_format="join"
+                                             )
+            else:
+                istr = (ihood.frequency_table(ctc_cutoff_Ang,
+                                              breakdown=True,
+                                              #AA_format="long",
+                                              lb_format="join").round(
+                    {"freq": 2, "sum": 2})).to_string(index=False ,header=False,
+                                                      justify='left',
+                                                      #justify = 'right'
+                                                      )
+                #istr[0] = '#'
+                istr += '\n'
+                with open(fname, 'w') as f:
+                    f.write(istr)
             print(fname)
 
     # One loop for the time resolved neighborhoods
@@ -409,7 +417,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             myfig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
             plt.close(myfig)
             print(fname)
-            ihood.save_trajs(output_desc,ascii_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
+            ihood.save_trajs(output_desc,table_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
             print()
 
     return {"ctc_idxs": ctc_idxs_small,
@@ -964,7 +972,7 @@ def interface(
     print("The following files have been created")
     print(fname)
     fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
-    neighborhood.table_summary(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
+    neighborhood.table_summary_to_excel(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
     print(fname_excel)
     if plot_timedep:
         fname = '%s.time_resolved.%s' % (output_desc,
