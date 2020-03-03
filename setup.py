@@ -20,6 +20,7 @@ setup(
     "mock"
     ],
     scripts=['scripts/residue_neighborhoods.py',
+             'scripts/compare_neighborhoods.py',
              'scripts/sites.py',
              'scripts/site_figures.py',
              'scripts/interface_ctc_analyzer.py',
