@@ -1,5 +1,6 @@
 import numpy as _np
 import mdtraj as _md
+from glob import glob as _glob
 #taken from molpx
 def re_warp(array_in, lengths):
     """Return iterable ::py:obj:array_in as a list of arrays, each
@@ -421,3 +422,24 @@ def iterate_and_inform_lambdas(ixtc,stride,chunksize, top=None):
                                                    "%3u frames. chunknr %4u frames %8u" %
                                                    (ixtc, traj_idx, chunksize, chunk_idx, running_f), end="\r", flush=True)
     return iterate, inform
+
+def put_this_idx_first_in_pair(idx, pair):
+    if pair[0] != idx and pair[1] == idx:
+        pair = pair[::-1]
+    elif pair[0] == idx and pair[1] != idx:
+        pass
+    else:
+        print(pair)
+        raise Exception
+    return pair
+
+def get_sorted_trajectories(trajectories):
+    if isinstance(trajectories,str):
+        trajectories = _glob(trajectories)
+
+    if isinstance(trajectories[0],str):
+        xtcs = sorted(trajectories)
+    else:
+        xtcs = trajectories
+
+    return xtcs
