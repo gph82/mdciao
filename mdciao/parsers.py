@@ -363,6 +363,23 @@ def _parser_add_table_ext(parser):
                         help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
                         default=None)
 
+def _paser_of_cn():
+    """
+    width=.2, figsize=(10, 5),
+                          fontsize=16,
+                          substitutions=["MG", "GDP"],
+                          mutations = {},
+                          plot_singles=False, stop_at=.1, scale_fig=False
+    :return:
+    """
+    parser = argparse.ArgumentParser(description="compare")
+    parser.add_argument("anchor",type=str)
+    parser.add_argument("--keys", type=str)
+    parser.add_argument("--files", type=str)
+    parser.add_argument("--colors", type=str)
+    parser.add_argument("--mutations",type=str)
+    #parser.add_argument("-width",type=float,default=.2)
+    return parser
 
 def parser_for_interface():
     parser = _parser_top_traj(description='Residue-residue contact analysis-tool where contacts are computed '
