@@ -21,13 +21,14 @@ from mdciao.nomenclature_utils import \
     _relabel_consensus, _guess_nomenclature_fragments
 
 from mdciao.contacts import \
-    ctc_freq_reporter_by_residue_neighborhood, \
+    select_and_report_residue_neighborhood_idxs, \
     xtcs2ctcs,contact_group, contact_pair
 
 from mdciao.list_utils import \
     rangeexpand, \
     unique_list_of_iterables_by_tuple_hashing, \
-    in_what_fragment
+    in_what_fragment, \
+    get_sorted_trajectories as _get_sorted_trajectories
 
 from mdciao.bond_utils import \
     bonded_neighborlist_from_top
@@ -204,7 +205,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     if sort:
         resSeq_idxs = sorted(resSeq_idxs)
 
-    xtcs = sorted(trajectories)
+    xtcs = _get_sorted_trajectories(trajectories)
     try:
         print("Will compute contact frequencies for the files:\n"
               "%s\n with a stride of %u frames.\n" % (
@@ -293,11 +294,11 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     actcs = np.vstack(ctcs_trajs)
     ctcs_mean = np.mean(actcs < ctc_cutoff_Ang / 10, 0)
 
-    final_look = ctc_freq_reporter_by_residue_neighborhood(ctcs_mean, resSeq2residxs,
-                                                           fragments, ctc_idxs_small,
-                                                           refgeom.top,
-                                                           interactive=False,
-                                                           n_ctcs=n_ctcs)
+    final_look = select_and_report_residue_neighborhood_idxs(ctcs_mean, resSeq2residxs,
+                                                             fragments, ctc_idxs_small,
+                                                             refgeom.top,
+                                                             interactive=False,
+                                                             n_ctcs=n_ctcs)
 
     # Create the neighborhoods as groups of contact_pair objects
     neighborhoods = {}
@@ -367,6 +368,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             ihood.anchor_res_and_fragment_str.replace('*', ""),
                                             ctc_cutoff_Ang,
                                             table_ext)
+            fname = path.join(output_dir, fname)
+
             if table_ext=='xlsx':
                 ihood.table_summary_to_excel(ctc_cutoff_Ang, fname,
                                              write_interface=False,
@@ -422,7 +425,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     return {"ctc_idxs": ctc_idxs_small,
             'ctcs_trajs': ctcs_trajs,
-            'time_array': time_array}
+            'time_array': time_array,
+            "neighborhoods":neighborhoods}
 
 
 def _sitefile2site(sitefile):
@@ -780,7 +784,7 @@ def interface(
         refgeom = topology
 
     frag_cons = False
-    if len(fragments)==1:
+    if len(fragments)==1 and fragments[0].isalpha():
         if fragments[0].lower()=="consensus":
             frag_cons = True
             fragments = get_fragments(refgeom.top, method='resSeq+',verbose=True)
@@ -790,6 +794,10 @@ def interface(
                                      "2 fragments. Aborting.")
     else:
         print("User input by residue index")
+        if len(fragments)==1:
+            print("Only one fragment provided, assuming the rest of residues are fragment 2")
+            fragments.append(','.join([str(ii) for ii in np.arange(refgeom.top.n_residues)
+                              if ii not in rangeexpand(fragments[0])]))
         _fragments = []
         for ii, ifrag in enumerate(fragments):
             ifrag = rangeexpand(ifrag.strip(","))
@@ -854,7 +862,6 @@ def interface(
                     #interface_fragments[ii] = ifrag_idxs
                     pass
         interface_residx_long = [np.hstack([fragments[ii] for ii in iint]) for iint in interface_fragments]
-
     ctc_idxs = np.vstack(list(product(interface_residx_long[0], interface_residx_long[1])))
 
     # Create a neighborlist
@@ -885,7 +892,7 @@ def interface(
         "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
         len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
     print()
-    ctcs, times = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
+    ctcs, times, __ = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
                             stride=stride, return_time=True,
                             consolidate=False,
                             chunksize=chunksize_in_frames,
@@ -995,6 +1002,12 @@ def interface(
         print(fname)
 
     return neighborhood
+
+
+def neighborhood_comparison(*args, **kwargs):
+    from .plots import compare_neighborhoods
+    return compare_neighborhoods(*args, **kwargs)
+
 
 def _cmdstr2cmdtuple(cmd):
     return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
