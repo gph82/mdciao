@@ -1,7 +1,7 @@
 from mdtraj.core.residue_names import _AMINO_ACID_CODES
 def find_AA(top, AA):
     """
-    This function is used to query the index of residue based on residue name.
+    Query the index of residue based on residue name.
 
     Parameters
     ----------
@@ -25,7 +25,7 @@ def find_AA(top, AA):
 
 def int_from_AA_code(key):
     """
-    This function returns the integer part from a residue name.
+    Returns the integer part from a residue name.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ def name_from_AA(key):
 
 def shorten_AA(AA, substitute_fail=None, keep_index=False):
     r"""
-    return the short name of an AA, e.g. TRP30 to W by trying to
+    Return the short name of an AA, e.g. TRP30 to W by trying to
     use either the :obj:`mdtraj.Topology.Residue.code' attribute
     or :obj:`mdtraj` internals AA dictionary
 

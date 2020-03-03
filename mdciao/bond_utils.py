@@ -5,7 +5,7 @@ def top2residue_bond_matrix(top, create_standard_bonds=True,
                             force_resSeq_breaks=False,
                             verbose=True):
     '''
-    This function creates a bond matrix from the topology file.
+    Returns a bond matrix from the topology file.
     The entries in the bond matrix will have either 1 or 0, where 1 signifies a bond is present.
 
     Parameters
@@ -50,7 +50,7 @@ def top2residue_bond_matrix(top, create_standard_bonds=True,
 
 def bonded_neighborlist_from_top(top, n=1):
     '''
-    This function returns the bonded neighbors of all the residues in the topology file.
+    Returns the bonded neighbors of all the residues in the topology file.
 
     Parameters
     ----------
