@@ -6,7 +6,7 @@ This module exposes high-level methods related to the extraction of residue-resi
 .. currentmodule:: mdciao.contacts
 
 .. autosummary::
-    ctc_freq_reporter_by_residue_neighborhood
+    select_and_report_residue_neighborhood_idxs
     xtcs2ctcs
 
 .. automodule:: mdciao.contacts
