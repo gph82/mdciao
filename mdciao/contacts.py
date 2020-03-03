@@ -1,7 +1,11 @@
 import numpy as _np
 import mdtraj as _md
 from os import path as _path
-from .list_utils import in_what_fragment, _replace4latex, iterate_and_inform_lambdas
+from .list_utils import in_what_fragment, \
+    _replace4latex, \
+    iterate_and_inform_lambdas, \
+    put_this_idx_first_in_pair
+
 from .plots import plot_w_smoothing_auto, plot_contact
 from collections import defaultdict
 
@@ -11,11 +15,13 @@ from pandas import DataFrame as _DF
 from joblib import Parallel as _Parallel, delayed as _delayed
 
 
-def ctc_freq_reporter_by_residue_neighborhood(ctc_freqs, resSeq2residxs, fragments,
-                                              residxs_pairs, top,
-                                              n_ctcs=5, restrict_to_resSeq=None,
-                                              interactive=False,
-                                              ):
+def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragments,
+                                                residxs_pairs, top,
+                                                n_ctcs=5,
+                                                restrict_to_resSeq=None,
+                                                interactive=False,
+                                                fac=.9
+                                                ):
     """Prints a formatted summary of contact frequencies
        Returns a residue-index keyed dictionary containing the indices
        of :obj:`residxs_pairs` relevant for this residue.
@@ -45,44 +51,41 @@ def ctc_freq_reporter_by_residue_neighborhood(ctc_freqs, resSeq2residxs, fragmen
 
     Returns
     -------
-    neighborhood : dictionary
-       neighborhood[300] = [100,200,201,208,500,501]
+    selection : dictionary
+       selection[300] = [100,200,201,208,500,501]
        means that pairs :obj:`residxs_pairs[100]`,...
        are the most frequent formed contacts for residue 300
        (up to n_ctcs or less, see option 'interactive')
     """
-    order = _np.argsort(ctc_freqs)[::-1]
     assert len(ctc_freqs) == len(residxs_pairs)
-    neighborhood = {}
+
+    order = _np.argsort(ctc_freqs)[::-1]
+    selection = {}
     if restrict_to_resSeq is None:
         restrict_to_resSeq = list(resSeq2residxs.keys())
     elif isinstance(restrict_to_resSeq, int):
         restrict_to_resSeq = [restrict_to_resSeq]
-    for key, val in resSeq2residxs.items():
-        if key in restrict_to_resSeq:
-            order_mask = _np.array([ii for ii in order if val in residxs_pairs[ii]])
+    for resSeq, residx in resSeq2residxs.items():
+        if resSeq in restrict_to_resSeq:
+            order_mask = _np.array([ii for ii in order if residx in residxs_pairs[ii]])
             print("#idx    Freq  contact             segA-segB residxA   residxB   ctc_idx")
-
             isum = 0
             seen_ctcs = []
             for ii, oo in enumerate(order_mask[:n_ctcs]):
                 pair = residxs_pairs[oo]
-                if pair[0] != val and pair[1] == val:
-                    pair = pair[::-1]
-                elif pair[0] == val and pair[1] != val:
-                    pass
-                else:
-                    print(pair)
-                    raise Exception
-                idx1 = pair[0]
-                idx2 = pair[1]
-                s1 = in_what_fragment(idx1, fragments)
-                s2 = in_what_fragment(idx2, fragments)
+                idx1, idx2 = put_this_idx_first_in_pair(residx, pair)
+                s1, s2 = [in_what_fragment(idx, fragments) for idx in [idx1,idx2]]
                 imean = ctc_freqs[oo]
                 isum += imean
                 seen_ctcs.append(imean)
                 print("%-6s %3.2f %8s-%-8s    %5u-%-5u %7u %7u %7u %3.2f" % (
                  '%u:' % (ii + 1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
+
+            total_n_ctcs = ctc_freqs[order_mask].sum()
+            nc = _np.argwhere(_np.cumsum(ctc_freqs[order_mask])>=total_n_ctcs*fac)[0]+1
+            print("These %u contacts capture %3.1f of the total %3.1f (over %u contacts)."
+                  " %u ctcs already capture %3.1f%% of %3.1f."%(ii+1,isum,total_n_ctcs, len(order_mask), nc, fac*100, total_n_ctcs))
+
             if interactive:
                 try:
                     answer = input("How many do you want to keep (Hit enter for None)?\n")
@@ -92,15 +95,15 @@ def ctc_freq_reporter_by_residue_neighborhood(ctc_freqs, resSeq2residxs, fragmen
                     pass
                 else:
                     answer = _np.arange(_np.min((int(answer), n_ctcs)))
-                    neighborhood[val] = order_mask[answer]
+                    selection[residx] = order_mask[answer]
             else:
                 seen_ctcs = _np.array(seen_ctcs)
                 n_nonzeroes = (seen_ctcs > 0).astype(int).sum()
                 answer = _np.arange(_np.min((n_nonzeroes, n_ctcs)))
-                neighborhood[val] = order_mask[answer]
+                selection[residx] = order_mask[answer]
     # TODO think about what's best to return here
     # TODO think about making a pandas dataframe with all the above info
-    return neighborhood
+    return selection
 
 
 
@@ -192,7 +195,6 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
         if 'scheme' in mdcontacts_kwargs.keys() and mdcontacts_kwargs["scheme"].upper()=='COM':
             jctcs = geom2COMdist(igeom, ctc_residxs_pairs)
         else:
-            _md.compute_contacts()
             jctcs, jidx_pairs, j_atompairs = compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
             # TODO do proper list comparison and do it only once
             assert len(jidx_pairs) == len(ctc_residxs_pairs)
@@ -205,6 +207,38 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
     iatps = _np.vstack(j_atompairs)
 
     return ictcs, itime, iatps
+
+def per_xtc_ctc_mat(top, ixtc, ctc_cutoff_Ang, chunksize, stride,
+                traj_idx, res_COM_cutoff_Ang,
+                **mdcontacts_kwargs):
+    #all_residxs_pairs =
+    from itertools import product
+    from .actor_utils import igeom2mindist_COMdist_truncation
+    iterate, inform = iterate_and_inform_lambdas(ixtc,stride, chunksize, top=top)
+    ictcs, itime, iaps = [],[],[]
+    running_f = 0
+    inform(ixtc, traj_idx, 0, running_f)
+    from scipy.sparse import lil_matrix
+    ctc_sum = lil_matrix((top.n_residues, top.n_residues), dtype=int)
+    for jj, igeom in enumerate(iterate(ixtc)):
+        running_f += igeom.n_frames
+        inform(ixtc, traj_idx, jj, running_f)
+        itime.append(igeom.time)
+
+        ctcs_mins, ctc_residxs_pairs, COMs_under_cutoff_pair_idxs  = igeom2mindist_COMdist_truncation(igeom,
+                                                                                                      res_COM_cutoff_Ang,
+                                                                                                      CA_switch=True)
+        jctcs, jidx_pairs, j_atompairs = compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
+        # TODO do proper list comparison and do it only once
+        assert len(jidx_pairs) == len(ctc_residxs_pairs)
+        counts = (jctcs<=ctc_cutoff_Ang/10).sum(0)
+        positive_idxs = _np.argwhere(counts>0).squeeze()
+        for idx in positive_idxs:
+            ii, jj  = sorted(jidx_pairs[idx])
+            ctc_sum[ii,jj] += counts[idx]
+
+
+    return jctcs, itime#, iatps
 
 def geom2COMdist(igeom, residue_pairs):
     r"""
@@ -313,6 +347,46 @@ def contact_matrix(trajectories, cutoff_Ang=3,
 
     return mat
 
+def contact_matrix_slim(trajectories, cutoff_Ang=3,
+                       **mdcontacts_kwargs):
+    r"""
+    Return a matrix with the contact frequency for **all** possible contacts
+    over all available frames
+    Parameters
+    ----------
+    trajectories: list of obj:`mdtraj.Trajectory`
+    n_frames_per_traj: int, default is 20
+        Stride the trajectories so that, on average, this number of frames
+        is used to compute the contacts
+    mdcontacts_kwargs
+
+    Returns
+    -------
+    ctc_freq : square 2D np.ndarray
+
+    """
+
+    top = trajectories[0].top
+    n_res = top.n_residues
+    mat = _np.zeros((n_res, n_res))
+    ctc_idxs = _np.vstack(_np.triu_indices_from(mat, k=0)).T
+
+    actcs = xtcs2ctcs(trajectories, top, ctc_idxs, stride=stride, chunksize=50,
+                      consolidate=True, ignore_nonprotein=False, **mdcontacts_kwargs)
+
+    actcs = (actcs <= cutoff_Ang/10).mean(0)
+    assert len(actcs)==len(ctc_idxs)
+    non_zero_idxs = _np.argwhere(actcs>0).squeeze()
+
+    for idx in non_zero_idxs:
+        ii, jj = ctc_idxs[idx]
+
+        mat[ii][jj]=actcs[idx]
+        if ii!=jj:
+            mat[jj][ii] = actcs[idx]
+
+    return mat
+
 def pick_best_label(fallback, test, exclude=[None, "None", "NA", "na"]):
     if test not in exclude:
         return test
@@ -368,7 +442,6 @@ class contact_group(object):
                         pass
 
             self._trajlabels = ref_ctc.trajlabels
-
             self._cons2resname = {}
             for key, val in zip(_np.hstack(self.consensus_labels),
                                 _np.hstack(self.residue_names_short)):
@@ -723,7 +796,8 @@ class contact_group(object):
                            shorten_AAs=False,
                             ctc_cutoff_Ang=None,
                             n_nearest=None,
-                           label_fontsize_factor=1):
+                           label_fontsize_factor=1,
+                            max_handles_per_row=4):
 
 
         label_dotref = self.anchor_res_and_fragment_str
@@ -755,7 +829,10 @@ class contact_group(object):
         jax.set_xlabel("D / $\AA$")
         jax.set_ylabel("counts ")
         jax.set_ylim([0,jax.get_ylim()[1]])
-        jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
+        jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor/self.n_ctcs**.25,
+                   ncol=_np.ceil(self.n_ctcs / max_handles_per_row).astype(int),
+                   loc=1,
+                   )
 
 
         return jax
@@ -1132,16 +1209,20 @@ class contact_group(object):
 
 
 
-    def save_trajs(self, output_desc, ext,
+    def save_trajs(self, output_desc,
+                   ext,
                    output_dir='.',
                    dt=1,
                    t_unit="ps",
                    verbose=False):
         dicts = self.to_per_traj_dicts_for_saving(dt=dt, t_unit=t_unit)
-        for idict, ixtc in zip(dicts, self.trajlabels):
-            traj_name = _path.splitext(ixtc)[0]
+
+        if str(ext).lower()=="none":
+            ext='dat'
+
+        for idict, ixtc  in zip(dicts, self.trajlabels):
             savename = "%s.%s.%s.%s" % (
-                output_desc, self.anchor_res_and_fragment_str.replace('*', ""), traj_name, ext)
+                output_desc, self.anchor_res_and_fragment_str.replace('*', ""), ixtc, ext.strip("."))
             savename = _path.join(output_dir, savename)
             if ext == 'xlsx':
                 _DF(idict["data"],
@@ -1329,9 +1410,14 @@ class contact_pair(object):
 
         """
         if self.trajs is None:
-            return ['traj %u'%ii for ii in range(self.n_trajs)]
+            trajlabels = ['traj %u'%ii for ii in range(self.n_trajs)]
         else:
-            return self.trajs
+            if isinstance(self.trajs[0], _md.Trajectory):
+                trajlabels = ['mdtraj.%02u'%ii for ii in range(self.n_trajs)]
+            else:
+                trajlabels = [_path.splitext(ii)[0] for ii in self.trajs]
+
+        return trajlabels
 
     @property
     def n_trajs(self):
@@ -1863,6 +1949,22 @@ class group_of_interfaces(object):
         else:
             return dict_out
 
+    def compare(self, ctc_cutoff_Ang, colordict, replacement_dict={}):
+        from .plots import unify_freq_dicts, plot_unified_freq_dicts, replace_w_dict
+        freqs = {key:val.frequency_dict_by_consensus_labels(ctc_cutoff_Ang,
+                                                            return_as_triplets=True
+                                                            )
+                                for key, val in self.interfaces.items()
+                                }
+        # Create and new dicts and do the replacements
+        _freqs = {}
+        for fkey, fval in freqs.items():
+            idict = {"-".join(sorted(triplet[:2])):triplet[-1] for triplet in fval}
+            _freqs[fkey]={replace_w_dict(key, replacement_dict):val for key, val in idict.items()}
+
+        freqs =  unify_freq_dicts(_freqs)
+        plot_unified_freq_dicts(freqs, colordict)
+
     def frequency_table(self,ctc_cutoff_Ang):
         return self.frequency_dict_by_consensus_labels(ctc_cutoff_Ang, return_as_triplets=True)
 
@@ -2150,7 +2252,7 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
 
         residue_pairs = _np.array(filtered_residue_pairs)
         distances = _md.compute_distances(traj, atom_pairs, periodic=periodic)
-
+        aa_pairs = atom_pairs
 
     elif scheme in ['closest', 'closest-heavy', 'sidechain', 'sidechain-heavy']:
         if scheme == 'closest':
