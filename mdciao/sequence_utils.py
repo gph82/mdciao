@@ -4,6 +4,8 @@ from Bio.pairwise2 import align as _Bioalign
 
 import mdtraj
 
+from collections import defaultdict as _defdict
+
 def _print_verbose_dataframe(idf):
     import pandas as _pd
     from IPython.display import display as _display
@@ -11,7 +13,8 @@ def _print_verbose_dataframe(idf):
                             'display.max_columns', None,
                             'display.width', 1000):
         _display(idf)
-def _align_tops(top0, top1, substitutions=None):
+def _align_tops(top0, top1, substitutions=None,
+                return_DF=True):
     r"""
     Provided to :obj:`mdtraj.Topology` objects,
     return their alignment as a :obj:`pandas.DataFrame`
@@ -41,24 +44,55 @@ def _align_tops(top0, top1, substitutions=None):
         top0_seq = top0_seq.replace(key,val)
         top1_seq = top1_seq.replace(key,val)
         #print(key,val)
-    return _DF(alignment_result_to_list_of_dicts(_my_bioalign(top0_seq, top1_seq)[0],
+    align_list = alignment_result_to_list_of_dicts(_my_bioalign(top0_seq, top1_seq)[0],
+                                                   top0,
+                                                   range(top0.n_residues),
+                                                   range(top1.n_residues),
+                                                   topology_1=top1,
+                                                   )
 
-                                             top0,
-                                             range(top0.n_residues),
-                                             range(top1.n_residues)
-                                             ))
+    if return_DF:
+        return _DF(align_list)
+    else:
+        return align_list
+
+def _align_tops_2_dicts(top0,top1,
+                        fail_on_key_redundancies=False):
+    alignm_list = _align_tops(top0, top1,
+                              return_DF=False)
+
+    matches = [al for al in alignm_list if al["match"]]
+    # print(matches)
+    key_0 = [al["fullname_0"] for al in matches]
+    key_1 = [al["fullname_1"] for al in matches]
+    if fail_on_key_redundancies:
+        assert len(key_0) == len(_np.unique(key_0)), (len(key_0), len(_np.unique(key_0) ))
+        assert len(key_1) == len(_np.unique(key_1)), (len(key_1), len(_np.unique(key_1) ))
+
+    AAtop0toAAtop1 = _defdict(list)
+    AAtop1toAAtop0 = _defdict(list)
+    for idict in matches:
+        AA0 = idict["fullname_0"]
+        AA1 = idict["fullname_1"]
+        AAtop0toAAtop1[AA0].append(idict)
+        AAtop1toAAtop0[AA1].append(idict)
+
+    return [{key: val for key, val in idict.items()} for idict in [AAtop0toAAtop1, AAtop1toAAtop0]]
+
 def _my_bioalign(seq1,seq2):
     return _Bioalign.globalxs(seq1, seq2, -1,0)
 
 def alignment_result_to_list_of_dicts(ialg, topology_0,
                                       seq_0_res_idxs,
                                       seq_1_res_idxs,
+                                      topology_1=None,
                                       AA_code_seq_0_key="AA_0",
                                       AA_code_seq_1_key="AA_1",
                                       resSeq_seq_0_key="resSeq_0",
                                       idx_seq_0_key="idx_0",
                                       idx_seq_1_key="idx_1",
                                       full_resname_seq_0_key='fullname_0',
+                                      full_resname_seq_1_key='fullname_1',
                                       verbose=False,
                                       ):
     r"""
@@ -106,6 +140,9 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
     seq_1_res_idxs_iterator = iter(seq_1_res_idxs)
     idx_seq_0_iterator = iter(seq_0_res_idxs)
     resname_top_0_iterator = iter([str(topology_0.residue(ii)) for ii in seq_0_res_idxs])
+    resname_top_1_iterator = None
+    if topology_1 is not None:
+        resname_top_1_iterator = iter([str(topology_1.residue(ii)) for ii in seq_1_res_idxs])
 
     alignment_dict = []
     for rt, rr in zip(top_0_seq, top_1_seq):
@@ -113,6 +150,7 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
                                AA_code_seq_1_key: rr,
                                resSeq_seq_0_key: '~',
                                full_resname_seq_0_key: '~',
+                               full_resname_seq_1_key: '~',
                                idx_seq_1_key: '~',
                                idx_seq_0_key: '~'})
 
@@ -123,6 +161,8 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
 
         if rr.isalpha():
             alignment_dict[-1][idx_seq_1_key] = next(seq_1_res_idxs_iterator)
+            if resname_top_1_iterator is not None:
+                alignment_dict[-1][full_resname_seq_1_key] = next(resname_top_1_iterator)
 
     # Add a field for matching vs nonmatching AAs
     for idict in alignment_dict:
@@ -137,6 +177,7 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
 
     return alignment_dict
 import numpy as _np
+# todo this is a bit of overkill, one alignment per residue
 def residx_in_seq_by_alignment(ridx1, top1,
                                top2,
                                subset_1=None,
