@@ -339,7 +339,7 @@ class consensus_labeler(object):
             print(istr)
 
         if return_defs:
-            return defs
+            return {key:val for key, val in defs.items()}
 
 def CGN_finder(identifier,
                format='CGN_%s.txt',
@@ -1019,14 +1019,14 @@ def _guess_nomenclature_fragments(CLtf, top, fragments,
     aligned_BWs = CLtf.top2map(top, fill_gaps=False)
     #for ii, iBW in enumerate(aligned_BWs):
     #    print(ii, iBW, top.residue(ii))
-    guess = []
+    hits, guess = [], []
     for ii, ifrag in enumerate(fragments):
-        hits = [aligned_BWs[jj] for jj in ifrag if aligned_BWs[jj] is not None]
-        if len(hits)/len(ifrag)>=min_hit_rate:
+        hit = [aligned_BWs[jj] for jj in ifrag if aligned_BWs[jj] is not None]
+        if len(hit)/len(ifrag)>=min_hit_rate:
             guess.append(ii)
         if verbose:
-            print(ii, len(hits)/len(ifrag))
-
+            print(ii, len(hit)/len(ifrag))
+        hits.append(hit)
     return guess
 
 def _map2defs(cons_list):
