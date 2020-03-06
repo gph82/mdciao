@@ -191,6 +191,21 @@ class Test_window_average_fast(unittest.TestCase):
         assert _np.allclose(window_average_fast(_np.arange(7), half_window_size=3), _np.array([3.0]))
         assert _np.allclose(window_average_fast(_np.arange(5), half_window_size=3), _np.array([1.42857143, 1.42857143, 1.42857143]))
 
+class Test_window_average(unittest.TestCase):
+    def test_window_average_just_works(self):
+        assert _np.allclose(window_average(_np.arange(5))[0], _np.array([2.0])) #mean
+        assert _np.allclose(_np.round(window_average(_np.arange(5))[1], 2), _np.array([1.41])) #std
+
+        assert _np.allclose(window_average(_np.arange(10))[0], _np.array([2.0, 3.0, 4.0, 5.0, 6.0, 7.0])) #mean
+        assert _np.allclose(_np.round(window_average(_np.arange(10))[1], 2), _np.array([1.41, 1.41, 1.41, 1.41, 1.41, 1.41])) #std
+
+    def test_window_average_half_window_size_works(self):
+        assert _np.allclose(window_average(_np.arange(7), half_window_size=3)[0], _np.array([3.0])) #mean
+        assert _np.allclose(window_average(_np.arange(7), half_window_size=3)[1], _np.array([2.0])) #std
+
+        #below assertion won't work because the function assumes that length of input array>= window size
+        #assert _np.allclose(window_average(_np.arange(5)[0], half_window_size=3), _np.array([1.42857143, 1.42857143, 1.42857143]))
+
 if __name__ == '__main__':
     unittest.main()
 
