@@ -7,7 +7,7 @@ import io
 from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
     does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand, \
-    pull_one_up_at_this_pos, assert_min_len, assert_no_intersection
+    pull_one_up_at_this_pos, assert_min_len, assert_no_intersection,window_average_fast
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
@@ -174,6 +174,11 @@ class Test_assert_no_intersection(unittest.TestCase):
         except AssertionError:
             failed_assertion = True
         assert failed_assertion
+
+class Test_window_average_fast(unittest.TestCase):
+    def test_window_average_fast_just_works(self):
+        assert _np.allclose(window_average_fast(_np.arange(5)), _np.array([2.0]))
+        assert _np.allclose(window_average_fast(_np.arange(10)), _np.array([2.0, 3.0, 4.0, 5.0, 6.0, 7.0]))
 
 if __name__ == '__main__':
     unittest.main()
