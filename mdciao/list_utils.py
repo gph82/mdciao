@@ -319,6 +319,7 @@ def exclude_same_fragments_from_residx_pairlist(pairlist,
     else:
         return idxs2exclude
 
+#todo test
 def assert_min_len(input_iterable, min_len=2):
     """
     Checks if an iterable satisfies the criteria of minimum length. (Default minimum length is 2).
@@ -374,6 +375,17 @@ def join_lists(lists, idxs_of_lists_to_join):
     return lists
 
 def assert_no_intersection(list_of_lists_of_integers):
+    """
+    Checks if two or more lists contain the same integer
+    Parameters
+    ----------
+    list_of_lists_of_integers : list of lists
+
+    Returns
+    -------
+    Prints assertion message if inner lists have the same integer, else no output
+
+    """
     #todo document and test
     # Nested loops feasible here because the number of fragments will never become too large
     for ii, l1 in enumerate(list_of_lists_of_integers):
