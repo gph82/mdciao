@@ -457,6 +457,18 @@ def iterate_and_inform_lambdas(ixtc,stride,chunksize, top=None):
     return iterate, inform
 
 def put_this_idx_first_in_pair(idx, pair):
+    """
+    Returns the original pair if the value already appears first, else returns reversed pair
+    Parameters
+    ----------
+    idx : value which needs to be brought in the first place (not the index but value itself)
+    pair : list
+            pair of values as a list
+    Returns
+    -------
+    pair
+
+    """
     if pair[0] != idx and pair[1] == idx:
         pair = pair[::-1]
     elif pair[0] == idx and pair[1] != idx:
