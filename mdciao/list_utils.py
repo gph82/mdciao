@@ -148,7 +148,7 @@ def window_average_fast(input_array_y, half_window_size=2):
     Parameters
     ----------
     input_array_y : array
-                    array for which moving average should be calculated
+                    numpy array for which moving average should be calculated
     half_window_size : int
                         the actual window size will be 2 * half_window_size + 1.
                         Example- when half window size = 2, moving average calculation will use window=5
@@ -163,12 +163,19 @@ def window_average_fast(input_array_y, half_window_size=2):
 
 #Lifted from my own aGPCR utils
 def window_average(input_array_y, half_window_size=2):
-    r"""
-    like a convolution but returns also the std inside the window
-    :param input_array_y:
-    :param window_size:
-    :param input_array_x:
-    :return:
+    """
+    Returns average and standard deviation inside the window
+    Parameters
+    ----------
+    input_array_y : array
+                    numpy array for which average and standard deviation should be calculated
+    half_window_size : int
+                            the actual window size will be 2 * half_window_size + 1.
+                        Example- when half window size = 2, moving average calculation will use window=5
+    Returns
+    -------
+    array_out_mean, array_out_std
+    two arrays corresponding to mean and standard deviation
     """
     array_out_mean = []
     array_out_std = []
