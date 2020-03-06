@@ -204,6 +204,7 @@ def overview(topology,
                             'resSeq_bonds',
                             'chains']):
     """
+    Prints the fragments created and their corresponding methods
 
     Parameters
     ----------
