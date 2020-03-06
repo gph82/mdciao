@@ -143,11 +143,19 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
     else:
         return idxs_out
 def window_average_fast(input_array_y, half_window_size=2):
-    r"""
-    Window average using numpy's convolve function
-    :param input_array_y:
-    :param window_size:
-    :return:
+    """
+    Returns the moving average using np.convolve
+    Parameters
+    ----------
+    input_array_y : array
+                    array for which moving average should be calculated
+    half_window_size : int
+                        the actual window size will be 2 * half_window_size + 1.
+                        Example- when half window size = 2, moving average calculation will use window=5
+    Returns
+    -------
+    array
+
     """
     input_array_y = (input_array_y).astype(float)
     window = _np.ones(2*half_window_size+1)
@@ -319,7 +327,6 @@ def exclude_same_fragments_from_residx_pairlist(pairlist,
     else:
         return idxs2exclude
 
-#todo test
 def assert_min_len(input_iterable, min_len=2):
     """
     Checks if an iterable satisfies the criteria of minimum length. (Default minimum length is 2).
@@ -331,7 +338,7 @@ def assert_min_len(input_iterable, min_len=2):
 
     Returns
     -------
-    Prints error if each element within the iterable has lesser number of elements than min_len
+    Prints error if each item within the iterable has lesser number of elements than min_len
 
     """
     for ii, element in enumerate(input_iterable):
