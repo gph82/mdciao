@@ -320,18 +320,25 @@ def exclude_same_fragments_from_residx_pairlist(pairlist,
         return idxs2exclude
 
 def assert_min_len(input_iterable, min_len=2):
+    """
+    Checks if an iterable satisfies the criteria of minimum length. (Default minimum length is 2).
+    Parameters
+    ----------
+    input_iterable : numpy array, list of list
+                    example np.zeros((2,1,1) or [[1,2],[3,4]] when min_len = 2
+    min_len : minimum length which the iterable should satisfy (Default is 2)
+
+    Returns
+    -------
+    Prints error if each element within the iterable has lesser number of elements than min_len
+
+    """
     for ii, element in enumerate(input_iterable):
         if _np.ndim(element)==0 or len(element) < min_len:
             aerror = 'The %s-th element has too few elements (min %s): %s' % (ii, min_len, element)
             raise AssertionError(aerror)
 
 def join_lists(lists, idxs_of_lists_to_join):
-    r"""
-
-    :param lists:
-    :param idxs_of_lists_to_join:
-    :return:
-    """
     #todo document and test
     assert_min_len(idxs_of_lists_to_join)
 
