@@ -7,7 +7,7 @@ import io
 from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
     does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand, \
-    pull_one_up_at_this_pos, assert_min_len, assert_no_intersection,window_average_fast
+    pull_one_up_at_this_pos, assert_min_len, assert_no_intersection, window_average_fast, window_average
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
@@ -148,6 +148,13 @@ class Test_assert_min_len(unittest.TestCase):
         except AssertionError:
             failed_assertion = True
         assert failed_assertion
+    def test_assert_min_length_min_len_works(self):
+        no_assertion = True
+        try:
+            assert_min_len([['a']], min_len=1)
+        except AssertionError:
+            no_assertion = False
+        assert no_assertion
 
 class Test_assert_no_intersection(unittest.TestCase):
     def test_assert_no_intersection_just_works(self):
@@ -179,6 +186,10 @@ class Test_window_average_fast(unittest.TestCase):
     def test_window_average_fast_just_works(self):
         assert _np.allclose(window_average_fast(_np.arange(5)), _np.array([2.0]))
         assert _np.allclose(window_average_fast(_np.arange(10)), _np.array([2.0, 3.0, 4.0, 5.0, 6.0, 7.0]))
+
+    def test_window_average_fast_half_window_size_works(self):
+        assert _np.allclose(window_average_fast(_np.arange(7), half_window_size=3), _np.array([3.0]))
+        assert _np.allclose(window_average_fast(_np.arange(5), half_window_size=3), _np.array([1.42857143, 1.42857143, 1.42857143]))
 
 if __name__ == '__main__':
     unittest.main()
