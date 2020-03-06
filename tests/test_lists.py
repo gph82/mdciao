@@ -7,7 +7,8 @@ import io
 from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
     does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand, \
-    pull_one_up_at_this_pos, assert_min_len, assert_no_intersection, window_average_fast, window_average
+    pull_one_up_at_this_pos, assert_min_len, assert_no_intersection, window_average_fast, window_average, \
+    put_this_idx_first_in_pair
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
@@ -205,6 +206,23 @@ class Test_window_average(unittest.TestCase):
 
         #below assertion won't work because the function assumes that length of input array>= window size
         #assert _np.allclose(window_average(_np.arange(5)[0], half_window_size=3), _np.array([1.42857143, 1.42857143, 1.42857143]))
+
+class Test_put_this_idx_first_in_pair(unittest.TestCase):
+    def test_put_this_idx_first_in_pair_just_works(self):
+        assert(put_this_idx_first_in_pair(20, [10,20]) == [20,10])
+        assert (put_this_idx_first_in_pair(10, [10, 20]) == [10, 20])
+        assert (put_this_idx_first_in_pair("first", ["first", "last"]) == ["first", "last"])
+        assert (put_this_idx_first_in_pair("first", ["last", "first"]) == ["first", "last"])
+
+    def test_put_this_idx_first_in_pair_exception(self):
+        failed_assertion = False
+        try:
+            put_this_idx_first_in_pair(99, [10, 20])
+
+        except Exception:
+            failed_assertion = True
+
+        assert failed_assertion
 
 if __name__ == '__main__':
     unittest.main()
