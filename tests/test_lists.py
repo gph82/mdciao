@@ -7,7 +7,7 @@ import io
 from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
     does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand, \
-    pull_one_up_at_this_pos, assert_min_len
+    pull_one_up_at_this_pos, assert_min_len, assert_no_intersection
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
@@ -145,6 +145,32 @@ class Test_assert_min_len(unittest.TestCase):
         failed_assertion = False
         try:
             assert_min_len([[1,2],[]])
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
+
+class Test_assert_no_intersection(unittest.TestCase):
+    def test_assert_no_intersection_just_works(self):
+        no_assertion = True
+        try:
+            assert_no_intersection([[1, 2], [3, 3]])
+        except AssertionError:
+            no_assertion = False
+        assert no_assertion
+
+    def test_assert_no_intersection_empty_list_just_works(self):
+        no_assertion = True
+        try:
+            assert_no_intersection([[], [3, 3]])
+            assert_no_intersection([[], []]) #TODO check with Guillermo if this should be handled as exception  func
+        except AssertionError:
+            no_assertion = False
+        assert no_assertion
+
+    def test_failed_assertion_just_works(self):
+        failed_assertion = False
+        try:
+            assert_no_intersection([[1,2,3],[3,3]])
         except AssertionError:
             failed_assertion = True
         assert failed_assertion
