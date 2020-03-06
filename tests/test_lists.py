@@ -7,7 +7,7 @@ import io
 from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
     does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand, \
-    pull_one_up_at_this_pos
+    pull_one_up_at_this_pos, assert_min_len
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
@@ -124,6 +124,30 @@ class Test_pull_one_up_at_this_pos(unittest.TestCase):
     def test_pull_one_up_at_this_pos_verbose_works(self):
         assert(pull_one_up_at_this_pos([1,2,3],1,"~",verbose=True) == [1, 3, '~'])
 
+class Test_assert_min_len(unittest.TestCase):
+    def test_assert_min_len_just_works(self):
+        no_assertion = True
+        try:
+            assert_min_len([['a', 'b'], ['c', 'd'],[1, 2]])
+        except AssertionError:
+            no_assertion = False
+        assert no_assertion
+
+    def test_assert_min_len_failed_assertion_just_works(self):
+        failed_assertion = False
+        try:
+            assert_min_len([[1]])
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
+
+    def test_assert_min_len_failed_assertion_works_empty_list(self):
+        failed_assertion = False
+        try:
+            assert_min_len([[1,2],[]])
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
 
 if __name__ == '__main__':
     unittest.main()
