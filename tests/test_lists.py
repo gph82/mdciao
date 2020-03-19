@@ -211,6 +211,13 @@ class Test_window_average(unittest.TestCase):
         assert _np.allclose(window_average(_np.arange(7), half_window_size=3)[0], _np.array([3.0])) #mean
         assert _np.allclose(window_average(_np.arange(7), half_window_size=3)[1], _np.array([2.0])) #std
 
+    def test_window_average_window_should_be_less_than_input_works(self):
+        failed_assertion = False
+        try:
+            assert window_average(_np.arange(3))
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
         #below assertion won't work because the function assumes that length of input array>= window size
         #assert _np.allclose(window_average(_np.arange(5)[0], half_window_size=3), _np.array([1.42857143, 1.42857143, 1.42857143]))
 
