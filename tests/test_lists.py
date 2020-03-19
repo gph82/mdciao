@@ -170,7 +170,6 @@ class Test_assert_no_intersection(unittest.TestCase):
         no_assertion = True
         try:
             assert_no_intersection([[], [3, 3]])
-            assert_no_intersection([[], []]) #TODO check with Guillermo if this should be handled as exception  func
         except AssertionError:
             no_assertion = False
         assert no_assertion
@@ -179,6 +178,14 @@ class Test_assert_no_intersection(unittest.TestCase):
         failed_assertion = False
         try:
             assert_no_intersection([[1,2,3],[3,3]])
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
+
+    def test_assert_no_intersection_empty_lists(self):
+        failed_assertion = False
+        try:
+            assert_no_intersection([[], []])
         except AssertionError:
             failed_assertion = True
         assert failed_assertion
