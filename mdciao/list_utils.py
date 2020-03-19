@@ -170,7 +170,7 @@ def window_average(input_array_y, half_window_size=2):
     input_array_y : array
                     numpy array for which average and standard deviation should be calculated
     half_window_size : int
-                            the actual window size will be 2 * half_window_size + 1.
+                            the actual window size will be half_window_size*2 + 1.
                         Example- when half window size = 2, moving average calculation will use window=5
     Returns
     -------
@@ -179,6 +179,7 @@ def window_average(input_array_y, half_window_size=2):
     """
     array_out_mean = []
     array_out_std = []
+    assert (half_window_size*2 + 1 <= len(input_array_y)),"In window average, input array should be >= half_window_size*2 + 1"
     for ii in range(half_window_size, len(input_array_y) - half_window_size):
         idxs = _np.hstack([_np.arange(ii - half_window_size, ii),
                            ii,
