@@ -400,11 +400,11 @@ def assert_no_intersection(list_of_lists_of_integers):
     Prints assertion message if inner lists have the same integer, else no output
 
     """
-    #todo document and test
     # Nested loops feasible here because the number of fragments will never become too large
     for ii, l1 in enumerate(list_of_lists_of_integers):
         for jj, l2 in enumerate(list_of_lists_of_integers):
             if (ii != jj):
+                assert (l1 + l2), "Both lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html"
                 assert len(_np.intersect1d(l1, l2)) == 0, 'join fragment id overlaps!'
 
 # TODO consider using np.delete in the code originally?
