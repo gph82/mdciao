@@ -1,5 +1,5 @@
 from mdtraj.core.residue_names import _AMINO_ACID_CODES
-def find_AA(top, AA):
+def find_AA(top, AA, relax=False):
     """
     Query the index of residue based on residue name.
 
@@ -15,13 +15,23 @@ def find_AA(top, AA):
         list of res_idxs where the residue is present, so that top.residue(idx) would return the wanted AA
 
     """
-    code = ''.join([ii for ii in AA if ii.isalpha()])
-    if len(code)==1:
-        return [rr.index for rr in top.residues if AA == '%s%u' % (rr.code, rr.resSeq)]
-    elif len(code)==3:
-        return [rr.index for rr in top.residues if AA == '%s%u' % (rr.name, rr.resSeq)]
+
+    if AA.isalpha():
+        if relax:
+            return [rr.index for rr in top.residues if AA == '%s' % (rr.name)]
+        else:
+            raise ValueError(
+                "Missing the resSeq index, all I got was %s" % (AA))
     else:
-        raise ValueError("The input AA %s must have an alphabetic code of either 3 or 1 letters"%AA)
+        code = ''.join([ii for ii in AA if ii.isalpha()])
+
+        if len(code)==1:
+            return [rr.index for rr in top.residues if AA == '%s%u' % (rr.code, rr.resSeq)]
+        elif len(code) in [2,3]:
+            return [rr.index for rr in top.residues if AA == '%s%u' % (rr.name, rr.resSeq)]
+        else:
+            raise ValueError(
+                "The input AA %s must have an alphabetic code of either 3 or 1 letters, but not %s" % (AA, code))
 
 def int_from_AA_code(key):
     """
