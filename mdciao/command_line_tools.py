@@ -1,4 +1,6 @@
-import numpy as np
+import numpy as _np
+
+
 import mdtraj as md
 from matplotlib import pyplot as plt,rcParams as _rcParams
 
@@ -81,8 +83,10 @@ def _parse_consensus_option(identifier, type,
     if tf_out is not None:
         answer = _guess_by_nomenclature(tf_out, top, fragments, type,
                                         return_str=False,
-                                        accept_guess=accept_guess)
-        restrict_to_residxs = np.hstack([fragments[ii] for ii in answer])
+                                        accept_guess=accept_guess,
+                                        #verbose=True
+                                        )
+        restrict_to_residxs = _np.hstack([fragments[ii] for ii in answer])
         map_out = tf_out.top2map(top,
                                  restrict_to_residxs=restrict_to_residxs,
                                  fill_gaps=True,
@@ -97,15 +101,18 @@ def _guess_by_nomenclature(Ntf, top, fragments, nomenclature_name,
                            return_str=True, accept_guess=False,
                            **guess_kwargs):
     guess = _guess_nomenclature_fragments(Ntf, top, fragments,**guess_kwargs)
-    print("%s-numbering aligns best with fragments: %s (first-last: %s-%s)."
-          % (nomenclature_name,str(guess),
-             top.residue(fragments[guess[0]][0]),
-             top.residue(fragments[guess[-1]][-1])))
+    if len(guess)>0:
+        print("%s-numbering aligns best with fragments: %s (first-last: %s-%s)."
+              % (nomenclature_name,str(guess),
+                 top.residue(fragments[guess[0]][0]),
+                 top.residue(fragments[guess[-1]][-1])))
+    else:
+        print("No guessed fragment")
+
     if accept_guess:
         answer = ','.join(['%s' % ii for ii in guess])
     else:
-        answer = input("Hit enter to accept or input alternative in a format 1,2-6,10,20-25")
-
+        answer = input("Input alternative in a format 1,2-6,10,20-25 or hit enter\n")
 
     if answer is '':
         answer = ','.join(['%s' % ii for ii in guess])
@@ -138,7 +145,7 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
                                                                    force_resSeq_breaks=True,
                                                                    frag_breaker_to_pick_idx=0,
                                                                    )
-            fragment_names.extend(top.residue(ifrag[0]).name for ifrag in fragments[len(fragment_names):])
+            fragment_na     mes.extend(top.residue(ifrag[0]).name for ifrag in fragments[len(fragment_names):])
 
             for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
                 _print_frag(ifrag_idx, top, ifrag, end='')
@@ -178,7 +185,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           plot_timedep=True,
                           n_cols=4,
                           distro=False,
-                          n_jobs=1
+                          n_jobs=1,
+                          just_N_ctcs=False,
                           ):
 
     if resSeq_idxs is None:
@@ -261,8 +269,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
 
     # Use it to prune the contact indices
-    ctc_idxs = np.vstack(
-        [[np.sort([val, ii]) for ii in range(refgeom.top.n_residues) if ii not in nl[val] and ii != val] for val in
+    ctc_idxs = _np.vstack(
+        [[_np.sort([val, ii]) for ii in range(refgeom.top.n_residues) if ii not in nl[val] and ii != val] for val in
          resSeq2residxs.values()])
 
     # Can we have same-fragment contacts
@@ -274,10 +282,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     print(
         "\nPre-computing likely neighborhoods by reducing the neighbor-list to %u Angstrom in the reference geom %s..." % (
             nlist_cutoff_Ang, topology), end="", flush=True)
-    ctcs, ctc_idxs = md.compute_contacts(refgeom, np.vstack(ctc_idxs), periodic=pbc)
+    ctcs, ctc_idxs = md.compute_contacts(refgeom, _np.vstack(ctc_idxs), periodic=pbc)
     print("done!")
 
-    ctc_idxs_small = np.argwhere(ctcs[0] < nlist_cutoff_Ang / 10).squeeze()
+    ctc_idxs_small = _np.argwhere(ctcs[0] < nlist_cutoff_Ang / 10).squeeze()
     _, ctc_idxs_small = md.compute_contacts(refgeom, ctc_idxs[ctc_idxs_small])
     ctc_idxs_small = unique_list_of_iterables_by_tuple_hashing(ctc_idxs_small)
 
@@ -291,8 +299,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                                       n_jobs=n_jobs,
                                                       )
     print() # to make sure we don't overwrite outut
-    actcs = np.vstack(ctcs_trajs)
-    ctcs_mean = np.mean(actcs < ctc_cutoff_Ang / 10, 0)
+    actcs = _np.vstack(ctcs_trajs)
+    ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
 
     final_look = select_and_report_residue_neighborhood_idxs(ctcs_mean, resSeq2residxs,
                                                              fragments, ctc_idxs_small,
@@ -324,8 +332,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         neighborhoods[key] = contact_group(neighborhoods[key])
 
     panelheight = 3
-    n_cols = np.min((n_cols, len(resSeq2residxs)))
-    n_rows = np.ceil(len(resSeq2residxs) / n_cols).astype(int)
+    n_cols = _np.min((n_cols, len(resSeq2residxs)))
+    n_rows = _np.ceil(len(resSeq2residxs) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
     histofig, histoax = plt.subplots(n_rows, n_cols,
@@ -354,7 +362,9 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                      shorten_AAs=short_AA_names
                                      )
 
-
+    if not distro:
+        xmax = _np.max([len(jax.patches) for jax in histoax.flatten()])+.5
+        [iax.set_xlim([-.5, xmax]) for iax in histoax.flatten()]
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
     fname = path.join(output_dir, fname)
@@ -393,13 +403,18 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             print(fname)
 
     # One loop for the time resolved neighborhoods
-    if plot_timedep:
+    if plot_timedep or just_N_ctcs:
         for ihood in neighborhoods.values():
-            fname = '%s.%s.time_resolved@%2.1f_Ang.%s' % (output_desc,
+            fname_timedep = '%s.%s.time_resolved@%2.1f_Ang.%s' % (output_desc,
                                                           ihood.anchor_res_and_fragment_str.replace('*', ""),
                                                           ctc_cutoff_Ang,
                                                           graphic_ext.strip("."))
-            fname = path.join(output_dir, fname)
+
+            fname_N_ctcs = '%s.%s.time_resolved@%2.1f_Ang.N_ctcs.%s' % (output_desc,
+                                                                        ihood.anchor_res_and_fragment_str.replace('*', ""),
+                                                                        ctc_cutoff_Ang,
+                                                                        graphic_ext.strip("."))
+
             myfig = ihood.plot_timedep_ctcs(panelheight,
                                             plot_N_ctcs=True,
                                             color_scheme = _my_color_schemes(curve_color),
@@ -409,18 +424,35 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             t_unit=t_unit,
                                             gray_background=gray_background,
                                             shorten_AAs=short_AA_names,
+                                            pop_N_ctcs=just_N_ctcs,
+                                         #   skip_timedep=not plot_timedep,
                                             )
 
             # One title for all axes on top
             title = ihood.anchor_res_and_fragment_str
             if short_AA_names:
                 title = ihood.anchor_res_and_fragment_str_short
-            myfig.axes[0].set_title(title)
-            myfig.tight_layout(h_pad=0,w_pad=0,pad=0)
-            myfig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-            plt.close(myfig)
-            print(fname)
-            ihood.save_trajs(output_desc,table_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
+
+            # Differentiate the type of figures we can have
+            if len(myfig) == 1:
+                if plot_timedep:
+                    fnames = [fname_timedep]
+                else:
+                    fnames = [fname_N_ctcs]
+            elif len(myfig) == 2:
+                fnames = [fname_timedep, fname_N_ctcs]
+
+            for iname, ifig in zip(fnames, myfig):
+                fname = path.join(output_dir, iname)
+                ifig.axes[0].set_title(title)
+                ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+                plt.close(ifig)
+                print(fname)
+
+            if plot_timedep:
+                ihood.save_trajs(output_desc,table_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
+            if just_N_ctcs:
+                ihood.save_trajs(output_desc,table_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True, ctc_cutoff_Ang=ctc_cutoff_Ang)
             print()
 
     return {"ctc_idxs": ctc_idxs_small,
@@ -472,13 +504,13 @@ def sites(topology,
           n_jobs=1,
           ):
     dt = _t_unit2dt(t_unit)
-    ylim_Ang = np.float(ylim_Ang)
+    ylim_Ang = _np.float(ylim_Ang)
 
     # todo this is an ad-hoc for a powerpoint presentation
     from matplotlib import rcParams
-    rcParams["xtick.labelsize"] = np.round(rcParams["font.size"]*2)
-    rcParams["ytick.labelsize"] = np.round(rcParams["font.size"]*2)
-    rcParams["font.size"] = np.round(rcParams["font.size"] * 2)
+    rcParams["xtick.labelsize"] = _np.round(rcParams["font.size"]*2)
+    rcParams["ytick.labelsize"] = _np.round(rcParams["font.size"]*2)
+    rcParams["font.size"] = _np.round(rcParams["font.size"] * 2)
     _offer_to_create_dir(output_dir)
 
     # Prepare naming
@@ -525,7 +557,7 @@ def sites(topology,
         print('%10s  %10u  %10u  %10s %10s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key, CGN[val]))
 
     ctc_idxs_small = _sites_to_ctc_idxs_old(sites, AAresSeq2residxs)
-    ctcs, time_array = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+    ctcs, time_array, aps = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                  chunksize=chunksize_in_frames,
                                  return_time=True, consolidate=False, periodic=pbc,
                                  scheme=scheme,
@@ -534,7 +566,7 @@ def sites(topology,
     # Abstract each site to a group of contacts
     site_as_gc = {}
     ctc_pairs_iterators = iter(ctc_idxs_small)
-    ctc_value_idx = iter(np.arange(len(ctc_idxs_small)))  # there has to be a better way
+    ctc_value_idx = iter(_np.arange(len(ctc_idxs_small)))  # there has to be a better way
     for isite in sites:
         key = isite["name"]
         site_as_gc[key] = []
@@ -557,8 +589,8 @@ def sites(topology,
 
     print("The following files have been created")
     panelheight = 3
-    n_cols = np.min((4, len(sites)))
-    n_rows = np.ceil(len(sites) / n_cols).astype(int)
+    n_cols = _np.min((4, len(sites)))
+    n_rows = _np.ceil(len(sites) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
     histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
@@ -570,7 +602,7 @@ def sites(topology,
                                        site_as_gc.items()):
         isite_nh.histo_site(ctc_cutoff_Ang, site_name,
                          jax=jax,
-                         xlim=np.max([ss["n_bonds"] for ss in sites]),
+                         xlim=_np.max([ss["n_bonds"] for ss in sites]),
                          label_fontsize_factor=panelsize2font / panelsize,
                          shorten_AAs=short_AA_names
                          )
@@ -668,7 +700,7 @@ def density_by_sites(topology,
                                                                      default_fragment_idx=default_fragment_index,
                                                                      )
 
-            aa_in_sites = np.unique(np.hstack([[aa.index for aa in refgeom.top.residue(ii).atoms] for ii in resSeq2residxs.values()]))
+            aa_in_sites = _np.unique(_np.hstack([[aa.index for aa in refgeom.top.residue(ii).atoms] for ii in resSeq2residxs.values()]))
             aa_in_sites_gmx = aa_in_sites+1
             atom_in_sites_gmx_str=','.join([str(ii) for ii in aa_in_sites_gmx])
             if False:
@@ -764,6 +796,7 @@ def interface(
         write_to_disk_BW=False,
         sort_by_av_ctcs=True,
         scheme="closest-heavy",
+        just_N_ctcs=False,
 ):
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
@@ -784,7 +817,7 @@ def interface(
         refgeom = topology
 
     frag_cons = False
-    if len(fragments)==1 and fragments[0].isalpha():
+    if len(fragments)==1 and fragments[0][:-1].isalpha(): # the -1 is to allow resseq+ to be alpha
         if fragments[0].lower()=="consensus":
             frag_cons = True
             fragments = get_fragments(refgeom.top, method='resSeq+',verbose=True)
@@ -796,7 +829,7 @@ def interface(
         print("User input by residue index")
         if len(fragments)==1:
             print("Only one fragment provided, assuming the rest of residues are fragment 2")
-            fragments.append(','.join([str(ii) for ii in np.arange(refgeom.top.n_residues)
+            fragments.append(','.join([str(ii) for ii in _np.arange(refgeom.top.n_residues)
                               if ii not in rangeexpand(fragments[0])]))
         _fragments = []
         for ii, ifrag in enumerate(fragments):
@@ -861,14 +894,17 @@ def interface(
                 elif isinstance(ifrag_idxs,list):
                     #interface_fragments[ii] = ifrag_idxs
                     pass
-        interface_residx_long = [np.hstack([fragments[ii] for ii in iint]) for iint in interface_fragments]
-    ctc_idxs = np.vstack(list(product(interface_residx_long[0], interface_residx_long[1])))
+        interface_residx_long = [_np.hstack([fragments[ii] for ii in iint]) for iint in interface_fragments]
+    ctc_idxs = _np.vstack(list(product(interface_residx_long[0], interface_residx_long[1])))
+
+    # Remove self-contacts
+    ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
 
     # Create a neighborlist
     if n_nearest>0:
         print("Excluding contacts between %u nearest neighbors"%n_nearest)
         nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
-        ctc_idxs = np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
+        ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
 
     print("\nComputing distances in the interface between fragments\n%s\nand\n%s.\n"
           "The interface is defined by the residues within %3.1f "
@@ -878,10 +914,10 @@ def interface(
              '\n'.join(_twrap(', '.join(['%s' % gg for gg in interface_fragments[1]]))),
              interface_cutoff_Ang), end="")
 
-    ctcs, ctc_idxs = md.compute_contacts(refgeom, np.vstack(ctc_idxs))
+    ctcs, ctc_idxs = md.compute_contacts(refgeom, _np.vstack(ctc_idxs))
     print("done!")
 
-    ctc_idxs_receptor_Gprot = ctc_idxs[np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
+    ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
 
     interface_residx_short = [set(ctc_idxs_receptor_Gprot[:,0]).intersection(interface_residx_long[0]),
                               set(ctc_idxs_receptor_Gprot[:,1]).intersection(interface_residx_long[1])]
@@ -902,13 +938,13 @@ def interface(
                             )
 
     # Stack all data
-    actcs = np.vstack(ctcs)
+    actcs = _np.vstack(ctcs)
 
     # Get frequencies so that we don't create unnecessary ctc objects
     ctcs_bin = (actcs <= ctc_cutoff_Ang / 10).astype("int").sum(0)
     ctc_frequency = ctcs_bin / actcs.shape[0]
-    order = np.argsort(ctc_frequency)[::-1]
-    #ctcs_trajectory_std = np.vstack([np.mean(ictcs < ctc_cutoff_Ang / 10, 0) for ictcs in ctcs]).std(0)
+    order = _np.argsort(ctc_frequency)[::-1]
+    #ctcs_trajectory_std = _np.vstack([_np.mean(ictcs < ctc_cutoff_Ang / 10, 0) for ictcs in ctcs]).std(0)
     from .aa_utils import shorten_AA
     ctc_objs = []
     for idx in order[:n_ctcs]:
@@ -949,7 +985,7 @@ def interface(
     panelsize2font = 3.5
     fudge = 7
     histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=False,
-                                     figsize=(n_cols * panelsize * np.ceil(neighborhood.n_ctcs/fudge),
+                                     figsize=(n_cols * panelsize * _np.ceil(neighborhood.n_ctcs/fudge),
                                               n_rows * panelsize),
                                      )
 
@@ -958,7 +994,7 @@ def interface(
     neighborhood.histo_site(ctc_cutoff_Ang,
                             output_desc,
                             jax=histoax[0],
-                            xlim=np.min((n_ctcs,neighborhood.n_ctcs)),
+                            xlim=_np.min((n_ctcs,neighborhood.n_ctcs)),
                             label_fontsize_factor=panelsize2font / panelsize,
                             shorten_AAs=short_AA_names,
                             truncate_at=.05,
@@ -981,10 +1017,11 @@ def interface(
     fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
     neighborhood.table_summary_to_excel(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
     print(fname_excel)
-    if plot_timedep:
-        fname = '%s.time_resolved.%s' % (output_desc,
-                                         graphic_ext.strip("."))
-        fname = path.join(output_dir, fname)
+    if plot_timedep or just_N_ctcs:
+        fname_timedep = '%s@%2.1f_Ang.time_resolved.%s' % (output_desc,ctc_cutoff_Ang,
+                                                            graphic_ext.strip("."))
+        fname_N_ctcs  = '%s@%2.1f_Ang.time_resolved.N_ctcs.%s' % (output_desc,ctc_cutoff_Ang,
+                                                                   graphic_ext.strip("."))
         myfig = neighborhood.plot_timedep_ctcs(panelheight,
                                                color_scheme=_my_color_schemes(curve_color),
                                                ctc_cutoff_Ang=ctc_cutoff_Ang,
@@ -993,16 +1030,119 @@ def interface(
                                                t_unit=t_unit,
                                                gray_background=gray_background,
                                                shorten_AAs=short_AA_names,
-                                               plot_N_ctcs=True)
+                                               plot_N_ctcs=True,
+                                               skip_timedep=~plot_timedep,
+                                               pop_N_ctcs=just_N_ctcs)
 
-        # One title for all axes on top
-        myfig.axes[0].set_title("site: %s" % (output_desc))
-        plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-        plt.close(myfig)
-        print(fname)
+        # Differentiate the type of figures we can have
+        if len(myfig)==1:
+            if plot_timedep:
+                fnames = [fname_timedep]
+            else:
+                fnames = [fname_N_ctcs]
+        elif len(myfig)==2:
+            fnames = [fname_timedep, fname_N_ctcs]
+
+        for iname, ifig in zip(fnames, myfig):
+            fname = path.join(output_dir, iname)
+            ifig.axes[0].set_title("site: %s" % (output_desc))
+            ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+            plt.close(ifig)
+            print(fname)
+
+
 
     return neighborhood
 
+def contact_map(
+        topology=None,
+        trajectories=None,
+        chunksize_in_frames=100,
+        list_ctc_cutoff_Ang=[3],
+        graphic_dpi=150,
+        graphic_ext=".pdf",
+        interface_cutoff_Ang=35,
+        output_desc="contact",
+        output_dir=".",
+        stride=1,
+        n_jobs=1,
+        scheme="closest-heavy",
+):
+    output_desc = output_desc.strip(".")
+    _offer_to_create_dir(output_dir)
+
+    if isinstance(trajectories,str):
+        trajectories = _glob(trajectories)
+    if isinstance(trajectories[0],str):
+        xtcs = sorted(trajectories)
+    else:
+        xtcs = trajectories
+    print("Will compute contact maps for the files:\n  %s\n with a stride of %u frames.\n" % (
+    "\n  ".join([str(ixtc) for ixtc in xtcs]), stride))
+
+    if isinstance(topology,str):
+        refgeom = md.load(topology)
+    else:
+        refgeom = topology
+
+
+
+    print()
+    from .contacts import xtcs2ctc_mat_dict
+    from .list_utils import force_iterable as _force_iterable
+    ctc_map_dict, times = xtcs2ctc_mat_dict(xtcs, refgeom.top, _force_iterable(list_ctc_cutoff_Ang),
+                                            stride=stride,
+                                            return_time=True,
+                                            chunksize=chunksize_in_frames,
+                                            n_jobs=n_jobs,
+                                            progressbar=True,
+                                            scheme=scheme
+                                            )
+    print()
+
+    panelheight = 3
+    n_cols = 3
+    n_rows = _np.ceil((len(xtcs)+1)/n_cols).astype(int)
+    panelsize2font = 3.5
+    print("The following files have been created")
+    for key, val in ctc_map_dict.items():
+        matfig, matax = plt.subplots(n_rows, n_cols,
+                                         sharex=True,
+                                         sharey=True,
+                                         figsize=(n_cols * panelheight,
+                                                  n_rows * panelheight),
+
+                                         )
+        axiter = iter(matax.flatten())
+        n_frames = 0
+        for imat, itime, ixtc in zip(val, times, xtcs):
+            iax = next(axiter)
+            i_nframes = len(itime[0])
+            iax.imshow(imat/i_nframes)
+            iax.set_title("%s\n(%s frames)"%(splitext(str(ixtc))[0], str(i_nframes)))
+            n_frames += i_nframes
+
+        iax = next(axiter)
+        av = _np.sum(val,0)/n_frames
+        iax.imshow(av)
+        iax.set_title("overall@%2.1f$\\AA$"%key)
+        for ii in range(n_cols):
+            try:
+                iax = next(axiter)
+                iax.set_frame_on(False)
+                iax.set_xticks([])
+                iax.set_yticks([])
+                iax.set_xticklabels([])
+            except StopIteration:
+                break
+
+        fname = "%s@%2.1f.overall.%s" % (output_desc, key, graphic_ext.strip("."))
+        fname = path.join(output_dir, fname)
+        matfig.savefig(fname, dpi=graphic_dpi, bbox_inches="tight")
+        print(fname)
+    return ctc_map_dict
+    fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
+    #neighborhood.table_summary_to_excel(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
 
 def neighborhood_comparison(*args, **kwargs):
     from .plots import compare_neighborhoods
@@ -1037,7 +1177,7 @@ def _sites_to_ctc_idxs(sites, top,**kwargs):
 
 
 def _sites_to_ctc_idxs_old(sites, AAresSeq2residxs):
-    return np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in sites]))
+    return _np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in sites]))
 
 
 def _my_color_schemes(istr):
