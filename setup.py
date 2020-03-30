@@ -29,6 +29,7 @@ setup(
              'scripts/BW_overview.py',
              'scripts/CGN_overview.py',
              'scripts/residue_dihedrals.py',
+             'scripts/contact_maps.py'
              #'scripts/CARDS.py'
              ]
 )
