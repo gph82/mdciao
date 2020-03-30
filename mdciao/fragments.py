@@ -237,8 +237,9 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
                 # print(key,refgeom.top.residue(cands[0]), cand_fragments)
             elif len(cands) > 1:
                 print("ambigous definition for resSeq %s" % key)
-                for cc, ss in zip(cands, cand_fragments):
-                    istr = '%10s in fragment %2u with index %6u'%(top.residue(cc), ss,cc)
+                #assert len(cand_fragments)==len(_np.unique(cand_fragments))
+                for cc, ss, char in zip(cands, cand_fragments,"abcdefg"):
+                    istr = '%s) %10s in fragment %2u with index %6u'%(char, top.residue(cc),cc, ss)
                     if additional_naming_dicts is not None:
                         extra=''
                         for key1, val1 in additional_naming_dicts.items():
@@ -248,21 +249,32 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
                             istr = istr + ' (%s)'%extra.rstrip(" ")
                     print(istr)
                 if not pick_first_fragment_by_default:
-                    answer = input(
-                        "input one fragment idx (out of %s) and press enter.\nLeave empty and hit enter to repeat last option [%s]\n" % ([int(ii) for ii in cand_fragments], last_answer))
+                    prompt =  "input one fragment idx (out of %s) and press enter.\n" \
+                              "Leave empty and hit enter to repeat last option [%s]\n" \
+                              "Use letters in case of repeated fragment index\n" % ([int(ii) for ii in cand_fragments], last_answer)
+
+                    answer = input(prompt)
+
                     if len(answer) == 0:
                         answer = last_answer
-                    try:
+                        cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
+
+                    elif answer.isdigit():
                         answer = int(answer)
-                    except:
-                        #TODO implent k for keeping this answer from now on
-                        if isinstance(answer,str) and answer=='k':
-                            pass
+                        cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
+                    elif answer.isalpha():
+                        idx = "abcdefg".find(answer)
+                        answer = cand_fragments[idx]
+                        cands  = cands[idx]
+
+                    #TODO implent k for keeping this answer from now on
+                    if isinstance(answer,str) and answer=='k':
+                        pass
                         print("Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
                         raise Exception
+
                     assert answer in cand_fragments, (
                                 "Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
-                    cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
                     last_answer = answer
                 else:
                     cands = cands[0]
