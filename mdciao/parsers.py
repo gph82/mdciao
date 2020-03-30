@@ -51,10 +51,10 @@ def _parser_add_stride(parser,
 
 def _parser_add_chunk(parser,help="Trajectories are read in chunks of this size. "
                                   "Helps with big files and/or large number of contacts"
-                                  " when you run into memory problems. Default is 10000",
+                                  " when you run into memory problems. Default is %s",
                       default=10000):
     parser.add_argument("--chunksize_in_frames", type=int,
-                        help=help,
+                        help=help%default,
                         default=default)
 
 def _parser_add_time_traces(parser):
@@ -220,6 +220,13 @@ def _parser_add_n_ctcs(parser, default=5):
                              "will be written to the ouput. Default is %u."%default,
                         default=default)
 
+def _parser_add_pop(parser):
+    parser.add_argument("--pop_N_ctcs", dest="just_N_ctcs", action="store_true",
+                        help="Separate the plot with the total number contacts from the time-trace plot. "
+                             "Default is False")
+    parser.add_argument("--no-pop_N_ctcs", dest="just_N_ctcs", action="store_false")
+    parser.set_defaults(just_N_ctcs=False)
+
 def parser_for_rn():
     parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
                                       'receptor-G-protein complex.')
@@ -283,6 +290,7 @@ def parser_for_rn():
     _parser_add_distro(parser)
     _parser_add_n_cols(parser)
     _parser_add_n_jobs(parser)
+    _parser_add_pop(parser)
     return parser
 
 def parser_for_dih():
@@ -463,8 +471,27 @@ def parser_for_interface():
     parser.add_argument('--no-sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_false')
     parser.set_defaults(sort_by_av_ctcs=True)
     _parser_add_scheme(parser)
+    _parser_add_pop(parser)
 
     return parser
+
+def parser_for_contact_map():
+    parser = _parser_top_traj(description='Residue-residue contact-maps')
+
+    parser.add_argument("--list_ctc_cutoff_Ang", type=str,
+                        help="The cutoff distances between two residues for them to be considered in contact.",
+                        default='3')
+    _parser_add_stride(parser)
+    _parser_add_n_jobs(parser)
+    _parser_add_chunk(parser, default=100)
+    _parser_add_output_desc(parser,'interface')
+    _parser_add_output_dir(parser)
+    _parser_add_graphic_ext(parser)
+    _parser_add_graphic_dpi(parser)
+    _parser_add_scheme(parser)
+
+    return parser
+
 
 def fnmatch_ex(patterns_as_csv, list_of_keys):
     r"""
