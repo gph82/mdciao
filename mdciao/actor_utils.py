@@ -949,3 +949,32 @@ def reorder_geometry(itraj, new_order_of_res_idxs):
                            unitcell_angles=itraj.unitcell_angles
                            )
     return igeom
+
+def ss_grower(igeom, residxs, frame=0, exclude=['C'],
+              check=True,
+              verbose=False):
+    if verbose:
+        print(residxs)
+    ss_array = _md.compute_dssp(igeom[frame]).squeeze()
+    if check:
+        assert ss_array[residxs[0]]==ss_array[residxs[-1]], ("The first and last residue (%u,%s,%s and %u,%s,%s)"
+                                                             " do not have the same SS "%(residxs[0],
+                                                                                          igeom.top.residue(residxs[0]),
+                                                                                          ss_array[residxs[0]],
+                                                                                          residxs[-1],
+                                                                                          igeom.top.residue(residxs[-1]),
+                                                                                              ss_array[residxs[-1]]))
+    if verbose:
+        for ii, iss in enumerate(ss_array):
+            print(ii,iss, igeom.top.residue(ii))
+        print()
+    output=list(residxs)
+    for inc, start_idx in zip([+1,-1], _np.array(residxs)[[-1,0]]):
+        idx = start_idx+inc
+        to_append = []
+        #print(idx, ss_array[idx],ss_array[start_idx])
+        while ss_array[idx] == ss_array[start_idx] and ss_array[start_idx] not in exclude:
+            to_append.append(idx)
+            idx+=inc
+        output.extend(to_append)
+    return _np.array(sorted(output))
