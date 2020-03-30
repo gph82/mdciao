@@ -4,7 +4,9 @@ from os import path as _path
 from .list_utils import in_what_fragment, \
     _replace4latex, \
     iterate_and_inform_lambdas, \
-    put_this_idx_first_in_pair
+    put_this_idx_first_in_pair,\
+    _replace_w_dict, \
+    unify_freq_dicts
 
 from .plots import plot_w_smoothing_auto, plot_contact
 from collections import defaultdict
@@ -204,22 +206,80 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
 
     itime = _np.hstack(itime)
     ictcs = _np.vstack(ictcs)
-    iatps = _np.vstack(j_atompairs)
+    iatps = _np.vstack(iaps)
 
     return ictcs, itime, iatps
 
-def per_xtc_ctc_mat(top, ixtc, ctc_cutoff_Ang, chunksize, stride,
-                traj_idx, res_COM_cutoff_Ang,
-                **mdcontacts_kwargs):
-    #all_residxs_pairs =
-    from itertools import product
+def xtcs2ctc_mat_dict(xtcs, top, list_ctc_cutoff_Ang,
+                      stride=1,
+                      return_time=False,
+                      res_COM_cutoff_Ang=25,
+                      chunksize=100,
+                      n_jobs=1,
+                      progressbar=False,
+                      **mdcontacts_kwargs):
+    """Returns the full contact map of residue-residue contacts from a list of trajectory files
+
+    Parameters
+    ----------
+    xtcs : list of strings
+        list of filenames with trajectory data. Typically xtcs,
+        but can be any type of file readable by :obj:mdtraj
+    top : str or :py:class:`mdtraj.Topology`
+        Topology that matches :obj:xtcs
+    stride : int, default is 1
+        Stride the trajectory data down by this value
+    chunksize : integer, default is 100
+        How many frames will be read into memory for
+        computation of the contact time-traces. The higher the number,
+        the higher the memory requirements
+    n_jobs : int, default is 1
+        to how many processors to parallellize
+
+
+    Returns
+    -------
+    ctc_mat
+
+    """
+
+    from tqdm import tqdm
+
+    if progressbar:
+        iterfunct = lambda a : tqdm(a)
+    else:
+        iterfunct = lambda a : a
+
+    ictc_mat_dicts_itimes = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc_mat_dict)(top, ixtc, list_ctc_cutoff_Ang, chunksize, stride, ii, res_COM_cutoff_Ang,
+                                                                               **mdcontacts_kwargs)
+                                            for ii, ixtc in enumerate(iterfunct(xtcs)))
+
+    ctc_maps = {key:[] for key in list_ctc_cutoff_Ang}
+    times = []
+
+    for ictc_map, itimes in ictc_mat_dicts_itimes:
+        for key in list_ctc_cutoff_Ang:
+            ctc_maps[key].append(ictc_map[key])
+        times.append(itimes)
+    actcs = ctc_maps
+    times = times
+
+    if not return_time:
+        return actcs
+    else:
+        return actcs, times
+
+def per_xtc_ctc_mat_dict(top, ixtc, list_ctc_cutoff_Ang, chunksize, stride,
+                         traj_idx, res_COM_cutoff_Ang,
+                         **mdcontacts_kwargs):
+
     from .actor_utils import igeom2mindist_COMdist_truncation
     iterate, inform = iterate_and_inform_lambdas(ixtc,stride, chunksize, top=top)
     ictcs, itime, iaps = [],[],[]
     running_f = 0
     inform(ixtc, traj_idx, 0, running_f)
-    from scipy.sparse import lil_matrix
-    ctc_sum = lil_matrix((top.n_residues, top.n_residues), dtype=int)
+    ctc_sum = {icoff: _np.zeros((top.n_residues, top.n_residues), dtype=int) for icoff in list_ctc_cutoff_Ang}
+
     for jj, igeom in enumerate(iterate(ixtc)):
         running_f += igeom.n_frames
         inform(ixtc, traj_idx, jj, running_f)
@@ -231,14 +291,14 @@ def per_xtc_ctc_mat(top, ixtc, ctc_cutoff_Ang, chunksize, stride,
         jctcs, jidx_pairs, j_atompairs = compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
         # TODO do proper list comparison and do it only once
         assert len(jidx_pairs) == len(ctc_residxs_pairs)
-        counts = (jctcs<=ctc_cutoff_Ang/10).sum(0)
-        positive_idxs = _np.argwhere(counts>0).squeeze()
-        for idx in positive_idxs:
-            ii, jj  = sorted(jidx_pairs[idx])
-            ctc_sum[ii,jj] += counts[idx]
-
-
-    return jctcs, itime#, iatps
+        for icoff in list_ctc_cutoff_Ang:
+            counts = (jctcs<=icoff/10).sum(0)
+            positive_idxs = _np.argwhere(counts>0).squeeze()
+            for idx in positive_idxs:
+                ii, jj  = sorted(jidx_pairs[idx])
+                ctc_sum[icoff][ii,jj] += counts[idx]
+                ctc_sum[icoff][jj,ii] += counts[idx]
+    return ctc_sum, itime
 
 def geom2COMdist(igeom, residue_pairs):
     r"""
@@ -679,10 +739,17 @@ class contact_group(object):
             _n_ctcs_t.append(itraj  .sum(1))
         return _n_ctcs_t
 
+    def add_ctc_type_to_histo(self, ctc_cutoff_Ang, jax):
+        ctc_type_dict = self.frequency_dict_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang)
+        print(ctc_type_dict)
+        pass
+        #frequency_dict_formed_atom_pairs_overall_trajs
+
     def histo(self, ctc_cutoff_Ang,
               jax=None,
               truncate_at=None,
-              bar_width_in_inches=.75):
+              bar_width_in_inches=.75,
+              ):
         r"""
         Base method for histogramming contact frequencies of the contacts
         contained in this class
@@ -753,8 +820,7 @@ class contact_group(object):
                            jax=None,
                            shorten_AAs=False,
                            label_fontsize_factor=1,
-                           sum_neighbors=True
-                           ):
+                           sum_neighbors=True):
 
         # Base plot
         jax = self.histo(ctc_cutoff_Ang,
@@ -987,26 +1053,41 @@ class contact_group(object):
 
     def plot_timedep_ctcs(self, panelheight,
                           plot_N_ctcs=True,
+                          pop_N_ctcs=False,
+                          skip_timedep=False,
                           **plot_contact_kwargs,
                           ):
-        if self.n_ctcs > 0:
+
+        figs_to_return = []
+        if pop_N_ctcs:
+            assert plot_N_ctcs, "If just_N_ctcs is True, plot_N_ctcs has to be True also"
+
+            fig_N_ctcs = _plt.figure(
+                figsize=(10, panelheight),
+            )
+            ax_N_ctcs = _plt.gca()
+
+        if self.n_ctcs > 0 and not skip_timedep:
             n_rows = self.n_ctcs
             if plot_N_ctcs:
                 n_rows +=1
             myfig, myax = _plt.subplots(n_rows, 1,
                                         figsize=(10, n_rows * panelheight),
                                         squeeze=False)
+            figs_to_return.append(myfig)
             myax = myax[:,0]
+            axes_iter = iter(myax)
+
             # Plot individual contacts
-            for ictc, iax in zip(self._contacts, myax[:self.n_ctcs]):
-                plot_contact(ictc,iax,
+            for ictc in self._contacts:
+                plot_contact(ictc,next(axes_iter),
                              **plot_contact_kwargs
                              )
+
 
             # Cosmetics
             [iax.set_xticklabels([]) for iax in myax[:self.n_ctcs-1]]
             [iax.set_xlabel('') for iax in myax[:self.n_ctcs - 1]]
-
 
             # TODO figure out how to put xticklabels on top
             axtop, axbottom = myax[0], myax[self.n_ctcs-1]
@@ -1016,22 +1097,27 @@ class contact_group(object):
             iax2.set_xlim(axtop.get_xlim())
             iax2.set_xlabel(axbottom.get_xlabel())
 
-        if plot_N_ctcs \
-                and "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
+        if "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
                 and plot_contact_kwargs["ctc_cutoff_Ang"] > 0:
+            if plot_N_ctcs:
+                if pop_N_ctcs:
+                    iax = ax_N_ctcs
+                    figs_to_return.append(fig_N_ctcs)
+                else:
+                    iax = next(axes_iter)
+
             ctc_cutoff_Ang = plot_contact_kwargs.pop("ctc_cutoff_Ang")
             try:
                 plot_contact_kwargs.pop("shorten_AAs")
             except KeyError:
                 pass
-            self.plot_timedep_Nctcs(myfig.axes[self.n_ctcs],
+            self.plot_timedep_Nctcs(iax,
                                     ctc_cutoff_Ang,
                                     **plot_contact_kwargs,
                                     )
 
-
-        myfig.tight_layout(pad=0, h_pad=0, w_pad=0)
-        return myfig
+        [ifig.tight_layout(pad=0, h_pad=0, w_pad=0) for ifig in figs_to_return]
+        return figs_to_return
 
     def plot_timedep_Nctcs(self,
                            iax,
@@ -1133,6 +1219,22 @@ class contact_group(object):
                          )
         return dicts
 
+    def to_per_traj_dicts_for_saving_N_ctcs(self, ctc_cutoff_Ang, dt=1, t_unit="ps"):
+        bintrajs = self.binarize_trajs(ctc_cutoff_Ang, order="traj")
+        labels = ['time / %s' % t_unit]
+        for ictc in self._contacts:
+            labels.append('%s / Ang' % ictc.ctc_label)
+
+        dicts = []
+        for ii in range(self.n_trajs):
+            data = [self.time_arrays[ii]*dt]+[bintrajs[ii].T.astype(int)]
+            data= _np.vstack(data).T
+            dicts.append({"header":labels,
+                          "data":data
+                          }
+                         )
+        return dicts
+
     def frequency_table_by_residue(self, ctc_cutoff_Ang,
                                    list_by_interface=False):
         dict_list = self.frequency_per_residue(ctc_cutoff_Ang,
@@ -1154,11 +1256,15 @@ class contact_group(object):
         df2return = idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
 
         if breakdown:
-            idf = [ictc.frequency_dict_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
+            idf = self.frequency_dict_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang)
             idf = ['(%s)'%(', '.join(['%2u%% %s'%(val*100,key) for key, val in idict.items()])) for idict in idf]
             df2return = df2return.join(_DF.from_dict({"breakdown": idf}))
 
         return df2return
+
+    def frequency_dict_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang):
+        return [ictc.frequency_dict_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
+
 
     def frequency_per_residue_idx(self, ctc_cutoff_Ang):
         dict_sum = defaultdict(list)
@@ -1207,22 +1313,34 @@ class contact_group(object):
 
         return dict_out
 
-
-
     def save_trajs(self, output_desc,
                    ext,
                    output_dir='.',
                    dt=1,
                    t_unit="ps",
-                   verbose=False):
-        dicts = self.to_per_traj_dicts_for_saving(dt=dt, t_unit=t_unit)
+                   basename=False,
+                   verbose=False,
+                   ctc_cutoff_Ang=None):
+
+        if ctc_cutoff_Ang is None:
+            dicts = self.to_per_traj_dicts_for_saving(dt=dt, t_unit=t_unit)
+        else:
+            dicts = self.to_per_traj_dicts_for_saving_N_ctcs(ctc_cutoff_Ang, dt=dt, t_unit=t_unit)
 
         if str(ext).lower()=="none":
             ext='dat'
 
         for idict, ixtc  in zip(dicts, self.trajlabels):
-            savename = "%s.%s.%s.%s" % (
-                output_desc, self.anchor_res_and_fragment_str.replace('*', ""), ixtc, ext.strip("."))
+            jxtc = ixtc
+            if basename:
+                jxtc = _path.basename(ixtc)
+
+            if ctc_cutoff_Ang is None:
+                savename = "%s.%s.%s.%s" % (
+                    output_desc, self.anchor_res_and_fragment_str.replace('*', ""), jxtc, ext.strip("."))
+            else:
+                savename = "%s.%s.%s.N_ctcs.%s" % (
+                    output_desc, self.anchor_res_and_fragment_str.replace('*', ""), jxtc, ext.strip("."))
             savename = _path.join(output_dir, savename)
             if ext == 'xlsx':
                 _DF(idict["data"],
@@ -1278,6 +1396,7 @@ class contact_pair(object):
         assert self._n_trajs == len(time_arrays)
         assert all([len(itraj)==len(itime) for itraj, itime in zip(ctc_trajs, time_arrays)])
         self._time_max = _np.max(_np.hstack(time_arrays))
+        self._binarized_trajs = {}
 
         self._anchor_residue_index = anchor_residue_idx
         self._partner_residue_index = None
@@ -1322,7 +1441,6 @@ class contact_pair(object):
                                 sort=True):
                                 #use_atom_names=False):
         bintrajs = self.binarize_trajs(ctc_cutoff_Ang)
-
         formed_atom_pair_trajs = [atraj[itraj==1] for atraj, itraj in zip(self.atom_pair_trajs, bintrajs)]
         formed_atom_pairs = _np.vstack(formed_atom_pair_trajs)
         formed_atom_pairs_hashes = _np.zeros_like(formed_atom_pairs, dtype=_np.int64)
@@ -1791,7 +1909,9 @@ class contact_pair(object):
         """
         return self._consensus_labels
 
-    def binarize_trajs(self, ctc_cutoff_Ang):
+    def binarize_trajs(self, ctc_cutoff_Ang,
+                       #switch_off_Ang=None
+                       ):
         """
 
         Parameters
@@ -1802,7 +1922,28 @@ class contact_pair(object):
         -------
 
         """
-        result = [itraj < ctc_cutoff_Ang / 10 for itraj in self._ctc_trajs]
+        transform = lambda itraj: itraj < ctc_cutoff_Ang / 10
+
+        """
+        if switch_off_Ang is not None:
+            assert isinstance(switch_off_Ang, float) and switch_off_Ang>0
+            m = -1 / (switch_off_Ang/10)
+            b = 1 +  (ctc_cutoff_Ang / switch_off_Ang)
+            def transform(d):
+                res = m * d + b
+                res[d<ctc_cutoff_Ang/10]=1
+                res[d > (ctc_cutoff_Ang + switch_off_Ang)/10]=0
+
+                return res
+        """
+
+        try:
+            result = self._binarized_trajs[ctc_cutoff_Ang]
+            #print("Grabbing already binarized %3.2f"%ctc_cutoff_Ang)
+        except KeyError:
+            #print("First time binarizing %3.2f. Storing them"%ctc_cutoff_Ang)
+            result = [transform(itraj) for itraj in self._ctc_trajs]
+            self._binarized_trajs[ctc_cutoff_Ang] = result
         #print([ires.shape for ires in result])
         return result
 
@@ -1895,6 +2036,29 @@ class contact_pair(object):
                     out += '\n%s: %s'%(var, getattr(self,'%s'%var))
         return out
 
+def contact_map_to_dict(imat, top,
+                        res_idxs=None,
+                        consensus_labels_map=None,
+                        ctc_freq_cutoff=0.01):
+
+    if res_idxs is None:
+        res_idxs = _np.arange(top.n_residues)
+
+    if consensus_labels_map is None:
+        consensus_labels_map = {key:None for key in res_idxs}
+    assert imat.shape[0] == imat.shape[1] == len(res_idxs), (imat.shape, len(res_idxs))
+    dict_out = {}
+    for ii, jj in _np.array(_np.triu_indices_from(imat, k=1)).T:
+        # print(ii,jj)
+        val = imat[ii, jj]
+        ii, jj = [res_idxs[kk] for kk in [ii, jj]]
+        key = '%s@%s-%s@%s' % (top.residue(ii), consensus_labels_map[ii],
+                               top.residue(jj), consensus_labels_map[jj])
+        key = key.replace("@None","").replace("@none","")
+        if val > ctc_freq_cutoff:
+            dict_out[key] = val
+    return dict_out
+
 class group_of_interfaces(object):
     def __init__(self, dict_of_interfaces):
         self._interfaces = dict_of_interfaces
@@ -1949,8 +2113,10 @@ class group_of_interfaces(object):
         else:
             return dict_out
 
-    def compare(self, ctc_cutoff_Ang, colordict, replacement_dict={}):
-        from .plots import unify_freq_dicts, plot_unified_freq_dicts, replace_w_dict
+    def compare(self, ctc_cutoff_Ang, colordict, replacement_dict={},
+                per_residue=False,
+                **plot_unified_freq_dicts_kwargs):
+        from .plots import plot_unified_freq_dicts
         freqs = {key:val.frequency_dict_by_consensus_labels(ctc_cutoff_Ang,
                                                             return_as_triplets=True
                                                             )
@@ -1959,11 +2125,15 @@ class group_of_interfaces(object):
         # Create and new dicts and do the replacements
         _freqs = {}
         for fkey, fval in freqs.items():
-            idict = {"-".join(sorted(triplet[:2])):triplet[-1] for triplet in fval}
-            _freqs[fkey]={replace_w_dict(key, replacement_dict):val for key, val in idict.items()}
+            if not per_residue:
+                idict = {"-".join(sorted(triplet[:2])):triplet[-1] for triplet in fval}
+            else:
+                idict = self.interfaces[fkey].frequency_per_residue(ctc_cutoff_Ang)
+
+            _freqs[fkey]={_replace_w_dict(key, replacement_dict):val for key, val in idict.items()}
 
         freqs =  unify_freq_dicts(_freqs)
-        plot_unified_freq_dicts(freqs, colordict)
+        plot_unified_freq_dicts(freqs, colordict, **plot_unified_freq_dicts_kwargs)
 
     def frequency_table(self,ctc_cutoff_Ang):
         return self.frequency_dict_by_consensus_labels(ctc_cutoff_Ang, return_as_triplets=True)
