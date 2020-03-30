@@ -7,7 +7,8 @@ import io
 from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
     does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand, \
-    pull_one_up_at_this_pos
+    pull_one_up_at_this_pos, assert_min_len, assert_no_intersection, window_average_fast, window_average, \
+    put_this_idx_first_in_pair
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
@@ -124,6 +125,118 @@ class Test_pull_one_up_at_this_pos(unittest.TestCase):
     def test_pull_one_up_at_this_pos_verbose_works(self):
         assert(pull_one_up_at_this_pos([1,2,3],1,"~",verbose=True) == [1, 3, '~'])
 
+class Test_assert_min_len(unittest.TestCase):
+    def test_assert_min_len_just_works(self):
+        no_assertion = True
+        try:
+            assert_min_len([['a', 'b'], ['c', 'd'],[1, 2]])
+        except AssertionError:
+            no_assertion = False
+        assert no_assertion
+
+    def test_assert_min_len_failed_assertion_just_works(self):
+        failed_assertion = False
+        try:
+            assert_min_len([[1]])
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
+
+    def test_assert_min_len_failed_assertion_works_empty_list(self):
+        failed_assertion = False
+        try:
+            assert_min_len([[1,2],[]])
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
+    def test_assert_min_length_min_len_works(self):
+        no_assertion = True
+        try:
+            assert_min_len([['a']], min_len=1)
+        except AssertionError:
+            no_assertion = False
+        assert no_assertion
+
+class Test_assert_no_intersection(unittest.TestCase):
+    def test_assert_no_intersection_just_works(self):
+        no_assertion = True
+        try:
+            assert_no_intersection([[1, 2], [3, 3]])
+        except AssertionError:
+            no_assertion = False
+        assert no_assertion
+
+    def test_assert_no_intersection_empty_list_just_works(self):
+        no_assertion = True
+        try:
+            assert_no_intersection([[], [3, 3]])
+        except AssertionError:
+            no_assertion = False
+        assert no_assertion
+
+    def test_failed_assertion_just_works(self):
+        failed_assertion = False
+        try:
+            assert_no_intersection([[1,2,3],[3,3]])
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
+
+    def test_assert_no_intersection_empty_lists(self):
+        failed_assertion = False
+        try:
+            assert_no_intersection([[], []])
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
+
+class Test_window_average_fast(unittest.TestCase):
+    def test_window_average_fast_just_works(self):
+        assert _np.allclose(window_average_fast(_np.arange(5)), _np.array([2.0]))
+        assert _np.allclose(window_average_fast(_np.arange(10)), _np.array([2.0, 3.0, 4.0, 5.0, 6.0, 7.0]))
+
+    def test_window_average_fast_half_window_size_works(self):
+        assert _np.allclose(window_average_fast(_np.arange(7), half_window_size=3), _np.array([3.0]))
+        assert _np.allclose(window_average_fast(_np.arange(5), half_window_size=3), _np.array([1.42857143, 1.42857143, 1.42857143]))
+
+class Test_window_average(unittest.TestCase):
+    def test_window_average_just_works(self):
+        assert _np.allclose(window_average(_np.arange(5))[0], _np.array([2.0])) #mean
+        assert _np.allclose(_np.round(window_average(_np.arange(5))[1], 2), _np.array([1.41])) #std
+
+        assert _np.allclose(window_average(_np.arange(10))[0], _np.array([2.0, 3.0, 4.0, 5.0, 6.0, 7.0])) #mean
+        assert _np.allclose(_np.round(window_average(_np.arange(10))[1], 2), _np.array([1.41, 1.41, 1.41, 1.41, 1.41, 1.41])) #std
+
+    def test_window_average_half_window_size_works(self):
+        assert _np.allclose(window_average(_np.arange(7), half_window_size=3)[0], _np.array([3.0])) #mean
+        assert _np.allclose(window_average(_np.arange(7), half_window_size=3)[1], _np.array([2.0])) #std
+
+    def test_window_average_window_should_be_less_than_input_works(self):
+        failed_assertion = False
+        try:
+            assert window_average(_np.arange(3))
+        except AssertionError:
+            failed_assertion = True
+        assert failed_assertion
+        #below assertion won't work because the function assumes that length of input array>= window size
+        #assert _np.allclose(window_average(_np.arange(5)[0], half_window_size=3), _np.array([1.42857143, 1.42857143, 1.42857143]))
+
+class Test_put_this_idx_first_in_pair(unittest.TestCase):
+    def test_put_this_idx_first_in_pair_just_works(self):
+        assert(put_this_idx_first_in_pair(20, [10,20]) == [20,10])
+        assert (put_this_idx_first_in_pair(10, [10, 20]) == [10, 20])
+        assert (put_this_idx_first_in_pair("first", ["first", "last"]) == ["first", "last"])
+        assert (put_this_idx_first_in_pair("first", ["last", "first"]) == ["first", "last"])
+
+    def test_put_this_idx_first_in_pair_exception(self):
+        failed_assertion = False
+        try:
+            put_this_idx_first_in_pair(99, [10, 20])
+
+        except Exception:
+            failed_assertion = True
+
+        assert failed_assertion
 
 if __name__ == '__main__':
     unittest.main()

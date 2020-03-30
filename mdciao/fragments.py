@@ -196,7 +196,6 @@ def get_fragments(top,
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
 
-# todo document
 def overview(topology,
              methods=['all'],
              all_methods = ['resSeq',
@@ -204,6 +203,23 @@ def overview(topology,
                             'bonds',
                             'resSeq_bonds',
                             'chains']):
+    """
+    Prints the fragments created and their corresponding methods
+
+    Parameters
+    ----------
+    topology :  :py:class:`mdtraj.Topology`
+    methods : list
+                method(s) to be used for obtaining fragments
+    all_methods : list
+                available list of methods
+
+    Returns
+    -------
+    None
+    prints the output from the get_fragments(), using the specified method(s)
+
+    """
 
     if methods[0].lower() == 'all':
         try_methods = all_methods

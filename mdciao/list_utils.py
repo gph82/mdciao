@@ -143,11 +143,19 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
     else:
         return idxs_out
 def window_average_fast(input_array_y, half_window_size=2):
-    r"""
-    Window average using numpy's convolve function
-    :param input_array_y:
-    :param window_size:
-    :return:
+    """
+    Returns the moving average using np.convolve
+    Parameters
+    ----------
+    input_array_y : array
+                    numpy array for which moving average should be calculated
+    half_window_size : int
+                        the actual window size will be 2 * half_window_size + 1.
+                        Example- when half window size = 2, moving average calculation will use window=5
+    Returns
+    -------
+    array
+
     """
     input_array_y = (input_array_y).astype(float)
     window = _np.ones(2*half_window_size+1)
@@ -155,15 +163,23 @@ def window_average_fast(input_array_y, half_window_size=2):
 
 #Lifted from my own aGPCR utils
 def window_average(input_array_y, half_window_size=2):
-    r"""
-    like a convolution but returns also the std inside the window
-    :param input_array_y:
-    :param window_size:
-    :param input_array_x:
-    :return:
+    """
+    Returns average and standard deviation inside the window
+    Parameters
+    ----------
+    input_array_y : array
+                    numpy array for which average and standard deviation should be calculated
+    half_window_size : int
+                            the actual window size will be half_window_size*2 + 1.
+                        Example- when half window size = 2, moving average calculation will use window=5
+    Returns
+    -------
+    array_out_mean, array_out_std
+    two arrays corresponding to mean and standard deviation
     """
     array_out_mean = []
     array_out_std = []
+    assert (half_window_size*2 + 1 <= len(input_array_y)),"In window average, input array should be >= half_window_size*2 + 1"
     for ii in range(half_window_size, len(input_array_y) - half_window_size):
         idxs = _np.hstack([_np.arange(ii - half_window_size, ii),
                            ii,
@@ -320,18 +336,25 @@ def exclude_same_fragments_from_residx_pairlist(pairlist,
         return idxs2exclude
 
 def assert_min_len(input_iterable, min_len=2):
+    """
+    Checks if an iterable satisfies the criteria of minimum length. (Default minimum length is 2).
+    Parameters
+    ----------
+    input_iterable : numpy array, list of list
+                    example np.zeros((2,1,1) or [[1,2],[3,4]] when min_len = 2
+    min_len : minimum length which the iterable should satisfy (Default is 2)
+
+    Returns
+    -------
+    Prints error if each item within the iterable has lesser number of elements than min_len
+
+    """
     for ii, element in enumerate(input_iterable):
         if _np.ndim(element)==0 or len(element) < min_len:
             aerror = 'The %s-th element has too few elements (min %s): %s' % (ii, min_len, element)
             raise AssertionError(aerror)
 
 def join_lists(lists, idxs_of_lists_to_join):
-    r"""
-
-    :param lists:
-    :param idxs_of_lists_to_join:
-    :return:
-    """
     #todo document and test
     assert_min_len(idxs_of_lists_to_join)
 
@@ -367,11 +390,22 @@ def join_lists(lists, idxs_of_lists_to_join):
     return lists
 
 def assert_no_intersection(list_of_lists_of_integers):
-    #todo document and test
+    """
+    Checks if two or more lists contain the same integer
+    Parameters
+    ----------
+    list_of_lists_of_integers : list of lists
+
+    Returns
+    -------
+    Prints assertion message if inner lists have the same integer, else no output
+
+    """
     # Nested loops feasible here because the number of fragments will never become too large
     for ii, l1 in enumerate(list_of_lists_of_integers):
         for jj, l2 in enumerate(list_of_lists_of_integers):
             if (ii != jj):
+                assert (l1 + l2), "Both lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html"
                 assert len(_np.intersect1d(l1, l2)) == 0, 'join fragment id overlaps!'
 
 # TODO consider using np.delete in the code originally?
@@ -424,6 +458,18 @@ def iterate_and_inform_lambdas(ixtc,stride,chunksize, top=None):
     return iterate, inform
 
 def put_this_idx_first_in_pair(idx, pair):
+    """
+    Returns the original pair if the value already appears first, else returns reversed pair
+    Parameters
+    ----------
+    idx : value which needs to be brought in the first place (not the index but value itself)
+    pair : list
+            pair of values as a list
+    Returns
+    -------
+    pair
+
+    """
     if pair[0] != idx and pair[1] == idx:
         pair = pair[::-1]
     elif pair[0] == idx and pair[1] != idx:
