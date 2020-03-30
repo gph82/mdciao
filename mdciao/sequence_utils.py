@@ -14,6 +14,8 @@ def _print_verbose_dataframe(idf):
                             'display.width', 1000):
         _display(idf)
 def _align_tops(top0, top1, substitutions=None,
+                seq_0_res_idxs=None,
+                seq_1_res_idxs=None,
                 return_DF=True):
     r"""
     Provided to :obj:`mdtraj.Topology` objects,
@@ -44,10 +46,20 @@ def _align_tops(top0, top1, substitutions=None,
         top0_seq = top0_seq.replace(key,val)
         top1_seq = top1_seq.replace(key,val)
         #print(key,val)
+
+    if seq_0_res_idxs is None:
+        seq_0_res_idxs=_np.arange(top0.n_residues, dtype=int)
+    if seq_1_res_idxs is None:
+        seq_1_res_idxs=_np.arange(top1.n_residues, dtype=int)
+
+    print(seq_0_res_idxs)
+    top0_seq = "".join([top0_seq[ii] for ii in seq_0_res_idxs])
+    top1_seq = "".join([top1_seq[ii] for ii in seq_1_res_idxs])
+
     align_list = alignment_result_to_list_of_dicts(_my_bioalign(top0_seq, top1_seq)[0],
                                                    top0,
-                                                   range(top0.n_residues),
-                                                   range(top1.n_residues),
+                                                   seq_0_res_idxs=seq_0_res_idxs,
+                                                   seq_1_res_idxs=seq_1_res_idxs,
                                                    topology_1=top1,
                                                    )
 
