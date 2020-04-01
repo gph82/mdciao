@@ -633,9 +633,9 @@ def sites(topology,
                                            t_unit=t_unit,
                                            gray_background=gray_background,
                                            shorten_AAs=short_AA_names,
-                                           plot_N_ctcs=False,
+                                           plot_N_ctcs=True,
                                            ylim_Ang=ylim_Ang,
-                                           )
+                                           )[0]
         # One title for all axes on top
         myfig.axes[0].set_title("site: %s" % (isite["name"]))
         plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
