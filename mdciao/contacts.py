@@ -1105,12 +1105,12 @@ class contact_group(object):
                     figs_to_return.append(fig_N_ctcs)
                 else:
                     iax = next(axes_iter)
-
             ctc_cutoff_Ang = plot_contact_kwargs.pop("ctc_cutoff_Ang")
-            try:
-                plot_contact_kwargs.pop("shorten_AAs")
-            except KeyError:
-                pass
+            for pkey in ["shorten_AAs", "ylim_Ang"]:
+                try:
+                    plot_contact_kwargs.pop(pkey)
+                except KeyError:
+                    pass
             self.plot_timedep_Nctcs(iax,
                                     ctc_cutoff_Ang,
                                     **plot_contact_kwargs,
