@@ -490,6 +490,9 @@ def get_sorted_trajectories(trajectories):
 
     return xtcs
 
+def _inform_about_trajectories(trajectories):
+    return "\n".join([str(itraj) for itraj in trajectories])
+
 # TODO consider dict_utils??
 def _replace_w_dict(key, pat_exp_dict):
     for pat, exp in pat_exp_dict.items():

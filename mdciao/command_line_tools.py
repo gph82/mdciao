@@ -30,7 +30,8 @@ from mdciao.list_utils import \
     rangeexpand, \
     unique_list_of_iterables_by_tuple_hashing, \
     in_what_fragment, \
-    get_sorted_trajectories as _get_sorted_trajectories
+    get_sorted_trajectories as _get_sorted_trajectories, \
+    _inform_about_trajectories
 
 from mdciao.bond_utils import \
     bonded_neighborlist_from_top
@@ -217,17 +218,11 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         resSeq_idxs = sorted(resSeq_idxs)
 
     xtcs = _get_sorted_trajectories(trajectories)
-    try:
-        print("Will compute contact frequencies for the files:\n"
-              "%s\n with a stride of %u frames.\n" % (
-            "\n  ".join(xtcs), stride))
-    except:
-        pass
+    print("Will compute contact frequencies for :\n%s"
+          "\n with a stride of %u frames)"%(_inform_about_trajectories(xtcs),stride))
 
-    if isinstance(topology, str):
-        refgeom = md.load(topology)
-    else:
-        refgeom = topology
+    refgeom = _load_any_top(topology)
+
     if fragmentify:
         fragments = get_fragments(refgeom.top,method='bonds')
     else:
@@ -522,13 +517,16 @@ def sites(topology,
     desc_out = desc_out.rstrip(".")
 
     # Inform about trajectories
-    xtcs = sorted(trajectories)
+    xtcs = _get_sorted_trajectories(trajectories)
 
-    print("Will compute the sites\n %s\nin the trajectories:\n  %s\n with a stride of %u frames.\n" % (
+    print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
         "\n ".join(site_files),
-        "\n  ".join(xtcs), stride))
+        _inform_about_trajectories(xtcs),
+          stride))
+
     # Inform about fragments
-    refgeom = md.load(topology)
+    refgeom = _load_any_top(topology)
+
     if fragmentify:
         fragments = get_fragments(refgeom.top, verbose=False)
     else:
@@ -773,13 +771,13 @@ def site_figures(topology,
 def interface(
         topology=None,
         trajectories=None,
+        frag_idxs_group_1=None,
+        frag_idxs_group_2=None,
         BW_uniprot="None",
         CGN_PDB="None",
         chunksize_in_frames=10000,
         ctc_cutoff_Ang=3,
         curve_color="auto",
-        frag_idxs_group_1=None,
-        frag_idxs_group_2=None,
         fragments=['resSeq'],
         graphic_dpi=150,
         graphic_ext=".pdf",
@@ -1026,6 +1024,7 @@ def interface(
                                                             graphic_ext.strip("."))
         fname_N_ctcs  = '%s@%2.1f_Ang.time_resolved.N_ctcs.%s' % (output_desc,ctc_cutoff_Ang,
                                                                    graphic_ext.strip("."))
+
         myfig = neighborhood.plot_timedep_ctcs(panelheight,
                                                color_scheme=_my_color_schemes(curve_color),
                                                ctc_cutoff_Ang=ctc_cutoff_Ang,
@@ -1035,8 +1034,9 @@ def interface(
                                                gray_background=gray_background,
                                                shorten_AAs=short_AA_names,
                                                plot_N_ctcs=True,
-                                               skip_timedep=~plot_timedep,
-                                               pop_N_ctcs=just_N_ctcs)
+                                               skip_timedep=not plot_timedep,
+                                               pop_N_ctcs=just_N_ctcs,
+                                               )
 
         # Differentiate the type of figures we can have
         if len(myfig)==1:
@@ -1201,3 +1201,11 @@ def _t_unit2dt(t_unit):
     else:
         raise ValueError("Time unit not known ", t_unit)
     return dt
+
+def _load_any_top(topology):
+    if isinstance(topology, str):
+        refgeom = md.load(topology)
+    else:
+        refgeom = topology
+
+    return refgeom

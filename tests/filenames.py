@@ -26,4 +26,6 @@ class filenames(object):
 
         self.GPCRmd_B2AR_nomenclature_test_xlsx = path.join(test_data_path,"GPCRmd_B2AR_nomenclature_test.xlsx")
 
+        self.GDP_json = path.join(test_data_path,"GDP.json")
+
 test_filenames = filenames()
