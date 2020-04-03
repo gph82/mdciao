@@ -167,6 +167,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           sort=True,
                           pbc=True,
                           fragmentify=True,
+                          ylim_Ang=15,
                           fragment_names="",
                           graphic_ext=".pdf",
                           table_ext=None,
@@ -188,6 +189,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           n_jobs=1,
                           just_N_ctcs=False,
                           ):
+
+    ylim_Ang=_np.float(ylim_Ang)
 
     if resSeq_idxs is None:
         print("You have to provide some residue indices via the --resSeq_idxs option")
@@ -425,6 +428,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             gray_background=gray_background,
                                             shorten_AAs=short_AA_names,
                                             pop_N_ctcs=just_N_ctcs,
+                                            ylim_Ang=ylim_Ang,
                                          #   skip_timedep=not plot_timedep,
                                             )
 

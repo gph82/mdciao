@@ -291,6 +291,7 @@ def parser_for_rn():
     _parser_add_n_cols(parser)
     _parser_add_n_jobs(parser)
     _parser_add_pop(parser)
+    _parser_add_ylim_Ang(parser)
     return parser
 
 def parser_for_dih():
