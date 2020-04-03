@@ -255,7 +255,7 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
                 print("ambigous definition for resSeq %s" % key)
                 #assert len(cand_fragments)==len(_np.unique(cand_fragments))
                 for cc, ss, char in zip(cands, cand_fragments,"abcdefg"):
-                    istr = '%s) %10s in fragment %2u with index %6u'%(char, top.residue(cc),cc, ss)
+                    istr = '%s) %10s in fragment %2u with index %6u'%(char, top.residue(cc),ss, cc)
                     if additional_naming_dicts is not None:
                         extra=''
                         for key1, val1 in additional_naming_dicts.items():
