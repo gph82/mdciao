@@ -426,7 +426,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             shorten_AAs=short_AA_names,
                                             pop_N_ctcs=separate_N_ctcs,
                                             ylim_Ang=ylim_Ang,
-                                         #   skip_timedep=not plot_timedep,
+                                            skip_timedep=not plot_timedep,
                                             )
 
             # One title for all axes on top
