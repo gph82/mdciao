@@ -182,22 +182,25 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           gray_background=False,
                           graphic_dpi=150,
                           short_AA_names=False,
-                          same_fragment=True,
+                          allow_same_fragment_ctcs=True,
                           write_to_disk_BW=False,
                           plot_timedep=True,
                           n_cols=4,
                           distro=False,
                           n_jobs=1,
-                          just_N_ctcs=False,
+                          separate_N_ctcs=False,
                           ):
 
-    ylim_Ang=_np.float(ylim_Ang)
-
+    # Input control resSeq_idxs
     if resSeq_idxs is None:
         print("You have to provide some residue indices via the --resSeq_idxs option")
         return None
-
-    dt = _t_unit2dt(t_unit)
+    _resSeq_idxs = rangeexpand(resSeq_idxs)
+    if len(_resSeq_idxs) == 0:
+        raise ValueError("Please check your input indices, "
+                         "they do not make sense %s" % resSeq_idxs)
+    else:
+        resSeq_idxs = _resSeq_idxs
 
     _offer_to_create_dir(output_dir)
 
@@ -207,13 +210,11 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     else:
         table_ext = None
 
+    # More input control
+    ylim_Ang=_np.float(ylim_Ang)
+    dt = _t_unit2dt(t_unit)
 
-    _resSeq_idxs = rangeexpand(resSeq_idxs)
-    if len(_resSeq_idxs) == 0:
-        raise ValueError("Please check your input indices, "
-                         "they do not make sense %s" % resSeq_idxs)
-    else:
-        resSeq_idxs = _resSeq_idxs
+
     if sort:
         resSeq_idxs = sorted(resSeq_idxs)
 
@@ -272,7 +273,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
          resSeq2residxs.values()])
 
     # Can we have same-fragment contacts
-    if not same_fragment:
+    if not allow_same_fragment_ctcs:
         fragment_idxs = [[in_what_fragment(idx, fragments) for idx in pair] for pair in ctc_idxs]
         ctc_idxs = [ctc_idxs[ii] for (ii,pair) in enumerate(fragment_idxs) if pair[0]!=pair[1]]
 
@@ -401,18 +402,19 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             print(fname)
 
     # One loop for the time resolved neighborhoods
-    if plot_timedep or just_N_ctcs:
+    if plot_timedep or separate_N_ctcs:
         for ihood in neighborhoods.values():
             fname_timedep = '%s.%s.time_resolved@%2.1f_Ang.%s' % (output_desc,
                                                           ihood.anchor_res_and_fragment_str.replace('*', ""),
                                                           ctc_cutoff_Ang,
                                                           graphic_ext.strip("."))
 
-            fname_N_ctcs = '%s.%s.time_resolved@%2.1f_Ang.N_ctcs.%s' % (output_desc,
+            fname_N_ctcs = '%s.%s.time_resolved@%2.1f_Ang.ctcs.%s' % (output_desc,
                                                                         ihood.anchor_res_and_fragment_str.replace('*', ""),
                                                                         ctc_cutoff_Ang,
                                                                         graphic_ext.strip("."))
 
+            # TODO this plot_N_ctcs and skip_timedep is very bad, but ATM my only chance without major refactor
             myfig = ihood.plot_timedep_ctcs(panelheight,
                                             plot_N_ctcs=True,
                                             color_scheme = _my_color_schemes(curve_color),
@@ -422,7 +424,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             t_unit=t_unit,
                                             gray_background=gray_background,
                                             shorten_AAs=short_AA_names,
-                                            pop_N_ctcs=just_N_ctcs,
+                                            pop_N_ctcs=separate_N_ctcs,
                                             ylim_Ang=ylim_Ang,
                                          #   skip_timedep=not plot_timedep,
                                             )
@@ -450,7 +452,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
             if plot_timedep:
                 ihood.save_trajs(output_desc,table_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
-            if just_N_ctcs:
+            if separate_N_ctcs:
                 ihood.save_trajs(output_desc,table_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True, ctc_cutoff_Ang=ctc_cutoff_Ang)
             print()
 
@@ -798,7 +800,7 @@ def interface(
         write_to_disk_BW=False,
         sort_by_av_ctcs=True,
         scheme="closest-heavy",
-        just_N_ctcs=False,
+        separate_N_ctcs=False,
 ):
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
@@ -1019,7 +1021,7 @@ def interface(
     fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
     neighborhood.table_summary_to_excel(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
     print(fname_excel)
-    if plot_timedep or just_N_ctcs:
+    if plot_timedep or separate_N_ctcs:
         fname_timedep = '%s@%2.1f_Ang.time_resolved.%s' % (output_desc,ctc_cutoff_Ang,
                                                             graphic_ext.strip("."))
         fname_N_ctcs  = '%s@%2.1f_Ang.time_resolved.N_ctcs.%s' % (output_desc,ctc_cutoff_Ang,
@@ -1035,7 +1037,7 @@ def interface(
                                                shorten_AAs=short_AA_names,
                                                plot_N_ctcs=True,
                                                skip_timedep=not plot_timedep,
-                                               pop_N_ctcs=just_N_ctcs,
+                                               pop_N_ctcs=separate_N_ctcs,
                                                )
 
         # Differentiate the type of figures we can have
@@ -1075,6 +1077,7 @@ def contact_map(
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
 
+    # TODO re-implement in the _get_sorted_trajectories()?
     if isinstance(trajectories,str):
         trajectories = _glob(trajectories)
     if isinstance(trajectories[0],str):
@@ -1084,10 +1087,8 @@ def contact_map(
     print("Will compute contact maps for the files:\n  %s\n with a stride of %u frames.\n" % (
     "\n  ".join([str(ixtc) for ixtc in xtcs]), stride))
 
-    if isinstance(topology,str):
-        refgeom = md.load(topology)
-    else:
-        refgeom = topology
+    refgeom = _load_any_top(topology)
+
 
 
 

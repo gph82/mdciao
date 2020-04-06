@@ -137,7 +137,7 @@ def _parser_add_no_fragfrag(parser):
                         help="Allow contact partners in the same fragment, default is True"
                              " Defaut is True")
     parser.add_argument('--no-same_fragment', dest='same_fragment', action='store_false')
-    parser.set_defaults(same_fragment=True)
+    parser.set_defaults(allow_same_fragment_ctcs=True)
 
 
 def _parser_add_pbc(parser):
@@ -225,7 +225,7 @@ def _parser_add_pop(parser):
                         help="Separate the plot with the total number contacts from the time-trace plot. "
                              "Default is False")
     parser.add_argument("--no-pop_N_ctcs", dest="just_N_ctcs", action="store_false")
-    parser.set_defaults(just_N_ctcs=False)
+    parser.set_defaults(separate_N_ctcs=False)
 
 def parser_for_rn():
     parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
