@@ -8,6 +8,8 @@ def find_AA(top, AA, relax=False):
     top : :py:class:`mdtraj.Topology`
     AA : string
         Valid residue name to be passed as a string, example- "GLU30" or "E30"
+    relax : boolean, default is True
+        Relaxes match criteria to include just the name ("GLU")
 
     Returns
     -------
@@ -17,11 +19,21 @@ def find_AA(top, AA, relax=False):
     """
 
     if AA.isalpha():
+        lenA = len(AA)
         if relax:
-            return [rr.index for rr in top.residues if AA == '%s' % (rr.name)]
+            assert lenA <= 3, ValueError("The input AA %s must have an alphabetic code of" 
+                                         " either 3 or 1 letters" % (AA))
+
+            get_name = {1: lambda rr : rr.code,
+                        2: lambda rr : rr.name,
+                        3: lambda rr : rr.name}
+
+            return [rr.index for rr in top.residues if AA == '%s' % (get_name[lenA](rr))]
+
         else:
             raise ValueError(
-                "Missing the resSeq index, all I got was %s" % (AA))
+                "Missing the resSeq index, all I got was %s. Check out the relax option" % (AA))
+
     else:
         code = ''.join([ii for ii in AA if ii.isalpha()])
 
