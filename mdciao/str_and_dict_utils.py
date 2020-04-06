@@ -4,26 +4,97 @@ import mdtraj as _md
 from .list_utils import re_warp
 
 def get_sorted_trajectories(trajectories):
+    r"""
+    Common parser for something that can be interpreted as a trajectory
+
+    Parameters
+    ----------
+    trajectories: can be one of these things:
+        - pattern, e.g. "*.ext"
+        - one string containing a filename
+        - list of filenames
+        - one :obj:`mdtraj.Trajectory` object
+        - list of :obj:`mdtraj.Trajectory` objects
+
+    Returns
+    -------
+        - for an input pattern, sorted trajectory filenames that match that pattern
+        - for filename, one list containing that filename
+        - for a list of filenames, a sorted list of filenames
+        - one :obj:`mdtraj.Trajectory` object (i.e: does nothing)
+        - list of :obj:`mdtraj.Trajectory` objects (i.e. does nothing)
+
+
+    """
     if isinstance(trajectories,str):
         trajectories = _glob(trajectories)
 
     if isinstance(trajectories[0],str):
         xtcs = sorted(trajectories)
+    elif isinstance(trajectories, _md.Trajectory):
+        xtcs = [trajectories]
     else:
+        assert all([isinstance(itraj, _md.Trajectory) for itraj in trajectories])
         xtcs = trajectories
 
     return xtcs
 
 def _inform_about_trajectories(trajectories):
+    r"""
+
+    Parameters
+    ----------
+    trajectories: list of strings or :obj:`mdtraj.Trajectory` objects
+
+    Returns
+    -------
+    nothing, just prints them as newline
+
+    """
+    assert isinstance(trajectories, list), "input has to be a list"
     return "\n".join([str(itraj) for itraj in trajectories])
 
 # TODO consider dict_utils??
-def _replace_w_dict(key, pat_exp_dict):
-    for pat, exp in pat_exp_dict.items():
+def _replace_w_dict(key, exp_rep_dict):
+    r"""
+
+    Parameters
+    ----------
+    key: str
+    exp_rep_dict: dictionary
+        keys are expressions that will be replaced with values, i.e.
+        key = key.replace(key1, val1) for key1, val1 etc
+
+    Returns
+    -------
+    key
+
+    """
+    for pat, exp in exp_rep_dict.items():
         key = key.replace(pat,exp)
     return key
 
 def _delete_exp_in_keys(idict, exp, sep="-"):
+    r"""
+    Assuming the keys in the dictionary are formed by two segments
+    joined by a separator, e.g. "GLU30-ARG40", deletes the segment
+    containing the input expression, :obj:`exp`
+
+    Will fail if not all keys have the expression to be deleted
+
+    Parameters
+    ----------
+    idict: dictionary
+    exp: str
+    sep: str, default is "-",
+
+    Returns
+    -------
+    dict:
+        dictionary with the same values but the keys lack the
+        segment containing :obj:`exp`
+    """
+
     out_dict = {}
     for names, val in idict.items():
         name = [name for name in names.split(sep) if exp not in name]
