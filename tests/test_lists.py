@@ -8,7 +8,7 @@ from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
     does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand, \
     pull_one_up_at_this_pos, assert_min_len, assert_no_intersection, window_average_fast, window_average, \
-    put_this_idx_first_in_pair
+    put_this_idx_first_in_pair, re_warp
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
@@ -237,6 +237,16 @@ class Test_put_this_idx_first_in_pair(unittest.TestCase):
             failed_assertion = True
 
         assert failed_assertion
+
+
+class Test_rewarp(unittest.TestCase):
+    def test_int_input(self):
+        assert all([_np.allclose(ii,jj) for ii,jj in zip([[0,1],
+                                                          [2,3]],
+                                                         re_warp([0,1,2,3], 2))])
+
+    def test_short_input(self):
+        assert _np.allclose(re_warp([0,1,2,3],[2]),[0,1])
 
 if __name__ == '__main__':
     unittest.main()
