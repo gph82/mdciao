@@ -1,11 +1,13 @@
 import numpy as _np
 from matplotlib import rcParams as _rcParams
 import matplotlib.pyplot as _plt
-from .list_utils import _replace4latex,  \
-    window_average_fast as _wav, \
+from .list_utils import   \
+    window_average_fast as _wav
+from .str_and_dict_utils import \
     _delete_exp_in_keys, \
     unify_freq_dicts, \
-    _replace_w_dict
+    _replace_w_dict, \
+    _replace4latex
 
 
 def plot_contact(ictc, iax,

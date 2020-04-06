@@ -29,7 +29,9 @@ from mdciao.contacts import \
 from mdciao.list_utils import \
     rangeexpand, \
     unique_list_of_iterables_by_tuple_hashing, \
-    in_what_fragment, \
+    in_what_fragment
+
+from mdciao.str_and_dict_utils import \
     get_sorted_trajectories as _get_sorted_trajectories, \
     _inform_about_trajectories
 

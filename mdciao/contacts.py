@@ -2,11 +2,13 @@ import numpy as _np
 import mdtraj as _md
 from os import path as _path
 from .list_utils import in_what_fragment, \
+    put_this_idx_first_in_pair
+
+from .str_and_dict_utils import \
+    _replace_w_dict,\
+    unify_freq_dicts,\
     _replace4latex, \
-    iterate_and_inform_lambdas, \
-    put_this_idx_first_in_pair,\
-    _replace_w_dict, \
-    unify_freq_dicts
+    iterate_and_inform_lambdas \
 
 from .plots import plot_w_smoothing_auto, plot_contact
 from collections import defaultdict
