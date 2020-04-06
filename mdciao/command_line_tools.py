@@ -808,12 +808,7 @@ def interface(
     _offer_to_create_dir(output_dir)
     dt = _t_unit2dt(t_unit)
 
-    if isinstance(trajectories,str):
-        trajectories = _glob(trajectories)
-    if isinstance(trajectories[0],str):
-        xtcs = sorted(trajectories)
-    else:
-        xtcs = trajectories
+    xtcs = _get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
     "\n  ".join([str(ixtc) for ixtc in xtcs]), stride))
 
@@ -1079,13 +1074,7 @@ def contact_map(
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
 
-    # TODO re-implement in the _get_sorted_trajectories()?
-    if isinstance(trajectories,str):
-        trajectories = _glob(trajectories)
-    if isinstance(trajectories[0],str):
-        xtcs = sorted(trajectories)
-    else:
-        xtcs = trajectories
+    xtcs = _get_sorted_trajectories(trajectories)
     print("Will compute contact maps for the files:\n  %s\n with a stride of %u frames.\n" % (
     "\n  ".join([str(ixtc) for ixtc in xtcs]), stride))
 
