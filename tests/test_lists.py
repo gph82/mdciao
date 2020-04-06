@@ -1,5 +1,6 @@
 import unittest
 import numpy as _np
+import pytest
 from unittest import mock
 from unittest.mock import patch
 import io
@@ -8,7 +9,7 @@ from mdciao.list_utils import exclude_same_fragments_from_residx_pairlist, \
     unique_list_of_iterables_by_tuple_hashing, in_what_fragment, \
     does_not_contain_strings, force_iterable, is_iterable, in_what_N_fragments, rangeexpand, \
     pull_one_up_at_this_pos, assert_min_len, assert_no_intersection, window_average_fast, \
-    put_this_idx_first_in_pair, re_warp
+    put_this_idx_first_in_pair, re_warp, join_lists
 
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 
@@ -51,20 +52,11 @@ class Test_in_what_fragment(unittest.TestCase):
 
     def test_in_what_fragment_idxs_should_be_integer(self):
         # Check that it fails when input is not an index
-        failed_assertion = False
-        try:
+        with pytest.raises(AssertionError):
             in_what_fragment([1],[[1, 2], [3, 4, 5, 6.6]])
-        except AssertionError as e:
-            failed_assertion = True
-        assert failed_assertion
 
-        # Check that it fails when strings are there
-        failed_assertion = False
-        try:
+        with pytest.raises(AssertionError):
             in_what_fragment([1], [[1, 2], [3, 4, 5, 6.6, "A"]])
-        except AssertionError as __:
-            failed_assertion = True
-        assert failed_assertion
 
 class Test_does_not_contain_strings(unittest.TestCase):
 
@@ -127,68 +119,33 @@ class Test_pull_one_up_at_this_pos(unittest.TestCase):
 
 class Test_assert_min_len(unittest.TestCase):
     def test_assert_min_len_just_works(self):
-        no_assertion = True
-        try:
-            assert_min_len([['a', 'b'], ['c', 'd'],[1, 2]])
-        except AssertionError:
-            no_assertion = False
-        assert no_assertion
+        assert_min_len([['a', 'b'], ['c', 'd'],[1, 2]])
 
     def test_assert_min_len_failed_assertion_just_works(self):
-        failed_assertion = False
-        try:
-            assert_min_len([[1]])
-        except AssertionError:
-            failed_assertion = True
-        assert failed_assertion
+       with pytest.raises(AssertionError):
+           assert_min_len([[1]])
 
     def test_assert_min_len_failed_assertion_works_empty_list(self):
-        failed_assertion = False
-        try:
+        with pytest.raises(AssertionError):
             assert_min_len([[1,2],[]])
-        except AssertionError:
-            failed_assertion = True
-        assert failed_assertion
+
     def test_assert_min_length_min_len_works(self):
-        no_assertion = True
-        try:
-            assert_min_len([['a']], min_len=1)
-        except AssertionError:
-            no_assertion = False
-        assert no_assertion
+        assert_min_len([['a']], min_len=1)
 
 class Test_assert_no_intersection(unittest.TestCase):
     def test_assert_no_intersection_just_works(self):
-        no_assertion = True
-        try:
-            assert_no_intersection([[1, 2], [3, 3]])
-        except AssertionError:
-            no_assertion = False
-        assert no_assertion
+        assert_no_intersection([[1, 2], [3, 3]])
 
     def test_assert_no_intersection_empty_list_just_works(self):
-        no_assertion = True
-        try:
-            assert_no_intersection([[], [3, 3]])
-        except AssertionError:
-            no_assertion = False
-        assert no_assertion
+        assert_no_intersection([[], [3, 3]])
 
     def test_failed_assertion_just_works(self):
-        failed_assertion = False
-        try:
+        with pytest.raises(AssertionError):
             assert_no_intersection([[1,2,3],[3,3]])
-        except AssertionError:
-            failed_assertion = True
-        assert failed_assertion
 
     def test_assert_no_intersection_empty_lists(self):
-        failed_assertion = False
-        try:
+        with pytest.raises(AssertionError):
             assert_no_intersection([[], []])
-        except AssertionError:
-            failed_assertion = True
-        assert failed_assertion
 
 class Test_window_average_fast(unittest.TestCase):
     def test_window_average_fast_just_works(self):
@@ -199,6 +156,34 @@ class Test_window_average_fast(unittest.TestCase):
         assert _np.allclose(window_average_fast(_np.arange(7), half_window_size=3), _np.array([3.0]))
         assert _np.allclose(window_average_fast(_np.arange(5), half_window_size=3), _np.array([1.42857143, 1.42857143, 1.42857143]))
 
+class Test_join_lists(unittest.TestCase):
+    def test_simple_run(self):
+        in_lists = [[0, 1], [2, 3], [4, 5], [6, 7]]
+        joined_lists = join_lists(in_lists, [[1, 2]])
+        assert _np.allclose(joined_lists[0], [0, 1])
+        assert _np.allclose(joined_lists[1], [2, 3, 4, 5]), (joined_lists[1])
+        assert _np.allclose(joined_lists[2], [6, 7]), (joined_lists[2])
+
+    def test_re_ordered_run(self):
+        in_lists = [[0, 1], [2, 3], [4, 5], [6, 7]]
+        joined_lists = join_lists(in_lists, [[3, 0],
+                                             [1, 2]])
+        assert _np.allclose(joined_lists[0], [0, 1, 6, 7])
+        assert _np.allclose(joined_lists[1], [2, 3, 4, 5])
+
+
+    def test_fails_overalpping_idxs(self):
+        with pytest.raises(AssertionError):
+            in_lists = [[0, 1], [2, 3], [4, 5], [6, 7]]
+            join_lists(in_lists, [[1, 2],
+                                  [2, 3]])
+
+    def test_fails_no_minlen_list2join(self):
+        with pytest.raises(AssertionError):
+            in_lists = [[0, 1], [2, 3], [4, 5], [6, 7]]
+            join_lists(in_lists, [[0],[1,2]])
+
+
 class Test_put_this_idx_first_in_pair(unittest.TestCase):
     def test_put_this_idx_first_in_pair_just_works(self):
         assert(put_this_idx_first_in_pair(20, [10,20]) == [20,10])
@@ -207,15 +192,8 @@ class Test_put_this_idx_first_in_pair(unittest.TestCase):
         assert (put_this_idx_first_in_pair("first", ["last", "first"]) == ["first", "last"])
 
     def test_put_this_idx_first_in_pair_exception(self):
-        failed_assertion = False
-        try:
+        with pytest.raises(Exception):
             put_this_idx_first_in_pair(99, [10, 20])
-
-        except Exception:
-            failed_assertion = True
-
-        assert failed_assertion
-
 
 class Test_rewarp(unittest.TestCase):
     def test_int_input(self):

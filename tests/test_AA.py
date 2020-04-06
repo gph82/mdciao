@@ -30,10 +30,6 @@ class Test_find_by_AA(unittest.TestCase):
         with pytest.raises(ValueError):
             print((find_AA(self.geom.top, 'GLU'))) == [0]
 
-    def test_long_AA_code(self):
-         assert np.allclose(find_AA(self.geom.top, 'GLU30'), [0])
-
-
     def test_does_not_find_AA(self):
         assert (find_AA(self.geom.top, "lys20")) == []   # small case won't give any result
         assert (find_AA(self.geom.top, 'w32')) == []    # small case won't give any result
@@ -42,10 +38,6 @@ class Test_find_by_AA(unittest.TestCase):
     def test_malformed_input(self):
         with pytest.raises(ValueError):
             find_AA(self.geom.top, "GLUTAMINE")
-
-    def test_malformed_input(self):
-            with pytest.raises(ValueError):
-                find_AA(self.geom.top, "GLUTAMINE30")
 
     def test_ambiguity(self):
         # AMBIGUOUS definition i.e. each residue is present in multiple fragments
