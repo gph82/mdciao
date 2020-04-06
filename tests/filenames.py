@@ -8,6 +8,7 @@ class filenames(object):
         sfpath = path.split(sfpath[0])[0]
         self.examples_path = path.join(sfpath, 'examples')
         test_data_path = path.join(sfpath,"tests","data")
+        self.test_data_path = test_data_path
 
         self.file_for_test_pdb = path.join(test_data_path,
                                            "file_for_test.pdb")
