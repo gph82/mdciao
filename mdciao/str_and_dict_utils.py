@@ -54,13 +54,13 @@ def _inform_about_trajectories(trajectories):
     assert isinstance(trajectories, list), "input has to be a list"
     return "\n".join([str(itraj) for itraj in trajectories])
 
-# TODO consider dict_utils??
-def _replace_w_dict(key, exp_rep_dict):
+def _replace_w_dict(input_str, exp_rep_dict):
     r"""
+    Sequentially perform string replacements on a string using a dictionary
 
     Parameters
     ----------
-    key: str
+    input_str: str
     exp_rep_dict: dictionary
         keys are expressions that will be replaced with values, i.e.
         key = key.replace(key1, val1) for key1, val1 etc
@@ -71,8 +71,8 @@ def _replace_w_dict(key, exp_rep_dict):
 
     """
     for pat, exp in exp_rep_dict.items():
-        key = key.replace(pat,exp)
-    return key
+        input_str = input_str.replace(pat, exp)
+    return input_str
 
 def _delete_exp_in_keys(idict, exp, sep="-"):
     r"""
@@ -105,23 +105,61 @@ def _delete_exp_in_keys(idict, exp, sep="-"):
 def unify_freq_dicts(freqs,
                      exclude=None,
                      key_separator="-",
-                     replacement_dict={},
-                     reorder_keys=True):
+                     replacement_dict=None,
+                     ):
+    r"""
+    Provided with a dictionaries of dictionaries, returns an equivalent,
+    key-unified dictionary where all sub-dictionaries share their keys,
+    putting zeroes where keys where absent originally.
 
+    Use :obj:`key_separator` for "GLU30-LY430" == "LYS40-GLU30" to be True
+
+    Parameters
+    ----------
+    freqs:  dictionary of dictionaries, e.g.:
+        {A:{key1:valA1, key2:valA2, key3:valA3},
+         B:{            key2:valB2, key3:valB3}}
+
+    key_separator: str, default is "-"
+        If keys are made up like "GLU30-LYS40", you can specify a separator s.t.
+        "GLU30-LYS40" is considered equal to "LYS40-GLU30".
+        Use "", "none" or None to differentiate
+
+    exclude: list, default is None
+         keys containing these strings will be excluded.
+         NOTE: This is not implemented yet, will raise an error
+
+    replacement_dict: dict, default is {}
+        all keys/strings will be subjected to replacements following this
+        dictionary, st. "GLH30" is "GLU30" if replacement_dict is {"GLH":"GLU"}
+        This way mutations and or indexing can be accounted for in different setups
+
+    Returns
+    -------
+    unified_dict: dictionary
+        A dictionary  of dictionaries sharing keys:
+       {A:{key1:valA1, key2:valA2, key3:valA3},
+        B:{key1:0,     key2:valB2, key3:valB3}}
+    """
+
+    # Order key alphabetically using the separator_key
     def order_key(key, sep):
         split_key = key.split(sep)
         return sep.join([split_key[ii] for ii in _np.argsort(split_key)])
 
+    # Create a copy, with re-ordered keys if needed
     freqs_work = {}
     for key, idict in freqs.items():
-        if reorder_keys:
-            freqs_work[key] = {order_key(key, key_separator):val for key, val in idict.items()}
-        else:
+        if str(key_separator).lower()=="none" or len(key_separator)==0:
             freqs_work[key] = {key:val for key, val in idict.items()}
+        else:
+            freqs_work[key] = {order_key(key, key_separator):val for key, val in idict.items()}
 
+    # Implement replacements
     if replacement_dict is not None:
         freqs_work = {key:{_replace_w_dict(key2, replacement_dict):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
 
+    # Perform the difference operations
     not_shared = []
     shared = []
     for idict1 in freqs_work.values():
@@ -134,18 +172,30 @@ def unify_freq_dicts(freqs,
     not_shared = list(_np.unique(not_shared))
     all_keys = shared + not_shared
 
+    # Prune keys we're not interested in
+    excluded = []
     if exclude is not None:
+        raise NotImplementedError("This feature not yet implemented")
+        """
+        assert isinstance(exclude,list)
         print("Excluding")
         for ikey, ifreq in freqs_work.items():
-            for key in shared:
+            # IDK I had this condition here, i think it is more intuitive if
+            # they are removed regardless if shared or not
+            #for key in shared:
+            for key in list(ifreq.keys()):
                 for pat in exclude:
                     if pat in key:
                         ifreq.pop(key)
                         print("%s from %s" % (key, ikey))
-                        all_keys = [ak for ak in all_keys if ak != key]
+                        print(ifreq.keys())
+                        excluded.append(key)
+                        #all_keys = [ak for ak in all_keys if ak != key]
+        """
 
+    # Set the non shared keys to zero
     for ikey, ifreq in freqs_work.items():
-        for key in not_shared:
+        for key in all_keys:
             if key not in ifreq.keys():
                 ifreq[key] = 0
 
@@ -159,22 +209,82 @@ def unify_freq_dicts(freqs,
 
 
 def _replace4latex(istr):
+    r"""
+    One of two things:
+        Prepares the input for latex rendering (in matplotlib, e.g.)
+        For strings with greek letters or underscores.
+        "alpha = 7"-> "$\alpha$ = 7"
+        "C_2"      -> "$C_2$"
+        "C^2"      -> "$C^2$"
+
+    Note
+    -----
+        A combination of both ("alpha = C_2"->"$\alpha = C_2$") is not
+        yet implemented
+
+    Parameters
+    ----------
+    istr: str
+
+    Returns
+    -------
+    alpha:$\alpha$
+
+    """
     for gl in ['alpha','beta','gamma', 'mu']:
         istr = istr.replace(gl,'$\\'+gl+'$')
 
-    if '$' not in istr and any([char in istr for char in ["_"]]):
-        istr = '$%s$'%istr
+    # This mode of comparison will
+    if any([cc in istr for cc in ["_", "^"]]):
+        if '$' not in istr:
+            istr = '$%s$'%istr
+        else:
+            raise NotImplementedError("The str already contains a dollar symbol, this is not implemented yet")
     return istr
 
-def iterate_and_inform_lambdas(ixtc,stride,chunksize, top=None):
+def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
+    r"""
+    Given a trajectory (as object or file), returns
+    a strided, chunked iterator and function for progress report
+
+    Parameters
+    ----------
+    ixtc: str (filename) or :obj:`mdtraj.Trajectory` object
+    chunksize: int
+        The trajectory will be iterated over in chunks of this many frames
+    stride: int, default is 1
+        The stride with which to iterate over the trajectory
+    top:  str (filename) or :obj:`mdtraj.Topology`
+        If :obj:`ixtc` is a filename, the topology needed to read it
+
+    Returns
+    -------
+
+    iterate, inform
+
+    iterate: lambda(ixtc)
+        strided, chunked iterator over :obj:`ixtc`
+
+    inform: lambda(ixtc, traj_idx, chunk_idx, running_f)
+        iterator that prints out streaming progress for every iteration
+
+    Note
+    ----
+
+    The lambdas returned differ depending on the type of input, but signature
+    is the same, s.t. the user does not have to care in posterior use
+
+    """
     if isinstance(ixtc, _md.Trajectory):
         iterate = lambda ixtc: [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride], chunksize)]
-        inform = lambda ixtc, traj_idx, chunk_idx, running_f: print("Analysing trajectory object nr. %3u (%7u frames) in chunks of "
-                                                   "%3u frames. chunknr %4u frames %8u" %
-                                                   (traj_idx, ixtc.n_frames, chunksize, chunk_idx, running_f), end="\r", flush=True)
+        inform = lambda ixtc, traj_idx, chunk_idx, running_f: \
+            print("Streaming over trajectory object nr. %3u (%6u frames, %6u with stride %2u) in chunks of "
+                  "%3u frames. Now at chunk nr %4u, frames so far %6u" %
+                  (traj_idx, ixtc.n_frames, _np.ceil(ixtc.n_frames/stride), stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
     else:
         iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
-        inform = lambda ixtc, traj_idx, chunk_idx, running_f: print("Analysing %20s (nr. %3u) in chunks of "
-                                                   "%3u frames. chunknr %4u frames %8u" %
-                                                   (ixtc, traj_idx, chunksize, chunk_idx, running_f), end="\r", flush=True)
+        inform = lambda ixtc, traj_idx, chunk_idx, running_f: \
+            print("Streaming %20s (nr. %3u) with stride %2u in chunks of "
+                  "%6u frames. Now at chunk nr %4u, frames so far %6u" %
+                  (ixtc, traj_idx, stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
     return iterate, inform
