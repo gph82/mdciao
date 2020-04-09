@@ -8,6 +8,8 @@ from mdciao.fragments import get_fragments, \
     interactive_fragment_picker_by_AAresSeq, interactive_fragment_picker_wip
 from filenames import filenames
 
+import pytest
+
 test_filenames = filenames()
 
 class Test_get_fragments(unittest.TestCase):
@@ -59,16 +61,13 @@ class Test_get_fragments(unittest.TestCase):
         assert _np.allclose(by_bonds[2], [7])
 
         # Checking for error from the overlapping ids in the argument "join_fragments"
-        failed_assertion = False
-        try:
+        with pytest.raises(AssertionError):
             get_fragments(self.geom.top,
                           join_fragments=[[1, 2], [2, 3]],
                           verbose=True,
                           auto_fragment_names=True,
                           method='bonds')
-        except AssertionError:
-            failed_assertion = True
-        assert failed_assertion
+
 
     def test_get_fragments_break_fragments_just_works(self):
         # Checking if the fragments are breaking correctly for the argument "fragment_breaker_fullresname"
@@ -132,14 +131,10 @@ class Test_get_fragments(unittest.TestCase):
         assert _np.allclose(by_both[4], [7])
 
     def test_get_fragments_dont_know_method(self):
-        failed_assertion = False
-        try:
+        with pytest.raises(AssertionError):
             get_fragments(self.geom.top,verbose=True,
                                  auto_fragment_names=True,
                                  method='xyz')
-        except ValueError:
-            failed_assertion = True
-        assert failed_assertion
 
 class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
 
@@ -224,26 +219,17 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
     def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_none_ans_should_be_int(self):
         residues = ["GLU30"]
 
-        failed_assertion = False
-        try:
+        with pytest.raises((ValueError,AssertionError)):
             interactive_fragment_picker_by_AAresSeq(residues, self.by_bonds_geom2frags,
-                                                                                  self.geom2frags.top)
-        except (ValueError,AssertionError):
-            failed_assertion = True
-        assert failed_assertion
+                                                    self.geom2frags.top)
 
     @patch('builtins.input', lambda *args: "123")
     def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_none_ans_should_be_in_list(self):
         residues = ["GLU30"]
 
-        failed_assertion = False
-        try:
+        with pytest.raises((ValueError, AssertionError)):
             interactive_fragment_picker_by_AAresSeq(residues, self.by_bonds_geom2frags,
                                                                                   self.geom2frags.top)
-        except (ValueError,AssertionError):
-            failed_assertion = True
-        assert failed_assertion
-
 
     def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_passed(self):
         residues = ["GLU30"]
@@ -258,14 +244,9 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
     def test_interactive_fragment_picker_by_AAresSeq_default_fragment_idx_is_passed_special_case(self):
         residues = ["GLU30"]
 
-        failed_assertion = False
-        try:
+        with pytest.raises(((ValueError, AssertionError))):
             resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq(residues, self.by_bonds_geom2frags,
                                                                                   self.geom2frags.top,default_fragment_idx=99)
-        except (ValueError,AssertionError):
-            failed_assertion = True
-        assert failed_assertion
-
 
     def test_interactive_fragment_picker_by_AAresSeq_ambiguous(self):
         with mock.patch('builtins.input', return_value ='4'):
@@ -379,43 +360,26 @@ class Test_interactive_fragment_picker_with_ambiguity_wip(unittest.TestCase):
     def test_interactive_fragment_picker_default_fragment_idx_is_none_ans_should_be_int(self):
         input_values = (val for val in ["xyz"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            failed_assertion = False
-            try:
+            with pytest.raises((ValueError, AssertionError)):
                 interactive_fragment_picker_wip("GLU30", self.by_bonds_geom2frags, self.geom2frags.top)
-            except (ValueError,AssertionError):
-                failed_assertion = True
-            assert failed_assertion
+
 
         input_values = (val for val in ["xyz"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            failed_assertion = False
-            try:
-                interactive_fragment_picker_wip(30, self.by_bonds_geom2frags, self.geom2frags.top)
-            except (ValueError, AssertionError):
-                failed_assertion = True
-            assert failed_assertion
+            with pytest.raises((ValueError, AssertionError)):
+               interactive_fragment_picker_wip(30, self.by_bonds_geom2frags, self.geom2frags.top)
 
     def test_interactive_fragment_picker_default_fragment_idx_is_none_ans_should_be_in_list(self):
 
         input_values = (val for val in ["123"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            failed_assertion = False
-            try:
+            with pytest.raises((ValueError, AssertionError)):
                 interactive_fragment_picker_wip("GLU30", self.by_bonds_geom2frags,self.geom2frags.top)
-
-            except (ValueError,AssertionError):
-                failed_assertion = True
-            assert failed_assertion
 
         input_values = (val for val in ["123"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            failed_assertion = False
-            try:
+            with pytest.raises((ValueError, AssertionError)):
                 interactive_fragment_picker_wip("30", self.by_bonds_geom2frags,self.geom2frags.top)
-            except (ValueError,AssertionError):
-                failed_assertion = True
-            assert failed_assertion
-
 
     def test_interactive_fragment_picker_default_fragment_idx_is_passed(self):
         residues = ["GLU30", 30]
@@ -431,23 +395,14 @@ class Test_interactive_fragment_picker_with_ambiguity_wip(unittest.TestCase):
 
     def test_interactive_fragment_picker_default_fragment_idx_is_passed_special_case(self):
 
-        failed_assertion = False
-        try:
+        with pytest.raises((ValueError, AssertionError)):
             resname2residx, resname2fragidx = interactive_fragment_picker_wip("GLU30", self.by_bonds_geom2frags,
                                                                                   self.geom2frags.top,default_fragment_idx=99)
-        except (ValueError,AssertionError):
-            failed_assertion = True
-        assert failed_assertion
 
-        failed_assertion = False
-        try:
+        with pytest.raises((ValueError, AssertionError)):
             resname2residx, resname2fragidx = interactive_fragment_picker_wip(30, self.by_bonds_geom2frags,
                                                                               self.geom2frags.top,
                                                                               default_fragment_idx=99)
-        except (ValueError, AssertionError):
-            failed_assertion = True
-        assert failed_assertion
-
 
     def test_interactive_fragment_picker_ambiguous(self):
 
