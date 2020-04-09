@@ -187,7 +187,7 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
                 traj_idx,
                 **mdcontacts_kwargs):
 
-    iterate, inform = iterate_and_inform_lambdas(ixtc,stride, chunksize, top=top)
+    iterate, inform = iterate_and_inform_lambdas(ixtc, chunksize, stride=stride, top=top)
     ictcs, itime, iaps = [],[],[]
     running_f = 0
     inform(ixtc, traj_idx, 0, running_f)
@@ -276,7 +276,7 @@ def per_xtc_ctc_mat_dict(top, ixtc, list_ctc_cutoff_Ang, chunksize, stride,
                          **mdcontacts_kwargs):
 
     from .actor_utils import igeom2mindist_COMdist_truncation
-    iterate, inform = iterate_and_inform_lambdas(ixtc,stride, chunksize, top=top)
+    iterate, inform = iterate_and_inform_lambdas(ixtc,chunksize, stride=stride, top=top)
     ictcs, itime, iaps = [],[],[]
     running_f = 0
     inform(ixtc, traj_idx, 0, running_f)
