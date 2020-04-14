@@ -18,7 +18,7 @@ class filenames(object):
         self.file_for_test_force_resSeq_breaks_is_true_pdb = path.join(test_data_path,
                                                                        "file_for_test_force_resSeq_breaks_is_true.pdb")
 
-
+        self.file_for_no_bonds_pdb = path.join(test_data_path, "file_no_bonds.pdb")
         self.file_for_top2consensus_map = path.join(test_data_path,
                                                     "file_for_top2consensus_map.pdb")
 
