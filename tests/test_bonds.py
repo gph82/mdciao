@@ -3,6 +3,7 @@ import unittest
 import numpy as _np
 from filenames import filenames
 from mdciao.bond_utils import top2residue_bond_matrix, bonded_neighborlist_from_top
+import pytest
 
 test_filenames = filenames()
 
@@ -11,6 +12,8 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.file_for_test_pdb)
         self.geom_force_resSeq_breaks = md.load(test_filenames.file_for_test_force_resSeq_breaks_is_true_pdb)
+        self.geom_no_bonds = md.load(test_filenames.file_for_no_bonds_pdb)
+        self.geom_no_bonds.top._bonds=[]
 
     def test_it_just_works_with_top2residue_bond_matrix(self):
         res_bond_matrix = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
@@ -34,6 +37,17 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
                                       [0, 0, 0, 0, 0, 0, 0, 0]])
 
         assert (top2residue_bond_matrix(self.geom_force_resSeq_breaks.top, force_resSeq_breaks=True) == res_bond_matrix).all()
+
+    def test_no_bonds_fails(self):
+        with pytest.raises(ValueError):
+            top2residue_bond_matrix(self.geom_no_bonds.top, create_standard_bonds=False)
+
+    def test_no_bonds_creates(self):
+        mat = top2residue_bond_matrix(self.geom_no_bonds.top)
+        bonds = [bond for bond in _np.argwhere(mat!=0).squeeze() if bond[0]!=bond[1]]
+        assert _np.allclose(bonds[0], [1,2])
+        assert _np.allclose(bonds[1], [2,1])
+
 
 class Test_bonded_neighborlist_from_top(unittest.TestCase):
     def setUp(self):
