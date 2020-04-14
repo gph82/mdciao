@@ -5,18 +5,27 @@ from .list_utils import in_what_N_fragments as _in_what_N_fragments, join_lists 
 
 def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                 return_string=False, **print_kwargs):
-    # TODO document
     """
+    For pretty-printing of fragments of an :obj:`mtraj.topology`
 
     Parameters
     ----------
-    frag_idx
-    top
-    fragment
-    print_kwargs
+    frag_idx: int
+        Index of the fragment to be printed
+    top: :obj:`mdtraj.Topology`
+        Topology in which the fragment appears
+    fragment: iterable of indices
+        The fragment in question, with zero-indexed residue indices
+    fragment_desc: str, default is "fragment"
+        Who to call the fragments, e.g. segment, block, monomer, chain
+    return_string: bool, default is False
+        Instead of printing, return the string
+    print_kwargs:
+        Optional keyword arguments to pass to the print function, e.g. "end=","" and such
 
     Returns
     -------
+    None or str, see return_string option
 
     """
     try:
@@ -38,14 +47,12 @@ def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 def get_fragments(top,
                   fragment_breaker_fullresname=None,
                   atoms=False,
-                  join_fragments=None,
                   verbose=True,
-                  auto_fragment_names=True,
-                  frag_breaker_to_pick_idx=None,
                   method='resSeq', #Whatever comes after this(**) will be passed as named argument to interactive_segment_picker
+                  join_fragments=None,
                   **kwargs_interactive_segment_picker):
     """
-    Returns the list of arrays containing the residues that are contained in a fragment
+    Given an :obj:`mdtraj.Topology` return its residues grouped into fragments using different methods.
 
     Parameters
     ----------
@@ -54,22 +61,35 @@ def get_fragments(top,
         list of full residue names. Example - GLU30 that will be used to break fragments,
         so that [R1, R2, ... GLU30,...R10, R11] will be broken into [R1, R2, ...], [GLU30,...,R10,R11]
     atoms : boolean, optional
+        Instead of returning residue indices, retun atom indices
     join_fragments : list of lists
         List of lists of integer fragment idxs which are to be joined together.
+        (After splitting them according to "methods")
         Duplicate entries in any inner list will be removed.
         One fragment idx cannot appear in more than one inner list, otherwise program throws an error.
     verbose : boolean, optional
-    auto_fragment_names : not used in the function
-    frag_breaker_to_pick_idx : not used in the function
-    method : 'resSeq' or or 'bonds' (or 'both') or 'chains' or 'monotonic'
-        The method passed will be the basis for creating fragments
+    method : str, default is 'resSeq'
+        The method passed will be the basis for creating fragments. Check the following options
+        with the example sequence "…-A27,Lig28,K29-…-W40,D45-…-W50,GDP1"
+        - 'resSeq'
+            breaks at jumps in resSeq entry: […A27,Lig28,K29,…,W40],[D45,…,W50],[GDP1]
+        - 'resSeq+'
+            breaks only at negative jumps in resSeq: […A27,Lig28,K29,…,W40,D45,…,W50],[GDP1]
+        - ‘bonds’
+            breaks when AAs are not connected by bonds, ignores resSeq: […A27][Lig28],[K29,…,W40],[D45,…,W50],[GDP1]
+        - 'resSeq_bonds'
+            breaks at resSeq jumps and at missing bonds
+        - 'chains'
+            breaks into chains of the PDB file/entry
+
     kwargs_interactive_segment_picker : optional
         additional arguments
 
     Returns
     -------
     List of integer array
-        Each array within the list has the residue ids that combine to form a fragment.
+        Each array within the list has the residue indices of each fragment.
+        These fragments do not have overlap. Their union contains all indices
 
     """
 
@@ -99,9 +119,33 @@ def get_fragments(top,
         fragments = [fragments[ii] for ii in _np.argsort([fr[0] for fr in fragments])]
     elif method == "chains":
         fragments = [[rr.index for rr in ichain.residues] for ichain in top.chains]
+    elif method == "resSeq+":
+        to_join = [[0]]
+        for ii, ifrag in enumerate(fragments_resSeq[:-1]):
+            r1 = top.residue(ifrag[-1])
+            r2 = top.residue(fragments_resSeq[ii + 1][0])
+            if r1.resSeq < r2.resSeq:
+                to_join[-1].append(ii + 1)
+            else:
+                to_join.append([ii + 1])
+
+        if False:
+            print("Fragments by ascending resSeq")
+            for idx, tj in enumerate(to_join):
+                for ii in tj:
+                    istr = _print_frag(idx, top, fragments_resSeq[ii],
+                                       return_string=True)
+                    print(istr)
+                print(''.join(["-" for __ in range(len(istr))]))
+        fragments = _join_lists(fragments_resSeq, [tj for tj in to_join if len(tj) > 1])
+
+    # TODO check why this is not equivalent to "bonds" in the test_file
     elif method == 'molecules':
-        fragments = [_np.unique([aa.residue.index for aa in iset]) for iset in top.find_molecules()]
+        raise NotImplementedError("method 'molecules' is not implemented yet")
+        #fragments = [_np.unique([aa.residue.index for aa in iset]) for iset in top.find_molecules()]
     elif method == 'molecules_resSeq+':
+        raise NotImplementedError("method 'molecules_resSeq+' is not implemented yet")
+        """
         _molecules = top.find_molecules()
         _fragments = [_np.unique([aa.residue.index for aa in iset]) for iset in _molecules]
         _resSeqs =   [[top.residue(idx).resSeq for idx in ifrag] for ifrag in _fragments]
@@ -122,28 +166,7 @@ def get_fragments(top,
                     if kk>1:
                         raise Exception
         #print(_negjumps)
-
-
-    elif method == "resSeq+":
-        fragments = []
-        to_join = [[0]]
-        for ii, ifrag in enumerate(fragments_resSeq[:-1]):
-            r1 = top.residue(ifrag[-1])
-            r2 = top.residue(fragments_resSeq[ii+1][0])
-            if r1.resSeq<r2.resSeq:
-                to_join[-1].append(ii+1)
-            else:
-                to_join.append([ii+1])
-
-        if False:
-            print("Fragments by ascending resSeq")
-            for idx, tj in enumerate(to_join):
-                for ii in tj:
-                    istr = _print_frag(idx, top, fragments_resSeq[ii],
-                                       return_string=True)
-                    print(istr)
-                print(''.join(["-" for __ in range(len(istr))]))
-        fragments = _join_lists(fragments_resSeq, [tj for tj in to_join if len(tj)>1])
+        """
 
     else:
         raise ValueError("Don't know what method '%s' is"%method)
@@ -196,23 +219,24 @@ def get_fragments(top,
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
 
-def overview(topology,
-             methods=['all'],
-             all_methods = ['resSeq',
+_allowed_fragment_methods = ['resSeq',
                             'resSeq+',
                             'bonds',
+                         #   'molecules',
                             'resSeq_bonds',
-                            'chains']):
+                            'chains']
+def overview(topology,
+             methods=['all']):
+
     """
     Prints the fragments created and their corresponding methods
 
     Parameters
     ----------
     topology :  :py:class:`mdtraj.Topology`
-    methods : list
+    methods : str or list of strings
                 method(s) to be used for obtaining fragments
-    all_methods : list
-                available list of methods
+
 
     Returns
     -------
@@ -221,18 +245,22 @@ def overview(topology,
 
     """
 
+    if isinstance(methods,str):
+        methods = [methods]
+
     if methods[0].lower() == 'all':
-        try_methods = all_methods
+        try_methods = _allowed_fragment_methods
     else:
         for imethd in methods:
-            assert imethd in all_methods, ('input method %s is not known. ' \
-                                           'Know methods are %s ' % (imethd, all_methods))
+            assert imethd in _allowed_fragment_methods, ('input method %s is not known. ' \
+                                           'Know methods are %s ' % (imethd, _allowed_fragment_methods))
         try_methods = methods
 
     for method in try_methods:
         get_fragments(topology,
                       method=method)
         print()
+
 def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
                                           pick_first_fragment_by_default=False,
                                           additional_naming_dicts=None):

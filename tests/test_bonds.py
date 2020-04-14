@@ -14,13 +14,13 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
 
     def test_it_just_works_with_top2residue_bond_matrix(self):
         res_bond_matrix = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
-                                    [1, 1, 1, 0, 0, 0, 0, 0],
-                                    [0, 1, 1, 0, 0, 0, 0, 0],
-                                    [0, 0, 0, 1, 1, 0, 0, 0],
-                                    [0, 0, 0, 1, 1, 1, 0, 0],
-                                    [0, 0, 0, 0, 1, 1, 0, 0], #LYS28 has a bond with GLU27
-                                    [0, 0, 0, 0, 0, 0, 0, 0],
-                                    [0, 0, 0, 0, 0, 0, 0, 0]])
+                                     [1, 1, 1, 0, 0, 0, 0, 0],
+                                     [0, 1, 1, 0, 0, 0, 0, 0],
+                                     [0, 0, 0, 1, 1, 0, 0, 0],
+                                     [0, 0, 0, 1, 1, 1, 0, 0],
+                                     [0, 0, 0, 0, 1, 1, 0, 0], #LYS28 has a bond with GLU27
+                                     [0, 0, 0, 0, 0, 0, 0, 0],
+                                     [0, 0, 0, 0, 0, 0, 0, 0]])
         assert (top2residue_bond_matrix(self.geom.top) == res_bond_matrix).all()
 
     def test_works_with_force_resSeq_breaks_is_true(self):
