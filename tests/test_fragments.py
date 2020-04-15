@@ -160,7 +160,7 @@ class Test_get_fragments_other_options(unittest.TestCase):
                 assert _np.allclose(ridxs_by_atom,rfrag)
 
 
-    def test_break_fragments_just_works(self):
+    def test_break_fragments(self):
         # Checking if the fragments are breaking correctly for the argument "fragment_breaker_fullresname"
         by_bonds = get_fragments(self.geom.top,
                                  fragment_breaker_fullresname=["VAL31", "GLU27"],  # two fragment breakers passed
