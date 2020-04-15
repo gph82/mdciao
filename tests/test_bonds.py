@@ -15,7 +15,7 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
         self.geom_no_bonds = md.load(test_filenames.file_for_no_bonds_pdb)
         self.geom_no_bonds.top._bonds=[]
 
-    def test_it_just_works_with_top2residue_bond_matrix(self):
+    def test_bond_matrix(self):
         res_bond_matrix = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
                                      [1, 1, 1, 0, 0, 0, 0, 0],
                                      [0, 1, 1, 0, 0, 0, 0, 0],
@@ -26,7 +26,7 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
                                      [0, 0, 0, 0, 0, 0, 0, 0]])
         assert (top2residue_bond_matrix(self.geom.top) == res_bond_matrix).all()
 
-    def test_works_with_force_resSeq_breaks_is_true(self):
+    def test_force_resSeq_breaks_is_true(self):
         res_bond_matrix = _np.array([ [1, 1, 0, 0, 0, 0, 0, 0],
                                       [1, 1, 1, 0, 0, 0, 0, 0],
                                       [0, 1, 1, 0, 0, 0, 0, 0],
@@ -53,7 +53,7 @@ class Test_bonded_neighborlist_from_top(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.file_for_test_pdb)
 
-    def test_bonded_neighborlist_from_top_just_works(self):
+    def test_neighbors(self):
        neighbors_from_function =  bonded_neighborlist_from_top(self.geom.top)
        actual_neighbors = [[1], [0, 2], [1], [4], [3, 5], [4], [], []]
        assert neighbors_from_function == actual_neighbors
