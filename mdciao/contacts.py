@@ -111,11 +111,11 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragm
 
 
 
-def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
-              chunksize=1000, return_times_and_atoms=False,
-              n_jobs=1,
-              progressbar=False,
-              **mdcontacts_kwargs):
+def trajs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
+               chunksize=1000, return_times_and_atoms=False,
+               n_jobs=1,
+               progressbar=False,
+               **mdcontacts_kwargs):
     """Returns the time-dependent traces of residue-residue contacts from
     a list of trajectories
 
@@ -441,8 +441,8 @@ def contact_matrix(trajectories, cutoff_Ang=3,
 
     stride=_np.ceil(_np.sum([itraj.n_frames for itraj in trajectories])/n_frames_per_traj).astype(int)
 
-    actcs = xtcs2ctcs(trajectories, top, ctc_idxs, stride=stride, chunksize=50,
-                      consolidate=True, ignore_nonprotein=False, **mdcontacts_kwargs)
+    actcs = trajs2ctcs(trajectories, top, ctc_idxs, stride=stride, chunksize=50,
+                       consolidate=True, ignore_nonprotein=False, **mdcontacts_kwargs)
 
     actcs = (actcs <= cutoff_Ang/10).mean(0)
     assert len(actcs)==len(ctc_idxs)
@@ -481,8 +481,8 @@ def contact_matrix_slim(trajectories, cutoff_Ang=3,
     mat = _np.zeros((n_res, n_res))
     ctc_idxs = _np.vstack(_np.triu_indices_from(mat, k=0)).T
 
-    actcs = xtcs2ctcs(trajectories, top, ctc_idxs, stride=stride, chunksize=50,
-                      consolidate=True, ignore_nonprotein=False, **mdcontacts_kwargs)
+    actcs = trajs2ctcs(trajectories, top, ctc_idxs, stride=stride, chunksize=50,
+                       consolidate=True, ignore_nonprotein=False, **mdcontacts_kwargs)
 
     actcs = (actcs <= cutoff_Ang/10).mean(0)
     assert len(actcs)==len(ctc_idxs)

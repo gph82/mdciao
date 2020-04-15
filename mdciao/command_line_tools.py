@@ -24,7 +24,7 @@ from mdciao.nomenclature_utils import \
 
 from mdciao.contacts import \
     select_and_report_residue_neighborhood_idxs, \
-    xtcs2ctcs,contact_group, contact_pair
+    trajs2ctcs,contact_group, contact_pair
 
 from mdciao.list_utils import \
     rangeexpand, \
@@ -294,11 +294,11 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
           "number is still too high (i.e. the computation is too slow), consider using a smaller nlist_cutoff_Ang " % (
               len(ctc_idxs), len(ctc_idxs_small)))
 
-    ctcs_trajs, time_array, at_pair_trajs = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
-                                                      chunksize=chunksize_in_frames, return_times_and_atoms=True,
-                                                      consolidate=False,
-                                                      n_jobs=n_jobs,
-                                                      )
+    ctcs_trajs, time_array, at_pair_trajs = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+                                                       chunksize=chunksize_in_frames, return_times_and_atoms=True,
+                                                       consolidate=False,
+                                                       n_jobs=n_jobs,
+                                                       )
     print() # to make sure we don't overwrite outut
     actcs = _np.vstack(ctcs_trajs)
     ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
@@ -563,11 +563,11 @@ def sites(topology,
         print('%10s  %10u  %10u  %10s %10s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key, CGN[val]))
 
     ctc_idxs_small = _sites_to_ctc_idxs_old(sites, AAresSeq2residxs)
-    ctcs, time_array, aps = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
-                                      chunksize=chunksize_in_frames,
-                                      return_times_and_atoms=True, consolidate=False, periodic=pbc,
-                                      scheme=scheme,
-                                      n_jobs=n_jobs)
+    ctcs, time_array, aps = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+                                       chunksize=chunksize_in_frames,
+                                       return_times_and_atoms=True, consolidate=False, periodic=pbc,
+                                       scheme=scheme,
+                                       n_jobs=n_jobs)
 
     # Abstract each site to a group of contacts
     site_as_gc = {}
@@ -929,14 +929,14 @@ def interface(
         "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
         len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
     print()
-    ctcs, times, __ = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
-                                stride=stride, return_times_and_atoms=True,
-                                consolidate=False,
-                                chunksize=chunksize_in_frames,
-                                n_jobs=n_jobs,
-                                progressbar=True,
-                                scheme=scheme
-                                )
+    ctcs, times, __ = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
+                                 stride=stride, return_times_and_atoms=True,
+                                 consolidate=False,
+                                 chunksize=chunksize_in_frames,
+                                 n_jobs=n_jobs,
+                                 progressbar=True,
+                                 scheme=scheme
+                                 )
 
     # Stack all data
     actcs = _np.vstack(ctcs)

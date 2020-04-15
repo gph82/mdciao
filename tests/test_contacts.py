@@ -7,7 +7,7 @@ import mock
 from scipy.spatial.distance import cdist
 from filenames import filenames
 from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
-    xtcs2ctcs, \
+    trajs2ctcs, \
     pick_best_label, \
     contact_pair, \
     per_xtc_ctc
@@ -165,22 +165,22 @@ class Test_xtcs2ctcs(Test_for_contacs):
         self.atoms_stacked = _np.vstack([self.my_idxs, self.my_idxs])
 
     def test_works(self):
-        ctcs_trajs_consolidated = xtcs2ctcs(self.xtcs, self.top, self.ctc_idxs)
+        ctcs_trajs_consolidated = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs)
         _np.testing.assert_allclose(ctcs_trajs_consolidated, self.ctcs_stacked)
 
 
     def test_return_time_and_atoms(self):
-        ctcs_trajs_consolidated, times_consolidated, atoms_consolidated = xtcs2ctcs(self.xtcs, self.top, self.ctc_idxs,
-                  return_times_and_atoms=True
-                  )
+        ctcs_trajs_consolidated, times_consolidated, atoms_consolidated = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs,
+                                                                                     return_times_and_atoms=True
+                                                                                     )
         _np.testing.assert_allclose(self.times_stacked, times_consolidated)
         _np.testing.assert_allclose(self.ctcs_stacked, ctcs_trajs_consolidated)
         _np.testing.assert_allclose(self.atoms_stacked, atoms_consolidated)
 
     def test_consolidate_is_false(self):
-        ctcs, times, atoms = xtcs2ctcs(self.xtcs, self.top, self.ctc_idxs,
-                                             return_times_and_atoms=True,
-                                             consolidate=False)
+        ctcs, times, atoms = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs,
+                                        return_times_and_atoms=True,
+                                        consolidate=False)
 
 
         [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.ctcs, self.ctcs], ctcs)]
@@ -188,7 +188,7 @@ class Test_xtcs2ctcs(Test_for_contacs):
         [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.my_idxs, self.my_idxs], atoms)]
 
     def test_progressbar(self):
-        ctcs_trajs_consolidated = xtcs2ctcs(self.xtcs, self.top, self.ctc_idxs, progressbar=True)
+        ctcs_trajs_consolidated = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs, progressbar=True)
 
 
 
