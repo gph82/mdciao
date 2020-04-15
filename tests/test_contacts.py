@@ -10,7 +10,7 @@ from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
     trajs2ctcs, \
     pick_best_label, \
     contact_pair, \
-    per_xtc_ctc
+    per_traj_ctc
 
 class Test_for_contacs(unittest.TestCase):
     def setUp(self):
@@ -41,29 +41,29 @@ class Test_for_contacs(unittest.TestCase):
                             atoms_20[idxs_2030[0]], atoms_30[idxs_2030[1]]])
         self.my_idxs = _np.vstack(my_idxs)
 
-class Test_per_xtc_ctc(Test_for_contacs):
+class Test_per_traj_ctc(Test_for_contacs):
     def test_contacts_file(self):
-        ctcs, time, __ = per_xtc_ctc(self.top, self.file_xtc, self.ctc_idxs, 1000, 1, 0)
+        ctcs, time, __ = per_traj_ctc(self.top, self.file_xtc, self.ctc_idxs, 1000, 1, 0)
         _np.testing.assert_allclose(ctcs,self.ctcs)
         _np.testing.assert_allclose(time, self.traj.time)
 
     def test_contacts_geom(self):
-        ctcs, time, __ = per_xtc_ctc(self.top, self.traj, self.ctc_idxs, 1000, 1, 0)
+        ctcs, time, __ = per_traj_ctc(self.top, self.traj, self.ctc_idxs, 1000, 1, 0)
         _np.testing.assert_allclose(ctcs,self.ctcs)
         _np.testing.assert_allclose(time, self.traj.time)
 
     def test_contacts_geom_stride(self):
-        ctcs, time, __ = per_xtc_ctc(self.top, self.traj, self.ctc_idxs, 1000, 2, 0)
+        ctcs, time, __ = per_traj_ctc(self.top, self.traj, self.ctc_idxs, 1000, 2, 0)
         _np.testing.assert_allclose(ctcs,self.ctcs[::2])
         _np.testing.assert_allclose(time, self.traj.time[::2])
 
     def test_contacts_geom_chunk(self):
-        ctcs, time, __ = per_xtc_ctc(self.top, self.traj, self.ctc_idxs, 5, 1, 0)
+        ctcs, time, __ = per_traj_ctc(self.top, self.traj, self.ctc_idxs, 5, 1, 0)
         _np.testing.assert_allclose(ctcs,self.ctcs)
         _np.testing.assert_allclose(time, self.traj.time)
 
     def test_atoms(self):
-        __, __, iatoms = per_xtc_ctc(self.top, self.file_xtc, [[10,20], [20,30]], 1000, 1, 0)
+        __, __, iatoms = per_traj_ctc(self.top, self.file_xtc, [[10, 20], [20, 30]], 1000, 1, 0)
         _np.testing.assert_allclose(iatoms, self.my_idxs)
 
 test_filenames = filenames()
@@ -154,11 +154,11 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
                                                                    interactive=True)
             assert ctc_freq == {}
 
-class Test_xtcs2ctcs(Test_for_contacs):
+class Test_trajs2ctcs(Test_for_contacs):
 
     def setUp(self):
         #TODO read why I shouldn't be doing this...https://nedbatchelder.com/blog/201210/multiple_inheritance_is_hard.html
-        super(Test_xtcs2ctcs,self).setUp()
+        super(Test_trajs2ctcs, self).setUp()
         self.xtcs = [self.file_xtc, self.file_xtc]
         self.ctcs_stacked = _np.vstack([self.ctcs, self.ctcs])
         self.times_stacked = _np.hstack([self.traj.time, self.traj.time])
