@@ -137,13 +137,18 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         How many frames will be read into memory for
         computation of the contact time-traces. The higher the number,
         the higher the memory requirements
-    n_jobs : int, default is 1
-        to how many processors to parallellize
-
     return_times_and_atoms : boolean, default is False
         Return also the time array in ps and the indices of the the atoms
         behind the distanes in :obj:`ctcs`. See :obj:`per_xtc_ctcs` for
         more info
+    n_jobs : int, default is 1
+        To how many processors to parallellize. The algorithm parallelizes
+        over the trajectories themeselves, having 3 trajs and n_jobs=4
+        is equal t n_jobs=3
+    progressbar : bool, default is False
+        Use a fancy :obj:`tqdm.tqdm` progressbar
+
+
 
     Returns
     -------
@@ -187,7 +192,7 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
     r"""
     Wrapper for :obj:`mdtraj.contacs` for strided, chunked computation
     of contacts of either :obj:`mdtraj.Trajectory` objects or
-    trajectory files on disk
+    trajectory files on disk (e.g. xtcs, dcs etc)
 
     You can fine-tune the computation itself using mdcontacts_kwargs
 
