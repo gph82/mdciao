@@ -9,7 +9,7 @@ from mdciao.command_line_tools import residue_neighborhoods, \
 from tempfile import TemporaryDirectory
 test_filenames = filenames()
 
-class test_minimal_just_runs_all(unittest.TestCase):
+class test_just_runs_all_fewest_options(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.prot1_pdb)
         self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)
@@ -41,7 +41,7 @@ class test_minimal_just_runs_all(unittest.TestCase):
                       output_dir=tmpdir)
 
 
-class test_residue_neighbrhoods_all_except_nomenclature(unittest.TestCase):
+class test_residue_neighbrhoods_options_except_nomenclature_just_runs(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.prot1_pdb)
         self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)
@@ -161,6 +161,7 @@ class test_residue_neighbrhoods_all_except_nomenclature(unittest.TestCase):
 
 
 class test_maximal_runs_no_nomenclature(unittest.TestCase):
+    #this is a WIP
 
     def __test_sites(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
