@@ -157,7 +157,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
 class Test_xtcs2ctcs(Test_for_contacs):
 
     def setUp(self):
-        #TODO read why I shouldn't be doing this...
+        #TODO read why I shouldn't be doing this...https://nedbatchelder.com/blog/201210/multiple_inheritance_is_hard.html
         super(Test_xtcs2ctcs,self).setUp()
         self.xtcs = [self.file_xtc, self.file_xtc]
         self.ctcs_stacked = _np.vstack([self.ctcs, self.ctcs])
@@ -177,14 +177,20 @@ class Test_xtcs2ctcs(Test_for_contacs):
         _np.testing.assert_allclose(self.ctcs_stacked, ctcs_trajs_consolidated)
         _np.testing.assert_allclose(self.atoms_stacked, atoms_consolidated)
 
-    def test_xtcs2ctcs_consolidate_is_true(self):
-        ctcs_trajs, time_array = xtcs2ctcs(self.xtcs, self.geom.top, [[1, 6]],  # stride=a.stride,
-                                           # chunksize=a.chunksize_in_frames,
-                                           return_times_and_atoms=True,
-                                           consolidate=True)
+    def test_consolidate_is_false(self):
+        ctcs, times, atoms = xtcs2ctcs(self.xtcs, self.top, self.ctc_idxs,
+                                             return_times_and_atoms=True,
+                                             consolidate=False)
 
-        _np.testing.assert_array_almost_equal(ctcs_trajs[:5], self.test_ctcs_trajs[::2], 4)
-        assert (_np.array_equal(time_array[:5], self.test_time_array[::2]))
+
+        [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.ctcs, self.ctcs], ctcs)]
+        [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.traj.time, self.traj.time], times)]
+        [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.my_idxs, self.my_idxs], atoms)]
+
+    def test_progressbar(self):
+        ctcs_trajs_consolidated = xtcs2ctcs(self.xtcs, self.top, self.ctc_idxs, progressbar=True)
+
+
 
 class Test_pick_best_label(unittest.TestCase):
     def test_pick_best_label_just_works(self):
