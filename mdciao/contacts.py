@@ -111,7 +111,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragm
 
 
 
-def trajs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
+def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
                chunksize=1000, return_times_and_atoms=False,
                n_jobs=1,
                progressbar=False,
@@ -121,7 +121,7 @@ def trajs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 
     Parameters
     ----------
-    xtcs : list of strings
+    trajs : list of strings
         list of filenames with trajectory data. Typically xtcs,
         but can be any type of file readable by
     top : str or :py:class:`mdtraj.Topology`
@@ -163,9 +163,9 @@ def trajs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         iterfunct = lambda a : tqdm(a)
     else:
         iterfunct = lambda a : a
-    ictcs_itimes_iaps = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc)(top, ixtc, ctc_residxs_pairs,chunksize,stride,ii,
-                                                                  **mdcontacts_kwargs)
-                                            for ii, ixtc in enumerate(iterfunct(xtcs)))
+    ictcs_itimes_iaps = _Parallel(n_jobs=n_jobs)(_delayed(per_traj_ctc)(top, ixtc, ctc_residxs_pairs, chunksize, stride, ii,
+                                                                        **mdcontacts_kwargs)
+                                            for ii, ixtc in enumerate(iterfunct(trajs)))
     ctcs = []
     times = []
     aps = []
@@ -186,9 +186,9 @@ def trajs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     else:
         return actcs, times, aps
 
-def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
-                traj_idx,
-                **mdcontacts_kwargs):
+def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
+                 traj_idx,
+                 **mdcontacts_kwargs):
     r"""
     Wrapper for :obj:`mdtraj.contacs` for strided, chunked computation
     of contacts of either :obj:`mdtraj.Trajectory` objects or
@@ -201,7 +201,7 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
     Parameters
     ----------
     top: `mdtraj.Topology`
-    ixtc: `mdtraj.Trajctory` or filename
+    itraj: `mdtraj.Trajctory` or filename
     ctc_residxs_pairs: iterable of pairs of residue indices
         Distances to be computed
     chunksize: int
@@ -235,13 +235,13 @@ def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
 
 
     """
-    iterate, inform = iterate_and_inform_lambdas(ixtc, chunksize, stride=stride, top=top)
+    iterate, inform = iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
     ictcs, itime, iaps = [],[],[]
     running_f = 0
-    inform(ixtc, traj_idx, 0, running_f)
-    for jj, igeom in enumerate(iterate(ixtc)):
+    inform(itraj, traj_idx, 0, running_f)
+    for jj, igeom in enumerate(iterate(itraj)):
         running_f += igeom.n_frames
-        inform(ixtc, traj_idx, jj, running_f)
+        inform(itraj, traj_idx, jj, running_f)
         itime.append(igeom.time)
             #TODO make lambda out of this if
         if 'scheme' in mdcontacts_kwargs.keys() and mdcontacts_kwargs["scheme"].upper()=='COM':

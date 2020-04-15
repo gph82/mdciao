@@ -8,7 +8,7 @@ This module exposes high-level methods related to the extraction of residue-resi
 .. autosummary::
     select_and_report_residue_neighborhood_idxs
     trajs2ctcs
-    per_xtc_ctc
+    per_traj_ctc
 
 .. automodule:: mdciao.contacts
    :members:
