@@ -45,7 +45,7 @@ class Test_find_by_AA(unittest.TestCase):
         assert (find_AA(self.geom2frags.top, "K28")) == [5, 13]
 
 class Test_int_from_AA_code(unittest.TestCase):
-    def test_int_from_AA_code_just_works(self):
+    def test_int_from_AA_code(self):
         assert (int_from_AA_code("GLU30") == 30)
         assert (int_from_AA_code("E30") == 30)
         assert (int_from_AA_code("glu30") == 30)
@@ -60,7 +60,7 @@ class Test_shorten_AA(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.file_for_test_pdb)
 
-    def test_shorten_AA_just_works(self):
+    def test_shorten_AA(self):
         assert(shorten_AA("GLU30") == 'E')
         assert(shorten_AA(self.geom.top.residue(1)) == 'V')
 
