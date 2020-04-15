@@ -264,6 +264,8 @@ def overview(topology,
 def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
                                           pick_first_fragment_by_default=False,
                                           additional_naming_dicts=None):
+
+    # TODO command line tools residue_neighborhoods 255
     resSeq2residxs = {}
     resSeq2segidxs = {}
     last_answer = 0
@@ -356,6 +358,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
     residuenames2fragidxs = {}
     last_answer = 0
 
+    #TODO one usage in get_fragments 195
     #TODO break the iteration in this method into a separate method. Same AAcode in different fragments will overwrite
     # each other
     if isinstance(AAresSeq_idxs, str):
