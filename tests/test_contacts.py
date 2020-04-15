@@ -4,8 +4,67 @@ import unittest
 from unittest.mock import Mock
 import numpy as _np
 import mock
+from scipy.spatial.distance import cdist
 from filenames import filenames
-from mdciao.contacts import select_and_report_residue_neighborhood_idxs, xtcs2ctcs, pick_best_label, contact_pair
+from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
+    xtcs2ctcs, \
+    pick_best_label, \
+    contact_pair, \
+    per_xtc_ctc
+
+class Test_for_contacs(unittest.TestCase):
+    def setUp(self):
+        self.pdb_file = test_filenames.prot1_pdb
+        self.file_xtc = test_filenames.run1_stride_100_xtc
+        self.top = md.load(self.pdb_file).top
+        self.traj = md.load(self.file_xtc, top = self.top)
+        self.ctc_idxs = [[10, 20], [20, 30]]
+        self.ctcs = md.compute_contacts(self.traj, self.ctc_idxs)[0]
+
+        atoms_10 = [aa.index for aa in self.top.residue(10).atoms if aa.element.symbol != "H"]
+        atoms_20 = [aa.index for aa in self.top.residue(20).atoms if aa.element.symbol != "H"]
+        atoms_30 = [aa.index for aa in self.top.residue(30).atoms if aa.element.symbol != "H"]
+
+        xyz_10 = self.traj.xyz[:, atoms_10]
+        xyz_20 = self.traj.xyz[:, atoms_20]
+        xyz_30 = self.traj.xyz[:, atoms_30]
+
+        my_idxs = []
+        for frame_10, frame_20, frame_30 in zip(xyz_10, xyz_20, xyz_30):
+            D = cdist(frame_10, frame_20)
+            idxs_1020 = _np.unravel_index(D.argmin(), D.shape)
+
+            D = cdist(frame_20, frame_30)
+            idxs_2030 = _np.unravel_index(D.argmin(), D.shape)
+
+            my_idxs.append([atoms_10[idxs_1020[0]], atoms_20[idxs_1020[1]],
+                            atoms_20[idxs_2030[0]], atoms_30[idxs_2030[1]]])
+        self.my_idxs = _np.vstack(my_idxs)
+
+class Test_per_xtc_ctc(Test_for_contacs):
+    def test_contacts_file(self):
+        ctcs, time, __ = per_xtc_ctc(self.top, self.file_xtc, self.ctc_idxs, 1000, 1, 0)
+        _np.testing.assert_allclose(ctcs,self.ctcs)
+        _np.testing.assert_allclose(time, self.traj.time)
+
+    def test_contacts_geom(self):
+        ctcs, time, __ = per_xtc_ctc(self.top, self.traj, self.ctc_idxs, 1000, 1, 0)
+        _np.testing.assert_allclose(ctcs,self.ctcs)
+        _np.testing.assert_allclose(time, self.traj.time)
+
+    def test_contacts_geom_stride(self):
+        ctcs, time, __ = per_xtc_ctc(self.top, self.traj, self.ctc_idxs, 1000, 2, 0)
+        _np.testing.assert_allclose(ctcs,self.ctcs[::2])
+        _np.testing.assert_allclose(time, self.traj.time[::2])
+
+    def test_contacts_geom_chunk(self):
+        ctcs, time, __ = per_xtc_ctc(self.top, self.traj, self.ctc_idxs, 5, 1, 0)
+        _np.testing.assert_allclose(ctcs,self.ctcs)
+        _np.testing.assert_allclose(time, self.traj.time)
+
+    def test_atoms(self):
+        __, __, iatoms = per_xtc_ctc(self.top, self.file_xtc, [[10,20], [20,30]], 1000, 1, 0)
+        _np.testing.assert_allclose(iatoms, self.my_idxs)
 
 test_filenames = filenames()
 class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
@@ -95,58 +154,34 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
                                                                    interactive=True)
             assert ctc_freq == {}
 
+class Test_xtcs2ctcs(Test_for_contacs):
 
-class Test_xtcs2ctcs(unittest.TestCase):
     def setUp(self):
-        file_geom = test_filenames.prot1_pdb
-        file_xtc =  test_filenames.run1_stride_100_xtc
-        self.geom = md.load(file_geom)
-        self.xtcs = [file_xtc]
+        #TODO read why I shouldn't be doing this...
+        super(Test_xtcs2ctcs,self).setUp()
+        self.xtcs = [self.file_xtc, self.file_xtc]
+        self.ctcs_stacked = _np.vstack([self.ctcs, self.ctcs])
+        self.times_stacked = _np.hstack([self.traj.time, self.traj.time])
+        self.atoms_stacked = _np.vstack([self.my_idxs, self.my_idxs])
 
-        #TODO AVOID HARD-CODING THIS
-        self.test_ctcs_trajs = _np.array([[0.4707409],
-                                     [0.44984677],
-                                     [0.49991393],
-                                     [0.53672814],
-                                     [0.53126746],
-                                     [0.49817562],
-                                     [0.46696925],
-                                     [0.4860978],
-                                     [0.4558717],
-                                     [0.4896131]])
-        self.test_time_array = _np.array([    0.,
-                                              10000.,
-                                              20000.,
-                                              30000.,
-                                              40000.,
-                                              50000.,
-                                              60000.,
-                                              70000.,
-                                              80000.,
-                                              90000.])
+    def test_works(self):
+        ctcs_trajs_consolidated = xtcs2ctcs(self.xtcs, self.top, self.ctc_idxs)
+        _np.testing.assert_allclose(ctcs_trajs_consolidated, self.ctcs_stacked)
 
-    def test_xtcs2ctcs_just_works(self):
-        ctcs_trajs, time_array = xtcs2ctcs(self.xtcs, self.geom.top, [[1, 6]],  #stride=a.stride,
-                                           # chunksize=a.chunksize_in_frames,
-                                           return_time=True,
-                                           consolidate=False)
 
-        _np.testing.assert_array_almost_equal(ctcs_trajs[0][:5], self.test_ctcs_trajs[::2], 4)
-        assert(_np.array_equal(time_array[0][:5], self.test_time_array[::2]))
-
-    def test_xtcs2ctcs_return_time_is_false(self):
-        ctcs_trajs = xtcs2ctcs(self.xtcs, self.geom.top, [[1, 6]],  #stride=a.stride,
-                                           # chunksize=a.chunksize_in_frames,
-                                           return_time=False,
-                                           consolidate=False)
-
-        _np.testing.assert_array_almost_equal(ctcs_trajs[0][:5], self.test_ctcs_trajs[::2], 4)
+    def test_return_time_and_atoms(self):
+        ctcs_trajs_consolidated, times_consolidated, atoms_consolidated = xtcs2ctcs(self.xtcs, self.top, self.ctc_idxs,
+                  return_times_and_atoms=True
+                  )
+        _np.testing.assert_allclose(self.times_stacked, times_consolidated)
+        _np.testing.assert_allclose(self.ctcs_stacked, ctcs_trajs_consolidated)
+        _np.testing.assert_allclose(self.atoms_stacked, atoms_consolidated)
 
     def test_xtcs2ctcs_consolidate_is_true(self):
         ctcs_trajs, time_array = xtcs2ctcs(self.xtcs, self.geom.top, [[1, 6]],  # stride=a.stride,
-                                               # chunksize=a.chunksize_in_frames,
-                                               return_time=True,
-                                               consolidate=True)
+                                           # chunksize=a.chunksize_in_frames,
+                                           return_times_and_atoms=True,
+                                           consolidate=True)
 
         _np.testing.assert_array_almost_equal(ctcs_trajs[:5], self.test_ctcs_trajs[::2], 4)
         assert (_np.array_equal(time_array[:5], self.test_time_array[::2]))
