@@ -295,7 +295,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
               len(ctc_idxs), len(ctc_idxs_small)))
 
     ctcs_trajs, time_array, at_pair_trajs = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
-                                                      chunksize=chunksize_in_frames, return_time=True,
+                                                      chunksize=chunksize_in_frames, return_times_and_atoms=True,
                                                       consolidate=False,
                                                       n_jobs=n_jobs,
                                                       )
@@ -564,10 +564,10 @@ def sites(topology,
 
     ctc_idxs_small = _sites_to_ctc_idxs_old(sites, AAresSeq2residxs)
     ctcs, time_array, aps = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
-                                 chunksize=chunksize_in_frames,
-                                 return_time=True, consolidate=False, periodic=pbc,
-                                 scheme=scheme,
-                                 n_jobs=n_jobs)
+                                      chunksize=chunksize_in_frames,
+                                      return_times_and_atoms=True, consolidate=False, periodic=pbc,
+                                      scheme=scheme,
+                                      n_jobs=n_jobs)
 
     # Abstract each site to a group of contacts
     site_as_gc = {}
@@ -930,13 +930,13 @@ def interface(
         len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
     print()
     ctcs, times, __ = xtcs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
-                            stride=stride, return_time=True,
-                            consolidate=False,
-                            chunksize=chunksize_in_frames,
-                            n_jobs=n_jobs,
-                            progressbar=True,
-                            scheme=scheme
-                            )
+                                stride=stride, return_times_and_atoms=True,
+                                consolidate=False,
+                                chunksize=chunksize_in_frames,
+                                n_jobs=n_jobs,
+                                progressbar=True,
+                                scheme=scheme
+                                )
 
     # Stack all data
     actcs = _np.vstack(ctcs)
