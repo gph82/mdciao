@@ -170,14 +170,9 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         aps.append(iaps)
 
     if consolidate:
-        try:
-            actcs = _np.vstack(ctcs)
-            times = _np.hstack(times)
-            aps = _np.vstack(aps)
-        except ValueError as e:
-            print(e)
-            print([_np.shape(ic) for ic in ctcs])
-            raise
+        actcs = _np.vstack(ctcs)
+        times = _np.hstack(times)
+        aps = _np.vstack(aps)
     else:
         actcs = ctcs
 
