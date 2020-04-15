@@ -180,7 +180,6 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
             raise
     else:
         actcs = ctcs
-        times = times
 
     if not return_times_and_atoms:
         return actcs
