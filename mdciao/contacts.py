@@ -112,17 +112,18 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragm
 
 
 def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
-              chunksize=1000, return_time=False,
+              chunksize=1000, return_times_and_atoms=False,
               n_jobs=1,
               progressbar=False,
               **mdcontacts_kwargs):
-    """Returns the time-dependent traces of residue-residue contacts from a list of trajectory files
+    """Returns the time-dependent traces of residue-residue contacts from
+    a list of trajectories
 
     Parameters
     ----------
     xtcs : list of strings
         list of filenames with trajectory data. Typically xtcs,
-        but can be any type of file readable by :obj:mdtraj
+        but can be any type of file readable by
     top : str or :py:class:`mdtraj.Topology`
         Topology that matches :obj:xtcs
     ctc_residxs_pairs : iterable
@@ -139,13 +140,15 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     n_jobs : int, default is 1
         to how many processors to parallellize
 
-    return_time : boolean, default is False
-        Return also the time array in ps
+    return_times_and_atoms : boolean, default is False
+        Return also the time array in ps and the indices of the the atoms
+        behind the distanes in :obj:`ctcs`. See :obj:`per_xtc_ctcs` for
+        more info
 
     Returns
     -------
     ctcs, or
-    ctcs, time_arrays if return_time=True
+    ctcs, time_arrays, atom_idxs if return_time=True
 
     """
 
@@ -178,7 +181,7 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         actcs = ctcs
         times = times
 
-    if not return_time:
+    if not return_times_and_atoms:
         return actcs
     else:
         return actcs, times, aps
@@ -186,7 +189,52 @@ def xtcs2ctcs(xtcs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 def per_xtc_ctc(top, ixtc, ctc_residxs_pairs, chunksize, stride,
                 traj_idx,
                 **mdcontacts_kwargs):
+    r"""
+    Wrapper for :obj:`mdtraj.contacs` for strided, chunked computation
+    of contacts of either :obj:`mdtraj.Trajectory` objects or
+    trajectory files on disk
 
+    You can fine-tune the computation itself using mdcontacts_kwargs
+
+    Prints out progress report while working
+
+    Parameters
+    ----------
+    top: `mdtraj.Topology`
+    ixtc: `mdtraj.Trajctory` or filename
+    ctc_residxs_pairs: iterable of pairs of residue indices
+        Distances to be computed
+    chunksize: int
+        Size (in frames) of the "chunks" in which the contacs will be computed.
+        Decrease the chunksize if you run into memmory errors
+    stride:int
+        Stride with which the contacts will be streamed over
+    traj_idx: int
+        The index of the trajectory being computed. For completeness
+        of the progress report
+    mdcontacts_kwargs:
+        Optional keyword arguments to pass to :obj:`mdtraj.contacs`
+
+        Note:
+        ----
+        If "scheme" is contained in mdcontacts_kwargs and scheme==COM,
+        the center of mass will be computed
+
+    Returns
+    -------
+    ictcs, itime, iatps
+    ictcs: 2D np.ndarray (Nframes, Nctcs), where Nctcs= len(ctc_residxs_pairs)
+        time traces of the wanted contacts, in
+
+    itime: 1D np.ndarray of len Nframes
+        timestamps of the computed contacts
+
+    iatps: 2D np.ndarray (Nframes, 2*Nctcs)
+        atom-indices yielding distances in ictcs, helps dis-aggregate the
+        residue interaction into backbone-backbone, backbone-sidechain, or sidechain-sidechain
+
+
+    """
     iterate, inform = iterate_and_inform_lambdas(ixtc, chunksize, stride=stride, top=top)
     ictcs, itime, iaps = [],[],[]
     running_f = 0
