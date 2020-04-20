@@ -64,7 +64,7 @@ def xtcs2dihs(xtcs, top, dih_idxs, stride=1, consolidate=True,
     Returns
     -------
     chis, or
-    chis, time_arrays if return_time=True
+    chis, time_trajs if return_time=True
 
     """
 
@@ -143,7 +143,7 @@ def plot_dih(ictc, iax,
     iax.set_ylabel(ylabel, rotation=90)
 
     for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(ictc.feat_trajs,
-                                                                ictc.time_arrays,
+                                                                ictc.time_trajs,
                                                                 ictc.trajlabels)):
 
         ilabel = '%s'%trjlabel
@@ -217,7 +217,7 @@ class angle(object):
         self._consensus_label = consensus_label
         self._fragment_idx  = fragment_idx
         if fragment_name is None:
-            # assert self.fragment_idxs is not None
+            # assert self.idxs is not None
             # self._fragment_names = self._fragment_idxs
 
             if self.fragment_idx is not None:

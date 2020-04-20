@@ -170,7 +170,7 @@ def _parser_add_sites(parser):
                         help='site file(s) in json format containing site information, i.e., which bonds correspond to each site')
 
 def _parser_add_fragment_names(parser):
-    parser.add_argument('--fragment_names', type=str,
+    parser.add_argument('--names', type=str,
                         help="Name of the fragments. Leave empty if you want them automatically named."
                              " Otherwise, give a quoted list of strings separated by commas, e.g. "
                              "'TM1, TM2, TM3,'",

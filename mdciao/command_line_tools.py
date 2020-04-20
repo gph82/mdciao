@@ -24,7 +24,7 @@ from mdciao.nomenclature_utils import \
 
 from mdciao.contacts import \
     select_and_report_residue_neighborhood_idxs, \
-    trajs2ctcs,contact_group, contact_pair
+    trajs2ctcs,contact_group, ContactPair
 
 from mdciao.list_utils import \
     rangeexpand, \
@@ -132,7 +132,7 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
     elif fragment_names.lower()=="none":
         fragment_names = [None for __ in fragments]
     else:
-        assert isinstance(fragment_names, str), "Argument --fragment_names invalid: %s" % fragment_names
+        assert isinstance(fragment_names, str), "Argument --names invalid: %s" % fragment_names
         if 'danger' not in fragment_names.lower():
             fragment_names = [ff.strip(" ") for ff in fragment_names.split(",")]
             assert len(fragment_names) == len(
@@ -142,15 +142,15 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
         elif 'danger' in fragment_names.lower():
             raise NotImplementedError
             """
-            fragments, fragment_names = dangerously_auto_fragments(top,
+            fragments, names = dangerously_auto_fragments(top,
                                                                    method="bonds",
                                                                    verbose=False,
                                                                    force_resSeq_breaks=True,
                                                                    frag_breaker_to_pick_idx=0,
                                                                    )
-            fragment_na     mes.extend(top.residue(ifrag[0]).name for ifrag in fragments[len(fragment_names):])
+            fragment_na     mes.extend(top.residue(ifrag[0]).name for ifrag in fragments[len(names):])
 
-            for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
+            for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, names)):
                 _print_frag(ifrag_idx, top, ifrag, end='')
                 print(" ", frag_name)
             """
@@ -317,18 +317,18 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             pair = ctc_idxs_small[idx]
             consensus_labels = [_relabel_consensus(idx, [BW, CGN]) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
-            neighborhoods[key].append(contact_pair(pair,
-                                                   [itraj[:, idx] for itraj in ctcs_trajs],
-                                                   time_array,
-                                                   top=refgeom.top,
-                                                   anchor_residue_idx=key,
-                                                   consensus_labels=consensus_labels,
-                                                   trajs=xtcs,
-                                                   fragment_idxs=fragment_idxs,
-                                                   fragment_names=[fragment_names[idx] for idx in fragment_idxs],
-                                                   fragment_colors=[fragcolors[idx] for idx in fragment_idxs],
-                                                   atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
-                                                   ))
+            neighborhoods[key].append(ContactPair(pair,
+                                                  [itraj[:, idx] for itraj in ctcs_trajs],
+                                                  time_array,
+                                                  top=refgeom.top,
+                                                  anchor_residue_idx=key,
+                                                  consensus_labels=consensus_labels,
+                                                  trajs=xtcs,
+                                                  fragment_idxs=fragment_idxs,
+                                                  fragment_names=[fragment_names[idx] for idx in fragment_idxs],
+                                                  fragment_colors=[fragcolors[idx] for idx in fragment_idxs],
+                                                  atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
+                                                  ))
 
         neighborhoods[key] = contact_group(neighborhoods[key])
 
@@ -581,7 +581,7 @@ def sites(topology,
             idx = next(ctc_value_idx)
             consensus_labels = [_relabel_consensus(idx, [BW, CGN]) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
-            site_as_gc[key].append(contact_pair(pair,
+            site_as_gc[key].append(ContactPair(pair,
                                                [itraj[:, idx] for itraj in ctcs],
                                                time_array,
                                                top=refgeom.top,
@@ -589,7 +589,7 @@ def sites(topology,
                                                trajs=xtcs,
                                                fragment_idxs=fragment_idxs,
                                                fragment_names=[fragment_names[idx] for idx in fragment_idxs],
-                                               #fragment_colors=[fragcolors[idx] for idx in fragment_idxs]
+                                               #colors=[fragcolors[idx] for idx in idxs]
                                                ))
         site_as_gc[key] = contact_group(site_as_gc[key])
 
@@ -956,16 +956,16 @@ def interface(
                                                                                      substitute_fail=0,
                                                                                      keep_index=True)) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
-            ctc_objs.append(contact_pair(pair,
-                                         [itraj[:, idx] for itraj in ctcs],
-                                         times,
-                                         top=refgeom.top,
-                                         consensus_labels=consensus_labels,
-                                         trajs=xtcs,
-                                         fragment_idxs=fragment_idxs,
-                                         # fragment_names=fragment_names,#[fragment_names[idx] for idx in fragment_idxs],
-                                         # fragment_colors=[fragcolors[idx] for idx in fragment_idxs]
-                                          ))
+            ctc_objs.append(ContactPair(pair,
+                                        [itraj[:, idx] for itraj in ctcs],
+                                        times,
+                                        top=refgeom.top,
+                                        consensus_labels=consensus_labels,
+                                        trajs=xtcs,
+                                        fragment_idxs=fragment_idxs,
+                                        # names=names,#[names[idx] for idx in idxs],
+                                        # colors=[fragcolors[idx] for idx in idxs]
+                                        ))
 
     neighborhood = contact_group(ctc_objs,
                                  interface_residxs=interface_residx_short)
