@@ -33,7 +33,7 @@ def plot_contact(ictc, iax,
         raise ValueError("Cannot understand your ylim value %s of type %s" % (ylim_Ang,type(ylim_Ang)))
     for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(ictc.feat_trajs,
                                                                 ictc.time_trajs,
-                                                                ictc.trajlabels)):
+                                                                ictc.trajstrs)):
 
         ilabel = '%s'%trjlabel
         if ctc_cutoff_Ang > 0:

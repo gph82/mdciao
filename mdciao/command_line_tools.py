@@ -24,7 +24,7 @@ from mdciao.nomenclature_utils import \
 
 from mdciao.contacts import \
     select_and_report_residue_neighborhood_idxs, \
-    trajs2ctcs,contact_group, ContactPair
+    trajs2ctcs,ContactGroup, ContactPair
 
 from mdciao.list_utils import \
     rangeexpand, \
@@ -330,7 +330,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                                   atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
                                                   ))
 
-        neighborhoods[key] = contact_group(neighborhoods[key])
+        neighborhoods[key] = ContactGroup(neighborhoods[key])
 
     panelheight = 3
     n_cols = _np.min((n_cols, len(resSeq2residxs)))
@@ -591,7 +591,7 @@ def sites(topology,
                                                fragment_names=[fragment_names[idx] for idx in fragment_idxs],
                                                #colors=[fragcolors[idx] for idx in idxs]
                                                ))
-        site_as_gc[key] = contact_group(site_as_gc[key])
+        site_as_gc[key] = ContactGroup(site_as_gc[key])
 
     print("The following files have been created")
     panelheight = 3
@@ -967,8 +967,8 @@ def interface(
                                         # colors=[fragcolors[idx] for idx in idxs]
                                         ))
 
-    neighborhood = contact_group(ctc_objs,
-                                 interface_residxs=interface_residx_short)
+    neighborhood = ContactGroup(ctc_objs,
+                                interface_residxs=interface_residx_short)
     print()
     print(neighborhood.frequency_table(ctc_cutoff_Ang).round({"freq":2,"sum":2}))
     print()

@@ -144,7 +144,7 @@ def plot_dih(ictc, iax,
 
     for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(ictc.feat_trajs,
                                                                 ictc.time_trajs,
-                                                                ictc.trajlabels)):
+                                                                ictc.trajstrs)):
 
         ilabel = '%s'%trjlabel
 
