@@ -15,11 +15,12 @@ from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
     geom2COMxyz, \
     geom2COMdist, \
     _atom_type, \
-    _sum_ctc_freqs_by_atom_type
+    _sum_ctc_freqs_by_atom_type,\
+    ContactGroup
 
 from mdciao.contacts import _Fragments, \
     _Residues, _NeighborhoodNames, \
-    _TimeTraces, _ContactLabels
+    _TimeTraces, _ContactStrings
 
 test_filenames = filenames()
 
@@ -455,68 +456,68 @@ class Test_auto_fragment_string(unittest.TestCase):
 
 
 
-class Test_ContactLabels(unittest.TestCase):
+class Test_ContactStrings(unittest.TestCase):
 
     def test_trajlabels_no_trajs(self):
-        cls = _ContactLabels(2,
-                             _Residues([10, 20],["GLU25", "ALA35"])
-                             )
+        cls = _ContactStrings(2,
+                              _Residues([10, 20],["GLU25", "ALA35"])
+                              )
 
-        assert cls.trajlabels[0]=="traj 0" and cls.trajlabels[1]=="traj 1", cls.trajlabels
+        assert cls.trajstrs[0] == "traj 0" and cls.trajstrs[1] == "traj 1", cls.trajstrs
 
     def test_trajlabels_w_mdtrajs(self):
         mdtrajs = md.load(test_filenames.run1_stride_100_xtc,
                                top=test_filenames.prot1_pdb)[:5]
         mdtrajs = [mdtrajs, mdtrajs]
-        cls = _ContactLabels(2,
-                             _Residues([10, 20], ["GLU25", "ALA35"]),
-                             trajs = mdtrajs
-                             )
+        cls = _ContactStrings(2,
+                              _Residues([10, 20], ["GLU25", "ALA35"]),
+                              trajs = mdtrajs
+                              )
 
-        assert cls.trajlabels[0] == "mdtraj.00" and cls.trajlabels[1] == "mdtraj.01", cls.trajlabels
+        assert cls.trajstrs[0] == "mdtraj.00" and cls.trajstrs[1] == "mdtraj.01", cls.trajstrs
 
     def test_trajlabels_wo_mdtrajs(self):
-        cls = _ContactLabels(2,
-                             _Residues([10, 20], ["GLU25", "ALA35"]),
-                             trajs=["file0.xtc", "file1.xtc"]
-                             )
+        cls = _ContactStrings(2,
+                              _Residues([10, 20], ["GLU25", "ALA35"]),
+                              trajs=["file0.xtc", "file1.xtc"]
+                              )
 
-        assert cls.trajlabels[0] == "file0" and cls.trajlabels[1] == "file1", cls.trajlabels
+        assert cls.trajstrs[0] == "file0" and cls.trajstrs[1] == "file1", cls.trajstrs
 
     def test_ctc_labels(self):
-        cls = _ContactLabels(2,
-                             _Residues([10, 20], ["GLU25", "ALA35"]),
-                             _Fragments(fragment_names=["fragA","fragB"])
-                             )
-        assert cls.ctc_label_w_fragments=="GLU25@fragA-ALA35@fragB", cls.ctc_label_w_fragments
-        assert cls.ctc_label_short_AA_w_fragments=="E25@fragA-A35@fragB", cls.ctc_label_short_AA_w_fragments
+        cls = _ContactStrings(2,
+                              _Residues([10, 20], ["GLU25", "ALA35"]),
+                              _Fragments(fragment_names=["fragA","fragB"])
+                              )
+        assert cls.w_fragments == "GLU25@fragA-ALA35@fragB", cls.w_fragments
+        assert cls.w_fragments_short_AA == "E25@fragA-A35@fragB", cls.w_fragments_short_AA
 
     def test_ctc_label_no_fragments(self):
-        cls = _ContactLabels(2,
-                             _Residues([10, 20], ["GLU25", "ALA35"]),
-                             )
+        cls = _ContactStrings(2,
+                              _Residues([10, 20], ["GLU25", "ALA35"]),
+                              )
 
-        assert cls.ctc_label_no_fragments == "GLU25-ALA35", cls.ctc_label_no_fragments
-        assert cls.ctc_label_no_fragments_short_AA == "E25-A35"
+        assert cls.no_fragments == "GLU25-ALA35", cls.no_fragments
+        assert cls.no_fragments_short_AA == "E25-A35"
 
 
     def test_ctc_label_missing_frags_and_consensus(self):
-        cls = _ContactLabels(2,
-                             _Residues([10, 20], ["GLU25", "ALA35"]),
-                             )
+        cls = _ContactStrings(2,
+                              _Residues([10, 20], ["GLU25", "ALA35"]),
+                              )
 
-        assert cls.ctc_label_w_fragments == "GLU25-ALA35", cls.ctc_label_w_fragment
-        assert cls.ctc_label_short_AA_w_fragments == "E25-A35", cls.ctc_label_short_AA_w_fragments
+        assert cls.w_fragments == "GLU25-ALA35", cls.ctc_label_w_fragment
+        assert cls.w_fragments_short_AA == "E25-A35", cls.w_fragments_short_AA
 
     def test_just_prints(self):
-        cls = _ContactLabels(2,
-                             _Residues([10, 20], ["GLU25", "ALA35"]),
-                             )
+        cls = _ContactStrings(2,
+                              _Residues([10, 20], ["GLU25", "ALA35"]),
+                              )
         print(cls)
 
 
 
-class Test_contact_pair(unittest.TestCase):
+class Test_ContactPair(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.file_for_test_pdb)
 
@@ -887,11 +888,148 @@ class Test_pick_best_label(unittest.TestCase):
         assert(auto_format_fragment_string(option="Print this instead", better_option="NA") == "Print this instead")
         assert(auto_format_fragment_string(option="Print this instead", better_option="na") == "Print this instead")
 
-class Test_contact_group(unittest.TestCase):
-    pass
+class Test_ContactGroup(unittest.TestCase):
 
+    def setUp(self):
+        self.cp1 = ContactPair([0,1], [[.1,   .2, .3] , [.4,  .5]], [[1, 2, 3], [1, 2]])
+        self.cp2 = ContactPair([0,2], [[.15, .25, .35], [.45, .45]],[[1,2,3], [1, 2]])
+        self.cp3 = ContactPair([1, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]])
 
+        self.top = md.load(test_filenames.prot1_pdb).top
+        self.cp1_wtop = ContactPair([0,1], [[.1,   .2, .3]], [[1, 2, 3]], top=self.top)
+        self.cp2_wtop = ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]], top=self.top)
+        self.cp3_wtop_other =  ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]],
+                                           top=md.load(test_filenames.file_for_test_pdb).top)
+        self.ct1_wtop_and_conslabs = ContactPair([0,1], [[.1,   .2, .3]], [[1, 2, 3]],
+                                                 consensus_labels=["3.50","4.50"],
+                                                 top=self.top)
+        self.ct2_wtop_and_conslabs = ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]],
+                                                 consensus_labels=["3.50", "5.50"],
+                                                 top=self.top)
 
+        self.cp1_w_anchor_and_frags = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
+                                                  fragment_names=["fragA", "fragB"],
+                                                  anchor_residue_idx=0)
+        self.cp2_w_anchor_and_frags  = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
+                                                   fragment_names=["fragA", "fragC"],
+                                                   anchor_residue_idx=0)
+
+        self.cp1_w_anchor_and_frags_and_top = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
+                                                  fragment_names=["fragA", "fragB"],
+                                                  anchor_residue_idx=0,
+                                                          top=self.top)
+        self.cp2_w_anchor_and_frags_and_top = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
+                                                  fragment_names=["fragA", "fragC"],
+                                                  anchor_residue_idx=0,
+                                                          top=self.top)
+
+    def test_works_minimal(self):
+        CG = ContactGroup([self.cp1, self.cp2])
+
+    def test_works_minimal_top_raises(self):
+        with pytest.raises(AssertionError):
+            CG = ContactGroup([self.cp1, self.cp2], top=self.top)
+
+    def test_works_minimal_top_works(self):
+        CG = ContactGroup([self.cp1_wtop, self.cp2_wtop], top=self.top)
+
+    def test_n_properties(self):
+        CG = ContactGroup([self.cp1, self.cp2])
+        _np.testing.assert_equal(CG.n_ctcs, 2)
+        _np.testing.assert_equal(CG.n_trajs, 2)
+        _np.testing.assert_array_equal(CG.n_frames,[3, 2])
+
+    def test_time_properties(self):
+        CG = ContactGroup([self.cp1, self.cp2])
+        _np.testing.assert_equal(3, CG.time_max)
+        _np.testing.assert_array_equal([1,2,3],CG.time_arrays[0])
+        _np.testing.assert_array_equal([1,2],CG.time_arrays[1])
+
+    def test_tops(self):
+        CG = ContactGroup([self.cp1, self.cp2])
+        assert CG.topology is CG.top is None
+        CG = ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        assert CG.topology is CG.top is self.top
+
+        with pytest.raises(ValueError):
+            CP = ContactGroup([self.cp1_wtop, self.cp2_wtop,
+                               self.cp3_wtop_other])
+
+    def test_residues(self):
+        CG = ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        _np.testing.assert_array_equal([[0,1],
+                                        [0,2]],
+                                        CG.res_idxs_pairs)
+
+        _np.testing.assert_equal(CG.residue_names_short[0][0],"E30")
+        _np.testing.assert_equal(CG.residue_names_short[0][1],"V31")
+        _np.testing.assert_equal(CG.residue_names_short[1][0],"E30")
+        _np.testing.assert_equal(CG.residue_names_short[1][1],"W32")
+
+    def test_labels(self):
+        CG = ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        _np.testing.assert_equal(CG.ctc_labels[0],"GLU30-VAL31")
+        _np.testing.assert_equal(CG.ctc_labels[1],"GLU30-TRP32")
+        _np.testing.assert_equal(CG.ctc_labels_short[0],"E30-V31")
+        _np.testing.assert_equal(CG.ctc_labels_short[1],"E30-W32")
+        _np.testing.assert_equal(CG.trajlabels[0],"traj 0")
+        _np.testing.assert_equal(CG.consensus_labels[0][0],None)
+        _np.testing.assert_equal(CG.consensus_labels[0][1],None)
+        _np.testing.assert_equal(CG.consensus_labels[1][0], None)
+        _np.testing.assert_equal(CG.consensus_labels[1][1], None)
+
+        CG = ContactGroup([self.ct1_wtop_and_conslabs,
+                           self.ct2_wtop_and_conslabs])
+
+        _np.testing.assert_equal(CG.consensus_labels[0][0], "3.50")
+        _np.testing.assert_equal(CG.consensus_labels[0][1], "4.50")
+        _np.testing.assert_equal(CG.consensus_labels[1][0], "3.50")
+        _np.testing.assert_equal(CG.consensus_labels[1][1], "5.50")
+
+    def test_neighborhoods_raises(self):
+        CP = ContactGroup([self.cp1, self.cp2])
+        _np.testing.assert_equal(CP.shared_anchor_residue_index, None)
+        with pytest.raises(AssertionError):
+            CP.anchor_res_and_fragment_str
+        with pytest.raises(AssertionError):
+            CP.anchor_res_and_fragment_str_short
+        with pytest.raises(AssertionError):
+            CP.partner_res_and_fragment_labels
+        with pytest.raises(AssertionError):
+            CP.anchor_fragment_color
+        with pytest.raises(AssertionError):
+            CP.partner_res_and_fragment_labels
+        with pytest.raises(AssertionError):
+            CP.partner_res_and_fragment_labels_short
+
+    def test_neighborhoods(self):
+        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+                           self.cp2_w_anchor_and_frags])
+        _np.testing.assert_equal(CP.shared_anchor_residue_index, 0)
+        _np.testing.assert_equal(CP.anchor_res_and_fragment_str,"0@fragA")
+        _np.testing.assert_equal(CP.anchor_res_and_fragment_str_short,"0@fragA")
+        _np.testing.assert_equal(CP.partner_res_and_fragment_labels[0],"1@fragB")
+        _np.testing.assert_equal(CP.partner_res_and_fragment_labels[1],"2@fragC")
+        _np.testing.assert_equal(CP.partner_res_and_fragment_labels_short[0], "1@fragB")
+        _np.testing.assert_equal(CP.partner_res_and_fragment_labels_short[1], "2@fragC")
+
+    def test_neighborhoods_w_top(self):
+        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        _np.testing.assert_equal(CP.shared_anchor_residue_index, 0)
+        _np.testing.assert_equal(CP.anchor_res_and_fragment_str, "GLU30@fragA")
+        _np.testing.assert_equal(CP.anchor_res_and_fragment_str_short, "E30@fragA")
+        _np.testing.assert_equal(CP.partner_res_and_fragment_labels[0], "VAL31@fragB")
+        _np.testing.assert_equal(CP.partner_res_and_fragment_labels[1], "TRP32@fragC")
+        _np.testing.assert_equal(CP.partner_res_and_fragment_labels_short[0], "V31@fragB")
+        _np.testing.assert_equal(CP.partner_res_and_fragment_labels_short[1], "W32@fragC")
+
+    def tst_residx2ctcidx(self):
+        CP = ContactGroup([self.cp1, self.cp2])
+        _np.testing.assert_array_equal(CP.residx2ctcidx(1),[[0,1]])
+        _np.testing.assert_array_equal(CP.residx2ctcidx(2),[[1,1]])
+        _np.testing.assert_array_equal(CP.residx2ctcidx(0),[[0,0],
+                                                             [1,0]])
 
 if __name__ == '__main__':
     unittest.main()

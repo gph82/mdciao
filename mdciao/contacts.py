@@ -515,8 +515,967 @@ def auto_format_fragment_string(option, better_option,
         else:
             return fmt % better_option
 
+# TODO many of these could in principle be named tuples but IDK if
+# its worth the effort and documentation-sphinx headeach
+class _TimeTraces(object):
 
-class contact_group(object):
+    def __init__(self, ctc_trajs,
+                 time_trajs,
+                 trajs,
+                 atom_pair_trajs):
+
+        assert len(time_trajs)==len(ctc_trajs)
+        self._ctc_trajs = [_np.array(itraj) for itraj in ctc_trajs]
+        self._time_trajs =time_trajs
+        self._trajs = trajs
+        if trajs is not None:
+            assert len(trajs)==len(ctc_trajs)
+        self._atom_pair_trajs = atom_pair_trajs
+        assert all([len(itraj) == len(itime) for itraj, itime in zip(ctc_trajs, time_trajs)])
+        if atom_pair_trajs is not None:
+            assert len(atom_pair_trajs)==len(ctc_trajs)
+            assert all([len(itraj) == len(iatt) for itraj, iatt in zip(ctc_trajs, atom_pair_trajs)]), "atom_pair_trajs does not have the appropiate length"
+            self._atom_pair_trajs = [_np.array(itraj) for itraj in self._atom_pair_trajs]
+            assert all([itraj.shape[1]==2 for itraj in self._atom_pair_trajs])
+    # Trajectories
+    @property
+    def ctc_trajs(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return self._ctc_trajs
+
+    @property
+    def atom_pair_trajs(self):
+        return self._atom_pair_trajs
+
+    @property
+    def time_trajs(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return self._time_trajs
+
+    @property
+    def trajs(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return self._trajs
+
+    @property
+    def feat_trajs(self):
+        return self.ctc_trajs
+
+class _NumberOfthings(object):
+
+    def __init__(self, n_trajs, n_frames):
+        self._n_trajs = n_trajs
+        self._n_frames = n_frames
+
+    @property
+    def n_trajs(self):
+        """
+
+        Returns
+        -------
+        int, total number of trajectories that were passed.
+
+        """
+        return self._n_trajs
+
+    @property
+    def n_frames(self):
+        """
+
+        Returns
+        -------
+        list, list of frames in each trajectory.
+
+        """
+        return self._n_frames
+
+    @property
+    def n_frames_total(self):
+        return _np.sum(self._n_frames)
+
+class _Residues(object):
+    def __init__(self, res_idxs_pair,
+                 residue_names,
+                 anchor_residue_idx=None,
+                 consensus_labels=None,
+                 top=None):
+
+        assert len(res_idxs_pair)==2
+        assert all([isinstance(ii,int) for ii in res_idxs_pair])
+        assert res_idxs_pair[0]!=res_idxs_pair[1]
+
+        self._res_idxs_pair = _np.array(res_idxs_pair)
+        self._residue_names = residue_names
+
+        if anchor_residue_idx is not None:
+            assert anchor_residue_idx in res_idxs_pair
+        self._anchor_residue_index = anchor_residue_idx
+        self._partner_residue_index = None
+        self._anchor_index = None
+        self._partner_index = None
+        self._anchor_residue = None
+        self._partner_residue = None
+        if self._anchor_residue_index is not None:
+            assert self._anchor_residue_index in self.idxs_pair
+            self._anchor_index = _np.argwhere(self.idxs_pair == self.anchor_residue_index).squeeze()
+            self._partner_index = _np.argwhere(self.idxs_pair != self.anchor_residue_index).squeeze()
+            self._partner_residue_index = self.idxs_pair[self.partner_index]
+            if top is not None:
+                self._anchor_residue =  top.residue(self.anchor_residue_index)
+                self._partner_residue = top.residue(self.partner_residue_index)
+        if consensus_labels is None:
+            consensus_labels = [None,None]
+        assert len(consensus_labels)==2
+        self._consensus_labels = consensus_labels
+
+    @property
+    def idxs_pair(self):
+        """
+
+        Returns
+        -------
+        list of residue index pair passed
+
+        """
+        return self._res_idxs_pair
+
+    @property
+    def names(self):
+        """
+
+        Returns
+        -------
+        list, for each residue index in the residue contact pair, the corresponding residue name from the topology file.
+        example : ['GLU30','VAL212']
+
+        """
+        return self._residue_names
+
+    @property
+    def names_short(self):
+        """
+
+        Returns
+        -------
+        list, for each residue name in the residue contact pair, the corresponding short residue name from the topology file.
+        example : ['E30', 'V212']
+
+        """
+        return [_shorten_AA(rr, substitute_fail="long", keep_index=True) for rr in self.names]
+
+    @property
+    def anchor_residue(self):
+        """
+
+        Returns
+        -------
+        str, anchor residue if anchor residue index is provided else None
+
+        """
+        return self._anchor_residue
+
+    @property
+    def partner_residue(self):
+        """
+
+        Returns
+        -------
+        str, partner residue if partner residue index is provided else None
+
+        """
+        return self._partner_residue
+
+    @property
+    def anchor_residue_index(self):
+        """
+
+        Returns
+        -------
+        int, anchor residue index if passed else None(default)
+
+        """
+        return self._anchor_residue_index
+
+    @property
+    def partner_residue_index(self):
+        """
+
+        Returns
+        -------
+        int, partner residue if passed else (default)
+
+        """
+        return self._partner_residue_index
+
+    @property
+    def anchor_index(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return self._anchor_index
+
+    @property
+    def partner_index(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return self._partner_index
+
+    @property
+    def consensus_labels(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return self._consensus_labels
+
+class _NeighborhoodNames(object):
+
+    def __init__(self, residue_container, fragment_container):
+        # Eliminate a lot of assertions down the line
+        assert residue_container.anchor_index is not None, ValueError("Cannot instantiate if the residue container does not have an anchor residue")
+        # TODO not enough protection for the containers, but easier code
+        # better forgiveness than permission?
+
+        self._residues = residue_container
+        self._fragments = fragment_container
+
+    @property
+    def residues(self):
+        return self._residues
+
+    @property
+    def fragments(self):
+        return self._fragments
+
+    @property
+    def anchor_fragment(self):
+        """
+
+        Returns
+        -------
+        str, fragment name in which the anchor residue is present.
+
+        """
+        return self.fragments.names[self.residues.anchor_index]
+
+    @property
+    def partner_fragment(self):
+        """
+
+        Returns
+        -------
+        str, fragment name in which the partner residue is present
+
+        """
+        return self.fragments.names[self.residues.partner_index]
+
+    @property
+    def partner_fragment_consensus(self):
+        """
+
+        Returns
+        -------
+        consensus label of the partner residue
+
+        """
+        if self.residues.consensus_labels is not None:
+            return self.residues.consensus_labels[self.residues.partner_index]
+        else:
+            return None
+
+    @property
+    def anchor_fragment_consensus(self):
+        """
+
+        Returns
+        -------
+        consensus label of the anchor residue. If no anchor_index is present then returns None
+
+        """
+        if self.residues.consensus_labels is not None:
+            return self.residues.consensus_labels[self.residues.anchor_index]
+        else:
+            return None
+
+    @property
+    def partner_fragment_best(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return auto_format_fragment_string(self.partner_fragment,
+                                           self.partner_fragment_consensus)
+
+    @property
+    def anchor_fragment_best(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return auto_format_fragment_string(self.anchor_fragment,
+                                           self.anchor_fragment_consensus)
+
+    @property
+    def anchor_res_and_fragment_str(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return '%s@%s' % (self.anchor_residue_name,
+                          self.anchor_fragment_best)
+
+    @property
+    def anchor_residue_name(self):
+        return self.residues.names[self.residues.anchor_index]
+
+    @property
+    def partner_residue_name(self):
+        return self.residues.names[self.residues.partner_index]
+
+    @property
+    def anchor_residue_short(self):
+        return self.residues.names_short[self.residues.anchor_index]
+
+    @property
+    def partner_residue_short(self):
+        return self.residues.names_short[self.residues.partner_index]
+
+    @property
+    def anchor_res_and_fragment_str_short(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return '%s@%s' % (self.anchor_residue_short,
+                          self.anchor_fragment_best)
+
+    @property
+    def partner_res_and_fragment_str(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return '%s@%s' % (self.partner_residue_name,
+                          self.partner_fragment_best)
+
+    @property
+    def partner_res_and_fragment_str_short(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return '%s@%s' % (self.partner_residue_short,
+                          self.partner_fragment_best)
+
+
+class _ContactStrings(object):
+    r"""
+    Only Return Strings
+    """
+    def __init__(self,
+                 n_trajs,
+                 residue_container,
+                 fragment_container=None,
+                 trajs=None,
+                 ):
+
+        self._trajs = trajs
+        self._n_trajs = n_trajs
+        self._residues = residue_container
+        self._fragments = fragment_container
+        if self._fragments is None:
+            self._fragnames = [None, None]
+        else:
+            self._fragnames = self._fragments.names
+
+    @property
+    def trajstrs(self):
+        """
+
+        Returns
+        -------
+        list, list of labels for each trajectory
+        If labels were not passed, then labels like 'traj 0','traj 1' and so on are assigned
+        If :obj:`mdtraj.Trajectory` objects were passed, then the "mdtraj" descriptor will be used
+        If filenames were passed, then the extension will be cut-off
+        """
+
+        if self._trajs is None:
+            trajlabels = ['traj %u' % ii for ii in range(self._n_trajs)]
+        else:
+            if isinstance(self._trajs[0], _md.Trajectory):
+                trajlabels = ['mdtraj.%02u' % ii for ii in range(self._n_trajs)]
+            else:
+                trajlabels = [_path.splitext(ii)[0] for ii in self._trajs]
+
+        return trajlabels
+
+    @property
+    def no_fragments(self):
+        return "%s-%s"%(self._residues.names[0], self._residues.names[1])
+
+    @property
+    def no_fragments_short_AA(self):
+        return "%s-%s" % (self._residues.names_short[0], self._residues.names_short[1])
+
+    @property
+    def w_fragments(self):
+        """
+
+        Returns
+        -------
+        str,
+
+        """
+
+        ctc_label = '%s%s-%s%s' % (self._residues.names[0],
+                               auto_format_fragment_string(self._fragnames[0],
+                                                           self._residues.consensus_labels[0],
+                                                           fmt="@%s"),
+                               self._residues.names[1],
+                               auto_format_fragment_string(self._fragnames[1],
+                                                           self._residues.consensus_labels[1],
+                                                           fmt="@%s"))
+        return ctc_label
+
+    @property
+    def w_fragments_short_AA(self):
+        """
+
+        Returns
+        -------
+        str,
+
+        """
+        ctc_label = '%s%s-%s%s' % (self._residues.names_short[0],
+                                     auto_format_fragment_string(self._fragnames[0],
+                                                                 self._residues.consensus_labels[0],
+                                                                 fmt="@%s"),
+                                     self._residues.names_short[1],
+                                     auto_format_fragment_string(self._fragnames[1],
+                                                                 self._residues.consensus_labels[0],
+                                                                 fmt="@%s"))
+
+        return ctc_label
+
+    def __str__(self):
+        istr = ["%s at %s with properties"%(type(self),id(self))]
+        unprinted = []
+        for iattr in [iattr for iattr in dir(self) if not iattr.startswith("__")]:
+            if iattr[0]!="_":
+                istr.append("%s:"%iattr)
+                istr.append(" "+str(getattr(self,iattr)))
+                istr.append(" ")
+
+            else:
+                unprinted.append(iattr)
+        print(istr)
+        return "\n".join(istr+["Unprinted"]+unprinted)
+
+class _Fragments(object):
+
+    def __init__(self,
+                 fragment_idxs=None,
+                 fragment_names=None,
+                 fragment_colors=None,
+                 ):
+        self._fragment_idxs = fragment_idxs
+        self._fragment_colors = fragment_colors
+
+        if fragment_names is None:
+            # assert self.idxs is not None
+            # self._fragment_names = self._fragment_idxs
+            if self.idxs is not None:
+                self._fragment_names = [str(fidx) for fidx in self._fragment_idxs]
+            else:
+                self._fragment_names = [None, None]
+        else:
+            assert len(fragment_names)==2
+            self._fragment_names = fragment_names
+        self._fragment_colors = fragment_colors
+
+    @property
+    def names(self):
+        """
+
+        Returns
+        -------
+        list of list, Fragment names if passed, else fragment idxs. If both are not available then None(default)
+
+        """
+        return self._fragment_names
+
+    @property
+    def idxs(self):
+        """
+
+        Returns
+        -------
+        list of list, Fragment idxs if passed, else None(default)
+
+        """
+        return self._fragment_idxs
+
+    @property
+    def colors(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return self._fragment_colors
+
+
+
+class ContactPair(object):
+    r"""Class for abstracting a single contact over many trajectory"""
+    #todo consider packing some of this stuff in the site_obj class
+    def __init__(self, res_idxs_pair,
+                 ctc_trajs,
+                 time_trajs,
+                 top=None,
+                 trajs=None,
+                 atom_pair_trajs=None,
+                 fragment_idxs=None,
+                 fragment_names=None,
+                 fragment_colors=None,
+                 anchor_residue_idx=None,
+                 consensus_labels=None):
+        """
+
+        Parameters
+        ----------
+        res_idxs_pair : iterable of two ints
+            pair of residue indices, corresponding to the zero-indexed, serial number of the residues
+        ctc_trajs : list of iterables of floats
+            time traces of the contact. len(ctc_trajs) is N_trajs. Each traj can have different lenghts
+            Will be cast into arrays
+        time_trajs : list of iterables of floats
+            time traces of the time-values, in ps. Not having the same shape as ctc_trajs will raise an error
+        top : :py:class:`mdtraj.Topology`, default is None
+            topology associated with the contact
+        trajs: list of :obj:`mdtraj.Trajectory` objects, default is None
+            The molecular trajectories responsible for which the contact has been evaluated.
+            Not having the same shape as ctc_trajs will raise an error
+        atom_pair_trajs: list of iterables of integers, default is None
+            Time traces of the the pair of atom indices responsible for the distance in :obj:`ctc_trajs`
+            Has to be of len(ctc_trajs) and each iterable of shape(Nframes, 2)
+        fragment_idxs : iterable of two ints, default is None
+            Indices of the fragments the residues of :obj:`res_idxs_pair`
+        fragment_names : iterable of two strings, default is None
+            Names of the fragments the residues of :obj:`res_idxs_pair`
+        fragment_colors : iterable of matplotlib.colors, default is None
+            Colors associated to the fragments of the residues of :obj:`res_idxs_pair`
+        anchor_residue_idx : int, default is None
+            Label this residue as the `anchor` of the contact, which will later allow
+            for the implementation of a :obj:`neighborhood` (see docs).
+            Has to be in :obj:`res_idxs_pair`.
+
+            Note
+            ----
+            Using this argument will automatically populate other properties, like (this is not a complete list)
+             - :obj:`anchor_index` will contain the [0,1] index of the anchor residue in :obj:`res_idxs_pair`
+             - :obj:`partner_index` will contain the [0,1] index of the partner residue in :obj:`res_idxs_pair`
+             - :obj:`partner_residue_index` will contain the other index of :obj:`res_idx_pair`
+            and other properties which depend on having defined an anchor and a partner
+
+            Furhtermore, if a topology is parsed as an argument:
+             - :obj:`anchor_residue_name` will contain the anchor residue as an :obj:`mdtraj.core.Topology.Residue` object
+             - :obj:`partner_residue_name` will contain the partner residue as an :obj:`mdtraj.core.Topology.Residue` object
+
+
+        consensus_labels : iterable of strings, default is None
+            Consensus nomenclature of the residues of :obj:`res_idxs_pair`
+        """
+
+        # Initialize the attribute holding classes
+        self._attribute_trajs = _TimeTraces(ctc_trajs, time_trajs, trajs, atom_pair_trajs)
+        self._attribute_n = _NumberOfthings(len(self._attribute_trajs.ctc_trajs),
+                                            [len(itraj) for itraj in self._attribute_trajs.ctc_trajs])
+
+        # Fail as early as possible
+        _np.testing.assert_equal(self._attribute_n.n_trajs, len(self._attribute_trajs.time_trajs))
+
+        residue_names = [str(ii) for ii in res_idxs_pair]
+        if top is not None:
+            residue_names = [str(top.residue(ii)) for ii in res_idxs_pair]
+
+        self._attribute_residues = _Residues(res_idxs_pair,
+                                             residue_names,
+                                             anchor_residue_idx=anchor_residue_idx,
+                                             consensus_labels=consensus_labels,
+                                             top=top)
+
+        self._attribute_fragments = _Fragments(fragment_idxs,
+                                               fragment_names,
+                                               fragment_colors)
+
+
+        self._ctc_strings = _ContactStrings(self._attribute_n.n_trajs,
+                                            self._attribute_residues,
+                                            self._attribute_fragments,
+                                            trajs=trajs)
+
+        if self._attribute_residues.anchor_residue_index is not None:
+            self._attribute_neighborhood_names = _NeighborhoodNames(self._attribute_residues,
+                                                                    self._attribute_fragments)
+        else:
+            self._attribute_neighborhood_names = None
+
+        self._top = top
+        self._time_max = _np.max(_np.hstack(time_trajs))
+        self._binarized_trajs = {}
+
+    #Trajectories
+    @property
+    def time_traces(self):
+        return self._attribute_trajs
+
+    # Accounting
+    @property
+    def n(self):
+        return self._attribute_n
+
+    # Residues
+    @property
+    def residues(self):
+        return self._attribute_residues
+
+    # Fragments
+    @property
+    def fragments(self):
+        return self._attribute_fragments
+
+    # Neighborhood
+    @property
+    def neighborhood(self):
+        return self._attribute_neighborhood_names
+
+    # Labels (TODO rename to strings?)
+    @property
+    def labels(self):
+        return self._ctc_strings
+
+    @property
+    def time_max(self):
+        """
+
+        Returns
+        -------
+        int or float, maximum time from list of list of time
+
+        """
+        return self._time_max
+
+    @property
+    def label(self):
+        return self.labels.no_fragments
+
+    @property
+    def top(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return self._top
+
+    @property
+    def topology(self):
+        """
+
+        Returns
+        -------
+
+        """
+        return self._top
+
+    def binarize_trajs(self, ctc_cutoff_Ang,
+                       #switch_off_Ang=None
+                       ):
+        """
+        Turn each distance-trajectory into a boolean using a cutoff.
+        The comparison is done using "<=", s.t. d=ctc_cutoff yields True
+
+        Whereas :obj:`ctc_cutoff_Ang` is in Angstrom, the trajectories are
+        in nm, as produced by :obj:`mdtraj.compute_contacts`
+
+        Note
+        ----
+        The method creates a dictionary in self._binarized_trajs keyed
+        with the ctc_cutoff_Ang, to avoid re-computing already binarized
+        trajs
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang: float
+            Cutoff in Angstrom. The comparison operator is "<="
+
+
+        Returns
+        -------
+        list of boolean arrays with the same shape as the trajectories
+
+        """
+        transform = lambda itraj: itraj <= ctc_cutoff_Ang / 10
+
+        """
+        if switch_off_Ang is not None:
+            assert isinstance(switch_off_Ang, float) and switch_off_Ang>0
+            m = -1 / (switch_off_Ang/10)
+            b = 1 +  (ctc_cutoff_Ang / switch_off_Ang)
+            def transform(d):
+                res = m * d + b
+                res[d<ctc_cutoff_Ang/10]=1
+                res[d > (ctc_cutoff_Ang + switch_off_Ang)/10]=0
+
+                return res
+        """
+
+        try:
+            result = self._binarized_trajs[ctc_cutoff_Ang]
+            #print("Grabbing already binarized %3.2f"%ctc_cutoff_Ang)
+        except KeyError:
+            #print("First time binarizing %3.2f. Storing them"%ctc_cutoff_Ang)
+            result = [transform(itraj) for itraj in self.time_traces.ctc_trajs]
+            self._binarized_trajs[ctc_cutoff_Ang] = result
+        #print([ires.shape for ires in result])
+        return result
+
+    def frequency_per_traj(self, ctc_cutoff_Ang):
+        """
+        Contact frequencies for each trajectory
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            Cutoff in Angstrom. The comparison operator is "<="
+
+        Returns
+        -------
+        freqs : array of len self.n.n_trajs with floats between [0,1]
+
+        """
+
+        return _np.array([_np.mean(itraj) for itraj in self.binarize_trajs(ctc_cutoff_Ang)])
+
+    def frequency_overall_trajs(self, ctc_cutoff_Ang):
+        """
+        How many times this contact is formed overall frames. 
+        Frequencies have values between 0 and 1
+        
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            Cutoff in Angstrom. The comparison operator is "<="
+
+        Returns
+        -------
+        freq: float
+            Frequency of the contact over all trajectories
+
+        """
+        return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang)))
+
+
+    def frequency_dict(self, ctc_cutoff_Ang,
+                       AA_format='short',
+                       lb_format='split'):
+        """
+        Returns the :obj:`frequency_overall_trajs` as a more informative
+        dictionary with keys "freq", "residue idxs", "label"
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            Cutoff in Angstrom. The comparison operator is "<="
+        AA_format : str, default is "short"
+            Amino-acid format ("E35" or "GLU25") for the value
+            fdict["label"]. Can also be "long"
+        lb_format : str, default is split
+            Label format. Splitting the contact label produces
+            easier-to-read stacks of contact labels
+            "E25@3.50    -    A35@4.50"
+
+        Returns
+        -------
+        fdcit : dictionary
+
+        """
+        if AA_format== 'short':
+            label = self.labels.w_fragments_short_AA
+        elif AA_format== 'long':
+            label = self.labels.w_fragments
+        else:
+            raise ValueError(AA_format)
+
+        if lb_format=='split':
+            label= '%-15s - %-15s'%tuple(label.split('-'))
+        elif lb_format=='join':
+            pass
+        else:
+            raise ValueError(lb_format)
+
+        return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang),
+                "residue idxs":'%u %u'%tuple(self.residues.idxs_pair),
+                "label":label}
+
+    def distro_overall_trajs(self, bins=10):
+        """
+
+        Parameters
+        ----------
+        bins
+
+        Returns
+        -------
+        x, h
+
+        """
+        return _np.histogram(_np.hstack(self.time_traces.ctc_trajs),
+                             bins=bins)
+
+    def _overall_stacked_formed_atoms(self, ctc_cutoff_Ang):
+        r"""
+        Returns the pairs of atom-indices responsible for the contact,
+        only for the frames in which the contact was formed at the given cutoff
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            Cutoff in Angstrom. The comparison operator is "<="
+
+        Returns
+        -------
+        formed_atom_pairs : _np.ndarray of len (N,2)
+
+        """
+
+        bintrajs = self.binarize_trajs(ctc_cutoff_Ang)
+        formed_atom_pair_trajs = [atraj[itraj] for atraj, itraj in zip(self.time_traces.atom_pair_trajs, bintrajs)]
+
+        return _np.vstack(formed_atom_pair_trajs)
+
+    def count_formed_atom_pairs(self, ctc_cutoff_Ang,
+                                sort=True):
+        r"""
+        Count how many times each atom-pair is considered formed overall trajectory
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            Cutoff in Angstrom. The comparison operator is "<="
+        sort: boolean, default is True
+            Return the counts by descending order
+
+        Returns
+        -------
+        atom_pairs, counts : list of atom pairs, list of ints
+        Note that no dictionary is returned bc atom_pairs is not hashable
+        """
+
+        assert self.time_traces.atom_pair_trajs is not None, ValueError("Cannot use this method if no atom_pair_trajs were parsed")
+        counts = _col_Counter(["%u-%u"%tuple(fap) for fap in self._overall_stacked_formed_atoms(ctc_cutoff_Ang)])
+        keys, counts = list(counts.keys()), list(counts.values())
+        keys = [[int(ii) for ii in key.split("-")] for key in keys]
+        if sort:
+            keys = [keys[ii] for ii in _np.argsort(counts)[::-1]]
+            counts=sorted(counts)[::-1]
+        return keys, counts
+
+
+    def relative_frequency_of_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang,
+                                                              keep_resname=False,
+                                                              aggregate_by_atomtype=True,
+                                                              min_freq=.05):
+        r"""
+        For those frames in which the contact is formed, group them by relative frequencies
+        of individual atom pairs
+        
+        Parameters
+        ----------
+        ctc_cutoff_Ang: float
+            Cutoff in Angstrom. The comparison operator is "<="
+        keep_resname: bool, default is False
+            Keep the atom's residue name in its descriptor. Only make
+            sense if consolidate_by_atom_type is False
+        aggregate_by_atomtype: bool, default is True
+            Aggregate the frequencies of the contact by tye atom types involved.
+            Atom types are backbone, sidechain or other (BB,SC, X)
+        min_freq: float, default is .05
+            Do not report relative frequencies below this cutoff, e.g.
+            "BB-BB":.9, "BB-SC":0.03, "SC-SC":0.03, "SC-BB":0.03
+            gets reported as "BB-BB":.9
+
+        Returns
+        -------
+        out_dict : dictionary with the relative freqs
+        """
+        assert self.top is not None, "Missing a topolgy object"
+        atom_pairs, counts = self.count_formed_atom_pairs(ctc_cutoff_Ang)
+        atom_pairs_as_atoms = [[self.top.atom(ii) for ii in pair] for pair in atom_pairs]
+
+        if aggregate_by_atomtype:
+            dict_out = _sum_ctc_freqs_by_atom_type(atom_pairs_as_atoms, counts)
+            return {key: val / _np.sum(counts) for key, val in dict_out.items() if
+                    val / _np.sum(counts) > min_freq}
+        else:
+            if keep_resname:
+                atom_pairs = ['-'.join([str(ii) for ii in key]) for key in atom_pairs_as_atoms]
+            else:
+                atom_pairs = ['-'.join([ii.name for ii in key]) for key in atom_pairs_as_atoms]
+            return {key:count/_np.sum(counts) for key, count in zip(atom_pairs, counts)
+                    if count/_np.sum(counts)>min_freq}
+
+    def __str__(self):
+
+        istr = ["%s at %s with public stuff" % (type(self), id(self))]
+        for iattr in dir(self):
+            if iattr[0] != "_":
+                istr.append("%s:" % iattr)
+                istr.append(" " + str(getattr(self, iattr)))
+                istr.append(" ")
+        return "\n".join(istr)
+
+class ContactGroup(object):
     r"""Class for containing contact objects, ideally
     it can be used for vicinities, sites, interfaces etc"""
 
@@ -534,37 +1493,40 @@ class contact_group(object):
             self._top = top
 
         # Sanity checks about having grouped this contacts together
-
-        # All contacts have the same number of trajs
-        self._n_trajs =_np.unique([ictc.n_trajs for ictc in self._contacts])
-        if self.n_ctcs==0:
+        if self._n_ctcs==0:
             raise NotImplementedError("This contact group has no contacts!")
         else:
-            assert len(self._n_trajs)==1, (self.n_trajs, [ictc.n_trajs for ictc in self._contacts])
-
+            # All contacts have the same number of trajs
+            self._n_trajs = _np.unique([ictc.n.n_trajs for ictc in self._contacts])
+            assert len(self._n_trajs)==1, (self._n_trajs, [ictc._n_trajs for ictc in self._contacts])
             self._n_trajs=self._n_trajs[0]
 
-            # All trajs have the same times
+            ref_ctc : ContactPair #TODO check if type-hinting is needed or it's just slow IDE over sshfs
             ref_ctc = self._contacts[0]
-            assert all([_np.allclose(ref_ctc.n_frames, ictc.n_frames) for ictc in self._contacts[1:]])
-            self._time_arrays=ref_ctc.time_trajs
-            self._time_max = ref_ctc.time_max
-            self._n_frames = ref_ctc.n_frames
 
-            # All contatcs have the same trajlabels
+            # All trajs have the same length
+            assert all([_np.allclose(ref_ctc.n.n_frames, ictc.n.n_frames) for ictc in self._contacts[1:]])
+            self._time_arrays=ref_ctc.time_traces.time_trajs
+            assert all([all([_np.array_equal(itime, jtime) for itime, jtime in zip(ref_ctc.time_traces.time_trajs,
+                                                                                   ictc.time_traces.time_trajs)])
+                        for ictc in self._contacts[1:]])
+            self._time_max = ref_ctc.time_max
+            self._n_frames = ref_ctc.n.n_frames
+
+            # All contatcs have the same trajstrs
             already_printed = False
             for ictc in self._contacts[1:]:
-                try:
-                    assert all([rlab.__hash__() == tlab.__hash__()
-                                for rlab, tlab in zip(ref_ctc.trajlabels, ictc.trajlabels)])
-                except AttributeError:
-                    if not already_printed:
-                        print("Trajectories unhashable, could not verify they are the same")
-                        already_printed = True
-                    else:
-                        pass
+                assert all([rlab.__hash__() == tlab.__hash__()
+                            for rlab, tlab in zip(ref_ctc.labels.trajstrs, ictc.labels.trajstrs)])
+                # todo why did I put this here in the first place
+                #except AttributeError:
+                #    if not already_printed:
+                #        print("Trajectories unhashable, could not verify they are the same")
+                #        already_printed = True
+                #    else:
+                #        pass
 
-            self._trajlabels = ref_ctc.trajlabels
+            self._trajlabels = ref_ctc.labels.trajstrs
             self._cons2resname = {}
             for key, val in zip(_np.hstack(self.consensus_labels),
                                 _np.hstack(self.residue_names_short)):
@@ -577,8 +1539,107 @@ class contact_group(object):
 
             self._resname2cons = {val: key for key, val in self._cons2resname.items()}
 
+    #todo again the dicussion about named tuples vs a miriad of properties
+    # I am opting for properties because of easyness of documenting i
+    @property
+    def n_trajs(self):
+        return self._n_trajs
+
+    @property
+    def n_ctcs(self):
+        return self._n_ctcs
+
+    @property
+    def n_frames(self):
+        return self._n_frames
+
+    @property
+    def time_max(self):
+        return self._time_max
+
+    @property
+    def time_arrays(self):
+        return self._time_arrays
+
+    @property
+    def res_idxs_pairs(self):
+        return _np.vstack([ictc.residues.idxs_pair for ictc in self._contacts])
+
+    @property
+    def residue_names_short(self):
+        return [ictc.residues.names_short for ictc in self._contacts]
+
+    @property
+    def ctc_labels(self):
+        return [ictc.labels.no_fragments for ictc in self._contacts]
+
+    @property
+    def ctc_labels_short(self):
+        return [ictc.labels.no_fragments_short_AA
+                for ictc in self._contacts]
+
+    @property
+    def trajlabels(self):
+        return self._trajlabels
+
+    # The next objects can also be None
+    @property
+    def top(self):
+        return self._top
+
+    @property
+    def topology(self):
+        return self._top
+
+    @property
+    def consensus_labels(self):
+        return [ictc.residues.consensus_labels for ictc in self._contacts]
+
+    @property
+    def shared_anchor_residue_index(self):
+        r"""
+        Returns none if no anchor residue is found
+        """
+        if any([ictc.residues.anchor_residue_index is None for ictc in self._contacts]):
+            #todo dont print so much
+            #todo let it fail?
+            print("Not all contact objects have an anchor_residue_index. Returning None")
+            pass
+        else:
+            shared = _np.unique([ictc.residues.anchor_residue_index for ictc in self._contacts])
+            if len(shared) == 1:
+                return shared[0]
+        return None
+
+    @property
+    def anchor_res_and_fragment_str(self):
+        assert self.shared_anchor_residue_index is not None
+        return self._contacts[0].neighborhood.anchor_res_and_fragment_str
+
+    @property
+    def anchor_res_and_fragment_str_short(self):
+        assert self.shared_anchor_residue_index is not None
+        return self._contacts[0].neighborhood.anchor_res_and_fragment_str_short
+
+    @property
+    def partner_res_and_fragment_labels(self):
+        assert self.shared_anchor_residue_index is not None
+        return [ictc.neighborhood.partner_res_and_fragment_str for ictc in self._contacts]
+
+    @property
+    def partner_res_and_fragment_labels_short(self):
+        assert self.shared_anchor_residue_index is not None
+        return [ictc.neighborhood.partner_res_and_fragment_str_short for ictc in self._contacts]
+
+    # TODO cannot find code that uses this at the moment
+    #@property
+    #def anchor_fragment_color(self):
+    #    assert self.shared_anchor_residue_index is not None
+    #    return self._contacts[0].fragments.colors[self._contacts[0].residues.anchor_index]
 
     #todo there is redundant code for generating interface labels!
+    # not sure we need it here, don't want to be testing now
+    """
     @property
     def cons2resname(self):
         return self._cons2resname
@@ -586,6 +1647,38 @@ class contact_group(object):
     @property
     def resname2cons(self):
         return self._resname2cons
+    """
+
+    # Now the functions begin
+    def _unique_topology_from_ctcs(self):
+        if all([ictc.top is None for ictc in self._contacts]):
+            return None
+
+        top = _np.unique([ictc.top.__hash__() for ictc in self._contacts])
+        if len(top)==1:
+            return self._contacts[0].top
+        else:
+            raise ValueError("All contacts in a group of contacts"
+                             " should have the same topology, but "
+                             "I found these hashes %s"%top)
+
+    def residx2ctcidx(self,idx):
+        r"""
+        Indices of the contacts and the position (0 or 1) in which the residue with residue :obj.`idx` appears
+        Parameters
+        ----------
+        idx: int
+
+        Returns
+        -------
+        ctc_idxs : 2D np.ndarray of shape (N,2)
+            The first index is the contact index, the second the the pair index (0 or 1)
+        """
+        ctc_idxs = []
+        for ii, pair in enumerate(self.res_idxs_pairs):
+            if idx in pair:
+                ctc_idxs.append([ii,_np.argwhere(pair==idx).squeeze()])
+        return _np.vstack(ctc_idxs)
 
     def frequency_dict_by_consensus_labels(self, ctc_cutoff_Ang,
                                            return_as_triplets=False,
@@ -635,14 +1728,6 @@ class contact_group(object):
         return labs_out
 
     @property
-    def consensus_labels(self):
-        return [ictc.consensus_labels for ictc in self._contacts]
-
-    @property
-    def residue_names_short(self):
-        return [ictc.names_short for ictc in self._contacts]
-
-    @property
     def interface_labels_consensus(self):
         if self._interface_residxs is not None\
                 and not hasattr(self,"_interface_labels_consensus"):
@@ -674,104 +1759,6 @@ class contact_group(object):
 
         self._interface_labels_consensus=labs_out
         #return labs_out
-
-    def residx2ctcidx(self,idx):
-        res = []
-        for ii, pair in enumerate(self.res_idxs_pairs):
-            if idx in pair:
-                res.append([ii,_np.argwhere(pair==idx).squeeze()])
-        return _np.vstack(res)
-
-    @property
-    def n_frames(self):
-        return self._n_frames
-
-    @property
-    def time_max(self):
-        return self._time_max
-
-    @property
-    def trajlabels(self):
-        return self._trajlabels
-
-    @property
-    def time_arrays(self):
-        return self._time_arrays
-
-    def _unique_topology_from_ctcs(self):
-        if all([ictc.top is None for ictc in self._contacts]):
-            return None
-
-        top = _np.unique([ictc.top.__hash__() for ictc in self._contacts])
-        if len(top)==1:
-            return self._contacts[0].top
-        else:
-            raise ValueError("All contacts in a group of contacts"
-                             " should have the same topology, but %s"%top)
-
-    @property
-    def ctc_labels(self):
-        return [ictc.ctc_label for ictc in self._contacts]
-
-    @property
-    def ctc_labels_short(self):
-        return [ictc.ctc_label_short for ictc in self._contacts]
-
-    @property
-    def res_idxs_pairs(self):
-        return _np.vstack([ictc.res_idxs_pair for ictc in self._contacts])
-
-    @property
-    def n_trajs(self):
-        return self._n_trajs
-
-    @property
-    def n_ctcs(self):
-        return self._n_ctcs
-
-    @property
-    def shared_anchor_residue(self):
-        r"""
-        Returns none if no anchor residue is found
-        """
-        shared = _np.unique([ictc.anchor_residue_index for ictc in self._contacts])
-        if len(shared)==1:
-            return shared[0]
-        else:
-            return None
-
-    @property
-    def anchor_res_and_fragment_str(self):
-        assert self.shared_anchor_residue is not None
-        return self._contacts[0].anchor_res_and_fragment_str
-
-    @property
-    def anchor_res_and_fragment_str_short(self):
-        assert self.shared_anchor_residue is not None
-        return self._contacts[0].anchor_res_and_fragment_str_short
-
-
-    @property
-    def partner_res_and_fragment_labels(self):
-        assert self.shared_anchor_residue is not None
-        return [ictc.partner_res_and_fragment_str for ictc in self._contacts]
-
-    @property
-    def partner_res_and_fragment_labels_short(self):
-        assert self.shared_anchor_residue is not None
-        return [ictc.partner_res_and_fragment_str_short for ictc in self._contacts]
-
-    @property
-    def anchor_fragment_color(self):
-        return self._contacts[0].colors[self._contacts[0].anchor_index]
-
-    @property
-    def top(self):
-        return self._top
-
-    @property
-    def topology(self):
-        return self._top
 
     def frequency_per_contact(self, ctc_cutoff_Ang):
         return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts])
@@ -1414,963 +2401,6 @@ class contact_group(object):
 
             if verbose:
                 print(savename)
-
-# TODO many of these could in principle be named tuples but IDK if
-# its worth the effort and documentation-sphinx headeach
-class _TimeTraces(object):
-
-    def __init__(self, ctc_trajs,
-                 time_trajs,
-                 trajs,
-                 atom_pair_trajs):
-
-        assert len(time_trajs)==len(ctc_trajs)
-        self._ctc_trajs = [_np.array(itraj) for itraj in ctc_trajs]
-        self._time_trajs =time_trajs
-        self._trajs = trajs
-        if trajs is not None:
-            assert len(trajs)==len(ctc_trajs)
-        self._atom_pair_trajs = atom_pair_trajs
-        assert all([len(itraj) == len(itime) for itraj, itime in zip(ctc_trajs, time_trajs)])
-        if atom_pair_trajs is not None:
-            assert len(atom_pair_trajs)==len(ctc_trajs)
-            assert all([len(itraj) == len(iatt) for itraj, iatt in zip(ctc_trajs, atom_pair_trajs)]), "atom_pair_trajs does not have the appropiate length"
-            self._atom_pair_trajs = [_np.array(itraj) for itraj in self._atom_pair_trajs]
-            assert all([itraj.shape[1]==2 for itraj in self._atom_pair_trajs])
-    # Trajectories
-    @property
-    def ctc_trajs(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return self._ctc_trajs
-
-    @property
-    def atom_pair_trajs(self):
-        return self._atom_pair_trajs
-
-    @property
-    def time_trajs(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return self._time_trajs
-
-    @property
-    def trajs(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return self._trajs
-
-    @property
-    def feat_trajs(self):
-        return self.ctc_trajs
-
-class _NumberOfthings(object):
-
-    def __init__(self, n_trajs, n_frames):
-        self._n_trajs = n_trajs
-        self._n_frames = n_frames
-
-    @property
-    def n_trajs(self):
-        """
-
-        Returns
-        -------
-        int, total number of trajectories that were passed.
-
-        """
-        return self._n_trajs
-
-    @property
-    def n_frames(self):
-        """
-
-        Returns
-        -------
-        list, list of frames in each trajectory.
-
-        """
-        return self._n_frames
-
-    @property
-    def n_frames_total(self):
-        return _np.sum(self._n_frames)
-
-class _Residues(object):
-    def __init__(self, res_idxs_pair,
-                 residue_names,
-                 anchor_residue_idx=None,
-                 consensus_labels=None,
-                 top=None):
-
-        assert len(res_idxs_pair)==2
-        assert all([isinstance(ii,int) for ii in res_idxs_pair])
-        assert res_idxs_pair[0]!=res_idxs_pair[1]
-
-        self._res_idxs_pair = _np.array(res_idxs_pair)
-        self._residue_names = residue_names
-
-        if anchor_residue_idx is not None:
-            assert anchor_residue_idx in res_idxs_pair
-        self._anchor_residue_index = anchor_residue_idx
-        self._partner_residue_index = None
-        self._anchor_index = None
-        self._partner_index = None
-        self._anchor_residue = None
-        self._partner_residue = None
-        if self._anchor_residue_index is not None:
-            assert self._anchor_residue_index in self.idxs_pair
-            self._anchor_index = _np.argwhere(self.idxs_pair == self.anchor_residue_index).squeeze()
-            self._partner_index = _np.argwhere(self.idxs_pair != self.anchor_residue_index).squeeze()
-            self._partner_residue_index = self.idxs_pair[self.partner_index]
-            if top is not None:
-                self._anchor_residue =  top.residue(self.anchor_residue_index)
-                self._partner_residue = top.residue(self.partner_residue_index)
-
-        if consensus_labels is None:
-            consensus_labels = [None,None]
-        assert len(consensus_labels)==2
-        self._consensus_labels = consensus_labels
-
-    @property
-    def idxs_pair(self):
-        """
-
-        Returns
-        -------
-        list of residue index pair passed
-
-        """
-        return self._res_idxs_pair
-
-    @property
-    def names(self):
-        """
-
-        Returns
-        -------
-        list, for each residue index in the residue contact pair, the corresponding residue name from the topology file.
-        example : ['GLU30','VAL212']
-
-        """
-        return self._residue_names
-
-    @property
-    def names_short(self):
-        """
-
-        Returns
-        -------
-        list, for each residue name in the residue contact pair, the corresponding short residue name from the topology file.
-        example : ['E30', 'V212']
-
-        """
-        return [_shorten_AA(rr, substitute_fail="long", keep_index=True) for rr in self.names]
-
-    @property
-    def anchor_residue(self):
-        """
-
-        Returns
-        -------
-        str, anchor residue if anchor residue index is provided else None
-
-        """
-        return self._anchor_residue
-
-    @property
-    def partner_residue(self):
-        """
-
-        Returns
-        -------
-        str, partner residue if partner residue index is provided else None
-
-        """
-        return self._partner_residue
-
-    @property
-    def anchor_residue_index(self):
-        """
-
-        Returns
-        -------
-        int, anchor residue index if passed else None(default)
-
-        """
-        return self._anchor_residue_index
-
-    @property
-    def partner_residue_index(self):
-        """
-
-        Returns
-        -------
-        int, partner residue if passed else (default)
-
-        """
-        return self._partner_residue_index
-
-    @property
-    def anchor_index(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return self._anchor_index
-
-    @property
-    def partner_index(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return self._partner_index
-
-    @property
-    def consensus_labels(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return self._consensus_labels
-
-class _NeighborhoodNames(object):
-
-    def __init__(self, residue_container, fragment_container):
-        # Eliminate a lot of assertions down the line
-        assert residue_container.anchor_index is not None, ValueError("Cannot instantiate if the residue container does not have an anchor residue")
-        # TODO not enough protection for the containers, but easier code
-        # better forgiveness than permission?
-
-        self._residues = residue_container
-        self._fragments = fragment_container
-
-    @property
-    def residues(self):
-        return self._residues
-
-    @property
-    def fragments(self):
-        return self._fragments
-
-    @property
-    def anchor_fragment(self):
-        """
-
-        Returns
-        -------
-        str, fragment name in which the anchor residue is present.
-
-        """
-        return self.fragments.names[self.residues.anchor_index]
-
-    @property
-    def partner_fragment(self):
-        """
-
-        Returns
-        -------
-        str, fragment name in which the partner residue is present
-
-        """
-        return self.fragments.names[self.residues.partner_index]
-
-    @property
-    def partner_fragment_consensus(self):
-        """
-
-        Returns
-        -------
-        consensus label of the partner residue
-
-        """
-        if self.residues.consensus_labels is not None:
-            return self.residues.consensus_labels[self.residues.partner_index]
-        else:
-            return None
-
-    @property
-    def anchor_fragment_consensus(self):
-        """
-
-        Returns
-        -------
-        consensus label of the anchor residue. If no anchor_index is present then returns None
-
-        """
-        if self.residues.consensus_labels is not None:
-            return self.residues.consensus_labels[self.residues.anchor_index]
-        else:
-            return None
-
-    @property
-    def partner_fragment_best(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return auto_format_fragment_string(self.partner_fragment,
-                                           self.partner_fragment_consensus)
-
-    @property
-    def anchor_fragment_best(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return auto_format_fragment_string(self.anchor_fragment,
-                                           self.anchor_fragment_consensus)
-
-    @property
-    def anchor_res_and_fragment_str(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return '%s@%s' % (self.anchor_residue,
-                          self.anchor_fragment_best)
-
-    @property
-    def anchor_residue(self):
-        return self.residues.names[self.residues.anchor_index]
-
-    @property
-    def partner_residue(self):
-        return self.residues.names[self.residues.partner_index]
-
-    @property
-    def anchor_residue_short(self):
-        return self.residues.names_short[self.residues.anchor_index]
-
-    @property
-    def partner_residue_short(self):
-        return self.residues.names_short[self.residues.partner_index]
-
-    @property
-    def anchor_res_and_fragment_str_short(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return '%s@%s' % (self.anchor_residue_short,
-                          self.anchor_fragment_best)
-
-    @property
-    def partner_res_and_fragment_str(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return '%s@%s' % (self.partner_residue,
-                          self.partner_fragment_best)
-
-    @property
-    def partner_res_and_fragment_str_short(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return '%s@%s' % (self.partner_residue_short,
-                          self.partner_fragment_best)
-
-class _ContactLabels(object):
-
-    def __init__(self,
-                 n_trajs,
-                 residue_container,
-                 fragment_container=None,
-                 trajs=None
-                 ):
-
-        self._trajs = trajs
-        self._n_trajs = n_trajs
-        self._residues = residue_container
-        self._fragments = fragment_container
-        if self._fragments is None:
-            self._fragnames = [None, None]
-        else:
-            self._fragnames = self._fragments.names
-
-    @property
-    def trajlabels(self):
-        """
-
-        Returns
-        -------
-        list, list of labels for each trajectory
-        If labels were not passed, then labels like 'traj 0','traj 1' and so on are assigned
-        If :obj:`mdtraj.Trajectory` objects were passed, then the "mdtraj" descriptor will be used
-        If filenames were passed, then the extension will be cut-off
-        """
-
-        if self._trajs is None:
-            trajlabels = ['traj %u' % ii for ii in range(self._n_trajs)]
-        else:
-            if isinstance(self._trajs[0], _md.Trajectory):
-                trajlabels = ['mdtraj.%02u' % ii for ii in range(self._n_trajs)]
-            else:
-                trajlabels = [_path.splitext(ii)[0] for ii in self._trajs]
-
-        return trajlabels
-
-    @property
-    def ctc_label_no_fragments(self):
-        return "%s-%s"%(self._residues.names[0], self._residues.names[1])
-
-    @property
-    def ctc_label_no_fragments_short_AA(self):
-        return "%s-%s" % (self._residues.names_short[0], self._residues.names_short[1])
-
-    @property
-    def ctc_label_w_fragments(self):
-        """
-
-        Returns
-        -------
-        str,
-
-        """
-
-        ctc_label = '%s%s-%s%s' % (self._residues.names[0],
-                               auto_format_fragment_string(self._fragnames[0],
-                                                           self._residues.consensus_labels[0],
-                                                           fmt="@%s"),
-                               self._residues.names[1],
-                               auto_format_fragment_string(self._fragnames[1],
-                                                           self._residues.consensus_labels[1],
-                                                           fmt="@%s"))
-        return ctc_label
-
-    @property
-    def ctc_label_short_AA_w_fragments(self):
-        """
-
-        Returns
-        -------
-        str,
-
-        """
-        ctc_label = '%s%s-%s%s' % (self._residues.names_short[0],
-                                     auto_format_fragment_string(self._fragnames[0],
-                                                                 self._residues.consensus_labels[0],
-                                                                 fmt="@%s"),
-                                     self._residues.names_short[1],
-                                     auto_format_fragment_string(self._fragnames[1],
-                                                                 self._residues.consensus_labels[0],
-                                                                 fmt="@%s"))
-
-        return ctc_label
-
-    def __str__(self):
-        istr = ["%s at %s with properties"%(type(self),id(self))]
-        unprinted = []
-        for iattr in [iattr for iattr in dir(self) if not iattr.startswith("__")]:
-            if iattr[0]!="_":
-                istr.append("%s:"%iattr)
-                istr.append(" "+str(getattr(self,iattr)))
-                istr.append(" ")
-
-            else:
-                unprinted.append(iattr)
-        print(istr)
-        return "\n".join(istr+["Unprinted"]+unprinted)
-
-class _Fragments(object):
-
-    def __init__(self,
-                 fragment_idxs=None,
-                 fragment_names=None,
-                 fragment_colors=None,
-                 ):
-        self._fragment_idxs = fragment_idxs
-        self._fragment_colors = fragment_colors
-
-        if fragment_names is None:
-            # assert self.idxs is not None
-            # self._fragment_names = self._fragment_idxs
-            if self.idxs is not None:
-                self._fragment_names = [str(fidx) for fidx in self._fragment_idxs]
-            else:
-                self._fragment_names = [None, None]
-        else:
-            assert len(fragment_names)==2
-            self._fragment_names = fragment_names
-        self._fragment_colors = fragment_colors
-
-    @property
-    def names(self):
-        """
-
-        Returns
-        -------
-        list of list, Fragment names if passed, else fragment idxs. If both are not available then None(default)
-
-        """
-        return self._fragment_names
-
-    @property
-    def idxs(self):
-        """
-
-        Returns
-        -------
-        list of list, Fragment idxs if passed, else None(default)
-
-        """
-        return self._fragment_idxs
-
-    @property
-    def colors(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return self._fragment_colors
-
-class ContactPair(object):
-    r"""Class for abstracting a single contact over many trajectory"""
-    #todo consider packing some of this stuff in the site_obj class
-    def __init__(self, res_idxs_pair,
-                 ctc_trajs,
-                 time_trajs,
-                 top=None,
-                 trajs=None,
-                 atom_pair_trajs=None,
-                 fragment_idxs=None,
-                 fragment_names=None,
-                 fragment_colors=None,
-                 anchor_residue_idx=None,
-                 consensus_labels=None):
-        """
-
-        Parameters
-        ----------
-        res_idxs_pair : iterable of two ints
-            pair of residue indices, corresponding to the zero-indexed, serial number of the residues
-        ctc_trajs : list of iterables of floats
-            time traces of the contact. len(ctc_trajs) is N_trajs. Each traj can have different lenghts
-            Will be cast into arrays
-        time_trajs : list of iterables of floats
-            time traces of the time-values, in ps. Not having the same shape as ctc_trajs will raise an error
-        top : :py:class:`mdtraj.Topology`, default is None
-            topology associated with the contact
-        trajs: list of :obj:`mdtraj.Trajectory` objects, default is None
-            The molecular trajectories responsible for which the contact has been evaluated.
-            Not having the same shape as ctc_trajs will raise an error
-        atom_pair_trajs: list of iterables of integers, default is None
-            Time traces of the the pair of atom indices responsible for the distance in :obj:`ctc_trajs`
-            Has to be of len(ctc_trajs) and each iterable of shape(Nframes, 2)
-        fragment_idxs : iterable of two ints, default is None
-            Indices of the fragments the residues of :obj:`res_idxs_pair`
-        fragment_names : iterable of two strings, default is None
-            Names of the fragments the residues of :obj:`res_idxs_pair`
-        fragment_colors : iterable of matplotlib.colors, default is None
-            Colors associated to the fragments of the residues of :obj:`res_idxs_pair`
-        anchor_residue_idx : int, default is None
-            Label this residue as the `anchor` of the contact, which will later allow
-            for the implementation of a :obj:`neighborhood` (see docs).
-            Has to be in :obj:`res_idxs_pair`.
-
-            Note
-            ----
-            Using this argument will automatically populate other properties, like (this is not a complete list)
-             - :obj:`anchor_index` will contain the [0,1] index of the anchor residue in :obj:`res_idxs_pair`
-             - :obj:`partner_index` will contain the [0,1] index of the partner residue in :obj:`res_idxs_pair`
-             - :obj:`partner_residue_index` will contain the other index of :obj:`res_idx_pair`
-            and other properties which depend on having defined an anchor and a partner
-
-            Furhtermore, if a topology is parsed as an argument:
-             - :obj:`anchor_residue` will contain the anchor residue as an :obj:`mdtraj.core.Topology.Residue` object
-             - :obj:`partner_residue` will contain the partner residue as an :obj:`mdtraj.core.Topology.Residue` object
-
-
-        consensus_labels : iterable of strings, default is None
-            Consensus nomenclature of the residues of :obj:`res_idxs_pair`
-        """
-
-        # Initialize the attribute holding classes
-        self._attribute_trajs = _TimeTraces(ctc_trajs, time_trajs, trajs, atom_pair_trajs)
-        self._attribute_n = _NumberOfthings(len(self._attribute_trajs.ctc_trajs),
-                                            [len(itraj) for itraj in self._attribute_trajs.ctc_trajs])
-
-        # Fail as early as possible
-        _np.testing.assert_equal(self._attribute_n.n_trajs, len(self._attribute_trajs.time_trajs))
-
-        residue_names = [str(ii) for ii in res_idxs_pair]
-        if top is not None:
-            residue_names = [str(top.residue(ii)) for ii in res_idxs_pair]
-
-        self._attribute_residues = _Residues(res_idxs_pair,
-                                             residue_names,
-                                             anchor_residue_idx=anchor_residue_idx,
-                                             top=top)
-
-        self._attribute_fragments = _Fragments(fragment_idxs,
-                                               fragment_names,
-                                               fragment_colors)
-
-
-        self._attribute_labels = _ContactLabels(self._attribute_n.n_trajs,
-                                                self._attribute_residues,
-                                                self._attribute_fragments,
-                                                trajs=trajs)
-
-        if self._attribute_residues.anchor_residue_index is not None:
-            self._attribute_neighborhood_names = _NeighborhoodNames(self._attribute_residues,
-                                                                    self._attribute_fragments)
-        else:
-            self._attribute_neighborhood_names = None
-
-        self._top = top
-        self._time_max = _np.max(_np.hstack(time_trajs))
-        self._binarized_trajs = {}
-        self._consensus_labels = consensus_labels
-
-    #Trajectories
-    @property
-    def time_traces(self):
-        return self._attribute_trajs
-
-    # Accounting
-    @property
-    def n(self):
-        return self._attribute_n
-
-    # Residues
-    @property
-    def residues(self):
-        return self._attribute_residues
-
-    # Fragments
-    @property
-    def fragments(self):
-        return self._attribute_fragments
-
-    # Neighborhood
-    @property
-    def neighborhood(self):
-        return self._attribute_neighborhood_names
-
-    # Labels
-    @property
-    def labels(self):
-        return self._attribute_labels
-
-    @property
-    def time_max(self):
-        """
-
-        Returns
-        -------
-        int or float, maximum time from list of list of time
-
-        """
-        return self._time_max
-
-    @property
-    def label(self):
-        return self.labels.ctc_label_no_fragments
-
-    @property
-    def top(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return self._top
-
-    @property
-    def topology(self):
-        """
-
-        Returns
-        -------
-
-        """
-        return self._top
-
-    def binarize_trajs(self, ctc_cutoff_Ang,
-                       #switch_off_Ang=None
-                       ):
-        """
-        Turn each distance-trajectory into a boolean using a cutoff.
-        The comparison is done using "<=", s.t. d=ctc_cutoff yields True
-
-        Whereas :obj:`ctc_cutoff_Ang` is in Angstrom, the trajectories are
-        in nm, as produced by :obj:`mdtraj.compute_contacts`
-
-        Note
-        ----
-        The method creates a dictionary in self._binarized_trajs keyed
-        with the ctc_cutoff_Ang, to avoid re-computing already binarized
-        trajs
-
-        Parameters
-        ----------
-        ctc_cutoff_Ang: float
-            Cutoff in Angstrom. The comparison operator is "<="
-
-
-        Returns
-        -------
-        list of boolean arrays with the same shape as the trajectories
-
-        """
-        transform = lambda itraj: itraj <= ctc_cutoff_Ang / 10
-
-        """
-        if switch_off_Ang is not None:
-            assert isinstance(switch_off_Ang, float) and switch_off_Ang>0
-            m = -1 / (switch_off_Ang/10)
-            b = 1 +  (ctc_cutoff_Ang / switch_off_Ang)
-            def transform(d):
-                res = m * d + b
-                res[d<ctc_cutoff_Ang/10]=1
-                res[d > (ctc_cutoff_Ang + switch_off_Ang)/10]=0
-
-                return res
-        """
-
-        try:
-            result = self._binarized_trajs[ctc_cutoff_Ang]
-            #print("Grabbing already binarized %3.2f"%ctc_cutoff_Ang)
-        except KeyError:
-            #print("First time binarizing %3.2f. Storing them"%ctc_cutoff_Ang)
-            result = [transform(itraj) for itraj in self.time_traces.ctc_trajs]
-            self._binarized_trajs[ctc_cutoff_Ang] = result
-        #print([ires.shape for ires in result])
-        return result
-
-    def frequency_per_traj(self, ctc_cutoff_Ang):
-        """
-        Contact frequencies for each trajectory
-
-        Parameters
-        ----------
-        ctc_cutoff_Ang : float
-            Cutoff in Angstrom. The comparison operator is "<="
-
-        Returns
-        -------
-        freqs : array of len self.n.n_trajs with floats between [0,1]
-
-        """
-
-        return _np.array([_np.mean(itraj) for itraj in self.binarize_trajs(ctc_cutoff_Ang)])
-
-    def frequency_overall_trajs(self, ctc_cutoff_Ang):
-        """
-        How many times this contact is formed overall frames. 
-        Frequencies have values between 0 and 1
-        
-        Parameters
-        ----------
-        ctc_cutoff_Ang : float
-            Cutoff in Angstrom. The comparison operator is "<="
-
-        Returns
-        -------
-        freq: float
-            Frequency of the contact over all trajectories
-
-        """
-        return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang)))
-
-
-    def frequency_dict(self, ctc_cutoff_Ang,
-                       AA_format='short',
-                       lb_format='split'):
-        """
-        Returns the :obj:`frequency_overall_trajs` as a more informative
-        dictionary with keys "freq", "residue idxs", "label"
-
-        Parameters
-        ----------
-        ctc_cutoff_Ang : float
-            Cutoff in Angstrom. The comparison operator is "<="
-        AA_format : str, default is "short"
-            Amino-acid format ("E35" or "GLU25") for the value
-            fdict["label"]. Can also be "long"
-        lb_format : str, default is split
-            Label format. Splitting the contact label produces
-            easier-to-read stacks of contact labels
-            "E25@3.50    -    A35@4.50"
-
-        Returns
-        -------
-        fdcit : dictionary
-
-        """
-        if AA_format== 'short':
-            label = self.labels.ctc_label_short_AA_w_fragments
-        elif AA_format== 'long':
-            label = self.labels.ctc_label_w_fragments
-        else:
-            raise ValueError(AA_format)
-
-        if lb_format=='split':
-            label= '%-15s - %-15s'%tuple(label.split('-'))
-        elif lb_format=='join':
-            pass
-        else:
-            raise ValueError(lb_format)
-
-        return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang),
-                "residue idxs":'%u %u'%tuple(self.residues.idxs_pair),
-                "label":label}
-
-    def distro_overall_trajs(self, bins=10):
-        """
-
-        Parameters
-        ----------
-        bins
-
-        Returns
-        -------
-        x, h
-
-        """
-        return _np.histogram(_np.hstack(self.time_traces.ctc_trajs),
-                             bins=bins)
-
-    def _overall_stacked_formed_atoms(self, ctc_cutoff_Ang):
-        r"""
-        Returns the pairs of atom-indices responsible for the contact,
-        only for the frames in which the contact was formed at the given cutoff
-
-        Parameters
-        ----------
-        ctc_cutoff_Ang : float
-            Cutoff in Angstrom. The comparison operator is "<="
-
-        Returns
-        -------
-        formed_atom_pairs : _np.ndarray of len (N,2)
-
-        """
-
-        bintrajs = self.binarize_trajs(ctc_cutoff_Ang)
-        formed_atom_pair_trajs = [atraj[itraj] for atraj, itraj in zip(self.time_traces.atom_pair_trajs, bintrajs)]
-
-        return _np.vstack(formed_atom_pair_trajs)
-
-    def count_formed_atom_pairs(self, ctc_cutoff_Ang,
-                                sort=True):
-        r"""
-        Count how many times each atom-pair is considered formed overall trajectory
-
-        Parameters
-        ----------
-        ctc_cutoff_Ang : float
-            Cutoff in Angstrom. The comparison operator is "<="
-        sort: boolean, default is True
-            Return the counts by descending order
-
-        Returns
-        -------
-        atom_pairs, counts : list of atom pairs, list of ints
-        Note that no dictionary is returned bc atom_pairs is not hashable
-        """
-
-        assert self.time_traces.atom_pair_trajs is not None, ValueError("Cannot use this method if no atom_pair_trajs were parsed")
-        counts = _col_Counter(["%u-%u"%tuple(fap) for fap in self._overall_stacked_formed_atoms(ctc_cutoff_Ang)])
-        keys, counts = list(counts.keys()), list(counts.values())
-        keys = [[int(ii) for ii in key.split("-")] for key in keys]
-        if sort:
-            keys = [keys[ii] for ii in _np.argsort(counts)[::-1]]
-            counts=sorted(counts)[::-1]
-        return keys, counts
-
-
-    def relative_frequency_of_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang,
-                                                              keep_resname=False,
-                                                              aggregate_by_atomtype=True,
-                                                              min_freq=.05):
-        r"""
-        For those frames in which the contact is formed, group them by relative frequencies
-        of individual atom pairs
-        
-        Parameters
-        ----------
-        ctc_cutoff_Ang: float
-            Cutoff in Angstrom. The comparison operator is "<="
-        keep_resname: bool, default is False
-            Keep the atom's residue name in its descriptor. Only make
-            sense if consolidate_by_atom_type is False
-        aggregate_by_atomtype: bool, default is True
-            Aggregate the frequencies of the contact by tye atom types involved.
-            Atom types are backbone, sidechain or other (BB,SC, X)
-        min_freq: float, default is .05
-            Do not report relative frequencies below this cutoff, e.g.
-            "BB-BB":.9, "BB-SC":0.03, "SC-SC":0.03, "SC-BB":0.03
-            gets reported as "BB-BB":.9
-
-        Returns
-        -------
-        out_dict : dictionary with the relative freqs
-        """
-        assert self.top is not None, "Missing a topolgy object"
-        atom_pairs, counts = self.count_formed_atom_pairs(ctc_cutoff_Ang)
-        atom_pairs_as_atoms = [[self.top.atom(ii) for ii in pair] for pair in atom_pairs]
-
-        if aggregate_by_atomtype:
-            dict_out = _sum_ctc_freqs_by_atom_type(atom_pairs_as_atoms, counts)
-            return {key: val / _np.sum(counts) for key, val in dict_out.items() if
-                    val / _np.sum(counts) > min_freq}
-        else:
-            if keep_resname:
-                atom_pairs = ['-'.join([str(ii) for ii in key]) for key in atom_pairs_as_atoms]
-            else:
-                atom_pairs = ['-'.join([ii.name for ii in key]) for key in atom_pairs_as_atoms]
-            return {key:count/_np.sum(counts) for key, count in zip(atom_pairs, counts)
-                    if count/_np.sum(counts)>min_freq}
-
-    def __str__(self):
-
-        istr = ["%s at %s with public stuff" % (type(self), id(self))]
-        for iattr in dir(self):
-            if iattr[0] != "_":
-                istr.append("%s:" % iattr)
-                istr.append(" " + str(getattr(self, iattr)))
-                istr.append(" ")
-        return "\n".join(istr)
-
 
 
 def contact_map_to_dict(imat, top,
