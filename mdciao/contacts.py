@@ -1476,6 +1476,30 @@ class ContactPair(object):
                          ylim_Ang=10,
                          max_handles_per_row=4,
                          ):
+        r"""
+        Plot this contact's timetraces for all trajs onto :obj:`ax`
+        Parameters
+        ----------
+        iax
+        color_scheme : list, default is None
+            Pass a list of colors understandable by matplotlib
+        ctc_cutoff_Ang
+        n_smooth_hw: int, default is 0
+            Size, in frames, of half the window size of the
+            smoothing window
+        dt : float, default is 1
+            The how units in :obj:`t_unit` one frame represents
+        gray_background
+        shorten_AAs
+        t_unit
+        ylim_Ang
+        max_handles_per_row : int, default is
+            legend control
+
+        Returns
+        -------
+
+        """
         if color_scheme is None:
             color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
         color_scheme = _np.tile(color_scheme, _np.ceil(self.n.n_trajs / len(color_scheme)).astype(int) + 1)
