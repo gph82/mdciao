@@ -12,7 +12,7 @@ from .str_and_dict_utils import \
     _replace4latex, \
     iterate_and_inform_lambdas \
 
-from .plots import plot_w_smoothing_auto, plot_contact
+from .plots import plot_w_smoothing_auto
 from collections import defaultdict, Counter as _col_Counter
 
 import matplotlib.pyplot as _plt
@@ -1464,6 +1464,61 @@ class ContactPair(object):
             return {key:count/_np.sum(counts) for key, count in zip(atom_pairs, counts)
                     if count/_np.sum(counts)>min_freq}
 
+    def plot_timetrace(self,
+                         iax,
+                         color_scheme=None,
+                         ctc_cutoff_Ang=0,
+                         n_smooth_hw=0,
+                         dt=1,
+                         gray_background=False,
+                         shorten_AAs=False,
+                         t_unit='ps',
+                         ylim_Ang=10,
+                         max_handles_per_row=4,
+                         ):
+        if color_scheme is None:
+            color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
+        color_scheme = _np.tile(color_scheme, _np.ceil(self.n.n_trajs / len(color_scheme)).astype(int) + 1)
+        iax.set_ylabel('D / $\\AA$', rotation=90)
+        if isinstance(ylim_Ang, (int, float)):
+            iax.set_ylim([0, ylim_Ang])
+        elif isinstance(ylim_Ang, str) and ylim_Ang.lower() == 'auto':
+            pass
+        else:
+            raise ValueError("Cannot understand your ylim value %s of type %s" % (ylim_Ang, type(ylim_Ang)))
+        for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(self.time_traces.feat_trajs,
+                                                                    self.time_traces.time_trajs,
+                                                                    self.labels.trajstrs)):
+
+            ilabel = '%s' % trjlabel
+            if ctc_cutoff_Ang > 0:
+                ilabel += ' (%u%%)' % (self.frequency_per_traj(ctc_cutoff_Ang)[traj_idx] * 100)
+
+            plot_w_smoothing_auto(iax, itime * dt, ictc_traj * 10,
+                                  ilabel,
+                                  color_scheme[traj_idx],
+                                  gray_background=gray_background,
+                                  n_smooth_hw=n_smooth_hw)
+        iax.legend(loc=1, fontsize=_rcParams["font.size"] * .75,
+                   ncol=_np.ceil(self.n.n_trajs / max_handles_per_row).astype(int)
+                   )
+        ctc_label = self.label
+        if shorten_AAs:
+            ctc_label = self.ctc_label_short
+        ctc_label = ctc_label.replace("@None", "")
+        if ctc_cutoff_Ang > 0:
+            ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang) * 100)
+
+        iax.text(_np.mean(iax.get_xlim()), 1 * 10 / _np.max((10, iax.get_ylim()[1])),  # fudge factor for labels
+                 ctc_label,
+                 ha='center')
+        if ctc_cutoff_Ang > 0:
+            iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
+
+        iax.set_xlabel('t / %s' % _replace4latex(t_unit))
+        iax.set_xlim([0, self.time_max * dt])
+        iax.set_ylim([0, iax.get_ylim()[1]])
+
     def __str__(self):
 
         istr = ["%s at %s with public stuff" % (type(self), id(self))]
@@ -2320,7 +2375,21 @@ class ContactGroup(object):
                           skip_timedep=False,
                           **plot_contact_kwargs,
                           ):
+        r"""
+        plot the time-traces of the all the contacts
 
+        Parameters
+        ----------
+        panelheight : int
+        plot_N_ctcs : bool, default is True
+        pop_N_ctcs : bool, default is False
+        skip_timedep : bool, default is False
+        plot_contact_kwargs
+
+        Returns
+        -------
+
+        """
         figs_to_return = []
         if pop_N_ctcs:
             assert plot_N_ctcs, "If just_N_ctcs is True, plot_N_ctcs has to be True also"
@@ -2343,7 +2412,7 @@ class ContactGroup(object):
 
             # Plot individual contacts
             for ictc in self._contacts:
-                plot_contact(ictc,next(axes_iter),
+                ictc.plot_timetrace(next(axes_iter),
                              **plot_contact_kwargs
                              )
 
