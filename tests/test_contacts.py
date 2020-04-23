@@ -756,6 +756,28 @@ class TestContactPair(unittest.TestCase):
                           )
         print(cpt)
 
+    def test_plot_timetrace_just_works(self):
+        CP = ContactPair([0, 1],
+                          [[.10, .25, .13], [.20, .21, .23, .24]],
+                          [[0, 1, 2], [0, 1, 2, 3]]
+                                                    )
+        _plt.figure()
+        iax = _plt.gca()
+        CP.plot_timetrace(iax)
+
+    def test_plot_timetrace_just_options(self):
+        CP = ContactPair([0, 1],
+                         [[.10, .25, .13], [.20, .21, .23, .24]],
+                         [[0, 1, 2], [0, 1, 2, 3]],
+                         top=self.geom.top
+                         )
+        _plt.figure()
+        iax = _plt.gca()
+        CP.plot_timetrace(iax,ctc_cutoff_Ang=2,
+                          shorten_AAs=True )
+
+        iax.figure.savefig("tst.png")
+
 class Test_atom_type(unittest.TestCase):
     def test_works(self):
         top = md.load(test_filenames.prot1_pdb).top
