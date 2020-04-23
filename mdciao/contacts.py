@@ -1016,7 +1016,10 @@ class _Fragments(object):
                  fragment_colors=None,
                  ):
         self._fragment_idxs = fragment_idxs
-        self._fragment_colors = fragment_colors
+        if fragment_colors is None:
+            self._fragment_colors = [None,None]
+        else:
+            self._fragment_colors = fragment_colors
 
         if fragment_names is None:
             # assert self.idxs is not None
@@ -1028,7 +1031,6 @@ class _Fragments(object):
         else:
             assert len(fragment_names)==2
             self._fragment_names = fragment_names
-        self._fragment_colors = fragment_colors
 
     @property
     def names(self):
@@ -1318,7 +1320,7 @@ class ContactPair(object):
 
     def frequency_dict(self, ctc_cutoff_Ang,
                        AA_format='short',
-                       lb_format='split'):
+                       split_label=True):
         """
         Returns the :obj:`frequency_overall_trajs` as a more informative
         dictionary with keys "freq", "residue idxs", "label"
@@ -1330,10 +1332,11 @@ class ContactPair(object):
         AA_format : str, default is "short"
             Amino-acid format ("E35" or "GLU25") for the value
             fdict["label"]. Can also be "long"
-        lb_format : str, default is split
-            Label format. Splitting the contact label produces
-            easier-to-read stacks of contact labels
+        split_label : bool, defaultis True
+            Split the labels so that stacked contact labels
+            become easier-to-read in plain ascii formats
             "E25@3.50    -    A35@4.50"
+            "A30@longfrag-    A35@4.50
 
         Returns
         -------
@@ -1347,12 +1350,8 @@ class ContactPair(object):
         else:
             raise ValueError(AA_format)
 
-        if lb_format=='split':
+        if split_label:
             label= '%-15s - %-15s'%tuple(label.split('-'))
-        elif lb_format=='join':
-            pass
-        else:
-            raise ValueError(lb_format)
 
         return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang),
                 "residue idxs":'%u %u'%tuple(self.residues.idxs_pair),
@@ -1498,7 +1497,7 @@ class ContactGroup(object):
         else:
             # All contacts have the same number of trajs
             self._n_trajs = _np.unique([ictc.n.n_trajs for ictc in self._contacts])
-            assert len(self._n_trajs)==1, (self._n_trajs, [ictc._n_trajs for ictc in self._contacts])
+            assert len(self._n_trajs)==1, (self._n_trajs, [ictc.n.n_trajs for ictc in self._contacts])
             self._n_trajs=self._n_trajs[0]
 
             ref_ctc : ContactPair #TODO check if type-hinting is needed or it's just slow IDE over sshfs
@@ -1526,6 +1525,9 @@ class ContactGroup(object):
                 #    else:
                 #        pass
 
+            #TODO
+            # This is the part were short residue-names are used
+            # instead of the consensus labels...rethink this perhaps?
             self._trajlabels = ref_ctc.labels.trajstrs
             self._cons2resname = {}
             for key, val in zip(_np.hstack(self.consensus_labels),
@@ -1537,7 +1539,15 @@ class ContactGroup(object):
                 else:
                     assert self._cons2resname[key]==val,(self._cons2resname[key],key,val)
 
-            self._resname2cons = {val: key for key, val in self._cons2resname.items()}
+            # Check the same residue always has the same consensus label
+            self._resname2cons = {}
+            for cl, kres in self._cons2resname.items():
+                assert kres not in self._resname2cons.keys(),"Consensus label '%s' " \
+                                                              "would overwrite existing '%s' for " \
+                                                              "residue with name '" \
+                                                             "%s'. " \
+                                                              "Check your consensus labels"%(cl,self._resname2cons[kres], val)
+                self._resname2cons[kres]=cl
 
     #todo again the dicussion about named tuples vs a miriad of properties
     # I am opting for properties because of easyness of documenting i
@@ -1604,7 +1614,6 @@ class ContactGroup(object):
             #todo dont print so much
             #todo let it fail?
             print("Not all contact objects have an anchor_residue_index. Returning None")
-            pass
         else:
             shared = _np.unique([ictc.residues.anchor_residue_index for ictc in self._contacts])
             if len(shared) == 1:
@@ -1631,11 +1640,17 @@ class ContactGroup(object):
         assert self.shared_anchor_residue_index is not None
         return [ictc.neighborhood.partner_res_and_fragment_str_short for ictc in self._contacts]
 
-    # TODO cannot find code that uses this at the moment
-    #@property
-    #def anchor_fragment_color(self):
-    #    assert self.shared_anchor_residue_index is not None
-    #    return self._contacts[0].fragments.colors[self._contacts[0].residues.anchor_index]
+    @property
+    def anchor_fragment_color(self):
+        assert self.shared_anchor_residue_index is not None
+        _col = self._contacts[0].fragments.colors[self._contacts[0].residues.anchor_index]
+        cond1 = not any([ictc.fragments.colors[ictc.residues.anchor_index] is None for ictc in self._contacts])
+        cond2 = all([ictc.fragments.colors[ictc.residues.anchor_index] == _col for ictc in self._contacts[1:]])
+        if cond1 and cond2:
+            return _col
+        else:
+            print("Not all anchors have or share the same color, returning None")
+            return None
 
     #todo there is redundant code for generating interface labels!
     # not sure we need it here, don't want to be testing now
@@ -1662,6 +1677,36 @@ class ContactGroup(object):
                              " should have the same topology, but "
                              "I found these hashes %s"%top)
 
+    def binarize_trajs(self, ctc_cutoff_Ang, order='contact'):
+        r"""
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+        order : str, default is "contact"
+            Sort first by contact, then by traj index. Alternative is
+            "traj", i.e. sort first by traj index, then by contact
+
+        Returns
+        -------
+        bintrajs : list of boolean arrays
+            if order==traj, each item of the list is a 2D np.ndarray
+            with of shape(Nt,n_ctcs), where Nt is the number of frames
+            of that trajectory
+
+        """
+        bintrajs = [ictc.binarize_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
+        if order=='contact':
+            return bintrajs
+        elif order=='traj':
+            _bintrajs = []
+            for ii in range(self.n_trajs):
+                _bintrajs.append(_np.vstack([itraj[ii] for itraj in bintrajs]).T)
+            bintrajs = _bintrajs
+        else:
+            raise ValueError(order)
+        return bintrajs
+
     def residx2ctcidx(self,idx):
         r"""
         Indices of the contacts and the position (0 or 1) in which the residue with residue :obj.`idx` appears
@@ -1680,17 +1725,146 @@ class ContactGroup(object):
                 ctc_idxs.append([ii,_np.argwhere(pair==idx).squeeze()])
         return _np.vstack(ctc_idxs)
 
+    # TODO think about implementing a frequency class, but how
+    # to do so without circular dependency to the ContactGroup object itself?
+    def frequency_per_contact(self, ctc_cutoff_Ang):
+        r"""
+        Frequency per contact over all trajs
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+        freqs : 1D np.ndarray of len(n_ctcs)
+        """
+        return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts])
+
+    def frequency_dict_per_residue_idx(self, ctc_cutoff_Ang):
+        r"""
+        Dictionary of aggregated :obj:`frequency_per_contact` per residue indices
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+        freqs_dict : dictionary
+            keys are the residue indices present in :obj:`res_idxs_pairs`
+            Values over 1 are possible, example if [0,1], [0,2] are always formed (=1)
+            freqs_dict[0]=2
+
+        """
+        dict_sum = defaultdict(list)
+        for (idx1, idx2), ifreq in zip(self.res_idxs_pairs,
+                                       self.frequency_per_contact(ctc_cutoff_Ang)):
+            dict_sum[idx1].append(ifreq)
+            dict_sum[idx2].append(ifreq)
+        dict_sum = {key: _np.sum(val) for key, val in dict_sum.items()}
+        return dict_sum
+
+    def frequency_dict_per_residue_names(self, ctc_cutoff_Ang,
+                                         sort=True,
+                                         list_by_interface=False,
+                                         return_as_dataframe=False):
+        r"""
+        Dictionary of aggregated :obj:`frequency_per_contact` per residue names,
+        whatever those names are. See :obj:`ContactPair.labels` for more info
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+        sort : bool, default is True
+            Sort by dictionary by descending order of frequencies
+            TODO dicts have order since py 3.x(?) and it is useful for creating
+            a dataframe, then excel_table that's already sorted by descending frequncies
+        list_by_interface : bool, default is False, NotImplemented
+            group the freq_dict by interface residues
+        return_as_dataframe : bool, default is False
+            Return an :obj:`pandas.DataFrame` with the column names labels and freqs
+
+        Returns
+        -------
+
+        """
+        freqs = self.frequency_dict_per_residue_idx(ctc_cutoff_Ang)
+        dict_out = {}
+        keys = list(freqs.keys())
+        if sort:
+            keys = [keys[ii] for ii in _np.argsort(list(freqs.values()))[::-1]]
+        for idx in keys:
+            ifreq = freqs[idx]
+            ctc_idx, pair_idx = self.residx2ctcidx(idx)[0]
+            dict_out[self.ctc_labels[ctc_idx].split("-")[pair_idx]] = ifreq
+
+        if list_by_interface:
+            raise NotImplementedError
+            dict_out = self._freq_name_dict2_interface_dict(dict_out,
+                                                            sort=sort)
+            if return_as_dataframe:
+                dict_out = [_DF({"label": list(dict_out[ii].keys()),
+                                 "freq": list(dict_out[ii].values())}) for ii in [0, 1]]
+        else:
+            if return_as_dataframe:
+                dict_out = _DF({"label": list(dict_out.keys()),
+                                "freq": list(dict_out.values())})
+
+        return dict_out
+
+    """"
+    # TODO this seems to be unused
+    def frequency_table_by_residue(self, ctc_cutoff_Ang,
+                                   list_by_interface=False):
+        dict_list = self.frequency_dict_per_residue_names(ctc_cutoff_Ang,
+                                                     list_by_interface=list_by_interface)
+
+        if list_by_interface:
+            label_bars = list(dict_list[0].keys()) + list(dict_list[1].keys())
+            freqs = _np.array(list(dict_list[0].values()) + list(dict_list[1].values()))
+        else:
+            label_bars, freqs = list(dict_list.keys()), list(dict_list.values())
+
+        return _DF({"label": label_bars,
+                    "freq": freqs})
+    """
+
     def frequency_dict_by_consensus_labels(self, ctc_cutoff_Ang,
                                            return_as_triplets=False,
-                                           sort_by_interface=False):
+                                           sort_by_interface=False,
+                                           include_trilower=False):
+        r"""
+        Return frequencies as a dictionary of dictionaries keyed by consensus labels
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+        return_as_triplets: bool, default is False
+            Return as the dictionary as a list of triplets, s.t.
+            freq_dict[3.50][4.50]=.25 is returned as
+            [[3.50,4.50,.25]]
+            Makes it easier to iterate through in other methods
+        sort_by_interface
+        include_trilower : bool, default is False
+            Include the transposed indexes in the returned dictionary. s.t.
+            the contact pair [3.50][4.50]=.25 also generates [4.50][3.50]=.25
+        Returns
+        -------
+        freqs : dictionary of dictionary or list of triplets (if return_as_triplets is True)
+
+        """
+        assert not any ([ilab[0] is None and ilab[1] is None for ilab in self.consensus_labels])
         dict_out = defaultdict(dict)
         for (key1, key2), ifreq in zip(self.consensus_labels,
                                        self.frequency_per_contact(ctc_cutoff_Ang)):
-
             dict_out[key1][key2] = ifreq
+            if include_trilower:
+                dict_out[key2][key1] = ifreq
+
         dict_out = {key:val for key,val in dict_out.items()}
 
         if sort_by_interface:
+            raise NotImplementedError
             _dict_out = {key:dict_out[key] for key in self.interface_labels_consensus[0] if key in dict_out.keys()}
             assert len(_dict_out)==len(dict_out)
             dict_out = _dict_out
@@ -1706,88 +1880,80 @@ class ContactGroup(object):
             dict_out = _dict_out
         return dict_out
 
-    @property
-    def interface_residxs(self):
-        res = None
-        if self._interface_residxs is not None:
-            res = []
-            for ig in self._interface_residxs:
-                res.append(sorted(set(ig).intersection(_np.unique(self.res_idxs_pairs,
-                                 #return_index=True
-                                 ))))
-        return res
+    def frequency_table(self, ctc_cutoff_Ang,
+                        by_atomtypes=False,
+                        **ctc_fd_kwargs):
+        r"""
+        Output a formatted dataframe with fields "label", "freq" and "sum", optionally
+        dis-aggregated by type of contact in "by_atomtypes"
 
-    @property
-    def interface_labels(self):
-        labs_out = [[],[]]
-        for ii, ints in enumerate(self.interface_residxs):
-            for idx in ints:
-                ctc_idx, pair_idx = self.residx2ctcidx(idx)[0]
-                labs_out[ii].append(self.ctc_labels[ctc_idx].split("-")[pair_idx])
+        Note
+        ----
+        The contacts in the table are sorted by their order in the instantiation
 
-        return labs_out
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+        by_atomtypes: bool, default is False
+            Add a column where the contact is dis-aggregated by the atom-types involved,
+            sidechain or backbone (SC or BB)
+        ctc_fd_kwargs: named optional arguments
+            Check :obj:`ContactPair.frequency_dict` for more info on e.g
+            AA_format='short' and or split_label
 
-    @property
-    def interface_labels_consensus(self):
-        if self._interface_residxs is not None\
-                and not hasattr(self,"_interface_labels_consensus"):
-            labs = [[],[]]
-            for ii, ig in enumerate(self.interface_residxs):
-                for idx in ig:
-                    ctc_idx, res_idx = self.residx2ctcidx(idx)[0]
-                    labs[ii].append(self.consensus_labels[ctc_idx][res_idx])
 
-            return labs
-        elif hasattr(self,"_interface_labels_consensus"):
-            return self._interface_labels_consensus
+        Returns
+        -------
+        df : :obj:`pandas.DataFrame`
+        """
+        idf = _DF([ictc.frequency_dict(ctc_cutoff_Ang, **ctc_fd_kwargs) for ictc in self._contacts])
+        df2return = idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
 
-    @property
-    def interface_orphaned_labels(self):
-        return [[AA for AA in conlabs if "." not in AA] for conlabs in
-                self.interface_labels_consensus]
+        if by_atomtypes:
+            idf = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang)
+            idf = ['(%s)' % (', '.join(['%2u%% %s' % (val * 100, key) for key, val in idict.items()])) for idict in idf]
+            df2return = df2return.join(_DF.from_dict({"by_atomtypes": idf}))
 
-    def interface_relabel_orphans(self):
-        labs_out =[[],[]]
-        for ii, labels in enumerate(self.interface_labels_consensus):
-            for jlab in labels:
-                if jlab in self._orphaned_residues_new_label.keys():
-                    new_lab = self._orphaned_residues_new_label[jlab]
-                    print(jlab, new_lab)
-                    labs_out[ii].append(new_lab)
-                else:
-                    labs_out[ii].append(jlab)
+        return df2return
 
-        self._interface_labels_consensus=labs_out
-        #return labs_out
+    def relative_frequency_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang):
+        r"""
 
-    def frequency_per_contact(self, ctc_cutoff_Ang):
-        return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts])
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+        refreq_dicts : list of dicts
+        """
+        return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
 
     def distro_per_contact(self, nbins=10):
         return [ictc.distro_overall_trajs(bins=nbins) for ictc in self._contacts]
 
-    def binarize_trajs(self, ctc_cutoff_Ang, order='contact'):
-        bintrajs = [ictc.binarize_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
-        if order=='contact':
-            return bintrajs
-        elif order=='traj':
-            _bintrajs = []
-            for ii in range(self.n_trajs):
-                _bintrajs.append(_np.vstack([itraj[ii] for itraj in bintrajs]).T)
-            bintrajs = _bintrajs
-        else:
-            raise ValueError(order)
-        return bintrajs
+    def n_ctcs_timetraces(self, ctc_cutoff_Ang):
+        r"""
+        time-traces of the number of contacts, by summing overall contacts for
+        each frame
 
-    def timedep_n_ctcs(self, ctc_cutoff_Ang):
-        bintrajs = self.binarize_trajs(ctc_cutoff_Ang,order='traj')
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+        nctc_trajs : list of 1D np.ndarrays
+
+        """
+        bintrajs = self.binarize_trajs(ctc_cutoff_Ang, order='traj')
         _n_ctcs_t = []
         for itraj in bintrajs:
             _n_ctcs_t.append(itraj  .sum(1))
         return _n_ctcs_t
 
     def add_ctc_type_to_histo(self, ctc_cutoff_Ang, jax):
-        ctc_type_dict = self.frequency_dict_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang)
+        ctc_type_dict = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang)
         print(ctc_type_dict)
         pass
         #relative_frequency_of_formed_atom_pairs_overall_trajs
@@ -1963,9 +2129,9 @@ class ContactGroup(object):
                       sort=True):
 
         # Base dict
-        freqs_dict = self.frequency_per_residue(ctc_cutoff_Ang,
-                                                sort=sort,
-                                                list_by_interface=list_by_interface)
+        freqs_dict = self.frequency_dict_per_residue_names(ctc_cutoff_Ang,
+                                                           sort=sort,
+                                                           list_by_interface=list_by_interface)
         # TODO this code is repeated in table_by_residue
         if list_by_interface:
             label_bars = list(freqs_dict[0].keys())+list(freqs_dict[1].keys())
@@ -2043,10 +2209,10 @@ class ContactGroup(object):
         if write_interface:
             offset+=1
 
-            idfs = self.frequency_per_residue(ctc_cutoff_Ang,
-                                              sort=sort,
-                                              list_by_interface=True,
-                                              return_as_dataframe=True)
+            idfs = self.frequency_dict_per_residue_names(ctc_cutoff_Ang,
+                                                         sort=sort,
+                                                         list_by_interface=True,
+                                                         return_as_dataframe=True)
 
 
             idfs[0].round({"freq": 2}).to_excel(writer,
@@ -2180,7 +2346,7 @@ class ContactGroup(object):
             color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
         color_scheme = _np.tile(color_scheme, _np.ceil(self.n_trajs / len(color_scheme)).astype(int) + 1)
         icol = iter(color_scheme)
-        for n_ctcs_t, itime, traj_name in zip(self.timedep_n_ctcs(ctc_cutoff_Ang),
+        for n_ctcs_t, itime, traj_name in zip(self.n_ctcs_timetraces(ctc_cutoff_Ang),
                                               self.time_arrays,
                                               self.trajlabels):
             plot_w_smoothing_auto(iax, itime*dt, n_ctcs_t,traj_name,next(icol),
@@ -2199,6 +2365,61 @@ class ContactGroup(object):
     # TODO document this to say that these labels are already ordered bc
     # within one given contact_group object/interface, the
     # residues can be sorted according to their order
+
+    @property
+    def interface_residxs(self):
+        res = None
+        if self._interface_residxs is not None:
+            res = []
+            for ig in self._interface_residxs:
+                res.append(sorted(set(ig).intersection(_np.unique(self.res_idxs_pairs,
+                                                                  # return_index=True
+                                                                  ))))
+        return res
+
+    @property
+    def interface_labels(self):
+        labs_out = [[], []]
+        for ii, ints in enumerate(self.interface_residxs):
+            for idx in ints:
+                ctc_idx, pair_idx = self.residx2ctcidx(idx)[0]
+                labs_out[ii].append(self.ctc_labels[ctc_idx].split("-")[pair_idx])
+
+        return labs_out
+
+    @property
+    def interface_labels_consensus(self):
+        if self._interface_residxs is not None \
+                and not hasattr(self, "_interface_labels_consensus"):
+            labs = [[], []]
+            for ii, ig in enumerate(self.interface_residxs):
+                for idx in ig:
+                    ctc_idx, res_idx = self.residx2ctcidx(idx)[0]
+                    labs[ii].append(self.consensus_labels[ctc_idx][res_idx])
+
+            return labs
+        elif hasattr(self, "_interface_labels_consensus"):
+            return self._interface_labels_consensus
+
+    @property
+    def interface_orphaned_labels(self):
+        return [[AA for AA in conlabs if "." not in AA] for conlabs in
+                self.interface_labels_consensus]
+
+    def interface_relabel_orphans(self):
+        labs_out = [[], []]
+        for ii, labels in enumerate(self.interface_labels_consensus):
+            for jlab in labels:
+                if jlab in self._orphaned_residues_new_label.keys():
+                    new_lab = self._orphaned_residues_new_label[jlab]
+                    print(jlab, new_lab)
+                    labs_out[ii].append(new_lab)
+                else:
+                    labs_out[ii].append(jlab)
+
+        self._interface_labels_consensus = labs_out
+        # return labs_out
+
     @property
     def interface_reslabels_short(self):
         if self._interface_residxs is not None:
@@ -2209,6 +2430,20 @@ class ContactGroup(object):
                     labs[ii].append(self.residue_names_short[ctc_idx][res_idx])
 
             return labs
+
+    def _freq_name_dict2_interface_dict(self, freq_dict_in,
+                                        sort=True):
+        dict_out = [{}, {}]
+        for ii, ilabs in enumerate(self.interface_labels):
+            # print(ilabs)
+            if sort:
+                for idx in freq_dict_in.keys():
+                    if idx in ilabs:
+                        dict_out[ii][idx] = freq_dict_in[idx]
+            else:
+                for jlab in ilabs:
+                    dict_out[ii][jlab] = freq_dict_in[jlab]
+        return dict_out
 
     def plot_interface_matrix(self,ctc_cutoff_Ang,
                               transpose=False,
@@ -2281,84 +2516,6 @@ class ContactGroup(object):
                           }
                          )
         return dicts
-
-    def frequency_table_by_residue(self, ctc_cutoff_Ang,
-                                   list_by_interface=False):
-        dict_list = self.frequency_per_residue(ctc_cutoff_Ang,
-                                               list_by_interface=list_by_interface)
-
-        if list_by_interface:
-            label_bars = list(dict_list[0].keys()) + list(dict_list[1].keys())
-            freqs = _np.array(list(dict_list[0].values()) + list(dict_list[1].values()))
-        else:
-            label_bars, freqs = list(dict_list.keys()), list(dict_list.values())
-
-        return _DF({"label":label_bars,
-                    "freq":freqs})
-
-    def frequency_table(self, ctc_cutoff_Ang,
-                        breakdown=False,
-                        **ctc_fd_kwargs):
-        idf = _DF([ictc.frequency_dict(ctc_cutoff_Ang, **ctc_fd_kwargs) for ictc in self._contacts])
-        df2return = idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
-
-        if breakdown:
-            idf = self.frequency_dict_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang)
-            idf = ['(%s)'%(', '.join(['%2u%% %s'%(val*100,key) for key, val in idict.items()])) for idict in idf]
-            df2return = df2return.join(_DF.from_dict({"breakdown": idf}))
-
-        return df2return
-
-    def frequency_dict_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang):
-        return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
-
-
-    def frequency_per_residue_idx(self, ctc_cutoff_Ang):
-        dict_sum = defaultdict(list)
-        for (idx1,idx2), ifreq in zip(self.res_idxs_pairs,
-                                      self.frequency_per_contact(ctc_cutoff_Ang)):
-            dict_sum[idx1].append(ifreq)
-            dict_sum[idx2].append(ifreq)
-        dict_sum = {key:_np.sum(val) for key, val in dict_sum.items()}
-        return dict_sum
-
-    def frequency_per_residue(self, ctc_cutoff_Ang,
-                              sort=True,
-                              list_by_interface=False,
-                              return_as_dataframe=False):
-        freqs = self.frequency_per_residue_idx(ctc_cutoff_Ang)
-        dict_out = {}
-        keys = list(freqs.keys())
-        if sort:
-            keys = [keys[ii] for ii in _np.argsort(list(freqs.values()))[::-1]]
-        for idx in keys:
-            ifreq = freqs[idx]
-            ctc_idx, pair_idx = self.residx2ctcidx(idx)[0]
-            dict_out[self.ctc_labels[ctc_idx].split("-")[pair_idx]]=ifreq
-
-        if list_by_interface:
-            _dict_out = [{},{}]
-            for ii, ilabs in enumerate(self.interface_labels):
-                #print(ilabs)
-                if sort:
-                    for idx in dict_out.keys():
-                        if idx in ilabs:
-                            _dict_out[ii][idx]=dict_out[idx]
-                else:
-                    for jlab in ilabs:
-                       _dict_out[ii][jlab]=dict_out[jlab]
-            dict_out = _dict_out
-
-            if return_as_dataframe:
-                dict_out = [_DF({"label": list(dict_out[ii].keys()),
-                                 "freq":  list(dict_out[ii].values())}) for ii in [0, 1]]
-        else:
-            if return_as_dataframe:
-                _DF({"label": list(dict_out.keys()),
-                     "freq": list(dict_out.values())})
-
-
-        return dict_out
 
     def save_trajs(self, output_desc,
                    ext,
@@ -2495,7 +2652,7 @@ class group_of_interfaces(object):
             if not per_residue:
                 idict = {"-".join(sorted(triplet[:2])):triplet[-1] for triplet in fval}
             else:
-                idict = self.interfaces[fkey].frequency_per_residue(ctc_cutoff_Ang)
+                idict = self.interfaces[fkey].frequency_dict_per_residue_names(ctc_cutoff_Ang)
 
             _freqs[fkey]={_replace_w_dict(key, replacement_dict):val for key, val in idict.items()}
 

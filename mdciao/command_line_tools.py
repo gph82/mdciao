@@ -390,7 +390,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                              )
             else:
                 istr = (ihood.frequency_table(ctc_cutoff_Ang,
-                                              breakdown=True,
+                                              by_atomtypes=True,
                                               #AA_format="long",
                                               lb_format="join").round(
                     {"freq": 2, "sum": 2})).to_string(index=False ,header=False,
@@ -972,10 +972,10 @@ def interface(
     print()
     print(neighborhood.frequency_table(ctc_cutoff_Ang).round({"freq":2,"sum":2}))
     print()
-    dfs = neighborhood.frequency_per_residue(ctc_cutoff_Ang,
-                                             list_by_interface=True,
-                                             return_as_dataframe=True,
-                                             sort=sort_by_av_ctcs)
+    dfs = neighborhood.frequency_dict_per_residue_names(ctc_cutoff_Ang,
+                                                        list_by_interface=True,
+                                                        return_as_dataframe=True,
+                                                        sort=sort_by_av_ctcs)
     print(dfs[0].round({"freq":2}))
     print()
     print(dfs[1].round({"freq":2}))
