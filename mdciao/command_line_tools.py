@@ -356,12 +356,13 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                       n_nearest= n_nearest
                                       )
         else:
-            ihood.histo_neighborhood(ctc_cutoff_Ang, n_nearest,
-                                     jax=jax,
-                                     xlim=n_ctcs,
-                                     label_fontsize_factor=panelsize2font / panelsize,
-                                     shorten_AAs=short_AA_names
-                                     )
+            ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
+                                          n_nearest,
+                                          jax=jax,
+                                          xmax=n_ctcs,
+                                          label_fontsize_factor=panelsize2font / panelsize,
+                                          shorten_AAs=short_AA_names
+                                          )
 
     if not distro:
         xmax = _np.max([len(jax.patches) for jax in histoax.flatten()])+.5
@@ -606,12 +607,12 @@ def sites(topology,
     _rcParams["font.size"] = panelsize * panelsize2font
     for jax, (site_name, isite_nh) in zip(histoax.flatten(),
                                        site_as_gc.items()):
-        isite_nh.histo_site(ctc_cutoff_Ang, site_name,
-                         jax=jax,
-                         xlim=_np.max([ss["n_bonds"] for ss in sites]),
-                         label_fontsize_factor=panelsize2font / panelsize,
-                         shorten_AAs=short_AA_names
-                         )
+        isite_nh.plot_freqs_as_bars(ctc_cutoff_Ang, site_name,
+                                    jax=jax,
+                                    xlim=_np.max([ss["n_bonds"] for ss in sites]),
+                                    label_fontsize_factor=panelsize2font / panelsize,
+                                    shorten_AAs=short_AA_names
+                                    )
 
 
     if scheme!="closest-heavy":
@@ -992,14 +993,14 @@ def interface(
 
     # One loop for the histograms
     _rcParams["font.size"] = panelsize * panelsize2font
-    neighborhood.histo_site(ctc_cutoff_Ang,
-                            output_desc,
-                            jax=histoax[0],
-                            xlim=_np.min((n_ctcs,neighborhood.n_ctcs)),
-                            label_fontsize_factor=panelsize2font / panelsize,
-                            shorten_AAs=short_AA_names,
-                            truncate_at=.05,
-                            )
+    neighborhood.plot_freqs_as_bars(ctc_cutoff_Ang,
+                                    output_desc,
+                                    jax=histoax[0],
+                                    xlim=_np.min((n_ctcs,neighborhood.n_ctcs)),
+                                    label_fontsize_factor=panelsize2font / panelsize,
+                                    shorten_AAs=short_AA_names,
+                                    truncate_at=.05,
+                                    )
 
     neighborhood.histo_summary(ctc_cutoff_Ang,
                                output_desc,
