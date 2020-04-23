@@ -1364,5 +1364,11 @@ class TestContactGroupPlots(unittest.TestCase):
         jax = _plt.gca()
         assert jax is CP.plot_neighborhood_freqs(2, 0, jax=jax)
 
+
+    def test_plot_timedep_ctcs_just_works(self):
+        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+                           self.cp2_w_anchor_and_frags])
+
+
 if __name__ == '__main__':
     unittest.main()
