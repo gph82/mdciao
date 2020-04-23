@@ -9,8 +9,12 @@ from .str_and_dict_utils import \
     _replace_w_dict, \
     _replace4latex
 
+#from .contacts import ContactPair as _CP
 
-def plot_contact(ictc, iax,
+# TODO very unsure where to put this...perhaps in the contact object itself?
+
+def plot_contact(ictc,
+                 iax,
                  color_scheme=None,
                  ctc_cutoff_Ang=0,
                  n_smooth_hw=0,
@@ -23,7 +27,7 @@ def plot_contact(ictc, iax,
                  ):
     if color_scheme is None:
         color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
-    color_scheme = _np.tile(color_scheme, _np.ceil(ictc.n_trajs/len(color_scheme)).astype(int)+1)
+    color_scheme = _np.tile(color_scheme, _np.ceil(ictc.n.n_trajs/len(color_scheme)).astype(int)+1)
     iax.set_ylabel('D / $\\AA$', rotation=90)
     if isinstance(ylim_Ang, (int, float)):
         iax.set_ylim([0, ylim_Ang])
@@ -31,9 +35,9 @@ def plot_contact(ictc, iax,
         pass
     else:
         raise ValueError("Cannot understand your ylim value %s of type %s" % (ylim_Ang,type(ylim_Ang)))
-    for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(ictc.feat_trajs,
-                                                                ictc.time_trajs,
-                                                                ictc.trajstrs)):
+    for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(ictc.time_traces.feat_trajs,
+                                                                ictc.time_traces.time_trajs,
+                                                                ictc.labels.trajstrs)):
 
         ilabel = '%s'%trjlabel
         if ctc_cutoff_Ang > 0:
@@ -45,7 +49,7 @@ def plot_contact(ictc, iax,
                               gray_background=gray_background,
                               n_smooth_hw=n_smooth_hw)
     iax.legend(loc=1, fontsize=_rcParams["font.size"]*.75,
-               ncol=_np.ceil(ictc.n_trajs/max_handles_per_row).astype(int)
+               ncol=_np.ceil(ictc.n.n_trajs/max_handles_per_row).astype(int)
                )
     ctc_label = ictc.label
     if shorten_AAs:

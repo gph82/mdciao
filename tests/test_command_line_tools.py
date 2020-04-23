@@ -9,7 +9,7 @@ from mdciao.command_line_tools import residue_neighborhoods, \
 from tempfile import TemporaryDirectory
 test_filenames = filenames()
 
-class test_just_runs_all_fewest_options(unittest.TestCase):
+class TestJustRunsAllFewestOptions(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.prot1_pdb)
         self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)

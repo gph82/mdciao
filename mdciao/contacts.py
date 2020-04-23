@@ -616,7 +616,7 @@ class _Residues(object):
                  top=None):
 
         assert len(res_idxs_pair)==2
-        assert all([isinstance(ii,int) for ii in res_idxs_pair])
+        assert all([isinstance(ii,(int,_np.int64)) for ii in res_idxs_pair])
         assert res_idxs_pair[0]!=res_idxs_pair[1]
 
         self._res_idxs_pair = _np.array(res_idxs_pair)
@@ -2542,8 +2542,8 @@ class ContactGroup(object):
             labels = ['time / %s'%t_unit]
             data = [self.time_arrays[ii]*dt]
             for ictc in self._contacts:
-                labels.append('%s / Ang'%ictc.ctc_label)
-                data.append(ictc.ctc_trajs[ii]*10)
+                labels.append('%s / Ang'%ictc.label)
+                data.append(ictc.time_traces.ctc_trajs[ii]*10)
             data= _np.vstack(data).T
             dicts.append({"header":labels,
                           "data":data
@@ -2555,7 +2555,7 @@ class ContactGroup(object):
         bintrajs = self.binarize_trajs(ctc_cutoff_Ang, order="traj")
         labels = ['time / %s' % t_unit]
         for ictc in self._contacts:
-            labels.append('%s / Ang' % ictc.ctc_label)
+            labels.append('%s / Ang' % ictc.label)
 
         dicts = []
         for ii in range(self.n_trajs):
