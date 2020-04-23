@@ -27,7 +27,6 @@ def plot_w_smoothing_auto(iax, x, y,
 
         if gray_background:
             icolor = "gray"
-
     iax.plot(x, y,
              label=ilabel,
              alpha=alpha,

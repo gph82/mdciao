@@ -1499,13 +1499,15 @@ class ContactPair(object):
                                   color_scheme[traj_idx],
                                   gray_background=gray_background,
                                   n_smooth_hw=n_smooth_hw)
+
         iax.legend(loc=1, fontsize=_rcParams["font.size"] * .75,
                    ncol=_np.ceil(self.n.n_trajs / max_handles_per_row).astype(int)
                    )
         ctc_label = self.label
         if shorten_AAs:
-            ctc_label = self.ctc_label_short
-        ctc_label = ctc_label.replace("@None", "")
+            ctc_label = self.labels.w_fragments_short_AA
+        # TODO: I do not think this removals of "None" are necessary any more
+        #ctc_label = ctc_label.replace("@None", "")
         if ctc_cutoff_Ang > 0:
             ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang) * 100)
 
