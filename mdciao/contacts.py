@@ -1622,7 +1622,7 @@ class ContactGroup(object):
 
     @property
     def anchor_res_and_fragment_str(self):
-        assert self.shared_anchor_residue_index is not None
+        assert self.shared_anchor_residue_index is not None,"There is no anchor residue, This is not a neighborhood."
         return self._contacts[0].neighborhood.anchor_res_and_fragment_str
 
     @property
@@ -1952,28 +1952,37 @@ class ContactGroup(object):
             _n_ctcs_t.append(itraj  .sum(1))
         return _n_ctcs_t
 
-    def add_ctc_type_to_histo(self, ctc_cutoff_Ang, jax):
-        ctc_type_dict = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang)
-        print(ctc_type_dict)
-        pass
+    #TODO this is WIP, not in use
+    #def add_ctc_type_to_histo(self, ctc_cutoff_Ang, jax):
+    #    ctc_type_dict = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang)
+    #    print(ctc_type_dict)
+    #    pass
         #relative_frequency_of_formed_atom_pairs_overall_trajs
 
-    def histo(self, ctc_cutoff_Ang,
-              jax=None,
-              truncate_at=None,
-              bar_width_in_inches=.75,
-              ):
+    def _plot_freqbars_baseplot(self, ctc_cutoff_Ang,
+                                jax=None,
+                                truncate_at=None,
+                                bar_width_in_inches=.75,
+                                ):
         r"""
-        Base method for histogramming contact frequencies of the contacts
-        contained in this class
+        Base method for plotting histograms of contact frequencies of the contacts
+        contained in this object
+
         Parameters
         ----------
         ctc_cutoff_Ang: float
-        jax: if None is passed, one will be created
-
+        jax : :obj:`matplotlib.Axes`, default is None
+            If None is passed, one will be created
+        truncate_at : float, default is None
+            Only plot frequencies above this value (between 0 and 1)
+        bar_width_in_inches : float, default is .75
+            The width of the axis will vary with the number of plotted
+            frequencies. This allows for plotting different :obj:`ContactGroup`
+            objects each with different number of contacts and still appear
+            uniform and have consistant bar_width across all histograms
         Returns
         -------
-        jax:
+        jax : :obj:`matplotlib.Axes`
         """
 
         freqs = self.frequency_per_contact(ctc_cutoff_Ang)
@@ -1993,28 +2002,47 @@ class ContactGroup(object):
         [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
         return jax
 
-    def histo_site(self,
-                   ctc_cutoff_Ang,
-                   site_name,
-                   xlim=None,
-                   jax=None,
-                   shorten_AAs=False,
-                   label_fontsize_factor=1,
-                   truncate_at=0):
+    def plot_freqs_as_bars(self,
+                           ctc_cutoff_Ang,
+                           title_label,
+                           xlim=None,
+                           jax=None,
+                           shorten_AAs=False,
+                           label_fontsize_factor=1,
+                           truncate_at=None):
+        r"""
+        Plot a contact frequencies as a bar plot
 
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+        title_label
+        xlim
+        jax
+        shorten_AAs
+        label_fontsize_factor
+        truncate_at
+
+        Returns
+        -------
+        jax : :obj:`matplotlib.pyplot.Axes`
+
+        """
         # Base plot
-        jax = self.histo(ctc_cutoff_Ang,
-                         jax=jax, truncate_at=truncate_at)
+        jax = self._plot_freqbars_baseplot(ctc_cutoff_Ang,
+                                           jax=jax, truncate_at=truncate_at)
         # Cosmetics
         jax.set_title(
             "Contact frequency @%2.1f $\AA$ of site '%s'\n"
-            % (ctc_cutoff_Ang, site_name))
+            % (ctc_cutoff_Ang, title_label))
 
-        label_bars = [ictc.ctc_label for ictc in self._contacts]
+        label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
         if shorten_AAs:
-            label_bars = [ictc.ctc_label_short for ictc in self._contacts]
+            label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
-        label_bars = [ilab.replace("@None","") for ilab in label_bars]
+        # TODO fragment names got changed (i thinkI to never return Nones,
+        # this shouldn't be necessary anymore
+        #label_bars = [ilab.replace("@None","") for ilab in label_bars]
 
         self.add_tilted_labels_to_patches(jax,
                                           label_bars[:(jax.get_xlim()[1]).astype(int)+1],
@@ -2027,22 +2055,44 @@ class ContactGroup(object):
 
         return jax
 
-    def histo_neighborhood(self, ctc_cutoff_Ang,
-                           n_nearest,
-                           xlim=None,
-                           jax=None,
-                           shorten_AAs=False,
-                           label_fontsize_factor=1,
-                           sum_neighbors=True):
+    def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
+                                n_nearest,
+                                xmax=None,
+                                jax=None,
+                                shorten_AAs=False,
+                                label_fontsize_factor=1,
+                                sum_freqs=True):
+        r"""
+        Neighborhood-aware frequencies bar plot for this contact group
+        
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        n_nearest : int
+        xmax : int, default is None
+            Default behaviour is to go to n_ctcs, use this
+            parameter to homogenize different calls to this
+            function over different contact groups, s.t.
+            each subplot has equal xlimits
+        jax
+        shorten_AAs
+        label_fontsize_factor
+        sum_freqs: bool, default is True
+            Add the sum of frequencies of the represented (and only those)
+            frequencies
+
+        Returns
+        -------
+        jax : :obj:`matplotlib.pyplot.Axes`
+        """
 
         # Base plot
-        jax = self.histo(ctc_cutoff_Ang,
-                         jax=jax)
+        jax = self._plot_freqbars_baseplot(ctc_cutoff_Ang,
+                                           jax=jax)
         # Cosmetics
         jax.set_title(
             "Contact frequency @%2.1f $\AA$\n"
             "%u nearest bonded neighbors excluded" % (ctc_cutoff_Ang, n_nearest))
-
 
         label_dotref = self.anchor_res_and_fragment_str
         label_bars = self.partner_res_and_fragment_labels
@@ -2050,7 +2100,7 @@ class ContactGroup(object):
             label_dotref = self.anchor_res_and_fragment_str_short
             label_bars = self.partner_res_and_fragment_labels_short
 
-        if sum_neighbors:
+        if sum_freqs:
             # HACK to avoid re-computing the frequencies
             label_dotref +='\n$\Sigma$ = %2.1f'%_np.sum([ipatch.get_height() for ipatch in jax.patches])
 
@@ -2063,8 +2113,8 @@ class ContactGroup(object):
                                           label_fontsize_factor=label_fontsize_factor)
 
         jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
-        if xlim is not None:
-            jax.set_xlim([-.5, xlim + 1 - .5])
+        if xmax is not None:
+            jax.set_xlim([-.5, xmax + 1 - .5])
 
         return jax
 

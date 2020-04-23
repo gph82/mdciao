@@ -18,6 +18,8 @@ from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
     _sum_ctc_freqs_by_atom_type,\
     ContactGroup
 
+from matplotlib import pyplot as _plt
+
 from mdciao.contacts import _Fragments, \
     _Residues, _NeighborhoodNames, \
     _TimeTraces, _ContactStrings
@@ -1267,6 +1269,100 @@ class TestContactGroupFrequencies(unittest.TestCase):
         _np.testing.assert_array_equal(table["sum"].array,[3/4, 3/4 + 3/4])
         _np.testing.assert_equal(table["by_atomtypes"][0],"(66% BB-BB, 33% BB-SC)")
         _np.testing.assert_equal(table["by_atomtypes"][1],"(66% BB-SC, 33% SC-BB)")
+
+class TestContactGroupPlots(unittest.TestCase):
+
+    def setUp(self):
+        self.cp1 = ContactPair([0, 1], [[.1,   .2, .3] , [.4]], [[1, 2, 3], [1]])
+        self.cp2 = ContactPair([0, 2], [[.15, .35, .25], [.16]],[[1,2,3], [1]])
+        self.cp3 = ContactPair([1, 2], [[.15, .30, .35], [.45]], [[1, 2, 3], [1]])
+
+        self.top = md.load(test_filenames.prot1_pdb).top
+        self.cp1_wtop = ContactPair([0,1], [[.1,   .2, .3]], [[1, 2, 3]], top=self.top)
+        self.cp2_wtop = ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]], top=self.top)
+        self.cp3_wtop_other =  ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]],
+                                           top=md.load(test_filenames.file_for_test_pdb).top)
+        self.cp1_wtop_and_conslabs = ContactPair([0, 1], [[.1, .2, .3]], [[1, 2, 3]],
+                                                 consensus_labels=["3.50","4.50"],
+                                                 top=self.top)
+        self.cp2_wtop_and_conslabs = ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
+                                                 consensus_labels=["3.50", "5.50"],
+                                                 top=self.top)
+        self.cp3_wtop_and_wrong_conslabs = ContactPair([1, 2], [[.1, .2, 3]], [[1, 2, 3]],
+                                                       consensus_labels=["4.50","550"],
+                                                       top=self.top)
+
+        self.cp1_w_anchor_and_frags = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
+                                                  fragment_names=["fragA", "fragB"],
+                                                  fragment_colors=["r","b"],
+                                                  anchor_residue_idx=0)
+        self.cp2_w_anchor_and_frags  = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
+                                                   fragment_names=["fragA", "fragC"],
+                                                   fragment_colors=["r","g"],
+                                                   anchor_residue_idx=0)
+
+        self.cp1_w_anchor_and_frags_and_top = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
+                                                  fragment_names=["fragA", "fragB"],
+                                                  anchor_residue_idx=0,
+                                                          top=self.top)
+        self.cp2_w_anchor_and_frags_and_top = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
+                                                  fragment_names=["fragA", "fragC"],
+                                                  anchor_residue_idx=0,
+                                                          top=self.top)
+
+
+    def test_baseplot_minimal(self):
+        CP = ContactGroup([self.cp1, self.cp2])
+        jax = CP._plot_freqbars_baseplot(2)
+        assert isinstance(jax,_plt.Axes)
+
+    def test_baseplot_pass_ax(self):
+        _plt.plot()
+        jax = _plt.gca()
+        CP = ContactGroup([self.cp1, self.cp2])
+        assert jax is CP._plot_freqbars_baseplot(2, jax=jax)
+
+    def test_baseplot_truncate(self):
+        CP = ContactGroup([self.cp1, self.cp2])
+        jax = CP._plot_freqbars_baseplot(2, truncate_at=.5)
+        # TODO I would like to test that jax.patches(?) or equivalent has length 1 instead of 2
+
+    def test_plot_freqs_as_bars_just_runs(self):
+        CP = ContactGroup([self.cp1, self.cp2])
+        jax = CP.plot_freqs_as_bars(2, "test_site")
+        assert isinstance(jax, _plt.Axes)
+
+    def test_plot_freqs_as_bars_just_runs_labels_short(self):
+        CP = ContactGroup([self.cp1, self.cp2])
+        jax = CP.plot_freqs_as_bars(2, "test_site",shorten_AAs=True)
+        assert isinstance(jax, _plt.Axes)
+
+    def test_plot_freqs_as_bars_just_runs_labels_short(self):
+        CP = ContactGroup([self.cp1, self.cp2])
+        jax = CP.plot_freqs_as_bars(2, "test_site",shorten_AAs=True)
+        assert isinstance(jax, _plt.Axes)
+
+    def test_plot_neighborhood_raises(self):
+        CP = ContactGroup([self.cp1, self.cp2])
+        with pytest.raises(AssertionError):
+            CP.plot_neighborhood_freqs(2,0)
+
+    def test_plot_neighborhood_works_minimal(self):
+        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+                           self.cp2_w_anchor_and_frags])
+        jax = CP.plot_neighborhood_freqs(2,0)
+        assert isinstance(jax, _plt.Axes)
+
+    def test_plot_neighborhood_works_options(self):
+        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+                           self.cp2_w_anchor_and_frags])
+        jax = CP.plot_neighborhood_freqs(2,0, shorten_AAs=True)
+        assert isinstance(jax, _plt.Axes)
+        jax = CP.plot_neighborhood_freqs(2, 0, xmax=10)
+        assert isinstance(jax, _plt.Axes)
+        _plt.plot()
+        jax = _plt.gca()
+        assert jax is CP.plot_neighborhood_freqs(2, 0, jax=jax)
 
 if __name__ == '__main__':
     unittest.main()
