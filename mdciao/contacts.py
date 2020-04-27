@@ -1359,14 +1359,20 @@ class ContactPair(object):
 
     def distro_overall_trajs(self, bins=10):
         """
+        Wrapper around :obj:`numpy.histogram` to produce a distribution
+        of the distance values (not the contact frequencies) this
+        contact over all trajectories
 
         Parameters
         ----------
-        bins
+        bins : int or anything :obj:`numpy.histogram` accepts
 
         Returns
         -------
-        x, h
+        h : _np.ndarray
+            The counts (integer valued)
+        x : _np.ndarray
+            The bin edges ``(length(hist)+1)``.
 
         """
         return _np.histogram(_np.hstack(self.time_traces.ctc_trajs),
@@ -1492,7 +1498,8 @@ class ContactPair(object):
         gray_background
         shorten_AAs
         t_unit
-        ylim_Ang
+        ylim_Ang : float or "auto"
+            The limit in Angstrom of the y-axis
         max_handles_per_row : int, default is
             legend control
 
@@ -1961,9 +1968,9 @@ class ContactGroup(object):
             dict_out = _dict_out
         return dict_out
 
-    def frequency_table(self, ctc_cutoff_Ang,
-                        by_atomtypes=False,
-                        **ctc_fd_kwargs):
+    def frequency_dataframe(self, ctc_cutoff_Ang,
+                            by_atomtypes=False,
+                            **ctc_fd_kwargs):
         r"""
         Output a formatted dataframe with fields "label", "freq" and "sum", optionally
         dis-aggregated by type of contact in "by_atomtypes"
@@ -2010,7 +2017,22 @@ class ContactGroup(object):
         """
         return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts]
 
-    def distro_per_contact(self, nbins=10):
+    def distributions_of_distances(self, nbins=10):
+        r"""
+        Histograms each the distance values of each contact,
+        returning a list with as many distributions as there
+        are contacts.
+
+        Parameters
+        ----------
+        nbins : int, default is 10
+
+        Returns
+        -------
+        list_of_distros : list
+            List of len self.n_ctcs, each entry contains
+            the counts and edges of the bins
+        """
         return [ictc.distro_overall_trajs(bins=nbins) for ictc in self._contacts]
 
     def n_ctcs_timetraces(self, ctc_cutoff_Ang):
@@ -2046,8 +2068,8 @@ class ContactGroup(object):
                                 bar_width_in_inches=.75,
                                 ):
         r"""
-        Base method for plotting histograms of contact frequencies of the contacts
-        contained in this object
+        Base method for plotting the contact frequencies of the contacts
+        contained in this object as bar plots
 
         Parameters
         ----------
@@ -2060,7 +2082,7 @@ class ContactGroup(object):
             The width of the axis will vary with the number of plotted
             frequencies. This allows for plotting different :obj:`ContactGroup`
             objects each with different number of contacts and still appear
-            uniform and have consistant bar_width across all histograms
+            uniform and have consistant bar_width across all barplots
         Returns
         -------
         jax : :obj:`matplotlib.Axes`
@@ -2096,13 +2118,13 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang
-        title_label
-        xlim
-        jax
-        shorten_AAs
-        label_fontsize_factor
-        truncate_at
+        ctc_cutoff_Ang : float
+        title_label : str
+        xlim : float, default is None
+        jax : :obj:`matplotlib.pyplot.Axes`
+        shorten_AAs : bool, default is None
+        label_fontsize_factor : float
+        truncate_at : float, default is None
 
         Returns
         -------
@@ -2199,16 +2221,51 @@ class ContactGroup(object):
 
         return jax
 
-    def distro_neighborhood(self,
-                            nbins=10,
-                           xlim=None,
-                           jax=None,
-                           shorten_AAs=False,
-                            ctc_cutoff_Ang=None,
-                            n_nearest=None,
-                           label_fontsize_factor=1,
-                            max_handles_per_row=4):
+    def plot_neighborhood_distributions(self,
+                                        nbins=10,
+                                        xlim=None,
+                                        jax=None,
+                                        shorten_AAs=False,
+                                        ctc_cutoff_Ang=None,
+                                        n_nearest=None,
+                                        label_fontsize_factor=1,
+                                        max_handles_per_row=4):
 
+        r"""
+        Plot distance distributions for the distance trajectories
+        of the contacts
+
+        Parameters
+        ----------
+        nbins : int, default is 10
+            How many bins to use for the distribution
+        xlim : iterable of two floats, default is None
+            Limits of the x-axis.
+            Outlier can stretch the scale, this forces it
+            to a given range
+        jax : :obj:`matplotlib.pyplot.Axes`, default is None
+            One will be created if None is passed
+        shorten_AAs: bool, default is False
+            Use amino-acid one-letter codes
+        ctc_cutoff_Ang: float, default is None
+            Include in the legend of the plot how much of the
+            distribution is below this cutoff. A vertical line
+            will be draw at this x-value
+        n_nearest : int, default is None
+            Add a line to the title specifying if any
+            nearest bonded neighbors were excluded
+        label_fontsize_factor
+        max_handles_per_row: int, default is 4
+            legend control
+
+        Returns
+        -------
+        jax : :obj:`matplotlib.pyplot.Axes`
+
+        """
+        if jax is None:
+            _plt.figure(figsize=(7, 5))
+            jax = _plt.gca()
 
         label_dotref = self.anchor_res_and_fragment_str
         label_bars = self.partner_res_and_fragment_labels
@@ -2226,7 +2283,7 @@ class ContactGroup(object):
         jax.set_title(title_str)
 
         # Base plot
-        for ii, ((h, x), label) in enumerate(zip(self.distro_per_contact(nbins=nbins), label_bars)):
+        for ii, ((h, x), label) in enumerate(zip(self.distributions_of_distances(nbins=nbins), label_bars)):
             if ctc_cutoff_Ang is not None:
                 if ii==0:
                     freqs = self.frequency_per_contact(ctc_cutoff_Ang)
@@ -2243,9 +2300,147 @@ class ContactGroup(object):
                    ncol=_np.ceil(self.n_ctcs / max_handles_per_row).astype(int),
                    loc=1,
                    )
-
+        jax.figure.tight_layout()
 
         return jax
+
+    def plot_timedep_ctcs(self, panelheight,
+                          plot_N_ctcs=True,
+                          pop_N_ctcs=False,
+                          skip_timedep=False,
+                          **plot_contact_kwargs,
+                          ):
+        r"""
+        For each trajectory, plot the time-traces of the all the contacts
+        and/or/ the timetrace of the overall number of contacts
+
+        Parameters
+        ----------
+        panelheight : int
+        plot_N_ctcs : bool, default is True
+            Add an extra panel at the bottom of the figure containing
+            the number of formed contacts for each frame for each trajecotry
+            A valid cutoff has to be passed along in :obj:`plot_contact_kwargs`
+            otherwise this has no effect
+        pop_N_ctcs : bool, default is False
+            Put the panel with the number of contacts in a separate figure
+            A valid cutoff has to be passed along in :obj:`plot_contact_kwargs`
+            otherwise this has no effect
+        skip_timedep : bool, default is False
+            Skip plotting the individual timetraces and plot only
+            the time trace of overall formed contacts. This sets
+            pop_N_ctcs to True internally
+        plot_contact_kwargs
+
+        Returns
+        -------
+        list_of_figs : list
+            The wanted figure(s)
+
+         Note
+        ----
+            The keywords :obj:`plot_N_ctcs`, :obj:`pop_N_ctcs`, and :obj:`skip_timedep`
+            allow this method to both include or totally exclude the total
+            number of contacts and/or the time-traces in the figure.
+            This might change in the figure,
+            it was coded this way to avoid breaking the command_line tools
+            API. Also note that some combinations will produce an empty return!
+
+
+        """
+        valid_cutoff = "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
+                       and plot_contact_kwargs["ctc_cutoff_Ang"] > 0
+
+        figs_to_return = []
+        if skip_timedep:
+            pop_N_ctcs = True
+
+        if pop_N_ctcs:
+            assert plot_N_ctcs, "If just_N_ctcs is True, plot_N_ctcs has to be True also"
+
+            fig_N_ctcs = _plt.figure(
+                figsize=(10, panelheight),
+            )
+            ax_N_ctcs = _plt.gca()
+
+
+        if self.n_ctcs > 0 and not skip_timedep:
+            n_rows = self.n_ctcs
+            if plot_N_ctcs and valid_cutoff and not pop_N_ctcs:
+                n_rows +=1
+            myfig, myax = _plt.subplots(n_rows, 1,
+                                        figsize=(10, n_rows * panelheight),
+                                        squeeze=False)
+            figs_to_return.append(myfig)
+            myax = myax[:,0]
+            axes_iter = iter(myax)
+
+            # Plot individual contacts
+            for ictc in self._contacts:
+                ictc.plot_timetrace(next(axes_iter),
+                             **plot_contact_kwargs
+                             )
+
+            # Cosmetics
+            [iax.set_xticklabels([]) for iax in myax[:self.n_ctcs-1]]
+            [iax.set_xlabel('') for iax in myax[:self.n_ctcs - 1]]
+            # TODO figure out how to put xticklabels on top
+            axtop, axbottom = myax[0], myax[-1]
+            iax2 = axtop.twiny()
+            iax2.set_xticks(axbottom.get_xticks())
+            iax2.set_xticklabels(axbottom.get_xticklabels())
+            iax2.set_xlim(axtop.get_xlim())
+            iax2.set_xlabel(axbottom.get_xlabel())
+
+        if valid_cutoff:
+            if plot_N_ctcs:
+                if pop_N_ctcs:
+                    iax = ax_N_ctcs
+                    figs_to_return.append(fig_N_ctcs)
+                else:
+                    iax = next(axes_iter)
+            ctc_cutoff_Ang = plot_contact_kwargs.pop("ctc_cutoff_Ang")
+            for pkey in ["shorten_AAs", "ylim_Ang"]:
+                try:
+                    plot_contact_kwargs.pop(pkey)
+                except KeyError:
+                    pass
+            self._plot_timedep_Nctcs(iax,
+                                     ctc_cutoff_Ang,
+                                     **plot_contact_kwargs,
+                                     )
+        [ifig.tight_layout(pad=0, h_pad=0, w_pad=0) for ifig in figs_to_return]
+        return figs_to_return
+
+    def _plot_timedep_Nctcs(self,
+                            iax,
+                            ctc_cutoff_Ang,
+                            color_scheme=None,
+                            dt=1, t_unit="ps",
+                            n_smooth_hw=0,
+                            gray_background=False,
+                            max_handles_per_row=4,
+                            ):
+        #Plot ncontacts in the last frame
+        if color_scheme is None:
+            color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
+        color_scheme = _np.tile(color_scheme, _np.ceil(self.n_trajs / len(color_scheme)).astype(int) + 1)
+        icol = iter(color_scheme)
+        for n_ctcs_t, itime, traj_name in zip(self.n_ctcs_timetraces(ctc_cutoff_Ang),
+                                              self.time_arrays,
+                                              self.trajlabels):
+            plot_w_smoothing_auto(iax, itime*dt, n_ctcs_t,traj_name,next(icol),
+                                  gray_background=gray_background,
+                                  n_smooth_hw=n_smooth_hw)
+
+        iax.set_ylabel('$\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
+        iax.set_xlabel('t / %s'%t_unit)
+        iax.set_xlim([0,self.time_max*dt])
+        iax.set_ylim([0,iax.get_ylim()[1]])
+        iax.legend(fontsize=_rcParams["font.size"]*.75,
+                   ncol=_np.ceil(self.n_trajs / max_handles_per_row).astype(int),
+                   loc=1,
+                   )
 
     def histo_summary(self,
                       ctc_cutoff_Ang,
@@ -2304,39 +2499,60 @@ class ContactGroup(object):
         if xlim is not None:
             jax.set_xlim([-.5, xlim + 1 - .5])
 
-
         return jax
 
-    def table_summary_to_excel(self, ctc_cutoff_Ang,
-                               fname_excel,
-                               sort=False,
-                               write_interface=True,
-                               offset=0,
-                               **freq_tab_kwargs):
+    def frequency_spreadsheet(self, ctc_cutoff_Ang,
+                              fname_excel,
+                              sort=False,
+                              write_interface=True,
+                              offset=0,
+                              sheet1="pairs by frequency",
+                              **freq_dataframe_kwargs):
+        r"""
+        Write an Excel file with the :obj:`pandas.Dataframe` that is
+        returned by :obj:`self.frequency_dataframe`. You can
+        control that call with obj:`freq_dataframe_kwargs`
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+        fname_excel
+        sort
+        write_interface
+        offset
+        freq_dataframe_kwargs
+
+        Returns
+        -------
+
+        """
+
+        main_DF = self.frequency_dataframe(ctc_cutoff_Ang, **freq_dataframe_kwargs)
 
         columns = ["label",
                    "freq",
                    "sum",
                    ]
-        if "breakdown" in freq_tab_kwargs.keys() and freq_tab_kwargs["breakdown"]:
+        if "breakdown" in freq_dataframe_kwargs.keys() and freq_dataframe_kwargs["breakdown"]:
             columns += ["breakdown"]
         from pandas import ExcelWriter as _ExcelWriter
         writer = _ExcelWriter(fname_excel, engine='xlsxwriter')
         workbook = writer.book
-        writer.sheets["pairs by frequency"] = workbook.add_worksheet('pairs by frequency')
-        writer.sheets["pairs by frequency"].write_string(0, offset,
+        writer.sheets[sheet1] = workbook.add_worksheet(sheet1)
+        writer.sheets[sheet1].write_string(0, offset,
                                       'pairs by contact frequency at %2.1f Angstrom'%ctc_cutoff_Ang)
         offset+=1
-        self.frequency_table(ctc_cutoff_Ang, **freq_tab_kwargs).round({"freq": 2, "sum": 2}).to_excel(writer,
-                                                                                   index=False,
-                                                                                   sheet_name='pairs by frequency',
-                                                                                   startrow=offset,
-                                                                                   startcol=0,
-                                                                                   columns=columns,
-                                                                                     )
+        main_DF.round({"freq": 2, "sum": 2}).to_excel(writer,
+                                                      index=False,
+                                                      sheet_name='pairs by frequency',
+                                                      startrow=offset,
+                                                      startcol=0,
+                                                      columns=columns,
+                                                      )
         offset = 0
         writer.sheets["residues by frequency"] = workbook.add_worksheet('residues by frequency')
         writer.sheets["residues by frequency"].write_string(offset, 0, 'Av. # ctcs (<%2.1f Ang) by residue '%ctc_cutoff_Ang)
+
         if write_interface:
             offset+=1
 
@@ -2394,118 +2610,6 @@ class ContactGroup(object):
                      fontsize=_rcParams["font.size"]*label_fontsize_factor,
                      backgroundcolor="white"
                      )
-
-    def plot_timedep_ctcs(self, panelheight,
-                          plot_N_ctcs=True,
-                          pop_N_ctcs=False,
-                          skip_timedep=False,
-                          **plot_contact_kwargs,
-                          ):
-        r"""
-        plot the time-traces of the all the contacts
-
-        Parameters
-        ----------
-        panelheight : int
-        plot_N_ctcs : bool, default is True
-        pop_N_ctcs : bool, default is False
-        skip_timedep : bool, default is False
-        plot_contact_kwargs
-
-        Returns
-        -------
-
-        """
-        figs_to_return = []
-        if pop_N_ctcs:
-            assert plot_N_ctcs, "If just_N_ctcs is True, plot_N_ctcs has to be True also"
-
-            fig_N_ctcs = _plt.figure(
-                figsize=(10, panelheight),
-            )
-            ax_N_ctcs = _plt.gca()
-
-        if self.n_ctcs > 0 and not skip_timedep:
-            n_rows = self.n_ctcs
-            if plot_N_ctcs:
-                n_rows +=1
-            myfig, myax = _plt.subplots(n_rows, 1,
-                                        figsize=(10, n_rows * panelheight),
-                                        squeeze=False)
-            figs_to_return.append(myfig)
-            myax = myax[:,0]
-            axes_iter = iter(myax)
-
-            # Plot individual contacts
-            for ictc in self._contacts:
-                ictc.plot_timetrace(next(axes_iter),
-                             **plot_contact_kwargs
-                             )
-
-
-            # Cosmetics
-            [iax.set_xticklabels([]) for iax in myax[:self.n_ctcs-1]]
-            [iax.set_xlabel('') for iax in myax[:self.n_ctcs - 1]]
-
-            # TODO figure out how to put xticklabels on top
-            axtop, axbottom = myax[0], myax[self.n_ctcs-1]
-            iax2 = axtop.twiny()
-            iax2.set_xticks(axbottom.get_xticks())
-            iax2.set_xticklabels(axbottom.get_xticklabels())
-            iax2.set_xlim(axtop.get_xlim())
-            iax2.set_xlabel(axbottom.get_xlabel())
-
-        if "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
-                and plot_contact_kwargs["ctc_cutoff_Ang"] > 0:
-            if plot_N_ctcs:
-                if pop_N_ctcs:
-                    iax = ax_N_ctcs
-                    figs_to_return.append(fig_N_ctcs)
-                else:
-                    iax = next(axes_iter)
-            ctc_cutoff_Ang = plot_contact_kwargs.pop("ctc_cutoff_Ang")
-            for pkey in ["shorten_AAs", "ylim_Ang"]:
-                try:
-                    plot_contact_kwargs.pop(pkey)
-                except KeyError:
-                    pass
-            self.plot_timedep_Nctcs(iax,
-                                    ctc_cutoff_Ang,
-                                    **plot_contact_kwargs,
-                                    )
-
-        [ifig.tight_layout(pad=0, h_pad=0, w_pad=0) for ifig in figs_to_return]
-        return figs_to_return
-
-    def plot_timedep_Nctcs(self,
-                           iax,
-                           ctc_cutoff_Ang,
-                           color_scheme=None,
-                           dt=1, t_unit="ps",
-                           n_smooth_hw=0,
-                           gray_background=False,
-                           max_handles_per_row=4,
-                           ):
-        #Plot ncontacts in the last frame
-        if color_scheme is None:
-            color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
-        color_scheme = _np.tile(color_scheme, _np.ceil(self.n_trajs / len(color_scheme)).astype(int) + 1)
-        icol = iter(color_scheme)
-        for n_ctcs_t, itime, traj_name in zip(self.n_ctcs_timetraces(ctc_cutoff_Ang),
-                                              self.time_arrays,
-                                              self.trajlabels):
-            plot_w_smoothing_auto(iax, itime*dt, n_ctcs_t,traj_name,next(icol),
-                                  gray_background=gray_background,
-                                  n_smooth_hw=n_smooth_hw)
-
-        iax.set_ylabel('$\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
-        iax.set_xlabel('t / %s'%t_unit)
-        iax.set_xlim([0,self.time_max*dt])
-        iax.set_ylim([0,iax.get_ylim()[1]])
-        iax.legend(fontsize=_rcParams["font.size"]*.75,
-                   ncol=_np.ceil(self.n_trajs / max_handles_per_row).astype(int),
-                   loc=1,
-                   )
 
     # TODO document this to say that these labels are already ordered bc
     # within one given contact_group object/interface, the
