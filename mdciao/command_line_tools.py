@@ -348,13 +348,13 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                    neighborhoods.values()):
 
         if distro:
-            ihood.distro_neighborhood(nbins=20,
-                                      jax=jax,
-                                      label_fontsize_factor=panelsize2font/panelsize,
-                                      shorten_AAs=short_AA_names,
-                                      ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                      n_nearest= n_nearest
-                                      )
+            ihood.plot_neighborhood_distributions(nbins=20,
+                                                  jax=jax,
+                                                  label_fontsize_factor=panelsize2font/panelsize,
+                                                  shorten_AAs=short_AA_names,
+                                                  ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                  n_nearest= n_nearest
+                                                  )
         else:
             ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
                                           n_nearest,
@@ -383,17 +383,17 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             fname = path.join(output_dir, fname)
 
             if table_ext=='xlsx':
-                ihood.table_summary_to_excel(ctc_cutoff_Ang, fname,
-                                             write_interface=False,
-                                             breakdown=True,
-                                             # AA_format="long",
-                                             lb_format="join"
-                                             )
+                ihood.frequency_spreadsheet(ctc_cutoff_Ang, fname,
+                                            write_interface=False,
+                                            breakdown=True,
+                                            # AA_format="long",
+                                            lb_format="join"
+                                            )
             else:
-                istr = (ihood.frequency_table(ctc_cutoff_Ang,
-                                              by_atomtypes=True,
-                                              #AA_format="long",
-                                              lb_format="join").round(
+                istr = (ihood.frequency_dataframe(ctc_cutoff_Ang,
+                                                  by_atomtypes=True,
+                                                  #AA_format="long",
+                                                  lb_format="join").round(
                     {"freq": 2, "sum": 2})).to_string(index=False ,header=False,
                                                       justify='left',
                                                       #justify = 'right'
@@ -971,7 +971,7 @@ def interface(
     neighborhood = ContactGroup(ctc_objs,
                                 interface_residxs=interface_residx_short)
     print()
-    print(neighborhood.frequency_table(ctc_cutoff_Ang).round({"freq":2,"sum":2}))
+    print(neighborhood.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))
     print()
     dfs = neighborhood.frequency_dict_per_residue_names(ctc_cutoff_Ang,
                                                         list_by_interface=True,
@@ -1017,7 +1017,7 @@ def interface(
     print("The following files have been created")
     print(fname)
     fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
-    neighborhood.table_summary_to_excel(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
+    neighborhood.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
     print(fname_excel)
     if plot_timedep or separate_N_ctcs:
         fname_timedep = '%s@%2.1f_Ang.time_resolved.%s' % (output_desc,ctc_cutoff_Ang,
@@ -1139,7 +1139,7 @@ def contact_map(
         print(fname)
     return ctc_map_dict
     fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
-    #neighborhood.table_summary_to_excel(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
+    #neighborhood.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
 
 def neighborhood_comparison(*args, **kwargs):
     from .plots import compare_neighborhoods

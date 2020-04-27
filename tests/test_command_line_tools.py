@@ -18,8 +18,9 @@ class TestJustRunsAllFewestOptions(unittest.TestCase):
     def test_neighborhoods(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
              residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                                   "396",
-                                   output_dir=tmpdir)
+                                   "200,396",
+                                  output_dir=tmpdir
+                                   )
 
     def test_sites(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
