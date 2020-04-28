@@ -33,7 +33,7 @@ from mdciao.list_utils import \
 
 from mdciao.str_and_dict_utils import \
     get_sorted_trajectories as _get_sorted_trajectories, \
-    _inform_about_trajectories
+    _inform_about_trajectories, _tunit2tunit
 
 from mdciao.bond_utils import \
     bonded_neighborlist_from_top
@@ -504,7 +504,6 @@ def sites(topology,
           ylim_Ang=10,
           n_jobs=1,
           ):
-    dt = _t_unit2dt(t_unit)
     ylim_Ang = _np.float(ylim_Ang)
 
     # todo this is an ad-hoc for a powerpoint presentation
@@ -633,7 +632,7 @@ def sites(topology,
                                            color_scheme=_my_color_schemes(curve_color),
                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
                                            n_smooth_hw=n_smooth_hw,
-                                           dt=dt,
+                                           dt=_tunit2tunit["ps"][t_unit],
                                            t_unit=t_unit,
                                            gray_background=gray_background,
                                            shorten_AAs=short_AA_names,
