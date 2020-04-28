@@ -214,8 +214,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
-    dt = _t_unit2dt(t_unit)
-
 
     if sort:
         resSeq_idxs = sorted(resSeq_idxs)
@@ -423,7 +421,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             color_scheme = _my_color_schemes(curve_color),
                                             ctc_cutoff_Ang=ctc_cutoff_Ang,
                                             n_smooth_hw=n_smooth_hw,
-                                            dt=dt,
                                             t_unit=t_unit,
                                             gray_background=gray_background,
                                             shorten_AAs=short_AA_names,
@@ -454,9 +451,9 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                 print(fname)
 
             if plot_timedep:
-                ihood.save_trajs(output_desc,table_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True)
+                ihood.save_trajs(output_desc,table_ext,output_dir, t_unit=t_unit, verbose=True)
             if separate_N_ctcs:
-                ihood.save_trajs(output_desc,table_ext,output_dir, dt=dt,t_unit=t_unit, verbose=True, ctc_cutoff_Ang=ctc_cutoff_Ang)
+                ihood.save_trajs(output_desc,table_ext,output_dir, t_unit=t_unit, verbose=True, ctc_cutoff_Ang=ctc_cutoff_Ang)
             print()
 
     return {"ctc_idxs": ctc_idxs_small,
