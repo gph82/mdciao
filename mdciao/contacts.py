@@ -10,14 +10,18 @@ from .str_and_dict_utils import \
     _replace_w_dict,\
     unify_freq_dicts,\
     _replace4latex, \
-    iterate_and_inform_lambdas \
+    iterate_and_inform_lambdas, \
+    _tunit2tunit
+
 
 from .plots import plot_w_smoothing_auto
 from collections import defaultdict, Counter as _col_Counter
 
 import matplotlib.pyplot as _plt
 from matplotlib import rcParams as _rcParams
-from pandas import DataFrame as _DF
+from pandas import DataFrame as _DF, \
+    ExcelWriter as _ExcelWriter
+
 from joblib import Parallel as _Parallel, delayed as _delayed
 
 
@@ -525,8 +529,8 @@ class _TimeTraces(object):
                  atom_pair_trajs):
 
         assert len(time_trajs)==len(ctc_trajs)
-        self._ctc_trajs = [_np.array(itraj) for itraj in ctc_trajs]
-        self._time_trajs =time_trajs
+        self._ctc_trajs = [_np.array(itraj,dtype=float) for itraj in ctc_trajs]
+        self._time_trajs =[_np.array(tt,dtype=float) for tt in time_trajs]
         self._trajs = trajs
         if trajs is not None:
             assert len(trajs)==len(ctc_trajs)
@@ -989,7 +993,7 @@ class _ContactStrings(object):
                                                                  fmt="@%s"),
                                      self._residues.names_short[1],
                                      auto_format_fragment_string(self._fragnames[1],
-                                                                 self._residues.consensus_labels[0],
+                                                                 self._residues.consensus_labels[1],
                                                                  fmt="@%s"))
 
         return ctc_label
@@ -1639,6 +1643,8 @@ class ContactGroup(object):
 
     #todo again the dicussion about named tuples vs a miriad of properties
     # I am opting for properties because of easyness of documenting i
+
+    #TODO access to conctat labels with fragnames and/or consensus?
     @property
     def n_trajs(self):
         return self._n_trajs
@@ -1675,6 +1681,11 @@ class ContactGroup(object):
     def ctc_labels_short(self):
         return [ictc.labels.no_fragments_short_AA
                 for ictc in self._contacts]
+
+    @property
+    def ctc_labels_w_fragments_short_AA(self):
+        return [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
+
 
     @property
     def trajlabels(self):
@@ -1859,6 +1870,7 @@ class ContactGroup(object):
         r"""
         Dictionary of aggregated :obj:`frequency_per_contact` per residue names,
         whatever those names are. See :obj:`ContactPair.labels` for more info
+        TODO add option the type of residue name we are using
 
         Parameters
         ----------
@@ -1866,7 +1878,7 @@ class ContactGroup(object):
         sort : bool, default is True
             Sort by dictionary by descending order of frequencies
             TODO dicts have order since py 3.x(?) and it is useful for creating
-            a dataframe, then excel_table that's already sorted by descending frequncies
+            TODO a dataframe, then excel_table that's already sorted by descending frequncies
         list_by_interface : bool, default is False, NotImplemented
             group the freq_dict by interface residues
         return_as_dataframe : bool, default is False
@@ -1884,7 +1896,8 @@ class ContactGroup(object):
         for idx in keys:
             ifreq = freqs[idx]
             ctc_idx, pair_idx = self.residx2ctcidx(idx)[0]
-            dict_out[self.ctc_labels[ctc_idx].split("-")[pair_idx]] = ifreq
+            #dict_out[self.ctc_labels[ctc_idx].split("-")[pair_idx]] = ifreq
+            dict_out[self.ctc_labels_w_fragments_short_AA[ctc_idx].split("-")[pair_idx]] = ifreq
 
         if list_by_interface:
             raise NotImplementedError
@@ -2003,6 +2016,95 @@ class ContactGroup(object):
             df2return = df2return.join(_DF.from_dict({"by_atomtypes": idf}))
 
         return df2return
+
+    def frequency_spreadsheet(self, ctc_cutoff_Ang,
+                              fname_excel,
+                              sort=False,
+                              write_interface=True,
+                              offset=0,
+                              sheet1_name="pairs by frequency",
+                              sheet2_name='residues by frequency',
+                              **freq_dataframe_kwargs):
+        r"""
+        Write an Excel file with the :obj:`pandas.Dataframe` that is
+        returned by :obj:`self.frequency_dataframe`. You can
+        control that call with obj:`freq_dataframe_kwargs`
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+        fname_excel
+        sort : bool, default is True
+            Sort by descing order of frequency
+        write_interface: bool, default is True
+            Treat contact group as interface
+        offset : int, default is 0
+            First line at which to start writing the table. For future devleopment
+            TODO do not expose this, perhaps?
+        freq_dataframe_kwargs: dict, default is {}
+            Optional arguments to :obj:`self.frequency_dataframe`, like by_atomtypes (bool)
+
+        Returns
+        -------
+
+        """
+
+        main_DF = self.frequency_dataframe(ctc_cutoff_Ang, **freq_dataframe_kwargs)
+
+        columns = ["label",
+                   "freq",
+                   "sum",
+                   ]
+        if "by_atomtypes" in freq_dataframe_kwargs.keys() and freq_dataframe_kwargs["by_atomtypes"]:
+            columns += ["by_atomtypes"]
+
+        writer = _ExcelWriter(fname_excel, engine='xlsxwriter')
+        workbook = writer.book
+        writer.sheets[sheet1_name] = workbook.add_worksheet(sheet1_name)
+        writer.sheets[sheet1_name].write_string(0, offset,
+                                      'pairs by contact frequency at %2.1f Angstrom' % ctc_cutoff_Ang)
+        offset+=1
+        main_DF.round({"freq": 2, "sum": 2}).to_excel(writer,
+                                                      index=False,
+                                                      sheet_name=sheet1_name,
+                                                      startrow=offset,
+                                                      startcol=0,
+                                                      columns=columns,
+                                                      )
+        offset = 0
+        writer.sheets[sheet2_name] = workbook.add_worksheet(sheet2_name)
+        writer.sheets[sheet2_name].write_string(offset, 0, 'Av. # ctcs (<%2.1f Ang) by residue '%ctc_cutoff_Ang)
+
+        offset += 1
+
+        idfs = self.frequency_dict_per_residue_names(ctc_cutoff_Ang,
+                                                         sort=sort,
+                                                         list_by_interface=write_interface,
+                                                         return_as_dataframe=True)
+        if not write_interface:
+            idfs=[idfs]
+        idfs[0].round({"freq": 2}).to_excel(writer,
+                                            sheet_name=sheet2_name,
+                                            startrow=offset,
+                                            startcol=0,
+                                            columns=[
+                                                "label",
+                                                "freq"],
+                                            index=False
+                                            )
+        if write_interface:
+            #Undecided about best placement for these
+            idfs[1].round({"freq": 2}).to_excel(writer,
+                                                     sheet_name=sheet2_name,
+                                                     startrow=offset,
+                                                     startcol=2+1,
+                                                     columns=[
+                                                         "label",
+                                                         "freq"],
+                                                     index=False
+                                                     )
+
+        writer.save()
 
     def relative_frequency_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang):
         r"""
@@ -2501,89 +2603,6 @@ class ContactGroup(object):
 
         return jax
 
-    def frequency_spreadsheet(self, ctc_cutoff_Ang,
-                              fname_excel,
-                              sort=False,
-                              write_interface=True,
-                              offset=0,
-                              sheet1="pairs by frequency",
-                              **freq_dataframe_kwargs):
-        r"""
-        Write an Excel file with the :obj:`pandas.Dataframe` that is
-        returned by :obj:`self.frequency_dataframe`. You can
-        control that call with obj:`freq_dataframe_kwargs`
-
-        Parameters
-        ----------
-        ctc_cutoff_Ang
-        fname_excel
-        sort
-        write_interface
-        offset
-        freq_dataframe_kwargs
-
-        Returns
-        -------
-
-        """
-
-        main_DF = self.frequency_dataframe(ctc_cutoff_Ang, **freq_dataframe_kwargs)
-
-        columns = ["label",
-                   "freq",
-                   "sum",
-                   ]
-        if "breakdown" in freq_dataframe_kwargs.keys() and freq_dataframe_kwargs["breakdown"]:
-            columns += ["breakdown"]
-        from pandas import ExcelWriter as _ExcelWriter
-        writer = _ExcelWriter(fname_excel, engine='xlsxwriter')
-        workbook = writer.book
-        writer.sheets[sheet1] = workbook.add_worksheet(sheet1)
-        writer.sheets[sheet1].write_string(0, offset,
-                                      'pairs by contact frequency at %2.1f Angstrom'%ctc_cutoff_Ang)
-        offset+=1
-        main_DF.round({"freq": 2, "sum": 2}).to_excel(writer,
-                                                      index=False,
-                                                      sheet_name='pairs by frequency',
-                                                      startrow=offset,
-                                                      startcol=0,
-                                                      columns=columns,
-                                                      )
-        offset = 0
-        writer.sheets["residues by frequency"] = workbook.add_worksheet('residues by frequency')
-        writer.sheets["residues by frequency"].write_string(offset, 0, 'Av. # ctcs (<%2.1f Ang) by residue '%ctc_cutoff_Ang)
-
-        if write_interface:
-            offset+=1
-
-            idfs = self.frequency_dict_per_residue_names(ctc_cutoff_Ang,
-                                                         sort=sort,
-                                                         list_by_interface=True,
-                                                         return_as_dataframe=True)
-
-
-            idfs[0].round({"freq": 2}).to_excel(writer,
-                                                  sheet_name='residues by frequency',
-                                                  startrow=offset,
-                                                  startcol=0,
-                                                  columns=[
-                                                      "label",
-                                                      "freq"],
-                                                  index=False
-                                                  )
-            #Undecided about best placement for these
-            idfs[1].round({"freq": 2}).to_excel(writer,
-                                                     sheet_name='residues by frequency',
-                                                     startrow=offset,
-                                                     startcol=2+1,
-                                                     columns=[
-                                                         "label",
-                                                         "freq"],
-                                                     index=False
-                                                     )
-
-        writer.save()
-
     def contact_map(self,
                     ctc_cutoff_Ang):
         mat = _np.zeros((self.top.n_residues, self.top.n_residues))
@@ -2735,13 +2754,39 @@ class ContactGroup(object):
 
         return mat
 
-    def to_per_traj_dicts_for_saving(self, dt=1, t_unit="ps"):
+    def _to_per_traj_dicts_for_saving(self, t_unit="ps"):
+        r"""
+        For every trajectory return an dictionary with
+        the data ready to be put into an ascii file,
+        with pretty headers etc.
+
+        The value "data" for every dict contains the
+        distance values and has the shape (Nti,Ncts),
+        where Nti is the number of frames of the i-th trajectory
+
+        TODO: choose the type of contact label
+        TODO: Think about using this wrapper for the plots
+
+        Parameters
+        ----------
+
+        t_unit : str, default is "ps"
+            The time unit to use for the labels. Alternatives are
+            "ps", "ns", "mus" and "ms"
+
+        Returns
+        -------
+        list_of_dicts with keys "header" and "data"
+        """
+
+        if t_unit not in _tunit2tunit.keys():
+            raise ValueError("I don't know the time unit %s, only %s"%(t_unit, _tunit2tunit.keys()))
         dicts = []
         for ii in range(self.n_trajs):
             labels = ['time / %s'%t_unit]
-            data = [self.time_arrays[ii]*dt]
+            data = [self.time_arrays[ii] * _tunit2tunit["ps"][t_unit]]
             for ictc in self._contacts:
-                labels.append('%s / Ang'%ictc.label)
+                labels.append('%s / Ang'%ictc.labels.w_fragments_short_AA)
                 data.append(ictc.time_traces.ctc_trajs[ii]*10)
             data= _np.vstack(data).T
             dicts.append({"header":labels,
@@ -2750,7 +2795,28 @@ class ContactGroup(object):
                          )
         return dicts
 
-    def to_per_traj_dicts_for_saving_N_ctcs(self, ctc_cutoff_Ang, dt=1, t_unit="ps"):
+    def _to_per_traj_dicts_for_saving_bintrajs(self, ctc_cutoff_Ang, t_unit="ps"):
+        r"""
+        For every trajectory return an dictionary with
+        the data ready to be put into an ascii file,
+        with pretty headers etc.
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        t_unit : str, default is "ps"
+            The time unit to use for the labels. Alternatives are
+            "ps", "ns", "mus" and "ms"
+
+        Returns
+        -------
+        list_of_dicts with keys "header" and "data"
+
+        """
+
+        if t_unit not in _tunit2tunit.keys():
+            raise ValueError("I don't know the time unit %s, only %s"%(t_unit, _tunit2tunit.keys()))
+
         bintrajs = self.binarize_trajs(ctc_cutoff_Ang, order="traj")
         labels = ['time / %s' % t_unit]
         for ictc in self._contacts:
@@ -2758,7 +2824,7 @@ class ContactGroup(object):
 
         dicts = []
         for ii in range(self.n_trajs):
-            data = [self.time_arrays[ii]*dt]+[bintrajs[ii].T.astype(int)]
+            data = [self.time_arrays[ii]*_tunit2tunit["ps"][t_unit]]+[bintrajs[ii].T.astype(int)]
             data= _np.vstack(data).T
             dicts.append({"header":labels,
                           "data":data
@@ -2766,34 +2832,75 @@ class ContactGroup(object):
                          )
         return dicts
 
-    def save_trajs(self, output_desc,
+    def save_trajs(self, prepend_filename,
                    ext,
                    output_dir='.',
-                   dt=1,
                    t_unit="ps",
-                   basename=False,
                    verbose=False,
-                   ctc_cutoff_Ang=None):
+                   ctc_cutoff_Ang=None,
+                   self_descriptor="mdciaoCG"
+                   ):
+        r"""
+        Save time-traces to disc.
+
+        Filenames will be created based on the property
+        :obj:`self.trajlabels`, but using only the basenames and
+        prepending with the string :obj:`prepend_filename`
+
+        If there is an anchor residue (i.e. this :obj:`ContactGroup`
+        is a neighborhood, the anchor will be included in the filename,
+        otherwise the string "contact_group" will be used.
+        You can control the output_directory using :obj:`output_dir`
+
+        If a ctc_cutoff is given, the time-traces will be binarized
+        (see :obj:`self.binarize_trajs`). Else, the distances themselves
+        are stored.
+
+        Parameters
+        ----------
+        prepend_filename: str
+            Each filename will be prepended with this string
+        ext : str
+            Extension, can be "xlsx" or anything :obj:`numpy.savetext`
+            can handle
+        output_dir: str, default is "."
+            The output directory
+        t_unit : str, default is "ps"
+            Other units are "ns", "mus", and "ms". The transformation
+            happens internally
+        verbose: boolean, default is False
+            Prints filenames
+        ctc_cutoff_Ang: float, default is None
+            Use this cutoff and save bintrajs instead
+        self_descriptor : str, default is "mdciaoCG"
+
+        Returns
+        -------
+        None
+        """
 
         if ctc_cutoff_Ang is None:
-            dicts = self.to_per_traj_dicts_for_saving(dt=dt, t_unit=t_unit)
+            dicts = self._to_per_traj_dicts_for_saving(t_unit=t_unit)
         else:
-            dicts = self.to_per_traj_dicts_for_saving_N_ctcs(ctc_cutoff_Ang, dt=dt, t_unit=t_unit)
+            dicts = self._to_per_traj_dicts_for_saving_bintrajs(ctc_cutoff_Ang,t_unit=t_unit)
 
         if str(ext).lower()=="none":
             ext='dat'
 
         for idict, ixtc  in zip(dicts, self.trajlabels):
             jxtc = ixtc
-            if basename:
-                jxtc = _path.basename(ixtc)
+            ixtc_path, ixtc_basename = _path.split(ixtc)
+
+            if self.shared_anchor_residue_index is not None:
+                self_descriptor = self.anchor_res_and_fragment_str.replace('*', "")
 
             if ctc_cutoff_Ang is None:
-                savename = "%s.%s.%s.%s" % (
-                    output_desc, self.anchor_res_and_fragment_str.replace('*', ""), jxtc, ext.strip("."))
+                savename_fmt = "%s.%s.%s.%s"
             else:
-                savename = "%s.%s.%s.N_ctcs.%s" % (
-                    output_desc, self.anchor_res_and_fragment_str.replace('*', ""), jxtc, ext.strip("."))
+                savename_fmt = "%s.%s.%s.bintrajs.%s"
+
+            savename = savename_fmt % (prepend_filename.strip("."), self_descriptor.strip("."), ixtc_basename, ext.strip("."))
+            savename = savename.replace(" ","_")
             savename = _path.join(output_dir, savename)
             if ext == 'xlsx':
                 _DF(idict["data"],
