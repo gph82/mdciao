@@ -380,6 +380,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             table_ext)
             fname = path.join(output_dir, fname)
 
+            #TODO can't the frequency_spreadsheet handle this now?
             if table_ext=='xlsx':
                 ihood.frequency_spreadsheet(ctc_cutoff_Ang, fname,
                                             write_interface=False,
@@ -388,6 +389,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             lb_format="join"
                                             )
             else:
+                # TODO can't the frequency_spreadsheet handle this now?
                 istr = (ihood.frequency_dataframe(ctc_cutoff_Ang,
                                                   by_atomtypes=True,
                                                   #AA_format="long",
@@ -421,6 +423,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             color_scheme = _my_color_schemes(curve_color),
                                             ctc_cutoff_Ang=ctc_cutoff_Ang,
                                             n_smooth_hw=n_smooth_hw,
+                                            dt=_tunit2tunit["ps"][t_unit],
+                                            #TODO perhaps it would be better to burry dt in the plotting directly?
                                             t_unit=t_unit,
                                             gray_background=gray_background,
                                             shorten_AAs=short_AA_names,
