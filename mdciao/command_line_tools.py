@@ -807,7 +807,6 @@ def interface(
 ):
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
-    dt = _t_unit2dt(t_unit)
 
     xtcs = _get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
@@ -1029,7 +1028,7 @@ def interface(
                                                color_scheme=_my_color_schemes(curve_color),
                                                ctc_cutoff_Ang=ctc_cutoff_Ang,
                                                n_smooth_hw=n_smooth_hw,
-                                               dt=dt,
+                                               dt=_tunit2tunit["ps"][t_unit],
                                                t_unit=t_unit,
                                                gray_background=gray_background,
                                                shorten_AAs=short_AA_names,
