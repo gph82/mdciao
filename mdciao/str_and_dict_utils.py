@@ -3,6 +3,12 @@ import numpy as _np
 import mdtraj as _md
 from .list_utils import re_warp
 
+_tunit2tunit = {"ps":  {"ps": 1,   "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
+                "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
+                "mus": {"ps": 1e6, "ns": 1e3,  "mus": 1,    "ms":1e-3},
+                "ms":  {"ps": 1e9, "ns": 1e6,  "mus": 1e3,  "ms":1},
+                }
+
 def get_sorted_trajectories(trajectories):
     r"""
     Common parser for something that can be interpreted as a trajectory

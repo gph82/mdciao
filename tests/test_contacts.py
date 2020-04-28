@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import Mock
 import numpy as _np
 import mock
+from os import path
 from scipy.spatial.distance import cdist
 from filenames import filenames
 import pytest
@@ -23,6 +24,8 @@ from matplotlib import pyplot as _plt
 from mdciao.contacts import _Fragments, \
     _Residues, _NeighborhoodNames, \
     _TimeTraces, _ContactStrings
+
+from tempfile import TemporaryDirectory as _TDir
 
 test_filenames = filenames()
 
@@ -1130,7 +1133,8 @@ class TestContactGroup(unittest.TestCase):
 class TestBaseClassContactGroup(unittest.TestCase):
     def setUp(self):
         self.top = md.load(test_filenames.prot1_pdb).top
-        self.cp1_w_anchor_and_frags_and_top = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
+        self.cp1_w_anchor_and_frags_and_top = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]],
+                                                          [[1, 2, 3], [1, 2]],
                                                           fragment_names=["fragA", "fragB"],
                                                           anchor_residue_idx=0,
                                                           top=self.top)
@@ -1361,120 +1365,336 @@ class TestContactGroupPlots(unittest.TestCase):
 
 
     def test_baseplot_minimal(self):
-        CP = ContactGroup([self.cp1, self.cp2])
-        jax = CP._plot_freqbars_baseplot(2)
+        CG = ContactGroup([self.cp1, self.cp2])
+        jax = CG._plot_freqbars_baseplot(2)
         assert isinstance(jax,_plt.Axes)
 
     def test_baseplot_pass_ax(self):
         _plt.plot()
         jax = _plt.gca()
-        CP = ContactGroup([self.cp1, self.cp2])
-        assert jax is CP._plot_freqbars_baseplot(2, jax=jax)
+        CG = ContactGroup([self.cp1, self.cp2])
+        assert jax is CG._plot_freqbars_baseplot(2, jax=jax)
 
     def test_baseplot_truncate(self):
-        CP = ContactGroup([self.cp1, self.cp2])
-        jax = CP._plot_freqbars_baseplot(2, truncate_at=.5)
+        CG = ContactGroup([self.cp1, self.cp2])
+        jax = CG._plot_freqbars_baseplot(2, truncate_at=.5)
         # TODO I would like to test that jax.patches(?) or equivalent has length 1 instead of 2
 
     def test_plot_freqs_as_bars_just_runs(self):
-        CP = ContactGroup([self.cp1, self.cp2])
-        jax = CP.plot_freqs_as_bars(2, "test_site")
+        CG = ContactGroup([self.cp1, self.cp2])
+        jax = CG.plot_freqs_as_bars(2, "test_site")
         assert isinstance(jax, _plt.Axes)
 
     def test_plot_freqs_as_bars_just_runs_labels_short(self):
-        CP = ContactGroup([self.cp1, self.cp2])
-        jax = CP.plot_freqs_as_bars(2, "test_site",shorten_AAs=True)
+        CG = ContactGroup([self.cp1, self.cp2])
+        jax = CG.plot_freqs_as_bars(2, "test_site",shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
 
     def test_plot_freqs_as_bars_just_runs_labels_xlim(self):
-        CP = ContactGroup([self.cp1, self.cp2])
-        jax = CP.plot_freqs_as_bars(2, "test_site",xlim=20)
+        CG = ContactGroup([self.cp1, self.cp2])
+        jax = CG.plot_freqs_as_bars(2, "test_site",xlim=20)
         assert isinstance(jax, _plt.Axes)
 
     def test_plot_neighborhood_raises(self):
-        CP = ContactGroup([self.cp1, self.cp2])
+        CG = ContactGroup([self.cp1, self.cp2])
         with pytest.raises(AssertionError):
-            CP.plot_neighborhood_freqs(2,0)
+            CG.plot_neighborhood_freqs(2,0)
 
     def test_plot_neighborhood_works_minimal(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+        CG = ContactGroup([self.cp1_w_anchor_and_frags,
                            self.cp2_w_anchor_and_frags])
-        jax = CP.plot_neighborhood_freqs(2,0)
+        jax = CG.plot_neighborhood_freqs(2,0)
         assert isinstance(jax, _plt.Axes)
 
     def test_plot_neighborhood_works_options(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+        CG = ContactGroup([self.cp1_w_anchor_and_frags,
                            self.cp2_w_anchor_and_frags])
-        jax = CP.plot_neighborhood_freqs(2,0, shorten_AAs=True)
+        jax = CG.plot_neighborhood_freqs(2,0, shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
-        jax = CP.plot_neighborhood_freqs(2, 0, xmax=10)
+        jax = CG.plot_neighborhood_freqs(2, 0, xmax=10)
         assert isinstance(jax, _plt.Axes)
         _plt.plot()
         jax = _plt.gca()
-        assert jax is CP.plot_neighborhood_freqs(2, 0, jax=jax)
+        assert jax is CG.plot_neighborhood_freqs(2, 0, jax=jax)
 
 
     def test_plot_timedep_ctcs(self):
         from matplotlib.pyplot import Figure
-        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+        CG = ContactGroup([self.cp1_w_anchor_and_frags,
                            self.cp2_w_anchor_and_frags])
-        figs = CP.plot_timedep_ctcs(1)
+        figs = CG.plot_timedep_ctcs(1)
         _np.testing.assert_equal(len(figs),1)
         assert isinstance(figs[0], Figure)
         ifig : Figure = figs[0]
         _np.testing.assert_equal(len(ifig.axes),2+1) #2 + twinx
 
     def test_plot_timedep_ctcs_with_valid_cutoff_no_pop(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+        CG = ContactGroup([self.cp1_w_anchor_and_frags,
                            self.cp2_w_anchor_and_frags],
                           )
-        figs = CP.plot_timedep_ctcs(1, ctc_cutoff_Ang=1)
+        figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1)
         ifig = figs[0]
         _np.testing.assert_equal(len(figs),1)
         _np.testing.assert_equal(len(ifig.axes),2+1+1) #2 + twinx + N
 
     def test_plot_timedep_ctcs_with_valid_cutoff_w_pop(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+        CG = ContactGroup([self.cp1_w_anchor_and_frags,
                            self.cp2_w_anchor_and_frags],
                           )
-        figs = CP.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
+        figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
                                     pop_N_ctcs=True)
         _np.testing.assert_equal(len(figs),2)
         _np.testing.assert_equal(len(figs[0].axes),2+1) #2 + twinx
         _np.testing.assert_equal(len(figs[1].axes),1)
 
     def test_plot_timedep_ctcs_skip_empty(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+        CG = ContactGroup([self.cp1_w_anchor_and_frags,
                            self.cp2_w_anchor_and_frags],
                           )
-        figs = CP.plot_timedep_ctcs(1, skip_timedep=True)
+        figs = CG.plot_timedep_ctcs(1, skip_timedep=True)
         _np.testing.assert_equal(len(figs),0)
 
     def test_plot_timedep_ctcs_skip_w_valid_cutoff(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags,
+        CG = ContactGroup([self.cp1_w_anchor_and_frags,
                            self.cp2_w_anchor_and_frags],
                           )
-        figs = CP.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
+        figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
                                     skip_timedep=True)
         _np.testing.assert_equal(len(figs),1)
         _np.testing.assert_equal(len(figs[0].axes),1) # Just nctc
 
     def test_plot_neighborhood_distributions_just_works(self):
         from matplotlib.pyplot import Axes
-        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top],
                           )
-        jax = CP.plot_neighborhood_distributions()
+        jax = CG.plot_neighborhood_distributions()
         assert isinstance(jax, Axes)
 
     def test_plot_neighborhood_distributions_just_works_w_options(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top],
                           )
-        jax = CP.plot_neighborhood_distributions(shorten_AAs=True,
+        jax = CG.plot_neighborhood_distributions(shorten_AAs=True,
                                                  ctc_cutoff_Ang=3,
                                                  xlim=[-1,5],
                                                  n_nearest=1)
+
+class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
+
+    def test_frequency_spreadsheedt_just_works(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                          self.cp2_w_anchor_and_frags_and_top])
+        with _TDir(suffix='_test_mdciao') as tmpdir:
+            CG.frequency_spreadsheet(2.5,path.join(tmpdir,"test.xlsx"),
+                                     write_interface=False)
+
+    def test_frequency_spreadsheedt_breakdown(self):
+        CG = ContactGroup([self.cp1_w_atom_types,
+                           self.cp2_w_atom_types])
+        with _TDir(suffix='_test_mdciao') as tmpdir:
+            CG.frequency_spreadsheet(2.5,path.join(tmpdir,"test.xlsx"),
+                                     write_interface=False,
+                                     by_atomtypes=True
+                                     )
+
+    def test_frequency_spreadsheet_raises_w_interface(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        with pytest.raises(NotImplementedError):
+            with _TDir(suffix='_test_mdciao') as tmpdir:
+                CG.frequency_spreadsheet(2.5, path.join(tmpdir,"test.xlsx"))
+
+class TestContactGroupTrajdicts(TestBaseClassContactGroup):
+
+    def test_to_per_traj_dicts_for_saving(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        list_of_dicts = CG._to_per_traj_dicts_for_saving()
+
+        data_traj_0 = list_of_dicts[0]["data"]
+        _np.testing.assert_array_equal(data_traj_0[:,0], self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0])
+        _np.testing.assert_array_equal(data_traj_0[:,1], self.cp1_w_anchor_and_frags_and_top.time_traces.ctc_trajs[0]*10)
+        _np.testing.assert_array_equal(data_traj_0[:,2], self.cp2_w_anchor_and_frags_and_top.time_traces.ctc_trajs[0]*10)
+
+        data_traj_1 = list_of_dicts[1]["data"]
+        _np.testing.assert_array_equal(data_traj_1[:, 0], self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1])
+        _np.testing.assert_array_equal(data_traj_1[:, 1], self.cp1_w_anchor_and_frags_and_top.time_traces.ctc_trajs[1] * 10)
+        _np.testing.assert_array_equal(data_traj_1[:, 2], self.cp2_w_anchor_and_frags_and_top.time_traces.ctc_trajs[1] * 10)
+
+    def test_to_per_traj_dicts_for_saving_with_tunits_ns(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="ns")
+
+        data_traj_0 = list_of_dicts[0]["data"]
+        _np.testing.assert_array_equal(data_traj_0[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0]*1e-3)
+
+        data_traj_1 = list_of_dicts[1]["data"]
+        _np.testing.assert_array_equal(data_traj_1[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-3)
+
+    def test_to_per_traj_dicts_for_saving_with_tunits_mus(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="mus")
+
+        data_traj_0 = list_of_dicts[0]["data"]
+        _np.testing.assert_array_equal(data_traj_0[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0] * 1e-6)
+
+        data_traj_1 = list_of_dicts[1]["data"]
+        _np.testing.assert_array_equal(data_traj_1[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-6)
+
+    def test_to_per_traj_dicts_for_saving_with_tunits_ms(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="ms")
+
+        data_traj_0 = list_of_dicts[0]["data"]
+        _np.testing.assert_array_equal(data_traj_0[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0] * 1e-9)
+
+        data_traj_1 = list_of_dicts[1]["data"]
+        _np.testing.assert_array_equal(data_traj_1[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-9)
+
+
+    def test_to_per_traj_dicts_for_saving_with_tunits_raises(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        with pytest.raises(ValueError):
+            list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="fs")
+
+class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
+
+    def test_to_per_traj_dicts_for_saving_bintrajs(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5)
+        bintrajs_per_traj = CG.binarize_trajs(2.5, order="traj")
+
+        data_traj_0 = list_of_dicts[0]["data"]
+        _np.testing.assert_array_equal(data_traj_0[:, 0], self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0])
+        _np.testing.assert_array_equal(data_traj_0[:, 1],
+                                       bintrajs_per_traj[0][:,0])
+        _np.testing.assert_array_equal(data_traj_0[:, 2],
+                                       bintrajs_per_traj[0][:,1])
+
+        data_traj_1 = list_of_dicts[1]["data"]
+        _np.testing.assert_array_equal(data_traj_1[:, 0], self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1])
+        _np.testing.assert_array_equal(data_traj_1[:, 1],
+                                       bintrajs_per_traj[1][:, 0])
+        _np.testing.assert_array_equal(data_traj_1[:, 2],
+                                       bintrajs_per_traj[1][:, 1])
+
+    def test_to_per_traj_dicts_for_saving_bintrajs_ns(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="ns")
+
+        data_traj_0 = list_of_dicts[0]["data"]
+        _np.testing.assert_array_equal(data_traj_0[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0]*1e-3)
+
+        data_traj_1 = list_of_dicts[1]["data"]
+        _np.testing.assert_array_equal(data_traj_1[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-3)
+
+    def test_to_per_traj_dicts_for_saving_bintrajs_mus(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="mus")
+
+        data_traj_0 = list_of_dicts[0]["data"]
+        _np.testing.assert_array_equal(data_traj_0[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0] * 1e-6)
+
+        data_traj_1 = list_of_dicts[1]["data"]
+        _np.testing.assert_array_equal(data_traj_1[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-6)
+
+    def test_to_per_traj_dicts_for_saving_bintrajs_ms(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="ms")
+
+        data_traj_0 = list_of_dicts[0]["data"]
+        _np.testing.assert_array_equal(data_traj_0[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0] * 1e-9)
+
+        data_traj_1 = list_of_dicts[1]["data"]
+        _np.testing.assert_array_equal(data_traj_1[:, 0],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-9)
+
+
+    def test_to_per_traj_dicts_for_saving_bintrajs_tunits_raises(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top])
+        with pytest.raises(ValueError):
+            list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="fs")
+
+class TestContactGroupSavetrajs(TestBaseClassContactGroup):
+
+    def test_save_trajs_no_anchor(self):
+        CG = ContactGroup([self.cp1_wtop_and_conslabs,
+                           self.cp2_wtop_and_conslabs])
+        with _TDir(suffix='_test_mdciao') as tempdir:
+            CG.save_trajs("test","dat", verbose=True, t_unit="ns",
+                          output_dir=tempdir)
+
+    def test_save_trajs_w_anchor(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top],
+                          )
+        with _TDir(suffix='_test_mdciao') as tempdir:
+            CG.save_trajs("test","dat", verbose=True, t_unit="ns",
+                          output_dir=tempdir)
+
+    def test_save_trajs_no_anchor_excel(self):
+        CG = ContactGroup([self.cp1_wtop_and_conslabs,
+                           self.cp2_wtop_and_conslabs])
+        with _TDir(suffix='_test_mdciao') as tempdir:
+            CG.save_trajs("test","xlsx", verbose=True, t_unit="ns",
+                          output_dir=tempdir)
+
+    def test_save_trajs_w_anchor_excel(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top],
+                          )
+        with _TDir(suffix='_test_mdciao') as tempdir:
+            CG.save_trajs("test","xlsx", verbose=True, t_unit="ns",
+                          output_dir=tempdir)
+
+    def test_save_trajs_w_anchor_None(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top],
+                          )
+        with _TDir(suffix='_test_mdciao') as tempdir:
+            CG.save_trajs("test", None, verbose=True, t_unit="ns",
+                          output_dir=tempdir)
+
+    def test_save_trajs_w_anchor_basename(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top],
+                          )
+        # Overwrite the trajlabels for the basename to work
+        CG._trajlabels = ["../non/existing/dir/traj1.xtc",
+                          "../non/existing/dir/traj2.xtc"]
+        with _TDir(suffix='_test_mdciao') as tempdir:
+            CG.save_trajs("test","dat", verbose=True, t_unit="ns",
+                          output_dir=tempdir)
+
+    def test_save_trajs_w_anchor_cutoff(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top],
+                          )
+        with _TDir(suffix='_test_mdciao') as tempdir:
+            CG.save_trajs("test_None", "dat", verbose=True, t_unit="ns",
+                          ctc_cutoff_Ang=2.5,
+                          output_dir=tempdir)
 
 if __name__ == '__main__':
     unittest.main()
