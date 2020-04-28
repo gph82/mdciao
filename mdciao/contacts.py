@@ -1868,8 +1868,9 @@ class ContactGroup(object):
                                          list_by_interface=False,
                                          return_as_dataframe=False):
         r"""
-        Dictionary of aggregated :obj:`frequency_per_contact` per residue names,
-        whatever those names are. See :obj:`ContactPair.labels` for more info
+        Dictionary of aggregated :obj:`frequency_per_contact` keyed
+        by residue names, using the most informative label possible
+        (See :obj:`ContactPair.labels` for more info on this)
         TODO add option the type of residue name we are using
 
         Parameters

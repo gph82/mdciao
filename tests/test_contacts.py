@@ -1208,18 +1208,18 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
                            self.cp2_w_anchor_and_frags_and_top])
         freq_dict = CP.frequency_dict_per_residue_names(2)
         assert len(freq_dict)==3
-        _np.testing.assert_equal(freq_dict["GLU30"],2/5+1/5)
-        _np.testing.assert_equal(freq_dict["VAL31"],2/5)
-        _np.testing.assert_equal(freq_dict["TRP32"],1/5)
+        _np.testing.assert_equal(freq_dict["E30@fragA"],2/5+1/5)
+        _np.testing.assert_equal(freq_dict["V31@fragB"],2/5)
+        _np.testing.assert_equal(freq_dict["W32@fragC"],1/5)
 
     def test_frequency_per_residue_name_no_sort(self):
         CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top])
         freq_dict = CP.frequency_dict_per_residue_names(2, sort=False)
         assert len(freq_dict) == 3
-        _np.testing.assert_equal(freq_dict["GLU30"], 2 / 5 + 1 / 5)
-        _np.testing.assert_equal(freq_dict["VAL31"], 2 / 5)
-        _np.testing.assert_equal(freq_dict["TRP32"], 1 / 5)
+        _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
+        _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
+        _np.testing.assert_equal(freq_dict["W32@fragC"], 1 / 5)
 
     def test_frequency_per_residue_name_dataframe(self):
         CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
@@ -1227,7 +1227,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         freq_dict = CP.frequency_dict_per_residue_names(2,
                                                         return_as_dataframe=True)
         assert len(freq_dict) == 3
-        _np.testing.assert_array_equal(freq_dict["label"].array,["GLU30","VAL31","TRP32"])
+        _np.testing.assert_array_equal(freq_dict["label"].array,["E30@fragA","V31@fragB","W32@fragC"])
         _np.testing.assert_array_equal(freq_dict["freq"].array,[2 / 5 + 1 / 5,
                                                                 2 / 5,
                                                                 1 / 5])
