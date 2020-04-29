@@ -1197,7 +1197,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_per_residue_idx(self):
         CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top])
-        freq_dict = CP.frequency_dict_per_residue_idx(2)
+        freq_dict = CP.frequency_sum_per_residue_idx_dict(2)
         assert len(freq_dict)==3
         _np.testing.assert_equal(freq_dict[0],2/5+1/5)
         _np.testing.assert_equal(freq_dict[1],2/5)
@@ -1206,7 +1206,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_per_residue_name(self):
         CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top])
-        freq_dict = CP.frequency_dict_per_residue_names(2)
+        freq_dict = CP.frequency_sum_per_residue_names_dict(2)
         assert len(freq_dict)==3
         _np.testing.assert_equal(freq_dict["E30@fragA"],2/5+1/5)
         _np.testing.assert_equal(freq_dict["V31@fragB"],2/5)
@@ -1215,7 +1215,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_per_residue_name_no_sort(self):
         CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top])
-        freq_dict = CP.frequency_dict_per_residue_names(2, sort=False)
+        freq_dict = CP.frequency_sum_per_residue_names_dict(2, sort=False)
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
@@ -1224,8 +1224,8 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_per_residue_name_dataframe(self):
         CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top])
-        freq_dict = CP.frequency_dict_per_residue_names(2,
-                                                        return_as_dataframe=True)
+        freq_dict = CP.frequency_sum_per_residue_names_dict(2,
+                                                            return_as_dataframe=True)
         assert len(freq_dict) == 3
         _np.testing.assert_array_equal(freq_dict["label"].array,["E30@fragA","V31@fragB","W32@fragC"])
         _np.testing.assert_array_equal(freq_dict["freq"].array,[2 / 5 + 1 / 5,
@@ -1236,8 +1236,8 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top])
         with pytest.raises(NotImplementedError):
-            CP.frequency_dict_per_residue_names(2,
-                                                list_by_interface=True)
+            CP.frequency_sum_per_residue_names_dict(2,
+                                                    list_by_interface=True)
 
     def test_frequency_dict_by_consensus_labels_fails(self):
 
@@ -1479,6 +1479,22 @@ class TestContactGroupPlots(unittest.TestCase):
                                                  ctc_cutoff_Ang=3,
                                                  xlim=[-1,5],
                                                  n_nearest=1)
+        assert isinstance(jax, _plt.Axes)
+
+    def test_histo_summary_just_works(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top],
+                          )
+        jax = CG.plot_frequency_sums_as_bars(2.0, "test", xmax=4)
+        assert isinstance(jax, _plt.Axes)
+        jax.figure.savefig("test.png")
+
+    def test_histo_summary_raises(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                           self.cp2_w_anchor_and_frags_and_top],
+                          )
+        with pytest.raises(NotImplementedError):
+            jax = CG.plot_frequency_sums_as_bars(2.0, "test", list_by_interface=True)
 
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 

@@ -972,10 +972,10 @@ def interface(
     print()
     print(neighborhood.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))
     print()
-    dfs = neighborhood.frequency_dict_per_residue_names(ctc_cutoff_Ang,
-                                                        list_by_interface=True,
-                                                        return_as_dataframe=True,
-                                                        sort=sort_by_av_ctcs)
+    dfs = neighborhood.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
+                                                            list_by_interface=True,
+                                                            return_as_dataframe=True,
+                                                            sort=sort_by_av_ctcs)
     print(dfs[0].round({"freq":2}))
     print()
     print(dfs[1].round({"freq":2}))
@@ -1001,14 +1001,14 @@ def interface(
                                     truncate_at=.05,
                                     )
 
-    neighborhood.histo_summary(ctc_cutoff_Ang,
-                               output_desc,
-                               jax=histoax[1],
-                               list_by_interface=True,
-                               label_fontsize_factor=panelsize2font / panelsize,
-                               truncate_at=.05,
-                               sort=sort_by_av_ctcs,
-                               )
+    neighborhood.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
+                                             output_desc,
+                                             jax=histoax[1],
+                                             list_by_interface=True,
+                                             label_fontsize_factor=panelsize2font / panelsize,
+                                             truncate_at=.05,
+                                             sort=sort_by_av_ctcs,
+                                             )
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
     fname = path.join(output_dir, fname)
