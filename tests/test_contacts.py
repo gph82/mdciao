@@ -1130,6 +1130,21 @@ class TestContactGroup(unittest.TestCase):
         _np.testing.assert_array_equal([3, 1, 1], ncts_tt[0])
         _np.testing.assert_array_equal([1], ncts_tt[1])
 
+    def test_no_interface(self):
+        CP = ContactGroup([self.cp1, self.cp2, self.cp3])
+        assert CP.interface is False
+        _np.testing.assert_array_equal(CP.interface_residxs, [[],[]])
+        _np.testing.assert_array_equal(CP.interface_labels, [[],[]])
+        _np.testing.assert_array_equal(CP.interface_reslabels_short, [[],[]])
+        _np.testing.assert_array_equal(CP.interface_labels_consensus, [[],[]])
+        _np.testing.assert_array_equal(CP.interface_orphaned_labels, [[],[]])
+        with pytest.raises(AssertionError):
+            CP._freq_name_dict2_interface_dict(None)
+        with pytest.raises(AssertionError):
+            CP.plot_interface_matrix(None)
+        assert CP.interface_matrix(None) is None
+
+
 class TestBaseClassContactGroup(unittest.TestCase):
     def setUp(self):
         self.top = md.load(test_filenames.prot1_pdb).top
@@ -1151,6 +1166,13 @@ class TestBaseClassContactGroup(unittest.TestCase):
                                                  top=self.top)
         self.cp3_wtop_and_conslabs = ContactPair([1, 2], [[.25, .15, .35]], [[1, 2, 3]],
                                                  consensus_labels=["4.50", "5.50"],
+                                                 top=self.top)
+        self.cp4_wtop_and_conslabs = ContactPair([3, 2], [[.25, .25, .35]], [[1, 2, 3]],
+                                                 consensus_labels=["3.51", "5.50"],
+                                                 top=self.top)
+
+        self.cp5_wtop_and_conslabs = ContactPair([4, 2], [[.25, .25, .35]], [[1, 2, 3]],
+                                                 consensus_labels=["3.51", "5.50"],
                                                  top=self.top)
 
         # Completely bogus contacts but testable
@@ -1487,7 +1509,6 @@ class TestContactGroupPlots(unittest.TestCase):
                           )
         jax = CG.plot_frequency_sums_as_bars(2.0, "test", xmax=4)
         assert isinstance(jax, _plt.Axes)
-        jax.figure.savefig("test.png")
 
     def test_histo_summary_raises(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
@@ -1711,6 +1732,64 @@ class TestContactGroupSavetrajs(TestBaseClassContactGroup):
             CG.save_trajs("test_None", "dat", verbose=True, t_unit="ns",
                           ctc_cutoff_Ang=2.5,
                           output_dir=tempdir)
+
+class TestContactGroupInterface(TestBaseClassContactGroup):
+
+    def setUp(self):
+        super(TestContactGroupInterface,self).setUp()
+        #TODO here in case i need extra stuff, otherwise
+
+    def test_instantiates_raises_intersect(self):
+        with pytest.raises(AssertionError):
+            I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs],
+                         interface_residxs=[[1, 3],
+                                            [1, 2]])
+
+    def test_instantiates_raises_duplicates(self):
+        with pytest.raises(AssertionError) as e:
+            I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs],
+                         interface_residxs=[[0, 0],
+                                            [1, 2]])
+
+        with pytest.raises(AssertionError) as e:
+            I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs],
+                         interface_residxs=[[0, 3],
+                                            [1, 1, 2]])
+
+    def test_instantiates_to_no_interface(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs],
+                         interface_residxs=[[10, 30],
+                                            [11, 20]])
+        assert I.interface is False
+
+    def test_instantiates_to_no_interface_even1res(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs],
+                         interface_residxs=[[0, 30],
+                                            [11, 20]])
+        assert I.interface is False
+        _np.testing.assert_array_equal(I.interface_residxs[0],[0])
+        assert I.interface_residxs[1]==[]
+
+    def test_easy(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs],
+                          interface_residxs=[[3, 0],
+                                             [2, 1]])
+        assert I.interface
+        _np.testing.assert_array_equal(I.interface_residxs[0],[0,3])
+        _np.testing.assert_array_equal(I.interface_residxs[1],[1,2])
+        print(I.interface_labels)
 
 if __name__ == '__main__':
     unittest.main()
