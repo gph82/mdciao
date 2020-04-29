@@ -77,8 +77,8 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragm
         restrict_to_resSeq = [restrict_to_resSeq]
     for resSeq, residx in resSeq2residxs.items():
         if resSeq in restrict_to_resSeq:
-            order_mask = _np.array([ii for ii in order if residx in residxs_pairs[ii]])
-            print("#idx    Freq  contact             segA-segB residxA   residxB   ctc_idx")
+            order_mask = _np.array([ii for ii in order if residx in residxs_pairs[ii]],dtype=int)
+            print("#idx    Freq  contact             segA-segB residxA   residxB   ctc_idx  sum")
             isum = 0
             seen_ctcs = []
             for ii, oo in enumerate(order_mask[:n_ctcs]):
@@ -90,9 +90,8 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragm
                 seen_ctcs.append(imean)
                 print("%-6s %3.2f %8s-%-8s    %5u-%-5u %7u %7u %7u %3.2f" % (
                  '%u:' % (ii + 1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
-
-            total_n_ctcs = ctc_freqs[order_mask].sum()
-            nc = _np.argwhere(_np.cumsum(ctc_freqs[order_mask])>=total_n_ctcs*fac)[0]+1
+            total_n_ctcs = _np.array(ctc_freqs)[order_mask].sum()
+            nc = _np.argwhere(_np.cumsum(_np.array(ctc_freqs)[order_mask])>=total_n_ctcs*fac)[0]+1
             print("These %u contacts capture %3.1f of the total %3.1f (over %u contacts)."
                   " %u ctcs already capture %3.1f%% of %3.1f."%(ii+1,isum,total_n_ctcs, len(order_mask), nc, fac*100, total_n_ctcs))
 
