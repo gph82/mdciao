@@ -14,7 +14,7 @@ from .str_and_dict_utils import \
     _tunit2tunit
 
 
-from .plots import plot_w_smoothing_auto
+from .plots import plot_w_smoothing_auto, add_tilted_labels_to_patches as _add_tilted_labels_to_patches
 from collections import defaultdict, Counter as _col_Counter
 
 import matplotlib.pyplot as _plt
@@ -907,7 +907,6 @@ class _NeighborhoodNames(object):
         return '%s@%s' % (self.partner_residue_short,
                           self.partner_fragment_best)
 
-
 class _ContactStrings(object):
     r"""
     Only Return Strings
@@ -1067,8 +1066,6 @@ class _Fragments(object):
 
         """
         return self._fragment_colors
-
-
 
 class ContactPair(object):
     r"""Class for abstracting a single contact over many trajectory"""
@@ -1839,7 +1836,7 @@ class ContactGroup(object):
         """
         return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang) for ictc in self._contacts])
 
-    def frequency_dict_per_residue_idx(self, ctc_cutoff_Ang):
+    def frequency_sum_per_residue_idx_dict(self, ctc_cutoff_Ang):
         r"""
         Dictionary of aggregated :obj:`frequency_per_contact` per residue indices
 
@@ -1863,10 +1860,10 @@ class ContactGroup(object):
         dict_sum = {key: _np.sum(val) for key, val in dict_sum.items()}
         return dict_sum
 
-    def frequency_dict_per_residue_names(self, ctc_cutoff_Ang,
-                                         sort=True,
-                                         list_by_interface=False,
-                                         return_as_dataframe=False):
+    def frequency_sum_per_residue_names_dict(self, ctc_cutoff_Ang,
+                                             sort=True,
+                                             list_by_interface=False,
+                                             return_as_dataframe=False):
         r"""
         Dictionary of aggregated :obj:`frequency_per_contact` keyed
         by residue names, using the most informative label possible
@@ -1889,7 +1886,7 @@ class ContactGroup(object):
         -------
 
         """
-        freqs = self.frequency_dict_per_residue_idx(ctc_cutoff_Ang)
+        freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang)
         dict_out = {}
         keys = list(freqs.keys())
         if sort:
@@ -1918,7 +1915,7 @@ class ContactGroup(object):
     # TODO this seems to be unused
     def frequency_table_by_residue(self, ctc_cutoff_Ang,
                                    list_by_interface=False):
-        dict_list = self.frequency_dict_per_residue_names(ctc_cutoff_Ang,
+        dict_list = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
                                                      list_by_interface=list_by_interface)
 
         if list_by_interface:
@@ -2078,7 +2075,7 @@ class ContactGroup(object):
 
         offset += 1
 
-        idfs = self.frequency_dict_per_residue_names(ctc_cutoff_Ang,
+        idfs = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
                                                          sort=sort,
                                                          list_by_interface=write_interface,
                                                          return_as_dataframe=True)
@@ -2250,10 +2247,10 @@ class ContactGroup(object):
         # this shouldn't be necessary anymore
         #label_bars = [ilab.replace("@None","") for ilab in label_bars]
 
-        self.add_tilted_labels_to_patches(jax,
-                                          label_bars[:(jax.get_xlim()[1]).astype(int)+1],
-                                          label_fontsize_factor=label_fontsize_factor
-                                          )
+        _add_tilted_labels_to_patches(jax,
+                                      label_bars[:(jax.get_xlim()[1]).astype(int)+1],
+                                      label_fontsize_factor=label_fontsize_factor
+                                      )
 
         #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
@@ -2314,9 +2311,9 @@ class ContactGroup(object):
                  color=self.anchor_fragment_color,
                  label=_replace4latex(label_dotref))
 
-        self.add_tilted_labels_to_patches(jax,
-                                          label_bars,
-                                          label_fontsize_factor=label_fontsize_factor)
+        _add_tilted_labels_to_patches(jax,
+                                      label_bars,
+                                      label_fontsize_factor=label_fontsize_factor)
 
         jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
         if xmax is not None:
@@ -2545,28 +2542,67 @@ class ContactGroup(object):
                    loc=1,
                    )
 
-    def histo_summary(self,
-                      ctc_cutoff_Ang,
-                      site_name,
-                      xlim=None,
-                      jax=None,
-                      shorten_AAs=False,
-                      label_fontsize_factor=1,
-                      truncate_at=0,
-                      bar_width_in_inches=.75,
-                      list_by_interface=False,
-                      sort=True):
+    def plot_frequency_sums_as_bars(self,
+                                    ctc_cutoff_Ang,
+                                    title_str,
+                                    xmax=None,
+                                    jax=None,
+                                    shorten_AAs=False,
+                                    label_fontsize_factor=1,
+                                    truncate_at=0,
+                                    bar_width_in_inches=.75,
+                                    list_by_interface=False,
+                                    sort=True):
+        r"""
+        bar plot with per-residue sums of frequencies (=nr. of neighbors?, cumulative freq? SIP?)
+        TODO think about introducing the term nr of neighbors
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        title_str : str
+        xmax : float, default is None
+            X-axis will extend from -.5 to xmax+.5
+        jax : obj:`matplotlib.pyplot.Axes`, default is None
+            If None, one will be created, else draw here
+        shorten_AAs : boolean, default is False
+            Unused ATM
+        label_fontsize_factor : float, default is 1
+            Some control over fontsizes when plotting a high
+            number of bars
+        truncate_at : float, default is 0
+            Do not show sums of freqs lower than this value
+        bar_width_in_inches : float, default is .75
+            If no :obj:`jax` is parsed, this controls that the
+            drawn figure always has a size proportional to the
+            number of frequencies being shown. Allows for
+            combining multiple subplots with different number of bars
+            in one figure with all bars equally wide regardles of
+            the subplot
+        list_by_interface : boolean, default is True
+            Separate residues by interface
+        sort : boolean, default is True
+            Sort sums of freqs in descending order
+
+        Returns
+        -------
+        ax : :obj:`matplotlib.pyplot.Axes`
+        """
 
         # Base dict
-        freqs_dict = self.frequency_dict_per_residue_names(ctc_cutoff_Ang,
-                                                           sort=sort,
-                                                           list_by_interface=list_by_interface)
+        freqs_dict = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
+                                                               sort=sort,
+                                                          list_by_interface=list_by_interface)
+
+        # TODO the method plot_freqs_as_bars is very similar but
+        # i think it's better to keep them separated
+
         # TODO this code is repeated in table_by_residue
         if list_by_interface:
+            raise(NotImplementedError)
             label_bars = list(freqs_dict[0].keys())+list(freqs_dict[1].keys())
             freqs = _np.array(list(freqs_dict[0].values())+list(freqs_dict[1].values()))
         else:
-            label_bars, freqs = list(freqs_dict.keys()),list(freqs_dict.values())
+            label_bars, freqs = list(freqs_dict.keys()),_np.array(list(freqs_dict.values()))
 
         # Truncate
         label_bars = [label_bars[ii] for ii in _np.argwhere(freqs>truncate_at).squeeze()]
@@ -2581,26 +2617,25 @@ class ContactGroup(object):
                           width=.25)
         yticks = _np.arange(.5,_np.max(freqs), .5)
         jax.set_yticks(yticks)
-        #jax.set_xticks([])
+        jax.set_xticks([],[])
         [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in yticks]
 
         # Cosmetics
         jax.set_title(
-            "Average nr. contacts @%2.1f $\AA$ \nper residue of site '%s'"
-            % (ctc_cutoff_Ang, site_name))
+            "Average nr. contacts @%2.1f $\AA$ \nper residue of contact group '%s'"
+            % (ctc_cutoff_Ang, title_str))
 
+        #TODO AFAIK this has been taken care of in the label-producing properties
+        #label_bars = [ilab.replace("@None", "") for ilab in label_bars]
 
-        label_bars = [ilab.replace("@None", "") for ilab in label_bars]
+        _add_tilted_labels_to_patches(jax,
+                                      label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
+                                      label_fontsize_factor=label_fontsize_factor,
+                                      trunc_y_labels_at=.65*_np.max(freqs)
+                                      )
 
-        self.add_tilted_labels_to_patches(jax,
-                                          label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
-                                          label_fontsize_factor=label_fontsize_factor,
-                                          trunc_y_labels_at=.65*_np.max(freqs)
-                                          )
-
-        # jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
-        if xlim is not None:
-            jax.set_xlim([-.5, xlim + 1 - .5])
+        if xmax is not None:
+            jax.set_xlim([-.5, xmax + 1 - .5])
 
         return jax
 
@@ -2613,23 +2648,6 @@ class ContactGroup(object):
             mat[jj,ii] = freq
 
         return mat
-
-    def add_tilted_labels_to_patches(self, jax, labels,
-                                     label_fontsize_factor=1,
-                                     trunc_y_labels_at=.65):
-        for ii, (ipatch, ilab) in enumerate(zip(jax.patches, labels)):
-            ix = ii
-            iy = ipatch.get_height()
-            iy += .01
-            if iy > trunc_y_labels_at:
-                iy = trunc_y_labels_at
-            jax.text(ix, iy, _replace4latex(ilab),
-                     va='bottom',
-                     ha='left',
-                     rotation=45,
-                     fontsize=_rcParams["font.size"]*label_fontsize_factor,
-                     backgroundcolor="white"
-                     )
 
     # TODO document this to say that these labels are already ordered bc
     # within one given contact_group object/interface, the
@@ -2889,7 +2907,6 @@ class ContactGroup(object):
             ext='dat'
 
         for idict, ixtc  in zip(dicts, self.trajlabels):
-            jxtc = ixtc
             ixtc_path, ixtc_basename = _path.split(ixtc)
 
             if self.shared_anchor_residue_index is not None:
@@ -2915,7 +2932,6 @@ class ContactGroup(object):
 
             if verbose:
                 print(savename)
-
 
 def contact_map_to_dict(imat, top,
                         res_idxs=None,
@@ -3009,7 +3025,7 @@ class group_of_interfaces(object):
             if not per_residue:
                 idict = {"-".join(sorted(triplet[:2])):triplet[-1] for triplet in fval}
             else:
-                idict = self.interfaces[fkey].frequency_dict_per_residue_names(ctc_cutoff_Ang)
+                idict = self.interfaces[fkey].frequency_sum_per_residue_names_dict(ctc_cutoff_Ang)
 
             _freqs[fkey]={_replace_w_dict(key, replacement_dict):val for key, val in idict.items()}
 

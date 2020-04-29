@@ -421,3 +421,36 @@ def span_domains(iax, domain_dict,
                     iax.axhspan(_np.min(val)-.5, _np.max(val)+.5, alpha=alpha,
                                 zorder=zorder, color=color_array[cc])
         idx *= fac
+
+def add_tilted_labels_to_patches(jax, labels,
+                                 label_fontsize_factor=1,
+                                 trunc_y_labels_at=.65):
+    r"""
+    Iterate through :obj:`jax.patches` and place the text strings
+    in :obj:`labels` on top of it.
+
+    Parameters
+    ----------
+    jax
+    labels
+    label_fontsize_factor
+    trunc_y_labels_at
+
+    Returns
+    -------
+
+    """
+    for ii, (ipatch, ilab) in enumerate(zip(jax.patches, labels)):
+        ix = ii
+        iy = ipatch.get_height()
+        iy += .01
+        if iy > trunc_y_labels_at:
+            iy = trunc_y_labels_at
+        jax.text(ix, iy, _replace4latex(ilab),
+                 va='bottom',
+                 ha='left',
+                 rotation=45,
+                 fontsize=_rcParams["font.size"]*label_fontsize_factor,
+                 backgroundcolor="white"
+                 )
+
