@@ -1565,14 +1565,39 @@ class ContactPair(object):
 class ContactGroup(object):
     r"""Class for containing contact objects, ideally
     it can be used for vicinities, sites, interfaces etc"""
-
+    #TODO create an extra sub-class? Unsure
     def __init__(self,
                  list_of_contact_objects,
                  interface_residxs=None,
                  top=None):
+        r"""
+
+        Parameters
+        ----------
+        list_of_contact_objects
+        interface_residxs : list of two iterables of indexes
+            In interface is defined by two, non-overlapping
+             groups of residues. This definition is flexible,
+            i.e. the only requirement is that the residues in
+            each group do not overlap
+
+            The property :obj:`self.interface_residxs` groups
+            the object's :obj:`self.residxs_pairs` into
+            two groups.
+
+            If one the groups in :obj:`interface_residxs`
+            does not overlap with the available :obj:`self.residxs_pairs`
+            then that group of  :obj:`self.interface_residxs` will
+            be None. If no overlap exists, then :obj:`self.residxs_pairs`
+            is None
+            #todo THINK of a more consistent way [None,[1,2]] vs [[],[1,2]]
+
+        top
+        """
         self._contacts = list_of_contact_objects
         self._n_ctcs  = len(list_of_contact_objects)
         self._interface_residxs = interface_residxs
+        self._interface = False
         if top is None:
             self._top = self._unique_topology_from_ctcs()
         else:
@@ -1637,6 +1662,25 @@ class ContactGroup(object):
                                                               "Check your consensus labels"%(cl,self._resname2cons[kres], val)
                 self._resname2cons[kres]=cl
 
+            if self._interface_residxs is not None:
+                # TODO prolly this is anti-pattern but I prefer these many sanity checks
+                assert len(self._interface_residxs)==2
+                intersect = list(set(self._interface_residxs[0]).intersection(self._interface_residxs[1]))
+                assert len(intersect)==0, ("Some_residxs appear in both members of the interface %s, "
+                                           "this is not possible"%intersect)
+
+                assert len(self._interface_residxs[0])==len(_np.unique(self._interface_residxs[0]))
+                assert len(self._interface_residxs[1])==len(_np.unique(self._interface_residxs[1]))
+
+                res = []
+                for ig in self._interface_residxs:
+                    res.append(sorted(set(ig).intersection(_np.unique(self.res_idxs_pairs,
+                                                                      ))))
+                self._interface_residxs = res
+                if len(res[0])>0 and len(res[1])>0:
+                    self._interface = True
+            else:
+                self._interface_residxs = [[],[]]
     #todo again the dicussion about named tuples vs a miriad of properties
     # I am opting for properties because of easyness of documenting i
 
@@ -2653,15 +2697,26 @@ class ContactGroup(object):
     # residues can be sorted according to their order
 
     @property
+    def interface(self):
+        r""" Whether this ContactGroup can be interpreted as an interface.
+
+        Note that while some idxs may have been parsed at initialization,
+        these were not found in self.residxs_pairs and this will evaluate
+        to False"""
+
+        return self._interface
+    @property
     def interface_residxs(self):
-        res = None
-        if self._interface_residxs is not None:
-            res = []
-            for ig in self._interface_residxs:
-                res.append(sorted(set(ig).intersection(_np.unique(self.res_idxs_pairs,
-                                                                  # return_index=True
-                                                                  ))))
-        return res
+        r"""
+        The residues split into the interface
+        to that interface, in ascending order within each member
+        of the interface
+
+        Returns
+        -------
+
+        """
+        return self._interface_residxs
 
     @property
     def interface_labels(self):
@@ -2674,9 +2729,20 @@ class ContactGroup(object):
         return labs_out
 
     @property
+    def interface_reslabels_short(self):
+        labs = [[], []]
+        for ii, ig in enumerate(self.interface_residxs):
+            for idx in ig:
+                ctc_idx, res_idx = self.residx2ctcidx(idx)[0]
+                labs[ii].append(self.residue_names_short[ctc_idx][res_idx])
+
+        return labs
+
+    @property
     def interface_labels_consensus(self):
-        if self._interface_residxs is not None \
-                and not hasattr(self, "_interface_labels_consensus"):
+        # TODO do I have anything like this anymore (with self.interface=False)
+        #if self._interface_residxs is not None \
+        #        and not hasattr(self, "_interface_labels_consensus"):
             labs = [[], []]
             for ii, ig in enumerate(self.interface_residxs):
                 for idx in ig:
@@ -2684,14 +2750,23 @@ class ContactGroup(object):
                     labs[ii].append(self.consensus_labels[ctc_idx][res_idx])
 
             return labs
-        elif hasattr(self, "_interface_labels_consensus"):
-            return self._interface_labels_consensus
+        #elif hasattr(self, "_interface_labels_consensus"):
+        #    return self._interface_labels_consensus
+        #else:
+        #    return None
 
     @property
     def interface_orphaned_labels(self):
+        r"""
+        list of labels that lack consensus nomenclature
+        Returns
+        -------
+
+        """
         return [[AA for AA in conlabs if "." not in AA] for conlabs in
                 self.interface_labels_consensus]
 
+    """ I am commenting all this until the interface UI is better
     def interface_relabel_orphans(self):
         labs_out = [[], []]
         for ii, labels in enumerate(self.interface_labels_consensus):
@@ -2705,20 +2780,11 @@ class ContactGroup(object):
 
         self._interface_labels_consensus = labs_out
         # return labs_out
-
-    @property
-    def interface_reslabels_short(self):
-        if self._interface_residxs is not None:
-            labs = [[], []]
-            for ii, ig in enumerate(self.interface_residxs):
-                for idx in ig:
-                    ctc_idx, res_idx = self.residx2ctcidx(idx)[0]
-                    labs[ii].append(self.residue_names_short[ctc_idx][res_idx])
-
-            return labs
+    """
 
     def _freq_name_dict2_interface_dict(self, freq_dict_in,
                                         sort=True):
+        assert self.interface
         dict_out = [{}, {}]
         for ii, ilabs in enumerate(self.interface_labels):
             # print(ilabs)
@@ -2738,6 +2804,7 @@ class ContactGroup(object):
                               #label_type='residue',
                               #label_type='both'
                               ):
+        assert self.interface
         mat = self.interface_matrix(ctc_cutoff_Ang)
         if label_type=='consensus':
             labels = self.interface_labels_consensus
@@ -2760,7 +2827,7 @@ class ContactGroup(object):
     # TODO would it be better to make use of self.frequency_dict_by_consensus_labels
     def interface_matrix(self,ctc_cutoff_Ang):
         mat = None
-        if self._interface_residxs is not None:
+        if self.interface:
             mat = _np.zeros((len(self.interface_residxs[0]),
                              len(self.interface_residxs[1])))
             freqs = self.frequency_per_contact(ctc_cutoff_Ang)
