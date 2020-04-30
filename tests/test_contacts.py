@@ -615,7 +615,7 @@ class TestContactPair(unittest.TestCase):
                           fragment_names=["fragA", "fragB"]
                           )
         idict = cpt.frequency_dict(21)
-        assert idict["label"] == '%-15s - %-15s'%("0@fragA","1@fragB")
+        assert idict["label"] == '%-15s - %-15s'%("0@fragA","1@fragB"),idict["label"]
 
         idict = cpt.frequency_dict(21,AA_format="long")
         assert idict["label"] == '%-15s - %-15s'%("0@fragA","1@fragB")
@@ -920,50 +920,103 @@ class Test_pick_best_label(unittest.TestCase):
         assert(auto_format_fragment_string(option="Print this instead", better_option="NA") == "Print this instead")
         assert(auto_format_fragment_string(option="Print this instead", better_option="na") == "Print this instead")
 
-class TestContactGroup(unittest.TestCase):
-
+class TestBaseClassContactGroup(unittest.TestCase):
     def setUp(self):
-        self.cp1 = ContactPair([0, 1], [[.1,   .2, .3] , [.4]], [[1, 2, 3], [1]])
-        self.cp2 = ContactPair([0, 2], [[.15, .35, .25], [.16]],[[1,2,3], [1]])
+        self.top = md.load(test_filenames.prot1_pdb).top
+
+
+        self.cp1 = ContactPair([0, 1], [[.1, .2, .3], [.4]], [[1, 2, 3], [1]])
+        self.cp2 = ContactPair([0, 2], [[.15, .35, .25], [.16]], [[1, 2, 3], [1]])
         self.cp3 = ContactPair([1, 2], [[.15, .30, .35], [.45]], [[1, 2, 3], [1]])
 
-        self.top = md.load(test_filenames.prot1_pdb).top
         self.cp1_wtop = ContactPair([0,1], [[.1,   .2, .3]], [[1, 2, 3]], top=self.top)
         self.cp2_wtop = ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]], top=self.top)
-        self.cp3_wtop_other =  ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]],
-                                           top=md.load(test_filenames.file_for_test_pdb).top)
+        self.cp3_wtop_other = ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
+                                          top=md.load(test_filenames.file_for_test_pdb).top)
+
+        self.cp1_w_anchor_and_frags = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
+                                                  fragment_names=["fragA", "fragB"],
+                                                  fragment_colors=["r", "b"],
+                                                  anchor_residue_idx=0)
+
+        self.cp2_w_anchor_and_frags = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
+                                                  fragment_names=["fragA", "fragC"],
+                                                  fragment_colors=["r", "g"],
+                                                  anchor_residue_idx=0)
+
+        self.cp3_w_anchor_and_frags_wrong_anchor_color = ContactPair([0, 3], [[.15, .25, .35], [.45, .45]],
+                                                                     [[1, 2, 3], [1, 2]],
+                                                                     fragment_names=["fragA", "fragC"],
+                                                                     fragment_colors=["y", "g"],
+                                                                     anchor_residue_idx=0)
+
+        self.cp1_w_anchor_and_frags_and_top = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]],
+                                                          [[1, 2, 3], [1, 2]],
+                                                          fragment_names=["fragA", "fragB"],
+                                                          anchor_residue_idx=0,
+                                                          top=self.top)
+        self.cp2_w_anchor_and_frags_and_top = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
+                                                          fragment_names=["fragA", "fragC"],
+                                                          anchor_residue_idx=0,
+                                                          top=self.top)
+
+
         self.cp1_wtop_and_conslabs = ContactPair([0, 1], [[.1, .2, .3]], [[1, 2, 3]],
-                                                 consensus_labels=["3.50","4.50"],
+                                                 consensus_labels=["3.50", "4.50"],
                                                  top=self.top)
         self.cp2_wtop_and_conslabs = ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
                                                  consensus_labels=["3.50", "5.50"],
                                                  top=self.top)
+        self.cp3_wtop_and_conslabs = ContactPair([1, 2], [[.25, .15, .35]], [[1, 2, 3]],
+                                                 consensus_labels=["4.50", "5.50"],
+                                                 top=self.top)
+
         self.cp3_wtop_and_wrong_conslabs = ContactPair([1, 2], [[.1, .2, 3]], [[1, 2, 3]],
-                                                       consensus_labels=["4.50","550"],
+                                                       consensus_labels=["4.50", "550"],
                                                        top=self.top)
 
-        self.cp1_w_anchor_and_frags = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
-                                                  fragment_names=["fragA", "fragB"],
-                                                  fragment_colors=["r","b"],
-                                                  anchor_residue_idx=0)
-        self.cp2_w_anchor_and_frags  = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
-                                                   fragment_names=["fragA", "fragC"],
-                                                   fragment_colors=["r","g"],
-                                                   anchor_residue_idx=0)
-        self.cp3_w_anchor_and_frags_wrong_anchor_color = ContactPair([0, 3], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
-                                                  fragment_names=["fragA", "fragC"],
-                                                  fragment_colors=["y", "g"],
-                                                  anchor_residue_idx=0)
+        self.cp4_wtop_and_conslabs = ContactPair([3, 2], [[.25, .25, .35]], [[1, 2, 3]],
+                                                 consensus_labels=["3.51", "5.50"],
+                                                 top=self.top)
 
+        self.cp5_wtop_and_wo_conslabs = ContactPair([4, 5], [[.25, .25, .35]], [[1, 2, 3]],
+                                                 #consensus_labels=["3.51", "5.50"],
+                                                 top=self.top)
 
-        self.cp1_w_anchor_and_frags_and_top = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
-                                                  fragment_names=["fragA", "fragB"],
-                                                  anchor_residue_idx=0,
-                                                          top=self.top)
-        self.cp2_w_anchor_and_frags_and_top = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
-                                                  fragment_names=["fragA", "fragC"],
-                                                  anchor_residue_idx=0,
-                                                          top=self.top)
+        # Completely bogus contacts but testable
+        self.atom_BB0 = list(self.top.residue(0).atoms_by_name("CA"))[0].index
+        self.atom_SC0 = list(self.top.residue(0).atoms_by_name("CB"))[0].index
+        self.atom_BB1 = list(self.top.residue(1).atoms_by_name("CA"))[0].index
+        self.atom_SC1 = list(self.top.residue(1).atoms_by_name("CB"))[0].index
+        self.atom_BB2 = list(self.top.residue(2).atoms_by_name("CA"))[0].index
+        self.atom_SC2 = list(self.top.residue(2).atoms_by_name("CB"))[0].index
+
+        self.cp1_w_atom_types = ContactPair([0, 1],
+                                            [[.15, .25, .35, .45]],
+                                            [[0, 1, 2, 3]],
+                                            atom_pair_trajs=[
+                                                [[self.atom_BB0, self.atom_SC1],
+                                                 [self.atom_BB0, self.atom_BB1],
+                                                 [self.atom_BB0, self.atom_BB1],
+                                                 [self.atom_BB0, self.atom_BB1]
+                                                 ],
+                                            ],
+                                            top=self.top
+                                            )
+        self.cp2_w_atom_types = ContactPair([0, 2],
+                                            [[.15, .25, .35, .45]],
+                                            [[0, 1, 2, 3]],
+                                            atom_pair_trajs=[
+                                                [[self.atom_BB0, self.atom_SC2],
+                                                 [self.atom_BB0, self.atom_SC2],
+                                                 [self.atom_SC0, self.atom_BB2],
+                                                 [self.atom_SC0, self.atom_BB2]
+                                                 ],
+                                            ],
+                                            top=self.top
+                                            )
+
+class TestContactGroup(TestBaseClassContactGroup):
 
     def test_works_minimal(self):
         CG = ContactGroup([self.cp1, self.cp2])
@@ -1028,7 +1081,59 @@ class TestContactGroup(unittest.TestCase):
         _np.testing.assert_equal(CG.consensus_labels[1][0], "3.50")
         _np.testing.assert_equal(CG.consensus_labels[1][1], "5.50")
 
-    def test_consensus_labels_raises(self):
+        _np.testing.assert_equal(CG.ctc_labels_w_fragments_short_AA[0],"E30@3.50-V31@4.50")
+        _np.testing.assert_equal(CG.ctc_labels_w_fragments_short_AA[1],"E30@3.50-W32@5.50")
+
+    def test_consensuslabel2resname(self):
+        CG = ContactGroup([self.cp1_wtop_and_conslabs,
+                           self.cp2_wtop_and_conslabs])
+        _np.testing.assert_equal(CG.consensuslabel2resname["3.50"],"E30")
+        _np.testing.assert_equal(CG.consensuslabel2resname["4.50"],"V31")
+        _np.testing.assert_equal(CG.consensuslabel2resname["5.50"],"W32")
+
+    def test_resname2consensuslabel(self):
+        CG = ContactGroup([self.cp1_wtop_and_conslabs,
+                           self.cp2_wtop_and_conslabs])
+        _np.testing.assert_equal(CG.resname2consensuslabel["E30"],"3.50")
+        _np.testing.assert_equal(CG.resname2consensuslabel["V31"],"4.50")
+        _np.testing.assert_equal(CG.resname2consensuslabel["W32"],"5.50")
+
+    def test_residx2resnameshort(self):
+        CG = ContactGroup([self.cp1_wtop_and_conslabs,
+                           self.cp2_wtop_and_conslabs])
+        _np.testing.assert_equal(CG.residx2resnameshort[0],"E30")
+        _np.testing.assert_equal(CG.residx2resnameshort[1],"V31")
+        _np.testing.assert_equal(CG.residx2resnameshort[2],"W32")
+
+    def test_resindex2consensuslabel(self):
+        CG = ContactGroup([self.cp1_wtop_and_conslabs,
+                           self.cp2_wtop_and_conslabs,
+                           self.cp5_wtop_and_wo_conslabs,
+                           ])
+        assert len(CG.residx2consensuslabel) == len(_np.unique(CG.res_idxs_pairs))
+        _np.testing.assert_equal(CG.residx2consensuslabel[0], "3.50")
+        _np.testing.assert_equal(CG.residx2consensuslabel[1], "4.50")
+        _np.testing.assert_equal(CG.residx2consensuslabel[2], "5.50")
+        _np.testing.assert_equal(CG.residx2consensuslabel[4], None)
+        _np.testing.assert_equal(CG.residx2consensuslabel[5], None)
+
+
+
+    def test_fragment_names_best_fragnames(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags,
+                           self.cp2_w_anchor_and_frags])
+
+        _np.testing.assert_array_equal(CG.fragment_names_best[0],["fragA","fragB"])
+        _np.testing.assert_array_equal(CG.fragment_names_best[1],["fragA","fragC"])
+
+    def test_fragment_names_best_consensus(self):
+        CG = ContactGroup([self.cp1_wtop_and_conslabs,
+                           self.cp2_wtop_and_conslabs])
+
+        _np.testing.assert_array_equal(CG.fragment_names_best[0], ["3.50", "4.50"])
+        _np.testing.assert_array_equal(CG.fragment_names_best[1], ["3.50", "5.50"])
+
+    def test_consensus_labels_wrong_raises(self):
         with pytest.raises(AssertionError):
             ContactGroup([self.cp1_wtop_and_conslabs,
                           self.cp2_wtop_and_conslabs,
@@ -1134,7 +1239,7 @@ class TestContactGroup(unittest.TestCase):
         CP = ContactGroup([self.cp1, self.cp2, self.cp3])
         assert CP.interface is False
         _np.testing.assert_array_equal(CP.interface_residxs, [[],[]])
-        _np.testing.assert_array_equal(CP.interface_labels, [[],[]])
+        _np.testing.assert_array_equal(CP.interface_residue_names_w_best_fragments_short, [[], []])
         _np.testing.assert_array_equal(CP.interface_reslabels_short, [[],[]])
         _np.testing.assert_array_equal(CP.interface_labels_consensus, [[],[]])
         _np.testing.assert_array_equal(CP.interface_orphaned_labels, [[],[]])
@@ -1143,70 +1248,6 @@ class TestContactGroup(unittest.TestCase):
         with pytest.raises(AssertionError):
             CP.plot_interface_matrix(None)
         assert CP.interface_matrix(None) is None
-
-
-class TestBaseClassContactGroup(unittest.TestCase):
-    def setUp(self):
-        self.top = md.load(test_filenames.prot1_pdb).top
-        self.cp1_w_anchor_and_frags_and_top = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]],
-                                                          [[1, 2, 3], [1, 2]],
-                                                          fragment_names=["fragA", "fragB"],
-                                                          anchor_residue_idx=0,
-                                                          top=self.top)
-        self.cp2_w_anchor_and_frags_and_top = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
-                                                          fragment_names=["fragA", "fragC"],
-                                                          anchor_residue_idx=0,
-                                                          top=self.top)
-
-        self.cp1_wtop_and_conslabs = ContactPair([0, 1], [[.1, .2, .3]], [[1, 2, 3]],
-                                                 consensus_labels=["3.50", "4.50"],
-                                                 top=self.top)
-        self.cp2_wtop_and_conslabs = ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
-                                                 consensus_labels=["3.50", "5.50"],
-                                                 top=self.top)
-        self.cp3_wtop_and_conslabs = ContactPair([1, 2], [[.25, .15, .35]], [[1, 2, 3]],
-                                                 consensus_labels=["4.50", "5.50"],
-                                                 top=self.top)
-        self.cp4_wtop_and_conslabs = ContactPair([3, 2], [[.25, .25, .35]], [[1, 2, 3]],
-                                                 consensus_labels=["3.51", "5.50"],
-                                                 top=self.top)
-
-        self.cp5_wtop_and_conslabs = ContactPair([4, 2], [[.25, .25, .35]], [[1, 2, 3]],
-                                                 consensus_labels=["3.51", "5.50"],
-                                                 top=self.top)
-
-        # Completely bogus contacts but testable
-        self.atom_BB0 = list(self.top.residue(0).atoms_by_name("CA"))[0].index
-        self.atom_SC0 = list(self.top.residue(0).atoms_by_name("CB"))[0].index
-        self.atom_BB1 = list(self.top.residue(1).atoms_by_name("CA"))[0].index
-        self.atom_SC1 = list(self.top.residue(1).atoms_by_name("CB"))[0].index
-        self.atom_BB2 = list(self.top.residue(2).atoms_by_name("CA"))[0].index
-        self.atom_SC2 = list(self.top.residue(2).atoms_by_name("CB"))[0].index
-
-        self.cp1_w_atom_types = ContactPair([0, 1],
-                                            [[.15, .25, .35, .45]],
-                                            [[0, 1, 2, 3]],
-                                            atom_pair_trajs=[
-                                                [[self.atom_BB0, self.atom_SC1],
-                                                 [self.atom_BB0, self.atom_BB1],
-                                                 [self.atom_BB0, self.atom_BB1],
-                                                 [self.atom_BB0, self.atom_BB1]
-                                                 ],
-                                            ],
-                                            top=self.top
-                                            )
-        self.cp2_w_atom_types = ContactPair([0, 2],
-                                            [[.15, .25, .35, .45]],
-                                            [[0, 1, 2, 3]],
-                                            atom_pair_trajs=[
-                                                [[self.atom_BB0, self.atom_SC2],
-                                                 [self.atom_BB0, self.atom_SC2],
-                                                 [self.atom_SC0, self.atom_BB2],
-                                                 [self.atom_SC0, self.atom_BB2]
-                                                 ],
-                                            ],
-                                            top=self.top
-                                            )
 
 class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
@@ -1438,7 +1479,6 @@ class TestContactGroupPlots(unittest.TestCase):
         _plt.plot()
         jax = _plt.gca()
         assert jax is CG.plot_neighborhood_freqs(2, 0, jax=jax)
-
 
     def test_plot_timedep_ctcs(self):
         from matplotlib.pyplot import Figure
@@ -1780,7 +1820,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(I.interface_residxs[0],[0])
         assert I.interface_residxs[1]==[]
 
-    def test_easy(self):
+    def test_residxs(self):
         I = ContactGroup([self.cp1_wtop_and_conslabs,
                           self.cp2_wtop_and_conslabs,
                           self.cp4_wtop_and_conslabs],
@@ -1789,7 +1829,72 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         assert I.interface
         _np.testing.assert_array_equal(I.interface_residxs[0],[0,3])
         _np.testing.assert_array_equal(I.interface_residxs[1],[1,2])
-        print(I.interface_labels)
+
+    def test_interface_reslabels_short(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs],
+                         interface_residxs=[[3, 0],
+                                            [2, 1]])
+        assert I.interface
+        _np.testing.assert_equal(I.interface_reslabels_short[0][0],"E30")
+        _np.testing.assert_equal(I.interface_reslabels_short[0][1],"V33")
+
+        _np.testing.assert_equal(I.interface_reslabels_short[1][0],"V31")
+        _np.testing.assert_equal(I.interface_reslabels_short[1][1],"W32")
+
+    def test_interface_labels_consensus(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs],
+                         interface_residxs=[[3, 0],
+                                            [2, 1]])
+
+        _np.testing.assert_equal(I.interface_labels_consensus[0][0], "3.50")
+        _np.testing.assert_equal(I.interface_labels_consensus[0][1], "3.51")
+
+        _np.testing.assert_equal(I.interface_labels_consensus[1][0], "4.50")
+        _np.testing.assert_equal(I.interface_labels_consensus[1][1], "5.50")
+
+
+    def test_interface_labels_consensus_some_missing(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs,
+                          self.cp5_wtop_and_wo_conslabs],
+                         interface_residxs=[[3, 0,4],
+                                            [2, 1,5]])
+        _np.testing.assert_equal(I.interface_labels_consensus[0][0], "3.50")
+        _np.testing.assert_equal(I.interface_labels_consensus[0][1], "3.51")
+        _np.testing.assert_equal(I.interface_labels_consensus[0][2], None)
+
+        _np.testing.assert_equal(I.interface_labels_consensus[1][0], "4.50")
+        _np.testing.assert_equal(I.interface_labels_consensus[1][1], "5.50")
+        _np.testing.assert_equal(I.interface_labels_consensus[1][2], None)
+
+    def test_interface_orphaned_labels(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs,
+                          self.cp5_wtop_and_wo_conslabs],
+                         interface_residxs=[[3, 0, 4],
+                                            [2, 1, 5]])
+        _np.testing.assert_equal(I.interface_orphaned_labels[0][0], "V34")
+        _np.testing.assert_equal(I.interface_orphaned_labels[1][0], "G35")
+
+    def test_interface_residue_names_w_best_fragments_short(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs],
+                         interface_residxs=[[3, 0],
+                                            [2, 1]])
+
+        _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[0][0], "E30@3.50")
+        _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[0][1], "V33@3.51")
+
+        _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[1][0], "V31@4.50")
+        _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[1][1], "W32@5.50")
+
 
 if __name__ == '__main__':
     unittest.main()
