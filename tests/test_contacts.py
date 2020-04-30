@@ -979,7 +979,7 @@ class TestBaseClassContactGroup(unittest.TestCase):
                                                  consensus_labels=["3.51", "5.50"],
                                                  top=self.top)
 
-        self.cp5_wtop_and_wo_conslabs = ContactPair([4, 5], [[.25, .25, .35]], [[1, 2, 3]],
+        self.cp5_wtop_and_wo_conslabs = ContactPair([4, 5], [[.2, .25, .35]], [[1, 2, 3]],
                                                  #consensus_labels=["3.51", "5.50"],
                                                  top=self.top)
 
@@ -1091,13 +1091,6 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.consensuslabel2resname["4.50"],"V31")
         _np.testing.assert_equal(CG.consensuslabel2resname["5.50"],"W32")
 
-    def test_resname2consensuslabel(self):
-        CG = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs])
-        _np.testing.assert_equal(CG.resname2consensuslabel["E30"],"3.50")
-        _np.testing.assert_equal(CG.resname2consensuslabel["V31"],"4.50")
-        _np.testing.assert_equal(CG.resname2consensuslabel["W32"],"5.50")
-
     def test_residx2resnameshort(self):
         CG = ContactGroup([self.cp1_wtop_and_conslabs,
                            self.cp2_wtop_and_conslabs])
@@ -1105,7 +1098,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.residx2resnameshort[1],"V31")
         _np.testing.assert_equal(CG.residx2resnameshort[2],"W32")
 
-    def test_resindex2consensuslabel(self):
+    def test_residx2consensuslabel(self):
         CG = ContactGroup([self.cp1_wtop_and_conslabs,
                            self.cp2_wtop_and_conslabs,
                            self.cp5_wtop_and_wo_conslabs,
@@ -1117,7 +1110,18 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.residx2consensuslabel[4], None)
         _np.testing.assert_equal(CG.residx2consensuslabel[5], None)
 
-
+    def test_residx2resnamefragnamebest(self):
+        CG = ContactGroup([self.cp1_wtop_and_conslabs,
+                           self.cp2_wtop_and_conslabs,
+                           self.cp5_wtop_and_wo_conslabs,
+                           ])
+        residx2resnamefragnamebest = CG.residx2resnamefragnamebest("@")
+        assert len(residx2resnamefragnamebest) == len(_np.unique(CG.res_idxs_pairs))
+        _np.testing.assert_equal(residx2resnamefragnamebest[0], "E30@3.50")
+        _np.testing.assert_equal(residx2resnamefragnamebest[1], "V31@4.50")
+        _np.testing.assert_equal(residx2resnamefragnamebest[2], "W32@5.50")
+        _np.testing.assert_equal(residx2resnamefragnamebest[4], "V34")
+        _np.testing.assert_equal(residx2resnamefragnamebest[5], "G35")
 
     def test_fragment_names_best_fragnames(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags,
@@ -1237,17 +1241,15 @@ class TestContactGroup(TestBaseClassContactGroup):
 
     def test_no_interface(self):
         CP = ContactGroup([self.cp1, self.cp2, self.cp3])
-        assert CP.interface is False
+        assert CP.is_interface is False
         _np.testing.assert_array_equal(CP.interface_residxs, [[],[]])
         _np.testing.assert_array_equal(CP.interface_residue_names_w_best_fragments_short, [[], []])
         _np.testing.assert_array_equal(CP.interface_reslabels_short, [[],[]])
         _np.testing.assert_array_equal(CP.interface_labels_consensus, [[],[]])
         _np.testing.assert_array_equal(CP.interface_orphaned_labels, [[],[]])
         with pytest.raises(AssertionError):
-            CP._freq_name_dict2_interface_dict(None)
-        with pytest.raises(AssertionError):
-            CP.plot_interface_matrix(None)
-        assert CP.interface_matrix(None) is None
+            CP.plot_interface_frequency_matrix(None)
+        assert CP.interface_frequency_matrix(None) is None
 
 class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
@@ -1298,7 +1300,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_per_residue_name_interface_raises(self):
         CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top])
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(AssertionError):
             CP.frequency_sum_per_residue_names_dict(2,
                                                     list_by_interface=True)
 
@@ -1359,6 +1361,38 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         with pytest.raises(NotImplementedError):
             CP.frequency_dict_by_consensus_labels(2, sort_by_interface=True)
 
+    def test_frequency_as_contact_matrix(self):
+
+        CP = ContactGroup([self.cp1_wtop_and_conslabs,
+                           self.cp2_wtop_and_conslabs,
+                           ])
+
+        mat = CP.frequency_as_contact_matrix(2)
+        mat_ref = _np.zeros((CP.top.n_residues, CP.top.n_residues))
+        mat_ref [:,:] = _np.nan
+        mat_ref[0,1] = mat_ref[1,0] = 2/3
+        mat_ref[0,2] = mat_ref[2,0] = 1/3
+
+        _np.testing.assert_array_equal(mat,mat_ref)
+
+    def test_interface_frequency_matrix(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp3_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs,
+                          self.cp5_wtop_and_wo_conslabs,
+                          ],
+                         interface_residxs=[[0,3,4],[1,2,20]])
+        print(I.res_idxs_pairs)
+        print(I.frequency_per_contact(2))
+        refmat = _np.zeros((3,2))
+        refmat [:,:] = _np.nan
+        refmat[0,0]=2/3 #[0,1]
+        refmat[0,1]=1/3 #[0,2]
+        refmat[1,1]= 0  # [3,2]
+        _np.testing.assert_array_equal(refmat, I.interface_frequency_matrix(2))
+
+
     def test_frequencies_of_atom_pairs_formed(self):
         CG = ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types])
         list_of_dicts = CG.relative_frequency_formed_atom_pairs_overall_trajs(4)
@@ -1386,46 +1420,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(table["by_atomtypes"][0],"(66% BB-BB, 33% BB-SC)")
         _np.testing.assert_equal(table["by_atomtypes"][1],"(66% BB-SC, 33% SC-BB)")
 
-class TestContactGroupPlots(unittest.TestCase):
-
-    def setUp(self):
-        self.cp1 = ContactPair([0, 1], [[.1,   .2, .3] , [.4]], [[1, 2, 3], [1]])
-        self.cp2 = ContactPair([0, 2], [[.15, .35, .25], [.16]],[[1,2,3], [1]])
-        self.cp3 = ContactPair([1, 2], [[.15, .30, .35], [.45]], [[1, 2, 3], [1]])
-
-        self.top = md.load(test_filenames.prot1_pdb).top
-        self.cp1_wtop = ContactPair([0,1], [[.1,   .2, .3]], [[1, 2, 3]], top=self.top)
-        self.cp2_wtop = ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]], top=self.top)
-        self.cp3_wtop_other =  ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]],
-                                           top=md.load(test_filenames.file_for_test_pdb).top)
-        self.cp1_wtop_and_conslabs = ContactPair([0, 1], [[.1, .2, .3]], [[1, 2, 3]],
-                                                 consensus_labels=["3.50","4.50"],
-                                                 top=self.top)
-        self.cp2_wtop_and_conslabs = ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
-                                                 consensus_labels=["3.50", "5.50"],
-                                                 top=self.top)
-        self.cp3_wtop_and_wrong_conslabs = ContactPair([1, 2], [[.1, .2, 3]], [[1, 2, 3]],
-                                                       consensus_labels=["4.50","550"],
-                                                       top=self.top)
-
-        self.cp1_w_anchor_and_frags = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
-                                                  fragment_names=["fragA", "fragB"],
-                                                  fragment_colors=["r","b"],
-                                                  anchor_residue_idx=0)
-        self.cp2_w_anchor_and_frags  = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
-                                                   fragment_names=["fragA", "fragC"],
-                                                   fragment_colors=["r","g"],
-                                                   anchor_residue_idx=0)
-
-        self.cp1_w_anchor_and_frags_and_top = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
-                                                  fragment_names=["fragA", "fragB"],
-                                                  anchor_residue_idx=0,
-                                                          top=self.top)
-        self.cp2_w_anchor_and_frags_and_top = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
-                                                  fragment_names=["fragA", "fragC"],
-                                                  anchor_residue_idx=0,
-                                                          top=self.top)
-
+class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_baseplot_minimal(self):
         CG = ContactGroup([self.cp1, self.cp2])
@@ -1543,19 +1538,35 @@ class TestContactGroupPlots(unittest.TestCase):
                                                  n_nearest=1)
         assert isinstance(jax, _plt.Axes)
 
-    def test_histo_summary_just_works(self):
+    def test_plot_frequency_sums_as_bars_just_works(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top],
                           )
         jax = CG.plot_frequency_sums_as_bars(2.0, "test", xmax=4)
         assert isinstance(jax, _plt.Axes)
 
-    def test_histo_summary_raises(self):
+    def test_plot_frequency_sums_as_bars_no_interface_raises(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top],
                           )
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(AssertionError):
             jax = CG.plot_frequency_sums_as_bars(2.0, "test", list_by_interface=True)
+
+    def test_plot_interface_frequency_matrix(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          #self.cp3_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs,
+                          self.cp5_wtop_and_wo_conslabs],
+                         interface_residxs=[[0,3,5],[1,2,4]])
+        print(I.frequency_dataframe(2))
+        print(I.frequency_sum_per_residue_names_dict(2))
+        print("orphans", I.interface_orphaned_labels)
+        print(I.interface_labels_consensus)
+        ifig, iax = I.plot_interface_frequency_matrix(2,
+                                                      label_type="both")
+        ifig.tight_layout()
+        ifig.savefig("test.png", bbox_inches="tight")
 
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
@@ -1578,7 +1589,7 @@ class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
     def test_frequency_spreadsheet_raises_w_interface(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                            self.cp2_w_anchor_and_frags_and_top])
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(AssertionError):
             with _TDir(suffix='_test_mdciao') as tmpdir:
                 CG.frequency_spreadsheet(2.5, path.join(tmpdir,"test.xlsx"))
 
@@ -1808,7 +1819,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                           self.cp4_wtop_and_conslabs],
                          interface_residxs=[[10, 30],
                                             [11, 20]])
-        assert I.interface is False
+        assert I.is_interface is False
 
     def test_instantiates_to_no_interface_even1res(self):
         I = ContactGroup([self.cp1_wtop_and_conslabs,
@@ -1816,7 +1827,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                           self.cp4_wtop_and_conslabs],
                          interface_residxs=[[0, 30],
                                             [11, 20]])
-        assert I.interface is False
+        assert I.is_interface is False
         _np.testing.assert_array_equal(I.interface_residxs[0],[0])
         assert I.interface_residxs[1]==[]
 
@@ -1826,7 +1837,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                           self.cp4_wtop_and_conslabs],
                           interface_residxs=[[3, 0],
                                              [2, 1]])
-        assert I.interface
+        assert I.is_interface
         _np.testing.assert_array_equal(I.interface_residxs[0],[0,3])
         _np.testing.assert_array_equal(I.interface_residxs[1],[1,2])
 
@@ -1836,7 +1847,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                           self.cp4_wtop_and_conslabs],
                          interface_residxs=[[3, 0],
                                             [2, 1]])
-        assert I.interface
+        assert I.is_interface
         _np.testing.assert_equal(I.interface_reslabels_short[0][0],"E30")
         _np.testing.assert_equal(I.interface_reslabels_short[0][1],"V33")
 
@@ -1895,6 +1906,50 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[1][0], "V31@4.50")
         _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[1][1], "W32@5.50")
 
+
+    def test_frequency_sum_per_residue_names_dict(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs,
+                          self.cp5_wtop_and_wo_conslabs],
+                         interface_residxs=[[3, 0, 4],
+                                            [2, 1, 5]])
+        print(I.frequency_dataframe(2))
+        print(I.interface_residxs)
+        idicts = I.frequency_sum_per_residue_names_dict(2,
+                                                    sort=False,
+                                                    list_by_interface=True)
+
+        assert len(idicts)==2
+        items0, items1 = list(idicts[0].items()), list(idicts[1].items())
+        _np.testing.assert_array_equal(items0[0],["E30@3.50",1.])
+        _np.testing.assert_array_equal(items0[1],["V33@3.51",0.])
+        _np.testing.assert_array_equal(items0[2],["V34",1/3])
+
+        _np.testing.assert_array_equal(items1[0],["V31@4.50",2/3.])
+        _np.testing.assert_array_equal(items1[1],["W32@5.50",1/3])
+        _np.testing.assert_array_equal(items1[2],["G35",1/3])
+
+    def test_frequency_sum_per_residue_names_dict(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs,
+                          self.cp5_wtop_and_wo_conslabs],
+                         interface_residxs=[[3, 0, 4],
+                                            [2, 1, 5]])
+
+        idicts = I.frequency_sum_per_residue_names_dict(2,
+                                                    list_by_interface=True)
+
+        assert len(idicts)==2
+        items0, items1 = list(idicts[0].items()), list(idicts[1].items())
+        _np.testing.assert_array_equal(items0[0],["E30@3.50",1.])
+        _np.testing.assert_array_equal(items0[1],["V34",1/3])
+        _np.testing.assert_array_equal(items0[2],["V33@3.51",0.])
+
+        _np.testing.assert_array_equal(items1[0],["V31@4.50",2/3.])
+        _np.testing.assert_array_equal(items1[1],["W32@5.50",1/3])
+        _np.testing.assert_array_equal(items1[2],["G35",1/3])
 
 if __name__ == '__main__':
     unittest.main()

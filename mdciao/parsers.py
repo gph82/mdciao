@@ -438,7 +438,7 @@ def parser_for_interface():
     _parser_add_cutoff(parser)
     _parser_add_n_ctcs(parser, default=10)
     parser.add_argument("--interface_cutoff_Ang", type=float,
-                        help="The interface between both groups is defined as the set of group_1-group_2-"
+                        help="The is_interface between both groups is defined as the set of group_1-group_2-"
                              "distances that are within this "
                              "cutoff in the reference topology. Otherwise, a large number of "
                              "non-necessary distances (e.g. between N-terminus and G-protein) are computed. Default is 35.",
@@ -456,7 +456,7 @@ def parser_for_interface():
     #parser.set_defaults(consolidate_opt=True)
     _parser_add_nomenclature(parser)
     _parser_add_chunk(parser)
-    _parser_add_output_desc(parser,'interface')
+    _parser_add_output_desc(parser,'is_interface')
     _parser_add_output_dir(parser)
     _parser_add_graphic_ext(parser)
     _parser_add_graphic_dpi(parser)
@@ -485,7 +485,7 @@ def parser_for_contact_map():
     _parser_add_stride(parser)
     _parser_add_n_jobs(parser)
     _parser_add_chunk(parser, default=100)
-    _parser_add_output_desc(parser,'interface')
+    _parser_add_output_desc(parser,'is_interface')
     _parser_add_output_dir(parser)
     _parser_add_graphic_ext(parser)
     _parser_add_graphic_dpi(parser)

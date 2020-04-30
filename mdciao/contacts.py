@@ -13,8 +13,10 @@ from .str_and_dict_utils import \
     iterate_and_inform_lambdas, \
     _tunit2tunit
 
+from .plots import plot_w_smoothing_auto, \
+    add_tilted_labels_to_patches as _add_tilted_labels_to_patches, \
+    plot_contact_matrix as _plot_interface_matrix
 
-from .plots import plot_w_smoothing_auto, add_tilted_labels_to_patches as _add_tilted_labels_to_patches
 from collections import defaultdict, Counter as _col_Counter
 
 import matplotlib.pyplot as _plt
@@ -1588,7 +1590,7 @@ class ContactGroup(object):
         ----------
         list_of_contact_objects
         interface_residxs : list of two iterables of indexes
-            An interface is defined by two, non-overlapping
+            An is_interface is defined by two, non-overlapping
             groups of residue indices.
 
             The only requirement is that the residues in
@@ -1598,7 +1600,7 @@ class ContactGroup(object):
 
             The property :obj:`interface_residxs` groups
             the object's own residue idxs present in
-            :obj:`residxs_pairs` into the two groups of the interface.
+            :obj:`residxs_pairs` into the two groups of the is_interface.
 
             #TODO document what happens if there is no overlap
 
@@ -1655,6 +1657,7 @@ class ContactGroup(object):
             self._cons2resname = {}
             self._residx2resname = {}
             self._residx2fragnamebest = {}
+            self._residx2conslabels = {}
             self._residxs_missing_conslabels = []
             for conslab, val, ridx, fragname in zip(_np.hstack(self.consensus_labels),
                                                     _np.hstack(self.residue_names_short),
@@ -1671,6 +1674,12 @@ class ContactGroup(object):
                 else:
                     assert self._residx2fragnamebest[ridx] == fragname, (self._residx2fragnamebest[ridx], fragname)
 
+
+                if ridx not in self._residx2conslabels.keys():
+                    self._residx2conslabels[ridx] = conslab
+                else:
+                    assert self._residx2conslabels[ridx] == conslab, (self._residx2conslabels[ridxs], conslab)
+
                 if str(conslab).lower() in ["na","none"]:
                     self._residxs_missing_conslabels.append(ridx)
                 else:
@@ -1679,6 +1688,7 @@ class ContactGroup(object):
                     else:
                         assert self._cons2resname[conslab]==val,(self._cons2resname[conslab],conslab,val)
 
+            """
             # Finally do this dictionary
             self._resname2cons = {}
             for cl, kres in self._cons2resname.items():
@@ -1689,15 +1699,17 @@ class ContactGroup(object):
                                                              "%s'. " \
                                                               "Check your consensus labels"%(cl,self._resname2cons[kres], val)
                 self._resname2cons[kres]=cl
+
             # Append the missing ones
             for ii in self._residxs_missing_conslabels:
                 self._resname2cons[self._residx2resname[ii]]=None
+            """
 
             if self._interface_residxs is not None:
                 # TODO prolly this is anti-pattern but I prefer these many sanity checks
                 assert len(self._interface_residxs)==2
                 intersect = list(set(self._interface_residxs[0]).intersection(self._interface_residxs[1]))
-                assert len(intersect)==0, ("Some_residxs appear in both members of the interface %s, "
+                assert len(intersect)==0, ("Some_residxs appear in both members of the is_interface %s, "
                                            "this is not possible"%intersect)
 
                 assert len(self._interface_residxs[0])==len(_np.unique(self._interface_residxs[0]))
@@ -1707,6 +1719,15 @@ class ContactGroup(object):
                 for ig in self._interface_residxs:
                     res.append(sorted(set(ig).intersection(_np.unique(self.res_idxs_pairs,
                                                                       ))))
+                # TODO can I benefit from not sorting these idxs
+                # later when using Group of Interfaces?
+
+                # TODO would it be wise to keep all idxs of the initialisaton
+                # to compare different interfaces?
+
+                # TODO Is the comparison throuh residxs robust enought, would it be
+                # better to compare consensus labels directly?
+
                 self._interface_residxs = res
                 if len(res[0])>0 and len(res[1])>0:
                     self._interface = True
@@ -1783,18 +1804,26 @@ class ContactGroup(object):
         return self._cons2resname
 
     @property
-    def resname2consensuslabel(self):
-        return self._resname2cons
-
-    @property
     def residx2consensuslabel(self):
-        return {ii: self.resname2consensuslabel[val]
-                for ii, val in self.residx2resnameshort.items()
-                if val in self.resname2consensuslabel.keys()}
+        return self._residx2conslabels
 
     @property
     def residx2resnameshort(self):
         return self._residx2resname
+
+    @property
+    def residx2fragnamebest(self):
+        return self._residx2fragnamebest
+
+    def residx2resnamefragnamebest(self,fragsep="@"):
+        idict = {}
+        for key in _np.unique(self.res_idxs_pairs):
+            val = self.residx2resnameshort[key]
+            ifrag = self.residx2fragnamebest[key]
+            if len(ifrag) > 0:
+                val += "%s%s" % (fragsep, ifrag)
+            idict[key] = val
+        return idict
 
     @property
     def shared_anchor_residue_index(self):
@@ -1843,7 +1872,7 @@ class ContactGroup(object):
             print("Not all anchors have or share the same color, returning None")
             return None
 
-    #todo there is redundant code for generating interface labels!
+    #todo there is redundant code for generating is_interface labels!
     # not sure we need it here, don't want to be testing now
     """
     @property
@@ -1958,11 +1987,12 @@ class ContactGroup(object):
     def frequency_sum_per_residue_names_dict(self, ctc_cutoff_Ang,
                                              sort=True,
                                              list_by_interface=False,
-                                             return_as_dataframe=False):
+                                             return_as_dataframe=False,
+                                             fragsep="@"):
         r"""
         Dictionary of aggregated :obj:`frequency_per_contact` keyed
         by residue names, using the most informative label possible
-        (See :obj:`ContactPair.labels` for more info on this)
+        (ATM it is residue@frag, see :obj:`ContactPair.labels` for more info on this)
         TODO add option the type of residue name we are using
 
         Parameters
@@ -1970,40 +2000,50 @@ class ContactGroup(object):
         ctc_cutoff_Ang
         sort : bool, default is True
             Sort by dictionary by descending order of frequencies
-            TODO dicts have order since py 3.x(?) and it is useful for creating
-            TODO a dataframe, then excel_table that's already sorted by descending frequncies
+            TODO dicts have order since py 3.6 and it is useful for creating
+            TODO a dataframe, then excel_table that's already sorted by descending frequencies
         list_by_interface : bool, default is False, NotImplemented
-            group the freq_dict by interface residues
+            group the freq_dict by is_interface residues
         return_as_dataframe : bool, default is False
             Return an :obj:`pandas.DataFrame` with the column names labels and freqs
-
+        fragsep : str, default is @
+            String to separate residue@fragname
         Returns
         -------
 
         """
         freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang)
-        dict_out = {}
-        keys = list(freqs.keys())
-        if sort:
-            keys = [keys[ii] for ii in _np.argsort(list(freqs.values()))[::-1]]
-        for idx in keys:
-            ifreq = freqs[idx]
-            ctc_idx, pair_idx = self.residx2ctcidx(idx)[0]
-            #dict_out[self.ctc_labels[ctc_idx].split("-")[pair_idx]] = ifreq
-            dict_out[self.ctc_labels_w_fragments_short_AA[ctc_idx].split("-")[pair_idx]] = ifreq
 
         if list_by_interface:
-            raise NotImplementedError
-            dict_out = self._freq_name_dict2_interface_dict(dict_out,
-                                                            sort=sort)
-            if return_as_dataframe:
-                dict_out = [_DF({"label": list(dict_out[ii].keys()),
-                                 "freq": list(dict_out[ii].values())}) for ii in [0, 1]]
+            assert self.is_interface
+            freqs = [{idx:freqs[idx] for idx in iint} for iint in self.interface_residxs]
         else:
-            if return_as_dataframe:
-                dict_out = _DF({"label": list(dict_out.keys()),
-                                "freq": list(dict_out.values())})
+            freqs = [freqs] #this way it is a list either way
 
+        if sort:
+            freqs = [{key:val for key, val in sorted(idict.items(),
+                                                     key=lambda item: item[1],
+                                                     reverse=True)}
+                     for idict in freqs]
+
+        # Use the residue@frag representation but avoid empty fragments
+        dict_out = []
+        for ifreq in freqs:
+            idict = {}
+            for idx, val in ifreq.items():
+                key   = self.residx2resnameshort[idx]
+                ifrag = self.residx2fragnamebest[idx]
+                if len(ifrag)>0:
+                    key += "%s%s"%(fragsep,ifrag)
+                idict[key] = val
+            dict_out.append(idict)
+
+        if return_as_dataframe:
+            dict_out = [_DF({"label": list(idict.keys()),
+                             "freq": list(idict.values())}) for idict in dict_out]
+
+        if len(dict_out)==1:
+            dict_out = dict_out[0]
         return dict_out
 
     """"
@@ -2130,7 +2170,7 @@ class ContactGroup(object):
         sort : bool, default is True
             Sort by descing order of frequency
         write_interface: bool, default is True
-            Treat contact group as interface
+            Treat contact group as is_interface
         offset : int, default is 0
             First line at which to start writing the table. For future devleopment
             TODO do not expose this, perhaps?
@@ -2198,6 +2238,40 @@ class ContactGroup(object):
                                                      )
 
         writer.save()
+
+    def frequency_as_contact_matrix(self,
+                                    ctc_cutoff_Ang):
+        r"""
+        Returns a symmetrical, square matrix of
+        size :obj:`top`.n_residues containing the
+        frequencies of the pairs in :obj:`residxs_pairs`,
+        and those pairs only, the rest will be NaNs
+
+        If :obj:`top` is None the method will fail.
+
+        Note
+        ----
+            This is NOT the full contact matrix unless
+            all necessary residue pairs were used to
+            construct this ContactGroup
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+        mat : numpy.ndarray
+
+        """
+
+        mat = _np.zeros((self.top.n_residues, self.top.n_residues))
+        mat[:, :] = _np.nan
+        for (ii, jj), freq in zip(self.res_idxs_pairs, self.frequency_per_contact(ctc_cutoff_Ang)):
+            mat[ii, jj] = freq
+            mat[jj, ii] = freq
+
+        return mat
 
     def relative_frequency_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang):
         r"""
@@ -2674,7 +2748,7 @@ class ContactGroup(object):
             in one figure with all bars equally wide regardles of
             the subplot
         list_by_interface : boolean, default is True
-            Separate residues by interface
+            Separate residues by is_interface
         sort : boolean, default is True
             Sort sums of freqs in descending order
 
@@ -2686,7 +2760,7 @@ class ContactGroup(object):
         # Base dict
         freqs_dict = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
                                                                sort=sort,
-                                                          list_by_interface=list_by_interface)
+                                                               list_by_interface=list_by_interface)
 
         # TODO the method plot_freqs_as_bars is very similar but
         # i think it's better to keep them separated
@@ -2734,27 +2808,12 @@ class ContactGroup(object):
 
         return jax
 
-    def contact_map(self,
-                    ctc_cutoff_Ang):
-        mat = _np.zeros((self.top.n_residues, self.top.n_residues))
-        mat[:,:] = _np.nan
-        for (ii, jj), freq in zip(self.res_idxs_pairs, self.frequency_per_contact(ctc_cutoff_Ang)):
-            mat[ii,jj] = freq
-            mat[jj,ii] = freq
-
-        return mat
-
-    # TODO document this to say that these labels are already ordered bc
-    # within one given contact_group object/interface, the
-    # residues can be sorted according to their order
-
     @property
-    def interface(self):
-        r""" Whether this ContactGroup can be interpreted as an interface.
+    def is_interface(self):
+        r""" Whether this ContactGroup can be interpreted as an is_interface.
 
-        Note that while some idxs may have been parsed at initialization,
-        if none of them were found in self.residxs_pairs, this property
-        will evaluate to False
+        Note that if none of the residxs_pairs parsed at initialization,
+        were found in self.residxs_pairs, this property will evaluate to False
         """
 
         return self._interface
@@ -2762,10 +2821,10 @@ class ContactGroup(object):
     @property
     def interface_residxs(self):
         r"""
-        The residues split into the interface
-        to that interface, in ascending order within each member
-        of the interface. Empty lists mean non residues were
-        found in the interface defined at initialization
+        The residues split into the is_interface
+        to that is_interface, in ascending order within each member
+        of the is_interface. Empty lists mean non residues were
+        found in the is_interface defined at initialization
 
         Returns
         -------
@@ -2794,12 +2853,14 @@ class ContactGroup(object):
         r"""
         Consensus labels of whatever  residues :obj:`interface_residxs` holds.
 
+        If there is no consensus labels, the corresponding label is None
+
         Returns
         -------
 
         """
 
-        # TODO do I have anything like this anymore (with self.interface=False)
+        # TODO do I have anything like this anymore (with self.is_interface=False)
         #if self._interface_residxs is not None \
         #        and not hasattr(self, "_interface_labels_consensus"):
         labs = [[], []]
@@ -2816,14 +2877,18 @@ class ContactGroup(object):
     @property
     def interface_residue_names_w_best_fragments_short(self):
         r"""
-        Best possible residue@fragment string for the residues in the interface
+        Best possible residue@fragment string for the residues in :obj:`interface_residxs`
+
+        In case neigher a consensus label > fragment name > fragment index is found,
+        nothing is return after the residue name
+
         Returns
         -------
 
         """
         labs_out = []
         for ints in self.interface_residxs:
-            labs_out.append(["%s@%s"%(self.residx2resnameshort[jj],self._residx2fragnamebest[jj]) for jj in ints])
+            labs_out.append([self.residx2resnamefragnamebest()[jj] for jj in ints])
 
 
         return labs_out
@@ -2831,16 +2896,16 @@ class ContactGroup(object):
     @property
     def interface_orphaned_labels(self):
         r"""
-        Short residue names that lack consensus nomenclature, sorted by interface
+        Short residue names that lack consensus nomenclature, sorted by is_interface
         Returns
         -------
         olist : list of len 2
         """
-        #TODO eliminate the "orphan" label string but wait until the group of interface objecs is tested
+        #TODO eliminate the "orphan" label string but wait until the group of is_interface objecs is tested
         return [[self.residx2resnameshort[ii] for ii in idxs if self.residx2consensuslabel[ii] is None]
                 for idxs in self.interface_residxs]
 
-    """ I am commenting all this until the interface UI is better
+    """ I am commenting all this until the is_interface UI is better
     def interface_relabel_orphans(self):
         labs_out = [[], []]
         for ii, labels in enumerate(self.interface_labels_consensus):
@@ -2856,9 +2921,11 @@ class ContactGroup(object):
         # return labs_out
     """
 
+    """
+    IDT we need this anymore
     def _freq_name_dict2_interface_dict(self, freq_dict_in,
                                         sort=True):
-        assert self.interface
+        assert self.is_interface
         dict_out = [{}, {}]
         for ii, ilabs in enumerate(self.interface_residue_names_w_best_fragments_short):
             # print(ilabs)
@@ -2870,47 +2937,81 @@ class ContactGroup(object):
                 for jlab in ilabs:
                     dict_out[ii][jlab] = freq_dict_in[jlab]
         return dict_out
+    """
 
-    def plot_interface_matrix(self,ctc_cutoff_Ang,
-                              transpose=False,
-                              label_type='consensus',
-                              **plot_mat_kwargs,
-                              #label_type='residue',
-                              #label_type='both'
-                              ):
-        assert self.interface
-        mat = self.interface_matrix(ctc_cutoff_Ang)
+    def plot_interface_frequency_matrix(self, ctc_cutoff_Ang,
+                                        transpose=False,
+                                        label_type='consensus',
+                                        **plot_mat_kwargs,
+                                        ):
+        r"""
+        Plot the :obj:`interface_frequency_matrix`
+
+        The first group of :obj:`interface_residxs` are the row indices,
+        shown in the y-axis top-to-bottom (since imshow is used to plot)
+        The second group of :obj:`interface_residxs` are the column indices,
+        shown in the x-axis left-to-right
+
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+        transpose : bool, default is False
+        label_type : str, default is "consensus"
+            "consensus" might lead to empty labels since it is not guaranteed
+            that all residues of the interface have consensus labels
+            Alternatives are "residue" or "both"
+        plot_mat_kwargs
+
+        Returns
+        -------
+        iax : :obj:`matplotlib.pyplot.Axes`
+        fig : :obj:`matplotlib.pyplot.Figure`
+
+        """
+        assert self.is_interface
+        mat = self.interface_frequency_matrix(ctc_cutoff_Ang)
         if label_type=='consensus':
             labels = self.interface_labels_consensus
         elif label_type=='residue':
             labels = self.interface_reslabels_short
         elif label_type=='both':
-            labels = [['%8s %8s'%(ilab,jlab) for ilab, jlab in zip(conlabs,reslabs)]
-                      for conlabs, reslabs in zip(
-                    self.interface_reslabels_short,
-                    self.interface_labels_consensus
-                )
-                      ]
+            labels = self.interface_residue_names_w_best_fragments_short
+        else:
+            raise ValueError(label_type)
 
         iax, __ = _plot_interface_matrix(mat,labels,
-                               transpose=transpose,
+                                         transpose=transpose,
                                          **plot_mat_kwargs,
-                               )
+                                         )
         return iax.figure, iax
 
     # TODO would it be better to make use of self.frequency_dict_by_consensus_labels
-    def interface_matrix(self,ctc_cutoff_Ang):
-        mat = None
-        if self.interface:
-            mat = _np.zeros((len(self.interface_residxs[0]),
-                             len(self.interface_residxs[1])))
-            freqs = self.frequency_per_contact(ctc_cutoff_Ang)
-            for ii, idx1 in enumerate(self.interface_residxs[0]):
-                for jj, idx2 in enumerate(self.interface_residxs[1]):
-                    for kk, pair in enumerate(self.res_idxs_pairs):
-                        if _np.allclose(sorted(pair),sorted([idx1,idx2])):
-                            mat[ii,jj]=freqs[kk]
+    def interface_frequency_matrix(self, ctc_cutoff_Ang):
+        r"""
+        Rectangular matrix of size (N,M) where N is the length
+        of :obj:`interface_residxs`[0] and M the length of
+        :obj:`interface_residxs`[1].
 
+        Note
+        ----
+        Pairs missing from :obj:`res_idxs_pairs` will be NaNs,
+        to differentitte from those pairs that were present
+        but have zero contact
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+
+        Returns
+        -------
+        mat : 2D numpy.ndarray
+        """
+        mat = None
+        if self.is_interface:
+            mat = self.frequency_as_contact_matrix(ctc_cutoff_Ang)
+            mat = mat[self.interface_residxs[0],:]
+            mat = mat[:,self.interface_residxs[1]]
         return mat
 
     def _to_per_traj_dicts_for_saving(self, t_unit="ps"):
@@ -3280,30 +3381,6 @@ class group_of_interfaces(object):
         assert len(hit) == 1, hit
         hit = hit[0]
         return aDF.iloc[hit[1]].to_dict()
-
-def _plot_interface_matrix(mat,labels,pixelsize=1,
-                           transpose=False, grid=False,
-                           cmap="binary",
-                           colorbar=False):
-    if transpose:
-        mat = mat.T
-        labels = labels[::-1]
-
-    _plt.figure(figsize = _np.array(mat.shape)*pixelsize)
-    im = _plt.imshow(mat,cmap=cmap)
-    _plt.ylim([len(labels[0])-.5, -.5])
-    _plt.xlim([-.5, len(labels[1])-.5])
-    _plt.yticks(_np.arange(len(labels[0])),labels[0],fontsize=pixelsize*20)
-    _plt.xticks(_np.arange(len(labels[1])), labels[1],fontsize=pixelsize*20,rotation=90)
-    if grid:
-        _plt.hlines(_np.arange(len(labels[0]))+.5,-.5,len(labels[1]),ls='--',lw=.5, color='gray', zorder=10)
-        _plt.vlines(_np.arange(len(labels[1])) + .5, -.5, len(labels[0]), ls='--', lw=.5,  color='gray', zorder=10)
-
-    if colorbar:
-        _plt.gcf().colorbar(im, ax=_plt.gcf())
-        im.set_clim(0.0, 1.0)
-
-    return _plt.gca(), pixelsize
 
 def _sum_ctc_freqs_by_atom_type(atom_pairs, counts):
     r"""

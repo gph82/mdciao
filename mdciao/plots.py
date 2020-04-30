@@ -454,3 +454,58 @@ def add_tilted_labels_to_patches(jax, labels,
                  backgroundcolor="white"
                  )
 
+def plot_contact_matrix(mat, labels, pixelsize=1,
+                        transpose=False, grid=False,
+                        cmap="binary",
+                        colorbar=False):
+    r"""
+    Plot a contact matrix. It is written to be able to
+    plot rectangular matrices where rows and columns
+    do not represent the same residues
+
+    Parameters
+    ----------
+    mat : 2D numpy.ndarray of shape (N,M)
+    labels : list of len(2) with the lenghts N, M
+    pixelsize : int, default is 1
+        The size in inches of the pixel representing
+        the contact. Ultimately controls the size
+        of the figure, because
+        figsize = _np.array(mat.shape)*pixelsize
+
+    transpose : boolean, default is False
+    grid : boolean, default is False
+        overlap a grid of dashed lines
+    cmap : str, default is binary
+        What :obj:`matplotlib.cmap` to use
+    colorbar : boolean, default is False
+        whether to use a colorbar
+
+    Returns
+    -------
+    ax : :obj:`matplotlib.pyplot.Axes` object
+    pixelsize : float, size of the pixel
+        Helpful in cases where this method is called
+        with the default value, in case the value
+        changes in the future
+    """
+    if transpose:
+        mat = mat.T
+        labels = labels[::-1]
+
+    _plt.figure(figsize = _np.array(mat.shape)*pixelsize)
+    im = _plt.imshow(mat,cmap=cmap)
+    _plt.ylim([len(labels[0])-.5, -.5])
+    _plt.xlim([-.5, len(labels[1])-.5])
+    _plt.yticks(_np.arange(len(labels[0])),labels[0],fontsize=pixelsize*20)
+    _plt.xticks(_np.arange(len(labels[1])), labels[1],fontsize=pixelsize*20,rotation=90)
+
+    if grid:
+        _plt.hlines(_np.arange(len(labels[0]))+.5,-.5,len(labels[1]),ls='--',lw=.5, color='gray', zorder=10)
+        _plt.vlines(_np.arange(len(labels[1])) + .5, -.5, len(labels[0]), ls='--', lw=.5,  color='gray', zorder=10)
+
+    if colorbar:
+        _plt.gcf().colorbar(im, ax=_plt.gcf())
+        im.set_clim(0.0, 1.0)
+
+    return _plt.gca(), pixelsize

@@ -790,7 +790,7 @@ def interface(
         interface_cutoff_Ang=35,
         n_ctcs=10,
         n_smooth_hw=0,
-        output_desc="interface",
+        output_desc="is_interface",
         output_dir=".",
         short_AA_names=False,
         stride=1,
@@ -907,10 +907,10 @@ def interface(
         nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
 
-    print("\nComputing distances in the interface between fragments\n%s\nand\n%s.\n"
-          "The interface is defined by the residues within %3.1f "
+    print("\nComputing distances in the is_interface between fragments\n%s\nand\n%s.\n"
+          "The is_interface is defined by the residues within %3.1f "
           "Angstrom of each other in the reference topology.\n"
-          "Computing interface..."
+          "Computing is_interface..."
           % ('\n'.join(_twrap(', '.join(['%s' % gg for gg in interface_fragments[0]]))),
              '\n'.join(_twrap(', '.join(['%s' % gg for gg in interface_fragments[1]]))),
              interface_cutoff_Ang), end="")
@@ -925,8 +925,8 @@ def interface(
 
     print()
     print(
-        "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
-        "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
+        "From %u potential group_1-group_2 distances, the is_interface was reduced to only %u potential contacts.\nIf this "
+        "number is still too high (i.e. the computation is too slow) consider using a smaller is_interface cutoff" % (
         len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
     print()
     ctcs, times, __ = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
