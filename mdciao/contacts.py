@@ -965,36 +965,48 @@ class _ContactStrings(object):
         str,
 
         """
-
+        fmt = "@%s"
         ctc_label = '%s%s-%s%s' % (self._residues.names[0],
-                               auto_format_fragment_string(self._fragnames[0],
-                                                           self._residues.consensus_labels[0],
-                                                           fmt="@%s"),
-                               self._residues.names[1],
-                               auto_format_fragment_string(self._fragnames[1],
-                                                           self._residues.consensus_labels[1],
-                                                           fmt="@%s"))
+                                   self.fragment_labels_best(fmt)[0],
+                                   self._residues.names[1],
+                                   self.fragment_labels_best(fmt)[1])
         return ctc_label
 
     @property
     def w_fragments_short_AA(self):
         """
+        A string of the form residue0@fragment0-residue1@fragment1
 
-        Returns
-        -------
-        str,
+        Note
+        ----
 
         """
+        fmt = "@%s"
         ctc_label = '%s%s-%s%s' % (self._residues.names_short[0],
-                                     auto_format_fragment_string(self._fragnames[0],
-                                                                 self._residues.consensus_labels[0],
-                                                                 fmt="@%s"),
+                                     self.fragment_labels_best(fmt)[0],
                                      self._residues.names_short[1],
-                                     auto_format_fragment_string(self._fragnames[1],
-                                                                 self._residues.consensus_labels[1],
-                                                                 fmt="@%s"))
+                                     self.fragment_labels_best(fmt)[1])
 
         return ctc_label
+
+    def fragment_labels_best(self,fmt):
+        r"""
+        The fragment name will try to pick the consensus nomenclature.
+        If no consensus label for the residue exists, the actual fragment
+        names are used as fallback (which themselves fallback to the fragment index)
+        Only if no consensus label, no fragment name and no fragment indices are there,
+        will this yeild "None" as a string.
+        Returns
+        -------
+        list of two strings
+        """
+        return [auto_format_fragment_string(self._fragnames[ii],
+                                            self._residues.consensus_labels[ii],
+                                            fmt=fmt)
+                for ii in [0,1]]
+
+
+
 
     def __str__(self):
         istr = ["%s at %s with properties"%(type(self),id(self))]
@@ -1349,10 +1361,8 @@ class ContactPair(object):
             label = self.labels.w_fragments
         else:
             raise ValueError(AA_format)
-
         if split_label:
             label= '%-15s - %-15s'%tuple(label.split('-'))
-
         return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang),
                 "residue idxs":'%u %u'%tuple(self.residues.idxs_pair),
                 "label":label}
@@ -1569,28 +1579,28 @@ class ContactGroup(object):
     def __init__(self,
                  list_of_contact_objects,
                  interface_residxs=None,
-                 top=None):
+                 top=None,
+                 use_AA_when_conslab_is_missing=True
+                 ):
         r"""
 
         Parameters
         ----------
         list_of_contact_objects
         interface_residxs : list of two iterables of indexes
-            In interface is defined by two, non-overlapping
-             groups of residues. This definition is flexible,
-            i.e. the only requirement is that the residues in
-            each group do not overlap
+            An interface is defined by two, non-overlapping
+            groups of residue indices.
 
-            The property :obj:`self.interface_residxs` groups
-            the object's :obj:`self.residxs_pairs` into
-            two groups.
+            The only requirement is that the residues in
+            each group do not overlap. The input `interface_residxs`
+            need not have all or any of the residue indices in
+            :obj:`res_idxs_pairs`
 
-            If one the groups in :obj:`interface_residxs`
-            does not overlap with the available :obj:`self.residxs_pairs`
-            then that group of  :obj:`self.interface_residxs` will
-            be None. If no overlap exists, then :obj:`self.residxs_pairs`
-            is None
-            #todo THINK of a more consistent way [None,[1,2]] vs [[],[1,2]]
+            The property :obj:`interface_residxs` groups
+            the object's own residue idxs present in
+            :obj:`residxs_pairs` into the two groups of the interface.
+
+            #TODO document what happens if there is no overlap
 
         top
         """
@@ -1643,24 +1653,45 @@ class ContactGroup(object):
             # instead of the consensus labels...rethink this perhaps?
             self._trajlabels = ref_ctc.labels.trajstrs
             self._cons2resname = {}
-            for key, val in zip(_np.hstack(self.consensus_labels),
-                                _np.hstack(self.residue_names_short)):
-                if str(key).lower() in ["na","none"]:
-                    key = val
-                if key not in self._cons2resname.keys():
-                    self._cons2resname[key]=val
-                else:
-                    assert self._cons2resname[key]==val,(self._cons2resname[key],key,val)
+            self._residx2resname = {}
+            self._residx2fragnamebest = {}
+            self._residxs_missing_conslabels = []
+            for conslab, val, ridx, fragname in zip(_np.hstack(self.consensus_labels),
+                                                    _np.hstack(self.residue_names_short),
+                                                    _np.hstack(self.res_idxs_pairs),
+                                                    _np.hstack(self.fragment_names_best)):
 
-            # Check the same residue always has the same consensus label
+                if ridx not in self._residx2resname.keys():
+                    self._residx2resname[ridx] = val
+                else:
+                    assert self._residx2resname[ridx]==val, (self._residx2resname[ridx], val)
+
+                if ridx not in self._residx2fragnamebest.keys():
+                    self._residx2fragnamebest[ridx] = fragname
+                else:
+                    assert self._residx2fragnamebest[ridx] == fragname, (self._residx2fragnamebest[ridx], fragname)
+
+                if str(conslab).lower() in ["na","none"]:
+                    self._residxs_missing_conslabels.append(ridx)
+                else:
+                    if conslab not in self._cons2resname.keys():
+                        self._cons2resname[conslab]=val
+                    else:
+                        assert self._cons2resname[conslab]==val,(self._cons2resname[conslab],conslab,val)
+
+            # Finally do this dictionary
             self._resname2cons = {}
             for cl, kres in self._cons2resname.items():
+                # Check the same residue always has the same consensus label
                 assert kres not in self._resname2cons.keys(),"Consensus label '%s' " \
                                                               "would overwrite existing '%s' for " \
                                                               "residue with name '" \
                                                              "%s'. " \
                                                               "Check your consensus labels"%(cl,self._resname2cons[kres], val)
                 self._resname2cons[kres]=cl
+            # Append the missing ones
+            for ii in self._residxs_missing_conslabels:
+                self._resname2cons[self._residx2resname[ii]]=None
 
             if self._interface_residxs is not None:
                 # TODO prolly this is anti-pattern but I prefer these many sanity checks
@@ -1714,6 +1745,10 @@ class ContactGroup(object):
         return [ictc.residues.names_short for ictc in self._contacts]
 
     @property
+    def fragment_names_best(self):
+        return [ictc.labels.fragment_labels_best(fmt="%s") for ictc in self._contacts]
+
+    @property
     def ctc_labels(self):
         return [ictc.labels.no_fragments for ictc in self._contacts]
 
@@ -1725,7 +1760,6 @@ class ContactGroup(object):
     @property
     def ctc_labels_w_fragments_short_AA(self):
         return [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
-
 
     @property
     def trajlabels(self):
@@ -1743,6 +1777,24 @@ class ContactGroup(object):
     @property
     def consensus_labels(self):
         return [ictc.residues.consensus_labels for ictc in self._contacts]
+
+    @property
+    def consensuslabel2resname(self):
+        return self._cons2resname
+
+    @property
+    def resname2consensuslabel(self):
+        return self._resname2cons
+
+    @property
+    def residx2consensuslabel(self):
+        return {ii: self.resname2consensuslabel[val]
+                for ii, val in self.residx2resnameshort.items()
+                if val in self.resname2consensuslabel.keys()}
+
+    @property
+    def residx2resnameshort(self):
+        return self._residx2resname
 
     @property
     def shared_anchor_residue_index(self):
@@ -1795,7 +1847,7 @@ class ContactGroup(object):
     # not sure we need it here, don't want to be testing now
     """
     @property
-    def cons2resname(self):
+    def consensuslabel2resname(self):
         return self._cons2resname
 
     @property
@@ -1848,7 +1900,7 @@ class ContactGroup(object):
 
     def residx2ctcidx(self,idx):
         r"""
-        Indices of the contacts and the position (0 or 1) in which the residue with residue :obj.`idx` appears
+        Indices of the contacts and the position (0 or 1) in which the residue with residue :obj:`idx` appears
         Parameters
         ----------
         idx: int
@@ -2701,16 +2753,19 @@ class ContactGroup(object):
         r""" Whether this ContactGroup can be interpreted as an interface.
 
         Note that while some idxs may have been parsed at initialization,
-        these were not found in self.residxs_pairs and this will evaluate
-        to False"""
+        if none of them were found in self.residxs_pairs, this property
+        will evaluate to False
+        """
 
         return self._interface
+
     @property
     def interface_residxs(self):
         r"""
         The residues split into the interface
         to that interface, in ascending order within each member
-        of the interface
+        of the interface. Empty lists mean non residues were
+        found in the interface defined at initialization
 
         Returns
         -------
@@ -2718,53 +2773,72 @@ class ContactGroup(object):
         """
         return self._interface_residxs
 
-    @property
-    def interface_labels(self):
-        labs_out = [[], []]
-        for ii, ints in enumerate(self.interface_residxs):
-            for idx in ints:
-                ctc_idx, pair_idx = self.residx2ctcidx(idx)[0]
-                labs_out[ii].append(self.ctc_labels[ctc_idx].split("-")[pair_idx])
-
-        return labs_out
 
     @property
     def interface_reslabels_short(self):
+        r"""
+        Residue labels of whatever  residues :obj:`interface_residxs` holds
+        Returns
+        -------
+
+        """
         labs = [[], []]
         for ii, ig in enumerate(self.interface_residxs):
             for idx in ig:
-                ctc_idx, res_idx = self.residx2ctcidx(idx)[0]
-                labs[ii].append(self.residue_names_short[ctc_idx][res_idx])
+                labs[ii].append(self.residx2resnameshort[idx])
 
         return labs
 
     @property
     def interface_labels_consensus(self):
+        r"""
+        Consensus labels of whatever  residues :obj:`interface_residxs` holds.
+
+        Returns
+        -------
+
+        """
+
         # TODO do I have anything like this anymore (with self.interface=False)
         #if self._interface_residxs is not None \
         #        and not hasattr(self, "_interface_labels_consensus"):
-            labs = [[], []]
-            for ii, ig in enumerate(self.interface_residxs):
-                for idx in ig:
-                    ctc_idx, res_idx = self.residx2ctcidx(idx)[0]
-                    labs[ii].append(self.consensus_labels[ctc_idx][res_idx])
+        labs = [[], []]
+        for ii, ig in enumerate(self.interface_residxs):
+            for idx in ig:
+                labs[ii].append(self.residx2consensuslabel[idx])
 
-            return labs
+        return labs
         #elif hasattr(self, "_interface_labels_consensus"):
         #    return self._interface_labels_consensus
         #else:
         #    return None
 
     @property
-    def interface_orphaned_labels(self):
+    def interface_residue_names_w_best_fragments_short(self):
         r"""
-        list of labels that lack consensus nomenclature
+        Best possible residue@fragment string for the residues in the interface
         Returns
         -------
 
         """
-        return [[AA for AA in conlabs if "." not in AA] for conlabs in
-                self.interface_labels_consensus]
+        labs_out = []
+        for ints in self.interface_residxs:
+            labs_out.append(["%s@%s"%(self.residx2resnameshort[jj],self._residx2fragnamebest[jj]) for jj in ints])
+
+
+        return labs_out
+
+    @property
+    def interface_orphaned_labels(self):
+        r"""
+        Short residue names that lack consensus nomenclature, sorted by interface
+        Returns
+        -------
+        olist : list of len 2
+        """
+        #TODO eliminate the "orphan" label string but wait until the group of interface objecs is tested
+        return [[self.residx2resnameshort[ii] for ii in idxs if self.residx2consensuslabel[ii] is None]
+                for idxs in self.interface_residxs]
 
     """ I am commenting all this until the interface UI is better
     def interface_relabel_orphans(self):
@@ -2786,7 +2860,7 @@ class ContactGroup(object):
                                         sort=True):
         assert self.interface
         dict_out = [{}, {}]
-        for ii, ilabs in enumerate(self.interface_labels):
+        for ii, ilabs in enumerate(self.interface_residue_names_w_best_fragments_short):
             # print(ilabs)
             if sort:
                 for idx in freq_dict_in.keys():
@@ -3133,16 +3207,16 @@ class group_of_interfaces(object):
             for ii, (pdb, iint) in enumerate(self.interfaces.items()):
                 xlabels = []
                 for key in self.interface_labels_consensus[0]:
-                    if key in iint.cons2resname.keys():
-                        xlabels.append(iint.cons2resname[key])
+                    if key in iint.consensuslabel2resname.keys():
+                        xlabels.append(iint.consensuslabel2resname[key])
                     elif hasattr(iint,"_orphaned_residues_new_label") and key in iint._orphaned_residues_new_label.values():
                         xlabels.append({val:key for key, val in iint._orphaned_residues_new_label.items()}[key])
                     else:
                         xlabels.append("-")
                 ylabels = []
                 for key in self.interface_labels_consensus[1]:
-                    if key in iint.cons2resname.keys():
-                        ylabels.append(iint.cons2resname[key])
+                    if key in iint.consensuslabel2resname.keys():
+                        ylabels.append(iint.consensuslabel2resname[key])
                     else:
                         ylabels.append("-")
                 y =  offset+ii+n_x+padding*ii
