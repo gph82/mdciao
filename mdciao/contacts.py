@@ -2031,10 +2031,7 @@ class ContactGroup(object):
         for ifreq in freqs:
             idict = {}
             for idx, val in ifreq.items():
-                key   = self.residx2resnameshort[idx]
-                ifrag = self.residx2fragnamebest[idx]
-                if len(ifrag)>0:
-                    key += "%s%s"%(fragsep,ifrag)
+                key = self.residx2resnamefragnamebest()[idx]
                 idict[key] = val
             dict_out.append(idict)
 
@@ -2070,6 +2067,12 @@ class ContactGroup(object):
         r"""
         Return frequencies as a dictionary of dictionaries keyed by consensus labels
 
+        Note
+        ----
+        Will fail if not all residues have consensus labels
+        TODO this is very similar to :obj:`frequency_sum_per_residue_names_dict`,
+        look at the usecase closesely and try to unify both methods
+
         Parameters
         ----------
         ctc_cutoff_Ang
@@ -2099,12 +2102,15 @@ class ContactGroup(object):
 
         if sort_by_interface:
             raise NotImplementedError
+            # TODO the usecase for this is not clear to me ATM
+            """
             _dict_out = {key:dict_out[key] for key in self.interface_labels_consensus[0] if key in dict_out.keys()}
             assert len(_dict_out)==len(dict_out)
             dict_out = _dict_out
             _dict_out = {key:{key2:val[key2] for key2 in self.interface_labels_consensus[1] if key2 in val.keys()} for key,val in dict_out.items()}
             assert all([len(val1)==len(val2) for val1, val2 in zip(dict_out.values(), _dict_out.values())])
             dict_out = _dict_out
+            """
 
         if return_as_triplets:
             _dict_out = []
@@ -2721,7 +2727,8 @@ class ContactGroup(object):
                                     truncate_at=0,
                                     bar_width_in_inches=.75,
                                     list_by_interface=False,
-                                    sort=True):
+                                    sort=True,
+                                    interface_vline=False):
         r"""
         bar plot with per-residue sums of frequencies (=nr. of neighbors?, cumulative freq? SIP?)
         TODO think about introducing the term nr of neighbors
@@ -2751,6 +2758,8 @@ class ContactGroup(object):
             Separate residues by is_interface
         sort : boolean, default is True
             Sort sums of freqs in descending order
+        interface_vline : bool, default is False
+            Plot a vertical line visually separating both interfaces
 
         Returns
         -------
@@ -2767,7 +2776,6 @@ class ContactGroup(object):
 
         # TODO this code is repeated in table_by_residue
         if list_by_interface:
-            raise(NotImplementedError)
             label_bars = list(freqs_dict[0].keys())+list(freqs_dict[1].keys())
             freqs = _np.array(list(freqs_dict[0].values())+list(freqs_dict[1].values()))
         else:
@@ -2784,7 +2792,7 @@ class ContactGroup(object):
 
         patches = jax.bar(xvec, freqs,
                           width=.25)
-        yticks = _np.arange(.5,_np.max(freqs), .5)
+        yticks = _np.arange(.5,_np.max(freqs)+.25, .5)
         jax.set_yticks(yticks)
         jax.set_xticks([],[])
         [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in yticks]
@@ -2806,6 +2814,9 @@ class ContactGroup(object):
         if xmax is not None:
             jax.set_xlim([-.5, xmax + 1 - .5])
 
+        if list_by_interface and interface_vline:
+            xpos = len([ifreq for ifreq in freqs_dict[0].values() if ifreq >truncate_at])
+            jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
         return jax
 
     @property
@@ -2902,7 +2913,7 @@ class ContactGroup(object):
         olist : list of len 2
         """
         #TODO eliminate the "orphan" label string but wait until the group of is_interface objecs is tested
-        return [[self.residx2resnameshort[ii] for ii in idxs if self.residx2consensuslabel[ii] is None]
+        return [[self.residx2resnameshort[ii] for ii in idxs if ii in self._residxs_missing_conslabels]
                 for idxs in self.interface_residxs]
 
     """ I am commenting all this until the is_interface UI is better
