@@ -2952,7 +2952,7 @@ class ContactGroup(object):
 
     def plot_interface_frequency_matrix(self, ctc_cutoff_Ang,
                                         transpose=False,
-                                        label_type='consensus',
+                                        label_type='best',
                                         **plot_mat_kwargs,
                                         ):
         r"""
@@ -2968,10 +2968,11 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang
         transpose : bool, default is False
-        label_type : str, default is "consensus"
-            "consensus" might lead to empty labels since it is not guaranteed
+        label_type : str, default is "best"
+            Best tries resname@consensus(>fragname>fragidx)
+            Alternatives are "residue" or "consensus", but"consensus" alone
+            might lead to empty labels since it is not guaranteed
             that all residues of the interface have consensus labels
-            Alternatives are "residue" or "both"
         plot_mat_kwargs
 
         Returns
@@ -2986,7 +2987,7 @@ class ContactGroup(object):
             labels = self.interface_labels_consensus
         elif label_type=='residue':
             labels = self.interface_reslabels_short
-        elif label_type=='both':
+        elif label_type=='best':
             labels = self.interface_residue_names_w_best_fragments_short
         else:
             raise ValueError(label_type)

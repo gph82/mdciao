@@ -1561,12 +1561,30 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                          interface_residxs=[[0,3,5],[1,2,4]])
         print(I.frequency_dataframe(2))
         print(I.frequency_sum_per_residue_names_dict(2))
-        print("orphans", I.interface_orphaned_labels)
         print(I.interface_labels_consensus)
         ifig, iax = I.plot_interface_frequency_matrix(2,
-                                                      label_type="both")
-        ifig.tight_layout()
-        ifig.savefig("test.png", bbox_inches="tight")
+                                                      label_type="best")
+        #ifig.tight_layout()
+        #ifig.savefig("test.png", bbox_inches="tight")
+
+    def test_plot_interface_frequency_matrix_other_labels(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          # self.cp3_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs,
+                          self.cp5_wtop_and_wo_conslabs],
+                         interface_residxs=[[0, 3, 5], [1, 2, 4]])
+        print(I.frequency_dataframe(2))
+        print(I.frequency_sum_per_residue_names_dict(2))
+        print(I.interface_labels_consensus)
+        ifig, iax = I.plot_interface_frequency_matrix(2,
+                                                      label_type="consensus")
+        ifig, iax = I.plot_interface_frequency_matrix(2,
+                                                      label_type="residue")
+        with pytest.raises(ValueError):
+            I.plot_interface_frequency_matrix(2,
+                                              label_type="blergh")
+
 
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
@@ -1973,7 +1991,6 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         iax = I.plot_frequency_sums_as_bars(2, "interface",
                                             list_by_interface=True,
                                             interface_vline=True)
-        iax.figure.savefig("test.png")
 
 
 if __name__ == '__main__':
