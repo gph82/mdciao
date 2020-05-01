@@ -384,16 +384,16 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             if table_ext=='xlsx':
                 ihood.frequency_spreadsheet(ctc_cutoff_Ang, fname,
                                             write_interface=False,
-                                            breakdown=True,
+                                            by_atomtypes=True,
                                             # AA_format="long",
-                                            lb_format="join"
+                                            split_label="join"
                                             )
             else:
                 # TODO can't the frequency_spreadsheet handle this now?
                 istr = (ihood.frequency_dataframe(ctc_cutoff_Ang,
                                                   by_atomtypes=True,
                                                   #AA_format="long",
-                                                  lb_format="join").round(
+                                                  split_label="join").round(
                     {"freq": 2, "sum": 2})).to_string(index=False ,header=False,
                                                       justify='left',
                                                       #justify = 'right'
@@ -920,8 +920,8 @@ def interface(
 
     ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
 
-    interface_residx_short = [set(ctc_idxs_receptor_Gprot[:,0]).intersection(interface_residx_long[0]),
-                              set(ctc_idxs_receptor_Gprot[:,1]).intersection(interface_residx_long[1])]
+    interface_residx_short = [list(set(ctc_idxs_receptor_Gprot[:,0]).intersection(interface_residx_long[0])),
+                              list(set(ctc_idxs_receptor_Gprot[:,1]).intersection(interface_residx_long[1]))]
 
     print()
     print(
