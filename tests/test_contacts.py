@@ -1951,5 +1951,30 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(items1[1],["W32@5.50",1/3])
         _np.testing.assert_array_equal(items1[2],["G35",1/3])
 
+
+    def test_frequency_spreadsheet_w_interface(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs,
+                          self.cp5_wtop_and_wo_conslabs],
+                         interface_residxs=[[3, 0, 4],
+                                            [2, 1, 5]])
+        with _TDir(suffix='_test_mdciao') as tmpdir:
+            I.frequency_spreadsheet(2.5, path.join(tmpdir,"test.xlsx"))
+
+    def test_plot_frequency_sums_as_bars(self):
+        I = ContactGroup([self.cp1_wtop_and_conslabs,
+                          self.cp2_wtop_and_conslabs,
+                          self.cp4_wtop_and_conslabs,
+                          self.cp5_wtop_and_wo_conslabs],
+                         interface_residxs=[[3, 0, 4],
+                                            [2, 1, 5]])
+
+        iax = I.plot_frequency_sums_as_bars(2, "interface",
+                                            list_by_interface=True,
+                                            interface_vline=True)
+        iax.figure.savefig("test.png")
+
+
 if __name__ == '__main__':
     unittest.main()
