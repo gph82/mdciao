@@ -2,7 +2,8 @@ import mdtraj as md
 import numpy as np
 import unittest
 from filenames import filenames
-from mdciao.aa_utils import find_AA, int_from_AA_code, name_from_AA, shorten_AA
+from mdciao.residue_and_atom_utils import \
+    find_AA, int_from_AA_code, name_from_AA, shorten_AA, _atom_type
 import pytest
 
 test_filenames = filenames()
@@ -14,7 +15,7 @@ class Test_find_by_AA(unittest.TestCase):
 
     def test_long_AA_code(self):
         assert (find_AA(self.geom.top, "GLU30")) == [0]
-        assert (find_AA(self.geom.top, "LYS28")) == [5]
+        np.testing.assert_array_equal(find_AA(self.geom.top, "LYS29"),[5])
 
     def test_short_AA_code(self):
         assert (find_AA(self.geom.top, 'E30')) == [0]
@@ -100,6 +101,19 @@ class Test_shorten_AA(unittest.TestCase):
     def test_shorten_AA_keep_index_is_true(self):
         assert(shorten_AA("GLU30", keep_index=True) == 'E30')
         assert(shorten_AA("glu30",substitute_fail='E',keep_index=True) == 'E30')
+
+class Test_atom_type(unittest.TestCase):
+    def test_works(self):
+        top = md.load(test_filenames.prot1_pdb).top
+        atoms_BB = [aa for aa in top.residue(0).atoms if aa.is_backbone]
+        atoms_SC = [aa for aa in top.residue(0).atoms if aa.is_sidechain]
+        atoms_X = [aa for aa in top.atoms if not aa.is_backbone and not aa.is_sidechain]
+        assert len(atoms_BB)>0
+        assert len(atoms_SC)>0
+        assert len(atoms_X)>0
+        assert all([_atom_type(aa)=="BB" for aa in atoms_BB])
+        assert all([_atom_type(aa)=="SC" for aa in atoms_SC])
+        assert all([_atom_type(aa)=="X" for aa in atoms_X])
 
 
 if __name__ == '__main__':

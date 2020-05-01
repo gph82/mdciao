@@ -294,3 +294,17 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
                   "%6u frames. Now at chunk nr %4u, frames so far %6u" %
                   (ixtc, traj_idx, stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
     return iterate, inform
+
+def choose_between_good_and_better_strings(good_option, better_option,
+                                           fmt="%s",
+                                           never_use=[None, "None", "NA", "na"]):
+    if good_option in never_use:
+        if better_option in never_use:
+            return ""
+        else:
+            return fmt % better_option
+    elif good_option not in never_use:
+        if better_option in never_use:
+            return fmt % good_option
+        else:
+            return fmt % better_option

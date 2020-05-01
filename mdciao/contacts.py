@@ -4,14 +4,17 @@ from os import path as _path
 from .list_utils import in_what_fragment, \
     put_this_idx_first_in_pair
 
-from .aa_utils import shorten_AA as _shorten_AA
+from .residue_and_atom_utils import \
+    shorten_AA as _shorten_AA, \
+    _atom_type
 
 from .str_and_dict_utils import \
     _replace_w_dict,\
     unify_freq_dicts,\
     _replace4latex, \
     iterate_and_inform_lambdas, \
-    _tunit2tunit
+    _tunit2tunit, \
+    choose_between_good_and_better_strings
 
 from .plots import plot_w_smoothing_auto, \
     add_tilted_labels_to_patches as _add_tilted_labels_to_patches, \
@@ -506,20 +509,6 @@ def contact_matrix_slim(trajectories, cutoff_Ang=3,
 
     return mat
 
-def auto_format_fragment_string(option, better_option,
-                                fmt="%s",
-                                exclude=[None, "None", "NA", "na"]):
-    if option in exclude:
-        if better_option in exclude:
-            return ""
-        else:
-            return fmt % better_option
-    elif option not in exclude:
-        if better_option in exclude:
-            return fmt % option
-        else:
-            return fmt % better_option
-
 # TODO many of these could in principle be named tuples but IDK if
 # its worth the effort and documentation-sphinx headeach
 class _TimeTraces(object):
@@ -834,8 +823,8 @@ class _NeighborhoodNames(object):
         -------
 
         """
-        return auto_format_fragment_string(self.partner_fragment,
-                                           self.partner_fragment_consensus)
+        return choose_between_good_and_better_strings(self.partner_fragment,
+                                                      self.partner_fragment_consensus)
 
     @property
     def anchor_fragment_best(self):
@@ -845,8 +834,8 @@ class _NeighborhoodNames(object):
         -------
 
         """
-        return auto_format_fragment_string(self.anchor_fragment,
-                                           self.anchor_fragment_consensus)
+        return choose_between_good_and_better_strings(self.anchor_fragment,
+                                                      self.anchor_fragment_consensus)
 
     @property
     def anchor_res_and_fragment_str(self):
@@ -1002,9 +991,9 @@ class _ContactStrings(object):
         -------
         list of two strings
         """
-        return [auto_format_fragment_string(self._fragnames[ii],
-                                            self._residues.consensus_labels[ii],
-                                            fmt=fmt)
+        return [choose_between_good_and_better_strings(self._fragnames[ii],
+                                                       self._residues.consensus_labels[ii],
+                                                       fmt=fmt)
                 for ii in [0,1]]
 
 
@@ -3415,27 +3404,6 @@ def _sum_ctc_freqs_by_atom_type(atom_pairs, counts):
     for key, count in zip(atom_pairs, counts):
         dict_out[key] += count
     return dict_out
-
-def _atom_type(aa, no_BB_no_SC='X'):
-    r"""
-    Return a string BB or SC for backbone or sidechain atom.
-    Parameters
-    ----------
-    aa : :obj:`mtraj.core.topology.Atom` object
-    no_BB_no_SC : str, default is X
-        Return this string if :obj:`aa` isn't either BB or SC
-
-    Returns
-    -------
-    aatype : str
-
-    """
-    if aa.is_backbone:
-        return 'BB'
-    elif aa.is_sidechain:
-        return 'SC'
-    else:
-        return no_BB_no_SC
 
 # todo check that mdtraj's license allows for this
 from mdtraj.utils import ensure_type
