@@ -1711,9 +1711,8 @@ class ContactGroup(object):
                 intersect = list(set(self._interface_residxs[0]).intersection(self._interface_residxs[1]))
                 assert len(intersect)==0, ("Some_residxs appear in both members of the is_interface %s, "
                                            "this is not possible"%intersect)
-
-                assert len(self._interface_residxs[0])==len(_np.unique(self._interface_residxs[0]))
-                assert len(self._interface_residxs[1])==len(_np.unique(self._interface_residxs[1]))
+                _np.testing.assert_equal(len(self._interface_residxs[0]),len(_np.unique(self._interface_residxs[0])))
+                _np.testing.assert_equal(len(self._interface_residxs[1]),len(_np.unique(self._interface_residxs[1])))
 
                 res = []
                 for ig in self._interface_residxs:
