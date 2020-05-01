@@ -1421,32 +1421,38 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         CG = ContactGroup([self.cp1, self.cp2])
         jax = CG._plot_freqbars_baseplot(2)
         assert isinstance(jax,_plt.Axes)
+        _plt.close("all")
 
     def test_baseplot_pass_ax(self):
         _plt.plot()
         jax = _plt.gca()
         CG = ContactGroup([self.cp1, self.cp2])
         assert jax is CG._plot_freqbars_baseplot(2, jax=jax)
+        _plt.close("all")
 
     def test_baseplot_truncate(self):
         CG = ContactGroup([self.cp1, self.cp2])
         jax = CG._plot_freqbars_baseplot(2, truncate_at=.5)
         # TODO I would like to test that jax.patches(?) or equivalent has length 1 instead of 2
+        _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs(self):
         CG = ContactGroup([self.cp1, self.cp2])
         jax = CG.plot_freqs_as_bars(2, "test_site")
         assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs_labels_short(self):
         CG = ContactGroup([self.cp1, self.cp2])
         jax = CG.plot_freqs_as_bars(2, "test_site",shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs_labels_xlim(self):
         CG = ContactGroup([self.cp1, self.cp2])
         jax = CG.plot_freqs_as_bars(2, "test_site",xlim=20)
         assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
 
     def test_plot_neighborhood_raises(self):
         CG = ContactGroup([self.cp1, self.cp2])
@@ -1458,6 +1464,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                            self.cp2_w_anchor_and_frags])
         jax = CG.plot_neighborhood_freqs(2,0)
         assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
 
     def test_plot_neighborhood_works_options(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags,
@@ -1469,6 +1476,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _plt.plot()
         jax = _plt.gca()
         assert jax is CG.plot_neighborhood_freqs(2, 0, jax=jax)
+        _plt.close("all")
 
     def test_plot_timedep_ctcs(self):
         from matplotlib.pyplot import Figure
@@ -1479,6 +1487,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         assert isinstance(figs[0], Figure)
         ifig : Figure = figs[0]
         _np.testing.assert_equal(len(ifig.axes),2+1) #2 + twinx
+        _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_no_pop(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags,
@@ -1488,6 +1497,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         ifig = figs[0]
         _np.testing.assert_equal(len(figs),1)
         _np.testing.assert_equal(len(ifig.axes),2+1+1) #2 + twinx + N
+        _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_w_pop(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags,
@@ -1498,6 +1508,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _np.testing.assert_equal(len(figs),2)
         _np.testing.assert_equal(len(figs[0].axes),2+1) #2 + twinx
         _np.testing.assert_equal(len(figs[1].axes),1)
+        _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_empty(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags,
@@ -1505,6 +1516,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                           )
         figs = CG.plot_timedep_ctcs(1, skip_timedep=True)
         _np.testing.assert_equal(len(figs),0)
+        _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_w_valid_cutoff(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags,
@@ -1514,6 +1526,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                     skip_timedep=True)
         _np.testing.assert_equal(len(figs),1)
         _np.testing.assert_equal(len(figs[0].axes),1) # Just nctc
+        _plt.close("all")
 
     def test_plot_neighborhood_distributions_just_works(self):
         from matplotlib.pyplot import Axes
@@ -1522,6 +1535,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                           )
         jax = CG.plot_neighborhood_distributions()
         assert isinstance(jax, Axes)
+        _plt.close("all")
 
     def test_plot_neighborhood_distributions_just_works_w_options(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
@@ -1532,6 +1546,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                                  xlim=[-1,5],
                                                  n_nearest=1)
         assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
 
     def test_plot_frequency_sums_as_bars_just_works(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
@@ -1539,6 +1554,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                           )
         jax = CG.plot_frequency_sums_as_bars(2.0, "test", xmax=4)
         assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
 
     def test_plot_frequency_sums_as_bars_no_interface_raises(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
@@ -1561,6 +1577,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                                       label_type="best")
         #ifig.tight_layout()
         #ifig.savefig("test.png", bbox_inches="tight")
+        _plt.close("all")
 
     def test_plot_interface_frequency_matrix_other_labels(self):
         I = ContactGroup([self.cp1_wtop_and_conslabs,
@@ -1579,6 +1596,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         with pytest.raises(ValueError):
             I.plot_interface_frequency_matrix(2,
                                               label_type="blergh")
+        _plt.close("all")
 
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 

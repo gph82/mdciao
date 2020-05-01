@@ -41,7 +41,6 @@ class TestJustRunsAllFewestOptions(unittest.TestCase):
                                     self.run1_stride_100_xtc_reverse],
                       output_dir=tmpdir)
 
-
 class test_residue_neighbrhoods_options_except_nomenclature_just_runs(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.prot1_pdb)
@@ -159,8 +158,6 @@ class test_residue_neighbrhoods_options_except_nomenclature_just_runs(unittest.T
                                        fragmentify=False,
                                        output_dir=tmpdir)
 
-
-
 class test_maximal_runs_no_nomenclature(unittest.TestCase):
     #this is a WIP
 
@@ -176,8 +173,6 @@ class test_maximal_runs_no_nomenclature(unittest.TestCase):
                       frag_idxs_group_1=[0],
                       frag_idxs_group_2=[1],
                       output_dir=tmpdir)
-
-
 
 if __name__ == '__main__':
     unittest.main()
