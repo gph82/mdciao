@@ -268,7 +268,6 @@ class TestResidues(unittest.TestCase):
         assert cors.consensus_labels[0]=="3.50"
         assert cors.consensus_labels[1]=="4.50"
 
-
 class TestFragments(unittest.TestCase):
 
 
@@ -461,8 +460,6 @@ class Test_auto_fragment_string(unittest.TestCase):
     def test_only_better_option(self):
         assert auto_format_fragment_string(None, "3.50")=="3.50"
 
-
-
 class TestContactStrings(unittest.TestCase):
 
     def test_trajlabels_no_trajs(self):
@@ -521,8 +518,6 @@ class TestContactStrings(unittest.TestCase):
                               _Residues([10, 20], ["GLU25", "ALA35"]),
                               )
         print(cls)
-
-
 
 class TestContactPair(unittest.TestCase):
     def setUp(self):
@@ -1585,7 +1580,6 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
             I.plot_interface_frequency_matrix(2,
                                               label_type="blergh")
 
-
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
     def test_frequency_spreadsheedt_just_works(self):
@@ -1991,7 +1985,6 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         iax = I.plot_frequency_sums_as_bars(2, "interface",
                                             list_by_interface=True,
                                             interface_vline=True)
-
 
 if __name__ == '__main__':
     unittest.main()
