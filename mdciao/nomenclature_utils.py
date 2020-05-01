@@ -1,6 +1,6 @@
 import mdtraj as _md
 import numpy as _np
-from .aa_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
+from .residue_and_atom_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
 from .sequence_utils import alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, _my_bioalign
 from pandas import DataFrame as _DF, read_json as _read_json, read_excel as _read_excel
 from collections import defaultdict as _defdict
@@ -549,7 +549,7 @@ def _top2consensus_map(consensus_dict, top,
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
     seq = ''.join([_shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
-    from mdciao.aa_utils import name_from_AA as _name_from_AA
+    from mdciao.residue_and_atom_utils import name_from_AA as _name_from_AA
     seq_consensus= ''.join([_name_from_AA(key) for key in consensus_dict.keys()])
     alignment = _alignment_result_to_list_of_dicts(_my_bioalign(seq, seq_consensus)[0],
                                                    top,

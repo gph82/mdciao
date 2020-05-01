@@ -340,7 +340,7 @@ class angle(object):
         example : ['E30', 'V212']
 
         """
-        from .aa_utils import shorten_AA as _shorten_AA
+        from .residue_and_atom_utils import shorten_AA as _shorten_AA
         if self.res_idx is not None:
             return _shorten_AA(self.residue_name, substitute_fail="long", keep_index=True)
         else:

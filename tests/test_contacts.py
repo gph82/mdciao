@@ -10,7 +10,6 @@ from filenames import filenames
 import pytest
 from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
     trajs2ctcs, \
-    auto_format_fragment_string, \
     ContactPair, \
     per_traj_ctc, \
     geom2COMxyz, \
@@ -446,20 +445,6 @@ class TestNeighborhoodNames(unittest.TestCase):
         assert cnns.anchor_res_and_fragment_str_short == "A35@4.50"
         assert cnns.partner_res_and_fragment_str_short == "E25@3.50"
 
-class Test_auto_fragment_string(unittest.TestCase):
-
-    def test_both_bad(self):
-        assert auto_format_fragment_string(None,None)==""
-
-    def test_both_good(self):
-        assert auto_format_fragment_string("fragA","3.50")=="3.50"
-
-    def test_only_option(self):
-        assert auto_format_fragment_string("fragA",None)=="fragA", auto_format_fragment_string("fragA",None)
-
-    def test_only_better_option(self):
-        assert auto_format_fragment_string(None, "3.50")=="3.50"
-
 class TestContactStrings(unittest.TestCase):
 
     def test_trajlabels_no_trajs(self):
@@ -781,19 +766,6 @@ class TestContactPair(unittest.TestCase):
             CP.plot_timetrace(iax,
                               ylim_Ang="max")
 
-class Test_atom_type(unittest.TestCase):
-    def test_works(self):
-        top = md.load(test_filenames.prot1_pdb).top
-        atoms_BB = [aa for aa in top.residue(0).atoms if aa.is_backbone]
-        atoms_SC = [aa for aa in top.residue(0).atoms if aa.is_sidechain]
-        atoms_X = [aa for aa in top.atoms if not aa.is_backbone and not aa.is_sidechain]
-        assert len(atoms_BB)>0
-        assert len(atoms_SC)>0
-        assert len(atoms_X)>0
-        assert all([_atom_type(aa)=="BB" for aa in atoms_BB])
-        assert all([_atom_type(aa)=="SC" for aa in atoms_SC])
-        assert all([_atom_type(aa)=="X" for aa in atoms_X])
-
 class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
     def test_works(self):
         top = md.load(test_filenames.prot1_pdb).top
@@ -904,16 +876,6 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
                                                                    n_ctcs=5, restrict_to_resSeq=None,
                                                                    interactive=True)
             assert ctc_freq == {}
-
-class Test_pick_best_label(unittest.TestCase):
-    def test_pick_best_label_just_works(self):
-        assert (auto_format_fragment_string(option="Print this instead", better_option="Print this") == "Print this")
-
-    def test_pick_best_label_exclude_works(self):
-        assert(auto_format_fragment_string(option="Print this instead", better_option= None) == "Print this instead")
-        assert(auto_format_fragment_string(option="Print this instead", better_option="None") == "Print this instead")
-        assert(auto_format_fragment_string(option="Print this instead", better_option="NA") == "Print this instead")
-        assert(auto_format_fragment_string(option="Print this instead", better_option="na") == "Print this instead")
 
 class TestBaseClassContactGroup(unittest.TestCase):
     def setUp(self):

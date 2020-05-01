@@ -13,7 +13,8 @@ from mdciao.str_and_dict_utils import \
     _delete_exp_in_keys, \
     iterate_and_inform_lambdas, \
     unify_freq_dicts,\
-    _replace4latex
+    _replace4latex, \
+    choose_between_good_and_better_strings
 
 import pytest
 
@@ -295,6 +296,30 @@ class Test_str_latex(unittest.TestCase):
     def test_notimplemented(self):
         with pytest.raises(NotImplementedError):
             _replace4latex("alpha C_2")
+
+class Test_auto_fragment_string(unittest.TestCase):
+
+    def test_both_bad(self):
+        assert choose_between_good_and_better_strings(None, None) == ""
+
+    def test_both_good(self):
+        assert choose_between_good_and_better_strings("fragA", "3.50") == "3.50"
+
+    def test_only_option(self):
+        assert choose_between_good_and_better_strings("fragA", None) == "fragA", choose_between_good_and_better_strings("fragA", None)
+
+    def test_only_better_option(self):
+        assert choose_between_good_and_better_strings(None, "3.50") == "3.50"
+
+    def test_pick_best_label_just_works(self):
+        assert (choose_between_good_and_better_strings("Print this instead", "Print this") == "Print this")
+
+    def test_pick_best_label_exclude_works(self):
+        assert(choose_between_good_and_better_strings("Print this instead", None) == "Print this instead")
+        assert(choose_between_good_and_better_strings("Print this instead", "None") == "Print this instead")
+        assert(choose_between_good_and_better_strings("Print this instead", "NA") == "Print this instead")
+        assert(choose_between_good_and_better_strings("Print this instead", "na") == "Print this instead")
+
 
 if __name__ == '__main__':
     unittest.main()

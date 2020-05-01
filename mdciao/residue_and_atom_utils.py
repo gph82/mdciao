@@ -139,3 +139,24 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
         return res
     else:
         return name_from_AA(res)
+
+def _atom_type(aa, no_BB_no_SC='X'):
+    r"""
+    Return a string BB or SC for backbone or sidechain atom.
+    Parameters
+    ----------
+    aa : :obj:`mtraj.core.topology.Atom` object
+    no_BB_no_SC : str, default is X
+        Return this string if :obj:`aa` isn't either BB or SC
+
+    Returns
+    -------
+    aatype : str
+
+    """
+    if aa.is_backbone:
+        return 'BB'
+    elif aa.is_sidechain:
+        return 'SC'
+    else:
+        return no_BB_no_SC

@@ -1,5 +1,5 @@
 import numpy as _np
-from .aa_utils import find_AA
+from .residue_and_atom_utils import find_AA
 from .bond_utils import top2residue_bond_matrix
 from .list_utils import in_what_N_fragments as _in_what_N_fragments, join_lists as _join_lists
 

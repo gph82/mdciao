@@ -762,7 +762,7 @@ def site_figures(topology,
             vmd_cmd += "mol addfile %s waitfor all\n"%(ss["best run"])
             vmd_cmd += 'mol addfile figs/density.site.%s.ccp4\n'%ss["name"]
             print(vmd_cmd[:-1])
-        from .aa_utils import shorten_AA as _shorten_AA
+        from .residue_and_atom_utils import shorten_AA as _shorten_AA
         for r1,r2 in ctc_idxs:
             r1 = refgeom.top.residue(r1)
             r2 = refgeom.top.residue(r2)
@@ -946,7 +946,7 @@ def interface(
     ctc_frequency = ctcs_bin / actcs.shape[0]
     order = _np.argsort(ctc_frequency)[::-1]
     #ctcs_trajectory_std = _np.vstack([_np.mean(ictcs < ctc_cutoff_Ang / 10, 0) for ictcs in ctcs]).std(0)
-    from .aa_utils import shorten_AA
+    from .residue_and_atom_utils import shorten_AA
     ctc_objs = []
     for idx in order[:n_ctcs]:
         ifreq = ctc_frequency[idx]
