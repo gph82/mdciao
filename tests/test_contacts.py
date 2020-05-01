@@ -28,7 +28,7 @@ from tempfile import TemporaryDirectory as _TDir
 
 test_filenames = filenames()
 
-class TestBaseClassContacs(unittest.TestCase):
+class TestBaseClassContacts(unittest.TestCase):
     def setUp(self):
         self.pdb_file = test_filenames.prot1_pdb
         self.file_xtc = test_filenames.run1_stride_100_xtc
@@ -57,7 +57,7 @@ class TestBaseClassContacs(unittest.TestCase):
                             atoms_20[idxs_2030[0]], atoms_30[idxs_2030[1]]])
         self.my_idxs = _np.vstack(my_idxs)
 
-class Test_per_traj_ctc(TestBaseClassContacs):
+class Test_per_traj_ctc(TestBaseClassContacts):
     def test_contacts_file(self):
         ctcs, time, __ = per_traj_ctc(self.top, self.file_xtc, self.ctc_idxs, 1000, 1, 0)
         _np.testing.assert_allclose(ctcs,self.ctcs)
@@ -93,38 +93,7 @@ class Test_per_traj_ctc(TestBaseClassContacs):
         assert iatoms.shape[1]==2*2
         assert all([_np.isnan(ii) for ii in iatoms.flatten()]  )
 
-class Test_COM_utils(TestBaseClassContacs):
-
-    def setUp(self):
-        super(Test_COM_utils,self).setUp()
-        self.traj_5_frames = self.traj[:5]
-        # Very slow, but what other way of directly computing the COM is there?
-        COMS_mdtraj = [md.compute_center_of_mass(self.traj_5_frames.atom_slice([aa.index for aa in rr.atoms])) for rr in
-                       self.top.residues]
-        # re order along the time axis
-        self.COMS_mdtraj = _np.zeros((5, self.top.n_residues, 3))
-        for ii in range(5):
-            self.COMS_mdtraj[ii,:, :] = [jcom[ii] for jcom in COMS_mdtraj]
-
-    def test_COMxyz_works(self):
-        COMSs_mine = geom2COMxyz(self.traj_5_frames)
-        _np.testing.assert_allclose(self.COMS_mdtraj, COMSs_mine)
-
-    def test_COMxyz_works_some_residues(self):
-        residue_idxs = [1, 3, 5, 7]
-        COMSs_mine = geom2COMxyz(self.traj_5_frames, residue_idxs=residue_idxs)
-
-        _np.testing.assert_allclose(COMSs_mine[:, [residue_idxs]],
-                                    self.COMS_mdtraj[:,[residue_idxs]])
-
-    def test_COMdist_works(self):
-        res_pairs = [[0,10], [10,20]]
-        Dref = _np.vstack((_np.linalg.norm(self.COMS_mdtraj[:,0]-self.COMS_mdtraj[:,10], axis=1),
-                           _np.linalg.norm(self.COMS_mdtraj[:,10]- self.COMS_mdtraj[:,20], axis=1))).T
-        COMdist =  geom2COMdist(self.traj_5_frames, residue_pairs=res_pairs)
-        _np.testing.assert_allclose(Dref, COMdist)
-
-class Test_trajs2ctcs(TestBaseClassContacs):
+class Test_trajs2ctcs(TestBaseClassContacts):
 
     def setUp(self):
         #TODO read why I shouldn't be doing this...https://nedbatchelder.com/blog/201210/multiple_inheritance_is_hard.html
