@@ -1141,8 +1141,8 @@ def contact_map(
     #neighborhood.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
 
 def neighborhood_comparison(*args, **kwargs):
-    from .plots import compare_neighborhoods
-    return compare_neighborhoods(*args, **kwargs)
+    from .plots import compare_groups_of_contacts
+    return compare_groups_of_contacts(*args, **kwargs)
 
 
 def _cmdstr2cmdtuple(cmd):

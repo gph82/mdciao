@@ -32,21 +32,63 @@ def plot_w_smoothing_auto(iax, x, y,
              alpha=alpha,
              color=icolor)
 
-def compare_neighborhoods(filedict,
-                          colordict,
-                          anchor=None,
-                          width=.2,
-                          ax=None,
-                          figsize=(10, 5),
-                          fontsize=16,
-                          mutations = {},
-                          plot_singles=False,
-                          exclude=None,
-                          ctc_cutoff_Ang=None,
-                          reorder_keys=True,
-                          **kwargs_plot_unified_freq_dicts,
-                          ):
+def compare_groups_of_contacts(dictionary_of_groups,
+                               colordict,
+                               anchor=None,
+                               width=.2,
+                               ax=None,
+                               figsize=(10, 5),
+                               fontsize=16,
+                               mutations = {},
+                               plot_singles=False,
+                               exclude=None,
+                               ctc_cutoff_Ang=None,
+                               reorder_keys=True,
+                               **kwargs_plot_unified_freq_dicts,
+                               ):
+    r"""
+    Compare contact groups using different plots and strategies
 
+    Parameters
+    ----------
+    dictionary_of_groups : dict
+        The keys will be used as names for the contact groups.
+        The values can be:
+          * :obj:`ContactGroup` objects
+          * dictionaries where the keys are residue-pairs
+          (one letter-codes, no fragment info, as in :obj:`ContactGroup.ctc_labels_short`)
+          and the values are contact frequencies [0,1]
+          * be ascii-files (see :obj:`neighborhood_datfile2freqws`)
+            with the contact labels in the second and frequencies in
+            the third column
+
+        Note
+        ----
+        If a :obj:`ContactGroup` is passed, then a :obj:`ctc_cutoff_Ang`
+        needs to be passed along, otherwise frequencies cannot be computed
+        on-the-fly
+
+    colordict : dict
+        Using the same keys as :obj:`dictionary_of_groups`,
+        a color for each group
+    anchor : str, default is None
+        If there is an anchor residue. Will have consequences
+        in the labelling
+    width
+    ax
+    figsize
+    fontsize
+    mutations
+    plot_singles
+    exclude
+    ctc_cutoff_Ang
+    reorder_keys
+    kwargs_plot_unified_freq_dicts
+
+    Returns
+    -------
+    myfig, freqs, posret
+    """
     def neighborhood_datfile2freqws(ifile):
         outdict = {}
         for iline in open(ifile).read().splitlines():
@@ -59,9 +101,9 @@ def compare_neighborhoods(filedict,
                 raise
         return outdict
 
-    freqs = {key: {} for key in filedict.keys()}
+    freqs = {key: {} for key in dictionary_of_groups.keys()}
 
-    for key, ifile in filedict.items():
+    for key, ifile in dictionary_of_groups.items():
         if isinstance(ifile, str):
             idict = neighborhood_datfile2freqws(ifile)
         elif "contact_group" in str(type(ifile)):
@@ -156,12 +198,72 @@ def plot_unified_freq_dicts(freqs,
                             figsize=(10, 5),
                             fontsize=16,
                             lower_cutoff_val=.1,
-                            order='mean',
+                            sort_by='mean',
                             remove_identities=False,
-                            orientation='horizontal',
+                            vertical_plot=False,
                             identity_cutoff=1,
                             ylim=1
                             ):
+    r"""
+    Plot unified frequency dictionaries (= with identical keys) for different systems
+
+    Parameters
+    ----------
+    freqs : dictionary of dictionaries
+        The first-level dict is keyed by system names, e.g freqs.keys() = ["WT","D10A","D10R"]
+        The second-level dict is keyed by contact names
+    colordict : dict
+        What color each system gets
+    width : float, default is .2
+        Bar width of the bar plot
+    ax : :obj:`matplotlib.pyplot.Axes`, default is None
+
+    figsize : iterable of len 2
+        Figure size (x,y), in inches
+        If you are transposing the figure (:obj:`vertical_plot` is True),
+        you do not have to invert (y,x) this parameter here, it is
+        done automatically.
+    fontsize : int, default is 16
+        Will be used in :obj:`matplotlib._rcParams["font.size"]
+        # TODO be less invasive
+    lower_cutoff_val : float, default is .1
+        Do not plot values lower than this. The cutoff is applied
+        to whatever property is used in :obj:`sort_by` (mean or std)
+    sort_by : str, default is "mean"
+        The sort_by by which to plot the contact. It is always descending
+        and the property can be:
+         * "mean" sort by mean frequency over all systems, making most
+         frequent contacts appear on top
+         * "std" sort by standard deviation over all frequencies, making
+         the contacts with most different values appear on top. This
+         highlights more "deviant" contacts and might hence be
+         more informative than "mean" in cases where a lot of
+         contacts have similar frequencies (high or low). If this option
+         is activated, a faint dotted line is incorporated into the plot
+         that marks the std for each contact group
+         * "keep" keep the contacts in whatever order they have in the
+         first dictionary
+         TODO check this actually works
+    remove_identities : bool, default is False
+        If True, the contacts where freq[sys][ctc] = 1 across all systems
+        will not be plotted nor considered in the sum over contacts
+        TODO : the word identity might be confusing
+    identity_cutoff : float, default is 1
+        If :obj:`remove_identities`, use this value to define what
+        is considered an identity, s.t. contacts with values e.g. .95
+        can also be removed
+        TODO conseder merging both identity paramters into one that is None or float
+    vertical_plot : bool, default is False
+        Plot the bars vertically in descending sort_by
+        instead of horizontally (better for large number of frequencies)
+
+    ylim
+
+    Returns
+    -------
+
+    """
+    _rcParams["font.size"] = fontsize
 
     #make copies of dicts
     freqs_work = {key:{key2:val2 for key2, val2 in val.items()} for key, val in freqs.items()}
@@ -172,55 +274,69 @@ def plot_unified_freq_dicts(freqs,
     for mk in master_keys[1:]:
         assert len(all_keys)==len(list(freqs_work[mk].keys()))
 
+    # Pop the keys for higher freqs
+    keys_popped_above = []
     if remove_identities:
-        popped_keys = []
         for key in all_keys:
             if all([val[key]>=identity_cutoff for val in freqs_work.values()]):
                 [idict.pop(key) for idict in freqs_work.values()]
-                popped_keys.append(key)
-        all_keys = [key for key in all_keys if key not in popped_keys]
+                keys_popped_above.append(key)
+        all_keys = [key for key in all_keys if key not in keys_popped_above]
 
-    order_vals = {"mean":[],
-                  "std": [],
-                  "keep":[]}
+    dicts_values_to_sort = {"mean":{},
+                         "std": {},
+                         "keep":{}}
     for ii, key in enumerate(all_keys):
-        order_vals["std"].append(_np.std([idict[key] for idict in freqs_work.values()])*len(freqs_work))
-        order_vals["mean"].append(_np.mean([idict[key] for idict in freqs_work.values()]))
-        order_vals["keep"].append(len(all_keys)-ii)
+        dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_work.values()])*len(freqs_work)
+        dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_work.values()])
+        dicts_values_to_sort["keep"][key] = len(all_keys)-ii+lower_cutoff_val # trick to keep the same logic
 
-    under_freq = []
-    for ii, ival in enumerate(order_vals[order]):
-        if ival <= lower_cutoff_val:
-            under_freq.append(ii)
+    # Find the keys lower sort property
+    keys_popped_below = []
+    for ii, (key, val) in enumerate(dicts_values_to_sort[sort_by].items()):
+        if val <= lower_cutoff_val:
+            [idict.pop(key) for idict in freqs_work.values()]
+            keys_popped_below.append(key)
+            all_keys.remove(key)
 
-    order_vals = {key:[ival for ii, ival in enumerate(val) if ii not in under_freq] for key, val in order_vals.items()}
-    all_keys = [key for ii,key in enumerate(all_keys) if ii not in under_freq]
-    order4plot = _np.argsort(order_vals[order])[::-1]
+    # Pop them form the needed dict
+    final_ordered_dict = {key:val for key, val in dicts_values_to_sort[sort_by].items() if key not in keys_popped_below}
 
-    _rcParams["font.size"] = 16
+    # Sort the dict for plotting
+    final_ordered_dict = {key:val for (key, val)  in
+                          sorted(final_ordered_dict.items(),
+                                 key = lambda item : item[1],
+                                 reverse = True
+                          )
+                          }
 
+    # Prepare the positions of the bars
     delta = {}
     for ii, key in enumerate(master_keys):
         delta[key] = width * ii
 
-    _rcParams["font.size"] = fontsize
     if ax is None:
-        if orientation.startswith("hor"):
-            myfig = _plt.figure(figsize=figsize)
-        elif orientation.startswith("vert"):
-            myfig = _plt.figure(figsize=figsize[::-1])
+        if vertical_plot:
+            figsize = figsize[::-1]
+        myfig = _plt.figure(figsize=figsize)
     else:
         _plt.sca(ax)
         myfig = ax.figure
 
-    for ii, idx in enumerate(order4plot):
-        key = all_keys[idx]
+    for ii, (key, val) in enumerate(final_ordered_dict.items()):
         for jj, (skey, sfreq) in enumerate(freqs_work.items()):
             if ii == 0:
                 label = '%s ($\\Sigma$= %2.1f)'%(skey, _np.sum(list(sfreq.values())))
+                if len(keys_popped_above)>0:
+                    label = label[:-1]+", +%2.1f above threshold)"%(_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
+                if len(keys_popped_below) > 0:
+                    label = label[:-1] + ", +%2.1f below threshold)" % (
+                        _np.sum([freqs[skey][nskey] for nskey in keys_popped_below]))
+
             else:
                 label = None
-            if orientation=="horizontal":
+
+            if not vertical_plot:
                 _plt.bar(ii + delta[skey], sfreq[key],
                          width=width,
                          color=colordict[skey],
@@ -228,16 +344,16 @@ def plot_unified_freq_dicts(freqs,
                          )
                 if jj == 0:
                     _plt.text(ii, ylim+.05, key, rotation=45)
-            if orientation=="vertical":
+            else:
                 _plt.barh(ii + delta[skey], sfreq[key],
                           height=width,
                           color=colordict[skey],
                           label=label,
                           )
                 if jj == 0:
-                    _plt.text(-.05, ii, key, ha='right')
+                    _plt.text(-.05, ii, key, ha='right', va="center") # TODO fix the vertical position here
     _plt.legend()
-    if orientation=='vertical':
+    if vertical_plot:
         _plt.yticks([])
         _plt.xlim(0, ylim)
         _plt.ylim(0 - width, ii + width * 2)
@@ -245,26 +361,27 @@ def plot_unified_freq_dicts(freqs,
         [_plt.gca().axvline(ii, ls=":", color="k", zorder=-1) for ii in [.25, .5, .75]]
         _plt.gca().invert_yaxis()
 
-        if order == "std":
-            _plt.plot(_np.array(order_vals[order])[order4plot], _np.arange(len(all_keys)), [order4plot], color='k', alpha=.25, ls=':')
+        if sort_by == "std":
+            _plt.plot(list(final_ordered_dict.values()), _np.arange(len(all_keys)), color='k', alpha=.25, ls=':')
 
-    elif orientation=="horizontal":
+    else:
         _plt.xticks([])
-        _plt.ylim(0, ylim)
         _plt.xlim(0 - width, ii + width * 2)
         if ylim<=1:
             yticks = [0, .25, .50, .75, 1]
 
         else:
-            yticks = (_np.arange(_np.round(ylim)))
+            yticks = _np.arange(0,_np.ceil(ylim),.50)
         _plt.yticks(yticks)
         [_plt.gca().axhline(ii, ls=":", color="k", zorder=-1) for ii in yticks[1:-1]]
-        if order == "std":
-            _plt.plot(_np.array(order_vals[order])[order4plot] ,color='k', alpha=.25, ls=':')
+        if sort_by == "std":
+            _plt.plot(list(final_ordered_dict.values()),
+                      color='k', alpha=.25, ls=':')
+
+        _plt.ylim(0, ylim)
 
 
-
-    return myfig, _plt.gca(),{all_keys[ii]:[idict[all_keys[ii]] for idict in freqs_work.values()] for ii in order4plot}
+    return myfig, _plt.gca(), None #{all_keys[ii]:[idict[all_keys[ii]] for idict in freqs_work.values()] for ii in order4plot}
 
 def RMSD_segments_vs_orientations(dict_RMSD,
                                   segments,
@@ -466,13 +583,16 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
     Parameters
     ----------
     mat : 2D numpy.ndarray of shape (N,M)
-    labels : list of len(2) with the lenghts N, M
+        The allowed values are in [0,1], else
+        the method fails
+    labels : list of len(2) with x and y labels
+        The length of each list has to be N, M for
+        x, y respectively, else this method fails
     pixelsize : int, default is 1
         The size in inches of the pixel representing
         the contact. Ultimately controls the size
         of the figure, because
         figsize = _np.array(mat.shape)*pixelsize
-
     transpose : boolean, default is False
     grid : boolean, default is False
         overlap a grid of dashed lines
@@ -489,6 +609,8 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         with the default value, in case the value
         changes in the future
     """
+    _np.testing.assert_array_equal(mat.shape,[len(ll) for ll in labels])
+    assert _np.max(mat)<=1 and _np.min(mat)>=0
     if transpose:
         mat = mat.T
         labels = labels[::-1]
@@ -505,7 +627,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         _plt.vlines(_np.arange(len(labels[1])) + .5, -.5, len(labels[0]), ls='--', lw=.5,  color='gray', zorder=10)
 
     if colorbar:
-        _plt.gcf().colorbar(im, ax=_plt.gcf())
+        _plt.gcf().colorbar(im, ax=_plt.gca())
         im.set_clim(0.0, 1.0)
 
     return _plt.gca(), pixelsize

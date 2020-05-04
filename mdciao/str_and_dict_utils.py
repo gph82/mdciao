@@ -114,11 +114,11 @@ def unify_freq_dicts(freqs,
                      replacement_dict=None,
                      ):
     r"""
-    Provided with a dictionaries of dictionaries, returns an equivalent,
+    Provided with a dictionary of dictionaries, returns an equivalent,
     key-unified dictionary where all sub-dictionaries share their keys,
     putting zeroes where keys where absent originally.
 
-    Use :obj:`key_separator` for "GLU30-LY430" == "LYS40-GLU30" to be True
+    Use :obj:`key_separator` for "GLU30-LY40" == "LYS40-GLU30" to be True
 
     Parameters
     ----------
