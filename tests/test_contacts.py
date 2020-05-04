@@ -12,9 +12,7 @@ from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
     trajs2ctcs, \
     ContactPair, \
     per_traj_ctc, \
-    geom2COMxyz, \
     geom2COMdist, \
-    _atom_type, \
     _sum_ctc_freqs_by_atom_type,\
     ContactGroup
 

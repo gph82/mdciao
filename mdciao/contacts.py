@@ -20,7 +20,7 @@ from .str_and_dict_utils import \
 
 from .plots import plot_w_smoothing_auto, \
     add_tilted_labels_to_patches as _add_tilted_labels_to_patches, \
-    plot_contact_matrix as _plot_interface_matrix
+    plot_contact_matrix as _plot_contact_matrix
 
 from collections import defaultdict, Counter as _col_Counter
 
@@ -1603,7 +1603,7 @@ class ContactGroup(object):
                 if ridx not in self._residx2conslabels.keys():
                     self._residx2conslabels[ridx] = conslab
                 else:
-                    assert self._residx2conslabels[ridx] == conslab, (self._residx2conslabels[ridxs], conslab)
+                    assert self._residx2conslabels[ridx] == conslab, (self._residx2conslabels[ridx], conslab)
 
                 if str(conslab).lower() in ["na","none"]:
                     self._residxs_missing_conslabels.append(ridx)
@@ -2916,10 +2916,10 @@ class ContactGroup(object):
         else:
             raise ValueError(label_type)
 
-        iax, __ = _plot_interface_matrix(mat,labels,
-                                         transpose=transpose,
-                                         **plot_mat_kwargs,
-                                         )
+        iax, __ = _plot_contact_matrix(mat,labels,
+                                       transpose=transpose,
+                                       **plot_mat_kwargs,
+                                       )
         return iax.figure, iax
 
     # TODO would it be better to make use of self.frequency_dict_by_consensus_labels
@@ -3233,9 +3233,9 @@ class group_of_interfaces(object):
                               annotate=True,
                               **kwargs_plot_interface_matrix):
         mat = self.interface_matrix(ctc_cutoff_Ang)
-        iax, pixelsize = _plot_interface_matrix(mat,
-                                                self.interface_labels_consensus,
-                                     **kwargs_plot_interface_matrix)
+        iax, pixelsize = _plot_contact_matrix(mat,
+                                              self.interface_labels_consensus,
+                                              **kwargs_plot_interface_matrix)
         offset=8*pixelsize
         padding=pixelsize*2
 
