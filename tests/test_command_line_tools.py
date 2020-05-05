@@ -4,10 +4,14 @@ from filenames import filenames
 import pytest
 from mdciao.command_line_tools import residue_neighborhoods, \
     sites, \
-    interface, \
-    contact_map
+    interface
+
+from mdciao.contact_matrix_utils import contact_map
 from tempfile import TemporaryDirectory
 test_filenames = filenames()
+
+from unittest.mock import patch
+
 
 class TestJustRunsAllFewestOptions(unittest.TestCase):
     def setUp(self):
@@ -15,6 +19,7 @@ class TestJustRunsAllFewestOptions(unittest.TestCase):
         self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)
         self.run1_stride_100_xtc_reverse = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)[::-1]
 
+    @patch('builtins.input', lambda *args: '4')
     def test_neighborhoods(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
              residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
@@ -34,7 +39,7 @@ class TestJustRunsAllFewestOptions(unittest.TestCase):
                       frag_idxs_group_1=[0],
                       frag_idxs_group_2=[1],
                       output_dir=tmpdir)
-
+    @unittest.skip("contact map is not being exposed anywhere ATM")
     def test_contact_map(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             contact_map(self.geom, [self.run1_stride_100_xtc,

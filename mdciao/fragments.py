@@ -193,8 +193,8 @@ def get_fragments(top,
         if isinstance(fragment_breaker_fullresname,str):
             fragment_breaker_fullresname=[fragment_breaker_fullresname]
         for breaker in fragment_breaker_fullresname:
-            resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq(breaker,fragments, top,
-                                                                                      **kwargs_interactive_segment_picker)
+            resname2residx, resname2fragidx = per_residue_fragment_picker(breaker,fragments, top,
+                                                                          **kwargs_interactive_segment_picker)
             idx = resname2residx[breaker]
             ifrag = resname2fragidx[breaker]
             if idx is None:
@@ -262,6 +262,7 @@ def overview(topology,
                       method=method)
         print()
 
+"""
 def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
                                           pick_first_fragment_by_default=False,
                                           additional_naming_dicts=None):
@@ -332,10 +333,13 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
 
     return resSeq2residxs, resSeq2segidxs
 
+"""
+
+"""
 def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
                                             default_fragment_idx=None,
                                             fragment_names=None, extra_string_info=''):
-    r"""
+    """r"""
     This function returns the fragment idxs and the residue idxs based on residue name.
     If a residue is present in multiple fragments, the function asks the user to choose the fragment, for which
     the residue idxs is reporte
@@ -351,7 +355,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
     :param extra_string_info: string with any additional info to be printed in case of ambiguity
     :return: two dictionaries, residuenames2residxs and residuenames2fragidxs. If the AA is not found then the
                 dictionaries for that key contain None, e.g. residuenames2residxs[notfoundAA]=None
-    """
+    """"""
     residuenames2residxs = {}
     residuenames2fragidxs = {}
     last_answer = 0
@@ -420,8 +424,8 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
             residuenames2fragidxs[key] = int(answer) #ditto
 
     return residuenames2residxs, residuenames2fragidxs
+"""
 
-#FIXME Trying to integrate both AAresseq and resseq functions in one, if Guillermo agrees, add the test also
 def per_residue_fragment_picker(residue_descriptors,
                                 fragments, top,
                                 pick_this_fragment_by_default=None,
@@ -469,46 +473,8 @@ def per_residue_fragment_picker(residue_descriptors,
                 answer = cand_fragments[0]
                 # print(key,refgeom.top.residue(cands[0]), cand_fragments)
             elif len(cands) > 1:
-                istr = "ambigous definition for AA %s" % key
+                istr = "ambiguous definition for AA %s" % key
                 istr += extra_string_info
-                print(istr)
-                """
-                for cc, ss in zip(cands, cand_fragments):
-                    istr = '%6s in fragment %2u with residue index %2u'%(top.residue(cc), ss, cc)
-                    if fragment_names is not None:
-                        istr += ' (%s)'%fragment_names[ss]
-                    print(istr)
-                if pick_this_fragment_by_default is None:
-                    answer = input(
-                        "input one fragment idx (out of %s) and press enter. Leave empty and hit enter to repeat last option [%s]\n" % ([int(cf) for cf in cand_fragments], last_answer))
-                    if len(answer) == 0:
-                        answer = last_answer
-                    try:
-                        answer = int(answer)
-                        assert answer in cand_fragments, "The answer '%s' is not in the candidate fragments %s"%(answer,cand_fragments)
-                    except (ValueError, AssertionError):
-                        print( "Your answer has to be an integer "
-                                "in the of the fragment list %s, but you gave %s" % ([int(cf) for cf in cand_fragments],answer))
-                        raise
-                    cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-                    last_answer = answer
-
-                elif isinstance(pick_this_fragment_by_default,int):
-                    try:
-                        assert pick_this_fragment_by_default in cand_fragments, "The answer '%s' is not in the candidate fragments %s"%(pick_this_fragment_by_default,cand_fragments)
-                    except AssertionError:
-                        print( "Your answer has to be an integer "
-                                "in the of the fragment list %s, but you gave %s" % ([int(cf) for cf in cand_fragments], pick_this_fragment_by_default))
-                        raise
-                    # cands = pick_this_fragment_by_default
-                    # answer = cand_fragments[_np.argwhere(cands==pick_this_fragment_by_default).squeeze()]
-                    answer = pick_this_fragment_by_default
-                    cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-
-                    print("Automatically picked fragment %u"%pick_this_fragment_by_default)
-                # print(refgeom.top.residue(cands))
-                print()
-                """
                 for cc, ss, char in zip(cands, cand_fragments,abc):
                     fname = " "
                     if fragment_names is not None:
@@ -517,7 +483,7 @@ def per_residue_fragment_picker(residue_descriptors,
                     if additional_naming_dicts is not None:
                         extra=''
                         for key1, val1 in additional_naming_dicts.items():
-                            if val1[cc] is not None:
+                            if cc in val1.keys() and val1[cc] is not None:
                                 extra +='%s: %s '%(key1,val1[cc])
                         if len(extra)>0:
                             istr = istr + ' (%s)'%extra.rstrip(" ")

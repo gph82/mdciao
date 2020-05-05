@@ -4,7 +4,7 @@ from os import path as _path
 from .list_utils import in_what_fragment, \
     put_this_idx_first_in_pair
 
-from .COM_utils import geom2COMdist, geom2COMxyz
+from .COM_utils import geom2COMdist
 
 from .residue_and_atom_utils import \
     shorten_AA as _shorten_AA, \

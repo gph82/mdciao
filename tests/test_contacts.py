@@ -16,6 +16,8 @@ from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
     _sum_ctc_freqs_by_atom_type,\
     ContactGroup
 
+from mdciao.fragments import get_fragments, per_residue_fragment_picker
+
 from matplotlib import pyplot as _plt
 
 from mdciao.contacts import _Fragments, \
@@ -759,14 +761,13 @@ class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
 
 class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
     def setUp(self):
-        from mdciao.fragments import get_fragments, interactive_fragment_picker_by_AAresSeq
         self.geom = md.load(test_filenames.file_for_test_pdb)
         self.by_bonds_geom = get_fragments(self.geom.top,
                                                      verbose=True,
                                                      auto_fragment_names=True,
                                                      method='bonds')
         self.residues = ["GLU30", "VAL31"]
-        self.resname2residx, self.resname2fragidx = interactive_fragment_picker_by_AAresSeq(self.residues,
+        self.resname2residx, self.resname2fragidx = per_residue_fragment_picker(self.residues,
                                                                                                  self.by_bonds_geom,
                                                                                                  self.geom.top)
 
@@ -830,11 +831,10 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
 
 
     def test_ctc_freq_reporter_by_residue_neighborhood_keyboard_interrupt(self):
-        from mdciao.fragments import interactive_fragment_picker_by_AAresSeq
         ctcs_mean = [30, 5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
         with unittest.mock.patch('builtins.input', side_effect=KeyboardInterrupt):
-            resname2residx, resname2fragidx = interactive_fragment_picker_by_AAresSeq("GLU30",self.by_bonds_geom,
+            resname2residx, resname2fragidx = per_residue_fragment_picker("GLU30",self.by_bonds_geom,
                                                                                   self.geom.top)
 
 
