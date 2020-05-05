@@ -5,18 +5,15 @@ import mdtraj as md
 from matplotlib import pyplot as plt,rcParams as _rcParams
 
 
-from json import load as jsonload
-from os.path import splitext, split as psplit
+from os.path import splitext
 from textwrap import wrap as _twrap
 from itertools import product
 from os import path, mkdir
 from tempfile import TemporaryDirectory as _TD
-from glob import glob as _glob
 
 from mdciao.fragments import \
-    interactive_fragment_picker_by_AAresSeq as _interactive_fragment_picker_by_AAresSeq, \
     get_fragments, _print_frag, \
-    interactive_fragment_picker_by_resSeq as _interactive_fragment_picker_by_resSeq
+    per_residue_fragment_picker as _per_residue_fragment_picker
 
 from mdciao.nomenclature_utils import \
     CGN_transformer, BW_transformer,\
@@ -30,6 +27,10 @@ from mdciao.list_utils import \
     rangeexpand, \
     unique_list_of_iterables_by_tuple_hashing, \
     in_what_fragment
+
+from mdciao.site_utils import \
+    sitefile2sitedict as _sitefile2sitedict, \
+    sites_to_ctc_idxs as _sites_to_ctc_idxs
 
 from mdciao.str_and_dict_utils import \
     get_sorted_trajectories as _get_sorted_trajectories, \
@@ -167,6 +168,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           nlist_cutoff_Ang=15,
                           n_smooth_hw=0,
                           ask=True,
+                          #TODO re-think whether ask makes sense anymore
                           sort=True,
                           pbc=True,
                           fragmentify=True,
@@ -250,10 +252,12 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         resSeq2residxs = {refgeom.top.residue(ii).resSeq: ii for ii in resSeq_idxs}
         print("\nInterpreting input indices as zero-indexed residue indexes")
     else:
-        resSeq2residxs, _ = _interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, refgeom.top,
-                                                                  pick_first_fragment_by_default=not ask,
-                                                                  additional_naming_dicts={"BW":BW,"CGN":CGN}
-                                                                  )
+        resSeq2residxs, _ = _per_residue_fragment_picker(resSeq_idxs, fragments, refgeom.top,
+                                    pick_this_fragment_by_default=None,
+                                     additional_naming_dicts={"BW": {ii:val for ii, val in enumerate(BW)},
+                                                              "CGN": {ii:val for ii, val in enumerate(CGN)}}
+                                                         )
+
     print("\nWill compute neighborhoods for the residues with resid")
     print("%s" % resSeq_idxs)
     print("excluding %u nearest neighbors\n" % n_nearest)
@@ -465,22 +469,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             'time_array': time_array,
             "neighborhoods":neighborhoods}
 
-
-def _sitefile2site(sitefile):
-    with open(sitefile, "r") as f:
-        idict = jsonload(f)
-    try:
-        idict["bonds"]["AAresSeq"] = [item.split("-") for item in idict["bonds"]["AAresSeq"] if item[0] != '#']
-        idict["n_bonds"] = len(idict["bonds"]["AAresSeq"])
-    except:
-        print("Malformed .json file for the site %s" % _sitefile2site())
-    if "sitename" not in idict.keys():
-        idict["name"] = splitext(psplit(sitefile)[-1])[0]
-    else:
-        idict["name"] = psplit(idict["sitename"])[-1]
-    return idict
-
-
 def sites(topology,
           trajectories,
           site_files,
@@ -551,19 +539,17 @@ def sites(topology,
     # Dow we want CGN definitions:
     CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
 
-
-    #TODO PACKAGE THIS SOMEHOW BETTER
-    sites = [_sitefile2site(ff) for ff in site_files]
-    AAresSeq2residxs = _sites_to_AAresSeqdict(sites, refgeom.top, fragments,
-                                              default_fragment_idx=default_fragment_index,
-                                              fragment_names=fragment_names)
+    sites = [_sitefile2sitedict(ff) for ff in site_files]
+    ctc_idxs_small, AAresSeq2residxs = _sites_to_ctc_idxs(sites, refgeom.top,
+                                                          fragments=fragments,
+                                                          default_fragment_idx=default_fragment_index,
+                                                          fragment_names=fragment_names)
 
 
     print('%10s  %10s  %10s  %10s %10s' % tuple(("residue  residx fragment fragment_name CGN ".split())))
     for key, val in AAresSeq2residxs.items():
         print('%10s  %10u  %10u  %10s %10s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key, CGN[val]))
 
-    ctc_idxs_small = _sites_to_ctc_idxs_old(sites, AAresSeq2residxs)
     ctcs, time_array, aps = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                        chunksize=chunksize_in_frames,
                                        return_times_and_atoms=True, consolidate=False, periodic=pbc,
@@ -677,7 +663,7 @@ def density_by_sites(topology,
     refgeom = md.load(topology)
     fragments = get_fragments(refgeom.top)
 
-    sites = [_sitefile2site(ff) for ff in site_files]
+    sites = [_sitefile2sitedict(ff) for ff in site_files]
 
     with _TD() as tmpdirname:
         tocat=xtcs
@@ -739,7 +725,7 @@ def site_figures(topology,
     refgeom = md.load(topology)
     fragments = get_fragments(refgeom.top)
 
-    sites = [_sitefile2site(ff) for ff in site_files]
+    sites = [_sitefile2sitedict(ff) for ff in site_files]
 
     # Dow we want CGN definitions:
 
@@ -1064,34 +1050,6 @@ def neighborhood_comparison(*args, **kwargs):
 
 def _cmdstr2cmdtuple(cmd):
     return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
-
-def _sites_to_AAresSeqdict(sites, top, fragments,
-                           raise_if_not_found=True,
-                           **interactive_fragment_picker_by_AAresSeq_kwargs):
-
-
-    AAresSeqs = [ss["bonds"]["AAresSeq"] for ss in sites]
-    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
-    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
-
-    AAresSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, top,
-                                                                 **interactive_fragment_picker_by_AAresSeq_kwargs)
-
-    if None in AAresSeq2residxs.values() and raise_if_not_found:
-        raise ValueError("These residues of your input have not been found. Please revise it:\n%s" % (
-            '\n'.join([key for key, val in AAresSeq2residxs.items() if val is None])))
-
-    return AAresSeq2residxs
-
-def _sites_to_ctc_idxs(sites, top,**kwargs):
-    fragments = get_fragments(top)
-    AAresSeq2residxs = _sites_to_AAresSeqdict(sites,top, fragments)
-    return _sites_to_ctc_idxs_old(sites, AAresSeq2residxs)
-
-
-def _sites_to_ctc_idxs_old(sites, AAresSeq2residxs):
-    return _np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in sites]))
-
 
 def _my_color_schemes(istr):
     return {"peter": ["red", "purple", "gold", "darkorange"],

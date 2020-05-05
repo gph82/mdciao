@@ -5,7 +5,7 @@ import numpy as _np
 from unittest.mock import patch
 import mock
 from mdciao.fragments import get_fragments, \
-    interactive_fragment_picker_by_AAresSeq, per_residue_fragment_picker, \
+    per_residue_fragment_picker, \
     overview, _allowed_fragment_methods, _print_frag
 from filenames import filenames
 
@@ -41,10 +41,8 @@ class Test_print_fragments(unittest.TestCase):
             _print_frag(0, "self.geom.top", self.fragments[0])
 
     def test_returns(self):
-        assert isinstance(_print_frag(0, self.geom.top, self.fragments[0], return_string=True), str)
-
-
-
+        assert isinstance(_print_frag(0, self.geom.top, self.fragments[0],
+                                      return_string=True), str)
 
 class Test_get_fragments_methods(unittest.TestCase):
     def setUp(self):
@@ -206,6 +204,7 @@ class Test_get_fragments_other_options(unittest.TestCase):
         assert _np.allclose(by_bonds[2], [6])
         assert _np.allclose(by_bonds[3], [7])
 
+@unittest.skip("interactive_fragment_picker_by_AAresSeq will be deprecated soon")
 class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
 
     def setUp(self):
@@ -234,6 +233,7 @@ class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
         assert (resname2residx["Glu30"] == None)
         assert (resname2fragidx["Glu30"] == None)
 
+@unittest.skip("interactive_fragment_picker_by_AAresSeq will be deprecated soon")
 class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
 
     def setUp(self):
@@ -361,7 +361,7 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
         assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
         assert resname2fragidx["GLU30"] == 0  # GLU30 is in the 1st fragment
 
-class Test_interactive_fragment_picker_no_ambiguity_wip(unittest.TestCase):
+class Test_per_residue_fragment_picker_no_ambiguity(unittest.TestCase):
 
     def setUp(self):
         self.geom = md.load(test_filenames.file_for_test_pdb)
@@ -369,7 +369,7 @@ class Test_interactive_fragment_picker_no_ambiguity_wip(unittest.TestCase):
                                            verbose=True,
                                            method='bonds')
 
-    def test_interactive_fragment_picker_wip_no_ambiguous(self):
+    def test_no_ambiguous(self):
         residues = ["GLU30", "GDP382", 30, 382]
         resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom,
                                                                       self.geom.top)
@@ -394,7 +394,7 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
                                                  verbose=True,
                                                  method='bonds')
 
-    def test_interactive_fragment_picker_default_fragment_idx_is_none(self):
+    def test_default_fragment_idx_is_none(self):
         residues = ["GLU30",30]
         input_values = (val for val in ["4", "4"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
@@ -409,7 +409,7 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
             assert (resname2residx[30]) == 8  # GLU30 is the 8th residue
             assert resname2fragidx[30] == 4 # GLU30 is in the 4th fragment
 
-    def test_interactive_fragment_picker_default_fragment_idx_is_none_last_answer(self):
+    def test_fragment_idx_is_none_last_answer(self):
         residues = ["GLU30",30]
         input_values = (val for val in ["", ""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
@@ -446,7 +446,7 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
             with pytest.raises((ValueError, AssertionError)):
                 per_residue_fragment_picker("30", self.by_bonds_geom2frags, self.geom2frags.top)
 
-    def test_interactive_fragment_picker_default_fragment_idx_is_passed(self):
+    def test_default_fragment_idx_is_passed(self):
         residues = ["GLU30", 30]
         resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
                                                                       self.geom2frags.top, pick_this_fragment_by_default=4)
@@ -470,7 +470,7 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
                                                                           self.geom2frags.top,
                                                                           pick_this_fragment_by_default=99)
 
-    def test_interactive_fragment_picker_ambiguous(self):
+    def test_ambiguous(self):
 
         input_values = (val for val in ["4", "4"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
@@ -496,14 +496,14 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
             assert (resname2residx[382]) == 7  # GDP382 is the 7th residue
             assert (resname2fragidx[382]) == 3  # GDP382 is the 3rd fragment
 
-    def test_interactive_fragment_picker_fragment_name(self):
+    def test_fragment_name(self):
         residues = ["GLU30", 30]
         input_values = (val for val in ["0", "0"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
                                                                           self.geom2frags.top,
                                                                           fragment_names=["A", "B", "C", "D",
-                                                                                                      "E", "F", "G", "H"])
+                                                                                          "E", "F", "G", "H"])
             # Checking if residue names gives the correct corresponding residue id
             # NOTE:Enter 0 for GLU30 when asked "input one fragment idx"
 
@@ -512,7 +512,7 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
             assert (resname2residx[30]) == 0  # GLU30 is the 1st residue
             assert resname2fragidx[30] == 0  # GLU30 is in the 1st fragment
 
-    def test_interactive_fragment_picker_idx_not_present(self):
+    def test_idx_not_present(self):
 
         resname2residx, resname2fragidx = per_residue_fragment_picker(["GLU99", 99], self.by_bonds_geom2frags,
                                                                       self.geom2frags.top,
@@ -521,6 +521,25 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
         assert (resname2residx[99] == None)
         assert (resname2fragidx["GLU99"] == None)
         assert (resname2fragidx[99] == None)
+
+    def test_extra_dicts(self):
+        residues = ["GLU30", "TRP32"]
+        consensus_dicts={"BW":{0 : "3.50"},
+                        "CGN":{2 : "CGNt"}}
+        resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
+                                                                      self.geom2frags.top,
+                                                                      additional_naming_dicts=consensus_dicts,
+                                                                      pick_this_fragment_by_default=0
+                                                                      )
+
+    def test_answer_letters(self):
+        residues = ["GLU30", "TRP32"]
+        input_values = (val for val in ["a", "b"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
+                                                                      self.geom2frags.top,
+                                                                      )
+
 
 if __name__ == '__main__':
     unittest.main()
