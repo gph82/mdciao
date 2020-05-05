@@ -45,6 +45,9 @@ class Test_find_by_AA(unittest.TestCase):
         assert (find_AA(self.geom2frags.top, "LYS28")) == [5, 13] # getting multiple idxs,as expected
         assert (find_AA(self.geom2frags.top, "K28")) == [5, 13]
 
+    def test_just_numbers(self):
+        np.testing.assert_array_equal(find_AA(self.geom2frags.top,"28"),[5,13])
+
 class Test_int_from_AA_code(unittest.TestCase):
     def test_int_from_AA_code(self):
         assert (int_from_AA_code("GLU30") == 30)

@@ -1,15 +1,18 @@
 from mdtraj.core.residue_names import _AMINO_ACID_CODES
 def find_AA(top, AA, relax=False):
     """
-    Query the index of residue based on residue name.
+    Query the index of residue based on a string: e.g. "GLU30", "E30", "GLU","E".
+    If provided only with a numeric str, "30", it will be interpreted as the
+    resSeq entry.
 
     Parameters
     ----------
     top : :py:class:`mdtraj.Topology`
     AA : string
-        Valid residue name to be passed as a string, example- "GLU30" or "E30"
+        Anything that could be used to identify a residue "GLU30" or "E30"
     relax : boolean, default is True
         Relaxes match criteria to include just the name ("GLU")
+    #TODO think about relax=True always
 
     Returns
     -------
@@ -33,7 +36,8 @@ def find_AA(top, AA, relax=False):
         else:
             raise ValueError(
                 "Missing the resSeq index, all I got was %s. Check out the relax option" % (AA))
-
+    elif AA.isdigit():
+        return [rr.index for rr in top.residues if rr.resSeq == int(AA)]
     else:
         code = ''.join([ii for ii in AA if ii.isalpha()])
 
