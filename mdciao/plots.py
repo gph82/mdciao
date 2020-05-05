@@ -614,7 +614,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         changes in the future
     """
     _np.testing.assert_array_equal(mat.shape,[len(ll) for ll in labels])
-    assert _np.max(mat)<=1 and _np.min(mat)>=0, (_np.max(mat), _np.min(mat))
+    assert _np.nanmax(mat)<=1 and _np.nanmin(mat)>=0, (_np.nanmax(mat), _np.nanmin(mat))
     if transpose:
         mat = mat.T
         labels = labels[::-1]
