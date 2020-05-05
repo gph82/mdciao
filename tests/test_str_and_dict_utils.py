@@ -14,7 +14,10 @@ from mdciao.str_and_dict_utils import \
     iterate_and_inform_lambdas, \
     unify_freq_dicts,\
     _replace4latex, \
-    choose_between_good_and_better_strings
+    choose_between_good_and_better_strings, \
+    freq_datfile2freqdict
+
+from tempfile import TemporaryDirectory as _TDir
 
 import pytest
 
@@ -319,6 +322,21 @@ class Test_auto_fragment_string(unittest.TestCase):
         assert(choose_between_good_and_better_strings("Print this instead", "None") == "Print this instead")
         assert(choose_between_good_and_better_strings("Print this instead", "NA") == "Print this instead")
         assert(choose_between_good_and_better_strings("Print this instead", "na") == "Print this instead")
+
+class Test_freq_datfile2freqdict(unittest.TestCase):
+
+    def test_works(self):
+        freqs = {"0-1":0.3, "0-2":.4}
+        with _TDir(suffix="_test_mdciao") as tempdir:
+            tmpfile = path.join(tempdir, "frqfile.dat")
+            with open(tmpfile,"w") as f:
+                for key, val in freqs.items():
+                    f.write("%f %s\n"%(val, key))
+
+            freqsin = freq_datfile2freqdict(tmpfile)
+        assert freqsin["0-1"]==.3
+        assert freqsin["0-2"]==.4
+        assert len(freqsin)==2
 
 
 if __name__ == '__main__':

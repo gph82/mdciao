@@ -212,7 +212,37 @@ def unify_freq_dicts(freqs,
 
     return freqs_work
 
+def freq_datfile2freqdict(ifile):
+    r"""
+    Reads an ascii file that contains contact frequencies (1st) column and
+    contact labels (2nd column). Columns are separeted by tabs or spaces.
 
+    Starts reading at the first line. Other columns other than the first and second
+    are read.
+
+    TODO use pandas to allow more flex, not needed for the moment
+
+    Parameters
+    ----------
+    ifile : str
+        The filename to be read
+
+    Returns
+    -------
+    freqdict : dictionary
+
+    """
+    outdict = {}
+    with open(ifile) as f:
+        for iline in f.read().splitlines():
+            try:
+                iline = iline.split()
+                freq, names = iline[0],iline[1]
+                outdict[names]=float(freq)
+            except ValueError:
+                print(iline)
+                raise
+    return outdict
 
 def _replace4latex(istr):
     r"""
