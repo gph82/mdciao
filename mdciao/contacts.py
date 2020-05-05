@@ -121,8 +121,6 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragm
     # TODO think about making a pandas dataframe with all the above info
     return selection
 
-
-
 def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
                chunksize=1000, return_times_and_atoms=False,
                n_jobs=1,
@@ -273,98 +271,6 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 
     return ictcs, itime, iatps
 
-def xtcs2ctc_mat_dict(xtcs, top, list_ctc_cutoff_Ang,
-                      stride=1,
-                      return_time=False,
-                      res_COM_cutoff_Ang=25,
-                      chunksize=100,
-                      n_jobs=1,
-                      progressbar=False,
-                      **mdcontacts_kwargs):
-    """Returns the full contact map of residue-residue contacts from a list of trajectory files
-
-    Parameters
-    ----------
-    xtcs : list of strings
-        list of filenames with trajectory data. Typically xtcs,
-        but can be any type of file readable by :obj:mdtraj
-    top : str or :py:class:`mdtraj.Topology`
-        Topology that matches :obj:xtcs
-    stride : int, default is 1
-        Stride the trajectory data down by this value
-    chunksize : integer, default is 100
-        How many frames will be read into memory for
-        computation of the contact time-traces. The higher the number,
-        the higher the memory requirements
-    n_jobs : int, default is 1
-        to how many processors to parallellize
-
-
-    Returns
-    -------
-    ctc_mat
-
-    """
-
-    from tqdm import tqdm
-
-    if progressbar:
-        iterfunct = lambda a : tqdm(a)
-    else:
-        iterfunct = lambda a : a
-
-    ictc_mat_dicts_itimes = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc_mat_dict)(top, itraj, list_ctc_cutoff_Ang, chunksize, stride, ii, res_COM_cutoff_Ang,
-                                                                               **mdcontacts_kwargs)
-                                            for ii, itraj in enumerate(iterfunct(xtcs)))
-
-    ctc_maps = {key:[] for key in list_ctc_cutoff_Ang}
-    times = []
-
-    for ictc_map, itimes in ictc_mat_dicts_itimes:
-        for key in list_ctc_cutoff_Ang:
-            ctc_maps[key].append(ictc_map[key])
-        times.append(itimes)
-    actcs = ctc_maps
-    times = times
-
-    if not return_time:
-        return actcs
-    else:
-        return actcs, times
-
-def per_xtc_ctc_mat_dict(top, itraj, list_ctc_cutoff_Ang, chunksize, stride,
-                         traj_idx, res_COM_cutoff_Ang,
-                         **mdcontacts_kwargs):
-
-    from .actor_utils import igeom2mindist_COMdist_truncation
-    iterate, inform = iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
-    ictcs, itime, iaps = [],[],[]
-    running_f = 0
-    inform(itraj, traj_idx, 0, running_f)
-    ctc_sum = {icoff: _np.zeros((top.n_residues, top.n_residues), dtype=int) for icoff in list_ctc_cutoff_Ang}
-
-    for jj, igeom in enumerate(iterate(itraj)):
-        running_f += igeom.n_frames
-        inform(itraj, traj_idx, jj, running_f)
-        itime.append(igeom.time)
-
-        ctcs_mins, ctc_residxs_pairs, COMs_under_cutoff_pair_idxs  = igeom2mindist_COMdist_truncation(igeom,
-                                                                                                      res_COM_cutoff_Ang,
-                                                                                                      CA_switch=True)
-        jctcs, jidx_pairs, j_atompairs = compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
-        # TODO do proper list comparison and do it only once
-        assert len(jidx_pairs) == len(ctc_residxs_pairs)
-        for icoff in list_ctc_cutoff_Ang:
-            counts = (jctcs<=icoff/10).sum(0)
-            positive_idxs = _np.argwhere(counts>0).squeeze()
-            for idx in positive_idxs:
-                ii, jj  = sorted(jidx_pairs[idx])
-                ctc_sum[icoff][ii,jj] += counts[idx]
-                ctc_sum[icoff][jj,ii] += counts[idx]
-    return ctc_sum, itime
-
-# TODO many of these could in principle be named tuples but IDK if
-# its worth the effort and documentation-sphinx headeach
 class _TimeTraces(object):
 
     def __init__(self, ctc_trajs,
