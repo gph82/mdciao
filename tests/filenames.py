@@ -29,4 +29,6 @@ class filenames(object):
 
         self.GDP_json = path.join(test_data_path,"GDP.json")
 
+        self.index_file = path.join(test_data_path,"index.ndx")
+
 test_filenames = filenames()
