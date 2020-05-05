@@ -2,6 +2,7 @@ import numpy as _np
 from .residue_and_atom_utils import find_AA
 from .bond_utils import top2residue_bond_matrix
 from .list_utils import in_what_N_fragments as _in_what_N_fragments, join_lists as _join_lists
+abc = "abcdefghijklmnopqrst"
 
 def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                 return_string=False, **print_kwargs):
@@ -300,19 +301,16 @@ def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
                               "Use letters in case of repeated fragment index\n" % ([int(ii) for ii in cand_fragments], last_answer)
 
                     answer = input(prompt)
-
                     if len(answer) == 0:
                         answer = last_answer
                         cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-
                     elif answer.isdigit():
                         answer = int(answer)
                         cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
                     elif answer.isalpha():
-                        idx = "abcdefg".find(answer)
+                        idx = abc.find(answer)
                         answer = cand_fragments[idx]
                         cands  = cands[idx]
-
                     #TODO implent k for keeping this answer from now on
                     if isinstance(answer,str) and answer=='k':
                         pass
@@ -424,48 +422,47 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
     return residuenames2residxs, residuenames2fragidxs
 
 #FIXME Trying to integrate both AAresseq and resseq functions in one, if Guillermo agrees, add the test also
-def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
-                                            default_fragment_idx=None,
-                                            fragment_names=None, extra_string_info=''):
+def per_residue_fragment_picker(residue_descriptors,
+                                fragments, top,
+                                pick_this_fragment_by_default=None,
+                                fragment_names=None,
+                                additional_naming_dicts=None,
+                                extra_string_info=''):
     r"""
     This function returns the fragment idxs and the residue idxs based on residue name/residue index.
     If a residue is present in multiple fragments, the function asks the user to choose the fragment, for which
     the residue idxs is reporte
 
-    :param AAresSeq_idxs: string or list of of strings
+    :param residue_descriptors: string or list of of strings
            AAs of the form of "GLU30" or "E30" or 30, can be mixed
     :param fragments: iterable of iterables of integers
             The integers in the iterables of 'fragments' represent residue indices of that fragment
     :param top: :py:class:`mdtraj.Topology`
-    :param default_fragment_idx: None or integer.
+    :param pick_this_fragment_by_default: None or integer.
             Pick this fragment withouth asking in case of ambiguity. If None, the user will we prompted
     :param fragment_names: list of strings providing informative names for the input fragments
     :param extra_string_info: string with any additional info to be printed in case of ambiguity
-    :return: two dictionaries, residuenames2residxs and residuenames2fragidxs. If the AA is not found then the
-                dictionaries for that key contain None, e.g. residuenames2residxs[notfoundAA]=None
+    :return: two dictionaries, resdesc2residxs and resdesc2fragidxs. If the AA is not found then the
+                dictionaries for that key contain None, e.g. resdesc2residxs[notfoundAA]=None
     """
-    residuenames2residxs = {}
-    residuenames2fragidxs = {}
+    resdesc2residxs = {}
+    resdesc2fragidxs = {}
     last_answer = 0
 
     #TODO break the iteration in this method into a separate method. Same AAcode in different fragments will overwrite
     # each other
-    if isinstance(AAresSeq_idxs, (str, int)):
-        AAresSeq_idxs = [AAresSeq_idxs]
+    if isinstance(residue_descriptors, (str, int)):
+        residue_descriptors = [residue_descriptors]
 
-    for key in AAresSeq_idxs:
-
-        if isinstance(key, str):
-            cands = find_AA(top, key)
-        elif isinstance(key, int):
-            cands = [rr.index for rr in top.residues if rr.resSeq == key]
-
+    for key in residue_descriptors:
+        assert key not in resdesc2residxs.keys()
+        cands = find_AA(top, str(key))
         cand_fragments = _in_what_N_fragments(cands, fragments)
         # TODO OUTSOURCE THIS?
         if len(cands) == 0:
             print("No residue found with resSeq %s"%key)
-            residuenames2residxs[key] = None
-            residuenames2fragidxs[key] = None
+            resdesc2residxs[key] = None
+            resdesc2fragidxs[key] = None
         else:
             if len(cands) == 1:
                 cands = cands[0]
@@ -475,12 +472,13 @@ def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
                 istr = "ambigous definition for AA %s" % key
                 istr += extra_string_info
                 print(istr)
+                """
                 for cc, ss in zip(cands, cand_fragments):
                     istr = '%6s in fragment %2u with residue index %2u'%(top.residue(cc), ss, cc)
                     if fragment_names is not None:
                         istr += ' (%s)'%fragment_names[ss]
                     print(istr)
-                if default_fragment_idx is None:
+                if pick_this_fragment_by_default is None:
                     answer = input(
                         "input one fragment idx (out of %s) and press enter. Leave empty and hit enter to repeat last option [%s]\n" % ([int(cf) for cf in cand_fragments], last_answer))
                     if len(answer) == 0:
@@ -495,26 +493,69 @@ def interactive_fragment_picker_wip(AAresSeq_idxs, fragments, top,
                     cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
                     last_answer = answer
 
-                elif isinstance(default_fragment_idx,int):
+                elif isinstance(pick_this_fragment_by_default,int):
                     try:
-                        assert default_fragment_idx in cand_fragments, "The answer '%s' is not in the candidate fragments %s"%(default_fragment_idx,cand_fragments)
+                        assert pick_this_fragment_by_default in cand_fragments, "The answer '%s' is not in the candidate fragments %s"%(pick_this_fragment_by_default,cand_fragments)
                     except AssertionError:
                         print( "Your answer has to be an integer "
-                                "in the of the fragment list %s, but you gave %s" % ([int(cf) for cf in cand_fragments], default_fragment_idx))
+                                "in the of the fragment list %s, but you gave %s" % ([int(cf) for cf in cand_fragments], pick_this_fragment_by_default))
                         raise
-                    # cands = default_fragment_idx
-                    # answer = cand_fragments[_np.argwhere(cands==default_fragment_idx).squeeze()]
-                    answer = default_fragment_idx
+                    # cands = pick_this_fragment_by_default
+                    # answer = cand_fragments[_np.argwhere(cands==pick_this_fragment_by_default).squeeze()]
+                    answer = pick_this_fragment_by_default
                     cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
 
-                    print("Automatically picked fragment %u"%default_fragment_idx)
+                    print("Automatically picked fragment %u"%pick_this_fragment_by_default)
                 # print(refgeom.top.residue(cands))
                 print()
+                """
+                for cc, ss, char in zip(cands, cand_fragments,abc):
+                    fname = " "
+                    if fragment_names is not None:
+                        fname = ' (%s) ' % fragment_names[ss]
+                    istr = '%s) %10s in fragment %2u%swith residue index %2u'%(char, top.residue(cc),ss, fname, cc)
+                    if additional_naming_dicts is not None:
+                        extra=''
+                        for key1, val1 in additional_naming_dicts.items():
+                            if val1[cc] is not None:
+                                extra +='%s: %s '%(key1,val1[cc])
+                        if len(extra)>0:
+                            istr = istr + ' (%s)'%extra.rstrip(" ")
+                    print(istr)
+                if pick_this_fragment_by_default is None:
+                    prompt =  "input one fragment idx (out of %s) and press enter.\n" \
+                              "Leave empty and hit enter to repeat last option [%s]\n" \
+                              "Use letters in case of repeated fragment index\n" % ([int(ii) for ii in cand_fragments], last_answer)
 
-            residuenames2residxs[key] = int(cands)  # this should be an integer
-            residuenames2fragidxs[key] = int(answer) #ditto
+                    answer = input(prompt)
+                else:
+                    answer = str(pick_this_fragment_by_default)
+                    print("Automatically picked fragment %u" % pick_this_fragment_by_default)
 
-    return residuenames2residxs, residuenames2fragidxs
+                if len(answer) == 0:
+                    answer = last_answer
+                    cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
+
+                elif answer.isdigit():
+                    answer = int(answer)
+                    if answer in cand_fragments:
+                        cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
+                elif answer.isalpha() and answer in abc:
+                    idx = abc.find(answer)
+                    answer = cand_fragments[idx]
+                    cands  = cands[idx]
+                else:
+                    raise ValueError("%s is not a possible answer"%answer)
+                    #TODO implent k for keeping this answer from now on
+
+                assert answer in cand_fragments, (
+                            "Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
+                last_answer = answer
+
+            resdesc2residxs[key] = int(cands)  # this should be an integer
+            resdesc2fragidxs[key] = int(answer) #ditto
+
+    return resdesc2residxs, resdesc2fragidxs
 
 
 my_frag_colors=[
