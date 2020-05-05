@@ -10,28 +10,57 @@ from .str_and_dict_utils import \
     _replace4latex, \
     freq_datfile2freqdict as _freq_datfile2freqdict
 
-def plot_w_smoothing_auto(iax, x, y,
-                          ilabel,
-                          icolor,
+def plot_w_smoothing_auto(ax, x, y,
+                          label,
+                          color,
                           gray_background=False,
                           n_smooth_hw=0):
+    r"""
+    A wrapper around :obj:`matplotlib.pyplot.plot` that allows
+    to add a smoothing window (or not). See
+    :obj:`window_average_fast` for more details
+
+    Parameters
+    ----------
+    ax : :obj:`matplotlib.pyplot.Axes
+    x : iterable of floats
+    y : iterable of floats
+    label : str
+        Label for the legend
+    color : str
+        anything `matplotlib.pyplot.colors` understands
+    gray_background : bool, default is False
+        If True, instead of using a fainted version
+        of :obj:`color`, the original :obj:`y`
+        will be plotted in gray
+        (useful to avoid over-coloring plots)
+    n_smooth_hw : int, default is 0
+        Half-size of the smoothing window.
+        If 0, this method is identical to
+        :obj:`matplotlib.pyplot.plot`
+
+    Returns
+    -------
+    None
+
+    """
     alpha = 1
     if n_smooth_hw > 0:
         alpha = .2
-        x_smooth = _wav(x, half_window_size=n_smooth_hw)
-        y_smooth = _wav(y, half_window_size=n_smooth_hw)
-        iax.plot(x_smooth,
-                 y_smooth,
-                 label=ilabel,
-                 color=icolor)
-        ilabel = None
+        x_smooth = _wav(_np.array(x), half_window_size=n_smooth_hw)
+        y_smooth = _wav(_np.array(y), half_window_size=n_smooth_hw)
+        ax.plot(x_smooth,
+                y_smooth,
+                label=label,
+                color=color)
+        label = None
 
         if gray_background:
-            icolor = "gray"
-    iax.plot(x, y,
-             label=ilabel,
-             alpha=alpha,
-             color=icolor)
+            color = "gray"
+    ax.plot(x, y,
+            label=label,
+            alpha=alpha,
+            color=color)
 
 def compare_groups_of_contacts(dictionary_of_groups,
                                colordict,
@@ -588,7 +617,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
     ----------
     mat : 2D numpy.ndarray of shape (N,M)
         The allowed values are in [0,1], else
-        the method fails
+        the method fails (NaNs are allowed)
     labels : list of len(2) with x and y labels
         The length of each list has to be N, M for
         x, y respectively, else this method fails
