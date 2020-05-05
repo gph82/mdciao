@@ -7,7 +7,8 @@ from .str_and_dict_utils import \
     _delete_exp_in_keys, \
     unify_freq_dicts, \
     _replace_w_dict, \
-    _replace4latex
+    _replace4latex, \
+    freq_datfile2freqdict as _freq_datfile2freqdict
 
 def plot_w_smoothing_auto(iax, x, y,
                           ilabel,
@@ -34,31 +35,30 @@ def plot_w_smoothing_auto(iax, x, y,
 
 def compare_groups_of_contacts(dictionary_of_groups,
                                colordict,
-                               anchor=None,
+                               mutations_dict={},
                                width=.2,
                                ax=None,
                                figsize=(10, 5),
                                fontsize=16,
-                               mutations = {},
+                               anchor=None,
                                plot_singles=False,
                                exclude=None,
                                ctc_cutoff_Ang=None,
-                               reorder_keys=True,
                                **kwargs_plot_unified_freq_dicts,
                                ):
     r"""
-    Compare contact groups using different plots and strategies
+    Compare contact groups accros different systems using different plots and strategies
 
     Parameters
     ----------
     dictionary_of_groups : dict
-        The keys will be used as names for the contact groups.
+        The keys will be used as names for the contact groups, e.g. "WT", "MUT" etc
         The values can be:
           * :obj:`ContactGroup` objects
           * dictionaries where the keys are residue-pairs
           (one letter-codes, no fragment info, as in :obj:`ContactGroup.ctc_labels_short`)
           and the values are contact frequencies [0,1]
-          * be ascii-files (see :obj:`neighborhood_datfile2freqws`)
+          * ascii-files (see :obj:`freq_datfile2freqdict`)
             with the contact labels in the second and frequencies in
             the third column
 
@@ -72,82 +72,85 @@ def compare_groups_of_contacts(dictionary_of_groups,
         Using the same keys as :obj:`dictionary_of_groups`,
         a color for each group
     anchor : str, default is None
-        If there is an anchor residue. Will have consequences
-        in the labelling
-    width
-    ax
-    figsize
-    fontsize
-    mutations
-    plot_singles
+        This string will be deleted from the contact labels,
+        leaving only the partner-residue to identify the contact.
+        The deletion takes place after the :obj:`mutations_dict`
+        has been applied.
+        No consistency-checks are carried out, i.e. use
+        at your own risk
+    width : float, default is .2
+        The witdth of the bars
+    ax : :obj:`matplotlib.pyplot.Axes`
+        Axis to draw on
+    figsize : tuple, default is (10,5)
+        The figure size in inches, in case it is
+        instantiated automatically by not passing an :obj:`ax`
+    fontsize : float, default is 16
+    mutations_dict : dictionary, default is {}
+        A mutation dictionary that contains allows to plot together
+        residues that would otherwise be identified as different
+        contactacs. If there were two mutations, e.g A30K and D35A
+        the mutation dictionary will be {"A30":"K30", "D35":"A35"}.
+        You can also use this parameter for correcting indexing
+        offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}
+    plot_singles : bool, default is False
+        Produce one extra figure with as many subplots as systems
+        in :obj:`dictionary_of_groups`, where each system is
+        plotted separately. The labels used will have been already
+        "mutated" using :obj:`mutations_dict` and "anchored" using
+        :obj:`anchor`. This plot is temporary and cannot be saved
     exclude
-    ctc_cutoff_Ang
-    reorder_keys
+    ctc_cutoff_Ang : float, default is None
+        Needed value to compute frequencies on-the-fly
+        if the input was using :obj:`ContactGroup` objects
     kwargs_plot_unified_freq_dicts
 
     Returns
     -------
-    myfig, freqs, posret
+    myfig : :obj:`matplotlib.pyplot.Figure` object with the comparison plot
+
+    freqs : dictionary of unified frequency dictionaries, including mutations and anchor
+
+    posret : None (TODO find out why I am returning this!)
+
     """
-    def neighborhood_datfile2freqws(ifile):
-        outdict = {}
-        for iline in open(ifile).read().splitlines():
-            try:
-                iline = iline.split()
-                freq, names = iline[0],iline[1]
-                outdict[names]=float(freq)
-            except ValueError:
-                print(iline)
-                raise
-        return outdict
 
     freqs = {key: {} for key in dictionary_of_groups.keys()}
 
     for key, ifile in dictionary_of_groups.items():
         if isinstance(ifile, str):
-            idict = neighborhood_datfile2freqws(ifile)
-        elif "contact_group" in str(type(ifile)):
+            idict = _freq_datfile2freqdict(ifile)
+        elif "mdciao.contacts.ContactGroup" in str(type(ifile)):
             assert ctc_cutoff_Ang is not None, "Cannot provide a neighborhood object without a ctc_cutoff_Ang parameter"
             idict = {ilab:val for ilab, val in zip(ifile.ctc_labels_short,
                                                    ifile.frequency_per_contact(ctc_cutoff_Ang))}
         else:
             idict = {key:val for key, val in ifile.items()}
 
-        idict = {_replace_w_dict(key, mutations):val for key, val in idict.items()}
+        idict = {_replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
         if anchor is not None:
             idict = _delete_exp_in_keys(idict, anchor)
         freqs[key] = idict
 
-    """
-    for key, val in freqs.items():
-        print(key)
-        for key, val in val.items():
-            print(key,val)
-        print()
-    """
-
     if plot_singles:
-        myfig, myax = _plt.subplots(1, 2, sharey=True, figsize=(figsize[0] * 2, figsize[1]))
+        nrows = len(freqs)
+        myfig, myax = _plt.subplots(nrows, 1,
+                                    sharey=True,
+                                    sharex=True,
+                                    figsize=(figsize[0], figsize[1]*nrows))
         for iax, (key, ifreq) in zip(myax, freqs.items()):
-            for ii, (jkey, jfreq) in enumerate(ifreq.items()):
-                # if ii==0:
-                #    label=skey
-                # else:
-                #    label=None
-                _plt.sca(iax)
-                _plt.bar(ii, jfreq, width=width,
-                        color=colordict[key],
-                        #        label=label
-                        )
-                _plt.text(ii, 1.05, jkey, rotation=45)
-            _plt.gca().text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom")
-            _plt.ylim(0, 1)
-            _plt.xlim(0 - width, ii + width)
-            _plt.yticks([0, .25, .50, .75, 1])
-            [_plt.gca().axhline(ii, ls=":", color="k", zorder=-1) for ii in [.25, .5, .75]]
-        myfig.tight_layout()
+            plot_unified_freq_dicts({key: ifreq},
+                                    colordict,
+                                    ax=iax, width=width,
+                                    fontsize=fontsize,
+                                    **kwargs_plot_unified_freq_dicts)
+            if anchor is not None:
+                _plt.gca().text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom")
 
-    freqs  = unify_freq_dicts(freqs, exclude, reorder_keys=reorder_keys)
+        myfig.tight_layout()
+        # _plt.show()
+
+    freqs  = unify_freq_dicts(freqs, exclude)
     myfig, iax, posret = plot_unified_freq_dicts(freqs,
                                                  colordict,
                                                  ax=ax,
@@ -155,9 +158,10 @@ def compare_groups_of_contacts(dictionary_of_groups,
                                                  fontsize=fontsize,
                                                  figsize=figsize,
                                                  **kwargs_plot_unified_freq_dicts)
-    _plt.text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom")
+    if anchor is not None:
+        _plt.text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom")
     _plt.gcf().tight_layout()
-    _plt.show()
+    #_plt.show()
 
     return myfig, freqs, posret
 
@@ -197,7 +201,7 @@ def plot_unified_freq_dicts(freqs,
                             ax=None,
                             figsize=(10, 5),
                             fontsize=16,
-                            lower_cutoff_val=.1,
+                            lower_cutoff_val=0,
                             sort_by='mean',
                             remove_identities=False,
                             vertical_plot=False,
@@ -226,7 +230,7 @@ def plot_unified_freq_dicts(freqs,
     fontsize : int, default is 16
         Will be used in :obj:`matplotlib._rcParams["font.size"]
         # TODO be less invasive
-    lower_cutoff_val : float, default is .1
+    lower_cutoff_val : float, default is 0
         Do not plot values lower than this. The cutoff is applied
         to whatever property is used in :obj:`sort_by` (mean or std)
     sort_by : str, default is "mean"
@@ -610,7 +614,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         changes in the future
     """
     _np.testing.assert_array_equal(mat.shape,[len(ll) for ll in labels])
-    assert _np.max(mat)<=1 and _np.min(mat)>=0
+    assert _np.max(mat)<=1 and _np.min(mat)>=0, (_np.max(mat), _np.min(mat))
     if transpose:
         mat = mat.T
         labels = labels[::-1]
