@@ -134,8 +134,9 @@ class Test_trajs2ctcs(TestBaseClassContacts):
     def test_progressbar(self):
         ctcs_trajs_consolidated = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs, progressbar=True)
 
-    def test_one_traj_one_frame(self):
-        trajs2ctcs([self.traj[0]],self.top, self.ctc_idxs)
+    def test_one_traj_one_frame_pdb_just_runs(self):
+        trajs2ctcs([self.pdb_file],self.top, self.ctc_idxs)
+
 class BaseClassForTestingAttributes(unittest.TestCase):
     def setUp(self):
         self.trajs = md.load(test_filenames.run1_stride_100_xtc, top=test_filenames.prot1_pdb)[:3]

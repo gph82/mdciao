@@ -133,7 +133,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     ----------
     trajs : list of strings
         list of filenames with trajectory data. Typically xtcs,
-        but can be any type of file readable by
+        but can be any type of file readable by :obj:`mdtraj`
     top : str or :py:class:`mdtraj.Topology`
         Topology that matches :obj:xtcs
     ctc_residxs_pairs : iterable
@@ -245,6 +245,8 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 
 
     """
+    # The creation of lambdas managing the file(xtc,pdb) vs traj case
+    # elswhere allows to keep the code here simple
     iterate, inform = iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
     ictcs, itime, iaps = [],[],[]
     running_f = 0

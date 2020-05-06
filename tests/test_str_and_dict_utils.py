@@ -88,7 +88,8 @@ class Test_iterate_and_inform_lambdas(unittest.TestCase):
 
     def setUp(self):
         self.filename = test_filenames.run1_stride_100_xtc
-        self.top = md.load(test_filenames.prot1_pdb).top
+        self.pdb = test_filenames.prot1_pdb
+        self.top = md.load(self.pdb).top
         self.traj = md.load(self.filename, top=self.top)
         self.stride=3
 

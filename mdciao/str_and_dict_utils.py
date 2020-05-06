@@ -317,6 +317,12 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
             print("Streaming over trajectory object nr. %3u (%6u frames, %6u with stride %2u) in chunks of "
                   "%3u frames. Now at chunk nr %4u, frames so far %6u" %
                   (traj_idx, ixtc.n_frames, _np.ceil(ixtc.n_frames/stride), stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
+    elif ixtc.endswith(".pdb") or ixtc.endswith(".pdb.gz") or ixtc.endswith(".gro"):
+        iterate =  lambda ixtc: [_md.load(ixtc)[::stride]]
+        inform  =  lambda ixtc, traj_idx, chunk_idx, running_f: \
+            print("Loaded %20s (nr. %3u) in full, using stride %2u but ignoring chunksize of "
+                  "%6u frames. This number should always be 0 : %4u. Total frames loaded %6u" %
+                  (ixtc, traj_idx, stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
     else:
         iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
         inform = lambda ixtc, traj_idx, chunk_idx, running_f: \
