@@ -12,18 +12,17 @@ def table2BW_by_AAcode(tablefile,
                        keep_AA_code=True,
                        return_fragments=False,
                        ):
-    """
+    r"""
     Reads an excel table and returns a dictionary AAcodes so that e.g. self.AA2BW[R131] -> '3.50'
 
     Parameters
     ----------
     tablefile : xlsx file or pandas dataframe
         Ballesteros-Weinstein nomenclature file in excel format, optional
-    keep_AA_code : boolean
-        'True' if amino acid letter code is required. (Default is True).
+    keep_AA_code : boolean, default is True
         If True then output dictionary will have key of the form "Q26" else "26".
-    return_defs : boolean
-        'True' if definition lines from the file are required then. (Default is True).
+    return_fragments : boolean, default is True
+        return a dictionary of fragments keyed by BW-fragment, e.g. "TM1"
 
     Returns
     -------
@@ -36,12 +35,12 @@ def table2BW_by_AAcode(tablefile,
     """
 
     if isinstance(tablefile,str):
-        df = _read_excel(tablefile, header=None)
+        df = _read_excel(tablefile, header=0)
     else:
         df = tablefile
 
     # This is the most important
-    AAcode2BW = {key: val for key, val in df[["AAresSeq", "BW"]].values}
+    AAcode2BW = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
     for key, AArS in df[["protein_segment", "AAresSeq"]].values:
@@ -351,7 +350,7 @@ def CGN_finder(identifier,
     import urllib
 
     file2read = format%identifier
-    _path.join(ref_path, file2read)
+    file2read = _path.join(ref_path, file2read)
     try:
         _DF = _read_csv(file2read, delimiter='\t')
         return_name = file2read
