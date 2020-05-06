@@ -9,60 +9,50 @@ from filenames import filenames
 test_filenames = filenames()
 class Test_table2BW_by_AAcode(unittest.TestCase):
     def setUp(self):
-        self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
+        self.file = test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx
 
-    def test_table2BW_by_AAcode_just_works(self):
+    def test_just_works(self):
         table2BW = table2BW_by_AAcode(tablefile = self.file)
         self.assertDictEqual(table2BW,
                              {'Q26': '1.25',
                               'E27': '1.26',
-                              'R28': '1.27',
-                              'F264': '1.28',
-                              'M40': '1.39',
-                              'S41': '1.40',
-                              'L42': '1.41',
-                              'I43': '1.42',
-                              'V44': '1.43',
-                              'L45': '1.44',
-                              'A46': '1.45',
-                              'I47': '1.46',
-                              'V48': '1.47'})
+                              'E62': '12.48',
+                              'R63': '12.49',
+                              'T66': '2.37',
+                              'V67': '2.38'
+                              })
 
-    def test_table2BW_by_AAcode_keep_AA_code_test(self): #dictionary keys will only have AA id
+    def test_keep_AA_code_test(self): #dictionary keys will only have AA id
         table2BW = table2BW_by_AAcode(tablefile = self.file, keep_AA_code=False)
         self.assertDictEqual(table2BW,
                              {26: '1.25',
                               27: '1.26',
-                              28: '1.27',
-                              264: '1.28',
-                              40: '1.39',
-                              41: '1.40',
-                              42: '1.41',
-                              43: '1.42',
-                              44: '1.43',
-                              45: '1.44',
-                              46: '1.45',
-                              47: '1.46',
-                              48: '1.47'})
+                              62: '12.48',
+                              63: '12.49',
+                              66: '2.37',
+                              67: '2.38',
+                           })
 
-    def test_table2BW_by_AAcode_return_defs_test(self):
-        table2BW, defs = table2BW_by_AAcode(tablefile=self.file, return_defs=True)
-        self.assertEqual(table2BW,
-                         {'Q26': '1.25',
-                           'E27': '1.26',
-                           'R28': '1.27',
-                           'F264': '1.28',
-                           'M40': '1.39',
-                           'S41': '1.40',
-                           'L42': '1.41',
-                           'I43': '1.42',
-                           'V44': '1.43',
-                           'L45': '1.44',
-                           'A46': '1.45',
-                           'I47': '1.46',
-                           'V48': '1.47'})
+    def test_table2BW_by_AAcode_return_fragments(self):
+        table2BW, defs = table2BW_by_AAcode(tablefile=self.file,
+                                            return_fragments=True)
 
-        self.assertEqual(defs,['TM1'])
+        self.assertDictEqual(defs,{'TM1':  ["Q26","E27"],
+                                   "ICL1": ["E62","R63"],
+                                   "TM2" : ["T66","V67"]})
+    def test_table2B_by_AAcode_already_DF(self):
+        from pandas import read_excel
+        df = read_excel(self.file, header=0)
+
+        table2BW = table2BW_by_AAcode(tablefile=df)
+        self.assertDictEqual(table2BW,
+                             {'Q26': '1.25',
+                              'E27': '1.26',
+                              'E62': '12.48',
+                              'R63': '12.49',
+                              'T66': '2.37',
+                              'V67': '2.38'
+                              })
 
 class Test_guess_missing_BWs(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
@@ -83,10 +73,15 @@ class Test_guess_missing_BWs(unittest.TestCase):
                               6: '1.28*',
                               7: '1.28*'})
 
+class Test_CGN_finder(unittest.TestCase):
+    pass
+
 class Test_CGN_transformer(unittest.TestCase):
     def setUp(self):
-        self.cgn = CGN_transformer(ref_path=test_filenames.examples_path)
+        self.cgn = CGN_transformer("3SN6",
+                                   ref_path=test_filenames.examples_path)
 
+    @unittest.skip(" ")
     def test_CGN_transformer_just_works(self):
         self.assertEqual(len(self.cgn.seq), len(self.cgn.seq_idxs))
         self.assertEqual(len(self.cgn.seq), len(self.cgn.AA2CGN))
@@ -94,7 +89,8 @@ class Test_CGN_transformer(unittest.TestCase):
 class Test_top2CGN_by_AAcode(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
     def setUp(self):
-        self.cgn = CGN_transformer(ref_path=test_filenames.examples_path)
+        self.cgn = CGN_transformer("3SN6",
+                                   ref_path=test_filenames.examples_path)
         self.geom = md.load(test_filenames.file_for_test_pdb)
 
     def _test_top2CGN_by_AAcode_just_works(self):
@@ -149,14 +145,16 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
 class Test_top2consensus_map(unittest.TestCase):
     #TODO add test for special case restrict_to_residxs
     def setUp(self):
-        self.cgn = CGN_transformer(ref_path=test_filenames.examples_path)
+        self.cgn = CGN_transformer("3SN6",
+                                   ref_path=test_filenames.examples_path,
+                                   )
         self.geom = md.load(test_filenames.file_for_top2consensus_map)
         self.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
         self.cons_list_keep_consensus = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', 'G.hfs2.4',
                                          'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
 
     def test_top2consensus_map_just_works(self): #generally works
-        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2CGN, top=self.geom.top)
+        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top)
 
         count = 1
         cons_list_out = []
@@ -171,7 +169,7 @@ class Test_top2consensus_map(unittest.TestCase):
     def test_top2consensus_map_keep_consensus_is_true(self):
         #In the output below, instead of None, None, it will be 'G.hfs2.4' and 'G.hfs2.5'
         # ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', None, None, 'G.hfs2.6', 'G.hfs2.7']
-        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2CGN, top=self.geom.top, keep_consensus=True)
+        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top, keep_consensus=True)
         cons_list_out = []
 
         for ii, val in enumerate(cons_list):
