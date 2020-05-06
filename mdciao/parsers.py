@@ -221,10 +221,10 @@ def _parser_add_n_ctcs(parser, default=5):
                         default=default)
 
 def _parser_add_pop(parser):
-    parser.add_argument("--pop_N_ctcs", dest="just_N_ctcs", action="store_true",
+    parser.add_argument("--pop_N_ctcs", dest="separate_N_ctcs", action="store_true",
                         help="Separate the plot with the total number contacts from the time-trace plot. "
                              "Default is False")
-    parser.add_argument("--no-pop_N_ctcs", dest="just_N_ctcs", action="store_false")
+    parser.add_argument("--no-pop_N_ctcs", dest="separate_N_ctcs", action="store_false")
     parser.set_defaults(separate_N_ctcs=False)
 
 def parser_for_rn():
