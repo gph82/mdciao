@@ -133,7 +133,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     ----------
     trajs : list of strings
         list of filenames with trajectory data. Typically xtcs,
-        but can be any type of file readable by :obj:`mdtraj`
+        but can be any type of file readable by
     top : str or :py:class:`mdtraj.Topology`
         Topology that matches :obj:xtcs
     ctc_residxs_pairs : iterable
@@ -173,7 +173,6 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         iterfunct = lambda a : tqdm(a)
     else:
         iterfunct = lambda a : a
-    print("AAAA",type(trajs),len(trajs),"AAAAA")
     ictcs_itimes_iaps = _Parallel(n_jobs=n_jobs)(_delayed(per_traj_ctc)(top, itraj, ctc_residxs_pairs, chunksize, stride, ii,
                                                                         **mdcontacts_kwargs)
                                             for ii, itraj in enumerate(iterfunct(trajs)))
