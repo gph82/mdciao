@@ -786,8 +786,8 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
 
         if verbose:
             import pandas as pd
-            from .sequence_utils import _print_verbose_dataframe
-            _print_verbose_dataframe(pd.DataFrame.from_dict(list_of_alignment_dicts))
+            from .sequence_utils import print_verbose_dataframe
+            print_verbose_dataframe(pd.DataFrame.from_dict(list_of_alignment_dicts))
             input("This is the alignment. Hit enter to continue")
 
         # TODO learn to tho dis with pandas

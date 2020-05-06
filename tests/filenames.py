@@ -30,7 +30,11 @@ class filenames(object):
         self.GDP_json = path.join(test_data_path,"GDP.json")
         self.GDP_name_json = path.join(test_data_path,"GDP_name_XXX.json")
 
-
         self.index_file = path.join(test_data_path,"index.ndx")
+
+        self.pdb_3CAP = path.join(test_data_path,"3cap.pdb.gz")
+        self.pdb_1U19 = path.join(test_data_path,"1u19.pdb.gz")
+        self.pdb_5D5A = path.join(test_data_path,"5d5a.pdb.gz")
+
 
 test_filenames = filenames()
