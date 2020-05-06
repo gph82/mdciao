@@ -91,7 +91,12 @@ class Test_per_traj_ctc(TestBaseClassContacts):
         _np.testing.assert_allclose(times, self.traj.time[:10])
         assert iatoms.shape[0]==10
         assert iatoms.shape[1]==2*2
-        assert all([_np.isnan(ii) for ii in iatoms.flatten()]  )
+        assert all([_np.isnan(ii) for ii in iatoms.flatten()])
+
+    def test_contacts_geom_1_frame(self):
+        ctcs, time, __ = per_traj_ctc(self.top, self.traj[0], self.ctc_idxs, 1000, 1, 0)
+        _np.testing.assert_allclose(ctcs,self.ctcs[:1,:])
+        _np.testing.assert_allclose(time, self.traj.time[:1])
 
 class Test_trajs2ctcs(TestBaseClassContacts):
 
@@ -125,9 +130,12 @@ class Test_trajs2ctcs(TestBaseClassContacts):
         [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.ctcs, self.ctcs], ctcs)]
         [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.traj.time, self.traj.time], times)]
         [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.my_idxs, self.my_idxs], atoms)]
+
     def test_progressbar(self):
         ctcs_trajs_consolidated = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs, progressbar=True)
 
+    def test_one_traj_one_frame(self):
+        trajs2ctcs([self.traj[0]],self.top, self.ctc_idxs)
 class BaseClassForTestingAttributes(unittest.TestCase):
     def setUp(self):
         self.trajs = md.load(test_filenames.run1_stride_100_xtc, top=test_filenames.prot1_pdb)[:3]
