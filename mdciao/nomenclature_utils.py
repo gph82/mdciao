@@ -8,6 +8,9 @@ from os import path as _path
 import requests as _requests
 from .list_utils import rangeexpand as _rangeexpand
 
+from pandas import read_csv as _read_csv, DataFrame as _DataFrame
+import urllib
+
 def table2BW_by_AAcode(tablefile,
                        keep_AA_code=True,
                        return_fragments=False,
@@ -346,61 +349,112 @@ def CGN_finder(identifier,
                try_web_lookup=True,
                verbose=True,
                dont_fail=False):
-    from pandas import read_csv as _read_csv
-    import urllib
+    r"""Provide a four-letter PDB code and look up (first locally, then online)
+    for a file that contains the Common-Gprotein-Nomenclature (CGN)
+    consesus labels and return them as a :obj:`DataFrame`. See
+    https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
 
+    Parameters
+    ----------
+    identifier : str
+        Typically, a PDB code
+    format : str
+        A format string that turns the :obj:`identifier`
+        into a filename for local lookup, in case the
+        user has custom filenames, e.g. 3SN6_consensus.txt
+    ref_path : str
+        The local path to the local consensus file
+    try_web_lookup : bool, default is True
+        If the local lookup fails, go online
+    verbose : bool, default is True
+    dont_fail : bool, default is False
+        Do not raise any errors that would interrupt
+        a workflow and simply return None
+
+    Returns
+    -------
+    DF : :obj:`DataFrame` with the consensus nomenclature
+    """
     file2read = format%identifier
     file2read = _path.join(ref_path, file2read)
+
     try:
-        _DF = _read_csv(file2read, delimiter='\t')
         return_name = file2read
-    except FileNotFoundError:
+        _DF = _read_csv(file2read, delimiter='\t')
+    except FileNotFoundError as e:
+        _DF = e
         if verbose:
             print("No local file %s found" % file2read, end="")
         if try_web_lookup:
             web_address = "www.mrc-lmb.cam.ac.uk"
             url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
+            return_name = url
             if verbose:
                 print(", checking online in\n%s ..." % url, end="")
             try:
                 _DF = _read_csv(url, delimiter='\t')
                 if verbose:
                     print("found! Continuing normally")
-                return_name = url
             except urllib.error.HTTPError as e:
                 print('CGN online db:',e)
-                if dont_fail:
-                    pass
-                else:
-                    raise
-        else:
-            raise
+                _DF = e
 
-    if len(_DF)<=1:
+    if isinstance(_DF, _DataFrame):
+        return _DF, return_name
+    else:
         if dont_fail:
-            pass
+            return None, return_name
         else:
-            print('CGN lookup returned empty')
-            raise ValueError(identifier)
-    return _DF, return_name
+            raise _DF
 
-def PDB_finder(ref_PDB, ref_path='.',
+def PDB_finder(PDB_code, local_path='.',
                try_web_lookup=True,
                verbose=True):
+    r"""
+    Input a pdb-code and return an :obj:`mdtraj.Trajectory`,
+    by loading a local file or optionally looking up online
+     (see :obj:`md_load_rscb`)
+
+    Note
+    ----
+    Since filenames are case-sensitive, e.g. 3CAP will not
+    find 3cap.pdb locally, but will sucessfully be found
+    online (urls are not case-sensitive), returning the
+    online file instead of the local one, which can lead
+    to "successfull" but wrong behaviour if the local
+    file had already some modifications (strip non protein etc)
+
+    Parameters
+    ----------
+    PDB_code : str
+        4-letter PDB code
+    local_path : str, default is "."
+        What directory to look into
+    try_web_lookup : bool, default is True
+        If the file :obj:`ref_PDB` cannot be found locally
+        as .pdb or .pdb.gz, a web lookup will be tried
+    verbose
+
+    Returns
+    -------
+    geom : :obj:`mdtraj.Trajectory`
+    return_file : str with filename,
+        Will contain an url if web_lookup was necessary
+    """
     try:
-        file2read = _path.join(ref_path, ref_PDB + '.pdb')
+        file2read = _path.join(local_path, PDB_code + '.pdb')
         _geom = _md.load(file2read)
         return_file = file2read
     except (OSError, FileNotFoundError):
         try:
-            file2read = _path.join(ref_path, ref_PDB + '.pdb.gz')
+            file2read = _path.join(local_path, PDB_code + '.pdb.gz')
             _geom = _md.load(file2read)
             return_file = file2read
         except (OSError, FileNotFoundError):
             if verbose:
-                print("No local PDB file for %s found" % ref_PDB, end="")
+                print("No local PDB file for %s found" % PDB_code, end="")
             if try_web_lookup:
-                _geom, return_file = md_load_rscb(ref_PDB,
+                _geom, return_file = md_load_rscb(PDB_code,
                                                   verbose=verbose,
                                                   return_url=True)
                 if verbose:

@@ -2,10 +2,17 @@ import unittest
 import mdtraj as md
 import numpy as _np
 from os import path
+from tempfile import tempdir
+from urllib.error import HTTPError
+
+from mdciao.sequence_utils import print_verbose_dataframe
+import pytest
 from mdciao import nomenclature_utils
 from mdciao.nomenclature_utils import *
 from mdciao.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps, _fill_BW_gaps
 from filenames import filenames
+
+from pandas import DataFrame
 
 test_filenames = filenames()
 
@@ -23,6 +30,34 @@ class Test_md_load_rscb(unittest.TestCase):
                                                     )
         assert isinstance(geom, md.Trajectory)
         assert isinstance(url, str)
+
+class Test_PDB_finder(unittest.TestCase):
+
+    def test_works_locally(self):
+        geom, filename = nomenclature_utils.PDB_finder("file_for_test",
+                                                       local_path=test_filenames.test_data_path,
+                                                       try_web_lookup=False)
+        assert isinstance(geom, md.Trajectory)
+        assert isinstance(filename, str)
+
+    def test_works_locally_pdbgz(self):
+        geom, filename = nomenclature_utils.PDB_finder("3cap",
+                                                       local_path=test_filenames.test_data_path,
+                                                       try_web_lookup=False)
+        assert isinstance(geom, md.Trajectory)
+        assert isinstance(filename, str)
+
+    def test_works_online(self):
+        geom, filename = nomenclature_utils.PDB_finder("3SN6")
+
+        assert isinstance(geom, md.Trajectory)
+        assert isinstance(filename, str)
+        assert "http" in filename
+
+    def test_fails_bc_no_online_access(self):
+        with pytest.raises((OSError,FileNotFoundError)):
+            nomenclature_utils.PDB_finder("3SN6",
+                                          try_web_lookup=False)
 
 class Test_table2BW_by_AAcode(unittest.TestCase):
     def setUp(self):
@@ -91,7 +126,50 @@ class Test_guess_missing_BWs(unittest.TestCase):
                               7: '1.28*'})
 
 class Test_CGN_finder(unittest.TestCase):
-    pass
+
+    def test_works_locally(self):
+        df, filename = nomenclature_utils.CGN_finder("3SN6",
+                                                     ref_path="../examples")
+
+        assert isinstance(df, DataFrame)
+        assert isinstance(filename,str)
+        _np.testing.assert_array_equal(list(df.keys()),["CGN","Sort number","3SN6"])
+
+    def test_works_olnline(self):
+        df, filename = nomenclature_utils.CGN_finder("3SN6",
+                                                     )
+
+        assert isinstance(df, DataFrame)
+        assert isinstance(filename, str)
+        assert "http" in filename
+        _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "3SN6"])
+
+    def test_raises_not_find_locally(self):
+        with pytest.raises(FileNotFoundError):
+            nomenclature_utils.CGN_finder("3SN6",
+                                          try_web_lookup=False
+                                                     )
+
+    def test_not_find_locally_but_no_fail(self):
+        DF, filename = nomenclature_utils.CGN_finder("3SN6",
+                                          try_web_lookup=False,
+                                          dont_fail=True
+                                                     )
+        assert DF is None
+        assert isinstance(filename,str)
+
+    def test_raises_not_find_online(self):
+        with pytest.raises(HTTPError):
+            nomenclature_utils.CGN_finder("3SNw",
+                                          )
+
+    def test_not_find_online_but_no_raise(self):
+        df, filename =    nomenclature_utils.CGN_finder("3SNw",
+                                          dont_fail=True
+                                          )
+        assert df is None
+        assert isinstance(filename,str)
+        assert "www" in filename
 
 class Test_CGN_transformer(unittest.TestCase):
     def setUp(self):
