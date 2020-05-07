@@ -343,70 +343,6 @@ class consensus_labeler(object):
         if return_defs:
             return {key:val for key, val in defs.items()}
 
-def CGN_finder(identifier,
-               format='CGN_%s.txt',
-               ref_path='.',
-               try_web_lookup=True,
-               verbose=True,
-               dont_fail=False):
-    r"""Provide a four-letter PDB code and look up (first locally, then online)
-    for a file that contains the Common-Gprotein-Nomenclature (CGN)
-    consesus labels and return them as a :obj:`DataFrame`. See
-    https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
-
-    Parameters
-    ----------
-    identifier : str
-        Typically, a PDB code
-    format : str
-        A format string that turns the :obj:`identifier`
-        into a filename for local lookup, in case the
-        user has custom filenames, e.g. 3SN6_consensus.txt
-    ref_path : str
-        The local path to the local consensus file
-    try_web_lookup : bool, default is True
-        If the local lookup fails, go online
-    verbose : bool, default is True
-    dont_fail : bool, default is False
-        Do not raise any errors that would interrupt
-        a workflow and simply return None
-
-    Returns
-    -------
-    DF : :obj:`DataFrame` with the consensus nomenclature
-    """
-    file2read = format%identifier
-    file2read = _path.join(ref_path, file2read)
-
-    try:
-        return_name = file2read
-        _DF = _read_csv(file2read, delimiter='\t')
-    except FileNotFoundError as e:
-        _DF = e
-        if verbose:
-            print("No local file %s found" % file2read, end="")
-        if try_web_lookup:
-            web_address = "www.mrc-lmb.cam.ac.uk"
-            url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
-            return_name = url
-            if verbose:
-                print(", checking online in\n%s ..." % url, end="")
-            try:
-                _DF = _read_csv(url, delimiter='\t')
-                if verbose:
-                    print("found! Continuing normally")
-            except urllib.error.HTTPError as e:
-                print('CGN online db:',e)
-                _DF = e
-
-    if isinstance(_DF, _DataFrame):
-        return _DF, return_name
-    else:
-        if dont_fail:
-            return None, return_name
-        else:
-            raise _DF
-
 def PDB_finder(PDB_code, local_path='.',
                try_web_lookup=True,
                verbose=True):
@@ -464,6 +400,175 @@ def PDB_finder(PDB_code, local_path='.',
                 raise
 
     return _geom, return_file
+
+def CGN_finder(identifier,
+               format='CGN_%s.txt',
+               ref_path='.',
+               try_web_lookup=True,
+               verbose=True,
+               dont_fail=False):
+    r"""Provide a four-letter PDB code and look up (first locally, then online)
+    for a file that contains the Common-Gprotein-Nomenclature (CGN)
+    consesus labels and return them as a :obj:`DataFrame`. See
+    https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
+
+    Parameters
+    ----------
+    identifier : str
+        Typically, a PDB code
+    format : str
+        A format string that turns the :obj:`identifier`
+        into a filename for local lookup, in case the
+        user has custom filenames, e.g. 3SN6_consensus.txt
+    ref_path : str
+        The local path to the local consensus file
+    try_web_lookup : bool, default is True
+        If the local lookup fails, go online
+    verbose : bool, default is True
+    dont_fail : bool, default is False
+        Do not raise any errors that would interrupt
+        a workflow and simply return None
+
+    Returns
+    -------
+    DF : :obj:`DataFrame` with the consensus nomenclature
+    """
+    file2read = format%identifier
+    file2read = _path.join(ref_path, file2read)
+    local_lookup_lambda = lambda file2read : _read_csv(file2read, delimiter='\t')
+
+    web_address = "www.mrc-lmb.cam.ac.uk"
+    url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
+    web_lookup_lambda = local_lookup_lambda
+
+    return _finder(file2read,local_lookup_lambda,
+                   url, web_lookup_lambda,
+                   try_web_lookup=try_web_lookup,
+                   verbose=verbose,
+                   dont_fail=dont_fail)
+    """
+    try:
+        return_name = file2read
+        _DF = _read_csv(file2read, delimiter='\t')
+    except FileNotFoundError as e:
+        _DF = e
+        if verbose:
+            print("No local file %s found" % file2read, end="")
+        if try_web_lookup:
+            web_address = "www.mrc-lmb.cam.ac.uk"
+            url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
+            return_name = url
+            if verbose:
+                print(", checking online in\n%s ..." % url, end="")
+            try:
+                _DF = _read_csv(url, delimiter='\t')
+                if verbose:
+                    print("found! Continuing normally")
+            except urllib.error.HTTPError as e:
+                print('CGN online db:',e)
+                _DF = e
+
+    if isinstance(_DF, _DataFrame):
+        return _DF, return_name
+    else:
+        if dont_fail:
+            return None, return_name
+        else:
+            raise _DF
+    """
+
+def _finder(full_local_path,
+            local2DF_labmda,
+            full_web_address,
+            web2DF_lambda,
+            try_web_lookup=True,
+            verbose=True,
+            dont_fail=False):
+    r"""
+    Try local lookup with a local lambda, then web lookup with a
+    web labmda and try to return a :obj:`DataFrame`
+    Parameters
+    ----------
+    full_local_path
+    full_web_address
+    local2DF_labmda
+    web2DF_lambda
+    try_web_lookup
+    verbose
+    dont_fail
+
+    Returns
+    -------
+
+    """
+    try:
+        return_name = full_local_path
+        _DF = local2DF_labmda(full_local_path)
+    except FileNotFoundError as e:
+        _DF = e
+        if verbose:
+            print("No local file %s found" % full_local_path, end="")
+        if try_web_lookup:
+            return_name = full_web_address
+            if verbose:
+                print(", checking online in\n%s ..." % full_web_address, end="")
+            try:
+                _DF = web2DF_lambda(full_web_address)
+                if verbose:
+                    print("found! Continuing normally")
+            except Exception as e:
+                print('Error getting or processing the web lookup:', e)
+                _DF = e
+
+    if isinstance(_DF, _DataFrame):
+        return _DF, return_name
+    else:
+        if dont_fail:
+            return None, return_name
+        else:
+            raise _DF
+
+
+def BW_finder(uniprot_name,
+              format = "%s.xlsx",
+            ref_path=".",
+              GPCRmd="https://gpcrdb.org/services/residues/extended",
+              write_to_disk=False,
+              verbose=True):
+    xlsxname = format % uniprot_name
+    fullpath = _path.join(ref_path,xlsxname)
+
+    if _path.exists(fullpath):
+        _DF = _read_excel(fullpath, converters={"BW": str}).replace({_np.nan: None})
+        print("read %s locally." % fullpath)
+    else:
+
+        url = "%s/%s"%(GPCRmd,uniprot_name)
+        if verbose:
+            print("requesting %s ..."%url,end="",flush=True)
+        a = _requests.get(url)
+        if a.text=='[]':
+            raise ValueError('Uniprot name %s yields nothing'%uniprot_name)
+        if verbose:
+            print("done!")
+        df =_read_json(a.text)
+        mydict = df.T.to_dict()
+        for key, val in mydict.items():
+            try:
+                for idict in val["alternative_generic_numbers"]:
+                    #print(key, idict["scheme"], idict["label"])
+                    val[idict["scheme"]]=idict["label"]
+                val.pop("alternative_generic_numbers")
+                val["AAresSeq"]='%s%s'%(val["amino_acid"],val["sequence_number"])
+            except IndexError:
+                pass
+        DFout = _DF.from_dict(mydict, orient="index").replace({_np.nan:None})
+        return DFout[["protein_segment", "AAresSeq","BW", "GPCRdb(A)", "display_generic_number"]]
+
+    if write_to_disk:
+        self._dataframe.to_excel(xlsxname)
+        print("wrote %s for future use" % xlsxname)
+
 
 #todo document and refactor to better place?
 def md_load_rscb(PDB,
@@ -565,15 +670,6 @@ class BW_transformer(consensus_labeler):
                  #todo write to disk should be moved to the superclass at some point
                  write_to_disk=False):
 
-        xlsxname = '%s.xlsx'%uniprot_name
-        if _path.exists(xlsxname):
-            self._dataframe = _read_excel(xlsxname, converters={"BW":str}).replace({_np.nan:None})
-            print("read %s locally."%xlsxname)
-        else:
-            self._dataframe = _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name, verbose=verbose)
-            if write_to_disk:
-                self._dataframe.to_excel(xlsxname)
-                print("wrote %s for future use"%xlsxname)
         self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
         # TODO can we do this using super?
         consensus_labeler.__init__(self,ref_PDB,
@@ -637,32 +733,6 @@ def _top2consensus_map(consensus_dict, top,
     if keep_consensus:
         out_list = _fill_CGN_gaps(out_list, top, verbose=True)
     return out_list
-
-def _uniprot_name_2_BWdf_from_gpcrdb(uniprot_name,
-                                     GPCRmd="https://gpcrdb.org/services/residues/extended",
-                                     verbose=True):
-    url = "%s/%s"%(GPCRmd,uniprot_name)
-    if verbose:
-        print("requesting %s ..."%url,end="",flush=True)
-    a = _requests.get(url)
-    if a.text=='[]':
-        raise ValueError('Uniprot name %s yields nothing'%uniprot_name)
-    if verbose:
-        print("done!")
-    df =_read_json(a.text)
-    mydict = df.T.to_dict()
-    for key, val in mydict.items():
-        try:
-            for idict in val["alternative_generic_numbers"]:
-                #print(key, idict["scheme"], idict["label"])
-                val[idict["scheme"]]=idict["label"]
-            val.pop("alternative_generic_numbers")
-            val["AAresSeq"]='%s%s'%(val["amino_acid"],val["sequence_number"])
-        except IndexError:
-            pass
-    DFout = _DF.from_dict(mydict, orient="index").replace({_np.nan:None})
-    return DFout[["protein_segment", "AAresSeq","BW", "GPCRdb(A)", "display_generic_number"]]
-
 
 def _fill_CGN_gaps(consensus_list, top, verbose=False):
     r""" Try to fill CGN consensus nomenclature gaps based on adjacent labels
