@@ -9,7 +9,6 @@ import requests as _requests
 from .list_utils import rangeexpand as _rangeexpand
 
 from pandas import read_csv as _read_csv, DataFrame as _DataFrame
-import urllib
 
 def table2BW_by_AAcode(tablefile,
                        keep_AA_code=True,
@@ -42,6 +41,8 @@ def table2BW_by_AAcode(tablefile,
     else:
         df = tablefile
 
+    # TODO some overlap here with with _BW_web_lookup of BW_finder
+    # figure out best practice to avoid code-repetition
     # This is the most important
     AAcode2BW = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
     # Locate definition lines and use their indices
@@ -411,6 +412,8 @@ def CGN_finder(identifier,
     for a file that contains the Common-Gprotein-Nomenclature (CGN)
     consesus labels and return them as a :obj:`DataFrame`. See
     https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
+    and :obj:`_finder` for what's happening under the hood
+
 
     Parameters
     ----------
@@ -446,36 +449,6 @@ def CGN_finder(identifier,
                    try_web_lookup=try_web_lookup,
                    verbose=verbose,
                    dont_fail=dont_fail)
-    """
-    try:
-        return_name = file2read
-        _DF = _read_csv(file2read, delimiter='\t')
-    except FileNotFoundError as e:
-        _DF = e
-        if verbose:
-            print("No local file %s found" % file2read, end="")
-        if try_web_lookup:
-            web_address = "www.mrc-lmb.cam.ac.uk"
-            url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
-            return_name = url
-            if verbose:
-                print(", checking online in\n%s ..." % url, end="")
-            try:
-                _DF = _read_csv(url, delimiter='\t')
-                if verbose:
-                    print("found! Continuing normally")
-            except urllib.error.HTTPError as e:
-                print('CGN online db:',e)
-                _DF = e
-
-    if isinstance(_DF, _DataFrame):
-        return _DF, return_name
-    else:
-        if dont_fail:
-            return None, return_name
-        else:
-            raise _DF
-    """
 
 def _finder(full_local_path,
             local2DF_labmda,
@@ -515,7 +488,7 @@ def _finder(full_local_path,
             try:
                 _DF = web2DF_lambda(full_web_address)
                 if verbose:
-                    print("found! Continuing normally")
+                    print("done without 404, continuing.")
             except Exception as e:
                 print('Error getting or processing the web lookup:', e)
                 _DF = e
@@ -531,44 +504,71 @@ def _finder(full_local_path,
 
 def BW_finder(uniprot_name,
               format = "%s.xlsx",
-            ref_path=".",
-              GPCRmd="https://gpcrdb.org/services/residues/extended",
-              write_to_disk=False,
-              verbose=True):
+              ref_path=".",
+              try_web_lookup=True,
+              verbose=True,
+              dont_fail=False):
     xlsxname = format % uniprot_name
     fullpath = _path.join(ref_path,xlsxname)
 
-    if _path.exists(fullpath):
-        _DF = _read_excel(fullpath, converters={"BW": str}).replace({_np.nan: None})
-        print("read %s locally." % fullpath)
-    else:
+    GPCRmd = "https://gpcrdb.org/services/residues/extended"
+    url = "%s/%s" % (GPCRmd, uniprot_name)
 
-        url = "%s/%s"%(GPCRmd,uniprot_name)
-        if verbose:
-            print("requesting %s ..."%url,end="",flush=True)
-        a = _requests.get(url)
-        if a.text=='[]':
-            raise ValueError('Uniprot name %s yields nothing'%uniprot_name)
-        if verbose:
-            print("done!")
-        df =_read_json(a.text)
+    local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
+                                                        usecols=lambda x : x.lower()!="unnamed: 0",
+                                                        converters={"BW": str}).replace({_np.nan: None})
+    web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
+
+    return _finder(fullpath, local_lookup_lambda,
+                   url, _BW_web_lookup,
+                   try_web_lookup=try_web_lookup,
+                   verbose=verbose,
+                   dont_fail=dont_fail)
+    """
+    if write_to_disk:
+        ._dataframe.to_excel(xlsxname)
+        print("wrote %s for future use" % xlsxname)
+    """
+
+def _BW_web_lookup(url, verbose=True):
+    r"""
+    Lookup this url for a BW-notation
+    return a ValueError if the lookup retuns an empty json
+    Parameters
+    ----------
+    url
+    verbose
+
+    Returns
+    -------
+
+    """
+    uniprot_name = url.split("/")[-1]
+    a = _requests.get(url)
+    if verbose:
+        print("done!")
+    if a.text == '[]':
+        DFout = ValueError('Contacted %s url sucessfully (no 404),\n'
+                           'but Uniprot name %s yields nothing' % (url, uniprot_name))
+    else:
+        df = _read_json(a.text)
         mydict = df.T.to_dict()
         for key, val in mydict.items():
             try:
                 for idict in val["alternative_generic_numbers"]:
-                    #print(key, idict["scheme"], idict["label"])
-                    val[idict["scheme"]]=idict["label"]
+                    # print(key, idict["scheme"], idict["label"])
+                    val[idict["scheme"]] = idict["label"]
                 val.pop("alternative_generic_numbers")
-                val["AAresSeq"]='%s%s'%(val["amino_acid"],val["sequence_number"])
+                val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
             except IndexError:
                 pass
-        DFout = _DF.from_dict(mydict, orient="index").replace({_np.nan:None})
-        return DFout[["protein_segment", "AAresSeq","BW", "GPCRdb(A)", "display_generic_number"]]
+        DFout = _DF.from_dict(mydict, orient="index").replace({_np.nan: None})
+        DFout = DFout[["protein_segment", "AAresSeq",
+                       "BW",
+                       "GPCRdb(A)",
+                       "display_generic_number"]]
 
-    if write_to_disk:
-        self._dataframe.to_excel(xlsxname)
-        print("wrote %s for future use" % xlsxname)
-
+    return DFout
 
 #todo document and refactor to better place?
 def md_load_rscb(PDB,

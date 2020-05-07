@@ -59,6 +59,115 @@ class Test_PDB_finder(unittest.TestCase):
             nomenclature_utils.PDB_finder("3SN6",
                                           try_web_lookup=False)
 
+class Test_CGN_finder(unittest.TestCase):
+
+    def test_works_locally(self):
+        df, filename = nomenclature_utils.CGN_finder("3SN6",
+                                                     ref_path="../examples")
+
+        assert isinstance(df, DataFrame)
+        assert isinstance(filename,str)
+        _np.testing.assert_array_equal(list(df.keys()),["CGN","Sort number","3SN6"])
+
+    def test_works_olnline(self):
+        df, filename = nomenclature_utils.CGN_finder("3SN6",
+                                                     )
+
+        assert isinstance(df, DataFrame)
+        assert isinstance(filename, str)
+        assert "http" in filename
+        _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "3SN6"])
+
+    def test_raises_not_find_locally(self):
+        with pytest.raises(FileNotFoundError):
+            nomenclature_utils.CGN_finder("3SN6",
+                                          try_web_lookup=False
+                                                     )
+
+    def test_not_find_locally_but_no_fail(self):
+        DF, filename = nomenclature_utils.CGN_finder("3SN6",
+                                          try_web_lookup=False,
+                                          dont_fail=True
+                                                     )
+        assert DF is None
+        assert isinstance(filename,str)
+
+    def test_raises_not_find_online(self):
+        with pytest.raises(HTTPError):
+            nomenclature_utils.CGN_finder("3SNw",
+                                          )
+
+    def test_not_find_online_but_no_raise(self):
+        df, filename =    nomenclature_utils.CGN_finder("3SNw",
+                                          dont_fail=True
+                                          )
+        assert df is None
+        assert isinstance(filename,str)
+        assert "www" in filename
+
+class Test_GPCRmd_lookup_BW(unittest.TestCase):
+
+    def test_works(self):
+        DF = nomenclature_utils._BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
+        assert isinstance(DF, DataFrame)
+    def test_wrong_code(self):
+        with pytest.raises(ValueError):
+            raise nomenclature_utils._BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
+
+
+
+
+
+class Test_BW_finder(unittest.TestCase):
+
+    def test_works_locally(self):
+        df, filename = nomenclature_utils.BW_finder("B2AR",
+                                                    format="GPCRmd_%s_nomenclature_test.xlsx",
+                                                    ref_path=test_filenames.test_data_path)
+
+        assert isinstance(df, DataFrame)
+        assert isinstance(filename,str)
+        _np.testing.assert_array_equal(list(df.keys()),["protein_segment","AAresSeq","BW","GPCRdb(A)","display_generic_number"])
+
+
+    def test_works_online(self):
+        df, filename = nomenclature_utils.BW_finder("adrb2_human",
+                                                     )
+
+        assert isinstance(df, DataFrame)
+        assert isinstance(filename, str)
+        assert "http" in filename
+        _np.testing.assert_array_equal(list(df.keys()),["protein_segment","AAresSeq","BW","GPCRdb(A)","display_generic_number"])
+
+
+    def test_raises_not_find_locally(self):
+        with pytest.raises(FileNotFoundError):
+            nomenclature_utils.BW_finder("B2AR",
+                                          try_web_lookup=False
+                                                     )
+
+    def test_not_find_locally_but_no_fail(self):
+        DF, filename = nomenclature_utils.BW_finder("B2AR",
+                                          try_web_lookup=False,
+                                          dont_fail=True
+                                                     )
+        assert DF is None
+        assert isinstance(filename,str)
+
+
+    def test_raises_not_find_online(self):
+        with pytest.raises(ValueError):
+            nomenclature_utils.BW_finder("B2AR",
+                                          )
+
+    def test_not_find_online_but_no_raise(self):
+        df, filename =    nomenclature_utils.BW_finder("3SNw",
+                                          dont_fail=True
+                                          )
+        assert df is None
+        assert isinstance(filename,str)
+
+
 class Test_table2BW_by_AAcode(unittest.TestCase):
     def setUp(self):
         self.file = test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx
@@ -124,52 +233,6 @@ class Test_guess_missing_BWs(unittest.TestCase):
                               5: '1.27*',
                               6: '1.28*',
                               7: '1.28*'})
-
-class Test_CGN_finder(unittest.TestCase):
-
-    def test_works_locally(self):
-        df, filename = nomenclature_utils.CGN_finder("3SN6",
-                                                     ref_path="../examples")
-
-        assert isinstance(df, DataFrame)
-        assert isinstance(filename,str)
-        _np.testing.assert_array_equal(list(df.keys()),["CGN","Sort number","3SN6"])
-
-    def test_works_olnline(self):
-        df, filename = nomenclature_utils.CGN_finder("3SN6",
-                                                     )
-
-        assert isinstance(df, DataFrame)
-        assert isinstance(filename, str)
-        assert "http" in filename
-        _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "3SN6"])
-
-    def test_raises_not_find_locally(self):
-        with pytest.raises(FileNotFoundError):
-            nomenclature_utils.CGN_finder("3SN6",
-                                          try_web_lookup=False
-                                                     )
-
-    def test_not_find_locally_but_no_fail(self):
-        DF, filename = nomenclature_utils.CGN_finder("3SN6",
-                                          try_web_lookup=False,
-                                          dont_fail=True
-                                                     )
-        assert DF is None
-        assert isinstance(filename,str)
-
-    def test_raises_not_find_online(self):
-        with pytest.raises(HTTPError):
-            nomenclature_utils.CGN_finder("3SNw",
-                                          )
-
-    def test_not_find_online_but_no_raise(self):
-        df, filename =    nomenclature_utils.CGN_finder("3SNw",
-                                          dont_fail=True
-                                          )
-        assert df is None
-        assert isinstance(filename,str)
-        assert "www" in filename
 
 class Test_CGN_transformer(unittest.TestCase):
     def setUp(self):
