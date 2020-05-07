@@ -416,14 +416,32 @@ def md_load_rscb(PDB,
                  web_address = "https://files.rcsb.org/download",
                  verbose=False,
                  return_url=False):
+    r"""
+    Input a PDB code get an :obj:`mdtraj.Trajectory` object
+
+    Parameters
+    ----------
+    PDB : str
+        4-letter PDB code
+    web_address: str, default is "https://files.rcsb.org/download"
+    verbose : bool, default is False
+        Be versose
+    return_url : bool, default is False
+        also Return the actual url that was checked
+
+    Returns
+    -------
+    traj, url
+    """
     url = '%s/%s.pdb' % (web_address, PDB)
     if verbose:
         print(", checking online in \n%s ..." % url, end="")
     igeom = _md.load_pdb(url)
     if return_url:
-        igeom, url
+        return igeom, url
     else:
         return igeom
+
 class CGN_transformer(consensus_labeler):
     """
     Class to abstract, handle, and use common-Gprotein-nomenclature.

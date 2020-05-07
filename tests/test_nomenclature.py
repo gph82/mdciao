@@ -2,11 +2,28 @@ import unittest
 import mdtraj as md
 import numpy as _np
 from os import path
+from mdciao import nomenclature_utils
 from mdciao.nomenclature_utils import *
 from mdciao.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps, _fill_BW_gaps
 from filenames import filenames
 
 test_filenames = filenames()
+
+class Test_md_load_rscb(unittest.TestCase):
+
+    def test_works(self):
+        geom = nomenclature_utils.md_load_rscb("3CAP",
+                                               verbose=True,
+                                                    )
+        assert isinstance(geom, md.Trajectory)
+    def test_works_return_url(self):
+        geom, url = nomenclature_utils.md_load_rscb("3CAP",
+                           #verbose=True,
+                           return_url=True
+                                                    )
+        assert isinstance(geom, md.Trajectory)
+        assert isinstance(url, str)
+
 class Test_table2BW_by_AAcode(unittest.TestCase):
     def setUp(self):
         self.file = test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx
