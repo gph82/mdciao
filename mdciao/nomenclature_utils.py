@@ -61,93 +61,6 @@ def table2BW_by_AAcode(tablefile,
     else:
         return AAcode2BW
 
-
-def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
-    """
-    Estimates the BW for residues which are not present in the nomenclature file.
-
-    Parameters
-    ----------
-    input_BW_dict : dictionary
-        BW dictionary with residue names as the key and their corresponding BW notation
-    top : :py:class:`mdtraj.Topology`
-    restrict_to_residxs: list, optional
-        residue indexes for which the BW needs to be estimated. (Default value is None, which means all).
-
-    Returns
-    -------
-    BW : list
-        list of len=top.n_residues including estimated missing BW-names,
-        it also retains all the values from the input dictionary.
-
-    """
-
-    if restrict_to_residxs is None:
-        restrict_to_residxs = [residue.index for residue in top.residues]
-
-    #TODO keep this until we are sure there are no consquences
-    out_list = [None for __ in top.residues]
-    for rr in restrict_to_residxs:
-        residue = top.residue(rr)
-        key = '%s%s'%(residue.code,residue.resSeq)
-        try:
-            (key, input_BW_dict[key])
-            #print(key, input_BW_dict[key])
-            out_list[residue.index] = input_BW_dict[key]
-        except KeyError:
-            resSeq = _int_from_AA_code(key)
-            try:
-                key_above = [key for key in input_BW_dict.keys() if _int_from_AA_code(key)>resSeq][0]
-                resSeq_above = _int_from_AA_code(key_above)
-                delta_above = int(_np.abs([resSeq - resSeq_above]))
-            except IndexError:
-                delta_above = 0
-            try:
-                key_below = [key for key in input_BW_dict.keys() if _int_from_AA_code(key)<resSeq][-1]
-                resSeq_below = _int_from_AA_code(key_below)
-                delta_below = int(_np.abs([resSeq-resSeq_below]))
-            except IndexError:
-                delta_below = 0
-
-            if delta_above<=delta_below:
-                closest_BW_key = key_above
-                delta = -delta_above
-            elif delta_above>delta_below:
-                closest_BW_key = key_below
-                delta = delta_below
-            else:
-                print(delta_above, delta_below)
-                raise Exception
-
-            if residue.index in restrict_to_residxs:
-                closest_BW=input_BW_dict[closest_BW_key]
-                base, exp = [int(ii) for ii in closest_BW.split('.')]
-                new_guessed_val = '%s.%u*'%(base,exp+delta)
-                #guessed_BWs[key] = new_guessed_val
-                out_list[residue.index] = new_guessed_val
-                #print(key, new_guessed_val, residue.index, residue.index in restrict_to_residxs)
-            else:
-                pass
-                #new_guessed_val = None
-
-            # print("closest",closest_BW_key,closest_BW, key, new_guessed_val )
-
-    #input_BW_dict.update(guessed_BWs)
-
-    if keep_keys:
-        guessed_BWs = {}
-        used_keys = []
-        for res_idx, val in enumerate(out_list):
-            new_key = _shorten_AA(top.residue(res_idx))
-            if new_key in input_BW_dict.keys():
-                assert val==input_BW_dict[new_key],"This should not have happened %s %s %s"%(val, new_key, input_BW_dict[new_key])
-            assert new_key not in used_keys
-            guessed_BWs[new_key]=val
-            used_keys.append(new_key)
-        return guessed_BWs
-    else:
-        return out_list
-
 class consensus_labeler(object):
     """
     Class to manage consensus notations like
@@ -407,12 +320,13 @@ def CGN_finder(identifier,
                ref_path='.',
                try_web_lookup=True,
                verbose=True,
-               dont_fail=False):
+               dont_fail=False,
+               write_to_disk=False):
     r"""Provide a four-letter PDB code and look up (first locally, then online)
     for a file that contains the Common-Gprotein-Nomenclature (CGN)
     consesus labels and return them as a :obj:`DataFrame`. See
     https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
-    and :obj:`_finder` for what's happening under the hood
+    and :obj:`_finder_writer` for what's happening under the hood
 
 
     Parameters
@@ -444,19 +358,21 @@ def CGN_finder(identifier,
     url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
     web_lookup_lambda = local_lookup_lambda
 
-    return _finder(file2read,local_lookup_lambda,
-                   url, web_lookup_lambda,
-                   try_web_lookup=try_web_lookup,
-                   verbose=verbose,
-                   dont_fail=dont_fail)
+    return _finder_writer(file2read, local_lookup_lambda,
+                          url, web_lookup_lambda,
+                          try_web_lookup=try_web_lookup,
+                          verbose=verbose,
+                          dont_fail=dont_fail,
+                          write_to_disk=write_to_disk)
 
-def _finder(full_local_path,
-            local2DF_labmda,
-            full_web_address,
-            web2DF_lambda,
-            try_web_lookup=True,
-            verbose=True,
-            dont_fail=False):
+def _finder_writer(full_local_path,
+                   local2DF_lambda,
+                   full_web_address,
+                   web2DF_lambda,
+                   try_web_lookup=True,
+                   verbose=True,
+                   dont_fail=False,
+                   write_to_disk=False):
     r"""
     Try local lookup with a local lambda, then web lookup with a
     web labmda and try to return a :obj:`DataFrame`
@@ -464,7 +380,7 @@ def _finder(full_local_path,
     ----------
     full_local_path
     full_web_address
-    local2DF_labmda
+    local2DF_lambda
     web2DF_lambda
     try_web_lookup
     verbose
@@ -472,11 +388,12 @@ def _finder(full_local_path,
 
     Returns
     -------
+    df : DataFrame or None
 
     """
     try:
         return_name = full_local_path
-        _DF = local2DF_labmda(full_local_path)
+        _DF = local2DF_lambda(full_local_path)
     except FileNotFoundError as e:
         _DF = e
         if verbose:
@@ -494,6 +411,17 @@ def _finder(full_local_path,
                 _DF = e
 
     if isinstance(_DF, _DataFrame):
+        if write_to_disk:
+            if _path.exists(full_local_path):
+                raise FileExistsError("Cannot overwrite exisiting file %s" % full_local_path)
+            if _path.splitext(full_local_path)[-1]==".xlsx":
+                _DF.to_excel(full_local_path)
+            else:
+                # see https://github.com/pandas-dev/pandas/issues/10415
+                with open(full_local_path,"w") as f:
+                    f.write(_DF.to_string(index=False,header=True))
+
+            print("wrote %s for future use" % full_local_path)
         return _DF, return_name
     else:
         if dont_fail:
@@ -507,7 +435,8 @@ def BW_finder(uniprot_name,
               ref_path=".",
               try_web_lookup=True,
               verbose=True,
-              dont_fail=False):
+              dont_fail=False,
+              write_to_disk=False):
     xlsxname = format % uniprot_name
     fullpath = _path.join(ref_path,xlsxname)
 
@@ -519,16 +448,12 @@ def BW_finder(uniprot_name,
                                                         converters={"BW": str}).replace({_np.nan: None})
     web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
 
-    return _finder(fullpath, local_lookup_lambda,
-                   url, _BW_web_lookup,
-                   try_web_lookup=try_web_lookup,
-                   verbose=verbose,
-                   dont_fail=dont_fail)
-    """
-    if write_to_disk:
-        ._dataframe.to_excel(xlsxname)
-        print("wrote %s for future use" % xlsxname)
-    """
+    return _finder_writer(fullpath, local_lookup_lambda,
+                          url, _BW_web_lookup,
+                          try_web_lookup=try_web_lookup,
+                          verbose=verbose,
+                          dont_fail=dont_fail,
+                          write_to_disk=write_to_disk)
 
 def _BW_web_lookup(url, verbose=True):
     r"""
@@ -656,6 +581,93 @@ class CGN_transformer(consensus_labeler):
     def CGN_file(self):
         r""" CGN_file used for instantiation"""
         return self._CGN_file
+
+def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
+    """
+    Estimates the BW for residues which are not present in the nomenclature file.
+
+    Parameters
+    ----------
+    input_BW_dict : dictionary
+        BW dictionary with residue names as the key and their corresponding BW notation
+    top : :py:class:`mdtraj.Topology`
+    restrict_to_residxs: list, optional
+        residue indexes for which the BW needs to be estimated. (Default value is None, which means all).
+
+    Returns
+    -------
+    BW : list
+        list of len=top.n_residues including estimated missing BW-names,
+        it also retains all the values from the input dictionary.
+
+    """
+
+    if restrict_to_residxs is None:
+        restrict_to_residxs = [residue.index for residue in top.residues]
+
+    #TODO keep this until we are sure there are no consquences
+    out_list = [None for __ in top.residues]
+    for rr in restrict_to_residxs:
+        residue = top.residue(rr)
+        key = '%s%s'%(residue.code,residue.resSeq)
+        try:
+            (key, input_BW_dict[key])
+            #print(key, input_BW_dict[key])
+            out_list[residue.index] = input_BW_dict[key]
+        except KeyError:
+            resSeq = _int_from_AA_code(key)
+            try:
+                key_above = [key for key in input_BW_dict.keys() if _int_from_AA_code(key)>resSeq][0]
+                resSeq_above = _int_from_AA_code(key_above)
+                delta_above = int(_np.abs([resSeq - resSeq_above]))
+            except IndexError:
+                delta_above = 0
+            try:
+                key_below = [key for key in input_BW_dict.keys() if _int_from_AA_code(key)<resSeq][-1]
+                resSeq_below = _int_from_AA_code(key_below)
+                delta_below = int(_np.abs([resSeq-resSeq_below]))
+            except IndexError:
+                delta_below = 0
+
+            if delta_above<=delta_below:
+                closest_BW_key = key_above
+                delta = -delta_above
+            elif delta_above>delta_below:
+                closest_BW_key = key_below
+                delta = delta_below
+            else:
+                print(delta_above, delta_below)
+                raise Exception
+
+            if residue.index in restrict_to_residxs:
+                closest_BW=input_BW_dict[closest_BW_key]
+                base, exp = [int(ii) for ii in closest_BW.split('.')]
+                new_guessed_val = '%s.%u*'%(base,exp+delta)
+                #guessed_BWs[key] = new_guessed_val
+                out_list[residue.index] = new_guessed_val
+                #print(key, new_guessed_val, residue.index, residue.index in restrict_to_residxs)
+            else:
+                pass
+                #new_guessed_val = None
+
+            # print("closest",closest_BW_key,closest_BW, key, new_guessed_val )
+
+    #input_BW_dict.update(guessed_BWs)
+
+    if keep_keys:
+        guessed_BWs = {}
+        used_keys = []
+        for res_idx, val in enumerate(out_list):
+            new_key = _shorten_AA(top.residue(res_idx))
+            if new_key in input_BW_dict.keys():
+                assert val==input_BW_dict[new_key],"This should not have happened %s %s %s"%(val, new_key, input_BW_dict[new_key])
+            assert new_key not in used_keys
+            guessed_BWs[new_key]=val
+            used_keys.append(new_key)
+        return guessed_BWs
+    else:
+        return out_list
+
 
 class BW_transformer(consensus_labeler):
     """
