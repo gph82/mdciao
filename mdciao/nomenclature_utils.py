@@ -411,26 +411,18 @@ class LabelerConsensus(object):
     @property
     def fragments(self):
         r""" Dictionary of fragments keyed with fragment names
-        and valued with the residue names in that fragment.
+        and valued with the residue names (AAresSeq) in that fragment.
+        """
 
-        # TODO check this is true with BW the note might be wrong
-
-        Note
-        ----
-        Depending on the type of consensus, the keys might not
-        be identical with the per-residue consensus labels, e.g.:
-            * CGN: G.HN.XXX residues are in the fragment "G.HN"
-            * BW:  56.XXX residues are in the fragment ICL3"""
         return self._fragments
 
     @property
     def fragments_as_conlabs(self):
-        r"""
-        Dictionary of fragments keyed with fragment names
+        r""" Dictionary of fragments keyed with fragment names
         and valued with the consensus labels in that fragment
+
         Returns
         -------
-
         """
         return self._fragments_as_conlabs
 
@@ -583,10 +575,10 @@ class LabelerCGN(LabelerConsensus):
             * rcsb.org (for the PDB)
         """
 
-        self._dataframe, self._CGN_file = CGN_finder(ref_PDB,
-                                                     local_path=local_path,
-                                                     try_web_lookup=try_web_lookup,
-                                                     verbose=verbose)
+        self._dataframe, self._tablefile = CGN_finder(ref_PDB,
+                                                      local_path=local_path,
+                                                      try_web_lookup=try_web_lookup,
+                                                      verbose=verbose)
 
         self._AA2conlab = {key: self._dataframe[self._dataframe[ref_PDB] == key]["CGN"].to_list()[0]
                            for key in self._dataframe[ref_PDB].to_list()}
@@ -605,27 +597,6 @@ class LabelerCGN(LabelerConsensus):
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
 
-    @property
-    def CGN_file(self):
-        r""" CGN_file used for instantiation.
-        Will be a URL if no local file was found."""
-        return self._CGN_file
-
-    #     TODO this is not a good idea, ithink, makes the child of the
-    #     parent class diverge too much, cannot write code guaranteed to
-    #     work
-    #@property
-    #def CGN2AA(self):
-    #    r""" Dictionary with consensus labels as keys, so that
-    #    self.CGN2AA["G.hfs2.2"] -> 'R201'. It is just
-    #     an alias for self.conlab2AA"""
-    #    return self.conlab2AA
-
-    @property
-    def tablefile(self):
-        return self.CGN_file
-
-
 class LabelerBW(LabelerConsensus):
     """
     Class to manage Ballesteros-Weinstein notation
@@ -634,22 +605,26 @@ class LabelerBW(LabelerConsensus):
     def __init__(self, uniprot_name,
                  ref_PDB=None,
                  local_path=".",
+                 format="%s.xlsx",
                  verbose=True,
                  try_web_lookup=True,
                  #todo write to disk should be moved to the superclass at some point
                  write_to_disk=False):
 
-        self._dataframe, __ = BW_finder(uniprot_name,
-                                        local_path=local_path,
-                                        try_web_lookup=try_web_lookup,
-                                        verbose=verbose,
-                                        write_to_disk=write_to_disk
-                                   )
+        # TODO now that the finder call is the same we could
+        # avoid cde repetition here
+        self._dataframe, self._tablefile = BW_finder(uniprot_name,
+                                            format=format,
+                                            local_path=local_path,
+                                            try_web_lookup=try_web_lookup,
+                                            verbose=verbose,
+                                            write_to_disk=write_to_disk
+                                       )
 
         self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
-                                  ref_path=local_path,
+                                  local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
 

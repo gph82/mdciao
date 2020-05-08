@@ -260,15 +260,15 @@ class Test_LabelerCGN(unittest.TestCase):
                                             "3SN6.pdb.gz"))
         self.cgn_local = LabelerCGN("3SN6",
                                local_path=test_filenames.examples_path)
-    def test_correct_files_and_geoms(self):
+    def test_correct_files(self):
 
 
-        _np.testing.assert_equal(self.cgn_local.CGN_file,
+        _np.testing.assert_equal(self.cgn_local.tablefile,
                                  path.join(test_filenames.examples_path,"CGN_3SN6.txt"))
         _np.testing.assert_equal(self.cgn_local.ref_PDB,
                                  "3SN6")
-
-        self.assertEqual(self.cgn_local.tablefile, self.cgn_local.CGN_file)
+    def test_mdtraj_attributes(self):
+        pass
         #_np.testing.assert_equal(cgn_local.geom,
         #                         self._geom_3SN6)
 
@@ -278,7 +278,6 @@ class Test_LabelerCGN(unittest.TestCase):
         self.assertIsInstance(self.cgn_local.dataframe, DataFrame)
         self.assertSequenceEqual(list(self.cgn_local.dataframe.keys()),
                                  ["CGN","Sort number","3SN6"])
-
 
     def test_correct_residue_dicts(self):
         _np.testing.assert_equal(self.cgn_local.conlab2AA["G.hfs2.2"],"R201")
@@ -304,27 +303,74 @@ class Test_LabelerCGN(unittest.TestCase):
         self.assertSequenceEqual(self.cgn_local.fragment_names,
                                  list(self.cgn_local.fragments.keys()))
 
-class Test_LabelerBW(unittest.TestCase):
+class Test_LabelerBW_no_pdb(unittest.TestCase):
 
+    # The setup is in itself a test
     def setUp(self):
-        self._geom_3SN6 = md.load(path.join(test_filenames.examples_path,
-                                            "3SN6.pdb.gz"))
+        self.BW_local_no_pdb = LabelerBW("B2AR",
+                                         format="GPCRmd_%s_nomenclature_test.xlsx",
+                                         local_path=test_filenames.test_data_path)
 
-    def test_LabelerBW_works_locally(self):
+    def test_correct_files(self):
+        _np.testing.assert_equal(self.BW_local_no_pdb.tablefile,
+                                 path.join(test_filenames.test_data_path,
+                                           "GPCRmd_B2AR_nomenclature_test.xlsx"))
+        _np.testing.assert_equal(self.BW_local_no_pdb.ref_PDB,
+                                 None)
 
-        cgn_local = LabelerBW("adrb2_human",
-                               local_path=test_filenames.examples_path)
-        _np.testing.assert_equal(cgn_local.CGN_file,
-                                 path.join(test_filenames.examples_path,"CGN_3SN6.txt"))
-        _np.testing.assert_equal(cgn_local.ref_PDB,
+class Test_LabelerBW_w_pdb(unittest.TestCase):
+
+    # The setup is in itself a test
+    def setUp(self):
+        self.BW_local_w_pdb = LabelerBW("B2AR",
+                                        ref_PDB="3SN6",
+                                        format="GPCRmd_%s_nomenclature_test.xlsx",
+                                        local_path=test_filenames.test_data_path)
+
+    def test_correct_files(self):
+        _np.testing.assert_equal(self.BW_local_w_pdb.tablefile,
+                                 path.join(test_filenames.test_data_path,
+                                           "GPCRmd_B2AR_nomenclature_test.xlsx"))
+        _np.testing.assert_equal(self.BW_local_w_pdb.ref_PDB,
                                  "3SN6")
-        #_np.testing.assert_equal(cgn_local.geom,
+
+    def test_mdtraj_attributes(self):
+        pass
+        # _np.testing.assert_equal(cgn_local.geom,
         #                         self._geom_3SN6)
 
-        #_np.testing.assert_equal(cgn_local.top,
+        # _np.testing.assert_equal(cgn_local.top,
         #                         self._geom_3SN6.top)
+    def test_dataframe(self):
+        self.assertIsInstance(self.BW_local_w_pdb.dataframe, DataFrame)
+        self.assertSequenceEqual(list(self.BW_local_w_pdb.dataframe.keys()),
+                                 ['protein_segment', 'AAresSeq', 'BW', 'GPCRdb(A)', 'display_generic_number'])
 
-        _np.testing.assert_equal(cgn_local.conlab2AA["G.hfs2.2"],"R201")
+    def test_correct_residue_dicts(self):
+        _np.testing.assert_equal(self.BW_local_w_pdb.conlab2AA["1.25"],"Q26")
+        _np.testing.assert_equal(self.BW_local_w_pdb.AA2conlab["Q26"],"1.25")
+
+    def test_correct_fragments_dict(self):
+        # Test "fragments" dictionary SMH
+        self.assertIsInstance(self.BW_local_w_pdb.fragments,dict)
+        assert all([len(ii)>0 for ii in self.BW_local_w_pdb.fragments.values()])
+        self.assertEqual(self.BW_local_w_pdb.fragments["ICL1"][0],"E62")
+        self.assertSequenceEqual(list(self.BW_local_w_pdb.fragments.keys()),
+                                 ["TM1","ICL1","TM2"])
+
+    def test_correct_fragments_as_conlabs_dict(self):
+        # Test "fragments_as_conslabs" dictionary SMH
+        self.assertIsInstance(self.BW_local_w_pdb.fragments_as_conlabs, dict)
+        assert all([len(ii) > 0 for ii in self.BW_local_w_pdb.fragments_as_conlabs.values()])
+        self.assertSequenceEqual(list(self.BW_local_w_pdb.fragments_as_conlabs.keys()),
+                                 ["TM1", "ICL1", "TM2"])
+        self.assertEqual(self.BW_local_w_pdb.fragments_as_conlabs["TM1"][0], "1.25")
+
+
+    def test_correct_fragment_names(self):
+        self.assertSequenceEqual(self.BW_local_w_pdb.fragment_names,
+                                 list(self.BW_local_w_pdb.fragments.keys()))
+
 
 class Test_guess_missing_BWs(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
