@@ -16,7 +16,7 @@ from mdciao.fragments import \
     per_residue_fragment_picker as _per_residue_fragment_picker
 
 from mdciao.nomenclature_utils import \
-    CGN_transformer, BW_transformer,\
+    LabelerCGN, LabelerBW,\
     _relabel_consensus, _guess_nomenclature_fragments
 
 from mdciao.contacts import \
@@ -76,8 +76,8 @@ def _parse_consensus_option(identifier, type,
             map_out = [None for __ in range(top.n_residues)]
             tf_out = None
         else:
-            tf_out = {"BW": BW_transformer,
-                      "CGN":CGN_transformer}[type](identifier, **tf_kwargs)
+            tf_out = {"BW": LabelerBW,
+                      "CGN":LabelerCGN}[type](identifier, **tf_kwargs)
 
     #todo add a class check here instead of failing later on
     else:

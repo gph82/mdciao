@@ -64,7 +64,7 @@ class Test_CGN_finder(unittest.TestCase):
 
     def test_works_locally(self):
         df, filename = nomenclature_utils.CGN_finder("3SN6",
-                                                     ref_path=test_filenames.examples_path)
+                                                     local_path=test_filenames.examples_path)
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename,str)
@@ -83,9 +83,9 @@ class Test_CGN_finder(unittest.TestCase):
         with _TDir(suffix="_mdciao_test") as tdir:
             df, filename = nomenclature_utils.CGN_finder("3SN6",
                                                          format="%s.xlsx",
-                                                         ref_path=tdir,
+                                                         local_path=tdir,
                                                          write_to_disk=True
-                                                     )
+                                                         )
 
             assert isinstance(df, DataFrame)
             assert isinstance(filename, str)
@@ -96,10 +96,10 @@ class Test_CGN_finder(unittest.TestCase):
     def test_works_online_and_writes_to_disk_ascii(self):
         with _TDir(suffix="_mdciao_test") as tdir:
             df, filename = nomenclature_utils.CGN_finder("3SN6",
-                                                         ref_path=tdir,
+                                                         local_path=tdir,
                                                          format="%s.txt",
                                                          write_to_disk=True
-                                                     )
+                                                         )
 
             assert isinstance(df, DataFrame)
             assert isinstance(filename, str)
@@ -113,10 +113,10 @@ class Test_CGN_finder(unittest.TestCase):
             copy(infile,tdir)
             with pytest.raises(FileExistsError):
                 nomenclature_utils.CGN_finder("3SN6",
-                                                         ref_path=tdir,
-                                                         format="%s.txt",
-                                                         write_to_disk=True
-                                                         )
+                                              local_path=tdir,
+                                              format="%s.txt",
+                                              write_to_disk=True
+                                              )
 
 
 
@@ -161,7 +161,7 @@ class Test_BW_finder(unittest.TestCase):
     def test_works_locally(self):
         df, filename = nomenclature_utils.BW_finder("B2AR",
                                                     format="GPCRmd_%s_nomenclature_test.xlsx",
-                                                    ref_path=test_filenames.test_data_path)
+                                                    local_path=test_filenames.test_data_path)
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename,str)
@@ -204,7 +204,6 @@ class Test_BW_finder(unittest.TestCase):
                                           )
         assert df is None
         assert isinstance(filename,str)
-
 
 class Test_table2BW_by_AAcode(unittest.TestCase):
     def setUp(self):
@@ -253,6 +252,80 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                               'V67': '2.38'
                               })
 
+class Test_LabelerCGN(unittest.TestCase):
+
+    # The setup is in itself a test
+    def setUp(self):
+        self._geom_3SN6 = md.load(path.join(test_filenames.examples_path,
+                                            "3SN6.pdb.gz"))
+        self.cgn_local = LabelerCGN("3SN6",
+                               local_path=test_filenames.examples_path)
+    def test_correct_files_and_geoms(self):
+
+
+        _np.testing.assert_equal(self.cgn_local.CGN_file,
+                                 path.join(test_filenames.examples_path,"CGN_3SN6.txt"))
+        _np.testing.assert_equal(self.cgn_local.ref_PDB,
+                                 "3SN6")
+
+        self.assertEqual(self.cgn_local.tablefile, self.cgn_local.CGN_file)
+        #_np.testing.assert_equal(cgn_local.geom,
+        #                         self._geom_3SN6)
+
+        #_np.testing.assert_equal(cgn_local.top,
+        #                         self._geom_3SN6.top)
+    def test_dataframe(self):
+        self.assertIsInstance(self.cgn_local.dataframe, DataFrame)
+        self.assertSequenceEqual(list(self.cgn_local.dataframe.keys()),
+                                 ["CGN","Sort number","3SN6"])
+
+
+    def test_correct_residue_dicts(self):
+        _np.testing.assert_equal(self.cgn_local.conlab2AA["G.hfs2.2"],"R201")
+        _np.testing.assert_equal(self.cgn_local.AA2conlab["R201"],"G.hfs2.2")
+
+    def test_correct_fragments_dict(self):
+        # Test "fragments" dictionary SMH
+        self.assertIsInstance(self.cgn_local.fragments,dict)
+        assert all([len(ii)>0 for ii in self.cgn_local.fragments.values()])
+        self.assertEqual(self.cgn_local.fragments["G.HN"][0],"T9")
+        self.assertSequenceEqual(list(self.cgn_local.fragments.keys()),
+                                 nomenclature_utils._CGN_fragments)
+
+    def test_correct_fragments_as_conlabs_dict(self):
+        # Test "fragments_as_conslabs" dictionary SMH
+        self.assertIsInstance(self.cgn_local.fragments_as_conlabs, dict)
+        assert all([len(ii) > 0 for ii in self.cgn_local.fragments_as_conlabs.values()])
+        self.assertEqual(self.cgn_local.fragments_as_conlabs["G.HN"][0], "G.HN.26")
+        self.assertSequenceEqual(list(self.cgn_local.fragments_as_conlabs.keys()),
+                                 nomenclature_utils._CGN_fragments)
+
+    def test_correct_fragment_names(self):
+        self.assertSequenceEqual(self.cgn_local.fragment_names,
+                                 list(self.cgn_local.fragments.keys()))
+
+class Test_LabelerBW(unittest.TestCase):
+
+    def setUp(self):
+        self._geom_3SN6 = md.load(path.join(test_filenames.examples_path,
+                                            "3SN6.pdb.gz"))
+
+    def test_LabelerBW_works_locally(self):
+
+        cgn_local = LabelerBW("adrb2_human",
+                               local_path=test_filenames.examples_path)
+        _np.testing.assert_equal(cgn_local.CGN_file,
+                                 path.join(test_filenames.examples_path,"CGN_3SN6.txt"))
+        _np.testing.assert_equal(cgn_local.ref_PDB,
+                                 "3SN6")
+        #_np.testing.assert_equal(cgn_local.geom,
+        #                         self._geom_3SN6)
+
+        #_np.testing.assert_equal(cgn_local.top,
+        #                         self._geom_3SN6.top)
+
+        _np.testing.assert_equal(cgn_local.conlab2AA["G.hfs2.2"],"R201")
+
 class Test_guess_missing_BWs(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
     def setUp(self):
@@ -272,19 +345,11 @@ class Test_guess_missing_BWs(unittest.TestCase):
                               6: '1.28*',
                               7: '1.28*'})
 
-class Test_CGN_transformer(unittest.TestCase):
-    def setUp(self):
-        self.cgn = CGN_transformer("3SN6",
-                                   ref_path=test_filenames.examples_path)
-
-    def test_CGN_transformer_just_works(self):
-        pass
-
 class Test_top2CGN_by_AAcode(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
     def setUp(self):
-        self.cgn = CGN_transformer("3SN6",
-                                   ref_path=test_filenames.examples_path)
+        self.cgn = LabelerCGN("3SN6",
+                              local_path=test_filenames.examples_path)
         self.geom = md.load(test_filenames.file_for_test_pdb)
 
     def _test_top2CGN_by_AAcode_just_works(self):
@@ -339,9 +404,9 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
 class Test_top2consensus_map(unittest.TestCase):
     #TODO add test for special case restrict_to_residxs
     def setUp(self):
-        self.cgn = CGN_transformer("3SN6",
-                                   ref_path=test_filenames.examples_path,
-                                   )
+        self.cgn = LabelerCGN("3SN6",
+                              local_path=test_filenames.examples_path,
+                              )
         self.geom = md.load(test_filenames.file_for_top2consensus_map)
         self.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
         self.cons_list_keep_consensus = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', 'G.hfs2.4',

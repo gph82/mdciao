@@ -61,7 +61,276 @@ def table2BW_by_AAcode(tablefile,
     else:
         return AAcode2BW
 
-class consensus_labeler(object):
+def PDB_finder(PDB_code, local_path='.',
+               try_web_lookup=True,
+               verbose=True):
+    r"""
+    Input a pdb-code and return an :obj:`mdtraj.Trajectory`,
+    by loading a local file or optionally looking up online
+     (see :obj:`md_load_rscb`)
+
+    Note
+    ----
+    Since filenames are case-sensitive, e.g. 3CAP will not
+    find 3cap.pdb locally, but will sucessfully be found
+    online (urls are not case-sensitive), returning the
+    online file instead of the local one, which can lead
+    to "successfull" but wrong behaviour if the local
+    file had already some modifications (strip non protein etc)
+
+    Parameters
+    ----------
+    PDB_code : str
+        4-letter PDB code
+    local_path : str, default is "."
+        What directory to look into
+    try_web_lookup : bool, default is True
+        If the file :obj:`ref_PDB` cannot be found locally
+        as .pdb or .pdb.gz, a web lookup will be tried
+    verbose
+
+    Returns
+    -------
+    geom : :obj:`mdtraj.Trajectory`
+    return_file : str with filename,
+        Will contain an url if web_lookup was necessary
+    """
+    try:
+        file2read = _path.join(local_path, PDB_code + '.pdb')
+        _geom = _md.load(file2read)
+        return_file = file2read
+    except (OSError, FileNotFoundError):
+        try:
+            file2read = _path.join(local_path, PDB_code + '.pdb.gz')
+            _geom = _md.load(file2read)
+            return_file = file2read
+        except (OSError, FileNotFoundError):
+            if verbose:
+                print("No local PDB file for %s found" % PDB_code, end="")
+            if try_web_lookup:
+                _geom, return_file = md_load_rscb(PDB_code,
+                                                  verbose=verbose,
+                                                  return_url=True)
+                if verbose:
+                    print("found! Continuing normally")
+
+            else:
+                raise
+
+    return _geom, return_file
+
+def CGN_finder(identifier,
+               format='CGN_%s.txt',
+               local_path='.',
+               try_web_lookup=True,
+               verbose=True,
+               dont_fail=False,
+               write_to_disk=False):
+    r"""Provide a four-letter PDB code and look up (first locally, then online)
+    for a file that contains the Common-Gprotein-Nomenclature (CGN)
+    consesus labels and return them as a :obj:`DataFrame`. See
+    https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
+    and :obj:`_finder_writer` for what's happening under the hood
+
+
+    Parameters
+    ----------
+    identifier : str
+        Typically, a PDB code
+    format : str
+        A format string that turns the :obj:`identifier`
+        into a filename for local lookup, in case the
+        user has custom filenames, e.g. 3SN6_consensus.txt
+    local_path : str
+        The local path to the local consensus file
+    try_web_lookup : bool, default is True
+        If the local lookup fails, go online
+    verbose : bool, default is True
+    dont_fail : bool, default is False
+        Do not raise any errors that would interrupt
+        a workflow and simply return None
+
+    Returns
+    -------
+    DF : :obj:`DataFrame` with the consensus nomenclature
+    """
+    file2read = format%identifier
+    file2read = _path.join(local_path, file2read)
+    local_lookup_lambda = lambda file2read : _read_csv(file2read, delimiter='\t')
+
+    web_address = "www.mrc-lmb.cam.ac.uk"
+    url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
+    web_lookup_lambda = local_lookup_lambda
+
+    return _finder_writer(file2read, local_lookup_lambda,
+                          url, web_lookup_lambda,
+                          try_web_lookup=try_web_lookup,
+                          verbose=verbose,
+                          dont_fail=dont_fail,
+                          write_to_disk=write_to_disk)
+
+def _finder_writer(full_local_path,
+                   local2DF_lambda,
+                   full_web_address,
+                   web2DF_lambda,
+                   try_web_lookup=True,
+                   verbose=True,
+                   dont_fail=False,
+                   write_to_disk=False):
+    r"""
+    Try local lookup with a local lambda, then web lookup with a
+    web labmda and try to return a :obj:`DataFrame`
+    Parameters
+    ----------
+    full_local_path
+    full_web_address
+    local2DF_lambda
+    web2DF_lambda
+    try_web_lookup
+    verbose
+    dont_fail
+
+    Returns
+    -------
+    df : DataFrame or None
+
+    """
+    try:
+        return_name = full_local_path
+        _DF = local2DF_lambda(full_local_path)
+    except FileNotFoundError as e:
+        _DF = e
+        if verbose:
+            print("No local file %s found" % full_local_path, end="")
+        if try_web_lookup:
+            return_name = full_web_address
+            if verbose:
+                print(", checking online in\n%s ..." % full_web_address, end="")
+            try:
+                _DF = web2DF_lambda(full_web_address)
+                if verbose:
+                    print("done without 404, continuing.")
+            except Exception as e:
+                print('Error getting or processing the web lookup:', e)
+                _DF = e
+
+    if isinstance(_DF, _DataFrame):
+        if write_to_disk:
+            if _path.exists(full_local_path):
+                raise FileExistsError("Cannot overwrite exisiting file %s" % full_local_path)
+            if _path.splitext(full_local_path)[-1]==".xlsx":
+                _DF.to_excel(full_local_path)
+            else:
+                # see https://github.com/pandas-dev/pandas/issues/10415
+                with open(full_local_path,"w") as f:
+                    f.write(_DF.to_string(index=False,header=True))
+
+            print("wrote %s for future use" % full_local_path)
+        return _DF, return_name
+    else:
+        if dont_fail:
+            return None, return_name
+        else:
+            raise _DF
+
+
+def BW_finder(uniprot_name,
+              format = "%s.xlsx",
+              local_path=".",
+              try_web_lookup=True,
+              verbose=True,
+              dont_fail=False,
+              write_to_disk=False):
+    xlsxname = format % uniprot_name
+    fullpath = _path.join(local_path, xlsxname)
+
+    GPCRmd = "https://gpcrdb.org/services/residues/extended"
+    url = "%s/%s" % (GPCRmd, uniprot_name)
+
+    local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
+                                                        usecols=lambda x : x.lower()!="unnamed: 0",
+                                                        converters={"BW": str}).replace({_np.nan: None})
+    web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
+
+    return _finder_writer(fullpath, local_lookup_lambda,
+                          url, web_looukup_lambda,
+                          try_web_lookup=try_web_lookup,
+                          verbose=verbose,
+                          dont_fail=dont_fail,
+                          write_to_disk=write_to_disk)
+
+def _BW_web_lookup(url, verbose=True):
+    r"""
+    Lookup this url for a BW-notation
+    return a ValueError if the lookup retuns an empty json
+    Parameters
+    ----------
+    url
+    verbose
+
+    Returns
+    -------
+
+    """
+    uniprot_name = url.split("/")[-1]
+    a = _requests.get(url)
+    if verbose:
+        print("done!")
+    if a.text == '[]':
+        DFout = ValueError('Contacted %s url sucessfully (no 404),\n'
+                           'but Uniprot name %s yields nothing' % (url, uniprot_name))
+    else:
+        df = _read_json(a.text)
+        mydict = df.T.to_dict()
+        for key, val in mydict.items():
+            try:
+                for idict in val["alternative_generic_numbers"]:
+                    # print(key, idict["scheme"], idict["label"])
+                    val[idict["scheme"]] = idict["label"]
+                val.pop("alternative_generic_numbers")
+                val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
+            except IndexError:
+                pass
+        DFout = _DF.from_dict(mydict, orient="index").replace({_np.nan: None})
+        DFout = DFout[["protein_segment", "AAresSeq",
+                       "BW",
+                       "GPCRdb(A)",
+                       "display_generic_number"]]
+
+    return DFout
+
+#todo document and refactor to better place?
+def md_load_rscb(PDB,
+                 web_address = "https://files.rcsb.org/download",
+                 verbose=False,
+                 return_url=False):
+    r"""
+    Input a PDB code get an :obj:`mdtraj.Trajectory` object
+
+    Parameters
+    ----------
+    PDB : str
+        4-letter PDB code
+    web_address: str, default is "https://files.rcsb.org/download"
+    verbose : bool, default is False
+        Be versose
+    return_url : bool, default is False
+        also Return the actual url that was checked
+
+    Returns
+    -------
+    traj, url
+    """
+    url = '%s/%s.pdb' % (web_address, PDB)
+    if verbose:
+        print(", checking online in \n%s ..." % url, end="")
+    igeom = _md.load_pdb(url)
+    if return_url:
+        return igeom, url
+    else:
+        return igeom
+
+class LabelerConsensus(object):
     """
     Class to manage consensus notations like
     * Ballesteros-Weinstein (BW)
@@ -86,15 +355,15 @@ class consensus_labeler(object):
              * rcsb.org (for the PDB)
 
         """
-        self._geom = None
+        self._geom_PDB = None
         self._ref_top = None
         self._ref_PDB = ref_PDB
         if ref_PDB is not None:
-            self._geom, self._PDB_file = PDB_finder(ref_PDB,
-                                                    **PDB_finder_kwargs,
-                                                    )
-
+            self._geom_PDB, self._PDB_file = PDB_finder(ref_PDB,
+                                                        **PDB_finder_kwargs,
+                                                        )
         self._conlab2AA = {val: key for key, val in self.AA2conlab.items()}
+
         self._fragment_names = list(self.fragments.keys())
         self._fragments_as_conlabs = {key: [self.AA2conlab[AA] for AA in val]
                                       for key, val in self.fragments.items()}
@@ -106,33 +375,63 @@ class consensus_labeler(object):
 
     @property
     def geom(self):
-        return self._geom
+        r""" :obj:`mdtraj.Trajectory` with with what was found
+        (locally or online) using :obj:`ref_PDB`"""
+        return self._geom_PDB
 
     @property
     def top(self):
-        return self._geom.top
+        r""" :obj:`mdtraj.Topology` with with what was found
+                (locally or online) using :obj:`ref_PDB`"""
+        return self._geom_PDB.top
 
     @property
     def conlab2AA(self):
-        r""" Dictionary with consensus labels as keys, so that e.g. self.AA2BW["3.50"] -> 'R131' """
+        r""" Dictionary with consensus labels as keys, so that e.g.
+            * self.conlab2AA["3.50"] -> 'R131' or
+            * self.conlab2AA["G.hfs2.2"] -> 'R201' """
         return self._conlab2AA
 
     @property
     def AA2conlab(self):
-        r""" Dictionary with AA-codes as keys, so that e.g. self.AA2BW[R131] -> '3.50' """
+        r""" Dictionary with AA-codes as keys, so that e.g.
+            * self.AA2BW["R131"] -> '3.50'
+            * self.conlab2AA["R201"] -> "G.hfs2.2" """
+
+
         return self._AA2conlab
 
     @property
     def fragment_names(self):
-        r"""Name of the fragments according to the CGN numbering"""
+        r"""Name of the fragments according to the consensus labels
+
+        TODO OR NOT? Check!"""
         return self._fragment_names
 
     @property
     def fragments(self):
+        r""" Dictionary of fragments keyed with fragment names
+        and valued with the residue names in that fragment.
+
+        # TODO check this is true with BW the note might be wrong
+
+        Note
+        ----
+        Depending on the type of consensus, the keys might not
+        be identical with the per-residue consensus labels, e.g.:
+            * CGN: G.HN.XXX residues are in the fragment "G.HN"
+            * BW:  56.XXX residues are in the fragment ICL3"""
         return self._fragments
 
     @property
     def fragments_as_conlabs(self):
+        r"""
+        Dictionary of fragments keyed with fragment names
+        and valued with the consensus labels in that fragment
+        Returns
+        -------
+
+        """
         return self._fragments_as_conlabs
 
     @property
@@ -257,284 +556,15 @@ class consensus_labeler(object):
         if return_defs:
             return {key:val for key, val in defs.items()}
 
-def PDB_finder(PDB_code, local_path='.',
-               try_web_lookup=True,
-               verbose=True):
-    r"""
-    Input a pdb-code and return an :obj:`mdtraj.Trajectory`,
-    by loading a local file or optionally looking up online
-     (see :obj:`md_load_rscb`)
 
-    Note
-    ----
-    Since filenames are case-sensitive, e.g. 3CAP will not
-    find 3cap.pdb locally, but will sucessfully be found
-    online (urls are not case-sensitive), returning the
-    online file instead of the local one, which can lead
-    to "successfull" but wrong behaviour if the local
-    file had already some modifications (strip non protein etc)
-
-    Parameters
-    ----------
-    PDB_code : str
-        4-letter PDB code
-    local_path : str, default is "."
-        What directory to look into
-    try_web_lookup : bool, default is True
-        If the file :obj:`ref_PDB` cannot be found locally
-        as .pdb or .pdb.gz, a web lookup will be tried
-    verbose
-
-    Returns
-    -------
-    geom : :obj:`mdtraj.Trajectory`
-    return_file : str with filename,
-        Will contain an url if web_lookup was necessary
-    """
-    try:
-        file2read = _path.join(local_path, PDB_code + '.pdb')
-        _geom = _md.load(file2read)
-        return_file = file2read
-    except (OSError, FileNotFoundError):
-        try:
-            file2read = _path.join(local_path, PDB_code + '.pdb.gz')
-            _geom = _md.load(file2read)
-            return_file = file2read
-        except (OSError, FileNotFoundError):
-            if verbose:
-                print("No local PDB file for %s found" % PDB_code, end="")
-            if try_web_lookup:
-                _geom, return_file = md_load_rscb(PDB_code,
-                                                  verbose=verbose,
-                                                  return_url=True)
-                if verbose:
-                    print("found! Continuing normally")
-
-            else:
-                raise
-
-    return _geom, return_file
-
-def CGN_finder(identifier,
-               format='CGN_%s.txt',
-               ref_path='.',
-               try_web_lookup=True,
-               verbose=True,
-               dont_fail=False,
-               write_to_disk=False):
-    r"""Provide a four-letter PDB code and look up (first locally, then online)
-    for a file that contains the Common-Gprotein-Nomenclature (CGN)
-    consesus labels and return them as a :obj:`DataFrame`. See
-    https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
-    and :obj:`_finder_writer` for what's happening under the hood
-
-
-    Parameters
-    ----------
-    identifier : str
-        Typically, a PDB code
-    format : str
-        A format string that turns the :obj:`identifier`
-        into a filename for local lookup, in case the
-        user has custom filenames, e.g. 3SN6_consensus.txt
-    ref_path : str
-        The local path to the local consensus file
-    try_web_lookup : bool, default is True
-        If the local lookup fails, go online
-    verbose : bool, default is True
-    dont_fail : bool, default is False
-        Do not raise any errors that would interrupt
-        a workflow and simply return None
-
-    Returns
-    -------
-    DF : :obj:`DataFrame` with the consensus nomenclature
-    """
-    file2read = format%identifier
-    file2read = _path.join(ref_path, file2read)
-    local_lookup_lambda = lambda file2read : _read_csv(file2read, delimiter='\t')
-
-    web_address = "www.mrc-lmb.cam.ac.uk"
-    url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
-    web_lookup_lambda = local_lookup_lambda
-
-    return _finder_writer(file2read, local_lookup_lambda,
-                          url, web_lookup_lambda,
-                          try_web_lookup=try_web_lookup,
-                          verbose=verbose,
-                          dont_fail=dont_fail,
-                          write_to_disk=write_to_disk)
-
-def _finder_writer(full_local_path,
-                   local2DF_lambda,
-                   full_web_address,
-                   web2DF_lambda,
-                   try_web_lookup=True,
-                   verbose=True,
-                   dont_fail=False,
-                   write_to_disk=False):
-    r"""
-    Try local lookup with a local lambda, then web lookup with a
-    web labmda and try to return a :obj:`DataFrame`
-    Parameters
-    ----------
-    full_local_path
-    full_web_address
-    local2DF_lambda
-    web2DF_lambda
-    try_web_lookup
-    verbose
-    dont_fail
-
-    Returns
-    -------
-    df : DataFrame or None
-
-    """
-    try:
-        return_name = full_local_path
-        _DF = local2DF_lambda(full_local_path)
-    except FileNotFoundError as e:
-        _DF = e
-        if verbose:
-            print("No local file %s found" % full_local_path, end="")
-        if try_web_lookup:
-            return_name = full_web_address
-            if verbose:
-                print(", checking online in\n%s ..." % full_web_address, end="")
-            try:
-                _DF = web2DF_lambda(full_web_address)
-                if verbose:
-                    print("done without 404, continuing.")
-            except Exception as e:
-                print('Error getting or processing the web lookup:', e)
-                _DF = e
-
-    if isinstance(_DF, _DataFrame):
-        if write_to_disk:
-            if _path.exists(full_local_path):
-                raise FileExistsError("Cannot overwrite exisiting file %s" % full_local_path)
-            if _path.splitext(full_local_path)[-1]==".xlsx":
-                _DF.to_excel(full_local_path)
-            else:
-                # see https://github.com/pandas-dev/pandas/issues/10415
-                with open(full_local_path,"w") as f:
-                    f.write(_DF.to_string(index=False,header=True))
-
-            print("wrote %s for future use" % full_local_path)
-        return _DF, return_name
-    else:
-        if dont_fail:
-            return None, return_name
-        else:
-            raise _DF
-
-
-def BW_finder(uniprot_name,
-              format = "%s.xlsx",
-              ref_path=".",
-              try_web_lookup=True,
-              verbose=True,
-              dont_fail=False,
-              write_to_disk=False):
-    xlsxname = format % uniprot_name
-    fullpath = _path.join(ref_path,xlsxname)
-
-    GPCRmd = "https://gpcrdb.org/services/residues/extended"
-    url = "%s/%s" % (GPCRmd, uniprot_name)
-
-    local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
-                                                        usecols=lambda x : x.lower()!="unnamed: 0",
-                                                        converters={"BW": str}).replace({_np.nan: None})
-    web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
-
-    return _finder_writer(fullpath, local_lookup_lambda,
-                          url, _BW_web_lookup,
-                          try_web_lookup=try_web_lookup,
-                          verbose=verbose,
-                          dont_fail=dont_fail,
-                          write_to_disk=write_to_disk)
-
-def _BW_web_lookup(url, verbose=True):
-    r"""
-    Lookup this url for a BW-notation
-    return a ValueError if the lookup retuns an empty json
-    Parameters
-    ----------
-    url
-    verbose
-
-    Returns
-    -------
-
-    """
-    uniprot_name = url.split("/")[-1]
-    a = _requests.get(url)
-    if verbose:
-        print("done!")
-    if a.text == '[]':
-        DFout = ValueError('Contacted %s url sucessfully (no 404),\n'
-                           'but Uniprot name %s yields nothing' % (url, uniprot_name))
-    else:
-        df = _read_json(a.text)
-        mydict = df.T.to_dict()
-        for key, val in mydict.items():
-            try:
-                for idict in val["alternative_generic_numbers"]:
-                    # print(key, idict["scheme"], idict["label"])
-                    val[idict["scheme"]] = idict["label"]
-                val.pop("alternative_generic_numbers")
-                val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
-            except IndexError:
-                pass
-        DFout = _DF.from_dict(mydict, orient="index").replace({_np.nan: None})
-        DFout = DFout[["protein_segment", "AAresSeq",
-                       "BW",
-                       "GPCRdb(A)",
-                       "display_generic_number"]]
-
-    return DFout
-
-#todo document and refactor to better place?
-def md_load_rscb(PDB,
-                 web_address = "https://files.rcsb.org/download",
-                 verbose=False,
-                 return_url=False):
-    r"""
-    Input a PDB code get an :obj:`mdtraj.Trajectory` object
-
-    Parameters
-    ----------
-    PDB : str
-        4-letter PDB code
-    web_address: str, default is "https://files.rcsb.org/download"
-    verbose : bool, default is False
-        Be versose
-    return_url : bool, default is False
-        also Return the actual url that was checked
-
-    Returns
-    -------
-    traj, url
-    """
-    url = '%s/%s.pdb' % (web_address, PDB)
-    if verbose:
-        print(", checking online in \n%s ..." % url, end="")
-    igeom = _md.load_pdb(url)
-    if return_url:
-        return igeom, url
-    else:
-        return igeom
-
-class CGN_transformer(consensus_labeler):
+class LabelerCGN(LabelerConsensus):
     """
     Class to abstract, handle, and use common-Gprotein-nomenclature.
-    See here_ for more info.
-     .. _here: https://www.mrc-lmb.cam.ac.uk/CGN/faq.html
+    See https://www.mrc-lmb.cam.ac.uk/CGN/faq.html for more info.
     """
 
     def __init__(self, ref_PDB,
-                 ref_path='.',
+                 local_path='.',
                  try_web_lookup=True,
                  verbose=True):
         r"""
@@ -543,19 +573,18 @@ class CGN_transformer(consensus_labeler):
         ----------
         ref_PDB: str
             The PDB four letter code that will be used for CGN purposes
-        ref_path: str, default is '.'
-            The local path where these files exist
-             * 3SN6_CGN.txt
-             * 3SN6.pdb
-
+        local_path: str, default is '.'
+            The local path where these files exist, if they exist
+            * 3SN6_CGN.txt (pre-downloaded CGN-type file)
+            * 3SN6.pdb     (pre-downloaded pdb)
         try_web_lookup: bool, default is True
             If the local files are not found, try automatically a web lookup at
-             * www.mrc-lmb.cam.ac.uk (for CGN)
-             * rcsb.org (for the PDB)
+            * www.mrc-lmb.cam.ac.uk (for CGN)
+            * rcsb.org (for the PDB)
         """
 
         self._dataframe, self._CGN_file = CGN_finder(ref_PDB,
-                                                     ref_path=ref_path,
+                                                     local_path=local_path,
                                                      try_web_lookup=try_web_lookup,
                                                      verbose=verbose)
 
@@ -570,17 +599,60 @@ class CGN_transformer(consensus_labeler):
                 print(key)
             #print(key,new_key)
             self._fragments[new_key].append(ires)
-                #print("yes")
         #print(self.fragments)
-        consensus_labeler.__init__(self, ref_PDB=ref_PDB,
-                                   ref_path=ref_path,
-                                   try_web_lookup=try_web_lookup,
-                                   verbose=verbose)
+        LabelerConsensus.__init__(self, ref_PDB=ref_PDB,
+                                  local_path=local_path,
+                                  try_web_lookup=try_web_lookup,
+                                  verbose=verbose)
 
     @property
     def CGN_file(self):
-        r""" CGN_file used for instantiation"""
+        r""" CGN_file used for instantiation.
+        Will be a URL if no local file was found."""
         return self._CGN_file
+
+    #     TODO this is not a good idea, ithink, makes the child of the
+    #     parent class diverge too much, cannot write code guaranteed to
+    #     work
+    #@property
+    #def CGN2AA(self):
+    #    r""" Dictionary with consensus labels as keys, so that
+    #    self.CGN2AA["G.hfs2.2"] -> 'R201'. It is just
+    #     an alias for self.conlab2AA"""
+    #    return self.conlab2AA
+
+    @property
+    def tablefile(self):
+        return self.CGN_file
+
+
+class LabelerBW(LabelerConsensus):
+    """
+    Class to manage Ballesteros-Weinstein notation
+
+    """
+    def __init__(self, uniprot_name,
+                 ref_PDB=None,
+                 local_path=".",
+                 verbose=True,
+                 try_web_lookup=True,
+                 #todo write to disk should be moved to the superclass at some point
+                 write_to_disk=False):
+
+        self._dataframe, __ = BW_finder(uniprot_name,
+                                        local_path=local_path,
+                                        try_web_lookup=try_web_lookup,
+                                        verbose=verbose,
+                                        write_to_disk=write_to_disk
+                                   )
+
+        self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
+        # TODO can we do this using super?
+        LabelerConsensus.__init__(self, ref_PDB,
+                                  ref_path=local_path,
+                                  try_web_lookup=try_web_lookup,
+                                  verbose=verbose)
+
 
 def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
     """
@@ -667,27 +739,6 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
         return guessed_BWs
     else:
         return out_list
-
-
-class BW_transformer(consensus_labeler):
-    """
-    Class to manage Ballesteros-Weinstein notation
-
-    """
-    def __init__(self, uniprot_name,
-                 ref_PDB=None,
-                 ref_path=".",
-                 verbose=True,
-                 try_web_lookup=True,
-                 #todo write to disk should be moved to the superclass at some point
-                 write_to_disk=False):
-
-        self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
-        # TODO can we do this using super?
-        consensus_labeler.__init__(self,ref_PDB,
-                                   ref_path=ref_path,
-                                   try_web_lookup=try_web_lookup,
-                                   verbose=verbose)
 
 def _top2consensus_map(consensus_dict, top,
                        restrict_to_residxs=None,
@@ -896,7 +947,7 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
     top :
         :py:class:`mdtraj.Topology` object
     ref_CGN_tf :
-        :class:`CGN_transformer` object
+        :class:`LabelerCGN` object
     restrict_to_residxs: list, optional, default is None
         residue indexes for which the CGN needs to be found out. Default behaviour is for all
         residues in the :obj:`top`.
@@ -1154,7 +1205,7 @@ def _guess_nomenclature_fragments(CLtf, top, fragments,
     Parameters
     ----------
     CLtf:
-        :class:`consensus_labeler` object
+        :class:`LabelerConsensus` object
     top:
         :py:class:`mdtraj.Topology` object
     fragments :
@@ -1236,40 +1287,41 @@ def order_frags(fragment_names, consensus_labels):
 def order_BW(labels):
     return order_frags("1 12 2 23 3 34 ICL2 4 45 5 56 ICL3 6 67 7 78 8".split(), labels)
 def order_CGN(labels):
-    CGN_fragments = ['G.HN',
-                     'G.hns1',
-                     'G.S1',
-                     'G.s1h1',
-                     'G.H1',
-                     'H.HA',
-                     'H.hahb',
-                     'H.HB',
-                     'H.hbhc',
-                     'H.HC',
-                     'H.hchd',
-                     'H.HD',
-                     'H.hdhe',
-                     'H.HE',
-                     'H.hehf',
-                     'H.HF',
-                     'G.hfs2',
-                     'G.S2',
-                     'G.s2s3',
-                     'G.S3',
-                     'G.s3h2',
-                     'G.H2',
-                     'G.h2s4',
-                     'G.S4',
-                     'G.s4h3',
-                     'G.H3',
-                     'G.h3s5',
-                     'G.S5',
-                     'G.s5hg',
-                     'G.HG',
-                     'G.hgh4',
-                     'G.H4',
-                     'G.h4s6',
-                     'G.S6',
-                     'G.s6h5',
-                     'G.H5']
-    return order_frags(CGN_fragments,labels)
+    return order_frags(_CGN_fragments,labels)
+
+_CGN_fragments = ['G.HN',
+                 'G.hns1',
+                 'G.S1',
+                 'G.s1h1',
+                 'G.H1',
+                 'H.HA',
+                 'H.hahb',
+                 'H.HB',
+                 'H.hbhc',
+                 'H.HC',
+                 'H.hchd',
+                 'H.HD',
+                 'H.hdhe',
+                 'H.HE',
+                 'H.hehf',
+                 'H.HF',
+                 'G.hfs2',
+                 'G.S2',
+                 'G.s2s3',
+                 'G.S3',
+                 'G.s3h2',
+                 'G.H2',
+                 'G.h2s4',
+                 'G.S4',
+                 'G.s4h3',
+                 'G.H3',
+                 'G.h3s5',
+                 'G.S5',
+                 'G.s5hg',
+                 'G.HG',
+                 'G.hgh4',
+                 'G.H4',
+                 'G.h4s6',
+                 'G.S6',
+                 'G.s6h5',
+                 'G.H5']
