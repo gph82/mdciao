@@ -792,6 +792,7 @@ class LabelerBW(LabelerConsensus):
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
 
+'''
 def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
     """
     Estimates the BW for residues which are not present in the nomenclature file.
@@ -877,6 +878,7 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
         return guessed_BWs
     else:
         return out_list
+'''
 
 def _top2consensus_map(consensus_dict, top,
                        restrict_to_residxs=None,
@@ -1078,7 +1080,7 @@ def _fill_BW_gaps(consensus_list, top, verbose=False):
                 print()
     return consensus_list
 
-
+'''
 def top2CGN_by_AAcode(top, ref_CGN_tf,
                       restrict_to_residxs=None,
                       verbose=False):
@@ -1156,11 +1158,16 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
                 print(idx, iCGN, top.residue(idx))
             input("This is the actual return value. Hit enter to continue")
     return list_out
+'''
 
-def _relabel_consensus(idx, consensus_dicts, no_key="NA"):
+def _choose_between_consensus_dicts(idx, consensus_dicts, no_key="NA"):
     """
-    Assigns labels based on the residue index
-    Parameters
+    Choose the best consensus label for a given :obj:`idx` in case
+    there are more than one consensus(es) at play (e.g. BW and CGN).
+
+    Wil raise error if both dictionaries have a consensus label for
+    the same index (unsual case)
+
     ----------
     idx : int
         index for which the relabeling is needed
@@ -1173,7 +1180,7 @@ def _relabel_consensus(idx, consensus_dicts, no_key="NA"):
     Returns
     -------
     string
-        label of the residue idx if present else "NA"
+        label of the residue idx if present else :obj:`no_key`
 
     """
     labels  = [idict[idx] for idict in consensus_dicts]
@@ -1184,6 +1191,7 @@ def _relabel_consensus(idx, consensus_dicts, no_key="NA"):
     except IndexError:
         return no_key
 
+'''
 def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True,
                               tablefile=None,
                               reorder_by_AA_names=False):
@@ -1232,9 +1240,9 @@ def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True,
                 _segment_dict[_shorten_AA(itop.residue(ii))]=iseg_key
         segment_dict = _segment_dict
     return segment_dict
+'''
 
-
-
+'''
 def add_loop_definitions_to_TM_residx_dict(segment_dict, not_present=["ICL3"], start_with='ICL'):
     """
     Adds the intra- and extracellular loop definitions on the existing TM residue index dictionary.
@@ -1289,7 +1297,9 @@ def add_loop_definitions_to_TM_residx_dict(segment_dict, not_present=["ICL3"], s
     if 'H8' in segment_dict:
         out_dict.update({'H8':segment_dict["H8"]})
     return out_dict
+'''
 
+'''
 def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
                         #modifications={"S262":"F264"},
                         reduce_to_resSeq=True):
@@ -1342,6 +1352,7 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
         AA_dict = {key: [int(ival) for ival in val] for key, val in
                    AA_dict.items()}
     return AA_dict
+'''
 
 def _guess_nomenclature_fragments(CLtf, top, fragments,
                                   min_hit_rate=.6,

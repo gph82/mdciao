@@ -18,7 +18,7 @@ from mdciao.fragments import \
     interactive_fragment_picker_by_resSeq as _interactive_fragment_picker_by_resSeq
 
 from mdciao.nomenclature_utils import \
-    _relabel_consensus
+    _choose_between_consensus_dicts
 
 from mdciao.list_utils import iterate_and_inform_lambdas,\
     rangeexpand, \
@@ -626,7 +626,7 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
     for res_idx, quad_dict in quad_dict_by_res_idxs.items():
         angles[res_idx] = []
         for ang_type, iquad in quad_dict.items():
-            consensus_label = _relabel_consensus(res_idx, [BW, CGN])
+            consensus_label = _choose_between_consensus_dicts(res_idx, [BW, CGN])
             fragment_idx =    in_what_fragment(res_idx, fragments)
             idx = next(idx_iter)
             angles[res_idx].append(angle(iquad,

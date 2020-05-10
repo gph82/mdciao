@@ -17,7 +17,7 @@ from mdciao.fragments import \
 
 from mdciao.nomenclature_utils import \
     LabelerCGN, LabelerBW,\
-    _relabel_consensus, _guess_nomenclature_fragments
+    _choose_between_consensus_dicts, _guess_nomenclature_fragments
 
 from mdciao.contacts import \
     select_and_report_residue_neighborhood_idxs, \
@@ -317,7 +317,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         neighborhoods[key] = []
         for idx in val:
             pair = ctc_idxs_small[idx]
-            consensus_labels = [_relabel_consensus(idx, [BW, CGN]) for idx in pair]
+            consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN]) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
             neighborhoods[key].append(ContactPair(pair,
                                                   [itraj[:, idx] for itraj in ctcs_trajs],
@@ -566,7 +566,7 @@ def sites(topology,
         for __ in range(isite["n_bonds"]):
             pair = next(ctc_pairs_iterators)
             idx = next(ctc_value_idx)
-            consensus_labels = [_relabel_consensus(idx, [BW, CGN]) for idx in pair]
+            consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN]) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
             site_as_gc[key].append(ContactPair(pair,
                                                [itraj[:, idx] for itraj in ctcs],
@@ -938,9 +938,9 @@ def interface(
         ifreq = ctc_frequency[idx]
         if ifreq > 0:
             pair = ctc_idxs_receptor_Gprot[idx]
-            consensus_labels = [_relabel_consensus(idx, [BW, CGN], no_key=shorten_AA(refgeom.top.residue(idx),
-                                                                                     substitute_fail=0,
-                                                                                     keep_index=True)) for idx in pair]
+            consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN], no_key=shorten_AA(refgeom.top.residue(idx),
+                                                                                                  substitute_fail=0,
+                                                                                                  keep_index=True)) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
             ctc_objs.append(ContactPair(pair,
                                         [itraj[:, idx] for itraj in ctcs],

@@ -473,6 +473,29 @@ class Test_intersecting_fragments(unittest.TestCase):
                                                             keep_all=True)
         _np.testing.assert_array_equal(_np.arange(3,9),result)
 
+class Test_choose_between_consensus_dicts(unittest.TestCase):
+
+    def test_works(self):
+        str = nomenclature_utils._choose_between_consensus_dicts(1,
+                                                                 [{1:"BW1"},
+                                                                  {1:None}])
+        assert str=="BW1"
+
+    def test_not_found(self):
+        str = nomenclature_utils._choose_between_consensus_dicts(1,
+                                                                 [{1: None},
+                                                                  {1: None}],
+                                                                 no_key="NAtest")
+        assert str == "NAtest"
+
+    def test_raises(self):
+        with pytest.raises(AssertionError):
+            nomenclature_utils._choose_between_consensus_dicts(1,
+                                                               [{1: "BW1"},
+                                                                {1: "CGN1"}],
+                                                              )
+
+
 @unittest.skip("The tested method appears to be unused")
 class Test_guess_missing_BWs(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
@@ -523,6 +546,7 @@ class Test_map2defs(unittest.TestCase):
         assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
         assert (_np.array_equal(map2defs['5'], [3]))
 
+@unittest.skip("This method appears unused at the moment")
 class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
     def setUp(self):
         self.segment_dict = {'TM1': [20, 21, 22], 'TM2': [30, 33, 34], 'TM3': [40, 48], 'TM4': [50, 56],
@@ -535,20 +559,6 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
         self.assertEqual(add_defs['ICL2'], [49, 49])
         self.assertEqual(add_defs['ECL2'], [57, 59])
         self.assertEqual(add_defs['ECL3'], [71, 79])
-
-#
-# class Test_table2TMdefs_resSeq(unittest.TestCase):
-#TODO test to be completed after clarifying from Guillermo
-
-#     def setUp(self):
-#         self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
-#
-#     def table2TMdefs_resSeq_just_works(self):
-#         table2TMdefs = table2TMdefs_resSeq(tablefile=self.file, return_defs=True)
-
-# class Test_csv_table2TMdefs_res_idxs(unittest.TestCase):
-# #TODO test to be completed after clarifying from Guillermo
-
 
 class Test_top2consensus_map(unittest.TestCase):
     #TODO add test for special case restrict_to_residxs
@@ -606,7 +616,6 @@ class Test_fill_BW_gaps(unittest.TestCase):
     def test_fill_BW_gaps_just_works(self):
         fill_bw = nomenclature_utils._fill_BW_gaps(self.cons_list_in, self.geom.top)
         self.assertEqual(fill_bw,self.cons_list_out)
-
 
 if __name__ == '__main__':
     unittest.main()
