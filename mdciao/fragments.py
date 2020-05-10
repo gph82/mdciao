@@ -22,8 +22,8 @@ def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
     Parameters
     ----------
-    frag_idx: int
-        Index of the fragment to be printed
+    frag_idx: int or str
+        Index or name of the fragment to be printed
     top: :obj:`mdtraj.Topology`
         Topology in which the fragment appears
     fragment: iterable of indices
