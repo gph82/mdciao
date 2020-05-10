@@ -1,10 +1,21 @@
 import numpy as _np
-from .residue_and_atom_utils import find_AA
-from .bond_utils import top2residue_bond_matrix
-from .list_utils import in_what_N_fragments as _in_what_N_fragments, join_lists as _join_lists
+
+from .residue_and_atom_utils \
+    import find_AA
+
+from .bond_utils import \
+    top2residue_bond_matrix
+
+from .list_utils import \
+    in_what_N_fragments as _in_what_N_fragments, \
+    join_lists as _join_lists
+
+from .str_and_dict_utils import \
+    choose_between_good_and_better_strings as _choose_between_good_and_better_strings
 abc = "abcdefghijklmnopqrst"
 
 def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
+                idx2label=None,
                 return_string=False, **print_kwargs):
     """
     For pretty-printing of fragments of an :obj:`mtraj.topology`
@@ -19,6 +30,8 @@ def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
         The fragment in question, with zero-indexed residue indices
     fragment_desc: str, default is "fragment"
         Who to call the fragments, e.g. segment, block, monomer, chain
+    idx2label : iterable or dictionary
+        Pass along any consensus labels here
     return_string: bool, default is False
         Instead of printing, return the string
     print_kwargs:
@@ -29,13 +42,20 @@ def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
     None or str, see return_string option
 
     """
+    maplabel_first, maplabel_last = "", ""
     try:
-        istr = "%s %6s with %3u AAs %7s(%4u)-%-7s(%-4u) (%s) " % (fragment_desc, str(frag_idx), len(fragment),
-                                                                   top.residue(fragment[0]),
-                                                                   top.residue(fragment[0]).index,
-                                                                   top.residue(fragment[-1]),
-                                                                   top.residue(fragment[-1]).index,
-                                                                   str(frag_idx))
+        if idx2label is not None:
+            maplabel_first = _choose_between_good_and_better_strings(None,idx2label[fragment[0]],fmt="@%s")
+            maplabel_last =  _choose_between_good_and_better_strings(None,idx2label[fragment[-1]],fmt="@%s")
+
+        resfirst = "%7s%s"%(top.residue(fragment[0]), maplabel_first)
+        reslast =  "%7s%s"%(top.residue(fragment[-1]), maplabel_last)
+        istr = "%s %6s with %3u AAs %s(%4u)-%-s(%-4u) (%s) " % (fragment_desc, str(frag_idx), len(fragment),
+                                                                resfirst,
+                                                                top.residue(fragment[0]).index,
+                                                                reslast,
+                                                                top.residue(fragment[-1]).index,
+                                                                str(frag_idx))
     except:
         print(fragment)
         raise

@@ -44,6 +44,14 @@ class Test_print_fragments(unittest.TestCase):
         assert isinstance(_print_frag(0, self.geom.top, self.fragments[0],
                                       return_string=True), str)
 
+    def test_uses_labels(self):
+        outstr = _print_frag(0, self.geom.top, self.fragments[0],
+                             return_string=True,
+                             idx2label={self.fragments[0][0 ]:"labelfirst",
+                                        self.fragments[0][-1]:"labellast"})
+        assert "@labelfirst" in outstr
+        assert "@labellast"  in outstr
+
 class Test_get_fragments_methods(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.file_for_test_pdb)
