@@ -1,14 +1,32 @@
 import mdtraj as _md
 import numpy as _np
-from .residue_and_atom_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
-from .sequence_utils import alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, _my_bioalign
-from pandas import DataFrame as _DF, read_json as _read_json, read_excel as _read_excel
-from collections import defaultdict as _defdict
-from os import path as _path
-import requests as _requests
-from .list_utils import rangeexpand as _rangeexpand
+from .residue_and_atom_utils import \
+    int_from_AA_code as _int_from_AA_code, \
+    shorten_AA as _shorten_AA
 
-from pandas import read_csv as _read_csv, DataFrame as _DataFrame
+from mdciao.list_utils import \
+    in_what_fragment,\
+    rangeexpand as _rangeexpand
+
+from mdciao.fragments import \
+    _print_frag
+
+from .sequence_utils import \
+    alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, \
+    _my_bioalign
+
+from pandas import \
+    read_json as _read_json, \
+    read_excel as _read_excel, \
+    read_csv as _read_csv, \
+    DataFrame as _DataFrame, \
+    unique as _pandas_unique
+
+from collections import defaultdict as _defdict
+
+from os import path as _path
+
+import requests as _requests
 
 def table2BW_by_AAcode(tablefile,
                        keep_AA_code=True,
@@ -291,7 +309,7 @@ def _BW_web_lookup(url, verbose=True):
                 val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
             except IndexError:
                 pass
-        DFout = _DF.from_dict(mydict, orient="index").replace({_np.nan: None})
+        DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
         DFout = DFout[["protein_segment", "AAresSeq",
                        "BW",
                        "GPCRdb(A)",
@@ -439,6 +457,52 @@ class LabelerConsensus(object):
                       restrict_to_residxs=None,
                       map=None,
                       keep_consensus=False):
+        r"""
+        Returns a dictionary keyed by consensus labels and valued
+        by residue indices of the input topology in :obj:`top`.
+
+        The default behaviour is to internally align :obj:`top`
+        with :obj:`self.top` on the fly using :obj:`_top2consensus_map`
+
+
+        Note
+        ----
+        This method is able to work with a new topology every
+        time, performing a sequence alginment every call.
+        The intention is to instantiate a
+        :obj:`LabelerConsensus` jus one time and use it with as
+        many topologies as you like without changing any attribute
+        of :obj:`self`.
+
+        HOWEVER, if you know what you are doing, you can provide a
+        list of consensus labels yourself using :obj:`map`. Then,
+        this method is nothing but a table lookup (almost)
+
+        Warning
+        -------
+        No checks are performed to see if the input of :obj:`map`
+        actually matches the residues of :obj:`top in any way,
+        so that the output can be rubbish and go unnoticed.
+
+
+        Parameters
+        ----------
+        top : :obj:`mdtraj.Topology`
+        restrict_to_residxs : iterable of indices, default is None
+            Align using only these indices, see :obj:`_top2consensus_map`
+            for more info. Has no effect if :obj:`map` is None
+        map : list, default is None
+            A pre-computed residx2consensuslabel map, i.e. the
+            output of a previous, external call to :obj:`_top2consensus_map`
+            If it contains duplicates, it is a malformed list.
+            See the note above for more info
+
+        keep_consensus : bool, default is False
+            Wheater to autofill consensus labels on the fly
+        Returns
+        -------
+        dict : keyed by consensus labels and valued with residue idxs???
+        """
         if map is None:
             map = _top2consensus_map(self.AA2conlab, top,
                                      restrict_to_residxs=restrict_to_residxs,
@@ -446,14 +510,43 @@ class LabelerConsensus(object):
         out_dict = {}
         for ii,imap in enumerate(map):
             if imap is not None:
-                out_dict[imap]=ii
+                if imap in out_dict.keys():
+                    raise ValueError("Entries %u and %u of the map, "
+                                     "i.e. residues %s and %s of the input topology "
+                                     "both have the same label %s.\n"
+                                     "This method cannot work with a map like this!"%(out_dict[imap], ii,
+                                                                                     top.residue(out_dict[imap]),
+                                                                                     top.residue(ii),
+                                                                                     imap))
+                else:
+                    out_dict[imap]=ii
         return out_dict
 
     def top2map(self, top, restrict_to_residxs=None, fill_gaps=False,
                 verbose=False):
-        r""" Align the sequence of :obj:`top` to the transformer's sequence
-        and return a list of BW numbering for each residue in :obj:`top`.
-        If no BW numbering is found after the alignment, the entry will be None
+        r""" Align the sequence of :obj:`top` to the sequence used
+        to initialize this :obj:`LabelerConsensus` and return a
+        list list of consenus labels for each residue in :obj:`top`.
+
+        The if a consensus label is returned as None it means one
+        of two things:
+            * this position was sucessfully aligned with a
+             match but the data used to initialize this
+             :obj:`ConsensusLabeler` did not contain a label
+
+            * this position has a label in the original data
+            but the sequence alignment is not matched (e.g.,
+            bc of a point mutation)
+
+        A heuristic to "autofill" the second case can be
+        turned on using :obj:`fill_gaps`, see :obj:`_fill_CGN_gaps`
+        for more info
+
+        Note
+        ----
+        This method simply wraps around :obj:`_top2consensus_map`
+        using the object's own data, see the doc on that method
+        for more info.
 
         Parameters
         ----------
@@ -468,8 +561,9 @@ class LabelerConsensus(object):
 
         Returns
         -------
-        map : list of len = top.n_residues with the BW numbering entries
+        map : list of len = top.n_residues with the consensus labels
         """
+
         return _top2consensus_map(self.AA2conlab, top,
                                   restrict_to_residxs=restrict_to_residxs,
                                   keep_consensus=fill_gaps,
@@ -482,8 +576,11 @@ class LabelerConsensus(object):
                  fill_gaps=False,
                  ):
         r"""
-        Print the BW transformer's definitions for the subdomains,
+        Prints the definitions of subdomains that the
+        consenus nomenclature contains and map it out
         in terms of residue indices of the input :obj:`top`
+
+        Does not return anything unless explicitly asked to.
 
         Parameters
         ----------
@@ -492,15 +589,35 @@ class LabelerConsensus(object):
         map:  list, default is None
             The user can parse an exisiting "top2map" map, otherwise this
             method will generate one on the fly. It is recommended (but
-            not needed) to pre-compute and pass such a map in critical
-            cases when naming errors are likely.
+            not needed) to pre-compute and pass such a map cases where:
+            * the user is sure that the map is the same every time
+            the method gets called.
+            * the on-the-fly creation of the map slows down the workflow
+            * in critical cases when alignment is poor and
+            naming errors are likely
         return_defs: boolean, default is False
             If True, apart from printing the definitions,
             they are returned as a dictionary
         fragments: iterable of integers, default is None
-            The user can parse an existing list of fragment-definitions,
-            to check whether these definitions are broken in the new ones.
-            An interactive prompt will appear in this case
+            The user can parse an existing list of fragment-definitions
+            (via residue idxs) to check if newly found, consensus
+            definitions (:obj:`defs`) clash with the input in :obj:`fragments`.
+            *Clash* means that the consensus definitions span over (=cross over?)
+            the definitions in :obj:`fragments`.
+
+            An interactive prompt will ask the user which fragments to
+            keep
+
+            Example
+            -------
+            In other words, the consensus definitions cannot
+            contain more than one of the :obj:`fragments`:
+            * defs["TM6"] = [1,2,3,4] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
+            is not a clash, bc TM6 is contained in fragments[0]
+            * defs["TM6"] = [0,1,2,3] and :obj:`fragments`=[[0,1],[2,3,4,5,6,7,8]]
+            is a clash. In this case the user will be prompted to choose
+            which fragments to keep in "TM6" (0 or 1). The answer cannot be both.
+
         fill_gaps: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
             :obj:`_fill_CGN_gaps`. It has no effect if the user inputs
@@ -511,8 +628,6 @@ class LabelerConsensus(object):
         defs : dictionary (if return_defs is True)
             Dictionary with subdomain names as keys and lists of indices as values
         """
-        from mdciao.list_utils import in_what_fragment
-        from mdciao.fragments import _print_frag
 
         if map is None:
             print("creating a temporary map, this is dangerous")
@@ -524,18 +639,33 @@ class LabelerConsensus(object):
             for iBW in ifrag:
                 if iBW in conlab2residx.keys():
                     defs[key].append(conlab2residx[iBW])
-
+        defs = {key:val for key,val in defs.items()}
         new_defs = {}
         for ii, (key, val) in enumerate(defs.items()):
-            istr = _print_frag(key, top, val, fragment_desc='', return_string=True)
             if fragments is not None:
+                # TODO this should be its own method
+                # Get the fragment idxs of all residues in this fragment
                 ifrags = [in_what_fragment(idx, fragments) for idx in val]
-                if ifrags[0]!=ifrags[-1]:
+                # This only happens if more than one fragment is present
+                frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
+                if len(frag_cands)>1:
+                    _print_frag(key, top, val, fragment_desc='')
+                    print("The range %s to %s contains more than one fragment:" % (map[val[0]], map[val[-1]]))
                     #todo AVOID ASKING THE USER
-                    print(istr, '%s-%s' % (map[val[0]], map[val[-1]]))
-                    answr = input("more than 1 fragments present. Input the ones to keep %s" % (_np.unique(ifrags)))
+                    for jj in frag_cands:
+                        istr = _print_frag(jj,top, fragments[jj], fragment_desc=" input fragment",
+                                           return_string=True)
+                        #print(istr)
+                        n_in_fragment = len(_np.intersect1d(val,fragments[jj]))
+                        if n_in_fragment<len(fragments[jj]):
+                            istr += "%u residues outside %s"%(len(fragments[jj])-n_in_fragment,key)
+                        print(istr)
+                    answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):"%key)
                     answr = _rangeexpand(answr)
-                    tokeep = [idx for ii, idx in enumerate(val) if ifrags[ii] in answr]
+                    assert all([idx in ifrags for idx in answr])
+                    tokeep = _np.hstack([idx for ii, idx in enumerate(val) if ifrags[ii] in answr]).tolist()
+                    if len(tokeep)>=len(ifrags):
+                        raise ValueError("Cannot keep these fragments %s!"%(str(answr)))
                     new_defs[key] = tokeep
 
         for key, val in new_defs.items():
@@ -544,7 +674,6 @@ class LabelerConsensus(object):
         for ii, (key, val) in enumerate(defs.items()):
             istr = _print_frag(key, top, val, fragment_desc='', return_string=True)
             print(istr)
-
         if return_defs:
             return {key:val for key, val in defs.items()}
 
@@ -627,7 +756,6 @@ class LabelerBW(LabelerConsensus):
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
-
 
 def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
     """
@@ -722,10 +850,14 @@ def _top2consensus_map(consensus_dict, top,
                        ):
     r"""
     Align the sequence of :obj:`top` to consensus
-    dictionary's sequence (typically CGN_tf.AA2CGN))
+    dictionary's sequence (typically in :obj:`ContactLabeler.AA2conlab`))
     and return a list of consensus numbering for each residue
-     in :obj:`top`. If no consensus numbering
-    is found after the alignment, the entry will be None
+     in :obj:`top`.
+
+    For the alignment details see :obj:`my_Bioalign`
+
+    If no consensus numbering
+    is found after the alignment, the residues entry will be None
 
     Parameters
     ----------
@@ -735,6 +867,10 @@ def _top2consensus_map(consensus_dict, top,
         :py:class:`mdtraj.Topology` object
     restrict_to_residxs: iterable of integers, default is None
         Use only these residues for alignment and labelling purposes
+        Helps "guide" the alignment method. E.g., one might be
+        passing an Ballesteros-Weinstein in :obj:`consensus_dict` but
+        the topology also contains the whole G-protein. If available,
+        one can pass here the indices of residues of the receptor
     keep_consensus : boolean default is False
         Even if there is a consensus mismatch with the sequence of the input
         :obj:`consensus_dict`, try to relabel automagically, s.t.
@@ -748,7 +884,7 @@ def _top2consensus_map(consensus_dict, top,
     Returns
     -------
     map : list
-        list of length top.n_residues containing CGN numberings
+        list of length top.n_residues containing consensus labels
     """
 
     if restrict_to_residxs is None:
@@ -762,7 +898,7 @@ def _top2consensus_map(consensus_dict, top,
                                                    [_int_from_AA_code(key) for key in consensus_dict],
                                                    verbose=verbose
                                                    )
-    alignment = _DF(alignment)
+    alignment = _DataFrame(alignment)
     alignment = alignment[alignment["match"] == True]
     out_list = [None for __ in top.residues]
     for idx, resSeq, AA in alignment[["idx_0","idx_1", "AA_1"]].values:

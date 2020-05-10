@@ -6,12 +6,12 @@ from tempfile import TemporaryDirectory as _TDir
 from urllib.error import HTTPError
 from shutil import copy
 
-from mdciao.sequence_utils import print_verbose_dataframe
 import pytest
 from mdciao import nomenclature_utils
 from mdciao.nomenclature_utils import *
-from mdciao.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps, _fill_BW_gaps
 from filenames import filenames
+
+import mock
 
 from pandas import DataFrame
 
@@ -31,6 +31,7 @@ class Test_md_load_rscb(unittest.TestCase):
                                                     )
         assert isinstance(geom, md.Trajectory)
         assert isinstance(url, str)
+        assert "http" in url
 
 class Test_PDB_finder(unittest.TestCase):
 
@@ -64,6 +65,7 @@ class Test_CGN_finder(unittest.TestCase):
 
     def test_works_locally(self):
         df, filename = nomenclature_utils.CGN_finder("3SN6",
+                                                     try_web_lookup=False,
                                                      local_path=test_filenames.examples_path)
 
         assert isinstance(df, DataFrame)
@@ -113,6 +115,7 @@ class Test_CGN_finder(unittest.TestCase):
             copy(infile,tdir)
             with pytest.raises(FileExistsError):
                 nomenclature_utils.CGN_finder("3SN6",
+                                              try_web_lookup=False,
                                               local_path=tdir,
                                               format="%s.txt",
                                               write_to_disk=True
@@ -152,6 +155,7 @@ class Test_GPCRmd_lookup_BW(unittest.TestCase):
     def test_works(self):
         DF = nomenclature_utils._BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
         assert isinstance(DF, DataFrame)
+
     def test_wrong_code(self):
         with pytest.raises(ValueError):
             raise nomenclature_utils._BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
@@ -160,6 +164,7 @@ class Test_BW_finder(unittest.TestCase):
 
     def test_works_locally(self):
         df, filename = nomenclature_utils.BW_finder("B2AR",
+                                                    try_web_lookup=False,
                                                     format="GPCRmd_%s_nomenclature_test.xlsx",
                                                     local_path=test_filenames.test_data_path)
 
@@ -252,13 +257,14 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                               'V67': '2.38'
                               })
 
-class Test_LabelerCGN(unittest.TestCase):
+class TestLabelerCGN(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
         self._geom_3SN6 = md.load(path.join(test_filenames.examples_path,
                                             "3SN6.pdb.gz"))
         self.cgn_local = LabelerCGN("3SN6",
+                                    try_web_lookup=False,
                                local_path=test_filenames.examples_path)
     def test_correct_files(self):
 
@@ -303,7 +309,65 @@ class Test_LabelerCGN(unittest.TestCase):
         self.assertSequenceEqual(self.cgn_local.fragment_names,
                                  list(self.cgn_local.fragments.keys()))
 
-class Test_LabelerBW_no_pdb(unittest.TestCase):
+    def test_conlab2residx_wo_input_map(self):
+        # More than anthing, this is testing _top2consensus_map
+        # I know this a priori using find_AA
+        out_dict = self.cgn_local.conlab2residx(self.cgn_local.top)
+        self.assertEqual(out_dict["G.hfs2.2"], 164)
+
+    def test_conlab2residx_w_input_map(self):
+        # This should find R201 no problem
+
+        map = [None for ii in range(200)]
+        map[164] = "G.hfs2.2"
+        out_dict = self.cgn_local.conlab2residx(self.cgn_local.top,map=map)
+        self.assertEqual(out_dict["G.hfs2.2"],164)
+
+    def test_conlab2residx_w_input_map_duplicates(self):
+        map = [None for ii in range(200)]
+        map[164] = "G.hfs2.2"  # I know this a priori using find_AA
+        map[165] = "G.hfs2.2"
+        with pytest.raises(ValueError):
+            self.cgn_local.conlab2residx(self.cgn_local.top, map=map)
+
+    def test_top2map_just_passes(self):
+        # the true test of this is in the test of _top2consensus_map
+        self.cgn_local.top2map(self.cgn_local.top)
+
+    def test_top2defs_returns_all_keys(self):
+        defs = self.cgn_local.top2defs(self.cgn_local.top, return_defs=True)
+        self.assertSequenceEqual(list(defs.keys()),
+                                 nomenclature_utils._CGN_fragments)
+
+    def test_top2defs_defs_are_broken_in_frags(self):
+
+        input_values = (val for val in ["0-1"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            defs = self.cgn_local.top2defs(self.cgn_local.top,
+                                           return_defs=True,
+                                           fragments=[_np.arange(0,10),
+                                                      _np.arange(10,15),
+                                                      _np.arange(15,20)
+                                                      ]
+                                           )
+            self.assertSequenceEqual(list(defs.keys()),
+                                     nomenclature_utils._CGN_fragments)
+            _np.testing.assert_array_equal(defs["G.HN"],_np.arange(0,15))
+
+
+    def test_top2defs_defs_are_broken_in_frags_bad_input(self):
+        input_values = (val for val in ["0-2"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
+            with pytest.raises(ValueError):
+                self.cgn_local.top2defs(self.cgn_local.top,
+                                        return_defs=True,
+                                           fragments=[_np.arange(0, 10),
+                                                      _np.arange(10, 15),
+                                                      _np.arange(15, 40)]
+                                           )
+
+
+class TestLabelerbwNoPdb(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
@@ -318,7 +382,7 @@ class Test_LabelerBW_no_pdb(unittest.TestCase):
         _np.testing.assert_equal(self.BW_local_no_pdb.ref_PDB,
                                  None)
 
-class Test_LabelerBW_w_pdb(unittest.TestCase):
+class TestLabelerbwWPdb(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
@@ -391,6 +455,7 @@ class Test_guess_missing_BWs(unittest.TestCase):
                               6: '1.28*',
                               7: '1.28*'})
 
+@unittest.skip("The tested method appears to be unused")
 class Test_top2CGN_by_AAcode(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
     def setUp(self):
@@ -415,7 +480,7 @@ class Test_map2defs(unittest.TestCase):
         self.cons_list =  ['3.67','G.H5.1','G.H5.6','5.69']
 
     def test_map2defs_just_works(self):
-        map2defs = _map2defs(self.cons_list)
+        map2defs = nomenclature_utils._map2defs(self.cons_list)
         assert (_np.array_equal(map2defs['3'], [0]))
         assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
         assert (_np.array_equal(map2defs['5'], [3]))
@@ -459,7 +524,7 @@ class Test_top2consensus_map(unittest.TestCase):
                                          'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
 
     def test_top2consensus_map_just_works(self): #generally works
-        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top)
+        cons_list = nomenclature_utils._top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top)
 
         count = 1
         cons_list_out = []
@@ -474,7 +539,7 @@ class Test_top2consensus_map(unittest.TestCase):
     def test_top2consensus_map_keep_consensus_is_true(self):
         #In the output below, instead of None, None, it will be 'G.hfs2.4' and 'G.hfs2.5'
         # ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', None, None, 'G.hfs2.6', 'G.hfs2.7']
-        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top, keep_consensus=True)
+        cons_list = nomenclature_utils._top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top, keep_consensus=True)
         cons_list_out = []
 
         for ii, val in enumerate(cons_list):
@@ -491,7 +556,7 @@ class Test_fill_CGN_gaps(unittest.TestCase):
                                          'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
 
     def test_fill_CGN_gaps_just_works(self):
-        fill_cgn = _fill_CGN_gaps(self.cons_list_in, self.geom.top)
+        fill_cgn = nomenclature_utils._fill_CGN_gaps(self.cons_list_in, self.geom.top)
         self.assertEqual(fill_cgn,self.cons_list_out)
 
 class Test_fill_BW_gaps(unittest.TestCase):
@@ -501,7 +566,7 @@ class Test_fill_BW_gaps(unittest.TestCase):
         self.cons_list_out = ['1.25', '1.26', '1.27', '1.28']
 
     def test_fill_BW_gaps_just_works(self):
-        fill_bw = _fill_BW_gaps(self.cons_list_in, self.geom.top)
+        fill_bw = nomenclature_utils._fill_BW_gaps(self.cons_list_in, self.geom.top)
         self.assertEqual(fill_bw,self.cons_list_out)
 
 
