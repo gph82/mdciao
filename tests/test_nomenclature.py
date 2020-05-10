@@ -266,6 +266,7 @@ class TestLabelerCGN(unittest.TestCase):
         self.cgn_local = LabelerCGN("3SN6",
                                     try_web_lookup=False,
                                local_path=test_filenames.examples_path)
+
     def test_correct_files(self):
 
 
@@ -273,6 +274,7 @@ class TestLabelerCGN(unittest.TestCase):
                                  path.join(test_filenames.examples_path,"CGN_3SN6.txt"))
         _np.testing.assert_equal(self.cgn_local.ref_PDB,
                                  "3SN6")
+
     def test_mdtraj_attributes(self):
         pass
         #_np.testing.assert_equal(cgn_local.geom,
@@ -280,6 +282,7 @@ class TestLabelerCGN(unittest.TestCase):
 
         #_np.testing.assert_equal(cgn_local.top,
         #                         self._geom_3SN6.top)
+
     def test_dataframe(self):
         self.assertIsInstance(self.cgn_local.dataframe, DataFrame)
         self.assertSequenceEqual(list(self.cgn_local.dataframe.keys()),
@@ -354,7 +357,6 @@ class TestLabelerCGN(unittest.TestCase):
                                      nomenclature_utils._CGN_fragments)
             _np.testing.assert_array_equal(defs["G.HN"],_np.arange(0,15))
 
-
     def test_top2defs_defs_are_broken_in_frags_bad_input(self):
         input_values = (val for val in ["0-2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
@@ -367,7 +369,7 @@ class TestLabelerCGN(unittest.TestCase):
                                            )
 
 
-class TestLabelerbwNoPdb(unittest.TestCase):
+class TestLabelerBWwoPDB(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
@@ -382,7 +384,7 @@ class TestLabelerbwNoPdb(unittest.TestCase):
         _np.testing.assert_equal(self.BW_local_no_pdb.ref_PDB,
                                  None)
 
-class TestLabelerbwWPdb(unittest.TestCase):
+class TestLabelerBWwPDB(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
@@ -405,6 +407,7 @@ class TestLabelerbwWPdb(unittest.TestCase):
 
         # _np.testing.assert_equal(cgn_local.top,
         #                         self._geom_3SN6.top)
+
     def test_dataframe(self):
         self.assertIsInstance(self.BW_local_w_pdb.dataframe, DataFrame)
         self.assertSequenceEqual(list(self.BW_local_w_pdb.dataframe.keys()),
@@ -430,12 +433,47 @@ class TestLabelerbwWPdb(unittest.TestCase):
                                  ["TM1", "ICL1", "TM2"])
         self.assertEqual(self.BW_local_w_pdb.fragments_as_conlabs["TM1"][0], "1.25")
 
-
     def test_correct_fragment_names(self):
         self.assertSequenceEqual(self.BW_local_w_pdb.fragment_names,
                                  list(self.BW_local_w_pdb.fragments.keys()))
 
+class Test_intersecting_fragments(unittest.TestCase):
 
+    def setUp(self):
+        self.fragments = [_np.arange(0,5),
+                          _np.arange(5,10),
+                          _np.arange(10,15)
+                          ]
+        self.top = md.load(test_filenames.prot1_pdb).top
+        self.map_conlab = ["%u_%s"%(rr.index,str(rr)) for rr in self.top.residues]
+
+    def test_no_clashes(self):
+        result = nomenclature_utils._intersecting_fragments([6,7,8],
+                                                            "test_frag",
+                                                            self.fragments,
+                                                            self.top,
+                                                            )
+        _np.testing.assert_array_equal(result, [6,7,8])
+
+    def test_clashes(self):
+        input_values = (val for val in ["0"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
+            result = nomenclature_utils._intersecting_fragments(_np.arange(3,9),
+                                                            "test_frag",
+                                                            self.fragments,
+                                                            self.top,
+                                                            )
+            _np.testing.assert_array_equal(result,[3,4])
+
+    def test_clashes_keeps_all(self):
+        result = nomenclature_utils._intersecting_fragments(_np.arange(3, 9),
+                                                            "test_frag",
+                                                            self.fragments,
+                                                            self.top,
+                                                            keep_all=True)
+        _np.testing.assert_array_equal(_np.arange(3,9),result)
+
+@unittest.skip("The tested method appears to be unused")
 class Test_guess_missing_BWs(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
     def setUp(self):

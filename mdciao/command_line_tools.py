@@ -833,7 +833,7 @@ def interface(
     if str(BW_uniprot).lower() != 'none':
         print("INFO: these are the BW fragments mapped onto your topology")
         fragment_defs.update(BWtf.top2defs(refgeom.top,
-                                           map=BW,
+                                           map_conlab=BW,
                                            fragments=fragments,
                                            return_defs=True))
         if interactive:
@@ -844,7 +844,7 @@ def interface(
     if str(CGN_PDB).lower() != 'none':
         print("INFO: these are the CGN fragments mapped onto your topology")
         fragment_defs.update(CGNtf.top2defs(refgeom.top,
-                                            map=CGN,
+                                            map_conlab=CGN,
                                             fragments=fragments,
                                             return_defs=True))
         if interactive:

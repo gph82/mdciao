@@ -124,7 +124,7 @@ def PDB_finder(PDB_code, local_path='.',
             return_file = file2read
         except (OSError, FileNotFoundError):
             if verbose:
-                print("No local PDB file for %s found" % PDB_code, end="")
+                print("No local PDB file for %s found in directory %s" % (PDB_code, local_path), end="")
             if try_web_lookup:
                 _geom, return_file = md_load_rscb(PDB_code,
                                                   verbose=verbose,
@@ -570,7 +570,7 @@ class LabelerConsensus(object):
                                   verbose=verbose,
                                   )
 
-    def top2defs(self, top, map=None,
+    def top2defs(self, top, map_conlab=None,
                  return_defs=False,
                  fragments=None,
                  fill_gaps=False,
@@ -586,8 +586,9 @@ class LabelerConsensus(object):
         ----------
         top:
             :py:class:`mdtraj.Topology` object
-        map:  list, default is None
-            The user can parse an exisiting "top2map" map, otherwise this
+        map_conlab:  list, default is None
+            The user can parse an existing map of residue idxs to
+            consensus labels. Otherwise this
             method will generate one on the fly. It is recommended (but
             not needed) to pre-compute and pass such a map cases where:
             * the user is sure that the map is the same every time
@@ -602,21 +603,13 @@ class LabelerConsensus(object):
             The user can parse an existing list of fragment-definitions
             (via residue idxs) to check if newly found, consensus
             definitions (:obj:`defs`) clash with the input in :obj:`fragments`.
-            *Clash* means that the consensus definitions span over (=cross over?)
-            the definitions in :obj:`fragments`.
+            *Clash* means that the consensus definitions span over more
+            than one of the fragments in defined in :obj:`fragments`.
 
             An interactive prompt will ask the user which fragments to
-            keep
+            keep in case of clashes.
 
-            Example
-            -------
-            In other words, the consensus definitions cannot
-            contain more than one of the :obj:`fragments`:
-            * defs["TM6"] = [1,2,3,4] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
-            is not a clash, bc TM6 is contained in fragments[0]
-            * defs["TM6"] = [0,1,2,3] and :obj:`fragments`=[[0,1],[2,3,4,5,6,7,8]]
-            is a clash. In this case the user will be prompted to choose
-            which fragments to keep in "TM6" (0 or 1). The answer cannot be both.
+            Check :obj:`_intersecting_fragments` for more info
 
         fill_gaps: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
@@ -629,11 +622,11 @@ class LabelerConsensus(object):
             Dictionary with subdomain names as keys and lists of indices as values
         """
 
-        if map is None:
-            print("creating a temporary map, this is dangerous")
-            map = self.top2map(top, fill_gaps=fill_gaps, verbose=False)
+        if map_conlab is None:
+            print("creating a temporary map_conlab, this is dangerous")
+            map_conlab = self.top2map(top, fill_gaps=fill_gaps, verbose=False)
 
-        conlab2residx = self.conlab2residx(top, map=map)
+        conlab2residx = self.conlab2residx(top, map=map_conlab)
         defs = _defdict(list)
         for key, ifrag in self.fragments_as_conlabs.items():
             for iBW in ifrag:
@@ -641,42 +634,84 @@ class LabelerConsensus(object):
                     defs[key].append(conlab2residx[iBW])
         defs = {key:val for key,val in defs.items()}
         new_defs = {}
-        for ii, (key, val) in enumerate(defs.items()):
+        for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
-                # TODO this should be its own method
-                # Get the fragment idxs of all residues in this fragment
-                ifrags = [in_what_fragment(idx, fragments) for idx in val]
-                # This only happens if more than one fragment is present
-                frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
-                if len(frag_cands)>1:
-                    _print_frag(key, top, val, fragment_desc='')
-                    print("The range %s to %s contains more than one fragment:" % (map[val[0]], map[val[-1]]))
-                    #todo AVOID ASKING THE USER
-                    for jj in frag_cands:
-                        istr = _print_frag(jj,top, fragments[jj], fragment_desc=" input fragment",
-                                           return_string=True)
-                        #print(istr)
-                        n_in_fragment = len(_np.intersect1d(val,fragments[jj]))
-                        if n_in_fragment<len(fragments[jj]):
-                            istr += "%u residues outside %s"%(len(fragments[jj])-n_in_fragment,key)
-                        print(istr)
-                    answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):"%key)
-                    answr = _rangeexpand(answr)
-                    assert all([idx in ifrags for idx in answr])
-                    tokeep = _np.hstack([idx for ii, idx in enumerate(val) if ifrags[ii] in answr]).tolist()
-                    if len(tokeep)>=len(ifrags):
-                        raise ValueError("Cannot keep these fragments %s!"%(str(answr)))
-                    new_defs[key] = tokeep
+                new_defs[key] = _intersecting_fragments(res_idxs,key,fragments,top, map_conlab)
 
-        for key, val in new_defs.items():
-            defs[key]=val
+        for key, res_idxs in new_defs.items():
+            defs[key]=res_idxs
 
-        for ii, (key, val) in enumerate(defs.items()):
-            istr = _print_frag(key, top, val, fragment_desc='', return_string=True)
+        for ii, (key, res_idxs) in enumerate(defs.items()):
+            istr = _print_frag(key, top, res_idxs, fragment_desc='', return_string=True)
             print(istr)
         if return_defs:
             return {key:val for key, val in defs.items()}
 
+def _intersecting_fragments(res_idxs, fragname, fragments, top,
+                            map_conlab=None,
+                            keep_all=False):
+    r"""
+    Input an iterable of integers representing a fragment check if
+    it clashes with other fragment definitions.
+
+    Prompt for a choice in case it is necessary
+
+
+    Example
+    -------
+    * defs["TM6"] = [1,2,3,4] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
+    is not a clash, bc TM6 is contained in fragments[0]
+    * defs["TM6"] = [0,1,2,3] and :obj:`fragments`=[[0,1],[2,3,4,5,6,7,8]]
+    is a clash. In this case the user will be prompted to choose
+    which subset of "TM6" to keep:
+     * "0": [0,1]
+     * "1": [2,3]
+     * "0-1" [0,1,2,3]
+
+
+    Parameters
+    ----------
+    res_idxs : iterable of integers
+    fragname : str
+    fragments : iterable of iterables of integers
+    top : :obj:`mdtraj.Trajectory`object
+    map_conlab : list or dict, default is None
+        maps residue idxs to consensus labels
+
+    Returns
+    -------
+    tokeep = 1D numpy array
+        If no clashes were found, this will be contain the same residues as
+        :obj:`res_idxs` without prompting the user.
+        Otherwise, the user has to input whether to leave the definition intact
+        or pick a sub-set
+    """
+    # Get the fragment idxs of all residues in this fragment
+    ifrags = [in_what_fragment(idx, fragments) for idx in res_idxs]
+
+    frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
+    if len(frag_cands) > 1 and not keep_all:
+        # This only happens if more than one fragment is present
+        _print_frag(fragname, top, res_idxs, fragment_desc='',
+                    idx2label=map_conlab)
+        print("  %s clashes with other fragment definitions"%fragname)
+        for jj in frag_cands:
+            istr = _print_frag(jj, top, fragments[jj],
+                               fragment_desc="   input fragment",
+                               return_string=True)
+            n_in_fragment = len(_np.intersect1d(res_idxs, fragments[jj]))
+            if n_in_fragment < len(fragments[jj]):
+                istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
+            print(istr)
+        answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):" % fragname)
+        answr = _rangeexpand(answr)
+        assert all([idx in ifrags for idx in answr])
+        tokeep = _np.hstack([idx for ii, idx in enumerate(res_idxs) if ifrags[ii] in answr]).tolist()
+        if len(tokeep) >= len(ifrags):
+            raise ValueError("Cannot keep these fragments %s!" % (str(answr)))
+        return tokeep
+    else:
+        return res_idxs
 
 class LabelerCGN(LabelerConsensus):
     """
