@@ -536,16 +536,6 @@ class Test_top2CGN_by_AAcode(unittest.TestCase):
                               6: None,
                               7: 'G.S2.6'})
 
-class Test_map2defs(unittest.TestCase):
-    def setUp(self):
-        self.cons_list =  ['3.67','G.H5.1','G.H5.6','5.69']
-
-    def test_map2defs_just_works(self):
-        map2defs = nomenclature_utils._map2defs(self.cons_list)
-        assert (_np.array_equal(map2defs['3'], [0]))
-        assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
-        assert (_np.array_equal(map2defs['5'], [3]))
-
 @unittest.skip("This method appears unused at the moment")
 class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
     def setUp(self):
@@ -559,6 +549,16 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
         self.assertEqual(add_defs['ICL2'], [49, 49])
         self.assertEqual(add_defs['ECL2'], [57, 59])
         self.assertEqual(add_defs['ECL3'], [71, 79])
+
+class Test_map2defs(unittest.TestCase):
+    def setUp(self):
+        self.cons_list =  ['3.67','G.H5.1','G.H5.6','5.69']
+
+    def test_map2defs_just_works(self):
+        map2defs = nomenclature_utils._map2defs(self.cons_list)
+        assert (_np.array_equal(map2defs['3'], [0]))
+        assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
+        assert (_np.array_equal(map2defs['5'], [3]))
 
 class Test_top2consensus_map(unittest.TestCase):
     #TODO add test for special case restrict_to_residxs

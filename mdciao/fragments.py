@@ -8,10 +8,16 @@ from .bond_utils import \
 
 from .list_utils import \
     in_what_N_fragments as _in_what_N_fragments, \
-    join_lists as _join_lists
+    join_lists as _join_lists, \
+    in_what_fragment as _in_what_fragment, \
+    rangeexpand as _rangeexpand
 
 from .str_and_dict_utils import \
     choose_between_good_and_better_strings as _choose_between_good_and_better_strings
+
+from  pandas import \
+    unique as _pandas_unique
+
 abc = "abcdefghijklmnopqrst"
 
 def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
@@ -542,6 +548,72 @@ def per_residue_fragment_picker(residue_descriptors,
             resdesc2fragidxs[key] = int(answer) #ditto
 
     return resdesc2residxs, resdesc2fragidxs
+
+def _intersecting_fragments(res_idxs, fragname, fragments, top,
+                            map_conlab=None,
+                            keep_all=False):
+    r"""
+    Input an iterable of integers representing a fragment check if
+    it clashes with other fragment definitions.
+
+    Prompt for a choice in case it is necessary
+
+
+    Example
+    -------
+    * defs["TM6"] = [1,2,3,4] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
+    is not a clash, bc TM6 is contained in fragments[0]
+    * defs["TM6"] = [0,1,2,3] and :obj:`fragments`=[[0,1],[2,3,4,5,6,7,8]]
+    is a clash. In this case the user will be prompted to choose
+    which subset of "TM6" to keep:
+     * "0": [0,1]
+     * "1": [2,3]
+     * "0-1" [0,1,2,3]
+
+
+    Parameters
+    ----------
+    res_idxs : iterable of integers
+    fragname : str
+    fragments : iterable of iterables of integers
+    top : :obj:`mdtraj.Trajectory`object
+    map_conlab : list or dict, default is None
+        maps residue idxs to consensus labels
+
+    Returns
+    -------
+    tokeep = 1D numpy array
+        If no clashes were found, this will be contain the same residues as
+        :obj:`res_idxs` without prompting the user.
+        Otherwise, the user has to input whether to leave the definition intact
+        or pick a sub-set
+    """
+    # Get the fragment idxs of all residues in this fragment
+    ifrags = [_in_what_fragment(idx, fragments) for idx in res_idxs]
+
+    frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
+    if len(frag_cands) > 1 and not keep_all:
+        # This only happens if more than one fragment is present
+        _print_frag(fragname, top, res_idxs, fragment_desc='',
+                    idx2label=map_conlab)
+        print("  %s clashes with other fragment definitions"%fragname)
+        for jj in frag_cands:
+            istr = _print_frag(jj, top, fragments[jj],
+                               fragment_desc="   input fragment",
+                               return_string=True)
+            n_in_fragment = len(_np.intersect1d(res_idxs, fragments[jj]))
+            if n_in_fragment < len(fragments[jj]):
+                istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
+            print(istr)
+        answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):" % fragname)
+        answr = _rangeexpand(answr)
+        assert all([idx in ifrags for idx in answr])
+        tokeep = _np.hstack([idx for ii, idx in enumerate(res_idxs) if ifrags[ii] in answr]).tolist()
+        if len(tokeep) >= len(ifrags):
+            raise ValueError("Cannot keep these fragments %s!" % (str(answr)))
+        return tokeep
+    else:
+        return res_idxs
 
 
 my_frag_colors=[
