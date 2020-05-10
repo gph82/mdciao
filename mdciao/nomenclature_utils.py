@@ -1,14 +1,31 @@
 import mdtraj as _md
 import numpy as _np
-from .residue_and_atom_utils import int_from_AA_code as _int_from_AA_code, shorten_AA as _shorten_AA
-from .sequence_utils import alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, _my_bioalign
-from pandas import DataFrame as _DF, read_json as _read_json, read_excel as _read_excel
-from collections import defaultdict as _defdict
-from os import path as _path
-import requests as _requests
-from .list_utils import rangeexpand as _rangeexpand
+from .residue_and_atom_utils import \
+    int_from_AA_code as _int_from_AA_code, \
+    shorten_AA as _shorten_AA
 
-from pandas import read_csv as _read_csv, DataFrame as _DataFrame
+from mdciao.list_utils import \
+    in_what_fragment,\
+    rangeexpand as _rangeexpand
+
+from mdciao.fragments import \
+    _print_frag
+
+from .sequence_utils import \
+    alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, \
+    _my_bioalign
+
+from pandas import \
+    read_json as _read_json, \
+    read_excel as _read_excel, \
+    read_csv as _read_csv, \
+    DataFrame as _DataFrame
+
+from collections import defaultdict as _defdict
+
+from os import path as _path
+
+import requests as _requests
 
 def table2BW_by_AAcode(tablefile,
                        keep_AA_code=True,
@@ -291,7 +308,7 @@ def _BW_web_lookup(url, verbose=True):
                 val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
             except IndexError:
                 pass
-        DFout = _DF.from_dict(mydict, orient="index").replace({_np.nan: None})
+        DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
         DFout = DFout[["protein_segment", "AAresSeq",
                        "BW",
                        "GPCRdb(A)",
@@ -587,8 +604,6 @@ class LabelerConsensus(object):
         defs : dictionary (if return_defs is True)
             Dictionary with subdomain names as keys and lists of indices as values
         """
-        from mdciao.list_utils import in_what_fragment
-        from mdciao.fragments import _print_frag
 
         if map is None:
             print("creating a temporary map, this is dangerous")
@@ -846,7 +861,7 @@ def _top2consensus_map(consensus_dict, top,
                                                    [_int_from_AA_code(key) for key in consensus_dict],
                                                    verbose=verbose
                                                    )
-    alignment = _DF(alignment)
+    alignment = _DataFrame(alignment)
     alignment = alignment[alignment["match"] == True]
     out_list = [None for __ in top.residues]
     for idx, resSeq, AA in alignment[["idx_0","idx_1", "AA_1"]].values:
