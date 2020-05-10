@@ -31,6 +31,7 @@ class Test_md_load_rscb(unittest.TestCase):
                                                     )
         assert isinstance(geom, md.Trajectory)
         assert isinstance(url, str)
+        assert "http" in url
 
 class Test_PDB_finder(unittest.TestCase):
 
@@ -64,6 +65,7 @@ class Test_CGN_finder(unittest.TestCase):
 
     def test_works_locally(self):
         df, filename = nomenclature_utils.CGN_finder("3SN6",
+                                                     try_web_lookup=False,
                                                      local_path=test_filenames.examples_path)
 
         assert isinstance(df, DataFrame)
@@ -113,6 +115,7 @@ class Test_CGN_finder(unittest.TestCase):
             copy(infile,tdir)
             with pytest.raises(FileExistsError):
                 nomenclature_utils.CGN_finder("3SN6",
+                                              try_web_lookup=False,
                                               local_path=tdir,
                                               format="%s.txt",
                                               write_to_disk=True
@@ -152,6 +155,7 @@ class Test_GPCRmd_lookup_BW(unittest.TestCase):
     def test_works(self):
         DF = nomenclature_utils._BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
         assert isinstance(DF, DataFrame)
+
     def test_wrong_code(self):
         with pytest.raises(ValueError):
             raise nomenclature_utils._BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
@@ -160,6 +164,7 @@ class Test_BW_finder(unittest.TestCase):
 
     def test_works_locally(self):
         df, filename = nomenclature_utils.BW_finder("B2AR",
+                                                    try_web_lookup=False,
                                                     format="GPCRmd_%s_nomenclature_test.xlsx",
                                                     local_path=test_filenames.test_data_path)
 
