@@ -257,13 +257,14 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                               'V67': '2.38'
                               })
 
-class Test_LabelerCGN(unittest.TestCase):
+class TestLabelerCGN(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
         self._geom_3SN6 = md.load(path.join(test_filenames.examples_path,
                                             "3SN6.pdb.gz"))
         self.cgn_local = LabelerCGN("3SN6",
+                                    try_web_lookup=False,
                                local_path=test_filenames.examples_path)
     def test_correct_files(self):
 
@@ -308,7 +309,34 @@ class Test_LabelerCGN(unittest.TestCase):
         self.assertSequenceEqual(self.cgn_local.fragment_names,
                                  list(self.cgn_local.fragments.keys()))
 
-class Test_LabelerBW_no_pdb(unittest.TestCase):
+    def test_conlab2residx_wo_input_map(self):
+        # More than anthing, this is testing _top2consensus_map
+        # I know this a priori using find_AA
+        out_dict = self.cgn_local.conlab2residx(self.cgn_local.top)
+        self.assertEqual(out_dict["G.hfs2.2"], 164)
+
+    def test_conlab2residx_w_input_map(self):
+        # This should find R201 no problem
+
+        map = [None for ii in range(200)]
+        map[164] = "G.hfs2.2"
+        out_dict = self.cgn_local.conlab2residx(self.cgn_local.top,map=map)
+        self.assertEqual(out_dict["G.hfs2.2"],164)
+
+    def test_conlab2residx_w_input_map_duplicates(self):
+        map = [None for ii in range(200)]
+        map[164] = "G.hfs2.2"  # I know this a priori using find_AA
+        map[165] = "G.hfs2.2"
+        with pytest.raises(ValueError):
+            self.cgn_local.conlab2residx(self.cgn_local.top, map=map)
+
+    def test_top2map_just_passes(self):
+        # the true test of this is in the test of _top2consensus_map
+        self.cgn_local.top2map(self.cgn_local.top)
+
+
+
+class TestLabelerbwNoPdb(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
@@ -323,7 +351,7 @@ class Test_LabelerBW_no_pdb(unittest.TestCase):
         _np.testing.assert_equal(self.BW_local_no_pdb.ref_PDB,
                                  None)
 
-class Test_LabelerBW_w_pdb(unittest.TestCase):
+class TestLabelerbwWPdb(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
@@ -396,6 +424,7 @@ class Test_guess_missing_BWs(unittest.TestCase):
                               6: '1.28*',
                               7: '1.28*'})
 
+@unittest.skip("The tested method appears to be unused")
 class Test_top2CGN_by_AAcode(unittest.TestCase):
     #TODO change this test to reflect the new changes Guillermo recently added
     def setUp(self):

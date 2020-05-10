@@ -439,6 +439,52 @@ class LabelerConsensus(object):
                       restrict_to_residxs=None,
                       map=None,
                       keep_consensus=False):
+        r"""
+        Returns a dictionary keyed by consensus labels and valued
+        by residue indices of the input topology in :obj:`top`.
+
+        The default behaviour is to internally align :obj:`top`
+        with :obj:`self.top` on the fly using :obj:`_top2consensus_map`
+
+
+        Note
+        ----
+        This method is able to work with a new topology every
+        time, performing a sequence alginment every call.
+        The intention is to instantiate a
+        :obj:`LabelerConsensus` jus one time and use it with as
+        many topologies as you like without changing any attribute
+        of :obj:`self`.
+
+        HOWEVER, if you know what you are doing, you can provide a
+        list of consensus labels yourself using :obj:`map`. Then,
+        this method is nothing but a table lookup (almost)
+
+        Warning
+        -------
+        No checks are performed to see if the input of :obj:`map`
+        actually matches the residues of :obj:`top in any way,
+        so that the output can be rubbish and go unnoticed.
+
+
+        Parameters
+        ----------
+        top : :obj:`mdtraj.Topology`
+        restrict_to_residxs : iterable of indices, default is None
+            Align using only these indices, see :obj:`_top2consensus_map`
+            for more info. Has no effect if :obj:`map` is None
+        map : list, default is None
+            A pre-computed residx2consensuslabel map, i.e. the
+            output of a previous, external call to :obj:`_top2consensus_map`
+            If it contains duplicates, it is a malformed list.
+            See the note above for more info
+
+        keep_consensus : bool, default is False
+            Wheater to autofill consensus labels on the fly
+        Returns
+        -------
+        dict : keyed by consensus labels and valued with residue idxs???
+        """
         if map is None:
             map = _top2consensus_map(self.AA2conlab, top,
                                      restrict_to_residxs=restrict_to_residxs,
@@ -446,14 +492,43 @@ class LabelerConsensus(object):
         out_dict = {}
         for ii,imap in enumerate(map):
             if imap is not None:
-                out_dict[imap]=ii
+                if imap in out_dict.keys():
+                    raise ValueError("Entries %u and %u of the map, "
+                                     "i.e. residues %s and %s of the input topology "
+                                     "both have the same label %s.\n"
+                                     "This method cannot work with a map like this!"%(out_dict[imap], ii,
+                                                                                     top.residue(out_dict[imap]),
+                                                                                     top.residue(ii),
+                                                                                     imap))
+                else:
+                    out_dict[imap]=ii
         return out_dict
 
     def top2map(self, top, restrict_to_residxs=None, fill_gaps=False,
                 verbose=False):
-        r""" Align the sequence of :obj:`top` to the transformer's sequence
-        and return a list of BW numbering for each residue in :obj:`top`.
-        If no BW numbering is found after the alignment, the entry will be None
+        r""" Align the sequence of :obj:`top` to the sequence used
+        to initialize this :obj:`LabelerConsensus` and return a
+        list list of consenus labels for each residue in :obj:`top`.
+
+        The if a consensus label is returned as None it means one
+        of two things:
+            * this position was sucessfully aligned with a
+             match but the data used to initialize this
+             :obj:`ConsensusLabeler` did not contain a label
+
+            * this position has a label in the original data
+            but the sequence alignment is not matched (e.g.,
+            bc of a point mutation)
+
+        A heuristic to "autofill" the second case can be
+        turned on using :obj:`fill_gaps`, see :obj:`_fill_CGN_gaps`
+        for more info
+
+        Note
+        ----
+        This method simply wraps around :obj:`_top2consensus_map`
+        using the object's own data, see the doc on that method
+        for more info.
 
         Parameters
         ----------
@@ -468,8 +543,9 @@ class LabelerConsensus(object):
 
         Returns
         -------
-        map : list of len = top.n_residues with the BW numbering entries
+        map : list of len = top.n_residues with the consensus labels
         """
+
         return _top2consensus_map(self.AA2conlab, top,
                                   restrict_to_residxs=restrict_to_residxs,
                                   keep_consensus=fill_gaps,
@@ -722,10 +798,14 @@ def _top2consensus_map(consensus_dict, top,
                        ):
     r"""
     Align the sequence of :obj:`top` to consensus
-    dictionary's sequence (typically CGN_tf.AA2CGN))
+    dictionary's sequence (typically in :obj:`ContactLabeler.AA2conlab`))
     and return a list of consensus numbering for each residue
-     in :obj:`top`. If no consensus numbering
-    is found after the alignment, the entry will be None
+     in :obj:`top`.
+
+    For the alignment details see :obj:`my_Bioalign`
+
+    If no consensus numbering
+    is found after the alignment, the residues entry will be None
 
     Parameters
     ----------
@@ -735,6 +815,10 @@ def _top2consensus_map(consensus_dict, top,
         :py:class:`mdtraj.Topology` object
     restrict_to_residxs: iterable of integers, default is None
         Use only these residues for alignment and labelling purposes
+        Helps "guide" the alignment method. E.g., one might be
+        passing an Ballesteros-Weinstein in :obj:`consensus_dict` but
+        the topology also contains the whole G-protein. If available,
+        one can pass here the indices of residues of the receptor
     keep_consensus : boolean default is False
         Even if there is a consensus mismatch with the sequence of the input
         :obj:`consensus_dict`, try to relabel automagically, s.t.
@@ -748,7 +832,7 @@ def _top2consensus_map(consensus_dict, top,
     Returns
     -------
     map : list
-        list of length top.n_residues containing CGN numberings
+        list of length top.n_residues containing consensus labels
     """
 
     if restrict_to_residxs is None:
