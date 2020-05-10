@@ -19,7 +19,8 @@ from pandas import \
     read_json as _read_json, \
     read_excel as _read_excel, \
     read_csv as _read_csv, \
-    DataFrame as _DataFrame
+    DataFrame as _DataFrame, \
+    unique as _pandas_unique
 
 from collections import defaultdict as _defdict
 
@@ -575,8 +576,11 @@ class LabelerConsensus(object):
                  fill_gaps=False,
                  ):
         r"""
-        Print the BW transformer's definitions for the subdomains,
+        Prints the definitions of subdomains that the
+        consenus nomenclature contains and map it out
         in terms of residue indices of the input :obj:`top`
+
+        Does not return anything unless explicitly asked to.
 
         Parameters
         ----------
@@ -585,15 +589,35 @@ class LabelerConsensus(object):
         map:  list, default is None
             The user can parse an exisiting "top2map" map, otherwise this
             method will generate one on the fly. It is recommended (but
-            not needed) to pre-compute and pass such a map in critical
-            cases when naming errors are likely.
+            not needed) to pre-compute and pass such a map cases where:
+            * the user is sure that the map is the same every time
+            the method gets called.
+            * the on-the-fly creation of the map slows down the workflow
+            * in critical cases when alignment is poor and
+            naming errors are likely
         return_defs: boolean, default is False
             If True, apart from printing the definitions,
             they are returned as a dictionary
         fragments: iterable of integers, default is None
-            The user can parse an existing list of fragment-definitions,
-            to check whether these definitions are broken in the new ones.
-            An interactive prompt will appear in this case
+            The user can parse an existing list of fragment-definitions
+            (via residue idxs) to check if newly found, consensus
+            definitions (:obj:`defs`) clash with the input in :obj:`fragments`.
+            *Clash* means that the consensus definitions span over (=cross over?)
+            the definitions in :obj:`fragments`.
+
+            An interactive prompt will ask the user which fragments to
+            keep
+
+            Example
+            -------
+            In other words, the consensus definitions cannot
+            contain more than one of the :obj:`fragments`:
+            * defs["TM6"] = [1,2,3,4] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
+            is not a clash, bc TM6 is contained in fragments[0]
+            * defs["TM6"] = [0,1,2,3] and :obj:`fragments`=[[0,1],[2,3,4,5,6,7,8]]
+            is a clash. In this case the user will be prompted to choose
+            which fragments to keep in "TM6" (0 or 1). The answer cannot be both.
+
         fill_gaps: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
             :obj:`_fill_CGN_gaps`. It has no effect if the user inputs
@@ -615,18 +639,33 @@ class LabelerConsensus(object):
             for iBW in ifrag:
                 if iBW in conlab2residx.keys():
                     defs[key].append(conlab2residx[iBW])
-
+        defs = {key:val for key,val in defs.items()}
         new_defs = {}
         for ii, (key, val) in enumerate(defs.items()):
-            istr = _print_frag(key, top, val, fragment_desc='', return_string=True)
             if fragments is not None:
+                # TODO this should be its own method
+                # Get the fragment idxs of all residues in this fragment
                 ifrags = [in_what_fragment(idx, fragments) for idx in val]
-                if ifrags[0]!=ifrags[-1]:
+                # This only happens if more than one fragment is present
+                frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
+                if len(frag_cands)>1:
+                    _print_frag(key, top, val, fragment_desc='')
+                    print("The range %s to %s contains more than one fragment:" % (map[val[0]], map[val[-1]]))
                     #todo AVOID ASKING THE USER
-                    print(istr, '%s-%s' % (map[val[0]], map[val[-1]]))
-                    answr = input("more than 1 fragments present. Input the ones to keep %s" % (_np.unique(ifrags)))
+                    for jj in frag_cands:
+                        istr = _print_frag(jj,top, fragments[jj], fragment_desc=" input fragment",
+                                           return_string=True)
+                        #print(istr)
+                        n_in_fragment = len(_np.intersect1d(val,fragments[jj]))
+                        if n_in_fragment<len(fragments[jj]):
+                            istr += "%u residues outside %s"%(len(fragments[jj])-n_in_fragment,key)
+                        print(istr)
+                    answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):"%key)
                     answr = _rangeexpand(answr)
-                    tokeep = [idx for ii, idx in enumerate(val) if ifrags[ii] in answr]
+                    assert all([idx in ifrags for idx in answr])
+                    tokeep = _np.hstack([idx for ii, idx in enumerate(val) if ifrags[ii] in answr]).tolist()
+                    if len(tokeep)>=len(ifrags):
+                        raise ValueError("Cannot keep these fragments %s!"%(str(answr)))
                     new_defs[key] = tokeep
 
         for key, val in new_defs.items():
@@ -635,7 +674,6 @@ class LabelerConsensus(object):
         for ii, (key, val) in enumerate(defs.items()):
             istr = _print_frag(key, top, val, fragment_desc='', return_string=True)
             print(istr)
-
         if return_defs:
             return {key:val for key, val in defs.items()}
 
@@ -718,7 +756,6 @@ class LabelerBW(LabelerConsensus):
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
-
 
 def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
     """

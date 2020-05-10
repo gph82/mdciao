@@ -6,12 +6,12 @@ from tempfile import TemporaryDirectory as _TDir
 from urllib.error import HTTPError
 from shutil import copy
 
-from mdciao.sequence_utils import print_verbose_dataframe
 import pytest
 from mdciao import nomenclature_utils
 from mdciao.nomenclature_utils import *
-from mdciao.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps, _fill_BW_gaps
 from filenames import filenames
+
+import mock
 
 from pandas import DataFrame
 
@@ -334,6 +334,37 @@ class TestLabelerCGN(unittest.TestCase):
         # the true test of this is in the test of _top2consensus_map
         self.cgn_local.top2map(self.cgn_local.top)
 
+    def test_top2defs_returns_all_keys(self):
+        defs = self.cgn_local.top2defs(self.cgn_local.top, return_defs=True)
+        self.assertSequenceEqual(list(defs.keys()),
+                                 nomenclature_utils._CGN_fragments)
+
+    def test_top2defs_defs_are_broken_in_frags(self):
+
+        input_values = (val for val in ["0-1"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            defs = self.cgn_local.top2defs(self.cgn_local.top,
+                                           return_defs=True,
+                                           fragments=[_np.arange(0,10),
+                                                      _np.arange(10,15),
+                                                      _np.arange(15,20)
+                                                      ]
+                                           )
+            self.assertSequenceEqual(list(defs.keys()),
+                                     nomenclature_utils._CGN_fragments)
+            _np.testing.assert_array_equal(defs["G.HN"],_np.arange(0,15))
+
+
+    def test_top2defs_defs_are_broken_in_frags_bad_input(self):
+        input_values = (val for val in ["0-2"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
+            with pytest.raises(ValueError):
+                self.cgn_local.top2defs(self.cgn_local.top,
+                                        return_defs=True,
+                                           fragments=[_np.arange(0, 10),
+                                                      _np.arange(10, 15),
+                                                      _np.arange(15, 40)]
+                                           )
 
 
 class TestLabelerbwNoPdb(unittest.TestCase):
@@ -449,7 +480,7 @@ class Test_map2defs(unittest.TestCase):
         self.cons_list =  ['3.67','G.H5.1','G.H5.6','5.69']
 
     def test_map2defs_just_works(self):
-        map2defs = _map2defs(self.cons_list)
+        map2defs = nomenclature_utils._map2defs(self.cons_list)
         assert (_np.array_equal(map2defs['3'], [0]))
         assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
         assert (_np.array_equal(map2defs['5'], [3]))
@@ -493,7 +524,7 @@ class Test_top2consensus_map(unittest.TestCase):
                                          'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
 
     def test_top2consensus_map_just_works(self): #generally works
-        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top)
+        cons_list = nomenclature_utils._top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top)
 
         count = 1
         cons_list_out = []
@@ -508,7 +539,7 @@ class Test_top2consensus_map(unittest.TestCase):
     def test_top2consensus_map_keep_consensus_is_true(self):
         #In the output below, instead of None, None, it will be 'G.hfs2.4' and 'G.hfs2.5'
         # ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', None, None, 'G.hfs2.6', 'G.hfs2.7']
-        cons_list = _top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top, keep_consensus=True)
+        cons_list = nomenclature_utils._top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top, keep_consensus=True)
         cons_list_out = []
 
         for ii, val in enumerate(cons_list):
@@ -525,7 +556,7 @@ class Test_fill_CGN_gaps(unittest.TestCase):
                                          'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
 
     def test_fill_CGN_gaps_just_works(self):
-        fill_cgn = _fill_CGN_gaps(self.cons_list_in, self.geom.top)
+        fill_cgn = nomenclature_utils._fill_CGN_gaps(self.cons_list_in, self.geom.top)
         self.assertEqual(fill_cgn,self.cons_list_out)
 
 class Test_fill_BW_gaps(unittest.TestCase):
@@ -535,7 +566,7 @@ class Test_fill_BW_gaps(unittest.TestCase):
         self.cons_list_out = ['1.25', '1.26', '1.27', '1.28']
 
     def test_fill_BW_gaps_just_works(self):
-        fill_bw = _fill_BW_gaps(self.cons_list_in, self.geom.top)
+        fill_bw = nomenclature_utils._fill_BW_gaps(self.cons_list_in, self.geom.top)
         self.assertEqual(fill_bw,self.cons_list_out)
 
 
