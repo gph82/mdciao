@@ -5,15 +5,22 @@ import pytest
 
 from mdciao import command_line_tools
 
-from mdciao.command_line_tools import residue_neighborhoods, \
+from mdciao.command_line_tools import \
+    residue_neighborhoods, \
     sites, \
     interface
 
-from mdciao.contact_matrix_utils import contact_map
+from mdciao.nomenclature_utils import \
+    LabelerBW
+
+from mdciao.contact_matrix_utils import \
+    contact_map
+
 from tempfile import TemporaryDirectory
 test_filenames = filenames()
 
 from unittest.mock import patch
+from mock import mock
 
 from pandas import \
     unique as _pandasunique
@@ -21,8 +28,8 @@ from pandas import \
 from os import \
     path as _path
 
-from mdciao.fragments \
-    import get_fragments
+from mdciao.fragments import \
+    get_fragments
 
 class TestJustRunsAllFewestOptions(unittest.TestCase):
     def setUp(self):
@@ -57,7 +64,7 @@ class TestJustRunsAllFewestOptions(unittest.TestCase):
                                     self.run1_stride_100_xtc_reverse],
                       output_dir=tmpdir)
 
-class Test_residue_neighbrhoodsOptionsExceptNomenclatureJustRuns(unittest.TestCase):
+class Test_residue_neighbrhoodsOptionsJustRuns(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.prot1_pdb)
         self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)
@@ -175,28 +182,34 @@ class Test_residue_neighbrhoodsOptionsExceptNomenclatureJustRuns(unittest.TestCa
                                        output_dir=tmpdir)
 
     def test_nomenclature_BW(self):
-        #with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-        residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                              "131",
-                              BW_uniprot=_path.join(test_filenames.test_data_path,"adrb2_human_full"), # TODO include this in filenames
-                              #output_dir=tmpdir
-                              )
-
-class test_maximal_runs_no_nomenclature(unittest.TestCase):
-    #this is a WIP
-
-    def __test_sites(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             sites(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                                   [test_filenames.GDP_json],
-                                   output_dir=tmpdir)
-
-    def __test_interface(self):
+            input_values = (val for val in ["","a"])
+            with mock.patch('builtins.input', lambda *x: next(input_values)):
+                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                                      "131",
+                                      BW_uniprot=_path.join(test_filenames.test_data_path,"adrb2_human_full"),
+                                      # TODO include this in filenames
+                                      output_dir=tmpdir
+                                      )
+    def test_nomenclature_CGN(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                      frag_idxs_group_1=[0],
-                      frag_idxs_group_2=[1],
-                      output_dir=tmpdir)
+            input_values = (val for val in ["", "a"])
+            with mock.patch('builtins.input', lambda *x: next(input_values)):
+                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                                      "131",
+                                      CGN_PDB="3SN6",
+                                      output_dir=tmpdir
+                                      )
+    def test_nomenclature_CGN_and_BW(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            input_values = (val for val in ["", "", "a"])
+            with mock.patch('builtins.input', lambda *x: next(input_values)):
+                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                                      "131",
+                                      CGN_PDB="3SN6",
+                                      BW_uniprot=_path.join(test_filenames.test_data_path, "adrb2_human_full"),
+                                      output_dir=tmpdir
+                                      )
 
 class Test_parse_consensus_option(unittest.TestCase):
 
@@ -220,10 +233,14 @@ class Test_parse_consensus_option(unittest.TestCase):
         option = _path.join(test_filenames.test_data_path,
                                 "adrb2_human_full")
         fragments = get_fragments(self.geom.top)
-        command_line_tools._parse_consensus_option(option, "BW",
+        input_values = (val for val in [""])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            residx2conlab, lblr = command_line_tools._parse_consensus_option(option, "BW",
                                                    self.geom.top,
                                                    fragments,
                                                    return_Labeler=True)
+            self.assertIsInstance(lblr, LabelerBW)
+            self.assertIsInstance(residx2conlab,list)
 
 
 
