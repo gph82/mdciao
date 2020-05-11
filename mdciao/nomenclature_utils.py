@@ -273,7 +273,8 @@ def BW_finder(uniprot_name,
                           dont_fail=dont_fail,
                           write_to_disk=write_to_disk)
 
-def _BW_web_lookup(url, verbose=True):
+def _BW_web_lookup(url, verbose=True,
+                   timeout=5):
     r"""
     Lookup this url for a BW-notation
     return a ValueError if the lookup retuns an empty json
@@ -281,13 +282,15 @@ def _BW_web_lookup(url, verbose=True):
     ----------
     url
     verbose
-
+    timeout : float, default is 1
+        Timout in seconds for :obj:`_requests.get`
+        https://requests.readthedocs.io/en/master/user/quickstart/#timeouts
     Returns
     -------
 
     """
     uniprot_name = url.split("/")[-1]
-    a = _requests.get(url)
+    a = _requests.get(url, timeout=timeout)
     if verbose:
         print("done!")
     if a.text == '[]':
