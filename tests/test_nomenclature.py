@@ -8,8 +8,11 @@ from shutil import copy
 
 import pytest
 from mdciao import nomenclature_utils
+#TODO make these imports cleaner
 from mdciao.nomenclature_utils import *
 from filenames import filenames
+
+from mdciao.fragments import get_fragments
 
 import mock
 
@@ -632,5 +635,73 @@ class Test_fill_BW_gaps_old(unittest.TestCase):
         fill_bw = nomenclature_utils._fill_BW_gaps(self.cons_list_in, self.geom.top)
         self.assertEqual(fill_bw,self.cons_list_out)
 
+
+class Test_guess_by_nomenclature(unittest.TestCase):
+
+    def setUp(self):
+        self.BW_local_w_pdb = LabelerBW("adrb2_human",
+                                        ref_PDB="3SN6",
+                                        format="%s_full.xlsx",
+                                        local_path=test_filenames.test_data_path)
+        self.fragments = get_fragments(self.BW_local_w_pdb.top)
+
+    def test_works_on_enter(self):
+        import mock
+        input_values = (val for val in [""])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            answer = nomenclature_utils._guess_by_nomenclature(self.BW_local_w_pdb,
+                                                              self.BW_local_w_pdb.top,
+                                                              self.fragments,
+                                                              "BW")
+            self.assertEqual(answer,"7,8,9")
+
+    def test_works_return_answer_as_list(self):
+        import mock
+        input_values = (val for val in [""])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            answer = nomenclature_utils._guess_by_nomenclature(self.BW_local_w_pdb,
+                                                              self.BW_local_w_pdb.top,
+                                                              self.fragments,
+                                                              "BW",
+                                                               return_str=False,
+                                                                       )
+            self.assertSequenceEqual(answer,[7,8,9])
+
+    def test_works_return_guess(self):
+        answer = nomenclature_utils._guess_by_nomenclature(self.BW_local_w_pdb,
+                                                          self.BW_local_w_pdb.top,
+                                                          self.fragments,
+                                                          "BW",
+                                                           accept_guess=True
+                                                           )
+        self.assertEqual(answer, "7,8,9")
+
+    def test_works_return_None(self):
+        answer = nomenclature_utils._guess_by_nomenclature(self.BW_local_w_pdb,
+                                                           self.BW_local_w_pdb.top,
+                                                           self.fragments,
+                                                           "BW",
+                                                           accept_guess=True,
+                                                           min_hit_rate=2, #impossible rate
+                                                           )
+        self.assertEqual(answer, None)
+
+class Test_guess_nomenclature_fragments(unittest.TestCase):
+    # The setup is in itself a test
+    def setUp(self):
+        self.BW_local_w_pdb = LabelerBW("adrb2_human",
+                                        ref_PDB="3SN6",
+                                        format="%s_full.xlsx",
+                                        local_path=test_filenames.test_data_path)
+        self.fragments = get_fragments(self.BW_local_w_pdb.top)
+
+    def test_finds_frags(self):
+        guessed_frags = nomenclature_utils._guess_nomenclature_fragments(self.BW_local_w_pdb,
+                                                         self.BW_local_w_pdb.top,
+                                                         fragments=self.fragments,
+                                                         verbose=True)
+        _np.testing.assert_array_equal([7,8,9],guessed_frags)
+
 if __name__ == '__main__':
     unittest.main()
+
