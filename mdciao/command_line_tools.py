@@ -17,7 +17,8 @@ from mdciao.fragments import \
 
 from mdciao.nomenclature_utils import \
     LabelerCGN, LabelerBW,\
-    _choose_between_consensus_dicts, _guess_nomenclature_fragments
+    _choose_between_consensus_dicts, \
+    _guess_by_nomenclature
 
 from mdciao.contacts import \
     select_and_report_residue_neighborhood_idxs, \
@@ -76,7 +77,7 @@ def _parse_consensus_option(option, consensus_type,
     while making them usable at the API-level
 
     Internally, it instantiates a :obj:`LabelerConsensus` object to use
-    its :obj:`LabelerConsensus.top2map`
+    its :obj:`LabelerConsensus.top2map` method
     
     A guess is performed on-the-fly using :obj:`_guess_by_nomenclature`
     to better align :obj:`top` to the :obj:`LabelerConsensus`
@@ -142,7 +143,7 @@ def _parse_consensus_option(option, consensus_type,
         map_out = tf_out.top2map(top,
                                  restrict_to_residxs=restrict_to_residxs,
                                  fill_gaps=True,
-                                 # verbose=True,
+                             #    verbose=True,
                                  )
     if not return_Labeler:
         return map_out
