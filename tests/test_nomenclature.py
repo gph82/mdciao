@@ -603,11 +603,26 @@ class Test_fill_CGN_gaps(unittest.TestCase):
         self.cons_list_out = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', 'G.hfs2.4',
                                          'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
 
-    def test_fill_CGN_gaps_just_works(self):
-        fill_cgn = nomenclature_utils._fill_CGN_gaps(self.cons_list_in, self.geom.top)
+
+    def test_fill_CGN_gaps_just_works_with_CGN(self):
+        fill_cgn = nomenclature_utils._fill_consensus_gaps(self.cons_list_in, self.geom.top)
         self.assertEqual(fill_cgn,self.cons_list_out)
 
+
 class Test_fill_BW_gaps(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load(test_filenames.prot1_pdb)
+        self.cons_list_in = ['3.46', '3.47', "3.48", None,
+                             None, '3.51', '3.52']
+        self.cons_list_out = ['3.46', '3.47', "3.48", "3.49",
+                             "3.50", '3.51', '3.52']
+
+    def test_fill_CGN_gaps_just_works_with_BW(self):
+        fill_cgn = nomenclature_utils._fill_consensus_gaps(self.cons_list_in, self.geom.top)
+        self.assertEqual(fill_cgn, self.cons_list_out)
+
+@unittest.skip("This method apperas unused at the moment")
+class Test_fill_BW_gaps_old(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.file_for_top2consensus_map)
         self.cons_list_in = ['1.25', '1.26', None, '1.28']

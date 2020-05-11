@@ -4,12 +4,9 @@ from .residue_and_atom_utils import \
     int_from_AA_code as _int_from_AA_code, \
     shorten_AA as _shorten_AA
 
-from mdciao.list_utils import \
-    in_what_fragment,\
-    rangeexpand as _rangeexpand
-
 from mdciao.fragments import \
-    _print_frag
+    _print_frag, \
+    _intersecting_fragments
 
 from .sequence_utils import \
     alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, \
@@ -19,8 +16,7 @@ from pandas import \
     read_json as _read_json, \
     read_excel as _read_excel, \
     read_csv as _read_csv, \
-    DataFrame as _DataFrame, \
-    unique as _pandas_unique
+    DataFrame as _DataFrame
 
 from collections import defaultdict as _defdict
 
@@ -539,7 +535,7 @@ class LabelerConsensus(object):
             bc of a point mutation)
 
         A heuristic to "autofill" the second case can be
-        turned on using :obj:`fill_gaps`, see :obj:`_fill_CGN_gaps`
+        turned on using :obj:`fill_gaps`, see :obj:`_fill_consensus_gaps`
         for more info
 
         Note
@@ -557,7 +553,7 @@ class LabelerConsensus(object):
             The return list will still be of length=top.n_residues
         fill_gaps: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
-            :obj:`_fill_CGN_gaps`
+            :obj:`_fill_consensus_gaps`
 
         Returns
         -------
@@ -613,7 +609,7 @@ class LabelerConsensus(object):
 
         fill_gaps: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
-            :obj:`_fill_CGN_gaps`. It has no effect if the user inputs
+            :obj:`_fill_consensus_gaps`. It has no effect if the user inputs
             the map
 
         Returns
@@ -876,16 +872,21 @@ def _top2consensus_map(consensus_dict, top,
         out_list[int(idx)]=consensus_dict[AA + str(resSeq)]
 
     if keep_consensus:
-        out_list = _fill_CGN_gaps(out_list, top, verbose=True)
+        out_list = _fill_consensus_gaps(out_list, top, verbose=True)
     return out_list
 
-def _fill_CGN_gaps(consensus_list, top, verbose=False):
+def _fill_consensus_gaps(consensus_list, top, verbose=False):
     r""" Try to fill CGN consensus nomenclature gaps based on adjacent labels
 
     The idea is to fill gaps of the sort:
      * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
       to
      * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
+
+    or equivalently:
+     * ['3.48', '3.49', None, '3.51']
+      to
+     * ['3.48', '3.49', "3.50", '3.51']
 
     The size of the gap is variable, it just has to match the length of
     the consensus labels, i.e. 28-26=1 which is the number of "None" the
@@ -948,7 +949,7 @@ def _fill_CGN_gaps(consensus_list, top, verbose=False):
                 print()
     return consensus_list
 
-
+'''
 def _fill_BW_gaps(consensus_list, top, verbose=False):
     r""" Try to fill BW consensus nomenclature gaps based on adjacent labels
 
@@ -1013,6 +1014,7 @@ def _fill_BW_gaps(consensus_list, top, verbose=False):
             if verbose:
                 print()
     return consensus_list
+'''
 
 '''
 def top2CGN_by_AAcode(top, ref_CGN_tf,
