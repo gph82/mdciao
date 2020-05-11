@@ -589,6 +589,28 @@ def parser_for_BW_overview():
                         help="Look for Ballesteros-Weinstein definitions in the GPRCmd using a uniprot code, "
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                         )
+
+    parser.add_argument("--keep",
+                        help="Save the BW locally for later use, default is False",
+                        dest="write_to_disk", action="store_true"
+                        )
+
+    parser.set_defaults(write_to_disk=False)
+
+    parser.add_argument("--verbose",
+                        help="Print the consensus labels for all residues",
+                        dest="print_conlab", action="store_true"
+                        )
+    parser.set_defaults(print_conlab=False)
+
+
+    parser.add_argument("--autofill",
+                        help="Try to guess missing consensus labels",
+                        dest="fill_gaps", action="store_true"
+                        )
+    parser.set_defaults(fill_gaps=False)
+
+
     return parser
 
 

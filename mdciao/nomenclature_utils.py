@@ -212,6 +212,7 @@ def _finder_writer(full_local_path,
     try:
         return_name = full_local_path
         _DF = local2DF_lambda(full_local_path)
+        print("%s found locally."%full_local_path)
     except FileNotFoundError as e:
         _DF = e
         if verbose:
@@ -508,7 +509,7 @@ class LabelerConsensus(object):
                                      keep_consensus=keep_consensus)
         out_dict = {}
         for ii,imap in enumerate(map):
-            if imap is not None:
+            if imap is not None and str(imap).lower()!="none":
                 if imap in out_dict.keys():
                     raise ValueError("Entries %u and %u of the map, "
                                      "i.e. residues %s and %s of the input topology "
@@ -641,7 +642,9 @@ class LabelerConsensus(object):
             defs[key]=res_idxs
 
         for ii, (key, res_idxs) in enumerate(defs.items()):
-            istr = _print_frag(key, top, res_idxs, fragment_desc='', return_string=True)
+            istr = _print_frag(key, top, res_idxs, fragment_desc='',
+                               idx2label=map_conlab,
+                               return_string=True)
             print(istr)
         if return_defs:
             return {key:val for key, val in defs.items()}

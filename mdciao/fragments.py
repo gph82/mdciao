@@ -56,7 +56,7 @@ def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
         resfirst = "%7s%s"%(top.residue(fragment[0]), maplabel_first)
         reslast =  "%7s%s"%(top.residue(fragment[-1]), maplabel_last)
-        istr = "%s %6s with %3u AAs %s(%4u)-%-s(%-4u) (%s) " % (fragment_desc, str(frag_idx), len(fragment),
+        istr = "%s %6s with %3u AAs %15s(%4u)-%-15s(%-4u) (%s) " % (fragment_desc, str(frag_idx), len(fragment),
                                                                 resfirst,
                                                                 top.residue(fragment[0]).index,
                                                                 reslast,
