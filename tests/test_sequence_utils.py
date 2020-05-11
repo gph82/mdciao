@@ -1,13 +1,11 @@
 import unittest
 import mdtraj as md
 import numpy as _np
-from os import path
-from mdciao.nomenclature_utils import *
-from mdciao.nomenclature_utils import _map2defs, _top2consensus_map, _fill_CGN_gaps, _fill_BW_gaps
 from filenames import filenames
 from pandas import DataFrame as _DF
 from mdciao import sequence_utils
 import pytest
+
 test_filenames = filenames()
 
 class Test_print_verbose_dataframe(unittest.TestCase):
