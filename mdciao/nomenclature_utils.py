@@ -8,9 +8,12 @@ from mdciao.fragments import \
     _print_frag, \
     _intersecting_fragments
 
-from .sequence_utils import \
+from mdciao.sequence_utils import \
     alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, \
     _my_bioalign
+
+from mdciao.list_utils import \
+    rangeexpand as _rangeexpand
 
 from pandas import \
     read_json as _read_json, \
@@ -1296,20 +1299,33 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
     return AA_dict
 '''
 
-def _guess_nomenclature_fragments(CLtf, top, fragments,
+def _guess_nomenclature_fragments(CLin, top, fragments,
                                   min_hit_rate=.6,
                                   verbose=False):
     """
+    Input a :class:`LabelerConsensus`  and a
+     :py:class:`mdtraj.Topology` and the
+     method produces a guess of what fragments
+     in the topology best match the consensus labels using
+     a cutoff for the quality of each segment's alignment
+     to the sequence in :obj:`CLin`
+
+    Example
+    -------
+    You can use the method to identify the receptor
+    in topolgy where other molecules (e.g. the Gprot)
+    are present (or the other way around)
 
     Parameters
     ----------
-    CLtf:
+    CLin:
         :class:`LabelerConsensus` object
     top:
         :py:class:`mdtraj.Topology` object
-    fragments :
-    min_hit_rate: float, default is .75
-        return only fragments with hit rates higher than this
+    fragments : How :obj:`top` is split into fragments
+    min_hit_rate: float, default is .6
+        Only fragments with hit rates higher than this
+        will be returned as a guess
     verbose: boolean
         be verbose
 
@@ -1319,18 +1335,66 @@ def _guess_nomenclature_fragments(CLtf, top, fragments,
         indices of the fragments with higher hit-rate than :obj:`cutoff`
 
     """
-    aligned_BWs = CLtf.top2map(top, fill_gaps=False)
-    #for ii, iBW in enumerate(aligned_BWs):
-    #    print(ii, iBW, top.residue(ii))
+    idx2conlab = CLin.top2map(top, fill_gaps=False)
     hits, guess = [], []
     for ii, ifrag in enumerate(fragments):
-        hit = [aligned_BWs[jj] for jj in ifrag if aligned_BWs[jj] is not None]
+        hit = [idx2conlab[jj] for jj in ifrag if idx2conlab[jj] is not None]
         if len(hit)/len(ifrag)>=min_hit_rate:
             guess.append(ii)
         if verbose:
             print(ii, len(hit)/len(ifrag))
         hits.append(hit)
     return guess
+
+
+def _guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
+                           return_str=True, accept_guess=False,
+                           **guess_kwargs):
+    r"""
+    Wrapper around :obj:`_guess_nomenclature_fragments`to interpret
+    its answer
+
+    Parameters
+    ----------
+    CLin : :obj:`LabelerConsensus`
+    top
+    fragments
+    nomenclature_name
+    return_str
+    accept_guess
+    guess_kwargs
+
+    Returns
+    -------
+
+    """
+    guess = _guess_nomenclature_fragments(CLin, top, fragments, **guess_kwargs)
+    guess_as_string = ','.join(['%s' % ii for ii in guess])
+
+    if len(guess) > 0:
+        print("%s-labels align best with fragments: %s (first-last: %s-%s)."
+              % (nomenclature_name, str(guess),
+                 top.residue(fragments[guess[0]][0]),
+                 top.residue(fragments[guess[-1]][-1])))
+    else:
+        print("No guessed fragment")
+        return None
+
+    if accept_guess:
+        answer = guess_as_string
+    else:
+        answer = input("Input alternative in a format 1,2-6,10,20-25 or\nhit enter to accept the guess %s\n"%guess_as_string)
+
+    if answer is '':
+        answer = guess_as_string
+    else:
+        answer = ','.join(['%s' % ii for ii in _rangeexpand(answer)])
+
+    if return_str:
+        pass
+    else:
+        answer = [int(ii) for ii in answer.split(",")]
+    return answer
 
 def _map2defs(cons_list):
     r"""

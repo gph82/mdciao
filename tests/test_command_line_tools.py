@@ -2,6 +2,9 @@ import mdtraj as md
 import unittest
 from filenames import filenames
 import pytest
+
+from mdciao import command_line_tools
+
 from mdciao.command_line_tools import residue_neighborhoods, \
     sites, \
     interface
@@ -12,6 +15,14 @@ test_filenames = filenames()
 
 from unittest.mock import patch
 
+from pandas import \
+    unique as _pandasunique
+
+from os import \
+    path as _path
+
+from mdciao.fragments \
+    import get_fragments
 
 class TestJustRunsAllFewestOptions(unittest.TestCase):
     def setUp(self):
@@ -46,7 +57,7 @@ class TestJustRunsAllFewestOptions(unittest.TestCase):
                                     self.run1_stride_100_xtc_reverse],
                       output_dir=tmpdir)
 
-class test_residue_neighbrhoods_options_except_nomenclature_just_runs(unittest.TestCase):
+class Test_residue_neighbrhoodsOptionsExceptNomenclatureJustRuns(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.prot1_pdb)
         self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)
@@ -163,6 +174,14 @@ class test_residue_neighbrhoods_options_except_nomenclature_just_runs(unittest.T
                                        fragmentify=False,
                                        output_dir=tmpdir)
 
+    def test_nomenclature_BW(self):
+        #with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+        residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                              "131",
+                              BW_uniprot=_path.join(test_filenames.test_data_path,"adrb2_human_full"), # TODO include this in filenames
+                              #output_dir=tmpdir
+                              )
+
 class test_maximal_runs_no_nomenclature(unittest.TestCase):
     #this is a WIP
 
@@ -178,6 +197,35 @@ class test_maximal_runs_no_nomenclature(unittest.TestCase):
                       frag_idxs_group_1=[0],
                       frag_idxs_group_2=[1],
                       output_dir=tmpdir)
+
+class Test_parse_consensus_option(unittest.TestCase):
+
+    def setUp(self):
+        self.geom = md.load(test_filenames.prot1_pdb)
+
+    def test_empty(self):
+        residx2conlab= command_line_tools._parse_consensus_option(None,None,self.geom.top,
+                                                   None,
+                                                  )
+        assert _pandasunique(residx2conlab)[0] is None
+
+    def test_empty_w_return(self):
+        residx2conlab, lblr  = command_line_tools._parse_consensus_option(None,None,self.geom.top,
+                                                   None,
+                                                   return_Labeler=True)
+        assert lblr is None
+        assert _pandasunique(residx2conlab)[0] is None
+
+    def test_with_BW(self):
+        option = _path.join(test_filenames.test_data_path,
+                                "adrb2_human_full")
+        fragments = get_fragments(self.geom.top)
+        command_line_tools._parse_consensus_option(option, "BW",
+                                                   self.geom.top,
+                                                   fragments,
+                                                   return_Labeler=True)
+
+
 
 if __name__ == '__main__':
     unittest.main()
