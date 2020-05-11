@@ -2935,8 +2935,12 @@ class ContactGroup(object):
 
             if verbose:
                 print(savename)
-
-class group_of_interfaces(object):
+'''
+class GroupOfInterfaces(object):
+    r"""
+    Class for containing various :obj:`ContactGroup` objects 
+    and perform comparison between the groups of contacts
+    """
     def __init__(self, dict_of_interfaces):
         self._interfaces = dict_of_interfaces
 
@@ -3120,6 +3124,7 @@ class group_of_interfaces(object):
         assert len(hit) == 1, hit
         hit = hit[0]
         return aDF.iloc[hit[1]].to_dict()
+'''
 
 def _sum_ctc_freqs_by_atom_type(atom_pairs, counts):
     r"""

@@ -192,6 +192,7 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
 
     return alignment_dict
 
+'''
 def _align_tops(top0, top1, substitutions=None,
                 seq_0_res_idxs=None,
                 seq_1_res_idxs=None,
@@ -250,7 +251,9 @@ def _align_tops(top0, top1, substitutions=None,
         return _DF(align_list)
     else:
         return align_list
+'''
 
+'''
 def _align_tops_2_dicts(top0,top1,
                         fail_on_key_redundancies=False):
     alignm_list = _align_tops(top0, top1,
@@ -273,7 +276,9 @@ def _align_tops_2_dicts(top0,top1,
         AAtop1toAAtop0[AA1].append(idict)
 
     return [{key: val for key, val in idict.items()} for idict in [AAtop0toAAtop1, AAtop1toAAtop0]]
+'''
 
+'''
 # todo this is a bit of overkill, one alignment per residue
 def residx_in_seq_by_alignment(ridx1, top1,
                                top2,
@@ -330,3 +335,4 @@ def residx_in_seq_by_alignment(ridx1, top1,
             print(jdf)
 
     return list(jdf["idx_1"])[0]
+'''
