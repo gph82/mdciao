@@ -1396,7 +1396,7 @@ def _guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
         answer = [int(ii) for ii in answer.split(",")]
     return answer
 
-def _map2defs(cons_list):
+def _map2defs(cons_list, splitchar="."):
     r"""
     Regroup a list of consensus labels into their subdomains. The indices of the list
     are interpreted as residue indices in the topology used to generate :obj:`cons_list`
@@ -1413,23 +1413,26 @@ def _map2defs(cons_list):
         Contains consensus labels for a given topology, s.t. indices of
         the list map to residue indices of a given topology, s.t.
         cons_list[10] has the consensus label of top.residue(10)
-
+    splitchar : str, default is "."
+        The character to use to get the subdomain labels from the
+        consensus labels, e.g. "3" from "3.50" or "G.H5" from "G.H5.1"
     Returns
     -------
     map : dictionary
-        dictionary with subdomains as keys and lists of consesus labels as values
+        dictionary with subdomains as keys and lists of consensus labels as values
     """
     defs = _defdict(list)
     for ii, key in enumerate(cons_list):
-        if key is not None:
+        if str(key).lower()!= "none":
+            assert splitchar in key, "Consensus keys have to have a '%s'-character" \
+                                     " in them, but '%s' hasn't"%(splitchar, key)
             if key[0].isnumeric(): # it means it is BW
-                new_key =key.split(".")[0]
+                new_key =key.split(splitchar)[0]
             elif key[0].isalpha(): # it means it CGN
-                new_key = '.'.join(key.split(".")[:-1])
+                new_key = '.'.join(key.split(splitchar)[:-1])
             else:
                 raise Exception(new_key)
             defs[new_key].append(ii)
-
     return {key: _np.array(val) for key, val in defs.items()}
 
 def order_frags(fragment_names, ref_fragnames_in_order):
