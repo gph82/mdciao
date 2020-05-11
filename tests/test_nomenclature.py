@@ -556,12 +556,27 @@ class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
 class Test_map2defs(unittest.TestCase):
     def setUp(self):
         self.cons_list =  ['3.67','G.H5.1','G.H5.6','5.69']
+        self.cons_list_w_Nones = ['3.67', None, None, 'G.H5.1','G.H5.6','5.69']
+        self.cons_list_wo_dots = ['367', None, None, 'G.H5.1','G.H5.6','5.69']
 
-    def test_map2defs_just_works(self):
+
+    def test_works(self):
         map2defs = nomenclature_utils._map2defs(self.cons_list)
-        assert (_np.array_equal(map2defs['3'], [0]))
-        assert (_np.array_equal(map2defs['G.H5'], [1, 2]))
-        assert (_np.array_equal(map2defs['5'], [3]))
+        assert _np.array_equal(map2defs['3'], [0])
+        assert _np.array_equal(map2defs['G.H5'], [1, 2])
+        assert _np.array_equal(map2defs['5'], [3])
+        _np.testing.assert_equal(len(map2defs),3)
+
+    def test_works_w_Nones(self):
+        map2defs = nomenclature_utils._map2defs(self.cons_list_w_Nones)
+        assert _np.array_equal(map2defs['3'], [0])
+        assert _np.array_equal(map2defs['G.H5'], [3,4])
+        assert _np.array_equal(map2defs['5'], [5])
+        _np.testing.assert_equal(len(map2defs), 3)
+
+    def test_works_wo_dot_raises(self):
+        with pytest.raises(AssertionError):
+            nomenclature_utils._map2defs(self.cons_list_wo_dots)
 
 class Test_top2consensus_map(unittest.TestCase):
     #TODO add test for special case restrict_to_residxs
