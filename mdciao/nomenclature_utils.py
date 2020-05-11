@@ -1365,17 +1365,30 @@ def _map2defs(cons_list):
 
     return {key: _np.array(val) for key, val in defs.items()}
 
-def order_frags(fragment_names, consensus_labels):
+def order_frags(fragment_names, ref_fragnames_in_order):
+    r"""
+    Input a list of fragment names and return in
+    sorted according to a reference
+
+    Parameters
+    ----------
+    fragment_names
+    ref_fragnames_in_order
+
+    Returns
+    -------
+    fragnames_out
+    """
     from natsort import natsorted
     labs_out = []
     for ifrag in fragment_names:
         if 'CL' in ifrag:
-            toappend = natsorted([ilab for ilab in consensus_labels if ilab.endswith(ifrag)])
+            toappend = natsorted([ilab for ilab in ref_fragnames_in_order if ilab.endswith(ifrag)])
         else:
-            toappend = natsorted([ilab for ilab in consensus_labels if ilab.startswith(ifrag)])
+            toappend = natsorted([ilab for ilab in ref_fragnames_in_order if ilab.startswith(ifrag)])
         if len(toappend) > 0:
             labs_out.extend(toappend)
-    for ilab in consensus_labels:
+    for ilab in ref_fragnames_in_order:
         if ilab not in labs_out:
             labs_out.append(ilab)
     return labs_out
