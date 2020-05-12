@@ -660,6 +660,7 @@ def sites(topology,
 
     return
 
+'''
 def density_by_sites(topology,
           trajectories,
           site_files,
@@ -781,6 +782,7 @@ def site_figures(topology,
 
 
         input()
+'''
 
 def interface(
         topology=None,
