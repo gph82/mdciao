@@ -383,6 +383,7 @@ def fnmatch_ex(patterns_as_csv, list_of_keys):
     passes_filter = lambda key : matches_include(key) and not matches_exclude(key)
     outgroup = []
     for key in list_of_keys:
+        #print(key, matches_include(key),matches_exclude(key),include_patterns, exclude_patterns)
         if passes_filter(key):
             outgroup.append(key)
     return outgroup
