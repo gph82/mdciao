@@ -45,17 +45,6 @@ from mdciao.fragments import my_frag_colors as mycolors
 from mdciao.str_and_dict_utils import \
     match_dict_by_patterns as _match_dict_by_patterns
 
-def _inform_of_parser(parser):
-    # TODO find out where the keys are hiding in parser...
-    a = parser.parse_args()
-    print("Here I am")
-    for key, __ in a._get_kwargs():
-        dval = parser.get_default(key)
-        fmt = '%s=%s,'
-        if isinstance(dval, str):
-            fmt = '%s="%s",'
-        print(fmt % (key, dval))
-
 def _offer_to_create_dir(output_dir):
     r"""
     Offer to create a directory if it does not

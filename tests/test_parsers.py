@@ -17,6 +17,12 @@ class TestParsersRun(unittest.TestCase):
         parsers.parser_for_sites()
         parsers.parser_for_compare_neighborhoods()
 
+class Test_inform_of_parser(unittest.TestCase):
+
+    def test_just_runs(self):
+        p = parsers.parser_for_rn()
+        parsers._inform_of_parser(p, [None,None])
+
 
 if __name__ == '__main__':
     unittest.main()

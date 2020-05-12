@@ -9,6 +9,31 @@ class SmartFormatter(argparse.HelpFormatter):
         # this is the RawTextHelpFormatter._split_lines
         return argparse.HelpFormatter._split_lines(self, text, width)
 
+def _inform_of_parser(parser,args=None):
+    r"""
+    Print all the valuesof the variables in a parser
+    TODO find out the native way of doing this
+    Parameters
+    ----------
+    parser
+
+    Returns
+    -------
+
+    """
+    # TODO is this too hacky, wouldn't *args suffice?
+    # This is just to run tests
+    if args is None:
+        a = parser.parse_args()
+    else:
+        a = parser.parse_args(args)
+    for key, __ in a._get_kwargs():
+        dval = parser.get_default(key)
+        fmt = '%s=%s,'
+        if isinstance(dval, str):
+            fmt = '%s="%s",'
+        print(fmt % (key, dval))
+
 def _parser_top_traj(description=None):
     r"""
     Instantiate the basic parsers which can take topology and trajectories

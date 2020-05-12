@@ -57,6 +57,7 @@ class TestJustRunsAllFewestOptions(unittest.TestCase):
                       frag_idxs_group_1=[0],
                       frag_idxs_group_2=[1],
                       output_dir=tmpdir)
+
     @unittest.skip("contact map is not being exposed anywhere ATM")
     def test_contact_map(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
