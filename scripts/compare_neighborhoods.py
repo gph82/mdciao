@@ -1,10 +1,9 @@
 #!/home/perezheg/miniconda3/bin/python
-import numpy as np
-from mdciao.parsers import _paser_of_cn
+from mdciao.parsers import parser_for_compare_neighborhoods
 from mdciao.command_line_tools import neighborhood_comparison
 
 # Get and instantiate parser
-parser = _paser_of_cn()
+parser = parser_for_compare_neighborhoods()
 a  = parser.parse_args()
 assert len(a.keys.split(","))==len(a.files.split(","))
 file_dict = {key: file for key, file in zip(a.keys.split(","), a.files.split(","))}

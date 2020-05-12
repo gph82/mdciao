@@ -242,7 +242,25 @@ class Test_parse_consensus_option(unittest.TestCase):
             self.assertIsInstance(lblr, LabelerBW)
             self.assertIsInstance(residx2conlab,list)
 
+class Test_offer_to_create_dir(unittest.TestCase):
 
+    def test_creates_dir(self):
+       with TemporaryDirectory() as tmpdir:
+           newdir = _path.join(tmpdir,"non_existent")
+           input_values = (val for val in [""])
+           with mock.patch('builtins.input', lambda *x: next(input_values)):
+               command_line_tools._offer_to_create_dir(newdir)
+           assert _path.exists(newdir)
+
+    def test_does_nothing_bc_dir_exists(self):
+       with TemporaryDirectory() as tmpdir:
+           command_line_tools._offer_to_create_dir(tmpdir)
+
+    def test_raises(self):
+        input_values = (val for val in ["n"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            res = command_line_tools._offer_to_create_dir("testdir")
+            assert res is None
 
 if __name__ == '__main__':
     unittest.main()

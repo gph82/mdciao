@@ -75,6 +75,7 @@ def _parser_add_smooth(parser):
     parser.add_argument("--n_smooth_hw", type=int,
                         help="Number of frames one half of the averaging window for the time-traces. Default is 0, which means no averaging.",
                         default=0)
+
 def _parser_add_scheme(parser):
     parser.add_argument("--scheme",type=str, default='closest-heavy',
                         help="Type for scheme for computing distance between residues. Choices are "
@@ -139,7 +140,6 @@ def _parser_add_no_fragfrag(parser):
     parser.add_argument('--no-same_fragment', dest='same_fragment', action='store_false')
     parser.set_defaults(allow_same_fragment_ctcs=True)
 
-
 def _parser_add_pbc(parser):
     parser.add_argument('--pbc', dest='pbc', action='store_true',
                         help="Consider periodic boundary conditions when computing distances."
@@ -176,44 +176,6 @@ def _parser_add_fragment_names(parser):
                              "'TM1, TM2, TM3,'",
                         default="")
 
-def parser_for_sites():
-    #todo THIS WILL BREARK PARSER FOR SITES!!!!
-    parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
-                                      'receptor-G-protein complex. The user has to provide "site" files in .json format')
-
-    _parser_add_sites(parser)
-    parser.add_argument('--default_fragment_index', default=None, type=int,
-                        help="In case a residue identified as, e.g, GLU30, appears more than\n"
-                             " one time in the topology, e.g. in case of a dimer, the user can\n"
-                             " pass which fragment/monomer should be chosen by default. The\n"
-                             " default behaviour (None) will prompt the user when necessary")
-    _parser_add_scheme(parser)
-    _parser_add_nomenclature(parser)
-    _parser_add_output_dir(parser)
-    _parser_add_stride(parser)
-    _parser_add_smooth(parser)
-    _parser_add_fragment_names(parser)
-    _parser_add_cutoff(parser)
-    _parser_add_t_unit(parser)
-    _parser_add_graphic_ext(parser)
-    _parser_add_curve_color(parser)
-    _parser_add_gray_backgroud(parser)
-    _parser_add_graphic_dpi(parser)
-    _parser_add_ylim_Ang(parser)
-    _parser_add_n_jobs(parser)
-    return parser
-
-
-def parser_for_densities():
-    parser = _parser_top_traj("For densities")
-    _parser_add_sites(parser)
-    _parser_add_output_dir(parser)
-    _parser_add_stride(parser,help='Stride down the data by this factor. Default is 1.')
-
-    return parser
-
-
-
 def _parser_add_n_ctcs(parser, default=5):
     parser.add_argument("--n_ctcs", type=int,
                         help="Only the first n_ctcs most-frequent contacts "
@@ -226,6 +188,93 @@ def _parser_add_pop(parser):
                              "Default is False")
     parser.add_argument("--no-pop_N_ctcs", dest="separate_N_ctcs", action="store_false")
     parser.set_defaults(separate_N_ctcs=False)
+
+def _parser_add_n_cols(parser):
+    parser.add_argument("--n_cols", type=int, help="number of columns of the overall plot. Default is 4",
+                        default=4)
+
+def _parser_add_graphic_dpi(parser):
+    parser.add_argument('--graphic_dpi', type=int,
+                        help="Dots per Inch (DPI) of the graphic output. Only has an effect for bitmap outputs. Default is 150.",
+                        default=150)
+
+def _parser_add_table_ext(parser):
+    parser.add_argument('--table_ext', type=str,
+                        help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
+                        default=None)
+
+def fnmatch_ex(patterns_as_csv, list_of_keys):
+    r"""
+    Match the keys of the input dictionary against some naming patterns
+    using Unix filename pattern matching TODO include link:  https://docs.python.org/3/library/fnmatch.html
+
+    This method also allows for exclusions (grep -e)
+
+    TODO: find out if regular expression re.findall() is better
+
+    Parameters
+    ----------
+    patterns_as_csv : str
+        Patterns to include or exclude, separated by commas, e.g.
+        * "H*,-H8" will include all TMs but not H8
+        * "G.S*" will include all beta-sheets
+    list_of_keys : list
+        Keys against which to match the patterns, e.g.
+        * ["H1","ICL1", "H2"..."ICL3","H6", "H7", "H8"]
+
+    Returns
+    -------
+    matching_keys : list
+
+    """
+    from fnmatch import fnmatch
+    include_patterns = [pattern for pattern in patterns_as_csv.split(",") if not pattern.startswith("-")]
+    exclude_patterns = [pattern[1:] for pattern in patterns_as_csv.split(",") if pattern.startswith("-")]
+    #print(include_patterns)
+    #print(exclude_patterns)
+    match = lambda key, pattern: fnmatch(str(key), pattern) and all([not fnmatch(str(key), negpat) for negpat in exclude_patterns])
+    outgroup = []
+    for pattern in include_patterns:
+        for key in list_of_keys:
+            #print(key, pattern, match(key,pattern))
+            if match(key, pattern):
+                outgroup.append(key)
+    return outgroup
+
+def match_dict_by_patterns(patterns_as_csv, index_dict, verbose=False):
+    r"""
+    Joins all the values in an input dictionary if their key matches
+    some patterns. This method also allows for exclusions (grep -e)
+
+    TODO: find out if regular expression re.findall() is better
+
+    Parameters
+    ----------
+    patterns_as_csv : str
+        Comma-separated patterns to include or exclude, separated by commas, e.g.
+        * "H*,-H8" will include all TMs but not H8
+        * "G.S*" will include all beta-sheets
+    index_dict : dictionary
+        It is expected to contain iterable of ints or floats or anything that
+        is "joinable" via np.hstack. Typically, something like:
+        * {"H1":[0,1,...30], "ICL1":[31,32,...40],...}
+
+    Returns
+    -------
+    matching_keys, matching_values : list, array of joined values
+
+    """
+    matching_keys =   fnmatch_ex(patterns_as_csv, index_dict.keys())
+    if verbose:
+        print(', '.join(matching_keys))
+    import numpy as _np
+
+    if len(matching_keys)==0:
+        matching_values = []
+    else:
+        matching_values = _np.hstack([index_dict[key] for key in matching_keys])
+
+    return matching_keys, matching_values
 
 def parser_for_rn():
     parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
@@ -358,36 +407,39 @@ def parser_for_dih():
 
     return parser
 
-def _parser_add_n_cols(parser):
-    parser.add_argument("--n_cols", type=int, help="number of columns of the overall plot. Default is 4",
-                        default=4)
+def parser_for_sites():
+    #todo THIS WILL BREARK PARSER FOR SITES!!!!
+    parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
+                                      'receptor-G-protein complex. The user has to provide "site" files in .json format')
 
-def _parser_add_graphic_dpi(parser):
-    parser.add_argument('--graphic_dpi', type=int,
-                        help="Dots per Inch (DPI) of the graphic output. Only has an effect for bitmap outputs. Default is 150.",
-                        default=150)
+    _parser_add_sites(parser)
+    parser.add_argument('--default_fragment_index', default=None, type=int,
+                        help="In case a residue identified as, e.g, GLU30, appears more than\n"
+                             " one time in the topology, e.g. in case of a dimer, the user can\n"
+                             " pass which fragment/monomer should be chosen by default. The\n"
+                             " default behaviour (None) will prompt the user when necessary")
+    _parser_add_scheme(parser)
+    _parser_add_nomenclature(parser)
+    _parser_add_output_dir(parser)
+    _parser_add_stride(parser)
+    _parser_add_smooth(parser)
+    _parser_add_fragment_names(parser)
+    _parser_add_cutoff(parser)
+    _parser_add_t_unit(parser)
+    _parser_add_graphic_ext(parser)
+    _parser_add_curve_color(parser)
+    _parser_add_gray_backgroud(parser)
+    _parser_add_graphic_dpi(parser)
+    _parser_add_ylim_Ang(parser)
+    _parser_add_n_jobs(parser)
+    return parser
 
-def _parser_add_table_ext(parser):
-    parser.add_argument('--table_ext', type=str,
-                        help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
-                        default=None)
+def parser_for_densities():
+    parser = _parser_top_traj("For densities")
+    _parser_add_sites(parser)
+    _parser_add_output_dir(parser)
+    _parser_add_stride(parser,help='Stride down the data by this factor. Default is 1.')
 
-def _paser_of_cn():
-    """
-    width=.2, figsize=(10, 5),
-                          fontsize=16,
-                          substitutions=["MG", "GDP"],
-                          mutations = {},
-                          plot_singles=False, stop_at=.1, scale_fig=False
-    :return:
-    """
-    parser = argparse.ArgumentParser(description="compare")
-    parser.add_argument("anchor",type=str)
-    parser.add_argument("--keys", type=str)
-    parser.add_argument("--files", type=str)
-    parser.add_argument("--colors", type=str)
-    parser.add_argument("--mutations",type=str)
-    #parser.add_argument("-width",type=float,default=.2)
     return parser
 
 def parser_for_interface():
@@ -493,81 +545,6 @@ def parser_for_contact_map():
 
     return parser
 
-
-def fnmatch_ex(patterns_as_csv, list_of_keys):
-    r"""
-    Match the keys of the input dictionary against some naming patterns
-    using Unix filename pattern matching TODO include link:  https://docs.python.org/3/library/fnmatch.html
-
-    This method also allows for exclusions (grep -e)
-
-    TODO: find out if regular expression re.findall() is better
-
-    Parameters
-    ----------
-    patterns_as_csv : str
-        Patterns to include or exclude, separated by commas, e.g.
-        * "H*,-H8" will include all TMs but not H8
-        * "G.S*" will include all beta-sheets
-    list_of_keys : list
-        Keys against which to match the patterns, e.g.
-        * ["H1","ICL1", "H2"..."ICL3","H6", "H7", "H8"]
-
-    Returns
-    -------
-    matching_keys : list
-
-    """
-    from fnmatch import fnmatch
-    include_patterns = [pattern for pattern in patterns_as_csv.split(",") if not pattern.startswith("-")]
-    exclude_patterns = [pattern[1:] for pattern in patterns_as_csv.split(",") if pattern.startswith("-")]
-    #print(include_patterns)
-    #print(exclude_patterns)
-    match = lambda key, pattern: fnmatch(str(key), pattern) and all([not fnmatch(str(key), negpat) for negpat in exclude_patterns])
-    outgroup = []
-    for pattern in include_patterns:
-        for key in list_of_keys:
-            #print(key, pattern, match(key,pattern))
-            if match(key, pattern):
-                outgroup.append(key)
-    return outgroup
-
-
-def match_dict_by_patterns(patterns_as_csv, index_dict, verbose=False):
-    r"""
-    Joins all the values in an input dictionary if their key matches
-    some patterns. This method also allows for exclusions (grep -e)
-
-    TODO: find out if regular expression re.findall() is better
-
-    Parameters
-    ----------
-    patterns_as_csv : str
-        Comma-separated patterns to include or exclude, separated by commas, e.g.
-        * "H*,-H8" will include all TMs but not H8
-        * "G.S*" will include all beta-sheets
-    index_dict : dictionary
-        It is expected to contain iterable of ints or floats or anything that
-        is "joinable" via np.hstack. Typically, something like:
-        * {"H1":[0,1,...30], "ICL1":[31,32,...40],...}
-
-    Returns
-    -------
-    matching_keys, matching_values : list, array of joined values
-
-    """
-    matching_keys =   fnmatch_ex(patterns_as_csv, index_dict.keys())
-    if verbose:
-        print(', '.join(matching_keys))
-    import numpy as _np
-
-    if len(matching_keys)==0:
-        matching_values = []
-    else:
-        matching_values = _np.hstack([index_dict[key] for key in matching_keys])
-
-    return matching_keys, matching_values
-
 def parser_for_frag_overview():
     parser = argparse.ArgumentParser(description='Provides overview of '
                                                  'fragments by different methods')
@@ -613,7 +590,6 @@ def parser_for_BW_overview():
 
     return parser
 
-
 def parser_for_CGN_overview():
     parser = argparse.ArgumentParser(description='Provides overview of '
                                                  'CGN nomenclature for a given topology')
@@ -622,4 +598,22 @@ def parser_for_CGN_overview():
     parser.add_argument("CGN_PDB", type=str,
                         help="Look for CGN definitions in a database using a PDB code, "
                              "e.g. 3SN6. see www.mrc-lmb.cam.ac.uk")
+    return parser
+
+def parser_for_compare_neighborhoods():
+    """
+    width=.2, figsize=(10, 5),
+                          fontsize=16,
+                          substitutions=["MG", "GDP"],
+                          mutations = {},
+                          plot_singles=False, stop_at=.1, scale_fig=False
+    :return:
+    """
+    parser = argparse.ArgumentParser(description="compare")
+    parser.add_argument("anchor",type=str)
+    parser.add_argument("--keys", type=str)
+    parser.add_argument("--files", type=str)
+    parser.add_argument("--colors", type=str)
+    parser.add_argument("--mutations",type=str)
+    #parser.add_argument("-width",type=float,default=.2)
     return parser
