@@ -31,11 +31,15 @@ from os import \
 from mdciao.fragments import \
     get_fragments
 
-class TestJustRunsAllFewestOptions(unittest.TestCase):
+class TestCLTBaseClass(unittest.TestCase):
+
     def setUp(self):
         self.geom = md.load(test_filenames.prot1_pdb)
         self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)
         self.run1_stride_100_xtc_reverse = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)[::-1]
+
+
+class TestJustRunsAllFewestOptions(TestCLTBaseClass):
 
     @patch('builtins.input', lambda *args: '4')
     def test_neighborhoods(self):
@@ -65,11 +69,7 @@ class TestJustRunsAllFewestOptions(unittest.TestCase):
                                     self.run1_stride_100_xtc_reverse],
                       output_dir=tmpdir)
 
-class Test_residue_neighbrhoodsOptionsJustRuns(unittest.TestCase):
-    def setUp(self):
-        self.geom = md.load(test_filenames.prot1_pdb)
-        self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)
-        self.run1_stride_100_xtc_reverse = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)[::-1]
+class Test_residue_neighbrhoodsOptionsJustRuns(TestCLTBaseClass):
 
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -211,6 +211,24 @@ class Test_residue_neighbrhoodsOptionsJustRuns(unittest.TestCase):
                                       BW_uniprot=_path.join(test_filenames.test_data_path, "adrb2_human_full"),
                                       output_dir=tmpdir
                                       )
+
+class Test_sites_missing_options(TestCLTBaseClass):
+
+    def test_scheme_CA(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            sites(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                  [test_filenames.GDP_json],
+                  output_dir=tmpdir,
+                  scheme="COM")
+
+    def test_fragmentify_raises(self):
+        with pytest.raises(NotImplementedError):
+            with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+                sites(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                      [test_filenames.GDP_json],
+                      output_dir=tmpdir,
+                      scheme="COM",
+                      fragmentify=False)
 
 class Test_parse_consensus_option(unittest.TestCase):
 
