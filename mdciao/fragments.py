@@ -56,7 +56,7 @@ def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
         resfirst = "%7s%s"%(top.residue(fragment[0]), maplabel_first)
         reslast =  "%7s%s"%(top.residue(fragment[-1]), maplabel_last)
-        istr = "%s %6s with %3u AAs %15s(%4u)-%-15s(%-4u) (%s) " % (fragment_desc, str(frag_idx), len(fragment),
+        istr = "%s %6s with %4u AAs %15s(%4u)-%-15s(%-4u) (%s) " % (fragment_desc, str(frag_idx), len(fragment),
                                                                 resfirst,
                                                                 top.residue(fragment[0]).index,
                                                                 reslast,
@@ -615,6 +615,71 @@ def _intersecting_fragments(res_idxs, fragname, fragments, top,
     else:
         return res_idxs
 
+def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
+    r"""
+    Method to help implement the input options wrt
+    to fragments of :obj:`parsers.parser_for_interface`
+
+    Check the documentation of interface (-h) for more details
+
+    Check also :obj:`rangeexpand` to understand the expressions
+
+
+    Parameters
+    ----------
+    fragment_input : list of strings
+        Many cases are possible
+        * ["consensus"] : fragment using "resSeq+"
+        and return consensus as True
+        * [method] : fragment using "method"
+        (see :obj:`get_fragments`) and return
+        consensus as False
+        * [['exp1']] : this str represents the
+        residues in one fragment (eg. "0-3,5" : 0,1,2,3,5).
+        Assume that the missing residues the other fragment.
+        Return the two fragments and consensus as False
+        * [["exp1"],
+           ["exp2"],
+           [...]]
+        These strs are the fragments expressed as residue
+        indices. Evaluate them and return them. Return
+        consensus as False
+
+    top : :obj:`mdtraj.Topology`
+
+    Returns
+    -------
+
+    """
+    consensus = False
+    assert isinstance(fragment_input,list)
+    if len(fragment_input)==1 and fragment_input[0][:-1].isalpha(): # the -1 is to allow resseq+ to be alpha
+        if fragment_input[0].lower()=="consensus":
+            consensus = True
+            method = 'resSeq+ (for later consensus labelling)'
+            fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
+                                                      verbose=False)
+        else:
+            method = fragment_input[0]
+            fragments_as_residue_idxs = get_fragments(top, method=method,
+                                                      verbose=False)
+            assert len(fragments_as_residue_idxs) >= 2, ("The chosen method detects less than"
+                                     "2 fragments. Aborting.")
+    else:
+        method = "user input by residue index"
+        # What we have is list residue idxs as strings like 0-100, 101-200, 201-300
+        fragments_as_residue_idxs =[_rangeexpand(ifrag.strip(",")) for ifrag in fragment_input]
+        if len(fragment_input)==1:
+            assert isinstance(fragment_input[0],str)
+            method += "(only one fragment provided, assuming the rest of residues are fragment 2)"
+            fragments_as_residue_idxs.append(_np.delete(_np.arange(top.n_residues), fragments_as_residue_idxs[0]))
+
+    if verbose:
+        print("Using method '%s' these fragments were found"%method)
+        for ii, ifrag in enumerate(fragments_as_residue_idxs):
+            _print_frag(ii, top, ifrag)
+
+    return fragments_as_residue_idxs, consensus
 
 my_frag_colors=[
          'magenta',

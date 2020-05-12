@@ -7,6 +7,9 @@ import mock
 from mdciao.fragments import get_fragments, \
     per_residue_fragment_picker, \
     overview, _allowed_fragment_methods, _print_frag
+
+from mdciao import fragments
+
 from filenames import filenames
 
 import pytest
@@ -547,6 +550,62 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
             resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
                                                                       self.geom2frags.top,
                                                                       )
+
+class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
+
+    def setUp(self):
+        self.top = md.load(test_filenames.prot1_pdb).top
+        self.fragments_by_resSeqplus = fragments.get_fragments(self.top,
+                                                               method="resSeq+",
+                                                               verbose=False)
+        self.fragments_by_resSeq = fragments.get_fragments(self.top,
+                                                               method="resSeq",
+                                                               verbose=False)
+    def test_consensus(self):
+        from mdciao import fragments
+        fragments, conlab  = fragments._fragments_strings_to_fragments(["consensus"],
+                                                  self.top)
+        [_np.testing.assert_array_equal(ii,jj) for ii, jj in zip(fragments,
+                                                  self.fragments_by_resSeqplus)]
+        assert conlab
+
+    def test_other_method(self):
+        from mdciao import fragments
+        fragments, conlab  = fragments._fragments_strings_to_fragments(["resSeq"],
+                                                  self.top)
+        [_np.testing.assert_array_equal(ii,jj) for ii, jj in zip(fragments,
+                                                  self.fragments_by_resSeq)]
+        assert not conlab
+
+    def test_one_fragment(self):
+        from mdciao import fragments
+        fragments, conlab = fragments._fragments_strings_to_fragments(["0-10"],
+                                                                      self.top)
+        other = _np.arange(11, self.top.n_residues)
+        [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
+                                                                  [_np.arange(11),
+                                                                   other])]
+        assert not conlab
+
+    def test_more_than_one_fragment(self):
+        from mdciao import fragments
+        fragments, conlab = fragments._fragments_strings_to_fragments(["0-10",
+                                                                       "11-100",
+                                                                       "200-210"],
+                                                                      self.top)
+        [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
+                                                                  [_np.arange(11),
+                                                                   _np.arange(11,101),
+                                                                   _np.arange(200,211)])]
+        assert not conlab
+
+    def test_verbose(self):
+        from mdciao import fragments
+        fragments, conlab = fragments._fragments_strings_to_fragments(["0-10",
+                                                                       "11-100",
+                                                                       "200-210"],
+                                                                      self.top,
+                                                                      verbose=True)
 
 
 if __name__ == '__main__':
