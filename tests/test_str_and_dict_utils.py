@@ -115,6 +115,17 @@ class Test_iterate_and_inform_lambdas(unittest.TestCase):
                                                      top=self.top)
         self._call_iterators_and_test_them(iterate, inform, self.filename, 1)
 
+    def test_filename_no_stride_filename_is_ascii_just_works(self):
+        iterate, inform = iterate_and_inform_lambdas(self.pdb,
+                                                     10,
+                                                     top=self.top)
+        nf = 0
+        for ii, chunk in enumerate(iterate(self.pdb)):
+            nf += chunk.n_frames
+            inform(self.pdb,0,ii,nf)
+        assert nf==1
+        assert ii==0
+
 
     def test_filename_w_stride(self):
         iterate, inform = iterate_and_inform_lambdas(self.filename,
