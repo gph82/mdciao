@@ -261,6 +261,21 @@ class Test_parse_consensus_option(unittest.TestCase):
             self.assertIsInstance(lblr, LabelerBW)
             self.assertIsInstance(residx2conlab,list)
 
+    def test_with_BW_already_instantiated(self):
+        fragments = get_fragments(self.geom.top)
+        BW = LabelerBW("adrb2_human_full",
+                       local_path=test_filenames.test_data_path)
+        input_values = (val for val in [""])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+
+            residx2conlab, lblr = command_line_tools._parse_consensus_option(BW, "BW",
+                                                   self.geom.top,
+                                                   fragments,
+                                                   return_Labeler=True)
+            self.assertIsInstance(lblr, LabelerBW)
+            self.assertEqual(lblr,BW)
+            self.assertIsInstance(residx2conlab,list)
+
 class Test_offer_to_create_dir(unittest.TestCase):
 
     def test_creates_dir(self):
