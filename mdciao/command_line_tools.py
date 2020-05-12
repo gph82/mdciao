@@ -42,7 +42,7 @@ from mdciao.bond_utils import \
 
 from mdciao.fragments import my_frag_colors as mycolors
 
-from mdciao.parsers import \
+from mdciao.str_and_dict_utils import \
     match_dict_by_patterns as _match_dict_by_patterns
 
 def _inform_of_parser(parser):
@@ -57,6 +57,18 @@ def _inform_of_parser(parser):
         print(fmt % (key, dval))
 
 def _offer_to_create_dir(output_dir):
+    r"""
+    Offer to create a directory if it does not
+    exist. Does nothing if it already exists
+
+    Parameters
+    ----------
+    output_dir : str
+
+    Returns
+    -------
+
+    """
     if not path.isdir(output_dir):
         answer = input("\nThe directory '%s' does not exist. Create it on the fly [y/n]?\nDefault [y]: " % output_dir)
         if len(answer) == 0 or answer.lower().startswith("y"):
@@ -64,7 +76,6 @@ def _offer_to_create_dir(output_dir):
         else:
             print("Stopping. Please check your variable 'output_dir' and try again")
             return
-
 
 def _parse_consensus_option(option, consensus_type,
                             top, fragments,

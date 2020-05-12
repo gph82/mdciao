@@ -2,6 +2,7 @@ from glob import glob as _glob
 import numpy as _np
 import mdtraj as _md
 from .list_utils import re_warp
+from fnmatch import fnmatch as _fnmatch
 
 _tunit2tunit = {"ps":  {"ps": 1,   "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
@@ -344,3 +345,78 @@ def choose_between_good_and_better_strings(good_option, better_option,
             return fmt % good_option
         else:
             return fmt % better_option
+
+def fnmatch_ex(patterns_as_csv, list_of_keys):
+    r"""
+    Match the keys in :obj:`list_of_keys` against some naming patterns
+    using Unix filename pattern matching
+    TODO include link:  https://docs.python.org/3/library/fnmatch.html
+
+    This method also allows for exclusions (grep -e)
+
+    TODO: find out if regular expression re.findall() is better
+
+    Uses fnmatch under the hood
+
+    Parameters
+    ----------
+    patterns_as_csv : str
+        Patterns to include or exclude, separated by commas, e.g.
+        * "H*,-H8" will include all TMs but not H8
+        * "G.S*" will include all beta-sheets
+    list_of_keys : list
+        Keys against which to match the patterns, e.g.
+        * ["H1","ICL1", "H2"..."ICL3","H6", "H7", "H8"]
+
+    Returns
+    -------
+    matching_keys : list
+
+    """
+    include_patterns = [pattern for pattern in patterns_as_csv.split(",") if not pattern.startswith("-")]
+    exclude_patterns = [pattern[1:] for pattern in patterns_as_csv.split(",") if pattern.startswith("-")]
+    #print(include_patterns)
+    #print(exclude_patterns)
+    # Define the match using a lambda
+    matches_include = lambda key : any([_fnmatch(str(key), patt) for patt in include_patterns])
+    matches_exclude = lambda key : any([_fnmatch(str(key), patt) for patt in exclude_patterns])
+    passes_filter = lambda key : matches_include(key) and not matches_exclude(key)
+    outgroup = []
+    for key in list_of_keys:
+        if passes_filter(key):
+            outgroup.append(key)
+    return outgroup
+
+def match_dict_by_patterns(patterns_as_csv, index_dict, verbose=False):
+    r"""
+    Joins all the values in an input dictionary if their key matches
+    some patterns. This method also allows for exclusions (grep -e)
+
+    TODO: find out if regular expression re.findall() is better
+
+    Parameters
+    ----------
+    patterns_as_csv : str
+        Comma-separated patterns to include or exclude, separated by commas, e.g.
+        * "H*,-H8" will include all TMs but not H8
+        * "G.S*" will include all beta-sheets
+    index_dict : dictionary
+        It is expected to contain iterable of ints or floats or anything that
+        is "joinable" via np.hstack. Typically, something like:
+        * {"H1":[0,1,...30], "ICL1":[31,32,...40],...}
+
+    Returns
+    -------
+    matching_keys, matching_values : list, array of joined values
+
+    """
+    matching_keys =   fnmatch_ex(patterns_as_csv, index_dict.keys())
+    if verbose:
+        print(', '.join(matching_keys))
+
+    if len(matching_keys)==0:
+        matching_values = []
+    else:
+        matching_values = _np.hstack([index_dict[key] for key in matching_keys])
+
+    return matching_keys, matching_values

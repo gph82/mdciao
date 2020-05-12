@@ -17,6 +17,8 @@ from mdciao.str_and_dict_utils import \
     choose_between_good_and_better_strings, \
     freq_datfile2freqdict
 
+from mdciao import str_and_dict_utils
+
 from tempfile import TemporaryDirectory as _TDir
 
 import pytest
@@ -339,6 +341,36 @@ class Test_freq_datfile2freqdict(unittest.TestCase):
         assert freqsin["0-2"]==.4
         assert len(freqsin)==2
 
+class Test_fnmatch_functions(unittest.TestCase):
+
+    def setUp(self):
+        self.dict = {"John Perez":[0,1],
+                     "Johnathan Hernandez":[2,3],
+                     "Guille Doe":[4,5],
+                     "Johnny Doe":[6,7]}
+        self.patterns = "John*,*Doe,-Johnny*"
+        # pick all FN John, LN Doe but avoid Johnny
+
+    def test_fnmatch_ex_works(self):
+
+        names = self.dict.keys()
+        filtered = str_and_dict_utils.fnmatch_ex(self.patterns,names)
+        self.assertEqual(filtered,["John Perez", "Johnathan Hernandez","Guille Doe"])
+
+    def test_match_dict_by_patterns_works(self):
+        matching_keys, matching_values = str_and_dict_utils.match_dict_by_patterns(self.patterns,self.dict,
+                                                      verbose=True)
+        self.assertEqual(matching_keys,["John Perez", "Johnathan Hernandez","Guille Doe"])
+        np.testing.assert_array_equal(matching_values,np.arange(6))
+        # pick all FN John, LN Doe but avoid Johny
+
+    def test_match_dict_by_patterns_empty(self):
+        matching_keys, matching_values = str_and_dict_utils.match_dict_by_patterns("Maria",
+                                                                                   self.dict,
+                                                      verbose=True)
+        self.assertEqual(matching_keys,[])
+        np.testing.assert_array_equal(matching_values,[])
+        # pick all FN John, LN Doe but avoid Johny
 
 if __name__ == '__main__':
     unittest.main()
