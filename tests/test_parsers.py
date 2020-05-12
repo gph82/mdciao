@@ -15,6 +15,7 @@ class TestParsersRun(unittest.TestCase):
         parsers.parser_for_interface()
         parsers.parser_for_dih()
         parsers.parser_for_sites()
+        parsers.parser_for_compare_neighborhoods()
 
 
 if __name__ == '__main__':
