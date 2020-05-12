@@ -783,7 +783,6 @@ def site_figures(topology,
 
         input()
 '''
-
 def interface(
         topology=None,
         trajectories=None,
@@ -820,13 +819,10 @@ def interface(
     _offer_to_create_dir(output_dir)
 
     xtcs = _get_sorted_trajectories(trajectories)
-    print("Will compute contact frequencies for the files:\n  %s\n with a stride of %u frames.\n" % (
-    "\n  ".join([str(ixtc) for ixtc in xtcs]), stride))
+    print("Will compute contact frequencies for :\n%s"
+          "\n with a stride of %u frames)" % (_inform_about_trajectories(xtcs), stride))
 
-    if isinstance(topology,str):
-        refgeom = md.load(topology)
-    else:
-        refgeom = topology
+    refgeom = _load_any_top(topology)
 
     frag_cons = False
     if len(fragments)==1 and fragments[0][:-1].isalpha(): # the -1 is to allow resseq+ to be alpha
