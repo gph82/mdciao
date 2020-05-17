@@ -14,7 +14,8 @@ from tempfile import TemporaryDirectory as _TD
 from mdciao.fragments import \
     get_fragments, _print_frag, \
     per_residue_fragment_picker as _per_residue_fragment_picker, \
-    _fragments_strings_to_fragments
+    _fragments_strings_to_fragments, \
+    _interface_frags_WIP
 
 from mdciao.nomenclature_utils import \
     LabelerCGN, LabelerBW,\
@@ -852,35 +853,12 @@ def interface(
         if interactive:
             input("Hit enter to continue!\n")
 
-    interface_fragments = []
-    if frag_cons:
-        fragments = list(fragment_defs.values())
-        interface_residx_long = []
-        for ii in [1, 2]:
-            print("group %u: " % ii, end='')
-            answer = input(
-                    "Input a list of posix-expressions like 'TM*,-TM2,H8' (TM2 will be avoided)\n").replace(
-                    " ", "").strip("'").strip('"')
-            igroup, res_idxs_in_group = _match_dict_by_patterns(answer, fragment_defs)
-            interface_fragments.append([ilab for ilab in fragment_defs.keys() if ilab in igroup])
-            interface_residx_long.append(sorted(res_idxs_in_group))
-            print(', '.join(interface_fragments[-1]))
+    interface_fragments_as_residue_idxs, \
+    int_frags_as_str_or_keys    = _interface_frags_WIP(fragment_defs, fragments_as_residue_idxs,
+                                                               frag_idxs_group_1, frag_idxs_group_2,
+                                                               frag_cons)
 
-    if len(interface_fragments) == 0:
-        if len(fragments_as_residue_idxs) == 2 and frag_idxs_group_1 is None and frag_idxs_group_2 is None:
-            print("Only two fragments detected with no values for frag_idxs_group_1 and frag_idxs_group_2.\n"
-                  "Setting frag_idxs_group_1=0 and frag_idxs_group_2=1")
-            interface_fragments=[[0],[1]]
-        else:
-            interface_fragments = [frag_idxs_group_1,frag_idxs_group_2]
-            for ii, ifrag_idxs in enumerate(interface_fragments):
-                if ifrag_idxs is None:
-                    interface_fragments[ii] = rangeexpand(input('Input group of fragments %u: '%(ii+1)))
-                elif isinstance(ifrag_idxs,str):
-                    interface_fragments[ii] = rangeexpand(ifrag_idxs)
-
-        interface_residx_long = [_np.hstack([fragments_as_residue_idxs[ii] for ii in iint]) for iint in interface_fragments]
-    ctc_idxs = _np.vstack(list(product(interface_residx_long[0], interface_residx_long[1])))
+    ctc_idxs = _np.vstack(list(product(interface_fragments_as_residue_idxs[0], interface_fragments_as_residue_idxs[1])))
 
     # Remove self-contacts
     ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
@@ -892,11 +870,11 @@ def interface(
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
 
     print("\nComputing distances in the interface between fragments\n%s\nand\n%s.\n"
-          "The is_interface is defined by the residues within %3.1f "
+          "The interface is defined by the residues within %3.1f "
           "Angstrom of each other in the reference topology.\n"
-          "Computing is_interface..."
-          % ('\n'.join(_twrap(', '.join(['%s' % gg for gg in interface_fragments[0]]))),
-             '\n'.join(_twrap(', '.join(['%s' % gg for gg in interface_fragments[1]]))),
+          "Computing interface..."
+          % ('\n'.join(_twrap(', '.join(['%s' % gg for gg in int_frags_as_str_or_keys[0]]))),
+             '\n'.join(_twrap(', '.join(['%s' % gg for gg in int_frags_as_str_or_keys[1]]))),
              interface_cutoff_Ang), end="")
 
     ctcs, ctc_idxs = md.compute_contacts(refgeom, _np.vstack(ctc_idxs))
@@ -904,13 +882,13 @@ def interface(
 
     ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
 
-    interface_residx_short = [list(set(ctc_idxs_receptor_Gprot[:,0]).intersection(interface_residx_long[0])),
-                              list(set(ctc_idxs_receptor_Gprot[:,1]).intersection(interface_residx_long[1]))]
+    interface_residx_short = [list(set(ctc_idxs_receptor_Gprot[:,0]).intersection(interface_fragments_as_residue_idxs[0])),
+                              list(set(ctc_idxs_receptor_Gprot[:,1]).intersection(interface_fragments_as_residue_idxs[1]))]
 
     print()
     print(
-        "From %u potential group_1-group_2 distances, the is_interface was reduced to only %u potential contacts.\nIf this "
-        "number is still too high (i.e. the computation is too slow) consider using a smaller is_interface cutoff" % (
+        "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
+        "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
         len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
     print()
     ctcs, times, __ = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,

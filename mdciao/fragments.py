@@ -13,7 +13,8 @@ from .list_utils import \
     rangeexpand as _rangeexpand
 
 from .str_and_dict_utils import \
-    choose_between_good_and_better_strings as _choose_between_good_and_better_strings
+    choose_between_good_and_better_strings as _choose_between_good_and_better_strings, \
+    match_dict_by_patterns as _match_dict_by_patterns
 
 from  pandas import \
     unique as _pandas_unique
@@ -692,6 +693,40 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
             _print_frag(ii, top, ifrag)
 
     return fragments_as_residue_idxs, consensus
+
+def _interface_frags_WIP(fragment_defs, fragments_as_residue_idxs,
+             frag_idxs_group_1,frag_idxs_group_2,
+             frag_cons):
+    if frag_cons:
+        int_frags_as_str_or_keys = []
+        interface_fragments_as_residue_idxs = []
+        for ii in [1, 2]:
+            print("group %u: " % ii, end='')
+            answer = input(
+                "Input a list of posix-expressions like 'TM*,-TM2,H8' (TM2 will be avoided)\n").replace(
+                " ", "").strip("'").strip('"')
+            igroup, res_idxs_in_group = _match_dict_by_patterns(answer, fragment_defs)
+            int_frags_as_str_or_keys.append([ilab for ilab in fragment_defs.keys() if ilab in igroup])
+            interface_fragments_as_residue_idxs.append(sorted(res_idxs_in_group))
+            print(', '.join(int_frags_as_str_or_keys[-1]))
+
+    else:
+        if len(fragments_as_residue_idxs) == 2 and frag_idxs_group_1 is None and frag_idxs_group_2 is None:
+            print("Only two fragments detected with no values for frag_idxs_group_1 and frag_idxs_group_2.\n"
+                  "Setting frag_idxs_group_1=0 and frag_idxs_group_2=1")
+            int_frags_as_str_or_keys = [[0], [1]]
+        else:
+            int_frags_as_str_or_keys = [frag_idxs_group_1, frag_idxs_group_2]
+            for ii, ifrag_idxs in enumerate(int_frags_as_str_or_keys):
+                if ifrag_idxs is None:
+                    int_frags_as_str_or_keys[ii] = _rangeexpand(input('Input group of fragments %u: ' % (ii + 1)))
+                elif isinstance(ifrag_idxs, str):
+                    int_frags_as_str_or_keys[ii] = _rangeexpand(ifrag_idxs)
+
+        interface_fragments_as_residue_idxs = [_np.hstack([fragments_as_residue_idxs[ii] for ii in iint]) for iint in
+                                               int_frags_as_str_or_keys]
+
+    return interface_fragments_as_residue_idxs, int_frags_as_str_or_keys
 
 my_frag_colors=[
          'magenta',
