@@ -13,7 +13,8 @@ from tempfile import TemporaryDirectory as _TD
 
 from mdciao.fragments import \
     get_fragments, _print_frag, \
-    per_residue_fragment_picker as _per_residue_fragment_picker
+    per_residue_fragment_picker as _per_residue_fragment_picker, \
+    _fragments_strings_to_fragments
 
 from mdciao.nomenclature_utils import \
     LabelerCGN, LabelerBW,\
@@ -824,29 +825,9 @@ def interface(
 
     refgeom = _load_any_top(topology)
 
-    frag_cons = False
-    if len(fragments)==1 and fragments[0][:-1].isalpha(): # the -1 is to allow resseq+ to be alpha
-        if fragments[0].lower()=="consensus":
-            frag_cons = True
-            fragments = get_fragments(refgeom.top, method='resSeq+',verbose=True)
-        else:
-            fragments=get_fragments(refgeom.top, method=fragments[0])
-            assert len(fragments) >= 2, ("The chosen method detects less than"
-                                     "2 fragments. Aborting.")
-    else:
-        print("User input by residue index")
-        if len(fragments)==1:
-            print("Only one fragment provided, assuming the rest of residues are fragment 2")
-            fragments.append(','.join([str(ii) for ii in _np.arange(refgeom.top.n_residues)
-                              if ii not in rangeexpand(fragments[0])]))
-        _fragments = []
-        for ii, ifrag in enumerate(fragments):
-            ifrag = rangeexpand(ifrag.strip(","))
-            _fragments.append(ifrag)
-            _print_frag(ii, refgeom.top, ifrag)
-        fragments = _fragments
+    fragments_as_residue_idxs, frag_cons = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
 
-    BW, BWtf = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments,
+    BW, BWtf = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments_as_residue_idxs,
                                        return_Labeler=True,
                                        accept_guess=accept_guess,
                                        write_to_disk=write_to_disk_BW)
@@ -855,23 +836,21 @@ def interface(
         print("INFO: these are the BW fragments mapped onto your topology")
         fragment_defs.update(BWtf.top2defs(refgeom.top,
                                            map_conlab=BW,
-                                           fragments=fragments,
+                                           fragments=fragments_as_residue_idxs,
                                            return_defs=True))
         if interactive:
             input("Hit enter to continue!\n")
-    CGN, CGNtf = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments,
+    CGN, CGNtf = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs,
                                          return_Labeler=True,
                                          accept_guess=accept_guess)
     if str(CGN_PDB).lower() != 'none':
         print("INFO: these are the CGN fragments mapped onto your topology")
         fragment_defs.update(CGNtf.top2defs(refgeom.top,
                                             map_conlab=CGN,
-                                            fragments=fragments,
+                                            fragments=fragments_as_residue_idxs,
                                             return_defs=True))
         if interactive:
             input("Hit enter to continue!\n")
-
-
 
     interface_fragments = []
     if frag_cons:
@@ -888,7 +867,7 @@ def interface(
             print(', '.join(interface_fragments[-1]))
 
     if len(interface_fragments) == 0:
-        if len(fragments) == 2 and frag_idxs_group_1 is None and frag_idxs_group_2 is None:
+        if len(fragments_as_residue_idxs) == 2 and frag_idxs_group_1 is None and frag_idxs_group_2 is None:
             print("Only two fragments detected with no values for frag_idxs_group_1 and frag_idxs_group_2.\n"
                   "Setting frag_idxs_group_1=0 and frag_idxs_group_2=1")
             interface_fragments=[[0],[1]]
@@ -899,10 +878,8 @@ def interface(
                     interface_fragments[ii] = rangeexpand(input('Input group of fragments %u: '%(ii+1)))
                 elif isinstance(ifrag_idxs,str):
                     interface_fragments[ii] = rangeexpand(ifrag_idxs)
-                elif isinstance(ifrag_idxs,list):
-                    #interface_fragments[ii] = ifrag_idxs
-                    pass
-        interface_residx_long = [_np.hstack([fragments[ii] for ii in iint]) for iint in interface_fragments]
+
+        interface_residx_long = [_np.hstack([fragments_as_residue_idxs[ii] for ii in iint]) for iint in interface_fragments]
     ctc_idxs = _np.vstack(list(product(interface_residx_long[0], interface_residx_long[1])))
 
     # Remove self-contacts
@@ -914,7 +891,7 @@ def interface(
         nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
 
-    print("\nComputing distances in the is_interface between fragments\n%s\nand\n%s.\n"
+    print("\nComputing distances in the interface between fragments\n%s\nand\n%s.\n"
           "The is_interface is defined by the residues within %3.1f "
           "Angstrom of each other in the reference topology.\n"
           "Computing is_interface..."
@@ -959,10 +936,11 @@ def interface(
         ifreq = ctc_frequency[idx]
         if ifreq > 0:
             pair = ctc_idxs_receptor_Gprot[idx]
-            consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN], no_key=shorten_AA(refgeom.top.residue(idx),
-                                                                                                  substitute_fail=0,
-                                                                                                  keep_index=True)) for idx in pair]
-            fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
+            consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN],
+                                                                no_key=shorten_AA(refgeom.top.residue(idx),
+                                                                                  substitute_fail=0,
+                                                                                  keep_index=True)) for idx in pair]
+            fragment_idxs = [in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             ctc_objs.append(ContactPair(pair,
                                         [itraj[:, idx] for itraj in ctcs],
                                         times,
