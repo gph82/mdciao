@@ -6,7 +6,7 @@ from .residue_and_atom_utils import \
 
 from mdciao.fragments import \
     _print_frag, \
-    _intersecting_fragments
+    _check_if_subfragment
 
 from mdciao.sequence_utils import \
     alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, \
@@ -261,7 +261,6 @@ def BW_finder(uniprot_name,
               write_to_disk=False):
     xlsxname = format % uniprot_name
     fullpath = _path.join(local_path, xlsxname)
-
     GPCRmd = "https://gpcrdb.org/services/residues/extended"
     url = "%s/%s" % (GPCRmd, uniprot_name)
 
@@ -612,7 +611,7 @@ class LabelerConsensus(object):
             An interactive prompt will ask the user which fragments to
             keep in case of clashes.
 
-            Check :obj:`_intersecting_fragments` for more info
+            Check :obj:`_check_if_subfragment` for more info
 
         fill_gaps: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
@@ -639,7 +638,7 @@ class LabelerConsensus(object):
         new_defs = {}
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
-                new_defs[key] = _intersecting_fragments(res_idxs,key,fragments,top, map_conlab)
+                new_defs[key] = _check_if_subfragment(res_idxs, key, fragments, top, map_conlab)
 
         for key, res_idxs in new_defs.items():
             defs[key]=res_idxs
@@ -1385,7 +1384,7 @@ def _guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
     else:
         answer = input("Input alternative in a format 1,2-6,10,20-25 or\nhit enter to accept the guess %s\n"%guess_as_string)
 
-    if answer is '':
+    if answer == '':
         answer = guess_as_string
     else:
         answer = ','.join(['%s' % ii for ii in _rangeexpand(answer)])
