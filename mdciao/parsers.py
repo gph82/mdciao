@@ -514,8 +514,11 @@ def parser_for_BW_overview():
                                                  'BW nomenclature for a given topology')
 
     _parser_add_topology(parser)
-    parser.add_argument("BW_uniprot", type=str,
-                        help="Look for Ballesteros-Weinstein definitions in the GPRCmd using a uniprot code, "
+    parser.add_argument("BW_uniprot_or_file", type=str,
+                        help="Get Ballesteros-Weinstein definitions from here.\n"
+                             "If a file is not found locally, look for\n"
+                             " Ballesteros-Weinstein definitions in the GPRCmd\n"
+                             "using this string as uniprot code, "
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                         )
 
