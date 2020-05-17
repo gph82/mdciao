@@ -549,9 +549,9 @@ def per_residue_fragment_picker(residue_descriptors,
 
     return resdesc2residxs, resdesc2fragidxs
 
-def _intersecting_fragments(res_idxs, fragname, fragments, top,
-                            map_conlab=None,
-                            keep_all=False):
+def _check_if_subfragment(sub_frag, fragname, fragments, top,
+                          map_conlab=None,
+                          keep_all=False):
     r"""
     Input an iterable of integers representing a fragment check if
     it clashes with other fragment definitions.
@@ -561,9 +561,16 @@ def _intersecting_fragments(res_idxs, fragname, fragments, top,
 
     Example
     -------
-    * defs["TM6"] = [1,2,3,4] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
+    Let's assume the BW-nomenclature tells us that TM6 is [0,1,2,3]
+    and we have already divided the topology into fragments
+    using :obj:`get_fragments`, with method "resSeq+", meaning
+    we have fragments for the receptor, Ga,Gb,Gg
+
+    The purpusose is to check whether the BW-fragmentation is
+    contained in the previous fragmentation:
+    * [0,1,2,3] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
     is not a clash, bc TM6 is contained in fragments[0]
-    * defs["TM6"] = [0,1,2,3] and :obj:`fragments`=[[0,1],[2,3,4,5,6,7,8]]
+    * [0,1,2,3] and :obj:`fragments`=[[0,1],[2,3],[4,5,6,7,8]]
     is a clash. In this case the user will be prompted to choose
     which subset of "TM6" to keep:
      * "0": [0,1]
@@ -573,7 +580,7 @@ def _intersecting_fragments(res_idxs, fragname, fragments, top,
 
     Parameters
     ----------
-    res_idxs : iterable of integers
+    sub_frag : iterable of integers
     fragname : str
     fragments : iterable of iterables of integers
     top : :obj:`mdtraj.Trajectory`object
@@ -584,36 +591,36 @@ def _intersecting_fragments(res_idxs, fragname, fragments, top,
     -------
     tokeep = 1D numpy array
         If no clashes were found, this will be contain the same residues as
-        :obj:`res_idxs` without prompting the user.
+        :obj:`sub_frag` without prompting the user.
         Otherwise, the user has to input whether to leave the definition intact
         or pick a sub-set
     """
     # Get the fragment idxs of all residues in this fragment
-    ifrags = [_in_what_fragment(idx, fragments) for idx in res_idxs]
+    ifrags = [_in_what_fragment(idx, fragments) for idx in sub_frag]
 
     frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
     if len(frag_cands) > 1 and not keep_all:
         # This only happens if more than one fragment is present
-        _print_frag(fragname, top, res_idxs, fragment_desc='',
+        _print_frag(fragname, top, sub_frag, fragment_desc='',
                     idx2label=map_conlab)
         print("  %s clashes with other fragment definitions"%fragname)
         for jj in frag_cands:
             istr = _print_frag(jj, top, fragments[jj],
                                fragment_desc="   input fragment",
                                return_string=True)
-            n_in_fragment = len(_np.intersect1d(res_idxs, fragments[jj]))
+            n_in_fragment = len(_np.intersect1d(sub_frag, fragments[jj]))
             if n_in_fragment < len(fragments[jj]):
                 istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
             print(istr)
         answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):" % fragname)
         answr = _rangeexpand(answr)
         assert all([idx in ifrags for idx in answr])
-        tokeep = _np.hstack([idx for ii, idx in enumerate(res_idxs) if ifrags[ii] in answr]).tolist()
+        tokeep = _np.hstack([idx for ii, idx in enumerate(sub_frag) if ifrags[ii] in answr]).tolist()
         if len(tokeep) >= len(ifrags):
             raise ValueError("Cannot keep these fragments %s!" % (str(answr)))
         return tokeep
     else:
-        return res_idxs
+        return sub_frag
 
 def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     r"""
@@ -669,6 +676,11 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
         method = "user input by residue index"
         # What we have is list residue idxs as strings like 0-100, 101-200, 201-300
         fragments_as_residue_idxs =[_rangeexpand(ifrag.strip(",")) for ifrag in fragment_input]
+        for ii, ifrag in enumerate(fragments_as_residue_idxs):
+            if not all([aa in range(top.n_residues) for aa in ifrag]):
+                print("Fragment %u has idxs outside of the geometry (total n_residues %u): %s"%(ii, top.n_residues,
+                                                                         set(ifrag).difference(range(top.n_residues))))
+
         if len(fragment_input)==1:
             assert isinstance(fragment_input[0],str)
             method += "(only one fragment provided, assuming the rest of residues are fragment 2)"
