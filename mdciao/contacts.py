@@ -280,14 +280,15 @@ class _TimeTraces(object):
                  trajs,
                  atom_pair_trajs):
 
-        assert len(time_trajs)==len(ctc_trajs)
+        _np.testing.assert_equal(len(time_trajs),len(ctc_trajs))
         self._ctc_trajs = [_np.array(itraj,dtype=float) for itraj in ctc_trajs]
         self._time_trajs =[_np.array(tt,dtype=float) for tt in time_trajs]
         self._trajs = trajs
         if trajs is not None:
             assert len(trajs)==len(ctc_trajs)
         self._atom_pair_trajs = atom_pair_trajs
-        assert all([len(itraj) == len(itime) for itraj, itime in zip(ctc_trajs, time_trajs)])
+        _np.testing.assert_array_equal([len(itraj) for itraj in ctc_trajs],
+                                       [len(itime) for itime in time_trajs])
         if atom_pair_trajs is not None:
             assert len(atom_pair_trajs)==len(ctc_trajs)
             assert all([len(itraj) == len(iatt) for itraj, iatt in zip(ctc_trajs, atom_pair_trajs)]), "atom_pair_trajs does not have the appropiate length"
@@ -1676,9 +1677,11 @@ class ContactGroup(object):
         if order=='contact':
             return bintrajs
         elif order=='traj':
-            _bintrajs = []
+            _bintrajs = [_np.zeros((nf,self.n_ctcs), dtype=bool) for nf in self.n_frames]
             for ii in range(self.n_trajs):
-                _bintrajs.append(_np.vstack([itraj[ii] for itraj in bintrajs]).T)
+                for jj in range(self.n_ctcs):
+                    _bintrajs[ii][:,jj] = bintrajs[jj][ii]
+
             bintrajs = _bintrajs
         else:
             raise ValueError(order)
