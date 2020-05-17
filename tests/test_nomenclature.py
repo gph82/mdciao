@@ -451,29 +451,29 @@ class Test_intersecting_fragments(unittest.TestCase):
         self.map_conlab = ["%u_%s"%(rr.index,str(rr)) for rr in self.top.residues]
 
     def test_no_clashes(self):
-        result = nomenclature_utils._intersecting_fragments([6,7,8],
+        result = nomenclature_utils._check_if_subfragment([6, 7, 8],
                                                             "test_frag",
-                                                            self.fragments,
-                                                            self.top,
-                                                            )
+                                                          self.fragments,
+                                                          self.top,
+                                                          )
         _np.testing.assert_array_equal(result, [6,7,8])
 
     def test_clashes(self):
         input_values = (val for val in ["0"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
-            result = nomenclature_utils._intersecting_fragments(_np.arange(3,9),
+            result = nomenclature_utils._check_if_subfragment(_np.arange(3, 9),
                                                             "test_frag",
-                                                            self.fragments,
-                                                            self.top,
-                                                            )
+                                                              self.fragments,
+                                                              self.top,
+                                                              )
             _np.testing.assert_array_equal(result,[3,4])
 
     def test_clashes_keeps_all(self):
-        result = nomenclature_utils._intersecting_fragments(_np.arange(3, 9),
+        result = nomenclature_utils._check_if_subfragment(_np.arange(3, 9),
                                                             "test_frag",
-                                                            self.fragments,
-                                                            self.top,
-                                                            keep_all=True)
+                                                          self.fragments,
+                                                          self.top,
+                                                          keep_all=True)
         _np.testing.assert_array_equal(_np.arange(3,9),result)
 
 class Test_choose_between_consensus_dicts(unittest.TestCase):

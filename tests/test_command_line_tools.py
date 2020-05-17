@@ -55,13 +55,6 @@ class TestJustRunsAllFewestOptions(TestCLTBaseClass):
                                    [test_filenames.GDP_json],
                                    output_dir=tmpdir)
 
-    def test_interface(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                      frag_idxs_group_1=[0],
-                      frag_idxs_group_2=[1],
-                      output_dir=tmpdir)
-
     @unittest.skip("contact map is not being exposed anywhere ATM")
     def test_contact_map(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -229,6 +222,71 @@ class Test_sites_missing_options(TestCLTBaseClass):
                       output_dir=tmpdir,
                       scheme="COM",
                       fragmentify=False)
+
+class Test_interface(TestCLTBaseClass):
+
+    def test_interface(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                      frag_idxs_group_1=[0],
+                      frag_idxs_group_2=[1],
+                      output_dir=tmpdir)
+
+    def test_interface_wo_frag_idxs_groups(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            input_values = (val for val in ["0-1","2,3"])
+            with mock.patch('builtins.input', lambda *x: next(input_values)):
+                interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                          output_dir=tmpdir)
+
+    def test_w_just_one_fragment_by_user(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                      output_dir=tmpdir,
+                      fragments=["0-5"])
+
+    def test_w_just_one_fragment_by_user_and_n_ctcs(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                      output_dir=tmpdir,
+                      fragments=["0-5"],
+                      n_nearest=1)
+
+    def test_w_just_two_fragments_by_user(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                      frag_idxs_group_1=[0],
+                      frag_idxs_group_2=[1],
+                      output_dir=tmpdir,
+                      fragments=["0-5",
+                                 "6-10"])
+
+    def test_w_nomenclature_CGN_BW(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            input_values = (val for val in ["","", "", ""])
+            with mock.patch('builtins.input', lambda *x: next(input_values)):
+                interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                          frag_idxs_group_1=[0],
+                          frag_idxs_group_2=[1],
+                          output_dir=tmpdir,
+                          fragments=["202-238",
+                                     "634-659"],
+                          CGN_PDB="3SN6",
+                          BW_uniprot=_path.join(test_filenames.test_data_path, "adrb2_human_full"),
+                          )
+
+    def test_w_nomenclature_CGN_BW_fragments_are_consensus(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            input_values = (val for val in ["","", "", "", "TM6","*H5"])
+            with mock.patch('builtins.input', lambda *x: next(input_values)):
+                interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                          frag_idxs_group_1=[0],
+                          frag_idxs_group_2=[1],
+                          output_dir=tmpdir,
+                          fragments=["consensus"],
+                          CGN_PDB="3SN6",
+                          BW_uniprot=_path.join(test_filenames.test_data_path, "adrb2_human_full"),
+                          )
 
 class Test_parse_consensus_option(unittest.TestCase):
 
