@@ -1576,6 +1576,13 @@ class ContactGroup(object):
         return idict
 
     @property
+    def is_neighborhood(self):
+        if self.shared_anchor_residue_index is None:
+            return False
+        else:
+            return True
+
+    @property
     def shared_anchor_residue_index(self):
         r"""
         Returns none if no anchor residue is found
@@ -1592,27 +1599,27 @@ class ContactGroup(object):
 
     @property
     def anchor_res_and_fragment_str(self):
-        assert self.shared_anchor_residue_index is not None,"There is no anchor residue, This is not a neighborhood."
+        assert self.is_neighborhood,"There is no anchor residue, This is not a neighborhood."
         return self._contacts[0].neighborhood.anchor_res_and_fragment_str
 
     @property
     def anchor_res_and_fragment_str_short(self):
-        assert self.shared_anchor_residue_index is not None
+        assert self.is_neighborhood
         return self._contacts[0].neighborhood.anchor_res_and_fragment_str_short
 
     @property
     def partner_res_and_fragment_labels(self):
-        assert self.shared_anchor_residue_index is not None
+        assert self.is_neighborhood
         return [ictc.neighborhood.partner_res_and_fragment_str for ictc in self._contacts]
 
     @property
     def partner_res_and_fragment_labels_short(self):
-        assert self.shared_anchor_residue_index is not None
+        assert self.is_neighborhood
         return [ictc.neighborhood.partner_res_and_fragment_str_short for ictc in self._contacts]
 
     @property
     def anchor_fragment_color(self):
-        assert self.shared_anchor_residue_index is not None
+        assert self.is_neighborhood
         _col = self._contacts[0].fragments.colors[self._contacts[0].residues.anchor_index]
         cond1 = not any([ictc.fragments.colors[ictc.residues.anchor_index] is None for ictc in self._contacts])
         cond2 = all([ictc.fragments.colors[ictc.residues.anchor_index] == _col for ictc in self._contacts[1:]])
@@ -2912,7 +2919,7 @@ class ContactGroup(object):
         for idict, ixtc  in zip(dicts, self.trajlabels):
             ixtc_path, ixtc_basename = _path.split(ixtc)
 
-            if self.shared_anchor_residue_index is not None:
+            if self.is_neighborhood:
                 self_descriptor = self.anchor_res_and_fragment_str.replace('*', "")
 
             if ctc_cutoff_Ang is None:

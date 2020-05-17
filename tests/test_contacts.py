@@ -1095,6 +1095,7 @@ class TestContactGroup(TestBaseClassContactGroup):
     def test_neighborhoods(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags,
                            self.cp2_w_anchor_and_frags])
+        assert CG.is_neighborhood
         _np.testing.assert_equal(CG.shared_anchor_residue_index, 0)
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str,"0@fragA")
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str_short,"0@fragA")
