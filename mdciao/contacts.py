@@ -1582,7 +1582,7 @@ class ContactGroup(object):
             return False
         else:
             return True
-
+    #TODO make this a property at instantiation and build neighborhoods a posteriori?
     @property
     def shared_anchor_residue_index(self):
         r"""
