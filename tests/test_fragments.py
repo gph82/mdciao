@@ -608,5 +608,89 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
                                                                       verbose=True)
 
 
+class Test_frag_dict_2_frag_groups(unittest.TestCase):
+
+    def test_works(self):
+        input_values = (val for val in ["TM*,-TM2", "H8"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+
+            groups_as_keys, \
+            groups_as_residue_idxs = fragments.frag_dict_2_frag_groups(
+                                                                        {"TM1":[0,1],
+                                                                         "TM2":[2,3],
+                                                                         "TM3":[4,5],
+                                                                         "H8":[6,7]},
+                                                                        verbose=True,
+                                                                    )
+            self.assertSequenceEqual(groups_as_keys[0],["TM1","TM3"])
+            self.assertSequenceEqual(groups_as_keys[1],["H8"])
+
+            self.assertSequenceEqual(groups_as_residue_idxs[0],[0,1,4,5])
+            self.assertSequenceEqual(groups_as_residue_idxs[1],[6,7])
+
+
+class Test_frag_list_2_frag_groups(unittest.TestCase):
+
+    def test_works_automatically(self):
+        frags = [[0,1],
+                 [2,3]]
+        frags_out, frag_names = fragments._frag_list_2_frag_groups(frags,
+                                                                   verbose=True)
+        self.assertSequenceEqual(frags[0],frags_out[0])
+        self.assertSequenceEqual(frags[1],frags_out[1])
+        self.assertEqual(len(frags_out),2)
+
+    def test_works_frag_list_gt_2(self):
+        frags = [[0,1],
+                 [2,3],
+                 [4,5]]
+
+        input_values = (val for val in ["0,2","1"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):
+            frags_out, frag_names = fragments._frag_list_2_frag_groups(frags,
+                                                                       )
+            self.assertSequenceEqual([0,1,4,5], frags_out[0])
+            self.assertSequenceEqual([2,3], frags_out[1])
+            self.assertEqual(len(frags_out), 2)
+
+    def test_works_frag_w_strs_as_input(self):
+        frags = [[0,1],
+                 [2,3],
+                 [4,5]]
+
+        frags_out, frag_names = fragments._frag_list_2_frag_groups(frags,
+                                                                   frag_idxs_group_1="0,2",
+                                                                   frag_idxs_group_2="1",
+                                                                   )
+        self.assertSequenceEqual([0,1,4,5], frags_out[0])
+        self.assertSequenceEqual([2,3], frags_out[1])
+        self.assertEqual(len(frags_out), 2)
+
+    def test_works_frag_w_ints_as_input(self):
+        frags = [[0,1],
+                 [2,3],
+                 [4,5]]
+
+        frags_out, frag_names = fragments._frag_list_2_frag_groups(frags,
+                                                                   frag_idxs_group_1=[0,2],
+                                                                   frag_idxs_group_2=[1],
+                                                                  )
+        self.assertSequenceEqual([0,1,4,5], frags_out[0])
+        self.assertSequenceEqual([2,3], frags_out[1])
+        self.assertEqual(len(frags_out), 2)
+
+    def test_works_frag_w_mixed_input(self):
+        frags = [[0,1],
+                 [2,3],
+                 [4,5]]
+
+        frags_out, frag_names = fragments._frag_list_2_frag_groups(frags,
+                                                                   frag_idxs_group_1="0,2",
+                                                                   frag_idxs_group_2=[1],
+                                                                  )
+        self.assertSequenceEqual([0,1,4,5], frags_out[0])
+        self.assertSequenceEqual([2,3], frags_out[1])
+        self.assertEqual(len(frags_out), 2)
+
 if __name__ == '__main__':
     unittest.main()

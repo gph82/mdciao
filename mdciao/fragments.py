@@ -694,39 +694,102 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
 
     return fragments_as_residue_idxs, consensus
 
-def _interface_frags_WIP(fragment_defs, fragments_as_residue_idxs,
-             frag_idxs_group_1,frag_idxs_group_2,
-             frag_cons):
-    if frag_cons:
-        int_frags_as_str_or_keys = []
-        interface_fragments_as_residue_idxs = []
-        for ii in [1, 2]:
-            print("group %u: " % ii, end='')
-            answer = input(
-                "Input a list of posix-expressions like 'TM*,-TM2,H8' (TM2 will be avoided)\n").replace(
-                " ", "").strip("'").strip('"')
-            igroup, res_idxs_in_group = _match_dict_by_patterns(answer, fragment_defs)
-            int_frags_as_str_or_keys.append([ilab for ilab in fragment_defs.keys() if ilab in igroup])
-            interface_fragments_as_residue_idxs.append(sorted(res_idxs_in_group))
-            print(', '.join(int_frags_as_str_or_keys[-1]))
+def _frag_list_2_frag_groups(frag_list,
+                             frag_idxs_group_1=None,
+                             frag_idxs_group_2=None,
+                             verbose=False):
+    r"""
+    Automagically find out the user wants to define
+    two fragments out of list of fragments.
+    Promt the user when necessary
 
+    Parameters
+    ----------
+    frag_list : list
+        list of fragments, defined as residue indices
+    frag_idxs_group_1 : iterable of ints, or str default is None
+        When str, it has to be a rangeexpand exprs, e.g. 2-5,10
+    frag_idxs_group_2 : iterable of ints, or str default is None
+
+
+    Returns
+    -------
+    group_residxs, group_names
+
+    """
+
+    if verbose:
+        for ii, ifrag in enumerate(frag_list):
+            print("frag %u: %u-%u"%(ii, ifrag[0],ifrag[-1]))
+
+    if len(frag_list) == 2 and \
+            frag_idxs_group_1 is None and \
+            frag_idxs_group_2 is None:
+        print("Only two fragments detected with no values for frag_idxs_group_1 and frag_idxs_group_2.\n"
+              "Setting frag_idxs_group_1=0 and frag_idxs_group_2=1")
+        group_names = [[0], [1]]
+        #TODO I don't think i need the check for None in the frag_idxs_groups, right?
     else:
-        if len(fragments_as_residue_idxs) == 2 and frag_idxs_group_1 is None and frag_idxs_group_2 is None:
-            print("Only two fragments detected with no values for frag_idxs_group_1 and frag_idxs_group_2.\n"
-                  "Setting frag_idxs_group_1=0 and frag_idxs_group_2=1")
-            int_frags_as_str_or_keys = [[0], [1]]
-        else:
-            int_frags_as_str_or_keys = [frag_idxs_group_1, frag_idxs_group_2]
-            for ii, ifrag_idxs in enumerate(int_frags_as_str_or_keys):
-                if ifrag_idxs is None:
-                    int_frags_as_str_or_keys[ii] = _rangeexpand(input('Input group of fragments %u: ' % (ii + 1)))
-                elif isinstance(ifrag_idxs, str):
-                    int_frags_as_str_or_keys[ii] = _rangeexpand(ifrag_idxs)
+        group_names = [frag_idxs_group_1, frag_idxs_group_2]
+        for ii, ifrag_idxs in enumerate(group_names):
+            if ifrag_idxs is None:
+                group_names[ii] = _rangeexpand(input('Input group of fragments (e.g. 1,3 or 2-4) for group %u: ' % (ii + 1)))
+            elif isinstance(ifrag_idxs, str):
+                group_names[ii] = _rangeexpand(ifrag_idxs)
+    group_residxs = [sorted(_np.hstack([frag_list[ii] for ii in iint])) for iint in
+                            group_names]
 
-        interface_fragments_as_residue_idxs = [_np.hstack([fragments_as_residue_idxs[ii] for ii in iint]) for iint in
-                                               int_frags_as_str_or_keys]
+    return group_residxs, group_names
 
-    return interface_fragments_as_residue_idxs, int_frags_as_str_or_keys
+def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
+                            verbose=False):
+    r"""
+    Input a dictionary of fragment definitions, keyed by
+    whatever and valued with residue idxs and prompt
+    the user how to re-group them
+
+    It wrappes around :obj:`_match_dict_by_patterns` to
+    under the hood
+
+    TODO: refactor into str_and_dict_utils
+    TODO: It will be mostly used with fragments so it's better here for the API? IDK
+
+    Parameters
+    ----------
+    frag_defs_dict : dict
+        Fragment definitions in residue idxs
+    ng : int, default is 2
+        wanted number of groups
+
+    Returns
+    -------
+    groups_as_keys, groups_as_residue_idxs
+
+    groups_as_keys : list of len ng
+        Contains ng lists with the keys
+        of :obj:`frag_defs_dict` in each of groups
+    groups_as_residue_idxs : list of len ng
+        Contains ng arrays with the concatenated
+        and sorted residues in each group
+    """
+
+    groups_as_keys = []
+    groups_as_residue_idxs = []
+    if verbose:
+        for key, val in frag_defs_dict.items():
+            print("%s: %u-%u"%(key, val[0],val[-1]))
+    for ii in range(1, ng + 1):
+        print("group %u: " % ii, end='')
+        answer = input(
+            "Input a list of comma-separated posix-expressions.\n"
+            "Prepend with '-' to exclude, e.g. 'TM*,-TM2,H8' to grab all TMs and H8, but exclude TM2)\n").replace(
+            " ", "").strip("'").strip('"')
+        igroup, res_idxs_in_group = _match_dict_by_patterns(answer, frag_defs_dict)
+        groups_as_keys.append([ilab for ilab in frag_defs_dict.keys() if ilab in igroup])
+        groups_as_residue_idxs.append(sorted(res_idxs_in_group))
+        print(', '.join(groups_as_keys[-1]))
+
+    return groups_as_keys, groups_as_residue_idxs
 
 my_frag_colors=[
          'magenta',
