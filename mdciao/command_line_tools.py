@@ -1,15 +1,14 @@
 import numpy as _np
 
+from mdciao.residue_and_atom_utils import \
+    shorten_AA as _shorten_AA
 
 import mdtraj as md
 from matplotlib import pyplot as plt,rcParams as _rcParams
 
-
-from os.path import splitext
 from textwrap import wrap as _twrap
 from itertools import product
 from os import path, mkdir
-from tempfile import TemporaryDirectory as _TD
 
 from mdciao.fragments import \
     get_fragments, _print_frag, \
@@ -44,9 +43,6 @@ from mdciao.bond_utils import \
     bonded_neighborlist_from_top
 
 from mdciao.fragments import my_frag_colors as mycolors
-
-from mdciao.str_and_dict_utils import \
-    match_dict_by_patterns as _match_dict_by_patterns
 
 def _offer_to_create_dir(output_dir):
     r"""
@@ -434,61 +430,43 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                     f.write(istr)
             print(fname)
 
-    # One loop for the time resolved neighborhoods
+    #TODO make a method out of this to use in all CLTs
+    # TODO perhaps use https://github.com/python-attrs/attrs
+    # to avoid boilerplate
+    # Thi is very ugly
     if plot_timedep or separate_N_ctcs:
         for ihood in neighborhoods.values():
-            fname_timedep = '%s.%s.time_resolved@%2.1f_Ang.%s' % (output_desc,
-                                                          ihood.anchor_res_and_fragment_str.replace('*', ""),
-                                                          ctc_cutoff_Ang,
-                                                          graphic_ext.strip("."))
-
-            fname_N_ctcs = '%s.%s.time_resolved@%2.1f_Ang.ctcs.%s' % (output_desc,
-                                                                        ihood.anchor_res_and_fragment_str.replace('*', ""),
-                                                                        ctc_cutoff_Ang,
-                                                                        graphic_ext.strip("."))
-
             # TODO this plot_N_ctcs and skip_timedep is very bad, but ATM my only chance without major refactor
+            # TODO perhaps it would be better to burry dt in the plotting directly?
             myfig = ihood.plot_timedep_ctcs(panelheight,
-                                            plot_N_ctcs=True,
-                                            color_scheme = _my_color_schemes(curve_color),
+                                            color_scheme=_my_color_schemes(curve_color),
                                             ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                            n_smooth_hw=n_smooth_hw,
                                             dt=_tunit2tunit["ps"][t_unit],
-                                            #TODO perhaps it would be better to burry dt in the plotting directly?
-                                            t_unit=t_unit,
                                             gray_background=gray_background,
-                                            shorten_AAs=short_AA_names,
+                                            n_smooth_hw=n_smooth_hw,
+                                            plot_N_ctcs=True,
                                             pop_N_ctcs=separate_N_ctcs,
-                                            ylim_Ang=ylim_Ang,
+                                            shorten_AAs=short_AA_names,
                                             skip_timedep=not plot_timedep,
+                                            t_unit=t_unit,
+                                            ylim_Ang=ylim_Ang,
                                             )
-
             # One title for all axes on top
             title = ihood.anchor_res_and_fragment_str
             if short_AA_names:
                 title = ihood.anchor_res_and_fragment_str_short
-
-            # Differentiate the type of figures we can have
-            if len(myfig) == 1:
-                if plot_timedep:
-                    fnames = [fname_timedep]
-                else:
-                    fnames = [fname_N_ctcs]
-            elif len(myfig) == 2:
-                fnames = [fname_timedep, fname_N_ctcs]
-
-            for iname, ifig in zip(fnames, myfig):
-                fname = path.join(output_dir, iname)
-                ifig.axes[0].set_title(title)
-                ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-                plt.close(ifig)
-                print(fname)
-
-            if plot_timedep:
-                ihood.save_trajs(output_desc,table_ext,output_dir, t_unit=t_unit, verbose=True)
-            if separate_N_ctcs:
-                ihood.save_trajs(output_desc,table_ext,output_dir, t_unit=t_unit, verbose=True, ctc_cutoff_Ang=ctc_cutoff_Ang)
-            print()
+            _manage_timedep_ploting_and_saving_options(ihood, myfig,
+                                                       ctc_cutoff_Ang,
+                                                       output_desc,
+                                                       graphic_ext,
+                                                       output_dir=output_dir,
+                                                       graphic_dpi=graphic_dpi,
+                                                       plot_timedep=plot_timedep,
+                                                       table_ext=table_ext,
+                                                       t_unit=t_unit,
+                                                       separate_N_ctcs=separate_N_ctcs,
+                                                       title=title
+                                                       )
 
     return {"ctc_idxs": ctc_idxs_small,
             'ctcs_trajs': ctcs_trajs,
@@ -523,12 +501,6 @@ def sites(topology,
           n_jobs=1,
           ):
     ylim_Ang = _np.float(ylim_Ang)
-
-    # todo this is an ad-hoc for a powerpoint presentation
-    from matplotlib import rcParams
-    rcParams["xtick.labelsize"] = _np.round(rcParams["font.size"]*2)
-    rcParams["ytick.labelsize"] = _np.round(rcParams["font.size"]*2)
-    rcParams["font.size"] = _np.round(rcParams["font.size"] * 2)
     _offer_to_create_dir(output_dir)
 
     # Prepare naming
@@ -803,7 +775,7 @@ def interface(
         interface_cutoff_Ang=35,
         n_ctcs=10,
         n_smooth_hw=0,
-        output_desc="is_interface",
+        output_desc="interface",
         output_dir=".",
         short_AA_names=False,
         stride=1,
@@ -817,6 +789,7 @@ def interface(
         sort_by_av_ctcs=True,
         scheme="closest-heavy",
         separate_N_ctcs=False,
+        table_ext=None,
 ):
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
@@ -914,14 +887,13 @@ def interface(
     ctc_frequency = ctcs_bin / actcs.shape[0]
     order = _np.argsort(ctc_frequency)[::-1]
     #ctcs_trajectory_std = _np.vstack([_np.mean(ictcs < ctc_cutoff_Ang / 10, 0) for ictcs in ctcs]).std(0)
-    from .residue_and_atom_utils import shorten_AA
     ctc_objs = []
     for idx in order[:n_ctcs]:
         ifreq = ctc_frequency[idx]
         if ifreq > 0:
             pair = ctc_idxs_receptor_Gprot[idx]
             consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN],
-                                                                no_key=shorten_AA(refgeom.top.residue(idx),
+                                                                no_key=_shorten_AA(refgeom.top.residue(idx),
                                                                                   substitute_fail=0,
                                                                                   keep_index=True)) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
@@ -936,12 +908,12 @@ def interface(
                                         # colors=[fragcolors[idx] for idx in idxs]
                                         ))
 
-    neighborhood = ContactGroup(ctc_objs,
+    ctc_grp_intf = ContactGroup(ctc_objs,
                                 interface_residxs=interface_residx_short)
     print()
-    print(neighborhood.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))
+    print(ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))
     print()
-    dfs = neighborhood.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
+    dfs = ctc_grp_intf.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
                                                             list_by_interface=True,
                                                             return_as_dataframe=True,
                                                             sort=sort_by_av_ctcs)
@@ -955,22 +927,22 @@ def interface(
     panelsize2font = 3.5
     fudge = 7
     histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=False,
-                                     figsize=(n_cols * panelsize * _np.ceil(neighborhood.n_ctcs/fudge),
+                                     figsize=(n_cols * panelsize * _np.ceil(ctc_grp_intf.n_ctcs/fudge),
                                               n_rows * panelsize),
                                      )
 
     # One loop for the histograms
     _rcParams["font.size"] = panelsize * panelsize2font
-    neighborhood.plot_freqs_as_bars(ctc_cutoff_Ang,
+    ctc_grp_intf.plot_freqs_as_bars(ctc_cutoff_Ang,
                                     output_desc,
                                     jax=histoax[0],
-                                    xlim=_np.min((n_ctcs,neighborhood.n_ctcs)),
+                                    xlim=_np.min((n_ctcs,ctc_grp_intf.n_ctcs)),
                                     label_fontsize_factor=panelsize2font / panelsize,
                                     shorten_AAs=short_AA_names,
                                     truncate_at=.05,
                                     )
 
-    neighborhood.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
+    ctc_grp_intf.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
                                              output_desc,
                                              jax=histoax[1],
                                              list_by_interface=True,
@@ -985,46 +957,113 @@ def interface(
     print("The following files have been created")
     print(fname)
     fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
-    neighborhood.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
+    ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
     print(fname_excel)
-    if plot_timedep or separate_N_ctcs:
-        fname_timedep = '%s@%2.1f_Ang.time_resolved.%s' % (output_desc,ctc_cutoff_Ang,
-                                                            graphic_ext.strip("."))
-        fname_N_ctcs  = '%s@%2.1f_Ang.time_resolved.N_ctcs.%s' % (output_desc,ctc_cutoff_Ang,
-                                                                   graphic_ext.strip("."))
 
-        myfig = neighborhood.plot_timedep_ctcs(panelheight,
+    if plot_timedep or separate_N_ctcs:
+        myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
                                                color_scheme=_my_color_schemes(curve_color),
                                                ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                               n_smooth_hw=n_smooth_hw,
                                                dt=_tunit2tunit["ps"][t_unit],
-                                               t_unit=t_unit,
                                                gray_background=gray_background,
-                                               shorten_AAs=short_AA_names,
+                                               n_smooth_hw=n_smooth_hw,
                                                plot_N_ctcs=True,
-                                               skip_timedep=not plot_timedep,
                                                pop_N_ctcs=separate_N_ctcs,
-                                               )
+                                               shorten_AAs=short_AA_names,
+                                               skip_timedep=not plot_timedep,
+                                               t_unit=t_unit)
 
-        # Differentiate the type of figures we can have
-        if len(myfig)==1:
-            if plot_timedep:
-                fnames = [fname_timedep]
-            else:
-                fnames = [fname_N_ctcs]
-        elif len(myfig)==2:
-            fnames = [fname_timedep, fname_N_ctcs]
+        _manage_timedep_ploting_and_saving_options(ctc_grp_intf, myfig,
+                                                   ctc_cutoff_Ang,
+                                                   output_desc,
+                                                   graphic_ext,
+                                                   output_dir=output_dir,
+                                                   graphic_dpi=graphic_dpi,
+                                                   plot_timedep=plot_timedep,
+                                                   table_ext=table_ext,
+                                                   t_unit=t_unit,
+                                                   separate_N_ctcs=separate_N_ctcs
+                                                   )
 
-        for iname, ifig in zip(fnames, myfig):
-            fname = path.join(output_dir, iname)
-            ifig.axes[0].set_title("site: %s" % (output_desc))
-            ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-            plt.close(ifig)
-            print(fname)
+    return ctc_grp_intf
+
+# TODO Consider putting the figure instantiation also here
+def _manage_timedep_ploting_and_saving_options(ctc_grp : ContactGroup,
+                                               myfig,
+                                               ctc_cutoff_Ang,
+                                               output_desc,
+                                               graphic_ext,
+                                               output_dir=".",
+                                               graphic_dpi=150,
+                                               plot_timedep=True,
+                                               separate_N_ctcs=False,
+                                               table_ext=".dat",
+                                               t_unit="ps",
+                                               title=None,
+                                               ):
+    r"""
+    CLTs share this part and have the same options to save files of timedep plots
+
+    Parameters
+    ----------
+    ctc_grp
+    myfig
+    ctc_cutoff_Ang
+    output_desc
+    graphic_ext
+    output_dir
+    graphic_dpi
+    plot_timedep
+    separate_N_ctcs
+    table_ext
+    t_unit
+
+    Returns
+    -------
+
+    """
+    firstname = output_desc
+    lastname = ""
+    # TODO manage interface and sites appropiately
+    if ctc_grp.is_neighborhood:
+        lastname = "%s"%ctc_grp.anchor_res_and_fragment_str.replace('*', "")
+
+    if title is None:
+        title = output_desc #TODO consider using lastname
+
+    fname_timedep = ('%s.%s.time_resolved@%2.1f_Ang.%s' % (firstname,
+                                                           lastname,
+                                                           ctc_cutoff_Ang,
+                                                           graphic_ext.strip("."))).replace("..", ".")
+
+    fname_N_ctcs = ('%s.%s.time_resolved@%2.1f_Ang.N_ctcs.%s' % (firstname,
+                                                                 lastname,
+                                                                 ctc_cutoff_Ang,
+                                                                 graphic_ext.strip("."))).replace("..", ".")
 
 
+    # Differentiate the type of figures we can have
+    if len(myfig) == 1:
+        if plot_timedep:
+            fnames = [fname_timedep]
+        else:
+            fnames = [fname_N_ctcs]
+    elif len(myfig) == 2:
+        fnames = [fname_timedep, fname_N_ctcs]
 
-    return neighborhood
+    for iname, ifig in zip(fnames, myfig):
+        fname = path.join(output_dir, iname)
+        ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
+        ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+        plt.close(ifig)
+        print(fname)
+
+    if plot_timedep:
+        ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True)
+    if separate_N_ctcs:
+        ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True,
+                           ctc_cutoff_Ang=ctc_cutoff_Ang)
+    print()
 
 def neighborhood_comparison(*args, **kwargs):
     from .plots import compare_groups_of_contacts

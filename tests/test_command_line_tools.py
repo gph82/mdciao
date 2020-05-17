@@ -3,7 +3,14 @@ import unittest
 from filenames import filenames
 import pytest
 
+from tempfile import TemporaryDirectory as _TDir
+
+from matplotlib import \
+    pyplot as _plt
+
 from mdciao import command_line_tools
+
+from mdciao.contacts import ContactGroup, ContactPair
 
 from mdciao.command_line_tools import \
     residue_neighborhoods, \
@@ -37,6 +44,104 @@ class TestCLTBaseClass(unittest.TestCase):
         self.geom = md.load(test_filenames.prot1_pdb)
         self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)
         self.run1_stride_100_xtc_reverse = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)[::-1]
+
+class Test_manage_timdep_plot_options(TestCLTBaseClass):
+
+    def setUp(self):
+        super(Test_manage_timdep_plot_options, self).setUp()
+        ctc_idxs = [[1067,1068],
+                    [1067,334],
+                    [1067,488]]
+        CPs = [ContactPair(pair,
+                           [md.compute_contacts(itraj, [pair])[0].squeeze() for itraj in
+                            [self.run1_stride_100_xtc,
+                             self.run1_stride_100_xtc_reverse[:10]]],
+                           [self.run1_stride_100_xtc.time,
+                            self.run1_stride_100_xtc.time[:10]],
+                           top=self.geom.top,
+                           anchor_residue_idx=1067)
+               for pair in ctc_idxs]
+
+        self.ctc_grp = ContactGroup(CPs,
+                                    top=self.geom.top,
+                                    )
+
+    """
+    1:     1.00   GDP396-MG397           9-10       1067    1068     162 1.00
+    2:     1.00   GDP396-THR55           9-4        1067     334      12 2.00
+    3:     1.00   GDP396-ASP223          9-4        1067     488      82 3.00
+    4:     1.00   GDP396-ARG201          9-4        1067     466      67 4.00
+    5:     1.00   GDP396-LYS53           9-4        1067     332      10 5.00    
+    """
+
+    def test_works(self):
+        with _TDir(suffix="_test_mdciao") as tmpdir:
+            myfig = self.ctc_grp.plot_timedep_ctcs(3,
+                                                   ctc_cutoff_Ang=3,
+                                                   plot_N_ctcs=True,
+                                                   pop_N_ctcs=False,
+                                                   skip_timedep=False,
+                                                   )
+
+            command_line_tools._manage_timedep_ploting_and_saving_options(self.ctc_grp,
+                                                                          myfig, 3,
+                                                                   "test_neigh", "png",
+                                                                          output_dir=tmpdir,
+                                                                          )
+        _plt.close("all")
+
+    def test_separate_N_ctcs(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            myfig = self.ctc_grp.plot_timedep_ctcs(3,
+                                                   ctc_cutoff_Ang=3,
+                                                   plot_N_ctcs=True,
+                                                   pop_N_ctcs=True,
+                                                   skip_timedep=False,
+                                                   )
+            command_line_tools._manage_timedep_ploting_and_saving_options(self.ctc_grp,
+                                                                          myfig, 3,
+                                                                   "test_neigh", "png",
+                                                                          output_dir=tmpdir,
+                                                                          separate_N_ctcs=True,
+                                                                          )
+            _plt.close("all")
+    def test_just_N_ctcs(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            myfig = self.ctc_grp.plot_timedep_ctcs(3,
+                                                   ctc_cutoff_Ang=3,
+                                                   plot_N_ctcs=True,
+                                                   pop_N_ctcs=True,
+                                                   skip_timedep=True,
+
+                                                   )
+            command_line_tools._manage_timedep_ploting_and_saving_options(self.ctc_grp,
+                                                                          myfig, 3,
+                                                                   "test_neigh", "png",
+                                                                          output_dir=tmpdir,
+                                                                          separate_N_ctcs=True,
+                                                                          plot_timedep=False,
+                                                                          )
+            _plt.close("all")
+
+    """
+    def test_no_timedep_yes_N_ctcs(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                                  "396",
+                                  plot_timedep=False,
+                                  separate_N_ctcs=True,
+                                  short_AA_names=True,
+                                  output_dir=tmpdir)
+
+    def test_separate_N_ctcs_no_time_trace(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc,
+                                              self.run1_stride_100_xtc_reverse],
+                                  "396",
+                                  plot_timedep=False,
+                                  separate_N_ctcs=True,
+                                  output_dir=tmpdir)
+    """
 
 
 class TestJustRunsAllFewestOptions(TestCLTBaseClass):
@@ -111,24 +216,6 @@ class Test_residue_neighbrhoodsOptionsJustRuns(TestCLTBaseClass):
                                   color_by_fragment='c',
                                   output_dir=tmpdir)
 
-    def test_just_N_ctcs(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                                   "396",
-                                   plot_timedep=False,
-                                   separate_N_ctcs=True,
-                                   short_AA_names=True,
-                                   output_dir=tmpdir)
-
-    def test_no_timedep_yes_N_ctcs(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                                   "396",
-                                   plot_timedep=False,
-                                   separate_N_ctcs=True,
-                                   short_AA_names=True,
-                                   output_dir=tmpdir)
-
     def test_no_residues_returns_None(self):
         # This is more of an argparse fail
         # TODO consider throwing exception
@@ -137,25 +224,6 @@ class Test_residue_neighbrhoodsOptionsJustRuns(TestCLTBaseClass):
                                                               self.run1_stride_100_xtc_reverse],
                                    None,
                                    distro=True,
-                                   output_dir=tmpdir)
-
-
-    def test_separate_N_ctcs(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc,
-                                               self.run1_stride_100_xtc_reverse],
-                                   "396",
-                                   separate_N_ctcs=True,
-                                   output_dir=tmpdir)
-
-
-    def test_separate_N_ctcs_no_time_trace(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc,
-                                               self.run1_stride_100_xtc_reverse],
-                                   "396",
-                                   plot_timedep=False,
-                                   separate_N_ctcs=True,
                                    output_dir=tmpdir)
 
     def test_wrong_input_resSeq_idxs(self):
