@@ -15,7 +15,8 @@ from mdciao.fragments import \
     get_fragments, _print_frag, \
     per_residue_fragment_picker as _per_residue_fragment_picker, \
     _fragments_strings_to_fragments, \
-    _interface_frags_WIP
+    _frag_list_2_frag_groups, \
+    frag_dict_2_frag_groups as _frag_dict_2_frag_groups
 
 from mdciao.nomenclature_utils import \
     LabelerCGN, LabelerBW,\
@@ -853,12 +854,17 @@ def interface(
         if interactive:
             input("Hit enter to continue!\n")
 
-    interface_fragments_as_residue_idxs, \
-    int_frags_as_str_or_keys    = _interface_frags_WIP(fragment_defs, fragments_as_residue_idxs,
+    if frag_cons:
+        int_frags_as_str_or_keys, intf_frags_as_residxs = \
+            _frag_dict_2_frag_groups(fragment_defs, ng=2)
+
+    else:
+        intf_frags_as_residxs, \
+        int_frags_as_str_or_keys    = _frag_list_2_frag_groups(fragments_as_residue_idxs,
                                                                frag_idxs_group_1, frag_idxs_group_2,
                                                                frag_cons)
 
-    ctc_idxs = _np.vstack(list(product(interface_fragments_as_residue_idxs[0], interface_fragments_as_residue_idxs[1])))
+    ctc_idxs = _np.vstack(list(product(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
 
     # Remove self-contacts
     ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
@@ -882,8 +888,8 @@ def interface(
 
     ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
 
-    interface_residx_short = [list(set(ctc_idxs_receptor_Gprot[:,0]).intersection(interface_fragments_as_residue_idxs[0])),
-                              list(set(ctc_idxs_receptor_Gprot[:,1]).intersection(interface_fragments_as_residue_idxs[1]))]
+    interface_residx_short = [list(set(ctc_idxs_receptor_Gprot[:,0]).intersection(intf_frags_as_residxs[0])),
+                              list(set(ctc_idxs_receptor_Gprot[:,1]).intersection(intf_frags_as_residxs[1]))]
 
     print()
     print(
