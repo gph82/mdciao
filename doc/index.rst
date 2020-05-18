@@ -4,45 +4,70 @@
    contain the root `toctree` directive.
 
 Welcome to mdciao's documentation!
-==========================================
+==================================
 
-The main goal of this Python library is to provide the command-line
-tools to analyze molecular simulation data using residue-residue contacts.
+The main goal of this Python library is to provide quick, "one-shot" command-line
+tools to analyze molecular simulation data using residue-residue distances, tyring to automate as much of the process as possible while being highly customizable.
 
-The starting point for these tools are the files typically generated in
+The analysis is based on contact-frequencies, i.e. the percentage of simulation time
+that two given residues find each other at a distances smaller or equal than a given
+cut-off value.
+
+Starting from the files typically generated in
 the context of molecular dynamics (MD) simulations, i.e.
 
- * topology files, like prot.gro or prot.pdb
- * trajectory files, like traj1.xtc, traj2.xtc
+* topology files, like prot.gro or prot.pdb
+* trajectory files, like traj1.xtc, traj2.xtc
 
-Most of its functionality to the molecular dynamics analysis library
-`mdtraj <http://mdtraj.org/>`_.
+mdciao will calculate contact frequencies, distance time-traces and overall number of interaction partners and produce quasi paper-ready tables and figures. Under the hood, the module `mdtraj <http://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, whereas mdciao provides functionalities like:
 
-At the moment, these command-line tools are:
+* fragment definitions for quickly defining regions of interest
+* *automagic* map and incorporate consensus nomenclature like the Ballesteros-Weinstein (BW) or Common-G-Protein (CGN) to the analysis
+* site definitions for analysing and comparing equivalent moieties accross different setups
+* comparison tools to automatically detect and present frequency differences accross systems, e.g. to look for the effect of mutations, pH-differences etc
+* TODO expand
 
- * residue_neighborhoods.py (tested and documented)
-      Analyzes most frequent interaction partners for any chosen residue via summaries
-      of their frequencies and time-traces.
- * sites.py (experimental)
-      Group sets of residue-residue contacts into "sites" and present a summary of
-      their frequencies and time-trances.
+.. note::
 
+ Lastly, a note of caution regarding what the above definitions for *contact* and *frequency* entail:
 
-These command-line tools work with methods contained in the submodules:
+ * the kinetic information is averaged out. Contacts quickly breaking and forming and contacts that break (or form) only once **will have the same frequency** as long as the **fraction of total time** they are formed is the same. For analysis taking kinetics into account, use. e.g. `pyemma <http://mdtraj.org>`_.
+ * The sharp, "distance-only" cutoff can sometimes over- or under-represent some interaction types. Modules like `get_contacts <https://github.com/getcontacts/getcontacts>`_ capture these interactions better.
 
- * contacts
+However, both these issues (if/when they arise) can be spotted easily by looking at the time-traces of said contacts and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
+
+Command line tools
+==================
+
+At the moment, the command-line tools that the user can invoke directly from the terminal after installing mdciao are
+
+* residue_neighborhoods.py
+* interface
+* sites.py
+* BW_overview
+* CGG_overview
+* fragment_overview
+* compare_neighborhoods
+
+You can see their documentation by invoking using the -h flag whe invoking them from the command line or by checking these pages.
+
+API
+===
+mdciao ships not only with the above command line tools, but with a number of submodules (loosely referred to as API from now on). The objects and methods in the API allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks.
+
+These can be imported into the namespace by simply by using ``import mdciao``.
+
+Whereas the command-line-tools from above tend to be more stable, the API functions and calls might change future. Bugfixes, refactors and redesigns are in the pipeline and experienced users should know how to deal with this.
+
+However, a general (semi) intuitive structure exists.
+
+* contacts
       For the computation residue-residue contacts and their presentation as time-traces
       or summarized probabilities (=frequencies).
- * fragments
-      For the identification and handling (=joining, splitting, naming) of fragments in
-      the molecular topology.
+* fragments
+      For the identification and handling (=joining, splitting, naming) of fragments in the molecular topology.
 
- * command_line_tools
-      The residue_neighborhoods.py and sites.py are just wrappers
-      around the methods contained in the submodule command_line_tools.
-      This way, the user can also use the command-line
-      tools in any interactive session, e.g. a in
-      the IPython terminal and/or the JuPyter notebooks.
+* command_line_tools
 
 The lowest level modules are more specific and are packed into the *_utils files:
 
@@ -51,12 +76,9 @@ The lowest level modules are more specific and are packed into the *_utils files
    * aa_utils.py
    * nomenclature_utils.py
 
-Finally, there is the submodule actor_utils.py, which is still containing important **but untested**
-methods. These methods will gradually be refactored into the any of the above submodules.
+::note
 
-.. note::
-   **This library is still under heavy development
-   It is guaranteed to change in the future.**
+ Yeah
 
 .. toctree::
    :maxdepth: 2
