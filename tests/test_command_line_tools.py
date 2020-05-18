@@ -1,6 +1,7 @@
 import mdtraj as md
 import unittest
 from filenames import filenames
+test_filenames = filenames()
 import pytest
 
 from tempfile import TemporaryDirectory as _TDir
@@ -24,7 +25,6 @@ from mdciao.contact_matrix_utils import \
     contact_map
 
 from tempfile import TemporaryDirectory
-test_filenames = filenames()
 
 from unittest.mock import patch
 from mock import mock
@@ -460,7 +460,7 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
                                      fragnames)
     def test_danger_raises(self):
         with pytest.raises(NotImplementedError):
-            fragnames = command_line_tools._parse_fragment_naming_options("TM1,danger", self.fragments, None)
+            command_line_tools._parse_fragment_naming_options("TM1,danger", self.fragments, None)
 
 
 
@@ -470,7 +470,7 @@ class Test_fragment_overview(unittest.TestCase):
         from mdciao.parsers import parser_for_CGN_overview
 
         a = parser_for_CGN_overview()
-        a = a.parse_args(["data/3SN6.pdb.gz","data/CGN_3SN6.txt"])
+        a = a.parse_args([filenames.test,"data/CGN_3SN6.txt"])
         command_line_tools._fragment_overview(a,"CGN")
 
     def test_BW_local_and_verbose(self):
