@@ -194,6 +194,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
 
     return myfig, freqs, posret
 
+"""
 def add_hover_ctc_labels(iax, ctc_mat,
                          label_dict_by_index=None,
                          fmt='%3.1f',
@@ -222,7 +223,7 @@ def add_hover_ctc_labels(iax, ctc_mat,
         hover=hover,
     )
     cursor.connect("add", lambda sel: sel.annotation.set_text(labels[sel.target.index]))
-
+"""
 
 def plot_unified_freq_dicts(freqs,
                             colordict,
