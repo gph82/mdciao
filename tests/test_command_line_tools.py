@@ -146,20 +146,6 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
 class TestJustRunsAllFewestOptions(TestCLTBaseClass):
 
-    @patch('builtins.input', lambda *args: '4')
-    def test_neighborhoods(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                                   "200,396",
-                                  output_dir=tmpdir
-                                   )
-
-    def test_sites(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             sites(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                                   [test_filenames.GDP_json],
-                                   output_dir=tmpdir)
-
     @unittest.skip("contact map is not being exposed anywhere ATM")
     def test_contact_map(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -167,7 +153,14 @@ class TestJustRunsAllFewestOptions(TestCLTBaseClass):
                                     self.run1_stride_100_xtc_reverse],
                       output_dir=tmpdir)
 
-class Test_residue_neighbrhoodsOptionsJustRuns(TestCLTBaseClass):
+class Test_residue_neighborhood(TestCLTBaseClass):
+
+    @patch('builtins.input', lambda *args: '4')
+    def test_neighborhoods(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                                  "200,396",
+                                  output_dir=tmpdir)
 
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -273,7 +266,13 @@ class Test_residue_neighbrhoodsOptionsJustRuns(TestCLTBaseClass):
                                       output_dir=tmpdir
                                       )
 
-class Test_sites_missing_options(TestCLTBaseClass):
+class Test_sites(TestCLTBaseClass):
+
+    def test_sites(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            sites(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                  [test_filenames.GDP_json],
+                  output_dir=tmpdir)
 
     def test_scheme_CA(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -459,7 +458,39 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
             fragnames = command_line_tools._parse_fragment_naming_options("TM1,TM2", self.fragments, None)
             self.assertSequenceEqual(["TM1", "TM2", "ICL3", "H8"],
                                      fragnames)
+    def test_danger_raises(self):
+        with pytest.raises(NotImplementedError):
+            fragnames = command_line_tools._parse_fragment_naming_options("TM1,danger", self.fragments, None)
 
+
+
+class Test_fragment_overview(unittest.TestCase):
+
+    def test_CGN(self):
+        from mdciao.parsers import parser_for_CGN_overview
+
+        a = parser_for_CGN_overview()
+        a = a.parse_args(["data/3SN6.pdb.gz","data/CGN_3SN6.txt"])
+        command_line_tools._fragment_overview(a,"CGN")
+
+    def test_BW_local_and_verbose(self):
+        from mdciao.parsers import parser_for_BW_overview
+
+        a = parser_for_BW_overview()
+        a = a.parse_args(["data/3SN6.pdb.gz","data/adrb2_human_full.xlsx"])
+        print(a)
+        a.__setattr__("print_conlab",True)
+        command_line_tools._fragment_overview(a,"BW")
+
+    def test_BW_url(self):
+        from mdciao.parsers import parser_for_BW_overview
+        a = parser_for_BW_overview()
+        a = a.parse_args(["data/3SN6.pdb.gz","adrb2_human"])
+        command_line_tools._fragment_overview(a,"BW")
+
+    def test_raises(self):
+        with pytest.raises(ValueError):
+            command_line_tools._fragment_overview(None,"BWx")
 
 if __name__ == '__main__':
     unittest.main()
