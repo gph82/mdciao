@@ -228,6 +228,34 @@ def _parser_add_table_ext(parser):
                         help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
                         default=None)
 
+def _parser_add_write_to_disk(parser):
+    parser.set_defaults(write_to_disk=False)
+    parser.add_argument("--keep",
+                        help="Save the consensus file locally for later use, default is False",
+                        dest="write_to_disk", action="store_true"
+                        )
+def _parser_add_print_conlab(parser):
+    parser.set_defaults(print_conlab=False)
+    parser.add_argument("--verbose",
+                        help="Print the consensus labels for all residues",
+                        dest="print_conlab", action="store_true"
+                        )
+def _parser_add_fill_gaps(parser):
+    parser.set_defaults(fill_gaps=False)
+    parser.add_argument("--autofill",
+                        help="Try to guess missing consensus labels",
+                        dest="fill_gaps", action="store_true"
+                        )
+def _parser_find_AAs(parser):
+    parser.add_argument("--AAs",type=str,
+                        help="Print the idxs and labels of these AAs, e.g. R131,GLU30",
+                        default=None)
+
+def _parser_find_labels(parser):
+    parser.add_argument("--labels",type=str,
+                        help="Print the idxs and resnames of these consensus labels, e.g. 3.50,2.63",
+                        default=None)
+
 def parser_for_rn():
     parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
                                       'receptor-G-protein complex.')
@@ -249,7 +277,7 @@ def parser_for_rn():
                              "non-necessary distances (e.g. between N-terminus and G-protein) are not even computed. "
                              "Default is 15 Angstrom.", default=15)
     _parser_add_fragments(parser)
-    _parser_add_fragment_names(parser)
+    #_parser_add_fragment_names(parser)
 
     parser.add_argument('--sort', dest='sort', action='store_true', help="Sort the resSeq_idxs list. Defaut is True")
     parser.add_argument('--no-sort', dest='sort', action='store_false')
@@ -286,7 +314,7 @@ def parser_for_rn():
     _parser_add_gray_backgroud(parser)
     _parser_add_graphic_dpi(parser)
     _parser_add_short_AA_names(parser)
-    _parser_add_no_fragfrag(parser)
+    #_parser_add_no_fragfrag(parser)
     _parser_add_time_traces(parser)
     _parser_add_distro(parser)
     _parser_add_n_cols(parser)
@@ -525,27 +553,10 @@ def parser_for_BW_overview():
     _parser_add_write_to_disk(parser)
     _parser_add_print_conlab(parser)
     _parser_add_fill_gaps(parser)
+    _parser_find_AAs(parser)
+    _parser_find_labels(parser)
 
     return parser
-
-def _parser_add_write_to_disk(parser):
-    parser.set_defaults(write_to_disk=False)
-    parser.add_argument("--keep",
-                        help="Save the consensus file locally for later use, default is False",
-                        dest="write_to_disk", action="store_true"
-                        )
-def _parser_add_print_conlab(parser):
-    parser.set_defaults(print_conlab=False)
-    parser.add_argument("--verbose",
-                        help="Print the consensus labels for all residues",
-                        dest="print_conlab", action="store_true"
-                        )
-def _parser_add_fill_gaps(parser):
-    parser.set_defaults(fill_gaps=False)
-    parser.add_argument("--autofill",
-                        help="Try to guess missing consensus labels",
-                        dest="fill_gaps", action="store_true"
-                        )
 
 def parser_for_CGN_overview():
     parser = argparse.ArgumentParser(description='Provides overview of '
