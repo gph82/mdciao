@@ -33,7 +33,7 @@ setup(
                     "requests"
                     ]
                      +test_deps
-                     +doc_deps
+                     #+doc_deps
     # tests_require=test_deps, # has been deprecated, gotta learn how to use tox
     ,
     scripts=['scripts/mdc_neighborhoods.py',
