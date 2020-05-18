@@ -7,7 +7,7 @@ Welcome to mdciao's documentation!
 ==================================
 
 The main goal of this Python library is to provide quick, "one-shot" command-line
-tools to analyze molecular simulation data using residue-residue distances, tyring to automate as much of the process as possible while being highly customizable.
+tools to analyze molecular simulation data using residue-residue distances, tyring to automate as much as possible while remaining highly customizable.
 
 The analysis is based on contact-frequencies, i.e. the percentage of simulation time
 that two given residues find each other at a distances smaller or equal than a given
@@ -29,7 +29,7 @@ mdciao will calculate contact frequencies, distance time-traces and overall numb
 
 .. note::
 
- Lastly, a note of caution regarding what the above definitions for *contact* and *frequency* entail:
+ Lastly, a note of caution regarding the above definitions for *contact* and *frequency*:
 
  * the kinetic information is averaged out. Contacts quickly breaking and forming and contacts that break (or form) only once **will have the same frequency** as long as the **fraction of total time** they are formed is the same. For analysis taking kinetics into account, use. e.g. `pyemma <http://mdtraj.org>`_.
  * The sharp, "distance-only" cutoff can sometimes over- or under-represent some interaction types. Modules like `get_contacts <https://github.com/getcontacts/getcontacts>`_ capture these interactions better.
@@ -41,15 +41,15 @@ Command line tools
 
 At the moment, the command-line tools that the user can invoke directly from the terminal after installing mdciao are
 
-* residue_neighborhoods.py
-* interface
-* sites.py
-* BW_overview
-* CGG_overview
-* fragment_overview
-* compare_neighborhoods
+* mdc_neighborhoods
+* mdc_sites
+* mdc_interface
+* mdc_fragment_overview
+* mdc_BW_overview
+* mdc_CGN_overview
+* mdc_compare_neighborhoods
 
-You can see their documentation by invoking using the -h flag whe invoking them from the command line or by checking these pages.
+You can see their documentation by using the ``-h`` flag whe invoking them from the command line or by checking these pages.
 
 API
 ===
@@ -57,7 +57,7 @@ mdciao ships not only with the above command line tools, but with a number of su
 
 These can be imported into the namespace by simply by using ``import mdciao``.
 
-Whereas the command-line-tools from above tend to be more stable, the API functions and calls might change future. Bugfixes, refactors and redesigns are in the pipeline and experienced users should know how to deal with this.
+Whereas the command-line-tools from above tend to be more stable, the API functions and object calls might change future. Bugfixes, refactors and redesigns are in the pipeline and experienced users should know how to deal with this.
 
 However, a general (semi) intuitive structure exists.
 
@@ -76,9 +76,17 @@ The lowest level modules are more specific and are packed into the *_utils files
    * aa_utils.py
    * nomenclature_utils.py
 
-::note
+.. toctree::
+   :maxdepth: 1
+   :caption: Command Line Tools:
 
- Yeah
+   mdc_neighborhoods
+   mdc_sites
+   mdc_interface
+   mdc_fragment_overview
+   mdc_BW_overview
+   mdc_CGN_overview
+   mdc_compare_neighborhoods
 
 .. toctree::
    :maxdepth: 2
@@ -86,15 +94,6 @@ The lowest level modules are more specific and are packed into the *_utils files
 
    contacts
    fragments
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Command Line Tools:
-
-   residue_neighborhoods
-   sites
-   interface_ctc_analyzer
-   fragment_overview
 
 .. toctree::
    :maxdepth: 2
