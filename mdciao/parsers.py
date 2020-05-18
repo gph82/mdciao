@@ -522,37 +522,45 @@ def parser_for_BW_overview():
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                         )
 
+    _parser_add_write_to_disk(parser)
+    _parser_add_print_conlab(parser)
+    _parser_add_fill_gaps(parser)
+
+    return parser
+
+def _parser_add_write_to_disk(parser):
+    parser.set_defaults(write_to_disk=False)
     parser.add_argument("--keep",
-                        help="Save the BW locally for later use, default is False",
+                        help="Save the consensus file locally for later use, default is False",
                         dest="write_to_disk", action="store_true"
                         )
-
-    parser.set_defaults(write_to_disk=False)
-
+def _parser_add_print_conlab(parser):
+    parser.set_defaults(print_conlab=False)
     parser.add_argument("--verbose",
                         help="Print the consensus labels for all residues",
                         dest="print_conlab", action="store_true"
                         )
-    parser.set_defaults(print_conlab=False)
-
-
+def _parser_add_fill_gaps(parser):
+    parser.set_defaults(fill_gaps=False)
     parser.add_argument("--autofill",
                         help="Try to guess missing consensus labels",
                         dest="fill_gaps", action="store_true"
                         )
-    parser.set_defaults(fill_gaps=False)
-
-
-    return parser
 
 def parser_for_CGN_overview():
     parser = argparse.ArgumentParser(description='Provides overview of '
                                                  'CGN nomenclature for a given topology')
 
     _parser_add_topology(parser)
-    parser.add_argument("CGN_PDB", type=str,
-                        help="Look for CGN definitions in a database using a PDB code, "
+    parser.add_argument("PDB_code_or_txtfile", type=str,
+                        help="Get CGN definitions from here. If a file is not "
+                             "found locally, there will be a web-lookup "
+                             "in a database using a PDB code, "
                              "e.g. 3SN6. see www.mrc-lmb.cam.ac.uk")
+
+    _parser_add_fill_gaps(parser)
+    _parser_add_print_conlab(parser)
+
     return parser
 
 def parser_for_compare_neighborhoods():
