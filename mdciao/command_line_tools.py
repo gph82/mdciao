@@ -288,7 +288,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     refgeom = _load_any_geom(topology)
 
     if fragmentify:
-        fragments = get_fragments(refgeom.top,method='bonds')
+        fragments = get_fragments(refgeom.top,method='resSeq+')
     else:
         raise NotImplementedError("This feature is not yet implemented")
 
