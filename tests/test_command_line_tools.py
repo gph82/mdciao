@@ -422,5 +422,44 @@ class Test_offer_to_create_dir(unittest.TestCase):
             res = command_line_tools._offer_to_create_dir("testdir")
             assert res is None
 
+class Test_load_any_geom(unittest.TestCase):
+
+    def test_loads_file(self):
+        geom = command_line_tools._load_any_geom(test_filenames.prot1_pdb)
+        self.assertIsInstance(geom, md.Trajectory)
+
+    def test_loads_geom(self):
+        geom = md.load(test_filenames.prot1_pdb)
+        geomout = command_line_tools._load_any_geom(geom)
+        self.assertIs(geom, geomout)
+
+class Test_parse_fragment_naming_options(unittest.TestCase):
+    def setUp(self):
+        self.fragments = [[0,1],
+                          [2,3],
+                          [4,5],
+                          [6,7]]
+    def test_empty_str(self):
+        fragnames = command_line_tools._parse_fragment_naming_options("",self.fragments,None)
+        self.assertSequenceEqual(["frag0","frag1","frag2","frag3"],
+                                 fragnames)
+
+    def test_None(self):
+        fragnames = command_line_tools._parse_fragment_naming_options("None", self.fragments, None)
+        self.assertSequenceEqual([None,None,None,None],
+                                 fragnames)
+
+    def test_csv(self):
+        fragnames = command_line_tools._parse_fragment_naming_options("TM1,TM2,ICL3,H8", self.fragments, None)
+        self.assertSequenceEqual(["TM1","TM2","ICL3","H8"],
+                                 fragnames)
+
+    def test_csv_wrong_nr_raises(self):
+        with pytest.raises(AssertionError):
+            fragnames = command_line_tools._parse_fragment_naming_options("TM1,TM2", self.fragments, None)
+            self.assertSequenceEqual(["TM1", "TM2", "ICL3", "H8"],
+                                     fragnames)
+
+
 if __name__ == '__main__':
     unittest.main()

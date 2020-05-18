@@ -150,6 +150,38 @@ def _parse_consensus_option(option, consensus_type,
         return map_out, tf_out
 
 def _parse_fragment_naming_options(fragment_names, fragments, top):
+    r"""
+    Helper method for the CLTs to understand what/how the user wants
+    the fragments to be named
+    Parameters
+    ----------
+    fragment_names : str
+        comes directly from the command line option --fragment_names,
+        see :obj:`parsers._parser_add_fragment_names. Can be different
+        things:
+        * "" : fragment names will be named frag0,frag1,frag2 ... as needed
+        * "None","none": fragment names will be None
+        * comma-separated values, with as many values
+        as fragments are in :obj:`fragments:
+    fragments: list
+        existing fragment definitions (iterables of residue indices)
+         to apply the :obj:`fragment_names` to.
+         Typically, :obj:`fragments` come from a call to :obj:`get_fragments`
+    top : :obj:`mdtraj.Topology` (unused)
+        Topolgy associated with the fragments, only used
+        in the very special case where the user passed the str
+        'danger'  in the command line tool. This is an advandced feature
+        and will be deprecated or refactored soon. It was dangerous
+        because the input :obj:`fragments` would be overwritten.
+        Raises NotImplementedError ATM
+
+    Returns
+    -------
+    fragment_names : list of strings
+    fragments : list of fragments (only case "danger" was used, deprecated
+    """
+    #TODO fragment naming should be handled at the object level?
+
     if fragment_names == '':
         fragment_names = ['frag%u' % ii for ii in range(len(fragments))]
     elif fragment_names.lower()=="none":
@@ -161,6 +193,7 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
             assert len(fragment_names) == len(
                 fragments), "Mismatch between nr. fragments and fragment names %s vs %s (%s)" % (
                 len(fragments), len(fragment_names), fragment_names)
+            return fragment_names
 
         elif 'danger' in fragment_names.lower():
             raise NotImplementedError
@@ -176,9 +209,10 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
             for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, names)):
                 _print_frag(ifrag_idx, top, ifrag, end='')
                 print(" ", frag_name)
+            return fragment_names, fragments
             """
-    return fragment_names, fragments
 
+    return fragment_names
 
 def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           res_idxs=False,
@@ -246,14 +280,14 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     print("Will compute contact frequencies for :\n%s"
           "\n with a stride of %u frames)"%(_inform_about_trajectories(xtcs),stride))
 
-    refgeom = _load_any_top(topology)
+    refgeom = _load_any_geom(topology)
 
     if fragmentify:
         fragments = get_fragments(refgeom.top,method='bonds')
     else:
         raise NotImplementedError("This feature is not yet implemented")
 
-    fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
 
     # Do we want BW definitions
     BWresidx2conlab = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments, write_to_disk=write_to_disk_BW)
@@ -516,14 +550,14 @@ def sites(topology,
           stride))
 
     # Inform about fragments
-    refgeom = _load_any_top(topology)
+    refgeom = _load_any_geom(topology)
 
     if fragmentify:
         fragments = get_fragments(refgeom.top, verbose=False)
     else:
         raise NotImplementedError("This feature is not yet implemented")
 
-    fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
 
 
     for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
@@ -798,7 +832,7 @@ def interface(
     print("Will compute contact frequencies for :\n%s"
           "\n with a stride of %u frames)" % (_inform_about_trajectories(xtcs), stride))
 
-    refgeom = _load_any_top(topology)
+    refgeom = _load_any_geom(topology)
 
     fragments_as_residue_idxs, frag_cons = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
 
@@ -1078,10 +1112,21 @@ def _my_color_schemes(istr):
             "hobat": ["m", "darkgreen", "darkorange", "navy"],
             "auto":  plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]
 
-def _load_any_top(topology):
-    if isinstance(topology, str):
-        refgeom = md.load(topology)
-    else:
-        refgeom = topology
+def _load_any_geom(geom):
+    r"""
+    Helper method for command-line-tools to create :obj:`mdtraj.Trajectories`
+    from either filenames or :obj:`mdtraj.Trajectories` (i.e. do nothing)
+    Parameters
+    ----------
+    geom : str or :obj:`mdtraj.Trajectory`
 
-    return refgeom
+    Returns
+    -------
+    outgeom : :obj:`mdtraj.Trajectory`
+    """
+    if isinstance(geom, str):
+        outgeom = md.load(geom)
+    else:
+        outgeom = geom
+
+    return outgeom
