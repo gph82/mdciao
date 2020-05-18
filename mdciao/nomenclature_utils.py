@@ -669,7 +669,7 @@ class LabelerCGN(LabelerConsensus):
             The PDB four letter code that will be used for CGN purposes
         local_path: str, default is '.'
             The local path where these files exist, if they exist
-            * 3SN6_CGN.txt (pre-downloaded CGN-type file)
+            * CGN_3SN6.txt (pre-downloaded CGN-type file)
             * 3SN6.pdb     (pre-downloaded pdb)
         try_web_lookup: bool, default is True
             If the local files are not found, try automatically a web lookup at
