@@ -1078,19 +1078,6 @@ def _my_color_schemes(istr):
             "hobat": ["m", "darkgreen", "darkorange", "navy"],
             "auto":  plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]
 
-def _t_unit2dt(t_unit):
-    # todo use a proper unit module
-    # like this https://pypi.org/project/units/
-    if t_unit == 'ns':
-        dt = 1e-3
-    elif t_unit == 'mus':
-        dt = 1e-6
-    elif t_unit == 'ps':
-        dt = 1
-    else:
-        raise ValueError("Time unit not known ", t_unit)
-    return dt
-
 def _load_any_top(topology):
     if isinstance(topology, str):
         refgeom = md.load(topology)
