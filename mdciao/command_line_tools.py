@@ -1,5 +1,8 @@
 import numpy as _np
 
+from inspect import \
+    signature as _signature
+
 from mdciao.residue_and_atom_utils import \
     shorten_AA as _shorten_AA
 
@@ -8,7 +11,9 @@ from matplotlib import pyplot as plt,rcParams as _rcParams
 
 from textwrap import wrap as _twrap
 from itertools import product
-from os import path, mkdir
+from os import \
+    path as _path, \
+    mkdir as _mkdir
 
 from mdciao.fragments import \
     get_fragments, _print_frag, \
@@ -57,10 +62,10 @@ def _offer_to_create_dir(output_dir):
     -------
 
     """
-    if not path.isdir(output_dir):
+    if not _path.isdir(output_dir):
         answer = input("\nThe directory '%s' does not exist. Create it on the fly [y/n]?\nDefault [y]: " % output_dir)
         if len(answer) == 0 or answer.lower().startswith("y"):
-            mkdir(output_dir)
+            _mkdir(output_dir)
         else:
             print("Stopping. Please check your variable 'output_dir' and try again")
             return
@@ -427,7 +432,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         [iax.set_xlim([-.5, xmax]) for iax in histoax.flatten()]
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
-    fname = path.join(output_dir, fname)
+    fname = _path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi)
     print("The following files have been created")
     print(fname)
@@ -438,7 +443,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             ihood.anchor_res_and_fragment_str.replace('*', ""),
                                             ctc_cutoff_Ang,
                                             table_ext)
-            fname = path.join(output_dir, fname)
+            fname = _path.join(output_dir, fname)
 
             #TODO can't the frequency_spreadsheet handle this now?
             if table_ext=='xlsx':
@@ -639,7 +644,7 @@ def sites(topology,
         scheme_desc=''
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall.%s%s" % (output_desc, scheme_desc, graphic_ext.strip("."))
-    fname = path.join(output_dir, fname)
+    fname = _path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi)
     plt.close(histofig)
     print("The following files have been created")
@@ -648,7 +653,7 @@ def sites(topology,
         fname = 'site.%s.%s.%stime_resolved.%s' % (
             site_name.replace(" ", "_"), desc_out.strip("."),
             scheme_desc, graphic_ext.strip("."))
-        fname = path.join(output_dir, fname)
+        fname = _path.join(output_dir, fname)
 
         myfig = isite_nh.plot_timedep_ctcs(panelheight,
                                            color_scheme=_my_color_schemes(curve_color),
@@ -986,7 +991,7 @@ def interface(
                                              )
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
-    fname = path.join(output_dir, fname)
+    fname = _path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi, bbox_inches="tight")
     print("The following files have been created")
     print(fname)
@@ -1086,7 +1091,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp : ContactGroup,
         fnames = [fname_timedep, fname_N_ctcs]
 
     for iname, ifig in zip(fnames, myfig):
-        fname = path.join(output_dir, iname)
+        fname = _path.join(output_dir, iname)
         ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
         ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
         plt.close(ifig)
@@ -1103,9 +1108,13 @@ def neighborhood_comparison(*args, **kwargs):
     from .plots import compare_groups_of_contacts
     return compare_groups_of_contacts(*args, **kwargs)
 
-
+#TODO introduce coverage exclusion labels
+# like https://coverage.readthedocs.io/en/v4.5.x/excluding.html
+# or refactor these methods into another test branch
+"""
 def _cmdstr2cmdtuple(cmd):
     return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
+"""
 
 def _my_color_schemes(istr):
     return {"peter": ["red", "purple", "gold", "darkorange"],
@@ -1130,3 +1139,52 @@ def _load_any_geom(geom):
         outgeom = geom
 
     return outgeom
+
+def _fragment_overview(a,labtype):
+    r"""
+    provide the CLTs BW_overview and CGN_overview
+
+    Parameters
+    ----------
+    a : :obj:`argparse.Namespace` object
+        Contains the arguments used by the user
+    labtype : srt, "BW" or "CGN"
+        lets the code know which :obj:`LabelerConsensus` to use
+
+    Returns
+    -------
+    None
+    """
+    if labtype == "CGN":
+        val = a.PDB_code_or_txtfile
+        if _path.exists(val):
+            # This is sort of un-winding the loging behind
+            # the initializiation of LabelerCGN, but it's
+            # better to add 2 lins of code here than
+            # changing the object's initialization
+            local_path, basename = _path.split(val)
+            ref_PDB = _path.splitext(basename)[0].replace("CGN_","")
+            assert len(ref_PDB)==4 and "CGN_%s.txt"%ref_PDB==basename
+            obj = LabelerCGN(ref_PDB,
+                             local_path=local_path,
+                             #write_to_disk=a.write_to_disk
+                             try_web_lookup=False)
+
+    elif labtype == "BW":
+        val = a.BW_uniprot_or_file
+        if _path.exists(val):
+            format = "%s"
+        else:
+            format = _signature(LabelerBW).parameters["format"].default
+        obj = LabelerBW(val,
+                  format=format,
+                  write_to_disk=a.write_to_disk)
+    else:
+        raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
+
+    top = md.load(a.topology).top
+    map_conlab = obj.top2map(top)
+    obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
+    if a.print_conlab:
+        for ii, ilab in enumerate(map_conlab):
+            print(ii, top.residue(ii), ilab)
