@@ -1353,7 +1353,7 @@ class ContactGroup(object):
         ----------
         list_of_contact_objects
         interface_residxs : list of two iterables of indexes
-            An is_interface is defined by two, non-overlapping
+            An interface is defined by two, non-overlapping
             groups of residue indices.
 
             The only requirement is that the residues in
@@ -1363,7 +1363,7 @@ class ContactGroup(object):
 
             The property :obj:`interface_residxs` groups
             the object's own residue idxs present in
-            :obj:`residxs_pairs` into the two groups of the is_interface.
+            :obj:`residxs_pairs` into the two groups of the interface.
 
             #TODO document what happens if there is no overlap
 
@@ -1372,7 +1372,7 @@ class ContactGroup(object):
         self._contacts = list_of_contact_objects
         self._n_ctcs  = len(list_of_contact_objects)
         self._interface_residxs = interface_residxs
-        self._interface = False
+        self._is_interface = False
         if top is None:
             self._top = self._unique_topology_from_ctcs()
         else:
@@ -1473,7 +1473,7 @@ class ContactGroup(object):
                 # TODO prolly this is anti-pattern but I prefer these many sanity checks
                 assert len(self._interface_residxs)==2
                 intersect = list(set(self._interface_residxs[0]).intersection(self._interface_residxs[1]))
-                assert len(intersect)==0, ("Some_residxs appear in both members of the is_interface %s, "
+                assert len(intersect)==0, ("Some_residxs appear in both members of theinterface %s, "
                                            "this is not possible"%intersect)
                 _np.testing.assert_equal(len(self._interface_residxs[0]),len(_np.unique(self._interface_residxs[0])))
                 _np.testing.assert_equal(len(self._interface_residxs[1]),len(_np.unique(self._interface_residxs[1])))
@@ -1493,7 +1493,7 @@ class ContactGroup(object):
 
                 self._interface_residxs = res
                 if len(res[0])>0 and len(res[1])>0:
-                    self._interface = True
+                    self._is_interface = True
             else:
                 self._interface_residxs = [[],[]]
     #todo again the dicussion about named tuples vs a miriad of properties
@@ -1646,7 +1646,7 @@ class ContactGroup(object):
             print("Not all anchors have or share the same color, returning None")
             return None
 
-    #todo there is redundant code for generating is_interface labels!
+    #todo there is redundant code for generatinginterface labels!
     # not sure we need it here, don't want to be testing now
     """
     @property
@@ -1779,7 +1779,7 @@ class ContactGroup(object):
             TODO dicts have order since py 3.6 and it is useful for creating
             TODO a dataframe, then excel_table that's already sorted by descending frequencies
         list_by_interface : bool, default is False, NotImplemented
-            group the freq_dict by is_interface residues
+            group the freq_dict by interface residues
         return_as_dataframe : bool, default is False
             Return an :obj:`pandas.DataFrame` with the column names labels and freqs
         fragsep : str, default is @
@@ -1952,7 +1952,7 @@ class ContactGroup(object):
         sort : bool, default is True
             Sort by descing order of frequency
         write_interface: bool, default is True
-            Treat contact group as is_interface
+            Treat contact group as interface
         offset : int, default is 0
             First line at which to start writing the table. For future devleopment
             TODO do not expose this, perhaps?
@@ -2531,7 +2531,7 @@ class ContactGroup(object):
             in one figure with all bars equally wide regardles of
             the subplot
         list_by_interface : boolean, default is True
-            Separate residues by is_interface
+            Separate residues by interface
         sort : boolean, default is True
             Sort sums of freqs in descending order
         interface_vline : bool, default is False
@@ -2597,21 +2597,21 @@ class ContactGroup(object):
 
     @property
     def is_interface(self):
-        r""" Whether this ContactGroup can be interpreted as an is_interface.
+        r""" Whether this ContactGroup can be interpreted as an interface.
 
         Note that if none of the residxs_pairs parsed at initialization,
         were found in self.residxs_pairs, this property will evaluate to False
         """
 
-        return self._interface
+        return self._is_interface
 
     @property
     def interface_residxs(self):
         r"""
-        The residues split into the is_interface
-        to that is_interface, in ascending order within each member
-        of the is_interface. Empty lists mean non residues were
-        found in the is_interface defined at initialization
+        The residues split into the interface
+        to that interface, in ascending order within each member
+        of the interface. Empty lists mean non residues were
+        found in the interface defined at initialization
 
         Returns
         -------
@@ -2683,16 +2683,16 @@ class ContactGroup(object):
     @property
     def interface_orphaned_labels(self):
         r"""
-        Short residue names that lack consensus nomenclature, sorted by is_interface
+        Short residue names that lack consensus nomenclature, sorted by interface
         Returns
         -------
         olist : list of len 2
         """
-        #TODO eliminate the "orphan" label string but wait until the group of is_interface objecs is tested
+        #TODO eliminate the "orphan" label string but wait until the group of interface objecs is tested
         return [[self.residx2resnameshort[ii] for ii in idxs if ii in self._residxs_missing_conslabels]
                 for idxs in self.interface_residxs]
 
-    """ I am commenting all this until the is_interface UI is better
+    """ I am commenting all this until the interface UI is better
     def interface_relabel_orphans(self):
         labs_out = [[], []]
         for ii, labels in enumerate(self.interface_labels_consensus):
