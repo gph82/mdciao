@@ -928,7 +928,8 @@ class ContactPair(object):
             self._attribute_neighborhood_names = None
 
         self._top = top
-        self._time_max = _np.max(_np.hstack(time_trajs))
+        self._time_max = _np.nanmax(_np.hstack(time_trajs))
+        self._time_min = _np.nanmin(_np.hstack(time_trajs))
         self._binarized_trajs = {}
 
     #Trajectories
@@ -972,6 +973,16 @@ class ContactPair(object):
         """
         return self._time_max
 
+    @property
+    def time_min(self):
+        """
+
+        Returns
+        -------
+        int or float, maximum time from list of list of time
+
+        """
+        return self._time_min
     @property
     def label(self):
         return self.labels.no_fragments
@@ -1119,7 +1130,7 @@ class ContactPair(object):
             label= '%-15s - %-15s'%tuple(label.split('-'))
         return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang),
                 "residue idxs":'%u %u'%tuple(self.residues.idxs_pair),
-                "label":label}
+                "label":label.rstrip(" ")}
 
     def distro_overall_trajs(self, bins=10):
         """
@@ -1313,7 +1324,7 @@ class ContactPair(object):
             iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
 
         iax.set_xlabel('t / %s' % _replace4latex(t_unit))
-        iax.set_xlim([0, self.time_max * dt])
+        iax.set_xlim([self.time_min*dt, self.time_max * dt])
         iax.set_ylim([0, iax.get_ylim()[1]])
 
     def __str__(self):
@@ -1387,6 +1398,7 @@ class ContactGroup(object):
                                                                                    ictc.time_traces.time_trajs)])
                         for ictc in self._contacts[1:]])
             self._time_max = ref_ctc.time_max
+            self._time_min = ref_ctc.time_min
             self._n_frames = ref_ctc.n.n_frames
 
             # All contatcs have the same trajstrs
@@ -1503,6 +1515,10 @@ class ContactGroup(object):
     @property
     def time_max(self):
         return self._time_max
+
+    @property
+    def time_min(self):
+        return self._time_min
 
     @property
     def time_arrays(self):
@@ -2470,7 +2486,7 @@ class ContactGroup(object):
 
         iax.set_ylabel('$\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
         iax.set_xlabel('t / %s'%t_unit)
-        iax.set_xlim([0,self.time_max*dt])
+        iax.set_xlim([self.time_min*dt,self.time_max*dt])
         iax.set_ylim([0,iax.get_ylim()[1]])
         iax.legend(fontsize=_rcParams["font.size"]*.75,
                    ncol=_np.ceil(self.n_trajs / max_handles_per_row).astype(int),
