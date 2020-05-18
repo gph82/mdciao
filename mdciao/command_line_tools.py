@@ -1185,6 +1185,28 @@ def _fragment_overview(a,labtype):
     top = md.load(a.topology).top
     map_conlab = obj.top2map(top)
     obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
+    from mdciao.residue_and_atom_utils import find_AA as _findAA
+    if str(a.AAs).lower()!="none":
+        AAs = [aa.strip(" ") for aa in a.AAs.split(",")]
+        for aa in AAs:
+            cands =_findAA(top,aa,relax=True)
+            if len(cands) == 0:
+                print("No %s found in the input topology" % aa)
+            else:
+                for idx in cands :
+                    rr = top.residue(idx)
+                    print(idx, rr, map_conlab[idx])
+        print()
+
+    if str(a.labels).lower() != "none":
+        labels = [aa.strip(" ") for aa in a.labels.split(",")]
+        conlab2residx = obj.conlab2residx(top, map=map_conlab)
+        for lab in labels:
+            if lab in conlab2residx.keys():
+                idx = conlab2residx[lab]
+                rr = top.residue(idx)
+                print(idx,rr, lab)
+
     if a.print_conlab:
         for ii, ilab in enumerate(map_conlab):
             print(ii, top.residue(ii), ilab)
