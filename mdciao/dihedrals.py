@@ -570,7 +570,7 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
     else:
         raise NotImplementedError("This feature is not yet implemented")
 
-    fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
 
     # Do we want BW definitions
     BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments, write_to_disk=write_to_disk_BW)
