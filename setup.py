@@ -30,7 +30,8 @@ setup(
                     "biopython",
                     "ipython",
                     "XlsxWriter",
-                    "requests"
+                    "requests",
+                    "tqdm"
                     ]
                      +test_deps
                      #+doc_deps
