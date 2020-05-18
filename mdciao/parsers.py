@@ -428,7 +428,7 @@ def parser_for_interface():
                               "     residue serial indices (zero-indexed) using space as\n"
                               "     separator. Not recommended\n."
                               "If you are unsure of any of these options, use \n"
-                              "the command line tool fragment_overview.py on \n"
+                              "the command line tool mdc_fragment_overview.py on \n"
                               "your topology file."))
 
     parser.add_argument("--frag_idxs_group_1", type=str,

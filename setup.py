@@ -36,15 +36,14 @@ setup(
                      +doc_deps
     # tests_require=test_deps, # has been deprecated, gotta learn how to use tox
     ,
-    scripts=['scripts/residue_neighborhoods.py',
-             #'scripts/compare_groups_of_contacts.py',
-             'scripts/sites.py',
-             #'scripts/site_figures.py',
-             'scripts/interface_ctc_analyzer.py',
+    scripts=['scripts/mdc_neighborhoods.py',
+             'scripts/mdc_sites.py',
+             'scripts/mdc_interface.py',
+             'scripts/mdc_fragment_overview.py',
+             'scripts/mdc_BW_overview.py',
+             'scripts/mdc_CGN_overview.py',
              #'scripts/density_by_sites.py',
-             'scripts/fragment_overview.py',
-             'scripts/BW_overview.py',
-             'scripts/CGN_overview.py',
+             #'scripts/site_figures.py',
              #'scripts/residue_dihedrals.py',
              #'scripts/contact_maps.py'
              #'scripts/CARDS.py'
