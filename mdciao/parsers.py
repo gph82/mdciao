@@ -246,12 +246,12 @@ def _parser_add_fill_gaps(parser):
                         help="Try to guess missing consensus labels",
                         dest="fill_gaps", action="store_true"
                         )
-def _parser_find_AAs(parser):
+def _parser_add_AAs(parser):
     parser.add_argument("--AAs",type=str,
                         help="Print the idxs and labels of these AAs, e.g. R131,GLU30",
                         default=None)
 
-def _parser_find_labels(parser):
+def _parser_add_conslabels(parser):
     parser.add_argument("--labels",type=str,
                         help="Print the idxs and resnames of these consensus labels, e.g. 3.50,2.63",
                         default=None)
@@ -470,7 +470,7 @@ def parser_for_interface():
     _parser_add_cutoff(parser)
     _parser_add_n_ctcs(parser, default=10)
     parser.add_argument("--interface_cutoff_Ang", type=float,
-                        help="The is_interface between both groups is defined as the set of group_1-group_2-"
+                        help="The interface between both groups is defined as the set of group_1-group_2-"
                              "distances that are within this "
                              "cutoff in the reference topology. Otherwise, a large number of "
                              "non-necessary distances (e.g. between N-terminus and G-protein) are computed. Default is 35.",
@@ -488,11 +488,10 @@ def parser_for_interface():
     #parser.set_defaults(consolidate_opt=True)
     _parser_add_nomenclature(parser)
     _parser_add_chunk(parser)
-    _parser_add_output_desc(parser,'is_interface')
+    _parser_add_output_desc(parser,'interface')
     _parser_add_output_dir(parser)
     _parser_add_graphic_ext(parser)
     _parser_add_graphic_dpi(parser)
-    #_parser_add_ascii(parser)
     _parser_add_curve_color(parser)
     _parser_add_t_unit(parser)
     _parser_add_gray_backgroud(parser)
@@ -553,8 +552,8 @@ def parser_for_BW_overview():
     _parser_add_write_to_disk(parser)
     _parser_add_print_conlab(parser)
     _parser_add_fill_gaps(parser)
-    _parser_find_AAs(parser)
-    _parser_find_labels(parser)
+    _parser_add_AAs(parser)
+    _parser_add_conslabels(parser)
 
     return parser
 
@@ -571,6 +570,8 @@ def parser_for_CGN_overview():
 
     _parser_add_fill_gaps(parser)
     _parser_add_print_conlab(parser)
+    _parser_add_AAs(parser)
+    _parser_add_conslabels(parser)
 
     return parser
 
