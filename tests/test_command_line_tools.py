@@ -157,10 +157,13 @@ class Test_residue_neighborhood(TestCLTBaseClass):
 
     @patch('builtins.input', lambda *args: '4')
     def test_neighborhoods(self):
+
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                                  "200,396",
-                                  output_dir=tmpdir)
+            input_values = (val for val in ["b"])
+            with mock.patch('builtins.input', lambda *x: next(input_values)):
+                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                                      "200,396",
+                                      output_dir=tmpdir)
 
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -470,7 +473,8 @@ class Test_fragment_overview(unittest.TestCase):
         from mdciao.parsers import parser_for_CGN_overview
 
         a = parser_for_CGN_overview()
-        a = a.parse_args([filenames.test,"data/CGN_3SN6.txt"])
+        a = a.parse_args([test_filenames.prot1_pdb,_path.join(test_filenames.test_data_path,
+                                                         "CGN_3SN6.txt")])
         command_line_tools._fragment_overview(a,"CGN")
 
     def test_BW_local_and_verbose(self):
