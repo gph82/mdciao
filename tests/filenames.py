@@ -36,5 +36,5 @@ class filenames(object):
         self.pdb_1U19 = path.join(test_data_path,"1u19.pdb.gz")
         self.pdb_5D5A = path.join(test_data_path,"5d5a.pdb.gz")
 
-
-test_filenames = filenames()
+if __name__ == '__main__':
+    pass
