@@ -11,9 +11,13 @@ from matplotlib import pyplot as plt,rcParams as _rcParams
 
 from textwrap import wrap as _twrap
 from itertools import product
+
 from os import \
     path as _path, \
     mkdir as _mkdir
+
+from mdciao.plots import \
+    compare_groups_of_contacts as _compare_groups_of_contacts
 
 from mdciao.fragments import \
     get_fragments, _print_frag, \
@@ -47,7 +51,8 @@ from mdciao.str_and_dict_utils import \
 from mdciao.bond_utils import \
     bonded_neighborlist_from_top
 
-from mdciao.fragments import my_frag_colors as mycolors
+from mdciao.fragments import \
+    my_frag_colors as mycolors
 
 def _offer_to_create_dir(output_dir):
     r"""
@@ -454,19 +459,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                             split_label="join"
                                             )
             else:
-                # TODO can't the frequency_spreadsheet handle this now?
-                istr = (ihood.frequency_dataframe(ctc_cutoff_Ang,
-                                                  by_atomtypes=True,
-                                                  #AA_format="long",
-                                                  split_label="join").round(
-                    {"freq": 2, "sum": 2})).to_string(index=False ,header=False,
-                                                      justify='left',
-                                                      #justify = 'right'
-                                                      )
-                #istr[0] = '#'
-                istr += '\n'
                 with open(fname, 'w') as f:
-                    f.write(istr)
+                    f.write(ihood.frequency_str_ASCII_file(ctc_cutoff_Ang))
             print(fname)
 
     #TODO make a method out of this to use in all CLTs
@@ -558,7 +552,7 @@ def sites(topology,
     refgeom = _load_any_geom(topology)
 
     if fragmentify:
-        fragments = get_fragments(refgeom.top, verbose=False)
+        fragments = get_fragments(refgeom.top, method="resSeq+")
     else:
         raise NotImplementedError("This feature is not yet implemented")
 
@@ -909,7 +903,7 @@ def interface(
         "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
         len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
     print()
-    ctcs, times, __ = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
+    ctcs, times, at_pair_trajs = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
                                  stride=stride, return_times_and_atoms=True,
                                  consolidate=False,
                                  chunksize=chunksize_in_frames,
@@ -943,6 +937,7 @@ def interface(
                                         consensus_labels=consensus_labels,
                                         trajs=xtcs,
                                         fragment_idxs=fragment_idxs,
+                                        atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
                                         # names=names,#[names[idx] for idx in idxs],
                                         # colors=[fragcolors[idx] for idx in idxs]
                                         ))
@@ -990,7 +985,7 @@ def interface(
                                              sort=sort_by_av_ctcs,
                                              )
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "%s.overall.%s" % (output_desc, graphic_ext.strip("."))
+    fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
     fname = _path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi, bbox_inches="tight")
     print("The following files have been created")
@@ -998,7 +993,11 @@ def interface(
     fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
     ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
     print(fname_excel)
-
+    fname_dat = fname.replace(graphic_ext.strip("."),"dat")
+    # TODO manage filenames better, avoid overwriting here when file exists
+    with open(fname_dat,"w") as f:
+        f.write(ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang))
+    print(fname_dat)
     if plot_timedep or separate_N_ctcs:
         myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
                                                color_scheme=_my_color_schemes(curve_color),
@@ -1105,8 +1104,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp : ContactGroup,
     print()
 
 def neighborhood_comparison(*args, **kwargs):
-    from .plots import compare_groups_of_contacts
-    return compare_groups_of_contacts(*args, **kwargs)
+    return _compare_groups_of_contacts(*args, **kwargs)
 
 #TODO introduce coverage exclusion labels
 # like https://coverage.readthedocs.io/en/v4.5.x/excluding.html
