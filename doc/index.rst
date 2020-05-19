@@ -42,8 +42,8 @@ Command line tools
 At the moment, the command-line tools that the user can invoke directly from the terminal after installing mdciao are
 
 * mdc_neighborhoods
-* mdc_sites
 * mdc_interface
+* mdc_sites
 * mdc_fragment_overview
 * mdc_BW_overview
 * mdc_CGN_overview
@@ -59,22 +59,7 @@ These can be imported into the namespace by simply by using ``import mdciao``.
 
 Whereas the command-line-tools from above tend to be more stable, the API functions and object calls might change future. Bugfixes, refactors and redesigns are in the pipeline and experienced users should know how to deal with this.
 
-However, a general (semi) intuitive structure exists.
-
-* contacts
-      For the computation residue-residue contacts and their presentation as time-traces
-      or summarized probabilities (=frequencies).
-* fragments
-      For the identification and handling (=joining, splitting, naming) of fragments in the molecular topology.
-
-* command_line_tools
-
-The lowest level modules are more specific and are packed into the *_utils files:
-
-   * list_utils.py
-   * bond_utils.py
-   * aa_utils.py
-   * nomenclature_utils.py
+All API objects and functions are extensively documented, just not linked here (yet). Please use their docstring: double-tab in Jupyter Notebooks, or cmd?+Enter in the IPython terminal.
 
 .. toctree::
    :maxdepth: 1
