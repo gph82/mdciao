@@ -233,16 +233,19 @@ def freq_datfile2freqdict(ifile):
     freqdict : dictionary
 
     """
+    #TODO consider using pandas
     outdict = {}
     with open(ifile) as f:
         for iline in f.read().splitlines():
-            try:
-                iline = iline.split()
-                freq, names = iline[0],iline[1]
-                outdict[names]=float(freq)
-            except ValueError:
-                print(iline)
-                raise
+            if iline[0]!="#":
+                try:
+                    iline = iline.split()
+                    assert iline[4]=="-"
+                    freq, names = float(iline[0]),"%s-%s"%(iline[3],iline[5])
+                    outdict[names]=float(freq)
+                except ValueError:
+                    print(iline)
+                    raise
     return outdict
 
 def _replace4latex(istr):
