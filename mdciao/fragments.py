@@ -733,7 +733,7 @@ def _frag_list_2_frag_groups(frag_list,
         group_names = [frag_idxs_group_1, frag_idxs_group_2]
         for ii, ifrag_idxs in enumerate(group_names):
             if ifrag_idxs is None:
-                group_names[ii] = _rangeexpand(input('Input group of fragments (e.g. 1,3 or 2-4) for group %u: ' % (ii + 1)))
+                group_names[ii] = _rangeexpand(input('Input group of fragments (e.g. 0,3 or 2-4,6) for group %u: ' % (ii + 1)))
             elif isinstance(ifrag_idxs, str):
                 group_names[ii] = _rangeexpand(ifrag_idxs)
     group_residxs = [sorted(_np.hstack([frag_list[ii] for ii in iint])) for iint in
