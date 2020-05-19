@@ -403,7 +403,7 @@ def parser_for_sites():
     _parser_add_output_dir(parser)
     _parser_add_stride(parser)
     _parser_add_smooth(parser)
-    _parser_add_fragment_names(parser)
+    #_parser_add_fragment_names(parser)
     _parser_add_cutoff(parser)
     _parser_add_t_unit(parser)
     _parser_add_graphic_ext(parser)
@@ -585,10 +585,9 @@ def parser_for_compare_neighborhoods():
     :return:
     """
     parser = argparse.ArgumentParser(description="compare")
-    parser.add_argument("anchor",type=str)
-    parser.add_argument("--keys", type=str)
-    parser.add_argument("--files", type=str)
-    parser.add_argument("--colors", type=str)
-    parser.add_argument("--mutations",type=str)
-    #parser.add_argument("-width",type=float,default=.2)
+    parser.add_argument("files", type=str, nargs="+")
+    parser.add_argument("--anchor",type=str,default=None)
+    parser.add_argument("--keys", type=str,default=None)
+    parser.add_argument("--colors", type=str, default="r,g")
+    parser.add_argument("--mutations",type=str, default=None)
     return parser
