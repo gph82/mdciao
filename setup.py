@@ -43,6 +43,8 @@ setup(
              'scripts/mdc_fragment_overview.py',
              'scripts/mdc_BW_overview.py',
              'scripts/mdc_CGN_overview.py',
+             'scripts/mdc_compare_neighborhoods.py',
+             'scripts/mdc_examples.py',
              #'scripts/density_by_sites.py',
              #'scripts/site_figures.py',
              #'scripts/residue_dihedrals.py',
