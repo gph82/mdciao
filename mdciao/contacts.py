@@ -2021,6 +2021,21 @@ class ContactGroup(object):
 
         writer.save()
 
+    def frequency_str_ASCII_file(self, ctc_cutoff_Ang):
+
+        # TODO can't the frequency_spreadsheet handle this now?
+        istr = (self.frequency_dataframe(ctc_cutoff_Ang,
+                                          by_atomtypes=True,
+                                          # AA_format="long",
+                                          split_label="join").round(
+            {"freq": 2, "sum": 2})).to_string(index=False,
+                                              header=True,
+                                              justify='left',
+                                              # justify = 'right'
+                                              )
+        return '#%s\n'%istr[1:]
+
+
     def frequency_as_contact_matrix(self,
                                     ctc_cutoff_Ang):
         r"""
