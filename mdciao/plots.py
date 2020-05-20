@@ -360,12 +360,13 @@ def plot_unified_freq_dicts(freqs,
     for ii, (key, val) in enumerate(final_ordered_dict.items()):
         for jj, (skey, sfreq) in enumerate(freqs_work.items()):
             if ii == 0:
-                label = '%s ($\\Sigma$= %2.1f)'%(skey, _np.sum(list(sfreq.values())))
+                label = '%s (Sigma= %2.1f)'%(skey, _np.sum(list(sfreq.values())))
                 if len(keys_popped_above)>0:
                     label = label[:-1]+", +%2.1f above threshold)"%(_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
                 if len(keys_popped_below) > 0:
                     label = label[:-1] + ", +%2.1f below threshold)" % (
                         _np.sum([freqs[skey][nskey] for nskey in keys_popped_below]))
+                label = _replace4latex(label)
 
             else:
                 label = None
@@ -400,7 +401,7 @@ def plot_unified_freq_dicts(freqs,
 
     else:
         _plt.xticks([])
-        _plt.xlim(0 - width, ii + width * 2)
+        _plt.xlim(0 - width, ii + width * len(final_ordered_dict))
         if ylim<=1:
             yticks = [0, .25, .50, .75, 1]
 
@@ -604,6 +605,33 @@ def add_tilted_labels_to_patches(jax, labels,
                  fontsize=_rcParams["font.size"]*label_fontsize_factor,
                  backgroundcolor="white"
                  )
+
+def _get_highest_y_of_bbox_in_axes_units(txt_obj):
+    jax  : _plt.Axes =  txt_obj.axes
+    jax.figure.tight_layout()
+    bbox = txt_obj.get_window_extent()
+    tf_inv_y = jax.transAxes.inverted()
+    y = tf_inv_y.transform(bbox)[-1, 1]
+    #print(bbox)
+    print(y)
+    return y
+
+def _dataunits2points(jax):
+    bbox = jax.get_window_extent()
+    dy_in_points = bbox.bounds[3]
+    dy_in_dataunits = _np.diff(jax.get_ylim())[0]
+    return dy_in_points / dy_in_dataunits
+
+def _titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
+    jax.figure.tight_layout()
+    data2pts = _dataunits2points(jax)
+    max_y_texts = _np.max([_get_highest_y_of_bbox_in_axes_units(txt) for txt in jax.texts])
+    dy = max_y_texts - jax.get_ylim()[1]
+    pad_in_points = _np.max([0,dy])*data2pts
+    if pad_in_points < min_pts4correction:
+        pad_in_points = 0
+
+    return pad_in_points
 
 def plot_contact_matrix(mat, labels, pixelsize=1,
                         transpose=False, grid=False,
