@@ -240,8 +240,8 @@ def freq_datfile2freqdict(ifile):
             if iline[0]!="#":
                 try:
                     iline = iline.split()
-                    assert iline[4]=="-"
-                    freq, names = float(iline[0]),"%s-%s"%(iline[3],iline[5])
+                    assert iline[2]=="-"
+                    freq, names = float(iline[0]),"%s-%s"%(iline[1],iline[3])
                     outdict[names]=float(freq)
                 except ValueError:
                     print(iline)
@@ -271,8 +271,11 @@ def _replace4latex(istr):
     alpha:$\alpha$
 
     """
-    for gl in ['alpha','beta','gamma', 'mu']:
+    for gl in ['alpha','beta','gamma', 'mu', "Sigma"]:
         istr = istr.replace(gl,'$\\'+gl+'$')
+
+    for syms in ["AA","Ang"]:
+        istr = istr.replace(syms, '$\\' + syms + '$')
 
     # This mode of comparison will
     if any([cc in istr for cc in ["_", "^"]]):
