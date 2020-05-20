@@ -588,6 +588,6 @@ def parser_for_compare_neighborhoods():
     parser.add_argument("files", type=str, nargs="+")
     parser.add_argument("--anchor",type=str,default=None)
     parser.add_argument("--keys", type=str,default=None)
-    parser.add_argument("--colors", type=str, default="r,g")
+    parser.add_argument("--colors", type=str, default="r,g,b")
     parser.add_argument("--mutations",type=str, default=None)
     return parser
