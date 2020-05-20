@@ -1,6 +1,7 @@
 import numpy as _np
 import mdtraj as _md
 from os import path as _path
+
 from .list_utils import in_what_fragment, \
     put_this_idx_first_in_pair
 
@@ -11,8 +12,6 @@ from .residue_and_atom_utils import \
     _atom_type
 
 from .str_and_dict_utils import \
-    _replace_w_dict,\
-    unify_freq_dicts,\
     _replace4latex, \
     iterate_and_inform_lambdas, \
     _tunit2tunit, \
@@ -20,7 +19,8 @@ from .str_and_dict_utils import \
 
 from .plots import plot_w_smoothing_auto, \
     add_tilted_labels_to_patches as _add_tilted_labels_to_patches, \
-    plot_contact_matrix as _plot_contact_matrix
+    plot_contact_matrix as _plot_contact_matrix, \
+    _titlepadding_in_points_no_clashes_w_texts
 
 from collections import defaultdict, Counter as _col_Counter
 
@@ -1129,8 +1129,9 @@ class ContactPair(object):
         if split_label:
             label= '%-15s - %-15s'%tuple(label.split('-'))
         return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang),
-                "residue idxs":'%u %u'%tuple(self.residues.idxs_pair),
-                "label":label.rstrip(" ")}
+                "label":label.rstrip(" "),
+                "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)
+                }
 
     def distro_overall_trajs(self, bins=10):
         """
@@ -1607,12 +1608,12 @@ class ContactGroup(object):
         if any([ictc.residues.anchor_residue_index is None for ictc in self._contacts]):
             #todo dont print so much
             #todo let it fail?
-            print("Not all contact objects have an anchor_residue_index. Returning None")
+            #print("Not all contact objects have an anchor_residue_index. Returning None")
+            return None
         else:
             shared = _np.unique([ictc.residues.anchor_residue_index for ictc in self._contacts])
             if len(shared) == 1:
                 return shared[0]
-        return None
 
     @property
     def anchor_res_and_fragment_str(self):
@@ -2021,18 +2022,18 @@ class ContactGroup(object):
 
         writer.save()
 
-    def frequency_str_ASCII_file(self, ctc_cutoff_Ang):
-
+    def frequency_str_ASCII_file(self, ctc_cutoff_Ang, by_atomtypes=True):
         # TODO can't the frequency_spreadsheet handle this now?
-        istr = (self.frequency_dataframe(ctc_cutoff_Ang,
-                                          by_atomtypes=True,
-                                          # AA_format="long",
-                                          split_label="join").round(
-            {"freq": 2, "sum": 2})).to_string(index=False,
-                                              header=True,
-                                              justify='left',
-                                              # justify = 'right'
-                                              )
+        idf = self.frequency_dataframe(ctc_cutoff_Ang,
+                                        by_atomtypes=by_atomtypes,
+                                        # AA_format="long",
+                                        split_label="join")
+        idf = idf.round({"freq": 2, "sum": 2})
+        istr = idf.to_string(index=False,
+                             header=True,
+                             justify='left',
+                             # justify = 'right'
+                             )
         return '#%s\n'%istr[1:]
 
 
@@ -2200,23 +2201,22 @@ class ContactGroup(object):
         # Base plot
         jax = self._plot_freqbars_baseplot(ctc_cutoff_Ang,
                                            jax=jax, truncate_at=truncate_at)
-        # Cosmetics
-        jax.set_title(
-            "Contact frequency @%2.1f $\AA$ of site '%s'\n"
-            % (ctc_cutoff_Ang, title_label))
+
 
         label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
         if shorten_AAs:
             label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
-        # TODO fragment names got changed (i thinkI to never return Nones,
-        # this shouldn't be necessary anymore
-        #label_bars = [ilab.replace("@None","") for ilab in label_bars]
-
         _add_tilted_labels_to_patches(jax,
                                       label_bars[:(jax.get_xlim()[1]).astype(int)+1],
                                       label_fontsize_factor=label_fontsize_factor
                                       )
+        # Cosmetics
+        jax.set_title(
+            "Contact frequency @%2.1f $\AA$ of site '%s'\n"
+            % (ctc_cutoff_Ang, title_label),
+            pad = _rcParams["axes.titlepad"] + _titlepadding_in_points_no_clashes_w_texts(jax)
+        )
 
         #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
@@ -2258,10 +2258,6 @@ class ContactGroup(object):
         # Base plot
         jax = self._plot_freqbars_baseplot(ctc_cutoff_Ang,
                                            jax=jax)
-        # Cosmetics
-        jax.set_title(
-            "Contact frequency @%2.1f $\AA$\n"
-            "%u nearest bonded neighbors excluded" % (ctc_cutoff_Ang, n_nearest))
 
         label_dotref = self.anchor_res_and_fragment_str
         label_bars = self.partner_res_and_fragment_labels
@@ -2281,10 +2277,16 @@ class ContactGroup(object):
                                       label_bars,
                                       label_fontsize_factor=label_fontsize_factor)
 
+        # Cosmetics
+        title_label = "Contact frequency @%2.1f $\AA$\n" \
+                      "%u nearest bonded neighbors excluded" % (ctc_cutoff_Ang, n_nearest)
+        jax.set_title(title_label,
+                      pad=_rcParams["axes.titlepad"]+_titlepadding_in_points_no_clashes_w_texts(jax)
+                      )
+
         jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
         if xmax is not None:
             jax.set_xlim([-.5, xmax + 1 - .5])
-
         return jax
 
     def plot_neighborhood_distributions(self,
