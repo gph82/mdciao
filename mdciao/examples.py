@@ -12,6 +12,11 @@ class ExamplesCLTs(object):
         test_data_path = path.join(mdc_path, "tests", "data")
         xtc = path.join(examples_path, "run1.1-p.stride.5.noH.xtc")
         pdb = path.join(examples_path, "p2.noH.pdb")
+
+        #pdb_full = path.join(examples_path,"gs-b2ar.pdb")
+        #xtc_full = path.join(examples_path,"gs-b2ar.xtc")
+        #xtc, pdb = xtc_full, pdb_full
+
         BW_file = path.join(test_data_path, "adrb2_human_full.xlsx")
         CGN_file = path.join(test_data_path, "CGN_3SN6.txt")
         sitefile = path.join(examples_path, "site_201.json")
@@ -33,21 +38,23 @@ class ExamplesCLTs(object):
                                 "--table xlsx"
                 ],
 
-            "mdc_interface": "mdc_interface.py "
-                             "%s %s" % (pdb, xtc) +
-                             " --fragments resSeq+"
-                             " --ctc_cutoff_Ang 4 "
-                             " --frag_idxs_group_1 0"
-                             " --frag_idxs_group_2 3"
-                             " --BW_uniprot %s" % BW_file +
-                             " --CGN_PDB %s" % CGN_file,
+            "mdc_interface": ["mdc_interface.py ",
+                             "%s %s" % (pdb, xtc),
+                             " --fragments resSeq+",
+                             " --ctc_cutoff_Ang 4 ",
+                             " --frag_idxs_group_1 0",
+                             " --frag_idxs_group_2 3",
+                             " --BW_uniprot %s" % BW_file,
+                             " --CGN_PDB %s" % CGN_file
+                              ],
 
-            "mdc_sites": "mdc_sites.py "
-                         "%s %s" % (pdb, xtc) +
-                         " --site_files %s" % sitefile +
-                         " --ctc_cutoff_Ang 4"
-                         " --BW_uniprot %s" % BW_file +
+            "mdc_sites": ["mdc_sites.py ",
+                         "%s %s" % (pdb, xtc),
+                         " --site_files %s" % sitefile,
+                         " --ctc_cutoff_Ang 4",
+                         " --BW_uniprot %s" % BW_file,
                          " --CGN_PDB %s" % CGN_file
+            ]
         }
 
     @property
