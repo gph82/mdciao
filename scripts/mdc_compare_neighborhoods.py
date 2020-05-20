@@ -2,6 +2,8 @@
 from mdciao.parsers import parser_for_compare_neighborhoods
 from mdciao.command_line_tools import neighborhood_comparison
 from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
 
 # Get and instantiate parser
 parser = parser_for_compare_neighborhoods()
@@ -12,8 +14,6 @@ if a.keys is None:
 else:
     assert len(a.keys.split(","))==nf
     keys = a.keys.split(",")
-print(a.files)
-print(a.anchor,type(a.anchor))
 file_dict = {key: file for key, file in zip(keys, a.files)}
 col_dict =  {key: col for key, col in zip(keys, a.colors.split(","))}
 mut_dict = {}
