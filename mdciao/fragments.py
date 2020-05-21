@@ -453,12 +453,76 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
     return residuenames2residxs, residuenames2fragidxs
 """
 
+#TODO test
+def _rangeexpand_residues2residxs(range_as_str, fragments, top,
+                                  interpret_as_res_idxs=False,
+                                  sort=False,
+                                  **per_residue_fragment_picker_kwargs):
+    r"""
+    Generalized range-expander (range-expander(2-5,7)=2,3,4,5,7 for a string containing
+    residue descriptors.
+
+    To dis-ambiguate descriptors, a fragment definition and a topology are needed
+    Note
+    ----
+    The input (= compressed range) is very flexible and accepts
+    mixed descriptors, posix expressions, eg: GLU*,ARG*,GDP*,LEU394,390-395 is a valid range
+
+    Parameters
+    ----------
+    range_as_str : string
+    fragments : list of iterable of residue indices
+    top : :mdtraj:`Topology` object
+    interpret_as_res_idxs : bool, default is False
+        If True, indices without residue names ("390-395") values will be interpreted as
+        residue indices, not resdiue sequential indices
+    sort : bool
+        sort the expanded range on return
+    per_residue_fragment_picker_kwargs:
+        Optional parameters for :obj:`per_residue_fragment_picker`
+
+    Returns
+    -------
+
+    """
+    residxs = []
+    print("For the range", range_as_str)
+    for r in range_as_str.split(','):
+        assert not r.startswith("-")
+        if "*" in r or "?" in r:
+            assert "-" not in r
+            from .str_and_dict_utils import fnmatch_ex as _fnmatch_ex
+            resnames = _fnmatch_ex(r,[str(rr) for rr in top.residues])
+            resnames = _np.unique(resnames)
+            residxs, __ = per_residue_fragment_picker(resnames, fragments, top,
+                                                      allow_repeated_descriptors=True,
+                                                      **per_residue_fragment_picker_kwargs)
+            residxs.extend(residxs)
+        else:
+            resnames = r.split('-')
+            assert len(resnames) >=1
+            if interpret_as_res_idxs:
+                residx_pair = [int(rr) for rr in resnames]
+            else:
+                residx_pair, __ = per_residue_fragment_picker(resnames, fragments, top,
+                                                              allow_repeated_descriptors=False,
+                                                              **per_residue_fragment_picker_kwargs)
+            residxs.extend(_np.arange(residx_pair[0],
+                                      residx_pair[-1] + 1))
+
+    if sort:
+        residxs = sorted(residxs)
+    return _pandas_unique(residxs)
+
+#TODO consider renaming
+#TODO consider moving elswhere
 def per_residue_fragment_picker(residue_descriptors,
                                 fragments, top,
                                 pick_this_fragment_by_default=None,
                                 fragment_names=None,
                                 additional_naming_dicts=None,
-                                extra_string_info=''):
+                                extra_string_info='',
+                                allow_repeated_descriptors=False):
     r"""
     This function returns the fragment idxs and the residue idxs based on residue name/residue index.
     If a residue is present in multiple fragments, the function asks the user to choose the fragment, for which
@@ -476,8 +540,8 @@ def per_residue_fragment_picker(residue_descriptors,
     :return: two dictionaries, resdesc2residxs and resdesc2fragidxs. If the AA is not found then the
                 dictionaries for that key contain None, e.g. resdesc2residxs[notfoundAA]=None
     """
-    resdesc2residxs = {}
-    resdesc2fragidxs = {}
+    residxs = []
+    fragidxs = []
     last_answer = 0
 
     #TODO break the iteration in this method into a separate method. Same AAcode in different fragments will overwrite
@@ -486,69 +550,65 @@ def per_residue_fragment_picker(residue_descriptors,
         residue_descriptors = [residue_descriptors]
 
     for key in residue_descriptors:
-        assert key not in resdesc2residxs.keys()
         cands = find_AA(top, str(key))
         cand_fragments = _in_what_N_fragments(cands, fragments)
-        # TODO OUTSOURCE THIS?
+        # TODO refactor into smaller methods
         if len(cands) == 0:
-            print("No residue found with resSeq %s"%key)
-            resdesc2residxs[key] = None
-            resdesc2fragidxs[key] = None
+            print("No residue found with descriptor %s"%key)
+            residxs.append(None)
+            fragidxs.append(None)
+        elif len(cands) == 1 or allow_repeated_descriptors:
+            residxs.extend([int(ii) for ii in cands])
+            fragidxs.extend([int(ff) for ff in cand_fragments])
         else:
-            if len(cands) == 1:
-                cands = cands[0]
-                answer = cand_fragments[0]
-                # print(key,refgeom.top.residue(cands[0]), cand_fragments)
-            elif len(cands) > 1:
-                istr = "ambiguous definition for AA %s" % key
-                istr += extra_string_info
-                for cc, ss, char in zip(cands, cand_fragments,abc):
-                    fname = " "
-                    if fragment_names is not None:
-                        fname = ' (%s) ' % fragment_names[ss]
-                    istr = '%s) %10s in fragment %2u%swith residue index %2u'%(char, top.residue(cc),ss, fname, cc)
-                    if additional_naming_dicts is not None:
-                        extra=''
-                        for key1, val1 in additional_naming_dicts.items():
-                            if cc in val1.keys() and val1[cc] is not None:
-                                extra +='%s: %s '%(key1,val1[cc])
-                        if len(extra)>0:
-                            istr = istr + ' (%s)'%extra.rstrip(" ")
-                    print(istr)
-                if pick_this_fragment_by_default is None:
-                    prompt =  "input one fragment idx (out of %s) and press enter.\n" \
-                              "Leave empty and hit enter to repeat last option [%s]\n" \
-                              "Use letters in case of repeated fragment index\n" % ([int(ii) for ii in cand_fragments], last_answer)
+            istr = "ambiguous definition for AA %s" % key
+            istr += extra_string_info
+            for cc, ss, char in zip(cands, cand_fragments,abc):
+                fname = " "
+                if fragment_names is not None:
+                    fname = ' (%s) ' % fragment_names[ss]
+                istr = '%s) %10s in fragment %2u%swith residue index %2u'%(char, top.residue(cc),ss, fname, cc)
+                if additional_naming_dicts is not None:
+                    extra=''
+                    for key1, val1 in additional_naming_dicts.items():
+                        if cc in val1.keys() and val1[cc] is not None:
+                            extra +='%s: %s '%(key1,val1[cc])
+                    if len(extra)>0:
+                        istr = istr + ' (%s)'%extra.rstrip(" ")
+                print(istr)
+            if pick_this_fragment_by_default is None:
+                prompt =  "input one fragment idx (out of %s) and press enter.\n" \
+                          "Leave empty and hit enter to repeat last option [%s]\n" \
+                          "Use letters in case of repeated fragment index\n" % ([int(ii) for ii in cand_fragments], last_answer)
 
-                    answer = input(prompt)
-                else:
-                    answer = str(pick_this_fragment_by_default)
-                    print("Automatically picked fragment %u" % pick_this_fragment_by_default)
+                answer = input(prompt)
+            else:
+                answer = str(pick_this_fragment_by_default)
+                print("Automatically picked fragment %u" % pick_this_fragment_by_default)
 
-                if len(answer) == 0:
-                    answer = last_answer
+            if len(answer) == 0:
+                answer = last_answer
+                cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
+            elif answer.isdigit():
+                answer = int(answer)
+                if answer in cand_fragments:
                     cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
+            elif answer.isalpha() and answer in abc:
+                idx = abc.find(answer)
+                answer = cand_fragments[idx]
+                cands  = cands[idx]
+            else:
+                raise ValueError("%s is not a possible answer"%answer)
+                #TODO implent k for keeping this answer from now on
 
-                elif answer.isdigit():
-                    answer = int(answer)
-                    if answer in cand_fragments:
-                        cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-                elif answer.isalpha() and answer in abc:
-                    idx = abc.find(answer)
-                    answer = cand_fragments[idx]
-                    cands  = cands[idx]
-                else:
-                    raise ValueError("%s is not a possible answer"%answer)
-                    #TODO implent k for keeping this answer from now on
+            assert answer in cand_fragments, (
+                        "Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
+            last_answer = answer
 
-                assert answer in cand_fragments, (
-                            "Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
-                last_answer = answer
+            residxs.append(int(cands))  # this should be an integer
+            fragidxs.append(int(answer)) #ditto
 
-            resdesc2residxs[key] = int(cands)  # this should be an integer
-            resdesc2fragidxs[key] = int(answer) #ditto
-
-    return resdesc2residxs, resdesc2fragidxs
+    return residxs, fragidxs
 
 def _check_if_subfragment(sub_frag, fragname, fragments, top,
                           map_conlab=None,
