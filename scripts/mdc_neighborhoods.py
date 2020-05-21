@@ -15,9 +15,11 @@ for key in ["topology","trajectories","resSeq_idxs","output_npy"]:
 # Call the method
 out_dict = residue_neighborhoods(a.topology, a.trajectories, a.resSeq_idxs, **b)
 
+"""
 if out_dict is not None:
     fname = a.output_npy
     if not fname.endswith(".npy"):
         fname += ".npy"
     np.save(fname,out_dict)
     print(fname)
+"""
