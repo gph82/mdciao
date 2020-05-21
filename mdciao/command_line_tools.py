@@ -368,26 +368,34 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     # Create the neighborhoods as groups of contact_pair objects
     neighborhoods = {}
-    for key, val in final_look.items():
-        neighborhoods[key] = []
+    empty_CGs = []
+    for res_idx, val in final_look.items():
+        CPs = []
         for idx in val:
             pair = ctc_idxs_small[idx]
             consensus_labels = [_choose_between_consensus_dicts(idx, [BWresidx2conlab, CGNresidx2conlab]) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
-            neighborhoods[key].append(ContactPair(pair,
-                                                  [itraj[:, idx] for itraj in ctcs_trajs],
-                                                  time_array,
-                                                  top=refgeom.top,
-                                                  anchor_residue_idx=key,
-                                                  consensus_labels=consensus_labels,
-                                                  trajs=xtcs,
-                                                  fragment_idxs=fragment_idxs,
-                                                  fragment_names=[fragment_names[idx] for idx in fragment_idxs],
-                                                  fragment_colors=[fragcolors[idx] for idx in fragment_idxs],
-                                                  atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
-                                                  ))
-
-        neighborhoods[key] = ContactGroup(neighborhoods[key])
+            CPs.append(ContactPair(pair,
+                                   [itraj[:, idx] for itraj in ctcs_trajs],
+                                   time_array,
+                                   top=refgeom.top,
+                                   anchor_residue_idx=res_idx,
+                                   consensus_labels=consensus_labels,
+                                   trajs=xtcs,
+                                   fragment_idxs=fragment_idxs,
+                                   fragment_names=[fragment_names[idx] for idx in fragment_idxs],
+                                   fragment_colors=[fragcolors[idx] for idx in fragment_idxs],
+                                   atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in at_pair_trajs]
+                                   ))
+        try:
+            neighborhoods[res_idx] = ContactGroup(CPs)
+        except NotImplementedError as e:
+            print(e)
+            empty_CGs.append(res_idx)
+            neighborhoods[res_idx] = None
+    if len(empty_CGs)>0:
+        print("These residues have no neighbors at %2.1f Ang"%ctc_cutoff_Ang)
+        print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
 
     panelheight = 3
     n_cols = _np.min((n_cols, len(res_idxs_list)))
@@ -403,23 +411,23 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     _rcParams["font.size"]=panelsize*panelsize2font
     for jax, ihood in zip(histoax.flatten(),
                                    neighborhoods.values()):
-
-        if distro:
-            ihood.plot_neighborhood_distributions(nbins=20,
-                                                  jax=jax,
-                                                  label_fontsize_factor=panelsize2font/panelsize,
-                                                  shorten_AAs=short_AA_names,
-                                                  ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                  n_nearest= n_nearest
-                                                  )
-        else:
-            ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
-                                          n_nearest,
-                                          jax=jax,
-                                          xmax=n_ctcs,
-                                          label_fontsize_factor=panelsize2font / panelsize,
-                                          shorten_AAs=short_AA_names
-                                          )
+        if ihood is not None:
+            if distro:
+                ihood.plot_neighborhood_distributions(nbins=20,
+                                                      jax=jax,
+                                                      label_fontsize_factor=panelsize2font/panelsize,
+                                                      shorten_AAs=short_AA_names,
+                                                      ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                      n_nearest= n_nearest
+                                                      )
+            else:
+                ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
+                                              n_nearest,
+                                              jax=jax,
+                                              xmax=n_ctcs,
+                                              label_fontsize_factor=panelsize2font / panelsize,
+                                              shorten_AAs=short_AA_names
+                                              )
 
     if not distro:
         xmax = _np.max([len(jax.patches) for jax in histoax.flatten()])+.5
@@ -429,6 +437,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     fname = _path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi)
     print("The following files have been created")
+    neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     print(fname)
     # TDOO undecided about this
     if table_ext is not None:
