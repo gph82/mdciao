@@ -21,10 +21,10 @@ from mdciao.plots import \
 
 from mdciao.fragments import \
     get_fragments, _print_frag, \
-    per_residue_fragment_picker as _per_residue_fragment_picker, \
     _fragments_strings_to_fragments, \
     _frag_list_2_frag_groups, \
-    frag_dict_2_frag_groups as _frag_dict_2_frag_groups
+    frag_dict_2_frag_groups as _frag_dict_2_frag_groups, \
+    _rangeexpand_residues2residxs
 
 from mdciao.nomenclature_utils import \
     LabelerCGN, LabelerBW,\
@@ -265,12 +265,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     if resSeq_idxs is None:
         print("You have to provide some residue indices via the --resSeq_idxs option")
         return None
-    _resSeq_idxs = rangeexpand(resSeq_idxs)
-    if len(_resSeq_idxs) == 0:
-        raise ValueError("Please check your input indices, "
-                         "they do not make sense %s" % resSeq_idxs)
-    else:
-        resSeq_idxs = _resSeq_idxs
 
     _offer_to_create_dir(output_dir)
 
@@ -282,9 +276,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
-
-    if sort:
-        resSeq_idxs = sorted(resSeq_idxs)
 
     xtcs = _get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
@@ -314,25 +305,23 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     elif isinstance(color_by_fragment, str):
         fragcolors = [color_by_fragment for cc in fragcolors]
 
-    if res_idxs:
-        resSeq2residxs = {refgeom.top.residue(ii).resSeq: ii for ii in resSeq_idxs}
-        print("\nInterpreting input indices as zero-indexed residue indexes")
-    else:
-        resSeq2residxs, _ = _per_residue_fragment_picker(resSeq_idxs, fragments, refgeom.top,
-                                    pick_this_fragment_by_default=None,
-                                     additional_naming_dicts={"BW": {ii:val for ii, val in enumerate(BWresidx2conlab)},
+    res_idxs_list = _rangeexpand_residues2residxs(resSeq_idxs, fragments, refgeom.top,
+                                                  interpret_as_res_idxs=res_idxs,
+                                                  sort=sort,
+                                                  pick_this_fragment_by_default=None,
+                                                  additional_naming_dicts={"BW": {ii:val for ii, val in enumerate(BWresidx2conlab)},
                                                               "CGN": {ii:val for ii, val in enumerate(CGNresidx2conlab)}}
-                                                         )
+                                                  )
 
-    print("\nWill compute neighborhoods for the residues with resid")
+    print("\nWill compute neighborhoods for the residues")
     print("%s" % resSeq_idxs)
     print("excluding %u nearest neighbors\n" % n_nearest)
 
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
-    for key, val in resSeq2residxs.items():
-        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments),
-                                                  key,
-                                                  BWresidx2conlab[val], CGNresidx2conlab[val]))
+    for idx in res_idxs_list:
+        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, in_what_fragment(idx, fragments),
+                                                  idx,
+                                                  BWresidx2conlab[idx], CGNresidx2conlab[idx]))
 
     # Create a neighborlist
     nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
@@ -340,7 +329,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     # Use it to prune the contact indices
     ctc_idxs = _np.vstack(
         [[_np.sort([val, ii]) for ii in range(refgeom.top.n_residues) if ii not in nl[val] and ii != val] for val in
-         resSeq2residxs.values()])
+         res_idxs_list])
 
     # Can we have same-fragment contacts
     if not allow_same_fragment_ctcs:
@@ -371,7 +360,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     actcs = _np.vstack(ctcs_trajs)
     ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
 
-    final_look = select_and_report_residue_neighborhood_idxs(ctcs_mean, resSeq2residxs,
+    final_look = select_and_report_residue_neighborhood_idxs(ctcs_mean, res_idxs_list,
                                                              fragments, ctc_idxs_small,
                                                              refgeom.top,
                                                              interactive=False,
@@ -401,8 +390,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         neighborhoods[key] = ContactGroup(neighborhoods[key])
 
     panelheight = 3
-    n_cols = _np.min((n_cols, len(resSeq2residxs)))
-    n_rows = _np.ceil(len(resSeq2residxs) / n_cols).astype(int)
+    n_cols = _np.min((n_cols, len(res_idxs_list)))
+    n_rows = _np.ceil(len(res_idxs_list) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
     histofig, histoax = plt.subplots(n_rows, n_cols,
