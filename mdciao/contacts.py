@@ -32,7 +32,7 @@ from pandas import DataFrame as _DF, \
 from joblib import Parallel as _Parallel, delayed as _delayed
 
 
-def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragments,
+def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                                                 residxs_pairs, top,
                                                 n_ctcs=5,
                                                 restrict_to_resSeq=None,
@@ -49,8 +49,8 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragm
     ----------
     ctc_freqs: iterable of floats
         Contact frequencies between 0 and 1
-    resSeq2residxs: dictionary
-        Dictionary mapping residue sequence numbers (resSeq) to residue idxs
+    res_idxs: list of integers
+        list of residuee idxs
     fragments: iterable of integers
         Fragments of the topology defined as list of non-overlapping residue indices
     residxs_pairs: iterable of integer pairs
@@ -79,10 +79,12 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, resSeq2residxs, fragm
     order = _np.argsort(ctc_freqs)[::-1]
     selection = {}
     if restrict_to_resSeq is None:
-        restrict_to_resSeq = list(resSeq2residxs.keys())
+        restrict_to_resSeq = [top.residue(ii).resSeq for ii in res_idxs]
+
     elif isinstance(restrict_to_resSeq, int):
         restrict_to_resSeq = [restrict_to_resSeq]
-    for resSeq, residx in resSeq2residxs.items():
+    for residx in res_idxs:
+        resSeq = top.residue(residx).resSeq
         if resSeq in restrict_to_resSeq:
             order_mask = _np.array([ii for ii in order if residx in residxs_pairs[ii]],dtype=int)
             print("#idx    Freq  contact             segA-segB residxA   residxB   ctc_idx  sum")
@@ -1383,6 +1385,7 @@ class ContactGroup(object):
         # Sanity checks about having grouped this contacts together
         if self._n_ctcs==0:
             raise NotImplementedError("This contact group has no contacts!")
+            # TODO imppelment an empty CG or a propety self.empty?
         else:
             # All contacts have the same number of trajs
             self._n_trajs = _np.unique([ictc.n.n_trajs for ictc in self._contacts])
@@ -1497,6 +1500,8 @@ class ContactGroup(object):
                     self._is_interface = True
             else:
                 self._interface_residxs = [[],[]]
+
+
     #todo again the dicussion about named tuples vs a miriad of properties
     # I am opting for properties because of easyness of documenting i
 
@@ -1603,7 +1608,7 @@ class ContactGroup(object):
     @property
     def shared_anchor_residue_index(self):
         r"""
-        Returns none if no anchor residue is found
+        Returns none if no anchor residue is found or if the ContactGroup is empty
         """
         if any([ictc.residues.anchor_residue_index is None for ictc in self._contacts]):
             #todo dont print so much
@@ -2267,7 +2272,7 @@ class ContactGroup(object):
 
         if sum_freqs:
             # HACK to avoid re-computing the frequencies
-            label_dotref +='\n$\Sigma$ = %2.1f'%_np.sum([ipatch.get_height() for ipatch in jax.patches])
+            label_dotref +='\nSigma = %2.1f'%_np.sum([ipatch.get_height() for ipatch in jax.patches])
 
         jax.plot(-1, -1, 'o',
                  color=self.anchor_fragment_color,
