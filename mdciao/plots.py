@@ -613,7 +613,7 @@ def _get_highest_y_of_bbox_in_axes_units(txt_obj):
     tf_inv_y = jax.transAxes.inverted()
     y = tf_inv_y.transform(bbox)[-1, 1]
     #print(bbox)
-    print(y)
+    #print(y)
     return y
 
 def _dataunits2points(jax):
