@@ -463,10 +463,14 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
     residue descriptors.
 
     To dis-ambiguate descriptors, a fragment definition and a topology are needed
+
     Note
     ----
     The input (= compressed range) is very flexible and accepts
-    mixed descriptors, posix expressions, eg: GLU*,ARG*,GDP*,LEU394,390-395 is a valid range
+    mixed descriptors and wildcards, eg: GLU*,ARG*,GDP*,LEU394,380-385 is a valid range
+
+    Be aware, though, that wildcards very powerful and can easily "grab" a lot of
+    residues, leading to long calculations and large outputs
 
     Parameters
     ----------
@@ -474,7 +478,7 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
     fragments : list of iterable of residue indices
     top : :mdtraj:`Topology` object
     interpret_as_res_idxs : bool, default is False
-        If True, indices without residue names ("390-395") values will be interpreted as
+        If True, indices without residue names ("380-385") values will be interpreted as
         residue indices, not resdiue sequential indices
     sort : bool
         sort the expanded range on return
@@ -485,7 +489,7 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
     -------
 
     """
-    residxs = []
+    residxs_out = []
     print("For the range", range_as_str)
     for r in range_as_str.split(','):
         assert not r.startswith("-")
@@ -497,7 +501,7 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
             residxs, __ = per_residue_fragment_picker(resnames, fragments, top,
                                                       allow_repeated_descriptors=True,
                                                       **per_residue_fragment_picker_kwargs)
-            residxs.extend(residxs)
+            residxs_out.extend(residxs)
         else:
             resnames = r.split('-')
             assert len(resnames) >=1
@@ -507,12 +511,12 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
                 residx_pair, __ = per_residue_fragment_picker(resnames, fragments, top,
                                                               allow_repeated_descriptors=False,
                                                               **per_residue_fragment_picker_kwargs)
-            residxs.extend(_np.arange(residx_pair[0],
+            residxs_out.extend(_np.arange(residx_pair[0],
                                       residx_pair[-1] + 1))
 
     if sort:
-        residxs = sorted(residxs)
-    return _pandas_unique(residxs)
+        residxs_out = sorted(residxs_out)
+    return _pandas_unique(residxs_out)
 
 #TODO consider renaming
 #TODO consider moving elswhere
