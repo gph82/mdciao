@@ -1384,7 +1384,9 @@ class ContactGroup(object):
 
         # Sanity checks about having grouped this contacts together
         if self._n_ctcs==0:
-            raise NotImplementedError("This contact group has no contacts!")
+            raise NotImplementedError("A ContactGroup has been initialized with no contacts\n"
+                                      "probably because no residues were found within the \n"
+                                      "cutoff!")
             # TODO imppelment an empty CG or a propety self.empty?
         else:
             # All contacts have the same number of trajs
@@ -2286,7 +2288,7 @@ class ContactGroup(object):
         title_label = "Contact frequency @%2.1f $\AA$\n" \
                       "%u nearest bonded neighbors excluded" % (ctc_cutoff_Ang, n_nearest)
         jax.set_title(title_label,
-                      pad=_rcParams["axes.titlepad"]+_titlepadding_in_points_no_clashes_w_texts(jax)
+                      pad=_rcParams["axes.titlepad"]#+_titlepadding_in_points_no_clashes_w_texts(jax)
                       )
 
         jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
