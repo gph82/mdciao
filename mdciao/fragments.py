@@ -469,7 +469,9 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
     The input (= compressed range) is very flexible and accepts
     mixed descriptors and wildcards, eg: GLU*,ARG*,GDP*,LEU394,380-385 is a valid range
 
-    Be aware, though, that wildcards very powerful and can easily "grab" a lot of
+    Wildcards use the full resnames, i.e. E* is NOT equivalent to GLU*
+
+    Be aware, though, that wildcards are very powerful easily "grab" a lot of
     residues, leading to long calculations and large outputs
 
     Parameters
