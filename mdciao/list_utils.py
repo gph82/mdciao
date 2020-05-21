@@ -160,6 +160,7 @@ def window_average_fast(input_array_y, half_window_size=2):
     window = _np.ones(2*half_window_size+1)
     return _np.convolve(input_array_y, window, mode="valid")/len(window)
 
+#TODO consider list and str utils for this?
 # from https://www.rosettacode.org/wiki/Range_expansion#Python
 def rangeexpand(txt):
     """
