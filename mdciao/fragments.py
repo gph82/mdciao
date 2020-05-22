@@ -76,9 +76,9 @@ def get_fragments(top,
                   fragment_breaker_fullresname=None,
                   atoms=False,
                   verbose=True,
-                  method='resSeq', #Whatever comes after this(**) will be passed as named argument to interactive_segment_picker
+                  method='resSeq',  #Whatever comes after this(**) will be passed as named argument to interactive_segment_picker
                   join_fragments=None,
-                  **kwargs_interactive_segment_picker):
+                  **kwargs_per_residue_fragment_picker):
     """
     Given an :obj:`mdtraj.Topology` return its residues grouped into fragments using different methods.
 
@@ -110,7 +110,7 @@ def get_fragments(top,
         - 'chains'
             breaks into chains of the PDB file/entry
 
-    kwargs_interactive_segment_picker : optional
+    kwargs_per_residue_fragment_picker : optional
         additional arguments
 
     Returns
@@ -220,10 +220,10 @@ def get_fragments(top,
         if isinstance(fragment_breaker_fullresname,str):
             fragment_breaker_fullresname=[fragment_breaker_fullresname]
         for breaker in fragment_breaker_fullresname:
-            resname2residx, resname2fragidx = per_residue_fragment_picker(breaker,fragments, top,
-                                                                          **kwargs_interactive_segment_picker)
-            idx = resname2residx[breaker]
-            ifrag = resname2fragidx[breaker]
+            residxs, fragidx = per_residue_fragment_picker(breaker, fragments, top,
+                                                           **kwargs_per_residue_fragment_picker)
+            idx = residxs[0]
+            ifrag = fragidx[0]
             if idx is None:
                 print("The fragment breaker %s appears nowhere" % breaker)
                 # raise ValueError
@@ -457,6 +457,7 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
 def _rangeexpand_residues2residxs(range_as_str, fragments, top,
                                   interpret_as_res_idxs=False,
                                   sort=False,
+                                  allow_empty_ranges=False,
                                   **per_residue_fragment_picker_kwargs):
     r"""
     Generalized range-expander (range-expander(2-5,7)=2,3,4,5,7 for a string containing
@@ -518,7 +519,11 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
 
     if sort:
         residxs_out = sorted(residxs_out)
-    return _pandas_unique(residxs_out)
+
+    residxs_out = _pandas_unique(residxs_out)
+    if len(residxs_out)==0 and not allow_empty_ranges:
+        raise ValueError("This range doen't return any residues!")
+    return residxs_out
 
 #TODO consider renaming
 #TODO consider moving elswhere
@@ -545,6 +550,12 @@ def per_residue_fragment_picker(residue_descriptors,
     :param extra_string_info: string with any additional info to be printed in case of ambiguity
     :return: two dictionaries, resdesc2residxs and resdesc2fragidxs. If the AA is not found then the
                 dictionaries for that key contain None, e.g. resdesc2residxs[notfoundAA]=None
+
+    Returns
+    -------
+    residxs, fragidxs,
+        lists of integers
+
     """
     residxs = []
     fragidxs = []
