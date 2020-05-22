@@ -70,8 +70,16 @@ def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
     AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
     AAresSeqs = [key for key in _np.unique(AAresSeqs)]
 
-    AAresSeq2residxs, _ = _per_residue_fragment_picker(AAresSeqs, fragments, top,
-                                                       **_per_residue_fragment_picker_kwargs)
+    residxs, _ = _per_residue_fragment_picker(AAresSeqs, fragments, top,
+                                              **_per_residue_fragment_picker_kwargs)
+
+    AAresSeq2residxs = {key:None for key in AAresSeqs}
+    for idx in residxs:
+        if idx is not None:
+            key = str(top.residue(idx))
+            assert key in AAresSeqs #otherwise _per_residue ... did not work
+            AAresSeq2residxs[key] = idx
+
 
     if None in AAresSeq2residxs.values() and raise_if_not_found:
         raise ValueError("These residues of your input have not been found. Please revise it:\n%s" % (
