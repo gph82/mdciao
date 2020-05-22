@@ -21,8 +21,12 @@ from mdciao.command_line_tools import \
 from mdciao.nomenclature_utils import \
     LabelerBW
 
-from mdciao.contact_matrix_utils import \
-    contact_map
+from mdciao.parsers import \
+    parser_for_CGN_overview, \
+    parser_for_BW_overview
+
+#from mdciao.contact_matrix_utils import \
+#    contact_map
 
 from tempfile import TemporaryDirectory
 
@@ -269,6 +273,23 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                       output_dir=tmpdir
                                       )
 
+    def test_no_contacts_at_allp(self):
+        residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                              "131",
+                              ctc_cutoff_Ang=.1,
+                              res_idxs=True,
+                              )
+
+    def test_some_CG_have_no_contacts(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                                  "0-3",
+                                  ctc_cutoff_Ang=3.2,
+                                  res_idxs=True,
+                                  output_dir=tmpdir,
+                                  )
+
+
 class Test_sites(TestCLTBaseClass):
 
     def test_sites(self):
@@ -470,16 +491,12 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
 class Test_fragment_overview(unittest.TestCase):
 
     def test_CGN(self):
-        from mdciao.parsers import parser_for_CGN_overview
-
         a = parser_for_CGN_overview()
         a = a.parse_args([test_filenames.prot1_pdb,_path.join(test_filenames.test_data_path,
                                                          "CGN_3SN6.txt")])
         command_line_tools._fragment_overview(a,"CGN")
 
     def test_BW_local_and_verbose(self):
-        from mdciao.parsers import parser_for_BW_overview
-
         a = parser_for_BW_overview()
         a = a.parse_args(["data/3SN6.pdb.gz","data/adrb2_human_full.xlsx"])
         print(a)
@@ -487,7 +504,6 @@ class Test_fragment_overview(unittest.TestCase):
         command_line_tools._fragment_overview(a,"BW")
 
     def test_BW_url(self):
-        from mdciao.parsers import parser_for_BW_overview
         a = parser_for_BW_overview()
         a = a.parse_args(["data/3SN6.pdb.gz","adrb2_human"])
         command_line_tools._fragment_overview(a,"BW")
@@ -495,6 +511,22 @@ class Test_fragment_overview(unittest.TestCase):
     def test_raises(self):
         with pytest.raises(ValueError):
             command_line_tools._fragment_overview(None,"BWx")
+
+    def test_AAs(self):
+        a = parser_for_CGN_overview()
+        a = a.parse_args([test_filenames.prot1_pdb, _path.join(test_filenames.test_data_path,
+                                                               "CGN_3SN6.txt"),
+                          ])
+        a.__setattr__("AAs","LEU394,LEU395")
+        command_line_tools._fragment_overview(a,"CGN")
+
+    def test_labels(self):
+        a = parser_for_CGN_overview()
+        a = a.parse_args([test_filenames.prot1_pdb, _path.join(test_filenames.test_data_path,
+                                                               "CGN_3SN6.txt"),
+                          ])
+        a.__setattr__("labels","G.H5.26")
+        command_line_tools._fragment_overview(a,"CGN")
 
 if __name__ == '__main__':
     unittest.main()
