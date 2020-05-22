@@ -213,13 +213,16 @@ def unify_freq_dicts(freqs,
 
     return freqs_work
 
-def freq_datfile2freqdict(ifile):
+def freq_datfile2freqdict(ifile, comment=["#"]):
     r"""
     Reads an ascii file that contains contact frequencies (1st) column and
-    contact labels (2nd column). Columns are separeted by tabs or spaces.
+    contact labels . Columns are separeted by tabs or spaces.
 
-    Starts reading at the first line. Other columns other than the first and second
-    are read.
+    Contact labels have to come after the frequency in the
+    form of "res1 res2, "res1-res2" or "res1 - res2",
+
+    Columns other than the frequencies and the residue labels are ignored
+
 
     TODO use pandas to allow more flex, not needed for the moment
 
@@ -228,6 +231,9 @@ def freq_datfile2freqdict(ifile):
     ifile : str
         The filename to be read
 
+    comment : list of chars
+        Any line starting with any of these
+        charecters will be ignored
     Returns
     -------
     freqdict : dictionary
@@ -237,11 +243,10 @@ def freq_datfile2freqdict(ifile):
     outdict = {}
     with open(ifile) as f:
         for iline in f.read().splitlines():
-            if iline[0]!="#":
+            if iline.strip()[0] not in comment:
                 try:
-                    iline = iline.split()
-                    assert iline[2]=="-"
-                    freq, names = float(iline[0]),"%s-%s"%(iline[1],iline[3])
+                    iline = iline.replace("-"," ").split()
+                    freq, names = float(iline[0]),"%s-%s"%(iline[1],iline[2])
                     outdict[names]=float(freq)
                 except ValueError:
                     print(iline)
