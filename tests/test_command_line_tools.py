@@ -226,7 +226,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         with pytest.raises(ValueError):
             with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
                  residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                                       "300-200",
+                                       "AX*",
                                        distro=True,
                                        output_dir=tmpdir)
 

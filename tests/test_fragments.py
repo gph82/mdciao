@@ -382,19 +382,16 @@ class Test_per_residue_fragment_picker_no_ambiguity(unittest.TestCase):
 
     def test_no_ambiguous(self):
         residues = ["GLU30", "GDP382", 30, 382]
-        resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom,
+        residxs, fragidxs = per_residue_fragment_picker(residues, self.by_bonds_geom,
                                                                       self.geom.top)
-        # Checking if residue names gives the correct corresponding residue id
-        assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
-        assert (resname2residx[30]) == 0
-        assert (resname2residx["GDP382"]) == 7  # GDP382 is the 8th residue
-        assert (resname2residx[382]) == 7  # GDP382 is the 8th residue
+        self.assertSequenceEqual([0,7,0,7], residxs)
+        # GLU30 is the 1st residue
+        # GDP382 is the 8th residue
 
-        # Checking if the residue name give the correct corresponding fragment id
-        assert (resname2fragidx["GLU30"]) == 0  # GLU30 is in the 1st fragment
-        assert (resname2fragidx[30]) == 0  # GLU30 is in the 1st fragment
-        assert (resname2fragidx["GDP382"]) == 3  # GDP382 is in the 4th fragment
-        assert (resname2fragidx[382]) == 3  # GDP382 is in the 4th fragment
+        self.assertSequenceEqual([0,3,0,3], fragidxs)
+        # GLU30 is in the 1st fragment
+        # GDP382 is in the 4th fragment
+
 
 class Test_per_residue_fragment_picker(unittest.TestCase):
 
@@ -406,33 +403,26 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
                                                  method='bonds')
 
     def test_default_fragment_idx_is_none(self):
-        residues = ["GLU30",30]
+        residues = ["GLU30", 30]
         input_values = (val for val in ["4", "4"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                          self.geom2frags.top)
+            residxs, fragidxs = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
+                                                            self.geom2frags.top)
 
-            # Checking if residue names gives the correct corresponding residue id
             # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
-            assert (resname2residx["GLU30"]) == 8  # GLU30 is the 8th residue
-            assert resname2fragidx["GLU30"] == 4 # GLU30 is in the 4th fragment
-
-            assert (resname2residx[30]) == 8  # GLU30 is the 8th residue
-            assert resname2fragidx[30] == 4 # GLU30 is in the 4th fragment
+            self.assertSequenceEqual(residxs, [8, 8])
+            self.assertSequenceEqual(fragidxs, [4, 4])
 
     def test_fragment_idx_is_none_last_answer(self):
-        residues = ["GLU30",30]
+        residues = ["GLU30", 30]
         input_values = (val for val in ["", ""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                          self.geom2frags.top)
+            residxs, fragidxs = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
+                                                            self.geom2frags.top)
 
-            # Checking if residue names gives the correct corresponding residue id
-            # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
-            assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
-            assert resname2fragidx["GLU30"] == 0 # GLU30 is in the 1st fragment
-            assert (resname2residx[30]) == 0  # GLU30 is the 1st residue
-            assert resname2fragidx[30] == 0 # GLU30 is in the 1st fragment
+            # NOTE:Accepted default "" for GLU30 when asked "input one fragment idx"
+            self.assertSequenceEqual(residxs, [0, 0])
+            self.assertSequenceEqual(fragidxs, [0, 0])
 
     def test_default_fragment_idx_is_none_ans_should_be_int(self):
         input_values = (val for val in ["A"])
@@ -440,11 +430,10 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
             with pytest.raises((ValueError, AssertionError)):
                 per_residue_fragment_picker("GLU30", self.by_bonds_geom2frags, self.geom2frags.top)
 
-
         input_values = (val for val in ["xyz"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             with pytest.raises((ValueError, AssertionError)):
-               per_residue_fragment_picker(30, self.by_bonds_geom2frags, self.geom2frags.top)
+                per_residue_fragment_picker(30, self.by_bonds_geom2frags, self.geom2frags.top)
 
     def test_default_fragment_idx_is_none_ans_should_be_in_list(self):
         input_values = (val for val in ["123"])
@@ -459,97 +448,83 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
 
     def test_default_fragment_idx_is_passed(self):
         residues = ["GLU30", 30]
-        resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                      self.geom2frags.top, pick_this_fragment_by_default=4)
+        residxs, fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
+                                                       self.geom2frags.top,
+                                                       pick_this_fragment_by_default=4)
 
         # Checking if residue names gives the correct corresponding residue id
         # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
-        assert (resname2residx["GLU30"]) == 8  # GLU30 is the 8th residue
-        assert (resname2fragidx["GLU30"]) == 4 # GLU30 is in the 4th fragment
-        assert (resname2residx[30]) == 8  # GLU30 is the 8th residue
-        assert (resname2fragidx[30]) == 4 # GLU30 is in the 4th fragment
+        self.assertSequenceEqual([8, 8], residxs)
+        self.assertSequenceEqual([4, 4], fragidx)
 
     def test_default_fragment_idx_is_passed_special_case(self):
+        with pytest.raises((ValueError, AssertionError)):
+            per_residue_fragment_picker("GLU30", self.by_bonds_geom2frags,
+                                        self.geom2frags.top,
+                                        pick_this_fragment_by_default=99)
 
         with pytest.raises((ValueError, AssertionError)):
-            resname2residx, resname2fragidx = per_residue_fragment_picker("GLU30", self.by_bonds_geom2frags,
-                                                                          self.geom2frags.top,
-                                                                          pick_this_fragment_by_default=99)
-
-        with pytest.raises((ValueError, AssertionError)):
-            resname2residx, resname2fragidx = per_residue_fragment_picker(30, self.by_bonds_geom2frags,
-                                                                          self.geom2frags.top,
-                                                                          pick_this_fragment_by_default=99)
+            per_residue_fragment_picker(30, self.by_bonds_geom2frags,
+                                        self.geom2frags.top,
+                                        pick_this_fragment_by_default=99)
 
     def test_ambiguous(self):
-
         input_values = (val for val in ["4", "4"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             residues = ["GLU30", 30]
-            resname2residx, resname2fragidx = per_residue_fragment_picker(residues,
-                                                                          self.by_bonds_geom2frags,
-                                                                          self.geom2frags.top)
+            residxs, fragidx = per_residue_fragment_picker(residues,
+                                                           self.by_bonds_geom2frags,
+                                                           self.geom2frags.top)
 
-            assert (resname2residx["GLU30"]) == 8  # GLU30 is the 8th
-            assert (resname2fragidx["GLU30"]) == 4  # GLU30 is in the 4th fragment
-            assert (resname2residx[30]) == 8  # GLU30 is the 8th
-            assert (resname2fragidx[30]) == 4  # GLU30 is in the 4th fragment
+            self.assertSequenceEqual([8, 8], residxs)
+            self.assertSequenceEqual([4, 4], fragidx)
 
         input_values = (val for val in ["3", "3"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             residues = ["GDP382", 382]
-            resname2residx, resname2fragidx = per_residue_fragment_picker(residues,
-                                                                          self.by_bonds_geom2frags,
-                                                                          self.geom2frags.top)
-
-            assert (resname2residx["GDP382"]) == 7  # GDP382 is the 7th residue
-            assert (resname2fragidx["GDP382"]) == 3  # GDP382 is the 3rd fragment
-            assert (resname2residx[382]) == 7  # GDP382 is the 7th residue
-            assert (resname2fragidx[382]) == 3  # GDP382 is the 3rd fragment
+            residxs, fragidx = per_residue_fragment_picker(residues,
+                                                           self.by_bonds_geom2frags,
+                                                           self.geom2frags.top)
+            self.assertSequenceEqual([7, 7], residxs)
+            self.assertSequenceEqual([3, 3], fragidx)
 
     def test_fragment_name(self):
         residues = ["GLU30", 30]
         input_values = (val for val in ["0", "0"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                          self.geom2frags.top,
-                                                                          fragment_names=["A", "B", "C", "D",
-                                                                                          "E", "F", "G", "H"])
+            residxs, fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
+                                                           self.geom2frags.top,
+                                                           fragment_names=["A", "B", "C", "D",
+                                                                           "E", "F", "G", "H"])
             # Checking if residue names gives the correct corresponding residue id
             # NOTE:Enter 0 for GLU30 when asked "input one fragment idx"
-
-            assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
-            assert resname2fragidx["GLU30"] == 0  # GLU30 is in the 1st fragment
-            assert (resname2residx[30]) == 0  # GLU30 is the 1st residue
-            assert resname2fragidx[30] == 0  # GLU30 is in the 1st fragment
+            self.assertSequenceEqual([0, 0], residxs)
+            self.assertSequenceEqual([0, 0], fragidx)
 
     def test_idx_not_present(self):
-
-        resname2residx, resname2fragidx = per_residue_fragment_picker(["GLU99", 99], self.by_bonds_geom2frags,
-                                                                      self.geom2frags.top,
-                                                                      pick_this_fragment_by_default=99)
-        assert(resname2residx["GLU99"] == None)
-        assert (resname2residx[99] == None)
-        assert (resname2fragidx["GLU99"] == None)
-        assert (resname2fragidx[99] == None)
+        residxs, fragidx = per_residue_fragment_picker(["GLU99", 99], self.by_bonds_geom2frags,
+                                                       self.geom2frags.top,
+                                                       pick_this_fragment_by_default=99)
+        self.assertSequenceEqual([None, None], residxs)
+        self.assertSequenceEqual([None, None], fragidx)
 
     def test_extra_dicts(self):
         residues = ["GLU30", "TRP32"]
-        consensus_dicts={"BW":{0 : "3.50"},
-                        "CGN":{2 : "CGNt"}}
-        resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                      self.geom2frags.top,
-                                                                      additional_naming_dicts=consensus_dicts,
-                                                                      pick_this_fragment_by_default=0
-                                                                      )
+        consensus_dicts = {"BW": {0: "3.50"},
+                           "CGN": {2: "CGNt"}}
+        per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
+                                    self.geom2frags.top,
+                                    additional_naming_dicts=consensus_dicts,
+                                    pick_this_fragment_by_default=0
+                                    )
 
     def test_answer_letters(self):
         residues = ["GLU30", "TRP32"]
         input_values = (val for val in ["a", "b"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            resname2residx, resname2fragidx = per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                      self.geom2frags.top,
-                                                                      )
+            per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
+                                        self.geom2frags.top,
+                                        )
 
 class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
 
