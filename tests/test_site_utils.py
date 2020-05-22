@@ -26,11 +26,12 @@ class Test_sitefile2site(unittest.TestCase):
         site = mdciao.site_utils.sitefile2sitedict(test_filenames.GDP_name_json)
         _np.testing.assert_equal(site["name"], "siteGDP")
 
-class Test__sites_to_AAresSeqdict(unittest.TestCase):
+class Test_sites_to_AAresSeqdict(unittest.TestCase):
     def setUp(self):
         self.GDP_json = test_filenames.GDP_json
         self.geom = _md.load(test_filenames.prot1_pdb)
         self.fragments = mdciao.fragments.get_fragments(self.geom.top)
+
     def test_works(self):
         site = mdciao.site_utils.sitefile2sitedict(self.GDP_json)
         AAdict = mdciao.site_utils.sites_to_AAresSeqdict([site], self.geom.top, self.fragments)
