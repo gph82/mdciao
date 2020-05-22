@@ -2222,7 +2222,7 @@ class ContactGroup(object):
         jax.set_title(
             "Contact frequency @%2.1f $\AA$ of site '%s'\n"
             % (ctc_cutoff_Ang, title_label),
-            pad = _rcParams["axes.titlepad"] + _titlepadding_in_points_no_clashes_w_texts(jax)
+            pad = _rcParams["axes.titlepad"] #+ _titlepadding_in_points_no_clashes_w_texts(jax)
         )
 
         #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
