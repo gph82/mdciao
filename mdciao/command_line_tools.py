@@ -392,7 +392,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
             print(e)
             empty_CGs.append(res_idx)
             neighborhoods[res_idx] = None
-    if len(empty_CGs)>0:
+    if len(empty_CGs) == len(final_look):
+        print("No residues have any neighbors at %2.1f Ang. No output produced." % ctc_cutoff_Ang)
+        return
+    elif len(empty_CGs)>0:
         print("These residues have no neighbors at %2.1f Ang"%ctc_cutoff_Ang)
         print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
 
@@ -1156,7 +1159,7 @@ def _fragment_overview(a,labtype):
         val = a.PDB_code_or_txtfile
         if _path.exists(val):
             # This is sort of un-winding the loging behind
-            # the initializiation of LabelerCGN, but it's
+            # the initialization of LabelerCGN, but it's
             # better to add 2 lins of code here than
             # changing the object's initialization
             local_path, basename = _path.split(val)
