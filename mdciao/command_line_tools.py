@@ -312,7 +312,6 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                                   additional_naming_dicts={"BW": {ii:val for ii, val in enumerate(BWresidx2conlab)},
                                                               "CGN": {ii:val for ii, val in enumerate(CGNresidx2conlab)}}
                                                   )
-
     print("\nWill compute neighborhoods for the residues")
     print("%s" % resSeq_idxs)
     print("excluding %u nearest neighbors\n" % n_nearest)
