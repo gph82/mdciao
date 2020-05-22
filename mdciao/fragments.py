@@ -1,5 +1,8 @@
 import numpy as _np
 
+from fnmatch import \
+    filter as _fn_filter
+
 from .residue_and_atom_utils \
     import find_AA
 
@@ -498,8 +501,7 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
         assert not r.startswith("-")
         if "*" in r or "?" in r:
             assert "-" not in r
-            from .str_and_dict_utils import fnmatch_ex as _fnmatch_ex
-            resnames = _fnmatch_ex(r,[str(rr) for rr in top.residues])
+            resnames = _fn_filter([str(rr) for rr in top.residues],r)
             resnames = _np.unique(resnames)
             residxs, __ = per_residue_fragment_picker(resnames, fragments, top,
                                                       allow_repeated_descriptors=True,
