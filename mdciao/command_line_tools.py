@@ -53,6 +53,10 @@ from mdciao.bond_utils import \
 from mdciao.fragments import \
     my_frag_colors as mycolors
 
+from mdciao.residue_and_atom_utils import \
+    find_AA as _findAA
+
+
 def _offer_to_create_dir(output_dir):
     r"""
     Offer to create a directory if it does not
@@ -1184,11 +1188,10 @@ def _fragment_overview(a,labtype):
     top = md.load(a.topology).top
     map_conlab = obj.top2map(top)
     obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
-    from mdciao.residue_and_atom_utils import find_AA as _findAA
     if str(a.AAs).lower()!="none":
         AAs = [aa.strip(" ") for aa in a.AAs.split(",")]
         for aa in AAs:
-            cands =_findAA(top,aa,relax=True)
+            cands =_findAA(top,aa)
             if len(cands) == 0:
                 print("No %s found in the input topology" % aa)
             else:
