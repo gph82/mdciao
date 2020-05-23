@@ -498,14 +498,16 @@ class Test_fragment_overview(unittest.TestCase):
 
     def test_BW_local_and_verbose(self):
         a = parser_for_BW_overview()
-        a = a.parse_args(["data/3SN6.pdb.gz","data/adrb2_human_full.xlsx"])
+        a = a.parse_args([_path.join(test_filenames.test_data_path, "3SN6.pdb.gz"),
+                          _path.join(test_filenames.test_data_path,"adrb2_human_full.xlsx")])
         print(a)
         a.__setattr__("print_conlab",True)
         command_line_tools._fragment_overview(a,"BW")
 
     def test_BW_url(self):
         a = parser_for_BW_overview()
-        a = a.parse_args(["data/3SN6.pdb.gz","adrb2_human"])
+        a = a.parse_args([_path.join(test_filenames.test_data_path, "3SN6.pdb.gz"),
+                          "adrb2_human"])
         command_line_tools._fragment_overview(a,"BW")
 
     def test_raises(self):
