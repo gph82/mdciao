@@ -36,7 +36,6 @@ from mdciao.contacts import \
     trajs2ctcs,ContactGroup, ContactPair
 
 from mdciao.list_utils import \
-    rangeexpand, \
     unique_list_of_iterables_by_tuple_hashing, \
     in_what_fragment
 

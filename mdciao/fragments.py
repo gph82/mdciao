@@ -1,10 +1,7 @@
 import numpy as _np
 
-from fnmatch import \
-    filter as _fn_filter
-
-from .residue_and_atom_utils \
-    import find_AA
+from .residue_and_atom_utils import \
+    find_AA as _find_AA
 
 from .bond_utils import \
     top2residue_bond_matrix
@@ -501,12 +498,7 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
         assert not r.startswith("-")
         if "*" in r or "?" in r:
             assert "-" not in r
-            resnames = _fn_filter([str(rr) for rr in top.residues],r)
-            resnames = _np.unique(resnames)
-            residxs, __ = per_residue_fragment_picker(resnames, fragments, top,
-                                                      allow_repeated_descriptors=True,
-                                                      **per_residue_fragment_picker_kwargs)
-            residxs_out.extend(residxs)
+            residxs_out.extend(_find_AA(top,r))
         else:
             resnames = r.split('-')
             assert len(resnames) >=1
@@ -514,7 +506,6 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
                 residx_pair = [int(rr) for rr in resnames]
             else:
                 residx_pair, __ = per_residue_fragment_picker(resnames, fragments, top,
-                                                              allow_repeated_descriptors=False,
                                                               **per_residue_fragment_picker_kwargs)
             residxs_out.extend(_np.arange(residx_pair[0],
                                       residx_pair[-1] + 1))
@@ -535,7 +526,7 @@ def per_residue_fragment_picker(residue_descriptors,
                                 fragment_names=None,
                                 additional_naming_dicts=None,
                                 extra_string_info='',
-                                allow_repeated_descriptors=False):
+                                ):
     r"""
     This function returns the fragment idxs and the residue idxs based on residue name/residue index.
     If a residue is present in multiple fragments, the function asks the user to choose the fragment, for which
@@ -569,16 +560,16 @@ def per_residue_fragment_picker(residue_descriptors,
         residue_descriptors = [residue_descriptors]
 
     for key in residue_descriptors:
-        cands = find_AA(top, str(key))
+        cands = _find_AA(top, str(key))
         cand_fragments = _in_what_N_fragments(cands, fragments)
         # TODO refactor into smaller methods
         if len(cands) == 0:
             print("No residue found with descriptor %s"%key)
             residxs.append(None)
             fragidxs.append(None)
-        elif len(cands) == 1 or allow_repeated_descriptors:
-            residxs.extend([int(ii) for ii in cands])
-            fragidxs.extend([int(ff) for ff in cand_fragments])
+        elif len(cands) == 1 :
+            residxs.append(cands[0])
+            fragidxs.append(cand_fragments[0])
         else:
             istr = "ambiguous definition for AA %s" % key
             istr += extra_string_info
