@@ -1,53 +1,56 @@
 from mdtraj.core.residue_names import _AMINO_ACID_CODES
-def find_AA(top, AA, relax=False):
+from fnmatch import filter as _fn_filter
+import numpy as np
+def find_AA(top, AA_pattern):
     """
-    Query the index of residue based on a string: e.g. "GLU30", "E30", "GLU","E".
-    If provided only with a numeric str, "30", it will be interpreted as the
-    resSeq entry.
+    Query the index of a residue(s) using a pattern.
 
     Parameters
     ----------
     top : :py:class:`mdtraj.Topology`
-    AA : string
-        Anything that could be used to identify a residue "GLU30" or "E30"
-    relax : boolean, default is True
-        Relaxes match criteria to include just the name ("GLU")
-    #TODO think about relax=True always
+    AA_pattern : string
+        Exact patterns work like this
+        * "GLU30" and "E30" are equivalent and return the index for GLU30
+        * "GLU" and "E" return indices for all GLUs
+        * "GL" will raise ValueError
+        * "30" will return GLU30 and LYS30
+        Wildcards are matched against full residue names
+        * "GLU*" will return indices for all GLUs (equivalent to GLU)
+        * "GLU3?" will only return indices all GLUs in the thirties
+        * "E*" will NOT return any GLUs
 
+    #TODO rewrite everything cleaner with fnmatch etc
     Returns
     -------
     list
         list of res_idxs where the residue is present, so that top.residue(idx) would return the wanted AA
 
     """
+    get_name = {1: lambda rr: rr.code,
+                2: lambda rr: rr.name,
+                3: lambda rr: rr.name}
 
-    if AA.isalpha():
-        lenA = len(AA)
-        if relax:
-            assert lenA <= 3, ValueError("The input AA %s must have an alphabetic code of" 
-                                         " either 3 or 1 letters" % (AA))
+    if AA_pattern.isalpha():
+        lenA = len(AA_pattern)
+        assert lenA in [1,3], ValueError("purely alphabetic patterns must have " 
+                                     " either 3 or 1 letters, not  %s" % (AA_pattern))
 
-            get_name = {1: lambda rr : rr.code,
-                        2: lambda rr : rr.name,
-                        3: lambda rr : rr.name}
 
-            return [rr.index for rr in top.residues if AA == '%s' % (get_name[lenA](rr))]
-
-        else:
-            raise ValueError(
-                "Missing the resSeq index, all I got was %s. Check out the relax option" % (AA))
-    elif AA.isdigit():
-        return [rr.index for rr in top.residues if rr.resSeq == int(AA)]
+        return [rr.index for rr in top.residues if AA_pattern == '%s' % (get_name[lenA](rr))]
+    elif AA_pattern.isdigit():
+        return [rr.index for rr in top.residues if rr.resSeq == int(AA_pattern)]
+    elif "*" in AA_pattern or "?" in AA_pattern:
+        resnames = [str(rr) for rr in top.residues]
+        filtered = _fn_filter(resnames, AA_pattern)
+        filtered_idxs  = [ii for ii, resname in enumerate(resnames) if resname in filtered]
+        return  np.unique(filtered_idxs)
     else:
-        code = ''.join([ii for ii in AA if ii.isalpha()])
-
-        if len(code)==1:
-            return [rr.index for rr in top.residues if AA == '%s%u' % (rr.code, rr.resSeq)]
-        elif len(code) in [2,3]:
-            return [rr.index for rr in top.residues if AA == '%s%u' % (rr.name, rr.resSeq)]
-        else:
+        code = ''.join([ii for ii in AA_pattern if ii.isalpha()])
+        try:
+            return [rr.index for rr in top.residues if AA_pattern == '%s%u' % (get_name[len(code)](rr), rr.resSeq)]
+        except KeyError:
             raise ValueError(
-                "The input AA %s must have an alphabetic code of either 3 or 1 letters, but not %s" % (AA, code))
+                "The input AA %s must have an alphabetic code of either 3 or 1 letters, but not %s" % (AA_pattern, code))
 
 def int_from_AA_code(key):
     """
