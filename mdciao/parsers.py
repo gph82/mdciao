@@ -130,6 +130,42 @@ def _parser_add_gray_backgroud(parser):
     parser.set_defaults(gray_background=False)
 
 def _parser_add_fragments(parser):
+    parser.add_argument('--fragments', default=['resSeq+'], nargs='+',
+                        help=("R|How to sub-divide the topology into fragments.\n"
+                              "Several options possible. Taking the example sequence:\n"
+                              "...-A27,Lig28,K29-...-W40,D45-...-W50,GDP1\n"
+                              " - 'resSeq'\n"
+                              "     breaks at jumps in resSeq entry:\n"
+                              "     [...A27,Lig28,K29,...,W40],[D45,...,W50],[GDP1]\n"
+                              " - 'resSeq+'\n"
+                              "     breaks only at negative jumps in resSeq:\n"
+                              "     [...A27,Lig28,K29,...,W40,D45,...,W50],[GDP1]\n"
+                              " - 'bonds'\n"
+                              "     breaks when AAs are not connected by bonds,\n"
+                              "     ignores resSeq:\n"
+                              "     [...A27][Lig28],[K29,...,W40],[D45,...,W50],[GDP1]\n"
+                              " - 'resSeq_bonds'\n"
+                              "     breaks both at resSeq jumps or missing bond\n"
+                              " - 'chains'\n"
+                              "     breaks into chains of the PDB file/entry\n"
+                              " - 'consensus'\n"
+                              "     If any consensus nomenclature is provided,\n"
+                              "     ask the user for definitions using\n"
+                              "     consensus labels\n"
+                              " - 0-10,15,14 20,21,30-50 51 (example, advanced users only)\n" 
+                              "     Input arbitrary fragments via their\n"
+                              "     residue serial indices (zero-indexed) using space as\n"
+                              "     separator. Not recommended\n."
+                              " - 'None'\n"
+                              "     All residues are in one fragment (fragment 0)\n"
+                              "     Can be harmless or potentially dangerous if residue\n "
+                              "     labels are repeated."
+                              "If you are unsure of any of these options, use \n"
+                              "the command line tool mdc_fragment_overview.py on \n"
+                              "your topology file."))
+
+# TODO this is deprecated
+def __parser_add_fragments(parser):
     parser.add_argument('--fragments', dest='fragmentify', action='store_true',
                         help="Auto-detect fragments (i.e. breaks) in the peptide-chain. Default is true.")
     parser.add_argument('--no-fragments', dest='fragmentify', action='store_false')
@@ -195,7 +231,7 @@ def _parser_add_sites(parser):
                         help='site file(s) in json format containing site information, i.e., which bonds correspond to each site')
 
 def _parser_add_fragment_names(parser):
-    parser.add_argument('--names', type=str,
+    parser.add_argument('--fragment_names', type=str,
                         help="Name of the fragments. Leave empty if you want them automatically named."
                              " Otherwise, give a quoted list of strings separated by commas, e.g. "
                              "'TM1, TM2, TM3,'",
@@ -277,7 +313,7 @@ def parser_for_rn():
                              "non-necessary distances (e.g. between N-terminus and G-protein) are not even computed. "
                              "Default is 15 Angstrom.", default=15)
     _parser_add_fragments(parser)
-    #_parser_add_fragment_names(parser)
+    _parser_add_fragment_names(parser)
 
     parser.add_argument('--sort', dest='sort', action='store_true', help="Sort the resSeq_idxs list. Defaut is True")
     parser.add_argument('--no-sort', dest='sort', action='store_false')
@@ -290,7 +326,7 @@ def parser_for_rn():
     parser.set_defaults(pbc=True)
 
     parser.add_argument('--ask_fragment', dest='ask', action='store_true',
-                        help="Interactively ask for fragment assignemnt when input matches more than one resSeq")
+                        help="Interactively ask for fragment assignment when input matches more than one resSeq")
     parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
     parser.set_defaults(ask=True)
     parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
@@ -335,7 +371,7 @@ def parser_for_dih():
     _parser_add_stride(parser)
     _parser_add_chunk(parser)
     _parser_add_smooth(parser)
-    _parser_add_fragments(parser)
+    #_parser_add_fragments(parser)
     _parser_add_fragment_names(parser)
 
     parser.add_argument('--sort', dest='sort', action='store_true', help="Sort the resSeq_idxs list. Defaut is True")
@@ -429,36 +465,7 @@ def parser_for_interface():
                                           'the peptide-chain in the input topology '
                                           'can be automatically broken down into fragments and use them directly.')
 
-    parser.add_argument('--fragments', default=['resSeq'], nargs='+',
-                        help=("R|How to sub-divide the topology into fragments.\n"
-                              "Several options possible. Taking the example sequence:\n"
-                              "...-A27,Lig28,K29-...-W40,D45-...-W50,GDP1\n"
-                              " - 'resSeq'\n"
-                              "     breaks at jumps in resSeq entry:\n"
-                              "     [...A27,Lig28,K29,...,W40],[D45,...,W50],[GDP1]\n"
-                              " - 'resSeq+'\n"
-                              "     breaks only at negative jumps in resSeq:\n"
-                              "     [...A27,Lig28,K29,...,W40,D45,...,W50],[GDP1]\n"
-                              " - 'bonds'\n"
-                              "     breaks when AAs are not connected by bonds,\n"
-                              "     ignores resSeq:\n"
-                              "     [...A27][Lig28],[K29,...,W40],[D45,...,W50],[GDP1]\n"
-                              " - 'resSeq_bonds'\n"
-                              "     breaks both at resSeq jumps or missing bond\n"
-                              " - 'chains'\n"
-                              "     breaks into chains of the PDB file/entry\n"
-                              " - 'consensus'\n"
-                              "     If any consensus nomenclature is provided,\n"
-                              "     ask the user for definitions using\n"
-                              "     consensus labels\n"
-                              " - 0-10,15,14 20,21,30-50 51 (example, advanced users only)\n" 
-                              "     Input arbitary fragments via their\n"
-                              "     residue serial indices (zero-indexed) using space as\n"
-                              "     separator. Not recommended\n."
-                              "If you are unsure of any of these options, use \n"
-                              "the command line tool mdc_fragment_overview.py on \n"
-                              "your topology file."))
-
+    _parser_add_fragments(parser)
     parser.add_argument("--frag_idxs_group_1", type=str,
                         help="Indices of the fragments that belong to the group_1. "
                              "Defaults to None which will prompt the user of information, except when "
@@ -480,7 +487,7 @@ def parser_for_interface():
     _parser_add_smooth(parser)
     _parser_add_time_traces(parser)
     _parser_add_n_jobs(parser)
-    #_parser_add_fragment_names(parser)
+    _parser_add_fragment_names(parser)
 
     #parser.add_argument('--consolidate', dest='consolidate_opt', action='store_true',
     #                    help="Treat all trajectories as fragments of one single trajectory. Default is True")
