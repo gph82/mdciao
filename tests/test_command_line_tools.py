@@ -234,15 +234,6 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                        distro=True,
                                        output_dir=tmpdir)
 
-    def test_fragmentify_not_implemented(self):
-        with pytest.raises(NotImplementedError):
-            with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-                 residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
-                                       "396",
-                                       distro=True,
-                                       fragmentify=False,
-                                       output_dir=tmpdir)
-
     def test_nomenclature_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["","a"])
