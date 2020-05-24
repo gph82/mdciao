@@ -6,6 +6,8 @@ from inspect import \
 from mdciao.residue_and_atom_utils import \
     shorten_AA as _shorten_AA
 
+from fnmatch import filter as _filter
+
 import mdtraj as md
 from matplotlib import pyplot as plt,rcParams as _rcParams
 
@@ -191,6 +193,7 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
     Returns
     -------
     fragment_names : list of strings
+
     fragments : list of fragments (only case "danger" was used, deprecated
     """
     #TODO fragment naming should be handled at the object level?
@@ -240,8 +243,8 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           #TODO re-think whether ask makes sense anymore
                           sort=True,
                           pbc=True,
-                          fragmentify=True,
                           ylim_Ang=15,
+                          fragments=["resSeq+"],
                           fragment_names="",
                           graphic_ext=".pdf",
                           table_ext=None,
@@ -286,18 +289,14 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     refgeom = _load_any_geom(topology)
 
-    if fragmentify:
-        fragments = get_fragments(refgeom.top,method='resSeq+')
-    else:
-        raise NotImplementedError("This feature is not yet implemented")
-
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
+    fragments_as_residue_idxs, __ = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
 
     # Do we want BW definitions
-    BWresidx2conlab = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments, write_to_disk=write_to_disk_BW)
+    BWresidx2conlab = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments_as_residue_idxs, write_to_disk=write_to_disk_BW)
 
     # Dow we want CGN definitions:
-    CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
+    CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs)
 
     # TODO find a consistent way for coloring fragments
     fragcolors = [cc for cc in mycolors]
@@ -308,7 +307,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     elif isinstance(color_by_fragment, str):
         fragcolors = [color_by_fragment for cc in fragcolors]
 
-    res_idxs_list = _rangeexpand_residues2residxs(resSeq_idxs, fragments, refgeom.top,
+    res_idxs_list = _rangeexpand_residues2residxs(resSeq_idxs, fragments_as_residue_idxs, refgeom.top,
                                                   interpret_as_res_idxs=res_idxs,
                                                   sort=sort,
                                                   pick_this_fragment_by_default=None,
@@ -321,9 +320,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
     for idx in res_idxs_list:
-        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, in_what_fragment(idx, fragments),
-                                                  idx,
-                                                  BWresidx2conlab[idx], CGNresidx2conlab[idx]))
+        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, in_what_fragment(idx,
+                                                                                                   fragments_as_residue_idxs),
+                                                   idx,
+                                                   BWresidx2conlab[idx], CGNresidx2conlab[idx]))
 
     # Create a neighborlist
     nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
@@ -335,7 +335,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
 
     # Can we have same-fragment contacts
     if not allow_same_fragment_ctcs:
-        fragment_idxs = [[in_what_fragment(idx, fragments) for idx in pair] for pair in ctc_idxs]
+        fragment_idxs = [[in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair] for pair in ctc_idxs]
         ctc_idxs = [ctc_idxs[ii] for (ii,pair) in enumerate(fragment_idxs) if pair[0]!=pair[1]]
 
 
@@ -349,8 +349,10 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     _, ctc_idxs_small = md.compute_contacts(refgeom, ctc_idxs[ctc_idxs_small])
     ctc_idxs_small = unique_list_of_iterables_by_tuple_hashing(ctc_idxs_small)
 
-    print("From %u potential distances, the neighborhoods have been reduced to only %u potential contacts.\nIf this "
-          "number is still too high (i.e. the computation is too slow), consider using a smaller nlist_cutoff_Ang " % (
+    print("From %u potential distances, the neighborhoods have been "
+          "reduced to only %u potential contacts.\n"
+          "If this number is still too high (i.e. the computation is too slow)"
+          ", consider using a smaller nlist_cutoff_Ang " % (
               len(ctc_idxs), len(ctc_idxs_small)))
 
     ctcs_trajs, time_array, at_pair_trajs = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
@@ -363,7 +365,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
 
     final_look = select_and_report_residue_neighborhood_idxs(ctcs_mean, res_idxs_list,
-                                                             fragments, ctc_idxs_small,
+                                                             fragments_as_residue_idxs, ctc_idxs_small,
                                                              refgeom.top,
                                                              interactive=False,
                                                              n_ctcs=n_ctcs)
@@ -376,7 +378,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
         for idx in val:
             pair = ctc_idxs_small[idx]
             consensus_labels = [_choose_between_consensus_dicts(idx, [BWresidx2conlab, CGNresidx2conlab]) for idx in pair]
-            fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
+            fragment_idxs = [in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             CPs.append(ContactPair(pair,
                                    [itraj[:, idx] for itraj in ctcs_trajs],
                                    time_array,
@@ -807,6 +809,7 @@ def interface(
         ctc_cutoff_Ang=3,
         curve_color="auto",
         fragments=['resSeq'],
+        fragment_names="",
         graphic_dpi=150,
         graphic_ext=".pdf",
         gray_background=False,
@@ -838,7 +841,8 @@ def interface(
 
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, frag_cons = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, user_wants_consenus = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
 
     BW, BWtf = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments_as_residue_idxs,
                                        return_Labeler=True,
@@ -865,15 +869,15 @@ def interface(
         if interactive:
             input("Hit enter to continue!\n")
 
-    if frag_cons:
-        int_frags_as_str_or_keys, intf_frags_as_residxs = \
-            _frag_dict_2_frag_groups(fragment_defs, ng=2)
+    if user_wants_consenus:
+        intf_frags_as_residxs, \
+        intf_frags_as_str_or_keys  = _frag_dict_2_frag_groups(fragment_defs, ng=2)
 
     else:
         intf_frags_as_residxs, \
-        int_frags_as_str_or_keys    = _frag_list_2_frag_groups(fragments_as_residue_idxs,
+        intf_frags_as_str_or_keys   = _frag_list_2_frag_groups(fragments_as_residue_idxs,
                                                                frag_idxs_group_1, frag_idxs_group_2,
-                                                               frag_cons)
+                                                               )
 
     ctc_idxs = _np.vstack(list(product(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
 
@@ -890,8 +894,8 @@ def interface(
           "The interface is defined by the residues within %3.1f "
           "Angstrom of each other in the reference topology.\n"
           "Computing interface..."
-          % ('\n'.join(_twrap(', '.join(['%s' % gg for gg in int_frags_as_str_or_keys[0]]))),
-             '\n'.join(_twrap(', '.join(['%s' % gg for gg in int_frags_as_str_or_keys[1]]))),
+          % ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
+             '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]]))),
              interface_cutoff_Ang), end="")
 
     ctcs, ctc_idxs = md.compute_contacts(refgeom, _np.vstack(ctc_idxs))
@@ -930,10 +934,12 @@ def interface(
         ifreq = ctc_frequency[idx]
         if ifreq > 0:
             pair = ctc_idxs_receptor_Gprot[idx]
+            #consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN],
+            #                                                    no_key=_shorten_AA(refgeom.top.residue(idx),
+            #                                                                      substitute_fail=0,
+            #                                                                      keep_index=True)) for idx in pair]
             consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN],
-                                                                no_key=_shorten_AA(refgeom.top.residue(idx),
-                                                                                  substitute_fail=0,
-                                                                                  keep_index=True)) for idx in pair]
+                                                                no_key=None) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             ctc_objs.append(ContactPair(pair,
                                         [itraj[:, idx] for itraj in ctcs],
@@ -942,6 +948,7 @@ def interface(
                                         consensus_labels=consensus_labels,
                                         trajs=xtcs,
                                         fragment_idxs=fragment_idxs,
+                                        fragment_names=[fragment_names[idx] for idx in fragment_idxs],
                                         atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
                                         # names=names,#[names[idx] for idx in idxs],
                                         # colors=[fragcolors[idx] for idx in idxs]
@@ -1172,6 +1179,8 @@ def _fragment_overview(a,labtype):
                              local_path=local_path,
                              #write_to_disk=a.write_to_disk
                              try_web_lookup=False)
+        else:
+            obj = LabelerCGN(val)
 
     elif labtype == "BW":
         val = a.BW_uniprot_or_file
@@ -1204,10 +1213,10 @@ def _fragment_overview(a,labtype):
         labels = [aa.strip(" ") for aa in a.labels.split(",")]
         conlab2residx = obj.conlab2residx(top, map=map_conlab)
         for lab in labels:
-            if lab in conlab2residx.keys():
-                idx = conlab2residx[lab]
+            for match in _filter(list(conlab2residx.keys()),lab):
+                idx = conlab2residx[match]
                 rr = top.residue(idx)
-                print(idx,rr, lab)
+                print(idx,rr, map_conlab[idx])
 
     if a.print_conlab:
         for ii, ilab in enumerate(map_conlab):
