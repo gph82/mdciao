@@ -164,13 +164,6 @@ def _parser_add_fragments(parser):
                               "the command line tool mdc_fragment_overview.py on \n"
                               "your topology file."))
 
-# TODO this is deprecated
-def __parser_add_fragments(parser):
-    parser.add_argument('--fragments', dest='fragmentify', action='store_true',
-                        help="Auto-detect fragments (i.e. breaks) in the peptide-chain. Default is true.")
-    parser.add_argument('--no-fragments', dest='fragmentify', action='store_false')
-    parser.set_defaults(fragmentify=True)
-
 def _parser_add_output_dir(parser):
     parser.add_argument('--output_dir', type=str, help="directory to which the results are written. Default is '.'",
                         default='.')
