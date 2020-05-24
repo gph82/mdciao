@@ -87,7 +87,6 @@ class Test_get_fragments_methods(unittest.TestCase):
 
     def test_resSeq_bonds(self):
         by_both = get_fragments(self.geom.top,
-                                verbose=True,
                       method='resSeq_bonds') #method is both
 
         assert _np.allclose(by_both[0], [0, 1, 2])
@@ -98,17 +97,28 @@ class Test_get_fragments_methods(unittest.TestCase):
 
     def test_chains(self):
         by_chains = get_fragments(self.geom.top,
-                                  verbose=True,
                                   method="chains")
 
         assert _np.allclose(by_chains[0],[0,1,2])
         assert _np.allclose(by_chains[1],[3,4,5])
         assert _np.allclose(by_chains[2],[6,7]), by_chains
 
+    def test_NoneType(self):
+        nonefrags = get_fragments(self.geom.top,
+                                  method=None)
+        _np.testing.assert_array_equal(nonefrags[0],
+                                       _np.arange(self.geom.top.n_residues))
+        self.assertEqual(len(nonefrags),1)
+    def test_Nonestr(self):
+        nonefrags = get_fragments(self.geom.top,
+                                  method="None")
+        _np.testing.assert_array_equal(nonefrags[0],
+                                       _np.arange(self.geom.top.n_residues))
+        self.assertEqual(len(nonefrags),1)
 
     def test_dont_know_method(self):
         with pytest.raises(ValueError):
-            get_fragments(self.geom.top,verbose=True,
+            get_fragments(self.geom.top,
                                  method='xyz')
 
     def test_molecule_raises_not_imp(self):
@@ -588,9 +598,9 @@ class Test_frag_dict_2_frag_groups(unittest.TestCase):
     def test_works(self):
         input_values = (val for val in ["TM*,-TM2", "H8"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-
+            groups_as_residue_idxs, \
             groups_as_keys, \
-            groups_as_residue_idxs = fragments.frag_dict_2_frag_groups(
+             = fragments.frag_dict_2_frag_groups(
                                                                         {"TM1":[0,1],
                                                                          "TM2":[2,3],
                                                                          "TM3":[4,5],
@@ -666,6 +676,92 @@ class Test_frag_list_2_frag_groups(unittest.TestCase):
         self.assertSequenceEqual([0,1,4,5], frags_out[0])
         self.assertSequenceEqual([2,3], frags_out[1])
         self.assertEqual(len(frags_out), 2)
+
+
+
+class Test_rangeexpand_residues2residxs(unittest.TestCase):
+
+    def setUp(self):
+        self.top = md.load(test_filenames.file_for_test_pdb).top
+        self.fragments = fragments.get_fragments(self.top, method="resSeq+",
+                                                 verbose=False)
+
+    def test_wildcards(self):
+        expanded_range = fragments._rangeexpand_residues2residxs("GLU*",
+                                                                 self.fragments,
+                                                                 self.top)
+        _np.testing.assert_array_equal(expanded_range, [0,4])
+
+    def test_rangeexpand_res_idxs(self):
+        expanded_range = fragments._rangeexpand_residues2residxs("2-4,6",
+                                                                 self.fragments,
+                                                                 self.top,
+                                                                 interpret_as_res_idxs=True)
+        _np.testing.assert_array_equal(expanded_range,[2,3,4,6])
+
+    def test_rangeexpand_resSeq_w_jumps(self):
+        expanded_range = fragments._rangeexpand_residues2residxs("26-381",
+                                                                 self.fragments,
+                                                                 self.top,
+                                                                 )
+        _np.testing.assert_array_equal(expanded_range,[3,4,5,6])
+
+    def test_rangeexpand_resSeq_sort(self):
+        expanded_range = fragments._rangeexpand_residues2residxs("381,26",
+                                                                 self.fragments,
+                                                                 self.top,
+                                                                 sort=True
+                                                                 )
+        _np.testing.assert_array_equal(expanded_range,[3,6])
+
+
+    def test_rangeexpand_raises_on_empty_range(self):
+        with pytest.raises(ValueError):
+            expanded_range = fragments._rangeexpand_residues2residxs("50-60",
+                                                                 self.fragments,
+                                                                 self.top,
+                                                                 )
+    def test_rangeexpand_raises_on_empty_wildcard(self):
+        with pytest.raises(ValueError):
+            expanded_range = fragments._rangeexpand_residues2residxs("ARG*",
+                                                                 self.fragments,
+                                                                 self.top,
+                                                                 )
+
+class Test_intersecting_fragments(unittest.TestCase):
+
+    def setUp(self):
+        self.fragments = [_np.arange(0,5),
+                          _np.arange(5,10),
+                          _np.arange(10,15)
+                          ]
+        self.top = md.load(test_filenames.prot1_pdb).top
+
+    def test_no_clashes(self):
+        result = fragments._check_if_subfragment([6, 7, 8],
+                                                            "test_frag",
+                                                          self.fragments,
+                                                          self.top,
+                                                          )
+        _np.testing.assert_array_equal(result, [6,7,8])
+
+    def test_clashes(self):
+        input_values = (val for val in ["0"])
+        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
+            result = fragments._check_if_subfragment(_np.arange(3, 9),
+                                                            "test_frag",
+                                                              self.fragments,
+                                                              self.top,
+                                                              )
+            _np.testing.assert_array_equal(result,[3,4])
+
+    def test_clashes_keeps_all(self):
+        result = fragments._check_if_subfragment(_np.arange(3, 9),
+                                                            "test_frag",
+                                                          self.fragments,
+                                                          self.top,
+                                                          keep_all=True)
+        _np.testing.assert_array_equal(_np.arange(3,9),result)
 
 if __name__ == '__main__':
     unittest.main()
