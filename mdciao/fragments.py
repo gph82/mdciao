@@ -19,6 +19,9 @@ from .str_and_dict_utils import \
 from  pandas import \
     unique as _pandas_unique
 
+from msmtools.estimation import \
+    connected_sets as _connected_sets
+
 abc = "abcdefghijklmnopqrst"
 
 def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
@@ -109,13 +112,15 @@ def get_fragments(top,
             breaks at resSeq jumps and at missing bonds
         - 'chains'
             breaks into chains of the PDB file/entry
+        - None or 'None'
+            all residues are in one fragment, fragment 0
 
     kwargs_per_residue_fragment_picker : optional
         additional arguments
 
     Returns
     -------
-    List of integer array
+    List of integer arrays
         Each array within the list has the residue indices of each fragment.
         These fragments do not have overlap. Their union contains all indices
 
@@ -135,7 +140,6 @@ def get_fragments(top,
             fragments_resSeq.append([ii])
         old = rr.resSeq
 
-    from msmtools.estimation import connected_sets as _connected_sets
     if method=="resSeq":
         fragments = fragments_resSeq
     elif method=='resSeq_bonds':
@@ -195,7 +199,8 @@ def get_fragments(top,
                         raise Exception
         #print(_negjumps)
         """
-
+    elif str(method).lower() == "none":
+        fragments = [_np.arange(top.n_residues)]
     else:
         raise ValueError("Don't know what method '%s' is"%method)
 
@@ -490,14 +495,18 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
 
     Returns
     -------
-
+    residxs_out = list of unique residue indices
     """
     residxs_out = []
-    print("For the range", range_as_str)
+    #print("For the range", range_as_str)
     for r in range_as_str.split(','):
         assert not r.startswith("-")
         if "*" in r or "?" in r:
             assert "-" not in r
+            filtered = _find_AA(top, r)
+            if len(filtered)==0:
+                raise ValueError("The input range contains '%s' which "
+                                 "returns no residues!"%r)
             residxs_out.extend(_find_AA(top,r))
         else:
             resnames = r.split('-')
@@ -507,6 +516,9 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
             else:
                 residx_pair, __ = per_residue_fragment_picker(resnames, fragments, top,
                                                               **per_residue_fragment_picker_kwargs)
+                if None in residx_pair:
+                    raise ValueError("The input range contains '%s' which "
+                                     "returns an untreatable range %s!" % (r, residx_pair))
             residxs_out.extend(_np.arange(residx_pair[0],
                                       residx_pair[-1] + 1))
 
@@ -514,8 +526,6 @@ def _rangeexpand_residues2residxs(range_as_str, fragments, top,
         residxs_out = sorted(residxs_out)
 
     residxs_out = _pandas_unique(residxs_out)
-    if len(residxs_out)==0 and not allow_empty_ranges:
-        raise ValueError("This range doen't return any residues!")
     return residxs_out
 
 #TODO consider renaming
@@ -708,41 +718,41 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     fragment_input : list of strings
         Many cases are possible
         * ["consensus"] : fragment using "resSeq+"
-        and return consensus as True
+        and return user_wants_consensus as True
         * [method] : fragment using "method"
         (see :obj:`get_fragments`) and return
-        consensus as False
+        user_wants_consensus as False
         * [['exp1']] : this str represents the
         residues in one fragment (eg. "0-3,5" : 0,1,2,3,5).
         Assume that the missing residues the other fragment.
-        Return the two fragments and consensus as False
+        Return the two fragments and user_wants_consensus as False
         * [["exp1"],
            ["exp2"],
            [...]]
         These strs are the fragments expressed as residue
         indices. Evaluate them and return them. Return
-        consensus as False
+        user_wants_consensus as False
+        * None or "None"
 
     top : :obj:`mdtraj.Topology`
 
     Returns
     -------
+    fragments_as_residue_idxs, user_wants_consensus
 
     """
-    consensus = False
+    user_wants_consensus = False
     assert isinstance(fragment_input,list)
     if len(fragment_input)==1 and fragment_input[0][:-1].isalpha(): # the -1 is to allow resseq+ to be alpha
         if fragment_input[0].lower()=="consensus":
-            consensus = True
-            method = 'resSeq+ (for later consensus labelling)'
+            user_wants_consensus = True
+            method = 'resSeq+ (for later user_wants_consensus labelling)'
             fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
                                                       verbose=False)
         else:
             method = fragment_input[0]
             fragments_as_residue_idxs = get_fragments(top, method=method,
                                                       verbose=False)
-            assert len(fragments_as_residue_idxs) >= 2, ("The chosen method detects less than"
-                                     "2 fragments. Aborting.")
     else:
         method = "user input by residue index"
         # What we have is list residue idxs as strings like 0-100, 101-200, 201-300
@@ -762,7 +772,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
         for ii, ifrag in enumerate(fragments_as_residue_idxs):
             _print_frag(ii, top, ifrag)
 
-    return fragments_as_residue_idxs, consensus
+    return fragments_as_residue_idxs, user_wants_consensus
 
 def _frag_list_2_frag_groups(frag_list,
                              frag_idxs_group_1=None,
@@ -770,8 +780,10 @@ def _frag_list_2_frag_groups(frag_list,
                              verbose=False):
     r"""
     Automagically find out the user wants to define
-    two fragments out of list of fragments.
-    Promt the user when necessary
+    two fragments out of list of fragments. This is used
+    by CLTs interface
+
+    Promt the user when disambguation is needed.
 
     Parameters
     ----------
@@ -784,7 +796,7 @@ def _frag_list_2_frag_groups(frag_list,
 
     Returns
     -------
-    group_residxs, group_names
+    groups_as_residxs, groups_as_fragidxs
 
     """
 
@@ -797,19 +809,19 @@ def _frag_list_2_frag_groups(frag_list,
             frag_idxs_group_2 is None:
         print("Only two fragments detected with no values for frag_idxs_group_1 and frag_idxs_group_2.\n"
               "Setting frag_idxs_group_1=0 and frag_idxs_group_2=1")
-        group_names = [[0], [1]]
+        groups_as_fragidxs = [[0], [1]]
         #TODO I don't think i need the check for None in the frag_idxs_groups, right?
     else:
-        group_names = [frag_idxs_group_1, frag_idxs_group_2]
-        for ii, ifrag_idxs in enumerate(group_names):
+        groups_as_fragidxs = [frag_idxs_group_1, frag_idxs_group_2]
+        for ii, ifrag_idxs in enumerate(groups_as_fragidxs):
             if ifrag_idxs is None:
-                group_names[ii] = _rangeexpand(input('Input group of fragments (e.g. 0,3 or 2-4,6) for group %u: ' % (ii + 1)))
+                groups_as_fragidxs[ii] = _rangeexpand(input('Input group of fragments (e.g. 0,3 or 2-4,6) for group %u: ' % (ii + 1)))
             elif isinstance(ifrag_idxs, str):
-                group_names[ii] = _rangeexpand(ifrag_idxs)
-    group_residxs = [sorted(_np.hstack([frag_list[ii] for ii in iint])) for iint in
-                            group_names]
+                groups_as_fragidxs[ii] = _rangeexpand(ifrag_idxs)
+    groups_as_residxs = [sorted(_np.hstack([frag_list[ii] for ii in iint])) for iint in
+                            groups_as_fragidxs]
 
-    return group_residxs, group_names
+    return groups_as_residxs, groups_as_fragidxs
 
 def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
                             verbose=False):
@@ -833,14 +845,14 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
 
     Returns
     -------
-    groups_as_keys, groups_as_residue_idxs
+    groups_as_residue_idxs, groups_as_keys
 
-    groups_as_keys : list of len ng
-        Contains ng lists with the keys
-        of :obj:`frag_defs_dict` in each of groups
     groups_as_residue_idxs : list of len ng
         Contains ng arrays with the concatenated
         and sorted residues in each group
+    groups_as_keys : list of len ng
+        Contains ng lists with the keys
+        of :obj:`frag_defs_dict` in each of groups
     """
 
     groups_as_keys = []
@@ -859,7 +871,7 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
         groups_as_residue_idxs.append(sorted(res_idxs_in_group))
         print(', '.join(groups_as_keys[-1]))
 
-    return groups_as_keys, groups_as_residue_idxs
+    return groups_as_residue_idxs, groups_as_keys
 
 my_frag_colors=[
          'magenta',
