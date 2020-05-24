@@ -1625,22 +1625,22 @@ class ContactGroup(object):
     @property
     def anchor_res_and_fragment_str(self):
         assert self.is_neighborhood,"There is no anchor residue, This is not a neighborhood."
-        return self._contacts[0].neighborhood.anchor_res_and_fragment_str
+        return self._contacts[0].neighborhood.anchor_res_and_fragment_str.rstrip("@")
 
     @property
     def anchor_res_and_fragment_str_short(self):
         assert self.is_neighborhood
-        return self._contacts[0].neighborhood.anchor_res_and_fragment_str_short
+        return self._contacts[0].neighborhood.anchor_res_and_fragment_str_short.rstrip("@")
 
     @property
     def partner_res_and_fragment_labels(self):
         assert self.is_neighborhood
-        return [ictc.neighborhood.partner_res_and_fragment_str for ictc in self._contacts]
+        return [ictc.neighborhood.partner_res_and_fragment_str.rstrip("@") for ictc in self._contacts]
 
     @property
     def partner_res_and_fragment_labels_short(self):
         assert self.is_neighborhood
-        return [ictc.neighborhood.partner_res_and_fragment_str_short for ictc in self._contacts]
+        return [ictc.neighborhood.partner_res_and_fragment_str_short.rstrip("@") for ictc in self._contacts]
 
     @property
     def anchor_fragment_color(self):
@@ -2208,7 +2208,6 @@ class ContactGroup(object):
         # Base plot
         jax = self._plot_freqbars_baseplot(ctc_cutoff_Ang,
                                            jax=jax, truncate_at=truncate_at)
-
 
         label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
         if shorten_AAs:
