@@ -161,14 +161,6 @@ def get_fragments(top,
             else:
                 to_join.append([ii + 1])
 
-        if False:
-            print("Fragments by ascending resSeq")
-            for idx, tj in enumerate(to_join):
-                for ii in tj:
-                    istr = _print_frag(idx, top, fragments_resSeq[ii],
-                                       return_string=True)
-                    print(istr)
-                print(''.join(["-" for __ in range(len(istr))]))
         fragments = _join_lists(fragments_resSeq, [tj for tj in to_join if len(tj) > 1])
 
     # TODO check why this is not equivalent to "bonds" in the test_file
