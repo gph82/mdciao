@@ -20,6 +20,8 @@ def find_AA(top, AA_pattern):
         * "E*" will NOT return any GLUs
 
     #TODO rewrite everything cleaner with fnmatch etc
+    #TODO handle cases when no residue was found uniformly
+    # accross mdciao either with None or []
     Returns
     -------
     list
