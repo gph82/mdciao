@@ -1658,6 +1658,18 @@ class ContactGroup(object):
             print("Not all anchors have or share the same color, returning None")
             return None
 
+    @property
+    def partner_fragment_colors(self):
+        assert self.is_neighborhood
+        _col = self._contacts[0].fragments.colors[self._contacts[0].residues.anchor_index]
+        partner_fragment_colors = [ictc.fragments.colors[ictc.residues.partner_index] for ictc in self._contacts]
+        not any([ictc.fragments.colors[ictc.residues.partner_index] is None for ictc in self._contacts])
+        if not any([icol is None for icol in partner_fragment_colors]):
+            return partner_fragment_colors
+        else:
+            print("Not all partners have a defined color, returning None")
+            return None
+
     #todo there is redundant code for generatinginterface labels!
     # not sure we need it here, don't want to be testing now
     """
@@ -2176,7 +2188,9 @@ class ContactGroup(object):
 
         patches = jax.bar(xvec, freqs,
                           # label=res_and_fragment_str,
-                          width=.25)
+                          width=.25,
+                          color=self.partner_fragment_colors
+                          )
         jax.set_yticks([.25, .50, .75, 1])
         jax.set_ylim([0, 1])
         jax.set_xticks([])
