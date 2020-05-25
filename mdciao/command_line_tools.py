@@ -3,9 +3,6 @@ import numpy as _np
 from inspect import \
     signature as _signature
 
-from mdciao.residue_and_atom_utils import \
-    shorten_AA as _shorten_AA
-
 from fnmatch import filter as _filter
 
 import mdtraj as md
@@ -53,7 +50,7 @@ from mdciao.bond_utils import \
     bonded_neighborlist_from_top
 
 from mdciao.fragments import \
-    my_frag_colors as mycolors
+    _my_frag_colors
 
 from mdciao.residue_and_atom_utils import \
     find_AA as _findAA
@@ -230,6 +227,58 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
 
     return fragment_names
 
+def _parse_coloring_options(color_option, n,
+                            default_color="blue",
+                            color_cycle=_my_frag_colors
+                            ):
+    r"""
+    Helper function to parse user input and return a color list
+
+    Parameters
+    ----------
+    color_option: str, list, bool, or None
+       * str : return a list of len n with this color as each entry
+       * list : assert len(list)>=len(n) and return it the first n-entries of it
+       * bool : True  : create a list of len n that repeats :obj:`color_cycle`
+                        as needed
+       * bool : False : create a list of len n with :obj:`default_color` as entries
+                        (same as :obj:`color_option` had equal to :obj:`default_color`)
+       * None : same as false
+    n : int
+        Wanted number of colors
+    default_color: str
+        Any color matplotlib understands
+    color_cycle: iterable of matplotlib colors
+
+    Returns
+    -------
+    colors
+
+    """
+    assert isinstance(color_cycle,list)
+
+    if str(color_option).lower()=="none":
+        color_option = False
+
+    if isinstance(color_option, bool):
+        if not color_option:
+            colors = [default_color for __ in range(n)]
+        else:
+            vec_idxs = _np.mod(_np.arange(n), len(_my_frag_colors))
+            colors = _np.array(color_cycle)[vec_idxs].tolist()
+    elif isinstance(color_option, str):
+        color_option = color_option.split(",")
+        if len(color_option)==0:
+            colors = [color_option[0] for __ in range(n)]
+
+    if isinstance(color_option,list):
+        if len(color_option)<n:
+            raise ValueError("Not enough input values %s for expected output of size n %u"%(color_option,n))
+        else:
+            colors = color_option[:n]
+
+    return colors
+
 def residue_neighborhoods(topology, trajectories, residues,
                           res_idxs=False,
                           ctc_cutoff_Ang=3.5,
@@ -246,12 +295,12 @@ def residue_neighborhoods(topology, trajectories, residues,
                           ylim_Ang=15,
                           fragments=["lig_resSeq+"],
                           fragment_names="",
+                          fragment_colors=None,
                           graphic_ext=".pdf",
                           table_ext=None,
                           BW_uniprot="None",
                           CGN_PDB="None",
                           output_dir='.',
-                          color_by_fragment=True,
                           output_desc='neighborhood',
                           t_unit='ns',
                           curve_color="auto",
@@ -291,21 +340,13 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     fragments_as_residue_idxs, __ = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
+    fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
     # Do we want BW definitions
     BWresidx2conlab = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments_as_residue_idxs, write_to_disk=write_to_disk_BW)
 
     # Dow we want CGN definitions:
     CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs)
-
-    # TODO find a consistent way for coloring fragments
-    fragcolors = [cc for cc in mycolors]
-    fragcolors.extend(fragcolors)
-    fragcolors.extend(fragcolors)
-    if isinstance(color_by_fragment, bool) and not color_by_fragment:
-        fragcolors = ['blue' for cc in fragcolors]
-    elif isinstance(color_by_fragment, str):
-        fragcolors = [color_by_fragment for cc in fragcolors]
 
     res_idxs_list = _rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
                                                   interpret_as_res_idxs=res_idxs,
@@ -388,7 +429,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                                    trajs=xtcs,
                                    fragment_idxs=fragment_idxs,
                                    fragment_names=[fragment_names[idx] for idx in fragment_idxs],
-                                   fragment_colors=[fragcolors[idx] for idx in fragment_idxs],
+                                   fragment_colors=[fragment_colors[idx] for idx in fragment_idxs],
                                    atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in at_pair_trajs]
                                    ))
         try:
@@ -1081,12 +1122,12 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp : ContactGroup,
     if title is None:
         title = output_desc #TODO consider using lastname
 
-    fname_timedep = ('%s.%s.time_resolved@%2.1f_Ang.%s' % (firstname,
+    fname_timedep = ('%s.%s.time_trace@%2.1f_Ang.%s' % (firstname,
                                                            lastname,
                                                            ctc_cutoff_Ang,
                                                            graphic_ext.strip("."))).replace("..", ".")
 
-    fname_N_ctcs = ('%s.%s.time_resolved@%2.1f_Ang.N_ctcs.%s' % (firstname,
+    fname_N_ctcs = ('%s.%s.time_trace@%2.1f_Ang.N_ctcs.%s' % (firstname,
                                                                  lastname,
                                                                  ctc_cutoff_Ang,
                                                                  graphic_ext.strip("."))).replace("..", ".")
