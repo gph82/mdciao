@@ -27,7 +27,7 @@ from mdciao.list_utils import iterate_and_inform_lambdas,\
 
 from mdciao.plots import plot_w_smoothing_auto
 
-from mdciao.fragments import my_frag_colors as mycolors
+from mdciao.fragments import _my_frag_colors as mycolors
 
 
 def xtcs2dihs(xtcs, top, dih_idxs, stride=1, consolidate=True,
