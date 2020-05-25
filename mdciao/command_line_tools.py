@@ -230,7 +230,7 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
 
     return fragment_names
 
-def residue_neighborhoods(topology, trajectories, resSeq_idxs,
+def residue_neighborhoods(topology, trajectories, residues,
                           res_idxs=False,
                           ctc_cutoff_Ang=3.5,
                           stride=1,
@@ -267,9 +267,9 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                           separate_N_ctcs=False,
                           ):
 
-    # Input control resSeq_idxs
-    if resSeq_idxs is None:
-        print("You have to provide some residue indices via the --resSeq_idxs option")
+    # Input control residues
+    if residues is None:
+        print("You have to provide some residue input via the --residues option")
         return None
 
     _offer_to_create_dir(output_dir)
@@ -307,7 +307,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     elif isinstance(color_by_fragment, str):
         fragcolors = [color_by_fragment for cc in fragcolors]
 
-    res_idxs_list = _rangeexpand_residues2residxs(resSeq_idxs, fragments_as_residue_idxs, refgeom.top,
+    res_idxs_list = _rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
                                                   interpret_as_res_idxs=res_idxs,
                                                   sort=sort,
                                                   pick_this_fragment_by_default=None,
@@ -315,7 +315,7 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                                               "CGN": {ii:val for ii, val in enumerate(CGNresidx2conlab)}}
                                                   )
     print("\nWill compute neighborhoods for the residues")
-    print("%s" % resSeq_idxs)
+    print("%s" % residues)
     print("excluding %u nearest neighbors\n" % n_nearest)
 
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
@@ -409,14 +409,14 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
     n_rows = _np.ceil(len(res_idxs_list) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
-    histofig, histoax = plt.subplots(n_rows, n_cols,
+    bar_fig, bar_ax = plt.subplots(n_rows, n_cols,
                                      sharex=True,
                                      sharey=True,
                                      figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
 
     # One loop for the histograms
     _rcParams["font.size"]=panelsize*panelsize2font
-    for jax, ihood in zip(histoax.flatten(),
+    for jax, ihood in zip(bar_ax.flatten(),
                                    neighborhoods.values()):
         if ihood is not None:
             if distro:
@@ -437,12 +437,12 @@ def residue_neighborhoods(topology, trajectories, resSeq_idxs,
                                               )
 
     if not distro:
-        xmax = _np.max([len(jax.patches) for jax in histoax.flatten()])+.5
-        [iax.set_xlim([-.5, xmax]) for iax in histoax.flatten()]
-    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
+        xmax = _np.max([len(jax.patches) for jax in bar_ax.flatten()])+.5
+        [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
+    bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
     fname = _path.join(output_dir, fname)
-    histofig.savefig(fname, dpi=graphic_dpi)
+    bar_fig.savefig(fname, dpi=graphic_dpi)
     print("The following files have been created")
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     print(fname)
