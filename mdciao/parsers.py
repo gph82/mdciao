@@ -306,7 +306,16 @@ def _parser_add_no_frag(parser):
                         help="Do not use fragments. Defautl is to use them")
     parser.set_defaults(fragmentify=True)
 
+def _parser_add_frag_colors(parser):
+    parser.add_argument("--fragment_colors", type=str,
+                        help="comma-separated vales of the fragment colors.\n"
+                             " If only one value, use that color for all fragments\n"
+                             " Any matplotlib colors can be used. Default is 'tab:blue'\n"
+                             " Why 'tab'? check https://matplotlib.org/3.1.1/tutorials/colors/colors.html !",
+                        default="tab:blue")
+
 # TODO group the parser better!
+# TODO add short versions of the most frequent options
 def parser_for_rn():
     parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
                                       'receptor-G-protein complex.')
@@ -317,7 +326,7 @@ def parser_for_rn():
     parser.add_argument('--serial_idxs', dest='res_idxs', action='store_true',
                         help='Interpret the indices of --residues '
                              'not as their sequence idxs (e.g. 30 for GLU30), but as '
-                             'their order in the topology (e.g. 0 for GLU30 if '
+                             'their serial order in the topology (e.g. 0 for GLU30 if '
                              'GLU30 is the first residue in the topology). Default is False')
     parser.set_defaults(res_idxs=False)
 
@@ -336,6 +345,7 @@ def parser_for_rn():
     _parser_add_fragments(parser)
     _parser_add_fragment_names(parser)
     _parser_add_no_frag(parser)
+    _parser_add_frag_colors(parser)
     parser.add_argument('--no-sort', dest='sort',
                         help="Don't sort the residues by their index. Defaut is to sort them.",
                         action='store_false')
