@@ -893,7 +893,7 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
 
     return groups_as_residue_idxs, groups_as_keys
 
-my_frag_colors=[
+_my_frag_colors=[
          'magenta',
          'yellow',
          'lime',
