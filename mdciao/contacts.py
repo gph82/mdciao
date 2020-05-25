@@ -37,7 +37,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                                                 n_ctcs=5,
                                                 restrict_to_resSeq=None,
                                                 interactive=False,
-                                                fac=.9
+                                                fraction=.9
                                                 ):
     """Prints a formatted summary of contact frequencies
        Returns a residue-index keyed dictionary containing the indices
@@ -65,6 +65,9 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
     interactive : boolean, default is False
         After reporting each neighborhood up to :obj:`n_ctcs` partners,
         ask the user how many should be kept
+    fraction : float, default is .9
+        report how many contacts (as in :obj:`n_ctcs`) one needs
+        to arrive at this fraction of the overall contacts.
 
     Returns
     -------
@@ -87,7 +90,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
         resSeq = top.residue(residx).resSeq
         if resSeq in restrict_to_resSeq:
             order_mask = _np.array([ii for ii in order if residx in residxs_pairs[ii]],dtype=int)
-            print("#idx    Freq  contact             segA-segB residxA   residxB   ctc_idx  sum")
+            print("#idx   freq      contact       fragments     res_idxs      ctc_idx  Sum")
             isum = 0
             seen_ctcs = []
             for ii, oo in enumerate(order_mask[:n_ctcs]):
@@ -97,12 +100,13 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 imean = ctc_freqs[oo]
                 isum += imean
                 seen_ctcs.append(imean)
-                print("%-6s %3.2f %8s-%-8s    %5u-%-5u %7u %7u %7u %3.2f" % (
+                print("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
             total_n_ctcs = _np.array(ctc_freqs)[order_mask].sum()
-            nc = _np.argwhere(_np.cumsum(_np.array(ctc_freqs)[order_mask])>=total_n_ctcs*fac)[0]+1
-            print("These %u contacts capture %3.1f of the total %3.1f (over %u contacts)."
-                  " %u ctcs already capture %3.1f%% of %3.1f."%(ii+1,isum,total_n_ctcs, len(order_mask), nc, fac*100, total_n_ctcs))
+            nc = _np.argwhere(_np.cumsum(_np.array(ctc_freqs)[order_mask]) >= total_n_ctcs * fraction)[0] + 1
+            print("These %u contacts capture %3.1f of the total frequency %3.1f (over %u contacts)."
+                  " %u ctcs already capture %3.1f%% of %3.1f." %
+                  (ii + 1, isum, total_n_ctcs, len(order_mask), nc, fraction * 100, total_n_ctcs))
 
             if interactive:
                 try:
