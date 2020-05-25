@@ -204,10 +204,10 @@ def _parser_add_no_fragfrag(parser):
     parser.set_defaults(allow_same_fragment_ctcs=True)
 
 def _parser_add_pbc(parser):
-    parser.add_argument('--pbc', dest='pbc', action='store_true',
-                        help="Consider periodic boundary conditions when computing distances."
-                             " Defaut is True")
-    parser.add_argument('--no-pbc', dest='pbc', action='store_false')
+    parser.add_argument('--no-pbc', dest='pbc',
+                        help="Do not consider periodic boundary conditions when computing distances."
+                             " Defaut is to consider them",
+                        action='store_false')
     parser.set_defaults(pbc=True)
 
 def _parser_add_short_AA_names(parser):
@@ -293,56 +293,61 @@ def _parser_add_conslabels(parser):
     parser.add_argument("--labels",type=str,
                         help="Print the idxs and resnames of these consensus labels, e.g. 3.50,2.63",
                         default=None)
+def _parser_add_residues(parser):
+    parser.add_argument('--residues', type=str,
+                        help='The residues of interest, as coma-separated-values without spaces.\n'
+                             'The input is very flexible and accepts\n'
+                             'mixed descriptors and wildcards, eg: "GLU*,ARG*,GDP*,LEU394,380-385"\n'
+                             "is a valid input. Numbers are interpeted as a residue's sequence number\n"
+                             " (394 in LEU394), unless --serial_idxs is passed as an option.")
 
+# TODO group the parser better!
 def parser_for_rn():
     parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
                                       'receptor-G-protein complex.')
 
-
-    parser.add_argument('--resSeq_idxs', type=str,
-                        help='the resSeq idxs of interest (in VMD these are called "resid"). '
-                             'Can be in a format 1,2-6,10,20-25. No spaces are allowed.')
-
+    _parser_add_residues(parser)
     _parser_add_cutoff(parser)
+
+    parser.add_argument('--serial_idxs', dest='res_idxs', action='store_true',
+                        help='Interpret the indices of --residues '
+                             'not as their sequence idxs (e.g. 30 for GLU30), but as '
+                             'their order in the topology (e.g. 0 for GLU30 if '
+                             'GLU30 is the first residue in the topology). Default is False')
+    parser.set_defaults(res_idxs=False)
+
     _parser_add_stride(parser)
     _parser_add_n_ctcs(parser)
     _parser_add_n_neighbors(parser)
     _parser_add_chunk(parser)
     _parser_add_smooth(parser)
     parser.add_argument("--nlist_cutoff_Ang", type=float,
-                        help="Cutoff for the initial neighborlist. Only atoms that are within this distance in the original reference "
-                             "(the topology file) are considered potential neighbors of the residues in resSeq_idxs, s.t. "
-                             "non-necessary distances (e.g. between N-terminus and G-protein) are not even computed. "
+                        help="Cutoff for the initial neighborlist. Only atoms that are \n"
+                             "within this distance in the original reference \n"
+                             "(the topology file) are considered potential neighbors \n"
+                             "of the --residues, s.t. non-necessary distances \n"
+                             " (e.g. between the receptor's N-terminus and G-protein) are not even computed. "
                              "Default is 15 Angstrom.", default=15)
     _parser_add_fragments(parser)
     _parser_add_fragment_names(parser)
 
-    parser.add_argument('--sort', dest='sort', action='store_true', help="Sort the resSeq_idxs list. Defaut is True")
-    parser.add_argument('--no-sort', dest='sort', action='store_false')
+    parser.add_argument('--no-sort', dest='sort',
+                        help="Don't sort the residues by their index. Defaut is to sort them.",
+                        action='store_false')
     parser.set_defaults(sort=True)
 
-    parser.add_argument('--pbc', dest='pbc', action='store_true',
-                        help="Consider periodic boundary conditions when computing distances."
-                             " Defaut is True")
-    parser.add_argument('--no-pbc', dest='pbc', action='store_false')
-    parser.set_defaults(pbc=True)
+    _parser_add_pbc(parser)
 
     parser.add_argument('--ask_fragment', dest='ask', action='store_true',
                         help="Interactively ask for fragment assignment when input matches more than one resSeq")
     parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
     parser.set_defaults(ask=True)
-    parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
-                        default='output.npy')
+    #parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
+    #                    default='output.npy')
     _parser_add_table_ext(parser)
-    parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
-                        default='.pdf')
+    _parser_add_graphic_ext(parser)
 
-    parser.add_argument('--serial_idxs', dest='res_idxs', action='store_true',
-                        help='Interpret the indices of --resSeq_idxs '
-                             'not as sequence idxs (e.g. 30 for GLU30), but as '
-                             'their order in the topology (e.g. 0 for GLU30 if '
-                             'GLU30 is the first residue in the topology). Default is False')
-    parser.set_defaults(res_idxs=False)
+
 
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
