@@ -15,7 +15,7 @@ from mdciao.str_and_dict_utils import \
     unify_freq_dicts,\
     _replace4latex, \
     choose_between_good_and_better_strings, \
-    freq_datfile2freqdict
+    freq_ascii2dict
 
 from mdciao import str_and_dict_utils
 
@@ -347,7 +347,7 @@ class Test_freq_datfile2freqdict(unittest.TestCase):
                 for key, val in freqs.items():
                     f.write("%f %s\n"%(val, key))
 
-            freqsin = freq_datfile2freqdict(tmpfile)
+            freqsin = freq_ascii2dict(tmpfile)
         assert freqsin["0-1"]==.3
         assert freqsin["0-2"]==.4
         assert len(freqsin)==2
