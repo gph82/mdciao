@@ -117,15 +117,17 @@ class Test_get_fragments_methods(unittest.TestCase):
         self.assertEqual(len(nonefrags),1)
 
     def test_dont_know_method(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             get_fragments(self.geom.top,
                                  method='xyz')
 
+    @unittest.skip("Undecided whether to never implement this or not")
     def test_molecule_raises_not_imp(self):
         with pytest.raises(NotImplementedError):
             get_fragments(self.geom.top,
                           method="molecules")
 
+    @unittest.skip("Undecided whether to never implement this or not")
     def test_molecule_resSeqplus_raises_not_imp(self):
         with pytest.raises(NotImplementedError):
             get_fragments(self.geom.top,
