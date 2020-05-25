@@ -6,9 +6,12 @@ from fnmatch import filter as _fnfilter
 execute = True
 list = False
 ex = ExamplesCLTs()
-parser = argparse.ArgumentParser(description="Wrapper script to showcase and optionally"
-                                             "run examples of the command-line-tools (clt)"
-                                             "that ship with mdciao"
+desc1 = "Wrapper script to showcase and optionally "\
+        "run examples of the command-line-tools (clt) "\
+        "that ship with mdciao."
+parser = argparse.ArgumentParser(description=desc1+
+                                             "\n To show available examples and nothing more\n"
+                                             "type any of 'mdc_examples.py l/list/?'"
                                  )
 
 parser.add_argument("clt",
@@ -24,18 +27,14 @@ parser.add_argument("-x",
                          "Default is False.")
 parser.set_defaults(execute=False)
 
-
-parser.add_argument("-l",
-                    action="store_true",
-                    dest="show_list",
-                    help="show available examples and nothing more")
 parser.set_defaults(show_list=False)
 
 args = parser.parse_args()
 clt = args.clt
-if args.show_list:
+if args.clt in ["l","lists","?"]:
+    print(desc1)
     print("Availble command line tools are")
-    print("\n".join(["%s.py"%key for key in ex.clts]))
+    print("\n".join([" - %s.py"%key for key in ex.clts]))
 else:
     if args.clt.endswith(".py"):
         clt = path.splitext(args.clt)[0]
