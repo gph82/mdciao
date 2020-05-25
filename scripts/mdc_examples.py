@@ -2,6 +2,7 @@
 from mdciao.examples import ExamplesCLTs
 import argparse
 from os import path
+from fnmatch import filter as _fnfilter
 execute = True
 list = False
 ex = ExamplesCLTs()
@@ -13,7 +14,8 @@ parser = argparse.ArgumentParser(description="Wrapper script to showcase and opt
 parser.add_argument("clt",
                     default=None,
                     type=str,
-                    help="The example script to run")
+                    help="The example script to run. Can be part of the name as well\n "
+                         "(neigh) for neighborhoods ")
 
 parser.add_argument("-x",
                     action="store_true",
@@ -37,6 +39,8 @@ if args.show_list:
 else:
     if args.clt.endswith(".py"):
         clt = path.splitext(args.clt)[0]
-    ex.show(clt)
-    if args.execute:
-        ex.run(clt, show=False)
+    clts = _fnfilter(ex.clts,"*%s*"%clt)
+    for clt in clts:
+        ex.show(clt)
+        if args.execute:
+            ex.run(clt, show=False)
