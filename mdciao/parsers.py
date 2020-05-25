@@ -301,6 +301,11 @@ def _parser_add_residues(parser):
                              "is a valid input. Numbers are interpeted as a residue's sequence number\n"
                              " (394 in LEU394), unless --serial_idxs is passed as an option.")
 
+def _parser_add_no_frag(parser):
+    parser.add_argument("--no-fragments", dest='fragmentify',action='store_false',
+                        help="Do not use fragments. Defautl is to use them")
+    parser.set_defaults(fragmentify=True)
+
 # TODO group the parser better!
 def parser_for_rn():
     parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
@@ -330,7 +335,7 @@ def parser_for_rn():
                              "Default is 15 Angstrom.", default=15)
     _parser_add_fragments(parser)
     _parser_add_fragment_names(parser)
-
+    _parser_add_no_frag(parser)
     parser.add_argument('--no-sort', dest='sort',
                         help="Don't sort the residues by their index. Defaut is to sort them.",
                         action='store_false')
