@@ -113,6 +113,7 @@ def unify_freq_dicts(freqs,
                      exclude=None,
                      key_separator="-",
                      replacement_dict=None,
+                     defrag=None
                      ):
     r"""
     Provided with a dictionary of dictionaries, returns an equivalent,
@@ -140,6 +141,12 @@ def unify_freq_dicts(freqs,
         all keys/strings will be subjected to replacements following this
         dictionary, st. "GLH30" is "GLU30" if replacement_dict is {"GLH":"GLU"}
         This way mutations and or indexing can be accounted for in different setups
+    defrag : char, default is None
+        If a char is given, "@", anything after that character in the labels
+        will be consider fragment information and ignored. This is only recommended
+        for advanced users, usually the fragment information helps keep track
+        of residue names in complex topologies:
+            R201@frag1 and R201@frag3 will both be "R201"
 
     Returns
     -------
@@ -154,6 +161,10 @@ def unify_freq_dicts(freqs,
         split_key = key.split(sep)
         return sep.join([split_key[ii] for ii in _np.argsort(split_key)])
 
+    # Remove fragment information from the key
+    def _defrag_key(key,defrag,sep="-"):
+        return sep.join([kk.split(defrag,1)[0] for kk in key.split(sep)])
+
     # Create a copy, with re-ordered keys if needed
     freqs_work = {}
     for key, idict in freqs.items():
@@ -165,6 +176,9 @@ def unify_freq_dicts(freqs,
     # Implement replacements
     if replacement_dict is not None:
         freqs_work = {key:{_replace_w_dict(key2, replacement_dict):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
+
+    if defrag is not None:
+        freqs_work = {key:{_defrag_key(key2, defrag):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
 
     # Perform the difference operations
     not_shared = []
@@ -213,7 +227,17 @@ def unify_freq_dicts(freqs,
 
     return freqs_work
 
-def freq_datfile2freqdict(ifile, comment=["#"]):
+def freq_file2dict(ifile):
+    from os import path as _path
+    ext = _path.splitext(ifile)[-1]
+    if ext.lower() == ".xlsx":
+        from pandas import read_excel as _read_excel
+        df = _read_excel(ifile, header=1)
+        return {key: val for key, val in zip(df["label"].values, df["freq"].values)}
+    else:
+        return freq_ascii2dict(ifile)
+
+def freq_ascii2dict(ifile, comment=["#"]):
     r"""
     Reads an ascii file that contains contact frequencies (1st) column and
     contact labels . Columns are separeted by tabs or spaces.
