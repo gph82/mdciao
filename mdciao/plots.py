@@ -8,7 +8,7 @@ from .str_and_dict_utils import \
     unify_freq_dicts, \
     _replace_w_dict, \
     _replace4latex, \
-    freq_datfile2freqdict as _freq_datfile2freqdict
+    freq_file2dict as _freq_file2dict
 
 def plot_w_smoothing_auto(ax, x, y,
                           label,
@@ -90,6 +90,8 @@ def compare_groups_of_contacts(dictionary_of_groups,
           * ascii-files (see :obj:`freq_datfile2freqdict`)
             with the contact labels in the second and frequencies in
             the third column
+          * .xlsx files with the header in the second row,
+            containing at least the column-names "label" and "freqs"
 
         Note
         ----
@@ -148,7 +150,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
 
     for key, ifile in dictionary_of_groups.items():
         if isinstance(ifile, str):
-            idict = _freq_datfile2freqdict(ifile)
+            idict = _freq_file2dict(ifile)
         elif "mdciao.contacts.ContactGroup" in str(type(ifile)):
             assert ctc_cutoff_Ang is not None, "Cannot provide a neighborhood object without a ctc_cutoff_Ang parameter"
             idict = {ilab:val for ilab, val in zip(ifile.ctc_labels_short,
@@ -179,7 +181,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
         myfig.tight_layout()
         # _plt.show()
 
-    freqs  = unify_freq_dicts(freqs, exclude)
+    freqs  = unify_freq_dicts(freqs, exclude, defrag="@")
     myfig, iax, posret = plot_unified_freq_dicts(freqs,
                                                  colordict,
                                                  ax=ax,
