@@ -1,5 +1,8 @@
 import numpy as _np
 
+from mdtraj.core.residue_names import \
+    _AMINO_ACID_CODES
+
 from .residue_and_atom_utils import \
     find_AA as _find_AA
 
@@ -79,7 +82,7 @@ def get_fragments(top,
                   fragment_breaker_fullresname=None,
                   atoms=False,
                   verbose=True,
-                  method='resSeq',  #Whatever comes after this(**) will be passed as named argument to interactive_segment_picker
+                  method='resSeq',
                   join_fragments=None,
                   **kwargs_per_residue_fragment_picker):
     """
@@ -101,15 +104,23 @@ def get_fragments(top,
     verbose : boolean, optional
     method : str, default is 'resSeq'
         The method passed will be the basis for creating fragments. Check the following options
-        with the example sequence "…-A27,Lig28,K29-…-W40,D45-…-W50,GDP1"
+        with the example sequence "…-A27,Lig28,K29-…-W40,D45-…-W50,CYSP51,GDP52"
         - 'resSeq'
-            breaks at jumps in resSeq entry: […A27,Lig28,K29,…,W40],[D45,…,W50],[GDP1]
+            breaks at jumps in resSeq entry:
+            […A27,Lig28,K29,…,W40],[D45,…,W50,CYSP51,GDP52]
         - 'resSeq+'
-            breaks only at negative jumps in resSeq: […A27,Lig28,K29,…,W40,D45,…,W50],[GDP1]
+            breaks only at negative jumps in resSeq:
+            […A27,Lig28,K29,…,W40,D45,…,W50,CYSP51,GDP52]
         - ‘bonds’
-            breaks when AAs are not connected by bonds, ignores resSeq: […A27][Lig28],[K29,…,W40],[D45,…,W50],[GDP1]
+            breaks when residues are not connected by bonds, ignores resSeq:
+            […A27][Lig28],[K29,…,W40],[D45,…,W50],[CYSP51],[GDP52]
+            notice that because phosphorylated CYSP51 didn't get a
+            bond in the topology, it's considered a ligand
         - 'resSeq_bonds'
             breaks at resSeq jumps and at missing bonds
+        - 'lig_resSeq+'
+            Like resSeq+ but put's any non-AA residue into it's own fragment.
+            […A27][Lig28],[K29,…,W40],[D45,…,W50,CYSP51],[GDP52]
         - 'chains'
             breaks into chains of the PDB file/entry
         - None or 'None'
@@ -125,6 +136,8 @@ def get_fragments(top,
         These fragments do not have overlap. Their union contains all indices
 
     """
+
+    _assert_method_allowed(method)
 
     # Auto detect fragments by resSeq
     old = top.residue(0).resSeq
@@ -143,32 +156,32 @@ def get_fragments(top,
     if method=="resSeq":
         fragments = fragments_resSeq
     elif method=='resSeq_bonds':
-        residue_bond_matrix = top2residue_bond_matrix(top, verbose=False, force_resSeq_breaks=True)
+        residue_bond_matrix = top2residue_bond_matrix(top, verbose=False,
+                                                      force_resSeq_breaks=True)
         fragments = _connected_sets(residue_bond_matrix)
     elif method=='bonds':
-        residue_bond_matrix = top2residue_bond_matrix(top, verbose=False, force_resSeq_breaks=False)
+        residue_bond_matrix = top2residue_bond_matrix(top, verbose=False,
+                                                      force_resSeq_breaks=False)
         fragments = _connected_sets(residue_bond_matrix)
         fragments = [fragments[ii] for ii in _np.argsort([fr[0] for fr in fragments])]
     elif method == "chains":
         fragments = [[rr.index for rr in ichain.residues] for ichain in top.chains]
     elif method == "resSeq+":
-        to_join = [[0]]
-        for ii, ifrag in enumerate(fragments_resSeq[:-1]):
-            r1 = top.residue(ifrag[-1])
-            r2 = top.residue(fragments_resSeq[ii + 1][0])
-            if r1.resSeq < r2.resSeq:
-                to_join[-1].append(ii + 1)
-            else:
-                to_join.append([ii + 1])
-
-        fragments = _join_lists(fragments_resSeq, [tj for tj in to_join if len(tj) > 1])
-
+        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
+    elif method == "lig_resSeq+":
+        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
+        for rr in top.residues:
+            if rr.name[:3] not in _AMINO_ACID_CODES.keys():
+                frag_idx = _in_what_fragment(rr.index, fragments)
+                # Todo use list.delete()?
+                fragments[frag_idx] = fragments[frag_idx][fragments[frag_idx]!=rr.index]
+                fragments.append([rr.index])
     # TODO check why this is not equivalent to "bonds" in the test_file
     elif method == 'molecules':
-        raise NotImplementedError("method 'molecules' is not implemented yet")
+        raise NotImplementedError("method 'molecules' is not fully implemented yet")
         #fragments = [_np.unique([aa.residue.index for aa in iset]) for iset in top.find_molecules()]
     elif method == 'molecules_resSeq+':
-        raise NotImplementedError("method 'molecules_resSeq+' is not implemented yet")
+        raise NotImplementedError("method 'molecules_resSeq+' is not fully implemented yet")
         """
         _molecules = top.find_molecules()
         _fragments = [_np.unique([aa.residue.index for aa in iset]) for iset in _molecules]
@@ -193,9 +206,8 @@ def get_fragments(top,
         """
     elif str(method).lower() == "none":
         fragments = [_np.arange(top.n_residues)]
-    else:
-        raise ValueError("Don't know what method '%s' is"%method)
 
+    fragments = [fragments[ii] for ii in _np.argsort([ifrag[0] for ifrag in fragments])]
     # Inform of the first result
     if verbose:
         print("Auto-detected fragments with method %s"%str(method))
@@ -244,12 +256,27 @@ def get_fragments(top,
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
 
+def _get_fragments_resSeq_plus(top, fragments_resSeq):
+    to_join = [[0]]
+    for ii, ifrag in enumerate(fragments_resSeq[:-1]):
+        r1 = top.residue(ifrag[-1])
+        r2 = top.residue(fragments_resSeq[ii + 1][0])
+        if r1.resSeq < r2.resSeq:
+            to_join[-1].append(ii + 1)
+        else:
+            to_join.append([ii + 1])
+
+    return _join_lists(fragments_resSeq, [tj for tj in to_join if len(tj) > 1])
+
+
 _allowed_fragment_methods = ['resSeq',
-                            'resSeq+',
-                            'bonds',
-                         #   'molecules',
-                            'resSeq_bonds',
-                            'chains']
+                             'resSeq+',
+                             'lig_resSeq+',
+                             'bonds',
+                             'resSeq_bonds',
+                             'chains',
+                             "None",
+                             ]
 def overview(topology,
              methods=['all']):
 
@@ -276,9 +303,8 @@ def overview(topology,
     if methods[0].lower() == 'all':
         try_methods = _allowed_fragment_methods
     else:
-        for imethd in methods:
-            assert imethd in _allowed_fragment_methods, ('input method %s is not known. ' \
-                                           'Know methods are %s ' % (imethd, _allowed_fragment_methods))
+        for method in methods:
+            _assert_method_allowed(method)
         try_methods = methods
 
     for method in try_methods:
@@ -286,6 +312,10 @@ def overview(topology,
                       method=method)
         print()
 
+def _assert_method_allowed(method):
+    assert str(method) in _allowed_fragment_methods, ('input method %s is not known. ' \
+                                                 'Know methods are %s ' %
+                                                 (method, "\n".join(_allowed_fragment_methods)))
 """
 def interactive_fragment_picker_by_resSeq(resSeq_idxs, fragments, top,
                                           pick_first_fragment_by_default=False,
@@ -450,7 +480,6 @@ def interactive_fragment_picker_by_AAresSeq(AAresSeq_idxs, fragments, top,
     return residuenames2residxs, residuenames2fragidxs
 """
 
-#TODO test
 def _rangeexpand_residues2residxs(range_as_str, fragments, top,
                                   interpret_as_res_idxs=False,
                                   sort=False,
@@ -735,17 +764,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     """
     user_wants_consensus = False
     assert isinstance(fragment_input,list)
-    if len(fragment_input)==1 and fragment_input[0][:-1].isalpha(): # the -1 is to allow resseq+ to be alpha
-        if fragment_input[0].lower()=="consensus":
-            user_wants_consensus = True
-            method = 'resSeq+ (for later user_wants_consensus labelling)'
-            fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
-                                                      verbose=False)
-        else:
-            method = fragment_input[0]
-            fragments_as_residue_idxs = get_fragments(top, method=method,
-                                                      verbose=False)
-    else:
+    if ("".join(fragment_input).replace("-","").replace(",","")).isnumeric():
         method = "user input by residue index"
         # What we have is list residue idxs as strings like 0-100, 101-200, 201-300
         fragments_as_residue_idxs =[_rangeexpand(ifrag.strip(",")) for ifrag in fragment_input]
@@ -758,7 +777,16 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
             assert isinstance(fragment_input[0],str)
             method += "(only one fragment provided, assuming the rest of residues are fragment 2)"
             fragments_as_residue_idxs.append(_np.delete(_np.arange(top.n_residues), fragments_as_residue_idxs[0]))
-
+    elif len(fragment_input)==1:
+        if fragment_input[0].lower()=="consensus":
+            user_wants_consensus = True
+            method = 'resSeq+ (for later user_wants_consensus labelling)'
+            fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
+                                                      verbose=False)
+        else:
+            method = fragment_input[0]
+            fragments_as_residue_idxs = get_fragments(top, method=method,
+                                                      verbose=False)
     if verbose:
         print("Using method '%s' these fragments were found"%method)
         for ii, ifrag in enumerate(fragments_as_residue_idxs):
