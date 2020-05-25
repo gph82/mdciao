@@ -60,8 +60,9 @@ def _parser_add_topology(parser):
 
 def _parser_add_cutoff(parser):
     parser.add_argument("--ctc_cutoff_Ang", type=float,
-                        help="The cutoff distance between two residues for them to be considered in contact. Default is 3 Angstrom.",
-                        default=3)
+                        help="The cutoff distance between two residues for them to be considered in contact. "
+                             "Default is 3.5 Angstrom.",
+                        default=3.5)
 
 def _parser_add_n_neighbors(parser, default=4):
     parser.add_argument("--n_nearest", type=int,
