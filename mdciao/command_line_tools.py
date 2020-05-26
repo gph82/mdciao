@@ -129,29 +129,30 @@ def _parse_consensus_option(option, consensus_type,
 
     Returns
     -------
+    map, LC
 
     """
     if isinstance(option, str) or option is None:
         if str(option).lower() == 'none':
             map_out = [None for __ in range(top.n_residues)]
-            tf_out = None
+            LC_out = None
         else:
-            tf_out = {"BW": LabelerBW,
+            LC_out = {"BW": LabelerBW,
                       "CGN":LabelerCGN}[consensus_type](option, **LabelerConsensus_kwargs)
 
     #todo add a class check here instead of failing later on
     else:
-        tf_out = option
+        LC_out = option
         #print("The transformer was provided already")
 
-    if tf_out is not None:
-        answer = _guess_by_nomenclature(tf_out, top, fragments, consensus_type,
+    if LC_out is not None:
+        answer = _guess_by_nomenclature(LC_out, top, fragments, consensus_type,
                                         return_str=False,
                                         accept_guess=accept_guess,
                                         #verbose=True
                                         )
         restrict_to_residxs = _np.hstack([fragments[ii] for ii in answer])
-        map_out = tf_out.top2map(top,
+        map_out = LC_out.top2map(top,
                                  restrict_to_residxs=restrict_to_residxs,
                                  fill_gaps=True,
                              #    verbose=True,
@@ -159,7 +160,31 @@ def _parse_consensus_option(option, consensus_type,
     if not return_Labeler:
         return map_out
     else:
-        return map_out, tf_out
+        return map_out, LC_out
+
+#TODO test
+#TODO document
+def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
+                                                      fragments_as_residue_idxs,
+                                                      accept_guess=False,
+                                                      write_to_disk_BW=False):
+    fragment_defs = {}
+    for key, option in option_dict.items():
+        map_CL, CL = _parse_consensus_option(option, key, top, fragments_as_residue_idxs,
+                                           return_Labeler=True,
+                                           accept_guess=accept_guess,
+                                           write_to_disk={"BW":write_to_disk_BW,
+                                                          "CGN":False}[key])
+        if str(option).lower() != 'none':
+            print("INFO: these are the %s fragments mapped onto your topology")
+            fragment_defs.update(CL.top2defs(top,
+                                               map_conlab=map_CL,
+                                               fragments=fragments_as_residue_idxs,
+                                               return_defs=True))
+            if not accept_guess:
+                input("Hit enter to continue!\n")
+
+    return fragment_defs
 
 def _parse_fragment_naming_options(fragment_names, fragments, top):
     r"""
@@ -268,11 +293,10 @@ def _parse_coloring_options(color_option, n,
             colors = _np.array(color_cycle)[vec_idxs].tolist()
     elif isinstance(color_option, str):
         color_option = color_option.split(",")
-        if len(color_option)==0:
+        if len(color_option)==1:
             colors = [color_option[0] for __ in range(n)]
-
-    if isinstance(color_option,list):
-        if len(color_option)<n:
+    elif isinstance(color_option,list):
+        if len(color_option)>n:
             raise ValueError("Not enough input values %s for expected output of size n %u"%(color_option,n))
         else:
             colors = color_option[:n]
@@ -474,11 +498,12 @@ def residue_neighborhoods(topology, trajectories, residues,
                                               jax=jax,
                                               xmax=n_ctcs,
                                               label_fontsize_factor=panelsize2font / panelsize,
-                                              shorten_AAs=short_AA_names
+                                              shorten_AAs=short_AA_names,
+                                              color=ihood.partner_fragment_colors
                                               )
 
     if not distro:
-        xmax = _np.max([len(jax.patches) for jax in bar_ax.flatten()])+.5
+        xmax = _np.max([jax.patches[-1].get_x()+jax.patches[-1].get_width()/2 for jax in bar_ax.flatten()])+.5
         [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
     bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
@@ -884,32 +909,12 @@ def interface(
 
     fragments_as_residue_idxs, user_wants_consenus = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
-
-    BW, BWtf = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments_as_residue_idxs,
-                                       return_Labeler=True,
-                                       accept_guess=accept_guess,
-                                       write_to_disk=write_to_disk_BW)
-    fragment_defs = {}
-    if str(BW_uniprot).lower() != 'none':
-        print("INFO: these are the BW fragments mapped onto your topology")
-        fragment_defs.update(BWtf.top2defs(refgeom.top,
-                                           map_conlab=BW,
-                                           fragments=fragments_as_residue_idxs,
-                                           return_defs=True))
-        if interactive:
-            input("Hit enter to continue!\n")
-    CGN, CGNtf = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs,
-                                         return_Labeler=True,
-                                         accept_guess=accept_guess)
-    if str(CGN_PDB).lower() != 'none':
-        print("INFO: these are the CGN fragments mapped onto your topology")
-        fragment_defs.update(CGNtf.top2defs(refgeom.top,
-                                            map_conlab=CGN,
-                                            fragments=fragments_as_residue_idxs,
-                                            return_defs=True))
-        if interactive:
-            input("Hit enter to continue!\n")
-
+    fragment_defs = _parse_consensus_options_and_return_fragment_defs({"BW":BW_uniprot,
+                                              "CGN":CGN_PDB},
+                                                                      refgeom.top,
+                                                                      fragments_as_residue_idxs,
+                                                                      accept_guess=accept_guess,
+                                                                      write_to_disk_BW=write_to_disk_BW)
     if user_wants_consenus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _frag_dict_2_frag_groups(fragment_defs, ng=2)
@@ -991,8 +996,6 @@ def interface(
                                         fragment_idxs=fragment_idxs,
                                         fragment_names=[fragment_names[idx] for idx in fragment_idxs],
                                         atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
-                                        # names=names,#[names[idx] for idx in idxs],
-                                        # colors=[fragcolors[idx] for idx in idxs]
                                         ))
 
     ctc_grp_intf = ContactGroup(ctc_objs,
@@ -1236,7 +1239,12 @@ def _fragment_overview(a,labtype):
         raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
 
     top = md.load(a.topology).top
-    map_conlab = obj.top2map(top)
+    from .nomenclature_utils import _guess_nomenclature_fragments
+    fragments = get_fragments(top,method="lig_resSeq+",
+                              verbose=False)
+    frag_idxs = _guess_nomenclature_fragments(obj, top, fragments)
+
+    map_conlab = obj.top2map(top, restrict_to_residxs=_np.hstack([fragments[ii] for ii in frag_idxs]))
     obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
     if str(a.AAs).lower()!="none":
         AAs = [aa.strip(" ") for aa in a.AAs.split(",")]
