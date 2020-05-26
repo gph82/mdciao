@@ -34,7 +34,7 @@ class ExamplesCLTs(object):
     def mdc_neighborhood(self):
         return ["mdc_neighborhoods.py",
                 "%s %s" % (self.pdb, self.xtc),
-                "--resSeq_idxs 394",
+                "--residues L394",
                 "--ctc_cutoff_Ang 4",
                 "--n_smooth_hw 1",
                 "--table xlsx",
@@ -55,13 +55,18 @@ class ExamplesCLTs(object):
     def mdc_interface(self):
         return ["mdc_interface.py ",
                 "%s %s" % (self.pdb, self.xtc),
-                " --fragments resSeq+",
                 " --ctc_cutoff_Ang 4 ",
                 " --frag_idxs_group_1 0",
                 " --frag_idxs_group_2 3",
                 " --BW_uniprot %s" % self.BW_file,
                 " --CGN_PDB %s" % self.CGN_file
                 ]
+
+    @property
+    def mdc_compare_neighborhoods(self):
+        pass
+
+
 
     @property
     def clts(self):
@@ -79,6 +84,7 @@ class ExamplesCLTs(object):
             oneline = oneline[:-2]
         oneline = " ".join(oneline)
         print(oneline.replace("--", "\n--"))
+        print("\n\nYou can paste the line below to execute:")
         print(oneline)
 
     def run(self, clt,show=True, write_to_tmpdir=False):
@@ -89,7 +95,7 @@ class ExamplesCLTs(object):
             oneline = oneline[:-2]
         oneline = " ".join(oneline)
         if write_to_tmpdir:
-            with _TD(suffix="test_mdciao") as tmpdir:
+            with _TD(suffix="mdciao") as tmpdir:
                 oneline +=" --output_dir %s"%tmpdir
                 _run(oneline.split(),
                      #text=True,
