@@ -91,10 +91,9 @@ def _parser_add_time_traces(parser):
     parser.set_defaults(plot_timedep=True)
 
 def _parser_add_distro(parser):
-    parser.add_argument('--distribution', dest="distro", action='store_true',
+    parser.add_argument('-d', '--distribution', dest="distro", action='store_true',
                         help='Plot distance distributions instead of contact bar plots. Default is False.')
-    parser.add_argument('--no-distribution', dest="distro", action='store_false',
-                       )
+
     parser.set_defaults(distro=False)
 
 def _parser_add_smooth(parser):
@@ -131,7 +130,7 @@ def _parser_add_gray_backgroud(parser):
     parser.set_defaults(gray_background=False)
 
 def _parser_add_fragments(parser):
-    parser.add_argument('--fragments', default=['lig_resSeq+'], nargs='+',
+    parser.add_argument("-fr",'--fragments', default=['lig_resSeq+'], nargs='+',
                         help=("R|How to sub-divide the topology into fragments.\n"
                               "Several options possible. Taking the example sequence:\n"
                               "…-A27,Lig28,K29-…-W40,D45-…-W50,CYSP51,GDP52\n"
@@ -193,7 +192,7 @@ def _parser_add_nomenclature(parser):
     parser.add_argument("--CGN_PDB", type=str, help="PDB code for a consensus G-protein nomenclature", default='None')
 
 def _parser_add_graphic_ext(parser):
-    parser.add_argument('--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
+    parser.add_argument('-ge','--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
                         default='.pdf')
 
 def _parser_add_no_fragfrag(parser):
@@ -211,10 +210,9 @@ def _parser_add_pbc(parser):
     parser.set_defaults(pbc=True)
 
 def _parser_add_short_AA_names(parser):
-    parser.add_argument('--short_AAs', dest='short_AA_names', action='store_true',
+    parser.add_argument('-sa','--short_AAs', dest='short_AA_names', action='store_true',
                         help="Use one-letter aminoacid names when possible, e.g. K145 insted of Lys145."
                              " Defaut is False")
-    parser.add_argument('--no-short_AAs', dest='short_AA_names', action='store_false')
     parser.set_defaults(short_AA_names=False)
 
 def _parser_add_output_desc(parser, default='output_sites'):
@@ -240,7 +238,7 @@ def _parser_add_fragment_names(parser):
                         default="")
 
 def _parser_add_n_ctcs(parser, default=5):
-    parser.add_argument("--n_ctcs", type=int,
+    parser.add_argument("-nc", "--n_ctcs", type=int,
                         help="Only the first n_ctcs most-frequent contacts "
                              "will be written to the ouput. Default is %u."%default,
                         default=default)
@@ -262,7 +260,7 @@ def _parser_add_graphic_dpi(parser):
                         default=150)
 
 def _parser_add_table_ext(parser):
-    parser.add_argument('--table_ext', type=str,
+    parser.add_argument('-te','--table_ext', type=str,
                         help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
                         default=None)
 
@@ -294,7 +292,7 @@ def _parser_add_conslabels(parser):
                         help="Print the idxs and resnames of these consensus labels, e.g. 3.50,2.63",
                         default=None)
 def _parser_add_residues(parser):
-    parser.add_argument('--residues', type=str,
+    parser.add_argument('-r', '--residues', type=str,
                         help='The residues of interest, as coma-separated-values without spaces.\n'
                              'The input is very flexible and accepts\n'
                              'mixed descriptors and wildcards, eg: "GLU*,ARG*,GDP*,LEU394,380-385"\n'
@@ -302,7 +300,7 @@ def _parser_add_residues(parser):
                              " (394 in LEU394), unless --serial_idxs is passed as an option.")
 
 def _parser_add_no_frag(parser):
-    parser.add_argument("--no-fragments", dest='fragmentify',action='store_false',
+    parser.add_argument('-nf',"--no-fragments", dest='fragmentify',action='store_false',
                         help="Do not use fragments. Defautl is to use them")
     parser.set_defaults(fragmentify=True)
 
@@ -313,6 +311,12 @@ def _parser_add_frag_colors(parser):
                              " Any matplotlib colors can be used. Default is 'tab:blue'\n"
                              " Why 'tab'? check https://matplotlib.org/3.1.1/tutorials/colors/colors.html !",
                         default="tab:blue")
+
+def _paser_add_guess(parser):
+    parser.add_argument("-ni", "-no-interactive",
+                        dest="accept_guess", action="store_true",
+                        help="Try not to be interactive. This can make wrong choices for the user, advanded only.")
+    parser.set_defaults(accept_guess=False)
 
 # TODO group the parser better!
 # TODO add short versions of the most frequent options
@@ -488,17 +492,17 @@ def parser_for_interface():
                                           'can be automatically broken down into fragments and use them directly.')
 
     _parser_add_fragments(parser)
-    parser.add_argument("--frag_idxs_group_1", type=str,
+    parser.add_argument("-fg1","--frag_idxs_group_1", type=str,
                         help="Indices of the fragments that belong to the group_1. "
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [0]", default=None)
-    parser.add_argument("--frag_idxs_group_2", type=str,
+    parser.add_argument("-fg2","--frag_idxs_group_2", type=str,
                         help="Indices of the fragments that belong to the group_2. "
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [1]", default=None)
     _parser_add_cutoff(parser)
     _parser_add_n_ctcs(parser, default=10)
-    parser.add_argument("--interface_cutoff_Ang", type=float,
+    parser.add_argument("-ic", "--interface_cutoff_Ang", type=float,
                         help="The interface between both groups is defined as the set of group_1-group_2-"
                              "distances that are within this "
                              "cutoff in the reference topology. Otherwise, a large number of "
@@ -510,11 +514,8 @@ def parser_for_interface():
     _parser_add_time_traces(parser)
     _parser_add_n_jobs(parser)
     _parser_add_fragment_names(parser)
+    _parser_add_no_frag(parser)
 
-    #parser.add_argument('--consolidate', dest='consolidate_opt', action='store_true',
-    #                    help="Treat all trajectories as fragments of one single trajectory. Default is True")
-    #parser.add_argument('--dont_consolidate', dest='consolidate_opt', action='store_false')
-    #parser.set_defaults(consolidate_opt=True)
     _parser_add_nomenclature(parser)
     _parser_add_chunk(parser)
     _parser_add_output_desc(parser,'interface')
@@ -533,7 +534,7 @@ def parser_for_interface():
     parser.set_defaults(sort_by_av_ctcs=True)
     _parser_add_scheme(parser)
     _parser_add_pop(parser)
-
+    _paser_add_guess(parser)
     return parser
 
 def parser_for_contact_map():
