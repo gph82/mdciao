@@ -1316,11 +1316,11 @@ class ContactPair(object):
         iax.legend(loc=1, fontsize=_rcParams["font.size"] * .75,
                    ncol=_np.ceil(self.n.n_trajs / max_handles_per_row).astype(int)
                    )
-        ctc_label = self.label
+        #ctc_label = self.label
+        ctc_label = self.labels.w_fragments
         if shorten_AAs:
             ctc_label = self.labels.w_fragments_short_AA
-        # TODO: I do not think this removals of "None" are necessary any more
-        #ctc_label = ctc_label.replace("@None", "")
+
         if ctc_cutoff_Ang > 0:
             ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang) * 100)
 
@@ -2156,6 +2156,7 @@ class ContactGroup(object):
                                 jax=None,
                                 truncate_at=None,
                                 bar_width_in_inches=.75,
+                                color=["tab:blue"],
                                 ):
         r"""
         Base method for plotting the contact frequencies of the contacts
@@ -2187,9 +2188,8 @@ class ContactGroup(object):
             jax = _plt.gca()
 
         patches = jax.bar(xvec, freqs,
-                          # label=res_and_fragment_str,
                           width=.25,
-                          color=self.partner_fragment_colors
+                          color=color
                           )
         jax.set_yticks([.25, .50, .75, 1])
         jax.set_ylim([0, 1])
@@ -2197,6 +2197,7 @@ class ContactGroup(object):
         [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
         return jax
 
+    # TODO evaluate if able to merge with plot_neighborhood_freqs
     def plot_freqs_as_bars(self,
                            ctc_cutoff_Ang,
                            title_label,
@@ -2250,6 +2251,7 @@ class ContactGroup(object):
 
     def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
                                 n_nearest,
+                                color=["tab:blue"],
                                 xmax=None,
                                 jax=None,
                                 shorten_AAs=False,
@@ -2281,7 +2283,8 @@ class ContactGroup(object):
 
         # Base plot
         jax = self._plot_freqbars_baseplot(ctc_cutoff_Ang,
-                                           jax=jax)
+                                           jax=jax,
+                                           color=color)
 
         label_dotref = self.anchor_res_and_fragment_str
         label_bars = self.partner_res_and_fragment_labels
@@ -2300,6 +2303,8 @@ class ContactGroup(object):
         _add_tilted_labels_to_patches(jax,
                                       label_bars,
                                       label_fontsize_factor=label_fontsize_factor)
+        self._add_hatching_by_atomtypes(jax, ctc_cutoff_Ang)
+
 
         # Cosmetics
         title_label = "Contact frequency @%2.1f $\AA$\n" \
@@ -2311,7 +2316,45 @@ class ContactGroup(object):
         jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
         if xmax is not None:
             jax.set_xlim([-.5, xmax + 1 - .5])
+
         return jax
+
+    #TODO test and document
+    def _add_hatching_by_atomtypes(self, jax, ctc_cutoff_Ang):
+        list_of_dicts = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang)
+        hatched_lists = []
+        keys = ["BB-BB","SC-SC", "BB-SC","SC-BB"]
+        for ii, ictc in enumerate(self._contacts):
+            for key in keys:
+                if key not in list_of_dicts[ii].keys():
+                    list_of_dicts[ii][key]=0
+            if ictc.residues.anchor_index==1:
+                list_of_dicts[ii]["SC-BB"], list_of_dicts[ii]["BB-SC"] = list_of_dicts[ii]["BB-SC"], list_of_dicts[ii]["SC-BB"]
+
+        hatchets = {"BB-BB":"||",
+                    "SC-SC":"--",
+                    "BB-SC":"///",
+                    "SC-BB":'\\\\\\'}
+        for key in keys:
+            hatched_lists.append([idict[key] for idict in list_of_dicts])
+        hatched_lists = _np.vstack(hatched_lists).T
+        heights = _np.array([ipatch.get_height() for ipatch in jax.patches])
+        width = jax.patches[0].get_width()
+
+        w_hatched_lists = hatched_lists*heights[:,_np.newaxis]
+        for ii, key in enumerate(keys):
+            jax.bar(_np.arange(len(w_hatched_lists)),
+                    w_hatched_lists[:,ii],
+                    color="r",
+                    fill=False,
+                    ec="w",
+                    #ec="lightgray",
+                    alpha=.5,
+                    width=width*1.,
+                    fc=None,
+                    bottom = w_hatched_lists[:,:ii].sum(1),
+                    hatch=hatchets[key],
+                    lw=0)
 
     def plot_neighborhood_distributions(self,
                                         nbins=10,
