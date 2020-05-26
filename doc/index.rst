@@ -3,38 +3,124 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. figure:: imgs/banner.png
+   :scale: 33%
+
 Welcome to mdciao's documentation!
 ==================================
 
-The main goal of this Python library is to provide quick, "one-shot" command-line
-tools to analyze molecular simulation data using residue-residue distances, tyring to automate as much as possible while remaining highly customizable.
+``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by offering an API (TODO LINK) with all the methods used to construct the command-line tools. Here you find our :ref:`minimal_example`.
 
-The analysis is based on contact-frequencies, i.e. the percentage of simulation time
-that two given residues find each other at a distances smaller or equal than a given
-cut-off value.
+Under the hood, the module `mdtraj <http://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, while ``mdciao`` focuses on providing functionalities like:
 
-Starting from the files typically generated in
-the context of molecular dynamics (MD) simulations, i.e.
+* paper-ready tables and figures from the command line
 
-* topology files, like prot.gro or prot.pdb
-* trajectory files, like traj1.xtc, traj2.xtc
+  .. figure:: imgs/bars_and_PDF.png
+      :scale: 40%
+      :align: left
 
-mdciao will calculate contact frequencies, distance time-traces and overall number of interaction partners and produce quasi paper-ready tables and figures. Under the hood, the module `mdtraj <http://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, whereas mdciao provides functionalities like:
+      Left panel: most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein. A cutoff of 3.5 AA between heavy-atoms has been used. Residue labels combine residue names and consenus nomenclature. Right panel: associated distance distributions.
 
-* fragment definitions for quickly defining regions of interest
-* *automagic* map and incorporate consensus nomenclature like the Ballesteros-Weinstein (BW) or Common-G-Protein (CGN) to the analysis
-* site definitions for analysing and comparing equivalent moieties accross different setups
-* comparison tools to automatically detect and present frequency differences accross systems, e.g. to look for the effect of mutations, pH-differences etc
+
+* easy input of target residues, e.g. the following is valid and will evaluate and show all these residues together::
+
+  -r GLU*,GDP,L394,380-394
+
+* different fragmentation heuristics to easily define regions of interest, e.g. beyond the TER and CONNECT records of a `.pdb <http://www.wwpdb.org/documentation/file-format-content/format33/v3.3.html>`_ file::
+
+   Auto-detected fragments with method lig_resSeq+
+   fragment      0 with  354 AAs            LEU4(   0)- LEU394        (353 ) (0) resSeq jumps
+   fragment      1 with  340 AAs            GLN1( 354)- ASN340        (693 ) (1)
+   fragment      2 with   66 AAs            ALA2( 694)-  PHE67        (759 ) (2)
+   fragment      3 with  283 AAs           GLU30( 760)- LEU340        (1042) (3) resSeq jumps
+   fragment      4 with    1 AAs          P0G395(1043)- P0G395        (1043) (4)
+
+* *automagically* map and incorporate consensus nomenclature like the `Ballesteros-Weinstein-Numbering <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_ (BW) or `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_  to the analysis, either from local files or over the network in the `GPRC.db <https://gpcrdb.org/>`_ and from `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_ ::
+
+   No local file ./adrb2_human.xlsx found, checking online in
+   https://gpcrdb.org/services/residues/extended/adrb2_human ...done!
+    TM1 with   32 AAs      GLU30@1.29( 906)-  PHE61@1.60   (937 ) (TM1)
+   ICL1 with    4 AAs     GLU62@12.48( 938)-  GLN65@12.51  (941 ) (ICL1)
+    ...
+    TM5 with   42 AAs     ASN196@5.35(1069)- GLU237@5.76   (1110) (TM5)
+    TM6 with   35 AAs     CYS265@6.27(1113)- GLN299@6.61   (1147) (TM6)
+    ...
+    ...
+   No local file ./CGN_3SN6.txt found, checking online in
+   https://www.mrc-lmb.cam.ac.uk/CGN/lookup_results/3SN6.txt...done
+   No local PDB file for 3SN6 found in directory ., checking online in
+   https://files.rcsb.org/download/3SN6.pdb ...found!./mdas/mdas/notebooks/data/B2_model_imp/runfiles/confout1.gro
+     G.HN with   28 AAs    THR9@G.HN.26(   5)-  VAL36@G.HN.53(32  ) (G.HN)
+   G.hns1 with    3 AAs   TYR37@G.hns1.1(  33)-  ALA39@G.hns1.3(35  ) (G.hns1)
+   ...
+   G.s6h5 with    5 AAs  THR364@G.s6h5.1( 323)- ASP368@G.s6h5.5(327 ) (G.s6h5)
+     G.H5 with   26 AAs   THR369@G.H5.1( 328)- LEU394@G.H5.26(353 ) (G.H5)
+
+
+* define interfaces and compute interfaces automatically:
+
+* use site definitions for equivalent moieties across different setups
+* compare, detect, and show frequency differences across different systems, e.g. to look for the effect of mutations, pH-differences etc
 * TODO expand
+
+Basic Principle
+---------------
+
+``mdciao``  takes the files typically generated by a molecular dynamics (MD) simulation, i.e.
+
+* topology files, like *prot.gro* or *prot.pdb*
+* trajectory files, like *traj1.xtc*, *traj2.xtc*
+
+and calculates the  time-traces of residue-residue distances, and from there, **contact frequencies** and **distance distributions**.
 
 .. note::
 
- Lastly, a note of caution regarding the above definitions for *contact* and *frequency*:
+ A note of caution regarding the above definitions for *contact* and *frequency*:
 
  * the kinetic information is averaged out. Contacts quickly breaking and forming and contacts that break (or form) only once **will have the same frequency** as long as the **fraction of total time** they are formed is the same. For analysis taking kinetics into account, use. e.g. `pyemma <http://mdtraj.org>`_.
  * The sharp, "distance-only" cutoff can sometimes over- or under-represent some interaction types. Modules like `get_contacts <https://github.com/getcontacts/getcontacts>`_ capture these interactions better.
 
-However, both these issues (if/when they arise) can be spotted easily by looking at the time-traces of said contacts and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
+ However, both these issues (if/when they arise) can be spotted easily by looking at the time-traces of said contacts and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
+
+.. _minimal_example:
+
+Minimal Example
+---------------
+
+This is one very simple example command::
+
+ mdc_neighborhoods.py p2.noH.pdb run1.1-p.stride.5.noH.xtc --residues L394 -nf
+
+
+Will print the following to the terminal::
+
+ ...
+ #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
+ 1:     0.55   LEU394-ARG389       0-0         353-348        33     0.55
+ 2:     0.47   LEU394-LYS270       0-0         353-972        71     1.02
+ 3:     0.38   LEU394-LEU388       0-0         353-347        32     1.39
+ 4:     0.23   LEU394-LEU230       0-0         353-957        56     1.62
+ 5:     0.10   LEU394-ARG385       0-0         353-344        29     1.73
+ These 5 contacts capture 1.7 of the total frequency 1.8 (over 87 contacts). 4 ctcs already capture 90.0% of 1.8.
+ The following files have been created
+ ./neighborhoods.overall@3.5_Ang.pdf
+ ./neighborhoods.LEU394.time_trace@3.5_Ang.pdf
+ ./neighborhoods.LEU394.gs-b2ar.dat
+
+And produce the following figures:
+
+.. figure:: imgs/neighborhoods.overall@3.5_Ang.Fig.1.png
+   :scale: 50%
+
+   **Fig. 1**: (neighborhoods.overall@3.5_Ang.pdf). Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the alpha5 helix of the Gs-protein are shown. The simualtion started from the `3SN6` structure (including the B2AR receptor). The simualtion itself can be seen here
+
+The timetraces behind the above figure are also produced by ``mdc_neighborhoods`` automatically:
+
+.. figure:: imgs/neighborhoods.LEU394.time_trace@3.5_Ang.Fig.2.png
+   :scale: 33%
+   :align: center
+
+   Time-traces of the residue-residue distances behind the frequency barplots of Fig. 1. The last time-trace represents the total number of neighbors (distances below the given cutoff) at any given moment in the trajectory. On average, LEU394 has 1.7 non-bonded neighbors below the cutoff (see legend of Fig.1)
 
 Command line tools
 ==================
