@@ -850,7 +850,7 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
     whatever and valued with residue idxs and prompt
     the user how to re-group them
 
-    It wrappes around :obj:`_match_dict_by_patterns` to
+    It wraps around :obj:`_match_dict_by_patterns` to
     under the hood
 
     TODO: refactor into str_and_dict_utils
