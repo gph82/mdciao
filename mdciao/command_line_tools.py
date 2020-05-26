@@ -285,6 +285,7 @@ def _parse_coloring_options(color_option, n,
     if str(color_option).lower()=="none":
         color_option = False
 
+
     if isinstance(color_option, bool):
         if not color_option:
             colors = [default_color for __ in range(n)]
@@ -302,6 +303,318 @@ def _parse_coloring_options(color_option, n,
             colors = color_option[:n]
 
     return colors
+
+'''
+def density_by_sites(topology,
+          trajectories,
+          site_files,
+          default_fragment_index=None,
+          desc_out="density",
+          output_dir='.',
+                     stride=1,
+          ):
+
+    from subprocess import check_output as _co, STDOUT as _STDOUT, CalledProcessError
+
+    _offer_to_create_dir(output_dir)
+
+    # Prepare naming
+    desc_out = desc_out.rstrip(".")
+
+    # Inform about trajectories
+    xtcs = sorted(trajectories)
+
+    print("Will compute the densities for sites\n %s\nin the trajectories:\n  %s" % (
+        "\n ".join(site_files),
+        "\n  ".join(xtcs)))
+    # Inform about fragments
+    refgeom = md.load(topology)
+    fragments = get_fragments(refgeom.top)
+
+    sites = [_sitefile2sitedict(ff) for ff in site_files]
+
+    with _TD() as tmpdirname:
+        tocat=xtcs
+        if stride > 1:
+            tocat=[]
+            for ii, ixtc in enumerate(xtcs):
+                strided_file = path.join(tmpdirname,'%u.strided.%u.xtc'%(ii,stride))
+                tocat.append(strided_file)
+                cmd = "gmx trjconv -f %s -o %s -skip %u"%(ixtc, strided_file,stride)
+                # OMG SUPER DANGEROUS
+                try:
+                    _co(cmd.split())
+                except:
+                    pass
+        trjcatted_tmp='trjcatted.xtc'
+        trjcatted_tmp=path.join(tmpdirname,trjcatted_tmp)
+        cmd = "gmx trjcat -f %s -o %s -cat"%(' '.join(tocat),trjcatted_tmp)
+        _co(cmd.split())
+
+        for ss in sites:
+            #print(ss["name"])
+            AAresSeqs = ss["bonds"]["AAresSeq"]
+            AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+            #AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+
+            resSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, refgeom.top,
+                                                                     default_fragment_idx=default_fragment_index,
+                                                                     )
+
+            aa_in_sites = _np.unique(_np.hstack([[aa.index for aa in refgeom.top.residue(ii).atoms] for ii in resSeq2residxs.values()]))
+            aa_in_sites_gmx = aa_in_sites+1
+            atom_in_sites_gmx_str=','.join([str(ii) for ii in aa_in_sites_gmx])
+            if False:
+                for ixtc in xtcs:
+                    outfile = '%s.site.%s'%(splitext(ixtc)[0],ss["name"])
+                    outfile = path.join(output_dir,outfile)
+
+                    cmd = "gmx_gromaps maptide -spacing .05 -f %s -s %s -mo %s -select 'atomnr %s'"%(ixtc,topology,outfile,atom_in_sites_gmx_str)
+                    print(cmd)
+                    out = _co(_cmdstr2cmdtuple(cmd))#, stderr=_STDOUT)  # this should, in principle, work
+                    #cmd = (gmxbin, "check", "-f", fname)
+
+            outfile = '%s.site.%s.stride.%02u'%(desc_out.strip("."),ss["name"].strip("."),stride)
+            outfile = path.join(output_dir,outfile)
+            cmd = "gmx_gromaps maptide -spacing .1 -f %s -s %s -mo %s -select 'atomnr %s'"%(trjcatted_tmp,topology,outfile,atom_in_sites_gmx_str)
+            print(cmd)
+            out = _co(_cmdstr2cmdtuple(cmd))
+
+def site_figures(topology,
+          site_files,
+                 BW_file="None",
+                 CGN_PDB="None",
+          ):
+
+
+    print("Will print VMD lines for sites\n %s"%(
+        "\n ".join(site_files)))
+    # Inform about fragments
+    refgeom = md.load(topology)
+    fragments = get_fragments(refgeom.top)
+
+    sites = [_sitefile2sitedict(ff) for ff in site_files]
+
+    # Dow we want CGN definitions:
+
+    CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
+    #for key, val in CGN.items():
+    #    print(key,val)
+    for ss in sites:
+        #print(ss["name"])
+        AAresSeqs = ss["bonds"]["AAresSeq"]
+        AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
+
+        resSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, refgeom.top)
+        ctc_idxs = _sites_to_ctc_idxs_old([ss], resSeq2residxs)
+        title="\nsite: %s"%ss["name"]
+        if "info" in ss.keys():
+            title+= ' (%s)'%ss["info"]
+        print(title)
+        if "best run" in ss.keys():
+            vmd_cmd =  "mol new %s\n"%topology
+            vmd_cmd += "mol addfile %s waitfor all\n"%(ss["best run"])
+            vmd_cmd += 'mol addfile figs/density.site.%s.ccp4\n'%ss["name"]
+            print(vmd_cmd[:-1])
+        from .residue_and_atom_utils import shorten_AA as _shorten_AA
+        for r1,r2 in ctc_idxs:
+            r1 = refgeom.top.residue(r1)
+            r2 = refgeom.top.residue(r2)
+            print("(resname %s and resid %s or resname %s and resid %s) and noh and not name O N "%(r1.name,r1.resSeq, r2.name,r2.resSeq))
+            print('%s-%s'%(_shorten_AA(r1), _shorten_AA(r2)))
+            print('%s-%s'%(CGN[r1.index], CGN[r2.index]))
+
+
+        input()
+'''
+
+# TODO Consider putting the figure instantiation also here
+def _manage_timedep_ploting_and_saving_options(ctc_grp : ContactGroup,
+                                               myfig,
+                                               ctc_cutoff_Ang,
+                                               output_desc,
+                                               graphic_ext,
+                                               output_dir=".",
+                                               graphic_dpi=150,
+                                               plot_timedep=True,
+                                               separate_N_ctcs=False,
+                                               table_ext=".dat",
+                                               t_unit="ps",
+                                               title=None,
+                                               ):
+    r"""
+    CLTs share this part and have the same options to save files of timedep plots
+
+    Parameters
+    ----------
+    ctc_grp
+    myfig
+    ctc_cutoff_Ang
+    output_desc
+    graphic_ext
+    output_dir
+    graphic_dpi
+    plot_timedep
+    separate_N_ctcs
+    table_ext
+    t_unit
+
+    Returns
+    -------
+
+    """
+    firstname = output_desc
+    lastname = ""
+    # TODO manage interface and sites appropiately
+    if ctc_grp.is_neighborhood:
+        lastname = "%s"%ctc_grp.anchor_res_and_fragment_str.replace('*', "")
+
+    if title is None:
+        title = output_desc #TODO consider using lastname
+
+    fname_timedep = ('%s.%s.time_trace@%2.1f_Ang.%s' % (firstname,
+                                                           lastname,
+                                                           ctc_cutoff_Ang,
+                                                           graphic_ext.strip("."))).replace("..", ".")
+
+    fname_N_ctcs = ('%s.%s.time_trace@%2.1f_Ang.N_ctcs.%s' % (firstname,
+                                                                 lastname,
+                                                                 ctc_cutoff_Ang,
+                                                                 graphic_ext.strip("."))).replace("..", ".")
+
+
+    # Differentiate the type of figures we can have
+    if len(myfig) == 1:
+        if plot_timedep:
+            fnames = [fname_timedep]
+        else:
+            fnames = [fname_N_ctcs]
+    elif len(myfig) == 2:
+        fnames = [fname_timedep, fname_N_ctcs]
+
+    for iname, ifig in zip(fnames, myfig):
+        fname = _path.join(output_dir, iname)
+        ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
+        ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+        plt.close(ifig)
+        print(fname)
+
+    if plot_timedep:
+        ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True)
+    if separate_N_ctcs:
+        ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True,
+                           ctc_cutoff_Ang=ctc_cutoff_Ang)
+    print()
+
+#TODO introduce coverage exclusion labels
+# like https://coverage.readthedocs.io/en/v4.5.x/excluding.html
+# or refactor these methods into another test branch
+"""
+def _cmdstr2cmdtuple(cmd):
+    return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
+"""
+
+def _my_color_schemes(istr):
+    return {"peter": ["red", "purple", "gold", "darkorange"],
+            "hobat": ["m", "darkgreen", "darkorange", "navy"],
+            "auto":  plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]
+
+def _load_any_geom(geom):
+    r"""
+    Helper method for command-line-tools to create :obj:`mdtraj.Trajectories`
+    from either filenames or :obj:`mdtraj.Trajectories` (i.e. do nothing)
+    Parameters
+    ----------
+    geom : str or :obj:`mdtraj.Trajectory`
+
+    Returns
+    -------
+    outgeom : :obj:`mdtraj.Trajectory`
+    """
+    if isinstance(geom, str):
+        outgeom = md.load(geom)
+    else:
+        outgeom = geom
+
+    return outgeom
+
+def _fragment_overview(a,labtype):
+    r"""
+    provide the CLTs BW_overview and CGN_overview
+
+    Parameters
+    ----------
+    a : :obj:`argparse.Namespace` object
+        Contains the arguments used by the user
+    labtype : srt, "BW" or "CGN"
+        lets the code know which :obj:`LabelerConsensus` to use
+
+    Returns
+    -------
+    None
+    """
+    if labtype == "CGN":
+        val = a.PDB_code_or_txtfile
+        if _path.exists(val):
+            # This is sort of un-winding the loging behind
+            # the initialization of LabelerCGN, but it's
+            # better to add 2 lins of code here than
+            # changing the object's initialization
+            local_path, basename = _path.split(val)
+            ref_PDB = _path.splitext(basename)[0].replace("CGN_","")
+            assert len(ref_PDB)==4 and "CGN_%s.txt"%ref_PDB==basename
+            obj = LabelerCGN(ref_PDB,
+                             local_path=local_path,
+                             #write_to_disk=a.write_to_disk
+                             try_web_lookup=False)
+        else:
+            obj = LabelerCGN(val)
+
+    elif labtype == "BW":
+        val = a.BW_uniprot_or_file
+        if _path.exists(val):
+            format = "%s"
+        else:
+            format = _signature(LabelerBW).parameters["format"].default
+        obj = LabelerBW(val,
+                  format=format,
+                  write_to_disk=a.write_to_disk)
+    else:
+        raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
+
+    top = md.load(a.topology).top
+    from .nomenclature_utils import _guess_nomenclature_fragments
+    fragments = get_fragments(top,method="lig_resSeq+",
+                              verbose=False)
+    frag_idxs = _guess_nomenclature_fragments(obj, top, fragments)
+
+    map_conlab = obj.top2map(top, restrict_to_residxs=_np.hstack([fragments[ii] for ii in frag_idxs]))
+    obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
+    if str(a.AAs).lower()!="none":
+        AAs = [aa.strip(" ") for aa in a.AAs.split(",")]
+        for aa in AAs:
+            cands =_findAA(top,aa)
+            if len(cands) == 0:
+                print("No %s found in the input topology" % aa)
+            else:
+                for idx in cands :
+                    rr = top.residue(idx)
+                    print(idx, rr, map_conlab[idx])
+        print()
+
+    if str(a.labels).lower() != "none":
+        labels = [aa.strip(" ") for aa in a.labels.split(",")]
+        conlab2residx = obj.conlab2residx(top, map=map_conlab)
+        for lab in labels:
+            for match in _filter(list(conlab2residx.keys()),lab):
+                idx = conlab2residx[match]
+                rr = top.residue(idx)
+                print(idx,rr, map_conlab[idx])
+
+    if a.print_conlab:
+        for ii, ilab in enumerate(map_conlab):
+            print(ii, top.residue(ii), ilab)
+
 
 def residue_neighborhoods(topology, trajectories, residues,
                           res_idxs=False,
@@ -579,291 +892,6 @@ def residue_neighborhoods(topology, trajectories, residues,
             'time_array': time_array,
             "neighborhoods":neighborhoods}
 
-def sites(topology,
-          trajectories,
-          site_files,
-          ctc_cutoff_Ang=3.5,
-          stride=1,
-          scheme="closest-heavy",
-          chunksize_in_frames=10000,
-          n_smooth_hw=0,
-          pbc=True,
-          BW_uniprot="None",
-          CGN_PDB="None",
-          default_fragment_index=None,
-          fragment_names="",
-          fragmentify=True,
-          output_npy="output_sites",
-          output_dir='.',
-          graphic_ext=".pdf",
-          t_unit='ns',
-          curve_color="auto",
-          gray_background=False,
-          graphic_dpi=150,
-          output_desc="sites",
-          short_AA_names=False,
-          write_to_disk_BW=False,
-          ylim_Ang=10,
-          n_jobs=1,
-          ):
-    ylim_Ang = _np.float(ylim_Ang)
-    _offer_to_create_dir(output_dir)
-
-    # Prepare naming
-    desc_out = output_npy
-    desc_out = desc_out.rstrip(".")
-
-    # Inform about trajectories
-    xtcs = _get_sorted_trajectories(trajectories)
-
-    print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
-        "\n ".join(site_files),
-        _inform_about_trajectories(xtcs),
-          stride))
-
-    # Inform about fragments
-    refgeom = _load_any_geom(topology)
-
-    if fragmentify:
-        fragments = get_fragments(refgeom.top, method="resSeq+")
-    else:
-        raise NotImplementedError("This feature is not yet implemented")
-
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
-
-
-    for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
-        _print_frag(ifrag_idx, refgeom.top, ifrag, end='')
-        print(" ", frag_name)
-
-    # Do we want BW definitions
-    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments,
-                                 write_to_disk=write_to_disk_BW)
-
-    # Dow we want CGN definitions:
-    CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
-
-    sites = [_sitefile2sitedict(ff) for ff in site_files]
-    ctc_idxs_small, AAresSeq2residxs = _sites_to_ctc_idxs(sites, refgeom.top,
-                                                          fragments=fragments,
-                                                          default_fragment_idx=default_fragment_index,
-                                                          fragment_names=fragment_names)
-
-
-    print('%10s  %10s  %10s  %10s %10s' % tuple(("residue  residx fragment fragment_name CGN ".split())))
-    for key, val in AAresSeq2residxs.items():
-        print('%10s  %10u  %10u  %10s %10s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key, CGN[val]))
-
-    ctcs, time_array, aps = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
-                                       chunksize=chunksize_in_frames,
-                                       return_times_and_atoms=True, consolidate=False, periodic=pbc,
-                                       scheme=scheme,
-                                       n_jobs=n_jobs)
-
-    # Abstract each site to a group of contacts
-    site_as_gc = {}
-    ctc_pairs_iterators = iter(ctc_idxs_small)
-    ctc_value_idx = iter(_np.arange(len(ctc_idxs_small)))  # there has to be a better way
-    for isite in sites:
-        key = isite["name"]
-        site_as_gc[key] = []
-        for __ in range(isite["n_bonds"]):
-            pair = next(ctc_pairs_iterators)
-            idx = next(ctc_value_idx)
-            consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN]) for idx in pair]
-            fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
-            site_as_gc[key].append(ContactPair(pair,
-                                               [itraj[:, idx] for itraj in ctcs],
-                                               time_array,
-                                               top=refgeom.top,
-                                               consensus_labels=consensus_labels,
-                                               trajs=xtcs,
-                                               fragment_idxs=fragment_idxs,
-                                               fragment_names=[fragment_names[idx] for idx in fragment_idxs],
-                                               #colors=[fragcolors[idx] for idx in idxs]
-                                               ))
-        site_as_gc[key] = ContactGroup(site_as_gc[key])
-
-    print("The following files have been created")
-    panelheight = 3
-    n_cols = _np.min((4, len(sites)))
-    n_rows = _np.ceil(len(sites) / n_cols).astype(int)
-    panelsize = 4
-    panelsize2font = 3.5
-    histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
-                                     figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
-
-    # One loop for the histograms
-    _rcParams["font.size"] = panelsize * panelsize2font
-    for jax, (site_name, isite_nh) in zip(histoax.flatten(),
-                                       site_as_gc.items()):
-        isite_nh.plot_freqs_as_bars(ctc_cutoff_Ang, site_name,
-                                    jax=jax,
-                                    xlim=_np.max([ss["n_bonds"] for ss in sites]),
-                                    label_fontsize_factor=panelsize2font / panelsize,
-                                    shorten_AAs=short_AA_names
-                                    )
-
-
-    if scheme!="closest-heavy":
-        scheme_desc='%s.'%scheme
-    else:
-        scheme_desc=''
-    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "%s.overall.%s%s" % (output_desc, scheme_desc, graphic_ext.strip("."))
-    fname = _path.join(output_dir, fname)
-    histofig.savefig(fname, dpi=graphic_dpi)
-    plt.close(histofig)
-    print("The following files have been created")
-    print(fname)
-    for site_name, isite_nh in site_as_gc.items():
-        fname = 'site.%s.%s.%stime_resolved.%s' % (
-            site_name.replace(" ", "_"), desc_out.strip("."),
-            scheme_desc, graphic_ext.strip("."))
-        fname = _path.join(output_dir, fname)
-
-        myfig = isite_nh.plot_timedep_ctcs(panelheight,
-                                           color_scheme=_my_color_schemes(curve_color),
-                                           ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                           n_smooth_hw=n_smooth_hw,
-                                           dt=_tunit2tunit["ps"][t_unit],
-                                           t_unit=t_unit,
-                                           gray_background=gray_background,
-                                           shorten_AAs=short_AA_names,
-                                           plot_N_ctcs=True,
-                                           ylim_Ang=ylim_Ang,
-                                           )[0]
-        # One title for all axes on top
-        myfig.axes[0].set_title("site: %s" % (isite["name"]))
-        plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-        plt.close(myfig)
-        print(fname)
-
-    return
-
-'''
-def density_by_sites(topology,
-          trajectories,
-          site_files,
-          default_fragment_index=None,
-          desc_out="density",
-          output_dir='.',
-                     stride=1,
-          ):
-
-    from subprocess import check_output as _co, STDOUT as _STDOUT, CalledProcessError
-
-    _offer_to_create_dir(output_dir)
-
-    # Prepare naming
-    desc_out = desc_out.rstrip(".")
-
-    # Inform about trajectories
-    xtcs = sorted(trajectories)
-
-    print("Will compute the densities for sites\n %s\nin the trajectories:\n  %s" % (
-        "\n ".join(site_files),
-        "\n  ".join(xtcs)))
-    # Inform about fragments
-    refgeom = md.load(topology)
-    fragments = get_fragments(refgeom.top)
-
-    sites = [_sitefile2sitedict(ff) for ff in site_files]
-
-    with _TD() as tmpdirname:
-        tocat=xtcs
-        if stride > 1:
-            tocat=[]
-            for ii, ixtc in enumerate(xtcs):
-                strided_file = path.join(tmpdirname,'%u.strided.%u.xtc'%(ii,stride))
-                tocat.append(strided_file)
-                cmd = "gmx trjconv -f %s -o %s -skip %u"%(ixtc, strided_file,stride)
-                # OMG SUPER DANGEROUS
-                try:
-                    _co(cmd.split())
-                except:
-                    pass
-        trjcatted_tmp='trjcatted.xtc'
-        trjcatted_tmp=path.join(tmpdirname,trjcatted_tmp)
-        cmd = "gmx trjcat -f %s -o %s -cat"%(' '.join(tocat),trjcatted_tmp)
-        _co(cmd.split())
-
-        for ss in sites:
-            #print(ss["name"])
-            AAresSeqs = ss["bonds"]["AAresSeq"]
-            AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
-            #AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
-
-            resSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, refgeom.top,
-                                                                     default_fragment_idx=default_fragment_index,
-                                                                     )
-
-            aa_in_sites = _np.unique(_np.hstack([[aa.index for aa in refgeom.top.residue(ii).atoms] for ii in resSeq2residxs.values()]))
-            aa_in_sites_gmx = aa_in_sites+1
-            atom_in_sites_gmx_str=','.join([str(ii) for ii in aa_in_sites_gmx])
-            if False:
-                for ixtc in xtcs:
-                    outfile = '%s.site.%s'%(splitext(ixtc)[0],ss["name"])
-                    outfile = path.join(output_dir,outfile)
-
-                    cmd = "gmx_gromaps maptide -spacing .05 -f %s -s %s -mo %s -select 'atomnr %s'"%(ixtc,topology,outfile,atom_in_sites_gmx_str)
-                    print(cmd)
-                    out = _co(_cmdstr2cmdtuple(cmd))#, stderr=_STDOUT)  # this should, in principle, work
-                    #cmd = (gmxbin, "check", "-f", fname)
-
-            outfile = '%s.site.%s.stride.%02u'%(desc_out.strip("."),ss["name"].strip("."),stride)
-            outfile = path.join(output_dir,outfile)
-            cmd = "gmx_gromaps maptide -spacing .1 -f %s -s %s -mo %s -select 'atomnr %s'"%(trjcatted_tmp,topology,outfile,atom_in_sites_gmx_str)
-            print(cmd)
-            out = _co(_cmdstr2cmdtuple(cmd))
-
-def site_figures(topology,
-          site_files,
-                 BW_file="None",
-                 CGN_PDB="None",
-          ):
-
-
-    print("Will print VMD lines for sites\n %s"%(
-        "\n ".join(site_files)))
-    # Inform about fragments
-    refgeom = md.load(topology)
-    fragments = get_fragments(refgeom.top)
-
-    sites = [_sitefile2sitedict(ff) for ff in site_files]
-
-    # Dow we want CGN definitions:
-
-    CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
-    #for key, val in CGN.items():
-    #    print(key,val)
-    for ss in sites:
-        #print(ss["name"])
-        AAresSeqs = ss["bonds"]["AAresSeq"]
-        AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
-
-        resSeq2residxs, _ = _interactive_fragment_picker_by_AAresSeq(AAresSeqs, fragments, refgeom.top)
-        ctc_idxs = _sites_to_ctc_idxs_old([ss], resSeq2residxs)
-        title="\nsite: %s"%ss["name"]
-        if "info" in ss.keys():
-            title+= ' (%s)'%ss["info"]
-        print(title)
-        if "best run" in ss.keys():
-            vmd_cmd =  "mol new %s\n"%topology
-            vmd_cmd += "mol addfile %s waitfor all\n"%(ss["best run"])
-            vmd_cmd += 'mol addfile figs/density.site.%s.ccp4\n'%ss["name"]
-            print(vmd_cmd[:-1])
-        from .residue_and_atom_utils import shorten_AA as _shorten_AA
-        for r1,r2 in ctc_idxs:
-            r1 = refgeom.top.residue(r1)
-            r2 = refgeom.top.residue(r2)
-            print("(resname %s and resid %s or resname %s and resid %s) and noh and not name O N "%(r1.name,r1.resSeq, r2.name,r2.resSeq))
-            print('%s-%s'%(_shorten_AA(r1), _shorten_AA(r2)))
-            print('%s-%s'%(CGN[r1.index], CGN[r2.index]))
-
-
-        input()
-'''
 def interface(
         topology=None,
         trajectories=None,
@@ -909,8 +937,8 @@ def interface(
 
     fragments_as_residue_idxs, user_wants_consenus = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
-    fragment_defs = _parse_consensus_options_and_return_fragment_defs({"BW":BW_uniprot,
-                                              "CGN":CGN_PDB},
+    fragment_defs = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
+                                                                       "CGN": CGN_PDB},
                                                                       refgeom.top,
                                                                       fragments_as_residue_idxs,
                                                                       accept_guess=accept_guess,
@@ -1081,192 +1109,167 @@ def interface(
 
     return ctc_grp_intf
 
-# TODO Consider putting the figure instantiation also here
-def _manage_timedep_ploting_and_saving_options(ctc_grp : ContactGroup,
-                                               myfig,
-                                               ctc_cutoff_Ang,
-                                               output_desc,
-                                               graphic_ext,
-                                               output_dir=".",
-                                               graphic_dpi=150,
-                                               plot_timedep=True,
-                                               separate_N_ctcs=False,
-                                               table_ext=".dat",
-                                               t_unit="ps",
-                                               title=None,
-                                               ):
-    r"""
-    CLTs share this part and have the same options to save files of timedep plots
+def sites(topology,
+          trajectories,
+          site_files,
+          ctc_cutoff_Ang=3.5,
+          stride=1,
+          scheme="closest-heavy",
+          chunksize_in_frames=10000,
+          n_smooth_hw=0,
+          pbc=True,
+          BW_uniprot="None",
+          CGN_PDB="None",
+          default_fragment_index=None,
+          fragment_names="",
+          fragmentify=True,
+          output_npy="output_sites",
+          output_dir='.',
+          graphic_ext=".pdf",
+          t_unit='ns',
+          curve_color="auto",
+          gray_background=False,
+          graphic_dpi=150,
+          output_desc="sites",
+          short_AA_names=False,
+          write_to_disk_BW=False,
+          ylim_Ang=10,
+          n_jobs=1,
+          ):
+    ylim_Ang = _np.float(ylim_Ang)
+    _offer_to_create_dir(output_dir)
 
-    Parameters
-    ----------
-    ctc_grp
-    myfig
-    ctc_cutoff_Ang
-    output_desc
-    graphic_ext
-    output_dir
-    graphic_dpi
-    plot_timedep
-    separate_N_ctcs
-    table_ext
-    t_unit
+    # Prepare naming
+    desc_out = output_npy
+    desc_out = desc_out.rstrip(".")
 
-    Returns
-    -------
+    # Inform about trajectories
+    xtcs = _get_sorted_trajectories(trajectories)
 
-    """
-    firstname = output_desc
-    lastname = ""
-    # TODO manage interface and sites appropiately
-    if ctc_grp.is_neighborhood:
-        lastname = "%s"%ctc_grp.anchor_res_and_fragment_str.replace('*', "")
+    print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
+        "\n ".join(site_files),
+        _inform_about_trajectories(xtcs),
+          stride))
 
-    if title is None:
-        title = output_desc #TODO consider using lastname
+    # Inform about fragments
+    refgeom = _load_any_geom(topology)
 
-    fname_timedep = ('%s.%s.time_trace@%2.1f_Ang.%s' % (firstname,
-                                                           lastname,
-                                                           ctc_cutoff_Ang,
-                                                           graphic_ext.strip("."))).replace("..", ".")
+    if fragmentify:
+        fragments = get_fragments(refgeom.top, method="resSeq+")
+    else:
+        raise NotImplementedError("This feature is not yet implemented")
 
-    fname_N_ctcs = ('%s.%s.time_trace@%2.1f_Ang.N_ctcs.%s' % (firstname,
-                                                                 lastname,
-                                                                 ctc_cutoff_Ang,
-                                                                 graphic_ext.strip("."))).replace("..", ".")
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
 
 
-    # Differentiate the type of figures we can have
-    if len(myfig) == 1:
-        if plot_timedep:
-            fnames = [fname_timedep]
-        else:
-            fnames = [fname_N_ctcs]
-    elif len(myfig) == 2:
-        fnames = [fname_timedep, fname_N_ctcs]
+    for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
+        _print_frag(ifrag_idx, refgeom.top, ifrag, end='')
+        print(" ", frag_name)
 
-    for iname, ifig in zip(fnames, myfig):
-        fname = _path.join(output_dir, iname)
-        ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
-        ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-        plt.close(ifig)
+    # Do we want BW definitions
+    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments,
+                                 write_to_disk=write_to_disk_BW)
+
+    # Dow we want CGN definitions:
+    CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
+
+    sites = [_sitefile2sitedict(ff) for ff in site_files]
+    ctc_idxs_small, AAresSeq2residxs = _sites_to_ctc_idxs(sites, refgeom.top,
+                                                          fragments=fragments,
+                                                          default_fragment_idx=default_fragment_index,
+                                                          fragment_names=fragment_names)
+
+
+    print('%10s  %10s  %10s  %10s %10s' % tuple(("residue  residx fragment fragment_name CGN ".split())))
+    for key, val in AAresSeq2residxs.items():
+        print('%10s  %10u  %10u  %10s %10s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key, CGN[val]))
+
+    ctcs, time_array, aps = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+                                       chunksize=chunksize_in_frames,
+                                       return_times_and_atoms=True, consolidate=False, periodic=pbc,
+                                       scheme=scheme,
+                                       n_jobs=n_jobs)
+
+    # Abstract each site to a group of contacts
+    site_as_gc = {}
+    ctc_pairs_iterators = iter(ctc_idxs_small)
+    ctc_value_idx = iter(_np.arange(len(ctc_idxs_small)))  # there has to be a better way
+    for isite in sites:
+        key = isite["name"]
+        site_as_gc[key] = []
+        for __ in range(isite["n_bonds"]):
+            pair = next(ctc_pairs_iterators)
+            idx = next(ctc_value_idx)
+            consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN]) for idx in pair]
+            fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
+            site_as_gc[key].append(ContactPair(pair,
+                                               [itraj[:, idx] for itraj in ctcs],
+                                               time_array,
+                                               top=refgeom.top,
+                                               consensus_labels=consensus_labels,
+                                               trajs=xtcs,
+                                               fragment_idxs=fragment_idxs,
+                                               fragment_names=[fragment_names[idx] for idx in fragment_idxs],
+                                               #colors=[fragcolors[idx] for idx in idxs]
+                                               ))
+        site_as_gc[key] = ContactGroup(site_as_gc[key])
+
+    print("The following files have been created")
+    panelheight = 3
+    n_cols = _np.min((4, len(sites)))
+    n_rows = _np.ceil(len(sites) / n_cols).astype(int)
+    panelsize = 4
+    panelsize2font = 3.5
+    histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
+                                     figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
+
+    # One loop for the histograms
+    _rcParams["font.size"] = panelsize * panelsize2font
+    for jax, (site_name, isite_nh) in zip(histoax.flatten(),
+                                       site_as_gc.items()):
+        isite_nh.plot_freqs_as_bars(ctc_cutoff_Ang, site_name,
+                                    jax=jax,
+                                    xlim=_np.max([ss["n_bonds"] for ss in sites]),
+                                    label_fontsize_factor=panelsize2font / panelsize,
+                                    shorten_AAs=short_AA_names
+                                    )
+
+
+    if scheme!="closest-heavy":
+        scheme_desc='%s.'%scheme
+    else:
+        scheme_desc=''
+    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
+    fname = "%s.overall.%s%s" % (output_desc, scheme_desc, graphic_ext.strip("."))
+    fname = _path.join(output_dir, fname)
+    histofig.savefig(fname, dpi=graphic_dpi)
+    plt.close(histofig)
+    print("The following files have been created")
+    print(fname)
+    for site_name, isite_nh in site_as_gc.items():
+        fname = 'site.%s.%s.%stime_resolved.%s' % (
+            site_name.replace(" ", "_"), desc_out.strip("."),
+            scheme_desc, graphic_ext.strip("."))
+        fname = _path.join(output_dir, fname)
+
+        myfig = isite_nh.plot_timedep_ctcs(panelheight,
+                                           color_scheme=_my_color_schemes(curve_color),
+                                           ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                           n_smooth_hw=n_smooth_hw,
+                                           dt=_tunit2tunit["ps"][t_unit],
+                                           t_unit=t_unit,
+                                           gray_background=gray_background,
+                                           shorten_AAs=short_AA_names,
+                                           plot_N_ctcs=True,
+                                           ylim_Ang=ylim_Ang,
+                                           )[0]
+        # One title for all axes on top
+        myfig.axes[0].set_title("site: %s" % (isite["name"]))
+        plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+        plt.close(myfig)
         print(fname)
 
-    if plot_timedep:
-        ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True)
-    if separate_N_ctcs:
-        ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True,
-                           ctc_cutoff_Ang=ctc_cutoff_Ang)
-    print()
+    return
 
 def neighborhood_comparison(*args, **kwargs):
     return _compare_groups_of_contacts(*args, **kwargs)
-
-#TODO introduce coverage exclusion labels
-# like https://coverage.readthedocs.io/en/v4.5.x/excluding.html
-# or refactor these methods into another test branch
-"""
-def _cmdstr2cmdtuple(cmd):
-    return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
-"""
-
-def _my_color_schemes(istr):
-    return {"peter": ["red", "purple", "gold", "darkorange"],
-            "hobat": ["m", "darkgreen", "darkorange", "navy"],
-            "auto":  plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]
-
-def _load_any_geom(geom):
-    r"""
-    Helper method for command-line-tools to create :obj:`mdtraj.Trajectories`
-    from either filenames or :obj:`mdtraj.Trajectories` (i.e. do nothing)
-    Parameters
-    ----------
-    geom : str or :obj:`mdtraj.Trajectory`
-
-    Returns
-    -------
-    outgeom : :obj:`mdtraj.Trajectory`
-    """
-    if isinstance(geom, str):
-        outgeom = md.load(geom)
-    else:
-        outgeom = geom
-
-    return outgeom
-
-def _fragment_overview(a,labtype):
-    r"""
-    provide the CLTs BW_overview and CGN_overview
-
-    Parameters
-    ----------
-    a : :obj:`argparse.Namespace` object
-        Contains the arguments used by the user
-    labtype : srt, "BW" or "CGN"
-        lets the code know which :obj:`LabelerConsensus` to use
-
-    Returns
-    -------
-    None
-    """
-    if labtype == "CGN":
-        val = a.PDB_code_or_txtfile
-        if _path.exists(val):
-            # This is sort of un-winding the loging behind
-            # the initialization of LabelerCGN, but it's
-            # better to add 2 lins of code here than
-            # changing the object's initialization
-            local_path, basename = _path.split(val)
-            ref_PDB = _path.splitext(basename)[0].replace("CGN_","")
-            assert len(ref_PDB)==4 and "CGN_%s.txt"%ref_PDB==basename
-            obj = LabelerCGN(ref_PDB,
-                             local_path=local_path,
-                             #write_to_disk=a.write_to_disk
-                             try_web_lookup=False)
-        else:
-            obj = LabelerCGN(val)
-
-    elif labtype == "BW":
-        val = a.BW_uniprot_or_file
-        if _path.exists(val):
-            format = "%s"
-        else:
-            format = _signature(LabelerBW).parameters["format"].default
-        obj = LabelerBW(val,
-                  format=format,
-                  write_to_disk=a.write_to_disk)
-    else:
-        raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
-
-    top = md.load(a.topology).top
-    from .nomenclature_utils import _guess_nomenclature_fragments
-    fragments = get_fragments(top,method="lig_resSeq+",
-                              verbose=False)
-    frag_idxs = _guess_nomenclature_fragments(obj, top, fragments)
-
-    map_conlab = obj.top2map(top, restrict_to_residxs=_np.hstack([fragments[ii] for ii in frag_idxs]))
-    obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
-    if str(a.AAs).lower()!="none":
-        AAs = [aa.strip(" ") for aa in a.AAs.split(",")]
-        for aa in AAs:
-            cands =_findAA(top,aa)
-            if len(cands) == 0:
-                print("No %s found in the input topology" % aa)
-            else:
-                for idx in cands :
-                    rr = top.residue(idx)
-                    print(idx, rr, map_conlab[idx])
-        print()
-
-    if str(a.labels).lower() != "none":
-        labels = [aa.strip(" ") for aa in a.labels.split(",")]
-        conlab2residx = obj.conlab2residx(top, map=map_conlab)
-        for lab in labels:
-            for match in _filter(list(conlab2residx.keys()),lab):
-                idx = conlab2residx[match]
-                rr = top.residue(idx)
-                print(idx,rr, map_conlab[idx])
-
-    if a.print_conlab:
-        for ii, ilab in enumerate(map_conlab):
-            print(ii, top.residue(ii), ilab)
