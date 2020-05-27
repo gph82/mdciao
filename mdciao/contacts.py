@@ -2198,6 +2198,7 @@ class ContactGroup(object):
         return jax
 
     # TODO evaluate if able to merge with plot_neighborhood_freqs
+    # it made sense to have diferent routines originally, not anymore
     def plot_freqs_as_bars(self,
                            ctc_cutoff_Ang,
                            title_label,
@@ -2237,11 +2238,10 @@ class ContactGroup(object):
                                       label_fontsize_factor=label_fontsize_factor
                                       )
         # Cosmetics
-        jax.set_title(
-            "Contact frequency @%2.1f $\AA$ of site '%s'\n"
-            % (ctc_cutoff_Ang, title_label),
-            pad = _rcParams["axes.titlepad"] #+ _titlepadding_in_points_no_clashes_w_texts(jax)
-        )
+        title = "Contact frequency @%2.1f AA of '%s'\nSigma = %2.1f\n" % (
+        ctc_cutoff_Ang, _replace4latex(title_label), _np.sum([ipatch.get_height() for ipatch in jax.patches]))
+        jax.set_title(_replace4latex(title),
+                      pad = _rcParams["axes.titlepad"] + _titlepadding_in_points_no_clashes_w_texts(jax))
 
         #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
@@ -2297,7 +2297,7 @@ class ContactGroup(object):
             # HACK to avoid re-computing the frequencies
             label_dotref +='\nSigma = %2.1f'%_np.sum([ipatch.get_height() for ipatch in jax.patches])
 
-        jax.plot(-1, -1, 'o',
+        jax.plot(_np.nan, _np.nan, 'o',
                  color=self.anchor_fragment_color,
                  label=_replace4latex(label_dotref))
 
@@ -2662,8 +2662,8 @@ class ContactGroup(object):
 
         # Cosmetics
         jax.set_title(
-            "Average nr. contacts @%2.1f $\AA$ \nper residue of contact group '%s'"
-            % (ctc_cutoff_Ang, title_str))
+            "Average nr. contacts @%2.1f $\AA$ \nper residue of '%s'"
+            % (ctc_cutoff_Ang, _replace4latex(title_str)))
 
         #TODO AFAIK this has been taken care of in the label-producing properties
         #label_bars = [ilab.replace("@None", "") for ilab in label_bars]
