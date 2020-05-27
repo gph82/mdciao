@@ -1,4 +1,3 @@
-import unittest
 import mdtraj as md
 from os import path
 import numpy as np
@@ -23,6 +22,9 @@ from tempfile import TemporaryDirectory as _TDir
 
 import pytest
 
+from pandas import \
+    DataFrame as _DF,\
+    ExcelWriter as _XW
 test_filenames = filenames()
 
 class Test_get_sorted_trajectories(unittest.TestCase):
@@ -337,20 +339,55 @@ class Test_auto_fragment_string(unittest.TestCase):
         assert(choose_between_good_and_better_strings("Print this instead", "NA") == "Print this instead")
         assert(choose_between_good_and_better_strings("Print this instead", "na") == "Print this instead")
 
-class Test_freq_datfile2freqdict(unittest.TestCase):
+class Test_freq_file2dict(unittest.TestCase):
 
-    def test_works(self):
-        freqs = {"0-1":0.3, "0-2":.4}
+    def setUp(self):
+        self.freqs = {"0-1":0.3, "0-2":.4}
+
+
+    def test_works_w_ascii(self):
         with _TDir(suffix="_test_mdciao") as tempdir:
             tmpfile = path.join(tempdir, "frqfile.dat")
             with open(tmpfile,"w") as f:
-                for key, val in freqs.items():
+                for key, val in self.freqs.items():
                     f.write("%f %s\n"%(val, key))
 
-            freqsin = freq_ascii2dict(tmpfile)
+            freqsin = str_and_dict_utils.freq_file2dict(tmpfile)
         assert freqsin["0-1"]==.3
         assert freqsin["0-2"]==.4
         assert len(freqsin)==2
+
+    def test_works_w_excel_no_header(self):
+        with _TDir(suffix="_test_mdciao") as tempdir:
+            tmpfile = "freqfile.xlsx"
+            tmpfile =  path.join(tempdir,tmpfile)
+            with _XW(tmpfile) as writer:
+                _DF.from_dict({"freq" : list(self.freqs.values()),
+                               "label": list(self.freqs.keys())}, ).to_excel(writer,
+                                                                             index=False,
+                                                                             )
+
+            freqsin = str_and_dict_utils.freq_file2dict(tmpfile)
+            self.assertEqual(freqsin["0-1"],.3)
+            self.assertEqual(freqsin["0-2"],.4)
+            assert len(freqsin) == 2
+
+    def test_works_w_excel_w_header(self):
+        with _TDir(suffix="_test_mdciao") as tempdir:
+            tmpfile = "freqfile.xlsx"
+            tmpfile =  path.join(tempdir,tmpfile)
+            with _XW(tmpfile) as writer:
+                _DF.from_dict({"freq" : list(self.freqs.values()),
+                               "label": list(self.freqs.keys())}, ).to_excel(writer,
+                                                                             index=False,
+                                                                             startrow=1
+                                                                             )
+
+            freqsin = str_and_dict_utils.freq_file2dict(tmpfile)
+            self.assertEqual(freqsin["0-1"],.3)
+            self.assertEqual(freqsin["0-2"],.4)
+            assert len(freqsin) == 2
+
 
 class Test_fnmatch_functions(unittest.TestCase):
 

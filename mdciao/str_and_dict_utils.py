@@ -3,6 +3,8 @@ import numpy as _np
 import mdtraj as _md
 from .list_utils import re_warp
 from fnmatch import fnmatch as _fnmatch
+from pandas import read_excel as _read_excel
+from os import path as _path
 
 _tunit2tunit = {"ps":  {"ps": 1,   "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
@@ -228,12 +230,30 @@ def unify_freq_dicts(freqs,
     return freqs_work
 
 def freq_file2dict(ifile):
-    from os import path as _path
+    r"""
+    Read a file containing the frequencies ("freq") and labels ("label")
+    of pre-computed contacts
+    Parameters
+    ----------
+    ifile : str
+        Path to file, can be a .xlsx, .dat, .txt
+
+    Returns
+    -------
+    dict : keyed by labels and valued with frequencies, e.g .{"0-1":.3, "0-2":.1}
+
+    """
     ext = _path.splitext(ifile)[-1]
     if ext.lower() == ".xlsx":
-        from pandas import read_excel as _read_excel
-        df = _read_excel(ifile, header=1)
-        return {key: val for key, val in zip(df["label"].values, df["freq"].values)}
+        df = _read_excel(ifile)
+        if "freq" in df.keys() and "label" in df.keys():
+            return {key: val for key, val in zip(df["label"].values, df["freq"].values)}
+        else:
+            row_lab, col_lab = _np.argwhere(df.values == "label").squeeze()
+            row_freq, col_freq = _np.argwhere(df.values == "freq").squeeze()
+            assert row_lab == row_freq,"File %s yields a weird dataframe on read \n%s"%(ifile,df)
+            return {key: val for key, val in zip(df.values[row_freq + 1:, col_lab].tolist(),
+                                                 df.values[row_freq + 1:, col_freq].tolist())}
     else:
         return freq_ascii2dict(ifile)
 
