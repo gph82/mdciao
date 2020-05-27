@@ -2657,7 +2657,7 @@ class ContactGroup(object):
                           width=.25)
         yticks = _np.arange(.5,_np.max(freqs)+.25, .5)
         jax.set_yticks(yticks)
-        jax.set_xticks([],[])
+        jax.set_xticks([])
         [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in yticks]
 
         # Cosmetics
