@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="422.12375mm"
+   height="101.6mm"
+   viewBox="0 0 422.12375 101.6"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
+   sodipodi:docname="bars_and_PDF.svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.35"
+     inkscape:cx="-170.28573"
+     inkscape:cy="-42.285704"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="2560"
+     inkscape:window-height="1341"
+     inkscape:window-x="0"
+     inkscape:window-y="58"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(13.153568,-36.045242)">
+    <image
+       sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/neighborhoods.overall.distro.@3.5_Ang.Fig.4.png"
+       xlink:href="neighborhoods.overall.distro.@3.5_Ang.Fig.4.png"
+       width="203.2"
+       height="101.6"
+       preserveAspectRatio="none"
+       id="image18"
+       x="205.77019"
+       y="36.045242" />
+    <image
+       sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/neighborhoods.overall@3.5_Ang.Fig.1.consensus.png"
+       xlink:href="neighborhoods.overall@3.5_Ang.Fig.1.consensus.png"
+       width="203.2"
+       height="101.6"
+       preserveAspectRatio="none"
+       id="image29"
+       x="-13.153568"
+       y="36.045242" />
+  </g>
+</svg>
