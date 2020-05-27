@@ -2256,7 +2256,8 @@ class ContactGroup(object):
                                 jax=None,
                                 shorten_AAs=False,
                                 label_fontsize_factor=1,
-                                sum_freqs=True):
+                                sum_freqs=True,
+                                plot_atomtypes=False):
         r"""
         Neighborhood-aware frequencies bar plot for this contact group
         
@@ -2303,7 +2304,9 @@ class ContactGroup(object):
         _add_tilted_labels_to_patches(jax,
                                       label_bars,
                                       label_fontsize_factor=label_fontsize_factor)
-        self._add_hatching_by_atomtypes(jax, ctc_cutoff_Ang)
+
+        if plot_atomtypes:
+            self._add_hatching_by_atomtypes(jax, ctc_cutoff_Ang)
 
 
         # Cosmetics
