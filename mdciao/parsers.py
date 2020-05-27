@@ -216,9 +216,15 @@ def _parser_add_short_AA_names(parser):
     parser.set_defaults(short_AA_names=False)
 
 def _parser_add_output_desc(parser, default='output_sites'):
-    parser.add_argument('--output_desc', type=str, help="Descriptor for output files. Default is %s"%default,
+    parser.add_argument('-o','--output_desc', type=str, help="Descriptor for output files. Default is %s"%default,
                         default=default)
     return parser
+
+
+def _parser_add_title(parser):
+    parser.add_argument("-t", "--title", default=None, type=str,
+                        help="Name of the system. Used for figure titles (not filenames)"
+                             "Defaults to --output_desc if None is given")
 
 def _parser_add_n_jobs(parser):
     parser.add_argument("--n_jobs", type=int, default=1, help="Number of processors to use. "
@@ -535,6 +541,7 @@ def parser_for_interface():
     _parser_add_scheme(parser)
     _parser_add_pop(parser)
     _paser_add_guess(parser)
+    _parser_add_title(parser)
     return parser
 
 def parser_for_contact_map():

@@ -919,7 +919,6 @@ def interface(
         t_unit="ns",
         plot_timedep=True,
         accept_guess=False,
-        interactive=True,
         n_jobs=1,
         n_nearest=0,
         write_to_disk_BW=False,
@@ -927,7 +926,12 @@ def interface(
         scheme="closest-heavy",
         separate_N_ctcs=False,
         table_ext=None,
+        title=None
 ):
+
+    if str(title).lower()=="none":
+        title = output_desc
+
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
 
@@ -1054,7 +1058,7 @@ def interface(
     # One loop for the histograms
     _rcParams["font.size"] = panelsize * panelsize2font
     ctc_grp_intf.plot_freqs_as_bars(ctc_cutoff_Ang,
-                                    output_desc,
+                                    title,
                                     jax=histoax[0],
                                     xlim=_np.min((n_ctcs,ctc_grp_intf.n_ctcs)),
                                     label_fontsize_factor=panelsize2font / panelsize,
@@ -1063,7 +1067,7 @@ def interface(
                                     )
 
     ctc_grp_intf.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
-                                             output_desc,
+                                             title,
                                              jax=histoax[1],
                                              list_by_interface=True,
                                              label_fontsize_factor=panelsize2font / panelsize,
