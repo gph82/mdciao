@@ -609,9 +609,29 @@ def add_tilted_labels_to_patches(jax, labels,
                  )
 
 def _get_highest_y_of_bbox_in_axes_units(txt_obj):
+    r"""
+    For an input text object, get the highest y-value of its bounding box in axis units
+
+    Goal: Find out if a text box overlaps with the title. Useful for rotated texts of variable
+    length.
+
+    There are mpl methods (contains or overlaps) but they do not return the coordinate
+
+    Parameters
+    ----------
+    txt_obj : :obj:`matplotlib.text.Text` object
+
+    Returns
+    -------
+    y : float
+
+    """
     jax  : _plt.Axes =  txt_obj.axes
-    jax.figure.tight_layout()
-    bbox = txt_obj.get_window_extent()
+    try:
+        bbox = txt_obj.get_window_extent()
+    except RuntimeError as e:
+        jax.figure.tight_layout()
+        bbox = txt_obj.get_window_extent()
     tf_inv_y = jax.transAxes.inverted()
     y = tf_inv_y.transform(bbox)[-1, 1]
     #print(bbox)
@@ -619,13 +639,40 @@ def _get_highest_y_of_bbox_in_axes_units(txt_obj):
     return y
 
 def _dataunits2points(jax):
+    r"""
+    Return a conversion factor for points 2 dataunits
+    Parameters
+    ----------
+    jax : obj:`matplotlib.Axes`
+
+    Returns
+    -------
+    float : p2d
+        Conversion factor so that points * p2d = points_in_dataunits
+
+    """
     bbox = jax.get_window_extent()
     dy_in_points = bbox.bounds[3]
     dy_in_dataunits = _np.diff(jax.get_ylim())[0]
     return dy_in_points / dy_in_dataunits
 
 def _titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
-    jax.figure.tight_layout()
+    r"""
+    Compute amount of upward padding need to avoid overlap between
+    he axis title and any text object in the axis
+
+    Parameters
+    ----------
+    jax : :obj:`matplotlib.Axis`
+    min_pts4correction : int, default is 4
+        Do not consider extensions smaller than this to
+        need correction. Helps with multiple axis in the same fig
+
+    Returns
+    -------
+    pad_id_points : float
+        
+    """
     data2pts = _dataunits2points(jax)
     max_y_texts = _np.max([_get_highest_y_of_bbox_in_axes_units(txt) for txt in jax.texts])
     dy = max_y_texts - jax.get_ylim()[1]
