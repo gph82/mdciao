@@ -173,7 +173,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
              residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
                                    "1067",
-                                   color_by_fragment=True,
+                                   fragment_colors=True,
                                    allow_same_fragment_ctcs=False,
                                    short_AA_names=True,
                                    res_idxs=True,
@@ -206,14 +206,14 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
                                   "396",
                                   short_AA_names=True,
-                                  color_by_fragment=False,
+                                  fragment_colors=True,
                                   output_dir=tmpdir)
 
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
                                   "396",
                                   short_AA_names=True,
-                                  color_by_fragment='c',
+                                  fragment_colors='c',
                                   output_dir=tmpdir)
 
     def test_no_residues_returns_None(self):
