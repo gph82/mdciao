@@ -168,14 +168,15 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                       fragments_as_residue_idxs,
                                                       accept_guess=False,
                                                       write_to_disk_BW=False):
-    fragment_defs = {}
+    fragment_defs, consensus_maps = {}, []
     for key, option in option_dict.items():
         map_CL, CL = _parse_consensus_option(option, key, top, fragments_as_residue_idxs,
                                            return_Labeler=True,
                                            accept_guess=accept_guess,
                                            write_to_disk={"BW":write_to_disk_BW,
                                                           "CGN":False}[key])
-        if str(option).lower() != 'none':
+        consensus_maps.append(map_CL)
+        if CL is not None:
             print("INFO: these are the %s fragments mapped onto your topology")
             fragment_defs.update(CL.top2defs(top,
                                                map_conlab=map_CL,
@@ -184,7 +185,7 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
             if not accept_guess:
                 input("Hit enter to continue!\n")
 
-    return fragment_defs
+    return fragment_defs, consensus_maps
 
 def _parse_fragment_naming_options(fragment_names, fragments, top):
     r"""
@@ -816,7 +817,8 @@ def residue_neighborhoods(topology, trajectories, residues,
                                               )
 
     if not distro:
-        xmax = _np.max([jax.patches[-1].get_x()+jax.patches[-1].get_width()/2 for jax in bar_ax.flatten()])+.5
+        xmax = _np.max([jax.patches[-1].get_x()+jax.patches[-1].get_width()/2 for jax in bar_ax.flatten()
+                        if len(jax.patches)>0])+.5
         [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
     bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
@@ -937,12 +939,13 @@ def interface(
 
     fragments_as_residue_idxs, user_wants_consenus = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
-    fragment_defs = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
-                                                                       "CGN": CGN_PDB},
-                                                                      refgeom.top,
-                                                                      fragments_as_residue_idxs,
-                                                                      accept_guess=accept_guess,
-                                                                      write_to_disk_BW=write_to_disk_BW)
+    fragment_defs, \
+    consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
+                                                                        "CGN": CGN_PDB},
+                                                                       refgeom.top,
+                                                                       fragments_as_residue_idxs,
+                                                                       accept_guess=accept_guess,
+                                                                       write_to_disk_BW=write_to_disk_BW)
     if user_wants_consenus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _frag_dict_2_frag_groups(fragment_defs, ng=2)
@@ -1002,7 +1005,6 @@ def interface(
     ctcs_bin = (actcs <= ctc_cutoff_Ang / 10).astype("int").sum(0)
     ctc_frequency = ctcs_bin / actcs.shape[0]
     order = _np.argsort(ctc_frequency)[::-1]
-    #ctcs_trajectory_std = _np.vstack([_np.mean(ictcs < ctc_cutoff_Ang / 10, 0) for ictcs in ctcs]).std(0)
     ctc_objs = []
     for idx in order[:n_ctcs]:
         ifreq = ctc_frequency[idx]
@@ -1012,7 +1014,7 @@ def interface(
             #                                                    no_key=_shorten_AA(refgeom.top.residue(idx),
             #                                                                      substitute_fail=0,
             #                                                                      keep_index=True)) for idx in pair]
-            consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN],
+            consensus_labels = [_choose_between_consensus_dicts(idx, consensus_maps,
                                                                 no_key=None) for idx in pair]
             fragment_idxs = [in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             ctc_objs.append(ContactPair(pair,
