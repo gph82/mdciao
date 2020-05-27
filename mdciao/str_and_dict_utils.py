@@ -5,6 +5,7 @@ from .list_utils import re_warp
 from fnmatch import fnmatch as _fnmatch
 from pandas import read_excel as _read_excel
 from os import path as _path
+import re as _re
 
 _tunit2tunit = {"ps":  {"ps": 1,   "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
@@ -297,6 +298,28 @@ def freq_ascii2dict(ifile, comment=["#"]):
                     raise
     return outdict
 
+def _find_latex_chunks(istr, blockers=['$$','\$']):
+    r"""
+    Find if a string has latex chunks in it, chunks of
+     the string that are within two dollar signs.
+    "There is $\alpha$ in the midle of this sentence"
+    returns [[range(10,17)]]
+    Parameters
+    ----------
+    istr
+
+    Returns
+    -------
+    list of ranges
+
+    """
+    for bb in blockers:
+        assert bb not in istr, ("Cannot find latex chunks in strint %s, it contains the blocker %s"%(istr,bb))
+    matches = [m.start() for m in _re.finditer('\$',istr)]
+    assert _np.mod(len(matches),2)==0, "The string %s has to contain an even number of dollar signs, " \
+                                       "but it contains %u"%(istr,len(matches))
+    ranges = [_np.arange(ii,jj+1) for ii,jj in zip(matches[:-1],matches[1:])]
+    return ranges
 def _replace4latex(istr):
     r"""
     One of two things:
@@ -320,11 +343,19 @@ def _replace4latex(istr):
     alpha:$\alpha$
 
     """
-    for gl in ['alpha','beta','gamma', 'mu', "Sigma"]:
-        istr = istr.replace(gl,'$\\'+gl+'$')
+    fmt = '$%s$'
+    for gl in ['alpha','beta','gamma', 'mu', "Sigma"]+ \
+              ["AA", "Ang"]:
 
-    for syms in ["AA","Ang"]:
-        istr = istr.replace(syms, '$\\' + syms + '$')
+        for span in [m.span() for m in _re.finditer(gl, istr)]:
+            latex_ranges = _find_latex_chunks(istr)
+            if any([set(lr).issuperset(span) for lr in latex_ranges]):
+                # This substring is already within a latex chunk, can't do anything
+                pass
+            else:
+                if istr[span[0]-1]!='\\':
+                    fmt = '$\%s$'
+                istr = istr.replace(gl,fmt%gl)
 
     # This mode of comparison will
     if any([cc in istr for cc in ["_", "^"]]):
