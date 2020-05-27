@@ -671,11 +671,12 @@ def _titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
     Returns
     -------
     pad_id_points : float
-        
+
     """
-    data2pts = _dataunits2points(jax)
+
     max_y_texts = _np.max([_get_highest_y_of_bbox_in_axes_units(txt) for txt in jax.texts])
     dy = max_y_texts - jax.get_ylim()[1]
+    data2pts = _dataunits2points(jax)
     pad_in_points = _np.max([0,dy])*data2pts
     if pad_in_points < min_pts4correction:
         pad_in_points = 0
