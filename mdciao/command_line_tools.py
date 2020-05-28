@@ -828,6 +828,7 @@ def residue_neighborhoods(topology, trajectories, residues,
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     print(fname)
     # TDOO undecided about this
+    # TODO this code is repeated in sites...can we abstract this oafa?
     if table_ext is not None:
         for ihood in neighborhoods.values():
             fname = '%s.%s@%2.1f_Ang.%s' % (output_desc,
@@ -837,6 +838,7 @@ def residue_neighborhoods(topology, trajectories, residues,
             fname = _path.join(output_dir, fname)
 
             #TODO can't the frequency_spreadsheet handle this now?
+            # TODO this code is repeated in sites...can we abstract this oafa?
             if table_ext=='xlsx':
                 ihood.frequency_spreadsheet(ctc_cutoff_Ang, fname,
                                             write_interface=False,
@@ -1126,29 +1128,32 @@ def sites(topology,
           pbc=True,
           BW_uniprot="None",
           CGN_PDB="None",
+          fragments=['lig_resSeq+'],
           default_fragment_index=None,
           fragment_names="",
-          fragmentify=True,
-          output_npy="output_sites",
           output_dir='.',
           graphic_ext=".pdf",
           t_unit='ns',
           curve_color="auto",
           gray_background=False,
           graphic_dpi=150,
-          output_desc="sites",
           short_AA_names=False,
           write_to_disk_BW=False,
           ylim_Ang=10,
           n_jobs=1,
+          accept_guess=False,
+          table_ext=None,
+          output_desc="sites",
           ):
+
     ylim_Ang = _np.float(ylim_Ang)
     _offer_to_create_dir(output_dir)
 
     # Prepare naming
-    desc_out = output_npy
-    desc_out = desc_out.rstrip(".")
-
+    output_desc = output_desc.rstrip(".")
+    if table_ext is not None:
+        table_ext = table_ext.strip(".")
+    graphic_ext = graphic_ext.strip(".")
     # Inform about trajectories
     xtcs = _get_sorted_trajectories(trajectories)
 
@@ -1160,43 +1165,36 @@ def sites(topology,
     # Inform about fragments
     refgeom = _load_any_geom(topology)
 
-    if fragmentify:
-        fragments = get_fragments(refgeom.top, method="resSeq+")
-    else:
-        raise NotImplementedError("This feature is not yet implemented")
-
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
-
-
-    for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, fragment_names)):
-        _print_frag(ifrag_idx, refgeom.top, ifrag, end='')
-        print(" ", frag_name)
-
-    # Do we want BW definitions
-    BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments,
-                                 write_to_disk=write_to_disk_BW)
-
-    # Dow we want CGN definitions:
-    CGN = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments)
+    fragments_as_residue_idxs, user_wants_consenus = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
+    fragment_defs, \
+    consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
+                                                                        "CGN": CGN_PDB},
+                                                                       refgeom.top,
+                                                                       fragments_as_residue_idxs,
+                                                                       accept_guess=accept_guess,
+                                                                       write_to_disk_BW=write_to_disk_BW)
 
     sites = [_sitefile2sitedict(ff) for ff in site_files]
     ctc_idxs_small, AAresSeq2residxs = _sites_to_ctc_idxs(sites, refgeom.top,
-                                                          fragments=fragments,
+                                                          fragments=fragments_as_residue_idxs,
                                                           default_fragment_idx=default_fragment_index,
                                                           fragment_names=fragment_names)
 
+    print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
+    for idx in AAresSeq2residxs.values():
+        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, in_what_fragment(idx,
+                                                                                                   fragments_as_residue_idxs),
+                                                   idx,
+                                                   consensus_maps[0][idx], consensus_maps[1][idx]))
 
-    print('%10s  %10s  %10s  %10s %10s' % tuple(("residue  residx fragment fragment_name CGN ".split())))
-    for key, val in AAresSeq2residxs.items():
-        print('%10s  %10u  %10u  %10s %10s' % (refgeom.top.residue(val), val, in_what_fragment(val, fragments), key, CGN[val]))
-
-    ctcs, time_array, aps = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+    ctcs, time_array, at_pair_trajs = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                        chunksize=chunksize_in_frames,
                                        return_times_and_atoms=True, consolidate=False, periodic=pbc,
                                        scheme=scheme,
                                        n_jobs=n_jobs)
 
-    # Abstract each site to a group of contacts
+    # Abstract each site to a group of contactsfragments
     site_as_gc = {}
     ctc_pairs_iterators = iter(ctc_idxs_small)
     ctc_value_idx = iter(_np.arange(len(ctc_idxs_small)))  # there has to be a better way
@@ -1206,8 +1204,8 @@ def sites(topology,
         for __ in range(isite["n_bonds"]):
             pair = next(ctc_pairs_iterators)
             idx = next(ctc_value_idx)
-            consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN]) for idx in pair]
-            fragment_idxs = [in_what_fragment(idx, fragments) for idx in pair]
+            consensus_labels = [_choose_between_consensus_dicts(idx, consensus_maps) for idx in pair]
+            fragment_idxs = [in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             site_as_gc[key].append(ContactPair(pair,
                                                [itraj[:, idx] for itraj in ctcs],
                                                time_array,
@@ -1216,6 +1214,9 @@ def sites(topology,
                                                trajs=xtcs,
                                                fragment_idxs=fragment_idxs,
                                                fragment_names=[fragment_names[idx] for idx in fragment_idxs],
+                                               atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in
+                                                                at_pair_trajs]
+
                                                #colors=[fragcolors[idx] for idx in idxs]
                                                ))
         site_as_gc[key] = ContactGroup(site_as_gc[key])
@@ -1253,11 +1254,18 @@ def sites(topology,
     print("The following files have been created")
     print(fname)
     for site_name, isite_nh in site_as_gc.items():
-        fname = 'site.%s.%s.%stime_resolved.%s' % (
-            site_name.replace(" ", "_"), desc_out.strip("."),
-            scheme_desc, graphic_ext.strip("."))
-        fname = _path.join(output_dir, fname)
+        fname_no_time = '%s.%s@%2.1f_Ang.%s' % (output_desc,
+                                        site_name.strip().replace(" ","_"),
+                                        ctc_cutoff_Ang,
+                                        table_ext)
+        fname_no_time = _path.join(output_dir, fname_no_time)
 
+
+        fname = '%s.%s.time_trace@%2.1f_Ang.%s' % (output_desc,
+                                        site_name.strip().replace(" ","_"),
+                                        ctc_cutoff_Ang,
+                                        graphic_ext)
+        fname = _path.join(output_dir,fname)
         myfig = isite_nh.plot_timedep_ctcs(panelheight,
                                            color_scheme=_my_color_schemes(curve_color),
                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
@@ -1274,6 +1282,18 @@ def sites(topology,
         plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
         plt.close(myfig)
         print(fname)
+        if table_ext is not None:
+            if table_ext == 'xlsx':
+                isite_nh.frequency_spreadsheet(ctc_cutoff_Ang, fname_no_time,
+                                            write_interface=False,
+                                            by_atomtypes=True,
+                                            # AA_format="long",
+                                            split_label="join"
+                                            )
+            else:
+                with open(fname_no_time, 'w') as f:
+                    f.write(isite_nh.frequency_str_ASCII_file(ctc_cutoff_Ang))
+            print(fname_no_time)
 
     return
 
