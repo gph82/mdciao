@@ -31,7 +31,7 @@ class ExamplesCLTs(object):
             self.sitefile = _path.relpath(self.sitefile, cwd)
         self.test = test
     @property
-    def mdc_neighborhood(self):
+    def mdc_neighborhoods(self):
         return ["mdc_neighborhoods.py",
                 "%s %s" % (self.pdb, self.xtc),
                 "--residues L394",
@@ -79,12 +79,14 @@ class ExamplesCLTs(object):
     def show(self, clt):
         self._assert_clt_exists(clt)
         print("%s example call:" % clt)
+        print("%s--------------"%("".join(["-" for _ in clt]))) # really?
         oneline = self.__getattribute__(clt)
         if self.test:
             oneline = oneline[:-2]
         oneline = " ".join(oneline)
         print(oneline.replace("--", "\n--"))
-        print("\n\nYou can paste the line below to execute:")
+        print("\n\nYou can re-run '-x' option to execute the command directly\n"
+              "or you can paste the line below into your terminal, add/edit options and then execute:\n")
         print(oneline)
 
     def run(self, clt,show=True, write_to_tmpdir=False):
