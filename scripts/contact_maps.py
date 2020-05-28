@@ -1,4 +1,4 @@
-#!/home/perezheg/miniconda3/bin/python
+#!python
 from mdciao.command_line_tools import contact_map
 
 from mdciao.parsers import parser_for_contact_map

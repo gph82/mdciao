@@ -1,4 +1,4 @@
-#!/home/perezheg/miniconda3/bin/python
+#!python
 
 from mdciao.command_line_tools import density_by_sites
 from mdciao.command_line_tools import _inform_of_parser
