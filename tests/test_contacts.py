@@ -30,8 +30,8 @@ test_filenames = filenames()
 
 class TestBaseClassContacts(unittest.TestCase):
     def setUp(self):
-        self.pdb_file = test_filenames.prot1_pdb
-        self.file_xtc = test_filenames.run1_stride_100_xtc
+        self.pdb_file = test_filenames.top_pdb
+        self.file_xtc = test_filenames.traj_xtc
         self.top = md.load(self.pdb_file).top
         self.traj = md.load(self.file_xtc, top = self.top)
         self.ctc_idxs = [[10, 20], [20, 30]]
@@ -139,7 +139,7 @@ class Test_trajs2ctcs(TestBaseClassContacts):
 
 class BaseClassForTestingAttributes(unittest.TestCase):
     def setUp(self):
-        self.trajs = md.load(test_filenames.run1_stride_100_xtc, top=test_filenames.prot1_pdb)[:3]
+        self.trajs = md.load(test_filenames.top_pdb, top=test_filenames.top_xtc)[:3]
         self.trajs = [self.trajs[:2],
                       self.trajs[:3]]
         self.ctc_trajs = [[1, 2], [10, 11, 12]]
@@ -213,7 +213,7 @@ class TestResidues(unittest.TestCase):
         _np.testing.assert_equal(20, cors.partner_residue_index)
 
     def test_anchor_and_partner_top(self):
-        top = md.load(test_filenames.prot1_pdb).top
+        top = md.load(test_filenames.top_pdb).top
         cors = _Residues([10, 20],
                          ["GLU25", "ALA35"],
                          anchor_residue_idx=10,
@@ -284,7 +284,7 @@ class TestFragments(unittest.TestCase):
 
     def test_anchor_and_partner_top(self):
         from mdciao.contacts import _Residues
-        top = md.load(test_filenames.prot1_pdb).top
+        top = md.load(test_filenames.top_pdb).top
         cors = _Residues([10, 20],
                          [None,None],
                          anchor_residue_idx=10,
@@ -433,8 +433,8 @@ class TestContactStrings(unittest.TestCase):
         assert cls.trajstrs[0] == "traj 0" and cls.trajstrs[1] == "traj 1", cls.trajstrs
 
     def test_trajlabels_w_mdtrajs(self):
-        mdtrajs = md.load(test_filenames.run1_stride_100_xtc,
-                               top=test_filenames.prot1_pdb)[:5]
+        mdtrajs = md.load(test_filenames.traj_xtc,
+                               top=test_filenames.top_pdb)[:5]
         mdtrajs = [mdtrajs, mdtrajs]
         cls = _ContactStrings(2,
                               _Residues([10, 20], ["GLU25", "ALA35"]),
@@ -484,7 +484,7 @@ class TestContactStrings(unittest.TestCase):
 
 class TestContactPair(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom = md.load(test_filenames.small_monomer)
 
     def test_works_minimal(self):
         ContactPair([0, 1],
@@ -747,7 +747,7 @@ class TestContactPair(unittest.TestCase):
 
 class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
     def test_works(self):
-        top = md.load(test_filenames.prot1_pdb).top
+        top = md.load(test_filenames.top_pdb).top
         atoms_BB = [aa for aa in top.residue(0).atoms if aa.is_backbone]
         atoms_SC = [aa for aa in top.residue(0).atoms if aa.is_sidechain]
         atom_pairs, counts = [],[]
@@ -771,7 +771,7 @@ class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
 
 class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom = md.load(test_filenames.small_monomer)
         self.by_bonds_geom = get_fragments(self.geom.top,
                                                      verbose=True,
                                                      auto_fragment_names=True,
@@ -856,7 +856,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
 
 class TestBaseClassContactGroup(unittest.TestCase):
     def setUp(self):
-        self.top = md.load(test_filenames.prot1_pdb).top
+        self.top = md.load(test_filenames.actor_pdb).top
 
 
         self.cp1 = ContactPair([0, 1], [[.1, .2, .3], [.4]], [[1, 2, 3], [1]])
@@ -866,7 +866,7 @@ class TestBaseClassContactGroup(unittest.TestCase):
         self.cp1_wtop = ContactPair([0,1], [[.1,   .2, .3]], [[1, 2, 3]], top=self.top)
         self.cp2_wtop = ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]], top=self.top)
         self.cp3_wtop_other = ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
-                                          top=md.load(test_filenames.file_for_test_pdb).top)
+                                          top=md.load(test_filenames.small_monomer).top)
 
         self.cp1_w_anchor_and_frags = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
                                                   fragment_names=["fragA", "fragB"],
@@ -918,6 +918,8 @@ class TestBaseClassContactGroup(unittest.TestCase):
                                                  top=self.top)
 
         # Completely bogus contacts but testable
+        print(self.top.residue(1))
+        print([aa for aa in self.top.residue(1).atoms])
         self.atom_BB0 = list(self.top.residue(0).atoms_by_name("CA"))[0].index
         self.atom_SC0 = list(self.top.residue(0).atoms_by_name("CB"))[0].index
         self.atom_BB1 = list(self.top.residue(1).atoms_by_name("CA"))[0].index

@@ -10,8 +10,8 @@ test_filenames = filenames()
 
 class Test_find_by_AA(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
-        self.geom2frags = md.load(test_filenames.file_for_test_repeated_fullresnames_pdb)
+        self.geom = md.load(test_filenames.small_monomer)
+        self.geom2frags = md.load(test_filenames.small_dimer)
 
     def test_full_long_AA_code(self):
         self.assertSequenceEqual(find_AA(self.geom.top, "GLU30"),[0])
@@ -58,7 +58,7 @@ class Test_name_from_AA(unittest.TestCase):
 
 class Test_shorten_AA(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom = md.load(test_filenames.small_monomer)
 
     def test_shorten_AA(self):
         assert(shorten_AA("GLU30") == 'E')
@@ -103,7 +103,7 @@ class Test_shorten_AA(unittest.TestCase):
 
 class Test_atom_type(unittest.TestCase):
     def test_works(self):
-        top = md.load(test_filenames.prot1_pdb).top
+        top = md.load(test_filenames.pdb_3CAP).top
         atoms_BB = [aa for aa in top.residue(0).atoms if aa.is_backbone]
         atoms_SC = [aa for aa in top.residue(0).atoms if aa.is_sidechain]
         atoms_X = [aa for aa in top.atoms if not aa.is_backbone and not aa.is_sidechain]

@@ -1,7 +1,7 @@
 import mdtraj as md
 import unittest
 from filenames import filenames
-test_filenames = filenames()
+test_filenames : filenames = filenames()
 import pytest
 
 from tempfile import TemporaryDirectory as _TDir
@@ -45,9 +45,9 @@ from mdciao.fragments import \
 class TestCLTBaseClass(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load(test_filenames.prot1_pdb)
-        self.run1_stride_100_xtc = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)
-        self.run1_stride_100_xtc_reverse = md.load(test_filenames.run1_stride_100_xtc, top=self.geom.top)[::-1]
+        self.geom = md.load(test_filenames.top_pdb)
+        self.traj = md.load(test_filenames.traj_xtc, top=self.geom.top)
+        self.traj_reverse = md.load(test_filenames.traj_xtc, top=self.geom.top)[::-1]
 
 class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
@@ -59,7 +59,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
         CPs = [ContactPair(pair,
                            [md.compute_contacts(itraj, [pair])[0].squeeze() for itraj in
                             [self.run1_stride_100_xtc,
-                             self.run1_stride_100_xtc_reverse[:10]]],
+                             self.traj_reverse[:10]]],
                            [self.run1_stride_100_xtc.time,
                             self.run1_stride_100_xtc.time[:10]],
                            top=self.geom.top,
@@ -130,7 +130,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
     """
     def test_no_timedep_yes_N_ctcs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                   "396",
                                   plot_timedep=False,
                                   separate_N_ctcs=True,
@@ -140,7 +140,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
     def test_separate_N_ctcs_no_time_trace(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc,
-                                              self.run1_stride_100_xtc_reverse],
+                                              self.traj_reverse],
                                   "396",
                                   plot_timedep=False,
                                   separate_N_ctcs=True,
@@ -154,8 +154,8 @@ class TestJustRunsAllFewestOptions(TestCLTBaseClass):
     def test_contact_map(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             contact_map(self.geom, [self.run1_stride_100_xtc,
-                                    self.run1_stride_100_xtc_reverse],
-                      output_dir=tmpdir)
+                                    self.traj_reverse],
+                        output_dir=tmpdir)
 
 class Test_residue_neighborhood(TestCLTBaseClass):
 
@@ -165,13 +165,13 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["b"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                       "200,396",
                                       output_dir=tmpdir)
 
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                    "1067",
                                    fragment_colors=True,
                                    allow_same_fragment_ctcs=False,
@@ -182,35 +182,35 @@ class Test_residue_neighborhood(TestCLTBaseClass):
 
     def test_excel(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                    "396",
                                    table_ext=".xlsx",
                                    output_dir=tmpdir)
 
     def test_distro(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                    "396",
                                    distro=True,
                                    output_dir=tmpdir)
 
     def test_AAs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+             residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                    "396",
                                    short_AA_names=True,
                                    output_dir=tmpdir)
 
     def test_colors(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                   "396",
                                   short_AA_names=True,
                                   fragment_colors=True,
                                   output_dir=tmpdir)
 
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                   "396",
                                   short_AA_names=True,
                                   fragment_colors='c',
@@ -221,15 +221,15 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         # TODO consider throwing exception
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
              assert None == residue_neighborhoods(self.geom, [self.run1_stride_100_xtc,
-                                                              self.run1_stride_100_xtc_reverse],
-                                   None,
-                                   distro=True,
-                                   output_dir=tmpdir)
+                                                              self.traj_reverse],
+                                                  None,
+                                                  distro=True,
+                                                  output_dir=tmpdir)
 
     def test_wrong_input_resSeq_idxs(self):
         with pytest.raises(ValueError):
             with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-                 residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                 residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                        "AX*",
                                        distro=True,
                                        output_dir=tmpdir)
@@ -238,7 +238,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["","a"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                       "131",
                                       BW_uniprot=_path.join(test_filenames.test_data_path,"adrb2_human_full"),
                                       # TODO include this in filenames
@@ -248,7 +248,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["", "a"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                       "131",
                                       CGN_PDB="3SN6",
                                       output_dir=tmpdir
@@ -257,7 +257,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["", "", "a"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                       "131",
                                       CGN_PDB="3SN6",
                                       BW_uniprot=_path.join(test_filenames.test_data_path, "adrb2_human_full"),
@@ -265,7 +265,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                       )
 
     def test_no_contacts_at_allp(self):
-        residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+        residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                               "131",
                               ctc_cutoff_Ang=.1,
                               res_idxs=True,
@@ -273,7 +273,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
 
     def test_some_CG_have_no_contacts(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            residue_neighborhoods(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                                   "0-3",
                                   ctc_cutoff_Ang=3.2,
                                   res_idxs=True,
@@ -285,13 +285,13 @@ class Test_sites(TestCLTBaseClass):
 
     def test_sites(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            sites(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            sites(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                   [test_filenames.GDP_json],
                   output_dir=tmpdir)
 
     def test_scheme_CA(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            sites(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            sites(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                   [test_filenames.GDP_json],
                   output_dir=tmpdir,
                   scheme="COM")
@@ -299,7 +299,7 @@ class Test_sites(TestCLTBaseClass):
     def test_fragmentify_raises(self):
         with pytest.raises(NotImplementedError):
             with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-                sites(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                sites(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                       [test_filenames.GDP_json],
                       output_dir=tmpdir,
                       scheme="COM",
@@ -309,7 +309,7 @@ class Test_interface(TestCLTBaseClass):
 
     def test_interface(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            interface(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                       frag_idxs_group_1=[0],
                       frag_idxs_group_2=[1],
                       output_dir=tmpdir)
@@ -318,25 +318,25 @@ class Test_interface(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["0-1","2,3"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                interface(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                           output_dir=tmpdir)
 
     def test_w_just_one_fragment_by_user(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            interface(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                       output_dir=tmpdir,
                       fragments=["0-5"])
 
     def test_w_just_one_fragment_by_user_and_n_ctcs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            interface(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                       output_dir=tmpdir,
                       fragments=["0-5"],
                       n_nearest=1)
 
     def test_w_just_two_fragments_by_user(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+            interface(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                       frag_idxs_group_1=[0],
                       frag_idxs_group_2=[1],
                       output_dir=tmpdir,
@@ -347,7 +347,7 @@ class Test_interface(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["","", "", ""])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                interface(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                           frag_idxs_group_1=[0],
                           frag_idxs_group_2=[1],
                           output_dir=tmpdir,
@@ -361,7 +361,7 @@ class Test_interface(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["","", "", "", "TM6","*H5"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                interface(self.geom, [self.run1_stride_100_xtc, self.run1_stride_100_xtc_reverse],
+                interface(self.geom, [self.run1_stride_100_xtc, self.traj_reverse],
                           frag_idxs_group_1=[0],
                           frag_idxs_group_2=[1],
                           output_dir=tmpdir,
@@ -483,8 +483,8 @@ class Test_fragment_overview(unittest.TestCase):
 
     def test_CGN(self):
         a = parser_for_CGN_overview()
-        a = a.parse_args([test_filenames.prot1_pdb,_path.join(test_filenames.test_data_path,
-                                                         "CGN_3SN6.txt")])
+        a = a.parse_args([test_filenames.top_pdb,
+                          test_filenames.CGN_3SN6])
         command_line_tools._fragment_overview(a,"CGN")
 
     def test_BW_local_and_verbose(self):
@@ -507,8 +507,9 @@ class Test_fragment_overview(unittest.TestCase):
 
     def test_AAs(self):
         a = parser_for_CGN_overview()
-        a = a.parse_args([test_filenames.prot1_pdb, _path.join(test_filenames.test_data_path,
-                                                               "CGN_3SN6.txt"),
+        a = a.parse_args([test_filenames.top_pdb,
+                          _path.join(test_filenames.nomenclature_path,
+                                     "CGN_3SN6.txt"),
                           ])
         a.__setattr__("AAs","LEU394,LEU395")
         command_line_tools._fragment_overview(a,"CGN")
