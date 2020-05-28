@@ -469,8 +469,10 @@ def parser_for_sites():
     _parser_add_scheme(parser)
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
+    _parser_add_output_desc(parser,default="sites")
     _parser_add_stride(parser)
     _parser_add_smooth(parser)
+    _parser_add_no_frag(parser)
     #_parser_add_fragment_names(parser)
     _parser_add_cutoff(parser)
     _parser_add_t_unit(parser)
@@ -479,7 +481,9 @@ def parser_for_sites():
     _parser_add_gray_backgroud(parser)
     _parser_add_graphic_dpi(parser)
     _parser_add_ylim_Ang(parser)
+    _parser_add_short_AA_names(parser)
     _parser_add_n_jobs(parser)
+    _parser_add_table_ext(parser)
     return parser
 
 def parser_for_densities():
