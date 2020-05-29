@@ -15,6 +15,9 @@ from os import \
     path as _path, \
     mkdir as _mkdir
 
+from mdciao.residue_and_atom_utils import \
+    _parse_and_list_AAs_input
+
 from mdciao.plots import \
     compare_groups_of_contacts as _compare_groups_of_contacts
 
@@ -591,17 +594,7 @@ def _fragment_overview(a,labtype):
 
     map_conlab = obj.top2map(top, restrict_to_residxs=_np.hstack([fragments[ii] for ii in frag_idxs]))
     obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
-    if str(a.AAs).lower()!="none":
-        AAs = [aa.strip(" ") for aa in a.AAs.split(",")]
-        for aa in AAs:
-            cands =_findAA(top,aa)
-            if len(cands) == 0:
-                print("No %s found in the input topology" % aa)
-            else:
-                for idx in cands :
-                    rr = top.residue(idx)
-                    print(idx, rr, map_conlab[idx])
-        print()
+    _parse_and_list_AAs_input(a.AAs, top, map_conlab)
 
     if str(a.labels).lower() != "none":
         labels = [aa.strip(" ") for aa in a.labels.split(",")]
@@ -615,7 +608,6 @@ def _fragment_overview(a,labtype):
     if a.print_conlab:
         for ii, ilab in enumerate(map_conlab):
             print(ii, top.residue(ii), ilab)
-
 
 def residue_neighborhoods(topology, trajectories, residues,
                           res_idxs=False,
@@ -652,6 +644,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                           distro=False,
                           n_jobs=1,
                           separate_N_ctcs=False,
+                          accept_guess=False,
                           ):
 
     # Input control residues
@@ -681,10 +674,13 @@ def residue_neighborhoods(topology, trajectories, residues,
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
     # Do we want BW definitions
-    BWresidx2conlab = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments_as_residue_idxs, write_to_disk=write_to_disk_BW)
+    BWresidx2conlab = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments_as_residue_idxs,
+                                              write_to_disk=write_to_disk_BW,
+                                              accept_guess=accept_guess)
 
     # Dow we want CGN definitions:
-    CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs)
+    CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs,
+                                               accept_guess=accept_guess)
 
     res_idxs_list = _rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
                                                   interpret_as_res_idxs=res_idxs,
