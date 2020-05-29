@@ -332,12 +332,12 @@ def _replace4latex(istr):
     Parameters
     ----------
     istr: str
-        "There's an alpha and beta here, also C_2"
+        "There's an alpha and a beta here, also C_2"
 
     Returns
     -------
     alpha: str
-        "There's an $alpha$ and a $beta$ here, also $C_2$"
+        'There's an $\alpha$ and a $\beta$ here, also $C_2$'
 
     """
     for gl in ['alpha','beta','gamma', 'mu', "Sigma"]+ \
