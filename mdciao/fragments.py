@@ -4,7 +4,8 @@ from mdtraj.core.residue_names import \
     _AMINO_ACID_CODES
 
 from .residue_and_atom_utils import \
-    find_AA as _find_AA
+    find_AA as _find_AA,\
+    _parse_and_list_AAs_input
 
 from .bond_utils import \
     top2residue_bond_matrix
@@ -278,7 +279,9 @@ _allowed_fragment_methods = ['resSeq',
                              "None",
                              ]
 def overview(topology,
-             methods=['all']):
+             methods=['all'],
+             AAs=None,
+             ):
 
     """
     Prints the fragments created and their corresponding methods
@@ -311,6 +314,8 @@ def overview(topology,
         get_fragments(topology,
                       method=method)
         print()
+
+    _parse_and_list_AAs_input(AAs, topology)
 
 def _assert_method_allowed(method):
     assert str(method) in _allowed_fragment_methods, ('input method %s is not known. ' \

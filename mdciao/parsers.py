@@ -575,6 +575,7 @@ def parser_for_frag_overview():
                         default=['all']
                         )
     _parser_add_topology(parser)
+    _parser_add_AAs(parser)
     return parser
 
 def parser_for_BW_overview():

@@ -259,8 +259,12 @@ def BW_finder(uniprot_name,
               verbose=True,
               dont_fail=False,
               write_to_disk=False):
-    xlsxname = format % uniprot_name
-    fullpath = _path.join(local_path, xlsxname)
+    if _path.exists(uniprot_name):
+        fullpath = uniprot_name
+        try_web_lookup=False
+    else:
+        xlsxname = format % uniprot_name
+        fullpath = _path.join(local_path, xlsxname)
     GPCRmd = "https://gpcrdb.org/services/residues/extended"
     url = "%s/%s" % (GPCRmd, uniprot_name)
 
@@ -660,13 +664,16 @@ class LabelerCGN(LabelerConsensus):
     def __init__(self, ref_PDB,
                  local_path='.',
                  try_web_lookup=True,
-                 verbose=True):
+                 verbose=True,
+                 write_to_disk=None):
         r"""
 
         Parameters
         ----------
         ref_PDB: str
+            #todo refactor to ref_PDB or local_PDB??? Not sure
             The PDB four letter code that will be used for CGN purposes
+
         local_path: str, default is '.'
             The local path where these files exist, if they exist
             * CGN_3SN6.txt (pre-downloaded CGN-type file)
@@ -676,7 +683,11 @@ class LabelerCGN(LabelerConsensus):
             * www.mrc-lmb.cam.ac.uk (for CGN)
             * rcsb.org (for the PDB)
         """
-
+        # TODO see fragment_overview...are there clashes
+        if _path.exists(ref_PDB):
+            local_path, basename = _path.split(ref_PDB)
+            ref_PDB = _path.splitext(basename)[0].replace("CGN_", "")
+            assert len(ref_PDB) == 4 and "CGN_%s.txt" % ref_PDB == basename
         self._dataframe, self._tablefile = CGN_finder(ref_PDB,
                                                       local_path=local_path,
                                                       try_web_lookup=try_web_lookup,
@@ -1104,7 +1115,7 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
     return list_out
 '''
 
-def _choose_between_consensus_dicts(idx, consensus_dicts, no_key="NA"):
+def _choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     """
     Choose the best consensus label for a given :obj:`idx` in case
     there are more than one consensus(es) at play (e.g. BW and CGN).
@@ -1115,9 +1126,10 @@ def _choose_between_consensus_dicts(idx, consensus_dicts, no_key="NA"):
     ----------
     idx : int
         index for which the relabeling is needed
-    consensus_dicts : list
-        each item in the list should be a dictionary. The keys of each dictionary should be the residue idxs,
-        and the corresponding value should be the label.
+    consensus_maps : list
+        The item sin the list should be "gettable" by using :obj:`idx`,
+        either by being lists, arrays, or dicts, s.t.,
+        the corresponding value should be the label.
     no_key : str
         output message if there is no label for the residue idx in any of the dictionaries.
 
@@ -1127,7 +1139,7 @@ def _choose_between_consensus_dicts(idx, consensus_dicts, no_key="NA"):
         label of the residue idx if present else :obj:`no_key`
 
     """
-    labels  = [idict[idx] for idict in consensus_dicts]
+    labels  = [idict[idx] for idict in consensus_maps]
     good_label = [ilab for ilab in labels if str(ilab).lower()!="none"]
     assert len(good_label)<=1, "There can only be one good label, but for residue %u found %s"%(idx, good_label)
     try:
