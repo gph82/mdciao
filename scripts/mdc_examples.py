@@ -6,9 +6,8 @@ from fnmatch import filter as _fnfilter
 execute = True
 list = False
 ex = ExamplesCLTs()
-desc1 = "Wrapper script to showcase and optionally "\
-        "run examples of the command-line-tools (clt) "\
-        "that ship with mdciao."
+desc1 = "Wrapper script to showcase and optionally run examples of the \n" \
+        "command-line-tools (clt) that ship with mdciao."
 parser = argparse.ArgumentParser(description=desc1+
                                              "\n To show available examples and nothing more\n"
                                              "type any of 'mdc_examples.py l/list/?'"
