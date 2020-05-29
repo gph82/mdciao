@@ -329,40 +329,42 @@ def _replace4latex(istr):
         "C_2"      -> "$C_2$"
         "C^2"      -> "$C^2$"
 
-    Note
-    -----
-        A combination of both ("alpha = C_2"->"$\alpha = C_2$") is not
-        yet implemented
-
     Parameters
     ----------
     istr: str
+        "There's an alpha and beta here, also C_2"
 
     Returns
     -------
-    alpha:$\alpha$
+    alpha: str
+        "There's an $alpha$ and a $beta$ here, also $C_2$"
 
     """
-    fmt = '$%s$'
     for gl in ['alpha','beta','gamma', 'mu', "Sigma"]+ \
               ["AA", "Ang"]:
 
-        for span in [m.span() for m in _re.finditer(gl, istr)]:
-            latex_ranges = _find_latex_chunks(istr)
-            if any([set(lr).issuperset(span) for lr in latex_ranges]):
-                # This substring is already within a latex chunk, can't do anything
-                pass
-            else:
-                if istr[span[0]-1]!='\\':
-                    fmt = '$\%s$'
-                istr = istr.replace(gl,fmt%gl)
+        istr = _latexify(gl,istr,symbol=True)
+    chars_that_latexify_word = ["_", "^"]
 
-    # This mode of comparison will
-    if any([cc in istr for cc in ["_", "^"]]):
-        if '$' not in istr:
-            istr = '$%s$'%istr
+    for c in chars_that_latexify_word:
+        for word in istr.split():
+            if c in word:
+                istr = _latexify(word,istr)
+    return istr
+
+def _latexify(word, istr, symbol=False):
+    for span in [m.span() for m in _re.finditer(word, istr)]:
+        latex_ranges = _find_latex_chunks(istr)
+        if any([set(lr).issuperset(span) for lr in latex_ranges]):
+            # This substring is already within a latex chunk, can't do anything
+            pass
         else:
-            raise NotImplementedError("The str already contains a dollar symbol, this is not implemented yet")
+            new = '$%s$' % word
+            if symbol:
+                if istr[span[0] - 1] != '\\':
+                    new = '$\%s$' % word
+            istr = istr[:span[0]] + new + istr[span[1]:]
+
     return istr
 
 def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
