@@ -19,7 +19,7 @@ test_filenames = filenames()
 class Test_overview(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom = md.load(test_filenames.top_pdb)
 
     def test_just_runs(self):
         overview(self.geom.top)
@@ -29,7 +29,7 @@ class Test_overview(unittest.TestCase):
 
 class Test_print_fragments(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom = md.load(test_filenames.top_pdb)
         self.fragments = get_fragments(self.geom.top, verbose=False)
 
 
@@ -57,7 +57,7 @@ class Test_print_fragments(unittest.TestCase):
 
 class Test_get_fragments_methods(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom = md.load(test_filenames.small_monomer)
 
     def test_resSeq(self):
         by_resSeq = get_fragments(self.geom.top,
@@ -141,8 +141,8 @@ class Test_get_fragments_methods(unittest.TestCase):
 
 class Test_get_fragments_other_options(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
-        self.geom_force_resSeq_breaks = md.load(test_filenames.file_for_test_force_resSeq_breaks_is_true_pdb)
+        self.geom = md.load(test_filenames.small_monomer)
+        self.geom_force_resSeq_breaks = md.load(test_filenames.small_monomer_LYS99)
 
     def test_join_fragments_normal(self):
         by_bonds = get_fragments(self.geom.top,
@@ -231,7 +231,7 @@ class Test_get_fragments_other_options(unittest.TestCase):
 class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom = md.load(test_filenames.top_pdb)
         self.by_bonds_geom = get_fragments(self.geom.top,
                                            verbose=True,
                                            method='bonds')
@@ -260,7 +260,7 @@ class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
 class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
 
     def setUp(self):
-        self.geom2frags = md.load(test_filenames.file_for_test_repeated_fullresnames_pdb)
+        self.geom2frags = md.load(test_filenames.small_dimer)
 
         self.by_bonds_geom2frags = get_fragments(self.geom2frags.top,
                                                  verbose=True,
@@ -387,7 +387,7 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
 class Test_per_residue_fragment_picker_no_ambiguity(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom = md.load(test_filenames.small_monomer)
         self.by_bonds_geom = get_fragments(self.geom.top,
                                            verbose=True,
                                            method='bonds')
@@ -408,7 +408,7 @@ class Test_per_residue_fragment_picker_no_ambiguity(unittest.TestCase):
 class Test_per_residue_fragment_picker(unittest.TestCase):
 
     def setUp(self):
-        self.geom2frags = md.load(test_filenames.file_for_test_repeated_fullresnames_pdb)
+        self.geom2frags = md.load(test_filenames.small_dimer)
 
         self.by_bonds_geom2frags = get_fragments(self.geom2frags.top,
                                                  verbose=True,
@@ -541,7 +541,7 @@ class Test_per_residue_fragment_picker(unittest.TestCase):
 class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
 
     def setUp(self):
-        self.top = md.load(test_filenames.prot1_pdb).top
+        self.top = md.load(test_filenames.top_pdb).top
         self.fragments_by_resSeqplus = fragments.get_fragments(self.top,
                                                                method="resSeq+",
                                                                verbose=False)
@@ -684,7 +684,7 @@ class Test_frag_list_2_frag_groups(unittest.TestCase):
 class Test_rangeexpand_residues2residxs(unittest.TestCase):
 
     def setUp(self):
-        self.top = md.load(test_filenames.file_for_test_pdb).top
+        self.top = md.load(test_filenames.small_monomer).top
         self.fragments = fragments.get_fragments(self.top, method="resSeq+",
                                                  verbose=False)
 
@@ -737,7 +737,7 @@ class Test_intersecting_fragments(unittest.TestCase):
                           _np.arange(5,10),
                           _np.arange(10,15)
                           ]
-        self.top = md.load(test_filenames.prot1_pdb).top
+        self.top = md.load(test_filenames.top_pdb).top
 
     def test_no_clashes(self):
         result = fragments._check_if_subfragment([6, 7, 8],

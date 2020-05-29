@@ -2,7 +2,8 @@ import unittest
 import mdtraj as md
 import numpy as _np
 from os import path
-from tempfile import TemporaryDirectory as _TDir
+from tempfile import TemporaryDirectory as _TDir, mkdtemp
+import shutil
 from urllib.error import HTTPError
 from shutil import copy
 
@@ -39,15 +40,15 @@ class Test_md_load_rscb(unittest.TestCase):
 class Test_PDB_finder(unittest.TestCase):
 
     def test_works_locally(self):
-        geom, filename = nomenclature_utils.PDB_finder("file_for_test",
-                                                       local_path=test_filenames.test_data_path,
+        geom, filename = nomenclature_utils.PDB_finder(path.splitext(test_filenames.top_pdb)[0],
+                                                       local_path=test_filenames.example_path,
                                                        try_web_lookup=False)
         assert isinstance(geom, md.Trajectory)
         assert isinstance(filename, str)
 
     def test_works_locally_pdbgz(self):
-        geom, filename = nomenclature_utils.PDB_finder("3cap",
-                                                       local_path=test_filenames.test_data_path,
+        geom, filename = nomenclature_utils.PDB_finder("3SN6",
+                                                       local_path=test_filenames.RSCB_pdb_path,
                                                        try_web_lookup=False)
         assert isinstance(geom, md.Trajectory)
         assert isinstance(filename, str)
@@ -69,7 +70,7 @@ class Test_CGN_finder(unittest.TestCase):
     def test_works_locally(self):
         df, filename = nomenclature_utils.CGN_finder("3SN6",
                                                      try_web_lookup=False,
-                                                     local_path=test_filenames.examples_path)
+                                                     local_path=test_filenames.nomenclature_path)
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename,str)
@@ -114,13 +115,12 @@ class Test_CGN_finder(unittest.TestCase):
 
     def test_works_local_does_not_overwrite(self):
         with _TDir(suffix="_mdciao_test") as tdir:
-            infile = path.join(test_filenames.examples_path,"3SN6.txt")
+            infile = test_filenames.CGN_3SN6
             copy(infile,tdir)
             with pytest.raises(FileExistsError):
                 nomenclature_utils.CGN_finder("3SN6",
                                               try_web_lookup=False,
                                               local_path=tdir,
-                                              format="%s.txt",
                                               write_to_disk=True
                                               )
 
@@ -166,10 +166,9 @@ class Test_GPCRmd_lookup_BW(unittest.TestCase):
 class Test_BW_finder(unittest.TestCase):
 
     def test_works_locally(self):
-        df, filename = nomenclature_utils.BW_finder("B2AR",
+        df, filename = nomenclature_utils.BW_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
                                                     try_web_lookup=False,
-                                                    format="GPCRmd_%s_nomenclature_test.xlsx",
-                                                    local_path=test_filenames.test_data_path)
+                                                    )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename,str)
@@ -260,21 +259,44 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                               'V67': '2.38'
                               })
 
-class TestLabelerCGN(unittest.TestCase):
+class TestClassSetUpTearDown_CGN_local(unittest.TestCase):
+    # The setup is in itself a test
+    def setUp(self):
+        self.tmpdir = mkdtemp("_test_mdciao_CGN_local")
+        self._CGN_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.CGN_3SN6))
+        self._PDB_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.pdb_3SN6))
+        shutil.copy(test_filenames.CGN_3SN6, self._CGN_3SN6_file)
+        shutil.copy(test_filenames.pdb_3SN6, self._PDB_3SN6_file)
+        self.cgn_local = LabelerCGN("3SN6",
+                                    try_web_lookup=False,
+                                    local_path=self.tmpdir,
+                                    )
+
+    def tearDown(self):
+        # Remove the directory after the test
+        shutil.rmtree(self.tmpdir)
+
+class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
 
     # The setup is in itself a test
     def setUp(self):
-        self._geom_3SN6 = md.load(path.join(test_filenames.examples_path,
-                                            "3SN6.pdb.gz"))
+        self.tmpdir = mkdtemp("_test_mdciao_CGN_local")
+        self._CGN_3SN6_file = path.join(self.tmpdir,path.basename(test_filenames.CGN_3SN6))
+        self._PDB_3SN6_file = path.join(self.tmpdir,path.basename(test_filenames.pdb_3SN6))
+        shutil.copy(test_filenames.CGN_3SN6, self._CGN_3SN6_file)
+        shutil.copy(test_filenames.pdb_3SN6, self._PDB_3SN6_file)
         self.cgn_local = LabelerCGN("3SN6",
                                     try_web_lookup=False,
-                               local_path=test_filenames.examples_path)
+                                    local_path=self.tmpdir,
+                                    )
+
+    def tearDown(self):
+        # Remove the directory after the test
+        shutil.rmtree(self.tmpdir)
 
     def test_correct_files(self):
-
-
         _np.testing.assert_equal(self.cgn_local.tablefile,
-                                 path.join(test_filenames.examples_path,"CGN_3SN6.txt"))
+                                 self._CGN_3SN6_file)
         _np.testing.assert_equal(self.cgn_local.ref_PDB,
                                  "3SN6")
 
@@ -372,34 +394,46 @@ class TestLabelerCGN(unittest.TestCase):
                                            )
 
 
-class TestLabelerBWwoPDB(unittest.TestCase):
+class TestLabelerBW_local_woPDB(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
-        self.BW_local_no_pdb = LabelerBW("B2AR",
-                                         format="GPCRmd_%s_nomenclature_test.xlsx",
-                                         local_path=test_filenames.test_data_path)
+        self._geom_3SN6 = md.load(test_filenames.pdb_3SN6)
+        self.tmpdir = mkdtemp("_test_mdciao_BW_local_no_pdb")
+        self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir,
+                                                             path.basename(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
+        shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx, self._GPCRmd_B2AR_nomenclature_test_xlsx)
+
+        self.BW_local_no_pdb = LabelerBW(self._GPCRmd_B2AR_nomenclature_test_xlsx,
+                                         try_web_lookup=False)
 
     def test_correct_files(self):
-        _np.testing.assert_equal(self.BW_local_no_pdb.tablefile,
-                                 path.join(test_filenames.test_data_path,
-                                           "GPCRmd_B2AR_nomenclature_test.xlsx"))
         _np.testing.assert_equal(self.BW_local_no_pdb.ref_PDB,
                                  None)
 
-class TestLabelerBWwPDB(unittest.TestCase):
+class TestLabelerBW_local(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
-        self.BW_local_w_pdb = LabelerBW("B2AR",
+        self._geom_3SN6 = md.load(test_filenames.pdb_3SN6)
+        self.tmpdir = mkdtemp("_test_mdciao_BW_local")
+        self._PDB_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.pdb_3SN6))
+        self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
+        shutil.copy(test_filenames.pdb_3SN6, self._PDB_3SN6_file)
+        shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,self._GPCRmd_B2AR_nomenclature_test_xlsx)
+        self.BW_local_w_pdb = LabelerBW(self._GPCRmd_B2AR_nomenclature_test_xlsx,
                                         ref_PDB="3SN6",
-                                        format="GPCRmd_%s_nomenclature_test.xlsx",
-                                        local_path=test_filenames.test_data_path)
+                                        try_web_lookup=False,
+                                        local_path=self.tmpdir,
+                                        )
+
+    def tearDown(self):
+        # Remove the directory after the test
+        shutil.rmtree(self.tmpdir)
 
     def test_correct_files(self):
         _np.testing.assert_equal(self.BW_local_w_pdb.tablefile,
-                                 path.join(test_filenames.test_data_path,
-                                           "GPCRmd_B2AR_nomenclature_test.xlsx"))
+                                 self._GPCRmd_B2AR_nomenclature_test_xlsx)
         _np.testing.assert_equal(self.BW_local_w_pdb.ref_PDB,
                                  "3SN6")
 
@@ -542,58 +576,43 @@ class Test_map2defs(unittest.TestCase):
         with pytest.raises(AssertionError):
             nomenclature_utils._map2defs(self.cons_list_wo_dots)
 
-class Test_top2consensus_map(unittest.TestCase):
+class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
+
     #TODO add test for special case restrict_to_residxs
     def setUp(self):
-        self.cgn = LabelerCGN("3SN6",
-                              local_path=test_filenames.examples_path,
-                              )
-        self.geom = md.load(test_filenames.file_for_top2consensus_map)
+        super(Test_top2consensus_map,self).setUp()
+        self.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
+        self.top_mut = md.load(test_filenames.pdb_3SN6_mut).top
         self.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
-        self.cons_list_keep_consensus = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', 'G.hfs2.4',
-                                         'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
 
     def test_top2consensus_map_just_works(self): #generally works
-        cons_list = nomenclature_utils._top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top)
+        cons_list = nomenclature_utils._top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
+                                                          top=self.top_3SN6)
 
-        count = 1
-        cons_list_out = []
-        for ii, val in enumerate(cons_list):
-            if val is not None:
-                cons_list_out.append(val)
-                count += 1
-            if count > 5: #testing for the first 5 entries in the pdb file which have a valid CGN name
-                break
-        self.assertEqual(cons_list_out, self.cons_list_test)
+        self.assertEqual(cons_list[:5], self.cons_list_test)
 
     def test_top2consensus_map_keep_consensus_is_true(self):
-        #In the output below, instead of None, None, it will be 'G.hfs2.4' and 'G.hfs2.5'
-        # ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', None, None, 'G.hfs2.6', 'G.hfs2.7']
-        cons_list = nomenclature_utils._top2consensus_map(consensus_dict=self.cgn.AA2conlab, top=self.geom.top, keep_consensus=True)
-        cons_list_out = []
+        cons_list = nomenclature_utils._top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
+                                                          top=self.top_mut,
+                                                          keep_consensus=True)
 
-        for ii, val in enumerate(cons_list):
-            if (ii > 434 and ii < 442):
-                cons_list_out.append(val)
-        self.assertEqual(cons_list_out, self.cons_list_keep_consensus)
+        self.assertEqual(cons_list[:5], self.cons_list_test)
 
 class Test_fill_CGN_gaps(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_top2consensus_map)
-        self.cons_list_in = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', None,
-                          None, 'G.hfs2.6', 'G.hfs2.7']
-        self.cons_list_out = ['G.hfs2.1', 'G.hfs2.2', 'G.hfs2.3', 'G.hfs2.4',
-                                         'G.hfs2.5', 'G.hfs2.6', 'G.hfs2.7']
-
+        self.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
+        self.top_mut = md.load(test_filenames.pdb_3SN6_mut).top
+        self.cons_list_out = ['G.HN.26', 'G.HN.27', 'G.HN.28', 'G.HN.29', 'G.HN.30']
+        self.cons_list_in = ['G.HN.26', None, 'G.HN.28', 'G.HN.29', 'G.HN.30']
 
     def test_fill_CGN_gaps_just_works_with_CGN(self):
-        fill_cgn = nomenclature_utils._fill_consensus_gaps(self.cons_list_in, self.geom.top)
+        fill_cgn = nomenclature_utils._fill_consensus_gaps(self.cons_list_in, self.top_mut)
         self.assertEqual(fill_cgn,self.cons_list_out)
 
 
 class Test_fill_BW_gaps(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.prot1_pdb)
+        self.geom = md.load(test_filenames.top_pdb)
         self.cons_list_in = ['3.46', '3.47', "3.48", None,
                              None, '3.51', '3.52']
         self.cons_list_out = ['3.46', '3.47', "3.48", "3.49",
@@ -606,7 +625,7 @@ class Test_fill_BW_gaps(unittest.TestCase):
 @unittest.skip("This method apperas unused at the moment")
 class Test_fill_BW_gaps_old(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_top2consensus_map)
+        self.geom = md.load(test_filenames.file_for_top2consensus_map) # this file does not exist anymore
         self.cons_list_in = ['1.25', '1.26', None, '1.28']
         self.cons_list_out = ['1.25', '1.26', '1.27', '1.28']
 

@@ -29,7 +29,7 @@ class Test_sitefile2site(unittest.TestCase):
 class Test_sites_to_AAresSeqdict(unittest.TestCase):
     def setUp(self):
         self.GDP_json = test_filenames.GDP_json
-        self.geom = _md.load(test_filenames.prot1_pdb)
+        self.geom = _md.load(test_filenames.actor_pdb)
         self.fragments = mdciao.fragments.get_fragments(self.geom.top)
 
     def test_works(self):
@@ -51,7 +51,7 @@ class Test_sites_to_AAresSeqdict(unittest.TestCase):
 class Test_sites_to_ctc_idxs(unittest.TestCase):
     def setUp(self):
         self.GDP_json = test_filenames.GDP_json
-        self.geom = _md.load(test_filenames.prot1_pdb)
+        self.geom = _md.load(test_filenames.actor_pdb)
         self.fragments = mdciao.fragments.get_fragments(self.geom.top)
 
     def test_the_idxs_work_no_frags(self):

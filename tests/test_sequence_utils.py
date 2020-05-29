@@ -19,11 +19,11 @@ class Test_print_verbose_dataframe(unittest.TestCase):
 class Test_top2seq(unittest.TestCase):
 
     def test_works(self):
-        top = md.load(test_filenames.file_for_test_pdb).top
+        top = md.load(test_filenames.small_monomer).top
         seq = sequence_utils.top2seq(top)
         _np.testing.assert_array_equal("EVWIEKXX",seq)
     def test_other_letter(self):
-        top = md.load(test_filenames.file_for_test_pdb).top
+        top = md.load(test_filenames.small_monomer).top
         seq = sequence_utils.top2seq(top, replacement_letter="Y")
         _np.testing.assert_array_equal("EVWIEKYY", seq)
 
@@ -48,7 +48,7 @@ class Test_my_bioalign(unittest.TestCase):
 class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
 
     def test_works_small(self):
-        top = md.load(test_filenames.file_for_test_pdb).top
+        top = md.load(test_filenames.small_monomer).top
         seq0 = sequence_utils.top2seq(top)
         seq1 = seq0[::-1]+seq0.replace("I","A")+seq0[::-1]
         seq0_idxs = _np.arange(len(seq0))

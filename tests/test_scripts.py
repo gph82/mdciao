@@ -24,7 +24,7 @@ class Test_ExamplesCLTs(unittest.TestCase):
     def test_mdc_neighborhood(self):
         #input_values = (val for val in ["3", "3"])
         #with mock.patch('builtins.input', lambda *x: next(input_values)):
-        self.xCLTs.run("mdc_neighborhood", write_to_tmpdir=True)
+        self.xCLTs.run("mdc_neighborhoods", write_to_tmpdir=True)
 
     def test_mdc_interface(self):
         #input_values = (val for val in ["3", "3"])

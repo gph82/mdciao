@@ -139,7 +139,7 @@ class Test_trajs2ctcs(TestBaseClassContacts):
 
 class BaseClassForTestingAttributes(unittest.TestCase):
     def setUp(self):
-        self.trajs = md.load(test_filenames.top_pdb, top=test_filenames.top_xtc)[:3]
+        self.trajs = md.load(test_filenames.traj_xtc, top=test_filenames.top_pdb)[:3]
         self.trajs = [self.trajs[:2],
                       self.trajs[:3]]
         self.ctc_trajs = [[1, 2], [10, 11, 12]]
@@ -1108,7 +1108,12 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.partner_res_and_fragment_labels_short[1], "2@fragC")
         _np.testing.assert_equal(CG.anchor_fragment_color,"r")
 
-    def test_neighborhoods_wrong_ancor_color(self):
+    def test_neighborhood_w_partner_color(self):
+        CG = ContactGroup([self.cp1_w_anchor_and_frags,
+                           self.cp2_w_anchor_and_frags])
+        _np.testing.assert_array_equal(["b","g"], CG.partner_fragment_colors)
+
+    def test_neighborhoods_wrong_anchor_color(self):
         CG = ContactGroup([self.cp1_w_anchor_and_frags,
                            self.cp2_w_anchor_and_frags,
                            self.cp3_w_anchor_and_frags_wrong_anchor_color])
