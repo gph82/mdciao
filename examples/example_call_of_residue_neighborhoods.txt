@@ -1,0 +1,2 @@
+# Example call of residue_neighborhoods that uses most of its options
+residue_neighborhoods.py prot1.pdb.gz run1_stride_200.xtc run2_stride_200.xtc  --resSeq 393,394 --CGN 3SN6 --BW adrb2_human --output_ascii .dat --output_dir sofi_test --short_AAs --n_smooth 1 --gray --curve_color hobat --graphic_ext png --graphic_dpi 300 --n_ctcs 10 --ctc_cutoff_Ang 5 --t_unit mus

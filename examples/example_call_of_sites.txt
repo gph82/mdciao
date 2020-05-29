@@ -1,0 +1,1 @@
+sites.py prot1.pdb.gz *.xtc --site_files site_F.json --output_dir figs --fragment_names B2AR,B2AR,Galpha,Galpha,Gbeta,Ggamma,lig --CGN_PDB 3SN6 --BW adrb2_human --n_smooth 1--stride 100 --ctc_cutoff_Ang 5 --t_unit mus --graphic_ext .png --curve_color Peter --gray-background --graphic_dpi 300
