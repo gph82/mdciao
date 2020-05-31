@@ -564,13 +564,13 @@ def _fragment_overview(a,labtype):
             # the initialization of LabelerCGN, but it's
             # better to add 2 lins of code here than
             # changing the object's initialization
-            local_path, basename = _path.split(val)
-            ref_PDB = _path.splitext(basename)[0].replace("CGN_","")
-            assert len(ref_PDB)==4 and "CGN_%s.txt"%ref_PDB==basename
-            obj = LabelerCGN(ref_PDB,
-                             local_path=local_path,
-                             #write_to_disk=a.write_to_disk
-                             try_web_lookup=False)
+            #local_path, basename = _path.split(val)
+            #ref_PDB = _path.splitext(basename)[0].replace("CGN_","")
+            #assert len(ref_PDB)==4 and "CGN_%s.txt"%ref_PDB==basename
+            obj = LabelerCGN(val,
+                             #local_path=local_path,
+                             #try_web_lookup=False
+            )
         else:
             obj = LabelerCGN(val)
 
@@ -594,6 +594,7 @@ def _fragment_overview(a,labtype):
 
     map_conlab = obj.top2map(top, restrict_to_residxs=_np.hstack([fragments[ii] for ii in frag_idxs]))
     obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
+
     _parse_and_list_AAs_input(a.AAs, top, map_conlab)
 
     if str(a.labels).lower() != "none":
