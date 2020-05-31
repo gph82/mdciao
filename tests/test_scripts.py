@@ -1,11 +1,7 @@
 
-import mdtraj as md
 import unittest
-import numpy as _np
-from unittest.mock import patch
 import mock
 import mdciao.examples
-import pytest
 
 class Test_ExamplesCLTs(unittest.TestCase):
 

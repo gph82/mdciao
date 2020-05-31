@@ -13,7 +13,7 @@ from mdciao.plots import plot_contact_matrix, \
 from tempfile import TemporaryDirectory as _TDir
 import os
 
-from filenames import filenames
+from mdciao.filenames import filenames
 test_filenames = filenames()
 class TestPlotContactMatrix(unittest.TestCase):
 

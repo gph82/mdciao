@@ -1,7 +1,7 @@
 import unittest
 import mdtraj as md
 import numpy as _np
-from filenames import filenames
+from mdciao.filenames import filenames
 from pandas import DataFrame as _DF
 from mdciao import sequence_utils
 import pytest

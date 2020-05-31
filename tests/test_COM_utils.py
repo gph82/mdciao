@@ -2,7 +2,7 @@ from mdciao.COM_utils import *
 import mdtraj as md
 import numpy as _np
 import unittest
-from filenames import filenames
+from mdciao.filenames import filenames
 
 test_filenames = filenames()
 class Test_COM_utils(unittest.TestCase):

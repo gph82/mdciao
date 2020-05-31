@@ -1,5 +1,5 @@
 import unittest
-from filenames import filenames
+from mdciao.filenames import filenames
 import mdtraj as md
 import numpy as _np
 from tempfile import TemporaryDirectory as _TDir

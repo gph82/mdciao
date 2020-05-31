@@ -11,7 +11,7 @@ import pytest
 from mdciao import nomenclature_utils
 #TODO make these imports cleaner
 from mdciao.nomenclature_utils import *
-from filenames import filenames
+from mdciao.filenames import filenames
 
 from mdciao.fragments import get_fragments
 

@@ -1,6 +1,5 @@
-import mdtraj as md
 import unittest
-from filenames import filenames
+from mdciao.filenames import filenames
 import pytest
 
 import numpy as _np

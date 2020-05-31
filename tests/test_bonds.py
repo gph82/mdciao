@@ -1,7 +1,7 @@
 import mdtraj as md
 import unittest
 import numpy as _np
-from filenames import filenames
+from mdciao.filenames import filenames
 from mdciao import bond_utils
 import pytest
 

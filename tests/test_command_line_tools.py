@@ -1,10 +1,24 @@
 import mdtraj as md
 import unittest
-from filenames import filenames
+from mdciao.filenames import filenames
 test_filenames : filenames = filenames()
 import pytest
 
+#see https://stackoverflow.com/questions/169070/how-do-i-write-a-decorator-that-restores-the-cwd
+import contextlib
+@contextlib.contextmanager
+def remember_cwd():
+    curdir = os.getcwd()
+    try:
+        yield
+    finally:
+        os.chdir(curdir)
+
+import shutil
+
 from tempfile import TemporaryDirectory as _TDir
+
+import os
 
 from matplotlib import \
     pyplot as _plt
@@ -53,9 +67,9 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
     def setUp(self):
         super(Test_manage_timdep_plot_options, self).setUp()
-        ctc_idxs = [[1067,1068],
-                    [1067,334],
-                    [1067,488]]
+        ctc_idxs = [[353,348],
+                    [353,972],
+                    [353,347]]
         CPs = [ContactPair(pair,
                            [md.compute_contacts(itraj, [pair])[0].squeeze() for itraj in
                             [self.traj,
@@ -63,7 +77,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
                            [self.traj.time,
                             self.traj_reverse.time[:10]],
                            top=self.geom.top,
-                           anchor_residue_idx=1067)
+                           anchor_residue_idx=353)
                for pair in ctc_idxs]
 
         self.ctc_grp = ContactGroup(CPs,
@@ -71,11 +85,12 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
                                     )
 
     """
-    1:     1.00   GDP396-MG397           9-10       1067    1068     162 1.00
-    2:     1.00   GDP396-THR55           9-4        1067     334      12 2.00
-    3:     1.00   GDP396-ASP223          9-4        1067     488      82 3.00
-    4:     1.00   GDP396-ARG201          9-4        1067     466      67 4.00
-    5:     1.00   GDP396-LYS53           9-4        1067     332      10 5.00    
+    1:     0.55   LEU394-ARG389       0-0         353-348        33     0.55
+    2:     0.47   LEU394-LYS270       0-3         353-972        71     1.02
+    3:     0.38   LEU394-LEU388       0-0         353-347        32     1.39
+    4:     0.23   LEU394-LEU230       0-3         353-957        56     1.62
+    5:     0.10   LEU394-ARG385       0-0         353-344        29     1.73
+
     """
 
     def test_works(self):
@@ -166,13 +181,13 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             input_values = (val for val in ["b"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
                 residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                      "200,396",
+                                      "200,395",
                                       output_dir=tmpdir)
 
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
              residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                   "1067",
+                                   "1043",
                                    fragment_colors=True,
                                    allow_same_fragment_ctcs=False,
                                    short_AA_names=True,
@@ -183,35 +198,35 @@ class Test_residue_neighborhood(TestCLTBaseClass):
     def test_excel(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
              residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                   "396",
+                                   "395",
                                    table_ext=".xlsx",
                                    output_dir=tmpdir)
 
     def test_distro(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
              residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                   "396",
+                                   "395",
                                    distro=True,
                                    output_dir=tmpdir)
 
     def test_AAs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
              residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                   "396",
+                                   "395",
                                    short_AA_names=True,
                                    output_dir=tmpdir)
 
     def test_colors(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                  "396",
+                                  "395",
                                   short_AA_names=True,
                                   fragment_colors=True,
                                   output_dir=tmpdir)
 
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                  "396",
+                                  "395",
                                   short_AA_names=True,
                                   fragment_colors='c',
                                   output_dir=tmpdir)
@@ -236,39 +251,43 @@ class Test_residue_neighborhood(TestCLTBaseClass):
 
     def test_nomenclature_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in ["","a"])
-            with mock.patch('builtins.input', lambda *x: next(input_values)):
-                residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                      "131",
-                                      BW_uniprot=_path.join(test_filenames.test_data_path,"adrb2_human_full"),
-                                      # TODO include this in filenames
-                                      output_dir=tmpdir
-                                      )
+            residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
+                                  "R131",
+                                  BW_uniprot=test_filenames.adrb2_human_xlsx,
+                                  output_dir=tmpdir,
+                                  accept_guess=True
+                                  )
     def test_nomenclature_CGN(self):
+
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in ["", "a"])
-            with mock.patch('builtins.input', lambda *x: next(input_values)):
+            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
+            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            with remember_cwd():
+                os.chdir(tmpdir)
                 residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                      "131",
+                                      "R131",
                                       CGN_PDB="3SN6",
-                                      output_dir=tmpdir
+                                      output_dir=tmpdir,
+                                      accept_guess=True
                                       )
     def test_nomenclature_CGN_and_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in ["", "", "a"])
-            with mock.patch('builtins.input', lambda *x: next(input_values)):
+            shutil.copy(test_filenames.CGN_3SN6,tmpdir)
+            shutil.copy(test_filenames.pdb_3SN6,tmpdir)
+            with remember_cwd():
+                os.chdir(tmpdir)
                 residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                      "131",
+                                      "R131",
                                       CGN_PDB="3SN6",
-                                      BW_uniprot=_path.join(test_filenames.test_data_path, "adrb2_human_full"),
-                                      output_dir=tmpdir
+                                      BW_uniprot=test_filenames.adrb2_human_xlsx,
+                                      output_dir=tmpdir,
+                                      accept_guess=True
                                       )
 
     def test_no_contacts_at_allp(self):
         residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                              "131",
+                              "R131",
                               ctc_cutoff_Ang=.1,
-                              res_idxs=True,
                               )
 
     def test_some_CG_have_no_contacts(self):
@@ -286,24 +305,15 @@ class Test_sites(TestCLTBaseClass):
     def test_sites(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             sites(self.geom, [self.traj, self.traj_reverse],
-                  [test_filenames.GDP_json],
+                  [test_filenames.tip_json],
                   output_dir=tmpdir)
 
     def test_scheme_CA(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             sites(self.geom, [self.traj, self.traj_reverse],
-                  [test_filenames.GDP_json],
+                  [test_filenames.tip_json],
                   output_dir=tmpdir,
                   scheme="COM")
-
-    def test_fragmentify_raises(self):
-        with pytest.raises(NotImplementedError):
-            with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-                sites(self.geom, [self.traj, self.traj_reverse],
-                      [test_filenames.GDP_json],
-                      output_dir=tmpdir,
-                      scheme="COM",
-                      fragmentify=False)
 
 class Test_interface(TestCLTBaseClass):
 
@@ -345,35 +355,41 @@ class Test_interface(TestCLTBaseClass):
 
     def test_w_nomenclature_CGN_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in ["","", "", ""])
-            with mock.patch('builtins.input', lambda *x: next(input_values)):
+            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
+            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.adrb2_human_xlsx,tmpdir)
+            with remember_cwd():
+                os.chdir(tmpdir)
                 interface(self.geom, [self.traj, self.traj_reverse],
-                          frag_idxs_group_1=[0],
-                          frag_idxs_group_2=[1],
                           output_dir=tmpdir,
-                          fragments=["202-238",
-                                     "634-659"],
+                          fragments=["967-1001", #TM6
+                                     "328-353"], #a5
                           CGN_PDB="3SN6",
-                          BW_uniprot=_path.join(test_filenames.test_data_path, "adrb2_human_full"),
+                          BW_uniprot="adrb2_human",
+                          accept_guess=True,
                           )
 
     def test_w_nomenclature_CGN_BW_fragments_are_consensus(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in ["","", "", "", "TM6","*H5"])
-            with mock.patch('builtins.input', lambda *x: next(input_values)):
-                interface(self.geom, [self.traj, self.traj_reverse],
-                          frag_idxs_group_1=[0],
-                          frag_idxs_group_2=[1],
+            input_values = (val for val in [ "TM6","*H5"])
+            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
+            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
+            with remember_cwd():
+                os.chdir(tmpdir)
+                with mock.patch('builtins.input', lambda *x: next(input_values)):
+                    interface(self.geom, [self.traj, self.traj_reverse],
                           output_dir=tmpdir,
                           fragments=["consensus"],
                           CGN_PDB="3SN6",
-                          BW_uniprot=_path.join(test_filenames.test_data_path, "adrb2_human_full"),
+                          BW_uniprot="adrb2_human",
+                          accept_guess=True,
                           )
 
 class Test_parse_consensus_option(unittest.TestCase):
 
     def setUp(self):
-        self.geom = md.load(test_filenames.prot1_pdb)
+        self.geom = md.load(test_filenames.top_pdb)
 
     def test_empty(self):
         residx2conlab= command_line_tools._parse_consensus_option(None,None,self.geom.top,
@@ -389,22 +405,21 @@ class Test_parse_consensus_option(unittest.TestCase):
         assert _pandasunique(residx2conlab)[0] is None
 
     def test_with_BW(self):
-        option = _path.join(test_filenames.test_data_path,
-                                "adrb2_human_full")
         fragments = get_fragments(self.geom.top)
         input_values = (val for val in [""])
+        option = test_filenames.adrb2_human_xlsx
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             residx2conlab, lblr = command_line_tools._parse_consensus_option(option, "BW",
-                                                   self.geom.top,
-                                                   fragments,
-                                                   return_Labeler=True)
+                                                                             self.geom.top,
+                                                                             fragments,
+                                                                             return_Labeler=True,
+                                                                             try_web_lookup=False)
             self.assertIsInstance(lblr, LabelerBW)
             self.assertIsInstance(residx2conlab,list)
 
     def test_with_BW_already_instantiated(self):
         fragments = get_fragments(self.geom.top)
-        BW = LabelerBW("adrb2_human_full",
-                       local_path=test_filenames.test_data_path)
+        BW = LabelerBW(test_filenames.adrb2_human_xlsx)
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
 
@@ -439,11 +454,11 @@ class Test_offer_to_create_dir(unittest.TestCase):
 class Test_load_any_geom(unittest.TestCase):
 
     def test_loads_file(self):
-        geom = command_line_tools._load_any_geom(test_filenames.prot1_pdb)
+        geom = command_line_tools._load_any_geom(test_filenames.top_pdb)
         self.assertIsInstance(geom, md.Trajectory)
 
     def test_loads_geom(self):
-        geom = md.load(test_filenames.prot1_pdb)
+        geom = md.load(test_filenames.top_pdb)
         geomout = command_line_tools._load_any_geom(geom)
         self.assertIs(geom, geomout)
 
@@ -481,25 +496,37 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
 
 class Test_fragment_overview(unittest.TestCase):
 
-    def test_CGN(self):
-        a = parser_for_CGN_overview()
-        a = a.parse_args([test_filenames.top_pdb,
-                          test_filenames.CGN_3SN6])
-        command_line_tools._fragment_overview(a,"CGN")
+    def test_CGN_paths(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            path_to_CGN_3SN6 = _path.join(tmpdir,_path.basename(test_filenames.CGN_3SN6))
+            #path_to_PDB_3SN6 = _path.join(tmpdir,_path.basename(test_filenames.pdb_3SN6))
+            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
+            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            with remember_cwd():
+                os.chdir(tmpdir)
+                a = parser_for_CGN_overview()
+                a = a.parse_args([test_filenames.top_pdb,
+                                  path_to_CGN_3SN6])
+                command_line_tools._fragment_overview(a,"CGN")
 
-    def test_BW_local_and_verbose(self):
+    def test_BW_paths_and_verbose(self):
         a = parser_for_BW_overview()
-        a = a.parse_args([_path.join(test_filenames.test_data_path, "3SN6.pdb.gz"),
-                          _path.join(test_filenames.test_data_path,"adrb2_human_full.xlsx")])
-        print(a)
+        a = a.parse_args([test_filenames.top_pdb,
+                         test_filenames.adrb2_human_xlsx])
         a.__setattr__("print_conlab",True)
         command_line_tools._fragment_overview(a,"BW")
 
     def test_BW_url(self):
         a = parser_for_BW_overview()
-        a = a.parse_args([_path.join(test_filenames.test_data_path, "3SN6.pdb.gz"),
+        a = a.parse_args([test_filenames.pdb_3SN6,
                           "adrb2_human"])
         command_line_tools._fragment_overview(a,"BW")
+
+    def test_BW_descriptor(self):
+        assert False
+
+    def test_CGN_descriptor(self):
+        assert False
 
     def test_raises(self):
         with pytest.raises(ValueError):
@@ -508,19 +535,17 @@ class Test_fragment_overview(unittest.TestCase):
     def test_AAs(self):
         a = parser_for_CGN_overview()
         a = a.parse_args([test_filenames.top_pdb,
-                          _path.join(test_filenames.nomenclature_path,
-                                     "CGN_3SN6.txt"),
+                          test_filenames.CGN_3SN6,
                           ])
         a.__setattr__("AAs","LEU394,LEU395")
         command_line_tools._fragment_overview(a,"CGN")
 
     def test_labels(self):
-        a = parser_for_CGN_overview()
-        a = a.parse_args([test_filenames.prot1_pdb, _path.join(test_filenames.test_data_path,
-                                                               "CGN_3SN6.txt"),
-                          ])
-        a.__setattr__("labels","G.H5.26")
-        command_line_tools._fragment_overview(a,"CGN")
+        a = parser_for_BW_overview()
+        a = a.parse_args([test_filenames.top_pdb,
+                          test_filenames.adrb2_human_xlsx])
+        a.__setattr__("labels","3.50")
+        command_line_tools._fragment_overview(a,"BW")
 
 if __name__ == '__main__':
     unittest.main()

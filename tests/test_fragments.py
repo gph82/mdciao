@@ -10,7 +10,7 @@ from mdciao.fragments import get_fragments, \
 
 from mdciao import fragments
 
-from filenames import filenames
+from mdciao.filenames import filenames
 
 import pytest
 

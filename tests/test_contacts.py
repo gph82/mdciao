@@ -6,7 +6,7 @@ import numpy as _np
 import mock
 from os import path
 from scipy.spatial.distance import cdist
-from filenames import filenames
+from mdciao.filenames import filenames
 import pytest
 from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
     trajs2ctcs, \

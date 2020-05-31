@@ -1,7 +1,7 @@
 import mdtraj as md
 import numpy as np
 import unittest
-from filenames import filenames
+from mdciao.filenames import filenames
 from mdciao.residue_and_atom_utils import \
     find_AA, int_from_AA_code, name_from_AA, shorten_AA, _atom_type
 import pytest

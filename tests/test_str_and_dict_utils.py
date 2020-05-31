@@ -3,7 +3,7 @@ from os import path
 import numpy as np
 
 import unittest
-from filenames import filenames
+from mdciao.filenames import filenames
 
 from mdciao.str_and_dict_utils import \
     get_sorted_trajectories, \
