@@ -1,0 +1,1 @@
+../../examples/CGN_3SN6.txt
