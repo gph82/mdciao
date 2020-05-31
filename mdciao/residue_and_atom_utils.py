@@ -172,9 +172,7 @@ def _atom_type(aa, no_BB_no_SC='X'):
 
 #TODO document
 def _parse_and_list_AAs_input(AAs, top, map_conlab=None):
-    print(AAs)
     if str(AAs).lower()!="none":
-        print(AAs,type(AAs))
         AAs = [aa.strip(" ") for aa in AAs.split(",")]
         for aa in AAs:
             cands = find_AA(top,aa)
