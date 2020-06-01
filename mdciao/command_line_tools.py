@@ -31,7 +31,8 @@ from mdciao.fragments import \
 from mdciao.nomenclature_utils import \
     LabelerCGN, LabelerBW,\
     _choose_between_consensus_dicts, \
-    _guess_by_nomenclature
+    _guess_by_nomenclature, \
+    _guess_nomenclature_fragments
 
 from mdciao.contacts import \
     select_and_report_residue_neighborhood_idxs, \
@@ -47,7 +48,9 @@ from mdciao.site_utils import \
 
 from mdciao.str_and_dict_utils import \
     get_sorted_trajectories as _get_sorted_trajectories, \
-    _inform_about_trajectories, _tunit2tunit
+    _inform_about_trajectories, \
+    _tunit2tunit, \
+    _replace4latex
 
 from mdciao.bond_utils import \
     bonded_neighborlist_from_top
@@ -559,20 +562,7 @@ def _fragment_overview(a,labtype):
     """
     if labtype == "CGN":
         val = a.PDB_code_or_txtfile
-        if _path.exists(val):
-            # This is sort of un-winding the loging behind
-            # the initialization of LabelerCGN, but it's
-            # better to add 2 lins of code here than
-            # changing the object's initialization
-            #local_path, basename = _path.split(val)
-            #ref_PDB = _path.splitext(basename)[0].replace("CGN_","")
-            #assert len(ref_PDB)==4 and "CGN_%s.txt"%ref_PDB==basename
-            obj = LabelerCGN(val,
-                             #local_path=local_path,
-                             #try_web_lookup=False
-            )
-        else:
-            obj = LabelerCGN(val)
+        obj = LabelerCGN(val)
 
     elif labtype == "BW":
         val = a.BW_uniprot_or_file
@@ -587,7 +577,6 @@ def _fragment_overview(a,labtype):
         raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
 
     top = md.load(a.topology).top
-    from .nomenclature_utils import _guess_nomenclature_fragments
     fragments = get_fragments(top,method="lig_resSeq+",
                               verbose=False)
     frag_idxs = _guess_nomenclature_fragments(obj, top, fragments)
@@ -909,7 +898,7 @@ def interface(
         graphic_ext=".pdf",
         gray_background=False,
         interface_cutoff_Ang=35,
-        n_ctcs=10,
+        n_ctcs=20,
         n_smooth_hw=0,
         output_desc="interface",
         output_dir=".",
@@ -925,7 +914,8 @@ def interface(
         scheme="closest-heavy",
         separate_N_ctcs=False,
         table_ext=None,
-        title=None
+        title=None,
+        min_freq=.10,
 ):
 
     if str(title).lower()=="none":
@@ -1007,11 +997,12 @@ def interface(
     # Get frequencies so that we don't create unnecessary ctc objects
     ctcs_bin = (actcs <= ctc_cutoff_Ang / 10).astype("int").sum(0)
     ctc_frequency = ctcs_bin / actcs.shape[0]
+    tot_freq = ctc_frequency.sum()
     order = _np.argsort(ctc_frequency)[::-1]
     ctc_objs = []
-    for idx in order[:n_ctcs]:
+    for ii, idx in enumerate(order[:n_ctcs]):
         ifreq = ctc_frequency[idx]
-        if ifreq > 0:
+        if ifreq > min_freq:
             pair = ctc_idxs_receptor_Gprot[idx]
             #consensus_labels = [_choose_between_consensus_dicts(idx, [BW, CGN],
             #                                                    no_key=_shorten_AA(refgeom.top.residue(idx),
@@ -1030,6 +1021,8 @@ def interface(
                                         fragment_names=[fragment_names[idx] for idx in fragment_idxs],
                                         atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
                                         ))
+            cum_freq = ctc_frequency[order[:ii+1]].sum()
+            #print(ii, ifreq.round(2), cum_freq.round(2), (cum_freq.sum()/tot_freq*100).round(2))
 
     ctc_grp_intf = ContactGroup(ctc_objs,
                                 interface_residxs=interface_residx_short)
@@ -1062,7 +1055,8 @@ def interface(
                                     xlim=_np.min((n_ctcs,ctc_grp_intf.n_ctcs)),
                                     label_fontsize_factor=panelsize2font / panelsize,
                                     shorten_AAs=short_AA_names,
-                                    truncate_at=.05,
+                                    truncate_at=min_freq,
+                                    total_freq=tot_freq
                                     )
 
     ctc_grp_intf.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
@@ -1087,6 +1081,17 @@ def interface(
     with open(fname_dat,"w") as f:
         f.write(ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang))
     print(fname_dat)
+    #TODO bury this in plots?
+    ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
+                                                             colorbar=True,
+                                                             grid=True)
+
+    iax.set_title("'%s'  as contact matrix"%_replace4latex(title),
+                  fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
+    ifig.tight_layout()
+    fname_mat = fname.replace("overall@","matrix@")
+    ifig.savefig(fname_mat)
+    print(fname_mat)
     if plot_timedep or separate_N_ctcs:
         myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
                                                color_scheme=_my_color_schemes(curve_color),
@@ -1141,6 +1146,7 @@ def sites(topology,
           accept_guess=False,
           table_ext=None,
           output_desc="sites",
+          plot_atomtypes=False
           ):
 
     ylim_Ang = _np.float(ylim_Ang)
@@ -1218,7 +1224,6 @@ def sites(topology,
                                                ))
         site_as_gc[key] = ContactGroup(site_as_gc[key])
 
-    print("The following files have been created")
     panelheight = 3
     n_cols = _np.min((4, len(sites)))
     n_rows = _np.ceil(len(sites) / n_cols).astype(int)
@@ -1235,16 +1240,19 @@ def sites(topology,
                                     jax=jax,
                                     xlim=_np.max([ss["n_bonds"] for ss in sites]),
                                     label_fontsize_factor=panelsize2font / panelsize,
-                                    shorten_AAs=short_AA_names
+                                    shorten_AAs=short_AA_names,
+                                    plot_atomtypes=plot_atomtypes,
                                     )
-
+        print()
+        print(isite_nh.frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}))
+        print()
 
     if scheme!="closest-heavy":
         scheme_desc='%s.'%scheme
     else:
         scheme_desc=''
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "%s.overall.%s%s" % (output_desc, scheme_desc, graphic_ext.strip("."))
+    fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
     fname = _path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi)
     plt.close(histofig)
@@ -1294,5 +1302,5 @@ def sites(topology,
 
     return
 
-def neighborhood_comparison(*args, **kwargs):
+def compare(*args, **kwargs):
     return _compare_groups_of_contacts(*args, **kwargs)
