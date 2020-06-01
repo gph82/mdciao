@@ -2206,7 +2206,9 @@ class ContactGroup(object):
                            jax=None,
                            shorten_AAs=False,
                            label_fontsize_factor=1,
-                           truncate_at=None):
+                           truncate_at=None,
+                           total_freq=None,
+                           plot_atomtypes=False):
         r"""
         Plot a contact frequencies as a bar plot
 
@@ -2238,14 +2240,26 @@ class ContactGroup(object):
                                       label_fontsize_factor=label_fontsize_factor
                                       )
         # Cosmetics
-        title = "Contact frequency @%2.1f AA of '%s'\nSigma = %2.1f\n" % (
-        ctc_cutoff_Ang, _replace4latex(title_label), _np.sum([ipatch.get_height() for ipatch in jax.patches]))
+        sigma = _np.sum([ipatch.get_height() for ipatch in jax.patches])
+        title = "Contact frequency @%2.1f AA of '%s' " \
+                "(Sigma = %2.1f)\n" \
+                % (
+                    ctc_cutoff_Ang, _replace4latex(title_label),
+                    sigma
+                )
+        if total_freq is not None:
+            title+="these %u most frequent contacts capture %4.2f %% of all contacts\n" % (self.n_ctcs,
+                                                                                   sigma / total_freq * 100,
+                                                                                           )
         jax.set_title(_replace4latex(title),
-                      pad = _rcParams["axes.titlepad"] + _titlepadding_in_points_no_clashes_w_texts(jax))
+          pad=_rcParams["axes.titlepad"] + _titlepadding_in_points_no_clashes_w_texts(jax))
 
         #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
             jax.set_xlim([-.5, xlim + 1 - .5])
+
+        if plot_atomtypes:
+            self._add_hatching_by_atomtypes(jax, ctc_cutoff_Ang)
 
         return jax
 
@@ -2836,7 +2850,8 @@ class ContactGroup(object):
             Alternatives are "residue" or "consensus", but"consensus" alone
             might lead to empty labels since it is not guaranteed
             that all residues of the interface have consensus labels
-        plot_mat_kwargs
+        plot_mat_kwargs: see :obj:`plot_mat
+            pixelsize, transpose, grid, cmap, colorbar
 
         Returns
         -------
