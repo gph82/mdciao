@@ -37,6 +37,9 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 Basic Usage
 -----------
 
+.. note::
+   The simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/'html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples.
+
 This is one very simple example command::
 
  mdc_neighborhoods.py p2.noH.pdb run1.1-p.stride.5.noH.xtc --residues L394 -nf
@@ -62,7 +65,7 @@ And produce the following figures:
 .. figure:: imgs/neighborhoods.overall@3.5_Ang.Fig.1.png
    :scale: 50%
 
-   **Fig. 1** Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the alpha5 helix of the Gs-protein are shown. The simualtion started from the `3SN6` structure (including the B2AR receptor). The simualtion itself can be seen here
+   **Fig. 1** Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the alpha5 helix of the Gs-protein are shown. The simualtion started from the `3SN6` structure (including the B2AR receptor). The simualtion itself can be seen interactively:
 
 Annotated figures with the timetraces giving rise to the above frequencies are also produced automatically:
 
@@ -124,26 +127,59 @@ Other Highlights
      G.H5 with   26 AAs   THR369@G.H5.1( 328)- LEU394@G.H5.26(353 ) (G.H5)
 
 
-* define interfaces and compute the residue contacts automatically::
+* use fragment definitions to automatically compute interfaces::
 
-    mdc_interface.py gs-b2ar.pdb gs-b2ar.xtc  -fg1 0-2 -fg2 3 --BW_un adrb2_human --CGN 3SN6 -t "3SN6 beta2Ar-Gs interface"
+    mdc_interface.py gs-b2ar.pdb gs-b2ar.xtc  -fg1 0-2 -fg2 3 --BW_un adrb2_human --CGN 3SN6 -t "3SN6 beta_2Ar-G_s interface"
 
- .. figure:: imgs/interface.overall@3.5_Ang.Fig.4.png
-      :scale: 33%
+ .. figure:: imgs/interface.matrix@3.5_Ang.Fig.4.png
+      :scale: 25%
       :align: left
 
-      **Fig. 4** Upper panel: most frequent contacts between the B2AR receptor and the G protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor (BW) and G-protein (CGN). On average, about 12 contacts (using this cutoff) are formed at ther interface. The lower panel sums contact frequencies by residue, sorting residues by how much they are participate, on average, in the interface between the receptor and the protein.
+      **Fig. 4** (click to enlarge). Interface contact matrix between the B2AR receptor and the Gs protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor (BW) and G-protein (CGN). Please note: this is not a **symmetric** contact-matrix. The y-axis shows residues in the Gs protein and the x-axis in the receptor.
 
-* use site definitions for equivalent moieties across different setups, e.g. pick some contacts from the above selection::
+* Since **Fig. 4** is bound to incorporate a lot of blank pixels. That is why mdciao will also produce sparse plots and figures that highlight the formed contacts only:
+
+ .. figure:: imgs/interface.overall@3.5_Ang.Fig.5.png
+      :scale: 15%
+      :align: left
+
+      **Fig. 5** (click to enlarge) Upper panel: most frequent contacts sorted by frequency. The lower panel aggreates and sorts the upper panel into per-residue frequencies, showing their average participation in the interface (same info will be written to `interface.overall@3.5_Ang.xlsx`). Also, the number of shown contacts can be controllod either with the `--n_ctcs` and/or `--min_freq` parameters of `mdc_interface.py`
+
+
+* A different approach is to look **only** for a particular set of pre-defined contacts. Simply writing this set into a human readable `JSON <https://www.json.org/>`_ file will allow `mdc_sites.py` to compute and present these (and only these) contacts, as in the example file `tip.json`::
 
    {"sitename":"interesting contacts",
    "bonds": {"AAresSeq": [
+               "L394-K270",
                "D381-Q229",
                "Q384-Q229",
                "R385-Q229",
                "D381-K232",
                "Q384-I135"
                ]}}
+
+
+  One added bonus is the .json files is that you can use the same file across different setups as long as the specified residues are present.
+
+  The command::
+
+   mdc_sites.py gs-b2ar.pdb gs-b2ar.xtc --site_files tip.json -at
+
+  generates the following figure (tables are generated but not shown). The option `-at` (`--atomtypes`) generates the patterns ("hatching") of the bars. They indicate how the atom types (sidechain or backbone) responsible for the contact:
+
+ | `-`   is sidechain-sidechain (SC-SC),
+ | `|`   is backbone-backbone(BB-BB),
+ | `/`   is SC-SC, and
+ | `\\`  is SC-BB
+
+.. figure:: imgs/sites.overall@3.5_Ang.Fig.6.png
+      :scale: 50%
+      :align: left
+
+      **Fig. 5** (click to enlarge) Contact frequencies of the pairs specified in the file `tip.json`, shown above with the contact type indicated by the stripes on the bars. Use e.g. the the 3D-visualisation to check how "L394-K270" switches between SC-SC and SC-BB.
+
+* compare contact frequencies coming from different calculations 
+
 
 * compare, detect, and show frequency differences across different systems, e.g. to look for the effect of mutations, pH-differences etc
 * TODO expand
