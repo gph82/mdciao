@@ -35,7 +35,6 @@ class ExamplesCLTs(object):
         return ["mdc_neighborhoods.py",
                 "%s %s" % (self.pdb, self.xtc),
                 "--residues L394",
-                "--ctc_cutoff_Ang 4",
                 "--n_smooth_hw 1",
                 "--table xlsx",
                 "--BW_uniprot %s" % self.BW_file,
@@ -46,7 +45,6 @@ class ExamplesCLTs(object):
         return ["mdc_sites.py ",
                 "%s %s" % (self.pdb, self.xtc),
                 " --site_files %s" % self.sitefile,
-                " --ctc_cutoff_Ang 4",
                 " --BW_uniprot %s" % self.BW_file,
                 " --CGN_PDB %s" % self.CGN_file
                 ]
@@ -55,11 +53,11 @@ class ExamplesCLTs(object):
     def mdc_interface(self):
         return ["mdc_interface.py ",
                 "%s %s" % (self.pdb, self.xtc),
-                " --ctc_cutoff_Ang 4 ",
-                " --frag_idxs_group_1 0",
+                " --frag_idxs_group_1 0-2",
                 " --frag_idxs_group_2 3",
                 " --BW_uniprot %s" % self.BW_file,
-                " --CGN_PDB %s" % self.CGN_file
+                " --CGN_PDB %s" % self.CGN_file,
+                " --n_ctcs 20"
                 ]
 
     @property
@@ -85,8 +83,8 @@ class ExamplesCLTs(object):
             oneline = oneline[:-2]
         oneline = " ".join(oneline)
         print(oneline.replace("--", "\n--"))
-        print("\n\nYou can re-run '-x' option to execute the command directly\n"
-              "or you can paste the line below into your terminal, add/edit options and then execute:\n")
+        print("\n\nYou can re-run 'mdc_examples %s.py' with the  '-x' option to execute the command directly\n"
+              "or you can paste the line below into your terminal, add/edit options and then execute:\n"%clt)
         print(oneline)
 
     def run(self, clt,show=True, write_to_tmpdir=False):
