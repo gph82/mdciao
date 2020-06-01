@@ -340,16 +340,18 @@ def _replace4latex(istr):
         'There's an $\alpha$ and a $\beta$ here, also $C_2$'
 
     """
-    for gl in ['alpha','beta','gamma', 'mu', "Sigma"]+ \
-              ["AA", "Ang"]:
-
-        istr = _latexify(gl,istr,symbol=True)
     chars_that_latexify_word = ["_", "^"]
-
     for c in chars_that_latexify_word:
         for word in istr.split():
             if c in word:
-                istr = _latexify(word,istr)
+                istr = _latexify(word, istr)
+
+    for gl in ['alpha','beta','gamma', 'mu', "Sigma"]+ \
+              ["AA", "Ang"]:
+        if gl in istr:
+            istr = _latexify(gl,istr,symbol=True)
+
+
     return istr
 
 def _latexify(word, istr, symbol=False):
@@ -357,7 +359,11 @@ def _latexify(word, istr, symbol=False):
         latex_ranges = _find_latex_chunks(istr)
         if any([set(lr).issuperset(span) for lr in latex_ranges]):
             # This substring is already within a latex chunk, can't do anything
-            pass
+            # except check if it's been enclosed in dollars but no \symbol, e.g. $beta_2$
+            if symbol:
+                if istr[span[0] - 1] != '\\':
+                    new = '\%s' % word
+                    istr = istr[:span[0]] + new + istr[span[1]:]
         else:
             new = '$%s$' % word
             if symbol:
