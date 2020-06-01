@@ -62,14 +62,17 @@ def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
             maplabel_first = _choose_between_good_and_better_strings(None,idx2label[fragment[0]],fmt="@%s")
             maplabel_last =  _choose_between_good_and_better_strings(None,idx2label[fragment[-1]],fmt="@%s")
 
-        resfirst = "%7s%s"%(top.residue(fragment[0]), maplabel_first)
-        reslast =  "%7s%s"%(top.residue(fragment[-1]), maplabel_last)
-        istr = "%s %6s with %4u AAs %15s(%4u)-%-15s(%-4u) (%s) " % (fragment_desc, str(frag_idx), len(fragment),
-                                                                resfirst,
-                                                                top.residue(fragment[0]).index,
-                                                                reslast,
-                                                                top.residue(fragment[-1]).index,
-                                                                str(frag_idx))
+        resfirst = "%8s%-10s"%(top.residue(fragment[0]), maplabel_first)
+        reslast =  "%8s%-10s"%(top.residue(fragment[-1]), maplabel_last)
+        istr = "%s %6s with %4u AAs %8s%-10s (%4u) - %8s%-10s (%-4u) (%s) " % \
+               (fragment_desc, str(frag_idx), len(fragment),
+                #resfirst,
+                top.residue(fragment[0]), maplabel_first,
+                top.residue(fragment[0]).index,
+                #reslast,
+                top.residue(fragment[-1]), maplabel_last,
+                top.residue(fragment[-1]).index,
+                str(frag_idx))
     except:
         print(fragment)
         raise
