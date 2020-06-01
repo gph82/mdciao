@@ -1,6 +1,7 @@
 import numpy as _np
 from matplotlib import rcParams as _rcParams
 import matplotlib.pyplot as _plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable as _make_axes_locatable
 from .list_utils import   \
     window_average_fast as _wav
 from .str_and_dict_utils import \
@@ -729,6 +730,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
 
     _plt.figure(figsize = _np.array(mat.shape)*pixelsize)
     im = _plt.imshow(mat,cmap=cmap)
+    fig,iax = _plt.gcf(), _plt.gca()
     _plt.ylim([len(labels[0])-.5, -.5])
     _plt.xlim([-.5, len(labels[1])-.5])
     _plt.yticks(_np.arange(len(labels[0])),labels[0],fontsize=pixelsize*20)
@@ -739,7 +741,10 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         _plt.vlines(_np.arange(len(labels[1])) + .5, -.5, len(labels[0]), ls='--', lw=.5,  color='gray', zorder=10)
 
     if colorbar:
-        _plt.gcf().colorbar(im, ax=_plt.gca())
+        # from https://stackoverflow.com/a/18195921
+        divider = _make_axes_locatable(iax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        _plt.gcf().colorbar(im, cax=cax)
         im.set_clim(0.0, 1.0)
-
-    return _plt.gca(), pixelsize
+    fig.tight_layout()
+    return iax, pixelsize
