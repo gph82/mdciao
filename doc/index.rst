@@ -178,7 +178,7 @@ Other Highlights
 
       **Fig. 5** (click to enlarge) Contact frequencies of the pairs specified in the file `tip.json`, shown above with the contact type indicated by the stripes on the bars. Use e.g. the the 3D-visualisation to check how "L394-K270" switches between SC-SC and SC-BB.
 
-* compare contact frequencies coming from different calculations 
+* compare contact frequencies coming from different calculations
 
 
 * compare, detect, and show frequency differences across different systems, e.g. to look for the effect of mutations, pH-differences etc

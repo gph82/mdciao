@@ -1,4 +1,4 @@
-#!/home/perezheg/miniconda3/bin/python
+#!python
 from mdciao.command_line_tools import interface
 from mdciao.parsers import parser_for_interface
 parser = parser_for_interface()
