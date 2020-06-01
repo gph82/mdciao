@@ -302,7 +302,7 @@ def _find_latex_chunks(istr, blockers=['$$','\$']):
     r"""
     Find if a string has latex chunks in it, chunks of
      the string that are within two dollar signs.
-    "There is $\alpha$ in the midle of this sentence"
+    "There is $\alpha$ in the middle of this sentence"
     returns [[range(10,17)]]
     Parameters
     ----------
@@ -314,12 +314,13 @@ def _find_latex_chunks(istr, blockers=['$$','\$']):
 
     """
     for bb in blockers:
-        assert bb not in istr, ("Cannot find latex chunks in strint %s, it contains the blocker %s"%(istr,bb))
+        assert bb not in istr, ("Cannot find latex chunks in string %s, it contains the blocker %s"%(istr,bb))
     matches = [m.start() for m in _re.finditer('\$',istr)]
     assert _np.mod(len(matches),2)==0, "The string %s has to contain an even number of dollar signs, " \
                                        "but it contains %u"%(istr,len(matches))
-    ranges = [_np.arange(ii,jj+1) for ii,jj in zip(matches[:-1],matches[1:])]
+    ranges = [_np.arange(ii,jj+1) for ii,jj in _np.reshape(matches,(-1,2))]
     return ranges
+
 def _replace4latex(istr):
     r"""
     One of two things:
@@ -344,18 +345,27 @@ def _replace4latex(istr):
     for c in chars_that_latexify_word:
         for word in istr.split():
             if c in word:
-                istr = _latexify(word, istr)
+                istr, __ = _latexify(word, istr)
 
     for gl in ['alpha','beta','gamma', 'mu', "Sigma"]+ \
               ["AA", "Ang"]:
         if gl in istr:
-            istr = _latexify(gl,istr,symbol=True)
-
+            still2latex = True
+            idx=0
+            #TODO do proper recursion here, it's too late at night now
+            while still2latex:
+                istr, still2latex = _latexify(gl,istr,symbol=True, idx=idx)
+                idx+=1
+                if idx>100:
+                    print("More than 100 occurrences of %s in str, this is not sane"%gl)
+                    break
 
     return istr
 
-def _latexify(word, istr, symbol=False):
-    for span in [m.span() for m in _re.finditer(word, istr)]:
+def _latexify(word, istr, symbol=False, idx=0):
+    spans = [m.span() for m in _re.finditer(word, istr)]
+    try:
+        span = spans[idx] # to be able to be out of range
         latex_ranges = _find_latex_chunks(istr)
         if any([set(lr).issuperset(span) for lr in latex_ranges]):
             # This substring is already within a latex chunk, can't do anything
@@ -370,8 +380,11 @@ def _latexify(word, istr, symbol=False):
                 if istr[span[0] - 1] != '\\':
                     new = '$\%s$' % word
             istr = istr[:span[0]] + new + istr[span[1]:]
+        still2latex=True
+    except IndexError:
+        still2latex=False
 
-    return istr
+    return istr,still2latex
 
 def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
     r"""
