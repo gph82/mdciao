@@ -169,7 +169,7 @@ def _parser_add_fragments(parser):
                               "     Can be harmless or potentially dangerous if residue\n "
                               "     labels are repeated."
                               "If you are unsure of any of these options, use \n"
-                              "the command line tool mdc_fragment_overview.py on \n"
+                              "the command line tool mdc_fragments.py on \n"
                               "your topology file."))
 
 def _parser_add_output_dir(parser):
@@ -192,7 +192,7 @@ def _parser_add_nomenclature(parser):
     parser.add_argument("--CGN_PDB", type=str, help="PDB code for a consensus G-protein nomenclature", default='None')
 
 def _parser_add_graphic_ext(parser):
-    parser.add_argument('-ge','--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
+    parser.add_argument('-gx','--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
                         default='.pdf')
 
 def _parser_add_no_fragfrag(parser):
@@ -266,7 +266,7 @@ def _parser_add_graphic_dpi(parser):
                         default=150)
 
 def _parser_add_table_ext(parser):
-    parser.add_argument('-te','--table_ext', type=str,
+    parser.add_argument('-tx','--table_ext', type=str,
                         help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
                         default=None)
 
@@ -293,6 +293,17 @@ def _parser_add_AAs(parser):
                         help="Print the idxs and labels of these AAs, e.g. R131,GLU30",
                         default=None)
 
+def _parser_add_atomtypes(parser):
+    parser.add_argument("-at", "--atomtypes",
+                        dest="plot_atomtypes", action="store_true",
+                        help="Add the atom-types to the frequency bars by 'hatching' them.\n"
+                             " '--' is sidechain-sidechain\n"
+                             " '|' is backbone-backbone\n"
+                             " '\\' is backbone-sidechain\n"
+                             " '/' is sidechain-backbone\n"
+                             "Default is false")
+    parser.set_defaults(accept_guess=False)
+
 def _parser_add_conslabels(parser):
     parser.add_argument("--labels",type=str,
                         help="Print the idxs and resnames of these consensus labels, e.g. 3.50,2.63",
@@ -310,6 +321,7 @@ def _parser_add_no_frag(parser):
                         help="Do not use fragments. Defautl is to use them")
     parser.set_defaults(fragmentify=True)
 
+#TODO unify _ vs - in arguments
 def _parser_add_frag_colors(parser):
     parser.add_argument("--fragment_colors", type=str,
                         help="comma-separated vales of the fragment colors.\n"
@@ -484,6 +496,7 @@ def parser_for_sites():
     _parser_add_short_AA_names(parser)
     _parser_add_n_jobs(parser)
     _parser_add_table_ext(parser)
+    _parser_add_atomtypes(parser)
     return parser
 
 def parser_for_densities():
@@ -495,11 +508,13 @@ def parser_for_densities():
     return parser
 
 def parser_for_interface():
-    parser = _parser_top_traj(description='Residue-residue contact analysis-tool where contacts are computed '
+    parser = _parser_top_traj(description='Analyse interfaces'
                                           ' between two groups of residues specified by the user.'                                          
                                           ' To help in the identification of these two groups of residues, '
-                                          'the peptide-chain in the input topology '
-                                          'can be automatically broken down into fragments and use them directly.')
+                                          ' the peptide-chain in the input topology '
+                                          ' can be automatically broken down into fragments and use them as input. '
+                                          'The number of shown contacts depends on the parameters "n_ctcs" and '
+                                          '"min_freq". ')
 
     _parser_add_fragments(parser)
     parser.add_argument("-fg1","--frag_idxs_group_1", type=str,
@@ -511,7 +526,11 @@ def parser_for_interface():
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [1]", default=None)
     _parser_add_cutoff(parser)
-    _parser_add_n_ctcs(parser, default=10)
+    _parser_add_n_ctcs(parser, default=50)
+    parser.add_argument("-mf", "--min_freq", type=float, default=.05,
+                        help="Do not show frequencies smaller than this. If you notice the output being"
+                             "truncated a values too far away from this, you need to increase the"
+                             "'n_ctcs' parameter" )
     parser.add_argument("-ic", "--interface_cutoff_Ang", type=float,
                         help="The interface between both groups is defined as the set of group_1-group_2-"
                              "distances that are within this "
@@ -628,8 +647,10 @@ def parser_for_compare_neighborhoods():
     """
     parser = argparse.ArgumentParser(description="compare")
     parser.add_argument("files", type=str, nargs="+")
-    parser.add_argument("--anchor",type=str,default=None)
-    parser.add_argument("--keys", type=str,default=None)
-    parser.add_argument("--colors", type=str, default="r,g,b")
-    parser.add_argument("--mutations",type=str, default=None)
+    parser.add_argument("-a","--anchor",type=str,default=None)
+    parser.add_argument("-k","--keys", type=str,default=None)
+    parser.add_argument("-c","--colors", type=str, default="tab:blue,tab:orange,tab:green,tab:red,tab:purple,tab:brown,tab:pink,tab:gray,tab:olive,tab:cyan")
+    parser.add_argument("-m","--mutations",type=str, default=None)
+    _parser_add_output_desc(parser,"freq_comparison")
+    _parser_add_graphic_ext(parser)
     return parser
