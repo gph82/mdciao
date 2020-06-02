@@ -211,15 +211,14 @@ Whereas the command-line-tools from above tend to be more stable, the API functi
 All API objects and functions are extensively documented, just not linked here (yet). Please use their docstring: double-tab in Jupyter Notebooks, or cmd?+Enter in the IPython terminal.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 0
    :caption: Installation
 
    installation
 
-.. toctree::
+.. toctree
    :maxdepth: 1
    :caption: Command Line Tools:
-
    mdc_neighborhoods
    mdc_sites
    mdc_interface
@@ -228,26 +227,23 @@ All API objects and functions are extensively documented, just not linked here (
    mdc_CGN_overview
    mdc_compare_neighborhoods
 
-.. toctree::
+.. toctree
    :maxdepth: 2
    :caption: Modules:
-
    contacts
    fragments
 
-.. toctree::
+.. toctree
    :maxdepth: 2
    :caption: Submodules:
-
    aa_utils
    bond_utils
    list_utils
    nomenclature_utils
    sequence_utils
 
-Indices and tables
-==================
-
+.. Indices and tables
+   ==================
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

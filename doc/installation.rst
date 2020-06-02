@@ -1,3 +1,8 @@
+================
+hands-on session
+================
+For our workshop on 03.06.2020 you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_.
+
 Installation
 ============
 .. note::
@@ -25,12 +30,12 @@ Installation from the source
 
 .. warning::
  * At the moment, the repository is private.
- * For our workshop on 04.06.2020 you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-develop_tests.zip>`_.
+ * For our workshop on 03.06.2020 you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_.
  * Please unzip the sources to your preferred software folder and continue with these instructions:
 
 * Execute the `setup.py` file::
 
-   cd mdciao
+   cd mdciao-hands_on
    python setup.py develop
 
 This should install `mdciao` along with all its dependencies. The `develop` option means that the `mdciao` in your Python path points directly to the sources directory, s.t. changes in the sources take effect immediately without re-installing.
@@ -60,7 +65,7 @@ If you already have conda, and don't want to clutter the `base` environment, we 
 
 If neither `pip` nor `conda` is installed in your system, we recommend you install the bare-bones conda distribution, `miniconda` and build from there:
 
-* Download the latest miniconda from `here <file:///home/guille/Programs/mdciao/doc/_build/html/installation.html>`_
+* Download the latest miniconda from `here <https://docs.conda.io/en/latest/miniconda.html>`_
 * Install by issuing::
 
    sh Miniconda3-latest-Linux-x86_64.sh
