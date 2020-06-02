@@ -1,11 +1,10 @@
 #!/home/perezheg/miniconda3/bin/python
-from os import path as _path, getcwd as _getcwd
+from os import path as _path, getcwd as _getcwd, chdir as _chdir
 from mdciao import __path__ as mdc_path
 from subprocess import run as _run
-from tempfile import TemporaryDirectory as _TD
 mdc_path = _path.split(mdc_path[0])[0]
 cwd = _getcwd()
-import subprocess
+
 
 
 class ExamplesCLTs(object):
@@ -55,16 +54,14 @@ class ExamplesCLTs(object):
                 "%s %s" % (self.pdb, self.xtc),
                 " --frag_idxs_group_1 0-2",
                 " --frag_idxs_group_2 3",
+                " --n_ctcs 20"
                 " --BW_uniprot %s" % self.BW_file,
                 " --CGN_PDB %s" % self.CGN_file,
-                " --n_ctcs 20"
                 ]
 
     @property
     def mdc_compare_neighborhoods(self):
         pass
-
-
 
     @property
     def clts(self):
@@ -87,26 +84,16 @@ class ExamplesCLTs(object):
               "or you can paste the line below into your terminal, add/edit options and then execute:\n"%clt)
         print(oneline)
 
-    def run(self, clt,show=True, write_to_tmpdir=False):
+    def run(self, clt,show=True, output_dir="."):
         if show:
             self.show(clt)
         oneline = self.__getattribute__(clt)
         if self.test:
-            oneline = oneline[:-2]
-        oneline = " ".join(oneline)
-        if write_to_tmpdir:
-            with _TD(suffix="mdciao") as tmpdir:
-                oneline +=" --output_dir %s"%tmpdir
-                _run(oneline.split(),
-                     #text=True,
-                     #stdin = subprocess.PIPE,
-                     #encoding="utf8"
-                     )
+            oneline = oneline[:-2]+["-ni"]+["-od",output_dir]
 
-        else:
-            _run(oneline.split(),
-        #         text=True,
-        #         #shell=True,
-        #         stdin = subprocess.PIPE
-                 )
+        oneline = " ".join(oneline) #?
+        CP = _run(oneline.split())
+        if self.test:
+            return CP
+
 
