@@ -651,7 +651,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
                                                               self.BW_local_w_pdb.top,
                                                               self.fragments,
                                                               "BW")
-            self.assertEqual(answer,"7,8,9")
+            self.assertEqual(answer,"3")
 
     def test_works_return_answer_as_list(self):
         import mock
@@ -663,7 +663,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
                                                               "BW",
                                                                return_str=False,
                                                                        )
-            self.assertSequenceEqual(answer,[7,8,9])
+            self.assertSequenceEqual(answer,[3])
 
     def test_works_return_guess(self):
         answer = nomenclature_utils._guess_by_nomenclature(self.BW_local_w_pdb,
@@ -672,7 +672,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
                                                           "BW",
                                                            accept_guess=True
                                                            )
-        self.assertEqual(answer, "7,8,9")
+        self.assertEqual(answer, "3")
 
     def test_works_return_None(self):
         answer = nomenclature_utils._guess_by_nomenclature(self.BW_local_w_pdb,
@@ -698,7 +698,7 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
                                                          self.BW_local_w_pdb.top,
                                                          fragments=self.fragments,
                                                          verbose=True)
-        _np.testing.assert_array_equal([7,8,9],guessed_frags)
+        _np.testing.assert_array_equal([3],guessed_frags)
 
 if __name__ == '__main__':
     unittest.main()

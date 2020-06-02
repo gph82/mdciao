@@ -4,6 +4,8 @@ import numpy as _np
 from mdciao.filenames import filenames
 from pandas import DataFrame as _DF
 from mdciao import sequence_utils
+from mdciao.fragments import get_fragments
+
 import pytest
 
 test_filenames = filenames()
@@ -95,9 +97,8 @@ class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
         geom_3CAP = md.load(test_filenames.pdb_3CAP)
         geom_1U19 = md.load(test_filenames.pdb_1U19)
 
-        from mdciao.fragments import get_fragments
         frag_3CAP = get_fragments(geom_3CAP.top,
-                                  verbose=False,
+                                  verbose=True,
                                   atoms=True
                                   )[0]
         frag_1U19 = get_fragments(geom_1U19.top,
