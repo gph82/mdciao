@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="svg2"
+   width="1906.1615"
+   height="699.89276"
+   viewBox="0 0 1906.1615 699.89276"
+   sodipodi:docname="banner.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)">
+  <metadata
+     id="metadata8">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs6">
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath45">
+      <rect
+         style="opacity:0.5;vector-effect:none;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.15465027;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect47"
+         width="1098.8793"
+         height="645.83258"
+         x="-1216.1829"
+         y="-57.839287" />
+    </clipPath>
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2560"
+     inkscape:window-height="1399"
+     id="namedview4"
+     showgrid="false"
+     inkscape:zoom="0.9878721"
+     inkscape:cx="1293.0889"
+     inkscape:cy="339.33811"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <image
+     sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/neighborhoods.LEU394@G.H5.26.time_trace@3.5_Ang.Fig.2.consensus.png"
+     xlink:href="neighborhoods.LEU394@G.H5.26.time_trace@3.5_Ang.Fig.2.consensus.png"
+     y="-46.915169"
+     x="-1161.791"
+     id="image20"
+     preserveAspectRatio="none"
+     height="1884.594"
+     width="1028.5731"
+     clip-path="url(#clipPath45)"
+     transform="matrix(1.1023522,0,0,1.1023522,1280.7029,51.717039)" />
+  <image
+     sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/neighborhoods.overall@3.5_Ang.Fig.1.consensus.png"
+     xlink:href="neighborhoods.overall@3.5_Ang.Fig.1.consensus.png"
+     width="717.89484"
+     height="358.94742"
+     preserveAspectRatio="none"
+     id="image31"
+     x="1188.2666"
+     y="9.9999971" />
+  <image
+     sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/table_screenshot.png"
+     xlink:href="table_screenshot.png"
+     width="683.58881"
+     height="273.6799"
+     preserveAspectRatio="none"
+     id="image54"
+     x="1222.5728"
+     y="404.37711" />
+</svg>

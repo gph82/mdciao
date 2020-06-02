@@ -18,7 +18,7 @@ from mdciao.fragments import \
     interactive_fragment_picker_by_resSeq as _interactive_fragment_picker_by_resSeq
 
 from mdciao.nomenclature_utils import \
-    _relabel_consensus
+    _choose_between_consensus_dicts
 
 from mdciao.list_utils import iterate_and_inform_lambdas,\
     rangeexpand, \
@@ -27,7 +27,7 @@ from mdciao.list_utils import iterate_and_inform_lambdas,\
 
 from mdciao.plots import plot_w_smoothing_auto
 
-from mdciao.fragments import my_frag_colors as mycolors
+from mdciao.fragments import _my_frag_colors as mycolors
 
 
 def xtcs2dihs(xtcs, top, dih_idxs, stride=1, consolidate=True,
@@ -64,7 +64,7 @@ def xtcs2dihs(xtcs, top, dih_idxs, stride=1, consolidate=True,
     Returns
     -------
     chis, or
-    chis, time_arrays if return_time=True
+    chis, time_trajs if return_time=True
 
     """
 
@@ -143,8 +143,8 @@ def plot_dih(ictc, iax,
     iax.set_ylabel(ylabel, rotation=90)
 
     for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(ictc.feat_trajs,
-                                                                ictc.time_arrays,
-                                                                ictc.trajlabels)):
+                                                                ictc.time_trajs,
+                                                                ictc.trajstrs)):
 
         ilabel = '%s'%trjlabel
 
@@ -217,7 +217,7 @@ class angle(object):
         self._consensus_label = consensus_label
         self._fragment_idx  = fragment_idx
         if fragment_name is None:
-            # assert self.fragment_idxs is not None
+            # assert self.idxs is not None
             # self._fragment_names = self._fragment_idxs
 
             if self.fragment_idx is not None:
@@ -340,7 +340,7 @@ class angle(object):
         example : ['E30', 'V212']
 
         """
-        from .aa_utils import shorten_AA as _shorten_AA
+        from .residue_and_atom_utils import shorten_AA as _shorten_AA
         if self.res_idx is not None:
             return _shorten_AA(self.residue_name, substitute_fail="long", keep_index=True)
         else:
@@ -570,7 +570,7 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
     else:
         raise NotImplementedError("This feature is not yet implemented")
 
-    fragment_names, fragments = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments, refgeom.top)
 
     # Do we want BW definitions
     BW = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments, write_to_disk=write_to_disk_BW)
@@ -626,7 +626,7 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
     for res_idx, quad_dict in quad_dict_by_res_idxs.items():
         angles[res_idx] = []
         for ang_type, iquad in quad_dict.items():
-            consensus_label = _relabel_consensus(res_idx, [BW, CGN])
+            consensus_label = _choose_between_consensus_dicts(res_idx, [BW, CGN])
             fragment_idx =    in_what_fragment(res_idx, fragments)
             idx = next(idx_iter)
             angles[res_idx].append(angle(iquad,

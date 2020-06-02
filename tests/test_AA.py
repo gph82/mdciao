@@ -1,22 +1,31 @@
 import mdtraj as md
+import numpy as np
 import unittest
-from filenames import filenames
-from mdciao.aa_utils import find_AA, int_from_AA_code, name_from_AA, shorten_AA
+from mdciao.filenames import filenames
+from mdciao.residue_and_atom_utils import \
+    find_AA, int_from_AA_code, name_from_AA, shorten_AA, _atom_type
+import pytest
 
 test_filenames = filenames()
 
 class Test_find_by_AA(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
-        self.geom2frags = md.load(test_filenames.file_for_test_repeated_fullresnames_pdb)
+        self.geom = md.load(test_filenames.small_monomer)
+        self.geom2frags = md.load(test_filenames.small_dimer)
 
-    def test_it_just_works_with_long_AA_code(self):
-        assert (find_AA(self.geom.top, "GLU30")) == [0]
-        assert (find_AA(self.geom.top, "LYS28")) == [5]
+    def test_full_long_AA_code(self):
+        self.assertSequenceEqual(find_AA(self.geom.top, "GLU30"),[0])
+        self.assertSequenceEqual(find_AA(self.geom.top, "LYS29"),[5])
 
-    def test_it_just_works_with_short_AA_code(self):
-        assert (find_AA(self.geom.top, 'E30')) == [0]
-        assert (find_AA(self.geom.top, 'W32')) == [2]
+    def test_full_short_AA_code(self):
+        self.assertSequenceEqual(find_AA(self.geom.top, 'E30'), [0])
+        self.assertSequenceEqual(find_AA(self.geom.top, 'W32'), [2])
+
+    def test_short_AA_code(self):
+        self.assertSequenceEqual(find_AA(self.geom.top, 'E'), [0,4])
+
+    def test_short_long_AA_code(self):
+        self.assertSequenceEqual(find_AA(self.geom.top, 'GLU'), [0, 4])
 
     def test_does_not_find_AA(self):
         assert (find_AA(self.geom.top, "lys20")) == []   # small case won't give any result
@@ -24,19 +33,19 @@ class Test_find_by_AA(unittest.TestCase):
         assert (find_AA(self.geom.top, 'w 32')) == []   # spaces between characters won't work
 
     def test_malformed_input(self):
-        failed_assertion = False
-        try:
+        with pytest.raises(AssertionError):
             find_AA(self.geom.top, "GLUTAMINE")
-        except ValueError as __:
-            failed_assertion = True
-        assert failed_assertion
+
     def test_ambiguity(self):
         # AMBIGUOUS definition i.e. each residue is present in multiple fragments
-        assert (find_AA(self.geom2frags.top, "LYS28")) == [5, 13] # getting multiple idxs,as expected
-        assert (find_AA(self.geom2frags.top, "K28")) == [5, 13]
+        self.assertSequenceEqual(find_AA(self.geom2frags.top, "LYS28"), [5, 13]) # getting multiple idxs,as expected
+        self.assertSequenceEqual(find_AA(self.geom2frags.top, "K28"), [5, 13])
+
+    def test_just_numbers(self):
+        np.testing.assert_array_equal(find_AA(self.geom2frags.top,"28"),[5,13])
 
 class Test_int_from_AA_code(unittest.TestCase):
-    def test_int_from_AA_code_just_works(self):
+    def test_int_from_AA_code(self):
         assert (int_from_AA_code("GLU30") == 30)
         assert (int_from_AA_code("E30") == 30)
         assert (int_from_AA_code("glu30") == 30)
@@ -49,9 +58,9 @@ class Test_name_from_AA(unittest.TestCase):
 
 class Test_shorten_AA(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.file_for_test_pdb)
+        self.geom = md.load(test_filenames.small_monomer)
 
-    def test_shorten_AA_just_works(self):
+    def test_shorten_AA(self):
         assert(shorten_AA("GLU30") == 'E')
         assert(shorten_AA(self.geom.top.residue(1)) == 'V')
 
@@ -91,6 +100,19 @@ class Test_shorten_AA(unittest.TestCase):
     def test_shorten_AA_keep_index_is_true(self):
         assert(shorten_AA("GLU30", keep_index=True) == 'E30')
         assert(shorten_AA("glu30",substitute_fail='E',keep_index=True) == 'E30')
+
+class Test_atom_type(unittest.TestCase):
+    def test_works(self):
+        top = md.load(test_filenames.pdb_3CAP).top
+        atoms_BB = [aa for aa in top.residue(0).atoms if aa.is_backbone]
+        atoms_SC = [aa for aa in top.residue(0).atoms if aa.is_sidechain]
+        atoms_X = [aa for aa in top.atoms if not aa.is_backbone and not aa.is_sidechain]
+        assert len(atoms_BB)>0
+        assert len(atoms_SC)>0
+        assert len(atoms_X)>0
+        assert all([_atom_type(aa)=="BB" for aa in atoms_BB])
+        assert all([_atom_type(aa)=="SC" for aa in atoms_SC])
+        assert all([_atom_type(aa)=="X" for aa in atoms_X])
 
 
 if __name__ == '__main__':

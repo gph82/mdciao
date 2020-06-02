@@ -10,10 +10,10 @@ Utils for handling nomenclature related functionality. Currently handles:
 
 .. autosummary::
     add_loop_definitions_to_TM_residx_dict
-    BW_transformer
+    LabelerBW
     CGN_finder
-    CGN_transformer
-    consensus_labeler
+    LabelerCGN
+    LabelerConsensus
     csv_table2TMdefs_res_idxs
     guess_missing_BWs
     md_load_rscb
@@ -26,9 +26,10 @@ Utils for handling nomenclature related functionality. Currently handles:
     top2CGN_by_AAcode
 
 
-.. autoclass:: mdciao.nomenclature_utils.CGN_transformer
-   :members:
+.. autoclass:: mdciao.nomenclature_utils.LabelerCGN
+    :members:
+    :inherited-members:
 
-.. autoclass:: mdciao.nomenclature_utils.BW_transformer
+.. autoclass:: mdciao.nomenclature_utils.LabelerBW
     :members:
     :inherited-members:

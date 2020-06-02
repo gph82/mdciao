@@ -1,30 +1,35 @@
 import numpy as _np
 
 # This is lifted from mdas, the original source shall remain there
-def top2residue_bond_matrix(top, create_standard_bonds=True,
+def top2residue_bond_matrix(top,
                             force_resSeq_breaks=False,
-                            verbose=True):
+                            verbose=True,
+                            create_standard_bonds=False):
     '''
-    Returns a bond matrix from the topology file.
+    Returns a residue-residue bond matrix from the topology file.
     The entries in the bond matrix will have either 1 or 0, where 1 signifies a bond is present.
 
     Parameters
     ----------
     top : :py:class:`mdtraj.Topology`
-    create_standard_bonds : boolean
-        'True' will force the method to create bonds if there are not upon reading, because the topology 
-        comes from a .gro-file instead of a .pdb-file. (Default is True).
-    force_resSeq_breaks : boolean
-        'True' will force the methods to break bonds,if two residue index are not next to each other.
-        (Default is False).
-    verbose : boolean
-        'True' will print a statement if residue index has no bonds. (Default is True).
+    force_resSeq_breaks : boolean, default is False
+        Delete bonds if there is a resSeq jump between residues.
+    verbose : boolean, default is True
+        Print a statement if residue index has no bonds
+    create_standard_bonds : boolean, default is False
+        Advanced users only, can easily lead to wrong
+        results in case of .gro files, because
+        :obj:`mdtraj.Topology.create_standard_bonds'
+        needs chain information to avoid creating
+        bonds between residues that follow one nother
+
+
         
     Returns
     -------
     numpy matrix
         Returns a symmetric adjacency matrix with entries ij=1 and ji=1,
-        if there is a bond between atom i and atom j.
+        if there is a bond between residue i and residue j.
 
     '''
 
@@ -32,7 +37,10 @@ def top2residue_bond_matrix(top, create_standard_bonds=True,
         if create_standard_bonds:
             top.create_standard_bonds()
         else:
-            raise ValueError("The parsed topology does not contain bonds! Aborting...")
+            raise ValueError("\nThe parsed topology does not contain bonds!\n"
+                             "If your input is a .gro file, you are advised\n"
+                             "to generate a .pdb file before continuing")
+
     residue_bond_matrix = _np.zeros((top.n_residues, top.n_residues), dtype=int)
     for ibond in top._bonds:
         r1, r2 = ibond.atom1.residue.index, ibond.atom2.residue.index
@@ -47,6 +55,19 @@ def top2residue_bond_matrix(top, create_standard_bonds=True,
             print("Residue with index %u (%s) has no bonds to other residues"%(ii,top.residue(ii)))
 
     return residue_bond_matrix
+
+def top2residuebonds(top,**top2residue_bond_matrix_kwargs):
+    return _residue_bond_matrix_to_triu_bonds(top2residue_bond_matrix(top, **top2residue_bond_matrix_kwargs))
+
+
+def _residue_bond_matrix_to_triu_bonds(residue_bond_matrix):
+    _np.testing.assert_array_equal(residue_bond_matrix, residue_bond_matrix.T), \
+        ("This is not a symmetric residue bond matrix\n", residue_bond_matrix)
+    bonds = []
+    for ii, jj in _np.vstack(_np.triu_indices_from(residue_bond_matrix, k=1)).T:
+        if residue_bond_matrix[ii, jj] == 1:
+            bonds.append([ii, jj])
+    return bonds
 
 def bonded_neighborlist_from_top(top, n=1):
     '''

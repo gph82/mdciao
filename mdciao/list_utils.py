@@ -1,7 +1,5 @@
 import numpy as _np
-import mdtraj as _md
-from glob import glob as _glob
-#taken from molpx
+
 def re_warp(array_in, lengths):
     """Return iterable ::py:obj:array_in as a list of arrays, each
      one with the length specified in lengths
@@ -142,6 +140,7 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
         return ilist_out
     else:
         return idxs_out
+
 def window_average_fast(input_array_y, half_window_size=2):
     """
     Returns the moving average using np.convolve
@@ -161,59 +160,7 @@ def window_average_fast(input_array_y, half_window_size=2):
     window = _np.ones(2*half_window_size+1)
     return _np.convolve(input_array_y, window, mode="valid")/len(window)
 
-#Lifted from my own aGPCR utils
-def window_average(input_array_y, half_window_size=2):
-    """
-    Returns average and standard deviation inside the window
-    Parameters
-    ----------
-    input_array_y : array
-                    numpy array for which average and standard deviation should be calculated
-    half_window_size : int
-                            the actual window size will be half_window_size*2 + 1.
-                        Example- when half window size = 2, moving average calculation will use window=5
-    Returns
-    -------
-    array_out_mean, array_out_std
-    two arrays corresponding to mean and standard deviation
-    """
-    array_out_mean = []
-    array_out_std = []
-    assert (half_window_size*2 + 1 <= len(input_array_y)),"In window average, input array should be >= half_window_size*2 + 1"
-    for ii in range(half_window_size, len(input_array_y) - half_window_size):
-        idxs = _np.hstack([_np.arange(ii - half_window_size, ii),
-                           ii,
-                           _np.arange(ii + 1, ii + half_window_size + 1)])
-        #print(idxs.shape)
-        array_out_mean.append(_np.average(input_array_y[idxs]))
-        array_out_std.append(_np.std(input_array_y[idxs]))
-    array_out_mean = _np.array(array_out_mean)
-    array_out_std = _np.array(array_out_std)
-
-    return array_out_mean, array_out_std
-
-def window_average_vec(input_array_y, half_window_size=2):
-    r"""
-    like a convolution but returns also the std inside the window
-    :param input_array_y:
-    :param window_size:
-    :param input_array_x:
-    :return:
-    """
-    array_out_mean = []
-    array_out_std = []
-    for ii in range(half_window_size, len(input_array_y) - half_window_size):
-        idxs = _np.hstack([_np.arange(ii - half_window_size, ii),
-                           ii,
-                           _np.arange(ii + 1, ii + half_window_size + 1)])
-        print(idxs.shape)
-        array_out_mean.append(_np.average(input_array_y[idxs, :], axis=0))
-        array_out_std.append(_np.std(input_array_y[idxs, :],axis=0))
-    array_out_mean = _np.array(array_out_mean)
-    array_out_std = _np.array(array_out_std)
-
-    return array_out_mean, array_out_std
-
+#TODO consider list and str utils for this?
 # from https://www.rosettacode.org/wiki/Range_expansion#Python
 def rangeexpand(txt):
     """
@@ -286,7 +233,7 @@ def in_what_fragment(residx,
     Returns
     -------
     integer or string
-        returns the name(if fragment_names is provided) otherwise returns index of the "fragment"
+        returns the name(if names is provided) otherwise returns index of the "fragment"
         in which the residue index appears
 
     """
@@ -355,14 +302,33 @@ def assert_min_len(input_iterable, min_len=2):
             raise AssertionError(aerror)
 
 def join_lists(lists, idxs_of_lists_to_join):
-    #todo document and test
+    r"""
+    Provided a list of lists, join them following idxs_of_lists_to_join
+
+    Parameters
+    ----------
+    lists: iterable of iterables
+        The lists to be joined
+
+    idxs_of_lists_to_join: iterable of iterables containing integers
+        The lists to join. These  3 things will be done before using this array
+            - remove duplicate entries in each iterable
+            - sort the entries in each iterable by ascending order
+            - assert there is no overlap between iterables
+
+    Returns
+    -------
+    joined_lists: iterable of iterables
+        :obj:`lists` joined following the criterion of :obj:`idxs_of_lists_to_join`
+        Once the new iterables have been created by joining the initial interables,
+        they will be re-ordered by ascending first element
+
+    """
+    # Check that the input is an iterable of iterables
     assert_min_len(idxs_of_lists_to_join)
 
     # Removing the redundant entries in each list and sorting them
     idxs_of_lists_to_join = [_np.unique(jo) for jo in idxs_of_lists_to_join]
-
-
-
 
     # Assert the join_fragments do not overlap
     assert_no_intersection(idxs_of_lists_to_join)
@@ -405,10 +371,11 @@ def assert_no_intersection(list_of_lists_of_integers):
     for ii, l1 in enumerate(list_of_lists_of_integers):
         for jj, l2 in enumerate(list_of_lists_of_integers):
             if (ii != jj):
-                assert (l1 + l2), "Both lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html"
-                assert len(_np.intersect1d(l1, l2)) == 0, 'join fragment id overlaps!'
+                assert len(l1) != 0 or len(l2) != 0, (l1,l2, "Both lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html")
+                assert len(_np.intersect1d(l1, l2)) == 0, 'input iterables %u and %u overlap: %s vs %s'%(ii, jj, l1, l2)
 
 # TODO consider using np.delete in the code originally?
+# TODO there is no code using this?
 def pull_one_up_at_this_pos(iterable_in, idx, padding='~',
                             verbose=False):
     """
@@ -436,27 +403,6 @@ def pull_one_up_at_this_pos(iterable_in, idx, padding='~',
             print(ii, old, new)
     return iterable_out
 
-def _replace4latex(istr):
-    for gl in ['alpha','beta','gamma', 'mu']:
-        istr = istr.replace(gl,'$\\'+gl+'$')
-
-    if '$' not in istr and any([char in istr for char in ["_"]]):
-        istr = '$%s$'%istr
-    return istr
-
-def iterate_and_inform_lambdas(ixtc,stride,chunksize, top=None):
-    if isinstance(ixtc, _md.Trajectory):
-        iterate = lambda ixtc: [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride], chunksize)]
-        inform = lambda ixtc, traj_idx, chunk_idx, running_f: print("Analysing trajectory object nr. %3u (%7u frames) in chunks of "
-                                                   "%3u frames. chunknr %4u frames %8u" %
-                                                   (traj_idx, ixtc.n_frames, chunksize, chunk_idx, running_f), end="\r", flush=True)
-    else:
-        iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
-        inform = lambda ixtc, traj_idx, chunk_idx, running_f: print("Analysing %20s (nr. %3u) in chunks of "
-                                                   "%3u frames. chunknr %4u frames %8u" %
-                                                   (ixtc, traj_idx, chunksize, chunk_idx, running_f), end="\r", flush=True)
-    return iterate, inform
-
 def put_this_idx_first_in_pair(idx, pair):
     """
     Returns the original pair if the value already appears first, else returns reversed pair
@@ -478,85 +424,3 @@ def put_this_idx_first_in_pair(idx, pair):
         print(pair)
         raise Exception
     return pair
-
-def get_sorted_trajectories(trajectories):
-    if isinstance(trajectories,str):
-        trajectories = _glob(trajectories)
-
-    if isinstance(trajectories[0],str):
-        xtcs = sorted(trajectories)
-    else:
-        xtcs = trajectories
-
-    return xtcs
-
-def _inform_about_trajectories(trajectories):
-    return "\n".join([str(itraj) for itraj in trajectories])
-
-# TODO consider dict_utils??
-def _replace_w_dict(key, pat_exp_dict):
-    for pat, exp in pat_exp_dict.items():
-        key = key.replace(pat,exp)
-    return key
-
-def _delete_exp_in_keys(idict, exp, sep="-"):
-    out_dict = {}
-    for names, val in idict.items():
-        name = [name for name in names.split(sep) if exp not in name]
-        assert len(name) == 1, name
-        out_dict[name[0]]=val
-    return out_dict
-
-def unify_freq_dicts(freqs,
-                     exclude=None,
-                     key_separator="-",
-                     replacement_dict={},
-                     reorder_keys=True):
-
-    def order_key(key, sep):
-        split_key = key.split(sep)
-        return sep.join([split_key[ii] for ii in _np.argsort(split_key)])
-
-    freqs_work = {}
-    for key, idict in freqs.items():
-        if reorder_keys:
-            freqs_work[key] = {order_key(key, key_separator):val for key, val in idict.items()}
-        else:
-            freqs_work[key] = {key:val for key, val in idict.items()}
-
-    if replacement_dict is not None:
-        freqs_work = {key:{_replace_w_dict(key2, replacement_dict):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
-
-    not_shared = []
-    shared = []
-    for idict1 in freqs_work.values():
-        for idict2 in freqs_work.values():
-            if not idict1 is idict2:
-                not_shared += list(set(idict1.keys()).difference(idict2.keys()))
-                shared += list(set(idict1.keys()).intersection(idict2.keys()))
-
-    shared = list(_np.unique(shared))
-    not_shared = list(_np.unique(not_shared))
-    all_keys = shared + not_shared
-
-    if exclude is not None:
-        print("Excluding")
-        for ikey, ifreq in freqs_work.items():
-            for key in shared:
-                for pat in exclude:
-                    if pat in key:
-                        ifreq.pop(key)
-                        print("%s from %s" % (key, ikey))
-                        all_keys = [ak for ak in all_keys if ak != key]
-
-    for ikey, ifreq in freqs_work.items():
-        for key in not_shared:
-            if key not in ifreq.keys():
-                ifreq[key] = 0
-
-    if len(not_shared)>0:
-        print("These interactions are not shared:\n%s" % (', '.join(not_shared)))
-        print("Their cummulative ctc freq is %f. " % _np.sum(
-            [[ifreq[key] for ifreq in freqs_work.values()] for key in not_shared]))
-
-    return freqs_work
