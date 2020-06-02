@@ -33,7 +33,7 @@ Installation from the source
    cd mdciao
    python setup.py develop
 
-This should install `mdciao` along with all its dependencies. The `development` option means that the `mdciao` in your Python path points directly to the sources directory, s.t. changes in the sources take effect immediately without re-installing.
+This should install `mdciao` along with all its dependencies. The `develop` option means that the `mdciao` in your Python path points directly to the sources directory, s.t. changes in the sources take effect immediately without re-installing.
 
 .. warning::
  At the moment, the `mdtraj` dependency is giving some problems, so we recommend issuing::
@@ -52,6 +52,12 @@ A note for beginners
 
 This means that it's very hard to "break" local Python installations (your own or shared installations, like in clusters). So, don't be afraid to use conda and mess up your Python environment as many times as you like. Wiping and re-installing is easy (delete `~/anaconda3` or `~/miniconda3` from your home directory) and won't not alter your existing Python installation at all!
 
+If you already have conda, and don't want to clutter the `base` environment, we recommend you create a new environment::
+
+ conda create -n for_mdciao
+ conda activate for_mdciao
+
+
 If neither `pip` nor `conda` is installed in your system, we recommend you install the bare-bones conda distribution, `miniconda` and build from there:
 
 * Download the latest miniconda from `here <file:///home/guille/Programs/mdciao/doc/_build/html/installation.html>`_
@@ -59,14 +65,22 @@ If neither `pip` nor `conda` is installed in your system, we recommend you insta
 
    sh Miniconda3-latest-Linux-x86_64.sh
 
-and following the prompt instructions.
+and follow the prompt instructions. If you don't want the anaconda Python interpreter to be your default, just answer *no* to the last question.
 
 .. note::
-If you are on Hildiknecht, `conda` is already installed as module, just issue::
+ If you are on Hildiknecht, `conda` is already installed as module, just issue::
 
- module load anaconda
- eval "$(conda shell.bash hook)" # if its the first time
+  module load anaconda
+  eval "$(conda shell.bash hook)" # if its the first time
 
 Then you should be able to follow the above instructions no problem!
 
+MacOs and Windows
+-----------------
+
+`mdciao` has been thoroughly tested only in GNU/Linux so far, but you should be able to install and run `mdciao` on MacOs/Windows as long as you have a working Python installation and are able to run::
+
+ `python setup.py develop`
+
+The needed dependencies should install automatically (see above the note about environments) and even if that fails for some reason, you should be able to use *some* package manager to install them manually.
 
