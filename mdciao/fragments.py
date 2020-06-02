@@ -176,10 +176,14 @@ def get_fragments(top,
         fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
         for rr in top.residues:
             if rr.name[:3] not in _AMINO_ACID_CODES.keys():
-                frag_idx = _in_what_fragment(rr.index, fragments)
-                # Todo use list.delete()?
-                fragments[frag_idx] = fragments[frag_idx][fragments[frag_idx]!=rr.index]
-                fragments.append([rr.index])
+                frag_idx = _in_what_fragment(rr.index,fragments)
+                if len(fragments[frag_idx])>1:
+                    list_for_removing=list(fragments[frag_idx])
+                    list_for_removing.remove(rr.index)
+                    fragments[frag_idx]=_np.array(list_for_removing)
+                    fragments.append([rr.index])
+
+
     # TODO check why this is not equivalent to "bonds" in the test_file
     elif method == 'molecules':
         raise NotImplementedError("method 'molecules' is not fully implemented yet")
