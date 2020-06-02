@@ -1,18 +1,22 @@
-================
-hands-on session
-================
-For our workshop on 03.06.2020 you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_.
+.. _installation:
 
 Installation
 ============
+
+hands-on session
+----------------
+For our workshop on 03.06.2020 you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_. Please also see the note on :ref:`hk`.
+
 .. note::
- As almost any Python module, `mdciao` comes with some dependencies that will be installed along when installing `mdciao`. If you don't want `mdciao` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install `mdciao` into. For beginners, see the below paragraph **How to install mdciao on Hildilab**.
+ As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. For beginners, see the below paragraph
+
+
 
 Installation via package manager
------------------------------------
+--------------------------------
 
 
-We recommend you install `mdciao` either via the `pip <https://pypi.org/project/pip/>`_ Python package installer or the `conda <https://conda.io/en/latest/>`_ Python package manager::
+We recommend you install ``mdciao`` either via the `pip <https://pypi.org/project/pip/>`_ Python package installer or the `conda <https://conda.io/en/latest/>`_ Python package manager::
 
  pip install mdciao
 
@@ -21,7 +25,7 @@ or::
  conda install mdciao
 
 .. warning::
- None of these methods work yet, as `mdciao` is not yet published to those package managers
+ None of these methods work yet, as ``mdciao`` is not yet published to those package managers
 
 Installation from the source
 -----------------------------
@@ -38,7 +42,7 @@ Installation from the source
    cd mdciao-hands_on
    python setup.py develop
 
-This should install `mdciao` along with all its dependencies. The `develop` option means that the `mdciao` in your Python path points directly to the sources directory, s.t. changes in the sources take effect immediately without re-installing.
+This should install ``mdciao`` along with all its dependencies. The `develop` option means that the ``mdciao`` in your Python path points directly to the sources directory, s.t. changes in the sources take effect immediately without re-installing.
 
 .. warning::
  At the moment, the `mdtraj` dependency is giving some problems, so we recommend issuing::
@@ -49,7 +53,7 @@ This should install `mdciao` along with all its dependencies. The `develop` opti
 
   conda install mdtraj -c conda forge
 
- **before** installing `mdciao`.
+ **before** installing ``mdciao``.
 
 A note for beginners
 ---------------------
@@ -72,20 +76,25 @@ If neither `pip` nor `conda` is installed in your system, we recommend you insta
 
 and follow the prompt instructions. If you don't want the anaconda Python interpreter to be your default, just answer *no* to the last question.
 
+.. _hk:
+
+Hildiknecht
+-----------
+
 .. note::
  If you are on Hildiknecht, `conda` is already installed as module, just issue::
 
   module load anaconda
   eval "$(conda shell.bash hook)" # if its the first time
 
-Then you should be able to follow the above instructions no problem!
+ Then you should be able to follow the above instructions no problem!
 
 MacOs and Windows
 -----------------
 
-`mdciao` has been thoroughly tested only in GNU/Linux so far, but you should be able to install and run `mdciao` on MacOs/Windows as long as you have a working Python installation and are able to run::
+``mdciao`` has been thoroughly tested only in GNU/Linux so far, but you should be able to install and run ``mdciao`` on MacOs/Windows as long as you have a working Python installation and are able to run::
 
- `python setup.py develop`
+ python setup.py develop
 
 The needed dependencies should install automatically (see above the note about environments) and even if that fails for some reason, you should be able to use *some* package manager to install them manually.
 

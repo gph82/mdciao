@@ -9,9 +9,14 @@
 Welcome to mdciao's documentation!
 ==================================
 
-``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an API (TODO LINK) to construct your own analysis workflow. Here you find our :ref:`minimal_example`.
+``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an :ref:`API` to construct your own analysis workflow. Here you find our :ref:`minimal_example`.
 
 Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org.org>`_ for visualizaton.
+
+.. toctree::
+   :maxdepth: 1
+
+   installation
 
 Basic Principle
 ---------------
@@ -188,17 +193,45 @@ Other Highlights
 Command line tools
 ==================
 
-At the moment, the command-line tools that the user can invoke directly from the terminal after installing mdciao are
+The best way to find out about the command-line tools that ``mdciao`` is to use...a command-line tool shipped with ``mdciao``::
+
+ mdc_examples.py ?
+
+ Wrapper script to showcase and optionally run examples of the
+ command-line-tools that ship with mdciao.
+ Availble command line tools are
+  * mdc_BW_overview.py
+  * mdc_CGN_overview.py
+  * mdc_compare.py
+  * mdc_fragments.py
+  * mdc_interface.py
+  * mdc_neighborhoods.py
+  * mdc_sites.py
+ Issue:
+  * 'mdc_command.py -h' to view the command's documentation or
+  * 'mdc_examples.py mdc_command' to show and/or run an example of that command
+
+
+What these tools do is:
 
 * mdc_neighborhoods
+   Analyse residue neighborhoods using a distance cutoff
 * mdc_interface
+   Analyse interfaces between any two groups of residues using a distance cutoff
 * mdc_sites
-* mdc_fragment_overview
+   Analyse a specific set of residue-residue contacts using a distance cutoff
+* mdc_fragments
+   Break a molecular topology into fragments using different heuristics.
 * mdc_BW_overview
+   Map a Ballesteros-Weinstein (BW)-type nomenclature on an input topology.
 * mdc_CGN_overview
-* mdc_compare_neighborhoods
+   Map a Common G-alpha Numbering (CGN)-type nomenclature on an input topology
+* mdc_compare
+   Compare residue-residue contact frequencies from different files
 
 You can see their documentation by using the ``-h`` flag whe invoking them from the command line or by checking these pages.
+
+.. _API:
 
 API
 ===
@@ -211,21 +244,16 @@ Whereas the command-line-tools from above tend to be more stable, the API functi
 All API objects and functions are extensively documented, just not linked here (yet). Please use their docstring: double-tab in Jupyter Notebooks, or cmd?+Enter in the IPython terminal.
 
 .. toctree::
-   :maxdepth: 0
-   :caption: Installation
-
-   installation
-
-.. toctree
    :maxdepth: 1
-   :caption: Command Line Tools:
+   :caption: Command line tools
+
    mdc_neighborhoods
-   mdc_sites
    mdc_interface
-   mdc_fragment_overview
+   mdc_sites
+   mdc_fragments
    mdc_BW_overview
    mdc_CGN_overview
-   mdc_compare_neighborhoods
+   mdc_compare
 
 .. toctree
    :maxdepth: 2
@@ -242,8 +270,8 @@ All API objects and functions are extensively documented, just not linked here (
    nomenclature_utils
    sequence_utils
 
-.. Indices and tables
-   ==================
+.. Indices and tables::
+======================
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
