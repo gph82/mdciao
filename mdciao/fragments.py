@@ -83,10 +83,10 @@ def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
 
 def get_fragments(top,
+                  method='lig_resSeq+',
                   fragment_breaker_fullresname=None,
                   atoms=False,
                   verbose=True,
-                  method='resSeq',
                   join_fragments=None,
                   **kwargs_per_residue_fragment_picker):
     """
@@ -95,17 +95,6 @@ def get_fragments(top,
     Parameters
     ----------
     top : :py:class:`mdtraj.Topology`
-    fragment_breaker_fullresname : list
-        list of full residue names. Example - GLU30 that will be used to break fragments,
-        so that [R1, R2, ... GLU30,...R10, R11] will be broken into [R1, R2, ...], [GLU30,...,R10,R11]
-    atoms : boolean, optional
-        Instead of returning residue indices, retun atom indices
-    join_fragments : list of lists
-        List of lists of integer fragment idxs which are to be joined together.
-        (After splitting them according to "methods")
-        Duplicate entries in any inner list will be removed.
-        One fragment idx cannot appear in more than one inner list, otherwise program throws an error.
-    verbose : boolean, optional
     method : str, default is 'resSeq'
         The method passed will be the basis for creating fragments. Check the following options
         with the example sequence "…-A27,Lig28,K29-…-W40,D45-…-W50,CYSP51,GDP52"
@@ -129,6 +118,17 @@ def get_fragments(top,
             breaks into chains of the PDB file/entry
         - None or 'None'
             all residues are in one fragment, fragment 0
+    fragment_breaker_fullresname : list
+        list of full residue names. Example - GLU30 that will be used to break fragments,
+        so that [R1, R2, ... GLU30,...R10, R11] will be broken into [R1, R2, ...], [GLU30,...,R10,R11]
+    atoms : boolean, optional
+        Instead of returning residue indices, retun atom indices
+    join_fragments : list of lists
+        List of lists of integer fragment idxs which are to be joined together.
+        (After splitting them according to "methods")
+        Duplicate entries in any inner list will be removed.
+        One fragment idx cannot appear in more than one inner list, otherwise program throws an error.
+    verbose : boolean, optional
 
     kwargs_per_residue_fragment_picker : optional
         additional arguments
@@ -176,10 +176,14 @@ def get_fragments(top,
         fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
         for rr in top.residues:
             if rr.name[:3] not in _AMINO_ACID_CODES.keys():
-                frag_idx = _in_what_fragment(rr.index, fragments)
-                # Todo use list.delete()?
-                fragments[frag_idx] = fragments[frag_idx][fragments[frag_idx]!=rr.index]
-                fragments.append([rr.index])
+                frag_idx = _in_what_fragment(rr.index,fragments)
+                if len(fragments[frag_idx])>1:
+                    list_for_removing=list(fragments[frag_idx])
+                    list_for_removing.remove(rr.index)
+                    fragments[frag_idx]=_np.array(list_for_removing)
+                    fragments.append([rr.index])
+
+
     # TODO check why this is not equivalent to "bonds" in the test_file
     elif method == 'molecules':
         raise NotImplementedError("method 'molecules' is not fully implemented yet")

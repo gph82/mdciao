@@ -1,7 +1,8 @@
 
 import unittest
-import mock
 import mdciao.examples
+from tempfile import TemporaryDirectory as _TDir
+
 
 class Test_ExamplesCLTs(unittest.TestCase):
 
@@ -11,23 +12,23 @@ class Test_ExamplesCLTs(unittest.TestCase):
             test=True
         )
 
-
     def test_mdc_sites(self):
-        input_values = (val for val in ["3", "3","3","3"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            self.xCLTs.run("mdc_sites", write_to_tmpdir=True)
+        with  _TDir("_mdciao_tests") as od:
+            CP = self.xCLTs.run("mdc_sites", show=False, output_dir=od)
+            assert CP.returncode==0
 
     def test_mdc_neighborhood(self):
         #input_values = (val for val in ["3", "3"])
         #with mock.patch('builtins.input', lambda *x: next(input_values)):
-        self.xCLTs.run("mdc_neighborhoods", write_to_tmpdir=True)
+        with  _TDir("_mdciao_tests") as od:
+            CP = self.xCLTs.run("mdc_neighborhoods", show=False, output_dir=od)
+            assert CP.returncode==0
+
 
     def test_mdc_interface(self):
-        #input_values = (val for val in ["3", "3"])
-        #with mock.patch('builtins.input', lambda *x: next(input_values)):
-        self.xCLTs.run("mdc_interface", write_to_tmpdir=True)
-
-
+        with  _TDir("_mdciao_tests") as od:
+            CP = self.xCLTs.run("mdc_interface", show=False, output_dir=od)
+            assert CP.returncode==0
 
 
 
