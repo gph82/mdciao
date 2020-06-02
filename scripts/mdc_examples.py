@@ -1,4 +1,4 @@
-#!/home/perezheg/miniconda3/bin/python
+#!/usr/bin/env python3
 from mdciao.examples import ExamplesCLTs
 import argparse
 from os import path

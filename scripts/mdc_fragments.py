@@ -1,4 +1,4 @@
-#!/home/perezheg/miniconda3/bin/python
+#!/usr/bin/env python3
 from mdciao.parsers import parser_for_frag_overview
 from mdciao.fragments import overview
 import mdtraj as _md

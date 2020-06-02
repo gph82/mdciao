@@ -1,4 +1,4 @@
-#!python
+#!/usr/bin/env python3
 from mdciao.command_line_tools import interface
 from mdciao.parsers import parser_for_interface
 parser = parser_for_interface()

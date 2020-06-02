@@ -1,5 +1,4 @@
-#!/home/perezheg/miniconda3/bin/python
-
+#!/usr/bin/env python3
 from mdciao.command_line_tools import sites
 from mdciao.parsers import parser_for_sites
 

@@ -1,5 +1,4 @@
-#!/home/perezheg/miniconda3/bin/python
-import numpy as np
+#!/usr/bin/env python3
 from mdciao.parsers import parser_for_rn, _inform_of_parser
 from mdciao.command_line_tools import residue_neighborhoods
 
