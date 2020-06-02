@@ -21,6 +21,7 @@ class ExamplesCLTs(object):
         self.BW_file = filenames.adrb2_human_xlsx
         self.CGN_file = filenames.CGN_3SN6
         self.sitefile = filenames.tip_json
+        self.pdb_3SN6 = filenames.pdb_3SN6
 
         if not test:
             self.xtc = _path.relpath(self.xtc, cwd)
@@ -28,6 +29,8 @@ class ExamplesCLTs(object):
             self.BW_file = _path.relpath(self.BW_file, cwd)
             self.CGN_file = _path.relpath(self.CGN_file, cwd)
             self.sitefile = _path.relpath(self.sitefile, cwd)
+            self.pdb_3SN6 = _path.relpath(filenames.pdb_3SN6,cwd)
+
         self.test = test
     @property
     def mdc_neighborhoods(self):
@@ -54,14 +57,35 @@ class ExamplesCLTs(object):
                 "%s %s" % (self.pdb, self.xtc),
                 " --frag_idxs_group_1 0-2",
                 " --frag_idxs_group_2 3",
-                " --n_ctcs 20"
+                " --n_ctcs 20",
                 " --BW_uniprot %s" % self.BW_file,
                 " --CGN_PDB %s" % self.CGN_file,
                 ]
+    @property
+    def mdc_BW_overview(self):
+        # This is the only one that needs network access
+        return ["mdc_BW_overview.py",
+                "%s" % self.pdb,
+                "%s" % self.BW_file]
 
     @property
-    def mdc_compare_neighborhoods(self):
+    def mdc_CGN_overview(self):
+        return ["mdc_CGN_overview.py",
+                "%s" % self.pdb,
+                "%s" % '3SN6'
+                ]
+
+    @property
+    def mdc_compare(self):
         pass
+
+    @property
+    def mdc_fragments(self):
+        return ["mdc_fragments.py ",
+                "%s" % (self.pdb)
+                ]
+        pass
+
 
     @property
     def clts(self):
@@ -77,7 +101,7 @@ class ExamplesCLTs(object):
         print("%s--------------"%("".join(["-" for _ in clt]))) # really?
         oneline = self.__getattribute__(clt)
         if self.test:
-            oneline = oneline[:-2]
+            oneline = [arg for arg in oneline if "BW" not in arg and "CGN" not in arg]
         oneline = " ".join(oneline)
         print(oneline.replace("--", "\n--"))
         print("\n\nYou can re-run 'mdc_examples %s.py' with the  '-x' option to execute the command directly\n"
