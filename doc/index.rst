@@ -212,6 +212,12 @@ All API objects and functions are extensively documented, just not linked here (
 
 .. toctree::
    :maxdepth: 1
+   :caption: Installation
+
+   installation
+
+.. toctree::
+   :maxdepth: 1
    :caption: Command Line Tools:
 
    mdc_neighborhoods
