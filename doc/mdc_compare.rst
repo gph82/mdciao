@@ -1,5 +1,5 @@
-mdc_compare_neighborhoods.py
-============================
+mdc_compare.py
+==============
 
 .. argparse::
    :module: mdciao.parsers

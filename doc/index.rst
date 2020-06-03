@@ -235,7 +235,7 @@ You can see their documentation by using the ``-h`` flag whe invoking them from 
 
 API
 ===
-mdciao ships not only with the above command line tools, but with a number of submodules (loosely referred to as API from now on). The objects and methods in the API allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks.
+mdciao ships not only with the above command line tools, but also with a number of submodules (loosely referred to as API from now on). The objects and methods in the API allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks.
 
 These can be imported into the namespace by simply by using ``import mdciao``.
 

@@ -1,5 +1,5 @@
-mdc_BW_overview.py
-==================
+mdc_CGN_overview.py
+===================
 
 .. argparse::
    :module: mdciao.parsers
