@@ -63,13 +63,13 @@ class ExamplesCLTs(object):
                 ]
     @property
     def mdc_BW_overview(self):
-        # This is the only one that needs network access
         return ["mdc_BW_overview.py",
                 "%s" % self.pdb,
                 "%s" % self.BW_file]
 
     @property
     def mdc_CGN_overview(self):
+        # This is the only one that needs network access
         return ["mdc_CGN_overview.py",
                 "%s" % self.pdb,
                 "%s" % '3SN6'
@@ -95,15 +95,18 @@ class ExamplesCLTs(object):
     def _assert_clt_exists(self, clt):
         assert clt in self.clts, "Input method %s is not in existing methods %s" % (clt, self.clts)
 
+    def _join_args(self,clt):
+        oneline = self.__getattribute__(clt)
+        if self.test:
+            oneline = [arg for arg in oneline if "-BW" not in arg and "-CGN" not in arg]
+        return " ".join(oneline)
+
     def show(self, clt):
         self._assert_clt_exists(clt)
         print("%s example call:" % clt)
         print("%s--------------"%("".join(["-" for _ in clt]))) # really?
-        oneline = self.__getattribute__(clt)
-        if self.test:
-            oneline = [arg for arg in oneline if "BW" not in arg and "CGN" not in arg]
-        oneline = " ".join(oneline)
-        print(oneline.replace("--", "\n--"))
+        oneline = self._join_args(clt)
+        print(oneline.replace(" -", " \n-"))
         print("\n\nYou can re-run 'mdc_examples %s.py' with the  '-x' option to execute the command directly\n"
               "or you can paste the line below into your terminal, add/edit options and then execute:\n"%clt)
         print(oneline)
@@ -111,11 +114,10 @@ class ExamplesCLTs(object):
     def run(self, clt,show=True, output_dir="."):
         if show:
             self.show(clt)
-        oneline = self.__getattribute__(clt)
-        if self.test:
-            oneline = oneline[:-2]+["-ni"]+["-od",output_dir]
+        oneline = self._join_args(clt)
+        #if self.test:
+        #    oneline = oneline
 
-        oneline = " ".join(oneline) #?
         CP = _run(oneline.split())
         if self.test:
             return CP
