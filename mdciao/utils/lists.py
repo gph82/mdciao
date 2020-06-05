@@ -95,7 +95,7 @@ def does_not_contain_strings(iterable):
 def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
     """
     Returns the unique entries(if there are duplicates) from a list of iterables.
-    Order matters, i.e. [[0,1],[1,0]] are considered different iterables
+    Order matters, i.e. [[0,1],[1,0]] are considered different iterables (unlike np.unique does)
     If ilist contains non-iterables, they will be considered as iterables for comparison purposes, s.t.
     1==[1]==np.array(1) and 'A'==['A']
 
@@ -131,7 +131,6 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
             sublist = sublist.flatten()
         this_objects_id = hash(tuple(force_iterable(sublist)))
 
-        # print(sublist, this_objects_id)
         if this_objects_id not in seen:
             ilist_out.append(force_iterable(sublist))
             idxs_out.append(force_iterable(ii))

@@ -10,53 +10,26 @@ my_frag_colors=[
          'teal',
 ]
 
+from os import path as _path, mkdir as _mkdir
 import numpy as _np
+import mdtraj as _md
+from matplotlib import pyplot as _plt, rcParams as _rcParams
 
-from inspect import \
-    signature as _signature
-
+from inspect import signature as _signature
 from fnmatch import filter as _filter
-
-import mdtraj as md
-from matplotlib import pyplot as plt,rcParams as _rcParams
-
 from textwrap import wrap as _twrap
-from itertools import product
+from itertools import product as _iterpd
 
-from os import \
-    path as _path, \
-    mkdir as _mkdir
+import mdciao.contacts as _mdcctcs
+import mdciao.fragments as _mdcfrg
+import mdciao.nomenclature as _mdcnomenc
+import mdciao.sites as _mdcsites
+import mdciao.plots as _mdcplots
 
-from mdciao.utils.residue_and_atom import \
-    _parse_and_list_AAs_input
-
-# This will cause shadowing for sure, just testing
-from mdciao.contacts import *
-
-from mdciao.nomenclature import \
-    LabelerCGN, LabelerBW,\
-    _choose_between_consensus_dicts, \
-    _guess_by_nomenclature, \
-    _guess_nomenclature_fragments
-
-from mdciao.utils.lists import \
-    unique_list_of_iterables_by_tuple_hashing, \
-    in_what_fragment
-
-from mdciao.sites import \
-    sitefile2sitedict as _sitefile2sitedict, \
-    sites_to_ctc_idxs as _sites_to_ctc_idxs
-
-from mdciao.utils.str_and_dict import \
-    get_sorted_trajectories as _get_sorted_trajectories, \
-    _inform_about_trajectories, \
-    _tunit2tunit, \
-    _replace4latex
-
-from mdciao.utils.bonds import \
-    bonded_neighborlist_from_top
-
-
+import mdciao.utils.residue_and_atom as _mdcresNat
+import mdciao.utils.lists as _mdclists
+import mdciao.utils.str_and_dict as _mdc_strNdict
+import mdciao.utils.bonds as _mdcbonds
 
 def _offer_to_create_dir(output_dir):
     r"""
@@ -139,8 +112,8 @@ def _parse_consensus_option(option, consensus_type,
             map_out = [None for __ in range(top.n_residues)]
             LC_out = None
         else:
-            LC_out = {"BW": LabelerBW,
-                      "CGN":LabelerCGN}[consensus_type](option, **LabelerConsensus_kwargs)
+            LC_out = {"BW": _mdcnomenc.LabelerBW,
+                      "CGN":_mdcnomenc.LabelerCGN}[consensus_type](option, **LabelerConsensus_kwargs)
 
     #todo add a class check here instead of failing later on
     else:
@@ -148,7 +121,7 @@ def _parse_consensus_option(option, consensus_type,
         #print("The transformer was provided already")
 
     if LC_out is not None:
-        answer = _guess_by_nomenclature(LC_out, top, fragments, consensus_type,
+        answer = _mdcnomenc._guess_by_nomenclature(LC_out, top, fragments, consensus_type,
                                         return_str=False,
                                         accept_guess=accept_guess,
                                         #verbose=True
@@ -375,7 +348,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
         fname = _path.join(output_dir, iname)
         ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
         ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-        plt.close(ifig)
+        _plt.close(ifig)
         print(fname)
 
     if plot_timedep:
@@ -396,7 +369,7 @@ def _cmdstr2cmdtuple(cmd):
 def _my_color_schemes(istr):
     return {"peter": ["red", "purple", "gold", "darkorange"],
             "hobat": ["m", "darkgreen", "darkorange", "navy"],
-            "auto":  plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]
+            "auto":  _plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]
 
 def _load_any_geom(geom):
     r"""
@@ -411,7 +384,7 @@ def _load_any_geom(geom):
     outgeom : :obj:`mdtraj.Trajectory`
     """
     if isinstance(geom, str):
-        outgeom = md.load(geom)
+        outgeom = _md.load(geom)
     else:
         outgeom = geom
 
@@ -434,29 +407,29 @@ def _fragment_overview(a,labtype):
     """
     if labtype == "CGN":
         val = a.PDB_code_or_txtfile
-        obj = LabelerCGN(val)
+        obj = _mdcnomenc.LabelerCGN(val)
 
     elif labtype == "BW":
         val = a.BW_uniprot_or_file
         if _path.exists(val):
             format = "%s"
         else:
-            format = _signature(LabelerBW).parameters["format"].default
-        obj = LabelerBW(val,
+            format = _signature(_mdcnomenc.LabelerBW).parameters["format"].default
+        obj = _mdcnomenc.LabelerBW(val,
                   format=format,
                   write_to_disk=a.write_to_disk)
     else:
         raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
 
-    top = md.load(a.topology).top
-    fragments = get_fragments(top,method="lig_resSeq+",
+    top = _md.load(a.topology).top
+    fragments = _mdcfrg.get_fragments(top,method="lig_resSeq+",
                               verbose=False)
-    frag_idxs = _guess_nomenclature_fragments(obj, top, fragments)
+    frag_idxs = _mdcnomenc._guess_nomenclature_fragments(obj, top, fragments)
 
     map_conlab = obj.top2map(top, restrict_to_residxs=_np.hstack([fragments[ii] for ii in frag_idxs]))
     obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
 
-    _parse_and_list_AAs_input(a.AAs, top, map_conlab)
+    _mdcresNat._parse_and_list_AAs_input(a.AAs, top, map_conlab)
 
     if str(a.labels).lower() != "none":
         labels = [aa.strip(" ") for aa in a.labels.split(",")]
@@ -525,13 +498,13 @@ def residue_neighborhoods(topology, trajectories, residues,
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
 
-    xtcs = _get_sorted_trajectories(trajectories)
+    xtcs = _mdc_strNdict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
-          "\n with a stride of %u frames)"%(_inform_about_trajectories(xtcs),stride))
+          "\n with a stride of %u frames)"%(_mdc_strNdict._inform_about_trajectories(xtcs),stride))
 
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, __ = fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, __ = _mdcfrg.fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
@@ -544,7 +517,7 @@ def residue_neighborhoods(topology, trajectories, residues,
     CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs,
                                                accept_guess=accept_guess)
 
-    res_idxs_list = rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
+    res_idxs_list = _mdcfrg.rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
                                                   interpret_as_res_idxs=res_idxs,
                                                   sort=sort,
                                                   pick_this_fragment_by_default=None,
@@ -557,13 +530,13 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
     for idx in res_idxs_list:
-        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, in_what_fragment(idx,
+        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, _mdcctcs.in_what_fragment(idx,
                                                                                                    fragments_as_residue_idxs),
                                                    idx,
                                                    BWresidx2conlab[idx], CGNresidx2conlab[idx]))
 
     # Create a neighborlist
-    nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
+    nl = _mdcbonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
 
     # Use it to prune the contact indices
     ctc_idxs = _np.vstack(
@@ -572,19 +545,19 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     # Can we have same-fragment contacts
     if not allow_same_fragment_ctcs:
-        fragment_idxs = [[in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair] for pair in ctc_idxs]
+        fragment_idxs = [[_mdcctcs.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair] for pair in ctc_idxs]
         ctc_idxs = [ctc_idxs[ii] for (ii,pair) in enumerate(fragment_idxs) if pair[0]!=pair[1]]
 
 
     print(
         "\nPre-computing likely neighborhoods by reducing the neighbor-list to %u Angstrom in the reference geom %s..." % (
             nlist_cutoff_Ang, topology), end="", flush=True)
-    ctcs, ctc_idxs = md.compute_contacts(refgeom, _np.vstack(ctc_idxs), periodic=pbc)
+    ctcs, ctc_idxs = _md.compute_contacts(refgeom, _np.vstack(ctc_idxs), periodic=pbc)
     print("done!")
 
     ctc_idxs_small = _np.argwhere(ctcs[0] < nlist_cutoff_Ang / 10).squeeze()
-    _, ctc_idxs_small = md.compute_contacts(refgeom, ctc_idxs[ctc_idxs_small])
-    ctc_idxs_small = unique_list_of_iterables_by_tuple_hashing(ctc_idxs_small)
+    _, ctc_idxs_small = _md.compute_contacts(refgeom, ctc_idxs[ctc_idxs_small])
+    ctc_idxs_small = _mdclists.unique_list_of_iterables_by_tuple_hashing(ctc_idxs_small)
 
     print("From %u potential distances, the neighborhoods have been "
           "reduced to only %u potential contacts.\n"
@@ -592,7 +565,7 @@ def residue_neighborhoods(topology, trajectories, residues,
           ", consider using a smaller nlist_cutoff_Ang " % (
               len(ctc_idxs), len(ctc_idxs_small)))
 
-    ctcs_trajs, time_array, at_pair_trajs = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+    ctcs_trajs, time_array, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                                        chunksize=chunksize_in_frames, return_times_and_atoms=True,
                                                        consolidate=False,
                                                        n_jobs=n_jobs,
@@ -601,7 +574,7 @@ def residue_neighborhoods(topology, trajectories, residues,
     actcs = _np.vstack(ctcs_trajs)
     ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
 
-    final_look = select_and_report_residue_neighborhood_idxs(ctcs_mean, res_idxs_list,
+    final_look = _mdcctcs.select_and_report_residue_neighborhood_idxs(ctcs_mean, res_idxs_list,
                                                              fragments_as_residue_idxs, ctc_idxs_small,
                                                              refgeom.top,
                                                              interactive=False,
@@ -614,9 +587,9 @@ def residue_neighborhoods(topology, trajectories, residues,
         CPs = []
         for idx in val:
             pair = ctc_idxs_small[idx]
-            consensus_labels = [_choose_between_consensus_dicts(idx, [BWresidx2conlab, CGNresidx2conlab]) for idx in pair]
-            fragment_idxs = [in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
-            CPs.append(ContactPair(pair,
+            consensus_labels = [_mdcnomenc._choose_between_consensus_dicts(idx, [BWresidx2conlab, CGNresidx2conlab]) for idx in pair]
+            fragment_idxs = [_mdcctcs.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
+            CPs.append(_mdcctcs.ContactPair(pair,
                                    [itraj[:, idx] for itraj in ctcs_trajs],
                                    time_array,
                                    top=refgeom.top,
@@ -629,7 +602,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                                    atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in at_pair_trajs]
                                    ))
         try:
-            neighborhoods[res_idx] = ContactGroup(CPs)
+            neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs)
         except NotImplementedError as e:
             print(e)
             empty_CGs.append(res_idx)
@@ -646,10 +619,10 @@ def residue_neighborhoods(topology, trajectories, residues,
     n_rows = _np.ceil(len(res_idxs_list) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
-    bar_fig, bar_ax = plt.subplots(n_rows, n_cols,
-                                     sharex=True,
-                                     sharey=True,
-                                     figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
+    bar_fig, bar_ax = _plt.subplots(n_rows, n_cols,
+                                    sharex=True,
+                                    sharey=True,
+                                    figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
 
     # One loop for the histograms
     _rcParams["font.size"]=panelsize*panelsize2font
@@ -720,7 +693,7 @@ def residue_neighborhoods(topology, trajectories, residues,
             myfig = ihood.plot_timedep_ctcs(panelheight,
                                             color_scheme=_my_color_schemes(curve_color),
                                             ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                            dt=_tunit2tunit["ps"][t_unit],
+                                            dt=_mdc_strNdict._tunit2tunit["ps"][t_unit],
                                             gray_background=gray_background,
                                             n_smooth_hw=n_smooth_hw,
                                             plot_N_ctcs=True,
@@ -796,13 +769,13 @@ def interface(
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
 
-    xtcs = _get_sorted_trajectories(trajectories)
+    xtcs = _mdc_strNdict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
-          "\n with a stride of %u frames)" % (_inform_about_trajectories(xtcs), stride))
+          "\n with a stride of %u frames)" % (_mdc_strNdict._inform_about_trajectories(xtcs), stride))
 
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, user_wants_consenus = fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
@@ -813,15 +786,15 @@ def interface(
                                                                        write_to_disk_BW=write_to_disk_BW)
     if user_wants_consenus:
         intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys  = frag_dict_2_frag_groups(fragment_defs, ng=2)
+        intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(fragment_defs, ng=2)
 
     else:
         intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys   = frag_list_2_frag_groups(fragments_as_residue_idxs,
+        intf_frags_as_str_or_keys   = _mdcfrg.frag_list_2_frag_groups(fragments_as_residue_idxs,
                                                                frag_idxs_group_1, frag_idxs_group_2,
                                                                )
 
-    ctc_idxs = _np.vstack(list(product(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
+    ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
 
     # Remove self-contacts
     ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
@@ -829,7 +802,7 @@ def interface(
     # Create a neighborlist
     if n_nearest>0:
         print("Excluding contacts between %u nearest neighbors"%n_nearest)
-        nl = bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
+        nl = _mdcbonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
 
     print("\nComputing distances in the interface between fragments\n%s\nand\n%s.\n"
@@ -840,7 +813,7 @@ def interface(
              '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]]))),
              interface_cutoff_Ang), end="")
 
-    ctcs, ctc_idxs = md.compute_contacts(refgeom, _np.vstack(ctc_idxs))
+    ctcs, ctc_idxs = _md.compute_contacts(refgeom, _np.vstack(ctc_idxs))
     print("done!")
 
     ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
@@ -854,7 +827,7 @@ def interface(
         "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
         len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
     print()
-    ctcs, times, at_pair_trajs = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
+    ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
                                  stride=stride, return_times_and_atoms=True,
                                  consolidate=False,
                                  chunksize=chunksize_in_frames,
@@ -880,10 +853,10 @@ def interface(
             #                                                    no_key=_shorten_AA(refgeom.top.residue(idx),
             #                                                                      substitute_fail=0,
             #                                                                      keep_index=True)) for idx in pair]
-            consensus_labels = [_choose_between_consensus_dicts(idx, consensus_maps,
+            consensus_labels = [_mdcnomenc._choose_between_consensus_dicts(idx, consensus_maps,
                                                                 no_key=None) for idx in pair]
-            fragment_idxs = [in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
-            ctc_objs.append(ContactPair(pair,
+            fragment_idxs = [_mdcctcs.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
+            ctc_objs.append(_mdcctcs.ContactPair(pair,
                                         [itraj[:, idx] for itraj in ctcs],
                                         times,
                                         top=refgeom.top,
@@ -896,7 +869,7 @@ def interface(
             cum_freq = ctc_frequency[order[:ii+1]].sum()
             #print(ii, ifreq.round(2), cum_freq.round(2), (cum_freq.sum()/tot_freq*100).round(2))
 
-    ctc_grp_intf = ContactGroup(ctc_objs,
+    ctc_grp_intf = _mdcctcs.ContactGroup(ctc_objs,
                                 interface_residxs=interface_residx_short)
     print()
     print(ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))
@@ -914,10 +887,10 @@ def interface(
     panelsize = 4
     panelsize2font = 3.5
     fudge = 7
-    histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=False,
-                                     figsize=(n_cols * panelsize * _np.ceil(ctc_grp_intf.n_ctcs/fudge),
+    histofig, histoax = _plt.subplots(n_rows, n_cols, sharex=True, sharey=False,
+                                      figsize=(n_cols * panelsize * _np.ceil(ctc_grp_intf.n_ctcs/fudge),
                                               n_rows * panelsize),
-                                     )
+                                      )
 
     # One loop for the histograms
     _rcParams["font.size"] = panelsize * panelsize2font
@@ -958,7 +931,7 @@ def interface(
                                                              colorbar=True,
                                                              grid=True)
 
-    iax.set_title("'%s'  as contact matrix"%_replace4latex(title),
+    iax.set_title("'%s'  as contact matrix"%_mdc_strNdict._replace4latex(title),
                   fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
     ifig.tight_layout()
     fname_mat = fname.replace("overall@","matrix@")
@@ -968,7 +941,7 @@ def interface(
         myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
                                                color_scheme=_my_color_schemes(curve_color),
                                                ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                               dt=_tunit2tunit["ps"][t_unit],
+                                               dt=_mdc_strNdict._tunit2tunit["ps"][t_unit],
                                                gray_background=gray_background,
                                                n_smooth_hw=n_smooth_hw,
                                                plot_N_ctcs=True,
@@ -1030,17 +1003,17 @@ def sites(topology,
         table_ext = table_ext.strip(".")
     graphic_ext = graphic_ext.strip(".")
     # Inform about trajectories
-    xtcs = _get_sorted_trajectories(trajectories)
+    xtcs = _mdc_strNdict.get_sorted_trajectories(trajectories)
 
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
         "\n ".join(site_files),
-        _inform_about_trajectories(xtcs),
+        _mdc_strNdict._inform_about_trajectories(xtcs),
           stride))
 
     # Inform about fragments
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, user_wants_consenus = fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
@@ -1050,20 +1023,20 @@ def sites(topology,
                                                                        accept_guess=accept_guess,
                                                                        write_to_disk_BW=write_to_disk_BW)
 
-    sites = [_sitefile2sitedict(ff) for ff in site_files]
-    ctc_idxs_small, AAresSeq2residxs = _sites_to_ctc_idxs(sites, refgeom.top,
+    sites = [_mdcsites.sitefile2sitedict(ff) for ff in site_files]
+    ctc_idxs_small, AAresSeq2residxs = _mdcsites.sites_to_ctc_idxs(sites, refgeom.top,
                                                           fragments=fragments_as_residue_idxs,
                                                           default_fragment_idx=default_fragment_index,
                                                           fragment_names=fragment_names)
 
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
     for idx in AAresSeq2residxs.values():
-        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, in_what_fragment(idx,
+        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, _mdcctcs.in_what_fragment(idx,
                                                                                                    fragments_as_residue_idxs),
                                                    idx,
                                                    consensus_maps[0][idx], consensus_maps[1][idx]))
 
-    ctcs, time_array, at_pair_trajs = trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+    ctcs, time_array, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                        chunksize=chunksize_in_frames,
                                        return_times_and_atoms=True, consolidate=False, periodic=pbc,
                                        scheme=scheme,
@@ -1079,9 +1052,9 @@ def sites(topology,
         for __ in range(isite["n_bonds"]):
             pair = next(ctc_pairs_iterators)
             idx = next(ctc_value_idx)
-            consensus_labels = [_choose_between_consensus_dicts(idx, consensus_maps) for idx in pair]
-            fragment_idxs = [in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
-            site_as_gc[key].append(ContactPair(pair,
+            consensus_labels = [_mdcnomenc._choose_between_consensus_dicts(idx, consensus_maps) for idx in pair]
+            fragment_idxs = [_mdcctcs.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
+            site_as_gc[key].append(_mdcctcs.ContactPair(pair,
                                                [itraj[:, idx] for itraj in ctcs],
                                                time_array,
                                                top=refgeom.top,
@@ -1094,15 +1067,15 @@ def sites(topology,
 
                                                #colors=[fragcolors[idx] for idx in idxs]
                                                ))
-        site_as_gc[key] = ContactGroup(site_as_gc[key])
+        site_as_gc[key] = _mdcctcs.ContactGroup(site_as_gc[key])
 
     panelheight = 3
     n_cols = _np.min((4, len(sites)))
     n_rows = _np.ceil(len(sites) / n_cols).astype(int)
     panelsize = 4
     panelsize2font = 3.5
-    histofig, histoax = plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
-                                     figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
+    histofig, histoax = _plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
+                                      figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
 
     # One loop for the histograms
     _rcParams["font.size"] = panelsize * panelsize2font
@@ -1127,7 +1100,7 @@ def sites(topology,
     fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
     fname = _path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi)
-    plt.close(histofig)
+    _plt.close(histofig)
     print("The following files have been created")
     print(fname)
     for site_name, isite_nh in site_as_gc.items():
@@ -1147,7 +1120,7 @@ def sites(topology,
                                            color_scheme=_my_color_schemes(curve_color),
                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
                                            n_smooth_hw=n_smooth_hw,
-                                           dt=_tunit2tunit["ps"][t_unit],
+                                           dt=_mdc_strNdict._tunit2tunit["ps"][t_unit],
                                            t_unit=t_unit,
                                            gray_background=gray_background,
                                            shorten_AAs=short_AA_names,
@@ -1156,8 +1129,8 @@ def sites(topology,
                                            )[0]
         # One title for all axes on top
         myfig.axes[0].set_title("site: %s" % (isite["name"]))
-        plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-        plt.close(myfig)
+        _plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+        _plt.close(myfig)
         print(fname)
         if table_ext is not None:
             if table_ext == 'xlsx':
@@ -1175,4 +1148,4 @@ def sites(topology,
     return
 
 def compare(*args, **kwargs):
-    return _compare_groups_of_contacts(*args, **kwargs)
+    return _mdcplots.compare_groups_of_contacts(*args, **kwargs)

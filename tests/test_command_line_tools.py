@@ -32,7 +32,7 @@ from mdciao.cli import *
 #    sites, \
 #    interface
 
-from mdciao.utils.nomenclature import \
+from mdciao.nomenclature import \
     LabelerBW
 
 from mdciao.parsers import \
