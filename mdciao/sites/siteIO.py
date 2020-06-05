@@ -2,7 +2,7 @@ from json import load as jsonload
 from os.path import splitext, split as psplit
 import numpy as _np
 
-from mdciao.fragments import \
+from mdciao.fragments.fragments import \
     get_fragments as _get_fragments, \
     per_residue_fragment_picker as _per_residue_fragment_picker
 

@@ -228,7 +228,7 @@ def contact_map(
 
     print()
     from .contacts import xtcs2ctc_mat_dict
-    from .list_utils import force_iterable as _force_iterable
+    from .lists import force_iterable as _force_iterable
     ctc_map_dict, times = xtcs2ctc_mat_dict(xtcs, refgeom.top, _force_iterable(list_ctc_cutoff_Ang),
                                             stride=stride,
                                             return_time=True,

@@ -1,10 +1,16 @@
 import numpy as _np
-from matplotlib import rcParams as _rcParams
-import matplotlib.pyplot as _plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable as _make_axes_locatable
-from .list_utils import   \
+
+from matplotlib import \
+    rcParams as _rcParams, \
+    pyplot as _plt
+
+from mpl_toolkits.axes_grid1 import \
+    make_axes_locatable as _make_axes_locatable
+
+from mdciao.utils.lists import   \
     window_average_fast as _wav
-from .str_and_dict_utils import \
+
+from mdciao.utils.str_and_dict import \
     _delete_exp_in_keys, \
     unify_freq_dicts, \
     _replace_w_dict, \
@@ -152,7 +158,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
     for key, ifile in dictionary_of_groups.items():
         if isinstance(ifile, str):
             idict = _freq_file2dict(ifile)
-        elif "mdciao.contacts.ContactGroup" in str(type(ifile)):
+        elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
             assert ctc_cutoff_Ang is not None, "Cannot provide a neighborhood object without a ctc_cutoff_Ang parameter"
             idict = {ilab:val for ilab, val in zip(ifile.ctc_labels_short,
                                                    ifile.frequency_per_contact(ctc_cutoff_Ang))}

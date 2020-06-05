@@ -6,7 +6,7 @@ import numpy as _np
 import mdtraj as _md
 
 test_filenames = filenames()
-import mdciao.site_utils
+import mdciao
 
 class Test_sitefile2site(unittest.TestCase):
 

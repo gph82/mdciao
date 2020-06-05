@@ -3,9 +3,8 @@ import mdtraj as md
 import numpy as _np
 from mdciao.filenames import filenames
 from pandas import DataFrame as _DF
-from mdciao import sequence_utils
 from mdciao.fragments import get_fragments
-
+from mdciao import sequence
 import pytest
 
 test_filenames = filenames()
@@ -16,17 +15,17 @@ class Test_print_verbose_dataframe(unittest.TestCase):
         df = _DF.from_dict({"x":_np.arange(500),
                             "x²":_np.arange(500)**2}
                            )
-        sequence_utils.print_verbose_dataframe(df)
+        sequence.print_verbose_dataframe(df)
 
 class Test_top2seq(unittest.TestCase):
 
     def test_works(self):
         top = md.load(test_filenames.small_monomer).top
-        seq = sequence_utils.top2seq(top)
+        seq = sequence.top2seq(top)
         _np.testing.assert_array_equal("EVWIEKXX",seq)
     def test_other_letter(self):
         top = md.load(test_filenames.small_monomer).top
-        seq = sequence_utils.top2seq(top, replacement_letter="Y")
+        seq = sequence.top2seq(top, replacement_letter="Y")
         _np.testing.assert_array_equal("EVWIEKYY", seq)
 
 
@@ -35,7 +34,7 @@ class Test_my_bioalign(unittest.TestCase):
     def test_works(self):
         seq1 = "EVWIEKXX"
         seq2 = seq1[::-1]+seq1.replace("I","A")+seq1[::-1]
-        algnmt = sequence_utils._my_bioalign(seq1,seq2)[0]
+        algnmt = sequence._my_bioalign(seq1, seq2)[0]
         res1 = "".join(["-" for __ in seq1])+seq1+"".join(["-" for __ in seq1])
         res2 = seq2
         _np.testing.assert_array_equal(algnmt[0],res1)
@@ -43,29 +42,29 @@ class Test_my_bioalign(unittest.TestCase):
 
     def test_raises(self):
         with pytest.raises(NotImplementedError):
-            sequence_utils._my_bioalign(None,None,method="other")
+            sequence._my_bioalign(None, None, method="other")
         with pytest.raises(NotImplementedError):
-            sequence_utils._my_bioalign(None,None,argstuple=(-2,1))
+            sequence._my_bioalign(None, None, argstuple=(-2, 1))
 
 class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
 
     def test_works_small(self):
         top = md.load(test_filenames.small_monomer).top
-        seq0 = sequence_utils.top2seq(top)
+        seq0 = sequence.top2seq(top)
         seq1 = seq0[::-1]+seq0.replace("I","A")+seq0[::-1]
         seq0_idxs = _np.arange(len(seq0))
         seq1_idxs = _np.arange(len(seq1))
         # We know the result a prioriy
         res0 = "".join(["-" for __ in seq0])+seq0+"".join(["-" for __ in seq0])
 
-        ialg = sequence_utils._my_bioalign(seq0,seq1)[0]
+        ialg = sequence._my_bioalign(seq0, seq1)[0]
 
-        result = sequence_utils.alignment_result_to_list_of_dicts(ialg,
-                                                         top,
-                                                         seq0_idxs,
-                                                         seq1_idxs,
-                                                         verbose=True
-                                                         )
+        result = sequence.alignment_result_to_list_of_dicts(ialg,
+                                                            top,
+                                                            seq0_idxs,
+                                                            seq1_idxs,
+                                                            verbose=True
+                                                            )
         df = _DF.from_dict(result)
         assert "resSeq_1" not in df.keys()
 
@@ -108,20 +107,20 @@ class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
         geom_3CAP = geom_3CAP.atom_slice(frag_3CAP)
         geom_1U19 = geom_1U19.atom_slice(frag_1U19)
 
-        seq_3CAP = sequence_utils.top2seq(geom_3CAP.top)
-        seq_1U19 = sequence_utils.top2seq(geom_1U19.top)
+        seq_3CAP = sequence.top2seq(geom_3CAP.top)
+        seq_1U19 = sequence.top2seq(geom_1U19.top)
 
-        ialg = sequence_utils._my_bioalign(seq_3CAP,
-                                           seq_1U19,
-                                           )[0]
+        ialg = sequence._my_bioalign(seq_3CAP,
+                                     seq_1U19,
+                                     )[0]
 
-        sequence_utils.alignment_result_to_list_of_dicts(ialg,
-                                                         geom_3CAP.top,
-                                                         _np.arange(geom_3CAP.n_residues),
-                                                         _np.arange(geom_1U19.n_residues),
-                                                         topology_1=geom_1U19.top,
-                                                         #verbose=True
-                                                         )
+        sequence.alignment_result_to_list_of_dicts(ialg,
+                                                   geom_3CAP.top,
+                                                   _np.arange(geom_3CAP.n_residues),
+                                                   _np.arange(geom_1U19.n_residues),
+                                                   topology_1=geom_1U19.top,
+                                                   #verbose=True
+                                                   )
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,3 +1,15 @@
+my_frag_colors=[
+         'magenta',
+         'yellow',
+         'lime',
+         'maroon',
+         'navy',
+         'olive',
+         'orange',
+         'purple',
+         'teal',
+]
+
 import numpy as _np
 
 from inspect import \
@@ -15,51 +27,35 @@ from os import \
     path as _path, \
     mkdir as _mkdir
 
-from mdciao.residue_and_atom_utils import \
+from mdciao.utils.residue_and_atom import \
     _parse_and_list_AAs_input
 
-from mdciao.plots import \
-    compare_groups_of_contacts as _compare_groups_of_contacts
+# This will cause shadowing for sure, just testing
+from mdciao.contacts import *
 
-from mdciao.fragments import \
-    get_fragments, _print_frag, \
-    _fragments_strings_to_fragments, \
-    _frag_list_2_frag_groups, \
-    frag_dict_2_frag_groups as _frag_dict_2_frag_groups, \
-    _rangeexpand_residues2residxs
-
-from mdciao.nomenclature_utils import \
+from mdciao.nomenclature import \
     LabelerCGN, LabelerBW,\
     _choose_between_consensus_dicts, \
     _guess_by_nomenclature, \
     _guess_nomenclature_fragments
 
-from mdciao.contacts import \
-    select_and_report_residue_neighborhood_idxs, \
-    trajs2ctcs,ContactGroup, ContactPair
-
-from mdciao.list_utils import \
+from mdciao.utils.lists import \
     unique_list_of_iterables_by_tuple_hashing, \
     in_what_fragment
 
-from mdciao.site_utils import \
+from mdciao.sites import \
     sitefile2sitedict as _sitefile2sitedict, \
     sites_to_ctc_idxs as _sites_to_ctc_idxs
 
-from mdciao.str_and_dict_utils import \
+from mdciao.utils.str_and_dict import \
     get_sorted_trajectories as _get_sorted_trajectories, \
     _inform_about_trajectories, \
     _tunit2tunit, \
     _replace4latex
 
-from mdciao.bond_utils import \
+from mdciao.utils.bonds import \
     bonded_neighborlist_from_top
 
-from mdciao.fragments import \
-    _my_frag_colors
-
-from mdciao.residue_and_atom_utils import \
-    find_AA as _findAA
 
 
 def _offer_to_create_dir(output_dir):
@@ -252,7 +248,7 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
             fragment_na     mes.extend(top.residue(ifrag[0]).name for ifrag in fragments[len(names):])
 
             for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, names)):
-                _print_frag(ifrag_idx, top, ifrag, end='')
+                print_frag(ifrag_idx, top, ifrag, end='')
                 print(" ", frag_name)
             return fragment_names, fragments
             """
@@ -261,7 +257,7 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
 
 def _parse_coloring_options(color_option, n,
                             default_color="blue",
-                            color_cycle=_my_frag_colors
+                            color_cycle=my_frag_colors
                             ):
     r"""
     Helper function to parse user input and return a color list
@@ -297,7 +293,7 @@ def _parse_coloring_options(color_option, n,
         if not color_option:
             colors = [default_color for __ in range(n)]
         else:
-            vec_idxs = _np.mod(_np.arange(n), len(_my_frag_colors))
+            vec_idxs = _np.mod(_np.arange(n), len(my_frag_colors))
             colors = _np.array(color_cycle)[vec_idxs].tolist()
     elif isinstance(color_option, str):
         color_option = color_option.split(",")
@@ -312,7 +308,7 @@ def _parse_coloring_options(color_option, n,
     return colors
 
 # TODO Consider putting the figure instantiation also here
-def _manage_timedep_ploting_and_saving_options(ctc_grp : ContactGroup,
+def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
                                                myfig,
                                                ctc_cutoff_Ang,
                                                output_desc,
@@ -535,7 +531,7 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, __ = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, __ = fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
@@ -548,7 +544,7 @@ def residue_neighborhoods(topology, trajectories, residues,
     CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs,
                                                accept_guess=accept_guess)
 
-    res_idxs_list = _rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
+    res_idxs_list = rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
                                                   interpret_as_res_idxs=res_idxs,
                                                   sort=sort,
                                                   pick_this_fragment_by_default=None,
@@ -806,7 +802,7 @@ def interface(
 
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, user_wants_consenus = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, user_wants_consenus = fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
@@ -817,11 +813,11 @@ def interface(
                                                                        write_to_disk_BW=write_to_disk_BW)
     if user_wants_consenus:
         intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys  = _frag_dict_2_frag_groups(fragment_defs, ng=2)
+        intf_frags_as_str_or_keys  = frag_dict_2_frag_groups(fragment_defs, ng=2)
 
     else:
         intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys   = _frag_list_2_frag_groups(fragments_as_residue_idxs,
+        intf_frags_as_str_or_keys   = frag_list_2_frag_groups(fragments_as_residue_idxs,
                                                                frag_idxs_group_1, frag_idxs_group_2,
                                                                )
 
@@ -1044,7 +1040,7 @@ def sites(topology,
     # Inform about fragments
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, user_wants_consenus = _fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, user_wants_consenus = fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,

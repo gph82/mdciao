@@ -1,4 +1,3 @@
-
 import mdtraj as md
 import unittest
 from unittest.mock import Mock
@@ -8,21 +7,11 @@ from os import path
 from scipy.spatial.distance import cdist
 from mdciao.filenames import filenames
 import pytest
-from mdciao.contacts import select_and_report_residue_neighborhood_idxs, \
-    trajs2ctcs, \
-    ContactPair, \
-    per_traj_ctc, \
-    geom2COMdist, \
-    _sum_ctc_freqs_by_atom_type,\
-    ContactGroup
+from mdciao import contacts
 
 from mdciao.fragments import get_fragments, per_residue_fragment_picker
 
 from matplotlib import pyplot as _plt
-
-from mdciao.contacts import _Fragments, \
-    _Residues, _NeighborhoodNames, \
-    _TimeTraces, _ContactStrings
 
 from tempfile import TemporaryDirectory as _TDir
 
@@ -33,7 +22,7 @@ class TestBaseClassContacts(unittest.TestCase):
         self.pdb_file = test_filenames.top_pdb
         self.file_xtc = test_filenames.traj_xtc
         self.top = md.load(self.pdb_file).top
-        self.traj = md.load(self.file_xtc, top = self.top)
+        self.traj = md.load(self.file_xtc, top=self.top)
         self.ctc_idxs = [[10, 20], [20, 30]]
         self.ctcs = md.compute_contacts(self.traj, self.ctc_idxs)[0]
 
@@ -59,49 +48,50 @@ class TestBaseClassContacts(unittest.TestCase):
 
 class Test_per_traj_ctc(TestBaseClassContacts):
     def test_contacts_file(self):
-        ctcs, time, __ = per_traj_ctc(self.top, self.file_xtc, self.ctc_idxs, 1000, 1, 0)
-        _np.testing.assert_allclose(ctcs,self.ctcs)
+        ctcs, time, __ = contacts.per_traj_ctc(self.top, self.file_xtc, self.ctc_idxs, 1000, 1, 0)
+        _np.testing.assert_allclose(ctcs, self.ctcs)
         _np.testing.assert_allclose(time, self.traj.time)
 
     def test_contacts_geom(self):
-        ctcs, time, __ = per_traj_ctc(self.top, self.traj, self.ctc_idxs, 1000, 1, 0)
-        _np.testing.assert_allclose(ctcs,self.ctcs)
+        ctcs, time, __ = contacts.per_traj_ctc(self.top, self.traj, self.ctc_idxs, 1000, 1, 0)
+        _np.testing.assert_allclose(ctcs, self.ctcs)
         _np.testing.assert_allclose(time, self.traj.time)
 
     def test_contacts_geom_stride(self):
-        ctcs, time, __ = per_traj_ctc(self.top, self.traj, self.ctc_idxs, 1000, 2, 0)
-        _np.testing.assert_allclose(ctcs,self.ctcs[::2])
+        ctcs, time, __ = contacts.per_traj_ctc(self.top, self.traj, self.ctc_idxs, 1000, 2, 0)
+        _np.testing.assert_allclose(ctcs, self.ctcs[::2])
         _np.testing.assert_allclose(time, self.traj.time[::2])
 
     def test_contacts_geom_chunk(self):
-        ctcs, time, __ = per_traj_ctc(self.top, self.traj, self.ctc_idxs, 5, 1, 0)
-        _np.testing.assert_allclose(ctcs,self.ctcs)
+        ctcs, time, __ = contacts.per_traj_ctc(self.top, self.traj, self.ctc_idxs, 5, 1, 0)
+        _np.testing.assert_allclose(ctcs, self.ctcs)
         _np.testing.assert_allclose(time, self.traj.time)
 
     def test_atoms(self):
-        __, __, iatoms = per_traj_ctc(self.top, self.file_xtc, self.ctc_idxs, 1000, 1, 0)
+        __, __, iatoms = contacts.per_traj_ctc(self.top, self.file_xtc, self.ctc_idxs, 1000, 1, 0)
         _np.testing.assert_allclose(iatoms, self.my_idxs)
 
     def test_scheme_COM(self):
-        test_COM = geom2COMdist(self.traj[:10], residue_pairs=self.ctc_idxs)
-        ctcs, times, iatoms = per_traj_ctc(self.top, self.traj[:10], self.ctc_idxs, 1000, 1, 0, scheme="COM")
+        test_COM = contacts.geom2COMdist(self.traj[:10], residue_pairs=self.ctc_idxs)
+        ctcs, times, iatoms = contacts.per_traj_ctc(self.top, self.traj[:10], self.ctc_idxs, 1000, 1, 0, scheme="COM")
         # Im using my own routine here bc we're not testing that it gets it right (which is tested in test_geomcomdist
         # I am just testing that it wraps the method correctly
         _np.testing.assert_allclose(test_COM, ctcs)
         _np.testing.assert_allclose(times, self.traj.time[:10])
-        assert iatoms.shape[0]==10
-        assert iatoms.shape[1]==2*2
+        assert iatoms.shape[0] == 10
+        assert iatoms.shape[1] == 2 * 2
         assert all([_np.isnan(ii) for ii in iatoms.flatten()])
 
     def test_contacts_geom_1_frame(self):
-        ctcs, time, __ = per_traj_ctc(self.top, self.traj[0], self.ctc_idxs, 1000, 1, 0)
-        _np.testing.assert_allclose(ctcs,self.ctcs[:1,:])
+        ctcs, time, __ = contacts.per_traj_ctc(self.top, self.traj[0], self.ctc_idxs, 1000, 1, 0)
+        _np.testing.assert_allclose(ctcs, self.ctcs[:1, :])
         _np.testing.assert_allclose(time, self.traj.time[:1])
+
 
 class Test_trajs2ctcs(TestBaseClassContacts):
 
     def setUp(self):
-        #TODO read why I shouldn't be doing this...https://nedbatchelder.com/blog/201210/multiple_inheritance_is_hard.html
+        # TODO read why I shouldn't be doing this...https://nedbatchelder.com/blog/201210/multiple_inheritance_is_hard.html
         super(Test_trajs2ctcs, self).setUp()
         self.xtcs = [self.file_xtc, self.file_xtc]
         self.ctcs_stacked = _np.vstack([self.ctcs, self.ctcs])
@@ -109,33 +99,33 @@ class Test_trajs2ctcs(TestBaseClassContacts):
         self.atoms_stacked = _np.vstack([self.my_idxs, self.my_idxs])
 
     def test_works(self):
-        ctcs_trajs_consolidated = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs)
+        ctcs_trajs_consolidated = contacts.trajs2ctcs(self.xtcs, self.top, self.ctc_idxs)
         _np.testing.assert_allclose(ctcs_trajs_consolidated, self.ctcs_stacked)
 
-
     def test_return_time_and_atoms(self):
-        ctcs_trajs_consolidated, times_consolidated, atoms_consolidated = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs,
-                                                                                     return_times_and_atoms=True
-                                                                                     )
+        ctcs_trajs_consolidated, times_consolidated, atoms_consolidated = contacts.trajs2ctcs(self.xtcs, self.top,
+                                                                                              self.ctc_idxs,
+                                                                                              return_times_and_atoms=True
+                                                                                              )
         _np.testing.assert_allclose(self.times_stacked, times_consolidated)
         _np.testing.assert_allclose(self.ctcs_stacked, ctcs_trajs_consolidated)
         _np.testing.assert_allclose(self.atoms_stacked, atoms_consolidated)
 
     def test_consolidate_is_false(self):
-        ctcs, times, atoms = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs,
-                                        return_times_and_atoms=True,
-                                        consolidate=False)
-
+        ctcs, times, atoms = contacts.trajs2ctcs(self.xtcs, self.top, self.ctc_idxs,
+                                                 return_times_and_atoms=True,
+                                                 consolidate=False)
 
         [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.ctcs, self.ctcs], ctcs)]
         [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.traj.time, self.traj.time], times)]
         [_np.testing.assert_equal(itraj, jtraj) for (itraj, jtraj) in zip([self.my_idxs, self.my_idxs], atoms)]
 
     def test_progressbar(self):
-        ctcs_trajs_consolidated = trajs2ctcs(self.xtcs, self.top, self.ctc_idxs, progressbar=True)
+        ctcs_trajs_consolidated = contacts.trajs2ctcs(self.xtcs, self.top, self.ctc_idxs, progressbar=True)
 
     def test_one_traj_one_frame_pdb_just_runs(self):
-        trajs2ctcs([self.pdb_file],self.top, self.ctc_idxs)
+        contacts.trajs2ctcs([self.pdb_file], self.top, self.ctc_idxs)
+
 
 class BaseClassForTestingAttributes(unittest.TestCase):
     def setUp(self):
@@ -143,54 +133,55 @@ class BaseClassForTestingAttributes(unittest.TestCase):
         self.trajs = [self.trajs[:2],
                       self.trajs[:3]]
         self.ctc_trajs = [[1, 2], [10, 11, 12]]
-        self.atom_pair_trajs = [[[100, 200],[100, 201]],
-                                [[101, 200],[100, 200], [100, 201]]]
+        self.atom_pair_trajs = [[[100, 200], [100, 201]],
+                                [[101, 200], [100, 200], [100, 201]]]
+
 
 class TestTimeTraces(BaseClassForTestingAttributes):
 
     def test_works(self):
-        cott = _TimeTraces(self.ctc_trajs, [self.trajs[0].time,
-                                            self.trajs[1].time],
-                           self.trajs, self.atom_pair_trajs)
+        cott = contacts._TimeTraces(self.ctc_trajs, [self.trajs[0].time,
+                                                     self.trajs[1].time],
+                                    self.trajs, self.atom_pair_trajs)
         [_np.testing.assert_allclose(itraj, jtraj) for itraj, jtraj in zip(cott.ctc_trajs, self.ctc_trajs)]
         [_np.testing.assert_allclose(itraj, jtraj) for itraj, jtraj in zip(cott.feat_trajs, self.ctc_trajs)]
         [_np.testing.assert_allclose(itraj, jtraj) for itraj, jtraj in zip(cott.time_trajs, [self.trajs[0].time,
                                                                                              self.trajs[1].time])]
 
         [_np.testing.assert_allclose(itraj, jtraj) for itraj, jtraj in zip(cott.atom_pair_trajs, self.atom_pair_trajs)]
-        assert all([itraj==jtraj for itraj, jtraj in zip(cott.trajs, self.trajs)])
+        assert all([itraj == jtraj for itraj, jtraj in zip(cott.trajs, self.trajs)])
 
     def test_fails_because_wrong_atom_trajs(self):
         with pytest.raises(AssertionError):
-            _TimeTraces(self.ctc_trajs, [self.trajs[0].time,
-                                         self.trajs[1].time],
-                           self.trajs, [[[0,1]],[0,1]])
+            contacts._TimeTraces(self.ctc_trajs, [self.trajs[0].time,
+                                                  self.trajs[1].time],
+                                 self.trajs, [[[0, 1]], [0, 1]])
 
         with pytest.raises(AssertionError):
-            _TimeTraces(self.ctc_trajs, [self.trajs[0].time,
-                                         self.trajs[1].time],
-                           self.trajs, [[[0,1,1]],[0,1]])
+            contacts._TimeTraces(self.ctc_trajs, [self.trajs[0].time,
+                                                  self.trajs[1].time],
+                                 self.trajs, [[[0, 1, 1]], [0, 1]])
+
 
 class TestNumberOfThings(BaseClassForTestingAttributes):
 
     def test_works(self):
-        from mdciao.contacts import _NumberOfthings
-        cont = _NumberOfthings(len(self.ctc_trajs),
-                               [len(itraj) for itraj in self.ctc_trajs]
-                               )
+        cont = contacts._NumberOfthings(len(self.ctc_trajs),
+                                        [len(itraj) for itraj in self.ctc_trajs]
+                                        )
         _np.testing.assert_equal(len(self.ctc_trajs), cont.n_trajs)
         _np.testing.assert_allclose([len(itraj) for itraj in self.ctc_trajs], cont.n_frames)
         _np.testing.assert_equal(_np.sum([len(itraj) for itraj in self.ctc_trajs]), cont.n_frames_total)
 
+
 class TestResidues(unittest.TestCase):
 
-
     def test_just_works(self):
-        cors = _Residues([0, 1], ["GLU25", "ALA35"])
+        cors = contacts.contacts._Residues([0, 1], ["GLU25", "ALA35"])
 
-        _np.testing.assert_allclose([0,1], cors.idxs_pair)
-        assert cors.names[0]=="GLU25" and cors.names[1]=="ALA35"
-        assert cors.names_short[0]=="E25" and cors.names_short[1]=="A35", cors.names_short
+        _np.testing.assert_allclose([0, 1], cors.idxs_pair)
+        assert cors.names[0] == "GLU25" and cors.names[1] == "ALA35"
+        assert cors.names_short[0] == "E25" and cors.names_short[1] == "A35", cors.names_short
 
         _np.testing.assert_equal(None, cors.anchor_index)
         _np.testing.assert_equal(None, cors.anchor_residue)
@@ -201,10 +192,10 @@ class TestResidues(unittest.TestCase):
         _np.testing.assert_equal(None, cors.partner_residue_index)
 
     def test_anchor_and_partner(self):
-        cors = _Residues([10, 20],
-                         ["GLU25", "ALA35"],
-                         anchor_residue_idx=10
-                         )
+        cors = contacts._Residues([10, 20],
+                                  ["GLU25", "ALA35"],
+                                  anchor_residue_idx=10
+                                  )
 
         _np.testing.assert_equal(10, cors.anchor_residue_index)
         _np.testing.assert_equal(0, cors.anchor_index)
@@ -214,11 +205,11 @@ class TestResidues(unittest.TestCase):
 
     def test_anchor_and_partner_top(self):
         top = md.load(test_filenames.top_pdb).top
-        cors = _Residues([10, 20],
-                         ["GLU25", "ALA35"],
-                         anchor_residue_idx=10,
-                         top = top
-                         )
+        cors = contacts._Residues([10, 20],
+                                  ["GLU25", "ALA35"],
+                                  anchor_residue_idx=10,
+                                  top=top
+                                  )
 
         _np.testing.assert_equal(10, cors.anchor_residue_index)
         _np.testing.assert_equal(0, cors.anchor_index)
@@ -229,9 +220,9 @@ class TestResidues(unittest.TestCase):
         assert top.residue(20) is cors.partner_residue
 
     def test_names(self):
-        cors = _Residues([10, 20],
-                         ["GLU25", "ALA35"]
-                         )
+        cors = contacts._Residues([10, 20],
+                                  ["GLU25", "ALA35"]
+                                  )
         assert cors.names[0] == "GLU25"
         assert cors.names[1] == "ALA35"
 
@@ -239,42 +230,41 @@ class TestResidues(unittest.TestCase):
         assert cors.names_short[1] == "A35"
 
     def test_consensus_labels(self):
-        cors = _Residues([10, 20],
-                         ["GLU25", "ALA35"],
-                         consensus_labels=["3.50","4.50"])
-        assert cors.consensus_labels[0]=="3.50"
-        assert cors.consensus_labels[1]=="4.50"
+        cors = contacts._Residues([10, 20],
+                                  ["GLU25", "ALA35"],
+                                  consensus_labels=["3.50", "4.50"])
+        assert cors.consensus_labels[0] == "3.50"
+        assert cors.consensus_labels[1] == "4.50"
+
 
 class TestFragments(unittest.TestCase):
 
-
     def test_just_works_empty(self):
-        cof = _Fragments()
+        cof = contacts._Fragments()
         assert cof.idxs is None
         assert cof.colors[0] is cof.colors[1] is None
-        assert cof.names[0]  is cof.names[1] is None
+        assert cof.names[0] is cof.names[1] is None
 
     def test_works(self):
-        cof = _Fragments(fragment_idxs=[0, 1],
-                         fragment_colors=["r","b"],
-                         fragment_names=["fragA", "fragB"])
-        _np.testing.assert_allclose([0,1], cof.idxs)
+        cof = contacts._Fragments(fragment_idxs=[0, 1],
+                                  fragment_colors=["r", "b"],
+                                  fragment_names=["fragA", "fragB"])
+        _np.testing.assert_allclose([0, 1], cof.idxs)
 
-        assert cof.colors[0]=="r" and cof.colors[1]=="b"
-        assert cof.names[0]=="fragA" and cof.names[1]=="fragB"
+        assert cof.colors[0] == "r" and cof.colors[1] == "b"
+        assert cof.names[0] == "fragA" and cof.names[1] == "fragB"
 
     def test_auto_fragnaming(self):
-        cof = _Fragments(fragment_idxs=[0, 1],
-                         )
+        cof = contacts._Fragments(fragment_idxs=[0, 1],
+                                  )
 
         assert cof.names[0] == str(0) and cof.names[1] == str(1)
 
-
     def test_anchor_and_partner(self):
-        cors = _Residues([10, 20],
-                         [None,None],
-                         anchor_residue_idx=10
-                         )
+        cors = contacts._Residues([10, 20],
+                                  [None, None],
+                                  anchor_residue_idx=10
+                                  )
 
         _np.testing.assert_equal(10, cors.anchor_residue_index)
         _np.testing.assert_equal(0, cors.anchor_index)
@@ -283,13 +273,12 @@ class TestFragments(unittest.TestCase):
         _np.testing.assert_equal(20, cors.partner_residue_index)
 
     def test_anchor_and_partner_top(self):
-        from mdciao.contacts import _Residues
         top = md.load(test_filenames.top_pdb).top
-        cors = _Residues([10, 20],
-                         [None,None],
-                         anchor_residue_idx=10,
-                         top = top
-                         )
+        cors = contacts._Residues([10, 20],
+                                  [None, None],
+                                  anchor_residue_idx=10,
+                                  top=top
+                                  )
 
         _np.testing.assert_equal(10, cors.anchor_residue_index)
         _np.testing.assert_equal(0, cors.anchor_index)
@@ -299,106 +288,105 @@ class TestFragments(unittest.TestCase):
         _np.testing.assert_equal(20, cors.partner_residue_index)
         assert top.residue(20) is cors.partner_residue
 
-    def _test_names(self):
-        from mdciao.contacts import _Residues
-        cors = _Residues([10, 20],
-                         ["GLU25", "ALA35"]
-                         )
-        assert cors.names[0] == "GLU25"
-        assert cors.names[1] == "ALA35"
+    def test_names(self):
+        cors = contacts._Residues([10, 20],
+                                  ["GLU25", "ALA35"]
+                                  )
+        self.assertEquals(cors.names[0],"GLU25")
+        self.assertEquals(cors.names[1],"ALA35")
 
-        assert cors.names_short[0] == "E10"
-        assert cors.names_short[1] == "A20"
+        self.assertEquals(cors.names_short[0],"E25")
+        self.assertEquals(cors.names_short[1],"A35")
+
 
 class TestNeighborhoodNames(unittest.TestCase):
 
     def test_works(self):
-        cnns = _NeighborhoodNames(
-            _Residues([10, 20],
-                      ["GLU25", "ALA35"],
-                      anchor_residue_idx=20
-                      ),
-            _Fragments([0, 1],
-                       ["fragA", "fragB"],
-                       ["r", "b"]
-                       )
+        cnns = contacts._NeighborhoodNames(
+            contacts._Residues([10, 20],
+                               ["GLU25", "ALA35"],
+                               anchor_residue_idx=20
+                               ),
+            contacts._Fragments([0, 1],
+                                ["fragA", "fragB"],
+                                ["r", "b"]
+                                )
         )
-
 
         assert cnns.anchor_fragment == "fragB"
         assert cnns.partner_fragment == "fragA"
 
     def test_raises(self):
         with pytest.raises(AssertionError):
-            _NeighborhoodNames(_Residues([10, 20],["GLU25", "ALA35"]),
-                               _Fragments([0, 1],
-                                          ["fragA", "fragB"],
-                                          ["r", "b"]
-                                          ))
+            contacts._NeighborhoodNames(contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+                                        contacts._Fragments([0, 1],
+                                                            ["fragA", "fragB"],
+                                                            ["r", "b"]
+                                                            ))
 
     def test_fragments_consensus_name_None(self):
-        cnns = _NeighborhoodNames(
-            _Residues([10, 20],
-                      ["GLU25", "ALA35"],
-                      anchor_residue_idx=20
-                      ),
-            _Fragments([0, 1],
-                       )
+        cnns = contacts._NeighborhoodNames(
+            contacts._Residues([10, 20],
+                               ["GLU25", "ALA35"],
+                               anchor_residue_idx=20
+                               ),
+            contacts._Fragments([0, 1],
+                                )
         )
         assert cnns.partner_fragment_consensus is None
         assert cnns.anchor_fragment_consensus is None
 
     def test_fragments_consensus_name(self):
-        cnns = _NeighborhoodNames(
-            _Residues([10, 20],
-                      ["GLU25", "ALA35"],
-                      anchor_residue_idx=20,
-                      consensus_labels=["3.50","4.50"]
-                      ),
-            _Fragments([0, 1],
-                       ["fragA", "fragB"],
-                       )
+        cnns = contacts._NeighborhoodNames(
+            contacts._Residues([10, 20],
+                               ["GLU25", "ALA35"],
+                               anchor_residue_idx=20,
+                               consensus_labels=["3.50", "4.50"]
+                               ),
+            contacts._Fragments([0, 1],
+                                ["fragA", "fragB"],
+                                )
         )
         assert cnns.partner_fragment_consensus == "3.50"
         assert cnns.anchor_fragment_consensus == "4.50"
 
     def test_fragments_names_best_no_consensus(self):
-        cnns = _NeighborhoodNames(
-            _Residues([10, 20],
-                      ["GLU25", "ALA35"],
-                      anchor_residue_idx=20
-                      ),
-            _Fragments([0, 1],
-                       fragment_names=["fragA", "fragB"]
-                       )
+        cnns = contacts._NeighborhoodNames(
+            contacts._Residues([10, 20],
+                               ["GLU25", "ALA35"],
+                               anchor_residue_idx=20
+                               ),
+            contacts._Fragments([0, 1],
+                                fragment_names=["fragA", "fragB"]
+                                )
         )
         assert cnns.partner_fragment_best == "fragA", cnns.partner_fragment_best
         assert cnns.anchor_fragment_best == "fragB"
 
     def test_fragments_names_best_w_consensus(self):
-        cnns = _NeighborhoodNames(
-            _Residues([10, 20],
-                      ["GLU25", "ALA35"],
-                      anchor_residue_idx=20,
-                      consensus_labels=["3.50","4.50"]
-                      ),
-            _Fragments([0, 1],
-                       fragment_names=["fragA", "fragB"]
-                       )
+        cnns = contacts._NeighborhoodNames(
+            contacts._Residues([10, 20],
+                               ["GLU25", "ALA35"],
+                               anchor_residue_idx=20,
+                               consensus_labels=["3.50", "4.50"]
+                               ),
+            contacts._Fragments([0, 1],
+                                fragment_names=["fragA", "fragB"]
+                                )
         )
         assert cnns.partner_fragment_best == "3.50"
         assert cnns.anchor_fragment_best == "4.50"
 
     def test_res_and_fragment_strs_no_consensus(self):
-        cnns = _NeighborhoodNames(
-            _Residues([10, 20],
-                      ["GLU25", "ALA35"],
-                      anchor_residue_idx=20,
-                      #consensus_labels=["3.50","4.50"]
-                      ),
-            _Fragments([0, 1],
-                       fragment_names=["fragA", "fragB"]
-                       )
+        cnns = contacts._NeighborhoodNames(
+            contacts._Residues([10, 20],
+                               ["GLU25", "ALA35"],
+                               anchor_residue_idx=20,
+                               # consensus_labels=["3.50","4.50"]
+                               ),
+            contacts._Fragments([0, 1],
+                                fragment_names=["fragA", "fragB"]
+                                )
         )
         assert cnns.anchor_res_and_fragment_str == "ALA35@fragB"
         assert cnns.partner_res_and_fragment_str == "GLU25@fragA"
@@ -407,15 +395,15 @@ class TestNeighborhoodNames(unittest.TestCase):
         assert cnns.partner_res_and_fragment_str_short == "E25@fragA"
 
     def test_res_and_fragment_strs_w_consensus(self):
-        cnns = _NeighborhoodNames(
-            _Residues([10, 20],
-                      ["GLU25", "ALA35"],
-                      anchor_residue_idx=20,
-                       consensus_labels=["3.50","4.50"]
-                      ),
-            _Fragments([0, 1],
-                       fragment_names=["fragA", "fragB"]
-                       )
+        cnns = contacts._NeighborhoodNames(
+            contacts._Residues([10, 20],
+                               ["GLU25", "ALA35"],
+                               anchor_residue_idx=20,
+                               consensus_labels=["3.50", "4.50"]
+                               ),
+            contacts._Fragments([0, 1],
+                                fragment_names=["fragA", "fragB"]
+                                )
         )
         assert cnns.anchor_res_and_fragment_str == "ALA35@4.50"
         assert cnns.partner_res_and_fragment_str == "GLU25@3.50"
@@ -423,226 +411,227 @@ class TestNeighborhoodNames(unittest.TestCase):
         assert cnns.anchor_res_and_fragment_str_short == "A35@4.50"
         assert cnns.partner_res_and_fragment_str_short == "E25@3.50"
 
+
 class TestContactStrings(unittest.TestCase):
 
     def test_trajlabels_no_trajs(self):
-        cls = _ContactStrings(2,
-                              _Residues([10, 20],["GLU25", "ALA35"])
-                              )
+        cls = contacts._ContactStrings(2,
+                                       contacts._Residues([10, 20], ["GLU25", "ALA35"])
+                                       )
 
         assert cls.trajstrs[0] == "traj 0" and cls.trajstrs[1] == "traj 1", cls.trajstrs
 
     def test_trajlabels_w_mdtrajs(self):
         mdtrajs = md.load(test_filenames.traj_xtc,
-                               top=test_filenames.top_pdb)[:5]
+                          top=test_filenames.top_pdb)[:5]
         mdtrajs = [mdtrajs, mdtrajs]
-        cls = _ContactStrings(2,
-                              _Residues([10, 20], ["GLU25", "ALA35"]),
-                              trajs = mdtrajs
-                              )
+        cls = contacts._ContactStrings(2,
+                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+                                       trajs=mdtrajs
+                                       )
 
         assert cls.trajstrs[0] == "mdtraj.00" and cls.trajstrs[1] == "mdtraj.01", cls.trajstrs
 
     def test_trajlabels_wo_mdtrajs(self):
-        cls = _ContactStrings(2,
-                              _Residues([10, 20], ["GLU25", "ALA35"]),
-                              trajs=["file0.xtc", "file1.xtc"]
-                              )
+        cls = contacts._ContactStrings(2,
+                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+                                       trajs=["file0.xtc", "file1.xtc"]
+                                       )
 
         assert cls.trajstrs[0] == "file0" and cls.trajstrs[1] == "file1", cls.trajstrs
 
     def test_ctc_labels(self):
-        cls = _ContactStrings(2,
-                              _Residues([10, 20], ["GLU25", "ALA35"]),
-                              _Fragments(fragment_names=["fragA","fragB"])
-                              )
+        cls = contacts._ContactStrings(2,
+                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+                                       contacts._Fragments(fragment_names=["fragA", "fragB"])
+                                       )
         assert cls.w_fragments == "GLU25@fragA-ALA35@fragB", cls.w_fragments
         assert cls.w_fragments_short_AA == "E25@fragA-A35@fragB", cls.w_fragments_short_AA
 
-    def test_ctc_label_no_fragments(self):
-        cls = _ContactStrings(2,
-                              _Residues([10, 20], ["GLU25", "ALA35"]),
-                              )
+    def test_ctc_label_nocontacts_Fragments(self):
+        cls = contacts._ContactStrings(2,
+                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+                                       )
 
         assert cls.no_fragments == "GLU25-ALA35", cls.no_fragments
         assert cls.no_fragments_short_AA == "E25-A35"
 
-
     def test_ctc_label_missing_frags_and_consensus(self):
-        cls = _ContactStrings(2,
-                              _Residues([10, 20], ["GLU25", "ALA35"]),
-                              )
+        cls = contacts._ContactStrings(2,
+                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+                                       )
 
         assert cls.w_fragments == "GLU25-ALA35", cls.ctc_label_w_fragment
         assert cls.w_fragments_short_AA == "E25-A35", cls.w_fragments_short_AA
 
     def test_just_prints(self):
-        cls = _ContactStrings(2,
-                              _Residues([10, 20], ["GLU25", "ALA35"]),
-                              )
+        cls = contacts._ContactStrings(2,
+                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+                                       )
         print(cls)
+
 
 class TestContactPair(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.small_monomer)
 
     def test_works_minimal(self):
-        ContactPair([0, 1],
-                    [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                    [[0, 1, 2], [0, 1, 2, 3]],
-                    )
+        contacts.ContactPair([0, 1],
+                             [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                             [[0, 1, 2], [0, 1, 2, 3]],
+                             )
 
     def test_with_top(self):
-        contact_pair_test =  ContactPair([0, 1],
-                    [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                    [[0, 1, 2], [0, 1, 2, 3]],
-                                         top=self.geom.top,
-                    )
+        contact_pair_test = contacts.ContactPair([0, 1],
+                                                 [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                                 [[0, 1, 2], [0, 1, 2, 3]],
+                                                 top=self.geom.top,
+                                                 )
         contact_pair_test.top == self.geom.top == contact_pair_test.topology
 
     def test_with_anchor(self):
-        contact_pair_test = ContactPair([0, 1],
-                                        [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                                        [[0, 1, 2], [0, 1, 2, 3]],
-                                        anchor_residue_idx=1,
-                                        )
+        contact_pair_test = contacts.ContactPair([0, 1],
+                                                 [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                                 [[0, 1, 2], [0, 1, 2, 3]],
+                                                 anchor_residue_idx=1,
+                                                 )
         contact_pair_test.top == self.geom.top
         assert contact_pair_test.neighborhood is not None
 
     def test_all_properties_w_empty_ones_just_runs(self):
-        cpt = ContactPair([0, 1],
-                                        [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                                        [[0, 1, 2], [0, 1, 2, 3]]
-                                        )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]]
+                                   )
         cpt.time_traces
         cpt.n
         cpt.residues
         cpt.fragments
         cpt.labels
         cpt.label
-        assert cpt.time_max==3
+        assert cpt.time_max == 3
         assert cpt.neighborhood is None
 
     def test_binarize_trajs(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]]
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]]
+                                   )
         bintrajs = cpt.binarize_trajs(21)
-        _np.testing.assert_array_equal([1, 1, 1],bintrajs[0])
+        _np.testing.assert_array_equal([1, 1, 1], bintrajs[0])
         _np.testing.assert_array_equal([1, 1, 0, 0], bintrajs[1])
 
     def test_freq_per_traj(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]]
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]]
+                                   )
         freqs = cpt.frequency_per_traj(21)
-        _np.testing.assert_equal(freqs[0],1)
-        _np.testing.assert_equal(freqs[1],.5)
+        _np.testing.assert_equal(freqs[0], 1)
+        _np.testing.assert_equal(freqs[1], .5)
 
     def test_freq_overall_trajs(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]]
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]]
+                                   )
         _np.testing.assert_equal(cpt.frequency_overall_trajs(21),
-                                 _np.mean([1, 1, 1]+[1, 1, 0, 0]))
+                                 _np.mean([1, 1, 1] + [1, 1, 0, 0]))
 
     def test_frequency_dict_no_labels(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]]
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]]
+                                   )
 
         idict = cpt.frequency_dict(21)
-        assert idict["freq"] == _np.mean([1, 1, 1]+[1, 1, 0, 0])
+        assert idict["freq"] == _np.mean([1, 1, 1] + [1, 1, 0, 0])
         assert idict["residue idxs"] == "0 1"
-        assert idict["label"] == ('%-15s - %-15s'%(0,1)).rstrip(" "),idict["label"]
+        assert idict["label"] == ('%-15s - %-15s' % (0, 1)).rstrip(" "), idict["label"]
 
-        idict = cpt.frequency_dict(21,AA_format="long")
-        assert idict["label"] == ('%-15s - %-15s' %(0,1)).rstrip(" "), idict["label"]
+        idict = cpt.frequency_dict(21, AA_format="long")
+        assert idict["label"] == ('%-15s - %-15s' % (0, 1)).rstrip(" "), idict["label"]
 
         idict = cpt.frequency_dict(21, split_label=False)
         assert idict["label"] == "0-1"
 
     def test_frequency_dict_w_labels(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]],
-                          fragment_names=["fragA", "fragB"]
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]],
+                                   fragment_names=["fragA", "fragB"]
+                                   )
         idict = cpt.frequency_dict(21)
         self.assertEqual(idict["label"],
-                         ('%-15s - %-15s'%("0@fragA","1@fragB")).rstrip(" "))
+                         ('%-15s - %-15s' % ("0@fragA", "1@fragB")).rstrip(" "))
 
-        idict = cpt.frequency_dict(21,AA_format="long")
-        assert idict["label"] == ('%-15s - %-15s'%("0@fragA","1@fragB")).rstrip(" ")
+        idict = cpt.frequency_dict(21, AA_format="long")
+        assert idict["label"] == ('%-15s - %-15s' % ("0@fragA", "1@fragB")).rstrip(" ")
         idict = cpt.frequency_dict(21, split_label=False)
         assert idict["label"] == '0@fragA-1@fragB'
 
     def test_distro_overall_trajs(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]],
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]],
+                                   )
         x, h = cpt.distro_overall_trajs(bins=10)
-        xt, ht = _np.histogram([1.0, 1.1, 1.3]+[2.0, 2.1, 2.3, 2.4],10)
-        _np.testing.assert_array_equal(x,xt)
+        xt, ht = _np.histogram([1.0, 1.1, 1.3] + [2.0, 2.1, 2.3, 2.4], 10)
+        _np.testing.assert_array_equal(x, xt)
         _np.testing.assert_array_equal(h, ht)
 
     def test_formed_atom_pairs_fails(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]],
-                          )
-        with pytest.raises((AssertionError,ValueError)):
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]],
+                                   )
+        with pytest.raises((AssertionError, ValueError)):
             cpt.count_formed_atom_pairs(21)
 
     def test_overall_stacked_formed_atoms(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 2.5, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]],
-                          atom_pair_trajs=[
-                              [[10,20],[11,20],[10,21]],
-                              [[11,21],[10,21],[10,20],[11,20]]
-                          ]
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 2.5, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]],
+                                   atom_pair_trajs=[
+                                       [[10, 20], [11, 20], [10, 21]],
+                                       [[11, 21], [10, 21], [10, 20], [11, 20]]
+                                   ]
+                                   )
 
         fas = cpt._overall_stacked_formed_atoms(21)
-        _np.testing.assert_array_equal([[10,20],
-                                        #[11,20], this frame is not formed
-                                        [10,21],
-                                        [11,21],
-                                        [10,21]], fas)
+        _np.testing.assert_array_equal([[10, 20],
+                                        # [11,20], this frame is not formed
+                                        [10, 21],
+                                        [11, 21],
+                                        [10, 21]], fas)
 
     def test_count_formed_atom_pairs(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 2.5, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]],
-                          atom_pair_trajs=[
-                              [[10,20],[11,20],[10,21]],
-                              [[10,21],[10,21],[10,20],[11,20]]
-                          ]
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 2.5, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]],
+                                   atom_pair_trajs=[
+                                       [[10, 20], [11, 20], [10, 21]],
+                                       [[10, 21], [10, 21], [10, 20], [11, 20]]
+                                   ]
+                                   )
         # The count should be [10,20]:1, [10,21]:3,
         pairs, counts = cpt.count_formed_atom_pairs(21, sort=False)
-        _np.testing.assert_array_equal(pairs,[[10,20],[10,21]])
-        _np.testing.assert_array_equal(counts,[1,3])
+        _np.testing.assert_array_equal(pairs, [[10, 20], [10, 21]])
+        _np.testing.assert_array_equal(counts, [1, 3])
 
         pairs, counts = cpt.count_formed_atom_pairs(21, sort=True)
-        _np.testing.assert_array_equal(pairs,[[10,21],[10,20]])
-        _np.testing.assert_array_equal(counts,[3,1])
+        _np.testing.assert_array_equal(pairs, [[10, 21], [10, 20]])
+        _np.testing.assert_array_equal(counts, [3, 1])
 
     def test_frequency_dict_formed_atom_pairs_overall_trajs_fails(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 2.5, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]],
-                          atom_pair_trajs=[
-                              [[10, 20], [11, 20], [10, 21]],
-                              [[10, 21], [10, 21], [10, 20], [11, 20]]
-                          ]
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 2.5, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]],
+                                   atom_pair_trajs=[
+                                       [[10, 20], [11, 20], [10, 21]],
+                                       [[10, 21], [10, 21], [10, 20], [11, 20]]
+                                   ]
+                                   )
         with pytest.raises(AssertionError):
             cpt.relative_frequency_of_formed_atom_pairs_overall_trajs(21)
 
@@ -650,51 +639,51 @@ class TestContactPair(unittest.TestCase):
         # Completely bogus contact but testable
         atom_BB = list(self.geom.top.residue(0).atoms_by_name("CA"))[0].index
         atom_SC = list(self.geom.top.residue(1).atoms_by_name("CB"))[0].index
-        cpt = ContactPair([0, 1],
-                          [[1.0, 2.5, 1.3, 1.0]],
-                          [[0, 1, 2, 3]],
-                          atom_pair_trajs=[
-                              [[atom_BB, atom_SC],
-                               [atom_SC, atom_SC],
-                               [atom_BB, atom_SC],
-                               [atom_BB, atom_BB]
-                               ],
-                            ],
-                          top=self.geom.top
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 2.5, 1.3, 1.0]],
+                                   [[0, 1, 2, 3]],
+                                   atom_pair_trajs=[
+                                       [[atom_BB, atom_SC],
+                                        [atom_SC, atom_SC],
+                                        [atom_BB, atom_SC],
+                                        [atom_BB, atom_BB]
+                                        ],
+                                   ],
+                                   top=self.geom.top
+                                   )
         out_dict = cpt.relative_frequency_of_formed_atom_pairs_overall_trajs(21)
-        _np.testing.assert_equal(out_dict["BB-SC"],2/3)
-        _np.testing.assert_equal(out_dict["BB-BB"],1/3)
-        assert len(out_dict)==2
+        _np.testing.assert_equal(out_dict["BB-SC"], 2 / 3)
+        _np.testing.assert_equal(out_dict["BB-BB"], 1 / 3)
+        assert len(out_dict) == 2
 
         out_dict = cpt.relative_frequency_of_formed_atom_pairs_overall_trajs(21, min_freq=.5)
-        _np.testing.assert_equal(out_dict["BB-SC"],2/3)
-        assert len(out_dict)==1
+        _np.testing.assert_equal(out_dict["BB-SC"], 2 / 3)
+        assert len(out_dict) == 1
 
     def test_frequency_dict_formed_atom_pairs_overall_trajs_aggregate_by_atomtype_False(self):
         # Completely bogus contact but testable
         atom_BB_1 = list(self.geom.top.residue(0).atoms_by_name("CA"))[0].index
         atom_BB_2 = list(self.geom.top.residue(0).atoms_by_name("N"))[0].index
         atom_SC = list(self.geom.top.residue(1).atoms_by_name("CB"))[0].index
-        cpt = ContactPair([0, 1],
-                          [[1.0, 2.5, 1.3, 1.0]],
-                          [[0, 1, 2, 3]],
-                          atom_pair_trajs=[
-                              [[atom_BB_1, atom_SC],
-                               [atom_SC, atom_SC],
-                               [atom_BB_2, atom_SC],
-                               [atom_BB_1, atom_BB_2]
-                               ],
-                            ],
-                          top=self.geom.top
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 2.5, 1.3, 1.0]],
+                                   [[0, 1, 2, 3]],
+                                   atom_pair_trajs=[
+                                       [[atom_BB_1, atom_SC],
+                                        [atom_SC, atom_SC],
+                                        [atom_BB_2, atom_SC],
+                                        [atom_BB_1, atom_BB_2]
+                                        ],
+                                   ],
+                                   top=self.geom.top
+                                   )
         out_dict = cpt.relative_frequency_of_formed_atom_pairs_overall_trajs(21,
                                                                              aggregate_by_atomtype=False,
                                                                              keep_resname=True)
-        _np.testing.assert_equal(out_dict["%s-%s"%(self.geom.top.atom(atom_BB_1),
-                                                   self.geom.top.atom(atom_SC))],1/3)
-        _np.testing.assert_equal(out_dict["%s-%s"%(self.geom.top.atom(atom_BB_2),
-                                                   self.geom.top.atom(atom_SC))],1/3)
+        _np.testing.assert_equal(out_dict["%s-%s" % (self.geom.top.atom(atom_BB_1),
+                                                     self.geom.top.atom(atom_SC))], 1 / 3)
+        _np.testing.assert_equal(out_dict["%s-%s" % (self.geom.top.atom(atom_BB_2),
+                                                     self.geom.top.atom(atom_SC))], 1 / 3)
         _np.testing.assert_equal(out_dict["%s-%s" % (self.geom.top.atom(atom_BB_1),
                                                      self.geom.top.atom(atom_BB_2))], 1 / 3)
 
@@ -707,34 +696,34 @@ class TestContactPair(unittest.TestCase):
                                                      self.geom.top.atom(atom_SC).name)], 1 / 3)
         _np.testing.assert_equal(out_dict["%s-%s" % (self.geom.top.atom(atom_BB_1).name,
                                                      self.geom.top.atom(atom_BB_2).name)], 1 / 3)
-        assert len(out_dict)==3
+        assert len(out_dict) == 3
 
     def test_prints(self):
-        cpt = ContactPair([0, 1],
-                          [[1.0, 2.5, 1.3], [2.0, 2.1, 2.3, 2.4]],
-                          [[0, 1, 2], [0, 1, 2, 3]],
-                          atom_pair_trajs=[
-                              [[10, 20], [11, 20], [10, 21]],
-                              [[10, 21], [10, 21], [10, 20], [11, 20]]
-                          ]
-                          )
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 2.5, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                   [[0, 1, 2], [0, 1, 2, 3]],
+                                   atom_pair_trajs=[
+                                       [[10, 20], [11, 20], [10, 21]],
+                                       [[10, 21], [10, 21], [10, 20], [11, 20]]
+                                   ]
+                                   )
         print(cpt)
 
     def test_plot_timetrace_just_works(self):
-        CP = ContactPair([0, 1],
-                          [[.10, .25, .13], [.20, .21, .23, .24]],
-                          [[0, 1, 2], [0, 1, 2, 3]]
-                                                    )
+        CP = contacts.ContactPair([0, 1],
+                                  [[.10, .25, .13], [.20, .21, .23, .24]],
+                                  [[0, 1, 2], [0, 1, 2, 3]]
+                                  )
         _plt.figure()
         iax = _plt.gca()
         CP.plot_timetrace(iax)
 
     def test_plot_timetrace_just_options(self):
-        CP = ContactPair([0, 1],
-                         [[.10, .25, .13], [.20, .21, .23, .24]],
-                         [[0, 1, 2], [0, 1, 2, 3]],
-                         top=self.geom.top
-                         )
+        CP = contacts.ContactPair([0, 1],
+                                  [[.10, .25, .13], [.20, .21, .23, .24]],
+                                  [[0, 1, 2], [0, 1, 2, 3]],
+                                  top=self.geom.top
+                                  )
         _plt.figure()
         iax = _plt.gca()
         CP.plot_timetrace(iax,
@@ -745,75 +734,79 @@ class TestContactPair(unittest.TestCase):
             CP.plot_timetrace(iax,
                               ylim_Ang="max")
 
+
 class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
     def test_works(self):
         top = md.load(test_filenames.top_pdb).top
         atoms_BB = [aa for aa in top.residue(0).atoms if aa.is_backbone]
         atoms_SC = [aa for aa in top.residue(0).atoms if aa.is_sidechain]
-        atom_pairs, counts = [],[]
-        for trip in     [[atoms_BB[0], atoms_BB[1], 5],
-                         [atoms_BB[0], atoms_BB[2], 4],
-                         [atoms_BB[0], atoms_SC[1], 10],
-                         [atoms_BB[1], atoms_SC[1], 20],
-                         [atoms_SC[0], atoms_BB[2], 3],
-                         [atoms_SC[1], atoms_SC[0], 1],
-                         [atoms_SC[2], atoms_SC[0], 1]]:
+        atom_pairs, counts = [], []
+        for trip in [[atoms_BB[0], atoms_BB[1], 5],
+                     [atoms_BB[0], atoms_BB[2], 4],
+                     [atoms_BB[0], atoms_SC[1], 10],
+                     [atoms_BB[1], atoms_SC[1], 20],
+                     [atoms_SC[0], atoms_BB[2], 3],
+                     [atoms_SC[1], atoms_SC[0], 1],
+                     [atoms_SC[2], atoms_SC[0], 1]]:
             atom_pairs.append(trip[:2])
             counts.append(trip[2])
 
-        dict_out = _sum_ctc_freqs_by_atom_type(atom_pairs, counts)
+        dict_out = contacts._sum_ctc_freqs_by_atom_type(atom_pairs, counts)
 
         assert dict_out["BB-BB"] == 9
         assert dict_out["BB-SC"] == 30
         assert dict_out["SC-BB"] == 3
         assert dict_out["SC-SC"] == 2
-        assert len(dict_out)==4
+        assert len(dict_out) == 4
+
 
 class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.small_monomer)
         self.by_bonds_geom = get_fragments(self.geom.top,
-                                                     verbose=True,
-                                                     auto_fragment_names=True,
-                                                     method='bonds')
+                                           verbose=True,
+                                           auto_fragment_names=True,
+                                           method='bonds')
         self.residues = ["GLU30", "VAL31"]
         self.resname2residx, self.resname2fragidx = per_residue_fragment_picker(self.residues,
-                                                                                                 self.by_bonds_geom,
-                                                                                                 self.geom.top)
+                                                                                self.by_bonds_geom,
+                                                                                self.geom.top)
 
     def test_ctc_freq_reporter_by_residue_neighborhood_just_works(self):
         ctcs_mean = [30, 5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
 
         input_values = (val for val in ["1", "1"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):#Checking against the input 1 and 1
-            ctc_freq = select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                                   self.geom.top,
-                                                                   n_ctcs=5, restrict_to_resSeq=None,
-                                                                   interactive=True)
+        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
+            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
+                                                                            self.by_bonds_geom, ctc_residxs_pairs,
+                                                                            self.geom.top,
+                                                                            n_ctcs=5, restrict_to_resSeq=None,
+                                                                            interactive=True)
             assert ctc_freq[0] == 0
             assert ctc_freq[1] == 0
 
-
         input_values = (val for val in ["1", "2"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)): #Checking against the input 1 and 2
-            ctc_freq = select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                                   self.geom.top,
-                                                                   n_ctcs=5, restrict_to_resSeq=None,
-                                                                   interactive=True)
+        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 2
+            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
+                                                                            self.by_bonds_geom, ctc_residxs_pairs,
+                                                                            self.geom.top,
+                                                                            n_ctcs=5, restrict_to_resSeq=None,
+                                                                            interactive=True)
             assert ctc_freq[0] == 0
-            assert (_np.array_equal(ctc_freq[1],[0, 1]))
+            assert (_np.array_equal(ctc_freq[1], [0, 1]))
 
     def test_ctc_freq_reporter_by_residue_neighborhood_select_by_resSeq_is_int(self):
         ctcs_mean = [30, 5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
 
         input_values = (val for val in ["1", "1"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):#Checking against the input 1 and 1
-            ctc_freq = select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                                   self.geom.top,
-                                                                   n_ctcs=5, restrict_to_resSeq=1,
-                                                                   interactive=True)
+        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
+            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
+                                                                            self.by_bonds_geom, ctc_residxs_pairs,
+                                                                            self.geom.top,
+                                                                            n_ctcs=5, restrict_to_resSeq=1,
+                                                                            interactive=True)
             assert ctc_freq == {}
 
     def test_ctc_freq_reporter_by_residue_neighborhood_hit_enter(self):
@@ -822,100 +815,101 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
 
         input_values = (val for val in ["", ""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            ctc_freq = select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                                   self.geom.top,
-                                                                   n_ctcs=5, restrict_to_resSeq=None,
-                                                                   interactive=True)
+            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
+                                                                            self.by_bonds_geom, ctc_residxs_pairs,
+                                                                            self.geom.top,
+                                                                            n_ctcs=5, restrict_to_resSeq=None,
+                                                                            interactive=True)
             assert ctc_freq == {}
 
     def test_ctc_freq_reporter_by_residue_neighborhood_silent_is_true(self):
         ctcs_mean = [30, 5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
 
-        ctc_freq = select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                               self.geom.top,
-                                                               n_ctcs=5, restrict_to_resSeq=None,
-                                                               interactive=False)
+        ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
+                                                                        self.by_bonds_geom, ctc_residxs_pairs,
+                                                                        self.geom.top,
+                                                                        n_ctcs=5, restrict_to_resSeq=None,
+                                                                        interactive=False)
         assert (_np.array_equal(ctc_freq[0], [0]))
         assert (_np.array_equal(ctc_freq[1], [0, 1]))
-
 
     def test_ctc_freq_reporter_by_residue_neighborhood_keyboard_interrupt(self):
         ctcs_mean = [30, 5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
         with unittest.mock.patch('builtins.input', side_effect=KeyboardInterrupt):
-            resname2residx, resname2fragidx = per_residue_fragment_picker("GLU30",self.by_bonds_geom,
-                                                                                  self.geom.top)
+            resname2residx, resname2fragidx = per_residue_fragment_picker("GLU30", self.by_bonds_geom,
+                                                                          self.geom.top)
 
-
-            ctc_freq = select_and_report_residue_neighborhood_idxs(ctcs_mean, resname2residx, self.by_bonds_geom, ctc_residxs_pairs,
-                                                                   self.geom.top,
-                                                                   n_ctcs=5, restrict_to_resSeq=None,
-                                                                   interactive=True)
+            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, resname2residx,
+                                                                            self.by_bonds_geom, ctc_residxs_pairs,
+                                                                            self.geom.top,
+                                                                            n_ctcs=5, restrict_to_resSeq=None,
+                                                                            interactive=True)
             assert ctc_freq == {}
+
 
 class TestBaseClassContactGroup(unittest.TestCase):
     def setUp(self):
         self.top = md.load(test_filenames.actor_pdb).top
 
+        self.cp1 = contacts.ContactPair([0, 1], [[.1, .2, .3], [.4]], [[1, 2, 3], [1]])
+        self.cp2 = contacts.ContactPair([0, 2], [[.15, .35, .25], [.16]], [[1, 2, 3], [1]])
+        self.cp3 = contacts.ContactPair([1, 2], [[.15, .30, .35], [.45]], [[1, 2, 3], [1]])
 
-        self.cp1 = ContactPair([0, 1], [[.1, .2, .3], [.4]], [[1, 2, 3], [1]])
-        self.cp2 = ContactPair([0, 2], [[.15, .35, .25], [.16]], [[1, 2, 3], [1]])
-        self.cp3 = ContactPair([1, 2], [[.15, .30, .35], [.45]], [[1, 2, 3], [1]])
+        self.cp1_wtop = contacts.ContactPair([0, 1], [[.1, .2, .3]], [[1, 2, 3]], top=self.top)
+        self.cp2_wtop = contacts.ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]], top=self.top)
+        self.cp3_wtop_other = contacts.ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
+                                                   top=md.load(test_filenames.small_monomer).top)
 
-        self.cp1_wtop = ContactPair([0,1], [[.1,   .2, .3]], [[1, 2, 3]], top=self.top)
-        self.cp2_wtop = ContactPair([0,2], [[.15, .25, .35]],[[1,2,3]], top=self.top)
-        self.cp3_wtop_other = ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
-                                          top=md.load(test_filenames.small_monomer).top)
+        self.cp1_w_anchor_and_frags = contacts.ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
+                                                           fragment_names=["fragA", "fragB"],
+                                                           fragment_colors=["r", "b"],
+                                                           anchor_residue_idx=0)
 
-        self.cp1_w_anchor_and_frags = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]], [[1, 2, 3], [1, 2]],
-                                                  fragment_names=["fragA", "fragB"],
-                                                  fragment_colors=["r", "b"],
-                                                  anchor_residue_idx=0)
+        self.cp2_w_anchor_and_frags = contacts.ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
+                                                           fragment_names=["fragA", "fragC"],
+                                                           fragment_colors=["r", "g"],
+                                                           anchor_residue_idx=0)
 
-        self.cp2_w_anchor_and_frags = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
-                                                  fragment_names=["fragA", "fragC"],
-                                                  fragment_colors=["r", "g"],
-                                                  anchor_residue_idx=0)
+        self.cp3_w_anchor_and_frags_wrong_anchor_color = contacts.ContactPair([0, 3], [[.15, .25, .35], [.45, .45]],
+                                                                              [[1, 2, 3], [1, 2]],
+                                                                              fragment_names=["fragA", "fragC"],
+                                                                              fragment_colors=["y", "g"],
+                                                                              anchor_residue_idx=0)
 
-        self.cp3_w_anchor_and_frags_wrong_anchor_color = ContactPair([0, 3], [[.15, .25, .35], [.45, .45]],
-                                                                     [[1, 2, 3], [1, 2]],
-                                                                     fragment_names=["fragA", "fragC"],
-                                                                     fragment_colors=["y", "g"],
-                                                                     anchor_residue_idx=0)
+        self.cp1_w_anchor_and_frags_and_top = contacts.ContactPair([0, 1], [[.1, .2, .3], [.4, .5]],
+                                                                   [[1, 2, 3], [1, 2]],
+                                                                   fragment_names=["fragA", "fragB"],
+                                                                   anchor_residue_idx=0,
+                                                                   top=self.top)
+        self.cp2_w_anchor_and_frags_and_top = contacts.ContactPair([0, 2], [[.15, .25, .35], [.45, .45]],
+                                                                   [[1, 2, 3], [1, 2]],
+                                                                   fragment_names=["fragA", "fragC"],
+                                                                   anchor_residue_idx=0,
+                                                                   top=self.top)
 
-        self.cp1_w_anchor_and_frags_and_top = ContactPair([0, 1], [[.1, .2, .3], [.4, .5]],
-                                                          [[1, 2, 3], [1, 2]],
-                                                          fragment_names=["fragA", "fragB"],
-                                                          anchor_residue_idx=0,
+        self.cp1_wtop_and_conslabs = contacts.ContactPair([0, 1], [[.1, .2, .3]], [[1, 2, 3]],
+                                                          consensus_labels=["3.50", "4.50"],
                                                           top=self.top)
-        self.cp2_w_anchor_and_frags_and_top = ContactPair([0, 2], [[.15, .25, .35], [.45, .45]], [[1, 2, 3], [1, 2]],
-                                                          fragment_names=["fragA", "fragC"],
-                                                          anchor_residue_idx=0,
+        self.cp2_wtop_and_conslabs = contacts.ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
+                                                          consensus_labels=["3.50", "5.50"],
+                                                          top=self.top)
+        self.cp3_wtop_and_conslabs = contacts.ContactPair([1, 2], [[.25, .15, .35]], [[1, 2, 3]],
+                                                          consensus_labels=["4.50", "5.50"],
                                                           top=self.top)
 
+        self.cp3_wtop_and_wrong_conslabs = contacts.ContactPair([1, 2], [[.1, .2, 3]], [[1, 2, 3]],
+                                                                consensus_labels=["4.50", "550"],
+                                                                top=self.top)
 
-        self.cp1_wtop_and_conslabs = ContactPair([0, 1], [[.1, .2, .3]], [[1, 2, 3]],
-                                                 consensus_labels=["3.50", "4.50"],
-                                                 top=self.top)
-        self.cp2_wtop_and_conslabs = ContactPair([0, 2], [[.15, .25, .35]], [[1, 2, 3]],
-                                                 consensus_labels=["3.50", "5.50"],
-                                                 top=self.top)
-        self.cp3_wtop_and_conslabs = ContactPair([1, 2], [[.25, .15, .35]], [[1, 2, 3]],
-                                                 consensus_labels=["4.50", "5.50"],
-                                                 top=self.top)
+        self.cp4_wtop_and_conslabs = contacts.ContactPair([3, 2], [[.25, .25, .35]], [[1, 2, 3]],
+                                                          consensus_labels=["3.51", "5.50"],
+                                                          top=self.top)
 
-        self.cp3_wtop_and_wrong_conslabs = ContactPair([1, 2], [[.1, .2, 3]], [[1, 2, 3]],
-                                                       consensus_labels=["4.50", "550"],
-                                                       top=self.top)
-
-        self.cp4_wtop_and_conslabs = ContactPair([3, 2], [[.25, .25, .35]], [[1, 2, 3]],
-                                                 consensus_labels=["3.51", "5.50"],
-                                                 top=self.top)
-
-        self.cp5_wtop_and_wo_conslabs = ContactPair([4, 5], [[.2, .25, .35]], [[1, 2, 3]],
-                                                 #consensus_labels=["3.51", "5.50"],
-                                                 top=self.top)
+        self.cp5_wtop_and_wo_conslabs = contacts.ContactPair([4, 5], [[.2, .25, .35]], [[1, 2, 3]],
+                                                             # consensus_labels=["3.51", "5.50"],
+                                                             top=self.top)
 
         # Completely bogus contacts but testable
         print(self.top.residue(1))
@@ -927,118 +921,119 @@ class TestBaseClassContactGroup(unittest.TestCase):
         self.atom_BB2 = list(self.top.residue(2).atoms_by_name("CA"))[0].index
         self.atom_SC2 = list(self.top.residue(2).atoms_by_name("CB"))[0].index
 
-        self.cp1_w_atom_types = ContactPair([0, 1],
-                                            [[.15, .25, .35, .45]],
-                                            [[0, 1, 2, 3]],
-                                            atom_pair_trajs=[
-                                                [[self.atom_BB0, self.atom_SC1],
-                                                 [self.atom_BB0, self.atom_BB1],
-                                                 [self.atom_BB0, self.atom_BB1],
-                                                 [self.atom_BB0, self.atom_BB1]
-                                                 ],
-                                            ],
-                                            top=self.top
-                                            )
-        self.cp2_w_atom_types = ContactPair([0, 2],
-                                            [[.15, .25, .35, .45]],
-                                            [[0, 1, 2, 3]],
-                                            atom_pair_trajs=[
-                                                [[self.atom_BB0, self.atom_SC2],
-                                                 [self.atom_BB0, self.atom_SC2],
-                                                 [self.atom_SC0, self.atom_BB2],
-                                                 [self.atom_SC0, self.atom_BB2]
-                                                 ],
-                                            ],
-                                            top=self.top
-                                            )
+        self.cp1_w_atom_types = contacts.ContactPair([0, 1],
+                                                     [[.15, .25, .35, .45]],
+                                                     [[0, 1, 2, 3]],
+                                                     atom_pair_trajs=[
+                                                         [[self.atom_BB0, self.atom_SC1],
+                                                          [self.atom_BB0, self.atom_BB1],
+                                                          [self.atom_BB0, self.atom_BB1],
+                                                          [self.atom_BB0, self.atom_BB1]
+                                                          ],
+                                                     ],
+                                                     top=self.top
+                                                     )
+        self.cp2_w_atom_types = contacts.ContactPair([0, 2],
+                                                     [[.15, .25, .35, .45]],
+                                                     [[0, 1, 2, 3]],
+                                                     atom_pair_trajs=[
+                                                         [[self.atom_BB0, self.atom_SC2],
+                                                          [self.atom_BB0, self.atom_SC2],
+                                                          [self.atom_SC0, self.atom_BB2],
+                                                          [self.atom_SC0, self.atom_BB2]
+                                                          ],
+                                                     ],
+                                                     top=self.top
+                                                     )
+
 
 class TestContactGroup(TestBaseClassContactGroup):
 
     def test_works_minimal(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
 
     def test_works_minimal_top_raises(self):
         with pytest.raises(AssertionError):
-            CG = ContactGroup([self.cp1, self.cp2], top=self.top)
+            CG = contacts.ContactGroup([self.cp1, self.cp2], top=self.top)
 
     def test_works_minimal_top_works(self):
-        CG = ContactGroup([self.cp1_wtop, self.cp2_wtop], top=self.top)
+        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop], top=self.top)
 
     def test_n_properties(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         _np.testing.assert_equal(CG.n_ctcs, 2)
         _np.testing.assert_equal(CG.n_trajs, 2)
-        _np.testing.assert_array_equal(CG.n_frames,[3, 1])
+        _np.testing.assert_array_equal(CG.n_frames, [3, 1])
 
     def test_time_properties(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         _np.testing.assert_equal(3, CG.time_max)
-        _np.testing.assert_array_equal([1,2,3],CG.time_arrays[0])
-        _np.testing.assert_array_equal([1],CG.time_arrays[1])
+        _np.testing.assert_array_equal([1, 2, 3], CG.time_arrays[0])
+        _np.testing.assert_array_equal([1], CG.time_arrays[1])
 
     def test_tops(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         assert CG.topology is CG.top is None
-        CG = ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop])
         assert CG.topology is CG.top is self.top
 
         with pytest.raises(ValueError):
-            ContactGroup([self.cp1_wtop, self.cp2_wtop,
-                          self.cp3_wtop_other])
+            contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop,
+                                   self.cp3_wtop_other])
 
-    def test_residues(self):
-        CG = ContactGroup([self.cp1_wtop, self.cp2_wtop])
-        _np.testing.assert_array_equal([[0,1],
-                                        [0,2]],
-                                        CG.res_idxs_pairs)
+    def test_Residues(self):
+        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        _np.testing.assert_array_equal([[0, 1],
+                                        [0, 2]],
+                                       CG.res_idxs_pairs)
 
-        _np.testing.assert_equal(CG.residue_names_short[0][0],"E30")
-        _np.testing.assert_equal(CG.residue_names_short[0][1],"V31")
-        _np.testing.assert_equal(CG.residue_names_short[1][0],"E30")
-        _np.testing.assert_equal(CG.residue_names_short[1][1],"W32")
+        _np.testing.assert_equal(CG.residue_names_short[0][0], "E30")
+        _np.testing.assert_equal(CG.residue_names_short[0][1], "V31")
+        _np.testing.assert_equal(CG.residue_names_short[1][0], "E30")
+        _np.testing.assert_equal(CG.residue_names_short[1][1], "W32")
 
     def test_labels(self):
-        CG = ContactGroup([self.cp1_wtop, self.cp2_wtop])
-        _np.testing.assert_equal(CG.ctc_labels[0],"GLU30-VAL31")
-        _np.testing.assert_equal(CG.ctc_labels[1],"GLU30-TRP32")
-        _np.testing.assert_equal(CG.ctc_labels_short[0],"E30-V31")
-        _np.testing.assert_equal(CG.ctc_labels_short[1],"E30-W32")
-        _np.testing.assert_equal(CG.trajlabels[0],"traj 0")
-        _np.testing.assert_equal(CG.consensus_labels[0][0],None)
-        _np.testing.assert_equal(CG.consensus_labels[0][1],None)
+        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        _np.testing.assert_equal(CG.ctc_labels[0], "GLU30-VAL31")
+        _np.testing.assert_equal(CG.ctc_labels[1], "GLU30-TRP32")
+        _np.testing.assert_equal(CG.ctc_labels_short[0], "E30-V31")
+        _np.testing.assert_equal(CG.ctc_labels_short[1], "E30-W32")
+        _np.testing.assert_equal(CG.trajlabels[0], "traj 0")
+        _np.testing.assert_equal(CG.consensus_labels[0][0], None)
+        _np.testing.assert_equal(CG.consensus_labels[0][1], None)
         _np.testing.assert_equal(CG.consensus_labels[1][0], None)
         _np.testing.assert_equal(CG.consensus_labels[1][1], None)
 
-        CG = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs])
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs])
 
         _np.testing.assert_equal(CG.consensus_labels[0][0], "3.50")
         _np.testing.assert_equal(CG.consensus_labels[0][1], "4.50")
         _np.testing.assert_equal(CG.consensus_labels[1][0], "3.50")
         _np.testing.assert_equal(CG.consensus_labels[1][1], "5.50")
 
-        _np.testing.assert_equal(CG.ctc_labels_w_fragments_short_AA[0],"E30@3.50-V31@4.50")
-        _np.testing.assert_equal(CG.ctc_labels_w_fragments_short_AA[1],"E30@3.50-W32@5.50")
+        _np.testing.assert_equal(CG.ctc_labels_w_fragments_short_AA[0], "E30@3.50-V31@4.50")
+        _np.testing.assert_equal(CG.ctc_labels_w_fragments_short_AA[1], "E30@3.50-W32@5.50")
 
     def test_consensuslabel2resname(self):
-        CG = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs])
-        _np.testing.assert_equal(CG.consensuslabel2resname["3.50"],"E30")
-        _np.testing.assert_equal(CG.consensuslabel2resname["4.50"],"V31")
-        _np.testing.assert_equal(CG.consensuslabel2resname["5.50"],"W32")
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs])
+        _np.testing.assert_equal(CG.consensuslabel2resname["3.50"], "E30")
+        _np.testing.assert_equal(CG.consensuslabel2resname["4.50"], "V31")
+        _np.testing.assert_equal(CG.consensuslabel2resname["5.50"], "W32")
 
     def test_residx2resnameshort(self):
-        CG = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs])
-        _np.testing.assert_equal(CG.residx2resnameshort[0],"E30")
-        _np.testing.assert_equal(CG.residx2resnameshort[1],"V31")
-        _np.testing.assert_equal(CG.residx2resnameshort[2],"W32")
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs])
+        _np.testing.assert_equal(CG.residx2resnameshort[0], "E30")
+        _np.testing.assert_equal(CG.residx2resnameshort[1], "V31")
+        _np.testing.assert_equal(CG.residx2resnameshort[2], "W32")
 
     def test_residx2consensuslabel(self):
-        CG = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs,
-                           self.cp5_wtop_and_wo_conslabs,
-                           ])
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    self.cp5_wtop_and_wo_conslabs,
+                                    ])
         assert len(CG.residx2consensuslabel) == len(_np.unique(CG.res_idxs_pairs))
         _np.testing.assert_equal(CG.residx2consensuslabel[0], "3.50")
         _np.testing.assert_equal(CG.residx2consensuslabel[1], "4.50")
@@ -1047,10 +1042,10 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.residx2consensuslabel[5], None)
 
     def test_residx2resnamefragnamebest(self):
-        CG = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs,
-                           self.cp5_wtop_and_wo_conslabs,
-                           ])
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    self.cp5_wtop_and_wo_conslabs,
+                                    ])
         residx2resnamefragnamebest = CG.residx2resnamefragnamebest("@")
         assert len(residx2resnamefragnamebest) == len(_np.unique(CG.res_idxs_pairs))
         _np.testing.assert_equal(residx2resnamefragnamebest[0], "E30@3.50")
@@ -1060,27 +1055,27 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(residx2resnamefragnamebest[5], "G35")
 
     def test_fragment_names_best_fragnames(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags])
 
-        _np.testing.assert_array_equal(CG.fragment_names_best[0],["fragA","fragB"])
-        _np.testing.assert_array_equal(CG.fragment_names_best[1],["fragA","fragC"])
+        _np.testing.assert_array_equal(CG.fragment_names_best[0], ["fragA", "fragB"])
+        _np.testing.assert_array_equal(CG.fragment_names_best[1], ["fragA", "fragC"])
 
     def test_fragment_names_best_consensus(self):
-        CG = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs])
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs])
 
         _np.testing.assert_array_equal(CG.fragment_names_best[0], ["3.50", "4.50"])
         _np.testing.assert_array_equal(CG.fragment_names_best[1], ["3.50", "5.50"])
 
     def test_consensus_labels_wrong_raises(self):
         with pytest.raises(AssertionError):
-            ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp3_wtop_and_wrong_conslabs])
+            contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp3_wtop_and_wrong_conslabs])
 
     def test_neighborhoods_raises(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         _np.testing.assert_equal(CG.shared_anchor_residue_index, None)
         with pytest.raises(AssertionError):
             CG.anchor_res_and_fragment_str
@@ -1096,32 +1091,32 @@ class TestContactGroup(TestBaseClassContactGroup):
             CG.partner_res_and_fragment_labels_short
 
     def test_neighborhoods(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags])
         assert CG.is_neighborhood
         _np.testing.assert_equal(CG.shared_anchor_residue_index, 0)
-        _np.testing.assert_equal(CG.anchor_res_and_fragment_str,"0@fragA")
-        _np.testing.assert_equal(CG.anchor_res_and_fragment_str_short,"0@fragA")
-        _np.testing.assert_equal(CG.partner_res_and_fragment_labels[0],"1@fragB")
-        _np.testing.assert_equal(CG.partner_res_and_fragment_labels[1],"2@fragC")
+        _np.testing.assert_equal(CG.anchor_res_and_fragment_str, "0@fragA")
+        _np.testing.assert_equal(CG.anchor_res_and_fragment_str_short, "0@fragA")
+        _np.testing.assert_equal(CG.partner_res_and_fragment_labels[0], "1@fragB")
+        _np.testing.assert_equal(CG.partner_res_and_fragment_labels[1], "2@fragC")
         _np.testing.assert_equal(CG.partner_res_and_fragment_labels_short[0], "1@fragB")
         _np.testing.assert_equal(CG.partner_res_and_fragment_labels_short[1], "2@fragC")
-        _np.testing.assert_equal(CG.anchor_fragment_color,"r")
+        _np.testing.assert_equal(CG.anchor_fragment_color, "r")
 
     def test_neighborhood_w_partner_color(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags])
-        _np.testing.assert_array_equal(["b","g"], CG.partner_fragment_colors)
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags])
+        _np.testing.assert_array_equal(["b", "g"], CG.partner_fragment_colors)
 
     def test_neighborhoods_wrong_anchor_color(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags,
-                           self.cp3_w_anchor_and_frags_wrong_anchor_color])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags,
+                                    self.cp3_w_anchor_and_frags_wrong_anchor_color])
         assert CG.anchor_fragment_color is None
 
     def test_neighborhoods_w_top(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         _np.testing.assert_equal(CG.shared_anchor_residue_index, 0)
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str, "GLU30@fragA")
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str_short, "E30@fragA")
@@ -1131,14 +1126,14 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.partner_res_and_fragment_labels_short[1], "W32@fragC")
 
     def test_residx2ctcidx(self):
-        CG = ContactGroup([self.cp1, self.cp2])
-        _np.testing.assert_array_equal(CG.residx2ctcidx(1),[[0,1]])
-        _np.testing.assert_array_equal(CG.residx2ctcidx(2),[[1,1]])
-        _np.testing.assert_array_equal(CG.residx2ctcidx(0),[[0,0],
-                                                             [1,0]])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        _np.testing.assert_array_equal(CG.residx2ctcidx(1), [[0, 1]])
+        _np.testing.assert_array_equal(CG.residx2ctcidx(2), [[1, 1]])
+        _np.testing.assert_array_equal(CG.residx2ctcidx(0), [[0, 0],
+                                                             [1, 0]])
 
     def test_binarize_trajs(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         bintrajs = CG.binarize_trajs(2.5)
         _np.testing.assert_array_equal([1, 1, 0], bintrajs[0][0])
         _np.testing.assert_array_equal([0], bintrajs[0][1])
@@ -1146,16 +1141,16 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_array_equal([1], bintrajs[1][1])
 
     def test_binarize_trajs_order(self):
-        CG = ContactGroup([self.cp1, self.cp2, self.cp3])
+        CG = contacts.ContactGroup([self.cp1, self.cp2, self.cp3])
         bintrajs = CG.binarize_trajs(2.5, order="traj")
 
-        traj_1_ctc_1 = bintrajs[0][:,0]
-        traj_1_ctc_2 = bintrajs[0][:,1]
-        traj_1_ctc_3 = bintrajs[0][:,2]
+        traj_1_ctc_1 = bintrajs[0][:, 0]
+        traj_1_ctc_2 = bintrajs[0][:, 1]
+        traj_1_ctc_3 = bintrajs[0][:, 2]
 
-        traj_2_ctc_1 = bintrajs[1][:,0]
-        traj_2_ctc_2 = bintrajs[1][:,1]
-        traj_2_ctc_3 = bintrajs[1][:,2]
+        traj_2_ctc_1 = bintrajs[1][:, 0]
+        traj_2_ctc_2 = bintrajs[1][:, 1]
+        traj_2_ctc_3 = bintrajs[1][:, 2]
 
         _np.testing.assert_array_equal([1, 1, 0], traj_1_ctc_1)
         _np.testing.assert_array_equal([1, 0, 1], traj_1_ctc_2)
@@ -1166,62 +1161,63 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_array_equal([0], traj_2_ctc_3)
 
     def test_distance_distributions(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         h1, x1 = self.cp1.distro_overall_trajs(bins=10)
         h2, x2 = self.cp2.distro_overall_trajs(bins=10)
         distros = CG.distributions_of_distances(nbins=10)
-        _np.testing.assert_array_equal(distros[0][0],h1)
-        _np.testing.assert_array_equal(distros[0][1],x1)
-        _np.testing.assert_array_equal(distros[1][0],h2)
-        _np.testing.assert_array_equal(distros[1][1],x2)
+        _np.testing.assert_array_equal(distros[0][0], h1)
+        _np.testing.assert_array_equal(distros[0][1], x1)
+        _np.testing.assert_array_equal(distros[1][0], h2)
+        _np.testing.assert_array_equal(distros[1][1], x2)
 
     def test_time_traces_n_ctcs(self):
-        CP = ContactGroup([self.cp1, self.cp2, self.cp3])
+        CP = contacts.ContactGroup([self.cp1, self.cp2, self.cp3])
         ncts_tt = CP.n_ctcs_timetraces(2.5)
         _np.testing.assert_array_equal([3, 1, 1], ncts_tt[0])
         _np.testing.assert_array_equal([1], ncts_tt[1])
 
     def test_no_interface(self):
-        CP = ContactGroup([self.cp1, self.cp2, self.cp3])
+        CP = contacts.ContactGroup([self.cp1, self.cp2, self.cp3])
         assert CP.is_interface is False
-        _np.testing.assert_array_equal(CP.interface_residxs, [[],[]])
+        _np.testing.assert_array_equal(CP.interface_residxs, [[], []])
         _np.testing.assert_array_equal(CP.interface_residue_names_w_best_fragments_short, [[], []])
-        _np.testing.assert_array_equal(CP.interface_reslabels_short, [[],[]])
-        _np.testing.assert_array_equal(CP.interface_labels_consensus, [[],[]])
-        _np.testing.assert_array_equal(CP.interface_orphaned_labels, [[],[]])
+        _np.testing.assert_array_equal(CP.interface_reslabels_short, [[], []])
+        _np.testing.assert_array_equal(CP.interface_labels_consensus, [[], []])
+        _np.testing.assert_array_equal(CP.interface_orphaned_labels, [[], []])
         with pytest.raises(AssertionError):
             CP.plot_interface_frequency_matrix(None)
         assert CP.interface_frequency_matrix(None) is None
 
+
 class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_contact(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                          self.cp2_w_anchor_and_frags_and_top])
+        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         freqs = CP.frequency_per_contact(2)
-        _np.testing.assert_array_equal([2/5,1/5],freqs)
+        _np.testing.assert_array_equal([2 / 5, 1 / 5], freqs)
 
     def test_frequency_per_residue_idx(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         freq_dict = CP.frequency_sum_per_residue_idx_dict(2)
-        assert len(freq_dict)==3
-        _np.testing.assert_equal(freq_dict[0],2/5+1/5)
-        _np.testing.assert_equal(freq_dict[1],2/5)
-        _np.testing.assert_equal(freq_dict[2],1/5)
+        assert len(freq_dict) == 3
+        _np.testing.assert_equal(freq_dict[0], 2 / 5 + 1 / 5)
+        _np.testing.assert_equal(freq_dict[1], 2 / 5)
+        _np.testing.assert_equal(freq_dict[2], 1 / 5)
 
     def test_frequency_per_residue_name(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         freq_dict = CP.frequency_sum_per_residue_names_dict(2)
-        assert len(freq_dict)==3
-        _np.testing.assert_equal(freq_dict["E30@fragA"],2/5+1/5)
-        _np.testing.assert_equal(freq_dict["V31@fragB"],2/5)
-        _np.testing.assert_equal(freq_dict["W32@fragC"],1/5)
+        assert len(freq_dict) == 3
+        _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
+        _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
+        _np.testing.assert_equal(freq_dict["W32@fragC"], 1 / 5)
 
     def test_frequency_per_residue_name_no_sort(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         freq_dict = CP.frequency_sum_per_residue_names_dict(2, sort=False)
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
@@ -1229,194 +1225,188 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(freq_dict["W32@fragC"], 1 / 5)
 
     def test_frequency_per_residue_name_dataframe(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         freq_dict = CP.frequency_sum_per_residue_names_dict(2,
                                                             return_as_dataframe=True)
         assert len(freq_dict) == 3
-        _np.testing.assert_array_equal(freq_dict["label"].array,["E30@fragA","V31@fragB","W32@fragC"])
-        _np.testing.assert_array_equal(freq_dict["freq"].array,[2 / 5 + 1 / 5,
-                                                                2 / 5,
-                                                                1 / 5])
+        _np.testing.assert_array_equal(freq_dict["label"].array, ["E30@fragA", "V31@fragB", "W32@fragC"])
+        _np.testing.assert_array_equal(freq_dict["freq"].array, [2 / 5 + 1 / 5,
+                                                                 2 / 5,
+                                                                 1 / 5])
 
     def test_frequency_per_residue_name_interface_raises(self):
-        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         with pytest.raises(AssertionError):
             CP.frequency_sum_per_residue_names_dict(2,
                                                     list_by_interface=True)
 
     def test_frequency_dict_by_consensus_labels_fails(self):
-
-        CP = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
 
         with pytest.raises(AssertionError):
             CP.frequency_dict_by_consensus_labels(2)
 
     def test_frequency_dict_by_consensus_labels(self):
-
-        CP = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs,
-                           self.cp3_wtop_and_conslabs])
+        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    self.cp3_wtop_and_conslabs])
 
         freq_dict = CP.frequency_dict_by_consensus_labels(2)
-        _np.testing.assert_equal(freq_dict["3.50"]["4.50"],2/3)
-        _np.testing.assert_equal(freq_dict["3.50"]["5.50"],1/3)
-        _np.testing.assert_equal(freq_dict["4.50"]["5.50"],1/3)
-        assert len(freq_dict)==2
+        _np.testing.assert_equal(freq_dict["3.50"]["4.50"], 2 / 3)
+        _np.testing.assert_equal(freq_dict["3.50"]["5.50"], 1 / 3)
+        _np.testing.assert_equal(freq_dict["4.50"]["5.50"], 1 / 3)
+        assert len(freq_dict) == 2
 
     def test_frequency_dict_by_consensus_labels_include_trilow(self):
-
-        CP = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs,
-                           self.cp3_wtop_and_conslabs])
+        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    self.cp3_wtop_and_conslabs])
 
         freq_dict = CP.frequency_dict_by_consensus_labels(2, include_trilower=True)
-        _np.testing.assert_equal(freq_dict["3.50"]["4.50"],2/3)
-        _np.testing.assert_equal(freq_dict["3.50"]["5.50"],1/3)
-        _np.testing.assert_equal(freq_dict["4.50"]["5.50"],1/3)
+        _np.testing.assert_equal(freq_dict["3.50"]["4.50"], 2 / 3)
+        _np.testing.assert_equal(freq_dict["3.50"]["5.50"], 1 / 3)
+        _np.testing.assert_equal(freq_dict["4.50"]["5.50"], 1 / 3)
 
-        _np.testing.assert_equal(freq_dict["4.50"]["3.50"],freq_dict["4.50"]["3.50"])
-        _np.testing.assert_equal(freq_dict["5.50"]["3.50"],freq_dict["5.50"]["3.50"])
-        _np.testing.assert_equal(freq_dict["5.50"]["4.50"],freq_dict["5.50"]["4.50"])
-        assert len(freq_dict)==3
+        _np.testing.assert_equal(freq_dict["4.50"]["3.50"], freq_dict["4.50"]["3.50"])
+        _np.testing.assert_equal(freq_dict["5.50"]["3.50"], freq_dict["5.50"]["3.50"])
+        _np.testing.assert_equal(freq_dict["5.50"]["4.50"], freq_dict["5.50"]["4.50"])
+        assert len(freq_dict) == 3
 
     def test_frequency_dict_by_consensus_labels_return_triplets(self):
-
-        CP = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs,
-                           self.cp3_wtop_and_conslabs])
+        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    self.cp3_wtop_and_conslabs])
 
         freq_dict = CP.frequency_dict_by_consensus_labels(2, return_as_triplets=True)
-        _np.testing.assert_array_equal(freq_dict[0],_np.array([["3.50", "4.50",2/3]]).squeeze())
-        _np.testing.assert_array_equal(freq_dict[1],_np.array([["3.50", "5.50",1/3]]).squeeze())
-        _np.testing.assert_array_equal(freq_dict[2],_np.array([["4.50", "5.50",1/3]]).squeeze())
+        _np.testing.assert_array_equal(freq_dict[0], _np.array([["3.50", "4.50", 2 / 3]]).squeeze())
+        _np.testing.assert_array_equal(freq_dict[1], _np.array([["3.50", "5.50", 1 / 3]]).squeeze())
+        _np.testing.assert_array_equal(freq_dict[2], _np.array([["4.50", "5.50", 1 / 3]]).squeeze())
 
-        assert len(freq_dict)==3
+        assert len(freq_dict) == 3
 
     def test_frequency_dict_by_consensus_labels_interface_raises(self):
-
-        CP = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs,
-                           self.cp3_wtop_and_conslabs])
+        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    self.cp3_wtop_and_conslabs])
         with pytest.raises(NotImplementedError):
             CP.frequency_dict_by_consensus_labels(2, sort_by_interface=True)
 
     def test_frequency_as_contact_matrix(self):
-
-        CP = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs,
-                           ])
+        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    ])
 
         mat = CP.frequency_as_contact_matrix(2)
         mat_ref = _np.zeros((CP.top.n_residues, CP.top.n_residues))
-        mat_ref [:,:] = _np.nan
-        mat_ref[0,1] = mat_ref[1,0] = 2/3
-        mat_ref[0,2] = mat_ref[2,0] = 1/3
+        mat_ref[:, :] = _np.nan
+        mat_ref[0, 1] = mat_ref[1, 0] = 2 / 3
+        mat_ref[0, 2] = mat_ref[2, 0] = 1 / 3
 
-        _np.testing.assert_array_equal(mat,mat_ref)
+        _np.testing.assert_array_equal(mat, mat_ref)
 
     def test_interface_frequency_matrix(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp3_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs,
-                          self.cp5_wtop_and_wo_conslabs,
-                          ],
-                         interface_residxs=[[0,3,4],[1,2,20]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp3_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs,
+                                   ],
+                                  interface_residxs=[[0, 3, 4], [1, 2, 20]])
         print(I.res_idxs_pairs)
         print(I.frequency_per_contact(2))
-        refmat = _np.zeros((3,2))
-        refmat [:,:] = _np.nan
-        refmat[0,0]=2/3 #[0,1]
-        refmat[0,1]=1/3 #[0,2]
-        refmat[1,1]= 0  # [3,2]
+        refmat = _np.zeros((3, 2))
+        refmat[:, :] = _np.nan
+        refmat[0, 0] = 2 / 3  # [0,1]
+        refmat[0, 1] = 1 / 3  # [0,2]
+        refmat[1, 1] = 0  # [3,2]
         _np.testing.assert_array_equal(refmat, I.interface_frequency_matrix(2))
 
-
     def test_frequencies_of_atom_pairs_formed(self):
-        CG = ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types])
+        CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types])
         list_of_dicts = CG.relative_frequency_formed_atom_pairs_overall_trajs(4)
-        _np.testing.assert_equal(list_of_dicts[0]["BB-SC"],1/3)
-        _np.testing.assert_equal(list_of_dicts[0]["BB-BB"],2/3)
-        _np.testing.assert_equal(list_of_dicts[1]["BB-SC"],2/3)
-        _np.testing.assert_equal(list_of_dicts[1]["SC-BB"],1/3)
+        _np.testing.assert_equal(list_of_dicts[0]["BB-SC"], 1 / 3)
+        _np.testing.assert_equal(list_of_dicts[0]["BB-BB"], 2 / 3)
+        _np.testing.assert_equal(list_of_dicts[1]["BB-SC"], 2 / 3)
+        _np.testing.assert_equal(list_of_dicts[1]["SC-BB"], 1 / 3)
 
     def test_frequency_table(self):
-        CG = ContactGroup([ContactPair([0,1],[[.4, .3, .25]],[[0,1,2]]),
-                           ContactPair([0,2],[[.1, .2, .3 ]],[[0,1,2]])])
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1], [[.4, .3, .25]], [[0, 1, 2]]),
+                                    contacts.ContactPair([0, 2], [[.1, .2, .3]], [[0, 1, 2]])])
 
         table = CG.frequency_dataframe(2.5, split_label=False)
-        _np.testing.assert_array_equal(table["freq"].array,[1/3,2/3])
-        _np.testing.assert_array_equal(table["label"].array, ["0-1","0-2"])
-        _np.testing.assert_array_equal(table["sum"].array,[1/3, 1/3+2/3])
+        _np.testing.assert_array_equal(table["freq"].array, [1 / 3, 2 / 3])
+        _np.testing.assert_array_equal(table["label"].array, ["0-1", "0-2"])
+        _np.testing.assert_array_equal(table["sum"].array, [1 / 3, 1 / 3 + 2 / 3])
 
     def test_frequency_table_w_atom_types_and_names(self):
-        CG = ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types])
+        CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types])
 
         table = CG.frequency_dataframe(3.5, split_label=False, by_atomtypes=True)
-        _np.testing.assert_array_equal(table["freq"].array,[3/4,3/4])
-        _np.testing.assert_array_equal(table["label"].array, ["E30-V31","E30-W32"])
-        _np.testing.assert_array_equal(table["sum"].array,[3/4, 3/4 + 3/4])
-        _np.testing.assert_equal(table["by_atomtypes"][0],"(66% BB-BB, 33% BB-SC)")
-        _np.testing.assert_equal(table["by_atomtypes"][1],"(66% BB-SC, 33% SC-BB)")
+        _np.testing.assert_array_equal(table["freq"].array, [3 / 4, 3 / 4])
+        _np.testing.assert_array_equal(table["label"].array, ["E30-V31", "E30-W32"])
+        _np.testing.assert_array_equal(table["sum"].array, [3 / 4, 3 / 4 + 3 / 4])
+        _np.testing.assert_equal(table["by_atomtypes"][0], "(66% BB-BB, 33% BB-SC)")
+        _np.testing.assert_equal(table["by_atomtypes"][1], "(66% BB-SC, 33% SC-BB)")
+
 
 class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_baseplot_minimal(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         jax = CG._plot_freqbars_baseplot(2)
-        assert isinstance(jax,_plt.Axes)
+        assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_baseplot_pass_ax(self):
         _plt.plot()
         jax = _plt.gca()
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         assert jax is CG._plot_freqbars_baseplot(2, jax=jax)
         _plt.close("all")
 
     def test_baseplot_truncate(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         jax = CG._plot_freqbars_baseplot(2, truncate_at=.5)
         # TODO I would like to test that jax.patches(?) or equivalent has length 1 instead of 2
         _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         jax = CG.plot_freqs_as_bars(2, "test_site")
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs_labels_short(self):
-        CG = ContactGroup([self.cp1, self.cp2])
-        jax = CG.plot_freqs_as_bars(2, "test_site",shorten_AAs=True)
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        jax = CG.plot_freqs_as_bars(2, "test_site", shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs_labels_xlim(self):
-        CG = ContactGroup([self.cp1, self.cp2])
-        jax = CG.plot_freqs_as_bars(2, "test_site",xlim=20)
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        jax = CG.plot_freqs_as_bars(2, "test_site", xlim=20)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_neighborhood_raises(self):
-        CG = ContactGroup([self.cp1, self.cp2])
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
         with pytest.raises(AssertionError):
-            CG.plot_neighborhood_freqs(2,0)
+            CG.plot_neighborhood_freqs(2, 0)
 
     def test_plot_neighborhood_works_minimal(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags])
-        jax = CG.plot_neighborhood_freqs(2,0)
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags])
+        jax = CG.plot_neighborhood_freqs(2, 0)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_neighborhood_works_options(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags])
-        jax = CG.plot_neighborhood_freqs(2,0, shorten_AAs=True)
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags])
+        jax = CG.plot_neighborhood_freqs(2, 0, shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
         jax = CG.plot_neighborhood_freqs(2, 0, xmax=10)
         assert isinstance(jax, _plt.Axes)
@@ -1427,112 +1417,112 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_timedep_ctcs(self):
         from matplotlib.pyplot import Figure
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags])
         figs = CG.plot_timedep_ctcs(1)
-        _np.testing.assert_equal(len(figs),1)
+        _np.testing.assert_equal(len(figs), 1)
         assert isinstance(figs[0], Figure)
-        ifig : Figure = figs[0]
-        _np.testing.assert_equal(len(ifig.axes),2+1) #2 + twinx
+        ifig: Figure = figs[0]
+        _np.testing.assert_equal(len(ifig.axes), 2 + 1)  # 2 + twinx
         _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_no_pop(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags],
+                                   )
         figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1)
         ifig = figs[0]
-        _np.testing.assert_equal(len(figs),1)
-        _np.testing.assert_equal(len(ifig.axes),2+1+1) #2 + twinx + N
+        _np.testing.assert_equal(len(figs), 1)
+        _np.testing.assert_equal(len(ifig.axes), 2 + 1 + 1)  # 2 + twinx + N
         _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_w_pop(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags],
+                                   )
         figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
                                     pop_N_ctcs=True)
-        _np.testing.assert_equal(len(figs),2)
-        _np.testing.assert_equal(len(figs[0].axes),2+1) #2 + twinx
-        _np.testing.assert_equal(len(figs[1].axes),1)
+        _np.testing.assert_equal(len(figs), 2)
+        _np.testing.assert_equal(len(figs[0].axes), 2 + 1)  # 2 + twinx
+        _np.testing.assert_equal(len(figs[1].axes), 1)
         _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_empty(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags],
+                                   )
         figs = CG.plot_timedep_ctcs(1, skip_timedep=True)
-        _np.testing.assert_equal(len(figs),0)
+        _np.testing.assert_equal(len(figs), 0)
         _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_w_valid_cutoff(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags,
-                           self.cp2_w_anchor_and_frags],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
+                                    self.cp2_w_anchor_and_frags],
+                                   )
         figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
                                     skip_timedep=True)
-        _np.testing.assert_equal(len(figs),1)
-        _np.testing.assert_equal(len(figs[0].axes),1) # Just nctc
+        _np.testing.assert_equal(len(figs), 1)
+        _np.testing.assert_equal(len(figs[0].axes), 1)  # Just nctc
         _plt.close("all")
 
     def test_plot_neighborhood_distributions_just_works(self):
         from matplotlib.pyplot import Axes
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   )
         jax = CG.plot_neighborhood_distributions()
         assert isinstance(jax, Axes)
         _plt.close("all")
 
     def test_plot_neighborhood_distributions_just_works_w_options(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   )
         jax = CG.plot_neighborhood_distributions(shorten_AAs=True,
                                                  ctc_cutoff_Ang=3,
-                                                 xlim=[-1,5],
+                                                 xlim=[-1, 5],
                                                  n_nearest=1)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_frequency_sums_as_bars_just_works(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   )
         jax = CG.plot_frequency_sums_as_bars(2.0, "test", xmax=4)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_frequency_sums_as_bars_no_interface_raises(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   )
         with pytest.raises(AssertionError):
             jax = CG.plot_frequency_sums_as_bars(2.0, "test", list_by_interface=True)
 
     def test_plot_interface_frequency_matrix(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          #self.cp3_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs,
-                          self.cp5_wtop_and_wo_conslabs],
-                         interface_residxs=[[0,3,5],[1,2,4]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   # self.cp3_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs],
+                                  interface_residxs=[[0, 3, 5], [1, 2, 4]])
         print(I.frequency_dataframe(2))
         print(I.frequency_sum_per_residue_names_dict(2))
         print(I.interface_labels_consensus)
         ifig, iax = I.plot_interface_frequency_matrix(2,
                                                       label_type="best")
-        #ifig.tight_layout()
-        #ifig.savefig("test.png", bbox_inches="tight")
+        # ifig.tight_layout()
+        # ifig.savefig("test.png", bbox_inches="tight")
         _plt.close("all")
 
     def test_plot_interface_frequency_matrix_other_labels(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          # self.cp3_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs,
-                          self.cp5_wtop_and_wo_conslabs],
-                         interface_residxs=[[0, 3, 5], [1, 2, 4]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   # self.cp3_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs],
+                                  interface_residxs=[[0, 3, 5], [1, 2, 4]])
         print(I.frequency_dataframe(2))
         print(I.frequency_sum_per_residue_names_dict(2))
         print(I.interface_labels_consensus)
@@ -1545,72 +1535,79 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                               label_type="blergh")
         _plt.close("all")
 
+
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
     def test_frequency_spreadsheedt_just_works(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                          self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         with _TDir(suffix='_test_mdciao') as tmpdir:
-            CG.frequency_spreadsheet(2.5,path.join(tmpdir,"test.xlsx"),
+            CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"),
                                      write_interface=False)
 
     def test_frequency_spreadsheedt_breakdown(self):
-        CG = ContactGroup([self.cp1_w_atom_types,
-                           self.cp2_w_atom_types])
+        CG = contacts.ContactGroup([self.cp1_w_atom_types,
+                                    self.cp2_w_atom_types])
         with _TDir(suffix='_test_mdciao') as tmpdir:
-            CG.frequency_spreadsheet(2.5,path.join(tmpdir,"test.xlsx"),
+            CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"),
                                      write_interface=False,
                                      by_atomtypes=True
                                      )
 
     def test_frequency_spreadsheet_raises_w_interface(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         with pytest.raises(AssertionError):
             with _TDir(suffix='_test_mdciao') as tmpdir:
-                CG.frequency_spreadsheet(2.5, path.join(tmpdir,"test.xlsx"))
+                CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"))
+
 
 class TestContactGroupASCII(TestBaseClassContactGroup):
     def test_frequency_str_ASCII_file(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
-        istr = CG.frequency_str_ASCII_file(2.5,by_atomtypes=False)
-        self.assertEqual(istr[0],"#")
-        self.assertIsInstance(istr,str)
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
+        istr = CG.frequency_str_ASCII_file(2.5, by_atomtypes=False)
+        self.assertEqual(istr[0], "#")
+        self.assertIsInstance(istr, str)
+
 
 class TestContactGroupTrajdicts(TestBaseClassContactGroup):
 
     def test_to_per_traj_dicts_for_saving(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         list_of_dicts = CG._to_per_traj_dicts_for_saving()
 
         data_traj_0 = list_of_dicts[0]["data"]
-        _np.testing.assert_array_equal(data_traj_0[:,0], self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0])
-        _np.testing.assert_array_equal(data_traj_0[:,1], self.cp1_w_anchor_and_frags_and_top.time_traces.ctc_trajs[0]*10)
-        _np.testing.assert_array_equal(data_traj_0[:,2], self.cp2_w_anchor_and_frags_and_top.time_traces.ctc_trajs[0]*10)
+        _np.testing.assert_array_equal(data_traj_0[:, 0], self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0])
+        _np.testing.assert_array_equal(data_traj_0[:, 1],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.ctc_trajs[0] * 10)
+        _np.testing.assert_array_equal(data_traj_0[:, 2],
+                                       self.cp2_w_anchor_and_frags_and_top.time_traces.ctc_trajs[0] * 10)
 
         data_traj_1 = list_of_dicts[1]["data"]
         _np.testing.assert_array_equal(data_traj_1[:, 0], self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1])
-        _np.testing.assert_array_equal(data_traj_1[:, 1], self.cp1_w_anchor_and_frags_and_top.time_traces.ctc_trajs[1] * 10)
-        _np.testing.assert_array_equal(data_traj_1[:, 2], self.cp2_w_anchor_and_frags_and_top.time_traces.ctc_trajs[1] * 10)
+        _np.testing.assert_array_equal(data_traj_1[:, 1],
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.ctc_trajs[1] * 10)
+        _np.testing.assert_array_equal(data_traj_1[:, 2],
+                                       self.cp2_w_anchor_and_frags_and_top.time_traces.ctc_trajs[1] * 10)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_ns(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="ns")
 
         data_traj_0 = list_of_dicts[0]["data"]
         _np.testing.assert_array_equal(data_traj_0[:, 0],
-                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0]*1e-3)
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0] * 1e-3)
 
         data_traj_1 = list_of_dicts[1]["data"]
         _np.testing.assert_array_equal(data_traj_1[:, 0],
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-3)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_mus(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="mus")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1622,8 +1619,8 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-6)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_ms(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="ms")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1634,27 +1631,27 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(data_traj_1[:, 0],
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-9)
 
-
     def test_to_per_traj_dicts_for_saving_with_tunits_raises(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         with pytest.raises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="fs")
+
 
 class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
 
     def test_to_per_traj_dicts_for_saving_bintrajs(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5)
         bintrajs_per_traj = CG.binarize_trajs(2.5, order="traj")
 
         data_traj_0 = list_of_dicts[0]["data"]
         _np.testing.assert_array_equal(data_traj_0[:, 0], self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0])
         _np.testing.assert_array_equal(data_traj_0[:, 1],
-                                       bintrajs_per_traj[0][:,0])
+                                       bintrajs_per_traj[0][:, 0])
         _np.testing.assert_array_equal(data_traj_0[:, 2],
-                                       bintrajs_per_traj[0][:,1])
+                                       bintrajs_per_traj[0][:, 1])
 
         data_traj_1 = list_of_dicts[1]["data"]
         _np.testing.assert_array_equal(data_traj_1[:, 0], self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1])
@@ -1664,21 +1661,21 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        bintrajs_per_traj[1][:, 1])
 
     def test_to_per_traj_dicts_for_saving_bintrajs_ns(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="ns")
 
         data_traj_0 = list_of_dicts[0]["data"]
         _np.testing.assert_array_equal(data_traj_0[:, 0],
-                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0]*1e-3)
+                                       self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[0] * 1e-3)
 
         data_traj_1 = list_of_dicts[1]["data"]
         _np.testing.assert_array_equal(data_traj_1[:, 0],
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-3)
 
     def test_to_per_traj_dicts_for_saving_bintrajs_mus(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="mus")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1690,8 +1687,8 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-6)
 
     def test_to_per_traj_dicts_for_saving_bintrajs_ms(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="ms")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1702,149 +1699,150 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(data_traj_1[:, 0],
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-9)
 
-
     def test_to_per_traj_dicts_for_saving_bintrajs_tunits_raises(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top])
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
         with pytest.raises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="fs")
+
 
 class TestContactGroupSavetrajs(TestBaseClassContactGroup):
 
     def test_save_trajs_no_anchor(self):
-        CG = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs])
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs])
         with _TDir(suffix='_test_mdciao') as tempdir:
-            CG.save_trajs("test","dat", verbose=True, t_unit="ns",
+            CG.save_trajs("test", "dat", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   )
         with _TDir(suffix='_test_mdciao') as tempdir:
-            CG.save_trajs("test","dat", verbose=True, t_unit="ns",
+            CG.save_trajs("test", "dat", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_no_anchor_excel(self):
-        CG = ContactGroup([self.cp1_wtop_and_conslabs,
-                           self.cp2_wtop_and_conslabs])
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs])
         with _TDir(suffix='_test_mdciao') as tempdir:
-            CG.save_trajs("test","xlsx", verbose=True, t_unit="ns",
+            CG.save_trajs("test", "xlsx", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_excel(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   )
         with _TDir(suffix='_test_mdciao') as tempdir:
-            CG.save_trajs("test","xlsx", verbose=True, t_unit="ns",
+            CG.save_trajs("test", "xlsx", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_None(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   )
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", None, verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_basename(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   )
         # Overwrite the trajlabels for the basename to work
         CG._trajlabels = ["../non/existing/dir/traj1.xtc",
                           "../non/existing/dir/traj2.xtc"]
         with _TDir(suffix='_test_mdciao') as tempdir:
-            CG.save_trajs("test","dat", verbose=True, t_unit="ns",
+            CG.save_trajs("test", "dat", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_cutoff(self):
-        CG = ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                           self.cp2_w_anchor_and_frags_and_top],
-                          )
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   )
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test_None", "dat", verbose=True, t_unit="ns",
                           ctc_cutoff_Ang=2.5,
                           output_dir=tempdir)
 
+
 class TestContactGroupInterface(TestBaseClassContactGroup):
 
     def setUp(self):
-        super(TestContactGroupInterface,self).setUp()
-        #TODO here in case i need extra stuff, otherwise
+        super(TestContactGroupInterface, self).setUp()
+        # TODO here in case i need extra stuff, otherwise
 
     def test_instantiates_raises_intersect(self):
         with pytest.raises(AssertionError):
-            I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs],
-                         interface_residxs=[[1, 3],
-                                            [1, 2]])
+            I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                       self.cp2_wtop_and_conslabs,
+                                       self.cp4_wtop_and_conslabs],
+                                      interface_residxs=[[1, 3],
+                                                         [1, 2]])
 
     def test_instantiates_raises_duplicates(self):
         with pytest.raises(AssertionError) as e:
-            I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs],
-                         interface_residxs=[[0, 0],
-                                            [1, 2]])
+            I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                       self.cp2_wtop_and_conslabs,
+                                       self.cp4_wtop_and_conslabs],
+                                      interface_residxs=[[0, 0],
+                                                         [1, 2]])
 
         with pytest.raises(AssertionError) as e:
-            I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs],
-                         interface_residxs=[[0, 3],
-                                            [1, 1, 2]])
+            I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                       self.cp2_wtop_and_conslabs,
+                                       self.cp4_wtop_and_conslabs],
+                                      interface_residxs=[[0, 3],
+                                                         [1, 1, 2]])
 
     def test_instantiates_to_no_interface(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs],
-                         interface_residxs=[[10, 30],
-                                            [11, 20]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs],
+                                  interface_residxs=[[10, 30],
+                                                     [11, 20]])
         assert I.is_interface is False
 
     def test_instantiates_to_no_interface_even1res(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs],
-                         interface_residxs=[[0, 30],
-                                            [11, 20]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs],
+                                  interface_residxs=[[0, 30],
+                                                     [11, 20]])
         assert I.is_interface is False
-        _np.testing.assert_array_equal(I.interface_residxs[0],[0])
-        assert I.interface_residxs[1]==[]
+        _np.testing.assert_array_equal(I.interface_residxs[0], [0])
+        assert I.interface_residxs[1] == []
 
     def test_residxs(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs],
-                          interface_residxs=[[3, 0],
-                                             [2, 1]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs],
+                                  interface_residxs=[[3, 0],
+                                                     [2, 1]])
         assert I.is_interface
-        _np.testing.assert_array_equal(I.interface_residxs[0],[0,3])
-        _np.testing.assert_array_equal(I.interface_residxs[1],[1,2])
+        _np.testing.assert_array_equal(I.interface_residxs[0], [0, 3])
+        _np.testing.assert_array_equal(I.interface_residxs[1], [1, 2])
 
     def test_interface_reslabels_short(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs],
-                         interface_residxs=[[3, 0],
-                                            [2, 1]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs],
+                                  interface_residxs=[[3, 0],
+                                                     [2, 1]])
         assert I.is_interface
-        _np.testing.assert_equal(I.interface_reslabels_short[0][0],"E30")
-        _np.testing.assert_equal(I.interface_reslabels_short[0][1],"V33")
+        _np.testing.assert_equal(I.interface_reslabels_short[0][0], "E30")
+        _np.testing.assert_equal(I.interface_reslabels_short[0][1], "V33")
 
-        _np.testing.assert_equal(I.interface_reslabels_short[1][0],"V31")
-        _np.testing.assert_equal(I.interface_reslabels_short[1][1],"W32")
+        _np.testing.assert_equal(I.interface_reslabels_short[1][0], "V31")
+        _np.testing.assert_equal(I.interface_reslabels_short[1][1], "W32")
 
     def test_interface_labels_consensus(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs],
-                         interface_residxs=[[3, 0],
-                                            [2, 1]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs],
+                                  interface_residxs=[[3, 0],
+                                                     [2, 1]])
 
         _np.testing.assert_equal(I.interface_labels_consensus[0][0], "3.50")
         _np.testing.assert_equal(I.interface_labels_consensus[0][1], "3.51")
@@ -1852,14 +1850,13 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         _np.testing.assert_equal(I.interface_labels_consensus[1][0], "4.50")
         _np.testing.assert_equal(I.interface_labels_consensus[1][1], "5.50")
 
-
     def test_interface_labels_consensus_some_missing(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs,
-                          self.cp5_wtop_and_wo_conslabs],
-                         interface_residxs=[[3, 0,4],
-                                            [2, 1,5]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs],
+                                  interface_residxs=[[3, 0, 4],
+                                                     [2, 1, 5]])
         _np.testing.assert_equal(I.interface_labels_consensus[0][0], "3.50")
         _np.testing.assert_equal(I.interface_labels_consensus[0][1], "3.51")
         _np.testing.assert_equal(I.interface_labels_consensus[0][2], None)
@@ -1869,21 +1866,21 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         _np.testing.assert_equal(I.interface_labels_consensus[1][2], None)
 
     def test_interface_orphaned_labels(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs,
-                          self.cp5_wtop_and_wo_conslabs],
-                         interface_residxs=[[3, 0, 4],
-                                            [2, 1, 5]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs],
+                                  interface_residxs=[[3, 0, 4],
+                                                     [2, 1, 5]])
         _np.testing.assert_equal(I.interface_orphaned_labels[0][0], "V34")
         _np.testing.assert_equal(I.interface_orphaned_labels[1][0], "G35")
 
     def test_interface_residue_names_w_best_fragments_short(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs],
-                         interface_residxs=[[3, 0],
-                                            [2, 1]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs],
+                                  interface_residxs=[[3, 0],
+                                                     [2, 1]])
 
         _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[0][0], "E30@3.50")
         _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[0][1], "V33@3.51")
@@ -1891,73 +1888,72 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[1][0], "V31@4.50")
         _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[1][1], "W32@5.50")
 
-
     def test_frequency_sum_per_residue_names_dict(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs,
-                          self.cp5_wtop_and_wo_conslabs],
-                         interface_residxs=[[3, 0, 4],
-                                            [2, 1, 5]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs],
+                                  interface_residxs=[[3, 0, 4],
+                                                     [2, 1, 5]])
         print(I.frequency_dataframe(2))
         print(I.interface_residxs)
         idicts = I.frequency_sum_per_residue_names_dict(2,
-                                                    sort=False,
-                                                    list_by_interface=True)
+                                                        sort=False,
+                                                        list_by_interface=True)
 
-        assert len(idicts)==2
+        assert len(idicts) == 2
         items0, items1 = list(idicts[0].items()), list(idicts[1].items())
-        _np.testing.assert_array_equal(items0[0],["E30@3.50",1.])
-        _np.testing.assert_array_equal(items0[1],["V33@3.51",0.])
-        _np.testing.assert_array_equal(items0[2],["V34",1/3])
+        _np.testing.assert_array_equal(items0[0], ["E30@3.50", 1.])
+        _np.testing.assert_array_equal(items0[1], ["V33@3.51", 0.])
+        _np.testing.assert_array_equal(items0[2], ["V34", 1 / 3])
 
-        _np.testing.assert_array_equal(items1[0],["V31@4.50",2/3.])
-        _np.testing.assert_array_equal(items1[1],["W32@5.50",1/3])
-        _np.testing.assert_array_equal(items1[2],["G35",1/3])
+        _np.testing.assert_array_equal(items1[0], ["V31@4.50", 2 / 3.])
+        _np.testing.assert_array_equal(items1[1], ["W32@5.50", 1 / 3])
+        _np.testing.assert_array_equal(items1[2], ["G35", 1 / 3])
 
     def test_frequency_sum_per_residue_names_dict(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs,
-                          self.cp5_wtop_and_wo_conslabs],
-                         interface_residxs=[[3, 0, 4],
-                                            [2, 1, 5]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs],
+                                  interface_residxs=[[3, 0, 4],
+                                                     [2, 1, 5]])
 
         idicts = I.frequency_sum_per_residue_names_dict(2,
-                                                    list_by_interface=True)
+                                                        list_by_interface=True)
 
-        assert len(idicts)==2
+        assert len(idicts) == 2
         items0, items1 = list(idicts[0].items()), list(idicts[1].items())
-        _np.testing.assert_array_equal(items0[0],["E30@3.50",1.])
-        _np.testing.assert_array_equal(items0[1],["V34",1/3])
-        _np.testing.assert_array_equal(items0[2],["V33@3.51",0.])
+        _np.testing.assert_array_equal(items0[0], ["E30@3.50", 1.])
+        _np.testing.assert_array_equal(items0[1], ["V34", 1 / 3])
+        _np.testing.assert_array_equal(items0[2], ["V33@3.51", 0.])
 
-        _np.testing.assert_array_equal(items1[0],["V31@4.50",2/3.])
-        _np.testing.assert_array_equal(items1[1],["W32@5.50",1/3])
-        _np.testing.assert_array_equal(items1[2],["G35",1/3])
-
+        _np.testing.assert_array_equal(items1[0], ["V31@4.50", 2 / 3.])
+        _np.testing.assert_array_equal(items1[1], ["W32@5.50", 1 / 3])
+        _np.testing.assert_array_equal(items1[2], ["G35", 1 / 3])
 
     def test_frequency_spreadsheet_w_interface(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs,
-                          self.cp5_wtop_and_wo_conslabs],
-                         interface_residxs=[[3, 0, 4],
-                                            [2, 1, 5]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs],
+                                  interface_residxs=[[3, 0, 4],
+                                                     [2, 1, 5]])
         with _TDir(suffix='_test_mdciao') as tmpdir:
-            I.frequency_spreadsheet(2.5, path.join(tmpdir,"test.xlsx"))
+            I.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"))
 
     def test_plot_frequency_sums_as_bars(self):
-        I = ContactGroup([self.cp1_wtop_and_conslabs,
-                          self.cp2_wtop_and_conslabs,
-                          self.cp4_wtop_and_conslabs,
-                          self.cp5_wtop_and_wo_conslabs],
-                         interface_residxs=[[3, 0, 4],
-                                            [2, 1, 5]])
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs],
+                                  interface_residxs=[[3, 0, 4],
+                                                     [2, 1, 5]])
 
         iax = I.plot_frequency_sums_as_bars(2, "interface",
                                             list_by_interface=True,
                                             interface_vline=True)
+
 
 if __name__ == '__main__':
     unittest.main()

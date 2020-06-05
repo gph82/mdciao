@@ -1,18 +1,18 @@
 import mdtraj as _md
 import numpy as _np
-from .residue_and_atom_utils import \
+from mdciao.utils.residue_and_atom import \
     int_from_AA_code as _int_from_AA_code, \
     shorten_AA as _shorten_AA
 
-from mdciao.fragments import \
-    _print_frag, \
-    _check_if_subfragment
+from mdciao.utils.residue_and_atom import name_from_AA as _name_from_AA
 
-from mdciao.sequence_utils import \
+from mdciao.fragments import check_if_subfragment, print_frag
+
+from mdciao.sequence import \
     alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, \
     _my_bioalign
 
-from mdciao.list_utils import \
+from mdciao.utils.lists import \
     rangeexpand as _rangeexpand
 
 from pandas import \
@@ -615,7 +615,7 @@ class LabelerConsensus(object):
             An interactive prompt will ask the user which fragments to
             keep in case of clashes.
 
-            Check :obj:`_check_if_subfragment` for more info
+            Check :obj:`check_if_subfragment` for more info
 
         fill_gaps: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
@@ -642,13 +642,13 @@ class LabelerConsensus(object):
         new_defs = {}
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
-                new_defs[key] = _check_if_subfragment(res_idxs, key, fragments, top, map_conlab)
+                new_defs[key] = check_if_subfragment(res_idxs, key, fragments, top, map_conlab)
 
         for key, res_idxs in new_defs.items():
             defs[key]=res_idxs
 
         for ii, (key, res_idxs) in enumerate(defs.items()):
-            istr = _print_frag(key, top, res_idxs, fragment_desc='',
+            istr = print_frag(key, top, res_idxs, fragment_desc='',
                                idx2label=map_conlab,
                                return_string=True)
             print(istr)
@@ -876,7 +876,6 @@ def _top2consensus_map(consensus_dict, top,
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
     seq = ''.join([_shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
-    from mdciao.residue_and_atom_utils import name_from_AA as _name_from_AA
     seq_consensus= ''.join([_name_from_AA(key) for key in consensus_dict.keys()])
     alignment = _alignment_result_to_list_of_dicts(_my_bioalign(seq, seq_consensus)[0],
                                                    top,

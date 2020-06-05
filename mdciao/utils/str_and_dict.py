@@ -1,7 +1,7 @@
 from glob import glob as _glob
 import numpy as _np
 import mdtraj as _md
-from .list_utils import re_warp
+from .lists import re_warp
 from fnmatch import fnmatch as _fnmatch
 from pandas import read_excel as _read_excel
 from os import path as _path

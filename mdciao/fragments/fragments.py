@@ -3,20 +3,20 @@ import numpy as _np
 from mdtraj.core.residue_names import \
     _AMINO_ACID_CODES
 
-from .residue_and_atom_utils import \
+from mdciao.utils.residue_and_atom import \
     find_AA as _find_AA,\
     _parse_and_list_AAs_input
 
-from .bond_utils import \
+from mdciao.utils.bonds import \
     top2residue_bond_matrix
 
-from .list_utils import \
+from mdciao.utils.lists import \
     in_what_N_fragments as _in_what_N_fragments, \
     join_lists as _join_lists, \
     in_what_fragment as _in_what_fragment, \
     rangeexpand as _rangeexpand
 
-from .str_and_dict_utils import \
+from mdciao.utils.str_and_dict import \
     choose_between_good_and_better_strings as _choose_between_good_and_better_strings, \
     match_dict_by_patterns as _match_dict_by_patterns
 
@@ -28,9 +28,9 @@ from msmtools.estimation import \
 
 abc = "abcdefghijklmnopqrst"
 
-def _print_frag(frag_idx, top, fragment, fragment_desc='fragment',
-                idx2label=None,
-                return_string=False, **print_kwargs):
+def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
+               idx2label=None,
+               return_string=False, **print_kwargs):
     """
     For pretty-printing of fragments of an :obj:`mtraj.topology`
 
@@ -141,7 +141,7 @@ def get_fragments(top,
 
     """
 
-    _assert_method_allowed(method)
+    assert_method_allowed(method)
 
     # Auto detect fragments by resSeq
     old = top.residue(0).resSeq
@@ -171,9 +171,9 @@ def get_fragments(top,
     elif method == "chains":
         fragments = [[rr.index for rr in ichain.residues] for ichain in top.chains]
     elif method == "resSeq+":
-        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
+        fragments = get_fragments_resSeq_plus(top, fragments_resSeq)
     elif method == "lig_resSeq+":
-        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
+        fragments = get_fragments_resSeq_plus(top, fragments_resSeq)
         for rr in top.residues:
             if rr.name[:3] not in _AMINO_ACID_CODES.keys():
                 frag_idx = _in_what_fragment(rr.index,fragments)
@@ -225,13 +225,13 @@ def get_fragments(top,
             if rj.resSeq-ri.resSeq!=len(iseg)-1:
                 #print(ii, rj.resSeq-ri.resSeq, len(iseg)-1)
                 end='resSeq jumps\n'
-            _print_frag(ii, top, iseg, end=end)
+            print_frag(ii, top, iseg, end=end)
     # Join if necessary
     if join_fragments is not None:
         fragments = _join_lists(fragments, join_fragments)
         print("Joined Fragments")
         for ii, iseg in enumerate(fragments):
-            _print_frag(ii, top, iseg)
+            print_frag(ii, top, iseg)
 
     if fragment_breaker_fullresname is not None:
         if isinstance(fragment_breaker_fullresname,str):
@@ -253,7 +253,7 @@ def get_fragments(top,
                     #print("now breaking up into", subfrags)
                     fragments = fragments[:ifrag] + subfrags + fragments[ifrag + 1:]
                     for ii, ifrag in enumerate(fragments):
-                        _print_frag(ii, top, ifrag)
+                        print_frag(ii, top, ifrag)
                 else:
                     print("Not using it since it already was a fragment breaker in frag %s"%ifrag)
             print()
@@ -264,7 +264,7 @@ def get_fragments(top,
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
 
-def _get_fragments_resSeq_plus(top, fragments_resSeq):
+def get_fragments_resSeq_plus(top, fragments_resSeq):
     to_join = [[0]]
     for ii, ifrag in enumerate(fragments_resSeq[:-1]):
         r1 = top.residue(ifrag[-1])
@@ -314,7 +314,7 @@ def overview(topology,
         try_methods = _allowed_fragment_methods
     else:
         for method in methods:
-            _assert_method_allowed(method)
+            assert_method_allowed(method)
         try_methods = methods
 
     for method in try_methods:
@@ -324,16 +324,16 @@ def overview(topology,
 
     _parse_and_list_AAs_input(AAs, topology)
 
-def _assert_method_allowed(method):
+def assert_method_allowed(method):
     assert str(method) in _allowed_fragment_methods, ('input method %s is not known. ' \
                                                  'Know methods are %s ' %
                                                  (method, "\n".join(_allowed_fragment_methods)))
 
-def _rangeexpand_residues2residxs(range_as_str, fragments, top,
-                                  interpret_as_res_idxs=False,
-                                  sort=False,
-                                  allow_empty_ranges=False,
-                                  **per_residue_fragment_picker_kwargs):
+def rangeexpand_residues2residxs(range_as_str, fragments, top,
+                                 interpret_as_res_idxs=False,
+                                 sort=False,
+                                 allow_empty_ranges=False,
+                                 **per_residue_fragment_picker_kwargs):
     r"""
     Generalized range-expander (range-expander(2-5,7)=2,3,4,5,7 for a string containing
     residue descriptors.
@@ -500,9 +500,9 @@ def per_residue_fragment_picker(residue_descriptors,
 
     return residxs, fragidxs
 
-def _check_if_subfragment(sub_frag, fragname, fragments, top,
-                          map_conlab=None,
-                          keep_all=False):
+def check_if_subfragment(sub_frag, fragname, fragments, top,
+                         map_conlab=None,
+                         keep_all=False):
     r"""
     Input an iterable of integers representing a fragment check if
     it clashes with other fragment definitions.
@@ -552,13 +552,13 @@ def _check_if_subfragment(sub_frag, fragname, fragments, top,
     frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
     if len(frag_cands) > 1 and not keep_all:
         # This only happens if more than one fragment is present
-        _print_frag(fragname, top, sub_frag, fragment_desc='',
-                    idx2label=map_conlab)
+        print_frag(fragname, top, sub_frag, fragment_desc='',
+                   idx2label=map_conlab)
         print("  %s clashes with other fragment definitions"%fragname)
         for jj in frag_cands:
-            istr = _print_frag(jj, top, fragments[jj],
-                               fragment_desc="   input fragment",
-                               return_string=True)
+            istr = print_frag(jj, top, fragments[jj],
+                              fragment_desc="   input fragment",
+                              return_string=True)
             n_in_fragment = len(_np.intersect1d(sub_frag, fragments[jj]))
             if n_in_fragment < len(fragments[jj]):
                 istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
@@ -573,7 +573,7 @@ def _check_if_subfragment(sub_frag, fragname, fragments, top,
     else:
         return sub_frag
 
-def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
+def fragments_strings_to_fragments(fragment_input, top, verbose=False):
     r"""
     Method to help implement the input options wrt
     to fragments of :obj:`parsers.parser_for_interface`
@@ -639,14 +639,14 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     if verbose:
         print("Using method '%s' these fragments were found"%method)
         for ii, ifrag in enumerate(fragments_as_residue_idxs):
-            _print_frag(ii, top, ifrag)
+            print_frag(ii, top, ifrag)
 
     return fragments_as_residue_idxs, user_wants_consensus
 
-def _frag_list_2_frag_groups(frag_list,
-                             frag_idxs_group_1=None,
-                             frag_idxs_group_2=None,
-                             verbose=False):
+def frag_list_2_frag_groups(frag_list,
+                            frag_idxs_group_1=None,
+                            frag_idxs_group_2=None,
+                            verbose=False):
     r"""
     Automagically find out the user wants to define
     two fragments out of list of fragments. This is used
@@ -742,7 +742,7 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
 
     return groups_as_residue_idxs, groups_as_keys
 
-_my_frag_colors=[
+my_frag_colors=[
          'magenta',
          'yellow',
          'lime',

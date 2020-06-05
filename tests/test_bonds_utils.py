@@ -2,7 +2,7 @@ import mdtraj as md
 import unittest
 import numpy as _np
 from mdciao.filenames import filenames
-from mdciao import bond_utils
+from mdciao.utils import bonds
 import pytest
 
 test_filenames = filenames()
@@ -24,7 +24,7 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
                                      [0, 0, 0, 0, 1, 1, 0, 0], #LYS28 has a bond with GLU27
                                      [0, 0, 0, 0, 0, 0, 0, 0],
                                      [0, 0, 0, 0, 0, 0, 0, 0]])
-        assert (bond_utils.top2residue_bond_matrix(self.geom.top) == res_bond_matrix).all()
+        assert (bonds.top2residue_bond_matrix(self.geom.top) == res_bond_matrix).all()
 
     def test_force_resSeq_breaks_is_true(self):
         res_bond_matrix = _np.array([ [1, 1, 0, 0, 0, 0, 0, 0],
@@ -36,15 +36,15 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
                                       [0, 0, 0, 0, 0, 0, 0, 0],
                                       [0, 0, 0, 0, 0, 0, 0, 0]])
 
-        assert (bond_utils.top2residue_bond_matrix(self.geom_force_resSeq_breaks.top, force_resSeq_breaks=True) == res_bond_matrix).all()
+        assert (bonds.top2residue_bond_matrix(self.geom_force_resSeq_breaks.top, force_resSeq_breaks=True) == res_bond_matrix).all()
 
     def test_no_bonds_fails(self):
         with pytest.raises(ValueError):
-            bond_utils.top2residue_bond_matrix(self.geom_no_bonds.top)
+            bonds.top2residue_bond_matrix(self.geom_no_bonds.top)
 
     def test_no_bonds_creates(self):
-        mat = bond_utils.top2residue_bond_matrix(self.geom_no_bonds.top,
-                                                 create_standard_bonds=True)
+        mat = bonds.top2residue_bond_matrix(self.geom_no_bonds.top,
+                                            create_standard_bonds=True)
         #because the .gro filed does not contain chains, this will have
         #created all bonds except the non AAs, i.e. 6 and 7
         _np.testing.assert_array_equal(_np.argwhere(mat != 0),
@@ -64,7 +64,7 @@ class Test_top2residuebonds(unittest.TestCase):
 
     def test_works(self):
         _np.testing.assert_array_equal([[0,1],[1,2],[3,4],[4,5]],
-                                       bond_utils.top2residuebonds(md.load(test_filenames.small_monomer).top))
+                                       bonds.top2residuebonds(md.load(test_filenames.small_monomer).top))
 
 class Test_residue_bond_matrix_to_triu_bonds(unittest.TestCase):
 
@@ -75,14 +75,14 @@ class Test_residue_bond_matrix_to_triu_bonds(unittest.TestCase):
                          [0,0,1,1]])
         _np.testing.assert_array_equal([[0,1],
                                         [2,3]],
-                                       bond_utils._residue_bond_matrix_to_triu_bonds(mat))
+                                       bonds._residue_bond_matrix_to_triu_bonds(mat))
 
 class Test_bonded_neighborlist_from_top(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.small_monomer)
 
     def test_neighbors(self):
-       neighbors_from_function =  bond_utils.bonded_neighborlist_from_top(self.geom.top)
+       neighbors_from_function =  bonds.bonded_neighborlist_from_top(self.geom.top)
        actual_neighbors = [[1], [0, 2], [1], [4], [3, 5], [4], [], []]
        assert neighbors_from_function == actual_neighbors
 

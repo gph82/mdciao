@@ -2,7 +2,7 @@ import os
 from shutil import rmtree
 import unittest
 import mdciao.examples
-from tempfile import TemporaryDirectory as _TDir, mkdtemp
+from tempfile import mkdtemp
 import contextlib
 @contextlib.contextmanager
 def remember_cwd():

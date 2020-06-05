@@ -2,34 +2,44 @@ import numpy as _np
 import mdtraj as _md
 from os import path as _path
 
-from .list_utils import in_what_fragment, \
+from mdciao.utils.lists import \
+    in_what_fragment, \
     put_this_idx_first_in_pair
 
-from .COM_utils import geom2COMdist
+from mdciao.utils.COM import \
+    geom2COMdist
 
-from .residue_and_atom_utils import \
+from mdciao.utils.residue_and_atom import \
     shorten_AA as _shorten_AA, \
     _atom_type
 
-from .str_and_dict_utils import \
+from mdciao.utils.str_and_dict import \
     _replace4latex, \
     iterate_and_inform_lambdas, \
     _tunit2tunit, \
     choose_between_good_and_better_strings
 
-from .plots import plot_w_smoothing_auto, \
+from mdciao.plots import \
     add_tilted_labels_to_patches as _add_tilted_labels_to_patches, \
-    plot_contact_matrix as _plot_contact_matrix, \
-    _titlepadding_in_points_no_clashes_w_texts
+    plot_w_smoothing_auto, \
+    _titlepadding_in_points_no_clashes_w_texts, \
+    plot_contact_matrix as _plot_contact_matrix
 
-from collections import defaultdict, Counter as _col_Counter
+from collections import \
+    defaultdict, \
+    Counter as _col_Counter
 
-import matplotlib.pyplot as _plt
-from matplotlib import rcParams as _rcParams
-from pandas import DataFrame as _DF, \
+from matplotlib import \
+    pyplot as _plt,\
+    rcParams as _rcParams
+
+from pandas import \
+    DataFrame as _DF, \
     ExcelWriter as _ExcelWriter
 
-from joblib import Parallel as _Parallel, delayed as _delayed
+from joblib import \
+    Parallel as _Parallel, \
+    delayed as _delayed
 
 
 def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
