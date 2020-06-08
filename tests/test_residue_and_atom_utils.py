@@ -110,9 +110,9 @@ class Test_atom_type(unittest.TestCase):
         assert len(atoms_BB)>0
         assert len(atoms_SC)>0
         assert len(atoms_X)>0
-        assert all([residue_and_atom._atom_type(aa)=="BB" for aa in atoms_BB])
-        assert all([residue_and_atom._atom_type(aa)=="SC" for aa in atoms_SC])
-        assert all([residue_and_atom._atom_type(aa)=="X" for aa in atoms_X])
+        assert all([residue_and_atom.atom_type(aa) == "BB" for aa in atoms_BB])
+        assert all([residue_and_atom.atom_type(aa) == "SC" for aa in atoms_SC])
+        assert all([residue_and_atom.atom_type(aa) == "X" for aa in atoms_X])
 
 
 if __name__ == '__main__':

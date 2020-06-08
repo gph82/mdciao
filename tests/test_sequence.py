@@ -34,7 +34,7 @@ class Test_my_bioalign(unittest.TestCase):
     def test_works(self):
         seq1 = "EVWIEKXX"
         seq2 = seq1[::-1]+seq1.replace("I","A")+seq1[::-1]
-        algnmt = sequence._my_bioalign(seq1, seq2)[0]
+        algnmt = sequence.my_bioalign(seq1, seq2)[0]
         res1 = "".join(["-" for __ in seq1])+seq1+"".join(["-" for __ in seq1])
         res2 = seq2
         _np.testing.assert_array_equal(algnmt[0],res1)
@@ -42,9 +42,9 @@ class Test_my_bioalign(unittest.TestCase):
 
     def test_raises(self):
         with pytest.raises(NotImplementedError):
-            sequence._my_bioalign(None, None, method="other")
+            sequence.my_bioalign(None, None, method="other")
         with pytest.raises(NotImplementedError):
-            sequence._my_bioalign(None, None, argstuple=(-2, 1))
+            sequence.my_bioalign(None, None, argstuple=(-2, 1))
 
 class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
 
@@ -57,7 +57,7 @@ class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
         # We know the result a prioriy
         res0 = "".join(["-" for __ in seq0])+seq0+"".join(["-" for __ in seq0])
 
-        ialg = sequence._my_bioalign(seq0, seq1)[0]
+        ialg = sequence.my_bioalign(seq0, seq1)[0]
 
         result = sequence.alignment_result_to_list_of_dicts(ialg,
                                                             top,
@@ -110,7 +110,7 @@ class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
         seq_3CAP = sequence.top2seq(geom_3CAP.top)
         seq_1U19 = sequence.top2seq(geom_1U19.top)
 
-        ialg = sequence._my_bioalign(seq_3CAP,
+        ialg = sequence.my_bioalign(seq_3CAP,
                                      seq_1U19,
                                      )[0]
 

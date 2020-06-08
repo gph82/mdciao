@@ -2,31 +2,13 @@ import numpy as _np
 import mdtraj as _md
 from os import path as _path
 
-from mdciao.utils.lists import \
-    in_what_fragment, \
-    put_this_idx_first_in_pair
+import mdciao.plots as _mdcplots
+import mdciao.utils as _mdcu
 
-from mdciao.utils.COM import \
-    geom2COMdist
-
-from mdciao.utils.residue_and_atom import \
-    shorten_AA as _shorten_AA, \
-    _atom_type
-
-from mdciao.utils.str_and_dict import \
-    _replace4latex, \
-    iterate_and_inform_lambdas, \
-    _tunit2tunit, \
-    choose_between_good_and_better_strings
-
-from mdciao.plots import \
-    add_tilted_labels_to_patches as _add_tilted_labels_to_patches, \
-    plot_w_smoothing_auto, \
-    _titlepadding_in_points_no_clashes_w_texts, \
-    plot_contact_matrix as _plot_contact_matrix
+from ._mdtraj import compute_contacts as _compute_contacts
 
 from collections import \
-    defaultdict, \
+    defaultdict as _defdict, \
     Counter as _col_Counter
 
 from matplotlib import \
@@ -40,7 +22,6 @@ from pandas import \
 from joblib import \
     Parallel as _Parallel, \
     delayed as _delayed
-
 
 def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                                                 residxs_pairs, top,
@@ -105,8 +86,8 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
             seen_ctcs = []
             for ii, oo in enumerate(order_mask[:n_ctcs]):
                 pair = residxs_pairs[oo]
-                idx1, idx2 = put_this_idx_first_in_pair(residx, pair)
-                s1, s2 = [in_what_fragment(idx, fragments) for idx in [idx1,idx2]]
+                idx1, idx2 = _mdcu.lists.put_this_idx_first_in_pair(residx, pair)
+                s1, s2 = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in [idx1,idx2]]
                 imean = ctc_freqs[oo]
                 isum += imean
                 seen_ctcs.append(imean)
@@ -263,7 +244,7 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
     """
     # The creation of lambdas managing the file(xtc,pdb) vs traj case
     # elswhere allows to keep the code here simple
-    iterate, inform = iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
+    iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
     ictcs, itime, iaps = [],[],[]
     running_f = 0
     inform(itraj, traj_idx, 0, running_f)
@@ -273,10 +254,10 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
         itime.append(igeom.time)
             #TODO make lambda out of this if
         if 'scheme' in mdcontacts_kwargs.keys() and mdcontacts_kwargs["scheme"].upper()=='COM':
-            jctcs = geom2COMdist(igeom, ctc_residxs_pairs)
+            jctcs = _mdcu.COM.geom2COMdist(igeom, ctc_residxs_pairs)
             j_atompairs = _np.full((len(jctcs), 2*len(ctc_residxs_pairs)),_np.nan)
         else:
-            jctcs, jidx_pairs, j_atompairs = compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
+            jctcs, jidx_pairs, j_atompairs = _compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
             # TODO do proper list comparison and do it only once
             assert len(jidx_pairs) == len(ctc_residxs_pairs)
 
@@ -449,7 +430,7 @@ class _Residues(object):
         example : ['E30', 'V212']
 
         """
-        return [_shorten_AA(rr, substitute_fail="long", keep_index=True) for rr in self.names]
+        return [_mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="long", keep_index=True) for rr in self.names]
 
     @property
     def anchor_residue(self):
@@ -602,7 +583,7 @@ class _NeighborhoodNames(object):
         -------
 
         """
-        return choose_between_good_and_better_strings(self.partner_fragment,
+        return _mdcu.str_and_dict.choose_between_good_and_better_strings(self.partner_fragment,
                                                       self.partner_fragment_consensus)
 
     @property
@@ -613,7 +594,7 @@ class _NeighborhoodNames(object):
         -------
 
         """
-        return choose_between_good_and_better_strings(self.anchor_fragment,
+        return _mdcu.str_and_dict.choose_between_good_and_better_strings(self.anchor_fragment,
                                                       self.anchor_fragment_consensus)
 
     @property
@@ -770,7 +751,7 @@ class _ContactStrings(object):
         -------
         list of two strings
         """
-        return [choose_between_good_and_better_strings(self._fragnames[ii],
+        return [_mdcu.str_and_dict.choose_between_good_and_better_strings(self._fragnames[ii],
                                                        self._residues.consensus_labels[ii],
                                                        fmt=fmt)
                 for ii in [0,1]]
@@ -1317,7 +1298,7 @@ class ContactPair(object):
             if ctc_cutoff_Ang > 0:
                 ilabel += ' (%u%%)' % (self.frequency_per_traj(ctc_cutoff_Ang)[traj_idx] * 100)
 
-            plot_w_smoothing_auto(iax, itime * dt, ictc_traj * 10,
+            _mdcplots.plot_w_smoothing_auto(iax, itime * dt, ictc_traj * 10,
                                   ilabel,
                                   color_scheme[traj_idx],
                                   gray_background=gray_background,
@@ -1340,7 +1321,7 @@ class ContactPair(object):
         if ctc_cutoff_Ang > 0:
             iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
 
-        iax.set_xlabel('t / %s' % _replace4latex(t_unit))
+        iax.set_xlabel('t / %s' % _mdcu.str_and_dict.replace4latex(t_unit))
         iax.set_xlim([self.time_min*dt, self.time_max * dt])
         iax.set_ylim([0, iax.get_ylim()[1]])
 
@@ -1786,7 +1767,7 @@ class ContactGroup(object):
             freqs_dict[0]=2
 
         """
-        dict_sum = defaultdict(list)
+        dict_sum = _defdict(list)
         for (idx1, idx2), ifreq in zip(self.res_idxs_pairs,
                                        self.frequency_per_contact(ctc_cutoff_Ang)):
             dict_sum[idx1].append(ifreq)
@@ -1901,7 +1882,7 @@ class ContactGroup(object):
 
         """
         assert not any ([ilab[0] is None and ilab[1] is None for ilab in self.consensus_labels])
-        dict_out = defaultdict(dict)
+        dict_out = _defdict(dict)
         for (key1, key2), ifreq in zip(self.consensus_labels,
                                        self.frequency_per_contact(ctc_cutoff_Ang)):
             dict_out[key1][key2] = ifreq
@@ -2245,7 +2226,7 @@ class ContactGroup(object):
         if shorten_AAs:
             label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
-        _add_tilted_labels_to_patches(jax,
+        _mdcplots.add_tilted_labels_to_patches(jax,
                                       label_bars[:(jax.get_xlim()[1]).astype(int)+1],
                                       label_fontsize_factor=label_fontsize_factor
                                       )
@@ -2254,15 +2235,15 @@ class ContactGroup(object):
         title = "Contact frequency @%2.1f AA of '%s' " \
                 "(Sigma = %2.1f)\n" \
                 % (
-                    ctc_cutoff_Ang, _replace4latex(title_label),
+                    ctc_cutoff_Ang, _mdcu.str_and_dict.replace4latex(title_label),
                     sigma
                 )
         if total_freq is not None:
             title+="these %u most frequent contacts capture %4.2f %% of all contacts\n" % (self.n_ctcs,
                                                                                    sigma / total_freq * 100,
                                                                                            )
-        jax.set_title(_replace4latex(title),
-          pad=_rcParams["axes.titlepad"] + _titlepadding_in_points_no_clashes_w_texts(jax))
+        jax.set_title(_mdcu.str_and_dict.replace4latex(title),
+                      pad=_rcParams["axes.titlepad"] + _mdcplots.titlepadding_in_points_no_clashes_w_texts(jax))
 
         #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
@@ -2323,9 +2304,9 @@ class ContactGroup(object):
 
         jax.plot(_np.nan, _np.nan, 'o',
                  color=self.anchor_fragment_color,
-                 label=_replace4latex(label_dotref))
+                 label=_mdcu.str_and_dict.replace4latex(label_dotref))
 
-        _add_tilted_labels_to_patches(jax,
+        _mdcplots.add_tilted_labels_to_patches(jax,
                                       label_bars,
                                       label_fontsize_factor=label_fontsize_factor)
 
@@ -2337,7 +2318,7 @@ class ContactGroup(object):
         title_label = "Contact frequency @%2.1f $\AA$\n" \
                       "%u nearest bonded neighbors excluded" % (ctc_cutoff_Ang, n_nearest)
         jax.set_title(title_label,
-                      pad=_rcParams["axes.titlepad"]#+_titlepadding_in_points_no_clashes_w_texts(jax)
+                      pad=_rcParams["axes.titlepad"]#+titlepadding_in_points_no_clashes_w_texts(jax)
                       )
 
         jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
@@ -2436,7 +2417,7 @@ class ContactGroup(object):
             label_bars = self.partner_res_and_fragment_labels_short
 
         # Cosmetics
-        title_str = "distribution for %s"%_replace4latex(label_dotref)
+        title_str = "distribution for %s"%_mdcu.str_and_dict.replace4latex(label_dotref)
         if ctc_cutoff_Ang is not None:
             title_str += "\nclosest residues <= @%2.1f $\AA$"%(ctc_cutoff_Ang)
             jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
@@ -2591,7 +2572,7 @@ class ContactGroup(object):
         for n_ctcs_t, itime, traj_name in zip(self.n_ctcs_timetraces(ctc_cutoff_Ang),
                                               self.time_arrays,
                                               self.trajlabels):
-            plot_w_smoothing_auto(iax, itime*dt, n_ctcs_t,traj_name,next(icol),
+            _mdcplots.plot_w_smoothing_auto(iax, itime*dt, n_ctcs_t,traj_name,next(icol),
                                   gray_background=gray_background,
                                   n_smooth_hw=n_smooth_hw)
 
@@ -2687,12 +2668,12 @@ class ContactGroup(object):
         # Cosmetics
         jax.set_title(
             "Average nr. contacts @%2.1f $\AA$ \nper residue of '%s'"
-            % (ctc_cutoff_Ang, _replace4latex(title_str)))
+            % (ctc_cutoff_Ang, _mdcu.str_and_dict.replace4latex(title_str)))
 
         #TODO AFAIK this has been taken care of in the label-producing properties
         #label_bars = [ilab.replace("@None", "") for ilab in label_bars]
 
-        _add_tilted_labels_to_patches(jax,
+        _mdcplots.add_tilted_labels_to_patches(jax,
                                       label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
                                       label_fontsize_factor=label_fontsize_factor,
                                       trunc_y_labels_at=.65*_np.max(freqs)
@@ -2880,7 +2861,7 @@ class ContactGroup(object):
         else:
             raise ValueError(label_type)
 
-        iax, __ = _plot_contact_matrix(mat,labels,
+        iax, __ = _mdcplots.plot_contact_matrix(mat,labels,
                                        transpose=transpose,
                                        **plot_mat_kwargs,
                                        )
@@ -2939,12 +2920,12 @@ class ContactGroup(object):
         list_of_dicts with keys "header" and "data"
         """
 
-        if t_unit not in _tunit2tunit.keys():
-            raise ValueError("I don't know the time unit %s, only %s"%(t_unit, _tunit2tunit.keys()))
+        if t_unit not in _mdcu.str_and_dict.tunit2tunit.keys():
+            raise ValueError("I don't know the time unit %s, only %s" % (t_unit, _mdcu.str_and_dict.tunit2tunit.keys()))
         dicts = []
         for ii in range(self.n_trajs):
             labels = ['time / %s'%t_unit]
-            data = [self.time_arrays[ii] * _tunit2tunit["ps"][t_unit]]
+            data = [self.time_arrays[ii] * _mdcu.str_and_dict.tunit2tunit["ps"][t_unit]]
             for ictc in self._contacts:
                 labels.append('%s / Ang'%ictc.labels.w_fragments_short_AA)
                 data.append(ictc.time_traces.ctc_trajs[ii]*10)
@@ -2974,8 +2955,8 @@ class ContactGroup(object):
 
         """
 
-        if t_unit not in _tunit2tunit.keys():
-            raise ValueError("I don't know the time unit %s, only %s"%(t_unit, _tunit2tunit.keys()))
+        if t_unit not in _mdcu.str_and_dict.tunit2tunit.keys():
+            raise ValueError("I don't know the time unit %s, only %s" % (t_unit, _mdcu.str_and_dict.tunit2tunit.keys()))
 
         bintrajs = self.binarize_trajs(ctc_cutoff_Ang, order="traj")
         labels = ['time / %s' % t_unit]
@@ -2984,7 +2965,7 @@ class ContactGroup(object):
 
         dicts = []
         for ii in range(self.n_trajs):
-            data = [self.time_arrays[ii]*_tunit2tunit["ps"][t_unit]]+[bintrajs[ii].T.astype(int)]
+            data = [self.time_arrays[ii] * _mdcu.str_and_dict.tunit2tunit["ps"][t_unit]] + [bintrajs[ii].T.astype(int)]
             data= _np.vstack(data).T
             dicts.append({"header":labels,
                           "data":data
@@ -3114,7 +3095,7 @@ class GroupOfInterfaces(object):
                                            return_as_triplets=False,
                                            ):
         mat = self.interface_matrix(ctc_cutoff_Ang)
-        dict_out = defaultdict(dict)
+        dict_out = _defdict(dict)
         for ii, jj in _np.argwhere(mat > 0):
             key1, key2 = self.interface_labels_consensus[0][ii], self.interface_labels_consensus[1][jj]
             dict_out[key1][key2] = mat[ii, jj]
@@ -3149,7 +3130,7 @@ class GroupOfInterfaces(object):
             else:
                 idict = self.interfaces[fkey].frequency_sum_per_residue_names_dict(ctc_cutoff_Ang)
 
-            _freqs[fkey]={_replace_w_dict(key, replacement_dict):val for key, val in idict.items()}
+            _freqs[fkey]={replace_w_dict(key, replacement_dict):val for key, val in idict.items()}
 
         freqs =  unify_freq_dicts(_freqs)
         plot_unified_freq_dicts(freqs, colordict, **plot_unified_freq_dicts_kwargs)
@@ -3236,7 +3217,7 @@ class GroupOfInterfaces(object):
         assert interface_idx==0,NotImplementedError(interface_idx)
 
         long2short = lambda istr: ['@'.join(ival.split('@')[:2]) for ival in istr.split("_") if ival != 'None'][0]
-        orphan_residues_by_short_label = defaultdict(dict)
+        orphan_residues_by_short_label = _defdict(dict)
         for pdb, iint in self.interfaces.items():
             iint._orphaned_residues_new_label = {}
             for AA in iint.interface_orphaned_labels[interface_idx]:
@@ -3281,206 +3262,8 @@ def _sum_ctc_freqs_by_atom_type(atom_pairs, counts):
     count_dict : dictionary
 
     """
-    atom_pairs = ['-'.join([_atom_type(aa) for aa in pair]) for pair in atom_pairs]
+    atom_pairs = ['-'.join([_mdcu.residue_and_atom.atom_type(aa) for aa in pair]) for pair in atom_pairs]
     dict_out = {key: 0 for key in atom_pairs}
     for key, count in zip(atom_pairs, counts):
         dict_out[key] += count
     return dict_out
-
-# todo check that mdtraj's license allows for this
-from mdtraj.utils import ensure_type
-import itertools
-from mdtraj.utils.six import string_types
-from mdtraj.utils.six.moves import xrange
-from mdtraj.core import element
-def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonprotein=True, periodic=True,
-                     soft_min=False, soft_min_beta=20):
-    """Compute the distance between pairs of residues in a trajectory.
-
-    Parameters
-    ----------
-    traj : md.Trajectory
-        An mdtraj trajectory. It must contain topology information.
-    contacts : array-like, ndim=2 or 'all'
-        An array containing pairs of indices (0-indexed) of residues to
-        compute the contacts between, or 'all'. The string 'all' will
-        select all pairs of residues separated by two or more residues
-        (i.e. the i to i+1 and i to i+2 pairs will be excluded).
-    scheme : {'ca', 'closest', 'closest-heavy', 'sidechain', 'sidechain-heavy'}
-        scheme to determine the distance between two residues:
-            'ca' : distance between two residues is given by the distance
-                between their alpha carbons
-            'closest' : distance is the closest distance between any
-                two atoms in the residues
-            'closest-heavy' : distance is the closest distance between
-                any two non-hydrogen atoms in the residues
-            'sidechain' : distance is the closest distance between any
-                two atoms in residue sidechains
-            'sidechain-heavy' : distance is the closest distance between
-                any two non-hydrogen atoms in residue sidechains
-    ignore_nonprotein : bool
-        When using `contact==all`, don't compute contacts between
-        "residues" which are not protein (i.e. do not contain an alpha
-        carbon).
-    periodic : bool, default=True
-        If periodic is True and the trajectory contains unitcell information,
-        we will compute distances under the minimum image convention.
-    soft_min : bool, default=False
-        If soft_min is true, we will use a diffrentiable version of
-        the scheme. The exact expression used
-         is d = \frac{\beta}{log\sum_i{exp(\frac{\beta}{d_i}})} where
-         beta is user parameter which defaults to 20nm. The expression
-         we use is copied from the plumed mindist calculator.
-         http://plumed.github.io/doc-v2.0/user-doc/html/mindist.html
-    soft_min_beta : float, default=20nm
-        The value of beta to use for the soft_min distance option.
-        Very large values might cause small contact distances to go to 0.
-
-    Returns
-    -------
-    distances : np.ndarray, shape=(n_frames, n_pairs), dtype=np.float32
-        Distances for each residue-residue contact in each frame
-        of the trajectory
-    residue_pairs : np.ndarray, shape=(n_pairs, 2), dtype=int
-        Each row of this return value gives the indices of the residues
-        involved in the contact. This argument mirrors the `contacts` input
-        parameter. When `all` is specified as input, this return value
-        gives the actual residue pairs resolved from `all`. Furthermore,
-        when scheme=='ca', any contact pair supplied as input corresponding
-        to a residue without an alpha carbon (e.g. HOH) is ignored from the
-        input contacts list, meanings that the indexing of the
-        output `distances` may not match up with the indexing of the input
-        `contacts`. But the indexing of `distances` *will* match up with
-        the indexing of `residue_pairs`
-
-    Examples
-    --------
-    >>> # To compute the contact distance between residue 0 and 10 and
-    >>> # residues 0 and 11
-    >>> _md.compute_contacts(t, [[0, 10], [0, 11]])
-
-    >>> # the itertools library can be useful to generate the arrays of indices
-    >>> group_1 = [0, 1, 2]
-    >>> group_2 = [10, 11]
-    >>> pairs = list(itertools.product(group_1, group_2))
-    >>> print(pairs)
-    [(0, 10), (0, 11), (1, 10), (1, 11), (2, 10), (2, 11)]
-    >>> _md.compute_contacts(t, pairs)
-
-    See Also
-    --------
-    mdtraj.geometry.squareform : turn the result from this function
-        into a square "contact map"
-    Topology.residue : Get residues from the topology by index
-    """
-    if traj.topology is None:
-        raise ValueError('contact calculation requires a topology')
-
-    if isinstance(contacts, string_types):
-        if contacts.lower() != 'all':
-            raise ValueError('(%s) is not a valid contacts specifier' % contacts.lower())
-
-        residue_pairs = []
-        for i in xrange(traj.n_residues):
-            residue_i = traj.topology.residue(i)
-            if ignore_nonprotein and not any(a for a in residue_i.atoms if a.name.lower() == 'ca'):
-                continue
-            for j in xrange(i+3, traj.n_residues):
-                residue_j = traj.topology.residue(j)
-                if ignore_nonprotein and not any(a for a in residue_j.atoms if a.name.lower() == 'ca'):
-                    continue
-                if residue_i.chain == residue_j.chain:
-                    residue_pairs.append((i, j))
-
-        residue_pairs = _np.array(residue_pairs)
-        if len(residue_pairs) == 0:
-            raise ValueError('No acceptable residue pairs found')
-
-    else:
-        residue_pairs = ensure_type(_np.asarray(contacts), dtype=_np.int, ndim=2, name='contacts',
-                                    shape=(None, 2), warn_on_cast=False)
-        if not _np.all((residue_pairs >= 0) * (residue_pairs < traj.n_residues)):
-            raise ValueError('contacts requests a residue that is not in the permitted range')
-
-    # now the bulk of the function. This will calculate atom distances and then
-    # re-work them in the required scheme to get residue distances
-    scheme = scheme.lower()
-    if scheme not in ['ca', 'closest', 'closest-heavy', 'sidechain', 'sidechain-heavy']:
-        raise ValueError('scheme must be one of [ca, closest, closest-heavy, sidechain, sidechain-heavy]')
-
-    if scheme == 'ca':
-        if soft_min:
-            import warnings
-            warnings.warn("The soft_min=True option with scheme=ca gives"
-                          "the same results as soft_min=False")
-        filtered_residue_pairs = []
-        atom_pairs = []
-
-        for r0, r1 in residue_pairs:
-            ca_atoms_0 = [a.index for a in traj.top.residue(r0).atoms if a.name.lower() == 'ca']
-            ca_atoms_1 = [a.index for a in traj.top.residue(r1).atoms if a.name.lower() == 'ca']
-            if len(ca_atoms_0) == 1 and len(ca_atoms_1) == 1:
-                atom_pairs.append((ca_atoms_0[0], ca_atoms_1[0]))
-                filtered_residue_pairs.append((r0, r1))
-            elif len(ca_atoms_0) == 0 or len(ca_atoms_1) == 0:
-                # residue does not contain a CA atom, skip it
-                if contacts != 'all':
-                    # if the user manually asked for this residue, and didn't use "all"
-                    import warnings
-                    warnings.warn('Ignoring contacts pair %d-%d. No alpha carbon.' % (r0, r1))
-            else:
-                raise ValueError('More than 1 alpha carbon detected in residue %d or %d' % (r0, r1))
-
-        residue_pairs = _np.array(filtered_residue_pairs)
-        distances = _md.compute_distances(traj, atom_pairs, periodic=periodic)
-        aa_pairs = atom_pairs
-
-    elif scheme in ['closest', 'closest-heavy', 'sidechain', 'sidechain-heavy']:
-        if scheme == 'closest':
-            residue_membership = [[atom.index for atom in residue.atoms]
-                                  for residue in traj.topology.residues]
-        elif scheme == 'closest-heavy':
-            # then remove the hydrogens from the above list
-            residue_membership = [[atom.index for atom in residue.atoms if not (atom.element == element.hydrogen)]
-                                  for residue in traj.topology.residues]
-        elif scheme == 'sidechain':
-            residue_membership = [[atom.index for atom in residue.atoms if atom.is_sidechain]
-                                  for residue in traj.topology.residues]
-        elif scheme == 'sidechain-heavy':
-            # then remove the hydrogens from the above list
-            residue_membership = [[atom.index for atom in residue.atoms if atom.is_sidechain and not (atom.element == element.hydrogen)]
-                                  for residue in traj.topology.residues]
-
-        residue_lens = [len(ainds) for ainds in residue_membership]
-
-        atom_pairs = []
-        n_atom_pairs_per_residue_pair = []
-        for pair in residue_pairs:
-            atom_pairs.extend(list(itertools.product(residue_membership[pair[0]], residue_membership[pair[1]])))
-            n_atom_pairs_per_residue_pair.append(residue_lens[pair[0]] * residue_lens[pair[1]])
-
-        atom_distances = _md.compute_distances(traj, atom_pairs, periodic=periodic)
-
-        # now squash the results based on residue membership
-        n_residue_pairs = len(residue_pairs)
-        distances = _np.zeros((len(traj), n_residue_pairs), dtype=_np.float32)
-        n_atom_pairs_per_residue_pair = _np.asarray(n_atom_pairs_per_residue_pair)
-
-        aa_pairs = []
-        for i in xrange(n_residue_pairs):
-            index = int(_np.sum(n_atom_pairs_per_residue_pair[:i]))
-            n = n_atom_pairs_per_residue_pair[i]
-            if not soft_min:
-                idx_min = atom_distances[:, index : index + n].argmin(axis=1)
-                aa_pairs.append(_np.array(atom_pairs[index: index + n])[idx_min])
-                # TODO do not call the min function again here, call idx_min
-                distances[:, i] = atom_distances[:, index : index + n].min(axis=1)
-            else:
-                distances[:, i] = soft_min_beta / \
-                                  _np.log(_np.sum(_np.exp(soft_min_beta /
-                                                       atom_distances[:, index : index + n]), axis=1))
-
-    else:
-        raise ValueError('This is not supposed to happen!')
-
-    return distances, residue_pairs, _np.hstack(aa_pairs)

@@ -40,9 +40,9 @@ def top2seq(top, replacement_letter="X"):
 
     return ''.join([str(rr.code).replace("None",replacement_letter) for rr in top.residues])
 
-def _my_bioalign(seq1,seq2,
-                 method="globalxs",
-                 argstuple=(-1,0)):
+def my_bioalign(seq1, seq2,
+                method="globalxs",
+                argstuple=(-1,0)):
     r"""
     Align two sequences using a method of :obj:`Bioalign`
 
@@ -115,7 +115,7 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
     Parameters
     ----------
     ialg: list
-        list with four entries, see obj:`_my_bioalign`
+        list with four entries, see obj:`my_bioalign`
         and https://biopython.org/DIST/docs/api/Bio.pairwise2-module.html
         for more info
     topology_0: :obj:`mdtraj.Topology` object
@@ -201,7 +201,7 @@ def _align_tops(top0, top1, substitutions=None,
     Provided two :obj:`mdtraj.Topology` objects,
     return their alignment as a :obj:`pandas.DataFrame`.
 
-    Relevant methods used under the hood are :obj:`_my_bioalign` and
+    Relevant methods used under the hood are :obj:`my_bioalign` and
     :obj:`alignment_result_to_list_of_dicts`
 
     Parameters
@@ -240,7 +240,7 @@ def _align_tops(top0, top1, substitutions=None,
     top0_seq = "".join([top0_seq[ii] for ii in seq_0_res_idxs])
     top1_seq = "".join([top1_seq[ii] for ii in seq_1_res_idxs])
 
-    align_list = alignment_result_to_list_of_dicts(_my_bioalign(top0_seq, top1_seq)[0],
+    align_list = alignment_result_to_list_of_dicts(my_bioalign(top0_seq, top1_seq)[0],
                                                    top0,
                                                    seq_0_res_idxs=seq_0_res_idxs,
                                                    seq_1_res_idxs=seq_1_res_idxs,
@@ -313,7 +313,7 @@ def residx_in_seq_by_alignment(ridx1, top1,
 
     top1_seq = ''.join([top1_seq[ii] for ii in subset_1])
     ires = alignment_result_to_list_of_dicts(
-        _my_bioalign(top1_seq, top2_seq)[0],
+        my_bioalign(top1_seq, top2_seq)[0],
         top1, subset_1,
         _np.arange(top2.n_residues),
         )

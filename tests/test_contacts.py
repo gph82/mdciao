@@ -1,3 +1,18 @@
+# Note: I am testing a bunch of private methods here, and
+# that is not best practice, see:
+# https://softwareengineering.stackexchange.com/questions/380287/why-is-unit-testing-private-methods-considered-as-bad-practice
+# https://softwareengineering.stackexchange.com/questions/375860/how-to-avoid-the-need-to-unit-test-private-methods
+# https://stackoverflow.com/questions/105007/should-i-test-private-methods-or-only-public-ones/47401015#47401015
+# ATM the "best practice" is to get the code tested and re-design when the API is more stable
+from mdciao.contacts.contacts import \
+    _sum_ctc_freqs_by_atom_type, \
+    _NeighborhoodNames, \
+    _NumberOfthings, \
+    _Residues, \
+    _ContactStrings, \
+    _TimeTraces, \
+    _Fragments
+
 import mdtraj as md
 import unittest
 from unittest.mock import Mock
@@ -9,11 +24,14 @@ from mdciao.filenames import filenames
 import pytest
 from mdciao import contacts
 
+
 from mdciao.fragments import get_fragments, per_residue_fragment_picker
 
 from matplotlib import pyplot as _plt
 
 from tempfile import TemporaryDirectory as _TDir
+
+import mdciao.utils.COM as mdcCOM
 
 test_filenames = filenames()
 
@@ -72,7 +90,7 @@ class Test_per_traj_ctc(TestBaseClassContacts):
         _np.testing.assert_allclose(iatoms, self.my_idxs)
 
     def test_scheme_COM(self):
-        test_COM = contacts.geom2COMdist(self.traj[:10], residue_pairs=self.ctc_idxs)
+        test_COM = mdcCOM.geom2COMdist(self.traj[:10], residue_pairs=self.ctc_idxs)
         ctcs, times, iatoms = contacts.per_traj_ctc(self.top, self.traj[:10], self.ctc_idxs, 1000, 1, 0, scheme="COM")
         # Im using my own routine here bc we're not testing that it gets it right (which is tested in test_geomcomdist
         # I am just testing that it wraps the method correctly
@@ -140,7 +158,7 @@ class BaseClassForTestingAttributes(unittest.TestCase):
 class TestTimeTraces(BaseClassForTestingAttributes):
 
     def test_works(self):
-        cott = contacts._TimeTraces(self.ctc_trajs, [self.trajs[0].time,
+        cott = _TimeTraces(self.ctc_trajs, [self.trajs[0].time,
                                                      self.trajs[1].time],
                                     self.trajs, self.atom_pair_trajs)
         [_np.testing.assert_allclose(itraj, jtraj) for itraj, jtraj in zip(cott.ctc_trajs, self.ctc_trajs)]
@@ -153,12 +171,12 @@ class TestTimeTraces(BaseClassForTestingAttributes):
 
     def test_fails_because_wrong_atom_trajs(self):
         with pytest.raises(AssertionError):
-            contacts._TimeTraces(self.ctc_trajs, [self.trajs[0].time,
+            _TimeTraces(self.ctc_trajs, [self.trajs[0].time,
                                                   self.trajs[1].time],
                                  self.trajs, [[[0, 1]], [0, 1]])
 
         with pytest.raises(AssertionError):
-            contacts._TimeTraces(self.ctc_trajs, [self.trajs[0].time,
+            _TimeTraces(self.ctc_trajs, [self.trajs[0].time,
                                                   self.trajs[1].time],
                                  self.trajs, [[[0, 1, 1]], [0, 1]])
 
@@ -166,7 +184,7 @@ class TestTimeTraces(BaseClassForTestingAttributes):
 class TestNumberOfThings(BaseClassForTestingAttributes):
 
     def test_works(self):
-        cont = contacts._NumberOfthings(len(self.ctc_trajs),
+        cont = _NumberOfthings(len(self.ctc_trajs),
                                         [len(itraj) for itraj in self.ctc_trajs]
                                         )
         _np.testing.assert_equal(len(self.ctc_trajs), cont.n_trajs)
@@ -177,7 +195,7 @@ class TestNumberOfThings(BaseClassForTestingAttributes):
 class TestResidues(unittest.TestCase):
 
     def test_just_works(self):
-        cors = contacts.contacts._Residues([0, 1], ["GLU25", "ALA35"])
+        cors = _Residues([0, 1], ["GLU25", "ALA35"])
 
         _np.testing.assert_allclose([0, 1], cors.idxs_pair)
         assert cors.names[0] == "GLU25" and cors.names[1] == "ALA35"
@@ -192,7 +210,7 @@ class TestResidues(unittest.TestCase):
         _np.testing.assert_equal(None, cors.partner_residue_index)
 
     def test_anchor_and_partner(self):
-        cors = contacts._Residues([10, 20],
+        cors = _Residues([10, 20],
                                   ["GLU25", "ALA35"],
                                   anchor_residue_idx=10
                                   )
@@ -205,7 +223,7 @@ class TestResidues(unittest.TestCase):
 
     def test_anchor_and_partner_top(self):
         top = md.load(test_filenames.top_pdb).top
-        cors = contacts._Residues([10, 20],
+        cors = _Residues([10, 20],
                                   ["GLU25", "ALA35"],
                                   anchor_residue_idx=10,
                                   top=top
@@ -220,7 +238,7 @@ class TestResidues(unittest.TestCase):
         assert top.residue(20) is cors.partner_residue
 
     def test_names(self):
-        cors = contacts._Residues([10, 20],
+        cors = _Residues([10, 20],
                                   ["GLU25", "ALA35"]
                                   )
         assert cors.names[0] == "GLU25"
@@ -230,7 +248,7 @@ class TestResidues(unittest.TestCase):
         assert cors.names_short[1] == "A35"
 
     def test_consensus_labels(self):
-        cors = contacts._Residues([10, 20],
+        cors = _Residues([10, 20],
                                   ["GLU25", "ALA35"],
                                   consensus_labels=["3.50", "4.50"])
         assert cors.consensus_labels[0] == "3.50"
@@ -240,13 +258,13 @@ class TestResidues(unittest.TestCase):
 class TestFragments(unittest.TestCase):
 
     def test_just_works_empty(self):
-        cof = contacts._Fragments()
+        cof = _Fragments()
         assert cof.idxs is None
         assert cof.colors[0] is cof.colors[1] is None
         assert cof.names[0] is cof.names[1] is None
 
     def test_works(self):
-        cof = contacts._Fragments(fragment_idxs=[0, 1],
+        cof = _Fragments(fragment_idxs=[0, 1],
                                   fragment_colors=["r", "b"],
                                   fragment_names=["fragA", "fragB"])
         _np.testing.assert_allclose([0, 1], cof.idxs)
@@ -255,13 +273,13 @@ class TestFragments(unittest.TestCase):
         assert cof.names[0] == "fragA" and cof.names[1] == "fragB"
 
     def test_auto_fragnaming(self):
-        cof = contacts._Fragments(fragment_idxs=[0, 1],
+        cof = _Fragments(fragment_idxs=[0, 1],
                                   )
 
         assert cof.names[0] == str(0) and cof.names[1] == str(1)
 
     def test_anchor_and_partner(self):
-        cors = contacts._Residues([10, 20],
+        cors = _Residues([10, 20],
                                   [None, None],
                                   anchor_residue_idx=10
                                   )
@@ -274,7 +292,7 @@ class TestFragments(unittest.TestCase):
 
     def test_anchor_and_partner_top(self):
         top = md.load(test_filenames.top_pdb).top
-        cors = contacts._Residues([10, 20],
+        cors = _Residues([10, 20],
                                   [None, None],
                                   anchor_residue_idx=10,
                                   top=top
@@ -289,7 +307,7 @@ class TestFragments(unittest.TestCase):
         assert top.residue(20) is cors.partner_residue
 
     def test_names(self):
-        cors = contacts._Residues([10, 20],
+        cors = _Residues([10, 20],
                                   ["GLU25", "ALA35"]
                                   )
         self.assertEquals(cors.names[0],"GLU25")
@@ -302,12 +320,12 @@ class TestFragments(unittest.TestCase):
 class TestNeighborhoodNames(unittest.TestCase):
 
     def test_works(self):
-        cnns = contacts._NeighborhoodNames(
-            contacts._Residues([10, 20],
+        cnns = _NeighborhoodNames(
+            _Residues([10, 20],
                                ["GLU25", "ALA35"],
                                anchor_residue_idx=20
                                ),
-            contacts._Fragments([0, 1],
+            _Fragments([0, 1],
                                 ["fragA", "fragB"],
                                 ["r", "b"]
                                 )
@@ -318,32 +336,32 @@ class TestNeighborhoodNames(unittest.TestCase):
 
     def test_raises(self):
         with pytest.raises(AssertionError):
-            contacts._NeighborhoodNames(contacts._Residues([10, 20], ["GLU25", "ALA35"]),
-                                        contacts._Fragments([0, 1],
+            _NeighborhoodNames(_Residues([10, 20], ["GLU25", "ALA35"]),
+                                        _Fragments([0, 1],
                                                             ["fragA", "fragB"],
                                                             ["r", "b"]
                                                             ))
 
     def test_fragments_consensus_name_None(self):
-        cnns = contacts._NeighborhoodNames(
-            contacts._Residues([10, 20],
+        cnns = _NeighborhoodNames(
+            _Residues([10, 20],
                                ["GLU25", "ALA35"],
                                anchor_residue_idx=20
                                ),
-            contacts._Fragments([0, 1],
+            _Fragments([0, 1],
                                 )
         )
         assert cnns.partner_fragment_consensus is None
         assert cnns.anchor_fragment_consensus is None
 
     def test_fragments_consensus_name(self):
-        cnns = contacts._NeighborhoodNames(
-            contacts._Residues([10, 20],
+        cnns = _NeighborhoodNames(
+            _Residues([10, 20],
                                ["GLU25", "ALA35"],
                                anchor_residue_idx=20,
                                consensus_labels=["3.50", "4.50"]
                                ),
-            contacts._Fragments([0, 1],
+            _Fragments([0, 1],
                                 ["fragA", "fragB"],
                                 )
         )
@@ -351,12 +369,12 @@ class TestNeighborhoodNames(unittest.TestCase):
         assert cnns.anchor_fragment_consensus == "4.50"
 
     def test_fragments_names_best_no_consensus(self):
-        cnns = contacts._NeighborhoodNames(
-            contacts._Residues([10, 20],
+        cnns = _NeighborhoodNames(
+            _Residues([10, 20],
                                ["GLU25", "ALA35"],
                                anchor_residue_idx=20
                                ),
-            contacts._Fragments([0, 1],
+            _Fragments([0, 1],
                                 fragment_names=["fragA", "fragB"]
                                 )
         )
@@ -364,13 +382,13 @@ class TestNeighborhoodNames(unittest.TestCase):
         assert cnns.anchor_fragment_best == "fragB"
 
     def test_fragments_names_best_w_consensus(self):
-        cnns = contacts._NeighborhoodNames(
-            contacts._Residues([10, 20],
+        cnns = _NeighborhoodNames(
+            _Residues([10, 20],
                                ["GLU25", "ALA35"],
                                anchor_residue_idx=20,
                                consensus_labels=["3.50", "4.50"]
                                ),
-            contacts._Fragments([0, 1],
+            _Fragments([0, 1],
                                 fragment_names=["fragA", "fragB"]
                                 )
         )
@@ -378,13 +396,13 @@ class TestNeighborhoodNames(unittest.TestCase):
         assert cnns.anchor_fragment_best == "4.50"
 
     def test_res_and_fragment_strs_no_consensus(self):
-        cnns = contacts._NeighborhoodNames(
-            contacts._Residues([10, 20],
+        cnns = _NeighborhoodNames(
+            _Residues([10, 20],
                                ["GLU25", "ALA35"],
                                anchor_residue_idx=20,
                                # consensus_labels=["3.50","4.50"]
                                ),
-            contacts._Fragments([0, 1],
+            _Fragments([0, 1],
                                 fragment_names=["fragA", "fragB"]
                                 )
         )
@@ -395,13 +413,13 @@ class TestNeighborhoodNames(unittest.TestCase):
         assert cnns.partner_res_and_fragment_str_short == "E25@fragA"
 
     def test_res_and_fragment_strs_w_consensus(self):
-        cnns = contacts._NeighborhoodNames(
-            contacts._Residues([10, 20],
+        cnns = _NeighborhoodNames(
+            _Residues([10, 20],
                                ["GLU25", "ALA35"],
                                anchor_residue_idx=20,
                                consensus_labels=["3.50", "4.50"]
                                ),
-            contacts._Fragments([0, 1],
+            _Fragments([0, 1],
                                 fragment_names=["fragA", "fragB"]
                                 )
         )
@@ -415,8 +433,8 @@ class TestNeighborhoodNames(unittest.TestCase):
 class TestContactStrings(unittest.TestCase):
 
     def test_trajlabels_no_trajs(self):
-        cls = contacts._ContactStrings(2,
-                                       contacts._Residues([10, 20], ["GLU25", "ALA35"])
+        cls = _ContactStrings(2,
+                                       _Residues([10, 20], ["GLU25", "ALA35"])
                                        )
 
         assert cls.trajstrs[0] == "traj 0" and cls.trajstrs[1] == "traj 1", cls.trajstrs
@@ -425,48 +443,48 @@ class TestContactStrings(unittest.TestCase):
         mdtrajs = md.load(test_filenames.traj_xtc,
                           top=test_filenames.top_pdb)[:5]
         mdtrajs = [mdtrajs, mdtrajs]
-        cls = contacts._ContactStrings(2,
-                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+        cls = _ContactStrings(2,
+                                       _Residues([10, 20], ["GLU25", "ALA35"]),
                                        trajs=mdtrajs
                                        )
 
         assert cls.trajstrs[0] == "mdtraj.00" and cls.trajstrs[1] == "mdtraj.01", cls.trajstrs
 
     def test_trajlabels_wo_mdtrajs(self):
-        cls = contacts._ContactStrings(2,
-                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+        cls = _ContactStrings(2,
+                                       _Residues([10, 20], ["GLU25", "ALA35"]),
                                        trajs=["file0.xtc", "file1.xtc"]
                                        )
 
         assert cls.trajstrs[0] == "file0" and cls.trajstrs[1] == "file1", cls.trajstrs
 
     def test_ctc_labels(self):
-        cls = contacts._ContactStrings(2,
-                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
-                                       contacts._Fragments(fragment_names=["fragA", "fragB"])
+        cls = _ContactStrings(2,
+                                       _Residues([10, 20], ["GLU25", "ALA35"]),
+                                       _Fragments(fragment_names=["fragA", "fragB"])
                                        )
         assert cls.w_fragments == "GLU25@fragA-ALA35@fragB", cls.w_fragments
         assert cls.w_fragments_short_AA == "E25@fragA-A35@fragB", cls.w_fragments_short_AA
 
     def test_ctc_label_nocontacts_Fragments(self):
-        cls = contacts._ContactStrings(2,
-                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+        cls = _ContactStrings(2,
+                                       _Residues([10, 20], ["GLU25", "ALA35"]),
                                        )
 
         assert cls.no_fragments == "GLU25-ALA35", cls.no_fragments
         assert cls.no_fragments_short_AA == "E25-A35"
 
     def test_ctc_label_missing_frags_and_consensus(self):
-        cls = contacts._ContactStrings(2,
-                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+        cls = _ContactStrings(2,
+                                       _Residues([10, 20], ["GLU25", "ALA35"]),
                                        )
 
         assert cls.w_fragments == "GLU25-ALA35", cls.ctc_label_w_fragment
         assert cls.w_fragments_short_AA == "E25-A35", cls.w_fragments_short_AA
 
     def test_just_prints(self):
-        cls = contacts._ContactStrings(2,
-                                       contacts._Residues([10, 20], ["GLU25", "ALA35"]),
+        cls = _ContactStrings(2,
+                                       _Residues([10, 20], ["GLU25", "ALA35"]),
                                        )
         print(cls)
 
@@ -751,7 +769,7 @@ class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
             atom_pairs.append(trip[:2])
             counts.append(trip[2])
 
-        dict_out = contacts._sum_ctc_freqs_by_atom_type(atom_pairs, counts)
+        dict_out = _sum_ctc_freqs_by_atom_type(atom_pairs, counts)
 
         assert dict_out["BB-BB"] == 9
         assert dict_out["BB-SC"] == 30

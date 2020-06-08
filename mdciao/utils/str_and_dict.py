@@ -7,11 +7,11 @@ from pandas import read_excel as _read_excel
 from os import path as _path
 import re as _re
 
-_tunit2tunit = {"ps":  {"ps": 1,   "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
+tunit2tunit = {"ps":  {"ps": 1, "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
                 "mus": {"ps": 1e6, "ns": 1e3,  "mus": 1,    "ms":1e-3},
                 "ms":  {"ps": 1e9, "ns": 1e6,  "mus": 1e3,  "ms":1},
-                }
+               }
 
 def get_sorted_trajectories(trajectories):
     r"""
@@ -49,7 +49,7 @@ def get_sorted_trajectories(trajectories):
 
     return xtcs
 
-def _inform_about_trajectories(trajectories):
+def inform_about_trajectories(trajectories):
     r"""
 
     Parameters
@@ -64,7 +64,7 @@ def _inform_about_trajectories(trajectories):
     assert isinstance(trajectories, list), "input has to be a list"
     return "\n".join([str(itraj) for itraj in trajectories])
 
-def _replace_w_dict(input_str, exp_rep_dict):
+def replace_w_dict(input_str, exp_rep_dict):
     r"""
     Sequentially perform string replacements on a string using a dictionary
 
@@ -84,7 +84,7 @@ def _replace_w_dict(input_str, exp_rep_dict):
         input_str = input_str.replace(pat, exp)
     return input_str
 
-def _delete_exp_in_keys(idict, exp, sep="-"):
+def delete_exp_in_keys(idict, exp, sep="-"):
     r"""
     Assuming the keys in the dictionary are formed by two segments
     joined by a separator, e.g. "GLU30-ARG40", deletes the segment
@@ -178,7 +178,7 @@ def unify_freq_dicts(freqs,
 
     # Implement replacements
     if replacement_dict is not None:
-        freqs_work = {key:{_replace_w_dict(key2, replacement_dict):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
+        freqs_work = {key:{replace_w_dict(key2, replacement_dict):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
 
     if defrag is not None:
         freqs_work = {key:{_defrag_key(key2, defrag):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
@@ -321,7 +321,7 @@ def _find_latex_chunks(istr, blockers=['$$','\$']):
     ranges = [_np.arange(ii,jj+1) for ii,jj in _np.reshape(matches,(-1,2))]
     return ranges
 
-def _replace4latex(istr):
+def replace4latex(istr):
     r"""
     One of two things:
         Prepares the input for latex rendering (in matplotlib, e.g.)

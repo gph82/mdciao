@@ -9,6 +9,16 @@ from shutil import copy
 
 import pytest
 from mdciao import nomenclature
+# It's a sign of bad design to have to import these private methods here
+# for testing, they should be tested by the methods using them or
+# made public
+# When API design is more stable will TODO
+from mdciao.nomenclature.nomenclature import \
+    _CGN_fragments, \
+    _BW_web_lookup, \
+    _fill_consensus_gaps, \
+    _map2defs,\
+    _top2consensus_map
 #TODO make these imports cleaner
 from mdciao.filenames import filenames
 
@@ -155,12 +165,12 @@ class Test_CGN_finder(unittest.TestCase):
 class Test_GPCRmd_lookup_BW(unittest.TestCase):
 
     def test_works(self):
-        DF = nomenclature._BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
+        DF = _BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
         assert isinstance(DF, DataFrame)
 
     def test_wrong_code(self):
         with pytest.raises(ValueError):
-            raise nomenclature._BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
+            raise _BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
 
 class Test_BW_finder(unittest.TestCase):
 
@@ -322,7 +332,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         assert all([len(ii)>0 for ii in self.cgn_local.fragments.values()])
         self.assertEqual(self.cgn_local.fragments["G.HN"][0],"T9")
         self.assertSequenceEqual(list(self.cgn_local.fragments.keys()),
-                                 nomenclature._CGN_fragments)
+                                 _CGN_fragments)
 
     def test_correct_fragments_as_conlabs_dict(self):
         # Test "fragments_as_conslabs" dictionary SMH
@@ -330,7 +340,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         assert all([len(ii) > 0 for ii in self.cgn_local.fragments_as_conlabs.values()])
         self.assertEqual(self.cgn_local.fragments_as_conlabs["G.HN"][0], "G.HN.26")
         self.assertSequenceEqual(list(self.cgn_local.fragments_as_conlabs.keys()),
-                                 nomenclature._CGN_fragments)
+                                 _CGN_fragments)
 
     def test_correct_fragment_names(self):
         self.assertSequenceEqual(self.cgn_local.fragment_names,
@@ -364,7 +374,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     def test_top2defs_returns_all_keys(self):
         defs = self.cgn_local.top2defs(self.cgn_local.top, return_defs=True)
         self.assertSequenceEqual(list(defs.keys()),
-                                 nomenclature._CGN_fragments)
+                                 _CGN_fragments)
 
     def test_top2defs_defs_are_broken_in_frags(self):
 
@@ -378,7 +388,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
                                                       ]
                                            )
             self.assertSequenceEqual(list(defs.keys()),
-                                     nomenclature._CGN_fragments)
+                                     _CGN_fragments)
             _np.testing.assert_array_equal(defs["G.HN"],_np.arange(0,15))
 
     def test_top2defs_defs_are_broken_in_frags_bad_input(self):
@@ -476,24 +486,24 @@ class TestLabelerBW_local(unittest.TestCase):
 class Test_choose_between_consensus_dicts(unittest.TestCase):
 
     def test_works(self):
-        str = nomenclature._choose_between_consensus_dicts(1,
-                                                           [{1:"BW1"},
+        str = nomenclature.choose_between_consensus_dicts(1,
+                                             [{1:"BW1"},
                                                                   {1:None}])
         assert str=="BW1"
 
     def test_not_found(self):
-        str = nomenclature._choose_between_consensus_dicts(1,
-                                                           [{1: None},
+        str = nomenclature.choose_between_consensus_dicts(1,
+                                             [{1: None},
                                                                   {1: None}],
-                                                           no_key="NAtest")
+                                             no_key="NAtest")
         assert str == "NAtest"
 
     def test_raises(self):
         with pytest.raises(AssertionError):
-            nomenclature._choose_between_consensus_dicts(1,
-                                                         [{1: "BW1"},
+            nomenclature.choose_between_consensus_dicts(1,
+                                           [{1: "BW1"},
                                                                 {1: "CGN1"}],
-                                                         )
+                                           )
 
 
 @unittest.skip("The tested method appears to be unused")
@@ -558,14 +568,14 @@ class Test_map2defs(unittest.TestCase):
 
 
     def test_works(self):
-        map2defs = nomenclature._map2defs(self.cons_list)
+        map2defs = _map2defs(self.cons_list)
         assert _np.array_equal(map2defs['3'], [0])
         assert _np.array_equal(map2defs['G.H5'], [1, 2])
         assert _np.array_equal(map2defs['5'], [3])
         _np.testing.assert_equal(len(map2defs),3)
 
     def test_works_w_Nones(self):
-        map2defs = nomenclature._map2defs(self.cons_list_w_Nones)
+        map2defs = _map2defs(self.cons_list_w_Nones)
         assert _np.array_equal(map2defs['3'], [0])
         assert _np.array_equal(map2defs['G.H5'], [3,4])
         assert _np.array_equal(map2defs['5'], [5])
@@ -573,7 +583,7 @@ class Test_map2defs(unittest.TestCase):
 
     def test_works_wo_dot_raises(self):
         with pytest.raises(AssertionError):
-            nomenclature._map2defs(self.cons_list_wo_dots)
+            _map2defs(self.cons_list_wo_dots)
 
 class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
 
@@ -585,13 +595,13 @@ class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
         self.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
 
     def test_top2consensus_map_just_works(self): #generally works
-        cons_list = nomenclature._top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
+        cons_list = _top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
                                                     top=self.top_3SN6)
 
         self.assertEqual(cons_list[:5], self.cons_list_test)
 
     def test_top2consensus_map_keep_consensus_is_true(self):
-        cons_list = nomenclature._top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
+        cons_list = _top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
                                                     top=self.top_mut,
                                                     keep_consensus=True)
 
@@ -605,7 +615,7 @@ class Test_fill_CGN_gaps(unittest.TestCase):
         self.cons_list_in = ['G.HN.26', None, 'G.HN.28', 'G.HN.29', 'G.HN.30']
 
     def test_fill_CGN_gaps_just_works_with_CGN(self):
-        fill_cgn = nomenclature._fill_consensus_gaps(self.cons_list_in, self.top_mut)
+        fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.top_mut)
         self.assertEqual(fill_cgn,self.cons_list_out)
 
 
@@ -618,7 +628,7 @@ class Test_fill_BW_gaps(unittest.TestCase):
                              "3.50", '3.51', '3.52']
 
     def test_fill_CGN_gaps_just_works_with_BW(self):
-        fill_cgn = nomenclature._fill_consensus_gaps(self.cons_list_in, self.geom.top)
+        fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.geom.top)
         self.assertEqual(fill_cgn, self.cons_list_out)
 
 @unittest.skip("This method apperas unused at the moment")
@@ -646,9 +656,9 @@ class Test_guess_by_nomenclature(unittest.TestCase):
         import mock
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            answer = nomenclature._guess_by_nomenclature(self.BW_local_w_pdb,
-                                                         self.BW_local_w_pdb.top,
-                                                         self.fragments,
+            answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
+                                           self.BW_local_w_pdb.top,
+                                           self.fragments,
                                                               "BW")
             self.assertEqual(answer,"3")
 
@@ -656,31 +666,31 @@ class Test_guess_by_nomenclature(unittest.TestCase):
         import mock
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            answer = nomenclature._guess_by_nomenclature(self.BW_local_w_pdb,
-                                                         self.BW_local_w_pdb.top,
-                                                         self.fragments,
+            answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
+                                           self.BW_local_w_pdb.top,
+                                           self.fragments,
                                                               "BW",
-                                                         return_str=False,
-                                                         )
+                                           return_str=False,
+                                           )
             self.assertSequenceEqual(answer,[3])
 
     def test_works_return_guess(self):
-        answer = nomenclature._guess_by_nomenclature(self.BW_local_w_pdb,
-                                                     self.BW_local_w_pdb.top,
-                                                     self.fragments,
+        answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
+                                       self.BW_local_w_pdb.top,
+                                       self.fragments,
                                                           "BW",
-                                                     accept_guess=True
-                                                     )
+                                       accept_guess=True
+                                       )
         self.assertEqual(answer, "3")
 
     def test_works_return_None(self):
-        answer = nomenclature._guess_by_nomenclature(self.BW_local_w_pdb,
-                                                     self.BW_local_w_pdb.top,
-                                                     self.fragments,
+        answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
+                                       self.BW_local_w_pdb.top,
+                                       self.fragments,
                                                            "BW",
-                                                     accept_guess=True,
-                                                     min_hit_rate=2,  #impossible rate
-                                                     )
+                                       accept_guess=True,
+                                       min_hit_rate=2,  #impossible rate
+                                       )
         self.assertEqual(answer, None)
 
 class Test_guess_nomenclature_fragments(unittest.TestCase):
@@ -693,10 +703,10 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
         self.fragments = get_fragments(self.BW_local_w_pdb.top)
 
     def test_finds_frags(self):
-        guessed_frags = nomenclature._guess_nomenclature_fragments(self.BW_local_w_pdb,
-                                                                   self.BW_local_w_pdb.top,
-                                                                   fragments=self.fragments,
-                                                                   verbose=True)
+        guessed_frags = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb,
+                                                     self.BW_local_w_pdb.top,
+                                                     fragments=self.fragments,
+                                                     verbose=True)
         _np.testing.assert_array_equal([3],guessed_frags)
 
 if __name__ == '__main__':

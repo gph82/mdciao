@@ -1,19 +1,11 @@
 import mdtraj as _md
 import numpy as _np
-from mdciao.utils.residue_and_atom import \
-    int_from_AA_code as _int_from_AA_code, \
-    shorten_AA as _shorten_AA
 
-from mdciao.utils.residue_and_atom import name_from_AA as _name_from_AA
 
-from mdciao.fragments import check_if_subfragment, print_frag
+import mdciao.fragments as _mdcfrg
+import mdciao.sequence as _mdcseq
 
-from mdciao.sequence import \
-    alignment_result_to_list_of_dicts as _alignment_result_to_list_of_dicts, \
-    _my_bioalign
-
-from mdciao.utils.lists import \
-    rangeexpand as _rangeexpand
+import mdciao.utils as _mdcu
 
 from pandas import \
     read_json as _read_json, \
@@ -642,13 +634,13 @@ class LabelerConsensus(object):
         new_defs = {}
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
-                new_defs[key] = check_if_subfragment(res_idxs, key, fragments, top, map_conlab)
+                new_defs[key] = _mdcfrg.check_if_subfragment(res_idxs, key, fragments, top, map_conlab)
 
         for key, res_idxs in new_defs.items():
             defs[key]=res_idxs
 
         for ii, (key, res_idxs) in enumerate(defs.items()):
-            istr = print_frag(key, top, res_idxs, fragment_desc='',
+            istr = _mdcfrg.print_frag(key, top, res_idxs, fragment_desc='',
                                idx2label=map_conlab,
                                return_string=True)
             print(istr)
@@ -875,12 +867,12 @@ def _top2consensus_map(consensus_dict, top,
 
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
-    seq = ''.join([_shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
-    seq_consensus= ''.join([_name_from_AA(key) for key in consensus_dict.keys()])
-    alignment = _alignment_result_to_list_of_dicts(_my_bioalign(seq, seq_consensus)[0],
+    seq = ''.join([_mdcu.residue_and_atom.shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
+    seq_consensus= ''.join([_mdcu.residue_and_atom.name_from_AA(key) for key in consensus_dict.keys()])
+    alignment = _mdcseq.alignment_result_to_list_of_dicts(_mdcseq.my_bioalign(seq, seq_consensus)[0],
                                                    top,
                                                    restrict_to_residxs,
-                                                   [_int_from_AA_code(key) for key in consensus_dict],
+                                                   [_mdcu.residue_and_atom.int_from_AA_code(key) for key in consensus_dict],
                                                    verbose=verbose
                                                    )
     alignment = _DataFrame(alignment)
@@ -1075,7 +1067,7 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
     AA_code_seq_1_key = 'AA_ref(%s)' % ref_CGN_tf.ref_PDB
     idx_seq_1_key = 'resSeq_ref(%s)' % ref_CGN_tf.ref_PDB
     idx_seq_0_key = 'idx_input'
-    for alignmt in _my_bioalign(seq, ref_CGN_tf.seq)[:1]:
+    for alignmt in my_bioalign(seq, ref_CGN_tf.seq)[:1]:
         #TODO this fucntion has been changed and this transformer will not work anymore
         # major bug (still?)
 
@@ -1114,7 +1106,7 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
     return list_out
 '''
 
-def _choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
+def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     """
     Choose the best consensus label for a given :obj:`idx` in case
     there are more than one consensus(es) at play (e.g. BW and CGN).
@@ -1309,9 +1301,9 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
     return AA_dict
 '''
 
-def _guess_nomenclature_fragments(CLin, top, fragments,
-                                  min_hit_rate=.6,
-                                  verbose=False):
+def guess_nomenclature_fragments(CLin, top, fragments,
+                                 min_hit_rate=.6,
+                                 verbose=False):
     """
     Input a :class:`LabelerConsensus`  and a
      :py:class:`mdtraj.Topology` and the
@@ -1357,11 +1349,11 @@ def _guess_nomenclature_fragments(CLin, top, fragments,
     return guess
 
 
-def _guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
-                           return_str=True, accept_guess=False,
-                           **guess_kwargs):
+def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
+                          return_str=True, accept_guess=False,
+                          **guess_kwargs):
     r"""
-    Wrapper around :obj:`_guess_nomenclature_fragments`to interpret
+    Wrapper around :obj:`guess_nomenclature_fragments`to interpret
     its answer
 
     Parameters
@@ -1378,7 +1370,7 @@ def _guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
     -------
 
     """
-    guess = _guess_nomenclature_fragments(CLin, top, fragments, **guess_kwargs)
+    guess = guess_nomenclature_fragments(CLin, top, fragments, **guess_kwargs)
     guess_as_string = ','.join(['%s' % ii for ii in guess])
 
     if len(guess) > 0:
@@ -1398,7 +1390,7 @@ def _guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
     if answer == '':
         answer = guess_as_string
     else:
-        answer = ','.join(['%s' % ii for ii in _rangeexpand(answer)])
+        answer = ','.join(['%s' % ii for ii in _mdcu.lists.rangeexpand(answer)])
 
     if return_str:
         pass

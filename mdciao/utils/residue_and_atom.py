@@ -149,7 +149,7 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
     else:
         return name_from_AA(res)
 
-def _atom_type(aa, no_BB_no_SC='X'):
+def atom_type(aa, no_BB_no_SC='X'):
     r"""
     Return a string BB or SC for backbone or sidechain atom.
     Parameters
@@ -171,7 +171,7 @@ def _atom_type(aa, no_BB_no_SC='X'):
         return no_BB_no_SC
 
 #TODO document
-def _parse_and_list_AAs_input(AAs, top, map_conlab=None):
+def parse_and_list_AAs_input(AAs, top, map_conlab=None):
     if str(AAs).lower()!="none":
         AAs = [aa.strip(" ") for aa in AAs.split(",")]
         for aa in AAs:

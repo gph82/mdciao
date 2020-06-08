@@ -1,10 +1,8 @@
-from json import load as jsonload
-from os.path import splitext, split as psplit
+from json import load as _jsonload
+from os.path import splitext as _psplitext, split as _psplit
 import numpy as _np
 
-from mdciao.fragments.fragments import \
-    get_fragments as _get_fragments, \
-    per_residue_fragment_picker as _per_residue_fragment_picker
+import mdciao.fragments as _mdcfrg
 
 def sitefile2sitedict(sitefile):
     r"""
@@ -18,16 +16,16 @@ def sitefile2sitedict(sitefile):
     site : dict with the keys
     """
     with open(sitefile, "r") as f:
-        idict = jsonload(f)
+        idict = _jsonload(f)
     try:
         idict["bonds"]["AAresSeq"] = [item.split("-") for item in idict["bonds"]["AAresSeq"] if item[0] != '#']
         idict["n_bonds"] = len(idict["bonds"]["AAresSeq"])
     except:
         print("Malformed .json file for the site %s" % sitefile)
     if "sitename" not in idict.keys():
-        idict["name"] = splitext(psplit(sitefile)[-1])[0]
+        idict["name"] = _psplitext(_psplit(sitefile)[-1])[0]
     else:
-        idict["name"] = psplit(idict["sitename"])[-1]
+        idict["name"] = _psplit(idict["sitename"])[-1]
     return idict
 
 def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
@@ -69,7 +67,7 @@ def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
     AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
     AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
     AAresSeqs = [key for key in _np.unique(AAresSeqs)]
-    residxs, _ = _per_residue_fragment_picker(AAresSeqs, fragments, top,
+    residxs, _ = _mdcfrg.per_residue_fragment_picker(AAresSeqs, fragments, top,
                                               **_per_residue_fragment_picker_kwargs)
     if None in residxs and raise_if_not_found:
         raise ValueError("These residues of your input have not been found. Please revise it:\n%s" %
@@ -107,7 +105,7 @@ def sites_to_ctc_idxs(site_dicts, top,
         in :obj:`top`
     """
     if fragments is None:
-        fragments = _get_fragments(top, **get_fragments_kwargs)
+        fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
     AAresSeq2residxs = sites_to_AAresSeqdict(site_dicts, top, fragments)
     ctc_idxs = _np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in site_dicts]))
     return ctc_idxs, AAresSeq2residxs

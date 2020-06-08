@@ -7,15 +7,7 @@ from matplotlib import \
 from mpl_toolkits.axes_grid1 import \
     make_axes_locatable as _make_axes_locatable
 
-from mdciao.utils.lists import   \
-    window_average_fast as _wav
-
-from mdciao.utils.str_and_dict import \
-    _delete_exp_in_keys, \
-    unify_freq_dicts, \
-    _replace_w_dict, \
-    _replace4latex, \
-    freq_file2dict as _freq_file2dict
+import mdciao.utils as _mdcu
 
 def plot_w_smoothing_auto(ax, x, y,
                           label,
@@ -54,8 +46,8 @@ def plot_w_smoothing_auto(ax, x, y,
     alpha = 1
     if n_smooth_hw > 0:
         alpha = .2
-        x_smooth = _wav(_np.array(x), half_window_size=n_smooth_hw)
-        y_smooth = _wav(_np.array(y), half_window_size=n_smooth_hw)
+        x_smooth = _mdcu.lists.window_average_fast(_np.array(x), half_window_size=n_smooth_hw)
+        y_smooth = _mdcu.lists.window_average_fast(_np.array(y), half_window_size=n_smooth_hw)
         ax.plot(x_smooth,
                 y_smooth,
                 label=label,
@@ -157,7 +149,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
 
     for key, ifile in dictionary_of_groups.items():
         if isinstance(ifile, str):
-            idict = _freq_file2dict(ifile)
+            idict = _mdcu.str_and_dict.freq_file2dict(ifile)
         elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
             assert ctc_cutoff_Ang is not None, "Cannot provide a neighborhood object without a ctc_cutoff_Ang parameter"
             idict = {ilab:val for ilab, val in zip(ifile.ctc_labels_short,
@@ -165,9 +157,9 @@ def compare_groups_of_contacts(dictionary_of_groups,
         else:
             idict = {key:val for key, val in ifile.items()}
 
-        idict = {_replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
+        idict = {_mdcu.str_and_dict.replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
         if anchor is not None:
-            idict = _delete_exp_in_keys(idict, anchor)
+            idict = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
         freqs[key] = idict
 
     if plot_singles:
@@ -188,7 +180,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
         myfig.tight_layout()
         # _plt.show()
 
-    freqs  = unify_freq_dicts(freqs, exclude, defrag="@")
+    freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag="@")
     myfig, iax, posret = plot_unified_freq_dicts(freqs,
                                                  colordict,
                                                  ax=ax,
@@ -375,7 +367,7 @@ def plot_unified_freq_dicts(freqs,
                 if len(keys_popped_below) > 0:
                     label = label[:-1] + ", +%2.1f below threshold)" % (
                         _np.sum([freqs[skey][nskey] for nskey in keys_popped_below]))
-                label = _replace4latex(label)
+                label = _mdcu.str_and_dict.replace4latex(label)
 
             else:
                 label = None
@@ -451,7 +443,7 @@ def add_tilted_labels_to_patches(jax, labels,
         iy += .01
         if iy > trunc_y_labels_at:
             iy = trunc_y_labels_at
-        jax.text(ix, iy, _replace4latex(ilab),
+        jax.text(ix, iy, _mdcu.str_and_dict.replace4latex(ilab),
                  va='bottom',
                  ha='left',
                  rotation=45,
@@ -507,7 +499,7 @@ def _dataunits2points(jax):
     dy_in_dataunits = _np.diff(jax.get_ylim())[0]
     return dy_in_points / dy_in_dataunits
 
-def _titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
+def titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
     r"""
     Compute amount of upward padding need to avoid overlap between
     he axis title and any text object in the axis

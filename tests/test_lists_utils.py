@@ -70,7 +70,7 @@ class Test_force_iterable(unittest.TestCase):
 
     def test_works(self):
         assert len(lists.force_iterable("A")) != 0
-        assert len(lists.force_iterable("abc")) != 0
+        assert len(lists.force_iterable("_abc")) != 0
         assert len(lists.force_iterable([9, 99, 999])) != 0
         assert len(lists.force_iterable(999)) != 0
 
@@ -79,7 +79,7 @@ class Test_is_iterable(unittest.TestCase):
     def test_is_iterable(self):
         assert lists.is_iterable([]), lists.is_iterable([])
         assert lists.is_iterable("A")
-        assert lists.is_iterable("abc")
+        assert lists.is_iterable("_abc")
         assert lists.is_iterable([9, 99, 999])
         assert not lists.is_iterable(999)
 

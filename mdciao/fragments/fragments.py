@@ -3,30 +3,13 @@ import numpy as _np
 from mdtraj.core.residue_names import \
     _AMINO_ACID_CODES
 
-from mdciao.utils.residue_and_atom import \
-    find_AA as _find_AA,\
-    _parse_and_list_AAs_input
+import mdciao.utils as _mdcu
 
-from mdciao.utils.bonds import \
-    top2residue_bond_matrix
+from  pandas import unique as _pandas_unique
 
-from mdciao.utils.lists import \
-    in_what_N_fragments as _in_what_N_fragments, \
-    join_lists as _join_lists, \
-    in_what_fragment as _in_what_fragment, \
-    rangeexpand as _rangeexpand
+from msmtools.estimation import connected_sets as _connected_sets
 
-from mdciao.utils.str_and_dict import \
-    choose_between_good_and_better_strings as _choose_between_good_and_better_strings, \
-    match_dict_by_patterns as _match_dict_by_patterns
-
-from  pandas import \
-    unique as _pandas_unique
-
-from msmtools.estimation import \
-    connected_sets as _connected_sets
-
-abc = "abcdefghijklmnopqrst"
+_abc = "abcdefghijklmnopqrst"
 
 def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                idx2label=None,
@@ -59,8 +42,8 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
     maplabel_first, maplabel_last = "", ""
     try:
         if idx2label is not None:
-            maplabel_first = _choose_between_good_and_better_strings(None,idx2label[fragment[0]],fmt="@%s")
-            maplabel_last =  _choose_between_good_and_better_strings(None,idx2label[fragment[-1]],fmt="@%s")
+            maplabel_first = _mdcu.str_and_dict.choose_between_good_and_better_strings(None,idx2label[fragment[0]],fmt="@%s")
+            maplabel_last =  _mdcu.str_and_dict.choose_between_good_and_better_strings(None,idx2label[fragment[-1]],fmt="@%s")
 
         resfirst = "%8s%-10s"%(top.residue(fragment[0]), maplabel_first)
         reslast =  "%8s%-10s"%(top.residue(fragment[-1]), maplabel_last)
@@ -141,7 +124,7 @@ def get_fragments(top,
 
     """
 
-    assert_method_allowed(method)
+    _assert_method_allowed(method)
 
     # Auto detect fragments by resSeq
     old = top.residue(0).resSeq
@@ -160,11 +143,11 @@ def get_fragments(top,
     if method=="resSeq":
         fragments = fragments_resSeq
     elif method=='resSeq_bonds':
-        residue_bond_matrix = top2residue_bond_matrix(top, verbose=False,
+        residue_bond_matrix = _mdcu.bonds.top2residue_bond_matrix(top, verbose=False,
                                                       force_resSeq_breaks=True)
         fragments = _connected_sets(residue_bond_matrix)
     elif method=='bonds':
-        residue_bond_matrix = top2residue_bond_matrix(top, verbose=False,
+        residue_bond_matrix = _mdcu.bonds.top2residue_bond_matrix(top, verbose=False,
                                                       force_resSeq_breaks=False)
         fragments = _connected_sets(residue_bond_matrix)
         fragments = [fragments[ii] for ii in _np.argsort([fr[0] for fr in fragments])]
@@ -176,7 +159,7 @@ def get_fragments(top,
         fragments = get_fragments_resSeq_plus(top, fragments_resSeq)
         for rr in top.residues:
             if rr.name[:3] not in _AMINO_ACID_CODES.keys():
-                frag_idx = _in_what_fragment(rr.index,fragments)
+                frag_idx = _mdcu.lists.in_what_fragment(rr.index,fragments)
                 if len(fragments[frag_idx])>1:
                     list_for_removing=list(fragments[frag_idx])
                     list_for_removing.remove(rr.index)
@@ -228,7 +211,7 @@ def get_fragments(top,
             print_frag(ii, top, iseg, end=end)
     # Join if necessary
     if join_fragments is not None:
-        fragments = _join_lists(fragments, join_fragments)
+        fragments = _mdcu.lists.join_lists(fragments, join_fragments)
         print("Joined Fragments")
         for ii, iseg in enumerate(fragments):
             print_frag(ii, top, iseg)
@@ -274,7 +257,7 @@ def get_fragments_resSeq_plus(top, fragments_resSeq):
         else:
             to_join.append([ii + 1])
 
-    return _join_lists(fragments_resSeq, [tj for tj in to_join if len(tj) > 1])
+    return _mdcu.lists.join_lists(fragments_resSeq, [tj for tj in to_join if len(tj) > 1])
 
 
 _allowed_fragment_methods = ['resSeq',
@@ -314,7 +297,7 @@ def overview(topology,
         try_methods = _allowed_fragment_methods
     else:
         for method in methods:
-            assert_method_allowed(method)
+            _assert_method_allowed(method)
         try_methods = methods
 
     for method in try_methods:
@@ -322,9 +305,9 @@ def overview(topology,
                       method=method)
         print()
 
-    _parse_and_list_AAs_input(AAs, topology)
+    _mdcu.residue_and_atom.parse_and_list_AAs_input(AAs, topology)
 
-def assert_method_allowed(method):
+def _assert_method_allowed(method):
     assert str(method) in _allowed_fragment_methods, ('input method %s is not known. ' \
                                                  'Know methods are %s ' %
                                                  (method, "\n".join(_allowed_fragment_methods)))
@@ -373,11 +356,11 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
         assert not r.startswith("-")
         if "*" in r or "?" in r:
             assert "-" not in r
-            filtered = _find_AA(top, r)
+            filtered = _mdcu.residue_and_atom.find_AA(top, r)
             if len(filtered)==0:
                 raise ValueError("The input range contains '%s' which "
                                  "returns no residues!"%r)
-            residxs_out.extend(_find_AA(top,r))
+            residxs_out.extend(_mdcu.residue_and_atom.find_AA(top,r))
         else:
             resnames = r.split('-')
             assert len(resnames) >=1
@@ -440,8 +423,8 @@ def per_residue_fragment_picker(residue_descriptors,
         residue_descriptors = [residue_descriptors]
 
     for key in residue_descriptors:
-        cands = _find_AA(top, str(key))
-        cand_fragments = _in_what_N_fragments(cands, fragments)
+        cands = _mdcu.residue_and_atom.find_AA(top, str(key))
+        cand_fragments = _mdcu.lists.in_what_N_fragments(cands, fragments)
         # TODO refactor into smaller methods
         if len(cands) == 0:
             print("No residue found with descriptor %s"%key)
@@ -453,7 +436,7 @@ def per_residue_fragment_picker(residue_descriptors,
         else:
             istr = "ambiguous definition for AA %s" % key
             istr += extra_string_info
-            for cc, ss, char in zip(cands, cand_fragments,abc):
+            for cc, ss, char in zip(cands, cand_fragments, _abc):
                 fname = " "
                 if fragment_names is not None:
                     fname = ' (%s) ' % fragment_names[ss]
@@ -483,8 +466,8 @@ def per_residue_fragment_picker(residue_descriptors,
                 answer = int(answer)
                 if answer in cand_fragments:
                     cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-            elif answer.isalpha() and answer in abc:
-                idx = abc.find(answer)
+            elif answer.isalpha() and answer in _abc:
+                idx = _abc.find(answer)
                 answer = cand_fragments[idx]
                 cands  = cands[idx]
             else:
@@ -547,7 +530,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
         or pick a sub-set
     """
     # Get the fragment idxs of all residues in this fragment
-    ifrags = [_in_what_fragment(idx, fragments) for idx in sub_frag]
+    ifrags = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in sub_frag]
 
     frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
     if len(frag_cands) > 1 and not keep_all:
@@ -564,7 +547,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
                 istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
             print(istr)
         answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):" % fragname)
-        answr = _rangeexpand(answr)
+        answr = _mdcu.lists.rangeexpand(answr)
         assert all([idx in ifrags for idx in answr])
         tokeep = _np.hstack([idx for ii, idx in enumerate(sub_frag) if ifrags[ii] in answr]).tolist()
         if len(tokeep) >= len(ifrags):
@@ -616,7 +599,7 @@ def fragments_strings_to_fragments(fragment_input, top, verbose=False):
     if ("".join(fragment_input).replace("-","").replace(",","")).isnumeric():
         method = "user input by residue index"
         # What we have is list residue idxs as strings like 0-100, 101-200, 201-300
-        fragments_as_residue_idxs =[_rangeexpand(ifrag.strip(",")) for ifrag in fragment_input]
+        fragments_as_residue_idxs =[_mdcu.lists.rangeexpand(ifrag.strip(",")) for ifrag in fragment_input]
         for ii, ifrag in enumerate(fragments_as_residue_idxs):
             if not all([aa in range(top.n_residues) for aa in ifrag]):
                 print("Fragment %u has idxs outside of the geometry (total n_residues %u): %s"%(ii, top.n_residues,
@@ -684,9 +667,10 @@ def frag_list_2_frag_groups(frag_list,
         groups_as_fragidxs = [frag_idxs_group_1, frag_idxs_group_2]
         for ii, ifrag_idxs in enumerate(groups_as_fragidxs):
             if ifrag_idxs is None:
-                groups_as_fragidxs[ii] = _rangeexpand(input('Input group of fragments (e.g. 0,3 or 2-4,6) for group %u: ' % (ii + 1)))
+                groups_as_fragidxs[ii] = _mdcu.lists.rangeexpand(input('Input group of fragments '
+                                                                     '(e.g. 0,3 or 2-4,6) for group %u: ' % (ii + 1)))
             elif isinstance(ifrag_idxs, str):
-                groups_as_fragidxs[ii] = _rangeexpand(ifrag_idxs)
+                groups_as_fragidxs[ii] = _mdcu.lists.rangeexpand(ifrag_idxs)
     groups_as_residxs = [sorted(_np.hstack([frag_list[ii] for ii in iint])) for iint in
                             groups_as_fragidxs]
 
@@ -735,7 +719,7 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
             "Input a list of comma-separated posix-expressions.\n"
             "Prepend with '-' to exclude, e.g. 'TM*,-TM2,H8' to grab all TMs and H8, but exclude TM2)\n").replace(
             " ", "").strip("'").strip('"')
-        igroup, res_idxs_in_group = _match_dict_by_patterns(answer, frag_defs_dict)
+        igroup, res_idxs_in_group = _mdcu.str_and_dict.match_dict_by_patterns(answer, frag_defs_dict)
         groups_as_keys.append([ilab for ilab in frag_defs_dict.keys() if ilab in igroup])
         groups_as_residue_idxs.append(sorted(res_idxs_in_group))
         print(', '.join(groups_as_keys[-1]))

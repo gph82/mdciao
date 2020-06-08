@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from mdciao.parsers import parser_for_compare_neighborhoods
-from mdciao.command_line_tools import compare
+from mdciao.cli import compare
 from matplotlib import pyplot as plt
 import matplotlib
 matplotlib.use('TkAgg')

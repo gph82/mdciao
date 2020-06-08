@@ -53,26 +53,26 @@ class Test_inform_about_trajectories(unittest.TestCase):
 
     def test_fails_no_list(self):
         with pytest.raises(AssertionError):
-            str_and_dict._inform_about_trajectories(test_filenames.traj_xtc)
+            str_and_dict.inform_about_trajectories(test_filenames.traj_xtc)
 
     def test_list_of_files(self):
-        str_and_dict._inform_about_trajectories([test_filenames.traj_xtc,
-                                    test_filenames.traj_xtc])
+        str_and_dict.inform_about_trajectories([test_filenames.traj_xtc,
+                                                test_filenames.traj_xtc])
 
     def test_list_of_trajs(self):
-        str_and_dict._inform_about_trajectories([self.traj,
-                                    self.traj_reverse])
+        str_and_dict.inform_about_trajectories([self.traj,
+                                                self.traj_reverse])
 
 
 class Test_replace_w_dict(unittest.TestCase):
-    outkey = str_and_dict._replace_w_dict("key I don't like",  {"key":"word", "like":"love"})
+    outkey = str_and_dict.replace_w_dict("key I don't like", {"key": "word", "like": "love"})
     assert outkey=="word I don't love"
 
 class Test_delete_exp_inkeys(unittest.TestCase):
     indict = {"GLU30-LYS40":True,
               "ARG40-GLU30":False}
 
-    outdict = str_and_dict._delete_exp_in_keys(indict, "GLU30")
+    outdict = str_and_dict.delete_exp_in_keys(indict, "GLU30")
     assert len(outdict)==2
     assert outdict["LYS40"]
     assert not outdict["ARG40"]
@@ -296,7 +296,7 @@ class Test_str_latex(unittest.TestCase):
 
     def test_works(self):
         import numpy as _np
-        _np.testing.assert_array_equal(str_and_dict._replace4latex("There's an alpha and a beta here, also C_2"),
+        _np.testing.assert_array_equal(str_and_dict.replace4latex("There's an alpha and a beta here, also C_2"),
                                     "There's an $\\alpha$ and a $\\beta$ here, also $C_2$")
 
 class Test_auto_fragment_string(unittest.TestCase):

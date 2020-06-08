@@ -6,6 +6,8 @@ from unittest.mock import patch
 import mock
 
 from mdciao import fragments as mdcfragments
+# I'm importing the private variable for testing other stuff, not to test the variable itself
+from mdciao.fragments.fragments import _allowed_fragment_methods
 
 from mdciao.filenames import filenames
 
@@ -130,9 +132,9 @@ class Test_get_fragments_methods(unittest.TestCase):
             mdcfragments.get_fragments(self.geom.top,
                                        method="molecules_resSeq+")
 
-
+    @unittest.skip("Do I need this?")
     def test_completeness(self):
-        for imethod in mdcfragments._allowed_fragment_methods:
+        for imethod in _allowed_fragment_methods:
             frags = mdcfragments.get_fragments(self.geom.top, method=imethod)
             assert _np.allclose(_np.hstack(frags),_np.arange(self.geom.top.n_residues))
 
@@ -169,7 +171,7 @@ class Test_get_fragments_other_options(unittest.TestCase):
                                        method='bonds')
 
     def test_atoms(self):
-        for imethod in mdcfragments._allowed_fragment_methods:
+        for imethod in _allowed_fragment_methods:
             fragments_residxs = mdcfragments.get_fragments(self.geom.top, method=imethod)
             fragments_atom_idxs = mdcfragments.get_fragments(self.geom.top, atoms=True, method=imethod)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from mdciao.parsers import parser_for_rn, _inform_of_parser
-from mdciao.command_line_tools import residue_neighborhoods
+from mdciao.cli import residue_neighborhoods
 
 # Get and instantiate parser
 parser = parser_for_rn()
