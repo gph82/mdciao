@@ -13,11 +13,6 @@ Welcome to mdciao's documentation!
 
 Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org.org>`_ for visualizaton.
 
-.. toctree::
-   :maxdepth: 1
-
-   installation
-
 Basic Principle
 ---------------
 
@@ -45,12 +40,12 @@ Basic Usage
 .. note::
    The simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples.
 
-This is one very simple example command::
+This command::
 
  mdc_neighborhoods.py p2.noH.pdb run1.1-p.stride.5.noH.xtc --residues L394 -nf
 
 
-which will print the following to the terminal (some headers have been left out)::
+will print the following to the terminal (some headers have been left out)::
 
  ...
  #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
@@ -65,14 +60,14 @@ which will print the following to the terminal (some headers have been left out)
  ./neighborhoods.LEU394.time_trace@3.5_Ang.pdf
  ./neighborhoods.LEU394.gs-b2ar.dat
 
-And produce the following figures:
+And produce the following figures (not the captions):
 
 .. figure:: imgs/neighborhoods.overall@3.5_Ang.Fig.1.png
    :scale: 50%
 
    **Fig. 1** Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the alpha5 helix of the Gs-protein are shown. The simualtion started from the `3SN6` structure (including the B2AR receptor). The simualtion itself can be seen interactively:
 
-Annotated figures with the timetraces giving rise to the above frequencies are also produced automatically:
+Annotated figures with the timetraces of the above distances are also produced automatically:
 
 .. figure:: imgs/neighborhoods.LEU394.time_trace@3.5_Ang.Fig.2.png
    :scale: 33%
@@ -80,11 +75,10 @@ Annotated figures with the timetraces giving rise to the above frequencies are a
 
    **Fig. 2** Time-traces of the residue-residue distances behind the frequency barplots of Fig. 1. The last time-trace represents the total number of neighbors (distances below the given cutoff) at any given moment in the trajectory. On average, LEU394 has 1.7 non-bonded neighbors below the cutoff (see legend of Fig.1)
 
-Also, anything that gets shown in any way can be saved for later use as human readable ASCII-files, Excel-tables or NumPy .npy files for later use.
+Anything that gets shown in any way to the output can be saved for later use as human readable ASCII-files, Excel-tables or NumPy `.npy` files for later use.
 
-
-Other Highlights
-----------------
+Highlights
+----------
 * paper-ready tables and figures from the command line
 
   .. figure:: imgs/bars_and_PDF.png
@@ -191,7 +185,7 @@ Other Highlights
 
 
 Command line tools
-==================
+------------------
 
 The best way to find out about the command-line tools that ``mdciao`` is to use...a command-line tool shipped with ``mdciao``::
 
@@ -229,39 +223,40 @@ What these tools do is:
 * mdc_compare
    Compare residue-residue contact frequencies from different files
 
-You can see their documentation by using the ``-h`` flag whe invoking them from the command line or by checking these pages.
+You can see their documentation by using the `-h` flag whe invoking them from the command line or by checking the help for the :ref:`cli_cli`.
 
 .. _API:
 
 API
-===
-mdciao ships not only with the above command line tools, but also with a number of submodules (loosely referred to as API from now on). The objects and methods in the API allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks.
+---
+``mdciao`` ships not only with the mentioned command line tools, but also with a number of modules and submodules (loosely referred to as API from now on). These can be imported into the namespace by simply by issuing::
 
-These can be imported into the namespace by simply by using ``import mdciao``.
+ import mdciao
 
-Whereas the command-line-tools from above tend to be more stable, the API functions and object calls might change future. Bugfixes, refactors and redesigns are in the pipeline and experienced users should know how to deal with this.
+They allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks. Head here :ref:`api_api` for a more detailed description.
 
-All API objects and functions are extensively documented, just not linked here (yet). Please use their docstring: double-tab in Jupyter Notebooks, or cmd?+Enter in the IPython terminal.
+All API objects and functions are extensively documented. Please use the powerful hinting capabilities of the IPython terminal (e.g. `Tab` for autocomplete or `cmd?+Enter`) or the `JuPyter Notebooks <https://www.dataquest.io/blog/jupyter-notebook-tips-tricks-shortcuts/>`_.
+
+.. note::
+   Whereas the command-line-tools from above tend to be more stable, the API functions and object calls might change future. Bugfixes, refactors and redesigns are in the pipeline and experienced users should know how to deal with this.
+
+
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Command line tools
+   :maxdepth: 2
+   :hidden:
 
-   mdc_neighborhoods
-   mdc_interface
-   mdc_sites
-   mdc_fragments
-   mdc_BW_overview
-   mdc_CGN_overview
-   mdc_compare
+   index
+   cli_cli
+   installation
 
-.. toctree
+.. toctree::
    :maxdepth: 2
    :caption: Modules:
    contacts
    fragments
 
-.. toctree
+.. toctree::
    :maxdepth: 2
    :caption: Submodules:
    aa_utils
@@ -269,9 +264,3 @@ All API objects and functions are extensively documented, just not linked here (
    list_utils
    nomenclature_utils
    sequence_utils
-
-.. Indices and tables::
-======================
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
