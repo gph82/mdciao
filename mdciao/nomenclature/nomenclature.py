@@ -1,10 +1,8 @@
 import mdtraj as _md
 import numpy as _np
 
-
 import mdciao.fragments as _mdcfrg
 import mdciao.sequence as _mdcseq
-
 import mdciao.utils as _mdcu
 
 from pandas import \

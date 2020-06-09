@@ -1075,9 +1075,9 @@ class ContactPair(object):
 
     def frequency_overall_trajs(self, ctc_cutoff_Ang):
         """
-        How many times this contact is formed overall frames. 
+        How many times this contact is formed overall frames.
         Frequencies have values between 0 and 1
-        
+
         Parameters
         ----------
         ctc_cutoff_Ang : float
@@ -1207,7 +1207,7 @@ class ContactPair(object):
         r"""
         For those frames in which the contact is formed, group them by relative frequencies
         of individual atom pairs
-        
+
         Parameters
         ----------
         ctc_cutoff_Ang: float
@@ -2265,7 +2265,7 @@ class ContactGroup(object):
                                 plot_atomtypes=False):
         r"""
         Neighborhood-aware frequencies bar plot for this contact group
-        
+
         Parameters
         ----------
         ctc_cutoff_Ang : float

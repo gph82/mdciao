@@ -4,7 +4,7 @@
 # https://softwareengineering.stackexchange.com/questions/375860/how-to-avoid-the-need-to-unit-test-private-methods
 # https://stackoverflow.com/questions/105007/should-i-test-private-methods-or-only-public-ones/47401015#47401015
 # ATM the "best practice" is to get the code tested and re-design when the API is more stable
-from mdciao.contacts.contacts import \
+from mdciao.contacts.contacts_ import \
     _sum_ctc_freqs_by_atom_type, \
     _NeighborhoodNames, \
     _NumberOfthings, \
