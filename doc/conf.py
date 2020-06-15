@@ -33,16 +33,22 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinxarg.ext",
     "sphinx.ext.intersphinx",
+#    "numpydoc",
 ]
 
 # Napoleon Settings for showing class documentation's init doc
-napoleon_include_init_with_doc = True
+#napoleon_include_init_with_doc = True
 
 intersphinx_mapping = {'mdtraj': ('http://mdtraj.org/1.9.3/', None),
                        'md': ('http://mdtraj.org/1.9.3/', None),
                        'matplotlib': ('https://matplotlib.org/',None)}
 
 autodoc_mock_imports = ["mdtraj", "matplotlib"]
+
+autosummary_generate = True
+autodoc_default_flags = ['members', 'inherited-members']
+#numpydoc_class_members_toctree = False
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

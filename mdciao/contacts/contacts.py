@@ -832,20 +832,22 @@ class _Fragments(object):
 class ContactPair(object):
     r"""Container object for a contact between two residues.
 
-    This is the first level of abstraction of mdciao,
-    and it is the "closest" to the actual data. This class'
-    methods carry out most of the low level operations on
+    This is the first level of abstraction of mdciao.
+    It is the "closest" to the actual data, and its
+    methods carry out most of the low-level operations on
     the data, e.g., the frequency calculations or the
     basic plotting. Other classes like :obj:`ContactGroup`
-    usually just wrap around these methods.
+    usually just wrap around a collection of :obj:`ContactPair`-objects
+    and use their methods.
 
-    The can be instantiated with the pair of indices of
-    two residues, the time-traces of the distances between them
-    (for all input trajectories) and the time-traces
+    This class just needs the pair of residue (serial) indices,
+    the time-traces of the distances between the residues
+    (for all input trajectories), and the time-traces
     of the timestamps in those trajectories.
 
-    Many other pieces of complementary information can be provided,
-    allowing the class to produce better plots and labels.
+    Many other pieces of complementary information can be provided
+    as optional parameters, allowing the class to produce
+    better plots, labels, and tables.
 
     Some sanity checks are carried out upon instantiation to ensure
     things like same number of steps in the in the distance and timestamp
@@ -853,10 +855,10 @@ class ContactPair(object):
 
     Note
     ----
-    Ideally, the user shouldn't need to access either :obj:`ContactPair` or
-    :obj:`ContactGroup` directly, they are exposed here because they are
-    used by other modules and it is practical to have them show up in the
-    documentation.
+    Higher-level methods in the API, like those exposed by :obj:`mdciao.cli`
+    will return :obj:`ContactPair` or :obj:`ContactGroup` objects already
+    instantiated and ready to use. It is recommened to use those instead
+    of individually calling :obj:`ContactPair` or :obj:`ContactGroup`.
 
     """
     def __init__(self, res_idxs_pair,
@@ -1033,8 +1035,7 @@ class ContactPair(object):
     def binarize_trajs(self, ctc_cutoff_Ang,
                        switch_off_Ang=None
                        ):
-        """
-        Turn each distance-trajectory into a boolean using a cutoff.
+        """Turn each distance-trajectory into a boolean using a cutoff.
         The comparison is done using "<=", s.t. d=ctc_cutoff yields True
 
         Whereas :obj:`ctc_cutoff_Ang` is in Angstrom, the trajectories are
@@ -1055,7 +1056,6 @@ class ContactPair(object):
         Returns
         -------
         bintrajs : list of boolean arrays with the same shape as the trajectories
-
         """
         transform = lambda itraj: itraj <= ctc_cutoff_Ang / 10
         _switchoff = 0
@@ -1095,8 +1095,7 @@ class ContactPair(object):
                                                                            switch_off_Ang=switch_off_Ang)])
 
     def frequency_overall_trajs(self, ctc_cutoff_Ang,switch_off_Ang=None):
-        """
-        How many times this contact is formed overall frames.
+        """How many times this contact is formed overall frames.
         Frequencies have values between 0 and 1
 
         Parameters
@@ -1419,11 +1418,18 @@ class ContactGroup(object):
 
     This class is the second level of abstraction after :obj:`ContactPair`
     and provides methods to
-     - perform operations on all the contact-pairs simultaneously and
-     - plot/show/save the result of these operations
+     * perform operations on all the contact-pairs simultaneously and
+     * plot/show/save the result of these operations
 
     In many cases, the methods of :obj:`ContactGroup` thinly wrap and
     iterate around equally named methods of the :obj:`ContactPair`-objects.
+
+    Note
+    ----
+    Higher-level methods in the API, like those exposed by :obj:`mdciao.cli`
+    will return :obj:`ContactPair` or :obj:`ContactGroup` objects already
+    instantiated and ready to use. It is recommened to use those instead
+    of individually calling :obj:`ContactPair` or :obj:`ContactGroup`.
 
     """
 
@@ -1777,7 +1783,7 @@ class ContactGroup(object):
                              "I found these hashes %s"%top)
 
     def binarize_trajs(self, ctc_cutoff_Ang, switch_off_Ang=None, order='contact'):
-        r"""
+        r""" Binarize trajs
 
         Parameters
         ----------
