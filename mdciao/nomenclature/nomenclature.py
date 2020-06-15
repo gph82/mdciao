@@ -2,7 +2,6 @@ import mdtraj as _md
 import numpy as _np
 
 import mdciao.fragments as _mdcfrg
-import mdciao.sequence as _mdcseq
 import mdciao.utils as _mdcu
 
 from pandas import \
@@ -477,7 +476,7 @@ class LabelerConsensus(object):
         Warning
         -------
         No checks are performed to see if the input of :obj:`map`
-        actually matches the residues of :obj:`top in any way,
+        actually matches the residues of :obj:`top` in any way,
         so that the output can be rubbish and go unnoticed.
 
 
@@ -526,13 +525,12 @@ class LabelerConsensus(object):
 
         The if a consensus label is returned as None it means one
         of two things:
-            * this position was sucessfully aligned with a
-             match but the data used to initialize this
-             :obj:`ConsensusLabeler` did not contain a label
-
-            * this position has a label in the original data
-            but the sequence alignment is not matched (e.g.,
-            bc of a point mutation)
+         * this position was sucessfully aligned with a
+           match but the data used to initialize this
+           :obj:`ConsensusLabeler` did not contain a label
+         * this position has a label in the original data
+           but the sequence alignment is not matched (e.g.,
+           bc of a point mutation)
 
         A heuristic to "autofill" the second case can be
         turned on using :obj:`fill_gaps`, see :obj:`_fill_consensus_gaps`
@@ -867,12 +865,13 @@ def _top2consensus_map(consensus_dict, top,
         restrict_to_residxs = [residue.index for residue in top.residues]
     seq = ''.join([_mdcu.residue_and_atom.shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
     seq_consensus= ''.join([_mdcu.residue_and_atom.name_from_AA(key) for key in consensus_dict.keys()])
-    alignment = _mdcseq.alignment_result_to_list_of_dicts(_mdcseq.my_bioalign(seq, seq_consensus)[0],
-                                                   top,
-                                                   restrict_to_residxs,
-                                                   [_mdcu.residue_and_atom.int_from_AA_code(key) for key in consensus_dict],
-                                                   verbose=verbose
-                                                   )
+    alignment = _mdcu.sequence.alignment_result_to_list_of_dicts(_mdcu.sequence.my_bioalign(seq, seq_consensus)[0],
+                                                                 top,
+                                                                 restrict_to_residxs,
+                                                                 [_mdcu.residue_and_atom.int_from_AA_code(key) for key
+                                                                  in consensus_dict],
+                                                                 verbose=verbose
+                                                                 )
     alignment = _DataFrame(alignment)
     alignment = alignment[alignment["match"] == True]
     out_list = [None for __ in top.residues]

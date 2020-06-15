@@ -5,12 +5,10 @@ Installation
 
 hands-on session
 ----------------
-For our workshop on 03.06.2020 you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_. Please also see the note on :ref:`hk`.
+For our workshop on 03.06.2020 you can download the sources from `herez <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_. Please also see the note on :ref:`hk`.
 
 .. note::
  As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. For beginners, see the below paragraph
-
-
 
 Installation via package manager
 --------------------------------
@@ -34,7 +32,7 @@ Installation from the source
 
 .. warning::
  * At the moment, the repository is private.
- * For our workshop on 03.06.2020 you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_.
+ * For our workshop on 03.06.2020 you can download the sources from `herey <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_.
  * Please unzip the sources to your preferred software folder and continue with these instructions:
 
 * Execute the `setup.py` file::
@@ -97,4 +95,8 @@ MacOs and Windows
  python setup.py develop
 
 The needed dependencies should install automatically (see above the note about environments) and even if that fails for some reason, you should be able to use *some* package manager to install them manually.
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
 

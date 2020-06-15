@@ -107,10 +107,14 @@ def delete_exp_in_keys(idict, exp, sep="-"):
 
     out_dict = {}
     for names, val in idict.items():
-        name = [name for name in names.split(sep) if exp not in name]
-        assert len(name) == 1, name
-        out_dict[name[0]]=val
+        new_name = delete_pattern_in_ctc_label(exp,names,sep)
+        out_dict[new_name]=val
     return out_dict
+
+def delete_pattern_in_ctc_label(pattern, label, sep):
+    new_name = [name for name in label.split(sep) if pattern not in name]
+    assert len(new_name) == 1, new_name
+    return new_name[0]
 
 def unify_freq_dicts(freqs,
                      exclude=None,
@@ -164,10 +168,6 @@ def unify_freq_dicts(freqs,
         split_key = key.split(sep)
         return sep.join([split_key[ii] for ii in _np.argsort(split_key)])
 
-    # Remove fragment information from the key
-    def _defrag_key(key,defrag,sep="-"):
-        return sep.join([kk.split(defrag,1)[0] for kk in key.split(sep)])
-
     # Create a copy, with re-ordered keys if needed
     freqs_work = {}
     for key, idict in freqs.items():
@@ -195,7 +195,6 @@ def unify_freq_dicts(freqs,
     shared = list(_np.unique(shared))
     not_shared = list(_np.unique(not_shared))
     all_keys = shared + not_shared
-
     # Prune keys we're not interested in
     excluded = []
     if exclude is not None:
@@ -230,7 +229,7 @@ def unify_freq_dicts(freqs,
 
     return freqs_work
 
-def freq_file2dict(ifile):
+def freq_file2dict(ifile, defrag=None):
     r"""
     Read a file containing the frequencies ("freq") and labels ("label")
     of pre-computed contacts
@@ -248,15 +247,19 @@ def freq_file2dict(ifile):
     if ext.lower() == ".xlsx":
         df = _read_excel(ifile)
         if "freq" in df.keys() and "label" in df.keys():
-            return {key: val for key, val in zip(df["label"].values, df["freq"].values)}
+            res = {key: val for key, val in zip(df["label"].values, df["freq"].values)}
         else:
             row_lab, col_lab = _np.argwhere(df.values == "label").squeeze()
             row_freq, col_freq = _np.argwhere(df.values == "freq").squeeze()
             assert row_lab == row_freq,"File %s yields a weird dataframe on read \n%s"%(ifile,df)
-            return {key: val for key, val in zip(df.values[row_freq + 1:, col_lab].tolist(),
+            res = {key: val for key, val in zip(df.values[row_freq + 1:, col_lab].tolist(),
                                                  df.values[row_freq + 1:, col_freq].tolist())}
     else:
-        return freq_ascii2dict(ifile)
+        res = freq_ascii2dict(ifile)
+    if defrag is not None:
+        res = {_defrag_key(key,'@'):val for key, val in res.items()}
+
+    return res
 
 def freq_ascii2dict(ifile, comment=["#"]):
     r"""
@@ -528,3 +531,7 @@ def match_dict_by_patterns(patterns_as_csv, index_dict, verbose=False):
         matching_values = _np.hstack([index_dict[key] for key in matching_keys])
 
     return matching_keys, matching_values
+
+ # Remove fragment information from the key
+def _defrag_key(key,defrag,sep="-"):
+    return sep.join([kk.split(defrag,1)[0] for kk in key.split(sep)])

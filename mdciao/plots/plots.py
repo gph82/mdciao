@@ -62,7 +62,7 @@ def plot_w_smoothing_auto(ax, x, y,
             color=color)
 
 def compare_groups_of_contacts(dictionary_of_groups,
-                               colordict,
+                               colordict=None,
                                mutations_dict={},
                                width=.2,
                                ax=None,
@@ -98,9 +98,9 @@ def compare_groups_of_contacts(dictionary_of_groups,
         needs to be passed along, otherwise frequencies cannot be computed
         on-the-fly
 
-    colordict : dict
+    colordict : dict, default is None
         Using the same keys as :obj:`dictionary_of_groups`,
-        a color for each group
+        a color for each group. Defaults to some sane matplotlib choices
     anchor : str, default is None
         This string will be deleted from the contact labels,
         leaving only the partner-residue to identify the contact.
@@ -144,7 +144,6 @@ def compare_groups_of_contacts(dictionary_of_groups,
     posret : None (TODO find out why I am returning this!)
 
     """
-
     freqs = {key: {} for key in dictionary_of_groups.keys()}
 
     for key, ifile in dictionary_of_groups.items():
@@ -170,7 +169,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
                                     figsize=(figsize[0], figsize[1]*nrows))
         for iax, (key, ifreq) in zip(myax, freqs.items()):
             plot_unified_freq_dicts({key: ifreq},
-                                    colordict,
+                                    colordict=colordict,
                                     ax=iax, width=width,
                                     fontsize=fontsize,
                                     **kwargs_plot_unified_freq_dicts)
@@ -182,7 +181,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
 
     freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag="@")
     myfig, iax, posret = plot_unified_freq_dicts(freqs,
-                                                 colordict,
+                                                 colordict=colordict,
                                                  ax=ax,
                                                  width=width,
                                                  fontsize=fontsize,
@@ -227,7 +226,7 @@ def add_hover_ctc_labels(iax, ctc_mat,
 """
 
 def plot_unified_freq_dicts(freqs,
-                            colordict,
+                            colordict=None,
                             width=.2,
                             ax=None,
                             figsize=(10, 5),
@@ -247,8 +246,8 @@ def plot_unified_freq_dicts(freqs,
     freqs : dictionary of dictionaries
         The first-level dict is keyed by system names, e.g freqs.keys() = ["WT","D10A","D10R"]
         The second-level dict is keyed by contact names
-    colordict : dict
-        What color each system gets
+    colordict : dict, default is None.
+        What color each system gets. Default is some sane matplotlib values
     width : float, default is .2
         Bar width of the bar plot
     ax : :obj:`matplotlib.pyplot.Axes`, default is None
@@ -299,7 +298,6 @@ def plot_unified_freq_dicts(freqs,
 
     """
     _rcParams["font.size"] = fontsize
-
     #make copies of dicts
     freqs_work = {key:{key2:val2 for key2, val2 in val.items()} for key, val in freqs.items()}
 
@@ -345,6 +343,10 @@ def plot_unified_freq_dicts(freqs,
                           )
                           }
 
+    # Prepare the dict
+    if colordict is None:
+        colordict = {key:val for key,val in zip(master_keys, _colorstring.split(","))}
+
     # Prepare the positions of the bars
     delta = {}
     for ii, key in enumerate(master_keys):
@@ -365,8 +367,9 @@ def plot_unified_freq_dicts(freqs,
                 if len(keys_popped_above)>0:
                     label = label[:-1]+", +%2.1f above threshold)"%(_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
                 if len(keys_popped_below) > 0:
-                    label = label[:-1] + ", +%2.1f below threshold)" % (
-                        _np.sum([freqs[skey][nskey] for nskey in keys_popped_below]))
+                    not_shown_sigma = _np.sum([freqs[skey][nskey] for nskey in keys_popped_below])
+                    if not_shown_sigma>0:
+                        label = label[:-1] + ", +%2.1f below threshold)" % (not_shown_sigma)
                 label = _mdcu.str_and_dict.replace4latex(label)
 
             else:
@@ -590,3 +593,5 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         im.set_clim(0.0, 1.0)
     fig.tight_layout()
     return iax, pixelsize
+
+_colorstring = 'tab:blue,tab:orange,tab:green,tab:red,tab:purple,tab:brown,tab:pink,tab:gray,tab:olive,tab:cyan'

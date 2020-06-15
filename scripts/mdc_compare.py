@@ -15,7 +15,7 @@ else:
     assert len(a.keys.split(","))==nf
     keys = a.keys.split(",")
 file_dict = {key: file for key, file in zip(keys, a.files)}
-col_dict =  {key: col for key, col in zip(keys, a.colors.split(","))}
+colordict =  {key: col for key, col in zip(keys, a.colors.split(","))}
 mut_dict = {}
 if a.mutations is not None:
     for pair in a.mutations.split(","):
@@ -23,7 +23,7 @@ if a.mutations is not None:
         mut_dict[key.replace(" ","")]=val.replace(" ","")
 
 # Call the method
-myfig, freqs, posret = compare(file_dict, col_dict,
+myfig, freqs, posret = compare(file_dict, colordict=colordict,
                                anchor=a.anchor,
                                mutations_dict=mut_dict)
 myfig.tight_layout()

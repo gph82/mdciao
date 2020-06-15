@@ -388,7 +388,7 @@ def parser_for_rn():
 
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
-    _parser_add_output_desc(parser, default='neighborhoods')
+    _parser_add_output_desc(parser, default='neighborhood')
     _parser_add_t_unit(parser)
     _parser_add_curve_color(parser)
     _parser_add_gray_backgroud(parser)
@@ -402,8 +402,14 @@ def parser_for_rn():
     _parser_add_pop(parser)
     _parser_add_ylim_Ang(parser)
     _paser_add_guess(parser)
+    _parser_add_switch(parser)
     return parser
 
+def _parser_add_switch(parser):
+    parser.add_argument("-s","--switch_off_Ang",
+                        default=None,
+                        type=float,
+                        help="Use a linear switchoff instead of a crisp one. Deafault is None")
 def parser_for_dih():
     parser = _parser_top_traj(description='Small analysis tool for computation of residue dihedrals, backbone and sidechains.')
 
@@ -637,6 +643,7 @@ def parser_for_CGN_overview():
 
     return parser
 
+# TODO use the colorstring here?
 def parser_for_compare_neighborhoods():
     parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies from different files.")
     parser.add_argument("files", type=str, nargs="+", help="Files (ASCII or .xlsx) containing the frequencies and labels in the first columns")

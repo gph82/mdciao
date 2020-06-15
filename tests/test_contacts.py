@@ -11,7 +11,8 @@ from mdciao.contacts.contacts import \
     _Residues, \
     _ContactStrings, \
     _TimeTraces, \
-    _Fragments
+    _Fragments, \
+    _linear_switchoff
 
 import mdtraj as md
 import unittest
@@ -734,7 +735,7 @@ class TestContactPair(unittest.TestCase):
                                   )
         _plt.figure()
         iax = _plt.gca()
-        CP.plot_timetrace(iax)
+        CP._plot_timetrace(iax)
 
     def test_plot_timetrace_just_options(self):
         CP = contacts.ContactPair([0, 1],
@@ -744,13 +745,13 @@ class TestContactPair(unittest.TestCase):
                                   )
         _plt.figure()
         iax = _plt.gca()
-        CP.plot_timetrace(iax,
-                          ctc_cutoff_Ang=2,
-                          shorten_AAs=True,
-                          ylim_Ang="auto")
+        CP._plot_timetrace(iax,
+                           ctc_cutoff_Ang=2,
+                           shorten_AAs=True,
+                           ylim_Ang="auto")
         with pytest.raises(ValueError):
-            CP.plot_timetrace(iax,
-                              ylim_Ang="max")
+            CP._plot_timetrace(iax,
+                               ylim_Ang="max")
 
 
 class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
@@ -1972,6 +1973,48 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                             list_by_interface=True,
                                             interface_vline=True)
 
+
+class Test_linear_switchoff(unittest.TestCase):
+
+    def setUp(self):
+        self.d_in_Ang =_np.array([3., 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.])
+        self.linearized = _np.array([1., .9, .8, .7, .6, .5, .4, .3, .2, .1, 0.])
+    def test_just_works(self):
+        # Switch in 1 ang
+        _np.testing.assert_allclose(self.linearized,
+                                    _linear_switchoff(self.d_in_Ang, 3, 1))
+        # Switch in 2 Ang
+        _np.testing.assert_allclose(_np.array([1., .95, .90, .85, .80, .75, .70, .65, .60, .55, .5]),
+                                    _linear_switchoff(self.d_in_Ang, 3, 2))
+
+    def test_from_ContactPair(self):
+        CP = contacts.ContactPair([0,1], [self.d_in_Ang / 10], [_np.arange(len(self.d_in_Ang))])
+        bintrajs = CP.binarize_trajs(3,switch_off_Ang=1)
+        _np.testing.assert_allclose(bintrajs[0],self.linearized,atol=1e-7)
+
+    def test_from_ContactGroup_bintrajs(self):
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
+                                                         [self.d_in_Ang / 10],
+                                                         [_np.arange(len(self.d_in_Ang))]),
+                                    contacts.ContactPair([0, 2],
+                                                         [self.d_in_Ang[::-1] / 10],
+                                                         [_np.arange(len(self.d_in_Ang))])])
+
+        bintrajs = CG.binarize_trajs(3,switch_off_Ang=1)
+        _np.testing.assert_allclose(bintrajs[0][0], self.linearized,atol=1e-7)
+        _np.testing.assert_allclose(bintrajs[1][0], self.linearized[::-1], atol=1e-7)
+
+    def test_from_ContactGroup_frequencies(self):
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
+                                                         [self.d_in_Ang / 10],
+                                                         [_np.arange(len(self.d_in_Ang))]),
+                                    contacts.ContactPair([0, 2],
+                                                         [self.d_in_Ang[::-1] / 10],
+                                                         [_np.arange(len(self.d_in_Ang))])])
+
+        _np.testing.assert_almost_equal(CG.frequency_per_contact(3, switch_off_Ang=1),
+                                        [_np.mean(self.linearized), _np.mean(self.linearized)],
+                                        )
 
 if __name__ == '__main__':
     unittest.main()

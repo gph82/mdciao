@@ -13,6 +13,8 @@ Welcome to mdciao's documentation!
 
 Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org.org>`_ for visualizaton.
 
+.. include:: basic_usage.rst
+
 Basic Principle
 ---------------
 
@@ -31,51 +33,6 @@ and calculates the  time-traces of residue-residue distances, and from there, **
  * The sharp, "distance-only" cutoff can sometimes over- or under-represent some interaction types. Modules like `get_contacts <https://github.com/getcontacts/getcontacts>`_ capture these interactions better.
 
  However, both these issues (if/when they arise) can be spotted easily by looking at the time-traces of said contacts and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
-
-.. _minimal_example:
-
-Basic Usage
------------
-
-.. note::
-   The simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples.
-
-This command::
-
- mdc_neighborhoods.py p2.noH.pdb run1.1-p.stride.5.noH.xtc --residues L394 -nf
-
-
-will print the following to the terminal (some headers have been left out)::
-
- ...
- #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
- 1:     0.55   LEU394-ARG389       0-0         353-348        33     0.55
- 2:     0.47   LEU394-LYS270       0-0         353-972        71     1.02
- 3:     0.38   LEU394-LEU388       0-0         353-347        32     1.39
- 4:     0.23   LEU394-LEU230       0-0         353-957        56     1.62
- 5:     0.10   LEU394-ARG385       0-0         353-344        29     1.73
- These 5 contacts capture 1.7 of the total frequency 1.8 (over 87 contacts). 4 ctcs already capture 90.0% of 1.8.
- The following files have been created
- ./neighborhoods.overall@3.5_Ang.pdf
- ./neighborhoods.LEU394.time_trace@3.5_Ang.pdf
- ./neighborhoods.LEU394.gs-b2ar.dat
-
-And produce the following figures (not the captions):
-
-.. figure:: imgs/neighborhoods.overall@3.5_Ang.Fig.1.png
-   :scale: 50%
-
-   **Fig. 1** Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the alpha5 helix of the Gs-protein are shown. The simualtion started from the `3SN6` structure (including the B2AR receptor). The simualtion itself can be seen interactively:
-
-Annotated figures with the timetraces of the above distances are also produced automatically:
-
-.. figure:: imgs/neighborhoods.LEU394.time_trace@3.5_Ang.Fig.2.png
-   :scale: 33%
-   :align: center
-
-   **Fig. 2** Time-traces of the residue-residue distances behind the frequency barplots of Fig. 1. The last time-trace represents the total number of neighbors (distances below the given cutoff) at any given moment in the trajectory. On average, LEU394 has 1.7 non-bonded neighbors below the cutoff (see legend of Fig.1)
-
-Anything that gets shown in any way to the output can be saved for later use as human readable ASCII-files, Excel-tables or NumPy `.npy` files for later use.
 
 Highlights
 ----------
@@ -136,7 +93,7 @@ Highlights
 
       **Fig. 4** (click to enlarge). Interface contact matrix between the B2AR receptor and the Gs protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor (BW) and G-protein (CGN). Please note: this is not a **symmetric** contact-matrix. The y-axis shows residues in the Gs protein and the x-axis in the receptor.
 
-* Since **Fig. 4** is bound to incorporate a lot of blank pixels. That is why mdciao will also produce sparse plots and figures that highlight the formed contacts only:
+* Since **Fig. 4** is bound to incorporate a lot of blank pixels, ``mdciao`` will also produce sparse plots and figures that highlight the formed contacts only:
 
  .. figure:: imgs/interface.overall@3.5_Ang.Fig.5.png
       :scale: 15%
@@ -175,55 +132,14 @@ Highlights
       :scale: 50%
       :align: left
 
-      **Fig. 5** (click to enlarge) Contact frequencies of the pairs specified in the file `tip.json`, shown above with the contact type indicated by the stripes on the bars. Use e.g. the the 3D-visualisation to check how "L394-K270" switches between SC-SC and SC-BB.
+      **Fig. 5** (click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the the 3D-visualisation http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl to check how "L394-K270" switches between SC-SC and SC-BB.
 
 * compare contact frequencies coming from different calculations
-
 
 * compare, detect, and show frequency differences across different systems, e.g. to look for the effect of mutations, pH-differences etc
 * TODO expand
 
-
-Command line tools
-------------------
-
-The best way to find out about the command-line tools that ``mdciao`` is to use...a command-line tool shipped with ``mdciao``::
-
- mdc_examples.py ?
-
- Wrapper script to showcase and optionally run examples of the
- command-line-tools that ship with mdciao.
- Availble command line tools are
-  * mdc_BW_overview.py
-  * mdc_CGN_overview.py
-  * mdc_compare.py
-  * mdc_fragments.py
-  * mdc_interface.py
-  * mdc_neighborhoods.py
-  * mdc_sites.py
- Issue:
-  * 'mdc_command.py -h' to view the command's documentation or
-  * 'mdc_examples.py mdc_command' to show and/or run an example of that command
-
-
-What these tools do is:
-
-* mdc_neighborhoods
-   Analyse residue neighborhoods using a distance cutoff
-* mdc_interface
-   Analyse interfaces between any two groups of residues using a distance cutoff
-* mdc_sites
-   Analyse a specific set of residue-residue contacts using a distance cutoff
-* mdc_fragments
-   Break a molecular topology into fragments using different heuristics.
-* mdc_BW_overview
-   Map a Ballesteros-Weinstein (BW)-type nomenclature on an input topology.
-* mdc_CGN_overview
-   Map a Common G-alpha Numbering (CGN)-type nomenclature on an input topology
-* mdc_compare
-   Compare residue-residue contact frequencies from different files
-
-You can see their documentation by using the `-h` flag whe invoking them from the command line or by checking the help for the :ref:`cli_cli`.
+.. include:: cli_stub.rst
 
 .. _API:
 
@@ -233,34 +149,18 @@ API
 
  import mdciao
 
-They allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks. Head here :ref:`api_api` for a more detailed description.
+They allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks. Head here :ref:`api_ref` for a more detailed description.
 
 All API objects and functions are extensively documented. Please use the powerful hinting capabilities of the IPython terminal (e.g. `Tab` for autocomplete or `cmd?+Enter`) or the `JuPyter Notebooks <https://www.dataquest.io/blog/jupyter-notebook-tips-tricks-shortcuts/>`_.
 
-.. note::
-   Whereas the command-line-tools from above tend to be more stable, the API functions and object calls might change future. Bugfixes, refactors and redesigns are in the pipeline and experienced users should know how to deal with this.
-
+.. include:: api_note.rst
 
 
 .. toctree::
    :maxdepth: 2
    :hidden:
 
-   index
-   cli_cli
+   api/api
+   cli_cli/cli_cli
    installation
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Modules:
-   contacts
-   fragments
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Submodules:
-   aa_utils
-   bond_utils
-   list_utils
-   nomenclature_utils
-   sequence_utils

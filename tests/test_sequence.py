@@ -4,7 +4,7 @@ import numpy as _np
 from mdciao.filenames import filenames
 from pandas import DataFrame as _DF
 from mdciao.fragments import get_fragments
-from mdciao import sequence
+from mdciao.utils import sequence
 import pytest
 
 test_filenames = filenames()

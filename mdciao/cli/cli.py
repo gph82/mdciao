@@ -478,6 +478,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                           n_jobs=1,
                           separate_N_ctcs=False,
                           accept_guess=False,
+                          switch_off_Ang=None,
                           ):
 
     # Input control residues
@@ -563,14 +564,18 @@ def residue_neighborhoods(topology, trajectories, residues,
           ", consider using a smaller nlist_cutoff_Ang " % (
               len(ctc_idxs), len(ctc_idxs_small)))
 
-    ctcs_trajs, time_array, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+    ctcs_trajs, time_arrays, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                                        chunksize=chunksize_in_frames, return_times_and_atoms=True,
                                                        consolidate=False,
                                                        n_jobs=n_jobs,
                                                        )
     print() # to make sure we don't overwrite outut
     actcs = _np.vstack(ctcs_trajs)
-    ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
+    from mdciao.contacts.contacts import _linear_switchoff
+    if switch_off_Ang is None:
+        ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
+    else:
+        ctcs_mean = _np.mean(_linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10),0)
 
     final_look = _mdcctcs.select_and_report_residue_neighborhood_idxs(ctcs_mean, res_idxs_list,
                                                              fragments_as_residue_idxs, ctc_idxs_small,
@@ -589,7 +594,7 @@ def residue_neighborhoods(topology, trajectories, residues,
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             CPs.append(_mdcctcs.ContactPair(pair,
                                    [itraj[:, idx] for itraj in ctcs_trajs],
-                                   time_array,
+                                   time_arrays,
                                    top=refgeom.top,
                                    anchor_residue_idx=res_idx,
                                    consensus_labels=consensus_labels,
@@ -638,6 +643,7 @@ def residue_neighborhoods(topology, trajectories, residues,
             else:
                 ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
                                               n_nearest,
+                                              switch_off_Ang=switch_off_Ang,
                                               jax=jax,
                                               xmax=n_ctcs,
                                               label_fontsize_factor=panelsize2font / panelsize,
@@ -670,6 +676,7 @@ def residue_neighborhoods(topology, trajectories, residues,
             # TODO this code is repeated in sites...can we abstract this oafa?
             if table_ext=='xlsx':
                 ihood.frequency_spreadsheet(ctc_cutoff_Ang, fname,
+                                            switch_off_Ang=switch_off_Ang,
                                             write_interface=False,
                                             by_atomtypes=True,
                                             # AA_format="long",
@@ -677,7 +684,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                                             )
             else:
                 with open(fname, 'w') as f:
-                    f.write(ihood.frequency_str_ASCII_file(ctc_cutoff_Ang))
+                    f.write(ihood.frequency_str_ASCII_file(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang))
             print(fname)
 
     #TODO make a method out of this to use in all CLTs
@@ -691,6 +698,7 @@ def residue_neighborhoods(topology, trajectories, residues,
             myfig = ihood.plot_timedep_ctcs(panelheight,
                                             color_scheme=_my_color_schemes(curve_color),
                                             ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                            switch_off_Ang=switch_off_Ang,
                                             dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
                                             gray_background=gray_background,
                                             n_smooth_hw=n_smooth_hw,
@@ -722,7 +730,7 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     return {"ctc_idxs": ctc_idxs_small,
             'ctcs_trajs': ctcs_trajs,
-            'time_array': time_array,
+            'time_array': time_arrays,
             "neighborhoods":neighborhoods}
 
 def interface(

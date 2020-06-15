@@ -19,7 +19,7 @@ def top2residue_bond_matrix(top,
     create_standard_bonds : boolean, default is False
         Advanced users only, can easily lead to wrong
         results in case of .gro files, because
-        :obj:`mdtraj.Topology.create_standard_bonds'
+        :obj:`mdtraj.Topology.create_standard_bonds`
         needs chain information to avoid creating
         bonds between residues that follow one nother
 
