@@ -11,6 +11,8 @@ from collections import \
     defaultdict as _defdict, \
     Counter as _col_Counter
 
+from tqdm import tqdm as _tqdm
+
 from matplotlib import \
     pyplot as _plt,\
     rcParams as _rcParams
@@ -30,28 +32,31 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                                                 interactive=False,
                                                 fraction=.9
                                                 ):
-    """Prints a formatted summary of contact frequencies
-       Returns a residue-index keyed dictionary containing the indices
-       of :obj:`residxs_pairs` relevant for this residue.
+    """Extract residue neighborhoods from pre-computed contact frequencies.
 
+    Returns a residue-index keyed dictionary containing the indices
+    of :obj:`residxs_pairs` relevant for this residue.
 
+    Can be used interactively to decide on-the-fly which residues to
+    include in the neighborhood..
 
     Parameters
     ----------
     ctc_freqs: iterable of floats
         Contact frequencies between 0 and 1
     res_idxs: list of integers
-        list of residuee idxs
+        list of residue idxs for which one wants to extract the neighborhoods
     fragments: iterable of integers
         Fragments of the topology defined as list of non-overlapping residue indices
     residxs_pairs: iterable of integer pairs
         The residue pairs for which the contact frequencies in :obj:`ctc_freqs`
         were computed.
-    top : :py:class:`mdtraj.Topology`
+    top : :obj:`mdtraj.Topology`
+        The topology from which the residues come
     n_ctcs : integer, default is 5
         Number of contacts to report per residue.
     restrict_to_resSeq: int, default is None
-        Produce the report only for the residue with this resSeq index. Default
+        Include only residues with this resSeq index. Default
         behaviour is to produce for all residues in :obj:`resSeq2residxs`
     interactive : boolean, default is False
         After reporting each neighborhood up to :obj:`n_ctcs` partners,
@@ -63,10 +68,15 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
     Returns
     -------
     selection : dictionary
-       selection[300] = [100,200,201,208,500,501]
-       means that pairs :obj:`residxs_pairs[100]`,...
-       are the most frequent formed contacts for residue 300
-       (up to n_ctcs or less, see option 'interactive')
+        Dictionary keyed with residue indices and valued with lists of
+        indices for :obj:`residxs_pairs` s.t. for example:
+
+           selection[30] = [100,200]
+
+        means that for the residue with the index 300, the :obj:`residxs_pairs`
+        on the 100-th and 200-th position, e.g. contain the pairs for its most
+        frequent neighbors, e.g. [30-45] and [30-145].
+        :obj:`n_ctcs` controls the length of the output, see also option 'interactive')
     """
     assert len(ctc_freqs) == len(residxs_pairs)
 
@@ -123,7 +133,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
                n_jobs=1,
                progressbar=False,
                **mdcontacts_kwargs):
-    """Returns the time-dependent traces of residue-residue contacts from
+    """Returns the time-traces of residue-residue distances from
     a list of trajectories
 
     Parameters
@@ -159,15 +169,13 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 
     Returns
     -------
-    ctcs, or
+    ctcs :
     ctcs, time_trajs, atom_idxs if return_time=True
 
     """
 
-    from tqdm import tqdm
-
     if progressbar:
-        iterfunct = lambda a : tqdm(a)
+        iterfunct = lambda a : _tqdm(a)
     else:
         iterfunct = lambda a : a
     ictcs_itimes_iaps = _Parallel(n_jobs=n_jobs)(_delayed(per_traj_ctc)(top, itraj, ctc_residxs_pairs, chunksize, stride, ii,
@@ -198,7 +206,9 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
                  **mdcontacts_kwargs):
     r"""
     Wrapper for :obj:`mdtraj.contacs` for strided, chunked computation
-    of contacts of either :obj:`mdtraj.Trajectory` objects or
+    of contacts.
+
+    Input can be directly :obj:`mdtraj.Trajectory` objects or
     trajectory files on disk (e.g. xtcs, dcs etc)
 
     You can fine-tune the computation itself using mdcontacts_kwargs
