@@ -1,3 +1,13 @@
+r"""
+Simple operations with bonds between the
+residues of an :obj:`mdtraj.Topology`
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+
+
+"""
 import numpy as _np
 
 # This is lifted from mdas, the original source shall remain there

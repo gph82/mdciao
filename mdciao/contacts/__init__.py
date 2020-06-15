@@ -1,15 +1,20 @@
 r"""
 
+Computation, bookkeeping, and manipulation
+of residue-residue contacts.
 
-This module methods and classes related to the
-computation of residue-residue contacts from
-molecular dynamics trajectories.
+The methods wrap around :obj:`mdtraj.compute_contacts`
+to extract residue-residue distances.
 
-It is recommened to use higher-level methods of the API,
+The classes contain and abstract these distances into
+sense-making groups, offering methods to operate directly
+on all residue-residue distances.
+
+It is recommended to use higher-level methods of the API,
 like those exposed by :obj:`mdciao.cli` to create
-:obj:`ContactPair` or :obj:`ContactGroup` objects,
-but of course experienced users can access them directly.
-
+:obj:`ContactPair` or :obj:`ContactGroup` objects and
+then use the methods stated above, but of course experienced
+users can instantiate them directly.
 
 .. currentmodule:: mdciao.contacts
 
@@ -29,6 +34,7 @@ Classes
 =======
 
 .. autosummary::
+    :nosignatures:
     :toctree: generated
 
     ContactPair

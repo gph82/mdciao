@@ -32,7 +32,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                                                 interactive=False,
                                                 fraction=.9
                                                 ):
-    """Extract residue neighborhoods from pre-computed contact frequencies.
+    """Group residue pairs into neighborhoods using pre-computed contact frequencies.
 
     Returns a residue-index keyed dictionary containing the indices
     of :obj:`residxs_pairs` relevant for this residue.
@@ -55,9 +55,8 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
         The topology from which the residues come
     n_ctcs : integer, default is 5
         Number of contacts to report per residue.
-    restrict_to_resSeq: int, default is None
-        Include only residues with this resSeq index. Default
-        behaviour is to produce for all residues in :obj:`resSeq2residxs`
+    restrict_to_resSeq: iterable, default is None
+        Only cycle through the residues in :obj:`res_idxs` with these resSeq indices.
     interactive : boolean, default is False
         After reporting each neighborhood up to :obj:`n_ctcs` partners,
         ask the user how many should be kept

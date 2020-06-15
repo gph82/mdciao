@@ -1,21 +1,21 @@
 import numpy as _np
-
-from mdtraj.core.residue_names import \
-    _AMINO_ACID_CODES
-
+from mdtraj.core.residue_names import _AMINO_ACID_CODES
 import mdciao.utils as _mdcu
-
 from  pandas import unique as _pandas_unique
-
 from msmtools.estimation import connected_sets as _connected_sets
 
-_abc = "abcdefghijklmnopqrst"
-
+_allowed_fragment_methods = ['resSeq',
+                             'resSeq+',
+                             'lig_resSeq+',
+                             'bonds',
+                             'resSeq_bonds',
+                             'chains',
+                             "None",
+                             ]
 def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                idx2label=None,
                return_string=False, **print_kwargs):
-    """
-    For pretty-printing of fragments of an :obj:`mtraj.topology`
+    """Pretty-printing of fragments of an :obj:`mtraj.topology`
 
     Parameters
     ----------
@@ -78,20 +78,30 @@ def get_fragments(top,
     Parameters
     ----------
     top : :py:class:`mdtraj.Topology`
-    method : str, default is 'resSeq'
+    method : str, default is 'lig_resSeq+'
         The method passed will be the basis for creating fragments. Check the following options
-        with the example sequence "…-A27,Lig28,K29-…-W40,D45-…-W50,CYSP51,GDP52"
+        with the example sequence
+
+            "…-A27,Lig28,K29-…-W40,D45-…-W50,CYSP51,GDP52"
+
         - 'resSeq'
             breaks at jumps in resSeq entry:
+
             […A27,Lig28,K29,…,W40],[D45,…,W50,CYSP51,GDP52]
+
         - 'resSeq+'
             breaks only at negative jumps in resSeq:
+
             […A27,Lig28,K29,…,W40,D45,…,W50,CYSP51,GDP52]
-        - ‘bonds’
+
+        - 'bonds'
             breaks when residues are not connected by bonds, ignores resSeq:
+
             […A27][Lig28],[K29,…,W40],[D45,…,W50],[CYSP51],[GDP52]
+
             notice that because phosphorylated CYSP51 didn't get a
             bond in the topology, it's considered a ligand
+
         - 'resSeq_bonds'
             breaks at resSeq jumps and at missing bonds
         - 'lig_resSeq+'
@@ -102,19 +112,22 @@ def get_fragments(top,
         - None or 'None'
             all residues are in one fragment, fragment 0
     fragment_breaker_fullresname : list
-        list of full residue names. Example - GLU30 that will be used to break fragments,
+        list of full residue names. Example [GLU30] will be used to break fragments,
         so that [R1, R2, ... GLU30,...R10, R11] will be broken into [R1, R2, ...], [GLU30,...,R10,R11]
     atoms : boolean, optional
-        Instead of returning residue indices, retun atom indices
+        Instead of returning residue indices, return atom indices
     join_fragments : list of lists
-        List of lists of integer fragment idxs which are to be joined together.
-        (After splitting them according to "methods")
+        After getting the fragments with :obj:`method`,
+        join these fragments again. The use case are hard
+        cases where no method gets it right and some post-processing
+        is needed.
         Duplicate entries in any inner list will be removed.
-        One fragment idx cannot appear in more than one inner list, otherwise program throws an error.
+        One fragment idx cannot appear in more than one inner list,
+        otherwise an exception is thrown
     verbose : boolean, optional
-
+        Be verbose
     kwargs_per_residue_fragment_picker : optional
-        additional arguments
+        additional arguments, see :obj:`per_residue_fragment_picker`
 
     Returns
     -------
@@ -154,9 +167,9 @@ def get_fragments(top,
     elif method == "chains":
         fragments = [[rr.index for rr in ichain.residues] for ichain in top.chains]
     elif method == "resSeq+":
-        fragments = get_fragments_resSeq_plus(top, fragments_resSeq)
+        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
     elif method == "lig_resSeq+":
-        fragments = get_fragments_resSeq_plus(top, fragments_resSeq)
+        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
         for rr in top.residues:
             if rr.name[:3] not in _AMINO_ACID_CODES.keys():
                 frag_idx = _mdcu.lists.in_what_fragment(rr.index,fragments)
@@ -247,7 +260,18 @@ def get_fragments(top,
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
 
-def get_fragments_resSeq_plus(top, fragments_resSeq):
+def _get_fragments_resSeq_plus(top, fragments_resSeq):
+    r"""
+    Get fragments using the 'resSeq+' method
+    Parameters
+    ----------
+    top
+    fragments_resSeq
+
+    Returns
+    -------
+
+    """
     to_join = [[0]]
     for ii, ifrag in enumerate(fragments_resSeq[:-1]):
         r1 = top.residue(ifrag[-1])
@@ -259,34 +283,29 @@ def get_fragments_resSeq_plus(top, fragments_resSeq):
 
     return _mdcu.lists.join_lists(fragments_resSeq, [tj for tj in to_join if len(tj) > 1])
 
-
-_allowed_fragment_methods = ['resSeq',
-                             'resSeq+',
-                             'lig_resSeq+',
-                             'bonds',
-                             'resSeq_bonds',
-                             'chains',
-                             "None",
-                             ]
 def overview(topology,
              methods=['all'],
              AAs=None,
              ):
 
     """
-    Prints the fragments created and their corresponding methods
+    Prints the fragments by all the available methods.
+
+    Optionally, you can pass along a list of residue
+    descriptors to be printed after the fragments have
+    been shown.
 
     Parameters
     ----------
-    topology :  :py:class:`mdtraj.Topology`
+    topology :  :obj:`mdtraj.Topology`
     methods : str or list of strings
-                method(s) to be used for obtaining fragments
-
+        method(s) to be used for obtaining fragments
+    AAs : list, default is None
+        Anything that :obj:`find_AA` can understand
 
     Returns
     -------
     None
-    prints the output from the get_fragments(), using the specified method(s)
 
     """
 
@@ -312,177 +331,6 @@ def _assert_method_allowed(method):
                                                  'Know methods are %s ' %
                                                  (method, "\n".join(_allowed_fragment_methods)))
 
-def rangeexpand_residues2residxs(range_as_str, fragments, top,
-                                 interpret_as_res_idxs=False,
-                                 sort=False,
-                                 allow_empty_ranges=False,
-                                 **per_residue_fragment_picker_kwargs):
-    r"""
-    Generalized range-expander (range-expander(2-5,7)=2,3,4,5,7 for a string containing
-    residue descriptors.
-
-    To dis-ambiguate descriptors, a fragment definition and a topology are needed
-
-    Note
-    ----
-    The input (= compressed range) is very flexible and accepts
-    mixed descriptors and wildcards, eg: GLU*,ARG*,GDP*,LEU394,380-385 is a valid range
-
-    Wildcards use the full resnames, i.e. E* is NOT equivalent to GLU*
-
-    Be aware, though, that wildcards are very powerful easily "grab" a lot of
-    residues, leading to long calculations and large outputs
-
-    Parameters
-    ----------
-    range_as_str : string
-    fragments : list of iterable of residue indices
-    top : :mdtraj:`Topology` object
-    interpret_as_res_idxs : bool, default is False
-        If True, indices without residue names ("380-385") values will be interpreted as
-        residue indices, not resdiue sequential indices
-    sort : bool
-        sort the expanded range on return
-    per_residue_fragment_picker_kwargs:
-        Optional parameters for :obj:`per_residue_fragment_picker`
-
-    Returns
-    -------
-    residxs_out = list of unique residue indices
-    """
-    residxs_out = []
-    #print("For the range", range_as_str)
-    for r in range_as_str.split(','):
-        assert not r.startswith("-")
-        if "*" in r or "?" in r:
-            assert "-" not in r
-            filtered = _mdcu.residue_and_atom.find_AA(top, r)
-            if len(filtered)==0:
-                raise ValueError("The input range contains '%s' which "
-                                 "returns no residues!"%r)
-            residxs_out.extend(_mdcu.residue_and_atom.find_AA(top,r))
-        else:
-            resnames = r.split('-')
-            assert len(resnames) >=1
-            if interpret_as_res_idxs:
-                residx_pair = [int(rr) for rr in resnames]
-            else:
-                residx_pair, __ = per_residue_fragment_picker(resnames, fragments, top,
-                                                              **per_residue_fragment_picker_kwargs)
-                if None in residx_pair:
-                    raise ValueError("The input range contains '%s' which "
-                                     "returns an untreatable range %s!" % (r, residx_pair))
-            residxs_out.extend(_np.arange(residx_pair[0],
-                                      residx_pair[-1] + 1))
-
-    if sort:
-        residxs_out = sorted(residxs_out)
-
-    residxs_out = _pandas_unique(residxs_out)
-    return residxs_out
-
-#TODO consider renaming
-#TODO consider moving elswhere
-def per_residue_fragment_picker(residue_descriptors,
-                                fragments, top,
-                                pick_this_fragment_by_default=None,
-                                fragment_names=None,
-                                additional_naming_dicts=None,
-                                extra_string_info='',
-                                ):
-    r"""
-    This function returns the fragment idxs and the residue idxs based on residue name/residue index.
-    If a residue is present in multiple fragments, the function asks the user to choose the fragment, for which
-    the residue idxs is reporte
-
-    :param residue_descriptors: string or list of of strings
-           AAs of the form of "GLU30" or "E30" or 30, can be mixed
-    :param fragments: iterable of iterables of integers
-            The integers in the iterables of 'fragments' represent residue indices of that fragment
-    :param top: :py:class:`mdtraj.Topology`
-    :param pick_this_fragment_by_default: None or integer.
-            Pick this fragment withouth asking in case of ambiguity. If None, the user will we prompted
-    :param fragment_names: list of strings providing informative names for the input fragments
-    :param extra_string_info: string with any additional info to be printed in case of ambiguity
-    :return: two dictionaries, resdesc2residxs and resdesc2fragidxs. If the AA is not found then the
-                dictionaries for that key contain None, e.g. resdesc2residxs[notfoundAA]=None
-
-    Returns
-    -------
-    residxs, fragidxs,
-        lists of integers
-
-    """
-    residxs = []
-    fragidxs = []
-    last_answer = 0
-
-    #TODO break the iteration in this method into a separate method. Same AAcode in different fragments will overwrite
-    # each other
-    if isinstance(residue_descriptors, (str, int)):
-        residue_descriptors = [residue_descriptors]
-
-    for key in residue_descriptors:
-        cands = _mdcu.residue_and_atom.find_AA(top, str(key))
-        cand_fragments = _mdcu.lists.in_what_N_fragments(cands, fragments)
-        # TODO refactor into smaller methods
-        if len(cands) == 0:
-            print("No residue found with descriptor %s"%key)
-            residxs.append(None)
-            fragidxs.append(None)
-        elif len(cands) == 1 :
-            residxs.append(cands[0])
-            fragidxs.append(cand_fragments[0])
-        else:
-            istr = "ambiguous definition for AA %s" % key
-            istr += extra_string_info
-            for cc, ss, char in zip(cands, cand_fragments, _abc):
-                fname = " "
-                if fragment_names is not None:
-                    fname = ' (%s) ' % fragment_names[ss]
-                istr = '%s) %10s in fragment %2u%swith residue index %2u'%(char, top.residue(cc),ss, fname, cc)
-                if additional_naming_dicts is not None:
-                    extra=''
-                    for key1, val1 in additional_naming_dicts.items():
-                        if cc in val1.keys() and val1[cc] is not None:
-                            extra +='%s: %s '%(key1,val1[cc])
-                    if len(extra)>0:
-                        istr = istr + ' (%s)'%extra.rstrip(" ")
-                print(istr)
-            if pick_this_fragment_by_default is None:
-                prompt =  "input one fragment idx (out of %s) and press enter.\n" \
-                          "Leave empty and hit enter to repeat last option [%s]\n" \
-                          "Use letters in case of repeated fragment index\n" % ([int(ii) for ii in cand_fragments], last_answer)
-
-                answer = input(prompt)
-            else:
-                answer = str(pick_this_fragment_by_default)
-                print("Automatically picked fragment %u" % pick_this_fragment_by_default)
-
-            if len(answer) == 0:
-                answer = last_answer
-                cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-            elif answer.isdigit():
-                answer = int(answer)
-                if answer in cand_fragments:
-                    cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-            elif answer.isalpha() and answer in _abc:
-                idx = _abc.find(answer)
-                answer = cand_fragments[idx]
-                cands  = cands[idx]
-            else:
-                raise ValueError("%s is not a possible answer"%answer)
-                #TODO implent k for keeping this answer from now on
-
-            assert answer in cand_fragments, (
-                        "Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
-            last_answer = answer
-
-            residxs.append(int(cands))  # this should be an integer
-            fragidxs.append(int(answer)) #ditto
-
-    return residxs, fragidxs
-
 def check_if_subfragment(sub_frag, fragname, fragments, top,
                          map_conlab=None,
                          keep_all=False):
@@ -491,7 +339,6 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     it clashes with other fragment definitions.
 
     Prompt for a choice in case it is necessary
-
 
     Example
     -------
@@ -556,7 +403,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     else:
         return sub_frag
 
-def fragments_strings_to_fragments(fragment_input, top, verbose=False):
+def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     r"""
     Method to help implement the input options wrt
     to fragments of :obj:`parsers.parser_for_interface`
@@ -725,15 +572,3 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
         print(', '.join(groups_as_keys[-1]))
 
     return groups_as_residue_idxs, groups_as_keys
-
-my_frag_colors=[
-         'magenta',
-         'yellow',
-         'lime',
-         'maroon',
-         'navy',
-         'olive',
-         'orange',
-         'purple',
-         'teal',
-]

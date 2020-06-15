@@ -549,24 +549,24 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
                                                               verbose=False)
     def test_consensus(self):
         from mdciao import fragments
-        fragments, conlab  =  fragments.fragments_strings_to_fragments(["consensus"],
-                                                  self.top)
+        fragments, conlab  =  fragments._fragments_strings_to_fragments(["consensus"],
+                                                                        self.top)
         [_np.testing.assert_array_equal(ii,jj) for ii, jj in zip(fragments,
                                                   self.fragments_by_resSeqplus)]
         assert conlab
 
     def test_other_method(self):
         from mdciao import fragments
-        fragments, conlab  =  fragments.fragments_strings_to_fragments(["resSeq"],
-                                                  self.top)
+        fragments, conlab  =  fragments._fragments_strings_to_fragments(["resSeq"],
+                                                                        self.top)
         [_np.testing.assert_array_equal(ii,jj) for ii, jj in zip(fragments,
                                                   self.fragments_by_resSeq)]
         assert not conlab
 
     def test_one_fragment(self):
         from mdciao import fragments
-        fragments, conlab =  fragments.fragments_strings_to_fragments(["0-10"],
-                                                                      self.top)
+        fragments, conlab =  fragments._fragments_strings_to_fragments(["0-10"],
+                                                                       self.top)
         other = _np.arange(11, self.top.n_residues)
         [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
                                                                   [_np.arange(11),
@@ -575,10 +575,10 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
 
     def test_more_than_one_fragment(self):
         from mdciao import fragments
-        fragments, conlab =  fragments.fragments_strings_to_fragments(["0-10",
+        fragments, conlab =  fragments._fragments_strings_to_fragments(["0-10",
                                                                        "11-100",
                                                                        "200-210"],
-                                                                      self.top)
+                                                                       self.top)
         [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
                                                                   [_np.arange(11),
                                                                    _np.arange(11,101),
@@ -587,11 +587,11 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
 
     def test_verbose(self):
         from mdciao import fragments
-        fragments, conlab =  fragments.fragments_strings_to_fragments(["0-10",
+        fragments, conlab =  fragments._fragments_strings_to_fragments(["0-10",
                                                                        "11-100",
                                                                        "200-210"],
-                                                                      self.top,
-                                                                      verbose=True)
+                                                                       self.top,
+                                                                       verbose=True)
 
 
 class Test_frag_dict_2_frag_groups(unittest.TestCase):

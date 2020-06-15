@@ -503,7 +503,7 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, __ = _mdcfrg.fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, __ = _mdcfrg._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
@@ -781,7 +781,7 @@ def interface(
 
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
@@ -1019,7 +1019,7 @@ def sites(topology,
     # Inform about fragments
     refgeom = _load_any_geom(topology)
 
-    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments_strings_to_fragments(fragments,refgeom.top,verbose=True)
+    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
