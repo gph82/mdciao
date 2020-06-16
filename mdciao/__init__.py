@@ -8,6 +8,7 @@ Welcome to mdciao! Below you will find the submodules exposed the API
     fragments
     sites
     cli
+    plots
     utils
 """
 

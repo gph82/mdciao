@@ -209,7 +209,7 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     ----------
     range_as_str : string
     fragments : list of iterable of residue indices
-    top : :mdtraj:`Topology` object
+    top : :obj:`mdtraj.Topology` object
     interpret_as_res_idxs : bool, default is False
         If True, indices without residue names ("380-385") values will be interpreted as
         residue indices, not resdiue sequential indices

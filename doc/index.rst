@@ -9,7 +9,7 @@
 Welcome to mdciao's documentation!
 ==================================
 
-``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an :ref:`API` to construct your own analysis workflow. Here you find our :ref:`minimal_example`.
+``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an :ref:`API` to construct your own analysis workflow. Here you can find our :ref:`minimal_example`.
 
 Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org.org>`_ for visualizaton.
 
@@ -83,7 +83,7 @@ Highlights
      G.H5 with   26 AAs   THR369@G.H5.1( 328)- LEU394@G.H5.26(353 ) (G.H5)
 
 
-* use fragment definitions to automatically compute interfaces::
+* use fragment definitions --like the ones above-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
 
     mdc_interface.py gs-b2ar.pdb gs-b2ar.xtc  -fg1 0-2 -fg2 3 --BW_un adrb2_human --CGN 3SN6 -t "3SN6 beta_2Ar-G_s interface"
 
@@ -115,7 +115,7 @@ Highlights
                ]}}
 
 
-  One added bonus is the .json files is that you can use the same file across different setups as long as the specified residues are present.
+  One added bonus is that the same .json files can be used file across different setups as long as the specified residues are present.
 
   The command::
 
@@ -158,9 +158,10 @@ All API objects and functions are extensively documented. Please use the powerfu
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
 
-   api/api
-   cli_cli/cli_cli
    installation
+   cli_cli/cli_cli
+   api/api
+
+
 

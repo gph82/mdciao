@@ -480,6 +480,119 @@ def residue_neighborhoods(topology, trajectories, residues,
                           accept_guess=False,
                           switch_off_Ang=None,
                           ):
+    r"""Per-residue neighborhoods based on contact frequencies between pairs
+    of residues.
+
+    A neighborhood is a :obj:`mdciao.contacts.ContactGroup`-object containing a set of
+    :obj:`mdciao.contacts.ContactPair`-objects with a shared residue,
+    called the `anchor_residue`.
+
+    The contact frequencies will be printed, plotted and saved, as well as the distance time-traces
+    used for their computation. The user may be prompted when necessary,
+    although this behaviour can be turned off.
+
+    Input can be from disk and/or from memory (see below).
+
+    Can be parallelized up to the number of used trajectories.
+
+    Many other optional parameters are exposed to allow fine-tuning of the
+    computing, plotting, printing, and saving. Additional information can be regarding nomenclature,
+    fragmentation heuristics and/or naming and or/coloring, residue labeling, time-trace
+    averaging, data-streaming,
+
+    Parameters
+    ----------
+    topology : str or :obj:`mdtraj.Trajectory`
+        This geometry is used as a topology and
+        as a reference geometry for :obj:`nlist_cutoff_Ang`.
+    trajectories : str or :obj:`mdtraj.Trajectory`
+        The MD-trajectories to calculate the frequencies from.
+        This input is pretty flexible. For more info check
+        :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
+        Accepted values are:
+         * pattern, e.g. "*.ext"
+         * one string containing a filename
+         * list of filenames
+         * one :obj:`mdtraj.Trajectory` object
+         * list of :obj:`mdtraj.Trajectory` objects
+    residues : int, iterable of ints or str
+        The residue(s) for which the neighborhood will be computed.
+        This input is pretty flexible wrt to strings and numbers,
+        which are interpreted as sequence indices unless :obj:`res_idxs` is True
+        Valid inputs are are:
+         * residues = [1,10,11,12]
+         * residues = '1,10,11,12'
+         * residues = '1,10-12'
+         * residues = [1]
+         * residues = 1
+         * residues = 1
+         * residues = '1,10-12,GLU*,GDP*,E30'
+         Please refer to :obj:`mdciao.utils.residue_and_atom.rangeexpand_residues2residxs`
+         for more info
+    Other Parameters
+    ----------------
+    res_idxs : bool, default is False
+        Whether the indices of :obj:`residues` should be understood as
+         * zero-indexed, residue serial indices or
+         * residue sequence, eg. 30 in GLU30, this is called 'resSeq'
+         in an :mdtraj.core.Residue`-object
+    ctc_cutoff_Ang : float, default is 3.5
+        Any residue-residue distance is considered a contact if d<=ctc_cutoff_Ang
+    stride : int, default is 1
+        Stride the input data by this number of frames
+    n_ctcs : int, default is 5
+        Only include the first :obj:`n_ctcs` in each neighborhood
+    n_nearest : int, default is 4
+        Exclude these many bonded neighbors for each residue, i.e
+    chunksize_in_frames : int, default is 10000
+        Stream through the trajectory data in chunks of this many frames
+        Can lead to memory errors if :obj:`n_jobs` makes it so that
+        e.g. 4 trajectories of 10000 frames each are loaded to memory
+        and their residue-residue distances computed
+    nlist_cutoff_Ang : int, default is 15
+        Before computing the residue-residue distance for all frames,
+        neighbor-list is created, for each residue, that includes
+        the residues up to :obj:`nlist_cutoff_Ang` from the residue.
+        Increase this parameters (e.g. to 30) if you expect large conformational
+        changes and/or the geometry in :obj:`topology`
+    n_smooth_hw: int, default is 0
+        Plots of the time-traces will be smoothed using a window
+        of 2*n_smooth_hw
+    ask : bool, default is True
+        Be interactive and prompt the user when it is needed
+    sort : bool, default is True
+        Sort the input :obj:`residues` according to their indices
+    pbc : bool, default is True
+        Use periodic boundary conditions
+    ylim_Ang : float, default is 10
+    fragments
+    fragment_names
+    fragment_colors
+    graphic_ext
+    table_ext
+    BW_uniprot
+    CGN_PDB
+    output_dir
+    output_desc
+    t_unit
+    curve_color
+    gray_background
+    graphic_dpi
+    short_AA_names
+    allow_same_fragment_ctcs
+    write_to_disk_BW
+    plot_timedep
+    n_cols
+    distro
+    n_jobs
+    separate_N_ctcs
+    accept_guess
+    switch_off_Ang
+
+    Returns
+    -------
+
+    """
 
     # Input control residues
     if residues is None:
@@ -516,7 +629,7 @@ def residue_neighborhoods(topology, trajectories, residues,
     CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs,
                                                accept_guess=accept_guess)
 
-    res_idxs_list = _mdcfrg.rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
+    res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
                                                   interpret_as_res_idxs=res_idxs,
                                                   sort=sort,
                                                   pick_this_fragment_by_default=None,
@@ -768,7 +881,49 @@ def interface(
         title=None,
         min_freq=.10,
 ):
+    r"""Contact-frequencies between residues belonging
+    to different fragments of the molecular topology
 
+    Parameters
+    ----------
+    topology
+    trajectories
+    frag_idxs_group_1
+    frag_idxs_group_2
+    BW_uniprot
+    CGN_PDB
+    chunksize_in_frames
+    ctc_cutoff_Ang
+    curve_color
+    fragments
+    fragment_names
+    graphic_dpi
+    graphic_ext
+    gray_background
+    interface_cutoff_Ang
+    n_ctcs
+    n_smooth_hw
+    output_desc
+    output_dir
+    short_AA_names
+    stride
+    t_unit
+    plot_timedep
+    accept_guess
+    n_jobs
+    n_nearest
+    write_to_disk_BW
+    sort_by_av_ctcs
+    scheme
+    separate_N_ctcs
+    table_ext
+    title
+    min_freq
+
+    Returns
+    -------
+
+    """
     if str(title).lower()=="none":
         title = output_desc
 
