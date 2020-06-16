@@ -1077,7 +1077,7 @@ class ContactPair(object):
 
         try:
             result = self._binarized_trajs[ctc_cutoff_Ang][_switchoff]
-            print("Grabbing already binarized %3.2f w switchoff %3.2f"%(ctc_cutoff_Ang,_switchoff))
+            #print("Grabbing already binarized %3.2f w switchoff %3.2f"%(ctc_cutoff_Ang,_switchoff))
         except KeyError:
             #print("First time binarizing %3.2f. Storing them"%ctc_cutoff_Ang)
             result = [transform(itraj) for itraj in self.time_traces.ctc_trajs]
