@@ -3,6 +3,7 @@ from os.path import splitext as _psplitext, split as _psplit
 import numpy as _np
 
 import mdciao.fragments as _mdcfrg
+import mdciao.utils as _mdcu
 
 def sitefile2sitedict(sitefile):
     r"""
@@ -30,7 +31,7 @@ def sitefile2sitedict(sitefile):
 
 def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
                           raise_if_not_found=True,
-                          **_per_residue_fragment_picker_kwargs):
+                          **residues_from_descriptors_kwargs):
 
     r"""
     For a list of site dictionaries (see :obj:`sitefile2sitedict`), return
@@ -54,8 +55,8 @@ def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
     fragments
     raise_if_not_found : boolean, default is True
         Fail if some of the residues are not found in the topology
-    _per_residue_fragment_picker_kwargs :
-        see :obj:`_per_residue_fragment_picker`
+    residues_from_descriptors_kwargs :
+        see :obj:`mdciao.utils.residue_and_atom.residues_from_descriptors`
 
     Returns
     -------
@@ -67,8 +68,8 @@ def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
     AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
     AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
     AAresSeqs = [key for key in _np.unique(AAresSeqs)]
-    residxs, _ = _mdcfrg.per_residue_fragment_picker(AAresSeqs, fragments, top,
-                                              **_per_residue_fragment_picker_kwargs)
+    residxs, _ = _mdcu.residue_and_atom.residues_from_descriptors(AAresSeqs, fragments, top,
+                                              **residues_from_descriptors_kwargs)
     if None in residxs and raise_if_not_found:
         raise ValueError("These residues of your input have not been found. Please revise it:\n%s" %
                          ('\n'.join(["input %u"%ii for ii,__ in enumerate(residxs) if ii is None])))
