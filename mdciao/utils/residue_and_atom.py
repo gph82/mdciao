@@ -1,7 +1,7 @@
 r"""
 
 Deal with residues, atoms, and their names, mostly.
-The function :obj:`residues_from_descriptors` is probably the
+The function :obj:`per_residue_fragment_picker` is probably the
 most elaborate and most higher-level.
 
 .. autosummary::
@@ -74,18 +74,19 @@ def find_AA(top, AA_pattern):
 
 
 # TODO consider renaming
-def residues_from_descriptors(residue_descriptors,
-                              fragments, top,
-                              pick_this_fragment_by_default=None,
-                              fragment_names=None,
-                              additional_naming_dicts=None,
-                              extra_string_info='',
-                              ):
+def per_residue_fragment_picker(residue_descriptors,
+                                fragments, top,
+                                pick_this_fragment_by_default=None,
+                                fragment_names=None,
+                                additional_naming_dicts=None,
+                                extra_string_info='',
+                                ):
     r"""
-    Returns residue idxs based on a list of residue descriptors.
+    Returns the fragment idxs and the residue idxs based
+    on a list of residue descriptors.
 
-    Fragments are needed to better identify residues. If a residue
-    is present in multiple times, the user is prompted to dis-ambiguate
+    If a residue is present in multiple times, the user
+    is prompted to dis-ambiguate
 
     Parameters
     ----------
@@ -183,7 +184,7 @@ def residues_from_descriptors(residue_descriptors,
 def rangeexpand_residues2residxs(range_as_str, fragments, top,
                                  interpret_as_res_idxs=False,
                                  sort=False,
-                                 **residues_from_descriptors_kwargs):
+                                 **per_residue_fragment_picker_kwargs):
     r"""
     Generalized range-expander for a string containing residue descriptors.
 
@@ -214,8 +215,8 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
         residue indices, not resdiue sequential indices
     sort : bool
         sort the expanded range on return
-    residues_from_descriptors_kwargs:
-        Optional parameters for :obj:`residues_from_descriptors`
+    per_residue_fragment_picker_kwargs:
+        Optional parameters for :obj:`per_residue_fragment_picker`
 
     Returns
     -------
@@ -238,8 +239,8 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
             if interpret_as_res_idxs:
                 residx_pair = [int(rr) for rr in resnames]
             else:
-                residx_pair, __ = residues_from_descriptors(resnames, fragments, top,
-                                                            **residues_from_descriptors_kwargs)
+                residx_pair, __ = per_residue_fragment_picker(resnames, fragments, top,
+                                                              **per_residue_fragment_picker_kwargs)
                 if None in residx_pair:
                     raise ValueError("The input range contains '%s' which "
                                      "returns an untreatable range %s!" % (r, residx_pair))

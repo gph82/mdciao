@@ -71,7 +71,7 @@ def get_fragments(top,
                   atoms=False,
                   verbose=True,
                   join_fragments=None,
-                  **kwargs_residues_from_descriptors):
+                  **kwargs_per_residue_fragment_picker):
     """
     Given an :obj:`mdtraj.Topology` return its residues grouped into fragments using different methods.
 
@@ -126,8 +126,8 @@ def get_fragments(top,
         otherwise an exception is thrown
     verbose : boolean, optional
         Be verbose
-    kwargs_residues_from_descriptors : optional
-        additional arguments, see :obj:`residues_from_descriptors`
+    kwargs_per_residue_fragment_picker : optional
+        additional arguments, see :obj:`per_residue_fragment_picker`
 
     Returns
     -------
@@ -233,8 +233,8 @@ def get_fragments(top,
         if isinstance(fragment_breaker_fullresname,str):
             fragment_breaker_fullresname=[fragment_breaker_fullresname]
         for breaker in fragment_breaker_fullresname:
-            residxs, fragidx = _mdcu.residue_and_atom.residues_from_descriptors(breaker, fragments, top,
-                                                           **kwargs_residues_from_descriptors)
+            residxs, fragidx = per_residue_fragment_picker(breaker, fragments, top,
+                                                           **kwargs_per_residue_fragment_picker)
             idx = residxs[0]
             ifrag = fragidx[0]
             if idx is None:
