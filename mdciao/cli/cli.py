@@ -684,11 +684,10 @@ def residue_neighborhoods(topology, trajectories, residues,
                                                        )
     print() # to make sure we don't overwrite outut
     actcs = _np.vstack(ctcs_trajs)
-    from mdciao.contacts.contacts import _linear_switchoff
     if switch_off_Ang is None:
         ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
     else:
-        ctcs_mean = _np.mean(_linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10),0)
+        ctcs_mean = _np.mean(_mdcctcs._linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10),0)
 
     final_look = _mdcctcs.select_and_report_residue_neighborhood_idxs(ctcs_mean, res_idxs_list,
                                                              fragments_as_residue_idxs, ctc_idxs_small,

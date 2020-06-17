@@ -42,3 +42,4 @@ Classes
 
 """
 from .contacts import *
+from .contacts import _linear_switchoff

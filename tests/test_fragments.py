@@ -7,7 +7,7 @@ import mock
 
 from mdciao import fragments as mdcfragments
 # I'm importing the private variable for testing other stuff, not to test the variable itself
-from mdciao.fragments.fragments import _allowed_fragment_methods
+from mdciao.fragments.fragments import _allowed_fragment_methods, _fragments_strings_to_fragments
 
 from mdciao.filenames import filenames
 
@@ -383,160 +383,6 @@ class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
         assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
         assert resname2fragidx["GLU30"] == 0  # GLU30 is in the 1st fragment
 
-class Test_per_residue_fragment_picker_no_ambiguity(unittest.TestCase):
-
-    def setUp(self):
-        self.geom = md.load(test_filenames.small_monomer)
-        self.by_bonds_geom = mdcfragments.get_fragments(self.geom.top,
-                                                        verbose=True,
-                                                        method='bonds')
-
-    def test_no_ambiguous(self):
-        residues = ["GLU30", "GDP382", 30, 382]
-        residxs, fragidxs = mdcfragments.per_residue_fragment_picker(residues, self.by_bonds_geom,
-                                                                     self.geom.top)
-        self.assertSequenceEqual([0,7,0,7], residxs)
-        # GLU30 is the 1st residue
-        # GDP382 is the 8th residue
-
-        self.assertSequenceEqual([0,3,0,3], fragidxs)
-        # GLU30 is in the 1st fragment
-        # GDP382 is in the 4th fragment
-
-
-class Test_per_residue_fragment_picker(unittest.TestCase):
-
-    def setUp(self):
-        self.geom2frags = md.load(test_filenames.small_dimer)
-
-        self.by_bonds_geom2frags = mdcfragments.get_fragments(self.geom2frags.top,
-                                                              verbose=True,
-                                                              method='bonds')
-
-    def test_default_fragment_idx_is_none(self):
-        residues = ["GLU30", 30]
-        input_values = (val for val in ["4", "4"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            residxs, fragidxs = mdcfragments.per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                         self.geom2frags.top)
-
-            # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
-            self.assertSequenceEqual(residxs, [8, 8])
-            self.assertSequenceEqual(fragidxs, [4, 4])
-
-    def test_fragment_idx_is_none_last_answer(self):
-        residues = ["GLU30", 30]
-        input_values = (val for val in ["", ""])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            residxs, fragidxs = mdcfragments.per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                         self.geom2frags.top)
-
-            # NOTE:Accepted default "" for GLU30 when asked "input one fragment idx"
-            self.assertSequenceEqual(residxs, [0, 0])
-            self.assertSequenceEqual(fragidxs, [0, 0])
-
-    def test_default_fragment_idx_is_none_ans_should_be_int(self):
-        input_values = (val for val in ["A"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            with pytest.raises((ValueError, AssertionError)):
-                mdcfragments.per_residue_fragment_picker("GLU30", self.by_bonds_geom2frags, self.geom2frags.top)
-
-        input_values = (val for val in ["xyz"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            with pytest.raises((ValueError, AssertionError)):
-                mdcfragments.per_residue_fragment_picker(30, self.by_bonds_geom2frags, self.geom2frags.top)
-
-    def test_default_fragment_idx_is_none_ans_should_be_in_list(self):
-        input_values = (val for val in ["123"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            with pytest.raises((ValueError, AssertionError)):
-                mdcfragments.per_residue_fragment_picker("GLU30", self.by_bonds_geom2frags, self.geom2frags.top)
-
-        input_values = (val for val in ["123"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            with pytest.raises((ValueError, AssertionError)):
-                mdcfragments.per_residue_fragment_picker("30", self.by_bonds_geom2frags, self.geom2frags.top)
-
-    def test_default_fragment_idx_is_passed(self):
-        residues = ["GLU30", 30]
-        residxs, fragidx = mdcfragments.per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                    self.geom2frags.top,
-                                                                    pick_this_fragment_by_default=4)
-
-        # Checking if residue names gives the correct corresponding residue id
-        # NOTE:Enter 4 for GLU30 when asked "input one fragment idx"
-        self.assertSequenceEqual([8, 8], residxs)
-        self.assertSequenceEqual([4, 4], fragidx)
-
-    def test_default_fragment_idx_is_passed_special_case(self):
-        with pytest.raises((ValueError, AssertionError)):
-            mdcfragments.per_residue_fragment_picker("GLU30", self.by_bonds_geom2frags,
-                                                     self.geom2frags.top,
-                                                     pick_this_fragment_by_default=99)
-
-        with pytest.raises((ValueError, AssertionError)):
-            mdcfragments.per_residue_fragment_picker(30, self.by_bonds_geom2frags,
-                                                     self.geom2frags.top,
-                                                     pick_this_fragment_by_default=99)
-
-    def test_ambiguous(self):
-        input_values = (val for val in ["4", "4"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            residues = ["GLU30", 30]
-            residxs, fragidx = mdcfragments.per_residue_fragment_picker(residues,
-                                                                        self.by_bonds_geom2frags,
-                                                                        self.geom2frags.top)
-
-            self.assertSequenceEqual([8, 8], residxs)
-            self.assertSequenceEqual([4, 4], fragidx)
-
-        input_values = (val for val in ["3", "3"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            residues = ["GDP382", 382]
-            residxs, fragidx = mdcfragments.per_residue_fragment_picker(residues,
-                                                                        self.by_bonds_geom2frags,
-                                                                        self.geom2frags.top)
-            self.assertSequenceEqual([7, 7], residxs)
-            self.assertSequenceEqual([3, 3], fragidx)
-
-    def test_fragment_name(self):
-        residues = ["GLU30", 30]
-        input_values = (val for val in ["0", "0"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            residxs, fragidx = mdcfragments.per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                                        self.geom2frags.top,
-                                                                        fragment_names=["A", "B", "C", "D",
-                                                                           "E", "F", "G", "H"])
-            # Checking if residue names gives the correct corresponding residue id
-            # NOTE:Enter 0 for GLU30 when asked "input one fragment idx"
-            self.assertSequenceEqual([0, 0], residxs)
-            self.assertSequenceEqual([0, 0], fragidx)
-
-    def test_idx_not_present(self):
-        residxs, fragidx = mdcfragments.per_residue_fragment_picker(["GLU99", 99], self.by_bonds_geom2frags,
-                                                                    self.geom2frags.top,
-                                                                    pick_this_fragment_by_default=99)
-        self.assertSequenceEqual([None, None], residxs)
-        self.assertSequenceEqual([None, None], fragidx)
-
-    def test_extra_dicts(self):
-        residues = ["GLU30", "TRP32"]
-        consensus_dicts = {"BW": {0: "3.50"},
-                           "CGN": {2: "CGNt"}}
-        mdcfragments.per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                 self.geom2frags.top,
-                                                 additional_naming_dicts=consensus_dicts,
-                                                 pick_this_fragment_by_default=0
-                                                 )
-
-    def test_answer_letters(self):
-        residues = ["GLU30", "TRP32"]
-        input_values = (val for val in ["a", "b"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            mdcfragments.per_residue_fragment_picker(residues, self.by_bonds_geom2frags,
-                                                     self.geom2frags.top,
-                                                     )
-
 class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
 
     def setUp(self):
@@ -548,24 +394,21 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
                                                               method="resSeq",
                                                               verbose=False)
     def test_consensus(self):
-        from mdciao import fragments
-        fragments, conlab  =  fragments._fragments_strings_to_fragments(["consensus"],
+        fragments, conlab  =  _fragments_strings_to_fragments(["consensus"],
                                                                         self.top)
         [_np.testing.assert_array_equal(ii,jj) for ii, jj in zip(fragments,
                                                   self.fragments_by_resSeqplus)]
         assert conlab
 
     def test_other_method(self):
-        from mdciao import fragments
-        fragments, conlab  =  fragments._fragments_strings_to_fragments(["resSeq"],
+        fragments, conlab  =  _fragments_strings_to_fragments(["resSeq"],
                                                                         self.top)
         [_np.testing.assert_array_equal(ii,jj) for ii, jj in zip(fragments,
                                                   self.fragments_by_resSeq)]
         assert not conlab
 
     def test_one_fragment(self):
-        from mdciao import fragments
-        fragments, conlab =  fragments._fragments_strings_to_fragments(["0-10"],
+        fragments, conlab =  _fragments_strings_to_fragments(["0-10"],
                                                                        self.top)
         other = _np.arange(11, self.top.n_residues)
         [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
@@ -574,8 +417,7 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
         assert not conlab
 
     def test_more_than_one_fragment(self):
-        from mdciao import fragments
-        fragments, conlab =  fragments._fragments_strings_to_fragments(["0-10",
+        fragments, conlab =  _fragments_strings_to_fragments(["0-10",
                                                                        "11-100",
                                                                        "200-210"],
                                                                        self.top)
@@ -586,8 +428,7 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
         assert not conlab
 
     def test_verbose(self):
-        from mdciao import fragments
-        fragments, conlab =  fragments._fragments_strings_to_fragments(["0-10",
+        fragments, conlab =  _fragments_strings_to_fragments(["0-10",
                                                                        "11-100",
                                                                        "200-210"],
                                                                        self.top,
@@ -677,57 +518,6 @@ class Test_frag_list_2_frag_groups(unittest.TestCase):
         self.assertSequenceEqual([0,1,4,5], frags_out[0])
         self.assertSequenceEqual([2,3], frags_out[1])
         self.assertEqual(len(frags_out), 2)
-
-
-
-class Test_rangeexpand_residues2residxs(unittest.TestCase):
-
-    def setUp(self):
-        self.top = md.load(test_filenames.small_monomer).top
-        self.fragments = mdcfragments.get_fragments(self.top, method="resSeq+",
-                                                    verbose=False)
-
-    def test_wildcards(self):
-        expanded_range =   mdcfragments.rangeexpand_residues2residxs("GLU*",
-                                                                     self.fragments,
-                                                                     self.top)
-        _np.testing.assert_array_equal(expanded_range, [0,4])
-
-    def test_rangeexpand_res_idxs(self):
-        expanded_range =   mdcfragments.rangeexpand_residues2residxs("2-4,6",
-                                                                     self.fragments,
-                                                                     self.top,
-                                                                     interpret_as_res_idxs=True)
-        _np.testing.assert_array_equal(expanded_range,[2,3,4,6])
-
-    def test_rangeexpand_resSeq_w_jumps(self):
-        expanded_range =   mdcfragments.rangeexpand_residues2residxs("26-381",
-                                                                     self.fragments,
-                                                                     self.top,
-                                                                     )
-        _np.testing.assert_array_equal(expanded_range,[3,4,5,6])
-
-    def test_rangeexpand_resSeq_sort(self):
-        expanded_range =   mdcfragments.rangeexpand_residues2residxs("381,26",
-                                                                     self.fragments,
-                                                                     self.top,
-                                                                     sort=True
-                                                                     )
-        _np.testing.assert_array_equal(expanded_range,[3,6])
-
-
-    def test_rangeexpand_raises_on_empty_range(self):
-        with pytest.raises(ValueError):
-            expanded_range =   mdcfragments.rangeexpand_residues2residxs("50-60",
-                                                                         self.fragments,
-                                                                         self.top,
-                                                                         )
-    def test_rangeexpand_raises_on_empty_wildcard(self):
-        with pytest.raises(ValueError):
-            expanded_range =   mdcfragments.rangeexpand_residues2residxs("ARG*",
-                                                                         self.fragments,
-                                                                         self.top,
-                                                                         )
 
 class Test_intersecting_fragments(unittest.TestCase):
 

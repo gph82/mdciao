@@ -26,7 +26,8 @@ import pytest
 from mdciao import contacts
 
 
-from mdciao.fragments import get_fragments, per_residue_fragment_picker
+from mdciao.fragments import get_fragments
+from mdciao.utils.residue_and_atom import residues_from_descriptors
 
 from matplotlib import pyplot as _plt
 
@@ -787,7 +788,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
                                            auto_fragment_names=True,
                                            method='bonds')
         self.residues = ["GLU30", "VAL31"]
-        self.resname2residx, self.resname2fragidx = per_residue_fragment_picker(self.residues,
+        self.resname2residx, self.resname2fragidx = residues_from_descriptors(self.residues,
                                                                                 self.by_bonds_geom,
                                                                                 self.geom.top)
 
@@ -857,7 +858,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
         ctcs_mean = [30, 5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
         with unittest.mock.patch('builtins.input', side_effect=KeyboardInterrupt):
-            resname2residx, resname2fragidx = per_residue_fragment_picker("GLU30", self.by_bonds_geom,
+            resname2residx, resname2fragidx = residues_from_descriptors("GLU30", self.by_bonds_geom,
                                                                           self.geom.top)
 
             ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, resname2residx,
