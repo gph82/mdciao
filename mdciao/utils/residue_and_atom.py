@@ -73,7 +73,7 @@ def find_AA(top, AA_pattern):
                 "The input AA %s must have an alphabetic code of either 3 or 1 letters, but not %s" % (AA_pattern, code))
 
 
-# TODO consider renaming
+#TODO what happens when residue are not found?G1G1G1G1
 def residues_from_descriptors(residue_descriptors,
                               fragments, top,
                               pick_this_fragment_by_default=None,
@@ -100,8 +100,6 @@ def residues_from_descriptors(residue_descriptors,
     fragment_names:
         list of strings providing informative names input :obj:`fragments`
     extra_string_info: string with any additional info to be printed in case of ambiguity
-        two dictionaries, resdesc2residxs and resdesc2fragidxs. If the AA is not found then the
-        dictionaries for that key contain None, e.g. resdesc2residxs[notfoundAA]=None
 
     Returns
     -------

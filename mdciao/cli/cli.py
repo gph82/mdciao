@@ -1185,10 +1185,10 @@ def sites(topology,
                                                                        write_to_disk_BW=write_to_disk_BW)
 
     sites = [_mdcsites.sitefile2sitedict(ff) for ff in site_files]
-    ctc_idxs_small, AAresSeq2residxs = _mdcsites.sites_to_ctc_idxs(sites, refgeom.top,
-                                                          fragments=fragments_as_residue_idxs,
-                                                          default_fragment_idx=default_fragment_index,
-                                                          fragment_names=fragment_names)
+    ctc_idxs_small, AAresSeq2residxs = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
+                                                                    fragments=fragments_as_residue_idxs,
+                                                                    default_fragment_idx=default_fragment_index,
+                                                                    fragment_names=fragment_names)
 
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
     for idx in AAresSeq2residxs.values():

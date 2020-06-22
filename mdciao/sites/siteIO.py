@@ -8,13 +8,33 @@ import mdciao.utils as _mdcu
 def sitefile2sitedict(sitefile):
     r"""
     Open a json file defining a site and turn into a site dictionary
+
+    Examples
+    --------
+    >>> This could be inside a json file named site.json
+    {"sitename":"interesting contacts",
+    "bonds": {"AAresSeq": [
+            "L394-K270",
+            "D381-Q229",
+            "Q384-Q229",
+            "R385-Q229",
+            "D381-K232",
+            "Q384-I135"
+            ]}}
+
     Parameters
     ----------
     sitefile : str
 
     Returns
     -------
-    site : dict with the keys
+    site : dict
+        Keys are:
+         * bonds
+         * nbonds
+         * name
+        And site["bonds"] is itself a dictionary with only one key ATM, "AAresSeq"
+
     """
     with open(sitefile, "r") as f:
         idict = _jsonload(f)
@@ -84,29 +104,41 @@ def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
 
     return AAresSeq2residxs
 
-def sites_to_ctc_idxs(site_dicts, top,
-                      fragments=None,
-                      **get_fragments_kwargs):
-    r"""
+def sites_to_res_pairs(site_dicts, top,
+                       fragments=None,
+                       **get_fragments_kwargs):
+    r"""Take a list of dictionaries representing sites
+    and return the pairs of res_idxs needed to compute
+    all the contacts contained in them
+
+    The idea is to join all needed pairs of res_idxs
+    in one list regardless of where they come from.
 
     Parameters
     ----------
     site_dicts : list of dicts
+        Check :obj:`sitefile2sitedict` for how these dics look like
     top : :obj:`mdtraj.Topology`
+    fragments : list, default is None
+        You can pass along a fragment definition so that
+        :obj:`sites_to_AAresSeqdict` has an easier time
+        understanding your input. Otherwise, one will
+        be created on-the-fly by :obj:`mdciao.fragments.get_fragments`
     get_fragments_kwargs :
         see :obj:`fragments.get_fragments`
 
     Returns
     -------
-    ctc_idxs : 2D np.ndarray
-        The residue indices in :obj:`top` of the contacts in :obj:`site_dict`,
+    res_idxs_pairs : 2D np.ndarray
+        The residue indices in :obj:`top` of the contacts in :obj:`site_dicts`,
         stacked together (might contain duplicates if the sites contain duplicates)
     AAdict : dict
         dictionary keyed by residue name and valued with the residue's index
-        in :obj:`top`
+        in :obj:`top`. Please see the note in :obj:`sites_to_AAresSeqdict`
+        regarding duplicate residue names
     """
     if fragments is None:
         fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
     AAresSeq2residxs = sites_to_AAresSeqdict(site_dicts, top, fragments)
-    ctc_idxs = _np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in site_dicts]))
-    return ctc_idxs, AAresSeq2residxs
+    res_idxs_pairs = _np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in site_dicts]))
+    return res_idxs_pairs, AAresSeq2residxs

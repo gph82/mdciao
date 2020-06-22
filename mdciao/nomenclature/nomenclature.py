@@ -70,18 +70,16 @@ def table2BW_by_AAcode(tablefile,
 def PDB_finder(PDB_code, local_path='.',
                try_web_lookup=True,
                verbose=True):
-    r"""
-    Input a pdb-code and return an :obj:`mdtraj.Trajectory`,
-    by loading a local file or optionally looking up online
-     (see :obj:`md_load_rscb`)
+    r"""Return an :obj:`mdtraj.Trajectory` by loading a local
+    file or optionally looking up online, see :obj:`md_load_rscb`
 
     Note
     ----
     Since filenames are case-sensitive, e.g. 3CAP will not
-    find 3cap.pdb locally, but will sucessfully be found
+    find `3cap.pdb` locally, but will be successfully found
     online (urls are not case-sensitive), returning the
     online file instead of the local one, which can lead
-    to "successfull" but wrong behaviour if the local
+    to "successful" but wrong behaviour if the local
     file had already some modifications (strip non protein etc)
 
     Parameters
@@ -93,7 +91,8 @@ def PDB_finder(PDB_code, local_path='.',
     try_web_lookup : bool, default is True
         If the file :obj:`ref_PDB` cannot be found locally
         as .pdb or .pdb.gz, a web lookup will be tried
-    verbose
+        using :obj:`md_load_rscb`
+    verbose : boolean, default is True
 
     Returns
     -------
@@ -241,21 +240,53 @@ def _finder_writer(full_local_path,
             raise _DF
 
 
-def BW_finder(uniprot_name,
+# TODO consider making private?
+def BW_finder(BW_descriptor,
               format = "%s.xlsx",
               local_path=".",
               try_web_lookup=True,
               verbose=True,
               dont_fail=False,
               write_to_disk=False):
-    if _path.exists(uniprot_name):
-        fullpath = uniprot_name
+    r"""
+    Return a :obj:`pandas.DataFrame` containing
+    a Ballesteros-Weinstein numbering.
+
+    There a different ways of doing the same thing
+    (for compatibility reasons).
+
+    This method wraps (with some lambdas) around
+    :obj:`_finder_writer`
+
+    Parameters
+    ----------
+    BW_descriptor : str
+        Anything that can be used to try and find
+        the needed information, locally or online:
+         * a uniprot descriptor, e.g. `adrb2_human`
+         * a full local filename
+         * a part of a local filename
+
+    format
+    local_path
+    try_web_lookup
+    verbose
+    dont_fail
+    write_to_disk
+
+    Returns
+    -------
+
+    """
+
+    if _path.exists(BW_descriptor):
+        fullpath = BW_descriptor
         try_web_lookup=False
     else:
-        xlsxname = format % uniprot_name
+        xlsxname = format % BW_descriptor
         fullpath = _path.join(local_path, xlsxname)
     GPCRmd = "https://gpcrdb.org/services/residues/extended"
-    url = "%s/%s" % (GPCRmd, uniprot_name)
+    url = "%s/%s" % (GPCRmd, BW_descriptor)
 
     local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
@@ -318,7 +349,10 @@ def md_load_rscb(PDB,
                  verbose=False,
                  return_url=False):
     r"""
-    Input a PDB code get an :obj:`mdtraj.Trajectory` object
+    Input a PDB code get an :obj:`mdtraj.Trajectory` object.
+
+    Thinly wraps around :obj:`mdtraj.load_pdb` by constructing
+    the url for the user.
 
     Parameters
     ----------
@@ -328,11 +362,12 @@ def md_load_rscb(PDB,
     verbose : bool, default is False
         Be versose
     return_url : bool, default is False
-        also Return the actual url that was checked
+        also return the actual url that was checked
 
     Returns
     -------
-    traj, url
+    traj : :obj:`mdtraj.Trajectory`
+    url  : str, optional
     """
     url = '%s/%s.pdb' % (web_address, PDB)
     if verbose:
@@ -344,10 +379,11 @@ def md_load_rscb(PDB,
         return igeom
 
 class LabelerConsensus(object):
-    """
-    Class to manage consensus notations like
-    * Ballesteros-Weinstein (BW)
-    * Common-Gprotein-nomenclature
+    """Parent class to manage consensus notations
+
+    At the moment child classe are
+     * :obj:`LabelerBW` for Ballesteros-Weinstein (BW)
+     * :obj:`LabelerCGN`for Common-Gprotein-nomenclature (CGN)
 
     The consensus labels are abbreviated to 'conlab' throughout
 
@@ -699,8 +735,7 @@ class LabelerCGN(LabelerConsensus):
                                   verbose=verbose)
 
 class LabelerBW(LabelerConsensus):
-    """
-    Class to manage Ballesteros-Weinstein notation
+    """Manipulate Ballesteros-Weinstein notation
 
     """
     def __init__(self, uniprot_name,
@@ -711,6 +746,22 @@ class LabelerBW(LabelerConsensus):
                  try_web_lookup=True,
                  #todo write to disk should be moved to the superclass at some point
                  write_to_disk=False):
+        r"""
+
+        Parameters
+        ----------
+        uniprot_name : str
+            Descriptor by which to find the nomenclature,
+            it gets directly passed to :obj:`BW_finder`
+            Can be several different things:
+             *
+        ref_PDB
+        local_path
+        format
+        verbose
+        try_web_lookup
+        write_to_disk
+        """
 
         # TODO now that the finder call is the same we could
         # avoid cde repetition here
@@ -1301,18 +1352,14 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
 def guess_nomenclature_fragments(CLin, top, fragments,
                                  min_hit_rate=.6,
                                  verbose=False):
-    """
-    Input a :class:`LabelerConsensus`  and a
-     :py:class:`mdtraj.Topology` and the
-     method produces a guess of what fragments
-     in the topology best match the consensus labels using
-     a cutoff for the quality of each segment's alignment
-     to the sequence in :obj:`CLin`
+    """Guess what fragments in the topology best match
+    the consensus labels in a :obj:`LabelerConsensus` object
 
-    Example
-    -------
+    The guess uses a cutoff for the quality of
+    each segment's alignment to the sequence in :obj:`CLin`
+
     You can use the method to identify the receptor
-    in topolgy where other molecules (e.g. the Gprot)
+    in topology where other molecules (e.g. the Gprot)
     are present (or the other way around)
 
     Parameters

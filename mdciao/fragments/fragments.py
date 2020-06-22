@@ -289,7 +289,7 @@ def overview(topology,
              ):
 
     """
-    Prints the fragments by all the available methods.
+    Prints the fragments obtained by :obj:`get_fragments` for the available methods.
 
     Optionally, you can pass along a list of residue
     descriptors to be printed after the fragments have

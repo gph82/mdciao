@@ -6,7 +6,7 @@ Reading and manipulating site definitions
 
    sitefile2sitedict
    sites_to_AAresSeqdict
-   sites_to_ctc_idxs
+   sites_to_res_pairs
 
 
 """

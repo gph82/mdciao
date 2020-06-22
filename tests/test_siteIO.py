@@ -55,15 +55,15 @@ class Test_sites_to_ctc_idxs(unittest.TestCase):
 
     def test_the_idxs_work_no_frags(self):
         site = mdciao.sites.sitefile2sitedict(self.GDP_json)
-        ctc_idxs, __ = mdciao.sites.sites_to_ctc_idxs([site], self.geom.top)
+        ctc_idxs, __ = mdciao.sites.sites_to_res_pairs([site], self.geom.top)
         for (ii,jj), (resi,resj) in zip(ctc_idxs,site["bonds"]["AAresSeq"]):
             _np.testing.assert_equal(str(self.geom.top.residue(ii)),resi)
             _np.testing.assert_equal(str(self.geom.top.residue(jj)),resj)
 
     def test_the_idxs_work_w_frags(self):
         site = mdciao.sites.sitefile2sitedict(self.GDP_json)
-        ctc_idxs, __ = mdciao.sites.sites_to_ctc_idxs([site], self.geom.top,
-                                                           fragments=self.fragments)
+        ctc_idxs, __ = mdciao.sites.sites_to_res_pairs([site], self.geom.top,
+                                                       fragments=self.fragments)
         for (ii,jj), (resi,resj) in zip(ctc_idxs,site["bonds"]["AAresSeq"]):
             _np.testing.assert_equal(str(self.geom.top.residue(ii)),resi)
             _np.testing.assert_equal(str(self.geom.top.residue(jj)),resj)

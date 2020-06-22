@@ -6,6 +6,7 @@ Welcome to mdciao! Below you will find the submodules exposed the API
 
     contacts
     fragments
+    nomenclature
     sites
     cli
     plots
