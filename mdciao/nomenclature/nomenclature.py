@@ -685,7 +685,7 @@ class LabelerCGN(LabelerConsensus):
     See https://www.mrc-lmb.cam.ac.uk/CGN/faq.html for more info.
     """
 
-    def __init__(self, ref_PDB,
+    def __init__(self, PDB_input,
                  local_path='.',
                  try_web_lookup=True,
                  verbose=True,
@@ -694,31 +694,57 @@ class LabelerCGN(LabelerConsensus):
 
         Parameters
         ----------
-        ref_PDB: str
-            #todo refactor to ref_PDB or local_PDB??? Not sure
-            The PDB four letter code that will be used for CGN purposes
+        PDB_input: str
+            The PDB-file to be used. For compatibility reasons, there's different use-cases.
+
+            * Full path to an existing file containing the CGN nomenclature, e.g. '/abs/path/to/some/dir/CGN_ABCD.txt' (or ABCD.txt). Then this happens:
+                * :obj:`local_path` gets overridden with '/abs/path/to/some/dir/'
+                * a PDB four-letter-code is inferred from the filename, e.g. 'ABCD'
+                * a file '/abs/path/to/some/dir/ABCD.pdb(.gz)' is looked for
+                * if not found and :obj:`try_web_lookup` is True, then
+                  'ABCD' is looked up online in the PDB rscb database
+
+            * Full path to an existing PDB-file, e.g.
+              '/abs/path/to/some/dir/ABCD.pdb(.gz)'. Then this happens:
+                * :obj:`local_path` gets overridden with '/abs/path/to/some/dir/'
+                * a file '/abs/path/to/some/dir/CGN_ABCD.txt is looked for
+                * if not found and :obj:`try_web_lookup` is True, then
+                  'ABCD' is looked up online in the CGN database
+
+            * Four letter code, e.g. 'ABCD'. Then this happens:
+                * look for the files '3SN6.pdb' and 'CGN_3SN6.txt' in :obj:`local_path`
+                * if one or both of these files cannot be found there,
+                  look up in their respective online databases (if
+                  :obj:`try_web_lookup` is True)
+
+        Note
+        ----
+            The intention behind this flexibility (which is hard to document and
+            maintain) is to keep the signature of consensus labelers somewhat
+            consistent for compatibility with other command line methods
 
         local_path: str, default is '.'
             The local path where these files exist, if they exist
-            * CGN_3SN6.txt (pre-downloaded CGN-type file)
-            * 3SN6.pdb     (pre-downloaded pdb)
+
         try_web_lookup: bool, default is True
             If the local files are not found, try automatically a web lookup at
             * www.mrc-lmb.cam.ac.uk (for CGN)
             * rcsb.org (for the PDB)
         """
         # TODO see fragment_overview...are there clashes
-        if _path.exists(ref_PDB):
-            local_path, basename = _path.split(ref_PDB)
-            ref_PDB = _path.splitext(basename)[0].replace("CGN_", "")
-            assert len(ref_PDB) == 4 and "CGN_%s.txt" % ref_PDB == basename
-        self._dataframe, self._tablefile = CGN_finder(ref_PDB,
+        if _path.exists(PDB_input):
+            local_path, basename = _path.split(PDB_input)
+            PDB_input = _path.splitext(basename)[0].replace("CGN_", "")
+            # TODO does the check need to have the .txt extension?
+            # TODO do we even need this check?
+            #assert len(PDB_input) == 4 and "CGN_%s.txt" % PDB_input == basename
+        self._dataframe, self._tablefile = CGN_finder(PDB_input,
                                                       local_path=local_path,
                                                       try_web_lookup=try_web_lookup,
                                                       verbose=verbose)
 
-        self._AA2conlab = {key: self._dataframe[self._dataframe[ref_PDB] == key]["CGN"].to_list()[0]
-                           for key in self._dataframe[ref_PDB].to_list()}
+        self._AA2conlab = {key: self._dataframe[self._dataframe[PDB_input] == key]["CGN"].to_list()[0]
+                           for key in self._dataframe[PDB_input].to_list()}
 
         self._fragments = _defdict(list)
         for ires, key in self.AA2conlab.items():
@@ -729,7 +755,7 @@ class LabelerCGN(LabelerConsensus):
             #print(key,new_key)
             self._fragments[new_key].append(ires)
         #print(self.fragments)
-        LabelerConsensus.__init__(self, ref_PDB=ref_PDB,
+        LabelerConsensus.__init__(self, ref_PDB=PDB_input,
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
