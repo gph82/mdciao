@@ -192,7 +192,7 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
 
     return alignment_dict
 
-'''
+
 def _align_tops(top0, top1, substitutions=None,
                 seq_0_res_idxs=None,
                 seq_1_res_idxs=None,
@@ -220,23 +220,20 @@ def _align_tops(top0, top1, substitutions=None,
 
 
     """
-    top0_seq = ''.join([str(rr.code).upper() for rr in top0.residues])
-    top1_seq = ''.join([str(rr.code).upper() for rr in top1.residues])
+    top0_seq = top2seq(top0)
+    top1_seq = top2seq(top1)
 
-    my_subs = {"NONE":"X"}
     if substitutions is not None:
-        my_subs.update(substitutions)
-    for key, val in my_subs.items():
-        top0_seq = top0_seq.replace(key,val)
-        top1_seq = top1_seq.replace(key,val)
-        #print(key,val)
+        for key, val in substitutions.items():
+            top0_seq = top0_seq.replace(key,val)
+            top1_seq = top1_seq.replace(key,val)
+            #print(key,val)
 
     if seq_0_res_idxs is None:
         seq_0_res_idxs=_np.arange(top0.n_residues, dtype=int)
     if seq_1_res_idxs is None:
         seq_1_res_idxs=_np.arange(top1.n_residues, dtype=int)
 
-    print(seq_0_res_idxs)
     top0_seq = "".join([top0_seq[ii] for ii in seq_0_res_idxs])
     top1_seq = "".join([top1_seq[ii] for ii in seq_1_res_idxs])
 
@@ -251,33 +248,36 @@ def _align_tops(top0, top1, substitutions=None,
         return _DF(align_list)
     else:
         return align_list
-'''
 
-'''
-def _align_tops_2_dicts(top0,top1,
-                        fail_on_key_redundancies=False):
-    alignm_list = _align_tops(top0, top1,
-                              return_DF=False)
 
-    matches = [al for al in alignm_list if al["match"]]
-    # print(matches)
-    key_0 = [al["fullname_0"] for al in matches]
-    key_1 = [al["fullname_1"] for al in matches]
-    if fail_on_key_redundancies:
-        assert len(key_0) == len(_np.unique(key_0)), (len(key_0), len(_np.unique(key_0) ))
-        assert len(key_1) == len(_np.unique(key_1)), (len(key_1), len(_np.unique(key_1) ))
 
-    AAtop0toAAtop1 = _defdict(list)
-    AAtop1toAAtop0 = _defdict(list)
-    for idict in matches:
-        AA0 = idict["fullname_0"]
-        AA1 = idict["fullname_1"]
-        AAtop0toAAtop1[AA0].append(idict)
-        AAtop1toAAtop0[AA1].append(idict)
+def _maptops(top0,
+             top1,
+             ):
+    r"""
+    map residue idxs between topologies using a sequence alignment
 
-    return [{key: val for key, val in idict.items()} for idict in [AAtop0toAAtop1, AAtop1toAAtop0]]
-'''
+    Parameters
+    ----------
+    top0 : :obj:`md.Topology`
+    top1:  :obj:`md.Topology`
 
+    Returns
+    -------
+    top0_to_top1 : dict
+        top0_to_top1[10] = 20
+    top1_to_top0 : dict
+        top1_to_top0[20] = 10
+
+    """
+    df = _align_tops(top0, top1,
+                     return_DF=True)
+
+    top0_to_top1 = {key : val for key, val in zip(df[df["match"] == True]["idx_0"].to_list(),
+                                                  df[df["match"] == True]["idx_1"].to_list())}
+    top1_to_top0 = {val:key for key, val in top0_to_top1.items()}
+
+    return top0_to_top1, top1_to_top0
 '''
 # todo this is a bit of overkill, one alignment per residue
 def residx_in_seq_by_alignment(ridx1, top1,
