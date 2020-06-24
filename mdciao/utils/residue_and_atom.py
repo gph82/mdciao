@@ -52,8 +52,8 @@ def find_AA(top, AA_pattern):
 
     if AA_pattern.isalpha():
         lenA = len(AA_pattern)
-        assert lenA in [1,3], ValueError("purely alphabetic patterns must have " 
-                                     " either 3 or 1 letters, not  %s" % (AA_pattern))
+        assert lenA in [1,2,3], ValueError("purely alphabetic patterns must have " 
+                                     " either 1, 2, or 3 letters, not  %s" % (AA_pattern))
 
 
         return [rr.index for rr in top.residues if AA_pattern == '%s' % (get_name[lenA](rr))]
