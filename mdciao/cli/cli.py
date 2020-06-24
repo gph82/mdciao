@@ -581,12 +581,15 @@ def residue_neighborhoods(topology, trajectories, residues,
     short_AA_names
     allow_same_fragment_ctcs
     write_to_disk_BW
-    plot_timedep
+    plot_timedep : bool, default is False
+        Plot and save time-traces of the the contacts
     n_cols
     distro
     n_jobs
     separate_N_ctcs
-    accept_guess
+    accept_guess : bool, default is False
+        Accept mdciao's guesses regarding fragment
+        identification using nomenclature labels
     switch_off_Ang
 
     Returns
@@ -629,6 +632,10 @@ def residue_neighborhoods(topology, trajectories, residues,
     CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs,
                                                accept_guess=accept_guess)
 
+    #TODO refactor into rangeexpand_residues2residxs?
+    # for compatibility for interactive execution
+    if not isinstance(residues,str):
+        residues= ','.join([str(ii) for ii in _mdcu.lists.force_iterable(residues)])
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
                                                   interpret_as_res_idxs=res_idxs,
                                                   sort=sort,
