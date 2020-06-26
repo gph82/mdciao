@@ -24,14 +24,14 @@ from scipy.spatial.distance import cdist
 from mdciao.filenames import filenames
 import pytest
 from mdciao import contacts
-
+import pickle
 
 from mdciao.fragments import get_fragments
 from mdciao.utils.residue_and_atom import residues_from_descriptors
 
 from matplotlib import pyplot as _plt
 
-from tempfile import TemporaryDirectory as _TDir
+from tempfile import TemporaryDirectory as _TDir, TemporaryFile as _TFil
 
 import mdciao.utils.COM as mdcCOM
 
@@ -932,8 +932,8 @@ class TestBaseClassContactGroup(unittest.TestCase):
                                                              top=self.top)
 
         # Completely bogus contacts but testable
-        print(self.top.residue(1))
-        print([aa for aa in self.top.residue(1).atoms])
+        #print(self.top.residue(1))
+        #print([aa for aa in self.top.residue(1).atoms])
         self.atom_BB0 = list(self.top.residue(0).atoms_by_name("CA"))[0].index
         self.atom_SC0 = list(self.top.residue(0).atoms_by_name("CB"))[0].index
         self.atom_BB1 = list(self.top.residue(1).atoms_by_name("CA"))[0].index
@@ -1335,8 +1335,6 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
                                    self.cp5_wtop_and_wo_conslabs,
                                    ],
                                   interface_residxs=[[0, 3, 4], [1, 2, 20]])
-        print(I.res_idxs_pairs)
-        print(I.frequency_per_contact(2))
         refmat = _np.zeros((3, 2))
         refmat[:, :] = _np.nan
         refmat[0, 0] = 2 / 3  # [0,1]
@@ -2016,6 +2014,42 @@ class Test_linear_switchoff(unittest.TestCase):
         _np.testing.assert_almost_equal(CG.frequency_per_contact(3, switch_off_Ang=1),
                                         [_np.mean(self.linearized), _np.mean(self.linearized)],
                                         )
+
+
+class TestContactPairHashingEqualitySaving(TestBaseClassContactGroup):
+
+    def test_not_equal(self):
+        assert self.cp1 != self.cp2
+
+    def test_copy_is_equal(self):
+        assert self.cp1 == self.cp1.copy()
+
+    def test_hash_survives_pickle(self):
+
+        with _TDir() as tdir:
+            picklefile = path.join(tdir,"CP.pickle")
+            self.cp1.save(picklefile)
+            cp1 = contacts.load(picklefile)
+
+        assert self.cp1 == cp1
+
+class TestContactGroupHashingEqualitySaving(TestBaseClassContactGroup):
+
+    def test_works(self):
+        CG1 = contacts.ContactGroup([self.cp1,self.cp2])
+        CG1c = contacts.ContactGroup([self.cp1,self.cp2])
+        CG2 = contacts.ContactGroup([self.cp1,self.cp2, self.cp3])
+        assert CG1 == CG1c == CG1.copy()
+        assert CG1 != CG2
+
+    def test_hash_survives_pickle(self):
+        CG1 = contacts.ContactGroup([self.cp1,self.cp2])
+        with _TDir() as tdir:
+            picklefile = path.join(tdir, "CG.pickle")
+            CG1.save(picklefile)
+            CG1p = contacts.load(picklefile)
+
+        assert CG1 == CG1p
 
 if __name__ == '__main__':
     unittest.main()

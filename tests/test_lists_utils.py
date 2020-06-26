@@ -1,11 +1,11 @@
 import unittest
 import numpy as _np
 import pytest
-from unittest import mock
-from unittest.mock import patch
-import io
+from mdciao import filenames
 
+test_filenames = filenames.filenames()
 from mdciao.utils import lists
+import mdtraj as md
 
 #TODO correct the "just works" nomenclature and the repetition of names of the funciton in class methods
 class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
@@ -200,6 +200,26 @@ class Test_rewarp(unittest.TestCase):
 
     def test_short_input(self):
         assert _np.allclose(lists.re_warp([0,1,2,3],[2]),[0,1])
+
+class test_hash_list(unittest.TestCase):
+
+    def test_passes(self):
+        geom = md.load(test_filenames.small_monomer)
+        ilist = [_np.random.randn(5000,2), # ndarray
+                 [_np.random.randn(5000,2),_np.random.randn(5000,2)], #list thereof
+                 'this_is_a_string', # str
+                 ['this_is_a_substring', 'this_is_another_one'], # list thereof
+                 1, # int
+                 [1,2], #list of ints
+                 [[1,],[2]], # list of lists,
+                 geom,
+                 geom.top,
+                 [geom, geom],
+                 [geom.top],
+                 [geom, geom.top],
+                 ]
+
+        lists.hash_list(ilist)
 
 if __name__ == '__main__':
     unittest.main()

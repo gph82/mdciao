@@ -423,3 +423,33 @@ def put_this_idx_first_in_pair(idx, pair):
         print(pair)
         raise Exception
     return pair
+
+def hash_list(ilist):
+    r"""Try to hash all the objects of a list (regardless of type) into one hash
+
+    Parameters
+    ----------
+    iobj : anthing
+
+    Returns : hashed object
+    -------
+
+    """
+    list_of_hashes = []
+    for iobj in ilist:
+        try:
+            res = hash(iobj)
+        except:
+            try:
+                res = hash(tuple(iobj))
+            except:
+                try:
+                    res = hash(tuple([hash(tuple(subitem)) for subitem in iobj]))
+                except:
+                    try:
+                        res = hash(tuple([hash(tuple(subitem.flatten())) for subitem in iobj]))
+                    except Exception as e:
+                        print("Cannot hash type", type(iobj))
+                        raise e
+        list_of_hashes.append(res)
+    return hash(tuple(list_of_hashes))
