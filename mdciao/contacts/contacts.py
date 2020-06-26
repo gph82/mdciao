@@ -1,12 +1,12 @@
 import numpy as _np
 import mdtraj as _md
 from os import path as _path
-
 import mdciao.plots as _mdcplots
 import mdciao.utils as _mdcu
 
 from ._mdtraj import compute_contacts as _compute_contacts
 
+from pickle import dump as _pdump,load as _pload
 from collections import \
     defaultdict as _defdict, \
     Counter as _col_Counter
@@ -126,6 +126,35 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
     # TODO think about what's best to return here
     # TODO think about making a pandas dataframe with all the above info
     return selection
+
+def _save_as_pickle(obj, filename,verbose=True):
+    with open(filename, "wb") as f:
+        _pdump(obj, f)
+    if verbose:
+        print("pickled %s to '%s'" % (obj, filename))
+
+def load(filename,return_copy=True):
+    r"""Load a pickled object
+
+    Parameters
+    ----------
+    filaname : str
+        path to pickled object
+    return_copy : bool, default is True
+        Issue obj.copy() before returning the pickled object,
+        this forces a reinstantiation (the pickled object might
+        not have all funcitons yet, although it could be that it does
+    Returns
+    -------
+
+    """
+    with open(filename,"rb") as f:
+        obj = _pload(f)
+
+    if return_copy:
+        obj = obj.copy()
+
+    return obj
 
 def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
                chunksize=1000, return_times_and_atoms=False,
@@ -1040,6 +1069,67 @@ class ContactPair(object):
 
         """
         return self._top
+
+    def copy(self):
+        r"""copy this object by re-instantiating another :obj:`ContactPair` object
+        with the same attributes. In theory self == self.copy() should hold (but
+        not self is self.copy()
+
+        Returns
+        -------
+        CP : :obj:`ContactPair`
+
+        """
+        return ContactPair(
+            self.residues.idxs_pair,
+            self.time_traces.ctc_trajs,
+            self.time_traces.time_trajs,
+            top=self.topology,
+            trajs=self.time_traces.trajs,
+            atom_pair_trajs=self.time_traces.atom_pair_trajs,
+            fragment_idxs=self.fragments.idxs,
+            fragment_names=self.fragments.names,
+            fragment_colors=self.fragments.colors,
+            anchor_residue_idx=self.residues.anchor_residue_index,
+            consensus_labels=self.residues.consensus_labels)
+
+    def __hash__(self):
+        tohash = []
+        for attr in ["residues.idxs_pair",
+                     "time_traces.ctc_trajs",
+                     "time_traces.time_trajs",
+                     "topology",
+                     "time_traces.trajs",
+                     "time_traces.atom_pair_trajs",
+                     "fragments.idxs",
+                     "fragments.names",
+                     "fragments.colors",
+                     "residues.anchor_residue_index",
+                     "residues.consensus_labels"]:
+            if "." in attr:
+                attr1, attr2 = attr.split(".")
+                gattr = getattr(getattr(self, attr1), attr2)
+            else:
+                gattr = getattr(self, attr)
+            tohash.append(gattr)
+        return _mdcu.lists.hash_list(tohash)
+
+    def __eq__(self, other):
+        return self.__hash__() == other.__hash__()
+
+    def save(self,filename):
+        r"""Save this :obj:`ContactPair` as a pickle
+
+        Parameters
+        ----------
+        filename : str
+            filename
+
+        Returns
+        -------
+
+        """
+        _save_as_pickle(self, filename,verbose=False) # Better not be verbose here
 
     def binarize_trajs(self, ctc_cutoff_Ang,
                        switch_off_Ang=None
@@ -3192,6 +3282,45 @@ class ContactGroup(object):
 
             if verbose:
                 print(savename)
+
+    def save(self,filename):
+        r"""Save this :obj:`ContactGroup` as a pickle
+
+        Parameters
+        ----------
+        filename : str
+            filename
+
+        Returns
+        -------
+
+        """
+        _save_as_pickle(self, filename)
+
+    def copy(self):
+        r"""copy this object by re-instantiating another :obj:`ContactGroup` object
+        with the same attributes.
+
+        In theory self == self.copy() should hold, but not self is self.copy()
+
+        Returns
+        -------
+        CG : :obj:`ContactGroup`
+
+        """
+        return ContactGroup([CP.copy() for CP in self._contacts],
+                            interface_residxs=self.interface_residxs,
+                            top=self.top)
+
+    def __hash__(self):
+        return hash(tuple([hash(tuple([CP.__hash__() for CP in self._contacts])),
+                           hash(tuple(self.interface_residxs[0])),
+                           hash(tuple(self.interface_residxs[1])),
+                           hash(self.top)]))
+
+    def __eq__(self, other):
+        return self.__hash__() == other.__hash__()
+
 '''
 class GroupOfInterfaces(object):
     r"""

@@ -932,8 +932,8 @@ class TestBaseClassContactGroup(unittest.TestCase):
                                                              top=self.top)
 
         # Completely bogus contacts but testable
-        print(self.top.residue(1))
-        print([aa for aa in self.top.residue(1).atoms])
+        #print(self.top.residue(1))
+        #print([aa for aa in self.top.residue(1).atoms])
         self.atom_BB0 = list(self.top.residue(0).atoms_by_name("CA"))[0].index
         self.atom_SC0 = list(self.top.residue(0).atoms_by_name("CB"))[0].index
         self.atom_BB1 = list(self.top.residue(1).atoms_by_name("CA"))[0].index
@@ -1335,8 +1335,6 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
                                    self.cp5_wtop_and_wo_conslabs,
                                    ],
                                   interface_residxs=[[0, 3, 4], [1, 2, 20]])
-        print(I.res_idxs_pairs)
-        print(I.frequency_per_contact(2))
         refmat = _np.zeros((3, 2))
         refmat[:, :] = _np.nan
         refmat[0, 0] = 2 / 3  # [0,1]
@@ -2018,7 +2016,7 @@ class Test_linear_switchoff(unittest.TestCase):
                                         )
 
 
-class TestContactPairHashingEquality(TestBaseClassContactGroup):
+class TestContactPairHashingEqualitySaving(TestBaseClassContactGroup):
 
     def test_not_equal(self):
         assert self.cp1 != self.cp2
@@ -2030,15 +2028,12 @@ class TestContactPairHashingEquality(TestBaseClassContactGroup):
 
         with _TDir() as tdir:
             picklefile = path.join(tdir,"CP.pickle")
-            with open(picklefile,"wb") as f:
-                pickle.dump(self.cp1,f)
-
-            with open(picklefile,"rb") as f:
-                cp1 = pickle.load(f)
+            self.cp1.save(picklefile)
+            cp1 = contacts.load(picklefile)
 
         assert self.cp1 == cp1
 
-class TestContactGroupHashingEquality(TestBaseClassContactGroup):
+class TestContactGroupHashingEqualitySaving(TestBaseClassContactGroup):
 
     def test_works(self):
         CG1 = contacts.ContactGroup([self.cp1,self.cp2])
@@ -2051,11 +2046,8 @@ class TestContactGroupHashingEquality(TestBaseClassContactGroup):
         CG1 = contacts.ContactGroup([self.cp1,self.cp2])
         with _TDir() as tdir:
             picklefile = path.join(tdir, "CG.pickle")
-            with open(picklefile, "wb") as f:
-                pickle.dump(CG1, f)
-
-            with open(picklefile, "rb") as f:
-                CG1p = pickle.load(f)
+            CG1.save(picklefile)
+            CG1p = contacts.load(picklefile)
 
         assert CG1 == CG1p
 
