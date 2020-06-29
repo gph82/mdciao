@@ -58,20 +58,20 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
             maplabel_last = _mdcu.str_and_dict.choose_between_good_and_better_strings(None, idx2label[fragment[-1]],
                                                                                       fmt="@%s")
 
-        rf, rl = [top.residue(ii) for ii in [fragment[0], fragment[-1]]]
-        resfirst = "%8s%-10s" % (rf, maplabel_first)
-        reslast = "%8s%-10s" % (rl, maplabel_last)
+        rfirst, rlast = [top.residue(ii) for ii in [fragment[0], fragment[-1]]]
+        labfirst = "%8s%-10s" % (rfirst, maplabel_first)
+        lablast = "%8s%-10s" % (rlast, maplabel_last)
         istr = "%s %6s with %4u AAs %8s%-10s (%4u) - %8s%-10s (%-4u) (%s) " % \
                (fragment_desc, str(frag_idx), len(fragment),
-                # resfirst,
-                top.residue(fragment[0]), maplabel_first,
-                top.residue(fragment[0]).index,
-                # reslast,
-                top.residue(fragment[-1]), maplabel_last,
-                top.residue(fragment[-1]).index,
+                #labfirst,
+                rfirst, maplabel_first,
+                rfirst.index,
+                #lablast,
+                rlast, maplabel_last,
+                rlast.index,
                 str(frag_idx))
 
-        if rl.resSeq - rf.resSeq != len(fragment) - 1:
+        if rlast.resSeq - rfirst.resSeq != len(fragment) - 1:
             # print(ii, rj.resSeq-ri.resSeq, len(iseg)-1)
             istr += ' resSeq jumps'
     except:

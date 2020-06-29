@@ -608,7 +608,6 @@ def parser_for_BW_overview():
                                                  'nomenclature on an input topology. '
                                                  'The BW nomenclature can be read locally or over the network')
 
-    _parser_add_topology(parser)
     parser.add_argument("BW_uniprot_or_file", type=str,
                         help="Get Ballesteros-Weinstein definitions from here.\n"
                              "If a file is not found locally, look for\n"
@@ -616,6 +615,8 @@ def parser_for_BW_overview():
                              "using this string as uniprot code, "
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                         )
+    parser.add_argument("-t",'--topology', type=str, help='Topology file', default=None)
+
 
     _parser_add_write_to_disk(parser)
     _parser_add_print_conlab(parser)
@@ -629,15 +630,16 @@ def parser_for_CGN_overview():
     parser = argparse.ArgumentParser(description="Map a Common G-alpha Numbering (CGN)-type nomenclature on an input topology. "
                                                  "The CGN nomenclature can be read locally or over the network" )
 
-    _parser_add_topology(parser)
+    parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
     parser.add_argument("PDB_code_or_txtfile", type=str,
                         help="Get CGN definitions from here. If a file is not "
                              "found locally, there will be a web-lookup "
                              "in a database using a PDB code, "
                              "e.g. 3SN6. see www.mrc-lmb.cam.ac.uk")
 
-    _parser_add_fill_gaps(parser)
+    _parser_add_write_to_disk(parser)
     _parser_add_print_conlab(parser)
+    _parser_add_fill_gaps(parser)
     _parser_add_AAs(parser)
     _parser_add_conslabels(parser)
 

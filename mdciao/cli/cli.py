@@ -419,29 +419,45 @@ def _fragment_overview(a,labtype):
     else:
         raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
 
-    top = _md.load(a.topology).top
-    fragments = _mdcfrg.get_fragments(top,method="lig_resSeq+",
-                              verbose=False)
-    frag_idxs = _mdcnomenc.guess_nomenclature_fragments(obj, top, fragments)
+    if a.topology is not None:
+        top = _md.load(a.topology).top
+        fragments = _mdcfrg.get_fragments(top,method="lig_resSeq+",
+                                  verbose=False)
+        frag_idxs = _mdcnomenc.guess_nomenclature_fragments(obj, top, fragments)
 
-    map_conlab = obj.top2map(top, restrict_to_residxs=_np.hstack([fragments[ii] for ii in frag_idxs]))
-    obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
+        map_conlab = obj.top2map(top, restrict_to_residxs=_np.hstack([fragments[ii] for ii in frag_idxs]))
+        obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
 
-    _mdcu.residue_and_atom.parse_and_list_AAs_input(a.AAs, top, map_conlab)
+        _mdcu.residue_and_atom.parse_and_list_AAs_input(a.AAs, top, map_conlab)
+        if str(a.labels).lower() != "none":
+            labels = [aa.strip(" ") for aa in a.labels.split(",")]
+            conlab2residx = obj.conlab2residx(top, map=map_conlab)
+            for lab in labels:
+                for match in _filter(list(conlab2residx.keys()),lab):
+                    idx = conlab2residx[match]
+                    rr = top.residue(idx)
+                    print(idx,rr, map_conlab[idx])
 
-    if str(a.labels).lower() != "none":
-        labels = [aa.strip(" ") for aa in a.labels.split(",")]
-        conlab2residx = obj.conlab2residx(top, map=map_conlab)
-        for lab in labels:
-            for match in _filter(list(conlab2residx.keys()),lab):
-                idx = conlab2residx[match]
-                rr = top.residue(idx)
-                print(idx,rr, map_conlab[idx])
+        if a.print_conlab:
+            for ii, ilab in enumerate(map_conlab):
+                print(ii, top.residue(ii), ilab)
+    else:
+        for key, frag in obj.fragments.items():
+            print("fragment %s with %u AAs:"%(key, len(frag)))
+            from pandas import DataFrame as _DF
+            idf = _DF.from_dict({"residue"  : frag,
+                                 "consensus": obj.fragments_as_conlabs[key]})
 
-    if a.print_conlab:
-        for ii, ilab in enumerate(map_conlab):
-            print(ii, top.residue(ii), ilab)
-
+            textblocks = [['%-25s'%iline for iline in idf.loc[idxs].to_string().splitlines()] for idxs in _mdcu.lists.re_warp(_np.arange(len(idf)),10)]
+            for ii in range(len(textblocks[0])):
+                line = ''
+                for tb in textblocks:
+                    try:
+                        line += ' | %s'%tb[ii]
+                    except IndexError as E:
+                        pass
+                print(line)
+            
 def residue_neighborhoods(topology, trajectories, residues,
                           res_idxs=False,
                           ctc_cutoff_Ang=3.5,
