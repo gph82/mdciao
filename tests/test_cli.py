@@ -502,21 +502,21 @@ class Test_fragment_overview(unittest.TestCase):
             with remember_cwd():
                 os.chdir(tmpdir)
                 a = parser_for_CGN_overview()
-                a = a.parse_args([test_filenames.top_pdb,
-                                  path_to_CGN_3SN6])
+                a = a.parse_args([path_to_CGN_3SN6])
+                a.__setattr__("topology",test_filenames.top_pdb)
                 cli._fragment_overview(a, "CGN")
 
     def test_BW_paths_and_verbose(self):
         a = parser_for_BW_overview()
-        a = a.parse_args([test_filenames.top_pdb,
-                         test_filenames.adrb2_human_xlsx])
+        a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("print_conlab",True)
+        a.__setattr__("topology",test_filenames.top_pdb)
         cli._fragment_overview(a, "BW")
 
     def test_BW_url(self):
         a = parser_for_BW_overview()
-        a = a.parse_args([test_filenames.pdb_3SN6,
-                          "adrb2_human"])
+        a = a.parse_args(["adrb2_human"])
+        a.__setattr__("topology",test_filenames.pdb_3SN6)
         cli._fragment_overview(a, "BW")
 
     @unittest.skip("not here yet")
@@ -533,16 +533,16 @@ class Test_fragment_overview(unittest.TestCase):
 
     def test_AAs(self):
         a = parser_for_CGN_overview()
-        a = a.parse_args([test_filenames.top_pdb,
-                          test_filenames.CGN_3SN6,
+        a = a.parse_args([test_filenames.CGN_3SN6,
                           ])
         a.__setattr__("AAs","LEU394,LEU395")
+        a.__setattr__("topology",test_filenames.top_pdb)
         cli._fragment_overview(a, "CGN")
 
     def test_labels(self):
         a = parser_for_BW_overview()
-        a = a.parse_args([test_filenames.top_pdb,
-                          test_filenames.adrb2_human_xlsx])
+        a = a.parse_args([test_filenames.adrb2_human_xlsx])
+        a.__setattr__("topology",test_filenames.top_pdb)
         a.__setattr__("labels","3.50")
         cli._fragment_overview(a, "BW")
 

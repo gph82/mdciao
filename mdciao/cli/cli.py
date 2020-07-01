@@ -1332,4 +1332,5 @@ def sites(topology,
     return
 
 def compare(*args, **kwargs):
-    return _mdcplots.compare_groups_of_contacts(*args, **kwargs)
+    myfig, freqs, plotted_freqs = _mdcplots.compare_groups_of_contacts(*args, **kwargs)
+    return myfig, freqs, plotted_freqs

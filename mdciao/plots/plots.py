@@ -9,6 +9,8 @@ from mpl_toolkits.axes_grid1 import \
 
 import mdciao.utils as _mdcu
 
+from os import path as _path
+
 def plot_w_smoothing_auto(ax, x, y,
                           label,
                           color,
@@ -61,8 +63,8 @@ def plot_w_smoothing_auto(ax, x, y,
             alpha=alpha,
             color=color)
 
-def compare_groups_of_contacts(dictionary_of_groups,
-                               colordict=None,
+def compare_groups_of_contacts(groups,
+                               colors=None,
                                mutations_dict={},
                                width=.2,
                                ax=None,
@@ -79,8 +81,10 @@ def compare_groups_of_contacts(dictionary_of_groups,
 
     Parameters
     ----------
-    dictionary_of_groups : dict
-        The keys will be used as names for the contact groups, e.g. "WT", "MUT" etc
+    groups : iterable (list or dict)
+        The contact groups. If dict, the keys will be used as names
+        for the contact groups, e.g. "WT", "MUT" etc, if list the keys
+        will be auto-generated.
         The values can be:
           * :obj:`ContactGroup` objects
           * dictionaries where the keys are residue-pairs
@@ -98,7 +102,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
         needs to be passed along, otherwise frequencies cannot be computed
         on-the-fly
 
-    colordict : dict, default is None
+    colors : iterable (list or dict), default is None
         Using the same keys as :obj:`dictionary_of_groups`,
         a color for each group. Defaults to some sane matplotlib choices
     anchor : str, default is None
@@ -141,12 +145,29 @@ def compare_groups_of_contacts(dictionary_of_groups,
 
     freqs : dictionary of unified frequency dictionaries, including mutations and anchor
 
-    posret : None (TODO find out why I am returning this!)
+    plotted_freqs : the unified freq dictionary sorted and purged like the one in the plot
 
     """
-    freqs = {key: {} for key in dictionary_of_groups.keys()}
+    if isinstance(groups, dict):
+        pass
+    else:
+        _groups = {}
+        for ii, item in enumerate(groups):
+            if isinstance(item,str):
+                key = _path.splitext(_path.basename(item))[0]
+            elif isinstance(item,dict):
+                key = "dict"
+            else:
+                key = "mdcCG"
+            _groups["%s (%u)"%(key,ii)]=item
+        groups = _groups
 
-    for key, ifile in dictionary_of_groups.items():
+    freqs = {key: {} for key in groups.keys()}
+    if isinstance(colors, list):
+        assert len(colors) >= len(freqs)
+        colors = {key:val for key, val in zip(freqs.keys(), colors)}
+
+    for key, ifile in groups.items():
         if isinstance(ifile, str):
             idict = _mdcu.str_and_dict.freq_file2dict(ifile)
         elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
@@ -169,7 +190,7 @@ def compare_groups_of_contacts(dictionary_of_groups,
                                     figsize=(figsize[0], figsize[1]*nrows))
         for iax, (key, ifreq) in zip(myax, freqs.items()):
             plot_unified_freq_dicts({key: ifreq},
-                                    colordict=colordict,
+                                    colordict=colors,
                                     ax=iax, width=width,
                                     fontsize=fontsize,
                                     **kwargs_plot_unified_freq_dicts)
@@ -180,19 +201,19 @@ def compare_groups_of_contacts(dictionary_of_groups,
         # _plt.show()
 
     freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag="@")
-    myfig, iax, posret = plot_unified_freq_dicts(freqs,
-                                                 colordict=colordict,
-                                                 ax=ax,
-                                                 width=width,
-                                                 fontsize=fontsize,
-                                                 figsize=figsize,
-                                                 **kwargs_plot_unified_freq_dicts)
+    myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
+                                                        colordict=colors,
+                                                        ax=ax,
+                                                        width=width,
+                                                        fontsize=fontsize,
+                                                        figsize=figsize,
+                                                        **kwargs_plot_unified_freq_dicts)
     if anchor is not None:
         _plt.text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom")
     _plt.gcf().tight_layout()
     #_plt.show()
 
-    return myfig, freqs, posret
+    return myfig, freqs, plotted_freqs
 
 """
 def add_hover_ctc_labels(iax, ctc_mat,
@@ -335,7 +356,8 @@ def plot_unified_freq_dicts(freqs,
     # Pop them form the needed dict
     final_ordered_dict = {key:val for key, val in dicts_values_to_sort[sort_by].items() if key not in keys_popped_below}
 
-    # Sort the dict for plotting
+    # Prepare the dict that stores the order for plotting
+    # and the values used for that sorting
     final_ordered_dict = {key:val for (key, val)  in
                           sorted(final_ordered_dict.items(),
                                  key = lambda item : item[1],
@@ -362,6 +384,7 @@ def plot_unified_freq_dicts(freqs,
 
     for ii, (key, val) in enumerate(final_ordered_dict.items()):
         for jj, (skey, sfreq) in enumerate(freqs_work.items()):
+            assert len(sfreq)==len(final_ordered_dict), "This shouldnt happen"
             if ii == 0:
                 label = '%s (Sigma= %2.1f)'%(skey, _np.sum(list(sfreq.values())))
                 if len(keys_popped_above)>0:
@@ -419,8 +442,10 @@ def plot_unified_freq_dicts(freqs,
 
         _plt.ylim(0, ylim)
 
-
-    return myfig, _plt.gca(), None #{all_keys[ii]:[idict[all_keys[ii]] for idict in freqs_work.values()] for ii in order4plot}
+    # Create a dictionary explaining the plot
+    out_dict = {key:{ss: val[ss] for ss in final_ordered_dict.keys()} for key, val in freqs_work.items()}
+    out_dict.update({sort_by: {key : _np.round(val,2) for key, val in final_ordered_dict.items()}})
+    return myfig, _plt.gca(),  out_dict
 
 def add_tilted_labels_to_patches(jax, labels,
                                  label_fontsize_factor=1,

@@ -604,8 +604,8 @@ def parser_for_frag_overview():
     return parser
 
 def parser_for_BW_overview():
-    parser = argparse.ArgumentParser(description='Map a Ballesteros-Weinstein (BW)-type '
-                                                 'nomenclature on an input topology. '
+    parser = argparse.ArgumentParser(description='Produce an overvoew of a Ballesteros-Weinstein (BW)-type '
+                                                 'nomenclature, optionally mapping it on an input topology. '
                                                  'The BW nomenclature can be read locally or over the network')
 
     parser.add_argument("BW_uniprot_or_file", type=str,
@@ -627,15 +627,16 @@ def parser_for_BW_overview():
     return parser
 
 def parser_for_CGN_overview():
-    parser = argparse.ArgumentParser(description="Map a Common G-alpha Numbering (CGN)-type nomenclature on an input topology. "
+    parser = argparse.ArgumentParser(description="Produce an overview of a G-alpha Numbering (CGN)-type"
+                                                 " nomenclature, optionally mapping it on an input topology. "
                                                  "The CGN nomenclature can be read locally or over the network" )
 
-    parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
     parser.add_argument("PDB_code_or_txtfile", type=str,
                         help="Get CGN definitions from here. If a file is not "
                              "found locally, there will be a web-lookup "
                              "in a database using a PDB code, "
                              "e.g. 3SN6. see www.mrc-lmb.cam.ac.uk")
+    parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
 
     _parser_add_write_to_disk(parser)
     _parser_add_print_conlab(parser)
@@ -645,13 +646,13 @@ def parser_for_CGN_overview():
 
     return parser
 
-# TODO use the colorstring here?
+from mdciao.plots.plots import _colorstring
 def parser_for_compare_neighborhoods():
-    parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies from different files.")
+    parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies from different files by generating a comparison plot and table")
     parser.add_argument("files", type=str, nargs="+", help="Files (ASCII or .xlsx) containing the frequencies and labels in the first columns")
     parser.add_argument("-a","--anchor",type=str,default=None, help="A residue that appears in all contacts. It will be eliminated from the labels for clarity.")
     parser.add_argument("-k","--keys", type=str,default=None, help="The keys used to label the files, e.g. 'WT,MUT'")
-    parser.add_argument("-c","--colors", type=str, default="tab:blue,tab:orange,tab:green,tab:red,tab:purple,tab:brown,tab:pink,tab:gray,tab:olive,tab:cyan")
+    parser.add_argument("-c","--colors", type=str, default=_colorstring, help='Colors to use for the dicts, defaults to "%s"'%", ".join(_colorstring.split(",")))
     parser.add_argument("-m","--mutations",type=str, default=None,help='A replacement dictionary, to be able to re-label residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes all GLUs to ARGs and all LYS to PHEs')
     _parser_add_output_desc(parser,"freq_comparison")
     _parser_add_graphic_ext(parser)

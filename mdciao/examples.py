@@ -64,15 +64,15 @@ class ExamplesCLTs(object):
     @property
     def mdc_BW_overview(self):
         return ["mdc_BW_overview.py",
-                "%s" % self.pdb,
-                "%s" % self.BW_file]
+                "%s" % self.BW_file,
+                "-t %s" % self.pdb]
 
     @property
     def mdc_CGN_overview(self):
         # This is the only one that needs network access
         return ["mdc_CGN_overview.py",
-                "%s" % self.pdb,
-                "%s" % '3SN6'
+                "%s" % '3SN6',
+                "-t %s" % self.pdb,
                 ]
 
     @property

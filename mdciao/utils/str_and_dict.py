@@ -351,7 +351,9 @@ def replace4latex(istr):
                 istr, __ = _latexify(word, istr)
 
     for gl in ['alpha','beta','gamma', 'mu', "Sigma"]+ \
-              ["AA", "Ang"]:
+              ["AA",
+               #"Ang"
+               ]:
         if gl in istr:
             still2latex = True
             idx=0
