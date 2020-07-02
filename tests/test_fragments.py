@@ -26,11 +26,10 @@ class Test_overview(unittest.TestCase):
     def test_select_method(self):
         mdcfragments.overview(self.geom.top, "resSeq")
 
-class Test_print_fragments(unittest.TestCase):
+class Test_print_frag(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.top_pdb)
         self.fragments = mdcfragments.get_fragments(self.geom.top, verbose=False)
-
 
     def test_just_runs(self):
          mdcfragments.print_frag(0, self.geom.top, self.fragments[0])
@@ -53,6 +52,19 @@ class Test_print_fragments(unittest.TestCase):
                                         self.fragments[0][-1]:"labellast"})
         assert "@labelfirst" in outstr
         assert "@labellast"  in outstr
+
+class Test_print_fragments(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load(test_filenames.top_pdb)
+        self.fragments = mdcfragments.get_fragments(self.geom.top, verbose=False)
+
+    def test_lists(self):
+        mdcfragments.print_fragments(self.fragments, self.geom.top)
+
+    def test_dict(self):
+        frags = {"A":self.fragments[0],
+                 "B":self.fragments[1]}
+        mdcfragments.print_fragments(frags, self.geom.top)
 
 class Test_get_fragments_methods(unittest.TestCase):
     def setUp(self):

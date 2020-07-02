@@ -15,7 +15,25 @@ _allowed_fragment_methods = ['resSeq',
 
 
 def print_fragments(fragments, top, **print_frag_kwargs):
-    for ii, iseg in enumerate(fragments):
+    """Inform about fragments, very thinly wrapping around :obj:`print_frag`
+
+    Parameters
+    ----------
+    fragments : dict or list
+        Iterable with the sets of residue indexes
+    top : :obj:`md.Topology`
+    print_frag_kwargs : opt, keyword args for :obj:`print_frag`
+
+    Returns
+    -------
+
+    """
+    if isinstance(fragments,list):
+        _fragments = {ii:val for ii, val in enumerate(fragments)}
+    else:
+        _fragments = {key:val for key, val in fragments.items()}
+
+    for ii, iseg in _fragments.items():
         print_frag(ii, top, iseg, **print_frag_kwargs)
 
 def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
