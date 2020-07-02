@@ -124,7 +124,12 @@ def _parse_consensus_option(option, consensus_type,
                                         accept_guess=accept_guess,
                                         #verbose=True
                                         )
-        restrict_to_residxs = _np.hstack([fragments[ii] for ii in answer])
+        if answer is None:
+            print("No fragments belonging to the nomenclature data\n"
+                  " could be guessed based on your fragments, this might be a weird case")
+            restrict_to_residxs = None
+        else:
+            restrict_to_residxs = _np.hstack([fragments[ii] for ii in answer])
         map_out = LC_out.top2map(top,
                                  restrict_to_residxs=restrict_to_residxs,
                                  fill_gaps=True,
@@ -957,7 +962,8 @@ def interface(
           "\n with a stride of %u frames)" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
     refgeom = _load_any_geom(topology)
-
+    if not isinstance(fragments,str):
+        fragments= [','.join([str(ii) for ii in _mdcu.lists.force_iterable(ifrag)]) for ifrag in fragments]
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
     fragment_defs, \
