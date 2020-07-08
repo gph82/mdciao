@@ -27,7 +27,46 @@ class Test_top2seq(unittest.TestCase):
         top = md.load(test_filenames.small_monomer).top
         seq = sequence.top2seq(top, replacement_letter="Y")
         _np.testing.assert_array_equal("EVWIEKYY", seq)
+class Test_align_tops(unittest.TestCase):
 
+    def test_works_w_itself(self):
+        top = md.load(test_filenames.small_monomer).top
+        df = sequence.align_tops(top,top)
+        assert isinstance(df, _DF)
+        #sequence.print_verbose_dataframe(df)
+
+    def test_works_w_itself_list(self):
+        top = md.load(test_filenames.small_monomer).top
+        df = sequence.align_tops(top,top, return_DF=False)
+        assert isinstance(df, list)
+        #print(df)
+
+    def test_works_w_dimer(self):
+        top2 = md.load(test_filenames.small_dimer).top
+        seq_1_res_idxs = [6,7,8,9,10,11]
+        df = sequence.align_tops(top2,top2, seq_1_res_idxs=seq_1_res_idxs)
+        _np.testing.assert_array_equal(df[df["match"]==True]["idx_0"].to_list(),
+                                       seq_1_res_idxs)
+        _np.testing.assert_array_equal(df[df["match"]==True]["idx_1"].to_list(),
+                                       seq_1_res_idxs)
+
+    def test_substitions(self):
+        top2 = md.load(test_filenames.small_monomer).top
+        df = sequence.align_tops(top2, top2, substitutions={"E":"G","X":"Y"})
+        _np.testing.assert_array_equal("GVWIGKYY", ''.join(df["AA_0"]))
+
+
+class Test_maptops(unittest.TestCase):
+
+     def test_works(self):
+        top1 = md.load(test_filenames.pdb_3CAP).top
+        top2 = md.load(test_filenames.pdb_1U19).top
+        top12top2, top22top1 = sequence.maptops(top1,top1)
+        for key, val in top12top2.items():
+            top2.residue(val).code == top1.residue(key).code
+
+        for key, val in top22top1.items():
+            top1.residue(val).code == top2.residue(key).code
 
 class Test_my_bioalign(unittest.TestCase):
 

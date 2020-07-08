@@ -1,3 +1,18 @@
+r"""
+
+These functions rely on sequence alignment to offer, e.g. maps between
+topologies, maps between topology and nomenclature objects
+
+.. currentmodule:: mdciao.utils.sequence
+
+
+Functions
+=========
+
+.. autosummary::
+   :toctree: generated/
+
+"""
 import numpy as _np
 from pandas import DataFrame as _DF
 from Bio.pairwise2 import align as _Bioalign
@@ -25,12 +40,14 @@ def print_verbose_dataframe(df):
 
 def top2seq(top, replacement_letter="X"):
     r"""
-    Return the AA sequence of :obj:`top `as a string
+    Return the AA sequence of :obj:`top` as a string
+
     Parameters
     ----------
     top : :obj:`mdtraj.Topology`
     replacement_letter : str, default is "X"
-        Has to be a str of len(1)
+        If the AA has no one-letter-code,
+        return this letter instead has to be a str of len(1)
 
     Returns
     -------
@@ -49,7 +66,8 @@ def my_bioalign(seq1, seq2,
     Note
     ----
     This is a one-liner wrapper around whatever method
-    of :obj:`Bioalign` has been chosen.
+    of :obj:`Bioalign` has been chosen, typically
+    pairwise2.align.globalxs
 
     The intention is to only use *this* method throughout
     mdciao, and change *here* any alignment parameters s.t.
@@ -68,13 +86,15 @@ def my_bioalign(seq1, seq2,
     seq2 : str, any length
     method : str, default is "globalxs"
     argstuple : tuple, default is (-1,0)
+        The
 
     Returns
     -------
-    An alignment dictionary
+    alignments : list
+        A list of tuples, each containing seq1,seq2,score.
+        See https://biopython.org/DIST/docs/api/Bio.pairwise2-module.html
+        for more info
 
-    See https://biopython.org/DIST/docs/api/Bio.pairwise2-module.html
-    for more info
 
     """
     allowed_method="globalxs"
@@ -110,7 +130,9 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
     This list of dictionaries is very suitable for further operations
     with :obj:`pandas.DataFrame`.
 
-    TODO : decide whether we need key_resSeq_1 or not
+    TODO
+    ----
+    Decide whether we need key_resSeq_1 or not
 
     Parameters
     ----------
@@ -193,16 +215,16 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
     return alignment_dict
 
 
-def _align_tops(top0, top1, substitutions=None,
-                seq_0_res_idxs=None,
-                seq_1_res_idxs=None,
-                return_DF=True):
-    r"""
-    Provided two :obj:`mdtraj.Topology` objects,
+def align_tops(top0, top1, substitutions=None,
+               seq_0_res_idxs=None,
+               seq_1_res_idxs=None,
+               return_DF=True):
+    r""" Provided two :obj:`mdtraj.Topology` objects,
     return their alignment as a :obj:`pandas.DataFrame`.
 
     Relevant methods used under the hood are :obj:`my_bioalign` and
-    :obj:`alignment_result_to_list_of_dicts`
+    :obj:`alignment_result_to_list_of_dicts`, see their docs
+    for more info
 
     Parameters
     ----------
@@ -212,7 +234,13 @@ def _align_tops(top0, top1, substitutions=None,
         dictionary of patterns and replacements,
         in case some AAs of the topologies
     seq_0_res_idxs : iterable of integers, default is None
+        only use these idxs for alignment in :obj:`top0`
     seq_1_res_idxs : iterable of integers, default is None
+        only use these idxs for alignment in :obj:`top1`
+    return_DF : bool, default is True
+        If false, a list of alignment dictionaries instead
+        of a dataframe will be returned
+
     Returns
     -------
     align : :obj:`pandas.DataFrame`
@@ -251,11 +279,13 @@ def _align_tops(top0, top1, substitutions=None,
 
 
 
-def _maptops(top0,
-             top1,
-             ):
-    r"""
-    map residue idxs between topologies using a sequence alignment
+def maptops(top0,
+            top1,
+            ):
+    r""" map matching residues via their serial indices
+    between topologies using a sequence alignment
+
+    Mis-matched positions and gaps are missing from the result
 
     Parameters
     ----------
@@ -270,8 +300,8 @@ def _maptops(top0,
         top1_to_top0[20] = 10
 
     """
-    df = _align_tops(top0, top1,
-                     return_DF=True)
+    df = align_tops(top0, top1,
+                    return_DF=True)
 
     top0_to_top1 = {key : val for key, val in zip(df[df["match"] == True]["idx_0"].to_list(),
                                                   df[df["match"] == True]["idx_1"].to_list())}
