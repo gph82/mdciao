@@ -16,6 +16,8 @@ from os import path as _path
 
 import requests as _requests
 
+from natsort import natsorted as _natsorted
+
 def table2BW_by_AAcode(tablefile,
                        keep_AA_code=True,
                        return_fragments=False,
@@ -1507,38 +1509,69 @@ def _map2defs(cons_list, splitchar="."):
             defs[new_key].append(ii)
     return {key: _np.array(val) for key, val in defs.items()}
 
-def order_frags(fragment_names, ref_fragnames_in_order):
+def sort_consensus_labels(subset, sorted_superset,
+                          append_diffset=True):
     r"""
-    Input a list of fragment names and return in
-    sorted according to a reference
+    Sort consensus labels (BW or CGN)
+
 
     Parameters
     ----------
-    fragment_names
-    ref_fragnames_in_order
+    subset : iterable
+        list with the names (type str) to be ordered
+    sorted_superset : iterable
+        list with names in the desired order. Is a superset
+        of :obj:`subset`
+    append_diffset : bool, default is True
+        Append the difference set subset-sorted_superset, i.e.
+        all the elements in subset that are not in sorted_superset.
 
     Returns
     -------
     fragnames_out
     """
-    from natsort import natsorted
+
+    by_frags = _defdict(dict)
+    for item in subset:
+        try:
+            frag, idx = item.rsplit(".",maxsplit=1)
+            by_frags[frag][idx] = item
+        except:
+            pass
+
     labs_out = []
-    for ifrag in fragment_names:
-        if 'CL' in ifrag:
-            toappend = natsorted([ilab for ilab in ref_fragnames_in_order if ilab.endswith(ifrag)])
-        else:
-            toappend = natsorted([ilab for ilab in ref_fragnames_in_order if ilab.startswith(ifrag)])
-        if len(toappend) > 0:
-            labs_out.extend(toappend)
-    for ilab in ref_fragnames_in_order:
-        if ilab not in labs_out:
-            labs_out.append(ilab)
+    for frag in sorted_superset:
+        if frag in by_frags.keys():
+            for ifk in _natsorted(by_frags[frag].keys()):
+                labs_out.append(by_frags[frag][ifk])
+
+    if append_diffset:
+        labs_out += [item for item in subset if item not in labs_out]
+
     return labs_out
 
-def order_BW(labels):
-    return order_frags("1 12 2 23 3 34 ICL2 4 45 5 56 ICL3 6 67 7 78 8".split(), labels)
-def order_CGN(labels):
-    return order_frags(_CGN_fragments,labels)
+def sort_BW_consensus_labels(labels, **kwargs):
+    return sort_consensus_labels(labels, _GCPR_fragments, **kwargs)
+def sort_CGN_consensus_labels(labels, **kwargs):
+    return sort_consensus_labels(labels, _CGN_fragments, **kwargs)
+
+_GCPR_fragments=["NT",
+                 "1", "TM1 ",
+                 "12","ICL1",
+                 "2", "TM2",
+                 "23","ECL1",
+                 "3", "TM3",
+                 "34","ICL2",
+                 "4", "TM4",
+                 "45","ECL2",
+                 "5", "TM5",
+                 "56","ICL3",
+                 "6", "TM6",
+                 "67","ECL3",
+                 "7", "TM7",
+                 "78",
+                 "8", "H8",
+                 "CT"]
 
 _CGN_fragments = ['G.HN',
                  'G.hns1',
