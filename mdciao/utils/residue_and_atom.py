@@ -366,8 +366,24 @@ def atom_type(aa, no_BB_no_SC='X'):
     else:
         return no_BB_no_SC
 
-#TODO document
 def parse_and_list_AAs_input(AAs, top, map_conlab=None):
+    r"""Helper method to print information regarding AA descriptors
+
+    Parameters
+    ----------
+    AAs : None or str
+        CSVs of AA descriptors, e.g.
+        'GLU30,GLU*,GDP', anything that :obj:`find_AA` can read
+        How AAs are being described
+    top : :obj:`mdtraj.Topology`
+        Topology where the AAs live
+    map_conlab : dict, list or array, default is None
+        maps residue indices to consensus labels
+
+    Returns
+    -------
+
+    """
     if str(AAs).lower()!="none":
         AAs = [aa.strip(" ") for aa in AAs.split(",")]
         for aa in AAs:

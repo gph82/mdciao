@@ -5,6 +5,8 @@ from mdciao.filenames import filenames
 from mdciao.utils import residue_and_atom 
 import mdciao.fragments as _mdcfrg
 import pytest
+import io
+from contextlib import redirect_stdout
 from unittest.mock import patch
 import mock
 
@@ -320,6 +322,32 @@ class Test_rangeexpand_residues2residxs(unittest.TestCase):
                                                                          self.top,
                                                                          )
 
+class Test_parse_and_list_AAs_input(unittest.TestCase):
+    def setUp(self):
+        self.top = md.load(test_filenames.small_monomer).top
+
+    def test_None(self):
+        f = io.StringIO()
+        with redirect_stdout(f):
+            residue_and_atom.parse_and_list_AAs_input(None, self.top)
+        out = f.getvalue()
+        assert out==""
+
+    def test_prints(self):
+        f = io.StringIO()
+        with redirect_stdout(f):
+            residue_and_atom.parse_and_list_AAs_input('GLU30,GLU31', self.top)
+        out = f.getvalue().splitlines()
+        np.testing.assert_equal(out[0],"0 GLU30")
+        np.testing.assert_equal(out[1], "No %s found in the input topology"%"GLU31")
+
+    def test_map_conlab(self):
+        f = io.StringIO()
+        with redirect_stdout(f):
+            residue_and_atom.parse_and_list_AAs_input('GLU30,GLU31', self.top, map_conlab={0:'3.50'})
+        out = f.getvalue().splitlines()
+        np.testing.assert_equal(out[0],"0 GLU30 3.50")
+        np.testing.assert_equal(out[1], "No %s found in the input topology"%"GLU31")
 
 if __name__ == '__main__':
     unittest.main()
