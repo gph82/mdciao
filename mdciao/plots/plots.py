@@ -74,6 +74,9 @@ def compare_groups_of_contacts(groups,
                                plot_singles=False,
                                exclude=None,
                                ctc_cutoff_Ang=None,
+                               AA_format='short',
+                               defrag='@',
+                               per_residue=False,
                                **kwargs_plot_unified_freq_dicts,
                                ):
     r"""
@@ -123,7 +126,7 @@ def compare_groups_of_contacts(groups,
     mutations_dict : dictionary, default is {}
         A mutation dictionary that contains allows to plot together
         residues that would otherwise be identified as different
-        contactacs. If there were two mutations, e.g A30K and D35A
+        contacts. If there were two mutations, e.g A30K and D35A
         the mutation dictionary will be {"A30":"K30", "D35":"A35"}.
         You can also use this parameter for correcting indexing
         offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}
@@ -137,6 +140,12 @@ def compare_groups_of_contacts(groups,
     ctc_cutoff_Ang : float, default is None
         Needed value to compute frequencies on-the-fly
         if the input was using :obj:`ContactGroup` objects
+    AA_format : str, default is "short"
+        see :obj:`ContactPair.frequency_dict` for more info
+    defrag : str, default is "@"
+        see :obj:`_mdcu.str_and_dict.unify_freq_dicts` for more info
+    per_residue : bool, default is False
+        Unify dictionaries by residue and not by pairs
     kwargs_plot_unified_freq_dicts
 
     Returns
@@ -171,13 +180,15 @@ def compare_groups_of_contacts(groups,
         if isinstance(ifile, str):
             idict = _mdcu.str_and_dict.freq_file2dict(ifile)
         elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
-            assert ctc_cutoff_Ang is not None, "Cannot provide a neighborhood object without a ctc_cutoff_Ang parameter"
-            idict = {ilab:val for ilab, val in zip(ifile.ctc_labels_short,
-                                                   ifile.frequency_per_contact(ctc_cutoff_Ang))}
+            assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a ctc_cutoff_Ang parameter"
+            idict = ifile.frequency_dict(ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                         AA_format=AA_format,
+                                         split_label=False)
         else:
             idict = {key:val for key, val in ifile.items()}
 
         idict = {_mdcu.str_and_dict.replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
+
         if anchor is not None:
             idict = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
         freqs[key] = idict
@@ -199,8 +210,11 @@ def compare_groups_of_contacts(groups,
 
         myfig.tight_layout()
         # _plt.show()
+    freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, per_residue=per_residue, defrag=defrag)
+    if per_residue:
+        kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
+        kwargs_plot_unified_freq_dicts["remove_identities"] = False
 
-    freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag="@")
     myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
                                                         colordict=colors,
                                                         ax=ax,

@@ -174,16 +174,29 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
 
     def test_just_works(self):
         myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
                                                       ctc_cutoff_Ang=1.5)
         myfig.tight_layout()
         #myfig.savefig("1.test.png",bbox_inches="tight")
         _plt.close("all")
 
+    def test_just_works_list(self):
+        myfig, freqs, __ = plots.compare_groups_of_contacts([self.CG1, self.CG2],
+                                                            ctc_cutoff_Ang=1.5)
+        myfig.tight_layout()
+        #myfig.savefig("1.1.test.png",bbox_inches="tight")
+        _plt.close("all")
+
+    def test_per_residue(self):
+        myfig, freqs, __ = plots.compare_groups_of_contacts([self.CG1, self.CG2],
+                                                            ctc_cutoff_Ang=1.5,
+                                                            per_residue=True)
+        myfig.tight_layout()
+        myfig.savefig("1.per_residue.test.png",bbox_inches="tight")
+        _plt.close("all")
+
 
     def test_mutation(self):
         myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
                                                       ctc_cutoff_Ang=1.5,
                                                       mutations_dict={"3":"2"})
         myfig.tight_layout()
@@ -192,8 +205,7 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
 
     def test_anchor(self):
         myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
-                                                      ctc_cutoff_Ang=1.5,
+                                                            ctc_cutoff_Ang=1.5,
                                                       anchor="0")
         myfig.tight_layout()
         #myfig.savefig("3.test.png",bbox_inches="tight")
@@ -201,7 +213,6 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
 
     def test_plot_singles(self):
         myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
                                                       ctc_cutoff_Ang=1.5,
                                                       plot_singles=True)
         myfig.tight_layout()
@@ -210,7 +221,6 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
 
     def test_plot_singles_w_anchor(self):
         myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
                                                       ctc_cutoff_Ang=1.5,
                                                       anchor="0",
                                                       plot_singles=True)
@@ -239,6 +249,28 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
                                                    ctc_cutoff_Ang=1.5)
         # myfig.savefig("7.test.png",bbox_inches="tight")
         _plt.close("all")
+
+    def test_color_list(self):
+        myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1": self.CG1, "CG2": self.CG2},
+                                                            ["r","g"],
+                                                            ctc_cutoff_Ang=1.5)
+        myfig.tight_layout()
+        # myfig.savefig("1.test.png",bbox_inches="tight")
+        _plt.close("all")
+
+    def test_with_CG_freqdict_file_as_list(self):
+        with _TDir(suffix="_test_mdciao") as tmpdir:
+            freqfile = os.path.join(tmpdir, "freqtest.dat")
+            with open(freqfile, "w") as f:
+                f.write(self.CG2.frequency_str_ASCII_file(1.5, by_atomtypes=False))
+            myfig, __, __ = plots.compare_groups_of_contacts([self.CG1,
+                                                              self.CG2,
+                                                              {"0-1":1, "0-3":1/3},
+                                                              freqfile],
+                                                             ctc_cutoff_Ang=1.5)
+            #myfig.savefig("8.test.png")
+            _plt.close("all")
+
 
 class Test_plot_w_smoothing_auto(unittest.TestCase):
 
