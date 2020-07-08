@@ -155,9 +155,48 @@ class Test_unify_freq_dicts(unittest.TestCase):
                                     "GLU30-LYS60": .2},
                            "prot": {"LYS40-GLH30": .3
                                     }}
+        self.freq_dicts_frags = {"WT": {"GLU30@frag1-LYS40@frag2": 1.0,
+                                        "GLU30@frag1-LYS50@frag3": .5,
+                                        "LYS60@frag4-GLU30@frag1": .1},
+                                 "K40A": {"ALA40-GLU30@frag1": .7,
+                                          # "LYS50-GLU30":.5,
+                                          "GLU30@frag1-LYS60@frag4": .2},
+                                 "prot": {"LYS40@frag2-GLH30@frag1": .3
+                                          }}
     def test_basic(self):
         out_dict = str_and_dict.unify_freq_dicts(self.freq_dicts,
                                     key_separator=None)
+        #original
+        assert out_dict["WT"]["GLU30-LYS40"] == 1.0
+        assert out_dict["WT"]["GLU30-LYS50"] == .5
+        assert out_dict["WT"]["LYS60-GLU30"] == .1
+        #external
+        assert out_dict["WT"]["ALA40-GLU30"] == 0 #from K40A
+        assert out_dict["WT"]["GLU30-LYS60"] == 0 #from K40A
+        assert out_dict["WT"]["LYS40-GLH30"] == 0 #from prot
+
+        # original
+        assert out_dict["K40A"]["ALA40-GLU30"] == .7
+        assert out_dict["K40A"]["GLU30-LYS60"] == .2
+        # external
+        assert out_dict["K40A"]["GLU30-LYS40"] == 0 #from WT
+        assert out_dict["K40A"]["GLU30-LYS50"] == 0 #from WT
+        assert out_dict["K40A"]["LYS40-GLH30"] == 0 #from prot
+
+        # original
+        assert out_dict["prot"]["LYS40-GLH30"] == .3
+        # external
+        assert out_dict["prot"]["GLU30-LYS40"] == 0  # from WT
+        assert out_dict["prot"]["GLU30-LYS50"] == 0  # from WT
+        assert out_dict["prot"]["LYS60-GLU30"] == 0  # from WT
+
+        assert out_dict["prot"]["LYS60-GLU30"] == 0  # from K40A
+        assert out_dict["prot"]["ALA40-GLU30"] == 0  # from K40A
+
+    def test_basic_defrag(self):
+        out_dict = str_and_dict.unify_freq_dicts(self.freq_dicts,
+                                                 key_separator=None,
+                                                 defrag="@")
         #original
         assert out_dict["WT"]["GLU30-LYS40"] == 1.0
         assert out_dict["WT"]["GLU30-LYS50"] == .5
@@ -288,6 +327,47 @@ class Test_unify_freq_dicts(unittest.TestCase):
         #assert out_dict["prot"]["LYS60-GLU30"] == 0  # from K40A not anymore, was set to 0 already
         assert out_dict["prot"]["ALA40-GLU30"] == 0  # from K40A
 
+    def test_per_residue(self):
+        """
+         self.freq_dicts = {"WT":   {"GLU30-LYS40":1.0,
+                                    "GLU30-LYS50":.5,
+                                    "LYS60-GLU30": .1},
+                           "K40A": {"ALA40-GLU30":.7,
+                                    "GLU30-LYS60": .2},
+                           "prot": {"LYS40-GLH30": .3
+                                    }}
+        Returns
+        -------
+
+        """
+        out_dict = str_and_dict.unify_freq_dicts(self.freq_dicts,
+                                                 per_residue=True)
+
+        test_dict = {"WT":   {"GLU30": 1.0 + .5 + .1,
+                              "LYS40": 1.0 + 0,
+                              "LYS50": .5,
+                              "LYS60": .1,
+                              "ALA40": 0,
+                              "GLH30": 0},
+                     "K40A": {"ALA40": .7,
+                              "GLU30": .7 + .2,
+                              "LYS60": .2,
+                              "LYS40": 0,
+                              "LYS50": 0,
+                              "GLH30": 0},
+                     "prot": {"GLU30":0,
+                              "LYS40":.3,
+                              "LYS50":0,
+                              "LYS60":0,
+                              "ALA40":0,
+                              "GLH30":.3}
+                     }
+
+
+        self.assertDictEqual(out_dict["WT"], test_dict["WT"])
+        self.assertDictEqual(out_dict["K40A"], test_dict["K40A"])
+        self.assertDictEqual(out_dict["prot"], test_dict["prot"])
+
 class Test_str_latex(unittest.TestCase):
 
     def setUp(self):
@@ -402,6 +482,34 @@ class Test_fnmatch_functions(unittest.TestCase):
         self.assertEqual(matching_keys,[])
         np.testing.assert_array_equal(matching_values,[])
         # pick all FN John, LN Doe but avoid Johny
+
+class Test_aggregate_freq_dict_per_residue(unittest.TestCase):
+
+    def test_works(self):
+        indict = {"A-B":1.5, "B-C":10, "A-D":100, "D-C":1000}
+        out_dict=str_and_dict.sum_dict_per_residue(indict,"-")
+        np.testing.assert_equal(out_dict["A"], 1.5+100)
+        np.testing.assert_equal(out_dict["B"], 1.5 + 10)
+        np.testing.assert_equal(out_dict["C"], 10 + 1000)
+        np.testing.assert_equal(out_dict["D"], 1000 + 100)
+
+class Test_defrag(unittest.TestCase):
+
+    def test_works(self):
+        label = 'res1@frag1-res2@frag2'
+        np.testing.assert_equal("res1-res2", str_and_dict.defrag_key(label))
+
+    def test_works_one_missing_frag(self):
+        label = 'res1@frag1-res2    '
+        np.testing.assert_equal("res1-res2", str_and_dict.defrag_key(label))
+
+    def test_works_no_frags(self):
+        label = 'res1-res2    '
+        np.testing.assert_equal("res1-res2", str_and_dict.defrag_key(label))
+
+    def test_works_just_one(self):
+        label = 'res1@frag1    '
+        np.testing.assert_equal("res1", str_and_dict.defrag_key(label))
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,3 +1,17 @@
+r"""
+Functions for manipulating strings and dictionaries, also a bit of IO.
+
+
+.. currentmodule:: mdciao.utils.str_and_dict
+
+
+Functions
+=========
+
+.. autosummary::
+   :toctree: generated/
+
+"""
 from glob import glob as _glob
 import numpy as _np
 import mdtraj as _md
@@ -6,6 +20,7 @@ from fnmatch import fnmatch as _fnmatch
 from pandas import read_excel as _read_excel
 from os import path as _path
 import re as _re
+from collections import defaultdict as _defdict
 
 tunit2tunit = {"ps":  {"ps": 1, "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
@@ -120,7 +135,8 @@ def unify_freq_dicts(freqs,
                      exclude=None,
                      key_separator="-",
                      replacement_dict=None,
-                     defrag=None
+                     defrag=None,
+                     per_residue=False,
                      ):
     r"""
     Provided with a dictionary of dictionaries, returns an equivalent,
@@ -136,9 +152,13 @@ def unify_freq_dicts(freqs,
          B:{            key2:valB2, key3:valB3}}
 
     key_separator: str, default is "-"
-        If keys are made up like "GLU30-LYS40", you can specify a separator s.t.
-        "GLU30-LYS40" is considered equal to "LYS40-GLU30".
-        Use "", "none" or None to differentiate
+        Specify how residues are separated in the contact
+        label, eg. "GLU30-LYS40".
+        With this knowledge, the method can split the label
+        before comparison so that "GLU30-LYS40" is considered
+        equal to "LYS40-GLU30". Use "", "none" or None to differentiate.
+        It will also be passed to :obj:`defrag_key` in case
+        :obj:`defrag` is not None.
 
     exclude: list, default is None
          keys containing these strings will be excluded.
@@ -154,6 +174,8 @@ def unify_freq_dicts(freqs,
         for advanced users, usually the fragment information helps keep track
         of residue names in complex topologies:
             R201@frag1 and R201@frag3 will both be "R201"
+    per_residue : bool, default is False
+        Aggregate interactions to their residues
 
     Returns
     -------
@@ -181,7 +203,10 @@ def unify_freq_dicts(freqs,
         freqs_work = {key:{replace_w_dict(key2, replacement_dict):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
 
     if defrag is not None:
-        freqs_work = {key:{_defrag_key(key2, defrag):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
+        freqs_work = {key:{defrag_key(key2, defrag):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
+
+    if per_residue:
+        freqs_work = {key:sum_dict_per_residue(val, key_separator) for key, val in freqs_work.items()}
 
     # Perform the difference operations
     not_shared = []
@@ -229,6 +254,35 @@ def unify_freq_dicts(freqs,
 
     return freqs_work
 
+def sum_dict_per_residue(idict, sep):
+    r"""Return a "per-residue" sum of values from a "per-residue-pair" keyed dictionary
+
+    Note:
+    There is a closely related method in :obj:`mdciao.contacts.ContactGroup`
+    that allows to query the freqs from the object already aggregated
+    by residue. This is for when the object is either not accessible, e.g.
+    because the freqs were loaded from a file
+
+    Parameters
+    ----------
+    idict : dict
+        Keyed with contact labels like "res1@frag1-res2@3.50" etc
+    sep : char
+        Character that separates fragments in the label
+
+    Returns
+    -------
+    aggr : dict
+        keyed with "res1@frag1" etc
+
+    """
+    out_dict = _defdict(list)
+    for key, freq in idict.items():
+        key1, key2 = key.split(sep) #This will fail if sep is not in key or sep does not separate in two
+        out_dict[key1].append(freq)
+        out_dict[key2].append(freq)
+    return {key:_np.sum(val) for key, val in out_dict.items()}
+
 def freq_file2dict(ifile, defrag=None):
     r"""
     Read a file containing the frequencies ("freq") and labels ("label")
@@ -257,7 +311,7 @@ def freq_file2dict(ifile, defrag=None):
     else:
         res = freq_ascii2dict(ifile)
     if defrag is not None:
-        res = {_defrag_key(key,'@'):val for key, val in res.items()}
+        res = {defrag_key(key, defrag=defrag):val for key, val in res.items()}
 
     return res
 
@@ -534,6 +588,23 @@ def match_dict_by_patterns(patterns_as_csv, index_dict, verbose=False):
 
     return matching_keys, matching_values
 
- # Remove fragment information from the key
-def _defrag_key(key,defrag,sep="-"):
-    return sep.join([kk.split(defrag,1)[0] for kk in key.split(sep)])
+def defrag_key(key, defrag="@", sep="-"):
+    r"""Remove fragment information from a contact label
+
+    Parameters
+    ----------
+    key : str
+        Contact label with some sort of pair information
+        e.g. e.g. R1@frag1-E2@frag2->R1-E2
+    defrag: char, default is "@"
+        Character that indicates the beginning of the
+        fragment
+    sep : char, default is "-"
+        Character that indicates the separation
+        between first and second residue of the pair
+
+    Returns
+    -------
+
+    """
+    return sep.join([kk.split(defrag,1)[0].strip(" ") for kk in key.split(sep)])
