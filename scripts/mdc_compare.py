@@ -12,6 +12,9 @@ nf = len(a.files)
 if a.keys is not None:
     assert len(a.keys.split(","))==nf, "Mismatch number of files vs number of keys %u vs %u"%(nf,len(a.keys.split()))
     keys = a.keys.split(",")
+    file_dict = {key:val for key, val in zip(keys, a.files)}
+else:
+    file_dict = a.files
 
 colordict =  a.colors.split(",")
 
