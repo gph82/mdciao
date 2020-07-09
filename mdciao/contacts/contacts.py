@@ -1,8 +1,10 @@
 import numpy as _np
 import mdtraj as _md
 from os import path as _path
+
 import mdciao.plots as _mdcplots
 import mdciao.utils as _mdcu
+import mdciao.nomenclature as _mdcn
 
 from ._mdtraj import compute_contacts as _compute_contacts
 
@@ -32,7 +34,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                                                 interactive=False,
                                                 fraction=.9
                                                 ):
-    """Group residue pairs into neighborhoods using pre-computed contact frequencies.
+    """Group residue pairs into neighborhoods using pre-computed contact frequencies
 
     Returns a residue-index keyed dictionary containing the indices
     of :obj:`residxs_pairs` relevant for this residue.
@@ -161,7 +163,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
                n_jobs=1,
                progressbar=False,
                **mdcontacts_kwargs):
-    """Returns the time-traces of residue-residue distances from
+    """Time-traces of residue-residue distances from
     a list of trajectories
 
     Parameters
@@ -234,7 +236,7 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
                  **mdcontacts_kwargs):
     r"""
     Wrapper for :obj:`mdtraj.contacs` for strided, chunked computation
-    of contacts.
+    of contacts
 
     Input can be directly :obj:`mdtraj.Trajectory` objects or
     trajectory files on disk (e.g. xtcs, dcs etc)
@@ -400,12 +402,28 @@ class _NumberOfthings(object):
     def n_frames_total(self):
         return _np.sum(self._n_frames)
 
-class _Residues(object):
+class Residues(object):
+    r"""Container for :obj:`mdtraj.Topology.Residues` objects
+
+    """
+
     def __init__(self, res_idxs_pair,
                  residue_names,
                  anchor_residue_idx=None,
                  consensus_labels=None,
                  top=None):
+        r"""
+
+        Parameters
+        ----------
+        res_idxs_pair : iterable of len two
+            two integers representing the residue serial index (residxs)
+        residue_names : iterable of len two
+            two strings with the residue names
+        anchor_residue_idx
+        consensus_labels
+        top
+        """
 
         assert len(res_idxs_pair)==2
         assert all([isinstance(ii,(int,_np.int64)) for ii in res_idxs_pair])
@@ -437,7 +455,7 @@ class _Residues(object):
 
     @property
     def idxs_pair(self):
-        """
+        """serial indices of the pair of residues
 
         Returns
         -------
@@ -536,7 +554,18 @@ class _Residues(object):
 
     @property
     def consensus_labels(self):
-        """
+        """Labels derived from BW, CGN or other type
+        of consensus nomenclature. They were parsed
+        at initialization
+
+        TODO
+
+        Warning
+        -------
+        This property can be changed externally by
+        the method :obj:`ContactGroup.relabel_consensus`.
+        This is bad practice and probably anti-pattern
+        but ATM there's no way around it
 
         Returns
         -------
@@ -875,7 +904,7 @@ class _Fragments(object):
         return self._fragment_colors
 
 class ContactPair(object):
-    r"""Container object for a contact between two residues.
+    r"""Container for a contacts between two residues
 
     This is the first level of abstraction of mdciao.
     It is the "closest" to the actual data, and its
@@ -975,11 +1004,11 @@ class ContactPair(object):
         if top is not None:
             residue_names = [str(top.residue(ii)) for ii in res_idxs_pair]
 
-        self._attribute_residues = _Residues(res_idxs_pair,
-                                             residue_names,
-                                             anchor_residue_idx=anchor_residue_idx,
-                                             consensus_labels=consensus_labels,
-                                             top=top)
+        self._attribute_residues = Residues(res_idxs_pair,
+                                            residue_names,
+                                            anchor_residue_idx=anchor_residue_idx,
+                                            consensus_labels=consensus_labels,
+                                            top=top)
 
         self._attribute_fragments = _Fragments(fragment_idxs,
                                                fragment_names,
@@ -1233,7 +1262,7 @@ class ContactPair(object):
         AA_format : str, default is "short"
             Amino-acid format ("E35" or "GLU25") for the value
             fdict["label"]. Can also be "long"
-        split_label : bool, defaultis True
+        split_label : bool, default is True
             Split the labels so that stacked contact labels
             become easier-to-read in plain ascii formats
              - "E25@3.50____-    A35@4.50"
@@ -1527,7 +1556,7 @@ class ContactPair(object):
         return "\n".join(istr)
 
 class ContactGroup(object):
-    r"""Container object for :obj:`ContactPair`-objects.
+    r"""Container for :obj:`ContactPair`-objects
 
     This class is the second level of abstraction after :obj:`ContactPair`
     and provides methods to
@@ -1625,19 +1654,15 @@ class ContactGroup(object):
                 #        pass
 
             #TODO
-            # This is the part were short residue-names are used
-            # instead of the consensus labels...rethink this perhaps?
+            # First update to this TODO, rely less and less on _type_of_attrs
+            # and get them new every time from the underlying .residue objects)
             self._trajlabels = ref_ctc.labels.trajstrs
-            self._cons2resname = {}
             self._residx2resname = {}
             self._residx2fragnamebest = {}
-            self._residx2conslabels = {}
-            self._residxs_missing_conslabels = []
             for conslab, val, ridx, fragname in zip(_np.hstack(self.consensus_labels),
                                                     _np.hstack(self.residue_names_short),
                                                     _np.hstack(self.res_idxs_pairs),
                                                     _np.hstack(self.fragment_names_best)):
-
                 if ridx not in self._residx2resname.keys():
                     self._residx2resname[ridx] = val
                 else:
@@ -1648,19 +1673,6 @@ class ContactGroup(object):
                 else:
                     assert self._residx2fragnamebest[ridx] == fragname, (self._residx2fragnamebest[ridx], fragname)
 
-
-                if ridx not in self._residx2conslabels.keys():
-                    self._residx2conslabels[ridx] = conslab
-                else:
-                    assert self._residx2conslabels[ridx] == conslab, (self._residx2conslabels[ridx], conslab)
-
-                if str(conslab).lower() in ["na","none"]:
-                    self._residxs_missing_conslabels.append(ridx)
-                else:
-                    if conslab not in self._cons2resname.keys():
-                        self._cons2resname[conslab]=val
-                    else:
-                        assert self._cons2resname[conslab]==val,(self._cons2resname[conslab],conslab,val)
 
             """
             # Finally do this dictionary
@@ -1683,7 +1695,7 @@ class ContactGroup(object):
                 # TODO prolly this is anti-pattern but I prefer these many sanity checks
                 assert len(self._interface_residxs)==2
                 intersect = list(set(self._interface_residxs[0]).intersection(self._interface_residxs[1]))
-                assert len(intersect)==0, ("Some_residxs appear in both members of theinterface %s, "
+                assert len(intersect)==0, ("Some_residxs appear in both members of the interface %s, "
                                            "this is not possible"%intersect)
                 _np.testing.assert_equal(len(self._interface_residxs[0]),len(_np.unique(self._interface_residxs[0])))
                 _np.testing.assert_equal(len(self._interface_residxs[1]),len(_np.unique(self._interface_residxs[1])))
@@ -1698,7 +1710,7 @@ class ContactGroup(object):
                 # TODO would it be wise to keep all idxs of the initialisaton
                 # to compare different interfaces?
 
-                # TODO Is the comparison throuh residxs robust enought, would it be
+                # TODO Is the comparison throuh residxs robust enough, would it be
                 # better to compare consensus labels directly?
 
                 self._interface_residxs = res
@@ -1780,11 +1792,30 @@ class ContactGroup(object):
 
     @property
     def consensuslabel2resname(self):
-        return self._cons2resname
+        _cons2resname = {}
+        for conslab, resname, ridx, in zip(_np.hstack(self.consensus_labels),
+                                           _np.hstack(self.residue_names_short),
+                                           _np.hstack(self.res_idxs_pairs),
+                                  ):
+            if conslab not in _cons2resname.keys():
+                _cons2resname[conslab] = resname
+            else:
+                assert _cons2resname[conslab] == resname, (_cons2resname[conslab], conslab, resname)
+
+        return _cons2resname
 
     @property
     def residx2consensuslabel(self):
-        return self._residx2conslabels
+        _residx2conslabels = {}
+        for conslab, ridx in zip(_np.hstack(self.consensus_labels),
+                                 _np.hstack(self.res_idxs_pairs),
+                                 ):
+            if ridx not in _residx2conslabels.keys():
+                _residx2conslabels[ridx] = conslab
+            else:
+                assert _residx2conslabels[ridx] == conslab, (_residx2conslabels[ridx], conslab)
+
+        return _residx2conslabels
 
     @property
     def residx2resnameshort(self):
@@ -1795,7 +1826,7 @@ class ContactGroup(object):
         return self._residx2fragnamebest
 
     def residx2resnamefragnamebest(self,fragsep="@"):
-        idict = {}
+        idict   = {}
         for key in _np.unique(self.res_idxs_pairs):
             val = self.residx2resnameshort[key]
             ifrag = self.residx2fragnamebest[key]
@@ -1810,6 +1841,7 @@ class ContactGroup(object):
             return False
         else:
             return True
+
     #TODO make this a property at instantiation and build neighborhoods a posteriori?
     @property
     def shared_anchor_residue_index(self):
@@ -1869,6 +1901,47 @@ class ContactGroup(object):
         else:
             print("Not all partners have a defined color, returning None")
             return None
+
+    def relabel_consensus(self,
+                          new_labels=None,
+                          ):
+        """Relabel any residue missing its consensus label to shortAA
+
+        Alternative (or additional) labels can be given as a
+        dictionary.
+
+        Parameters
+        ----------
+        new_labels : dict
+            keyed with shortAA-codes and valued
+            with the new desired labels
+
+        TODO
+        ----
+        Perhaps its better to key both with shortAAs and/or
+        consensus labels also?
+
+        Warning
+        -------
+        For expert use only. The changes
+        in consensus labels propagates down to
+        the attribute consensus labels of the
+        the low-level attribute :obj:`Residues.consensus_labels`
+        of the :obj:`Residues` objects
+        underlying each of the :obj:`ContactPair`s
+        in this :obj:`ContactGroup`
+
+        """
+        if new_labels is None:
+           new_labels = {}
+
+        for cp in self._contacts:
+            consensus_labels = cp.residues.consensus_labels  # We need the attribute outside
+            for ii in [0, 1]:
+                if cp.residues.names_short[ii] in new_labels.keys():
+                    consensus_labels[ii] = new_labels[cp.residues.names_short[ii]]
+                elif str(consensus_labels[ii]).lower() == "none":
+                    consensus_labels[ii] = cp.residues.names_short[ii]
 
     #todo there is redundant code for generatinginterface labels!
     # not sure we need it here, don't want to be testing now
@@ -1954,6 +2027,29 @@ class ContactGroup(object):
             if idx in pair:
                 ctc_idxs.append([ii,_np.argwhere(pair==idx).squeeze()])
         return _np.vstack(ctc_idxs)
+
+
+    def frequency_dict(self, ctc_cutoff_Ang,
+                       **kwargs):
+        """
+        Wraps around the method :obj:`ContactPair.frequency_dict`
+        of each of the underlying :obj:`ContactPair` s and
+        returns one frequency dict keyed by contact label
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            Cutoff in Angstrom. The comparison operator is "<="
+        kwargs : optional keyword arguments
+            Check :obj:`ContactPair.frequency_dict`
+
+        Returns
+        -------
+        fdict : dictionary
+
+        """
+        frequency_dicts = [cp.frequency_dict(ctc_cutoff_Ang=ctc_cutoff_Ang, **kwargs) for cp in self._contacts]
+        return {idict["label"] : idict["freq"] for idict in frequency_dicts}
 
     # TODO think about implementing a frequency class, but how
     # to do so without circular dependency to the ContactGroup object itself?
@@ -2930,8 +3026,13 @@ class ContactGroup(object):
     def is_interface(self):
         r""" Whether this ContactGroup can be interpreted as an interface.
 
-        Note that if none of the residxs_pairs parsed at initialization,
-        were found in self.residxs_pairs, this property will evaluate to False
+        Note
+        ----
+        If none of the :obj:`residxs_pairs`
+        were found in the :obj:`interface_residxs`
+        (both provided at initialization),
+        this property will evaluate to False even if
+        some indeces were parsed
         """
 
         return self._is_interface
@@ -2939,8 +3040,8 @@ class ContactGroup(object):
     @property
     def interface_residxs(self):
         r"""
-        The residues split into the interface
-        to that interface, in ascending order within each member
+        The residues split into the interface,
+        in ascending order within each member
         of the interface. Empty lists mean non residues were
         found in the interface defined at initialization
 
@@ -2978,27 +3079,21 @@ class ContactGroup(object):
 
         """
 
-        # TODO do I have anything like this anymore (with self.is_interface=False)
-        #if self._interface_residxs is not None \
-        #        and not hasattr(self, "_interface_labels_consensus"):
         labs = [[], []]
         for ii, ig in enumerate(self.interface_residxs):
             for idx in ig:
                 labs[ii].append(self.residx2consensuslabel[idx])
 
         return labs
-        #elif hasattr(self, "_interface_labels_consensus"):
-        #    return self._interface_labels_consensus
-        #else:
-        #    return None
 
     @property
     def interface_residue_names_w_best_fragments_short(self):
-        r"""
-        Best possible residue@fragment string for the residues in :obj:`interface_residxs`
+        r"""Best possible residue@fragment string for
+        the residues in :obj:`interface_residxs`
 
-        In case neigher a consensus label > fragment name > fragment index is found,
-        nothing is return after the residue name
+
+        In case neither a consensus label > fragment name > fragment index is found,
+        nothing is returned after the residue name
 
         Returns
         -------
@@ -3010,34 +3105,6 @@ class ContactGroup(object):
 
 
         return labs_out
-
-    @property
-    def interface_orphaned_labels(self):
-        r"""
-        Short residue names that lack consensus nomenclature, sorted by interface
-        Returns
-        -------
-        olist : list of len 2
-        """
-        #TODO eliminate the "orphan" label string but wait until the group of interface objecs is tested
-        return [[self.residx2resnameshort[ii] for ii in idxs if ii in self._residxs_missing_conslabels]
-                for idxs in self.interface_residxs]
-
-    """ I am commenting all this until the interface UI is better
-    def interface_relabel_orphans(self):
-        labs_out = [[], []]
-        for ii, labels in enumerate(self.interface_labels_consensus):
-            for jlab in labels:
-                if jlab in self._orphaned_residues_new_label.keys():
-                    new_lab = self._orphaned_residues_new_label[jlab]
-                    print(jlab, new_lab)
-                    labs_out[ii].append(new_lab)
-                else:
-                    labs_out[ii].append(jlab)
-
-        self._interface_labels_consensus = labs_out
-        # return labs_out
-    """
 
     """
     IDT we need this anymore
@@ -3107,7 +3174,7 @@ class ContactGroup(object):
                                        )
         return iax.figure, iax
 
-    # TODO would it be better to make use of self.frequency_dict_by_consensus_labels
+    # TODO would it be better to make use of self.interface_frequency_dict_by_consensus_labels
     def interface_frequency_matrix(self, ctc_cutoff_Ang, switch_off_Ang=None):
         r"""
         Rectangular matrix of size (N,M) where N is the length
@@ -3335,50 +3402,148 @@ class ContactGroup(object):
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
 
-'''
-class GroupOfInterfaces(object):
-    r"""
-    Class for containing various :obj:`ContactGroup` objects 
-    and perform comparison between the groups of contacts
-    """
-    def __init__(self, dict_of_interfaces):
-        self._interfaces = dict_of_interfaces
 
+class GroupOfInterfaces(object):
+    r"""Container for :obj:`ContactGroup` objects
+
+    Note
+    ----
+    * ATM the only :obj:`ContactGroup` s allowed are the ones
+      that were initialized with some :obj:`interface_residxs`
+      so that :obj:`ContactGroup.is_interface` will yield True
+
+    * This object does not use residue indices at all and
+      performs (and reports) all lookups with consensus labels
+      The idea is that each contact group can have a different
+      topologies. This is why relabel_consensus is True by
+      default, because we cannot allow missing consensus labels
+      beyond this point
+
+    """
+    def __init__(self, dict_of_CGs, relabel_consensus=True):
+        r"""
+
+        Parameters
+        ----------
+        dict_of_CGs : dict
+        relabel_consensus : bool, default is True
+
+
+        """
+
+        self._contact_groups = dict_of_CGs
+
+        assert all([iint.is_interface for iint in self._contact_groups.values()]), NotImplementedError
+
+        if relabel_consensus:
+            self.relabel_consensus()
 
     @property
-    def n_interfaces(self):
+    def interfaces(self):
+        return self._contact_groups
+
+    @property
+    def n_groups(self):
         return len(self.interfaces)
 
     @property
+    def interface_names(self):
+        r"""The keys with which the object was initialized"""
+        return list(self.interfaces.keys())
+
+    # TODO rename interfaces to interface_dict?
+    @property
+    def interface_list(self):
+        return list(self._contact_groups.values())
+
+    def relabel_consensus(self,**kwargs):
+        r"""Calls :obj:`ContactGroup.relabel_consensus`
+        on all underlying contact groups
+
+        Parameters
+        ----------
+        ** kwargs : optional named args, e.g. new_labels
+
+        Returns
+        -------
+
+        """
+        [iintf.relabel_consensus(**kwargs) for iintf in self.interface_list]
+
+    @property
     def conlab2matidx(self):
-        return [{key:ii for ii, key in enumerate(conlabs)} for conlabs in self.interface_labels_consensus]
+        r"""Maps consensus labels (strings)
+        to matrix indices of the :obj:`interface_matrix`"""
+
+        out_dict= {}
+        for jj, conlabs in enumerate(self.interface_labels_consensus):
+            for ii, key in enumerate(conlabs):
+                assert key not in out_dict.keys(), "Something went very wrong, %s is already used for %s, but found again" \
+                                                   "also for %s"%(key,out_dict[key], [ii,jj])
+                assert key is not None
+                out_dict[key] = [jj, ii]
+
+        return out_dict
 
     def interface_matrix(self,ctc_cutoff_Ang):
+        r"""Average of all interface_matrices contained in the this object
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            The contact cutoff in Ang
+
+        Returns
+        -------
+        mat : ndarray
+            The rows contain the residues in :obj:`interface_residxs`[0]
+            and the columns the ones in :obj:`interface_residxs`[1].
+            Their consensus labels, in the same order, can
+            be found in :obj:`interface_labels_consensus`
+
+
+        """
+
         labels = self.interface_labels_consensus
         mat = _np.zeros((len(labels[0]),len(labels[1])))
         conlab2matidx = self.conlab2matidx
         for key, iint in self.interfaces.items():
-            idict = iint.frequency_dict_by_consensus_labels(ctc_cutoff_Ang)
-            print(key)
-            for key1, val in idict.items():
-                for key2, val2 in val.items():
-                    if key1 not in conlab2matidx[0]:
-                        key1 = iint._orphaned_residues_new_label[key1]
-                    ii, jj = conlab2matidx[0][key1], conlab2matidx[1][key2]
-                    #print(key1,key2,val2)
-                    mat[ii,jj] += val2
+            idict = iint.frequency_dict_by_consensus_labels(ctc_cutoff_Ang, return_as_triplets=True)
+            for key1, key2, freq in idict:
+                key1_i, ii = conlab2matidx[key1]
+                key2_i, jj = conlab2matidx[key2]
+                assert key1_i == 0 and key2_i == 1
+                mat[ii,jj] += freq
 
-        mat = mat / self.n_interfaces
-
+        mat = mat / self.n_groups
         return mat
 
-    def frequency_dict_by_consensus_labels(self, ctc_cutoff_Ang,
-                                           return_as_triplets=False,
-                                           ):
+    def interface_frequency_dict_by_consensus_labels(self, ctc_cutoff_Ang,
+                                                     return_as_triplets=False,
+                                                     ):
+        r"""Contact frequencies of the :obj:`interface_matrix` as a sparse dictionary
+        of dicts double-keyed by consensus labels, e.g. res[key1][key2] : freq
+
+
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        return_as_triplets : bool
+            instead of a dict [key1][key2]->freq res1-res2,
+            return a list with triplets[[key1,key2,freq],...]
+
+        Returns
+        -------
+
+        """
         mat = self.interface_matrix(ctc_cutoff_Ang)
+        conlab2matidx = self.conlab2matidx
         dict_out = _defdict(dict)
         for ii, jj in _np.argwhere(mat > 0):
             key1, key2 = self.interface_labels_consensus[0][ii], self.interface_labels_consensus[1][jj]
+            _np.testing.assert_array_equal(conlab2matidx[key1], [0, ii]) #sanity check
+            _np.testing.assert_array_equal(conlab2matidx[key2], [1, jj]) #sanity check
             dict_out[key1][key2] = mat[ii, jj]
 
         # Make a normal dictionary
@@ -3389,53 +3554,52 @@ class GroupOfInterfaces(object):
             for key2,val2 in val.items():
                 #print(key,key2,val2.round(2))
                 dict_pairs.append((key,key2,val2))
+
         if return_as_triplets:
             return dict_pairs
         else:
             return dict_out
 
-    def compare(self, ctc_cutoff_Ang, colordict, replacement_dict={},
-                per_residue=False,
-                **plot_unified_freq_dicts_kwargs):
-        from .plots import plot_unified_freq_dicts
-        freqs = {key:val.frequency_dict_by_consensus_labels(ctc_cutoff_Ang,
-                                                            return_as_triplets=True
-                                                            )
-                                for key, val in self.interfaces.items()
-                                }
-        # Create and new dicts and do the replacements
-        _freqs = {}
-        for fkey, fval in freqs.items():
-            if not per_residue:
-                idict = {"-".join(sorted(triplet[:2])):triplet[-1] for triplet in fval}
-            else:
-                idict = self.interfaces[fkey].frequency_sum_per_residue_names_dict(ctc_cutoff_Ang)
+    #TODO document
+    def compare(self, **kwargs):
+        r"""Very thin wrapper around :obj:`mdciao.plots.compare_groups_of_contacts`
 
-            _freqs[fkey]={replace_w_dict(key, replacement_dict):val for key, val in idict.items()}
 
-        freqs =  unify_freq_dicts(_freqs)
-        plot_unified_freq_dicts(freqs, colordict, **plot_unified_freq_dicts_kwargs)
-
-    def frequency_table(self,ctc_cutoff_Ang):
-        return self.frequency_dict_by_consensus_labels(ctc_cutoff_Ang, return_as_triplets=True)
-
-    @property
-    def interfaces(self):
-        return self._interfaces
+        """
+        return _mdcplots.compare_groups_of_contacts(self.interfaces,
+                                                    **kwargs
+                                                    )
 
     @property
     def interface_labels_consensus(self):
+        r"""Union of all underlying consensus labels,
+        split into the two interface members
+
+        Note
+        ----
+        The underlying :obj:`ContactGroup.interface_labels_consensus` is used
+
+        Returns
+        -------
+
+        """
+
         _interface_labels_consensus = [[], []]
-        for key, interface in self.interfaces.items():
+        for __, interface in self.interfaces.items():
             for ii, ilabs in enumerate(interface.interface_labels_consensus):
                 for jlab in ilabs:
                     if jlab not in _interface_labels_consensus[ii]:
                         _interface_labels_consensus[ii].append(jlab)
-        from .nomenclature_utils import order_BW, order_CGN
-        _interface_labels_consensus[0] = order_BW(_interface_labels_consensus[0])
-        _interface_labels_consensus[1] = order_CGN(_interface_labels_consensus[1])
+        #print(_interface_labels_consensus)
+        # TODO this re-ordering for proper matching
+        #_interface_labels_consensus[0] = _mdcn.sort_BW_consensus_labels(_interface_labels_consensus[0])
+        #_interface_labels_consensus[1] = _mdcn.sort_CGN_consensus_labels(_interface_labels_consensus[1])
         return _interface_labels_consensus
 
+    """
+    def frequency_table(self,ctc_cutoff_Ang):
+        return self.interface_frequency_dict_by_consensus_labels(ctc_cutoff_Ang, return_as_triplets=True)
+    
     def plot_interface_matrix(self,ctc_cutoff_Ang,
                               annotate=True,
                               **kwargs_plot_interface_matrix):
@@ -3485,12 +3649,7 @@ class GroupOfInterfaces(object):
                              )
 
         return iax.figure, iax
-
-    @property
-    def PDBs(self):
-        return list(self.interfaces.keys())
-
-
+    
     def rename_orphaned_residues_foreach_interface(self,
                                                    alignment_as_DF,
                                                    interface_idx=0):
@@ -3501,7 +3660,7 @@ class GroupOfInterfaces(object):
         orphan_residues_by_short_label = _defdict(dict)
         for pdb, iint in self.interfaces.items():
             iint._orphaned_residues_new_label = {}
-            for AA in iint.interface_orphaned_labels[interface_idx]:
+            for AA in iint.interface_shortAAs_missing_conslabels[interface_idx]:
                 line = self.dict_same_orphan_labels_by_alignemntDF(AA,alignment_as_DF,pdb)
                 line = {key:line[key] for key in self.PDBs}
                 long_key  = '_'.join([str(ival) for ival in line.values()])
@@ -3513,10 +3672,12 @@ class GroupOfInterfaces(object):
                 orphan_residues_by_short_label[short_key][pdb]=line[pdb]
                 iint.interface_relabel_orphans()
         self._orphans_renamed = {key:val for key,val in orphan_residues_by_short_label.items()}
+    
 
     @property
     def orphans_renamed(self):
         return self._orphans_renamed
+    
 
     #todo move this outside?
     def dict_same_orphan_labels_by_alignemntDF(self,AA,aDF,pdb):
@@ -3524,7 +3685,7 @@ class GroupOfInterfaces(object):
         assert len(hit) == 1, hit
         hit = hit[0]
         return aDF.iloc[hit[1]].to_dict()
-'''
+    """
 
 def _linear_switchoff(d, cutoff, switch_off):
     r"""
