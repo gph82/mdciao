@@ -9,10 +9,8 @@ from pandas import DataFrame
 parser = parser_for_compare_neighborhoods()
 a  = parser.parse_args()
 nf = len(a.files)
-if a.keys is None:
-    file_dict =a.files
-else:
-    assert len(a.keys.split(","))==nf
+if a.keys is not None:
+    assert len(a.keys.split(","))==nf, "Mismatch number of files vs number of keys %u vs %u"%(nf,len(a.keys.split()))
     keys = a.keys.split(",")
 
 colordict =  a.colors.split(",")
@@ -24,7 +22,7 @@ if a.mutations is not None:
         mut_dict[key.replace(" ","")]=val.replace(" ","")
 
 # Call the method
-myfig, freqs, posret = compare(file_dict,
+myfig, freqs, posret = compare(a.files,
                                #colordict=colordict,
                                anchor=a.anchor,
                                mutations_dict=mut_dict)
