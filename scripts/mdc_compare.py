@@ -26,7 +26,7 @@ if a.mutations is not None:
 
 # Call the method
 myfig, freqs, posret = compare(file_dict,
-                               #colordict=colordict,
+                               colors=colordict,
                                anchor=a.anchor,
                                mutations_dict=mut_dict)
 myfig.tight_layout()
