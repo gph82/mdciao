@@ -1,14 +1,12 @@
 import unittest
 import numpy as _np
 import pytest
-import mdtraj as md
+
 from matplotlib import pyplot as _plt
 
 from mdciao.contacts import ContactGroup, ContactPair
-from mdciao.plots import plot_contact_matrix, \
-    compare_groups_of_contacts, \
-    plot_unified_freq_dicts, \
-    plot_w_smoothing_auto
+
+from mdciao import plots
 
 from tempfile import TemporaryDirectory as _TDir
 import os
@@ -22,7 +20,7 @@ class TestPlotContactMatrix(unittest.TestCase):
         mat = _np.linspace(0,1,6).reshape(2,3)
         labels = [[1,2],["A","B","C"]]
 
-        iax, ipix = plot_contact_matrix(mat,
+        iax, ipix = plots.plot_contact_matrix(mat,
                                         labels,
                                         grid=True,
                                         colorbar=True,
@@ -36,14 +34,14 @@ class TestPlotContactMatrix(unittest.TestCase):
         mat = _np.linspace(0,1,6).reshape(2,3)
         labels = [[1,2],["A","B"]]
         with pytest.raises(AssertionError):
-            plot_contact_matrix(mat,labels)
+            plots.plot_contact_matrix(mat,labels)
 
     def test_plot_contact_matrix_raises_range(self):
 
         mat = _np.linspace(0,2,6).reshape(2,3)
         labels = [[1,2],["A","B","C"]]
         with pytest.raises(AssertionError):
-            plot_contact_matrix(mat,labels)
+            plots.plot_contact_matrix(mat,labels)
 
 class Test_plot_unified_freq_dicts(unittest.TestCase):
 
@@ -55,14 +53,14 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
 
 
     def test_plot_unified_freq_dicts_minimal(self):
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
                                                   {"CG1":"r", "CG1copy":"b"})
 
         #myfig.savefig("1.test_full.png", bbox_inches="tight")
         _plt.close("all")
 
     def test_plot_unified_freq_dicts_remove_identities(self):
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG1copy": self.CG1_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG1copy": self.CG1_freqdict},
                                                   {"CG1": "r", "CG1copy": "b"},
                                                   remove_identities=True)
         #Check that the 0-1 contact has been removed
@@ -70,14 +68,14 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         _plt.close("all")
 
     def test_plot_unified_freq_dicts_remove_identities_cutoff(self):
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
                                                   {"CG1": "r", "CG2": "b"},
                                                   remove_identities=True)
         #Check that the 0-1 contact is there
         #myfig.savefig("3.test_wo_ident_cutoff.ref.png", bbox_inches="tight")
         _plt.close("all")
 
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
                                                   {"CG1": "r", "CG2": "b"},
                                                   remove_identities=True,
                                                   identity_cutoff=.95)
@@ -86,7 +84,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         _plt.close("all")
 
     def test_plot_unified_freq_dicts_lower_cutoff_val(self):
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
                                                   {"CG1": "r", "CG2": "b"},
                                                   remove_identities=True,
                                                   identity_cutoff=.9,
@@ -95,7 +93,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         #myfig.savefig("5.test_above_below_thres.png", bbox_inches="tight")
         _plt.close("all")
 
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
                                                   {"CG1": "r", "CG2": "b"},
                                                   remove_identities=True,
                                                   identity_cutoff=.95)
@@ -104,7 +102,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
 
 
     def test_plot_unified_freq_dicts_order_std(self):
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
                                                   {"CG1": "r", "CG2": "b"},
                                                   sort_by="std",
                                                   lower_cutoff_val=0.0
@@ -114,7 +112,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         _plt.close("all")
 
     def test_plot_unified_freq_dicts_order_keep(self):
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1s": self.CG1_freqdict_shuffled, "CG2": self.CG2_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1s": self.CG1_freqdict_shuffled, "CG2": self.CG2_freqdict},
                                                   {"CG1s": "r", "CG2": "b"},
                                                   sort_by="keep",
                                                   )
@@ -125,7 +123,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
 
 
     def test_plot_unified_freq_dicts_remove_identities_vert(self):
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
                                                   {"CG1": "r", "CG2": "b"},
                                                   remove_identities=True,
                                                   vertical_plot=True)
@@ -133,7 +131,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         _plt.close("all")
 
     def test_plot_unified_freq_dicts_remove_identities_vert_order_by_std(self):
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
                                                   {"CG1": "r", "CG2": "b"},
                                                   sort_by="std",
                                                   #remove_identities=True,
@@ -143,7 +141,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         _plt.close("all")
 
     def test_plot_unified_freq_dicts_ylim(self):
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
                                                   {"CG1":"r", "CG1copy":"b"}, ylim=2.25)
 
         #myfig.savefig("11.test_ylim.png", bbox_inches="tight")
@@ -152,7 +150,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
     def test_plot_unified_freq_dicts_ax(self):
         _plt.figure()
         ax = _plt.gca()
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
                                                   {"CG1":"r", "CG1copy":"b"}, ylim=2.25, ax=ax)
         assert myax is ax
         _plt.close("all")
@@ -160,7 +158,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
     def test_plot_just_one_dict(self):
         _plt.figure()
         ax = _plt.gca()
-        myfig, myax, __ = plot_unified_freq_dicts({"CG1": self.CG1_freqdict},
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict},
                                                   {"CG1": "r"})
         #myfig.savefig("12.test_just_one.png",bbox_inches="tight")
         _plt.close("all")
@@ -175,17 +173,30 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
                                  ContactPair([0,3],[[.1, .2, .2]], [[0., 1., 2.]])])
 
     def test_just_works(self):
-        myfig, freqs, __ = compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
+        myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
                                                       ctc_cutoff_Ang=1.5)
         myfig.tight_layout()
         #myfig.savefig("1.test.png",bbox_inches="tight")
         _plt.close("all")
 
+    def test_just_works_list(self):
+        myfig, freqs, __ = plots.compare_groups_of_contacts([self.CG1, self.CG2],
+                                                            ctc_cutoff_Ang=1.5)
+        myfig.tight_layout()
+        #myfig.savefig("1.1.test.png",bbox_inches="tight")
+        _plt.close("all")
+
+    def test_per_residue(self):
+        myfig, freqs, __ = plots.compare_groups_of_contacts([self.CG1, self.CG2],
+                                                            ctc_cutoff_Ang=1.5,
+                                                            per_residue=True)
+        myfig.tight_layout()
+        myfig.savefig("1.per_residue.test.png",bbox_inches="tight")
+        _plt.close("all")
+
 
     def test_mutation(self):
-        myfig, freqs, __ = compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
+        myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
                                                       ctc_cutoff_Ang=1.5,
                                                       mutations_dict={"3":"2"})
         myfig.tight_layout()
@@ -193,17 +204,15 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
         _plt.close("all")
 
     def test_anchor(self):
-        myfig, freqs, __ = compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
-                                                      ctc_cutoff_Ang=1.5,
+        myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
+                                                            ctc_cutoff_Ang=1.5,
                                                       anchor="0")
         myfig.tight_layout()
         #myfig.savefig("3.test.png",bbox_inches="tight")
         _plt.close("all")
 
     def test_plot_singles(self):
-        myfig, freqs, __ = compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
+        myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
                                                       ctc_cutoff_Ang=1.5,
                                                       plot_singles=True)
         myfig.tight_layout()
@@ -211,8 +220,7 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
         _plt.close("all")
 
     def test_plot_singles_w_anchor(self):
-        myfig, freqs, __ = compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
-                                                      {"CG1":"r", "CG2":"b"},
+        myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,"CG2":self.CG2},
                                                       ctc_cutoff_Ang=1.5,
                                                       anchor="0",
                                                       plot_singles=True)
@@ -225,7 +233,7 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
             freqfile = os.path.join(tmpdir,"freqtest.dat")
             with open(freqfile,"w") as f:
                 f.write(self.CG2.frequency_str_ASCII_file(1.5, by_atomtypes=False))
-            myfig, __, __ = compare_groups_of_contacts({"CG1":self.CG1,
+            myfig, __, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,
                                                         "CG2":self.CG2,
                                                         "CG2f":freqfile},
                                                        {"CG1":"r", "CG2":"b", "CG2f":"g"},
@@ -234,7 +242,7 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
         _plt.close("all")
 
     def test_with_freqdict(self):
-        myfig, __, __ = compare_groups_of_contacts({"CG1":self.CG1,
+        myfig, __, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,
                                                     "CG2":self.CG2,
                                                     "CG2d":{"0-1":1, "0-3":1/3}},
                                                    {"CG1":"r", "CG2":"b", "CG2d":"g"},
@@ -242,13 +250,35 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
         # myfig.savefig("7.test.png",bbox_inches="tight")
         _plt.close("all")
 
+    def test_color_list(self):
+        myfig, freqs, __ = plots.compare_groups_of_contacts({"CG1": self.CG1, "CG2": self.CG2},
+                                                            ["r","g"],
+                                                            ctc_cutoff_Ang=1.5)
+        myfig.tight_layout()
+        # myfig.savefig("1.test.png",bbox_inches="tight")
+        _plt.close("all")
+
+    def test_with_CG_freqdict_file_as_list(self):
+        with _TDir(suffix="_test_mdciao") as tmpdir:
+            freqfile = os.path.join(tmpdir, "freqtest.dat")
+            with open(freqfile, "w") as f:
+                f.write(self.CG2.frequency_str_ASCII_file(1.5, by_atomtypes=False))
+            myfig, __, __ = plots.compare_groups_of_contacts([self.CG1,
+                                                              self.CG2,
+                                                              {"0-1":1, "0-3":1/3},
+                                                              freqfile],
+                                                             ctc_cutoff_Ang=1.5)
+            #myfig.savefig("8.test.png")
+            _plt.close("all")
+
+
 class Test_plot_w_smoothing_auto(unittest.TestCase):
 
     def test_just_runs(self):
         x = [0,1,2,3,4,5]
         y = [0,1,2,3,4,5]
         _plt.figure()
-        plot_w_smoothing_auto(_plt.gca(), x,y,
+        plots.plot_w_smoothing_auto(_plt.gca(), x,y,
                               "test","r",
                               n_smooth_hw=1,
                               gray_background=True)

@@ -7,7 +7,7 @@ execute = True
 list = False
 ex = ExamplesCLTs()
 desc1 = "Wrapper script to showcase and optionally run examples of the \n" \
-        "command-line-tools (clt) that ship with mdciao."
+        "command-line-tools that ship with mdciao."
 parser = argparse.ArgumentParser(description=desc1+
                                              "\n To show available examples and nothing more\n"
                                              "type any of 'mdc_examples.py l/list/?'"
@@ -33,7 +33,10 @@ clt = args.clt
 if args.clt in ["l","lists","?"]:
     print(desc1)
     print("Availble command line tools are")
-    print("\n".join([" - %s.py"%key for key in ex.clts]))
+    print("\n".join([" * %s.py"%key for key in ex.clts]))
+    print("Issue:\n"
+          " * 'mdc_command.py -h' to view the command's documentation or\n"
+          " * 'mdc_examples.py mdc_command' to show and/or run an example of that command ")
 else:
     if args.clt.endswith(".py"):
         clt = path.splitext(args.clt)[0]

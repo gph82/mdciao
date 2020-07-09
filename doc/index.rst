@@ -9,9 +9,11 @@
 Welcome to mdciao's documentation!
 ==================================
 
-``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an API (TODO LINK) to construct your own analysis workflow. Here you find our :ref:`minimal_example`.
+``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an :ref:`API` to construct your own analysis workflow. Here you can find our :ref:`minimal_example`.
 
 Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org.org>`_ for visualizaton.
+
+.. include:: basic_usage.rst
 
 Basic Principle
 ---------------
@@ -32,54 +34,8 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 
  However, both these issues (if/when they arise) can be spotted easily by looking at the time-traces of said contacts and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
 
-.. _minimal_example:
-
-Basic Usage
------------
-
-.. note::
-   The simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/'html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples.
-
-This is one very simple example command::
-
- mdc_neighborhoods.py p2.noH.pdb run1.1-p.stride.5.noH.xtc --residues L394 -nf
-
-
-which will print the following to the terminal (some headers have been left out)::
-
- ...
- #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
- 1:     0.55   LEU394-ARG389       0-0         353-348        33     0.55
- 2:     0.47   LEU394-LYS270       0-0         353-972        71     1.02
- 3:     0.38   LEU394-LEU388       0-0         353-347        32     1.39
- 4:     0.23   LEU394-LEU230       0-0         353-957        56     1.62
- 5:     0.10   LEU394-ARG385       0-0         353-344        29     1.73
- These 5 contacts capture 1.7 of the total frequency 1.8 (over 87 contacts). 4 ctcs already capture 90.0% of 1.8.
- The following files have been created
- ./neighborhoods.overall@3.5_Ang.pdf
- ./neighborhoods.LEU394.time_trace@3.5_Ang.pdf
- ./neighborhoods.LEU394.gs-b2ar.dat
-
-And produce the following figures:
-
-.. figure:: imgs/neighborhoods.overall@3.5_Ang.Fig.1.png
-   :scale: 50%
-
-   **Fig. 1** Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the alpha5 helix of the Gs-protein are shown. The simualtion started from the `3SN6` structure (including the B2AR receptor). The simualtion itself can be seen interactively:
-
-Annotated figures with the timetraces giving rise to the above frequencies are also produced automatically:
-
-.. figure:: imgs/neighborhoods.LEU394.time_trace@3.5_Ang.Fig.2.png
-   :scale: 33%
-   :align: center
-
-   **Fig. 2** Time-traces of the residue-residue distances behind the frequency barplots of Fig. 1. The last time-trace represents the total number of neighbors (distances below the given cutoff) at any given moment in the trajectory. On average, LEU394 has 1.7 non-bonded neighbors below the cutoff (see legend of Fig.1)
-
-Also, anything that gets shown in any way can be saved for later use as human readable ASCII-files, Excel-tables or NumPy .npy files for later use.
-
-
-Other Highlights
-----------------
+Highlights
+----------
 * paper-ready tables and figures from the command line
 
   .. figure:: imgs/bars_and_PDF.png
@@ -127,7 +83,7 @@ Other Highlights
      G.H5 with   26 AAs   THR369@G.H5.1( 328)- LEU394@G.H5.26(353 ) (G.H5)
 
 
-* use fragment definitions to automatically compute interfaces::
+* use fragment definitions --like the ones above-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
 
     mdc_interface.py gs-b2ar.pdb gs-b2ar.xtc  -fg1 0-2 -fg2 3 --BW_un adrb2_human --CGN 3SN6 -t "3SN6 beta_2Ar-G_s interface"
 
@@ -137,7 +93,7 @@ Other Highlights
 
       **Fig. 4** (click to enlarge). Interface contact matrix between the B2AR receptor and the Gs protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor (BW) and G-protein (CGN). Please note: this is not a **symmetric** contact-matrix. The y-axis shows residues in the Gs protein and the x-axis in the receptor.
 
-* Since **Fig. 4** is bound to incorporate a lot of blank pixels. That is why mdciao will also produce sparse plots and figures that highlight the formed contacts only:
+* Since **Fig. 4** is bound to incorporate a lot of blank pixels, ``mdciao`` will also produce sparse plots and figures that highlight the formed contacts only:
 
  .. figure:: imgs/interface.overall@3.5_Ang.Fig.5.png
       :scale: 15%
@@ -159,7 +115,7 @@ Other Highlights
                ]}}
 
 
-  One added bonus is the .json files is that you can use the same file across different setups as long as the specified residues are present.
+  One added bonus is that the same .json files can be used file across different setups as long as the specified residues are present.
 
   The command::
 
@@ -176,78 +132,36 @@ Other Highlights
       :scale: 50%
       :align: left
 
-      **Fig. 5** (click to enlarge) Contact frequencies of the pairs specified in the file `tip.json`, shown above with the contact type indicated by the stripes on the bars. Use e.g. the the 3D-visualisation to check how "L394-K270" switches between SC-SC and SC-BB.
+      **Fig. 5** (click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the the 3D-visualisation http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl to check how "L394-K270" switches between SC-SC and SC-BB.
 
 * compare contact frequencies coming from different calculations
-
 
 * compare, detect, and show frequency differences across different systems, e.g. to look for the effect of mutations, pH-differences etc
 * TODO expand
 
+.. include:: cli_stub.rst
 
-Command line tools
-==================
-
-At the moment, the command-line tools that the user can invoke directly from the terminal after installing mdciao are
-
-* mdc_neighborhoods
-* mdc_interface
-* mdc_sites
-* mdc_fragment_overview
-* mdc_BW_overview
-* mdc_CGN_overview
-* mdc_compare_neighborhoods
-
-You can see their documentation by using the ``-h`` flag whe invoking them from the command line or by checking these pages.
+.. _API:
 
 API
-===
-mdciao ships not only with the above command line tools, but with a number of submodules (loosely referred to as API from now on). The objects and methods in the API allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks.
+---
+``mdciao`` ships not only with the mentioned command line tools, but also with a number of modules and submodules (loosely referred to as API from now on). These can be imported into the namespace by simply by issuing::
 
-These can be imported into the namespace by simply by using ``import mdciao``.
+ import mdciao
 
-Whereas the command-line-tools from above tend to be more stable, the API functions and object calls might change future. Bugfixes, refactors and redesigns are in the pipeline and experienced users should know how to deal with this.
+They allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks. Head here :ref:`api_ref` for a more detailed description.
 
-All API objects and functions are extensively documented, just not linked here (yet). Please use their docstring: double-tab in Jupyter Notebooks, or cmd?+Enter in the IPython terminal.
+All API objects and functions are extensively documented. Please use the powerful hinting capabilities of the IPython terminal (e.g. `Tab` for autocomplete or `cmd?+Enter`) or the `JuPyter Notebooks <https://www.dataquest.io/blog/jupyter-notebook-tips-tricks-shortcuts/>`_.
+
+.. include:: api_note.rst
+
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Installation
+   :maxdepth: 2
 
    installation
+   cli_cli/cli_cli
+   api/api
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Command Line Tools:
 
-   mdc_neighborhoods
-   mdc_sites
-   mdc_interface
-   mdc_fragment_overview
-   mdc_BW_overview
-   mdc_CGN_overview
-   mdc_compare_neighborhoods
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Modules:
-
-   contacts
-   fragments
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Submodules:
-
-   aa_utils
-   bond_utils
-   list_utils
-   nomenclature_utils
-   sequence_utils
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

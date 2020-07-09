@@ -1,4 +1,4 @@
-from mdciao.COM_utils import *
+from mdciao.utils.COM import *
 import mdtraj as md
 import numpy as _np
 import unittest

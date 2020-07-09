@@ -173,7 +173,7 @@ def _parser_add_fragments(parser):
                               "your topology file."))
 
 def _parser_add_output_dir(parser):
-    parser.add_argument('--output_dir', type=str, help="directory to which the results are written. Default is '.'",
+    parser.add_argument('-od','--output_dir', type=str, help="directory to which the results are written. Default is '.'",
                         default='.')
 
 def _parser_add_nomenclature(parser):
@@ -339,8 +339,10 @@ def _paser_add_guess(parser):
 # TODO group the parser better!
 # TODO add short versions of the most frequent options
 def parser_for_rn():
-    parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
-                                      'receptor-G-protein complex.')
+    parser = _parser_top_traj(description='Analyse residue neighborhoods using a distance cutoff. '
+                                          'residue-residue contacts are reported in terms of their'
+                                          'overall frequencies and time-traces. A number of files '
+                                          'containing plots, tables and data will be generated.' )
 
     _parser_add_residues(parser)
     _parser_add_cutoff(parser)
@@ -379,8 +381,6 @@ def parser_for_rn():
                         help="Interactively ask for fragment assignment when input matches more than one resSeq")
     parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
     parser.set_defaults(ask=True)
-    #parser.add_argument('--output_npy', type=str, help="Name of the output.npy file for storing this runs' results",
-    #                    default='output.npy')
     _parser_add_table_ext(parser)
     _parser_add_graphic_ext(parser)
 
@@ -388,7 +388,7 @@ def parser_for_rn():
 
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
-    _parser_add_output_desc(parser, default='neighborhoods')
+    _parser_add_output_desc(parser, default='neighborhood')
     _parser_add_t_unit(parser)
     _parser_add_curve_color(parser)
     _parser_add_gray_backgroud(parser)
@@ -401,8 +401,15 @@ def parser_for_rn():
     _parser_add_n_jobs(parser)
     _parser_add_pop(parser)
     _parser_add_ylim_Ang(parser)
+    _paser_add_guess(parser)
+    _parser_add_switch(parser)
     return parser
 
+def _parser_add_switch(parser):
+    parser.add_argument("-s","--switch_off_Ang",
+                        default=None,
+                        type=float,
+                        help="Use a linear switchoff instead of a crisp one. Deafault is None")
 def parser_for_dih():
     parser = _parser_top_traj(description='Small analysis tool for computation of residue dihedrals, backbone and sidechains.')
 
@@ -468,9 +475,9 @@ def parser_for_dih():
     return parser
 
 def parser_for_sites():
-    #todo THIS WILL BREARK PARSER FOR SITES!!!!
-    parser = _parser_top_traj(description='Small residue-residue contact analysis tool, initially developed for the '
-                                      'receptor-G-protein complex. The user has to provide "site" files in .json format')
+    #todo THIS WILL BREAK PARSER FOR SITES!!!! HUH?
+    parser = _parser_top_traj(description='Analyse a specific set of residue-residue contacts using a distance cutoff. '
+                                          'The user has to provide one or more "site" files in a .json format')
 
     _parser_add_sites(parser)
     parser.add_argument('--default_fragment_index', default=None, type=int,
@@ -497,6 +504,7 @@ def parser_for_sites():
     _parser_add_n_jobs(parser)
     _parser_add_table_ext(parser)
     _parser_add_atomtypes(parser)
+    _paser_add_guess(parser)
     return parser
 
 def parser_for_densities():
@@ -508,11 +516,10 @@ def parser_for_densities():
     return parser
 
 def parser_for_interface():
-    parser = _parser_top_traj(description='Analyse interfaces'
-                                          ' between two groups of residues specified by the user.'                                          
-                                          ' To help in the identification of these two groups of residues, '
-                                          ' the peptide-chain in the input topology '
-                                          ' can be automatically broken down into fragments and use them as input. '
+    parser = _parser_top_traj(description='Analyse interfaces between any two groups of residues using a distance cutoff. '           
+                                          'To help in the identification of these two groups of residues, '
+                                          'the peptide-chain in the input topology '
+                                          'can be automatically broken down into fragments and use them as input. '
                                           'The number of shown contacts depends on the parameters "n_ctcs" and '
                                           '"min_freq". ')
 
@@ -585,8 +592,7 @@ def parser_for_contact_map():
     return parser
 
 def parser_for_frag_overview():
-    parser = argparse.ArgumentParser(description='Provides overview of '
-                                                 'fragments by different methods')
+    parser = argparse.ArgumentParser(description='Break a molecular topology into fragments using different heuristics.')
     parser.add_argument('--methods', help='What methods to test. '
                                           'Default is all.',
                         nargs='+',
@@ -598,10 +604,10 @@ def parser_for_frag_overview():
     return parser
 
 def parser_for_BW_overview():
-    parser = argparse.ArgumentParser(description='Provides overview of '
-                                                 'BW nomenclature for a given topology')
+    parser = argparse.ArgumentParser(description='Produce an overvoew of a Ballesteros-Weinstein (BW)-type '
+                                                 'nomenclature, optionally mapping it on an input topology. '
+                                                 'The BW nomenclature can be read locally or over the network')
 
-    _parser_add_topology(parser)
     parser.add_argument("BW_uniprot_or_file", type=str,
                         help="Get Ballesteros-Weinstein definitions from here.\n"
                              "If a file is not found locally, look for\n"
@@ -609,6 +615,8 @@ def parser_for_BW_overview():
                              "using this string as uniprot code, "
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                         )
+    parser.add_argument("-t",'--topology', type=str, help='Topology file', default=None)
+
 
     _parser_add_write_to_disk(parser)
     _parser_add_print_conlab(parser)
@@ -619,38 +627,33 @@ def parser_for_BW_overview():
     return parser
 
 def parser_for_CGN_overview():
-    parser = argparse.ArgumentParser(description='Provides overview of '
-                                                 'CGN nomenclature for a given topology')
+    parser = argparse.ArgumentParser(description="Produce an overview of a G-alpha Numbering (CGN)-type"
+                                                 " nomenclature, optionally mapping it on an input topology. "
+                                                 "The CGN nomenclature can be read locally or over the network" )
 
-    _parser_add_topology(parser)
     parser.add_argument("PDB_code_or_txtfile", type=str,
                         help="Get CGN definitions from here. If a file is not "
                              "found locally, there will be a web-lookup "
                              "in a database using a PDB code, "
                              "e.g. 3SN6. see www.mrc-lmb.cam.ac.uk")
+    parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
 
-    _parser_add_fill_gaps(parser)
+    _parser_add_write_to_disk(parser)
     _parser_add_print_conlab(parser)
+    _parser_add_fill_gaps(parser)
     _parser_add_AAs(parser)
     _parser_add_conslabels(parser)
 
     return parser
 
+from mdciao.plots.plots import _colorstring
 def parser_for_compare_neighborhoods():
-    """
-    width=.2, figsize=(10, 5),
-                          fontsize=16,
-                          substitutions=["MG", "GDP"],
-                          mutations = {},
-                          plot_singles=False, stop_at=.1, scale_fig=False
-    :return:
-    """
-    parser = argparse.ArgumentParser(description="compare")
-    parser.add_argument("files", type=str, nargs="+")
-    parser.add_argument("-a","--anchor",type=str,default=None)
-    parser.add_argument("-k","--keys", type=str,default=None)
-    parser.add_argument("-c","--colors", type=str, default="tab:blue,tab:orange,tab:green,tab:red,tab:purple,tab:brown,tab:pink,tab:gray,tab:olive,tab:cyan")
-    parser.add_argument("-m","--mutations",type=str, default=None)
+    parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies from different files by generating a comparison plot and table")
+    parser.add_argument("files", type=str, nargs="+", help="Files (ASCII or .xlsx) containing the frequencies and labels in the first columns")
+    parser.add_argument("-a","--anchor",type=str,default=None, help="A residue that appears in all contacts. It will be eliminated from the labels for clarity.")
+    parser.add_argument("-k","--keys", type=str,default=None, help="The keys used to label the files, e.g. 'WT,MUT'")
+    parser.add_argument("-c","--colors", type=str, default=_colorstring, help='Colors to use for the dicts, defaults to "%s"'%", ".join(_colorstring.split(",")))
+    parser.add_argument("-m","--mutations",type=str, default=None,help='A replacement dictionary, to be able to re-label residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes all GLUs to ARGs and all LYS to PHEs')
     _parser_add_output_desc(parser,"freq_comparison")
     _parser_add_graphic_ext(parser)
     return parser
