@@ -778,6 +778,13 @@ class _ContactStrings(object):
 
         return ctc_label
 
+    @property
+    def just_consensus(self):
+        ctc_label = '%s-%s' % (self._residues.consensus_labels[0],
+                                   self._residues.consensus_labels[1],
+                                   )
+        return ctc_label
+
     def fragment_labels_best(self,fmt):
         r"""
         The fragment name will try to pick the consensus nomenclature.
@@ -1241,6 +1248,13 @@ class ContactPair(object):
             label = self.labels.w_fragments_short_AA
         elif AA_format== 'long':
             label = self.labels.w_fragments
+        elif AA_format== 'just_consensus':
+            #TODO where do we put this assertion?
+            if None in self._attribute_residues.consensus_labels:
+                raise ValueError("Residues %s don't have both consensus labels:%s" % (
+                    self._attribute_residues.names_short,
+                    self._attribute_residues.consensus_labels))
+            label = self.labels.just_consensus
         else:
             raise ValueError(AA_format)
         if split_label:
