@@ -41,7 +41,8 @@ extensions = [
 
 intersphinx_mapping = {'mdtraj': ('http://mdtraj.org/1.9.3/', None),
                        'md': ('http://mdtraj.org/1.9.3/', None),
-                       'matplotlib': ('https://matplotlib.org/',None)}
+                       'matplotlib': ('https://matplotlib.org/',None),
+                       'pandas': ('https://pandas.pydata.org/docs/',None)}
 
 autodoc_mock_imports = ["mdtraj", "matplotlib"]
 
