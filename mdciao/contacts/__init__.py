@@ -23,11 +23,12 @@ Functions
 =========
 
 .. autosummary::
-   :toctree: generated/
+    :nosignatures:
+    :toctree: generated/
 
-   per_traj_ctc
-   trajs2ctcs
-   select_and_report_residue_neighborhood_idxs
+    per_traj_ctc
+    trajs2ctcs
+    select_and_report_residue_neighborhood_idxs
 
 
 Classes
@@ -37,8 +38,10 @@ Classes
     :nosignatures:
     :toctree: generated
 
+    Residues
     ContactPair
     ContactGroup
+    GroupOfInterfaces
 
 """
 from .contacts import *
