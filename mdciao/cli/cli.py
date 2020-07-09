@@ -962,7 +962,7 @@ def interface(
           "\n with a stride of %u frames)" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
     refgeom = _load_any_geom(topology)
-    if not isinstance(fragments,str):
+    if not isinstance(fragments[0],str):
         fragments= [','.join([str(ii) for ii in _mdcu.lists.force_iterable(ifrag)]) for ifrag in fragments]
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
@@ -982,7 +982,9 @@ def interface(
         intf_frags_as_str_or_keys   = _mdcfrg.frag_list_2_frag_groups(fragments_as_residue_idxs,
                                                                frag_idxs_group_1, frag_idxs_group_2,
                                                                )
-
+    intersect = list(set(intf_frags_as_residxs[0]).intersection(intf_frags_as_residxs[1]))
+    assert len(intersect) == 0, ("Some_residxs appear in both members of the interface %s, "
+                                 "this is not possible" % intersect)
     ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
 
     # Remove self-contacts
