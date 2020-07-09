@@ -31,7 +31,8 @@ setup(
                     "ipython",
                     "XlsxWriter",
                     "requests",
-                    "tqdm"
+                    "tqdm",
+                    "natsort"
                     ]
                      +test_deps
                      #+doc_deps
