@@ -3223,6 +3223,30 @@ class ContactGroup(object):
             mat = mat[:,self.interface_residxs[1]]
         return mat
 
+    def frequency_to_bfactor(self, ctc_cutoff_Ang,
+                             pdbfile,
+                             geom):
+        r"""Save the contact frequency aggregated by residue to a pdb file
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        pdbfile : str
+        geom : :obj:`mdtraj.Trajectory`
+            Has to have the same topology as :obj:`self.top`
+
+        Returns
+        -------
+        bfactors : 1D np.array of len(self.top.n_atoms)
+
+        """
+
+        bfactors = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, return_array=True)
+        bfactors = [bfactors[aa.residue.index] for aa in self.top.atoms]
+        assert geom.top == self.top, "The parsed geometry has to have the same top as self.top"
+        geom.save(pdbfile,bfactors=bfactors)
+        return bfactors
+
     def _to_per_traj_dicts_for_saving(self, t_unit="ps"):
         r"""
         For every trajectory return an dictionary with
