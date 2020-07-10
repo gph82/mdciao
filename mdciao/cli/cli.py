@@ -956,6 +956,8 @@ def interface(
 
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
+    graphic_ext = graphic_ext.strip(".")
+    table_ext = table_ext.strip(".")
 
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
@@ -1104,19 +1106,25 @@ def interface(
                                              sort=sort_by_av_ctcs,
                                              )
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
-    fname = _path.join(output_dir, fname)
-    histofig.savefig(fname, dpi=graphic_dpi, bbox_inches="tight")
+
+    # TODO manage filenames better, avoid overwriting here when file exists
     print("The following files have been created")
-    print(fname)
-    fname_excel = fname.replace(graphic_ext.strip("."),"xlsx")
+    fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc, ctc_cutoff_Ang)
+    fname_wo_ext = _path.join(output_dir, fname_wo_ext)
+    fname_histo = ".".join([fname_wo_ext, graphic_ext])
+    fname_excel = ".".join([fname_wo_ext,"xlsx"])
+    fname_dat = ".".join(fname_wo_ext, "dat")
+    fname_pdb = ".".join(fname_wo_ext, "pdb")
+
+    histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
+    print(fname_histo)
     ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
     print(fname_excel)
-    fname_dat = fname.replace(graphic_ext.strip("."),"dat")
-    # TODO manage filenames better, avoid overwriting here when file exists
-    with open(fname_dat,"w") as f:
-        f.write(ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang))
+    ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fname_dat)
     print(fname_dat)
+    ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom)
+    print(fname_pdb)
+
     #TODO bury this in plots?
     ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
                                                              colorbar=True,
