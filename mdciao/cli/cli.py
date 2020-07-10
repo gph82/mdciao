@@ -957,7 +957,6 @@ def interface(
     output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
     graphic_ext = graphic_ext.strip(".")
-    table_ext = table_ext.strip(".")
 
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
@@ -1113,8 +1112,8 @@ def interface(
     fname_wo_ext = _path.join(output_dir, fname_wo_ext)
     fname_histo = ".".join([fname_wo_ext, graphic_ext])
     fname_excel = ".".join([fname_wo_ext,"xlsx"])
-    fname_dat = ".".join(fname_wo_ext, "dat")
-    fname_pdb = ".".join(fname_wo_ext, "pdb")
+    fname_dat = ".".join([fname_wo_ext, "dat"])
+    fname_pdb = ".".join([fname_wo_ext, "as_bfactors.pdb"])
 
     histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
     print(fname_histo)
@@ -1133,7 +1132,7 @@ def interface(
     iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
                   fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
     ifig.tight_layout()
-    fname_mat = fname.replace("overall@","matrix@")
+    fname_mat = fname_histo.replace("overall@","matrix@")
     ifig.savefig(fname_mat)
     print(fname_mat)
     if plot_timedep or separate_N_ctcs:
