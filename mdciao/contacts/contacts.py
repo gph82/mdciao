@@ -2370,7 +2370,10 @@ class ContactGroup(object):
 
         writer.save()
 
-    def frequency_str_ASCII_file(self, ctc_cutoff_Ang, switch_off_Ang=None, by_atomtypes=True):
+    def frequency_str_ASCII_file(self, ctc_cutoff_Ang,
+                                 switch_off_Ang=None,
+                                 by_atomtypes=True,
+                                 ascii_file=None):
         # TODO can't the frequency_spreadsheet handle this now?
         idf = self.frequency_dataframe(ctc_cutoff_Ang,
                                        switch_off_Ang=switch_off_Ang,
@@ -2383,8 +2386,12 @@ class ContactGroup(object):
                              justify='left',
                              # justify = 'right'
                              )
-        return '#%s\n'%istr[1:]
-
+        istr = '#%s\n'%istr[1:]
+        if ascii_file is None:
+            return istr
+        else:
+            with open(ascii_file, "w") as f:
+                f.write(istr)
 
     def frequency_as_contact_matrix(self,
                                     ctc_cutoff_Ang,
