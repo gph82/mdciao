@@ -2099,7 +2099,7 @@ class ContactGroup(object):
         dict_sum = {key: _np.sum(val) for key, val in dict_sum.items()}
         if return_array:
             array_sum = _np.zeros(self.top.n_residues)
-            array_sum[list(dict_sum.keys())] = list(dict_sum.items())
+            array_sum[list(dict_sum.keys())] = list(dict_sum.values())
             return array_sum
         else:
             return dict_sum
