@@ -28,7 +28,9 @@ if a.mutations is not None:
 myfig, freqs, posret = compare(file_dict,
                                colors=colordict,
                                anchor=a.anchor,
-                               mutations_dict=mut_dict)
+                               mutations_dict=mut_dict,
+                               figsize=None,
+                               width=None)
 myfig.tight_layout()
 fname = "%s.%s"%(a.output_desc,a.graphic_ext.strip("."))
 myfig.savefig(fname)
