@@ -2067,20 +2067,27 @@ class ContactGroup(object):
         """
         return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang) for ictc in self._contacts])
 
-    def frequency_sum_per_residue_idx_dict(self, ctc_cutoff_Ang,switch_off_Ang=None):
+    def frequency_sum_per_residue_idx_dict(self, ctc_cutoff_Ang,
+                                           switch_off_Ang=None,
+                                           return_array=False):
         r"""
         Dictionary of aggregated :obj:`frequency_per_contact` per residue indices
+        Values over 1 are possible, example if [0,1], [0,2]
+        are always formed (=1) freqs_dict[0]=2
 
         Parameters
         ----------
         ctc_cutoff_Ang
+        return_array : bool, default is False
+            If True, the return value is not a dict
+            but an array of len(self.top.n_residues)
 
         Returns
         -------
-        freqs_dict : dictionary
-            keys are the residue indices present in :obj:`res_idxs_pairs`
-            Values over 1 are possible, example if [0,1], [0,2] are always formed (=1)
-            freqs_dict[0]=2
+        freqs_dict : dictionary or array
+            If dict, keys are the residue indices present in :obj:`res_idxs_pairs`
+            If array, idxs are the residue indices of self.top
+
 
         """
         dict_sum = _defdict(list)
@@ -2090,7 +2097,12 @@ class ContactGroup(object):
             dict_sum[idx1].append(ifreq)
             dict_sum[idx2].append(ifreq)
         dict_sum = {key: _np.sum(val) for key, val in dict_sum.items()}
-        return dict_sum
+        if return_array:
+            array_sum = _np.zeros(self.top.n_residues)
+            array_sum[list(dict_sum.keys())] = list(dict_sum.items())
+            return array_sum
+        else:
+            return dict_sum
 
     def frequency_sum_per_residue_names_dict(self, ctc_cutoff_Ang,
                                              switch_off_Ang=None,
