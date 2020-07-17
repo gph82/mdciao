@@ -2067,20 +2067,27 @@ class ContactGroup(object):
         """
         return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang) for ictc in self._contacts])
 
-    def frequency_sum_per_residue_idx_dict(self, ctc_cutoff_Ang,switch_off_Ang=None):
+    def frequency_sum_per_residue_idx_dict(self, ctc_cutoff_Ang,
+                                           switch_off_Ang=None,
+                                           return_array=False):
         r"""
         Dictionary of aggregated :obj:`frequency_per_contact` per residue indices
+        Values over 1 are possible, example if [0,1], [0,2]
+        are always formed (=1) freqs_dict[0]=2
 
         Parameters
         ----------
         ctc_cutoff_Ang
+        return_array : bool, default is False
+            If True, the return value is not a dict
+            but an array of len(self.top.n_residues)
 
         Returns
         -------
-        freqs_dict : dictionary
-            keys are the residue indices present in :obj:`res_idxs_pairs`
-            Values over 1 are possible, example if [0,1], [0,2] are always formed (=1)
-            freqs_dict[0]=2
+        freqs_dict : dictionary or array
+            If dict, keys are the residue indices present in :obj:`res_idxs_pairs`
+            If array, idxs are the residue indices of self.top
+
 
         """
         dict_sum = _defdict(list)
@@ -2090,7 +2097,12 @@ class ContactGroup(object):
             dict_sum[idx1].append(ifreq)
             dict_sum[idx2].append(ifreq)
         dict_sum = {key: _np.sum(val) for key, val in dict_sum.items()}
-        return dict_sum
+        if return_array:
+            array_sum = _np.zeros(self.top.n_residues)
+            array_sum[list(dict_sum.keys())] = list(dict_sum.values())
+            return array_sum
+        else:
+            return dict_sum
 
     def frequency_sum_per_residue_names_dict(self, ctc_cutoff_Ang,
                                              switch_off_Ang=None,
@@ -2358,7 +2370,10 @@ class ContactGroup(object):
 
         writer.save()
 
-    def frequency_str_ASCII_file(self, ctc_cutoff_Ang, switch_off_Ang=None, by_atomtypes=True):
+    def frequency_str_ASCII_file(self, ctc_cutoff_Ang,
+                                 switch_off_Ang=None,
+                                 by_atomtypes=True,
+                                 ascii_file=None):
         # TODO can't the frequency_spreadsheet handle this now?
         idf = self.frequency_dataframe(ctc_cutoff_Ang,
                                        switch_off_Ang=switch_off_Ang,
@@ -2371,8 +2386,12 @@ class ContactGroup(object):
                              justify='left',
                              # justify = 'right'
                              )
-        return '#%s\n'%istr[1:]
-
+        istr = '#%s\n'%istr[1:]
+        if ascii_file is None:
+            return istr
+        else:
+            with open(ascii_file, "w") as f:
+                f.write(istr)
 
     def frequency_as_contact_matrix(self,
                                     ctc_cutoff_Ang,
@@ -3203,6 +3222,30 @@ class ContactGroup(object):
             mat = mat[self.interface_residxs[0],:]
             mat = mat[:,self.interface_residxs[1]]
         return mat
+
+    def frequency_to_bfactor(self, ctc_cutoff_Ang,
+                             pdbfile,
+                             geom):
+        r"""Save the contact frequency aggregated by residue to a pdb file
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        pdbfile : str
+        geom : :obj:`mdtraj.Trajectory`
+            Has to have the same topology as :obj:`self.top`
+
+        Returns
+        -------
+        bfactors : 1D np.array of len(self.top.n_atoms)
+
+        """
+
+        bfactors = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, return_array=True)
+        bfactors = [bfactors[aa.residue.index] for aa in self.top.atoms]
+        assert geom.top == self.top, "The parsed geometry has to have the same top as self.top"
+        geom.save(pdbfile,bfactors=bfactors)
+        return bfactors
 
     def _to_per_traj_dicts_for_saving(self, t_unit="ps"):
         r"""

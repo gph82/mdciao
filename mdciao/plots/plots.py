@@ -271,7 +271,9 @@ def plot_unified_freq_dicts(freqs,
                             remove_identities=False,
                             vertical_plot=False,
                             identity_cutoff=1,
-                            ylim=1
+                            ylim=1,
+                            panelheight_inches=5,
+                            inch_per_contacts=1,
                             ):
     r"""
     Plot unified frequency dictionaries (= with identical keys) for different systems
@@ -283,8 +285,11 @@ def plot_unified_freq_dicts(freqs,
         The second-level dict is keyed by contact names
     colordict : dict, default is None.
         What color each system gets. Default is some sane matplotlib values
-    width : float, default is .2
-        Bar width of the bar plot
+    width : None or float, default is .2
+        Bar width of the bar plot.
+        If None, .5/len(freqs) will be used, leaving
+        50% of space free between contacts
+
     ax : :obj:`matplotlib.pyplot.Axes`, default is None
 
     figsize : iterable of len 2
@@ -332,6 +337,7 @@ def plot_unified_freq_dicts(freqs,
     -------
 
     """
+    _fontsize=_rcParams["font.size"]
     _rcParams["font.size"] = fontsize
     #make copies of dicts
     freqs_work = {key:{key2:val2 for key2, val2 in val.items()} for key, val in freqs.items()}
@@ -384,55 +390,71 @@ def plot_unified_freq_dicts(freqs,
         colordict = {key:val for key,val in zip(master_keys, _colorstring.split(","))}
 
     # Prepare the positions of the bars
+    if width is None:
+        width = .5/len(master_keys)
     delta = {}
     for ii, key in enumerate(master_keys):
         delta[key] = width * ii
 
     if ax is None:
+        if figsize is None:
+            y_figsize=panelheight_inches
+            x_figsize=inch_per_contacts*len(final_ordered_dict)
+            figsize = [x_figsize,y_figsize]
         if vertical_plot:
             figsize = figsize[::-1]
+
         myfig = _plt.figure(figsize=figsize)
     else:
         _plt.sca(ax)
         myfig = ax.figure
 
-    for ii, (key, val) in enumerate(final_ordered_dict.items()):
-        for jj, (skey, sfreq) in enumerate(freqs_work.items()):
-            assert len(sfreq)==len(final_ordered_dict), "This shouldnt happen"
-            if ii == 0:
-                label = '%s (Sigma= %2.1f)'%(skey, _np.sum(list(sfreq.values())))
-                if len(keys_popped_above)>0:
-                    label = label[:-1]+", +%2.1f above threshold)"%(_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
-                if len(keys_popped_below) > 0:
-                    not_shown_sigma = _np.sum([freqs[skey][nskey] for nskey in keys_popped_below])
-                    if not_shown_sigma>0:
-                        label = label[:-1] + ", +%2.1f below threshold)" % (not_shown_sigma)
-                label = _mdcu.str_and_dict.replace4latex(label)
+    for jj, (skey, sfreq) in enumerate(freqs_work.items()):
+        # Sanity check
+        assert len(sfreq) == len(final_ordered_dict), "This shouldnt happen"
 
-            else:
-                label = None
+        bar_array = [sfreq[key] for key in final_ordered_dict.keys()]
+        x_array = _np.arange(len(bar_array))
 
-            if not vertical_plot:
-                _plt.bar(ii + delta[skey], sfreq[key],
-                         width=width,
-                         color=colordict[skey],
-                         label=label,
-                         )
-                if jj == 0:
-                    _plt.text(ii, ylim+.05, key, rotation=45)
-            else:
-                _plt.barh(ii + delta[skey], sfreq[key],
-                          height=width,
-                          color=colordict[skey],
-                          label=label,
-                          )
-                if jj == 0:
-                    _plt.text(-.05, ii, key, ha='right', va="center") # TODO fix the vertical position here
+        # Label
+        label = '%s (Sigma= %2.1f)'%(skey, _np.sum(list(sfreq.values())))
+        if len(keys_popped_above)>0:
+            label = label[:-1]+", +%2.1f above threshold)"%\
+                    (_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
+        if len(keys_popped_below) > 0:
+            not_shown_sigma = _np.sum([freqs[skey][nskey] for nskey in keys_popped_below])
+            if not_shown_sigma>0:
+                label = label[:-1] + ", +%2.1f below threshold)" % (not_shown_sigma)
+        label = _mdcu.str_and_dict.replace4latex(label)
+
+        if not vertical_plot:
+            _plt.bar(x_array + delta[skey], bar_array,
+                     width=width,
+                     color=colordict[skey],
+                     label=label,
+                     )
+        else:
+            _plt.barh(x_array + delta[skey], bar_array,
+                      height=width,
+                      color=colordict[skey],
+                      label=label,
+                      )
+
     _plt.legend()
     if vertical_plot:
+        for ii, key in enumerate(final_ordered_dict.keys()):
+            # 1) centered in the middle of the bar, since plt.bar(align="center")
+            # 2) displaced by one half width*nbars
+            iix = ii \
+                  - width / 2 \
+                  + len(freqs_work) * width / 2
+            _plt.text(0 - .05, iix, key,
+                      ha="right",
+                      #rotation=45,
+                      )
         _plt.yticks([])
         _plt.xlim(0, ylim)
-        _plt.ylim(0 - width, ii + width * 2)
+        _plt.ylim(0 - width, ii + width * len(freqs_work))
         _plt.xticks([0, .25, .50, .75, 1])
         [_plt.gca().axvline(ii, ls=":", color="k", zorder=-1) for ii in [.25, .5, .75]]
         _plt.gca().invert_yaxis()
@@ -441,11 +463,21 @@ def plot_unified_freq_dicts(freqs,
             _plt.plot(list(final_ordered_dict.values()), _np.arange(len(all_keys)), color='k', alpha=.25, ls=':')
 
     else:
+        for ii, key in enumerate(final_ordered_dict.keys()):
+            # 1) centered in the middle of the bar, since plt.bar(align="center")
+            # 2) displaced by one half width*nbars
+            iix = ii\
+                  -width/2\
+                  +len(freqs_work)*width/2
+            _plt.text(iix, ylim + .05, key,
+                      ha="center",
+                      rotation=45,
+                      )
+            #_plt.gca().axvline(iix) (visual aid)
         _plt.xticks([])
-        _plt.xlim(0 - width, ii + width * len(final_ordered_dict))
+        _plt.xlim(0 - width, ii + width * len(freqs_work))
         if ylim<=1:
             yticks = [0, .25, .50, .75, 1]
-
         else:
             yticks = _np.arange(0,_np.ceil(ylim),.50)
         _plt.yticks(yticks)
@@ -459,6 +491,8 @@ def plot_unified_freq_dicts(freqs,
     # Create a dictionary explaining the plot
     out_dict = {key:{ss: val[ss] for ss in final_ordered_dict.keys()} for key, val in freqs_work.items()}
     out_dict.update({sort_by: {key : _np.round(val,2) for key, val in final_ordered_dict.items()}})
+
+    _rcParams["font.size"] = _fontsize
     return myfig, _plt.gca(),  out_dict
 
 def add_tilted_labels_to_patches(jax, labels,
