@@ -334,7 +334,9 @@ def overview(topology,
 
     Returns
     -------
-    None
+    fragments_out : dict
+        The result of the fragmentation schemes keyed
+        by their method name
 
     """
 
@@ -348,12 +350,15 @@ def overview(topology,
             _assert_method_allowed(method)
         try_methods = methods
 
+    fragments_out = {}
     for method in try_methods:
-        get_fragments(topology,
-                      method=method)
+        fragments_out[method] = get_fragments(topology,
+                                              method=method)
         print()
 
     _mdcu.residue_and_atom.parse_and_list_AAs_input(AAs, topology)
+
+    return fragments_out
 
 def _assert_method_allowed(method):
     assert str(method) in _allowed_fragment_methods, ('input method %s is not known. ' \
