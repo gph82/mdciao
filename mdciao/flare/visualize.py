@@ -1,7 +1,6 @@
 
 __author__ = 'gph82'
-from .flare import fragment_selection_parser, cartify_segments, pol2cart, curvify_segments, col_list_from_input_and_fragments
-from mdciao.utils.bonds import bonded_neighborlist_from_top
+
 
 import numpy as _np
 
@@ -45,44 +44,6 @@ _mycolors=[
          'purple',
          'teal',
 ]
-from bezier import Curve as _BZCurve
-class my_BZCURVE(_BZCurve):
-    """
-    Modified Bezier curve to plot with line-width
-    """
-
-    def plot(self, num_pts, color=None, alpha=None, ax=None,lw=1):
-        """Plot the current curve.
-
-        Args:
-            num_pts (int): Number of points to plot.
-            color (Optional[Tuple[float, float, float]]): Color as RGB profile.
-            alpha (Optional[float]): The alpha channel for the color.
-            ax (Optional[matplotlib.artist.Artist]): matplotlib axis object
-                to add plot to.
-
-        Returns:
-            matplotlib.artist.Artist: The axis containing the plot. This
-            may be a newly created axis.
-
-        Raises:
-            NotImplementedError: If the curve's dimension is not ``2``.
-        """
-        from bezier import _plot_helpers
-        if self._dimension != 2:
-            raise NotImplementedError(
-                "2D is the only supported dimension",
-                "Current dimension",
-                self._dimension,
-            )
-
-        s_vals = _np.linspace(0.0, 1.0, num_pts)
-        points = self.evaluate_multi(s_vals)
-        if ax is None:
-            ax = _plot_helpers.new_axis()
-        ax.plot(points[0, :], points[1, :], color=color, alpha=alpha, lw=lw)
-        return ax
-
 
 class _line_mixes(object):
 
@@ -577,12 +538,6 @@ def _blockify_showmat(iax, blocks, block_names=[], labels="lower"):
             clean_ax([])
         offset+=len(iseg)
 
-def cart2pol(x, y):
-    rho = _np.sqrt(x**2 + y**2)
-    phi = _np.arctan2(y, x)
-    return(rho, phi)
-
-
 #Charged positive(BLUE) ARG, HIS, LYS
 # Charged negative(RED) GLU, ASP
 #Polar(GREEN) ASN, CYS, GLN, SER, THR
@@ -621,7 +576,6 @@ def _list_of_list_idxs(ilist):
         offset += len(jlist)
     return  out_list
 
-_SS2vmdcol = {'H':"purple", "E":"yellow","C":"cyan", "NA":"gray"}
 
 def _my_vmd_colormap(n, offset=.1,midpoint=.5):
     x = _np.linspace(0,1, num=n)
@@ -694,13 +648,13 @@ def correlations(correlation_input, res_idxs_pairs, segments,
                                                           _np.abs(icorr)[most_corr].min(),
                                                           jcorr.max())
         #print(label)
-        iax, respairs_descending = binary_ctcs2flare(jcorr.reshape(1, -1),
-                                                     res_idxs_pairs,
-                                                     segments,
-                                                     iax=iax,
-                                                     panelsize=panelsize,
-                                                     **binary_ctcs2flare_kwargs,
-                                                     )
+        iax, respairs_descending = sparse_freqs2flare(jcorr.reshape(1, -1),
+                                                      res_idxs_pairs,
+                                                      segments,
+                                                      iax=iax,
+                                                      panelsize=panelsize,
+                                                      **binary_ctcs2flare_kwargs,
+                                                      )
         _empty_legend(iax, [ilabel])
         iax.figure.tight_layout(h_pad=0,w_pad=0, pad=0)
         if not static:
@@ -737,13 +691,13 @@ def correlations(correlation_input, res_idxs_pairs, segments,
                 else:
                     pass
 
-                iax, __ = binary_ctcs2flare(jctc.reshape(1,-1),
-                                                         res_idxs_pairs,
-                                                         segments,
-                                                         iax=None,
-                                                         panelsize=panelsize,
-                                                         **ctc_kwargs,
-                                                         )
+                iax, __ = sparse_freqs2flare(jctc.reshape(1, -1),
+                                             res_idxs_pairs,
+                                             segments,
+                                             iax=None,
+                                             panelsize=panelsize,
+                                             **ctc_kwargs,
+                                             )
                 _empty_legend(iax, ['arg%s'%["min","max"][jj]])
                 iax.figure.tight_layout(h_pad=0, w_pad=0, pad=0)
 
@@ -787,323 +741,7 @@ def add_rep_vmdstyle_resid(iwd, top, reptype, resids, color='red'):
 #def add_rep_vmdstyle(iwd,reptype, selection):
 
 
-def binary_ctcs2flare(ictcs, res_idxs_pairs,
-                      fragments=None,
-                      exclude_neighbors=1,
-                      alpha=1,
-                      freq_cutoff=0,
-                          iax=None,
-                      fragment_names=None,
-                      center=_np.array([0,0]),
-                      r=1,
-                      mute_segments=None,
-                      anchor_segments=None,
-                      ss_array=None,
-                      panelsize=4,
-                      angle_offset=0,
-                      highlight_residxs=None,
-                      vicinities=None,
-                      top=None,
-                      radial_padding_percent=10,
-                      colors=True,
-                      fontsize=6,
-                      return_descending_ctc_freqs=False,
-                      shortenAAs=False, aa_offset=0,
-                      markersize=5,
-                      bezier_linecolor='k',
-                      plot_curves_only=False,
-                      curves=False,
-                      textlabels=True,
-                      no_dots=False,
-                      padding_beginning=0,
-                      padding_end=0,
-                      lw=1,
-                      ):
-    r"""
-    Parameters
-    ----------
-    ictcs : numpy.ndarray
-        Can have different shapes
-        * (n)
-            n is the number of residue pairs in :obj:`res_idxs_pairs`
-        * (m,n)
-            m is the number of frames
-            In this case, an average over m will be done automatically
-    res_idxs_pairs : iterable of pairs
-        reside indices for which the above N contacts stand
-    fragments: list of lists of integers
-        The residue indices to be drawn as a circle for the
-        flareplot. These *are* the dots that will be plotted
-        on that circle regardless of how many contacts they
-        appear in. They can be any integers that could represent
-        a residue. The only hard condition is that the set
-        of np.unique(res_idxs_pairs) must be contained
-        within np.hstack(segments)
-    exclude_neighbors: int, default is 1
-        Do not show contacts where the partners are separated by
-        these many residues.
-        * Note: The "neighborhood-condition" is checked using
-        residue serial-numbers, assuming the molecule only
-        has one long peptidic-chain.
-    average: boolean, default is True
-        Average over T and represent the value with line transparency (alpha)
-    alpha: float, defalut is 1.
-        (Avanced use) fix the value of alpha regardless
-        Will be ignored, however, if average is True
-    freq_cutoff: float, default is 0
-        Contact frequencies lower than this value will not be shown
-    iax: Matplotlib axis object, default is None
-        Parse an axis to draw on, otherwise one will be created
-    fragment_names: iterable of strings, default is None
-        The names of the segments used in :obj:`segments`
-    panelsize: float, default is 4
-        Size in inches of the panel (=figsize in Matplotlib).
-        Will be ignored if a pre-existing axis object is parsed
-    center: np.ndarray, default is [0,0]
-        In axis units, where the flareplot will be centered around
-    r: float, default is 1
-        In axis units, the radius of the flareplot
-    mute_segments: iterable of integers, default is None
-        Contacts involving these segments will be hidden. Segments
-        are expressed as indices of :obj:`segments`
-    anchor_segments: iterable of integers, default is None
-        Only contacts involving these segments will be shown. Segments
-        are expressed as indices of :obj:`segments`
-    top: mdtraj.Topology object, default is None
-        If provided a top, residue names (e.g. GLU30) will be used
-        instead of residue indices. Will fail if the residue indices
-        in :obj:`res_idxs_pairs` can not be used to call :obj:`top.residue(ii)`
-    ss_dict
-    angle_offset
-    highlight_residxs
-    vicinities
-    r2rfac: float, default is 1.1
-        Fudge factor controlling the separation between labels. Still fudging
-    colors: boolean, default is True
-        Color control.
-        * True uses one different color per segment (see visualize._mycolors)
-        * False, defaults to blue. If a single string is given
-        * One string uses that color for all residues (e.g. "r" or "red" for all red)
-        * A list of strings of len = number of drawn residues, which is
-        equal to len(np.hstack(segments)). Any other length will produce an error
-        #todo perhaps this change in the future, not sure of the safest behaviour
-    fontsize: int, default is 6
-    return_descending_ctc_freqs#
-    dotsize: float, default is 5
-        Size of the dot used to represent a residue
-    lw: float, default is 1
-        Line width of the contact lines
-    shortenAAs: boolean, default is False
-        Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
-        is parsed
-    Returns
-    -------
-    if not return_descending_ctc_freqs:
-        return iax, res_pairs_descending
-    else:
-        return iax, res_pairs_descending, sorted(array_for_sorting)[::-1]
-    """
 
-    padding_end += 5 #todo dangerous?
-
-    if _np.ndim(ictcs)==1:
-        ictcs = ictcs.reshape(1,-1)
-    elif _np.ndim(ictcs)==2:
-        pass
-
-    else:
-        raise ValueError("Input array has to of shape either (m) or (n, m) where n : n frames, and m: n_contacts")
-
-    assert ictcs.shape[1]==len(res_idxs_pairs), "The size of the contact array and the res_idxs_pairs array do not match %u vs %u"%(ictcs.shape[1], len(res_idxs_pairs))
-
-    if iax is None:
-        assert not plot_curves_only,("You cannot use plot_curves_only=True and iax=None. Makes no sense")
-        _plt.figure(figsize=(panelsize, panelsize))
-        iax = _plt.gca()
-
-    radial_padding_units=1+radial_padding_percent/100
-
-
-    # Define some useful lambdas for deciding if plotting or not plotting a pair
-    # Create a residue list
-    residue_idxs_in_input_segments = _np.hstack(fragments)
-    # Condition did I select it with my fragments
-    is_pair_not_muted_bc_one_residx_is_not_in_input_segments = lambda pair : all(_np.in1d(pair, residue_idxs_in_input_segments))
-
-    # Condition vicinities
-    if vicinities is not None:
-        is_pair_not_muted_bc_vicinities = lambda pair : len(_np.intersect1d(pair,vicinities))>0
-    else:
-        is_pair_not_muted_bc_vicinities = lambda pair : True
-
-    # Condition in anchor segment or in muted segment
-    is_pair_not_muted_bc_anchor_and_mute_segments = \
-        fragment_selection_parser(fragments, mute_segments, anchor_segments)
-
-    # Condition not nearest neighbors
-    if top is None:
-        is_pair_not_muted_bc_nearest_neighbors = lambda pair : _np.abs(pair[0] - pair[1]) > exclude_neighbors
-    else:
-        nearest_n_neighbor_list = bonded_neighborlist_from_top(top, exclude_neighbors)
-        is_pair_not_muted_bc_nearest_neighbors = lambda pair : pair[1] not in nearest_n_neighbor_list[pair[0]]
-
-    # Angular/cartesian quantities
-    xy = cartify_segments(fragments, r=r, angle_offset=angle_offset,
-                          padding_initial=padding_beginning,
-                          padding_final=padding_end,
-                          padding_between_fragments=1)
-    xy += center
-    xy_labels, xy_angles = cartify_segments(fragments, r=r * radial_padding_units, return_angles=True, angle_offset=angle_offset,
-                                            padding_initial=padding_beginning,
-                                            padding_final=padding_end,
-                                            padding_between_fragments=1)
-    xy_labels += center
-
-    # Do we have SS dictionaries
-    if ss_array is not None:
-        if plot_curves_only:
-            print("Ignoring input %s because plot_curves_only is %s" % ("ss_dict", plot_curves_only))
-        else:
-            #assert len(ss_dict)==len(res_idxs_pairs)
-            xy_labels_SS, xy_angles_SS = cartify_segments(fragments, r=r * radial_padding_units ** 1.7, return_angles=True, angle_offset=angle_offset,
-                                                          padding_initial=padding_beginning,
-                                                          padding_final=padding_end,
-                                                          padding_between_fragments=1)
-            xy_labels_SS += center
-    # Do we have names?
-    if fragment_names:
-        if plot_curves_only:
-            print("Ignoring input %s because plot_curves_only = %s" % ("fragment_names", plot_curves_only))
-        else:
-            for seg_idxs, iname in zip(_list_of_list_idxs(fragments), fragment_names):
-                xseg, yseg = xy[seg_idxs].mean(0)-center
-                rho, phi = cart2pol(xseg, yseg)
-                xseg, yseg = pol2cart(r * radial_padding_units ** 2.5, phi) + center
-
-                iang=phi+_np.pi/2
-                if _np.cos(iang) < 0:
-                    iang = iang + _np.pi
-                iax.text(xseg, yseg, iname, ha="center", va="center",
-                         fontsize=fontsize*2,
-                         rotation=_np.rad2deg(iang))
-
-    # TODO review variable names
-    col_list = col_list_from_input_and_fragments(colors, fragments, residue_idxs_in_input_segments)
-
-    # Plot!
-    # Do this first to have an idea of the points per axis unit necessary for the plot
-    iax.set_xlim([-1.5, 1.5])
-    iax.set_ylim([-1.5, 1.5])
-    iax.set_yticks([])
-    iax.set_xticks([])
-    iax.set_aspect("equal")
-
-    """
-    _plt.ion()
-    iax.figure.canvas.draw()
-    points_per_axis_unit = iax.get_window_extent().width / (_np.diff(iax.get_xlim()).squeeze())
-    av_dist_between_centers = _np.linalg.norm(xy[:-1]-xy[1:], axis=1).mean()
-    av_dist_between_centers /= iax.figure.get_size_inches().mean() # shamelessly some fudging here...
-    s2 = (av_dist_between_centers * points_per_axis_unit) ** 2
-    iax.scatter(xy[:, 0], xy[:, 1], c=col_list, s=s2)
-    """
-    if plot_curves_only:
-        print("Not scattering, coloring, or labelling anything because plot_curves_only = %s" % (plot_curves_only))
-    else:
-        if not curves:
-            iax.scatter(xy[:, 0], xy[:, 1], c=col_list, s=markersize, zorder=10)
-        else:
-            # todo CLEAN THIS curfify and colors thing up
-            list_of_curves_for_fragments = curvify_segments(fragments, r=r, angle_offset=angle_offset, padding=padding_end)
-            col_list_new = []
-            for icol in col_list:
-                if icol not in col_list_new:
-                    col_list_new.append(icol)
-            for ii, (icurve,icol) in enumerate(zip(list_of_curves_for_fragments, col_list_new)):
-                iax.plot(icurve[:,0],icurve[:,1],'-',lw=5, color=icol)
-
-        if textlabels:
-            for shown_residue_index, (ires, ixy, iang) in enumerate(zip(residue_idxs_in_input_segments, xy_labels, xy_angles)):
-                if _np.cos(iang) < 0:
-                    iang = iang+_np.pi
-                ilabel = ires
-                txtclr = "k"
-                if top is not None:
-                    if not shortenAAs:
-                        ilabel = top.residue(ires)
-                    else:
-                        idxs = top.residue(ires).resSeq + aa_offset
-                        ilabel = ("%s%u"%(top.residue(ires).code,idxs)).replace("None",top.residue(ires).name)
-                    if highlight_residxs is not None and ires in highlight_residxs:
-                        txtclr="red"
-
-                itxt = iax.text(ixy[0], ixy[1], '%s'%ilabel,
-                                color=txtclr,
-                                va="center",
-                                ha="center",
-                                rotation=_np.rad2deg(iang),
-                                fontsize=fontsize)
-
-    # TODO refactor to use less code
-    if ss_array is not None and not plot_curves_only:
-        for shown_residue_index, ixy, iang in zip(residue_idxs_in_input_segments, xy_labels_SS, xy_angles_SS):
-            if _np.cos(iang) < 0:
-                iang = iang+_np.pi
-            ilabel = ss_array[shown_residue_index]
-            itxt = iax.text(ixy[0], ixy[1], '%s'%ilabel,
-                            ha="center", va="center", rotation=_np.rad2deg(iang),
-                            fontsize=fontsize, color=_SS2vmdcol[ilabel], weight='heavy')
-
-    # Create a dictionary
-    residx2idx = _np.zeros(_np.max(residue_idxs_in_input_segments) + 1, dtype=int)
-    residx2idx[:] = _np.nan
-    residx2idx[residue_idxs_in_input_segments] = _np.arange(len(residue_idxs_in_input_segments))
-
-    ctcs_averaged = _np.average(ictcs, axis=0)
-    # All formed contacts
-    flat_idx_unique_formed_contacts = _np.argwhere(ctcs_averaged>freq_cutoff).squeeze()
-
-    # Create a dictionary of initialized bezier curves with the residxs as keys
-    # TODO each curve will be used only once, but it is better to have it like this
-    #  for per-frame operations later on (otherwise we could use the same loop)
-    bz_curve = {}
-    ctc_idxs_to_plot = []
-    plotted_respairs = []
-    array_for_sorting = []
-    for shown_residue_index in flat_idx_unique_formed_contacts:
-        res_pair = res_idxs_pairs[shown_residue_index].astype("int")
-        if  is_pair_not_muted_bc_one_residx_is_not_in_input_segments(res_pair) and \
-            is_pair_not_muted_bc_nearest_neighbors(res_pair) and \
-            is_pair_not_muted_bc_anchor_and_mute_segments(res_pair) and\
-            is_pair_not_muted_bc_vicinities(res_pair):
-            node_idxs = residx2idx[res_pair].squeeze()
-            nodes = xy[node_idxs]
-            bz_curve[shown_residue_index] = create_flare_bezier(nodes, center=center)
-            ctc_idxs_to_plot.append(shown_residue_index)
-            plotted_respairs.append(res_pair)
-            array_for_sorting.append(ctcs_averaged[shown_residue_index])
-    for shown_residue_index in flat_idx_unique_formed_contacts:
-        if shown_residue_index in ctc_idxs_to_plot:
-            ialpha = ctcs_averaged[shown_residue_index]
-            bz_curve[shown_residue_index].plot(50, ax=iax, alpha=ialpha,
-                                   color=bezier_linecolor,
-                              lw=lw,#_np.sqrt(markersize),
-                              #zorder=-1
-                              )
-
-    # Cosmetics
-    #itxt = _np.vstack([itxt.get_position() for itxt in iax.texts])
-    #xlim, ylim = _np.vstack((itxt.min(0), itxt.max(0))).T
-    #iax.set_xlim(xlim)
-    #iax.set_ylim(ylim)
-
-    res_pairs_descending = []
-    if len(array_for_sorting)>0:
-        res_pairs_descending = _np.vstack([plotted_respairs[ii] for ii in _np.argsort(array_for_sorting)[::-1]])
-    if not return_descending_ctc_freqs:
-        return iax, res_pairs_descending
-    else:
-        return iax, res_pairs_descending, sorted(array_for_sorting)[::-1]
 
 #TODO refactor segments to fragments in all the module's methods
 def topology2circle(top, segments=None, **binary_ctcs2flare_kwargs):
@@ -1119,7 +757,7 @@ def topology2circle(top, segments=None, **binary_ctcs2flare_kwargs):
     if segments is None:
         segments = [[ii for ii in range(top.n_residues)]]
 
-    return binary_ctcs2flare(ictcs, res_idxs_pairs, segments, top=top, **binary_ctcs2flare_kwargs)
+    return sparse_freqs2flare(ictcs, res_idxs_pairs, segments, top=top, **binary_ctcs2flare_kwargs)
 
 def list2circle(ilist,fragments = None, **binary_ctcs2flare_kwargs):
     n_residues = len(ilist)
@@ -1129,16 +767,8 @@ def list2circle(ilist,fragments = None, **binary_ctcs2flare_kwargs):
     if fragments is None:
         fragments = [[ii for ii in range(n_residues)]]
 
-    return binary_ctcs2flare(ictcs, res_idxs_pairs, fragments, **binary_ctcs2flare_kwargs)
+    return sparse_freqs2flare(ictcs, res_idxs_pairs, fragments, **binary_ctcs2flare_kwargs)
 
-
-def create_flare_bezier(nodes, center=None):
-    middle = _np.floor(len(nodes) / 2).astype("int")
-    if center is not None:
-        nodes = _np.vstack((nodes[:middle], center, nodes[middle:]))
-
-    return my_BZCURVE(nodes.T, degree=2)
-    #return _bezier.Curve(nodes.T, degree=3)
 
 
 def _hover(event):
@@ -1300,15 +930,15 @@ def represent(set_geoms, set_ctcs,
         else:
             iax = None
 
-        iax, respairs_descending, ctcs_freq_descending = binary_ctcs2flare(ictcs.reshape(1, -1) - background,
-                                                                           res_idxs_pairs,
-                                                                           segments,
-                                                                           ss_array=_most_freq_SS(igeom)[_np.unique(res_idxs_pairs)],
-                                                                           top=igeom.top,
-                                                                           iax=iax,
-                                                                           return_descending_ctc_freqs=True,
-                                                                           **binary_ctcs2flare_kwargs,
-                                                                           )
+        iax, respairs_descending, ctcs_freq_descending = sparse_freqs2flare(ictcs.reshape(1, -1) - background,
+                                                                            res_idxs_pairs,
+                                                                            segments,
+                                                                            ss_array=_most_freq_SS(igeom)[_np.unique(res_idxs_pairs)],
+                                                                            top=igeom.top,
+                                                                            iax=iax,
+                                                                            return_descending_ctc_freqs=True,
+                                                                            **binary_ctcs2flare_kwargs,
+                                                                            )
 
         if basins is not None:
             icol = color_by_basin(ii, basins)
@@ -1399,16 +1029,16 @@ def represent(set_geoms, set_ctcs,
         else:
             iax = None
         #  todo remove code
-        iax, respairs_descending, ctcs_freq_descending = binary_ctcs2flare(background.reshape(1, -1),
-                                                                           res_idxs_pairs,
-                                                                           segments,
-                                                                           iax=iax,
-                                                                           ss_array=most_freq_SS_weights([set_geoms[ss] for ss in selection],
+        iax, respairs_descending, ctcs_freq_descending = sparse_freqs2flare(background.reshape(1, -1),
+                                                                            res_idxs_pairs,
+                                                                            segments,
+                                                                            iax=iax,
+                                                                            ss_array=most_freq_SS_weights([set_geoms[ss] for ss in selection],
                                                                                                          ipi[selection])[_np.unique((res_idxs_pairs))],
-                                                                           top=igeom.top,
-                                                                           return_descending_ctc_freqs=True,
-                                                                           **binary_ctcs2flare_kwargs,
-                                                                           )
+                                                                            top=igeom.top,
+                                                                            return_descending_ctc_freqs=True,
+                                                                            **binary_ctcs2flare_kwargs,
+                                                                            )
         _empty_legend(iax, ["background"])
 
         if infopoint is not None:
@@ -1475,16 +1105,16 @@ def represent_vicinities(set_geoms, set_ctcs,
                                                  [set_ctcs[ii] for ii in selection])):
         jctcs=_np.copy(ictcs)
         jctcs[~residxs_input]=0
-        iax, respairs_descending, ctcs_freq_descending = binary_ctcs2flare(jctcs.reshape(1, -1),
-                                                                           res_idxs_pairs,
-                                                                           segments,
-                                                                           ss_array=_most_freq_SS(igeom)[
+        iax, respairs_descending, ctcs_freq_descending = sparse_freqs2flare(jctcs.reshape(1, -1),
+                                                                            res_idxs_pairs,
+                                                                            segments,
+                                                                            ss_array=_most_freq_SS(igeom)[
                                                                                _np.unique(res_idxs_pairs)],
-                                                                           top=igeom.top,
-                                                                           iax=myax[idx,0],
-                                                                           return_descending_ctc_freqs=True,
-                                                                           **binary_ctcs2flare_kwargs,
-                                                                           )
+                                                                            top=igeom.top,
+                                                                            iax=myax[idx,0],
+                                                                            return_descending_ctc_freqs=True,
+                                                                            **binary_ctcs2flare_kwargs,
+                                                                            )
 
         ilabel = _metric_to_label(metric, ii, igeom)
         colortxt='k'

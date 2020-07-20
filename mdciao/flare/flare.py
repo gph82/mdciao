@@ -1,163 +1,336 @@
 import numpy as _np
+from ._utils import \
+    cartify_fragments,  \
+    add_fragment_names, col_list_from_input_and_fragments, should_this_residue_pair_get_a_curve, add_residue_labels, add_SS_labels, create_flare_bezier
 
-#TODO rename circle?
-#TODO rename offset->start
-def regspace_angles(npoints, circle=360, offset=0, clockwise=True):
-    r"""Return the angular values for spreading n points equidistantly in a circle
+from matplotlib import pyplot as _plt
 
-    Note
-    ----
-    The goal of this is to work together with :obj:`cartify_segments`, s.t.
-     * offset=0 puts the first "angle" at 0 s.t that the first cartesian
-     pair will be (1,0) and then clockwise on (0,-1) etc (see :obj:`pol2cart`)
-     * even if :obj:`circle`=360, the last entry of the returned :obj:`angles`
-       will not be 360, regardless of the :obj:`offset`
-
-    Parameters
-    ----------
-    n : integer
-        number of points
-    circle : float, default is 360
-        size of the circle in degrees
-    offset : float, default is 0
-        Where the circle is supposed to start
-    clockwise : boolean, default is True
-        In which direction the angle array grows.
-
-    Returns
-    -------
-    angles : np.ndarray of len(array_in)
-
-    """
-    npoints
-    dang = circle / npoints
-    if clockwise:
-        fac=-1
-    else:
-        fac=1
-    angles = _np.hstack([fac*(ii * dang)+offset for ii in range(npoints)])
-    return angles
-
-def fragment_selection_parser(fragments,
-                              hide_fragments=None,
-                              only_show_fragments=None):
+def sparse_freqs2flare(ictcs, res_idxs_pairs,
+                       fragments=None,
+                       sparse=False,
+                       exclude_neighbors=1,
+                       alpha=1,
+                       freq_cutoff=0,
+                       iax=None,
+                       fragment_names=None,
+                       center=_np.array([0,0]),
+                       r=1,
+                       mute_fragments=None,
+                       anchor_segments=None,
+                       ss_array=None,
+                       panelsize=4,
+                       angle_offset=0,
+                       highlight_residxs=None,
+                       pair_selection=None,
+                       top=None,
+                       radial_padding_percent=15,
+                       colors=True,
+                       fontsize=6,
+                       return_descending_ctc_freqs=False,
+                       shortenAAs=False, aa_offset=0,
+                       markersize=5,
+                       bezier_linecolor='k',
+                       plot_curves_only=False,
+                       curves=False,
+                       textlabels=True,
+                       no_dots=False,
+                       padding_beginning=0,
+                       padding_end=0,
+                       lw=1,
+                       ):
     r"""
-    Return a lambda that will decide whether a residue pair should be shown or not based on a fragment selection.
 
-    Note
-    ----
-    At least one of :obj:`hide_fragments` or :obj:`only_show_fragments` should
-    be None, i.e. the user can either make no choice (==> all residue pairs
-    should be plotted) or select a subset of residue pairs to show by
-    either `hiding` some or `only_showing' some fragments, but not muting or showing
-    simultaneously
+    The residues are plotted as dots lying on a circle of radius
+    :obj:`r`, with bezier curves of variable :obj:`alpha` connecting
+    the dots. The curve opacity represents the contact frequency
+    between two residues.
+
+    The control over what residues and what curves get ultimately shown
+    is done separately(-ish) for the residues and the curves.
+
+    The reason behind this is that in some/many cases, letting
+    "contactless" residues appear in plot helps in showing
+    the underlying molecular topology. For example, it's useful to
+    show an entire TM-helix even if only the residues in its middle
+    have contacts.
+
+    In the simplest form, only the residues contained in :obj:`res_idxs_pairs`
+    will be plotted (sparse=True).
+
+    * Residue control:
+        Those (and only those) residues contained in :obj:`fragments`
+        will be plotted if this optional argument is parsed.
+        If sparse=True, then the intersection of :obj:`res_idx_pairs`
+        and :obj:`fragments` is plotted
+
+    * Curve control:
+        Many other optional parameters control whether a given
+        curve is plotted or not
+        TODO list
+
 
     Parameters
     ----------
-    fragments : iterable
-        Fragment list, each item is itself an iterable of residue indices
-    hide_fragments : iterable, default is None
-        subset of :obj:`fragments` to mute, i.e. residues belonging
-        to these fragments will be deleted from the output
-    only_show_fragments : iterable, default is None
-        show  subset of :obj:`fragments` to force-show, i.e. residues belonging
-        to these fragments will be shown even if they are originally
-        muted
-
+    ictcs : numpy.ndarray
+        Can have different shapes
+        * (n)
+            n is the number of residue pairs in :obj:`res_idxs_pairs`
+        * (m,n)
+            m is the number of frames
+            In this case, an average over m will be done automatically
+    res_idxs_pairs : iterable of pairs
+        reside indices for which the above N contacts stand
+    fragments: list of lists of integers, default is None
+        The residue indices to be drawn as a circle for the
+        flareplot. These *are* the dots that will be plotted
+        on that circle regardless of how many contacts they
+        appear in. They can be any integers that could represent
+        a residue. The only hard condition is that the set
+        of np.unique(res_idxs_pairs) must be contained
+        within np.hstack(segments)
+    exclude_neighbors: int, default is 1
+        Do not show contacts where the partners are separated by
+        these many residues.
+        * Note: The "neighborhood-condition" is checked using
+        residue serial-numbers, assuming the molecule only
+        has one long peptidic-chain.
+    average: boolean, default is True
+        Average over T and represent the value with line transparency (alpha)
+    alpha: float, defalut is 1.
+        (Avanced use) fix the value of alpha regardless
+        Will be ignored, however, if average is True
+    freq_cutoff: float, default is 0
+        Contact frequencies lower than this value will not be shown
+    iax: Matplotlib axis object, default is None
+        Parse an axis to draw on, otherwise one will be created
+    fragment_names: iterable of strings, default is None
+        The names of the segments used in :obj:`segments`
+    panelsize: float, default is 4
+        Size in inches of the panel (=figsize in Matplotlib).
+        Will be ignored if a pre-existing axis object is parsed
+    center: np.ndarray, default is [0,0]
+        In axis units, where the flareplot will be centered around
+    r: float, default is 1
+        In axis units, the radius of the flareplot
+    mute_fragments: iterable of integers, default is None
+        Contacts involving these segments will be hidden. Segments
+        are expressed as indices of :obj:`segments`
+    anchor_segments: iterable of integers, default is None
+        Only contacts involving these segments will be shown. Segments
+        are expressed as indices of :obj:`segments`
+    top: mdtraj.Topology object, default is None
+        If provided a top, residue names (e.g. GLU30) will be used
+        instead of residue indices. Will fail if the residue indices
+        in :obj:`res_idxs_pairs` can not be used to call :obj:`top.residue(ii)`
+    ss_dict
+    angle_offset
+    highlight_residxs
+    pair_selection
+    r2rfac: float, default is 1.1
+        Fudge factor controlling the separation between labels. Still fudging
+    colors: boolean, default is True
+        Color control.
+        * True uses one different color per segment (see visualize._mycolors)
+        * False, defaults to blue. If a single string is given
+        * One string uses that color for all residues (e.g. "r" or "red" for all red)
+        * A list of strings of len = number of drawn residues, which is
+        equal to len(np.hstack(segments)). Any other length will produce an error
+        #todo perhaps this change in the future, not sure of the safest behaviour
+    fontsize: int, default is 6
+    return_descending_ctc_freqs#
+    dotsize: float, default is 5
+        Size of the dot used to represent a residue
+    lw: float, default is 1
+        Line width of the contact lines
+    shortenAAs: boolean, default is False
+        Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
+        is parsed
     Returns
     -------
-    condition : lambda : residx_pair -> bool
-        Take a residx_pair and tell whether it should be plotted
-        according to the fragment selection
-    """
-
-    if hide_fragments is None and only_show_fragments is None:
-        condition = lambda res_pair : True
-    elif hide_fragments is None and only_show_fragments is not None:
-        residxs = _np.hstack([fragments[iseg] for iseg in only_show_fragments])
-        condition = lambda res_pair: _np.any([ires in residxs for ires in res_pair])
-    elif hide_fragments is not None and only_show_fragments is None:
-        residxs = _np.hstack([fragments[iseg] for iseg in hide_fragments])
-        condition = lambda res_pair: _np.all([ires not in residxs for ires in res_pair])
+    if not return_descending_ctc_freqs:
+        return iax, res_pairs_descending
     else:
-        raise ValueError("'hide_fragments' and 'only_show_fragments' can't simultaneously be 'None'")
-
-    return condition
-
-def cartify_segments(fragments,
-                     r=1.0,
-                     return_angles=False,
-                     angle_offset=0,
-                     padding_initial=0,
-                     padding_final=0,
-                     padding_between_fragments=0):
-    r"""
-    Cartesian coordinates on a circle of radius :obj:`r` for each sub-item in the lists of :obj:`fragments`
-
-    Note
-    ----
-    works internally in radians
-
-    Parameters
-    ----------
-    fragments: iterable of iterables
-        They represent the fragments
-    r : float, radius
-    return_angles : bool, default is False
-    angle_offset : float
-        Degrees. Where in the circle the first sub-item in of
-        the first item of :obj:`fragments` should start. Default
-        is 0 which places the first point at xy = r,0 (3 o'clock)
-    padding_initial : int, default is 0
-        Add these many empty positions at the
-        beginning of the position array
-    padding_final : int, default is 0
-        Add these many empty positions at the end
-        of the position array
-    padding_between_fragments : int, default is 0
-        Add these many empty positions between fragments
-    Returns
-    -------
-
+        return iax, res_pairs_descending, sorted(array_for_sorting)[::-1]
     """
 
-    padding_initial = [None for ii in range(padding_initial)]
-    padding_final = [None for ii in range(padding_final)]
+    padding_end += 5 #todo dangerous?
 
-    tostack = [_np.hstack(([None] * padding_between_fragments, iseg)) for iseg in fragments]
+    if _np.ndim(ictcs)==1:
+        ictcs = ictcs.reshape(1,-1)
+    elif _np.ndim(ictcs)==2:
+        pass
 
-    if len(padding_initial) > 0:
-        tostack = padding_initial + tostack
-    if len(padding_final) > 0:
-        tostack += padding_final
-
-    spaced_segments = _np.hstack(tostack)
-    spaced_angles = regspace_angles(len(spaced_segments),
-                                    circle=2 * _np.pi,
-                                    offset=angle_offset * _np.pi / 180
-                                    )
-    angles = _np.hstack([spaced_angles[ii] for ii, idx in enumerate(spaced_segments) if idx is not None])
-    xy = pol2cart(_np.ones_like(angles) * r, angles)
-
-    if not return_angles:
-        return _np.vstack(xy).T
     else:
-        return _np.vstack(xy).T, angles
+        raise ValueError("Input array has to of shape either "
+                         "(m) or (n, m) where n : n frames, and m: n_contacts")
 
-def pol2cart(rho, phi):
-    r"""
-    Polar to cartesian coordinates. Angles in radians
+    assert ictcs.shape[1]==len(res_idxs_pairs), \
+        "The size of the contact array and the " \
+        "res_idxs_pairs array do not match %u vs %u"%(ictcs.shape[1], len(res_idxs_pairs))
 
-    Parameters
-    ----------
-    rho : float
-    phi : float
+    if iax is None:
+        assert not plot_curves_only,("You cannot use "
+                                     "plot_curves_only=True and iax=None. Makes no sense")
+        _plt.figure(figsize=(panelsize, panelsize))
+        iax = _plt.gca()
 
-    Returns
-    -------
-    x, y
-    """
-    x = rho * _np.cos(phi)
-    y = rho * _np.sin(phi)
+    radial_padding_units=1+radial_padding_percent/100
 
-    return (x, y)
+    # Residue handling/bookkepping
+    if sparse:
+        residx_array = _np.unique(res_idxs_pairs)
+    else:
+        residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1])+1
+
+    if fragments is None:
+        fragments = [residx_array]
+    else:
+        if sparse:
+            fragments = [_np.intersect1d(ifrag,residx_array) for ifrag in fragments]
+
+    residues_to_plot_as_dots = _np.hstack(fragments)
+
+    # Create a map
+    residx2markeridx = _np.zeros(_np.max(residues_to_plot_as_dots) + 1, dtype=int)
+    residx2markeridx[:] = _np.nan
+    residx2markeridx[residues_to_plot_as_dots] = _np.arange(len(residues_to_plot_as_dots))
+
+    # Angular/cartesian quantities
+    xy = cartify_fragments(fragments, r=r, angle_offset=angle_offset,
+                           padding_initial=padding_beginning,
+                           padding_final=padding_end,
+                           padding_between_fragments=1)
+    xy += center
+
+    xy_labels, xy_angles = cartify_fragments(fragments, r=r * radial_padding_units,
+                                             return_angles=True,
+                                             angle_offset=angle_offset,
+                                             padding_initial=padding_beginning,
+                                             padding_final=padding_end,
+                                             padding_between_fragments=1)
+    xy_labels += center
+
+    # Do we have SS dictionaries
+    if ss_array is not None:
+        if plot_curves_only:
+            print("Ignoring input %s because plot_curves_only is %s" % ("ss_dict", plot_curves_only))
+        else:
+            #assert len(ss_dict)==len(res_idxs_pairs)
+            xy_labels_SS, xy_angles_SS = cartify_fragments(fragments,
+                                                           r=r * radial_padding_units ** 1.7,
+                                                           return_angles=True, angle_offset=angle_offset,
+                                                           padding_initial=padding_beginning,
+                                                           padding_final=padding_end,
+                                                           padding_between_fragments=1)
+            xy_labels_SS += center
+
+    # Do we have names?
+    if fragment_names:
+        if plot_curves_only:
+            print("Ignoring input %s because plot_curves_only = %s" % ("fragment_names", plot_curves_only))
+        else:
+            add_fragment_names(iax, xy,
+                               fragments,
+                               fragment_names,
+                               residx2markeridx,
+                               fontsize,
+                               center=center,
+                               r = r * radial_padding_units ** 2.5
+                               )
+
+    # TODO review variable names
+    col_list = col_list_from_input_and_fragments(colors, residues_to_plot_as_dots,fragments=fragments)
+
+    # Plot!
+    # Do this first to have an idea of the points per axis unit necessary for the plot
+    iax.set_xlim([-1.5, 1.5])
+    iax.set_ylim([-1.5, 1.5])
+    iax.set_yticks([])
+    iax.set_xticks([])
+    iax.set_aspect("equal")
+
+
+    if plot_curves_only:
+        print("Not scattering, coloring, or labelling anything because plot_curves_only = %s" % (plot_curves_only))
+    else:
+        if not curves:
+            iax.scatter(xy[:, 0], xy[:, 1], c=col_list, s=markersize, zorder=10)
+        else:
+            """
+            # todo CLEAN THIS curfify and colors thing up
+            list_of_curves_for_fragments = curvify_segments(fragments, r=r, angle_offset=angle_offset, padding=padding_end)
+            col_list_new = []
+            for icol in col_list:
+                if icol not in col_list_new:
+                    col_list_new.append(icol)
+            for ii, (icurve,icol) in enumerate(zip(list_of_curves_for_fragments, col_list_new)):
+                iax.plot(icurve[:,0],icurve[:,1],'-',lw=5, color=icol)
+            """
+
+        if textlabels:
+            add_residue_labels(iax,
+                               xy_labels, xy_angles,
+                               residues_to_plot_as_dots,
+                               fontsize,
+                               shortenAAs=shortenAAs,
+                               highlight_residxs=highlight_residxs,
+                               top=top,
+                               aa_offset=aa_offset
+                               )
+
+    if ss_array is not None and not plot_curves_only:
+        add_SS_labels(iax, residues_to_plot_as_dots, ss_array, xy_labels_SS, xy_angles_SS, fontsize)
+
+    ctcs_averaged = _np.average(ictcs, axis=0)
+
+    # All formed contacts
+    flat_idx_unique_formed_contacts = _np.argwhere(ctcs_averaged>freq_cutoff).squeeze()
+
+    # Create a dictionary of initialized bezier curves with the residxs as keys
+    # TODO each curve will be used only once, but it is better to have it like this
+    #  for per-frame operations later on (otherwise we could use the same loop)
+    bz_curve = {}
+    ctc_idxs_to_plot = []
+    plotted_respairs = []
+    array_for_sorting = []
+
+    plot_this_pair_lambda = should_this_residue_pair_get_a_curve(fragments,
+                                                                 pair_selection=pair_selection,
+                                                                 mute_fragments=mute_fragments,
+                                                                 anchor_fragments=anchor_segments,
+                                                                 top=top, exclude_neighbors=exclude_neighbors)
+
+    for shown_residue_index in flat_idx_unique_formed_contacts:
+        res_pair = res_idxs_pairs[shown_residue_index].astype("int")
+        if  plot_this_pair_lambda(res_pair):
+            node_idxs = residx2markeridx[res_pair].squeeze()
+            nodes = xy[node_idxs]
+            bz_curve[shown_residue_index] = create_flare_bezier(nodes, center=center)
+            ctc_idxs_to_plot.append(shown_residue_index)
+            plotted_respairs.append(res_pair)
+            array_for_sorting.append(ctcs_averaged[shown_residue_index])
+
+    for shown_residue_index in flat_idx_unique_formed_contacts:
+        if shown_residue_index in ctc_idxs_to_plot:
+            ialpha = ctcs_averaged[shown_residue_index]
+            bz_curve[shown_residue_index].plot(50, ax=iax, alpha=ialpha,
+                                   color=bezier_linecolor,
+                              lw=lw,#_np.sqrt(markersize),
+                              #zorder=-1
+                              )
+
+    # Cosmetics
+    #itxt = _np.vstack([itxt.get_position() for itxt in iax.texts])
+    #xlim, ylim = _np.vstack((itxt.min(0), itxt.max(0))).T
+    #padx = _np.diff(xlim)*radial_padding_percent/100
+    #pady = _np.diff(ylim)*radial_padding_percent/100
+    #iax.set_xlim([xlim[0]-padx,xlim[1]+padx])
+    #iax.set_ylim([ylim[0]-pady,ylim[1]+pady])
+
+    res_pairs_descending = []
+    if len(array_for_sorting)>0:
+        res_pairs_descending = _np.vstack([plotted_respairs[ii] for ii in _np.argsort(array_for_sorting)[::-1]])
+    if not return_descending_ctc_freqs:
+        return iax, res_pairs_descending
+    else:
+        return iax, res_pairs_descending, sorted(array_for_sorting)[::-1]
