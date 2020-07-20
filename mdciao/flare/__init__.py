@@ -8,8 +8,9 @@ Flare
 .. autosummary::
    :toctree: generated/
 
-   angulate_segments
+   regspace_angles
    fragment_selection_parser
+   cartify_segments
 
 
 """

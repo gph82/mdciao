@@ -1,6 +1,6 @@
 
 __author__ = 'gph82'
-from .flare import angulate_segments, fragment_selection_parser
+from .flare import regspace_angles, fragment_selection_parser, cartify_segments
 from mdciao.utils.bonds import bonded_neighborlist_from_top
 
 import numpy as _np
@@ -598,11 +598,6 @@ def _blockify_showmat(iax, blocks, block_names=[], labels="lower"):
             clean_ax([])
         offset+=len(iseg)
 
-def pol2cart(rho, phi):
-    x = rho * _np.cos(phi)
-    y = rho * _np.sin(phi)
-    return (x, y)
-
 def cart2pol(x, y):
     rho = _np.sqrt(x**2 + y**2)
     phi = _np.arctan2(y, x)
@@ -633,31 +628,6 @@ def color_by_restype(top, unknown='white',
     return _np.hstack(colors)
 
 
-
-def cartify_segments(segments, r=1.0, return_angles=False,
-                     angle_offset=0,
-                     padding_beginning=0,
-                     padding_end=0):
-    padding_beginning = [None for ii in range(padding_beginning)]
-    padding_end = [None for ii in range(padding_end)]
-    middle_region = [_np.hstack((None, iseg)) for iseg in segments]
-    tostack = middle_region
-    if len(padding_beginning) > 0:
-        tostack = padding_beginning + tostack
-    if len(padding_end) > 0:
-        tostack += padding_end
-    spaced_segments = _np.hstack(tostack)
-
-    #spaced_segments = _np.hstack([_np.hstack((None, iseg)) for iseg in segments] + [None for ii in range(padding_end)])
-    spaced_angles = angulate_segments(spaced_segments, circle=2 * _np.pi,offset=angle_offset*_np.pi/180)
-    angles = _np.hstack([spaced_angles[ii] for ii, idx in enumerate(spaced_segments) if idx is not None])
-    xy = pol2cart(_np.ones_like(angles) * r, angles)
-
-    if not return_angles:
-        return _np.vstack(xy).T
-    else:
-        return _np.vstack(xy).T, angles
-
 def curvify_segments(segments, r=1.0, angle_offset=0, padding=0):
 
     total_n_points = len(_np.hstack(segments))
@@ -669,7 +639,7 @@ def curvify_segments(segments, r=1.0, angle_offset=0, padding=0):
         factor_to_720 = _np.ceil(720/total_n_points).round().astype(int)
     #print(total_n_points, factor_to_720)
     spaced_segments = _np.hstack([_np.hstack(([None]*factor_to_720, _np.repeat(iseg, factor_to_720))) for iseg in segments] + [None for ii in range(padding*factor_to_720)])
-    angles = angulate_segments(spaced_segments, circle=2 * _np.pi, offset=angle_offset * _np.pi / 180)
+    angles = regspace_angles(spaced_segments, circle=2 * _np.pi, offset=angle_offset * _np.pi / 180)
 
     xy = pol2cart(_np.ones_like(angles) * r, angles)
     xy = _np.vstack(xy).T
@@ -1019,12 +989,12 @@ def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
 
     # Angular/cartesian quantities
     xy = cartify_segments(fragments, r=r, angle_offset=angle_offset,
-                          padding_beginning=padding_beginning,
-                          padding_end=padding_end)
+                          padding_initial=padding_beginning,
+                          padding_final=padding_end)
     xy += center
     xy_labels, xy_angles = cartify_segments(fragments, r=r * radial_padding_units, return_angles=True, angle_offset=angle_offset,
-                                            padding_beginning=padding_beginning,
-                                            padding_end=padding_end)
+                                            padding_initial=padding_beginning,
+                                            padding_final=padding_end)
     xy_labels += center
 
     # Do we have SS dictionaries
@@ -1034,8 +1004,8 @@ def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
         else:
             #assert len(ss_dict)==len(res_idxs_pairs)
             xy_labels_SS, xy_angles_SS = cartify_segments(fragments, r=r * radial_padding_units ** 1.7, return_angles=True, angle_offset=angle_offset,
-                                                          padding_beginning=padding_beginning,
-                                                          padding_end=padding_end)
+                                                          padding_initial=padding_beginning,
+                                                          padding_final=padding_end)
             xy_labels_SS += center
     # Do we have names?
     if fragment_names:
