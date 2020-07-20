@@ -1,6 +1,6 @@
 
 __author__ = 'gph82'
-from .flare import regspace_angles, fragment_selection_parser, cartify_segments
+from .flare import fragment_selection_parser, cartify_segments, pol2cart, curvify_segments, col_list_from_input_and_fragments
 from mdciao.utils.bonds import bonded_neighborlist_from_top
 
 import numpy as _np
@@ -106,27 +106,6 @@ class _linestyle(object):
         self.col = color
 
 
-def _col_list_from_input_and_segments(colors, segments,
-                                      list_of_non_zero_residue_indxs):
-    if isinstance(colors,bool):
-       if colors:
-           jcolors = _np.tile(_mycolors, _np.ceil(len(segments) / len(_mycolors)).astype("int"))
-           col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(segments)])
-       else:
-           col_list = ["blue" for __ in range(len(list_of_non_zero_residue_indxs))]
-    elif isinstance(colors,str):
-        col_list = [colors for __ in range(len(list_of_non_zero_residue_indxs))]
-    elif isinstance(colors,(list,_np.ndarray)):
-        assert len(colors)==len(list_of_non_zero_residue_indxs), (len(colors),len(list_of_non_zero_residue_indxs))
-        col_list = colors
-    elif isinstance(colors, dict):
-        assert len(colors)==len(segments)
-        col_list = _np.hstack([[val] * len(iseg) for val, iseg in zip(colors.values(), segments)])
-    else:
-        raise Exception
-
-    return col_list
-
 def segment_definition_table(top, names=['TM1','ICL1',
                                          'TM2','ECL1',
                                          'TM3','ICL2',
@@ -170,7 +149,7 @@ def binary_ctcs2snake(ictcs, res_idxs_pairs, top, segments,
     list_of_non_zero_residue_indxs = _np.hstack(segments)
 
     # TODO review variable names
-    col_list = _col_list_from_input_and_segments(colors, segments, list_of_non_zero_residue_indxs)
+    col_list = _col_list_from_input_and_fragments(colors, segments, list_of_non_zero_residue_indxs)
 
     colors_by_resSeq={top.residue(ii).resSeq:cc for ii,cc in zip(list_of_non_zero_residue_indxs, col_list)}
     # TODO avoid code repetition with binary_ctc2flare
@@ -628,35 +607,6 @@ def color_by_restype(top, unknown='white',
     return _np.hstack(colors)
 
 
-def curvify_segments(segments, r=1.0, angle_offset=0, padding=0):
-
-    total_n_points = len(_np.hstack(segments))
-    #print(total_n_points)
-    factor_to_720 = 720/total_n_points
-    if factor_to_720<=1:
-        factor_to_720=1
-    else:
-        factor_to_720 = _np.ceil(720/total_n_points).round().astype(int)
-    #print(total_n_points, factor_to_720)
-    spaced_segments = _np.hstack([_np.hstack(([None]*factor_to_720, _np.repeat(iseg, factor_to_720))) for iseg in segments] + [None for ii in range(padding*factor_to_720)])
-    angles = regspace_angles(spaced_segments, circle=2 * _np.pi, offset=angle_offset * _np.pi / 180)
-
-    xy = pol2cart(_np.ones_like(angles) * r, angles)
-    xy = _np.vstack(xy).T
-
-    frag_curves_as_list_of_xy_pairs = [[] for ii in range(len(segments))]
-    last_val = None
-    current_frag=-1
-    for ii, (ival, ixy) in enumerate(zip(spaced_segments,xy)):
-        if ival is not None:
-            if last_val is None:
-                current_frag+=1
-            frag_curves_as_list_of_xy_pairs[current_frag].append(ixy)
-        last_val = ival
-        #print(ii, current_frag, ival)
-
-    #TODO shamelessly off-by-oneing this one
-    return [_np.vstack(ifrag[:-padding]) for ifrag in frag_curves_as_list_of_xy_pairs]
 
 def _list_of_list_idxs(ilist):
     r"""
@@ -837,9 +787,9 @@ def add_rep_vmdstyle_resid(iwd, top, reptype, resids, color='red'):
 #def add_rep_vmdstyle(iwd,reptype, selection):
 
 
-def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
+def binary_ctcs2flare(ictcs, res_idxs_pairs,
+                      fragments=None,
                       exclude_neighbors=1,
-                      average=True,
                       alpha=1,
                       freq_cutoff=0,
                           iax=None,
@@ -872,8 +822,13 @@ def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
     r"""
     Parameters
     ----------
-    ictcs : numpy.ndarray  shape (T,N)
-        T number of frames and N number of contacts
+    ictcs : numpy.ndarray
+        Can have different shapes
+        * (n)
+            n is the number of residue pairs in :obj:`res_idxs_pairs`
+        * (m,n)
+            m is the number of frames
+            In this case, an average over m will be done automatically
     res_idxs_pairs : iterable of pairs
         reside indices for which the above N contacts stand
     fragments: list of lists of integers
@@ -951,10 +906,14 @@ def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
 
     padding_end += 5 #todo dangerous?
 
-    # Sanity checking of the input
-    if not average:
-        raise NotImplementedError
-    assert _np.ndim(ictcs)==2, "Input array has to be (n, m) n-frames, m-contacts. Otherwise average will fail"
+    if _np.ndim(ictcs)==1:
+        ictcs = ictcs.reshape(1,-1)
+    elif _np.ndim(ictcs)==2:
+        pass
+
+    else:
+        raise ValueError("Input array has to of shape either (m) or (n, m) where n : n frames, and m: n_contacts")
+
     assert ictcs.shape[1]==len(res_idxs_pairs), "The size of the contact array and the res_idxs_pairs array do not match %u vs %u"%(ictcs.shape[1], len(res_idxs_pairs))
 
     if iax is None:
@@ -963,6 +922,7 @@ def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
         iax = _plt.gca()
 
     radial_padding_units=1+radial_padding_percent/100
+
 
     # Define some useful lambdas for deciding if plotting or not plotting a pair
     # Create a residue list
@@ -990,11 +950,13 @@ def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
     # Angular/cartesian quantities
     xy = cartify_segments(fragments, r=r, angle_offset=angle_offset,
                           padding_initial=padding_beginning,
-                          padding_final=padding_end)
+                          padding_final=padding_end,
+                          padding_between_fragments=1)
     xy += center
     xy_labels, xy_angles = cartify_segments(fragments, r=r * radial_padding_units, return_angles=True, angle_offset=angle_offset,
                                             padding_initial=padding_beginning,
-                                            padding_final=padding_end)
+                                            padding_final=padding_end,
+                                            padding_between_fragments=1)
     xy_labels += center
 
     # Do we have SS dictionaries
@@ -1005,7 +967,8 @@ def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
             #assert len(ss_dict)==len(res_idxs_pairs)
             xy_labels_SS, xy_angles_SS = cartify_segments(fragments, r=r * radial_padding_units ** 1.7, return_angles=True, angle_offset=angle_offset,
                                                           padding_initial=padding_beginning,
-                                                          padding_final=padding_end)
+                                                          padding_final=padding_end,
+                                                          padding_between_fragments=1)
             xy_labels_SS += center
     # Do we have names?
     if fragment_names:
@@ -1025,7 +988,7 @@ def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
                          rotation=_np.rad2deg(iang))
 
     # TODO review variable names
-    col_list = _col_list_from_input_and_segments(colors, fragments, residue_idxs_in_input_segments)
+    col_list = col_list_from_input_and_fragments(colors, fragments, residue_idxs_in_input_segments)
 
     # Plot!
     # Do this first to have an idea of the points per axis unit necessary for the plot
@@ -1121,10 +1084,7 @@ def binary_ctcs2flare(ictcs, res_idxs_pairs, fragments,
             array_for_sorting.append(ctcs_averaged[shown_residue_index])
     for shown_residue_index in flat_idx_unique_formed_contacts:
         if shown_residue_index in ctc_idxs_to_plot:
-            if average:
-                ialpha = ctcs_averaged[shown_residue_index]
-            else:
-                ialpha = alpha
+            ialpha = ctcs_averaged[shown_residue_index]
             bz_curve[shown_residue_index].plot(50, ax=iax, alpha=ialpha,
                                    color=bezier_linecolor,
                               lw=lw,#_np.sqrt(markersize),
