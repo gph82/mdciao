@@ -8,12 +8,9 @@ Flare
 .. autosummary::
    :toctree: generated/
 
-   regspace_angles
-   fragment_selection_parser
-   cartify_fragments
-   col_list_from_input_and_fragments
+   sparse_freqs2flare
 
 
 """
 #from .flare import *
-from .flare import sparse_freqs2flare
+from .flare import sparse_freqs2flare, circle_plot_residues, add_bezier_curves

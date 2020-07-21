@@ -1,15 +1,16 @@
 import numpy as _np
 from ._utils import \
     cartify_fragments,  \
-    add_fragment_names, col_list_from_input_and_fragments, should_this_residue_pair_get_a_curve, add_residue_labels, add_SS_labels, create_flare_bezier
+    add_fragment_names, col_list_from_input_and_fragments, should_this_residue_pair_get_a_curve, add_residue_labels, add_SS_labels, create_flare_bezier, residx2dotidx, markersize_scatter
+
+from mdciao.flare._utils import pts_per_axis_unit
 
 from matplotlib import pyplot as _plt
-
+from matplotlib.patches import CirclePolygon as _CP
 def sparse_freqs2flare(ictcs, res_idxs_pairs,
                        fragments=None,
                        sparse=False,
                        exclude_neighbors=1,
-                       alpha=1,
                        freq_cutoff=0,
                        iax=None,
                        fragment_names=None,
@@ -23,20 +24,18 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
                        highlight_residxs=None,
                        pair_selection=None,
                        top=None,
-                       radial_padding_percent=15,
                        colors=True,
                        fontsize=6,
-                       return_descending_ctc_freqs=False,
-                       shortenAAs=False, aa_offset=0,
+                       shortenAAs=False,
+                       aa_offset=0,
                        markersize=5,
                        bezier_linecolor='k',
                        plot_curves_only=False,
-                       curves=False,
                        textlabels=True,
                        no_dots=False,
                        padding_beginning=0,
                        padding_end=0,
-                       lw=1,
+                       lw=5,
                        ):
     r"""
 
@@ -171,10 +170,15 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
     if iax is None:
         assert not plot_curves_only,("You cannot use "
                                      "plot_curves_only=True and iax=None. Makes no sense")
-        _plt.figure(figsize=(panelsize, panelsize))
+        _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
         iax = _plt.gca()
+        iax.set_yticks([])
+        iax.set_xticks([])
 
-    radial_padding_units=1+radial_padding_percent/100
+    # Prepare the figure for everything that's coming
+    iax.set_xlim([center[0] - 1.5 * r, center[0] + 1.5 * r])
+    iax.set_ylim([center[1] - 1.5 * r, center[1] + 1.5 * r])
+    iax.set_aspect('equal')
 
     # Residue handling/bookkepping
     if sparse:
@@ -183,18 +187,114 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
         residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1])+1
 
     if fragments is None:
-        fragments = [residx_array]
+        residues_as_fragments = [residx_array]
     else:
         if sparse:
-            fragments = [_np.intersect1d(ifrag,residx_array) for ifrag in fragments]
-
-    residues_to_plot_as_dots = _np.hstack(fragments)
-
+            residues_as_fragments = [_np.intersect1d(ifrag,residx_array) for ifrag in fragments]
+        else:
+            residues_as_fragments = fragments
+    residues_to_plot_as_dots = _np.hstack(residues_as_fragments)
     # Create a map
-    residx2markeridx = _np.zeros(_np.max(residues_to_plot_as_dots) + 1, dtype=int)
-    residx2markeridx[:] = _np.nan
-    residx2markeridx[residues_to_plot_as_dots] = _np.arange(len(residues_to_plot_as_dots))
+    residx2markeridx = residx2dotidx(residues_to_plot_as_dots)
 
+    if plot_curves_only:
+        print("Ignoring input %s because plot_curves_only is %s" % ("ss_dict", plot_curves_only))
+
+    else:
+        xy = circle_plot_residues(residues_as_fragments,
+                                  fontsize, colors,
+                                  padding_beginning=padding_beginning,
+                                  padding_end=padding_end,
+                                  center=center,
+                                  ss_array=ss_array,
+                                  fragment_names=fragment_names,
+                                  iax=iax,
+                                  markersize=markersize,
+                                  textlabels=textlabels,
+                                  shortenAAs=shortenAAs,
+                                  highlight_residxs=highlight_residxs,
+                                  aa_offset=aa_offset,
+                                  top=top,
+                                  r=r,
+                                  angle_offset=angle_offset)
+        circle_radius_in_pts = iax.artists[0].radius * pts_per_axis_unit(iax).mean()
+        lw = circle_radius_in_pts # ??
+
+    # All formed contacts
+    ctcs_averaged = _np.average(ictcs, axis=0)
+    idxs_of_formed_contacts = _np.argwhere(ctcs_averaged>freq_cutoff).squeeze()
+
+    plot_this_pair_lambda = should_this_residue_pair_get_a_curve(residues_as_fragments,
+                                                                 pair_selection=pair_selection,
+                                                                 mute_fragments=mute_fragments,
+                                                                 anchor_fragments=anchor_segments,
+                                                                 top=top, exclude_neighbors=exclude_neighbors)
+
+    idxs_of_pairs2plot = _np.intersect1d(idxs_of_formed_contacts,
+                                         [ii for ii, pair in enumerate(res_idxs_pairs) if plot_this_pair_lambda(pair)])
+
+    alphas = ctcs_averaged[idxs_of_pairs2plot]
+    pairs_of_nodes = [(xy[residx2markeridx[ii]],
+                       xy[residx2markeridx[jj]]) for (ii,jj) in res_idxs_pairs[idxs_of_pairs2plot]]
+
+    bezier_curves = add_bezier_curves(iax,
+                                      pairs_of_nodes,
+                                      alphas=alphas,
+                                      center=center,
+                                      lw=lw,
+                                      bezier_linecolor=bezier_linecolor,
+                                      )
+
+
+def circle_plot_residues(fragments,
+                         fontsize, colors,
+                         markersize=5,
+                         r=1,
+                         panelsize=4,
+                         angle_offset=0,
+                         padding_beginning=1,
+                         padding_end=1,
+                         center=0,
+                         ss_array=None,
+                         fragment_names=None,
+                         iax=None,
+                         textlabels=True,
+                         shortenAAs=True,
+                         highlight_residxs=None,
+                         aa_offset=0,
+                         top=None):
+    r"""
+    Circular background that serves as background for flare-plots. Is independent of
+    the curves that will later be plotted onto it.
+
+    Parameters
+    ----------
+    fragments
+    r
+    angle_offset
+    padding_beginning
+    padding_end
+    center
+    radial_padding_units
+    ss_array
+    plot_curves_only
+    fragment_names
+    iax
+    residx2markeridx
+    fontsize
+    colors
+    residues_to_plot_as_dots
+    markersize
+    textlabels
+    shortenAAs
+    highlight_residxs
+    aa_offset
+    top
+
+    Returns
+    -------
+
+    """
     # Angular/cartesian quantities
     xy = cartify_fragments(fragments, r=r, angle_offset=angle_offset,
                            padding_initial=padding_beginning,
@@ -202,135 +302,170 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
                            padding_between_fragments=1)
     xy += center
 
-    xy_labels, xy_angles = cartify_fragments(fragments, r=r * radial_padding_units,
-                                             return_angles=True,
-                                             angle_offset=angle_offset,
-                                             padding_initial=padding_beginning,
-                                             padding_final=padding_end,
-                                             padding_between_fragments=1)
-    xy_labels += center
-
-    # Do we have SS dictionaries
-    if ss_array is not None:
-        if plot_curves_only:
-            print("Ignoring input %s because plot_curves_only is %s" % ("ss_dict", plot_curves_only))
-        else:
-            #assert len(ss_dict)==len(res_idxs_pairs)
-            xy_labels_SS, xy_angles_SS = cartify_fragments(fragments,
-                                                           r=r * radial_padding_units ** 1.7,
-                                                           return_angles=True, angle_offset=angle_offset,
-                                                           padding_initial=padding_beginning,
-                                                           padding_final=padding_end,
-                                                           padding_between_fragments=1)
-            xy_labels_SS += center
-
-    # Do we have names?
-    if fragment_names:
-        if plot_curves_only:
-            print("Ignoring input %s because plot_curves_only = %s" % ("fragment_names", plot_curves_only))
-        else:
-            add_fragment_names(iax, xy,
-                               fragments,
-                               fragment_names,
-                               residx2markeridx,
-                               fontsize,
-                               center=center,
-                               r = r * radial_padding_units ** 2.5
-                               )
-
     # TODO review variable names
-    col_list = col_list_from_input_and_fragments(colors, residues_to_plot_as_dots,fragments=fragments)
+    # TODO this color mess needs to be cleaned up
+    residues_to_plot_as_dots = _np.hstack(fragments)
+    col_list = col_list_from_input_and_fragments(colors, residues_to_plot_as_dots, fragments=fragments)
+
+    if iax is None:
+        _plt.figure(figsize=(panelsize,panelsize))
+        iax = _plt.gca()
+
+    # Create a map
+    residx2markeridx = residx2dotidx(residues_to_plot_as_dots)
 
     # Plot!
     # Do this first to have an idea of the points per axis unit necessary for the plot
-    iax.set_xlim([-1.5, 1.5])
-    iax.set_ylim([-1.5, 1.5])
-    iax.set_yticks([])
-    iax.set_xticks([])
     iax.set_aspect("equal")
-
-
-    if plot_curves_only:
-        print("Not scattering, coloring, or labelling anything because plot_curves_only = %s" % (plot_curves_only))
+    if markersize is None:
+        diameter = 2*_np.pi*r/(len(xy)+padding_beginning+padding_end+len(fragments))
+        diameter *= .50 #fudging int a bit to leave some space between points
+        radius = diameter / 2
+        CPs = [_CP(ixy,
+                 radius=radius,
+                 color=col_list[ii],
+                 zorder=10) for ii, ixy in enumerate(xy)]
+        [iax.add_artist(iCP) for iCP in CPs]
+        running_r_pad = diameter
     else:
-        if not curves:
-            iax.scatter(xy[:, 0], xy[:, 1], c=col_list, s=markersize, zorder=10)
+        raise NotImplementedError
+        #iax.scatter(xy[:, 0], xy[:, 1], c=col_list, s=10, zorder=10)
+
+    iax.add_artist(_plt.Circle(center,
+                               radius=r + running_r_pad,
+                               ec='r',
+                               fc=None,
+                               fill=False,
+                               zorder=-10))
+
+    # Get unit scale
+    ppau = pts_per_axis_unit(iax=iax).mean()
+    if textlabels:
+        # This is all fudging with fontsizes and padsizes
+        if fontsize is None:
+            opt_h_in_au = 2 * _np.pi * r / (len(xy) + padding_beginning + padding_end + len(fragments))
+            opt_h_in_pts = opt_h_in_au*ppau
+            fontsize = opt_h_in_pts / 2.5 #fudging it, still unsure why this is not working
         else:
-            """
-            # todo CLEAN THIS curfify and colors thing up
-            list_of_curves_for_fragments = curvify_segments(fragments, r=r, angle_offset=angle_offset, padding=padding_end)
-            col_list_new = []
-            for icol in col_list:
-                if icol not in col_list_new:
-                    col_list_new.append(icol)
-            for ii, (icurve,icol) in enumerate(zip(list_of_curves_for_fragments, col_list_new)):
-                iax.plot(icurve[:,0],icurve[:,1],'-',lw=5, color=icol)
-            """
+            raise NotImplementedError
 
-        if textlabels:
-            add_residue_labels(iax,
-                               xy_labels, xy_angles,
-                               residues_to_plot_as_dots,
-                               fontsize,
-                               shortenAAs=shortenAAs,
-                               highlight_residxs=highlight_residxs,
-                               top=top,
-                               aa_offset=aa_offset
-                               )
+        if shortenAAs:
+            running_r_pad += opt_h_in_au * .5
+        else:
+            running_r_pad += opt_h_in_au * 1
 
-    if ss_array is not None and not plot_curves_only:
+        iax.add_artist(_plt.Circle(center,
+                                   radius=r + running_r_pad,
+                                   ec='r',
+                                   fc=None,
+                                   fill=False,
+                                   zorder=-10))
+
+
+        xy_labels, xy_angles = cartify_fragments(fragments,
+                                                 r=r + running_r_pad,
+                                                 return_angles=True,
+                                                 angle_offset=angle_offset,
+                                                 padding_initial=padding_beginning,
+                                                 padding_final=padding_end,
+                                                 padding_between_fragments=1)
+        xy_labels += center
+
+
+
+        labels = add_residue_labels(iax,
+                                    xy_labels, xy_angles,
+                                    residues_to_plot_as_dots,
+                                    fontsize,
+                                    shortenAAs=shortenAAs,
+                                    highlight_residxs=highlight_residxs,
+                                    top=top,
+                                    aa_offset=aa_offset
+                                    )
+
+        itxt_pos = _np.vstack([itxt.get_position() for itxt in labels])
+        xlim, ylim = _np.vstack((itxt_pos.min(0), itxt_pos.max(0))).T
+        furthest_x, furthest_y = _np.max(_np.abs(xlim-center[0])), _np.max(_np.abs(ylim-center[0]))
+        pad  = _np.max((furthest_x,furthest_y))-r
+        running_r_pad += pad
+        iax.add_artist(_plt.Circle(center,
+                                   radius=r + running_r_pad,
+                                   ec='r',
+                                   fc=None,
+                                   fill=False,
+                                   zorder=-10))
+
+
+    # Do we have SS dictionaries
+    if ss_array is not None:
+        # assert len(ss_dict)==len(res_idxs_pairs)
+        xy_labels_SS, xy_angles_SS = cartify_fragments(fragments,
+                                                       r=r + running_r_pad,
+                                                       return_angles=True, angle_offset=angle_offset,
+                                                       padding_initial=padding_beginning,
+                                                       padding_final=padding_end,
+                                                       padding_between_fragments=1)
+        xy_labels_SS += center
+
         add_SS_labels(iax, residues_to_plot_as_dots, ss_array, xy_labels_SS, xy_angles_SS, fontsize)
+        running_r_pad += opt_h_in_au * .5
 
-    ctcs_averaged = _np.average(ictcs, axis=0)
+    # Do we have names?
+    if fragment_names is not None:
+        add_fragment_names(iax, xy,
+                           fragments,
+                           fragment_names,
+                           residx2markeridx,
+                           fontsize=fontsize*2,
+                           center=center,
+                           r=r + running_r_pad
+                           )
+    return xy
 
-    # All formed contacts
-    flat_idx_unique_formed_contacts = _np.argwhere(ctcs_averaged>freq_cutoff).squeeze()
+def add_bezier_curves(iax,
+                      xy,
+                      alphas=None,
+                      center=0,
+                      lw=1,
+                      bezier_linecolor='k',
+                      ):
+    r"""
+    Generate a bezier curves. Uses
 
-    # Create a dictionary of initialized bezier curves with the residxs as keys
-    # TODO each curve will be used only once, but it is better to have it like this
-    #  for per-frame operations later on (otherwise we could use the same loop)
-    bz_curve = {}
-    ctc_idxs_to_plot = []
-    plotted_respairs = []
-    array_for_sorting = []
+    Parameters
+    ----------
+    iax : :obj:`matplotlib.Axes`
+    xy : iterable of pairs of pairs of floats
+        Each item is a pair of pairs [(x1,y1),(x2,y2)]
+        to be connected with bezier curves 1<--->2
+    alphas : iterable of floats, default is None
+        The opacity of the curves connecting
+        the pairs in :obj:`xy`.
+        If None is provided, it will be set to 1
+        for all curves. If provided,
+        must be of len(xy)
+    center
+    lw
+    bezier_linecolor
 
-    plot_this_pair_lambda = should_this_residue_pair_get_a_curve(fragments,
-                                                                 pair_selection=pair_selection,
-                                                                 mute_fragments=mute_fragments,
-                                                                 anchor_fragments=anchor_segments,
-                                                                 top=top, exclude_neighbors=exclude_neighbors)
+    Returns
+    -------
 
-    for shown_residue_index in flat_idx_unique_formed_contacts:
-        res_pair = res_idxs_pairs[shown_residue_index].astype("int")
-        if  plot_this_pair_lambda(res_pair):
-            node_idxs = residx2markeridx[res_pair].squeeze()
-            nodes = xy[node_idxs]
-            bz_curve[shown_residue_index] = create_flare_bezier(nodes, center=center)
-            ctc_idxs_to_plot.append(shown_residue_index)
-            plotted_respairs.append(res_pair)
-            array_for_sorting.append(ctcs_averaged[shown_residue_index])
+    """
+    if alphas is None:
+        alphas = _np.ones(len(xy))
 
-    for shown_residue_index in flat_idx_unique_formed_contacts:
-        if shown_residue_index in ctc_idxs_to_plot:
-            ialpha = ctcs_averaged[shown_residue_index]
-            bz_curve[shown_residue_index].plot(50, ax=iax, alpha=ialpha,
-                                   color=bezier_linecolor,
-                              lw=lw,#_np.sqrt(markersize),
-                              #zorder=-1
-                              )
+    assert len(alphas)==len(xy)
 
-    # Cosmetics
-    #itxt = _np.vstack([itxt.get_position() for itxt in iax.texts])
-    #xlim, ylim = _np.vstack((itxt.min(0), itxt.max(0))).T
-    #padx = _np.diff(xlim)*radial_padding_percent/100
-    #pady = _np.diff(ylim)*radial_padding_percent/100
-    #iax.set_xlim([xlim[0]-padx,xlim[1]+padx])
-    #iax.set_ylim([ylim[0]-pady,ylim[1]+pady])
+    bz_curves=[]
+    for nodes, ialpha in zip(xy, alphas):
+        bz_curves.append(create_flare_bezier(nodes, center=center))
+        bz_curves[-1].plot(50,
+                           ax=iax,
+                           alpha=ialpha,
+                           color=bezier_linecolor,
+                           lw=lw,  # _np.sqrt(markersize),
+                           zorder=-1
+                           )
 
-    res_pairs_descending = []
-    if len(array_for_sorting)>0:
-        res_pairs_descending = _np.vstack([plotted_respairs[ii] for ii in _np.argsort(array_for_sorting)[::-1]])
-    if not return_descending_ctc_freqs:
-        return iax, res_pairs_descending
-    else:
-        return iax, res_pairs_descending, sorted(array_for_sorting)[::-1]
+    return bz_curves

@@ -10,7 +10,7 @@ class my_BZCURVE(_BZCurve):
     Modified Bezier curve to plot with line-width
     """
 
-    def plot(self, num_pts, color=None, alpha=None, ax=None,lw=1):
+    def plot(self, num_pts, color=None, alpha=None, ax=None,lw=1, zorder=None):
         """Plot the current curve.
 
         Args:
@@ -39,7 +39,7 @@ class my_BZCURVE(_BZCurve):
         points = self.evaluate_multi(s_vals)
         if ax is None:
             ax = _plot_helpers.new_axis()
-        ax.plot(points[0, :], points[1, :], color=color, alpha=alpha, lw=lw)
+        ax.plot(points[0, :], points[1, :], color=color, alpha=alpha, lw=lw, zorder=zorder)
         return ax
 
 def create_flare_bezier(nodes, center=None):
@@ -362,7 +362,7 @@ def add_fragment_names(iax, xy,
                        fragments,
                        fragment_names,
                        residx2xyidx,
-                       fontsize,
+                       fontsize=5,
                        center=0,
                        r=1.0):
     r"""
@@ -393,7 +393,7 @@ def add_fragment_names(iax, xy,
         if _np.cos(iang) < 0:
             iang = iang + _np.pi
         iax.text(xseg, yseg, iname, ha="center", va="center",
-                 fontsize=fontsize * 2,
+                 fontsize=fontsize,
                  rotation=_np.rad2deg(iang))
 
 def cart2pol(x, y):
@@ -441,6 +441,7 @@ def add_residue_labels(iax,
     """
     assert len(res_idxs) == len(xy_labels) == len(xy_angles)
 
+    labels = []
     for ii, (res_idx, ixy, iang) in enumerate(zip(res_idxs, xy_labels, xy_angles)):
         if _np.cos(iang) < 0:
             iang = iang + _np.pi
@@ -456,12 +457,17 @@ def add_residue_labels(iax,
             if highlight_residxs is not None and res_idx in highlight_residxs:
                 txtclr = "red"
 
+
         itxt = iax.text(ixy[0], ixy[1], '%s' % ilabel,
                         color=txtclr,
                         va="center",
                         ha="center",
                         rotation=_np.rad2deg(iang),
-                        fontsize=fontsize)
+                        fontsize=fontsize,
+                        zorder=20)
+        labels.append(itxt)
+
+    return labels
 
 
 def add_SS_labels(iax, res_idxs, ss_labels, xy_labels_SS, xy_angles_SS, fontsize):
@@ -499,3 +505,51 @@ def add_SS_labels(iax, res_idxs, ss_labels, xy_labels_SS, xy_angles_SS, fontsize
                         fontsize=fontsize, color=_SS2vmdcol[ilabel], weight='heavy')
 
 _SS2vmdcol = {'H':"purple", "E":"yellow","C":"cyan", "NA":"gray"}
+
+
+def residx2dotidx(residues_to_plot_as_dots):
+    residx2markeridx = _np.zeros(_np.max(residues_to_plot_as_dots) + 1, dtype=int)
+    residx2markeridx[:] = _np.nan
+    residx2markeridx[residues_to_plot_as_dots] = _np.arange(len(residues_to_plot_as_dots))
+
+    return residx2markeridx
+
+
+# DIrectly lifted from my molpx, coudl go with _dataunits2points prolly
+def pts_per_axis_unit(iax, pt_per_inch=72):
+    r"""
+    Return how many pt per axis unit of a given maptplotlib axis a figure has
+
+    Parameters
+    ----------
+
+    iax : :obj:`matplotlib.axes._subplots.AxesSubplot`
+
+    pt_per_inch : how many points are in an inch (this number should not change)
+
+    Returns
+    --------
+
+    pt_per_xunit, pt_per_yunit
+
+    """
+
+    # matplotlib voodoo
+    # Get bounding box
+    bbox = iax.get_window_extent().transformed(iax.get_figure().dpi_scale_trans.inverted())
+
+    span_inch = _np.array([bbox.width, bbox.height], ndmin=2).T
+
+    span_units = [iax.get_xlim(), iax.get_ylim()]
+    span_units = _np.diff(span_units, axis=1)
+
+    inch_per_unit = span_inch / span_units
+    return inch_per_unit * pt_per_inch
+
+def markersize_scatter(n,l, iax):
+    r = l / (2 * n)
+    ppau = _np.mean(pts_per_axis_unit(iax))
+    rau = r * ppau
+    s = (2 * rau) ** 2
+
+    return s
