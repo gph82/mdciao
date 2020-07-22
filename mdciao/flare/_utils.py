@@ -138,9 +138,7 @@ def cartify_fragments(fragments,
                       r=1.0,
                       return_angles=False,
                       angle_offset=0,
-                      padding_initial=0,
-                      padding_final=0,
-                      padding_between_fragments=0):
+                      **padding_kwargs):
     r"""
     Cartesian coordinates on a circle of radius :obj:`r` for each sub-item in the lists of :obj:`fragments`
 
@@ -158,30 +156,15 @@ def cartify_fragments(fragments,
         Degrees. Where in the circle the first sub-item in of
         the first item of :obj:`fragments` should start. Default
         is 0 which places the first point at xy = r,0 (3 o'clock)
-    padding_initial : int, default is 0
-        Add these many empty positions at the
-        beginning of the position array
-    padding_final : int, default is 0
-        Add these many empty positions at the end
-        of the position array
-    padding_between_fragments : int, default is 0
-        Add these many empty positions between fragments
+    padding_kwargs : optional keyword args for :obj:`pad_fragment_positions`
+
     Returns
     -------
 
     """
 
-    padding_initial = [None for ii in range(padding_initial)]
-    padding_final = [None for ii in range(padding_final)]
-
-    tostack = [_np.hstack(([None] * padding_between_fragments, iseg)) for iseg in fragments]
-
-    if len(padding_initial) > 0:
-        tostack = padding_initial + tostack
-    if len(padding_final) > 0:
-        tostack += padding_final
-
-    spaced_segments = _np.hstack(tostack)
+    padded_fragment_list = pad_fragment_positions(fragments,**padding_kwargs)
+    spaced_segments = _np.hstack(padded_fragment_list)
     spaced_angles = regspace_angles(len(spaced_segments),
                                     circle=2 * _np.pi,
                                     offset=angle_offset * _np.pi / 180
@@ -193,6 +176,41 @@ def cartify_fragments(fragments,
         return _np.vstack(xy).T
     else:
         return _np.vstack(xy).T, angles
+
+def pad_fragment_positions(fragments,
+                           padding_initial=0,
+                           padding_final=0,
+                           padding_between_fragments=0,
+                           pad_value=None):
+    r"""
+    Provided a list of fragments, introduce a number of :obj:`pad_value` between them
+
+    Parameters
+    ----------
+    fragments : list of iterables
+    padding_initial : int, default is 0
+        Number of padding values to put at the very beginning of the fragment list
+    padding_final : int, default is 0
+        Number of padding values to put at the very end of the fragment list
+    padding_between_fragments : int, default is 0
+        Number of padding values to put at the beginning of each fragment
+    pad_value : arbitryry, default is None
+        What value to pad with (None, np.NaN, 0, "X") etc
+
+    Returns
+    -------
+    padded_fragments : list
+    """
+    padding_initial = [pad_value for ii in range(padding_initial)]
+    padding_final = [pad_value for ii in range(padding_final)]
+    padded_frags = [_np.hstack(([pad_value] * padding_between_fragments, iseg)) for iseg in fragments]
+
+    if len(padding_initial) > 0:
+        padded_frags = padding_initial + padded_frags
+    if len(padding_final) > 0:
+        padded_frags += padding_final
+
+    return padded_frags
 
 def pol2cart(rho, phi):
     r"""
@@ -308,6 +326,27 @@ def curvify_segments(segments, r=1.0, angle_offset=0, padding=0):
     #TODO shamelessly off-by-oneing this one
     return [_np.vstack(ifrag[:-padding]) for ifrag in frag_curves_as_list_of_xy_pairs]
 
+def draw_arcs(fragments, iax, colors=None,
+              lw=1,
+              center=0, r=1, angle_offset=0, **cartify_kwargs):
+
+    if colors is None:
+        colors = ["k"]*len(fragments)
+    angles = cartify_fragments(fragments,r=r, return_angles=True, **cartify_kwargs)[1]*180/_np.pi
+    from mdciao.utils.lists import re_warp
+    angles = re_warp(angles,[len(ifrag) for ifrag in fragments])
+    from matplotlib.patches import Arc as _Arc
+    for ii, iang in enumerate(angles):
+        iarc = _Arc(center,
+                    width=r,
+                    height=r,
+                    angle=angle_offset,
+                    theta1=iang[-1],
+                    theta2=iang[0],
+                    lw=lw,
+                    color=colors[ii],
+                    )
+        iax.add_artist(iarc)
 
 def should_this_residue_pair_get_a_curve(
                                          fragments,
@@ -380,10 +419,11 @@ def add_fragment_names(iax, xy,
 
     Returns
     -------
-    None
+    fragment_labels : list
 
     """
 
+    fragment_labels = []
     for seg_idxs, iname in zip(fragments, fragment_names):
         xseg, yseg = xy[residx2xyidx[seg_idxs]].mean(0) - center
         rho, phi = cart2pol(xseg, yseg)
@@ -392,10 +432,12 @@ def add_fragment_names(iax, xy,
         iang = phi + _np.pi / 2
         if _np.cos(iang) < 0:
             iang = iang + _np.pi
-        iax.text(xseg, yseg, iname, ha="center", va="center",
-                 fontsize=fontsize,
-                 rotation=_np.rad2deg(iang))
 
+        fragment_labels.append(iax.text(xseg, yseg, iname, ha="center", va="center",
+                                        fontsize=fontsize,
+                                        rotation=_np.rad2deg(iang)))
+
+    return fragment_labels
 def cart2pol(x, y):
     rho = _np.sqrt(x**2 + y**2)
     phi = _np.arctan2(y, x)
@@ -410,6 +452,9 @@ def add_residue_labels(iax,
                        top=None,
                        shortenAAs=True,
                        aa_offset=0,
+                       colors=None,
+                       forced_labels=None,
+                       **text_kwargs
                        ):
     r"""
     Add residue names to a flareplot
@@ -433,20 +478,33 @@ def add_residue_labels(iax,
         In case the resSeq idxs of the topologies
         don't match the desired sequence, provide
         and offset here
+    colors : list of len(res_idxs), default is None,
+        Individual residue colors, default is black
+    forced_labels : list of len(res_idxs), defaut is None
+        Individual residue labels, default is None
+        Overwrite everything and use these labels
 
     Returns
     -------
-    None
+    labels : list of text objects
 
     """
     assert len(res_idxs) == len(xy_labels) == len(xy_angles)
+
+    if colors is None:
+        colors = ['k']*len(res_idxs)
+    else:
+        assert len(colors)==len(res_idxs)
+
+    if forced_labels is not None:
+        assert len(forced_labels)==len(res_idxs)
 
     labels = []
     for ii, (res_idx, ixy, iang) in enumerate(zip(res_idxs, xy_labels, xy_angles)):
         if _np.cos(iang) < 0:
             iang = iang + _np.pi
         ilabel = res_idx
-        txtclr = "k"
+        txtclr = colors[ii]
 
         if top is not None:
             if not shortenAAs:
@@ -456,7 +514,8 @@ def add_residue_labels(iax,
                 ilabel = ("%s%u" % (top.residue(res_idx).code, idxs)).replace("None", top.residue(res_idx).name)
             if highlight_residxs is not None and res_idx in highlight_residxs:
                 txtclr = "red"
-
+        if forced_labels is not None:
+            ilabel = forced_labels[ii]
 
         itxt = iax.text(ixy[0], ixy[1], '%s' % ilabel,
                         color=txtclr,
@@ -464,45 +523,12 @@ def add_residue_labels(iax,
                         ha="center",
                         rotation=_np.rad2deg(iang),
                         fontsize=fontsize,
-                        zorder=20)
+                        zorder=20,
+                        **text_kwargs)
         labels.append(itxt)
 
     return labels
 
-
-def add_SS_labels(iax, res_idxs, ss_labels, xy_labels_SS, xy_angles_SS, fontsize):
-    r"""
-
-    Parameters
-    ----------
-    iax : :obj:`matplotlib.Axes`
-    res_idxs : np.ndarray
-        The indices of the residues
-    ss_labels : iterable of strings
-        The labels (H,E,C) to use.
-        length is arbitrary  as long as
-        it's indexable with the elements
-        of :obj:`res_idxs`,
-
-    xy_labels_SS : iterable of of pairs of floats
-        pre-computed xy-positions of the labels
-    xy_angles_SS : iterable of floats
-        pre-computed angles of the labels
-    fontsize : float
-
-    Returns
-    -------
-    Nont
-    """
-    assert len(res_idxs)==len(xy_labels_SS)==len(xy_angles_SS)
-
-    for ii, ixy, iang in zip(res_idxs, xy_labels_SS, xy_angles_SS):
-        if _np.cos(iang) < 0:
-            iang = iang + _np.pi
-        ilabel = ss_labels[ii]
-        itxt = iax.text(ixy[0], ixy[1], '%s' % ilabel,
-                        ha="center", va="center", rotation=_np.rad2deg(iang),
-                        fontsize=fontsize, color=_SS2vmdcol[ilabel], weight='heavy')
 
 _SS2vmdcol = {'H':"purple", "E":"yellow","C":"cyan", "NA":"gray"}
 

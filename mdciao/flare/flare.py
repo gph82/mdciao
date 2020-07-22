@@ -1,9 +1,8 @@
 import numpy as _np
 from ._utils import \
     cartify_fragments,  \
-    add_fragment_names, col_list_from_input_and_fragments, should_this_residue_pair_get_a_curve, add_residue_labels, add_SS_labels, create_flare_bezier, residx2dotidx, markersize_scatter
-
-from mdciao.flare._utils import pts_per_axis_unit
+    add_fragment_names, col_list_from_input_and_fragments, should_this_residue_pair_get_a_curve, add_residue_labels, create_flare_bezier, residx2dotidx, draw_arcs, \
+    _SS2vmdcol, pts_per_axis_unit
 
 from matplotlib import pyplot as _plt
 from matplotlib.patches import CirclePolygon as _CP
@@ -19,7 +18,7 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
                        mute_fragments=None,
                        anchor_segments=None,
                        ss_array=None,
-                       panelsize=4,
+                       panelsize=10,
                        angle_offset=0,
                        highlight_residxs=None,
                        pair_selection=None,
@@ -32,7 +31,6 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
                        bezier_linecolor='k',
                        plot_curves_only=False,
                        textlabels=True,
-                       no_dots=False,
                        padding_beginning=0,
                        padding_end=0,
                        lw=5,
@@ -146,10 +144,7 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
         is parsed
     Returns
     -------
-    if not return_descending_ctc_freqs:
-        return iax, res_pairs_descending
-    else:
-        return iax, res_pairs_descending, sorted(array_for_sorting)[::-1]
+
     """
 
     padding_end += 5 #todo dangerous?
@@ -166,19 +161,6 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
     assert ictcs.shape[1]==len(res_idxs_pairs), \
         "The size of the contact array and the " \
         "res_idxs_pairs array do not match %u vs %u"%(ictcs.shape[1], len(res_idxs_pairs))
-
-    if iax is None:
-        assert not plot_curves_only,("You cannot use "
-                                     "plot_curves_only=True and iax=None. Makes no sense")
-        _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
-        iax = _plt.gca()
-        iax.set_yticks([])
-        iax.set_xticks([])
-
-    # Prepare the figure for everything that's coming
-    iax.set_xlim([center[0] - 1.5 * r, center[0] + 1.5 * r])
-    iax.set_ylim([center[1] - 1.5 * r, center[1] + 1.5 * r])
-    iax.set_aspect('equal')
 
     # Residue handling/bookkepping
     if sparse:
@@ -198,25 +180,26 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
     residx2markeridx = residx2dotidx(residues_to_plot_as_dots)
 
     if plot_curves_only:
-        print("Ignoring input %s because plot_curves_only is %s" % ("ss_dict", plot_curves_only))
-
+        assert iax is not None, ("You cannot use "
+                                 "plot_curves_only=True and iax=None. Makes no sense")
     else:
-        xy = circle_plot_residues(residues_as_fragments,
-                                  fontsize, colors,
-                                  padding_beginning=padding_beginning,
-                                  padding_end=padding_end,
-                                  center=center,
-                                  ss_array=ss_array,
-                                  fragment_names=fragment_names,
-                                  iax=iax,
-                                  markersize=markersize,
-                                  textlabels=textlabels,
-                                  shortenAAs=shortenAAs,
-                                  highlight_residxs=highlight_residxs,
-                                  aa_offset=aa_offset,
-                                  top=top,
-                                  r=r,
-                                  angle_offset=angle_offset)
+        iax, xy = circle_plot_residues(residues_as_fragments,
+                                       fontsize, colors,
+                                       panelsize=panelsize,
+                                       padding_beginning=padding_beginning,
+                                       padding_end=padding_end,
+                                       center=center,
+                                       ss_array=ss_array,
+                                       fragment_names=fragment_names,
+                                       iax=iax,
+                                       markersize=markersize,
+                                       textlabels=textlabels,
+                                       shortenAAs=shortenAAs,
+                                       highlight_residxs=highlight_residxs,
+                                       aa_offset=aa_offset,
+                                       top=top,
+                                       r=r,
+                                       angle_offset=angle_offset)
         circle_radius_in_pts = iax.artists[0].radius * pts_per_axis_unit(iax).mean()
         lw = circle_radius_in_pts # ??
 
@@ -247,14 +230,16 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
 
 
 def circle_plot_residues(fragments,
-                         fontsize, colors,
-                         markersize=5,
+                         fontsize=None,
+                         colors=True,
+                         markersize=None,
                          r=1,
                          panelsize=4,
                          angle_offset=0,
                          padding_beginning=1,
                          padding_end=1,
-                         center=0,
+                         padding_between_fragments=1,
+                         center=[0,0],
                          ss_array=None,
                          fragment_names=None,
                          iax=None,
@@ -262,7 +247,8 @@ def circle_plot_residues(fragments,
                          shortenAAs=True,
                          highlight_residxs=None,
                          aa_offset=0,
-                         top=None):
+                         top=None,
+                         arc=False):
     r"""
     Circular background that serves as background for flare-plots. Is independent of
     the curves that will later be plotted onto it.
@@ -295,132 +281,212 @@ def circle_plot_residues(fragments,
     -------
 
     """
-    # Angular/cartesian quantities
-    xy = cartify_fragments(fragments, r=r, angle_offset=angle_offset,
+    debug = False
+
+    xy = cartify_fragments(fragments,
+                           r=r,
+                           angle_offset=angle_offset,
                            padding_initial=padding_beginning,
                            padding_final=padding_end,
-                           padding_between_fragments=1)
+                           padding_between_fragments=padding_between_fragments)
     xy += center
+
+    n_positions = len(xy) + padding_beginning + padding_end + len(fragments)*padding_between_fragments
 
     # TODO review variable names
     # TODO this color mess needs to be cleaned up
     residues_to_plot_as_dots = _np.hstack(fragments)
     col_list = col_list_from_input_and_fragments(colors, residues_to_plot_as_dots, fragments=fragments)
-
     if iax is None:
-        _plt.figure(figsize=(panelsize,panelsize))
+        _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
         iax = _plt.gca()
+        # Do this first to have an idea of the points per axis unit necessary for the plot
+        iax.set_xlim([center[0] - r, center[0] +  r])
+        iax.set_ylim([center[1] - r, center[1] +  r])
+
+    iax.set_aspect('equal')
 
     # Create a map
     residx2markeridx = residx2dotidx(residues_to_plot_as_dots)
 
     # Plot!
-    # Do this first to have an idea of the points per axis unit necessary for the plot
-    iax.set_aspect("equal")
+    running_r_pad = 0
     if markersize is None:
-        diameter = 2*_np.pi*r/(len(xy)+padding_beginning+padding_end+len(fragments))
-        diameter *= .50 #fudging int a bit to leave some space between points
-        radius = diameter / 2
-        CPs = [_CP(ixy,
-                 radius=radius,
-                 color=col_list[ii],
-                 zorder=10) for ii, ixy in enumerate(xy)]
-        [iax.add_artist(iCP) for iCP in CPs]
-        running_r_pad = diameter
+        dot_radius = r * _np.sin(_np.pi/n_positions)
+        dot_radius_in_pts = dot_radius*pts_per_axis_unit(iax).mean()
+        if dot_radius_in_pts < 1.5:
+            print(ValueError("This number of residues (%u) with this panelsize in inches (%3.1f) "
+                             "forces too small dotsizes and fontsizes. Weird crowding effects "
+                             "might occur. Either reduce the number of residues or increase "
+                             "the panel size"%(n_positions, panelsize)))
+        if not arc:
+            CPs = [_CP(ixy,
+                     radius=dot_radius,
+                     color=col_list[ii],
+                     zorder=10) for ii, ixy in enumerate(xy)]
+            [iax.add_artist(iCP) for iCP in CPs]
+            running_r_pad += dot_radius
+        else:
+            lw = r*.05*pts_per_axis_unit(iax).mean() #5% of the arc linewidth)
+            draw_arcs(fragments, iax,
+                      colors=[col_list[ifrag[0]] for ifrag in fragments],
+                      center=center,
+                      r=2*r, # don't understand this 2 here
+                      angle_offset=angle_offset,
+                      padding_initial=padding_beginning,
+                      padding_final=padding_end,
+                      padding_between_fragments=padding_between_fragments,
+                      lw=2 * lw
+                      )
+            running_r_pad += 4 * lw
     else:
         raise NotImplementedError
         #iax.scatter(xy[:, 0], xy[:, 1], c=col_list, s=10, zorder=10)
 
-    iax.add_artist(_plt.Circle(center,
-                               radius=r + running_r_pad,
-                               ec='r',
-                               fc=None,
-                               fill=False,
-                               zorder=-10))
+    # After the dots have been plotted,
+    # we use their radius as in points
+    # as approximate fontsize
+    if fontsize is None:
+        opt_h_in_pts = dot_radius_in_pts
+        fontsize = opt_h_in_pts
+    else:
+        raise NotImplementedError
 
-    # Get unit scale
-    ppau = pts_per_axis_unit(iax=iax).mean()
+    n_max = 100
+    maxlen = 1
+    labels = []
     if textlabels:
-        # This is all fudging with fontsizes and padsizes
-        if fontsize is None:
-            opt_h_in_au = 2 * _np.pi * r / (len(xy) + padding_beginning + padding_end + len(fragments))
-            opt_h_in_pts = opt_h_in_au*ppau
-            fontsize = opt_h_in_pts / 2.5 #fudging it, still unsure why this is not working
-        else:
-            raise NotImplementedError
+        overlap = True
+        counter = 0
+        while overlap and counter < n_max:
+            running_r_pad += dot_radius * maxlen / 2
+            [ilab.remove() for ilab in labels]
+            labels = add_fragmented_residue_labels(fragments,
+                                                   iax,
+                                                   fontsize,
+                                                   center=0,
+                                                   r=r + running_r_pad,
+                                                   angle_offset=angle_offset,
+                                                   padding_beginning=padding_beginning,
+                                                   padding_end=padding_end,
+                                                   padding_between_fragments=padding_between_fragments,
+                                                   shortenAAs=shortenAAs,
+                                                   highlight_residxs=highlight_residxs, top=top,
+                                                   aa_offset=aa_offset)
+            lab_lenths = [len(itext.get_text()) for itext in labels]
+            idx_longest_label = _np.argmax(lab_lenths)
+            maxlen=_np.max(lab_lenths)
+            bad_txt_bb = labels[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
+            bad_dot_bb =    CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
+            overlap = bad_txt_bb.overlaps(bad_dot_bb)
+            counter+=1
+            #print(overlap, counter)
 
-        if shortenAAs:
-            running_r_pad += opt_h_in_au * .5
-        else:
-            running_r_pad += opt_h_in_au * 1
+        assert not overlap, ValueError("Tried to 'un'-overlap textlabels and residue markers %u times without success"%n_max)
 
+        running_r_pad += dot_radius*maxlen/2
+
+    if debug:
         iax.add_artist(_plt.Circle(center,
                                    radius=r + running_r_pad,
                                    ec='r',
                                    fc=None,
                                    fill=False,
-                                   zorder=-10))
-
-
-        xy_labels, xy_angles = cartify_fragments(fragments,
-                                                 r=r + running_r_pad,
-                                                 return_angles=True,
-                                                 angle_offset=angle_offset,
-                                                 padding_initial=padding_beginning,
-                                                 padding_final=padding_end,
-                                                 padding_between_fragments=1)
-        xy_labels += center
-
-
-
-        labels = add_residue_labels(iax,
-                                    xy_labels, xy_angles,
-                                    residues_to_plot_as_dots,
-                                    fontsize,
-                                    shortenAAs=shortenAAs,
-                                    highlight_residxs=highlight_residxs,
-                                    top=top,
-                                    aa_offset=aa_offset
-                                    )
-
-        itxt_pos = _np.vstack([itxt.get_position() for itxt in labels])
-        xlim, ylim = _np.vstack((itxt_pos.min(0), itxt_pos.max(0))).T
-        furthest_x, furthest_y = _np.max(_np.abs(xlim-center[0])), _np.max(_np.abs(ylim-center[0]))
-        pad  = _np.max((furthest_x,furthest_y))-r
-        running_r_pad += pad
-        iax.add_artist(_plt.Circle(center,
-                                   radius=r + running_r_pad,
-                                   ec='r',
-                                   fc=None,
-                                   fill=False,
-                                   zorder=-10))
+                                   zorder=10))
 
 
     # Do we have SS dictionaries
+    ss_labels = []
     if ss_array is not None:
-        # assert len(ss_dict)==len(res_idxs_pairs)
-        xy_labels_SS, xy_angles_SS = cartify_fragments(fragments,
-                                                       r=r + running_r_pad,
-                                                       return_angles=True, angle_offset=angle_offset,
-                                                       padding_initial=padding_beginning,
-                                                       padding_final=padding_end,
-                                                       padding_between_fragments=1)
-        xy_labels_SS += center
+        overlap = True
+        counter = 0
+        ss_colors = [_SS2vmdcol[ss_array[res_idx]] for res_idx in residues_to_plot_as_dots]
+        while overlap and counter < n_max:
+            running_r_pad += dot_radius * 2
+            [ilab.remove() for ilab in ss_labels]
+            ss_labels = add_fragmented_residue_labels(fragments,
+                                                   iax,
+                                                   fontsize*2,
+                                                   center=0,
+                                                   r=r + running_r_pad,
+                                                   angle_offset=angle_offset,
+                                                   padding_beginning=padding_beginning,
+                                                   padding_end=padding_end,
+                                                   padding_between_fragments=padding_between_fragments,
+                                                   shortenAAs=shortenAAs,
+                                                   highlight_residxs=highlight_residxs, top=top,
+                                                   aa_offset=aa_offset,
+                                                   forced_labels=[ss_array[ii] for ii in residues_to_plot_as_dots],
+                                                   colors=ss_colors,
+                                                   weight="bold")
+            idx_longest_label = _np.argmax([len(itext.get_text()) for itext in ss_labels])
+            bad_ss_bb = ss_labels[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
+            bad_dot_bb = CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
+            overlap = bad_ss_bb.overlaps(bad_dot_bb)
+            if len(labels) >0 :
+                overlap_w_text = bad_ss_bb.overlaps(labels[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer()))
+                overlap = _np.any([overlap, overlap_w_text])
+            counter += 1
 
-        add_SS_labels(iax, residues_to_plot_as_dots, ss_array, xy_labels_SS, xy_angles_SS, fontsize)
-        running_r_pad += opt_h_in_au * .5
+        running_r_pad += dot_radius
 
+    if debug:
+        iax.add_artist(_plt.Circle(center,
+                                   radius=r + running_r_pad,
+                                   ec='b',
+                                   fc=None,
+                                   fill=False,
+                                   zorder=10))
     # Do we have names?
     if fragment_names is not None:
-        add_fragment_names(iax, xy,
+        span = (2*(r + running_r_pad))
+        frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of space)
+        frag_fontsize_in_pts = frag_fontsize_in_aus * pts_per_axis_unit(iax).mean()
+        #frag_fontsize_in_pts = panelsize * 2
+        frag_labels = add_fragment_names(iax, xy,
                            fragments,
                            fragment_names,
                            residx2markeridx,
-                           fontsize=fontsize*2,
+                           fontsize=frag_fontsize_in_pts,
                            center=center,
                            r=r + running_r_pad
                            )
-    return xy
+
+        frag_boxes = [fl.get_window_extent(renderer=iax.figure.canvas.get_renderer()) for fl in frag_labels]
+        potential_clashing_artists = CPs+labels+ss_labels
+        potential_clashing_boxes = [aa.get_window_extent(renderer=iax.figure.canvas.get_renderer()) for aa in potential_clashing_artists]
+        overlapping_boxes = []
+        overlapping_artists = []
+        for fbox in frag_boxes:
+            idxs = [ii for ii, bbox in enumerate(potential_clashing_boxes) if fbox.overlaps(bbox)]
+            overlapping_artists.extend([potential_clashing_artists[ii] for ii in idxs])
+            overlapping_boxes.extend([potential_clashing_boxes[ii] for ii in idxs])
+        overlap = True
+        counter = 0
+        from mdciao.utils.str_and_dict import replace4latex
+        while overlap and counter < n_max:
+            [fl.remove() for fl in frag_labels]
+            running_r_pad += frag_fontsize_in_aus
+            frag_labels = add_fragment_names(iax, xy,
+                                             fragments,
+                                             [replace4latex(ifrag) for ifrag in fragment_names],
+                                             residx2markeridx,
+                                             fontsize=frag_fontsize_in_pts,
+                                             center=center,
+                                             r=r + running_r_pad
+                                             )
+            frag_boxes = [fl.get_window_extent(renderer=iax.figure.canvas.get_renderer()) for fl in frag_labels]
+            _overlaps = [frag_boxes[0].overlaps(ibox) for ibox in potential_clashing_boxes]
+            overlap = _np.any(_overlaps)
+            counter +=1
+        running_r_pad += frag_fontsize_in_pts / pts_per_axis_unit(iax).mean()
+
+
+    iax.set_yticks([])
+    iax.set_xticks([])
+    iax.set_xlim([center[0] - r - running_r_pad, center[0] + r + running_r_pad])
+    iax.set_ylim([center[1] - r - running_r_pad, center[1] + r + running_r_pad])
+    return iax, xy
 
 def add_bezier_curves(iax,
                       xy,
@@ -469,3 +535,56 @@ def add_bezier_curves(iax,
                            )
 
     return bz_curves
+
+def add_fragmented_residue_labels(fragments,
+                                  iax,
+                                  fontsize,
+                                  center=[0,0],
+                                  r=1,
+                                  angle_offset=0,
+                                  padding_beginning=0,
+                                  padding_end=0,
+                                  padding_between_fragments=0,
+                                  **add_res_labs_kwargs,
+                                  ):
+    r"""
+    Like add_labels but starting from the fragments
+    Parameters
+    ----------
+    fragments
+    center
+    r
+    angle_offset
+    padding_beginning
+    padding_end
+    iax
+    residues_to_plot_as_dots
+    fontsize
+    shortenAAs
+    highlight_residxs
+    top
+    aa_offset
+
+    Returns
+    -------
+    labels : list of text objects
+
+    """
+    xy_labels, xy_angles = cartify_fragments(fragments,
+                                             r=r,
+                                             return_angles=True,
+                                             angle_offset=angle_offset,
+                                             padding_initial=padding_beginning,
+                                             padding_final=padding_end,
+                                             padding_between_fragments=padding_between_fragments)
+    xy_labels += center
+
+    residues_to_plot_as_dots = _np.hstack(fragments)
+    labels = add_residue_labels(iax,
+                                xy_labels, xy_angles,
+                                residues_to_plot_as_dots,
+                                fontsize,
+                                **add_res_labs_kwargs,
+                                )
+
+    return labels
