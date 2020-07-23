@@ -1114,6 +1114,8 @@ def interface(
     fname_excel = ".".join([fname_wo_ext,"xlsx"])
     fname_dat = ".".join([fname_wo_ext, "dat"])
     fname_pdb = ".".join([fname_wo_ext, "as_bfactors.pdb"])
+    fname_mat   = fname_histo.replace("overall@", "matrix@")
+    fname_flare = fname_histo.replace("overall@", "flare@")
 
     histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
     print(fname_histo)
@@ -1135,6 +1137,20 @@ def interface(
     fname_mat = fname_histo.replace("overall@","matrix@")
     ifig.savefig(fname_mat)
     print(fname_mat)
+
+    ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
+                                                     consensus_maps=consensus_maps,
+                                                     SS=refgeom,
+                                                     #fragment_names=fragment_names,
+                                                     fragment_names=list(fragment_defs.keys()),
+                                                     fragments=list(fragment_defs.values()),
+                                                     #fragments=fragments_as_residue_idxs,
+                                                     panelsize=_np.max(ifig.get_size_inches()),
+                                                     )
+    ifig.tight_layout()
+    ifig.savefig(fname_flare,bbox_inches="tight")
+    print(fname_flare)
+
     if plot_timedep or separate_N_ctcs:
         myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
                                                color_scheme=_my_color_schemes(curve_color),
