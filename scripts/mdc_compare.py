@@ -25,8 +25,7 @@ if a.mutations is not None:
         mut_dict[key.replace(" ","")]=val.replace(" ","")
 
 # Call the method
-myfig, freqs, posret = compare(file_dict,
-                               colors=colordict,
+myfig, freqs, posret = compare(file_dict, colordict=colordict,
                                anchor=a.anchor,
                                mutations_dict=mut_dict,
                                figsize=None,
