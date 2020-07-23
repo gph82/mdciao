@@ -171,14 +171,16 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
     the fragments to be named
     Parameters
     ----------
-    fragment_names : str
-        comes directly from the command line option --fragment_names,
+    fragment_names : str or list
+        If str, we assume it comes directly from the
+        command line option --fragment_names,
         see :obj:`parsers._parser_add_fragment_names. Can be different
         things:
         * "" : fragment names will be named frag0,frag1,frag2 ... as needed
         * "None","none": fragment names will be None
         * comma-separated values, with as many values
         as fragments are in :obj:`fragments:
+        If list, we do nothing (for compatiblity with API use of CLI tools)
     fragments: list
         existing fragment definitions (iterables of residue indices)
          to apply the :obj:`fragment_names` to.
@@ -199,6 +201,8 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
     """
     #TODO fragment naming should be handled at the object level?
 
+    if isinstance(fragment_names,(list, _np.ndarray)):
+        return fragment_names
     if fragment_names == '':
         fragment_names = ['frag%u' % ii for ii in range(len(fragments))]
     elif fragment_names.lower()=="none":
@@ -214,20 +218,7 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
 
         elif 'danger' in fragment_names.lower():
             raise NotImplementedError
-            """
-            fragments, names = dangerously_auto_fragments(top,
-                                                                   method="bonds",
-                                                                   verbose=False,
-                                                                   force_resSeq_breaks=True,
-                                                                   frag_breaker_to_pick_idx=0,
-                                                                   )
-            fragment_na     mes.extend(top.residue(ifrag[0]).name for ifrag in fragments[len(names):])
-
-            for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, names)):
-                print_frag(ifrag_idx, top, ifrag, end='')
-                print(" ", frag_name)
-            return fragment_names, fragments
-            """
+            # browse older version to see what was here
 
     return fragment_names
 
@@ -641,7 +632,7 @@ def residue_neighborhoods(topology, trajectories, residues,
     refgeom = _load_any_geom(topology)
 
     fragments_as_residue_idxs, __ = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
     # Do we want BW definitions
@@ -963,10 +954,12 @@ def interface(
           "\n with a stride of %u frames)" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
     refgeom = _load_any_geom(topology)
+
+    # TODO this is a backwards-compat issue that should be handled elsehere
     if not isinstance(fragments[0],str):
         fragments= [','.join([str(ii) for ii in _mdcu.lists.force_iterable(ifrag)]) for ifrag in fragments]
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
                                                                         "CGN": CGN_PDB},
@@ -1041,10 +1034,6 @@ def interface(
         ifreq = ctc_frequency[idx]
         if ifreq > min_freq:
             pair = ctc_idxs_receptor_Gprot[idx]
-            #consensus_labels = [choose_between_consensus_dicts(idx, [BW, CGN],
-            #                                                    no_key=_shorten_AA(refgeom.top.residue(idx),
-            #                                                                      substitute_fail=0,
-            #                                                                      keep_index=True)) for idx in pair]
             consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps,
                                                                 no_key=None) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
@@ -1134,7 +1123,6 @@ def interface(
     iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
                   fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
     ifig.tight_layout()
-    fname_mat = fname_histo.replace("overall@","matrix@")
     ifig.savefig(fname_mat)
     print(fname_mat)
 
