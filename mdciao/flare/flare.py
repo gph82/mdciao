@@ -24,7 +24,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 top=None,
                 colors=True,
                 fontsize=None,
-                shortenAAs=False,
+                shortenAAs=True,
                 aa_offset=0,
                 markersize=None,
                 bezier_linecolor='k',
@@ -113,6 +113,14 @@ def freqs2flare(freqs, res_idxs_pairs,
         In axis units, where the flareplot will be centered around
     r: float, default is 1
         In axis units, the radius of the flareplot
+    textlabels : bool or array_like, default is True
+        If
+        * True: the dots representing the residues
+          will be provided a label, either their
+          serial index or the residue name, e.g. GLU30
+        * False: no labeling
+        * array_like : will be passed as label_replacement
+        to XXX via XXX #todo    
     mute_fragments: iterable of integers, default is None
         Curves involving these fragments will be hidden. Fragments
         are expressed as indices of :obj:`fragments`
@@ -146,7 +154,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     fontsize: int, default is None
     lw: float, default is None
         Line width of the contact lines
-    shortenAAs: boolean, default is False
+    shortenAAs: boolean, default is True
         Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
         is parsed
 
@@ -188,7 +196,7 @@ def freqs2flare(freqs, res_idxs_pairs,
             residues_as_fragments = fragments
     residues_to_plot_as_dots = _np.hstack(residues_as_fragments)
     assert set(residx_array).issubset(residues_to_plot_as_dots), \
-        "The input do not contain all residues residx_array, " \
+        "The input fragments do not contain all residues residx_array, " \
         "their set difference is %s"%(set(residx_array).difference(residues_to_plot_as_dots))
 
     # Create a map
@@ -339,9 +347,10 @@ def circle_plot_residues(fragments,
         dot_radius = r * _np.sin(_np.pi/n_positions)
         dot_radius_in_pts = dot_radius*_points2dataunits(iax).mean()
         if dot_radius_in_pts < 1.5:
-            print(ValueError("This number of residues (%u) with this panelsize in inches (%3.1f) "
-                             "forces too small dotsizes and fontsizes. Weird crowding effects "
-                             "might occur. Either reduce the number of residues or increase "
+            print(ValueError("Drawing this many of residues (%u) in "
+                             "a panel %3.1f inches wide/high "
+                             "forces too small dotsizes and fontsizes. If crowding effects "
+                             "occur, either reduce the number of residues or increase "
                              "the panel size"%(n_positions, panelsize)))
         if not arc:
             CPs = [_CP(ixy,
@@ -380,6 +389,11 @@ def circle_plot_residues(fragments,
     maxlen = 1
     labels = []
     if textlabels:
+        if isinstance(textlabels,bool):
+            replacement_labels = None
+        else:
+            # Interpret the textlabels as replacements
+            replacement_labels = textlabels
         overlap = True
         counter = 0
         while overlap and counter < n_max:
@@ -396,7 +410,8 @@ def circle_plot_residues(fragments,
                                                    padding_between_fragments=padding_between_fragments,
                                                    shortenAAs=shortenAAs,
                                                    highlight_residxs=highlight_residxs, top=top,
-                                                   aa_offset=aa_offset)
+                                                   aa_offset=aa_offset,
+                                                   replacement_labels=replacement_labels)
             lab_lenths = [len(itext.get_text()) for itext in labels]
             idx_longest_label = _np.argmax(lab_lenths)
             maxlen=_np.max(lab_lenths)
