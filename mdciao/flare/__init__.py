@@ -13,7 +13,5 @@ Flare
    circle_plot_residues
    add_bezier_curves
 
-
 """
-#from .flare import *
 from .flare import freqs2flare, circle_plot_residues, add_bezier_curves
