@@ -1,14 +1,13 @@
 import numpy as _np
 from ._utils import \
     cartify_fragments,  \
-    add_fragment_labels, col_list_from_input_and_fragments, should_this_residue_pair_get_a_curve, add_residue_labels, create_flare_bezier, value2position_map, draw_arcs, \
+    add_fragment_labels, col_list_from_input_and_fragments, should_this_residue_pair_get_a_curve, add_residue_labels, create_flare_bezier_2, value2position_map, draw_arcs, \
     _SS2vmdcol
-
 from mdciao.plots.plots import _points2dataunits
 
 from matplotlib import pyplot as _plt
 from matplotlib.patches import CirclePolygon as _CP
-def sparse_freqs2flare(ictcs, res_idxs_pairs,
+def sparse_freqs2flare(freqs, res_idxs_pairs,
                        fragments=None,
                        sparse=False,
                        exclude_neighbors=1,
@@ -26,10 +25,10 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
                        select_residxs=None,
                        top=None,
                        colors=True,
-                       fontsize=6,
+                       fontsize=None,
                        shortenAAs=False,
                        aa_offset=0,
-                       markersize=5,
+                       markersize=None,
                        bezier_linecolor='k',
                        plot_curves_only=False,
                        textlabels=True,
@@ -70,13 +69,16 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
 
     Parameters
     ----------
-    ictcs : numpy.ndarray
-        Can have different shapes
+    freqs : numpy.ndarray
+        The contact frequency to show in the flareplot. The
+            linewidsths of the bezier curves connecting residue
+            pairs will be proportional to this number. Can
+            have different shapes:
         * (n)
             n is the number of residue pairs in :obj:`res_idxs_pairs`
         * (m,n)
             m is the number of frames
-            In this case, an average over m will be done automatically
+            In this case, an average over m will be done automatically.
     res_idxs_pairs : iterable of pairs
         reside indices for which the above N contacts stand
     fragments: list of lists of integers, default is None
@@ -144,46 +146,61 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
     shortenAAs: boolean, default is False
         Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
         is parsed
+
     Returns
     -------
+    iax : :obj:`matplotlib.Axis`
 
+    plotted_pairs : 2D np.ndarray
     """
 
     padding_end += 5 #todo dangerous?
 
-    if _np.ndim(ictcs)==1:
-        ictcs = ictcs.reshape(1,-1)
-    elif _np.ndim(ictcs)==2:
-        pass
-
+    if _np.ndim(freqs)==1:
+        freqs = _np.reshape(freqs,(1, -1))
+    elif _np.ndim(freqs)==2:
+        freqs
     else:
         raise ValueError("Input array has to of shape either "
                          "(m) or (n, m) where n : n frames, and m: n_contacts")
 
-    assert ictcs.shape[1]==len(res_idxs_pairs), \
+    assert freqs.shape[1] == len(res_idxs_pairs), \
         "The size of the contact array and the " \
-        "res_idxs_pairs array do not match %u vs %u"%(ictcs.shape[1], len(res_idxs_pairs))
+        "res_idxs_pairs array do not match %u vs %u"%(freqs.shape[1], len(res_idxs_pairs))
 
     # Residue handling/bookkepping
     if sparse:
         residx_array = _np.unique(res_idxs_pairs)
     else:
-        residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1])+1
+        residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1]+1)
 
     if fragments is None:
         residues_as_fragments = [residx_array]
     else:
+        from mdciao.utils.lists import assert_no_intersection as _no_intersect
+        _no_intersect(fragments, word="fragments")
         if sparse:
             residues_as_fragments = [_np.intersect1d(ifrag,residx_array) for ifrag in fragments]
         else:
             residues_as_fragments = fragments
     residues_to_plot_as_dots = _np.hstack(residues_as_fragments)
+    assert set(residx_array).issubset(residues_to_plot_as_dots), \
+        "The input do not contain all residues residx_array, " \
+        "their set difference is %s"%(set(residx_array).difference(residues_to_plot_as_dots))
+
     # Create a map
     residx2markeridx = value2position_map(residues_to_plot_as_dots)
 
     if plot_curves_only:
         assert iax is not None, ("You cannot use "
                                  "plot_curves_only=True and iax=None. Makes no sense")
+        xy = cartify_fragments(fragments,
+                               r=r,
+                               angle_offset=angle_offset,
+                               padding_initial=padding_beginning,
+                               padding_final=padding_end,
+                               )
+        xy += center
     else:
         iax, xy = circle_plot_residues(residues_as_fragments,
                                        fontsize, colors,
@@ -207,9 +224,8 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
         lw = circle_radius_in_pts # ??
 
     # All formed contacts
-    ctcs_averaged = _np.average(ictcs, axis=0)
+    ctcs_averaged = _np.average(freqs, axis=0)
     idxs_of_formed_contacts = _np.argwhere(ctcs_averaged>freq_cutoff).squeeze()
-
     plot_this_pair_lambda = should_this_residue_pair_get_a_curve(residues_as_fragments,
                                                                  select_residxs=select_residxs,
                                                                  mute_fragments=mute_fragments,
@@ -219,18 +235,20 @@ def sparse_freqs2flare(ictcs, res_idxs_pairs,
     idxs_of_pairs2plot = _np.intersect1d(idxs_of_formed_contacts,
                                          [ii for ii, pair in enumerate(res_idxs_pairs) if plot_this_pair_lambda(pair)])
 
-    alphas = ctcs_averaged[idxs_of_pairs2plot]
-    pairs_of_nodes = [(xy[residx2markeridx[ii]],
-                       xy[residx2markeridx[jj]]) for (ii,jj) in res_idxs_pairs[idxs_of_pairs2plot]]
-
-    bezier_curves = add_bezier_curves(iax,
-                                      pairs_of_nodes,
-                                      alphas=alphas,
-                                      center=center,
-                                      lw=lw,
-                                      bezier_linecolor=bezier_linecolor,
-                                      )
-
+    if len(idxs_of_pairs2plot) > 0:
+        pairs_of_nodes = [(xy[residx2markeridx[ii]],
+                           xy[residx2markeridx[jj]]) for (ii, jj) in res_idxs_pairs[idxs_of_pairs2plot]]
+        alphas = ctcs_averaged[idxs_of_pairs2plot]
+        bezier_curves = add_bezier_curves(iax,
+                                          pairs_of_nodes,
+                                          alphas=alphas,
+                                          center=center,
+                                          lw=lw,
+                                          bezier_linecolor=bezier_linecolor,
+                                          )
+    else:
+        alphas = []
+    return iax, idxs_of_pairs2plot
 
 def circle_plot_residues(fragments,
                          fontsize=None,
@@ -367,7 +385,7 @@ def circle_plot_residues(fragments,
             labels = add_fragmented_residue_labels(fragments,
                                                    iax,
                                                    fontsize,
-                                                   center=0,
+                                                   center=center,
                                                    r=r + running_r_pad,
                                                    angle_offset=angle_offset,
                                                    padding_beginning=padding_beginning,
@@ -410,7 +428,7 @@ def circle_plot_residues(fragments,
             ss_labels = add_fragmented_residue_labels(fragments,
                                                       iax,
                                                       fontsize * 2,
-                                                      center=0,
+                                                      center=center,
                                                       r=r + running_r_pad,
                                                       angle_offset=angle_offset,
                                                       padding_beginning=padding_beginning,
@@ -494,9 +512,9 @@ def circle_plot_residues(fragments,
     return iax, xy
 
 def add_bezier_curves(iax,
-                      xy,
+                      nodepairs_xy,
                       alphas=None,
-                      center=0,
+                      center=[0,0],
                       lw=1,
                       bezier_linecolor='k',
                       ):
@@ -506,15 +524,15 @@ def add_bezier_curves(iax,
     Parameters
     ----------
     iax : :obj:`matplotlib.Axes`
-    xy : iterable of pairs of pairs of floats
+    nodepairs_xy : iterable of pairs of pairs of floats
         Each item is a pair of pairs [(x1,y1),(x2,y2)]
         to be connected with bezier curves 1<--->2
     alphas : iterable of floats, default is None
         The opacity of the curves connecting
-        the pairs in :obj:`xy`.
+        the pairs in :obj:`nodepairs_xy`.
         If None is provided, it will be set to 1
         for all curves. If provided,
-        must be of len(xy)
+        must be of len(nodepairs_xy)
     center
     lw
     bezier_linecolor
@@ -524,13 +542,13 @@ def add_bezier_curves(iax,
 
     """
     if alphas is None:
-        alphas = _np.ones(len(xy))
+        alphas = _np.ones(len(nodepairs_xy)) * 1.0
 
-    assert len(alphas)==len(xy)
+    assert len(alphas)==len(nodepairs_xy)
 
     bz_curves=[]
-    for nodes, ialpha in zip(xy, alphas):
-        bz_curves.append(create_flare_bezier(nodes, center=center))
+    for nodes, ialpha in zip(nodepairs_xy, alphas):
+        bz_curves.append(create_flare_bezier_2(nodes, center=center))
         bz_curves[-1].plot(50,
                            ax=iax,
                            alpha=ialpha,

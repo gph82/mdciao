@@ -451,8 +451,6 @@ def add_fragment_labels(fragments,
     for seg_idxs, iname in zip(fragments, fragment_names):
         xseg, yseg = _xy[residx2xyidx[seg_idxs]].mean(0) - center
         rho, phi = cart2pol(xseg, yseg)
-        print(rho, phi)
-        print(pol2cart(r , phi))
         xseg, yseg = pol2cart(r , phi) + _np.array(center)
 
         iang = phi + _np.pi / 2

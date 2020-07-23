@@ -1,6 +1,4 @@
-from mdciao.flare import flare
 from mdciao.flare import _utils
-from mdciao.flare import sparse_freqs2flare
 import numpy as np
 from unittest import TestCase
 from itertools import combinations
@@ -80,7 +78,7 @@ class TestFragmentSelectionParser(TestCase):
 class TestCartify(TestCase):
 
     def test_works(self):
-        XY, angles = flare.cartify_fragments([[0, 1, 2, 4]],
+        XY, angles = _utils.cartify_fragments([[0, 1, 2, 4]],
                                              return_angles=True)
 
         np.testing.assert_array_almost_equal(angles/np.pi*180, [0,-90,-180,-270])
@@ -91,7 +89,7 @@ class TestCartify(TestCase):
                                                   ])
 
     def test_padding_between(self):
-        XY = flare.cartify_fragments([[0], [1]],
+        XY = _utils.cartify_fragments([[0], [1]],
                                      padding_between_fragments=1,  # The first and 3rd positions should be empty
                                      )
         np.testing.assert_array_almost_equal(XY,
@@ -101,7 +99,7 @@ class TestCartify(TestCase):
                                              ])
 
     def test_padding_initial(self):
-        XY = flare.cartify_fragments([[0, 1]],
+        XY = _utils.cartify_fragments([[0, 1]],
                                      padding_initial=2
                                      )
         np.testing.assert_array_almost_equal(XY, [[-1, 0],
@@ -109,7 +107,7 @@ class TestCartify(TestCase):
                                                   ])
 
     def test_padding_final(self):
-        XY = flare.cartify_fragments([[0, 1]],
+        XY = _utils.cartify_fragments([[0, 1]],
                                      padding_final=2
                                      )
         np.testing.assert_array_almost_equal(XY, [[ 1, 0],
@@ -307,8 +305,6 @@ class TestFragmentLabels(TestCase):
                                   xy,
                                   [10,20,30,40],
                                   10)
-        v2p = _utils.value2position_map([10,20,30,40])
-        print(v2p)
 
         _utils.add_fragment_labels(fragments, iax, xy, ["frag_10_20", "frag_30_40"],
                                    _utils.value2position_map([10,20,30,40]))
@@ -378,17 +374,3 @@ class TestMyBezier(TestCase):
     def test_plot(self):
         mybz = _utils.create_flare_bezier_2(np.array([[0, -1], [1, 0]]), [0, 0])
         mybz.plot(50)
-
-class TestFlare(TestCase):
-
-    def _test_works(self):
-        myax, __ = sparse_freqs2flare(np.reshape([1, 1, 1], (1, -1)),
-                                      np.array([[0,1],[1,2],[2,3]]),
-                                      np.arange(10),
-                                      colors=["r"]*10,
-                                      exclude_neighbors=0,
-                                      angle_offset=0,
-                                      )
-
-        myax.figure.tight_layout()
-        myax.figure.savefig("test.pdf")

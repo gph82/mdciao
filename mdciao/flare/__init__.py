@@ -7,8 +7,11 @@ Flare
 
 .. autosummary::
    :toctree: generated/
+   :nosignatures:
 
    sparse_freqs2flare
+   circle_plot_residues
+   add_bezier_curves
 
 
 """

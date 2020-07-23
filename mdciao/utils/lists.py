@@ -354,7 +354,7 @@ def join_lists(lists, idxs_of_lists_to_join):
 
     return lists
 
-def assert_no_intersection(list_of_lists_of_integers):
+def assert_no_intersection(list_of_lists_of_integers, word='iterables'):
     """
     Checks if two or more lists contain the same integer
     Parameters
@@ -371,7 +371,8 @@ def assert_no_intersection(list_of_lists_of_integers):
         for jj, l2 in enumerate(list_of_lists_of_integers):
             if (ii != jj):
                 assert len(l1) != 0 or len(l2) != 0, (l1,l2, "Both lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html")
-                assert len(_np.intersect1d(l1, l2)) == 0, 'input iterables %u and %u overlap: %s vs %s'%(ii, jj, l1, l2)
+                assert len(_np.intersect1d(l1, l2)) == 0, 'input %s %u and %u have these elements ' \
+                                                          'in common: %s:\n%s\nvs\n%s'%(word, ii, jj, set(l1).intersection(l2), l1, l2)
 
 # TODO consider using np.delete in the code originally?
 # TODO there is no code using this?
