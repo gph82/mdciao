@@ -289,6 +289,26 @@ def get_fragments(top,
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
 
+# TODO document, test and use in get_fragments
+def _get_fragments_by_jumps_in_sequence(sequence,jump=1):
+    old = sequence[0]
+    fragments = [[]]
+    fragments_idxs = [[]]
+    for ii, rr in enumerate(sequence):
+        delta = _np.abs(rr - old)
+        # print(delta, ii, rr, end=" ")
+        if delta <= jump:
+            # print(delta, ii, rr, "appending")
+            fragments[-1].append(ii)
+            fragments_idxs[-1].append(rr)
+        else:
+            # print(delta, ii, rr, "new")
+            fragments.append([ii])
+            fragments_idxs.append([rr])
+        # print(fragments[-1])
+        old = rr
+    return fragments# , fragments_idxs
+
 def _get_fragments_resSeq_plus(top, fragments_resSeq):
     r"""
     Get fragments using the 'resSeq+' method

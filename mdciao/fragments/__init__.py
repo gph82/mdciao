@@ -18,3 +18,4 @@ please note the API is not yet stable.
 
 """
 from .fragments import *
+from .fragments import _get_fragments_by_jumps_in_sequence

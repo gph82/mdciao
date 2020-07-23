@@ -305,7 +305,8 @@ def col_list_from_input_and_fragments(colors,
         col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
 
     elif isinstance(colors, (list, _np.ndarray)):
-        assert len(colors) == len(residxs_as_fragments), (len(colors), len(residxs_as_fragments))
+        assert len(colors) in [len(residxs_as_fragments),
+                               len(_np.hstack(residxs_as_fragments))], (len(colors), len(residxs_as_fragments))
         col_list = colors
 
     elif isinstance(colors, dict):
