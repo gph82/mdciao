@@ -557,7 +557,7 @@ def _get_highest_y_of_bbox_in_axes_units(txt_obj):
     #print(y)
     return y
 
-def _dataunits2points(jax):
+def _points2dataunits(jax):
     r"""
     Return a conversion factor for points 2 dataunits
     Parameters
@@ -566,14 +566,14 @@ def _dataunits2points(jax):
 
     Returns
     -------
-    float : p2d
+    p2d : float
         Conversion factor so that points * p2d = points_in_dataunits
 
     """
     bbox = jax.get_window_extent()
-    dy_in_points = bbox.bounds[3]
-    dy_in_dataunits = _np.diff(jax.get_ylim())[0]
-    return dy_in_points / dy_in_dataunits
+    dx_pts, dy_pts = bbox.bounds[-2:]
+    dx_in_dataunits, dy_in_dataunits = _np.diff(jax.get_xlim())[0], _np.diff(jax.get_ylim())[0]
+    return _np.array((dx_pts/dx_in_dataunits, dy_pts / dy_in_dataunits)).T
 
 def titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
     r"""
@@ -595,7 +595,7 @@ def titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
 
     max_y_texts = _np.max([_get_highest_y_of_bbox_in_axes_units(txt) for txt in jax.texts])
     dy = max_y_texts - jax.get_ylim()[1]
-    data2pts = _dataunits2points(jax)
+    data2pts = _points2dataunits(jax)[1]
     pad_in_points = _np.max([0,dy])*data2pts
     if pad_in_points < min_pts4correction:
         pad_in_points = 0

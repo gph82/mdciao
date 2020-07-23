@@ -398,3 +398,27 @@ def parse_and_list_AAs_input(AAs, top, map_conlab=None):
                     else:
                         print(idx,rr)
         print()
+
+def find_CA(res, default="CA"):
+    r""" Return the CA atom (or something equivalent) for this residue"""
+
+    CA_atom = list(res.atoms_by_name(default))
+    if len(CA_atom) == 1:
+        pass
+    elif len(CA_atom) == 0:
+        if res.n_atoms == 1:
+            return list(res.atoms())[0]
+        else:
+            try:
+                CA_atom = list(res.atoms_by_name(_CA_rules[res.name]))
+                assert len(CA_atom) == 1
+            except:
+                raise NotImplementedError(
+                    "This method does not know what the 'CA' of a %s is.Known res are %s" % (res, _CA_rules.keys()))
+
+    else:
+        raise ValueError("More than one CA atom for %s:%s"%(res,CA_atom))
+    return CA_atom[0]
+
+
+_CA_rules = {"GDP": "C1"}
