@@ -37,53 +37,60 @@ def sparse_freqs2flare(freqs, res_idxs_pairs,
                        lw=5,
                        ):
     r"""
+    Plot contact frequencies as `flare plots` (TODO insert refs)
 
     The residues are plotted as dots lying on a circle of radius
-    :obj:`r`, with bezier curves of variable :obj:`alpha` connecting
-    the dots. The curve opacity represents the contact frequency
+    :obj:`r`, with Bezier curves of variable opacity connecting TODO ref
+    the dots. The curve opacity represents the contact frequency, :obj:`freq`,
     between two residues.
 
-    The control over what residues and what curves get ultimately shown
-    is done separately(-ish) for the residues and the curves.
-
-    The reason behind this is that in some/many cases, letting
-    "contactless" residues appear in plot helps in showing
-    the underlying molecular topology. For example, it's useful to
+    One can control separately what residues and what curves
+    ultimately get get shown, allowing for "contactless" residues
+    to still appear as dots in the circle. This is very helpful to
+    to highligty the molecular topology. For example, it's useful to
     show an entire TM-helix even if only the residues in its middle
-    have contacts.
+    have contacts. Furthermore, it allows for re-use of a "background"
+    of residues on top of which different sets of curves (e.g. with
+    different colors) can be plotted.
 
-    In the simplest form, only the residues contained in :obj:`res_idxs_pairs`
-    will be plotted (sparse=True).
+    * which/how residues get plotted:
+        * :obj:`res_idxs_pairs` is the primary source of which
+          residues will be plotted. All residues appearing
+          in these pairs will always be plotted, no matter what.
+        * :obj:`fragments` is used to
+          a) expand the initial residue list and
+          b) split the residues into fragments when placing the dots on the flareplot.
+        * :obj:`sparse` is needed to accomplish b) without
+          expanding the list
+        * :obj:`highlight_residxs` show the labels of these residues
+          in red
 
-    * Residue control:
-        Those (and only those) residues contained in :obj:`fragments`
-        will be plotted if this optional argument is parsed.
-        If sparse=True, then the intersection of :obj:`res_idx_pairs`
-        and :obj:`fragments` is plotted
-
-    * Curve control:
-        Many other optional parameters control whether a given
-        curve is plotted or not
-        TODO list
-
+    * which/how residues get connected with bezier curves:
+        * :obj:`exclude_neighbors` do not plot curves connecting neighbors
+        * :obj:`freq_cutoff` do not plot curves with associated :obj:`freq`
+          below this cutoff
+        * :obj:`select_residxs` plot only the curves where these residues appear
+        * :obj:`mute_fragments` do not plot curves from/to this fragment
+        * :obj:`anchor_segments` only plot curves from/to this fragment
 
     Parameters
     ----------
     freqs : numpy.ndarray
         The contact frequency to show in the flareplot. The
-            linewidsths of the bezier curves connecting residue
-            pairs will be proportional to this number. Can
-            have different shapes:
+        linewidsths of the bezier curves connecting residue
+        pairs will be proportional to this number. Can
+        have different shapes:
+
         * (n)
-            n is the number of residue pairs in :obj:`res_idxs_pairs`
+          n is the number of residue pairs in :obj:`res_idxs_pairs`
         * (m,n)
-            m is the number of frames
-            In this case, an average over m will be done automatically.
+          m is the number of frames, in this case,
+          an average over m will be done automatically.
     res_idxs_pairs : iterable of pairs
-        reside indices for which the above N contacts stand
+        residue indices for which the above N contacts stand
     fragments: list of lists of integers, default is None
         The residue indices to be drawn as a circle for the
-        flareplot. These *are* the dots that will be plotted
+        flareplot. These dots that will be plotted
         on that circle regardless of how many contacts they
         appear in. They can be any integers that could represent
         a residue. The only hard condition is that the set
@@ -91,44 +98,46 @@ def sparse_freqs2flare(freqs, res_idxs_pairs,
         within np.hstack(segments)
     exclude_neighbors: int, default is 1
         Do not show contacts where the partners are separated by
-        these many residues.
-        * Note: The "neighborhood-condition" is checked using
-        residue serial-numbers, assuming the molecule only
-        has one long peptidic-chain.
-    average: boolean, default is True
-        Average over T and represent the value with line transparency (alpha)
-    alpha: float, defalut is 1.
-        (Avanced use) fix the value of alpha regardless
-        Will be ignored, however, if average is True
+        these many residues. If no :obj:`top` is passed, the
+        neighborhood-condition is checked using residue
+        serial-numbers, assuming the molecule only has one long peptidic-chain.
     freq_cutoff: float, default is 0
         Contact frequencies lower than this value will not be shown
-    iax: Matplotlib axis object, default is None
+    iax: :obj:`matplotlib.Axes`, default is None
         Parse an axis to draw on, otherwise one will be created
+        using :obj:`panelsize`
     fragment_names: iterable of strings, default is None
-        The names of the segments used in :obj:`segments`
-    panelsize: float, default is 4
-        Size in inches of the panel (=figsize in Matplotlib).
+        The names of the segments used in :obj:`fragments`
+    panelsize: float, default is 10
+        Size in inches of the panel (=figsize in matplotlib).
         Will be ignored if a pre-existing axis object is parsed
     center: np.ndarray, default is [0,0]
         In axis units, where the flareplot will be centered around
     r: float, default is 1
         In axis units, the radius of the flareplot
     mute_fragments: iterable of integers, default is None
-        Contacts involving these segments will be hidden. Segments
-        are expressed as indices of :obj:`segments`
-    anchor_segments: iterable of integers, default is None
-        Only contacts involving these segments will be shown. Segments
-        are expressed as indices of :obj:`segments`
-    top: mdtraj.Topology object, default is None
+        Curves involving these fragments will be hidden. Fragments
+        are expressed as indices of :obj:`fragments`
+    anchor_fragments: iterable of integers, default is None
+        Curves **not** involving these fragments will be
+        **not** be shown, i.e. it is the complementary
+         of :obj:`mut_fragments`. Both cannot be passed
+         simulataneously.
+    top: :md:`Topology object, default is None
         If provided a top, residue names (e.g. GLU30) will be used
         instead of residue indices. Will fail if the residue indices
         in :obj:`res_idxs_pairs` can not be used to call :obj:`top.residue(ii)`
-    ss_dict
-    angle_offset
-    highlight_residxs
-    select_residxs
-    r2rfac: float, default is 1.1
-        Fudge factor controlling the separation between labels. Still fudging
+    ss_array : 1D np.ndarray, default is None
+        Array containing secondary structure (ss) information to
+        be included in the flareplot. Indexed by residue index,
+        i.e. it can also be a dictionary as long as
+        ss_array[idx] returns the SS for residue with that residue idx
+    angle_offset : float, default is 0
+        In degrees, where the flareplot "begins". Zero is xy = [1,0]
+    highlight_residxs : iterable of ints, default is None
+        Show the labels for these residues in red
+    select_residxs : iterable of ints, default is None
+        Only the residues here can be connected with a Bezier curve
     colors: boolean, default is True
         Color control.
         * True uses one different color per segment (see visualize._mycolors)
@@ -137,11 +146,8 @@ def sparse_freqs2flare(freqs, res_idxs_pairs,
         * A list of strings of len = number of drawn residues, which is
         equal to len(np.hstack(segments)). Any other length will produce an error
         #todo perhaps this change in the future, not sure of the safest behaviour
-    fontsize: int, default is 6
-    return_descending_ctc_freqs#
-    dotsize: float, default is 5
-        Size of the dot used to represent a residue
-    lw: float, default is 1
+    fontsize: int, default is None
+    lw: float, default is None
         Line width of the contact lines
     shortenAAs: boolean, default is False
         Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
