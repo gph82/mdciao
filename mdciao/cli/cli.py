@@ -165,7 +165,7 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
 
     return fragment_defs, consensus_maps
 
-def _parse_fragment_naming_options(fragment_names, fragments, top):
+def _parse_fragment_naming_options(fragment_names, fragments):
     r"""
     Helper method for the CLTs to understand what/how the user wants
     the fragments to be named
@@ -185,13 +185,6 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
         existing fragment definitions (iterables of residue indices)
          to apply the :obj:`fragment_names` to.
          Typically, :obj:`fragments` come from a call to :obj:`get_fragments`
-    top : :obj:`mdtraj.Topology` (unused)
-        Topolgy associated with the fragments, only used
-        in the very special case where the user passed the str
-        'danger'  in the command line tool. This is an advandced feature
-        and will be deprecated or refactored soon. It was dangerous
-        because the input :obj:`fragments` would be overwritten.
-        Raises NotImplementedError ATM
 
     Returns
     -------
@@ -330,7 +323,9 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
 
 
     # Differentiate the type of figures we can have
-    if len(myfig) == 1:
+    if len(myfig) == 0:
+        fnames = []
+    elif len(myfig) == 1:
         if plot_timedep:
             fnames = [fname_timedep]
         else:
@@ -343,8 +338,8 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
         ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
         ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
         _plt.close(ifig)
-        print(fname)
 
+    # even if no figures were produced, the files should still be saved
     if plot_timedep:
         ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True)
     if separate_N_ctcs:
@@ -1163,6 +1158,8 @@ def interface(
                                                    t_unit=t_unit,
                                                    separate_N_ctcs=separate_N_ctcs
                                                    )
+        if len(myfig)==0:
+            print("No figures of time-traces were produced because only 1 frame was provided")
 
     return ctc_grp_intf
 
@@ -1217,7 +1214,7 @@ def sites(topology,
 
     # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elswhere
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
                                                                         "CGN": CGN_PDB},
