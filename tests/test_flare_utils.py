@@ -1,0 +1,394 @@
+from mdciao.flare import flare
+from mdciao.flare import _utils
+from mdciao.flare import sparse_freqs2flare
+import numpy as np
+from unittest import TestCase
+from itertools import combinations
+from unittest import skip
+from mdciao.plots.plots import _colorstring
+from mdciao.filenames import filenames
+import mdtraj as md
+from matplotlib import pyplot as plt
+
+
+filenames = filenames()
+class TestAngulateSegments(TestCase):
+
+    def test_works(self):
+        angles = _utils.regspace_angles(10, circle=360)
+
+        np.testing.assert_array_equal(angles,
+                                      [0., -36., -72., -108., -144., -180., -216., -252., -288., -324.])
+
+    def test_anti_clockwise(self):
+        angles = _utils.regspace_angles(10, circle=360, clockwise=False)
+
+        np.testing.assert_array_equal(angles,
+                                      [0, 36, 72, 108, 144, 180, 216, 252, 288, 324])
+
+    @skip("Not sure offset means")
+    def test_offset(self):
+        angles = _utils.regspace_angles(10, circle=360,
+                                       offset=45)
+
+
+        print(angles)
+        raise NotImplementedError
+
+
+class TestFragmentSelectionParser(TestCase):
+
+    def setUp(self):
+        self.fragments = [[0, 1], [2, 3], [4, 5]]
+        self.all_pairs = np.vstack(list(combinations(np.arange(6), 2)))
+
+    def test_works(self):
+        condition = _utils.fragment_selection_parser(self.fragments)
+        assert all([condition(pair) for pair in self.all_pairs])
+
+    def test_show_only(self):
+        condition = _utils.fragment_selection_parser(self.fragments, only_show_fragments=[2])
+        shown_pairs = [pair for pair in self.all_pairs if condition(pair)]
+        np.testing.assert_array_equal([[0, 4],
+                                       [0, 5],
+                                       [1, 4],
+                                       [1, 5],
+                                       [2, 4],
+                                       [2, 5],
+                                       [3, 4],
+                                       [3, 5],
+                                       [4, 5]],
+                                      shown_pairs)
+
+    def test_hide(self):
+        condition = _utils.fragment_selection_parser(self.fragments, hide_fragments=[0])
+        shown_pairs = [pair for pair in self.all_pairs if condition(pair)]
+        np.testing.assert_array_equal([[2, 3],
+                                       [2, 4],
+                                       [2, 5],
+                                       [3, 4],
+                                       [3, 5],
+                                       [4, 5]],
+                                      shown_pairs)
+
+    def test_raises(self):
+        with np.testing.assert_raises(ValueError):
+            _utils.fragment_selection_parser(self.fragments,
+                                             hide_fragments=[0], only_show_fragments=[1])
+
+
+class TestCartify(TestCase):
+
+    def test_works(self):
+        XY, angles = flare.cartify_fragments([[0, 1, 2, 4]],
+                                             return_angles=True)
+
+        np.testing.assert_array_almost_equal(angles/np.pi*180, [0,-90,-180,-270])
+        np.testing.assert_array_almost_equal(XY, [[ 1, 0],
+                                                  [ 0,-1],
+                                                  [-1, 0],
+                                                  [ 0, 1],
+                                                  ])
+
+    def test_padding_between(self):
+        XY = flare.cartify_fragments([[0], [1]],
+                                     padding_between_fragments=1,  # The first and 3rd positions should be empty
+                                     )
+        np.testing.assert_array_almost_equal(XY,
+                                             [
+                                                 [0, -1],
+                                                 [0,  1],
+                                             ])
+
+    def test_padding_initial(self):
+        XY = flare.cartify_fragments([[0, 1]],
+                                     padding_initial=2
+                                     )
+        np.testing.assert_array_almost_equal(XY, [[-1, 0],
+                                                  [0, 1],
+                                                  ])
+
+    def test_padding_final(self):
+        XY = flare.cartify_fragments([[0, 1]],
+                                     padding_final=2
+                                     )
+        np.testing.assert_array_almost_equal(XY, [[ 1, 0],
+                                                  [ 0,-1],
+                                                  ])
+
+
+class TestColors(TestCase):
+
+    def setUp(self):
+        self.ref_colors = _colorstring.split(",")
+        self.fragments = [[0, 1], [2, 3], [4, 5]]
+
+    def test_works_False(self):
+        colorlist = _utils.col_list_from_input_and_fragments(False, self.fragments)
+        np.testing.assert_array_equal(["tab:blue"] * 6, colorlist)
+
+    def test_works_True(self):
+        colorlist = _utils.col_list_from_input_and_fragments(True, self.fragments)
+        np.testing.assert_array_equal([self.ref_colors[0], self.ref_colors[0],
+                                       self.ref_colors[1], self.ref_colors[1],
+                                       self.ref_colors[2], self.ref_colors[2]],
+                                      colorlist)
+
+    def test_works_string(self):
+        colorlist = _utils.col_list_from_input_and_fragments("salmon", self.fragments)
+        np.testing.assert_array_equal(['salmon'] * 6,
+                                      colorlist)
+
+    def test_works_iterable(self):
+        colorlist = _utils.col_list_from_input_and_fragments(["r", "g", "b"], self.fragments)
+        np.testing.assert_array_equal(["r", "g", "b"],
+                                      colorlist)
+
+    def test_works_dict(self):
+        colorlist = _utils.col_list_from_input_and_fragments({"frag1": "r",
+                                                              "frag2": "g",
+                                                              "frag3": "b"},
+                                                             self.fragments)
+        np.testing.assert_array_equal(["r", "r",
+                                       "g", "g",
+                                       "b", "b"],
+                                      colorlist)
+
+    def test_works_one_frag(self):
+        colorlist = _utils.col_list_from_input_and_fragments(False, [0, 1, 2])
+        np.testing.assert_array_equal(["tab:blue"] * 3, colorlist)
+
+class TestLambaCurve(TestCase):
+
+    def setUp(self):
+        self.fragments = [[0,1],
+                          [2,3],
+                          [4,5],
+                          [6,7]]
+        self.pairs = np.vstack(list(combinations(range(8),2)))
+    def test_works_all_pairs(self):
+        ilambda = _utils.should_this_residue_pair_get_a_curve(self.fragments)
+        assert all([ilambda(pair) for pair in self.pairs])
+
+    def test_res_selection(self):
+        res_selection=[1,4]
+        ilambda = _utils.should_this_residue_pair_get_a_curve(self.fragments,
+                                                              select_residxs=res_selection)
+        selected_pairs = np.vstack([pair for pair in self.pairs if ilambda(pair)])
+        np.testing.assert_array_equal(selected_pairs, [[0, 1],  # bc 1
+                                                       [0, 4],  # bc 4
+                                                       [1, 2],  # bc 1
+                                                       [1, 3],  #
+                                                       [1, 4],
+                                                       [1, 5],
+                                                       [1, 6],
+                                                       [1, 7],  # bc 1
+                                                       [2, 4],  # bc 4
+                                                       [3, 4],
+                                                       [4, 5],
+                                                       [4, 6],
+                                                       [4, 7]
+                                                       ])
+
+    def test_frag_selection(self):
+        # This is tested anyway in its own lambda but testing again here
+        ilambda = _utils.should_this_residue_pair_get_a_curve(self.fragments,
+                                                              mute_fragments=[0,1])
+        selected_pairs = np.vstack([pair for pair in self.pairs if ilambda(pair)])
+        np.testing.assert_array_equal(selected_pairs, [[4, 5],
+                                                       [4, 6],
+                                                       [4, 7],
+                                                       [5, 6],
+                                                       [5, 7],
+                                                       [6, 7]
+                                                       ])
+
+    def test_neighbor_selection(self):
+        ilambda = _utils.should_this_residue_pair_get_a_curve(self.fragments,
+                                                              exclude_neighbors=3)
+        selected_pairs = np.vstack([pair for pair in self.pairs if ilambda(pair)])
+        np.testing.assert_array_equal(selected_pairs, [[0, 4],
+                                                       [0, 5],
+                                                       [0, 6],
+                                                       [0, 7],
+                                                       [1, 5],
+                                                       [1, 6],
+                                                       [1, 7],
+                                                       [2, 6],
+                                                       [2, 7],
+                                                       [3, 7],
+                                                       ]
+                                                       )
+    def test_neighbor_selection_w_top(self):
+        top = md.load(filenames.actor_pdb).top # All is one chain here
+        ilambda = _utils.should_this_residue_pair_get_a_curve(self.fragments,
+                                                              top=top,
+                                                              exclude_neighbors=3)
+        selected_pairs = np.vstack([pair for pair in self.pairs if ilambda(pair)])
+        np.testing.assert_array_equal(selected_pairs, [[0, 4],
+                                                       [0, 5],
+                                                       [0, 6],
+                                                       [0, 7],
+                                                       [1, 5],
+                                                       [1, 6],
+                                                       [1, 7],
+                                                       [2, 6],
+                                                       [2, 7],
+                                                       [3, 7],
+                                                       ]
+                                                       )
+
+
+class TestResidueLabels(TestCase):
+
+    def test_works(self):
+        plt.figure(figsize=(5, 5))
+        iax = plt.gca()
+        iax.set_aspect("equal")
+        iax.set_xlim([-1, 1])
+        iax.set_ylim([-1, 1])
+        _utils.add_residue_labels(plt.gca(), [[1, 0],
+                                              [0, -1],
+                                              [-1, 0],
+                                              [0, 1]],
+                                  [15, 18, 21, 12],
+                                  10,
+                                  center=[0, 0])
+        ifig = plt.gcf()
+        ifig.tight_layout()
+        # plt.savefig('test.png',bbox_inches="tight")
+
+    def test_works_options(self):
+        top = md.load(filenames.actor_pdb).top
+        ifig, myax = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(10, 5))
+        iax = plt.gca()
+        iax.set_aspect("equal")
+        iax.set_xlim([-1, 1])
+        iax.set_ylim([-1, 1])
+        _utils.add_residue_labels(myax[0], [[1, 0],
+                                            [0, -1],
+                                            [-1, 0],
+                                            [0, 1]],
+                                  [15, 18, 21, 12],
+                                  10,
+                                  center=[0, 0],
+                                  top=top,
+                                  colors=['b'] * 4)
+
+        _utils.add_residue_labels(myax[1], [[1, 0],
+                                            [0, -1],
+                                            [-1, 0],
+                                            [0, 1]],
+                                  [15, 18, 21, 12],
+                                  10,
+                                  center=[0, 0],
+                                  top=top,
+                                  highlight_residxs=[15],
+                                  replacement_labels={18: "6 o'clock"},
+                                  shortenAAs=False)
+
+        ifig.tight_layout()
+        #plt.savefig('test.png',bbox_inches="tight")
+
+class TestFragmentLabels(TestCase):
+
+    def test_works(self):
+        plt.figure(figsize=(5, 5))
+        iax = plt.gca()
+        iax.set_aspect("equal")
+        iax.set_xlim([-1, 1])
+        iax.set_ylim([-1, 1])
+        fragments = [[10,20],[30,40]]
+        xy = [[1, 0],
+              [0, -1],
+              [-1, 0],
+              [0, 1]]
+        _utils.add_residue_labels(iax,
+                                  xy,
+                                  [10,20,30,40],
+                                  10)
+        v2p = _utils.value2position_map([10,20,30,40])
+        print(v2p)
+
+        _utils.add_fragment_labels(fragments, iax, xy, ["frag_10_20", "frag_30_40"],
+                                   _utils.value2position_map([10,20,30,40]))
+        ifig = plt.gcf()
+        ifig.tight_layout()
+        plt.savefig('test.png',bbox_inches="tight")
+
+    def _test_works_options(self):
+        top = md.load(filenames.actor_pdb).top
+        ifig, myax = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(10, 5))
+        iax = plt.gca()
+        iax.set_aspect("equal")
+        iax.set_xlim([-1, 1])
+        iax.set_ylim([-1, 1])
+        _utils.add_residue_labels(myax[0], [[1, 0],
+                                            [0, -1],
+                                            [-1, 0],
+                                            [0, 1]],
+                                  [0,
+                                   -np.pi/2,
+                                   -np.pi,
+                                   -np.pi*1.5],
+                                  [15, 18,21,12],
+                                  10,
+                                  top=top,
+                                  colors=['b']*4)
+
+
+        _utils.add_residue_labels(myax[1], [[1, 0],
+                                            [0, -1],
+                                            [-1, 0],
+                                            [0, 1]],
+                                  [0,
+                                   -np.pi / 2,
+                                   -np.pi,
+                                   -np.pi * 1.5],
+                                  [15, 18, 21, 12],
+                                  10,
+                                  top=top,
+                                  highlight_residxs=[15],
+                                  replacement_labels={18:"6 o'clock"},
+                                  shortenAAs=False)
+
+        ifig.tight_layout()
+        #plt.savefig('test.png',bbox_inches="tight")
+
+
+class Testvalue2pos(TestCase):
+    def test_works(self):
+        x = [10,20,3,5,7,1000,0]
+
+        v2p = _utils.value2position_map(x)
+        assert 0==v2p[10]
+        assert 1 == v2p[20]
+        assert 2 == v2p[3]
+        assert 3 == v2p[5]
+        assert 4 == v2p[7]
+        assert 5 == v2p[1000]
+        assert 6 == v2p[0]
+
+class TestMyBezier(TestCase):
+
+    def test_create(self):
+        mybz = _utils.create_flare_bezier_2([[0,-1],[1,0]],[0,0])
+        assert isinstance(mybz,_utils.my_BZCURVE)
+
+    def test_plot(self):
+        mybz = _utils.create_flare_bezier_2(np.array([[0, -1], [1, 0]]), [0, 0])
+        mybz.plot(50)
+
+class TestFlare(TestCase):
+
+    def _test_works(self):
+        myax, __ = sparse_freqs2flare(np.reshape([1, 1, 1], (1, -1)),
+                                      np.array([[0,1],[1,2],[2,3]]),
+                                      np.arange(10),
+                                      colors=["r"]*10,
+                                      exclude_neighbors=0,
+                                      angle_offset=0,
+                                      )
+
+        myax.figure.tight_layout()
+        myax.figure.savefig("test.pdf")

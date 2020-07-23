@@ -46,9 +46,30 @@ def create_flare_bezier(nodes, center=None):
     middle = _np.floor(len(nodes) / 2).astype("int")
     if center is not None:
         nodes = _np.vstack((nodes[:middle], center, nodes[middle:]))
-
     return my_BZCURVE(nodes.T, degree=2)
-    #return _bezier.Curve(nodes.T, degree=3)
+
+def create_flare_bezier_2(nodes,
+                        center):
+    r"""
+
+    Parameters
+    ----------
+    nodes : 2D np.ndarray
+        The x-y positions of
+        the nodes to be joined
+        via a Bezier curve
+    center : pair of floats
+        x-y coordinate of the center
+
+    Returns
+    -------
+
+    bzc : :obj:`my_BZCURVE`
+
+    """
+    assert len(nodes)==2
+    nodes = _np.vstack((_np.array((nodes[0], center, nodes[1]),dtype="float")))
+    return my_BZCURVE(nodes.T, degree=2)
 
 #TODO rename circle?
 #TODO rename offset->start
@@ -233,17 +254,11 @@ def pol2cart(rho, phi):
 
 # todo CLEAN THIS COLOR MESS
 def col_list_from_input_and_fragments(colors,
-                                      res_idxs,
-                                      fragments=None):
+                                      residxs_as_fragments,
+                                      ):
     r"""
-    Build a usable color list, taking fragments into account
+    per-residue color list taking possible fragmentation into account
 
-    Note:
-    ATM the return behaviour is VERY!!!! inconsistent, i believe
-    is for compatibility reasons
-    Sometimes the return value is of len(list_of...) and sometimes
-    of len(fragments)
-    #todo
 
     Parameters
     ----------
@@ -258,73 +273,48 @@ def col_list_from_input_and_fragments(colors,
             Has to be of len(list_of_non_zero_residue_idxs)
             Nothing happens, the list is done already
         * iterable (dict)
-            Has to be of len(fragments)
+            Has to be of len(residxs_as_fragments)
 
-    fragments : iterable of iterable of indices, default is None
-        Needs to contain the set of :obj:`res_idxs`, will
-        only one fragment assumed is fragments is None
-    res_idxs
+    res_idxs : iterable of ints or iterable thereof
+        The residues for which to generate the
+        colors. If an iterable of ints is passed,
+        only one fragment is assumed
 
     Returns
     -------
-    list of colors....of variable length??? TODO
+    colors : list
+        list of len(_np.hstack(fragments))
 
     """
 
-    if fragments is None:
-        fragments = [res_idxs]
+
+    if isinstance(residxs_as_fragments[0], int):
+        residxs_as_fragments = [residxs_as_fragments]
 
     if isinstance(colors, bool):
         if colors:
-            jcolors = _np.tile(_mycolors, _np.ceil(len(fragments) / len(_mycolors)).astype("int"))
-            col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(fragments)])
+            to_tile = _mycolors
         else:
-            col_list = [_mycolors[0] for __ in range(len(res_idxs))]
+            to_tile = _mycolors[:1]
+        jcolors = _np.tile(to_tile, _np.ceil(len(residxs_as_fragments) / len(to_tile)).astype("int"))
+        col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
 
     elif isinstance(colors, str):
-        col_list = [colors for __ in range(len(res_idxs))]
+        to_tile = [colors]
+        jcolors = _np.tile(to_tile, _np.ceil(len(residxs_as_fragments) / len(to_tile)).astype("int"))
+        col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
 
     elif isinstance(colors, (list, _np.ndarray)):
-        assert len(colors) == len(res_idxs), (len(colors), len(res_idxs))
+        assert len(colors) == len(residxs_as_fragments), (len(colors), len(residxs_as_fragments))
         col_list = colors
 
     elif isinstance(colors, dict):
-        assert len(colors) == len(fragments)
-        col_list = _np.hstack([[val] * len(iseg) for val, iseg in zip(colors.values(), fragments)])
+        assert len(colors) == len(residxs_as_fragments)
+        col_list = _np.hstack([[val] * len(iseg) for val, iseg in zip(colors.values(), residxs_as_fragments)])
     else:
         raise Exception
 
     return col_list
-
-def curvify_segments(segments, r=1.0, angle_offset=0, padding=0):
-
-    total_n_points = len(_np.hstack(segments))
-    #print(total_n_points)
-    factor_to_720 = 720/total_n_points
-    if factor_to_720<=1:
-        factor_to_720=1
-    else:
-        factor_to_720 = _np.ceil(720/total_n_points).round().astype(int)
-    #print(total_n_points, factor_to_720)
-    spaced_segments = _np.hstack([_np.hstack(([None]*factor_to_720, _np.repeat(iseg, factor_to_720))) for iseg in segments] + [None for ii in range(padding*factor_to_720)])
-    angles = regspace_angles(spaced_segments, circle=2 * _np.pi, offset=angle_offset * _np.pi / 180)
-
-    xy = pol2cart(_np.ones_like(angles) * r, angles)
-    xy = _np.vstack(xy).T
-
-    frag_curves_as_list_of_xy_pairs = [[] for ii in range(len(segments))]
-    last_val = None
-    current_frag=-1
-    for ii, (ival, ixy) in enumerate(zip(spaced_segments,xy)):
-        if ival is not None:
-            if last_val is None:
-                current_frag+=1
-            frag_curves_as_list_of_xy_pairs[current_frag].append(ixy)
-        last_val = ival
-        #print(ii, current_frag, ival)
-
-    #TODO shamelessly off-by-oneing this one
-    return [_np.vstack(ifrag[:-padding]) for ifrag in frag_curves_as_list_of_xy_pairs]
 
 def draw_arcs(fragments, iax, colors=None,
               lw=1,
@@ -353,33 +343,59 @@ def should_this_residue_pair_get_a_curve(
                                          mute_fragments=None,
                                          anchor_fragments=None,
                                          top=None,
-                                         pair_selection=None,
+                                         select_residxs=None,
                                          exclude_neighbors=0,
                                          ):
     r"""
-    Discriminate whether there should even be a bezier curve for
-    this contact based on a handful of criteria
+    lambda for selecting and/or muting residue pairs
+
+    A residue pair gets muted when at least one condition is met,
+    even if another would "un-mute" it.
 
     Parameters
     ----------
-    pair_selection : list of pairs
-    fragments
-    mute_fragments
-    anchor_fragments
-    top
+    fragments : iterable if iterable of ints
+        How residue idxs are divided into fragments
+    mute_fragments : iterable of ints, default is None
+        Idxs of fragments to be muted: any residue pair
+        containing at least one residue in these fragments
+        will be muted.
+        Cannot be provided simultaneously with :obj:`anchor_fragments`
+    anchor_fragments : iterable of ints, default is None
+        Complementary of :obj:`mute_fragments`: any residue
+        pair not containing at least one residue
+        in these fragments will be muted.
+        Cannot be provided simultaneously with :obj:`mute_fragments`
+    select_residxs : list of idxs
+        When provided, any pair *not* containing at least
+        one of these residues will be muted
+    exclude_neighbors : int, default is 0
+        pairs with neighbors up to :obj:`exclude_neighbors`
+        will be excluded. When no :obj:`top` is provided,
+        the neighborhood condition is computed by
+        substraction of the idxs themselves, i.e.
+        [20-21] are 1-neighbors regardless of
+        whether there is a bond or not connecting
+        them
+    top : :obj:`mdtraj.Topology`
+        For implementing :obj:`exclude_neighbors` with
+        topology (=bond) information, see :obj:`bonded_neighborlist_from_top`
 
     Returns
     -------
     lambda : pair -> boolean
+        One can apply this lambda to any residue pair and it will return
+        False if any of the muting conditions apply, otherwise True
     """
-    # Condition vicinities
-    if pair_selection is not None:
-        is_pair_not_muted_bc_direct_selection = lambda pair: len(_np.intersect1d(pair, pair_selection)) > 0
+
+    # Condition residues
+    if select_residxs is not None:
+        is_pair_not_muted_bc_direct_selection = lambda pair: len(_np.intersect1d(pair, select_residxs)) > 0
     else:
         is_pair_not_muted_bc_direct_selection = lambda pair: True
 
     # Condition in anchor segment or in muted segment
-    is_pair_not_muted_bc_anchor_and_mute_segments = \
+    is_pair_not_muted_bc_anchor_and_mute_fragments = \
         fragment_selection_parser(fragments,
                                   hide_fragments=mute_fragments,
                                   only_show_fragments=anchor_fragments)
@@ -392,42 +408,52 @@ def should_this_residue_pair_get_a_curve(
         is_pair_not_muted_bc_nearest_neighbors = lambda pair: pair[1] not in nearest_n_neighbor_list[pair[0]]
 
     lambda_out = lambda res_pair : is_pair_not_muted_bc_nearest_neighbors(res_pair) and \
-                                   is_pair_not_muted_bc_anchor_and_mute_segments(res_pair) and \
+                                   is_pair_not_muted_bc_anchor_and_mute_fragments(res_pair) and \
                                    is_pair_not_muted_bc_direct_selection(res_pair)
 
     return lambda_out
 
-def add_fragment_names(iax, xy,
-                       fragments,
-                       fragment_names,
-                       residx2xyidx,
-                       fontsize=5,
-                       center=0,
-                       r=1.0):
+def add_fragment_labels(fragments,
+                        iax,
+                        xy,
+                        fragment_names,
+                        residx2xyidx,
+                        fontsize=5,
+                        center=[0,0],
+                        r=1.0):
     r"""
     Add fragment names to a flareplot
 
+    Very similar to :obj:`add_residue_labels` but does not
+    "radiate" the labels, it puts them in the angular
+    center of the residues contained in each fragment
+
     Parameters
     ----------
+    fragments : iterable if iterables of ints
     iax : :obj:`matplotlib.Axes`
     xy : iterable of (x,y) tuples
-    fragments : iterable if iterables of ints
     fragment_names  :iterable of strs, len(fragments)
     residx2xyidx : np.ndarray
         map to use idxs of :obj:`fragments` on :obj:`xy`,
         since almost always these will never coincide
+    center : pair for floats, default is (0,0)
+        The center of the flareplot
+
 
     Returns
     -------
-    fragment_labels : list
+    fragment_labels : list of the :obj:`matplotlib.text.Text` objects
 
     """
-
+    _xy = _np.array(xy)
     fragment_labels = []
     for seg_idxs, iname in zip(fragments, fragment_names):
-        xseg, yseg = xy[residx2xyidx[seg_idxs]].mean(0) - center
+        xseg, yseg = _xy[residx2xyidx[seg_idxs]].mean(0) - center
         rho, phi = cart2pol(xseg, yseg)
-        xseg, yseg = pol2cart(r , phi) + center
+        print(rho, phi)
+        print(pol2cart(r , phi))
+        xseg, yseg = pol2cart(r , phi) + _np.array(center)
 
         iang = phi + _np.pi / 2
         if _np.cos(iang) < 0:
@@ -438,6 +464,7 @@ def add_fragment_names(iax, xy,
                                         rotation=_np.rad2deg(iang)))
 
     return fragment_labels
+
 def cart2pol(x, y):
     rho = _np.sqrt(x**2 + y**2)
     phi = _np.arctan2(y, x)
@@ -445,15 +472,15 @@ def cart2pol(x, y):
 
 def add_residue_labels(iax,
                        xy_labels,
-                       xy_angles,
                        res_idxs,
                        fontsize,
-                       highlight_residxs=None,
+                       center=None,
                        top=None,
                        shortenAAs=True,
                        aa_offset=0,
                        colors=None,
-                       forced_labels=None,
+                       highlight_residxs=None,
+                       replacement_labels=None,
                        **text_kwargs
                        ):
     r"""
@@ -465,10 +492,16 @@ def add_residue_labels(iax,
     res_idxs : np.ndarray
         The residue indices to use as labels
     xy_labels : 2D-np.ndarray
-    xy_angles : 2D-np.narray
+        x-y position of the labels
+    center: pair of floats, default is None
+        When provided, this is the center
+        of the circle that the :obj:`xy_labels`
+        are assumed to lie on. The polar rho-angle
+        will be computed and passed as :obj:`rotation`
+        argument to the :obj:`matplotlib.text` call,
+        making residue labels "radiate"
+        out of the :obj:`center`.
     fontsize : int
-    highlight_residxs: iterable, default is None
-        Highlight these labels in red
     top : :obj:`mtdtraj.Topology`, default is None
         Use the idxs in :obj:`res_idxs` on this
         topology to generate better labels
@@ -480,29 +513,36 @@ def add_residue_labels(iax,
         and offset here
     colors : list of len(res_idxs), default is None,
         Individual residue colors, default is black
-    forced_labels : list of len(res_idxs), defaut is None
-        Individual residue labels, default is None
-        Overwrite everything and use these labels
+    replacement_labels : dict, defaut is None
+        Input individual replacements for residue labels here,
+        keyed with residue idxs
+        Typical cases could be a mutated residue that you want
+        to show as R38A instead of just A38, or use
+        e.g. BW or CGN consensus labels.
+    highlight_residxs : iterable of ints, default is None
+        In case you don't want to construct a whole
+        color list for :obj:`colors`, you can simply
+        input a subset of :obj:`res_idxs` here and
+        they will be shown in red.
+
 
     Returns
     -------
-    labels : list of text objects
+    labels : list of :obj:`matplotlib.text.Text` objects
 
     """
-    assert len(res_idxs) == len(xy_labels) == len(xy_angles)
+    assert len(res_idxs) == len(xy_labels)
 
     if colors is None:
         colors = ['k']*len(res_idxs)
     else:
         assert len(colors)==len(res_idxs)
 
-    if forced_labels is not None:
-        assert len(forced_labels)==len(res_idxs)
+    if replacement_labels is None:
+        replacement_labels = {}
 
     labels = []
-    for ii, (res_idx, ixy, iang) in enumerate(zip(res_idxs, xy_labels, xy_angles)):
-        if _np.cos(iang) < 0:
-            iang = iang + _np.pi
+    for ii, (res_idx, ixy) in enumerate(zip(res_idxs, xy_labels)):
         ilabel = res_idx
         txtclr = colors[ii]
 
@@ -514,14 +554,24 @@ def add_residue_labels(iax,
                 ilabel = ("%s%u" % (top.residue(res_idx).code, idxs)).replace("None", top.residue(res_idx).name)
             if highlight_residxs is not None and res_idx in highlight_residxs:
                 txtclr = "red"
-        if forced_labels is not None:
-            ilabel = forced_labels[ii]
+
+        try:
+            ilabel = replacement_labels[res_idx]
+        except KeyError:
+            pass # the residue does not have a replacement
+
+        rotation = 0
+        if center is not None:
+            rho, phi = cart2pol(ixy[0] - center[0], ixy[1] - center[1])
+            if _np.cos(phi) < 0:
+                phi = phi + _np.pi
+            rotation = phi
 
         itxt = iax.text(ixy[0], ixy[1], '%s' % ilabel,
                         color=txtclr,
                         va="center",
                         ha="center",
-                        rotation=_np.rad2deg(iang),
+                        rotation=_np.rad2deg(rotation),
                         fontsize=fontsize,
                         zorder=20,
                         **text_kwargs)
@@ -532,50 +582,24 @@ def add_residue_labels(iax,
 
 _SS2vmdcol = {'H':"purple", "E":"yellow","C":"cyan", "NA":"gray"}
 
-
-def residx2dotidx(residues_to_plot_as_dots):
-    residx2markeridx = _np.zeros(_np.max(residues_to_plot_as_dots) + 1, dtype=int)
-    residx2markeridx[:] = _np.nan
-    residx2markeridx[residues_to_plot_as_dots] = _np.arange(len(residues_to_plot_as_dots))
-
-    return residx2markeridx
-
-
-# DIrectly lifted from my molpx, coudl go with _dataunits2points prolly
-def pts_per_axis_unit(iax, pt_per_inch=72):
+def value2position_map(unique_idxs):
     r"""
-    Return how many pt per axis unit of a given maptplotlib axis a figure has
+    Return an array v2p so that v2p[idx]=pos, where pos is the position of idx in unique_idxs
 
     Parameters
     ----------
-
-    iax : :obj:`matplotlib.axes._subplots.AxesSubplot`
-
-    pt_per_inch : how many points are in an inch (this number should not change)
+    unique_idxs : iterable of ints
+        No index can be repeated
 
     Returns
-    --------
+    -------
+    value2pos : np.ndarray
 
-    pt_per_xunit, pt_per_yunit
 
     """
-
-    # matplotlib voodoo
-    # Get bounding box
-    bbox = iax.get_window_extent().transformed(iax.get_figure().dpi_scale_trans.inverted())
-
-    span_inch = _np.array([bbox.width, bbox.height], ndmin=2).T
-
-    span_units = [iax.get_xlim(), iax.get_ylim()]
-    span_units = _np.diff(span_units, axis=1)
-
-    inch_per_unit = span_inch / span_units
-    return inch_per_unit * pt_per_inch
-
-def markersize_scatter(n,l, iax):
-    r = l / (2 * n)
-    ppau = _np.mean(pts_per_axis_unit(iax))
-    rau = r * ppau
-    s = (2 * rau) ** 2
-
-    return s
+    values, positions = _np.unique(unique_idxs, return_index=True)
+    assert len(values)==len(positions)
+    value2pos = _np.zeros(_np.max(unique_idxs) + 1, dtype=int)
+    value2pos[:] = _np.nan
+    value2pos[values] = positions
+    return value2pos
