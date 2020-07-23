@@ -6,6 +6,8 @@ import mdciao.plots as _mdcplots
 import mdciao.utils as _mdcu
 import mdciao.nomenclature as _mdcn
 
+import mdciao.flare as _mdcflare
+
 from ._mdtraj import compute_contacts as _compute_contacts
 
 from pickle import dump as _pdump,load as _pload
@@ -1734,7 +1736,23 @@ class ContactGroup(object):
 
     @property
     def n_frames(self):
+        r"""
+        List of per-trajectory n_frames
+        Returns
+        -------
+        n_frames : list
+        """
         return self._n_frames
+
+    @property
+    def n_frames_total(self):
+        r"""
+        Total number of frames
+        Returns
+        -------
+        n_frames : int
+        """
+        return _np.sum(self._n_frames)
 
     @property
     def time_max(self):
@@ -2844,7 +2862,12 @@ class ContactGroup(object):
         valid_cutoff = "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
                        and plot_contact_kwargs["ctc_cutoff_Ang"] > 0
 
+
         figs_to_return = []
+        if self.n_frames_total==1:
+            #print("Just one frame, not plotting any time-traces")
+            return figs_to_return
+
         if skip_timedep:
             pop_N_ctcs = True
 
