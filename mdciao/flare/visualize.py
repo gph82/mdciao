@@ -25,7 +25,7 @@ from matplotlib.patches import Circle as _Circle, Rectangle as _Rect
 #from ipywidgets import VBox as _VBox, Layout as _Layout, Button as _Button
 
 import os as _os
-#from . import _utils
+#from . import _futils
 from matplotlib import pyplot as _plt
 #from myplots import mycolors
 
@@ -339,7 +339,7 @@ def adaptive_viewer(projdir, panelsize=2, ratio=1,
         # Append seeds
         try:
             # print(_os.path.basename(isim.starting_pdb.replace('.pdb', "")))
-            # print(_utils.starting_fname2seeds(_os.path.basename(isim.starting_pdb.replace('.pdb', ""))))
+            # print(_futils.starting_fname2seeds(_os.path.basename(isim.starting_pdb.replace('.pdb', ""))))
             seeds.append(_utils.starting_fname2seeds(_os.path.basename(isim.starting_pdb.replace('.pdb', ""))))
         except AttributeError:
             seeds.append([isim.epoch, isim.serial, 0])

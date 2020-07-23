@@ -14,10 +14,10 @@ from matplotlib import pyplot as plt
 class TestFlare(TestCase):
 
     def test_works(self):
-        myax, _ = flare.sparse_freqs2flare([1, 1, 1],
-                                           np.array([[0, 1], [1, 2], [2, 3]]),
-                                           exclude_neighbors=0,
-                                           )
+        myax, _ = flare.freqs2flare([1, 1, 1],
+                                    np.array([[0, 1], [1, 2], [2, 3]]),
+                                    exclude_neighbors=0,
+                                    )
 
         myax.figure.tight_layout()
         #myax.figure.savefig("test.png")
@@ -25,34 +25,34 @@ class TestFlare(TestCase):
     def test_options_only_curves(self):
         myfig = plt.figure(figsize=(5,5))
         iax = plt.gca()
-        iax , _ = flare.sparse_freqs2flare(np.array([[1, 1, 1]]),
-                                       np.array([[0, 1], [1, 2], [2, 3]]),
-                                       fragments=[[0, 1], [2, 3]],
-                                       exclude_neighbors=0,
-                                        plot_curves_only=True,
-                                           iax=iax,
-                                       )
+        iax , _ = flare.freqs2flare(np.array([[1, 1, 1]]),
+                                    np.array([[0, 1], [1, 2], [2, 3]]),
+                                    fragments=[[0, 1], [2, 3]],
+                                    exclude_neighbors=0,
+                                    plot_curves_only=True,
+                                    iax=iax,
+                                    )
 
         iax.figure.tight_layout()
         #iax.figure.savefig("test.png")
 
     def test_options_sparse(self):
         myfig, myax = plt.subplots(1,2,sharex=True, sharey=True, figsize=(10,5))
-        iax , _ = flare.sparse_freqs2flare(np.array([[1, 1, 1]]),
-                                       np.array([[0, 1], [1, 2], [2, 3]]),
-                                       fragments=[[0, 1], [2, 3],np.arange(4,15)],
-                                       exclude_neighbors=0,
-                                        iax=myax[0]
+        iax , _ = flare.freqs2flare(np.array([[1, 1, 1]]),
+                                    np.array([[0, 1], [1, 2], [2, 3]]),
+                                    fragments=[[0, 1], [2, 3],np.arange(4,15)],
+                                    exclude_neighbors=0,
+                                    iax=myax[0]
 
-                                       )
-        iax, _ = flare.sparse_freqs2flare(np.array([[1, 1, 1]]),
-                                          np.array([[0, 1], [1, 2], [2, 3]]),
-                                          fragments=[[0, 1], [2, 3], np.arange(4, 15)],
-                                          exclude_neighbors=0,
-                                          iax=myax[1],
-                                          sparse=True
+                                    )
+        iax, _ = flare.freqs2flare(np.array([[1, 1, 1]]),
+                                   np.array([[0, 1], [1, 2], [2, 3]]),
+                                   fragments=[[0, 1], [2, 3], np.arange(4, 15)],
+                                   exclude_neighbors=0,
+                                   iax=myax[1],
+                                   sparse=True
 
-                                          )
+                                   )
 
         iax.figure.tight_layout()
         iax.figure.savefig("test.png")
