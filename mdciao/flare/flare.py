@@ -120,7 +120,7 @@ def freqs2flare(freqs, res_idxs_pairs,
           serial index or the residue name, e.g. GLU30
         * False: no labeling
         * array_like : will be passed as label_replacement
-        to XXX via XXX #todo    
+        to XXX via XXX #todo
     mute_fragments: iterable of integers, default is None
         Curves involving these fragments will be hidden. Fragments
         are expressed as indices of :obj:`fragments`
@@ -195,6 +195,8 @@ def freqs2flare(freqs, res_idxs_pairs,
         else:
             residues_as_fragments = fragments
     residues_to_plot_as_dots = _np.hstack(residues_as_fragments)
+    print(len(residues_to_plot_as_dots), "LLLL")
+    print(len(colors),"CCCC")
     assert set(residx_array).issubset(residues_to_plot_as_dots), \
         "The input fragments do not contain all residues residx_array, " \
         "their set difference is %s"%(set(residx_array).difference(residues_to_plot_as_dots))
@@ -328,6 +330,8 @@ def circle_plot_residues(fragments,
     # TODO review variable names
     # TODO this color mess needs to be cleaned up
     residues_to_plot_as_dots = _np.hstack(fragments)
+    print(len(residues_to_plot_as_dots),"RRRRRR")
+    print(len(colors),"CCCCCC")
     col_list = _futils.col_list_from_input_and_fragments(colors, fragments)
     if iax is None:
         _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)

@@ -215,6 +215,7 @@ def _parse_fragment_naming_options(fragment_names, fragments):
 
     return fragment_names
 
+# TODO mix and match with the color options of flareplots
 def _parse_coloring_options(color_option, n,
                             default_color="blue",
                             color_cycle=my_frag_colors
@@ -1120,15 +1121,27 @@ def interface(
     ifig.tight_layout()
     ifig.savefig(fname_mat)
     print(fname_mat)
+    fragdefs, fragnames = list(fragment_defs.values()), list(fragment_defs.keys())
+    orphans = _np.delete(_np.arange(ctc_grp_intf.top.n_residues), _np.hstack(fragdefs))
+    orphans = [orphans[idxs] for idxs in _mdcfrg._get_fragments_by_jumps_in_sequence(orphans)]
+    orphans_labels = ['' for __ in orphans]
+    new_frags = orphans + fragdefs
+    new_labels = orphans_labels + fragnames
+    idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
+    new_labels = [new_labels[ii] for ii in idxs]
+    new_frags =  [new_frags[ii] for ii in idxs]
+    from mdciao.flare._utils import col_list_from_input_and_fragments
 
     ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
                                                      consensus_maps=consensus_maps,
                                                      SS=refgeom,
-                                                     #fragment_names=fragment_names,
-                                                     fragment_names=list(fragment_defs.keys()),
-                                                     fragments=list(fragment_defs.values()),
+                                                     fragment_names=new_labels,
+                                                     #fragment_names=list(fragment_defs.keys()),
+                                                     fragments=new_frags,
                                                      #fragments=fragments_as_residue_idxs,
                                                      panelsize=_np.max(ifig.get_size_inches()),
+                                                     colors=col_list_from_input_and_fragments(True,
+                                                                                              fragments_as_residue_idxs)
                                                      )
     ifig.tight_layout()
     ifig.savefig(fname_flare,bbox_inches="tight")
