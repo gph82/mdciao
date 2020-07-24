@@ -32,8 +32,9 @@ setup(
                     "XlsxWriter",
                     "requests",
                     "tqdm",
-                    "natsort"
-                    ]
+                    "natsort",
+                    "bezier",
+                     ]
                      +test_deps
                      #+doc_deps
     # tests_require=test_deps, # has been deprecated, gotta learn how to use tox
