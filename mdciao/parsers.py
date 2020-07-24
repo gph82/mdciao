@@ -172,6 +172,16 @@ def _parser_add_fragments(parser):
                               "the command line tool mdc_fragments.py on \n"
                               "your topology file."))
 
+def _parser_add_matrix(parser):
+    parser.add_argument('--no-matrix', dest='contact_matrix', action='store_false',
+                        help="Do not produce a plot of the interface contact matrix")
+    parser.set_defaults(contact_matrix=True)
+
+def _parser_add_flare(parser):
+    parser.add_argument('--no-flare', dest='flareplot', action='store_false',
+                        help="Do not produce a flare plot of interface the contact matrix")
+    parser.set_defaults(flareplot=True)
+
 def _parser_add_output_dir(parser):
     parser.add_argument('-od','--output_dir', type=str, help="directory to which the results are written. Default is '.'",
                         default='.')
@@ -569,6 +579,8 @@ def parser_for_interface():
     parser.add_argument('--no-sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_false')
     parser.set_defaults(sort_by_av_ctcs=True)
     _parser_add_scheme(parser)
+    _parser_add_flare(parser)
+    _parser_add_matrix(parser)
     _parser_add_pop(parser)
     _paser_add_guess(parser)
     _parser_add_title(parser)
