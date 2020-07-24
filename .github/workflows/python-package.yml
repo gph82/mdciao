@@ -4,10 +4,12 @@
 name: mdciao
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  #push:
+  #  branches: [ master ]
+  #pull_request:
+  #  branches: [ master ]
+  workflow_dispatch:
+  
 
 jobs:
   build:
@@ -39,4 +41,5 @@ jobs:
     #    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest
+        pytest test_scripts.py -vs -k "test_mdc_sites"
+
