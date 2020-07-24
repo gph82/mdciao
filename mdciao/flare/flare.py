@@ -420,9 +420,9 @@ def circle_plot_residues(fragments,
             bad_dot_bb =    CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
             overlap = bad_txt_bb.overlaps(bad_dot_bb)
             counter+=1
-            #print(overlap, counter)
+            #print(overlappers, counter)
 
-        assert not overlap, ValueError("Tried to 'un'-overlap textlabels and residue markers %u times without success"%n_max)
+        assert not overlap, ValueError("Tried to 'un'-overlappers textlabels and residue markers %u times without success"%n_max)
 
         running_r_pad += dot_radius*maxlen/2
 
@@ -461,6 +461,7 @@ def circle_plot_residues(fragments,
                                                       colors=ss_colors,
                                                       weight="bold")
             idx_longest_label = _np.argmax([len(itext.get_text()) for itext in ss_labels])
+            # We're doing this "by hand" here because it's just two or at most 3 offenders
             bad_ss_bb = ss_labels[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
             bad_dot_bb = CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
             overlap = bad_ss_bb.overlaps(bad_dot_bb)
@@ -481,7 +482,7 @@ def circle_plot_residues(fragments,
     # Do we have names?
     if fragment_names is not None:
         span = (2*(r + running_r_pad))
-        frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of space)
+        frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of panel space)
         frag_fontsize_in_pts = frag_fontsize_in_aus * _points2dataunits(iax).mean()
         #frag_fontsize_in_pts = panelsize * 2
         frag_labels = _futils.add_fragment_labels(fragments,
@@ -492,22 +493,16 @@ def circle_plot_residues(fragments,
                                                   center=center,
                                                   r=r + running_r_pad
                                                   )
+        # First un-overlapp the labels themselves
+        _futils.un_overlap_via_fontsize(frag_labels)
+        frag_fontsize_in_pts = frag_labels[0].get_size()
 
-        frag_boxes = [fl.get_window_extent(renderer=iax.figure.canvas.get_renderer()) for fl in frag_labels]
-        potential_clashing_artists = CPs+labels+ss_labels
-        potential_clashing_boxes = [aa.get_window_extent(renderer=iax.figure.canvas.get_renderer()) for aa in potential_clashing_artists]
-        overlapping_boxes = []
-        overlapping_artists = []
-        for fbox in frag_boxes:
-            idxs = [ii for ii, bbox in enumerate(potential_clashing_boxes) if fbox.overlaps(bbox)]
-            overlapping_artists.extend([potential_clashing_artists[ii] for ii in idxs])
-            overlapping_boxes.extend([potential_clashing_boxes[ii] for ii in idxs])
-        overlap = True
+        # Then find the overlappers among existing labels (to avoid using all labels unnecessarily)
+        foverlappers = _futils.overlappers(frag_labels, CPs + labels + ss_labels)
         counter = 0
-        from mdciao.utils.str_and_dict import replace4latex
-        while overlap and counter < n_max:
+        while any(_futils.overlappers(frag_labels, foverlappers)) and counter < n_max:
             [fl.remove() for fl in frag_labels]
-            running_r_pad += frag_fontsize_in_aus
+            running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
             frag_labels = _futils.add_fragment_labels(fragments,
                                                       iax, xy,
                                                       [replace4latex(ifrag) for ifrag in fragment_names],
@@ -516,10 +511,9 @@ def circle_plot_residues(fragments,
                                                       center=center,
                                                       r=r + running_r_pad
                                                       )
-            frag_boxes = [fl.get_window_extent(renderer=iax.figure.canvas.get_renderer()) for fl in frag_labels]
-            _overlaps = [frag_boxes[0].overlaps(ibox) for ibox in potential_clashing_boxes]
-            overlap = _np.any(_overlaps)
-            counter +=1
+            # print(counter, overlappers(frag_labels, foverlappers))
+            counter += 1
+            frag_fontsize_in_pts = frag_labels[0].get_size()
 
         running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
 
