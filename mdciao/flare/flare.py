@@ -1,6 +1,7 @@
 import numpy as _np
 from . import _utils as _futils
 from mdciao.plots.plots import _points2dataunits
+from mdciao.utils.str_and_dict import replace4latex
 
 from matplotlib import pyplot as _plt
 from matplotlib.patches import CirclePolygon as _CP
@@ -422,7 +423,7 @@ def circle_plot_residues(fragments,
             counter+=1
             #print(overlappers, counter)
 
-        assert not overlap, ValueError("Tried to 'un'-overlappers textlabels and residue markers %u times without success"%n_max)
+        assert not overlap, ValueError("Tried to 'un'-overlap textlabels and residue markers %u times without success"%n_max)
 
         running_r_pad += dot_radius*maxlen/2
 
@@ -479,12 +480,12 @@ def circle_plot_residues(fragments,
                                    fc=None,
                                    fill=False,
                                    zorder=10))
+
     # Do we have names?
     if fragment_names is not None:
         span = (2*(r + running_r_pad))
         frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of panel space)
         frag_fontsize_in_pts = frag_fontsize_in_aus * _points2dataunits(iax).mean()
-        #frag_fontsize_in_pts = panelsize * 2
         frag_labels = _futils.add_fragment_labels(fragments,
                                                   iax, xy,
                                                   fragment_names,
@@ -517,12 +518,12 @@ def circle_plot_residues(fragments,
 
         running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
 
-
     iax.set_yticks([])
     iax.set_xticks([])
     iax.set_xlim([center[0] - r - running_r_pad, center[0] + r + running_r_pad])
     iax.set_ylim([center[1] - r - running_r_pad, center[1] + r + running_r_pad])
     return iax, xy
+
 
 def add_bezier_curves(iax,
                       nodepairs_xy,
