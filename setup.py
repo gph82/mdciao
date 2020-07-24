@@ -19,7 +19,7 @@ setup(
     packages=find_packages(),
     install_requires=[
                     "cython",
-                    "numpy",
+                    "numpy>=1.18.1",
                     "mdtraj",
                     "pandas",
                     "matplotlib",
