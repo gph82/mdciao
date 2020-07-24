@@ -36,6 +36,7 @@ jobs:
         pip install --upgrade setuptools
         python setup.py install_egg_info
         pip install -e .[test]
+        pip install -e .
     #- name: Lint with flake8
     #  run: |
     #    # stop the build if there are Python syntax errors or undefined names
