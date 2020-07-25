@@ -632,7 +632,7 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
 
     return groups_as_residue_idxs, groups_as_keys
 
-def splice_orphan_fragments(fragments, fragnames, highest_res_idxs=None,
+def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
                             orphan_name="?"):
     r"""
     Return a fragment list where residues not present in :obj:`fragments` are
@@ -645,7 +645,7 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idxs=None,
         The initial fragments potentially missing some residues
     fragnames : list
         The names of :obj:`fragments`
-    highest_res_idxs : int, default is None
+    highest_res_idx : int, default is None
         The highest possible res_idx. The returned fragments
         will have this idx as last idx of the last fragment (input or orphan)
         If None, the highest value (max) of fragments is
@@ -661,13 +661,13 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idxs=None,
         The new names, where the "orphans" have gotten the name orphan_char
 
     """
-    if highest_res_idxs is None:
-        highest_res_idxs = _np.max(_np.hstack(fragments))
+    if highest_res_idx is None:
+        highest_res_idx = _np.max(_np.hstack(fragments))
 
     for ifrag in fragments:
         if len(ifrag)==ifrag[-1]-ifrag[0]:
             raise ValueError("This method cannot use fragments like this\n",ifrag)
-    orphans = _np.delete(_np.arange(highest_res_idxs+1), _np.hstack(fragments))
+    orphans = _np.delete(_np.arange(highest_res_idx + 1), _np.hstack(fragments))
     orphans = _get_fragments_by_jumps_in_sequence(orphans)[1]
     orphans_labels = [orphan_name for __ in orphans]
     new_frags = orphans + fragments
