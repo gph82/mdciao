@@ -632,8 +632,8 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
 
     return groups_as_residue_idxs, groups_as_keys
 
-def splice_orphan_fragments(fragments, fragnames, max_res=None,
-                            orphan_char="?"):
+def splice_orphan_fragments(fragments, fragnames, highest_res_idxs=None,
+                            orphan_name="?"):
     r"""
     Return a fragment list where residues not present in :obj:`fragments` are
     now new interstitial fragments. The individual fragments have to
@@ -645,26 +645,31 @@ def splice_orphan_fragments(fragments, fragnames, max_res=None,
         The initial fragments potentially missing some residues
     fragnames : list
         The names of :obj:`fragments`
-    max_res : int, default is None
-        What is the maximum possible fragment index.
-        By default, the maximum of :obj:`fragments`
-        is used
-    orphan_char : char, default is ?
+    highest_res_idxs : int, default is None
+        The highest possible res_idx. The returned fragments
+        will have this idx as last idx of the last fragment (input or orphan)
+        If None, the highest value (max) of fragments is
+        used
+    orphan_name : str, default is ?
 
 
     Returns
     -------
+    new_fragments : list
+        The new fragments including those missing in the input
+    new_names : list
+        The new names, where the "orphans" have gotten the name orphan_char
 
     """
-    if max_res is None:
-        max_res = _np.max(_np.hstack(fragments))
+    if highest_res_idxs is None:
+        highest_res_idxs = _np.max(_np.hstack(fragments))
 
     for ifrag in fragments:
         if len(ifrag)==ifrag[-1]-ifrag[0]:
             raise ValueError("This method cannot use fragments like this\n",ifrag)
-    orphans = _np.delete(_np.arange(max_res+1), _np.hstack(fragments))
+    orphans = _np.delete(_np.arange(highest_res_idxs+1), _np.hstack(fragments))
     orphans = _get_fragments_by_jumps_in_sequence(orphans)[1]
-    orphans_labels = [orphan_char for __ in orphans]
+    orphans_labels = [orphan_name for __ in orphans]
     new_frags = orphans + fragments
     new_labels = orphans_labels + fragnames
     idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
