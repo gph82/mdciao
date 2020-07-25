@@ -1,4 +1,12 @@
 # todo check that mdtraj's license allows for this
+# opened an issue for this:
+# https://github.com/mdtraj/mdtraj/issues/1569
+# Further reading
+# https://www.oreilly.com/library/view/understanding-open-source/0596005814/ch03.html
+# https://tldrlegal.com/license/gnu-lesser-general-public-license-v3-(lgpl-3)
+# http://oss-watch.ac.uk/resources/lgpl
+#https://www.gnu.org/licenses/gpl-faq.html#AllCompatibility
+
 import numpy as _np
 import mdtraj as _md
 from mdtraj.utils import ensure_type
