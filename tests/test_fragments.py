@@ -599,7 +599,7 @@ class Test_splice_fragments(unittest.TestCase):
                      [6, 7, 8],
                      [12, 13, 14]]
         fragnames = ["A", "B", "C"]
-        newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames, highest_res_idxs=17)
+        newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames, highest_res_idx=17)
 
         _np.testing.assert_array_equal(newfrags, [[0, 1, 2, 3],
                                                   [4, 5],
