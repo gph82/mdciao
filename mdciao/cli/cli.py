@@ -29,6 +29,9 @@ import mdciao.plots as _mdcplots
 
 import mdciao.utils as _mdcu
 
+from mdciao.flare import _utils as _mdcfu
+
+
 def _offer_to_create_dir(output_dir):
     r"""
     Offer to create a directory if it does not
@@ -1125,27 +1128,21 @@ def interface(
         ifig.savefig(fname_mat)
         print(fname_mat)
     if flareplot:
-        fragdefs, fragnames = list(fragment_defs.values()), list(fragment_defs.keys())
-        orphans = _np.delete(_np.arange(ctc_grp_intf.top.n_residues), _np.hstack(fragdefs))
-        orphans = [orphans[idxs] for idxs in _mdcfrg._get_fragments_by_jumps_in_sequence(orphans)]
-        orphans_labels = ['' for __ in orphans]
-        new_frags = orphans + fragdefs
-        new_labels = orphans_labels + fragnames
-        idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
-        new_labels = [new_labels[ii] for ii in idxs]
-        new_frags =  [new_frags[ii] for ii in idxs]
-        from mdciao.flare._utils import col_list_from_input_and_fragments
-
+        flare_frags, flare_labs = fragments_as_residue_idxs, None
+        if len(fragment_defs) > 0:
+            flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(fragment_defs.values()),
+                                                                      list(fragment_defs.keys()),
+                                                                      highest_res_idx=ctc_grp_intf.top.n_residues - 1,
+                                                                      orphan_name=""
+                                                                      )
         ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
                                                          consensus_maps=consensus_maps,
                                                          SS=refgeom,
-                                                         fragment_names=new_labels,
-                                                         #fragment_names=list(fragment_defs.keys()),
-                                                         fragments=new_frags,
-                                                         #fragments=fragments_as_residue_idxs,
+                                                         fragment_names=flare_labs,
+                                                         fragments=flare_frags,
                                                          panelsize=_np.max(ifig.get_size_inches()),
-                                                         colors=col_list_from_input_and_fragments(True,
-                                                                                                  fragments_as_residue_idxs)
+                                                         colors=_mdcfu.col_list_from_input_and_fragments(True,
+                                                                                                         fragments_as_residue_idxs),
                                                          )
         ifig.tight_layout()
         ifig.savefig(fname_flare,bbox_inches="tight")
