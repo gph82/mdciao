@@ -298,7 +298,6 @@ def col_list_from_input_and_fragments(colors,
             to_tile = _mycolors[:1]
         jcolors = _np.tile(to_tile, _np.ceil(len(residxs_as_fragments) / len(to_tile)).astype("int"))
         col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
-
     elif isinstance(colors, str):
         to_tile = [colors]
         jcolors = _np.tile(to_tile, _np.ceil(len(residxs_as_fragments) / len(to_tile)).astype("int"))
@@ -306,7 +305,9 @@ def col_list_from_input_and_fragments(colors,
 
     elif isinstance(colors, (list, _np.ndarray)):
         assert len(colors) in [len(residxs_as_fragments),
-                               len(_np.hstack(residxs_as_fragments))], (len(colors), len(residxs_as_fragments))
+                               len(_np.hstack(residxs_as_fragments))], (len(colors),
+                                                                        len(residxs_as_fragments),
+                                                                        len(_np.hstack(residxs_as_fragments)))
         col_list = colors
 
     elif isinstance(colors, dict):
