@@ -171,7 +171,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     if _np.ndim(freqs)==1:
         freqs = _np.reshape(freqs,(1, -1))
     elif _np.ndim(freqs)==2:
-        freqs
+        pass
     else:
         raise ValueError("Input array has to of shape either "
                          "(m) or (n, m) where n : n frames, and m: n_contacts")
@@ -196,7 +196,6 @@ def freqs2flare(freqs, res_idxs_pairs,
         else:
             residues_as_fragments = fragments
     residues_to_plot_as_dots = _np.hstack(residues_as_fragments)
-
     assert set(residx_array).issubset(residues_to_plot_as_dots), \
         "The input fragments do not contain all residues residx_array, " \
         "their set difference is %s"%(set(residx_array).difference(residues_to_plot_as_dots))
@@ -216,7 +215,8 @@ def freqs2flare(freqs, res_idxs_pairs,
         xy += center
     else:
         iax, xy = circle_plot_residues(residues_as_fragments,
-                                       fontsize, colors,
+                                       fontsize=fontsize,
+                                       colors=colors,
                                        panelsize=panelsize,
                                        padding_beginning=padding_beginning,
                                        padding_end=padding_end,
