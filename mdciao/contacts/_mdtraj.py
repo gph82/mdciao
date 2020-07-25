@@ -186,7 +186,6 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
             if not soft_min:
                 idx_min = atom_distances[:, index : index + n].argmin(axis=1)
                 aa_pairs.append(_np.array(atom_pairs[index: index + n])[idx_min])
-                # TODO do not call the min function again here, call idx_min
                 distances[:, i] = atom_distances[:, index : index + n].min(axis=1)
             else:
                 distances[:, i] = soft_min_beta / \
