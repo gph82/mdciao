@@ -6,6 +6,8 @@ import mdciao.plots as _mdcplots
 import mdciao.utils as _mdcu
 import mdciao.nomenclature as _mdcn
 
+import mdciao.flare as _mdcflare
+
 from ._mdtraj import compute_contacts as _compute_contacts
 
 from pickle import dump as _pdump,load as _pload
@@ -1734,7 +1736,23 @@ class ContactGroup(object):
 
     @property
     def n_frames(self):
+        r"""
+        List of per-trajectory n_frames
+        Returns
+        -------
+        n_frames : list
+        """
         return self._n_frames
+
+    @property
+    def n_frames_total(self):
+        r"""
+        Total number of frames
+        Returns
+        -------
+        n_frames : int
+        """
+        return _np.sum(self._n_frames)
 
     @property
     def time_max(self):
@@ -2844,7 +2862,12 @@ class ContactGroup(object):
         valid_cutoff = "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
                        and plot_contact_kwargs["ctc_cutoff_Ang"] > 0
 
+
         figs_to_return = []
+        if self.n_frames_total==1:
+            #print("Just one frame, not plotting any time-traces")
+            return figs_to_return
+
         if skip_timedep:
             pop_N_ctcs = True
 
@@ -3040,6 +3063,93 @@ class ContactGroup(object):
             xpos = len([ifreq for ifreq in freqs_dict[0].values() if ifreq >truncate_at])
             jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
         return jax
+
+    def plot_freqs_as_flareplot(self,ctc_cutoff_Ang,
+                                consensus_maps=None,
+                                SS=None,
+                                **kwargs_freqs2flare,
+                                ):
+        r"""
+        Produce contact flareplots by thinly wrapping around :obj:`mdciao.flare.freqs2flare`
+
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float,
+        SS : secondary structure information, default is None
+            Whether and how to include information about
+            secondary structure. Can be many things
+            * triple of ints (CP_idx, traj_idx, frame_idx)
+              Go to contact group CP_idx, trajectory traj_idx
+              and grab this frame to compute the SS.
+              Will read xtcs when necessary or otherwise
+              directly grab it from a :obj:`mdtraj.Trajectory`
+              in case it was passed. Ignores potential stride
+              values.
+              See :obj:`ContactPair.time_traces` for more info
+            * True
+              same as [0,0,0]
+            * None or False
+              Do nothing
+            * :obj:`mdtraj.Trajectory`
+              Use this geometry to compute the SS
+            * array_like
+              Use the SS from here, s.t.ss_inf[idx]
+              gives the SS-info for the residue
+              with that idx
+        kwargs_freqs2flare: optargs
+            Keyword arguments for :obj:`mdciao.flare.freqs2flare
+            except for :obj:`top` and :obj:`ss_array`
+
+        Returns
+        -------
+        ifig, iax
+        """
+
+        if consensus_maps is None:
+            pass
+        else:
+            textlabels = []
+            for rr in self.top.residues:
+                clab = _mdcn.choose_between_consensus_dicts(rr.index, consensus_maps,
+                                                            no_key=None)
+                rlab = '%s%s' % (_mdcu.residue_and_atom.shorten_AA(rr, keep_index=True, substitute_fail="long"),
+                                 _mdcu.str_and_dict.choose_between_good_and_better_strings(None, clab, fmt='@%s'))
+                textlabels.append(rlab)
+            kwargs_freqs2flare["textlabels"] = textlabels
+
+        from_tuple = False
+        if not SS or SS is None:
+            kwargs_freqs2flare["ss_array"] = None
+        elif isinstance(SS, _md.Trajectory):
+            kwargs_freqs2flare["ss_array"] = _md.compute_dssp(SS[0],simplified=True)[0]
+        elif SS is True:
+            from_tuple = [0,0,0]
+        elif len(SS)==3:
+            from_tuple = SS
+        else:
+            kwargs_freqs2flare["ss_array"] = SS
+
+        # Introspect?
+        if from_tuple:
+            idx_cp, idx_traj, idx_frame = from_tuple
+            traj = self._contacts[idx_cp].time_traces.trajs[idx_traj]
+            if isinstance(traj,str):
+                traj = _md.load(traj,top=self.top,frame=idx_frame)
+            else:
+                traj = traj[idx_frame]
+                assert isinstance(traj,_md.Trajectory)
+            kwargs_freqs2flare["ss_array"] = \
+            _md.compute_dssp(traj)[0]
+
+        kwargs_freqs2flare["top"]=self.top
+        iax, _ = _mdcflare.freqs2flare(self.frequency_per_contact(ctc_cutoff_Ang),
+                                       self.res_idxs_pairs,
+                                       **kwargs_freqs2flare,
+                                       )
+        ifig = iax.figure
+        ifig.tight_layout()
+        return ifig, iax
 
     @property
     def is_interface(self):

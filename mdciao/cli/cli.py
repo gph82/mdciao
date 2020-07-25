@@ -29,6 +29,9 @@ import mdciao.plots as _mdcplots
 
 import mdciao.utils as _mdcu
 
+from mdciao.flare import _utils as _mdcfu
+
+
 def _offer_to_create_dir(output_dir):
     r"""
     Offer to create a directory if it does not
@@ -165,31 +168,26 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
 
     return fragment_defs, consensus_maps
 
-def _parse_fragment_naming_options(fragment_names, fragments, top):
+def _parse_fragment_naming_options(fragment_names, fragments):
     r"""
     Helper method for the CLTs to understand what/how the user wants
     the fragments to be named
     Parameters
     ----------
-    fragment_names : str
-        comes directly from the command line option --fragment_names,
+    fragment_names : str or list
+        If str, we assume it comes directly from the
+        command line option --fragment_names,
         see :obj:`parsers._parser_add_fragment_names. Can be different
         things:
         * "" : fragment names will be named frag0,frag1,frag2 ... as needed
         * "None","none": fragment names will be None
         * comma-separated values, with as many values
         as fragments are in :obj:`fragments:
+        If list, we do nothing (for compatiblity with API use of CLI tools)
     fragments: list
         existing fragment definitions (iterables of residue indices)
          to apply the :obj:`fragment_names` to.
          Typically, :obj:`fragments` come from a call to :obj:`get_fragments`
-    top : :obj:`mdtraj.Topology` (unused)
-        Topolgy associated with the fragments, only used
-        in the very special case where the user passed the str
-        'danger'  in the command line tool. This is an advandced feature
-        and will be deprecated or refactored soon. It was dangerous
-        because the input :obj:`fragments` would be overwritten.
-        Raises NotImplementedError ATM
 
     Returns
     -------
@@ -199,6 +197,8 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
     """
     #TODO fragment naming should be handled at the object level?
 
+    if isinstance(fragment_names,(list, _np.ndarray)):
+        return fragment_names
     if fragment_names == '':
         fragment_names = ['frag%u' % ii for ii in range(len(fragments))]
     elif fragment_names.lower()=="none":
@@ -214,23 +214,11 @@ def _parse_fragment_naming_options(fragment_names, fragments, top):
 
         elif 'danger' in fragment_names.lower():
             raise NotImplementedError
-            """
-            fragments, names = dangerously_auto_fragments(top,
-                                                                   method="bonds",
-                                                                   verbose=False,
-                                                                   force_resSeq_breaks=True,
-                                                                   frag_breaker_to_pick_idx=0,
-                                                                   )
-            fragment_na     mes.extend(top.residue(ifrag[0]).name for ifrag in fragments[len(names):])
-
-            for ifrag_idx, (ifrag, frag_name) in enumerate(zip(fragments, names)):
-                print_frag(ifrag_idx, top, ifrag, end='')
-                print(" ", frag_name)
-            return fragment_names, fragments
-            """
+            # browse older version to see what was here
 
     return fragment_names
 
+# TODO mix and match with the color options of flareplots
 def _parse_coloring_options(color_option, n,
                             default_color="blue",
                             color_cycle=my_frag_colors
@@ -339,7 +327,9 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
 
 
     # Differentiate the type of figures we can have
-    if len(myfig) == 1:
+    if len(myfig) == 0:
+        fnames = []
+    elif len(myfig) == 1:
         if plot_timedep:
             fnames = [fname_timedep]
         else:
@@ -352,8 +342,8 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
         ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
         ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
         _plt.close(ifig)
-        print(fname)
 
+    # even if no figures were produced, the files should still be saved
     if plot_timedep:
         ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True)
     if separate_N_ctcs:
@@ -641,7 +631,7 @@ def residue_neighborhoods(topology, trajectories, residues,
     refgeom = _load_any_geom(topology)
 
     fragments_as_residue_idxs, __ = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
     # Do we want BW definitions
@@ -907,6 +897,8 @@ def interface(
         table_ext=None,
         title=None,
         min_freq=.10,
+        contact_matrix=True,
+        flareplot=True
 ):
     r"""Contact-frequencies between residues belonging
     to different fragments of the molecular topology
@@ -963,10 +955,12 @@ def interface(
           "\n with a stride of %u frames)" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
     refgeom = _load_any_geom(topology)
+
+    # TODO this is a backwards-compat issue that should be handled elsehere
     if not isinstance(fragments[0],str):
         fragments= [','.join([str(ii) for ii in _mdcu.lists.force_iterable(ifrag)]) for ifrag in fragments]
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
                                                                         "CGN": CGN_PDB},
@@ -1041,10 +1035,6 @@ def interface(
         ifreq = ctc_frequency[idx]
         if ifreq > min_freq:
             pair = ctc_idxs_receptor_Gprot[idx]
-            #consensus_labels = [choose_between_consensus_dicts(idx, [BW, CGN],
-            #                                                    no_key=_shorten_AA(refgeom.top.residue(idx),
-            #                                                                      substitute_fail=0,
-            #                                                                      keep_index=True)) for idx in pair]
             consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps,
                                                                 no_key=None) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
@@ -1114,6 +1104,8 @@ def interface(
     fname_excel = ".".join([fname_wo_ext,"xlsx"])
     fname_dat = ".".join([fname_wo_ext, "dat"])
     fname_pdb = ".".join([fname_wo_ext, "as_bfactors.pdb"])
+    fname_mat   = fname_histo.replace("overall@", "matrix@")
+    fname_flare = fname_histo.replace("overall@", "flare@")
 
     histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
     print(fname_histo)
@@ -1125,16 +1117,37 @@ def interface(
     print(fname_pdb)
 
     #TODO bury this in plots?
-    ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
-                                                             colorbar=True,
-                                                             grid=True)
+    if contact_matrix:
+        ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
+                                                                 colorbar=True,
+                                                                 grid=True)
 
-    iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
-                  fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
-    ifig.tight_layout()
-    fname_mat = fname_histo.replace("overall@","matrix@")
-    ifig.savefig(fname_mat)
-    print(fname_mat)
+        iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
+                      fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
+        ifig.tight_layout()
+        ifig.savefig(fname_mat)
+        print(fname_mat)
+    if flareplot:
+        flare_frags, flare_labs = fragments_as_residue_idxs, None
+        if len(fragment_defs) > 0:
+            flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(fragment_defs.values()),
+                                                                      list(fragment_defs.keys()),
+                                                                      highest_res_idx=ctc_grp_intf.top.n_residues - 1,
+                                                                      orphan_name=""
+                                                                      )
+        ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
+                                                         consensus_maps=consensus_maps,
+                                                         SS=refgeom,
+                                                         fragment_names=flare_labs,
+                                                         fragments=flare_frags,
+                                                         panelsize=_np.max(ifig.get_size_inches()),
+                                                         colors=_mdcfu.col_list_from_input_and_fragments(True,
+                                                                                                         fragments_as_residue_idxs),
+                                                         )
+        ifig.tight_layout()
+        ifig.savefig(fname_flare,bbox_inches="tight")
+        print(fname_flare)
+
     if plot_timedep or separate_N_ctcs:
         myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
                                                color_scheme=_my_color_schemes(curve_color),
@@ -1159,6 +1172,8 @@ def interface(
                                                    t_unit=t_unit,
                                                    separate_N_ctcs=separate_N_ctcs
                                                    )
+        if len(myfig)==0:
+            print("No figures of time-traces were produced because only 1 frame was provided")
 
     return ctc_grp_intf
 
@@ -1213,7 +1228,7 @@ def sites(topology,
 
     # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elswhere
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs, refgeom.top)
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, \
     consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
                                                                         "CGN": CGN_PDB},

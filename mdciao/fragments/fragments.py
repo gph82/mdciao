@@ -175,18 +175,7 @@ def get_fragments(top,
     _assert_method_allowed(method)
 
     # Auto detect fragments by resSeq
-    old = top.residue(0).resSeq
-    fragments_resSeq = [[]]
-    for ii, rr in enumerate(top.residues):
-        delta = _np.abs(rr.resSeq - old)
-        # print(delta, ii, rr, end=" ")
-        if delta <= 1:
-            # print("appending")
-            fragments_resSeq[-1].append(ii)
-        else:
-            # print("new")
-            fragments_resSeq.append([ii])
-        old = rr.resSeq
+    fragments_resSeq = _get_fragments_by_jumps_in_sequence([rr.resSeq for rr in top.residues])[0]
 
     if method=="resSeq":
         fragments = fragments_resSeq
@@ -288,6 +277,42 @@ def get_fragments(top,
         return fragments
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
+
+def _get_fragments_by_jumps_in_sequence(sequence,jump=1):
+    r"""
+    Return the array in :obj:`sequence` chopped into sub-arrays (=fragments=
+    where there's a jump in the sequence
+
+    Parameters
+    ----------
+    sequence : iterable of ints
+    jump : int, default is 1
+        What is considered a jump in the sequence
+
+    Returns
+    -------
+    idxs : list
+        The idxs of :obj:`sequence` in each fragment
+    fragments : list
+        :obj:`sequence` chopped into the fragments
+    """
+    old = sequence[0]
+    frag_idxs = [[]]
+    frag_elements = [[]]
+    for ii, rr in enumerate(sequence):
+        delta = _np.abs(rr - old)
+        # print(delta, ii, rr, end=" ")
+        if delta <= jump:
+            # print(delta, ii, rr, "appending")
+            frag_idxs[-1].append(ii)
+            frag_elements[-1].append(rr)
+        else:
+            # print(delta, ii, rr, "new")
+            frag_idxs.append([ii])
+            frag_elements.append([rr])
+        # print(fragments[-1])
+        old = rr
+    return frag_idxs, frag_elements
 
 def _get_fragments_resSeq_plus(top, fragments_resSeq):
     r"""
@@ -606,3 +631,46 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
         print(', '.join(groups_as_keys[-1]))
 
     return groups_as_residue_idxs, groups_as_keys
+
+def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
+                            orphan_name="?"):
+    r"""
+    Return a fragment list where residues not present in :obj:`fragments` are
+    now new interstitial fragments. The individual fragments have to
+    cover their entire span, i.e. a fragment like [0,1,5,6] is not permitted
+
+    Parameters
+    ----------
+    fragments : list
+        The initial fragments potentially missing some residues
+    fragnames : list
+        The names of :obj:`fragments`
+    highest_res_idx : int, default is None
+        The highest possible res_idx. The returned fragments
+        will have this idx as last idx of the last fragment (input or orphan)
+        If None, the highest value (max) of fragments is
+        used
+    orphan_name : str, default is ?
+
+
+    Returns
+    -------
+    new_fragments : list
+        The new fragments including those missing in the input
+    new_names : list
+        The new names, where the "orphans" have gotten the name orphan_char
+
+    """
+    if highest_res_idx is None:
+        highest_res_idx = _np.max(_np.hstack(fragments))
+
+    for ifrag in fragments:
+        if len(ifrag)==ifrag[-1]-ifrag[0]:
+            raise ValueError("This method cannot use fragments like this\n",ifrag)
+    orphans = _np.delete(_np.arange(highest_res_idx + 1), _np.hstack(fragments))
+    orphans = _get_fragments_by_jumps_in_sequence(orphans)[1]
+    orphans_labels = [orphan_name for __ in orphans]
+    new_frags = orphans + fragments
+    new_labels = orphans_labels + fragnames
+    idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
+    return [new_frags[ii] for ii in idxs], [new_labels[ii] for ii in idxs]

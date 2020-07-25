@@ -1,6 +1,7 @@
 import numpy as _np
 from . import _utils as _futils
 from mdciao.plots.plots import _points2dataunits
+from mdciao.utils.str_and_dict import replace4latex
 
 from matplotlib import pyplot as _plt
 from matplotlib.patches import CirclePolygon as _CP
@@ -24,7 +25,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 top=None,
                 colors=True,
                 fontsize=None,
-                shortenAAs=False,
+                shortenAAs=True,
                 aa_offset=0,
                 markersize=None,
                 bezier_linecolor='k',
@@ -113,6 +114,14 @@ def freqs2flare(freqs, res_idxs_pairs,
         In axis units, where the flareplot will be centered around
     r: float, default is 1
         In axis units, the radius of the flareplot
+    textlabels : bool or array_like, default is True
+        If
+        * True: the dots representing the residues
+          will be provided a label, either their
+          serial index or the residue name, e.g. GLU30
+        * False: no labeling
+        * array_like : will be passed as label_replacement
+        to XXX via XXX #todo
     mute_fragments: iterable of integers, default is None
         Curves involving these fragments will be hidden. Fragments
         are expressed as indices of :obj:`fragments`
@@ -146,7 +155,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     fontsize: int, default is None
     lw: float, default is None
         Line width of the contact lines
-    shortenAAs: boolean, default is False
+    shortenAAs: boolean, default is True
         Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
         is parsed
 
@@ -162,7 +171,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     if _np.ndim(freqs)==1:
         freqs = _np.reshape(freqs,(1, -1))
     elif _np.ndim(freqs)==2:
-        freqs
+        pass
     else:
         raise ValueError("Input array has to of shape either "
                          "(m) or (n, m) where n : n frames, and m: n_contacts")
@@ -188,7 +197,7 @@ def freqs2flare(freqs, res_idxs_pairs,
             residues_as_fragments = fragments
     residues_to_plot_as_dots = _np.hstack(residues_as_fragments)
     assert set(residx_array).issubset(residues_to_plot_as_dots), \
-        "The input do not contain all residues residx_array, " \
+        "The input fragments do not contain all residues residx_array, " \
         "their set difference is %s"%(set(residx_array).difference(residues_to_plot_as_dots))
 
     # Create a map
@@ -206,7 +215,8 @@ def freqs2flare(freqs, res_idxs_pairs,
         xy += center
     else:
         iax, xy = circle_plot_residues(residues_as_fragments,
-                                       fontsize, colors,
+                                       fontsize=fontsize,
+                                       colors=colors,
                                        panelsize=panelsize,
                                        padding_beginning=padding_beginning,
                                        padding_end=padding_end,
@@ -339,9 +349,10 @@ def circle_plot_residues(fragments,
         dot_radius = r * _np.sin(_np.pi/n_positions)
         dot_radius_in_pts = dot_radius*_points2dataunits(iax).mean()
         if dot_radius_in_pts < 1.5:
-            print(ValueError("This number of residues (%u) with this panelsize in inches (%3.1f) "
-                             "forces too small dotsizes and fontsizes. Weird crowding effects "
-                             "might occur. Either reduce the number of residues or increase "
+            print(ValueError("Drawing this many of residues (%u) in "
+                             "a panel %3.1f inches wide/high "
+                             "forces too small dotsizes and fontsizes. If crowding effects "
+                             "occur, either reduce the number of residues or increase "
                              "the panel size"%(n_positions, panelsize)))
         if not arc:
             CPs = [_CP(ixy,
@@ -380,6 +391,11 @@ def circle_plot_residues(fragments,
     maxlen = 1
     labels = []
     if textlabels:
+        if isinstance(textlabels,bool):
+            replacement_labels = None
+        else:
+            # Interpret the textlabels as replacements
+            replacement_labels = textlabels
         overlap = True
         counter = 0
         while overlap and counter < n_max:
@@ -396,7 +412,8 @@ def circle_plot_residues(fragments,
                                                    padding_between_fragments=padding_between_fragments,
                                                    shortenAAs=shortenAAs,
                                                    highlight_residxs=highlight_residxs, top=top,
-                                                   aa_offset=aa_offset)
+                                                   aa_offset=aa_offset,
+                                                   replacement_labels=replacement_labels)
             lab_lenths = [len(itext.get_text()) for itext in labels]
             idx_longest_label = _np.argmax(lab_lenths)
             maxlen=_np.max(lab_lenths)
@@ -404,7 +421,7 @@ def circle_plot_residues(fragments,
             bad_dot_bb =    CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
             overlap = bad_txt_bb.overlaps(bad_dot_bb)
             counter+=1
-            #print(overlap, counter)
+            #print(overlappers, counter)
 
         assert not overlap, ValueError("Tried to 'un'-overlap textlabels and residue markers %u times without success"%n_max)
 
@@ -445,6 +462,7 @@ def circle_plot_residues(fragments,
                                                       colors=ss_colors,
                                                       weight="bold")
             idx_longest_label = _np.argmax([len(itext.get_text()) for itext in ss_labels])
+            # We're doing this "by hand" here because it's just two or at most 3 offenders
             bad_ss_bb = ss_labels[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
             bad_dot_bb = CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
             overlap = bad_ss_bb.overlaps(bad_dot_bb)
@@ -462,12 +480,12 @@ def circle_plot_residues(fragments,
                                    fc=None,
                                    fill=False,
                                    zorder=10))
+
     # Do we have names?
     if fragment_names is not None:
         span = (2*(r + running_r_pad))
-        frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of space)
+        frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of panel space)
         frag_fontsize_in_pts = frag_fontsize_in_aus * _points2dataunits(iax).mean()
-        #frag_fontsize_in_pts = panelsize * 2
         frag_labels = _futils.add_fragment_labels(fragments,
                                                   iax, xy,
                                                   fragment_names,
@@ -476,22 +494,16 @@ def circle_plot_residues(fragments,
                                                   center=center,
                                                   r=r + running_r_pad
                                                   )
+        # First un-overlapp the labels themselves
+        _futils.un_overlap_via_fontsize(frag_labels)
+        frag_fontsize_in_pts = frag_labels[0].get_size()
 
-        frag_boxes = [fl.get_window_extent(renderer=iax.figure.canvas.get_renderer()) for fl in frag_labels]
-        potential_clashing_artists = CPs+labels+ss_labels
-        potential_clashing_boxes = [aa.get_window_extent(renderer=iax.figure.canvas.get_renderer()) for aa in potential_clashing_artists]
-        overlapping_boxes = []
-        overlapping_artists = []
-        for fbox in frag_boxes:
-            idxs = [ii for ii, bbox in enumerate(potential_clashing_boxes) if fbox.overlaps(bbox)]
-            overlapping_artists.extend([potential_clashing_artists[ii] for ii in idxs])
-            overlapping_boxes.extend([potential_clashing_boxes[ii] for ii in idxs])
-        overlap = True
+        # Then find the overlappers among existing labels (to avoid using all labels unnecessarily)
+        foverlappers = _futils.overlappers(frag_labels, CPs + labels + ss_labels)
         counter = 0
-        from mdciao.utils.str_and_dict import replace4latex
-        while overlap and counter < n_max:
+        while any(_futils.overlappers(frag_labels, foverlappers)) and counter < n_max:
             [fl.remove() for fl in frag_labels]
-            running_r_pad += frag_fontsize_in_aus
+            running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
             frag_labels = _futils.add_fragment_labels(fragments,
                                                       iax, xy,
                                                       [replace4latex(ifrag) for ifrag in fragment_names],
@@ -500,19 +512,18 @@ def circle_plot_residues(fragments,
                                                       center=center,
                                                       r=r + running_r_pad
                                                       )
-            frag_boxes = [fl.get_window_extent(renderer=iax.figure.canvas.get_renderer()) for fl in frag_labels]
-            _overlaps = [frag_boxes[0].overlaps(ibox) for ibox in potential_clashing_boxes]
-            overlap = _np.any(_overlaps)
-            counter +=1
+            # print(counter, overlappers(frag_labels, foverlappers))
+            counter += 1
+            frag_fontsize_in_pts = frag_labels[0].get_size()
 
         running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
-
 
     iax.set_yticks([])
     iax.set_xticks([])
     iax.set_xlim([center[0] - r - running_r_pad, center[0] + r + running_r_pad])
     iax.set_ylim([center[1] - r - running_r_pad, center[1] + r + running_r_pad])
     return iax, xy
+
 
 def add_bezier_curves(iax,
                       nodepairs_xy,

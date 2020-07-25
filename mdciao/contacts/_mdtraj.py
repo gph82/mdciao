@@ -1,4 +1,12 @@
 # todo check that mdtraj's license allows for this
+# opened an issue for this:
+# https://github.com/mdtraj/mdtraj/issues/1569
+# Further reading
+# https://www.oreilly.com/library/view/understanding-open-source/0596005814/ch03.html
+# https://tldrlegal.com/license/gnu-lesser-general-public-license-v3-(lgpl-3)
+# http://oss-watch.ac.uk/resources/lgpl
+#https://www.gnu.org/licenses/gpl-faq.html#AllCompatibility
+
 import numpy as _np
 import mdtraj as _md
 from mdtraj.utils import ensure_type
@@ -186,7 +194,6 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
             if not soft_min:
                 idx_min = atom_distances[:, index : index + n].argmin(axis=1)
                 aa_pairs.append(_np.array(atom_pairs[index: index + n])[idx_min])
-                # TODO do not call the min function again here, call idx_min
                 distances[:, i] = atom_distances[:, index : index + n].min(axis=1)
             else:
                 distances[:, i] = soft_min_beta / \

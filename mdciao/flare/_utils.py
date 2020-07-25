@@ -298,14 +298,16 @@ def col_list_from_input_and_fragments(colors,
             to_tile = _mycolors[:1]
         jcolors = _np.tile(to_tile, _np.ceil(len(residxs_as_fragments) / len(to_tile)).astype("int"))
         col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
-
     elif isinstance(colors, str):
         to_tile = [colors]
         jcolors = _np.tile(to_tile, _np.ceil(len(residxs_as_fragments) / len(to_tile)).astype("int"))
         col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
 
     elif isinstance(colors, (list, _np.ndarray)):
-        assert len(colors) == len(residxs_as_fragments), (len(colors), len(residxs_as_fragments))
+        assert len(colors) in [len(residxs_as_fragments),
+                               len(_np.hstack(residxs_as_fragments))], (len(colors),
+                                                                        len(residxs_as_fragments),
+                                                                        len(_np.hstack(residxs_as_fragments)))
         col_list = colors
 
     elif isinstance(colors, dict):
@@ -601,3 +603,52 @@ def value2position_map(unique_idxs):
     value2pos[:] = _np.nan
     value2pos[values] = positions
     return value2pos
+
+def overlappers(text_objects_1, text_objects_2):
+    r"""
+    Return a list of objects whose window_extents overlap in any way with any other object
+
+    The self-overlap is ignored
+
+    Parameters
+    ----------
+    text_objects_1 : list
+        List of :obj:`matplotlib.text.Text` objects
+
+    Returns
+    -------
+    overlappers : list
+        The :obj:`matplotlib.text.Text` objects
+
+
+    """
+
+    boxes_1 = [t.get_window_extent(renderer=t.axes.figure.canvas.get_renderer()) for t in text_objects_1]
+    # We could be computing the same boxes two times but makes for
+    # better readability and more consistent return values
+    boxes_2 = [t.get_window_extent(renderer=t.axes.figure.canvas.get_renderer()) for t in text_objects_2]
+    return [t2 for t2, b2 in zip(text_objects_2,boxes_2) if any([(b1 is not b2 and b1.overlaps(b2)) for b1 in boxes_1])]
+
+
+def un_overlap_via_fontsize(text_objects, fac=.95, maxiter=50):
+    r"""
+    Iteratively (up to n_max) reduce the fontsize by :obj:`fac`
+    until the text objects do not overlap anymore
+
+    Parameters
+    ----------
+    text_objects : list
+        List of :obj:`matplotlib.text.Text` objects
+    fac : float, default is .95
+        fontsize_ii_+1 = fontsize_ii * fac
+    maxiter: int, default is 50
+        Stop after these many iterations
+
+    Returns
+    -------
+
+    """
+    counter = 0
+    while any(overlappers(text_objects, text_objects)) and counter < maxiter:
+        [t1.set_size(t1.get_size() * fac) for t1 in text_objects]
+        counter += 1
