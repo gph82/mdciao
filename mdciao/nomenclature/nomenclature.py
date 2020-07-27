@@ -606,6 +606,7 @@ class LabelerConsensus(object):
                  return_defs=False,
                  fragments=None,
                  fill_gaps=False,
+                 verbose=True,
                  ):
         r"""
         Prints the definitions of subdomains that the
@@ -677,7 +678,8 @@ class LabelerConsensus(object):
             istr = _mdcfrg.print_frag(key, top, res_idxs, fragment_desc='',
                                idx2label=map_conlab,
                                return_string=True)
-            print(istr)
+            if verbose:
+                print(istr)
         if return_defs:
             return {key:val for key, val in defs.items()}
 
