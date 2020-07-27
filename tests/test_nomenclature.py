@@ -737,3 +737,29 @@ class Test_sort_consensus_labels(unittest.TestCase):
         sorted = nomenclature.sort_CGN_consensus_labels(self.tosort, append_diffset=False)
         _np.testing.assert_array_equal(["G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20"],
                                        sorted)
+
+
+class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
+
+    def setUp(self):
+        super(Test_compatible_consensus_fragments,self).setUp()
+        self.top = md.load(test_filenames.actor_pdb).top
+
+    def test_works(self):
+        # Obtain the full objects first
+        full_map = self.cgn_local.top2map(self.top,
+                                          verbose=False)
+        frag_defs = self.cgn_local.top2defs(self.top,
+                                            verbose=False, return_defs=True,
+                                            map_conlab=full_map)
+        idxs_to_restrict_to = frag_defs["G.H5"]
+        incomplete_map = [full_map[idx] if idx in idxs_to_restrict_to else None for idx in range(self.top.n_residues)]
+
+        # Reconstruct the full definitions from the cgn_local object
+        reconstructed_defs = nomenclature.compatible_consensus_fragments(self.top,
+                                                                         [incomplete_map],
+                                                                         [self.cgn_local],
+                                                                         fill_gaps=False)
+
+        self.assertDictEqual(frag_defs, reconstructed_defs)
+

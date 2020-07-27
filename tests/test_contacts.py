@@ -35,7 +35,9 @@ from tempfile import TemporaryDirectory as _TDir, TemporaryFile as _TFil
 
 import mdciao.utils.COM as mdcCOM
 
+#TODO break this up by object type? Testfile is huge
 test_filenames = filenames()
+
 
 class TestBaseClassContacts(unittest.TestCase):
     def setUp(self):
@@ -2065,7 +2067,6 @@ class Test_linear_switchoff(unittest.TestCase):
                                         [_np.mean(self.linearized), _np.mean(self.linearized)],
                                         )
 
-
 class TestContactPairHashingEqualitySaving(TestBaseClassContactGroup):
 
     def test_not_equal(self):
@@ -2195,3 +2196,52 @@ class TestGroupOfGroupsOfContactsBasic(TestBaseClassGroupOfGroupsOfContacts):
         _np.testing.assert_array_equal(mat, mat_ref)
 
 
+class Test_modified_mdtraj_contacts(unittest.TestCase):
+
+    def setUp(self):
+        self.traj = md.load(test_filenames.traj_xtc, top=test_filenames.top_pdb)
+
+    def test_works(self):
+        ctcs_ref, residxs_ref = md.compute_contacts(self.traj, [[10, 20], [100, 200]])
+        ctcs_tst, residxs_tst, __ = contacts._mdtraj.compute_contacts(self.traj, [[10, 20], [100, 200]])
+        _np.testing.assert_array_equal(ctcs_ref, ctcs_tst)
+        _np.testing.assert_array_equal(residxs_ref, residxs_tst)
+
+    def test_schemes(self):
+        for scheme in ['ca', 'closest', 'closest-heavy', 'sidechain', 'sidechain-heavy']:
+            ctcs_ref, residxs_ref = md.compute_contacts(self.traj, [[10, 20], [100, 200]], scheme=scheme)
+            ctcs_tst, residxs_tst, __ = contacts._mdtraj.compute_contacts(self.traj, [[10, 20], [100, 200]],
+                                                                          scheme=scheme)
+            _np.testing.assert_array_equal(ctcs_ref, ctcs_tst)
+            _np.testing.assert_array_equal(residxs_ref, residxs_tst)
+
+    def test_softmin(self):
+        ctcs_ref, residxs_ref = md.compute_contacts(self.traj, [[10, 20], [100, 200]], soft_min=True)
+        ctcs_tst, residxs_tst, __ = contacts._mdtraj.compute_contacts(self.traj, [[10, 20], [100, 200]], soft_min=True)
+        _np.testing.assert_array_equal(ctcs_ref, ctcs_tst)
+        _np.testing.assert_array_equal(residxs_ref, residxs_tst)
+
+    def test_all(self):
+        small_traj = self.traj.atom_slice(self.traj.top.select("residue < 10"))
+        ctcs_ref, residxs_ref = md.compute_contacts(small_traj, "all")
+        ctcs_tst, residxs_tst, __ = contacts._mdtraj.compute_contacts(small_traj, "all")
+        _np.testing.assert_array_equal(ctcs_ref, ctcs_tst)
+        _np.testing.assert_array_equal(residxs_ref, residxs_tst)
+
+    def test_failures(self):
+        with _np.testing.assert_raises(ValueError):
+            contacts._mdtraj.compute_contacts(self.traj, 'al')
+
+        with _np.testing.assert_raises(ValueError):
+            contacts._mdtraj.compute_contacts(self.traj, [])
+
+        with _np.testing.assert_raises(ValueError):
+            no_top = self.traj[:]
+            setattr(no_top, "_topology", None)
+            contacts._mdtraj.compute_contacts(no_top, [[0,1]])
+
+        with _np.testing.assert_raises(ValueError):
+            contacts._mdtraj.compute_contacts(self.traj, [[0,1]], scheme='CB    ')
+
+    def test_passes(self):
+        contacts._mdtraj.compute_contacts(self.traj, [[0, 1]], scheme='ca', soft_min=True)

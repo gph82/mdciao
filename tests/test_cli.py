@@ -312,76 +312,88 @@ class Test_sites(TestCLTBaseClass):
                   output_dir=tmpdir,
                   scheme="COM")
 
+
 class Test_interface(TestCLTBaseClass):
 
     def test_interface(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.interface(self.geom, [self.traj, self.traj_reverse],
-                      frag_idxs_group_1=[0],
-                      frag_idxs_group_2=[1],
-                      output_dir=tmpdir)
+            cli.interface(self.geom, [self.traj, self.traj_reverse],
+                          frag_idxs_group_1=[0],
+                          frag_idxs_group_2=[1],
+                          output_dir=tmpdir,
+                          flareplot=False,
+                          )
 
     def test_interface_wo_frag_idxs_groups(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in ["0-1","2,3"])
+            input_values = (val for val in ["0-1", "2,3"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                 cli.interface(self.geom, [self.traj, self.traj_reverse],
-                          output_dir=tmpdir)
+                cli.interface(self.geom, [self.traj, self.traj_reverse],
+                              output_dir=tmpdir,
+                              flareplot=False
+                              )
 
     def test_w_just_one_fragment_by_user(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.interface(self.geom, [self.traj, self.traj_reverse],
-                      output_dir=tmpdir,
-                      fragments=["0-5"])
+            cli.interface(self.geom, [self.traj, self.traj_reverse],
+                          output_dir=tmpdir,
+                          fragments=["0-5"],
+                          flareplot=False,
+                          )
 
     def test_w_just_one_fragment_by_user_and_n_ctcs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.interface(self.geom, [self.traj, self.traj_reverse],
-                      output_dir=tmpdir,
-                      fragments=["0-5"],
-                      n_nearest=1)
+            cli.interface(self.geom, [self.traj, self.traj_reverse],
+                          output_dir=tmpdir,
+                          fragments=["0-5"],
+                          n_nearest=1,
+                          flareplot=False
+                          )
 
     def test_w_just_two_fragments_by_user(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.interface(self.geom, [self.traj, self.traj_reverse],
-                      frag_idxs_group_1=[0],
-                      frag_idxs_group_2=[1],
-                      output_dir=tmpdir,
-                      fragments=["0-5",
-                                 "6-10"])
+            cli.interface(self.geom, [self.traj, self.traj_reverse],
+                          frag_idxs_group_1=[0],
+                          frag_idxs_group_2=[1],
+                          output_dir=tmpdir,
+                          fragments=["0-5",
+                                     "6-10"],
+                          flareplot=False)
 
     def test_w_nomenclature_CGN_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             shutil.copy(test_filenames.CGN_3SN6, tmpdir)
             shutil.copy(test_filenames.pdb_3SN6, tmpdir)
-            shutil.copy(test_filenames.adrb2_human_xlsx,tmpdir)
+            shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
                 cli.interface(self.geom, [self.traj, self.traj_reverse],
-                          output_dir=tmpdir,
-                          fragments=["967-1001", #TM6
-                                     "328-353"], #a5
-                          CGN_PDB="3SN6",
-                          BW_uniprot="adrb2_human",
-                          accept_guess=True,
-                          )
+                              output_dir=tmpdir,
+                              fragments=["967-1001",  # TM6
+                                         "328-353"],  # a5
+                              CGN_PDB="3SN6",
+                              BW_uniprot="adrb2_human",
+                              accept_guess=True,
+                              flareplot=False
+                              )
 
     def test_w_nomenclature_CGN_BW_fragments_are_consensus(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in [ "TM6","*H5"])
+            input_values = (val for val in ["TM6", "*H5"])
             shutil.copy(test_filenames.CGN_3SN6, tmpdir)
             shutil.copy(test_filenames.pdb_3SN6, tmpdir)
             shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
                 with mock.patch('builtins.input', lambda *x: next(input_values)):
-                     cli.interface(self.geom, [self.traj, self.traj_reverse],
-                          output_dir=tmpdir,
-                          fragments=["consensus"],
-                          CGN_PDB="3SN6",
-                          BW_uniprot="adrb2_human",
-                          accept_guess=True,
-                          )
+                    cli.interface(self.geom, [self.traj, self.traj_reverse],
+                                  output_dir=tmpdir,
+                                  fragments=["consensus"],
+                                  CGN_PDB="3SN6",
+                                  BW_uniprot="adrb2_human",
+                                  accept_guess=True,
+                                  flareplot=False
+                                  )
 
 class Test_parse_consensus_option(unittest.TestCase):
 
