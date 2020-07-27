@@ -148,8 +148,9 @@ def _parse_consensus_option(option, consensus_type,
 def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                       fragments_as_residue_idxs,
                                                       accept_guess=False,
-                                                      write_to_disk_BW=False):
-    fragment_defs, consensus_maps = {}, []
+                                                      write_to_disk_BW=False,
+                                                      verbose=True):
+    fragment_defs, consensus_maps, consensus_labelers = {}, [], {}
     for key, option in option_dict.items():
         map_CL, CL = _parse_consensus_option(option, key, top, fragments_as_residue_idxs,
                                            return_Labeler=True,
@@ -158,15 +159,18 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                           "CGN":False}[key])
         consensus_maps.append(map_CL)
         if CL is not None:
-            print("INFO: these are the %s fragments mapped onto your topology")
-            fragment_defs.update(CL.top2defs(top,
-                                               map_conlab=map_CL,
-                                               fragments=fragments_as_residue_idxs,
-                                               return_defs=True))
+            consensus_labelers[key] = CL
+            if verbose:
+                print("These are the %s fragments mapped onto your topology:"%key)
+                fragment_defs.update(CL.top2defs(top,
+                                                 map_conlab=map_CL,
+                                                 fragments=fragments_as_residue_idxs,
+                                                 return_defs=True,
+                                                 verbose=verbose))
             if not accept_guess:
                 input("Hit enter to continue!\n")
 
-    return fragment_defs, consensus_maps
+    return fragment_defs, consensus_maps, consensus_labelers
 
 def _parse_fragment_naming_options(fragment_names, fragments):
     r"""
@@ -961,13 +965,13 @@ def interface(
         fragments= [','.join([str(ii) for ii in _mdcu.lists.force_iterable(ifrag)]) for ifrag in fragments]
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
-    fragment_defs, \
-    consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
-                                                                        "CGN": CGN_PDB},
-                                                                       refgeom.top,
-                                                                       fragments_as_residue_idxs,
-                                                                       accept_guess=accept_guess,
-                                                                       write_to_disk_BW=write_to_disk_BW)
+    fragment_defs, consensus_maps, consensus_labelers = \
+        _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
+                                                           "CGN": CGN_PDB},
+                                                          refgeom.top,
+                                                          fragments_as_residue_idxs,
+                                                          accept_guess=accept_guess,
+                                                          write_to_disk_BW=write_to_disk_BW)
     if user_wants_consenus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(fragment_defs, ng=2)
@@ -1129,10 +1133,15 @@ def interface(
         print(fname_mat)
     if flareplot:
         flare_frags, flare_labs = fragments_as_residue_idxs, None
-        if len(fragment_defs) > 0:
-            flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(fragment_defs.values()),
-                                                                      list(fragment_defs.keys()),
-                                                                      highest_res_idx=ctc_grp_intf.top.n_residues - 1,
+        if len(consensus_labelers) > 0:
+            # This is because frag_defs could be missing a lot of stuff depending
+            # on user input, check the next method's doc
+            consensus_frags = compatible_consensus_fragments(refgeom.top, consensus_maps,
+                                                             consensus_labelers.values())
+
+            flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(consensus_frags.values()),
+                                                                      list(consensus_frags.keys()),
+                                                                      highest_res_idx=refgeom.top.n_residues - 1,
                                                                       orphan_name=""
                                                                       )
 
@@ -1141,9 +1150,9 @@ def interface(
                                                          SS=refgeom,
                                                          fragment_names=flare_labs,
                                                          fragments=flare_frags,
-                                                         panelsize=_np.max(ifig.get_size_inches()),
-                                                         colors=_mdcfu.col_list_from_input_and_fragments(True,
-                                                                                                         fragments_as_residue_idxs),
+                                                         #panelsize=_np.max(ifig.get_size_inches()),
+                                                         # TODO deal with the color madness
+                                                         colors=_mdcfu.col_list_from_input_and_fragments(True, flare_frags),
                                                          )
         ifig.tight_layout()
         ifig.savefig(fname_flare,bbox_inches="tight")
@@ -1177,6 +1186,71 @@ def interface(
             print("No figures of time-traces were produced because only 1 frame was provided")
 
     return ctc_grp_intf
+
+
+def compatible_consensus_fragments(top,
+                                   existing_consensus_maps,
+                                   CLs,
+                                   fill_gaps=True):
+    r"""
+
+    Note
+    ----
+
+    (to developers)
+
+    In the case of direct-selection by residue index, labelling objects such
+    as consensus maps don't carry information about excluded indices.
+
+    However, flareplots usually (sparse=False) show all residues regardless of
+    what the user's fragment selection was.
+
+    To label residues originally omitted by user selection, here we call again the
+    consensus auto-labeling methods to include as many residues as possible.
+
+    If this re-labelling clashes with the old one, an Exception is thrown.
+
+    -------
+
+    Returns
+    -------
+    new_frags : dict
+        A new fragment definition, keyed with the consensus labels present
+        in the input consensus labelers and compatible with the
+        existing consensus labels
+    """
+    # If this doesn't work, nothing else will
+    unified_existing_consensus_map = [_mdcnomenc.choose_between_consensus_dicts(idx, existing_consensus_maps, no_key=None)
+                                      for idx in range(top.n_residues)]
+
+    # Same here
+    new_maps = [iCL.top2map(top, fill_gaps=fill_gaps,verbose=False) for iCL in CLs]
+    unified_new_consensus_map = [_mdcnomenc.choose_between_consensus_dicts(idx,new_maps,no_key=None) for idx in range(top.n_residues)]
+
+    # Now incorporate new labels while checking with clashes with old ones
+    for ii in range(top.n_residues):
+        existing_val = unified_existing_consensus_map[ii]
+        new_val = unified_new_consensus_map[ii]
+        # take the new val, even if it's also None
+        if existing_val is None:
+            unified_existing_consensus_map[ii] = new_val
+        # otherwise check no clashes with the existing map
+        else:
+            #print(existing_val, "ex not None")
+            #print(new_val, "new val")
+            assert(existing_val==new_val)
+
+    new_frags = {}
+    for iCL in CLs:
+        new_frags.update(iCL.top2defs(top,
+                                      map_conlab=unified_new_consensus_map,
+                                      return_defs=True,
+                                      verbose=False))
+
+    # This should hold anyway bc of top2defs calling conlab2residx
+    _mdcu.lists.assert_no_intersection(new_frags.values())
+
+    return new_frags
 
 def sites(topology,
           trajectories,
@@ -1230,13 +1304,13 @@ def sites(topology,
     # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elswhere
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
-    fragment_defs, \
-    consensus_maps = _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
-                                                                        "CGN": CGN_PDB},
-                                                                       refgeom.top,
-                                                                       fragments_as_residue_idxs,
-                                                                       accept_guess=accept_guess,
-                                                                       write_to_disk_BW=write_to_disk_BW)
+    fragment_defs, consensus_maps, __ = \
+        _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
+                                                           "CGN": CGN_PDB},
+                                                          refgeom.top,
+                                                          fragments_as_residue_idxs,
+                                                          accept_guess=accept_guess,
+                                                          write_to_disk_BW=write_to_disk_BW)
 
     sites = [_mdcsites.sitefile2sitedict(ff) for ff in site_files]
     ctc_idxs_small, AAresSeq2residxs = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
