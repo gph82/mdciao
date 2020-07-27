@@ -375,9 +375,13 @@ class Test_str_latex(unittest.TestCase):
         self.sub_supers = ["C_2", "C^2"]
 
     def test_works(self):
-        import numpy as _np
-        _np.testing.assert_array_equal(str_and_dict.replace4latex("There's an alpha and a beta here, also C_2"),
+        np.testing.assert_array_equal(str_and_dict.replace4latex("There's an alpha and a beta here, also C_2"),
                                     "There's an $\\alpha$ and a $\\beta$ here, also $C_2$")
+
+    def test_nothing_happens(self):
+        istr = str_and_dict.replace4latex("There's an alpha and a beta here, also C_2")
+        np.testing.assert_array_equal(str_and_dict.replace4latex(istr),
+                                    istr)
 
 class Test_auto_fragment_string(unittest.TestCase):
 
