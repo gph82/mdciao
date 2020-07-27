@@ -191,9 +191,9 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
         for i in xrange(n_residue_pairs):
             index = int(_np.sum(n_atom_pairs_per_residue_pair[:i]))
             n = n_atom_pairs_per_residue_pair[i]
+            idx_min = atom_distances[:, index: index + n].argmin(axis=1)
+            aa_pairs.append(_np.array(atom_pairs[index: index + n])[idx_min])
             if not soft_min:
-                idx_min = atom_distances[:, index : index + n].argmin(axis=1)
-                aa_pairs.append(_np.array(atom_pairs[index: index + n])[idx_min])
                 distances[:, i] = atom_distances[:, index : index + n].min(axis=1)
             else:
                 distances[:, i] = soft_min_beta / \
