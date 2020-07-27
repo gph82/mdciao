@@ -701,7 +701,8 @@ class LabelerCGN(LabelerConsensus):
         PDB_input: str
             The PDB-file to be used. For compatibility reasons, there's different use-cases.
 
-            * Full path to an existing file containing the CGN nomenclature, e.g. '/abs/path/to/some/dir/CGN_ABCD.txt' (or ABCD.txt). Then this happens:
+            * Full path to an existing file containing the CGN nomenclature,
+            e.g. '/abs/path/to/some/dir/CGN_ABCD.txt' (or ABCD.txt). Then this happens:
                 * :obj:`local_path` gets overridden with '/abs/path/to/some/dir/'
                 * a PDB four-letter-code is inferred from the filename, e.g. 'ABCD'
                 * a file '/abs/path/to/some/dir/ABCD.pdb(.gz)' is looked for
@@ -1610,3 +1611,85 @@ _CGN_fragments = ['G.HN',
                  'G.S6',
                  'G.s6h5',
                  'G.H5']
+
+def compatible_consensus_fragments(top,
+                                   existing_consensus_maps,
+                                   CLs,
+                                   fill_gaps=True):
+    r"""
+    Expand (if possible) a list existing consensus maps using
+    :obj:`mdciao.nomenclature.LabelerConsensus` objects
+
+
+
+    Note
+    ----
+
+    The origin of this plot is that :obj:`mdciao.cli.interface` needs
+    all consensus labels it can get to prettify flareplots.
+
+    However, in the case of direct-selection by residue index (and possibly
+    other cases), these consensus maps don't carry information about indices
+    that were excluded when aligning the topology to a reference sequence
+    (for better alignment).
+
+    Hence, to be able to label these omitted residues, we
+     * generate new consensus maps from all objects in :obj:`CLs`
+     * aggregate them into one single map (if possible)
+     * add them to :obj:`existing_consensus_maps`
+
+    The last step will only work if the the newly generated maps
+    do not have differing definitions to those already in
+    :obj:`existing` maps. Otherwise, an Exception is thrown.
+
+    Parameters
+    ----------
+    top : :obj:`mdtraj.Topology`
+    existing_consensus_maps : list
+        List of individual consensus maps, typically BW
+        or CGN maps. These list are maps in this sense:
+        cons_map[res_idx] = "3.50"
+    CLs : list
+        List of :obj:`mdciao.nomenclature.LabelerConsensus`-objects
+        that will generate new consensus maps for all residues
+        in :obj:`top`
+
+    Returns
+    -------
+    new_frags : dict
+        A new fragment definition, keyed with the consensus labels present
+        in the input consensus labelers and compatible with the
+        existing consensus labels
+    """
+    # If this doesn't work, nothing else will
+    unified_existing_consensus_map = [choose_between_consensus_dicts(idx, existing_consensus_maps, no_key=None)
+                                      for idx in range(top.n_residues)]
+
+    # Same here
+    new_maps = [iCL.top2map(top, fill_gaps=fill_gaps,verbose=False) for iCL in CLs]
+    unified_new_consensus_map = [choose_between_consensus_dicts(idx,new_maps,no_key=None) for idx in range(top.n_residues)]
+
+    # Now incorporate new labels while checking with clashes with old ones
+    for ii in range(top.n_residues):
+        existing_val = unified_existing_consensus_map[ii]
+        new_val = unified_new_consensus_map[ii]
+        # take the new val, even if it's also None
+        if existing_val is None:
+            unified_existing_consensus_map[ii] = new_val
+        # otherwise check no clashes with the existing map
+        else:
+            #print(existing_val, "ex not None")
+            #print(new_val, "new val")
+            assert(existing_val==new_val)
+
+    new_frags = {}
+    for iCL in CLs:
+        new_frags.update(iCL.top2defs(top,
+                                      map_conlab=unified_new_consensus_map,
+                                      return_defs=True,
+                                      verbose=False))
+
+    # This should hold anyway bc of top2defs calling conlab2residx
+    _mdcu.lists.assert_no_intersection(new_frags.values())
+
+    return new_frags

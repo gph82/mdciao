@@ -67,7 +67,7 @@ def _parse_consensus_option(option, consensus_type,
     its :obj:`LabelerConsensus.top2map` method
     
     A guess is performed on-the-fly using :obj:`guess_by_nomenclature`
-    to better align :obj:`top` to the :obj:`LabelerConsensus`
+    to better align :obj:`top` to the :obj:`LabelerConsensus`.
 
     Parameters
     ----------
@@ -1136,7 +1136,7 @@ def interface(
         if len(consensus_labelers) > 0:
             # This is because frag_defs could be missing a lot of stuff depending
             # on user input, check the next method's doc
-            consensus_frags = compatible_consensus_fragments(refgeom.top, consensus_maps,
+            consensus_frags = _mdcnomenc.compatible_consensus_fragments(refgeom.top, consensus_maps,
                                                              consensus_labelers.values())
 
             flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(consensus_frags.values()),
@@ -1187,70 +1187,6 @@ def interface(
 
     return ctc_grp_intf
 
-
-def compatible_consensus_fragments(top,
-                                   existing_consensus_maps,
-                                   CLs,
-                                   fill_gaps=True):
-    r"""
-
-    Note
-    ----
-
-    (to developers)
-
-    In the case of direct-selection by residue index, labelling objects such
-    as consensus maps don't carry information about excluded indices.
-
-    However, flareplots usually (sparse=False) show all residues regardless of
-    what the user's fragment selection was.
-
-    To label residues originally omitted by user selection, here we call again the
-    consensus auto-labeling methods to include as many residues as possible.
-
-    If this re-labelling clashes with the old one, an Exception is thrown.
-
-    -------
-
-    Returns
-    -------
-    new_frags : dict
-        A new fragment definition, keyed with the consensus labels present
-        in the input consensus labelers and compatible with the
-        existing consensus labels
-    """
-    # If this doesn't work, nothing else will
-    unified_existing_consensus_map = [_mdcnomenc.choose_between_consensus_dicts(idx, existing_consensus_maps, no_key=None)
-                                      for idx in range(top.n_residues)]
-
-    # Same here
-    new_maps = [iCL.top2map(top, fill_gaps=fill_gaps,verbose=False) for iCL in CLs]
-    unified_new_consensus_map = [_mdcnomenc.choose_between_consensus_dicts(idx,new_maps,no_key=None) for idx in range(top.n_residues)]
-
-    # Now incorporate new labels while checking with clashes with old ones
-    for ii in range(top.n_residues):
-        existing_val = unified_existing_consensus_map[ii]
-        new_val = unified_new_consensus_map[ii]
-        # take the new val, even if it's also None
-        if existing_val is None:
-            unified_existing_consensus_map[ii] = new_val
-        # otherwise check no clashes with the existing map
-        else:
-            #print(existing_val, "ex not None")
-            #print(new_val, "new val")
-            assert(existing_val==new_val)
-
-    new_frags = {}
-    for iCL in CLs:
-        new_frags.update(iCL.top2defs(top,
-                                      map_conlab=unified_new_consensus_map,
-                                      return_defs=True,
-                                      verbose=False))
-
-    # This should hold anyway bc of top2defs calling conlab2residx
-    _mdcu.lists.assert_no_intersection(new_frags.values())
-
-    return new_frags
 
 def sites(topology,
           trajectories,
