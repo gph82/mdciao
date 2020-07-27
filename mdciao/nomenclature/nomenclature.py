@@ -501,9 +501,9 @@ class LabelerConsensus(object):
         Note
         ----
         This method is able to work with a new topology every
-        time, performing a sequence alginment every call.
+        time, performing a sequence alignment every call.
         The intention is to instantiate a
-        :obj:`LabelerConsensus` jus one time and use it with as
+        :obj:`LabelerConsensus` just one time and use it with as
         many topologies as you like without changing any attribute
         of :obj:`self`.
 
@@ -609,7 +609,7 @@ class LabelerConsensus(object):
                  ):
         r"""
         Prints the definitions of subdomains that the
-        consenus nomenclature contains and map it out
+        consensus nomenclature contains and map it out
         in terms of residue indices of the input :obj:`top`
 
         Does not return anything unless explicitly asked to.
@@ -756,7 +756,6 @@ class LabelerCGN(LabelerConsensus):
                 print(key)
             #print(key,new_key)
             self._fragments[new_key].append(ires)
-        #print(self.fragments)
         LabelerConsensus.__init__(self, ref_PDB=PDB_input,
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,

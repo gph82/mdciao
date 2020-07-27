@@ -394,7 +394,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
                          map_conlab=None,
                          keep_all=False):
     r"""
-    Input an iterable of integers representing a fragment check if
+    Input an iterable of integers representing a fragment and check if
     it clashes with other fragment definitions.
 
     Prompt for a choice in case it is necessary

@@ -1097,7 +1097,6 @@ def interface(
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
     # TODO manage filenames better, avoid overwriting here when file exists
-    print("The following files have been created")
     fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc, ctc_cutoff_Ang)
     fname_wo_ext = _path.join(output_dir, fname_wo_ext)
     fname_histo = ".".join([fname_wo_ext, graphic_ext])
@@ -1107,6 +1106,7 @@ def interface(
     fname_mat   = fname_histo.replace("overall@", "matrix@")
     fname_flare = fname_histo.replace("overall@", "flare@")
 
+    print("The following files have been created")
     histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
     print(fname_histo)
     ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
@@ -1135,6 +1135,7 @@ def interface(
                                                                       highest_res_idx=ctc_grp_intf.top.n_residues - 1,
                                                                       orphan_name=""
                                                                       )
+
         ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
                                                          consensus_maps=consensus_maps,
                                                          SS=refgeom,
