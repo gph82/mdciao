@@ -466,28 +466,28 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
                           [4,5],
                           [6,7]]
     def test_empty_str(self):
-        fragnames = cli._parse_fragment_naming_options("", self.fragments, None)
+        fragnames = cli._parse_fragment_naming_options("", self.fragments)
         self.assertSequenceEqual(["frag0","frag1","frag2","frag3"],
                                  fragnames)
 
     def test_None(self):
-        fragnames = cli._parse_fragment_naming_options("None", self.fragments, None)
+        fragnames = cli._parse_fragment_naming_options("None", self.fragments)
         self.assertSequenceEqual([None,None,None,None],
                                  fragnames)
 
     def test_csv(self):
-        fragnames = cli._parse_fragment_naming_options("TM1,TM2,ICL3,H8", self.fragments, None)
+        fragnames = cli._parse_fragment_naming_options("TM1,TM2,ICL3,H8", self.fragments)
         self.assertSequenceEqual(["TM1","TM2","ICL3","H8"],
                                  fragnames)
 
     def test_csv_wrong_nr_raises(self):
         with pytest.raises(AssertionError):
-            fragnames = cli._parse_fragment_naming_options("TM1,TM2", self.fragments, None)
+            fragnames = cli._parse_fragment_naming_options("TM1,TM2", self.fragments)
             self.assertSequenceEqual(["TM1", "TM2", "ICL3", "H8"],
                                      fragnames)
     def test_danger_raises(self):
         with pytest.raises(NotImplementedError):
-            cli._parse_fragment_naming_options("TM1,danger", self.fragments, None)
+            cli._parse_fragment_naming_options("TM1,danger", self.fragments)
 
 
 
