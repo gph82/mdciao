@@ -27,7 +27,8 @@ consider this library a finished one.
 
 Authors
 =======
-``mdciao`` is written and maintained by Guillermo Pérez-Hernández (@gph82 in github, ORCID)
+``mdciao`` is written and maintained by Guillermo Pérez-Hernández (`ORCID <http://orcid.org/0000-0002-9287-8704>`_) currently at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_ in the
+`Charité Universitäsmedizin Berlin <https://www.charite.de/>`_.
 
 
 .. |Python Package| image::
