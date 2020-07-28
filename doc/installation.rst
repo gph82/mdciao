@@ -5,14 +5,16 @@ Installation
 
 hands-on session
 ----------------
-For our workshop on 03.06.2020 you can download the sources from `herez <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_. Please also see the note on :ref:`hk`.
+For our August workshop  you can download the sources from `herez <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_. Please also see the note on :ref:`hk`.
 
 .. note::
  As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. For beginners, see the below paragraph
 
 Installation via package manager
 --------------------------------
-
+.. warning::
+ None of these methods work yet, as ``mdciao`` is not yet published to those package managers. Please use
+the Installation from the source
 
 We recommend you install ``mdciao`` either via the `pip <https://pypi.org/project/pip/>`_ Python package installer or the `conda <https://conda.io/en/latest/>`_ Python package manager::
 
@@ -22,17 +24,13 @@ or::
 
  conda install mdciao
 
-.. warning::
- None of these methods work yet, as ``mdciao`` is not yet published to those package managers
-
-Installation from the source
------------------------------
+Installation from source
+------------------------
 
 * You can also clone the sources from `mdciao's github repository <https://github.com/gph82/mdciao>`_ to your preferred `programs` or `software` folder.
 
 .. warning::
- * At the moment, the repository is private.
- * For our workshop on 03.06.2020 you can download the sources from `herey <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_.
+ * At the moment, the repository is private. For our August workshop  you can download the sources from `herez <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_. Please also see the note on :ref:`hk`.
  * Please unzip the sources to your preferred software folder and continue with these instructions:
 
 * Execute the `setup.py` file::

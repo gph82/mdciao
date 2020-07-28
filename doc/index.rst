@@ -3,8 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. include:: ../README.rst
+mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
+==============================================================================
 
+|Python Package| |Coverage|
+
+.. figure:: imgs/banner.png
+   :scale: 33%
+
+``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an API to construct your own analysis workflow.
+
+Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org.org>`_ for visualizaton.
 .. include:: basic_usage.rst
 
 Basic Principle
@@ -146,6 +155,15 @@ They allow the experienced user to create their own scripts or interactive workf
 All API objects and functions are extensively documented. Please use the powerful hinting capabilities of the IPython terminal (e.g. `Tab` for autocomplete or `cmd?+Enter`) or the `JuPyter Notebooks <https://www.dataquest.io/blog/jupyter-notebook-tips-tricks-shortcuts/>`_.
 
 .. include:: api_note.rst
+
+.. |Python Package| image::
+   https://github.com/gph82/mdciao/workflows/Python%20package/badge.svg
+   :target: https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22
+
+.. |Coverage| image::
+   https://codecov.io/gh/gph82/mdciao/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/gph82/mdciao
+
 
 
 .. toctree::
