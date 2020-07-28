@@ -25,7 +25,7 @@ import mdciao.nomenclature as _mdcn
 
 import mdciao.flare as _mdcflare
 
-from ._mdtraj import compute_contacts as _compute_contacts
+from ._md_compute_contacts import compute_contacts as _compute_contacts
 
 from pickle import dump as _pdump,load as _pload
 from collections import \
