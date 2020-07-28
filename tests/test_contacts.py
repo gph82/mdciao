@@ -2203,45 +2203,45 @@ class Test_modified_mdtraj_contacts(unittest.TestCase):
 
     def test_works(self):
         ctcs_ref, residxs_ref = md.compute_contacts(self.traj, [[10, 20], [100, 200]])
-        ctcs_tst, residxs_tst, __ = contacts._mdtraj.compute_contacts(self.traj, [[10, 20], [100, 200]])
+        ctcs_tst, residxs_tst, __ = contacts._md_compute_contacts.compute_contacts(self.traj, [[10, 20], [100, 200]])
         _np.testing.assert_array_equal(ctcs_ref, ctcs_tst)
         _np.testing.assert_array_equal(residxs_ref, residxs_tst)
 
     def test_schemes(self):
         for scheme in ['ca', 'closest', 'closest-heavy', 'sidechain', 'sidechain-heavy']:
             ctcs_ref, residxs_ref = md.compute_contacts(self.traj, [[10, 20], [100, 200]], scheme=scheme)
-            ctcs_tst, residxs_tst, __ = contacts._mdtraj.compute_contacts(self.traj, [[10, 20], [100, 200]],
+            ctcs_tst, residxs_tst, __ = contacts._md_compute_contacts.compute_contacts(self.traj, [[10, 20], [100, 200]],
                                                                           scheme=scheme)
             _np.testing.assert_array_equal(ctcs_ref, ctcs_tst)
             _np.testing.assert_array_equal(residxs_ref, residxs_tst)
 
     def test_softmin(self):
         ctcs_ref, residxs_ref = md.compute_contacts(self.traj, [[10, 20], [100, 200]], soft_min=True)
-        ctcs_tst, residxs_tst, __ = contacts._mdtraj.compute_contacts(self.traj, [[10, 20], [100, 200]], soft_min=True)
+        ctcs_tst, residxs_tst, __ = contacts._md_compute_contacts.compute_contacts(self.traj, [[10, 20], [100, 200]], soft_min=True)
         _np.testing.assert_array_equal(ctcs_ref, ctcs_tst)
         _np.testing.assert_array_equal(residxs_ref, residxs_tst)
 
     def test_all(self):
         small_traj = self.traj.atom_slice(self.traj.top.select("residue < 10"))
         ctcs_ref, residxs_ref = md.compute_contacts(small_traj, "all")
-        ctcs_tst, residxs_tst, __ = contacts._mdtraj.compute_contacts(small_traj, "all")
+        ctcs_tst, residxs_tst, __ = contacts._md_compute_contacts.compute_contacts(small_traj, "all")
         _np.testing.assert_array_equal(ctcs_ref, ctcs_tst)
         _np.testing.assert_array_equal(residxs_ref, residxs_tst)
 
     def test_failures(self):
         with _np.testing.assert_raises(ValueError):
-            contacts._mdtraj.compute_contacts(self.traj, 'al')
+            contacts._md_compute_contacts.compute_contacts(self.traj, 'al')
 
         with _np.testing.assert_raises(ValueError):
-            contacts._mdtraj.compute_contacts(self.traj, [])
+            contacts._md_compute_contacts.compute_contacts(self.traj, [])
 
         with _np.testing.assert_raises(ValueError):
             no_top = self.traj[:]
             setattr(no_top, "_topology", None)
-            contacts._mdtraj.compute_contacts(no_top, [[0,1]])
+            contacts._md_compute_contacts.compute_contacts(no_top, [[0,1]])
 
         with _np.testing.assert_raises(ValueError):
-            contacts._mdtraj.compute_contacts(self.traj, [[0,1]], scheme='CB    ')
+            contacts._md_compute_contacts.compute_contacts(self.traj, [[0,1]], scheme='CB    ')
 
     def test_passes(self):
-        contacts._mdtraj.compute_contacts(self.traj, [[0, 1]], scheme='ca', soft_min=True)
+        contacts._md_compute_contacts.compute_contacts(self.traj, [[0, 1]], scheme='ca', soft_min=True)
