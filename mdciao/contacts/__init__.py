@@ -3,8 +3,11 @@ r"""
 Computation, bookkeeping, and manipulation
 of residue-residue contacts.
 
-The methods wrap around :obj:`mdtraj.compute_contacts`
-to extract residue-residue distances.
+The methods wrap around a modified version
+of `mdtraj.compute_contacts` to extract
+residue-residue distances. The modifications
+consist in including the indices of the closest
+atom-pairs in the returned values.
 
 The classes contain and abstract these distances into
 sense-making groups, offering methods to operate directly
