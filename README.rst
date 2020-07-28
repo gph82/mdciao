@@ -1,7 +1,7 @@
 mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 ==============================================================================
 
-|Python Package|
+|Python Package| |Coverage|
 
 .. figure:: doc/imgs/banner.png
    :scale: 33%
@@ -14,7 +14,7 @@ Licenses
 ========
 * ``mdciao`` is licensed under the `GNU Lesser General Public License v3.0 or later <https://www.gnu.org/licenses/lgpl-3.0-standalone.html>`_ (``LGPL-3.0-or-later``, see the LICENSE.txt).
 
-* ``mdciao`` uses a modified version of the method `mdtraj.compute_contacts` of `mdtraj <https://mdtraj.org/>`_. This modified version is published along with ``mdciao`` and can be found in `contacts/_mdtraj_compute_contacts.py`. Please see that file for details on the modifications.
+* ``mdciao`` uses a modified version of the method `mdtraj.compute_contacts <https://github.com/mdtraj/mdtraj/blob/70a94ff87a6c4223ca1be78c752ef3ef452d3d44/mdtraj/geometry/contact.py#L42>`_  of `mdtraj <https://mdtraj.org/>`_. This modified version is published along with ``mdciao`` and can be found in `contacts/_md_compute_contacts.py <mdciao/contacts/_md_compute_contacts.py>`_. Please see that file for details on the modifications.
 
 * Modules used by ``mdciao`` have different licenses. You can check any module's license in your Python environment using `pip-licenses <https://github.com/raimon49/pip-licenses>`_:
 >>> pip-licenses | grep module_name
@@ -34,3 +34,7 @@ Authors
 .. |Python Package| image::
    https://github.com/gph82/mdciao/workflows/Python%20package/badge.svg
    :target: https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22
+
+.. |Coverage| image::
+   https://codecov.io/gh/gph82/mdciao/branch/master/graph/badge.svg?
+   :target: https://codecov.io/gh/gph82/mdciao
