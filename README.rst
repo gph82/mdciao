@@ -6,7 +6,7 @@ mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 .. figure:: doc/imgs/banner.png
    :scale: 33%
 
-.. figure:: imgs/interface.combined.png
+.. figure::     imgs/interface.combined.png
    :scale: 33%
 
 ``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an API to construct your own analysis workflow.
