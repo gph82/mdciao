@@ -1058,7 +1058,6 @@ def _top2consensus_map(consensus_dict, top,
     seq = ''.join([_mdcu.residue_and_atom.shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
     seq_consensus= ''.join([_mdcu.residue_and_atom.name_from_AA(key) for key in consensus_dict.keys()])
     alignment = _mdcu.sequence.alignment_result_to_list_of_dicts(_mdcu.sequence.my_bioalign(seq, seq_consensus)[0],
-                                                                 top,
                                                                  restrict_to_residxs, # THIS IS THE CULPRIT OF THE FINAL ConsensusLabeler not having the frag definitions of the idxs not having all fragments
                                                                  [_mdcu.residue_and_atom.int_from_AA_code(key) for key
                                                                   in consensus_dict],
