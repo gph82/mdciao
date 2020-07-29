@@ -99,9 +99,9 @@ class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
         ialg = sequence.my_bioalign(seq0, seq1)[0]
 
         result = sequence.alignment_result_to_list_of_dicts(ialg,
-                                                            top,
                                                             seq0_idxs,
                                                             seq1_idxs,
+                                                            topology_0=top,
                                                             verbose=True
                                                             )
         df = _DF.from_dict(result)
@@ -154,9 +154,9 @@ class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
                                      )[0]
 
         sequence.alignment_result_to_list_of_dicts(ialg,
-                                                   geom_3CAP.top,
                                                    _np.arange(geom_3CAP.n_residues),
                                                    _np.arange(geom_1U19.n_residues),
+                                                   topology_0=geom_3CAP.top,
                                                    topology_1=geom_1U19.top,
                                                    #verbose=True
                                                    )
