@@ -209,7 +209,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         computation of the contact time-traces. The higher the number,
         the higher the memory requirements
     return_times_and_atoms : boolean, default is False
-        Return also the time array in ps and the indices of the the atoms
+        Return also the time array in ps and the indices of the atoms
         behind the distanes in :obj:`ctcs`. See :obj:`per_traj_ctcs` for
         more info
     n_jobs : int, default is 1
@@ -987,7 +987,7 @@ class ContactPair(object):
             The molecular trajectories responsible for which the contact has been evaluated.
             Not having the same shape as ctc_trajs will raise an error
         atom_pair_trajs: list of iterables of integers, default is None
-            Time traces of the the pair of atom indices responsible for the distance in :obj:`ctc_trajs`
+            Time traces of the pair of atom indices responsible for the distance in :obj:`ctc_trajs`
             Has to be of len(ctc_trajs) and each iterable of shape(Nframes, 2)
         fragment_idxs : iterable of two ints, default is None
             Indices of the fragments the residues of :obj:`res_idxs_pair`
@@ -2060,7 +2060,7 @@ class ContactGroup(object):
         Returns
         -------
         ctc_idxs : 2D np.ndarray of shape (N,2)
-            The first index is the contact index, the second the the pair index (0 or 1)
+            The first index is the contact index, the second the pair index (0 or 1)
         """
         ctc_idxs = []
         for ii, pair in enumerate(self.res_idxs_pairs):

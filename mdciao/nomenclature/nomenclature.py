@@ -1749,7 +1749,7 @@ def compatible_consensus_fragments(top,
      * aggregate them into one single map (if possible)
      * add them to :obj:`existing_consensus_maps`
 
-    The last step will only work if the the newly generated maps
+    The last step will only work if the newly generated maps
     do not have differing definitions to those already in
     :obj:`existing` maps. Otherwise, an Exception is thrown.
 

@@ -620,7 +620,7 @@ def residue_neighborhoods(topology, trajectories, residues,
     allow_same_fragment_ctcs
     write_to_disk_BW
     plot_timedep : bool, default is False
-        Plot and save time-traces of the the contacts
+        Plot and save time-traces of the contacts
     n_cols
     distro
     n_jobs

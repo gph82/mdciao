@@ -11,6 +11,9 @@ mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 .. figure:: imgs/banner.png
    :scale: 33%
 
+.. figure:: imgs/interface.combined.png
+   :scale: 33%
+
 ``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an API to construct your own analysis workflow.
 
 Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org.org>`_ for visualizaton.
@@ -31,7 +34,7 @@ and calculates the  time-traces of residue-residue distances, and from there, **
  A note of caution regarding the above definitions for *contact* and *frequency*:
 
  * the kinetic information is averaged out. Contacts quickly breaking and forming and contacts that break (or form) only once **will have the same frequency** as long as the **fraction of total time** they are formed is the same. For analysis taking kinetics into account, use. e.g. `pyemma <http://mdtraj.org>`_.
- * The sharp, "distance-only" cutoff can sometimes over- or under-represent some interaction types. Modules like `get_contacts <https://github.com/getcontacts/getcontacts>`_ capture these interactions better.
+ * The sharp, "distance-only" cutoff can sometimes over- or under-represent some interaction types. Modules like `get_contacts <https://github.com/getcontacts/getcontacts>`_ capture these interactions better, and have a ton of other features features.
 
  However, both these issues (if/when they arise) can be spotted easily by looking at the time-traces of said contacts and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
 
@@ -133,7 +136,7 @@ Highlights
       :scale: 50%
       :align: left
 
-      **Fig. 5** (click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the the 3D-visualisation http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl to check how "L394-K270" switches between SC-SC and SC-BB.
+      **Fig. 5** (click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
 
 * compare contact frequencies coming from different calculations
 
