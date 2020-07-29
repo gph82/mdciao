@@ -699,4 +699,4 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
     new_frags = orphans + full_frags
     new_labels = orphans_labels + fragnames
     idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
-    return [new_frags[ii] for ii in idxs], [new_labels[ii] for ii in idxs]
+    return [list(new_frags[ii]) for ii in idxs], [new_labels[ii] for ii in idxs]

@@ -609,13 +609,17 @@ class Test_splice_fragments(unittest.TestCase):
                                                   [15,16,17]])
         _np.testing.assert_array_equal(newnames, ["A", "?", "B", "?", "C", "?"])
 
-    def test_raises(self):
-        with _np.testing.assert_raises(ValueError):
-            fragments = [[0, 1, 2, 3],
-                         [6, 8],
-                         [12, 13, 14]]
-            fragnames = ["A", "B", "C"]
-            mdcfragments.splice_orphan_fragments(fragments, fragnames)
+    def test_fragment_w_holes(self):
+        fragments = [[0, 1, 2, 3],
+                     [6, 8],
+                     [12, 13, 14]]
+        fragnames = ["A", "B", "C"]
+        newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames)
+        _np.testing.assert_array_equal(newfrags,[[0,1,2,3],
+                                                  [4,5],
+                                                  [6,7,8],
+                                                  [9,10,11],
+                                                  [12,13,14]])
 
 
 
