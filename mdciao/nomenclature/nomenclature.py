@@ -350,20 +350,35 @@ def _BW_web_lookup(url, verbose=True,
     else:
         df = _read_json(a.text)
         mydict = df.T.to_dict()
+        fmt = 'old'
         for key, val in mydict.items():
             try:
-                for idict in val["alternative_generic_numbers"]:
-                    # print(key, idict["scheme"], idict["label"])
-                    val[idict["scheme"]] = idict["label"]
-                val.pop("alternative_generic_numbers")
                 val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
+                if "alternative_generic_numbers" in val.keys():
+                    for idict in val["alternative_generic_numbers"]:
+                        # print(key, idict["scheme"], idict["label"])
+                        val[idict["scheme"]] = idict["label"]
+                    val.pop("alternative_generic_numbers")
+                else:
+                    fmt = 'new'
+                    pass
+
             except IndexError:
                 pass
+
+        return_fields = \
+            {"old": [
+                "protein_segment",
+                "AAresSeq",
+                "BW",
+                "GPCRdb(A)",
+                "display_generic_number"],
+            "new": [
+                    "protein_segment",
+                    "AAresSeq",
+                    "display_generic_number"]}
         DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
-        DFout = DFout[["protein_segment", "AAresSeq",
-                       "BW",
-                       "GPCRdb(A)",
-                       "display_generic_number"]]
+        DFout = DFout[return_fields[fmt]]
 
     return DFout
 
