@@ -454,6 +454,11 @@ class LabelerConsensus(object):
         return self._geom_PDB.top
 
     @property
+    def seq(self):
+        r""" The reference sequence in :obj:`dataframe`"""
+        return ''.join([_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe[self._AAresSeq_key].values.squeeze()])
+
+    @property
     def conlab2AA(self):
         r""" Dictionary with consensus labels as keys, so that e.g.
             * self.conlab2AA["3.50"] -> 'R131' or
@@ -764,6 +769,10 @@ class LabelerCGN(LabelerConsensus):
                                                       local_path=local_path,
                                                       try_web_lookup=try_web_lookup,
                                                       verbose=verbose)
+        # The title of the column with this field varies between CGN and BW
+        AAresSeq_key = [key for key in list(self.dataframe.keys()) if key.lower() not in ["CGN".lower(), "Sort number".lower()]]
+        assert len(AAresSeq_key)==1
+        self._AAresSeq_key = AAresSeq_key
 
         self._AA2conlab = {key: self._dataframe[self._dataframe[PDB_input] == key]["CGN"].to_list()[0]
                            for key in self._dataframe[PDB_input].to_list()}
@@ -780,6 +789,22 @@ class LabelerCGN(LabelerConsensus):
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
+
+    @property
+    def fragments_as_idxs(self):
+        r""" Dictionary of fragments keyed with fragment names
+        and valued with idxs of the first column of self.dataframe,
+        regardless of these residues having a consensus label or not
+
+        Returns
+        -------
+        """
+        AAresSeq_list = self.dataframe[self._AAresSeq_key].values.squeeze()
+        assert len(_np.unique(AAresSeq_list))==len(AAresSeq_list),"Redundant residue names in the dataframe? Somethings wrong"
+        AAresSeq2idx = {key:idx for idx,key in enumerate(AAresSeq_list)}
+        defs =  {key: [AAresSeq2idx[AAresSeq] for AAresSeq in val] for key, val in self.fragments.items()}
+        return defs
+
 
 class LabelerBW(LabelerConsensus):
     """Manipulate Ballesteros-Weinstein notation
@@ -819,13 +844,27 @@ class LabelerBW(LabelerConsensus):
                                             verbose=verbose,
                                             write_to_disk=write_to_disk
                                        )
-
+        # The title of the column with this field varies between CGN and BW
+        self._AAresSeq_key = "AAresSeq"
         self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
+
+    @property
+    def fragments_as_idxs(self):
+        r""" Dictionary of fragments keyed with fragment names
+        and valued with idxs of the first column of self.dataframe,
+        regardless of these residues having a consensus label or not
+
+        Returns
+        -------
+        """
+
+        return {key: list(self.dataframe[self.dataframe["protein_segment"] == key].index) for key in
+                self.dataframe["protein_segment"].unique()}
 
 '''
 def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
