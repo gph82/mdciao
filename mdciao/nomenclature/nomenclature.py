@@ -628,7 +628,9 @@ class LabelerConsensus(object):
                  return_defs=False,
                  fragments=None,
                  fill_gaps=False,
+                 min_hit_rate=.5,
                  verbose=True,
+                 new_method=False,
                  ):
         r"""
         Prints the definitions of subdomains that the
@@ -671,22 +673,57 @@ class LabelerConsensus(object):
             :obj:`_fill_consensus_gaps`. It has no effect if the user inputs
             the map
 
+        min_hit_rate : float, default is .5
+            If :obj:`map_conlab` is not provided, such a map will
+            be generated on the fly using the whole topology, i.e.
+            the whole sequence for an initial alignment.
+            With big topologies, the alignment method
+            (check :obj:`mdciao.sequence.my_bioalign`)
+            sometimes yields sub-optimal results.
+            :obj:`min_hit_rate` = .5 means that
+             only the fragments (:obj:`mdciao.fragments.get_fragments` defaults)
+             with more than 50% alignment in the original alignment
+             are used for a second alignment to create a
+             better the on-the-fly :obj:`map_conlab`
+
         Returns
         -------
         defs : dictionary (if return_defs is True)
             Dictionary with subdomain names as keys and lists of indices as values
         """
 
-        if map_conlab is None:
-            print("creating a temporary map_conlab, this is dangerous")
-            map_conlab = self.top2map(top, fill_gaps=fill_gaps, verbose=False)
+        if new_method:
+            if min_hit_rate > 0:
+                chains = _mdcfrg.get_fragments(top, verbose=False)
+                answer = guess_nomenclature_fragments(self, top, chains, min_hit_rate=min_hit_rate)
+                restrict_to_residxs = _np.hstack([chains[ii] for ii in answer])
+            else:
+                restrict_to_residxs = None
 
-        conlab2residx = self.conlab2residx(top, map=map_conlab)
-        defs = _defdict(list)
-        for key, ifrag in self.fragments_as_conlabs.items():
-            for iBW in ifrag:
-                if iBW in conlab2residx.keys():
-                    defs[key].append(conlab2residx[iBW])
+            top2self, self2top, df = self.aligntop(top, restrict_to_residxs)
+            frags =  self.fragments_as_idxs
+            defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
+            defs = {key:val for key, val in defs.items() if len(val)>0}
+            map_conlab = self.top2map(top, fill_gaps=fill_gaps, verbose=False, restrict_to_residxs=restrict_to_residxs)
+
+        else:
+            if map_conlab is None:
+                print("creating a temporary map_conlab, this is dangerous")
+                if min_hit_rate > 0:
+                    chains = _mdcfrg.get_fragments(top, verbose=False)
+                    answer = guess_nomenclature_fragments(self, top, chains, min_hit_rate=min_hit_rate)
+                    restrict_to_residxs = _np.hstack([chains[ii] for ii in answer])
+                else:
+                    restrict_to_residxs = None
+                map_conlab = self.top2map(top, fill_gaps=fill_gaps, verbose=False, restrict_to_residxs=restrict_to_residxs  )
+
+            conlab2residx = self.conlab2residx(top, map=map_conlab)
+            defs = _defdict(list)
+            for key, ifrag in self.fragments_as_conlabs.items():
+                for iBW in ifrag:
+                    if iBW in conlab2residx.keys():
+                        defs[key].append(conlab2residx[iBW])
+
         defs = {key:val for key,val in defs.items()}
         new_defs = {}
         for ii, (key, res_idxs) in enumerate(defs.items()):
@@ -704,6 +741,18 @@ class LabelerConsensus(object):
                 print(istr)
         if return_defs:
             return {key:val for key, val in defs.items()}
+
+    def aligntop(self, top, restrict_idxs=None):
+        r""" Analogous to :obj:`mdciao.sequence.maptops` but using
+        :obj:`ConsensusLabelers.seq` as the second sequence"""
+
+        seq_self = self.seq
+        df = _mdcu.sequence.align_tops_or_seqs(top,
+                                               seq_self,
+                                               seq_0_res_idxs=restrict_idxs,
+                                               return_DF=True)
+        top2self, self2top = _mdcu.sequence.df2maps(df)
+        return top2self, self2top, df
 
 class LabelerCGN(LabelerConsensus):
     """
@@ -974,6 +1023,7 @@ def _top2consensus_map(consensus_dict, top,
     ----------
     consensus_dict : dictionary
         AA-codes as keys and nomenclature as values, e.g. AA2CGN["K25"] -> G.HN.42
+        Typically comes from :obj:`ConsensusLabeler.AA2conlab`
     top :
         :py:class:`mdtraj.Topology` object
     restrict_to_residxs: iterable of integers, default is None
@@ -1007,6 +1057,7 @@ def _top2consensus_map(consensus_dict, top,
                                                                  restrict_to_residxs, # THIS IS THE CULPRIT OF THE FINAL ConsensusLabeler not having the frag definitions of the idxs not having all fragments
                                                                  [_mdcu.residue_and_atom.int_from_AA_code(key) for key
                                                                   in consensus_dict],
+                                                                 topology_0=top,
                                                                  verbose=verbose
                                                                  )
     alignment = _DataFrame(alignment)
