@@ -3357,7 +3357,8 @@ class ContactGroup(object):
 
     def frequency_to_bfactor(self, ctc_cutoff_Ang,
                              pdbfile,
-                             geom):
+                             geom,
+                             interface_sign=False):
         r"""Save the contact frequency aggregated by residue to a pdb file
 
         Parameters
@@ -3366,7 +3367,11 @@ class ContactGroup(object):
         pdbfile : str
         geom : :obj:`mdtraj.Trajectory`
             Has to have the same topology as :obj:`self.top`
-
+        interface_sign : bool, default is False
+            Give the bfactor values of the
+            members of the interface different sign
+            s.t. the appear with different colors
+            in a visualizer
         Returns
         -------
         bfactors : 1D np.array of len(self.top.n_atoms)
@@ -3374,8 +3379,12 @@ class ContactGroup(object):
         """
 
         bfactors = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, return_array=True)
-        bfactors = [bfactors[aa.residue.index] for aa in self.top.atoms]
+        bfactors = _np.array([bfactors[aa.residue.index] for aa in self.top.atoms])
         assert geom.top == self.top, "The parsed geometry has to have the same top as self.top"
+        if interface_sign:
+            assert self.is_interface
+            interface_0_atoms = _np.hstack([[aa.index for aa in geom.top.residue(ii).atoms] for ii in self.interface_residxs[0]])
+            bfactors[interface_0_atoms] *= -1
         geom.save(pdbfile,bfactors=bfactors)
         return bfactors
 

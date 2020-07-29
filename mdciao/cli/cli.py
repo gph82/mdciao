@@ -1140,7 +1140,9 @@ def interface(
     print(fname_excel)
     ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fname_dat)
     print(fname_dat)
-    ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom)
+    ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom,
+                                      #interface_sign=True
+                                      )
     print(fname_pdb)
 
     #TODO bury this in plots?
