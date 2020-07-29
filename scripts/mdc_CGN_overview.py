@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 ##############################################################################
 #    This file is part of mdciao.
+#    
+#    Copyright 2020 Charité Universitätsmedizin Berlin and the Authors
+#
+#    Authors: Guillermo Pérez-Hernandez
+#    Contributors:
 #
 #    mdciao is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Lesser General Public License as published by
