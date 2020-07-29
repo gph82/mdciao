@@ -200,7 +200,8 @@ def _parser_add_matrix(parser):
 
 def _parser_add_flare(parser):
     parser.add_argument('--no-flare', dest='flareplot', action='store_false',
-                        help="Do not produce a flare plot of interface the contact matrix")
+                        help="Do not produce a flare plot of interface the contact matrix. The format will .pdf no matter "
+                             "the value of --graphic_ext")
     parser.set_defaults(flareplot=True)
 
 def _parser_add_output_dir(parser):

@@ -1131,7 +1131,7 @@ def interface(
     fname_dat = ".".join([fname_wo_ext, "dat"])
     fname_pdb = ".".join([fname_wo_ext, "as_bfactors.pdb"])
     fname_mat   = fname_histo.replace("overall@", "matrix@")
-    fname_flare = fname_histo.replace("overall@", "flare@")
+    fname_flare = '.'.join([fname_wo_ext.replace("overall@", "flare@"),'.pdf'])
 
     print("The following files have been created")
     histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
