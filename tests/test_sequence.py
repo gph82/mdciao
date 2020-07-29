@@ -31,20 +31,20 @@ class Test_align_tops(unittest.TestCase):
 
     def test_works_w_itself(self):
         top = md.load(test_filenames.small_monomer).top
-        df = sequence.align_tops(top,top)
+        df = sequence.align_tops_or_seqs(top, top)
         assert isinstance(df, _DF)
         #sequence.print_verbose_dataframe(df)
 
     def test_works_w_itself_list(self):
         top = md.load(test_filenames.small_monomer).top
-        df = sequence.align_tops(top,top, return_DF=False)
+        df = sequence.align_tops_or_seqs(top, top, return_DF=False)
         assert isinstance(df, list)
         #print(df)
 
     def test_works_w_dimer(self):
         top2 = md.load(test_filenames.small_dimer).top
         seq_1_res_idxs = [6,7,8,9,10,11]
-        df = sequence.align_tops(top2,top2, seq_1_res_idxs=seq_1_res_idxs)
+        df = sequence.align_tops_or_seqs(top2, top2, seq_1_res_idxs=seq_1_res_idxs)
         _np.testing.assert_array_equal(df[df["match"]==True]["idx_0"].to_list(),
                                        seq_1_res_idxs)
         _np.testing.assert_array_equal(df[df["match"]==True]["idx_1"].to_list(),
@@ -52,7 +52,7 @@ class Test_align_tops(unittest.TestCase):
 
     def test_substitions(self):
         top2 = md.load(test_filenames.small_monomer).top
-        df = sequence.align_tops(top2, top2, substitutions={"E":"G","X":"Y"})
+        df = sequence.align_tops_or_seqs(top2, top2, substitutions={"E": "G", "X": "Y"})
         _np.testing.assert_array_equal("GVWIGKYY", ''.join(df["AA_0"]))
 
 
