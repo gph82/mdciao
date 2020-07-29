@@ -17,8 +17,6 @@ import numpy as _np
 from pandas import DataFrame as _DF
 from Bio.pairwise2 import align as _Bioalign
 
-from collections import defaultdict as _defdict
-
 def print_verbose_dataframe(df):
     r"""
     Print the full dataframe no matter how big
@@ -221,12 +219,14 @@ def alignment_result_to_list_of_dicts(ialg,
     return alignment_dict
 
 
-def align_tops(top0, top1, substitutions=None,
-               seq_0_res_idxs=None,
-               seq_1_res_idxs=None,
-               return_DF=True):
-    r""" Provided two :obj:`mdtraj.Topology` objects,
-    return their alignment as a :obj:`pandas.DataFrame`.
+def align_tops_or_seqs(top0, top1, substitutions=None,
+                       seq_0_res_idxs=None,
+                       seq_1_res_idxs=None,
+                       return_DF=True):
+    r""" Align two sequence-containing objects, i.e. strings and/or
+    :obj:`mdtraj.Topology` objects)
+
+    Returns a :obj:`pandas.DataFrame`
 
     Relevant methods used under the hood are :obj:`my_bioalign` and
     :obj:`alignment_result_to_list_of_dicts`, see their docs
@@ -234,8 +234,8 @@ def align_tops(top0, top1, substitutions=None,
 
     Parameters
     ----------
-    top0 : :obj:`mdtraj.Topology`
-    top1 : :obj:`mdtraj.Topology`
+    top0 : :str or obj:`mdtraj.Topology`
+    top1 : :str or obj:`mdtraj.Topology`
     substitutions : dictionary
         dictionary of patterns and replacements,
         in case some AAs of the topologies
@@ -254,8 +254,23 @@ def align_tops(top0, top1, substitutions=None,
 
 
     """
-    top0_seq = top2seq(top0)
-    top1_seq = top2seq(top1)
+    if isinstance(top0, str):
+        top0_seq = top0
+        n_res_0 = len(top0_seq)
+        top04a = None
+    else:
+        top0_seq = top2seq(top0)
+        n_res_0 = top0.n_residues
+        top04a = top0
+
+    if isinstance(top1, str):
+        top1_seq = top1
+        n_res_1 = len(top1_seq)
+        top14a = None
+    else:
+        n_res_1 = top1.n_residues
+        top1_seq = top2seq(top1)
+        top14a = top1
 
     if substitutions is not None:
         for key, val in substitutions.items():
@@ -264,18 +279,19 @@ def align_tops(top0, top1, substitutions=None,
             #print(key,val)
 
     if seq_0_res_idxs is None:
-        seq_0_res_idxs=_np.arange(top0.n_residues, dtype=int)
+        seq_0_res_idxs=_np.arange(n_res_0, dtype=int)
     if seq_1_res_idxs is None:
-        seq_1_res_idxs=_np.arange(top1.n_residues, dtype=int)
+        seq_1_res_idxs=_np.arange(n_res_1, dtype=int)
 
     top0_seq = "".join([top0_seq[ii] for ii in seq_0_res_idxs])
     top1_seq = "".join([top1_seq[ii] for ii in seq_1_res_idxs])
 
     align_list = alignment_result_to_list_of_dicts(my_bioalign(top0_seq, top1_seq)[0],
-                                                   top0,
+                                                   topology_0=top04a,
                                                    seq_0_res_idxs=seq_0_res_idxs,
                                                    seq_1_res_idxs=seq_1_res_idxs,
-                                                   topology_1=top1,
+                                                   topology_1=top14a,
+                                                   #verbose=True,
                                                    )
 
     if return_DF:
@@ -306,8 +322,29 @@ def maptops(top0,
         top1_to_top0[20] = 10
 
     """
-    df = align_tops(top0, top1,
-                    return_DF=True)
+    df = align_tops_or_seqs(top0, top1,
+                            return_DF=True)
+
+    return df2maps(df)
+
+def df2maps(df):
+    r"""Map the columns "idx_0" and "idx_1" of an alignment
+    (a :obj:`pandas.DataFrame`)
+
+
+    Parameters
+    ----------
+    df : :obj:`pandas.DataFrame`
+        Typically comes from  :obj:`align_tops_or_seqs`
+
+    Returns
+    -------
+    top0_to_top1 : dict
+        top0_to_top1[10] = 20
+    top1_to_top0 : dict
+        top1_to_top0[20] = 10
+
+    """
 
     top0_to_top1 = {key : val for key, val in zip(df[df["match"] == True]["idx_0"].to_list(),
                                                   df[df["match"] == True]["idx_1"].to_list())}
