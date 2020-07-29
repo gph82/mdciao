@@ -110,9 +110,10 @@ def my_bioalign(seq1, seq2,
 
     return getattr(_Bioalign, method)(seq1, seq2, *argstuple)
 
-def alignment_result_to_list_of_dicts(ialg, topology_0,
+def alignment_result_to_list_of_dicts(ialg,
                                       seq_0_res_idxs,
                                       seq_1_res_idxs,
+                                      topology_0=None,
                                       topology_1=None,
                                       key_AA_code_seq_0="AA_0",
                                       key_AA_code_seq_1="AA_1",
@@ -163,7 +164,6 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
     """
     # Unpack the alignment
     top_0_seq, top_1_seq = ialg[0], ialg[1]
-
     # Some sanity checks
     assert len(top_0_seq) == len(top_1_seq)
 
@@ -172,10 +172,15 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
     assert len(seq_0_res_idxs)==len(''.join([ii for ii in top_0_seq if ii.isalpha()]))
 
     # Create needed iterators
-    top_0_resSeq_iterator = iter([topology_0.residue(ii).resSeq for ii in seq_0_res_idxs])
     seq_1_res_idxs_iterator = iter(seq_1_res_idxs)
     idx_seq_0_iterator = iter(seq_0_res_idxs)
-    resname_top_0_iterator = iter([str(topology_0.residue(ii)) for ii in seq_0_res_idxs])
+
+    top_0_resSeq_iterator = None
+    resname_top_0_iterator = None
+    if topology_0 is not None:
+        top_0_resSeq_iterator = iter([topology_0.residue(ii).resSeq for ii in seq_0_res_idxs])
+        resname_top_0_iterator = iter([str(topology_0.residue(ii)) for ii in seq_0_res_idxs])
+
     resname_top_1_iterator = None
     if topology_1 is not None:
         resname_top_1_iterator = iter([str(topology_1.residue(ii)) for ii in seq_1_res_idxs])
@@ -191,13 +196,14 @@ def alignment_result_to_list_of_dicts(ialg, topology_0,
                                key_idx_seq_0: '~'})
 
         if rt.isalpha():
-            alignment_dict[-1][key_resSeq_seq_0] = next(top_0_resSeq_iterator)
-            alignment_dict[-1][key_full_resname_seq_0] = next(resname_top_0_iterator)
+            if topology_0 is not None:
+                alignment_dict[-1][key_full_resname_seq_0] = next(resname_top_0_iterator)
+                alignment_dict[-1][key_resSeq_seq_0] = next(top_0_resSeq_iterator)
             alignment_dict[-1][key_idx_seq_0] = next(idx_seq_0_iterator)
 
         if rr.isalpha():
             alignment_dict[-1][key_idx_seq_1] = next(seq_1_res_idxs_iterator)
-            if resname_top_1_iterator is not None:
+            if topology_1 is not None:
                 alignment_dict[-1][key_full_resname_seq_1] = next(resname_top_1_iterator)
 
     # Add a field for matching vs nonmatching AAs

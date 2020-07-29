@@ -658,8 +658,10 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
                             orphan_name="?"):
     r"""
     Return a fragment list where residues not present in :obj:`fragments` are
-    now new interstitial fragments. The individual fragments have to
-    cover their entire span, i.e. a fragment like [0,1,5,6] is not permitted
+    now new interstitial fragments.
+
+    "not-present" means outside of the ranges of each fragment, s.t.
+    an existing fragment like [0,1,5,6] is actually considered [0,1,2,3,4,5,6]
 
     Parameters
     ----------
@@ -686,13 +688,15 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
     if highest_res_idx is None:
         highest_res_idx = _np.max(_np.hstack(fragments))
 
-    for ifrag in fragments:
+    full_frags = []
+    for ifrag, iname in zip(fragments,fragnames):
         if len(ifrag)==ifrag[-1]-ifrag[0]:
-            raise ValueError("This method cannot use fragments like this\n",ifrag)
-    orphans = _np.delete(_np.arange(highest_res_idx + 1), _np.hstack(fragments))
+            print("Fragment %s has holes in it but will be considered from %u to %u regardless"%(iname,ifrag[0],ifrag[-1]))
+        full_frags.append(_np.arange(ifrag[0],ifrag[-1]+1))
+    orphans = _np.delete(_np.arange(highest_res_idx + 1), _np.hstack(full_frags))
     orphans = _get_fragments_by_jumps_in_sequence(orphans)[1]
     orphans_labels = [orphan_name for __ in orphans]
-    new_frags = orphans + fragments
+    new_frags = orphans + full_frags
     new_labels = orphans_labels + fragnames
     idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
     return [new_frags[ii] for ii in idxs], [new_labels[ii] for ii in idxs]
