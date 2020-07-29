@@ -22,13 +22,15 @@ Licenses
 
 Status
 ======
-``mdciao`` is in its early versions and changes to the API and functionality are to be expected. Please do not
-consider this library a finished one.
+``mdciao`` is in its initial development, with versions 0.Y.Z. Anything MAY change at any time.
+`The public API SHOULD NOT be considered stable <https://semver.org/#spec-item-4>`_.
 
 Authors
 =======
 ``mdciao`` is written and maintained by Guillermo Pérez-Hernández (`ORCID <http://orcid.org/0000-0002-9287-8704>`_) currently at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_ in the
 `Charité Universitäsmedizin Berlin <https://www.charite.de/>`_.
+
+Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2020 (in preparation)"
 
 
 .. |Python Package| image::
