@@ -369,6 +369,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
         ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
         ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
         _plt.close(ifig)
+        print(fname)
 
     # even if no figures were produced, the files should still be saved
     if plot_timedep:
@@ -771,7 +772,7 @@ def residue_neighborhoods(topology, trajectories, residues,
         print("No residues have any neighbors at %2.1f Ang. No output produced." % ctc_cutoff_Ang)
         return
     elif len(empty_CGs)>0:
-        print("These residues have no neighbors at %2.1f Ang"%ctc_cutoff_Ang)
+        print("The following residues have no neighbors at %2.1f Ang, their frequency histograms will be empty"%ctc_cutoff_Ang)
         print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
 
     panelheight = 3
