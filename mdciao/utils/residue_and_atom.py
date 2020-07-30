@@ -240,17 +240,29 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
             residxs_out.extend(find_AA(top,r))
         else:
             resnames = r.split('-')
-            assert len(resnames) >=1
             if interpret_as_res_idxs:
-                residx_pair = [int(rr) for rr in resnames]
+                # TODO clean the double "-" condiditon 
+                if "-" in r:  # it was a pair
+                    assert len(resnames) == 2
+                    for_extending = _np.arange(int(resnames[0]),
+                                               int(resnames[-1]) + 1)
+                else:
+                    for_extending = [int(rr) for rr in resnames]
             else:
-                residx_pair, __ = residues_from_descriptors(resnames, fragments, top,
+                for_extending, __ = residues_from_descriptors(resnames, fragments, top,
                                                             **residues_from_descriptors_kwargs)
-                if None in residx_pair:
+                if None in for_extending:
                     raise ValueError("The input range contains '%s' which "
-                                     "returns an untreatable range %s!" % (r, residx_pair))
-            residxs_out.extend(_np.arange(residx_pair[0],
-                                      residx_pair[-1] + 1))
+                                     "returns an untreatable range %s!" % (r, for_extending))
+                if "-" in r:  # it was a pair
+                    assert len(for_extending)==2
+                    for_extending = _np.arange(for_extending[0],
+                                               for_extending[-1] + 1)
+                else: # it was something else
+                    pass
+                    #for_extending = for_extending[0]
+
+            residxs_out.extend(for_extending)
 
     if sort:
         residxs_out = sorted(residxs_out)
