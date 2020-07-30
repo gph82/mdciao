@@ -1,3 +1,12 @@
+r"""
+Miscellaneous operations on list or list-like objects
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+
+
+"""
+
 import numpy as _np
 
 def re_warp(array_in, lengths):

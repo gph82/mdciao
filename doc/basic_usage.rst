@@ -6,9 +6,10 @@ Basic Usage
 .. toctree::
    :maxdepth: 2
 
+.. _`3D visualization`:
 
 .. note::
-   The simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `herex <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples.
+   The simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples.
 
 This command::
 
@@ -35,7 +36,7 @@ And produce the following figures (not the captions):
 .. figure:: imgs/neighborhoods.overall@3.5_Ang.Fig.1.png
    :scale: 50%
 
-   **Fig. 1** Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the alpha5 helix of the Gs-protein are shown. The simualtion started from the `3SN6` structure (including the B2AR receptor). The simualtion itself can be seen interactively:
+   Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the alpha5 helix of the Gs-protein are shown. The stimulation started from the `3SN6` structure (including the B2AR receptor). The stimulation itself can be seen interactively in the link posted in the `3D visualization`_.
 
 Annotated figures with the timetraces of the above distances are also produced automatically:
 
@@ -43,6 +44,6 @@ Annotated figures with the timetraces of the above distances are also produced a
    :scale: 33%
    :align: center
 
-   **Fig. 2** Time-traces of the residue-residue distances behind the frequency barplots of Fig. 1. The last time-trace represents the total number of neighbors (distances below the given cutoff) at any given moment in the trajectory. On average, LEU394 has 1.7 non-bonded neighbors below the cutoff (see legend of Fig.1)
+   Time-traces of the residue-residue distances behind the frequency barplots of Fig. 1. The last time-trace represents the total number of neighbors (distances below the given cutoff) at any given moment in the trajectory. On average, LEU394 has around 1.7 non-bonded neighbors below the cutoff (see legend of Fig.1)
 
 Anything that gets shown in any way to the output can be saved for later use as human readable ASCII-files, Excel-tables or NumPy `.npy` files for later use.

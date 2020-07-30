@@ -21,6 +21,8 @@
 ##############################################################################
 
 import argparse
+from mdciao.plots.plots import _colorstring
+
 # https://stackoverflow.com/questions/3853722/python-argparse-how-to-insert-newline-in-the-help-text
 class SmartFormatter(argparse.HelpFormatter):
 
@@ -680,7 +682,6 @@ def parser_for_CGN_overview():
 
     return parser
 
-from mdciao.plots.plots import _colorstring
 def parser_for_compare_neighborhoods():
     parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies from different files by generating a comparison plot and table")
     parser.add_argument("files", type=str, nargs="+", help="Files (ASCII or .xlsx) containing the frequencies and labels in the first columns")
@@ -690,4 +691,27 @@ def parser_for_compare_neighborhoods():
     parser.add_argument("-m","--mutations",type=str, default=None,help='A replacement dictionary, to be able to re-label residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes all GLUs to ARGs and all LYS to PHEs')
     _parser_add_output_desc(parser,"freq_comparison")
     _parser_add_graphic_ext(parser)
+    return parser
+
+def parser_for_examples():
+    desc1 = "Wrapper script to showcase and optionally run examples of the" \
+            "command-line-tools that ship with mdciao.\n" \
+            "\nTo show available examples and nothing more " \
+            "type 'mdc_examples.py' followed by any of '?/l/list'"
+    parser = argparse.ArgumentParser(description=desc1)
+    parser.add_argument("clt",
+                        default=None,
+                        type=str,
+                        help="The command-line-tool (also known as script) to run. Can be part of the name as well\n "
+                             "e.g. 'neigh' for mdc_neighborhood.py")
+
+    parser.add_argument("-x",
+                        action="store_true",
+                        dest="execute",
+                        help="whether to execute the command after showing it. "
+                             "Default is False.")
+    parser.set_defaults(execute=False)
+
+    parser.set_defaults(show_list=False)
+
     return parser

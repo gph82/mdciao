@@ -3,9 +3,9 @@
 Installation
 ============
 
-hands-on session
-----------------
-For our August workshop  you can download the sources from `herez <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_. Please also see the note on :ref:`hk`.
+Workshop
+--------
+For our August workshop  you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_ and follow the `Installation from source`_.
 
 .. note::
  As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. For beginners, see the below paragraph
@@ -13,8 +13,7 @@ For our August workshop  you can download the sources from `herez <http://protei
 Installation via package manager
 --------------------------------
 .. warning::
- None of these methods work yet, as ``mdciao`` is not yet published to those package managers. Please use
-the Installation from the source
+ None of these methods work yet, as ``mdciao`` is not yet published to those package managers. Please use the Installation from the source
 
 We recommend you install ``mdciao`` either via the `pip <https://pypi.org/project/pip/>`_ Python package installer or the `conda <https://conda.io/en/latest/>`_ Python package manager::
 
@@ -26,22 +25,31 @@ or::
 
 Installation from source
 ------------------------
+.. warning::
+ * At the moment, the repository is private. For our August workshop  you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_.
+ * Please also see the note on :ref:`hk` if you are planning to run ``mdciao`` on our group cluster.
 
-* You can also clone the sources from `mdciao's github repository <https://github.com/gph82/mdciao>`_ to your preferred `programs` or `software` folder.
+.. |ss| raw:: html
+
+   <strike>
+
+.. |se| raw:: html
+
+   </strike>
+
+* |ss| Clone `mdciao's github repository <https://github.com/gph82/mdciao>`_ |se| `Download and unzip the sources <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_ to your preferred `programs` or `software` folder.
+
+* If you are not familiar with Python environments, please read this `python interpreter and environment`_ note before continuing.
+
+* ``cd`` to the unzipped directory and execute the ``setup.py`` file::
+
+   python setup.py install
+
+
+This should install ``mdciao`` along with all its dependencies. Optionally using `develop` instead of `install` means that the ``mdciao`` in your Python path points directly to the sources directory, s.t. changes in the source take effect immediately without re-installing
 
 .. warning::
- * At the moment, the repository is private. For our August workshop  you can download the sources from `herez <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-hands_on.zip>`_. Please also see the note on :ref:`hk`.
- * Please unzip the sources to your preferred software folder and continue with these instructions:
-
-* Execute the `setup.py` file::
-
-   cd mdciao-hands_on
-   python setup.py develop
-
-This should install ``mdciao`` along with all its dependencies. The `develop` option means that the ``mdciao`` in your Python path points directly to the sources directory, s.t. changes in the sources take effect immediately without re-installing.
-
-.. warning::
- At the moment, the `mdtraj` dependency is giving some problems, so we recommend issuing::
+ On some rare occasions the above command doesn't install `mdtraj` properly. Should that happen to you, we recommend issuing::
 
   pip install mdtraj
 
@@ -51,13 +59,13 @@ This should install ``mdciao`` along with all its dependencies. The `develop` op
 
  **before** installing ``mdciao``.
 
-A note for beginners
----------------------
-`conda` and `pip` are very popular, user friendly package managers, but may seem complex to beginners. **A very nice feature** of `conda` is that it installs its own `python` interpreter, separate from the system's Python. It does so in the user's home directory, s.t. no root privileges are needed.
+python interpreter and environment
+----------------------------------
+`conda <https://docs.conda.io/en/latest/>`_ and `pip <https://pypi.org/project/pip/>`_ are very popular, user friendly package managers. **A very nice feature** of `conda` is that it installs its own ``python`` interpreter, separate from the system's Python. It does so in the user's home directory, s.t. no root privileges are needed.
 
 This means that it's very hard to "break" local Python installations (your own or shared installations, like in clusters). So, don't be afraid to use conda and mess up your Python environment as many times as you like. Wiping and re-installing is easy (delete `~/anaconda3` or `~/miniconda3` from your home directory) and won't not alter your existing Python installation at all!
 
-If you already have conda, and don't want to clutter the `base` environment, we recommend you create a new environment::
+If you already have conda, and don't want to clutter the ``base`` environment, we recommend you create a new environment::
 
  conda create -n for_mdciao
  conda activate for_mdciao

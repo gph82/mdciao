@@ -23,38 +23,18 @@
 ##############################################################################
 
 from mdciao.examples import ExamplesCLTs
-import argparse
+from mdciao.parsers import parser_for_examples, _inform_of_parser
 from os import path
 from fnmatch import filter as _fnfilter
 execute = True
 list = False
 ex = ExamplesCLTs()
-desc1 = "Wrapper script to showcase and optionally run examples of the \n" \
-        "command-line-tools that ship with mdciao."
-parser = argparse.ArgumentParser(description=desc1+
-                                             "\n To show available examples and nothing more\n"
-                                             "type any of 'mdc_examples.py l/list/?'"
-                                 )
 
-parser.add_argument("clt",
-                    default=None,
-                    type=str,
-                    help="The example script to run. Can be part of the name as well\n "
-                         "(neigh) for neighborhoods ")
-
-parser.add_argument("-x",
-                    action="store_true",
-                    dest="execute",
-                    help="whether to execute the command after showing it. "
-                         "Default is False.")
-parser.set_defaults(execute=False)
-
-parser.set_defaults(show_list=False)
-
+parser = parser_for_examples()
+#print(_inform_of_parser(parser))
 args = parser.parse_args()
 clt = args.clt
 if args.clt in ["l","lists","?"]:
-    print(desc1)
     print("Availble command line tools are")
     print("\n".join([" * %s.py"%key for key in ex.clts]))
     print("Issue:\n"

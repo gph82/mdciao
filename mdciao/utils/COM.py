@@ -1,3 +1,12 @@
+r"""
+Functions related to Center-Of-Mass (COM) computations
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+
+
+"""
 import numpy as _np
 def geom2COMdist(igeom, residue_pairs):
     r"""

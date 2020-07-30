@@ -1,6 +1,5 @@
 r"""
-Get and manipulate consensus nomenclature like the
-
+Get and manipulate consensus nomenclature:
  * `Ballesteros-Weinstein-Numbering <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_ (BW)
  * `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_
 

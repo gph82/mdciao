@@ -9,6 +9,7 @@ We refer to the command-line-tools collectively as the command-line-interface, o
    :maxdepth: 2
    :hidden:
 
+   mdc_examples
    mdc_neighborhoods
    mdc_interface
    mdc_sites

@@ -59,6 +59,10 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+# Number figures
+numfig = True
+numfig_format = {'figure': '<b>Fig. %s:</b>'}
+
 
 # -- Options for HTML output -------------------------------------------------
 

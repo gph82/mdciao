@@ -1,3 +1,13 @@
+r"""
+Functions related to contact-map operations (WIP)
+
+.. autosummary::
+   :nosignatures:
+   :toctree: generated/
+
+
+"""
+
 import numpy as _np
 import mdtraj as _md
 import os.path as _path

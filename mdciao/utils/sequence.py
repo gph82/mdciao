@@ -1,7 +1,11 @@
 r"""
 
-These functions rely on sequence alignment to offer, e.g. maps between
-topologies, maps between topology and nomenclature objects
+Functions for and around sequence alignment
+
+The alignment takes only in one place (:obj:`my_bioalign`),
+the rest of functions either prepare the alignment or produce
+other objects derived from it (DataFrames, dictionaries,
+maps between topologies etc)
 
 .. currentmodule:: mdciao.utils.sequence
 
