@@ -14,8 +14,8 @@ from mdtraj.core.residue_names import _AMINO_ACID_CODES
 from fnmatch import filter as _fn_filter
 import numpy as _np
 from  pandas import unique as _pandas_unique
-from mdciao.utils.lists import in_what_N_fragments as _in_what_N_fragments
-_abc = "abcdefghijklmnopqrst"
+from mdciao.utils.lists import in_what_N_fragments as _in_what_N_fragments, force_iterable as _force_iterable
+from collections import Counter as _Counter
 
 def find_AA(top, AA_pattern):
     """
@@ -85,7 +85,12 @@ def residues_from_descriptors(residue_descriptors,
     Returns residue idxs based on a list of residue descriptors.
 
     Fragments are needed to better identify residues. If a residue
-    is present in multiple times, the user is prompted to dis-ambiguate
+    is present in multiple fragments, the user can dis-ambiguate
+    or pick all residue idxs matching the :obj:`residue_descriptor`
+
+    Because of this (one descriptor can match more than one residue)
+    the return values are not necessarily of the same length
+    as :obj:`residue_descriptors`
 
     Parameters
     ----------
@@ -103,22 +108,23 @@ def residues_from_descriptors(residue_descriptors,
 
     Returns
     -------
-    residxs, fragidxs,
-        lists of integers
-
+    residxs : list
+        lists of integers that have been selected
+    fragidxs : list
+        The list of fragments where the residues are
     """
     residxs = []
     fragidxs = []
-    last_answer = 0
+    last_answer = '0'
 
-    # TODO break the iteration in this method into a separate method. Same AAcode in different fragments will overwrite
-    # each other
+
     if isinstance(residue_descriptors, (str, int)):
         residue_descriptors = [residue_descriptors]
 
     for key in residue_descriptors:
-        cands = find_AA(top, str(key))
-        cand_fragments = _in_what_N_fragments(cands, fragments)
+        cands = _np.array(find_AA(top, str(key)))
+        cand_fragments =   _force_iterable(_np.squeeze(_in_what_N_fragments(cands, fragments)))
+
         # TODO refactor into smaller methods
         if len(cands) == 0:
             print("No residue found with descriptor %s" % key)
@@ -130,11 +136,12 @@ def residues_from_descriptors(residue_descriptors,
         else:
             istr = "ambiguous definition for AA %s" % key
             istr += extra_string_info
-            for cc, ss, char in zip(cands, cand_fragments, _abc):
+            cand_chars = _np.hstack([['%s.%u'%(key,ii) for ii in range(n)] for key, n in _Counter(cand_fragments).items()]).tolist()
+            for cc, ss, char in zip(cands, cand_fragments, cand_chars):
                 fname = " "
                 if fragment_names is not None:
                     fname = ' (%s) ' % fragment_names[ss]
-                istr = '%s) %10s in fragment %2u%swith residue index %2u' % (char, top.residue(cc), ss, fname, cc)
+                istr = '%-6s %10s in fragment %2u%swith residue index %2u' % (char+')', top.residue(cc), ss, fname, cc)
                 if additional_naming_dicts is not None:
                     extra = ''
                     for key1, val1 in additional_naming_dicts.items():
@@ -144,10 +151,10 @@ def residues_from_descriptors(residue_descriptors,
                         istr = istr + ' (%s)' % extra.rstrip(" ")
                 print(istr)
             if pick_this_fragment_by_default is None:
-                prompt = "input one fragment idx (out of %s) and press enter.\n" \
-                         "Leave empty and hit enter to repeat last option [%s]\n" \
-                         "Use letters in case of repeated fragment index\n" % (
-                         [int(ii) for ii in cand_fragments], last_answer)
+                prompt = "Input one fragment idx out of %s and press enter (selects all matching residues in that fragment).\n" \
+                         "Use one x.y descriptor in case of repeated fragment index.\n" \
+                         "Leave empty and hit enter to repeat last option [%s]" % (
+                         [int(ii) for ii in _np.unique(cand_fragments)], last_answer)
 
                 answer = input(prompt)
             else:
@@ -156,15 +163,16 @@ def residues_from_descriptors(residue_descriptors,
 
             if len(answer) == 0:
                 answer = last_answer
-                cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-            elif answer.isdigit():
+
+            if str(answer).isdigit():
                 answer = int(answer)
-                if answer in cand_fragments:
-                    cands = cands[_np.argwhere([answer == ii for ii in cand_fragments]).squeeze()]
-            elif answer.isalpha() and answer in _abc:
-                idx = _abc.find(answer)
-                answer = cand_fragments[idx]
-                cands = cands[idx]
+                assert answer in cand_fragments
+                idxs_w_answer = _np.argwhere([answer == ii for ii in cand_fragments]).squeeze()
+                cands = cands[idxs_w_answer]
+            elif '.' in answer and answer in cand_chars:
+                idx_w_answer = _np.argwhere([answer == ii for ii in cand_chars]).squeeze()
+                answer = cand_fragments[idx_w_answer]
+                cands = cands[idx_w_answer]
             else:
                 raise ValueError("%s is not a possible answer" % answer)
                 # TODO implent k for keeping this answer from now on
@@ -173,8 +181,8 @@ def residues_from_descriptors(residue_descriptors,
                     "Your answer has to be an integer in the of the fragment list %s" % cand_fragments)
             last_answer = answer
 
-            residxs.append(int(cands))  # this should be an integer
-            fragidxs.append(int(answer))  # ditto
+            residxs.extend([int(ii) for ii in _force_iterable(cands)])
+            fragidxs.extend([int(answer) for __ in _force_iterable(cands)])
 
     return residxs, fragidxs
 
