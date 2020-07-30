@@ -694,9 +694,9 @@ def parser_for_compare_neighborhoods():
     return parser
 
 def parser_for_examples():
-    desc1 = "Wrapper script to showcase and optionally run examples of the" \
+    desc1 = "Wrapper script to showcase and optionally run examples of the " \
             "command-line-tools that ship with mdciao.\n" \
-            "\nTo show available examples and nothing more " \
+            "\nTo show available comands and nothing more " \
             "type 'mdc_examples.py' followed by any of '?/l/list'"
     parser = argparse.ArgumentParser(description=desc1)
     parser.add_argument("clt",

@@ -10,6 +10,12 @@ For our August workshop  you can download the sources from `here <http://protein
 .. note::
  As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. For beginners, see the below paragraph
 
+
+Python versions
+---------------
+At the moment, ``mdciao`` is CI-tested only for GNU/Linux OSs and Python versions
+3.6 and 3.7. See this warning_ for problems during installation from source.
+
 Installation via package manager
 --------------------------------
 .. warning::
@@ -49,12 +55,16 @@ Installation from source
 This should install ``mdciao`` along with all its dependencies. Optionally using `develop` instead of `install` means that the ``mdciao`` in your Python path points directly to the sources directory, s.t. changes in the source take effect immediately without re-installing
 
 .. warning::
- On some rare occasions the above command doesn't install `mdtraj` properly. Should that happen to you, we recommend issuing::
+ On some occasions the above command doesn't install `numpy`, `cython` or `mdtraj` properly. Should that happen to you, we recommend issuing::
 
+  pip install cython
+  pip install numpy
   pip install mdtraj
 
  or::
 
+  conda install cython
+  conda install numpy
   conda install mdtraj -c conda forge
 
  **before** installing ``mdciao``.
