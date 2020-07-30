@@ -28,11 +28,15 @@ Licenses
 * Modules used by ``mdciao`` have different licenses. You can check any module's license in your Python environment using `pip-licenses <https://github.com/raimon49/pip-licenses>`_:
 >>> pip-licenses | grep module_name
 
-
 Status
 ======
 ``mdciao`` is in its initial development, with versions 0.Y.Z. Anything MAY change at any time.
 `The public API SHOULD NOT be considered stable <https://semver.org/#spec-item-4>`_.
+
+Python versions
+===============
+At the moment, ``mdciao`` is CI-tested only for GNU/Linux OSs and Python versions
+3.6 and 3.7
 
 Authors
 =======

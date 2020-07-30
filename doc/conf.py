@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'mdciao'
-copyright = '2019, Guillermo Perez-Hernandez, Sofi Tiwari'
-author = 'Guillermo Perez-Hernandez, Sofi Tiwari'
+copyright = '2019, Guillermo Perez-Hernandez'
+author = 'Guillermo Perez-Hernandez'
 
 
 # -- General configuration ---------------------------------------------------
