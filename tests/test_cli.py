@@ -175,7 +175,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
     def test_neighborhoods(self):
 
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in ["b"])
+            input_values = (val for val in ["1.0"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
                 cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
                                       "200,395",

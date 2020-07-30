@@ -266,7 +266,7 @@ class Test_residues_from_descriptors(unittest.TestCase):
 
     def test_answer_letters(self):
         residues = ["GLU30", "TRP32"]
-        input_values = (val for val in ["a", "b"])
+        input_values = (val for val in ["0.0", "4.0"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             residue_and_atom.residues_from_descriptors(residues, self.by_bonds_geom2frags,
                                                      self.geom2frags.top,
