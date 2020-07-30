@@ -935,6 +935,7 @@ class LabelerBW(LabelerConsensus):
         return {key: list(self.dataframe[self.dataframe["protein_segment"] == key].index) for key in
                 self.dataframe["protein_segment"].unique()}
 
+# TODO the new fragment_idxs from the BW labeler takes care of this
 '''
 def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
     """
