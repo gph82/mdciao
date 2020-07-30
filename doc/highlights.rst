@@ -7,7 +7,7 @@ Highlights
       :align: left
 
 
-      Left panel: most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein. A cutoff of 3.5 AA between heavy-atoms has been used. Residue labels combine residue names and consenus nomenclature. Right panel: associated distance distributions.
+      **Left panel**: most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein. A cutoff of 3.5 AA between heavy-atoms has been used. Residue labels combine residue names and consenus nomenclature. **Right panel**: associated distance distributions.
 
 
 * easy input of target residues, e.g. the following is valid and will evaluate and show all these residues together::
@@ -56,10 +56,11 @@ Highlights
  .. figure:: imgs/interface.matrix@3.5_Ang.Fig.4.png
       :scale: 25%
       :align: left
+      :name: interface_matrix
 
       (click to enlarge). Interface contact matrix between the B2AR receptor and the Gs protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor (BW) and G-protein (CGN). Please note: this is not a **symmetric** contact-matrix. The y-axis shows residues in the Gs protein and the x-axis in the receptor.
 
-* Since **Fig. 4** is bound to incorporate a lot of blank pixels, ``mdciao`` will also produce sparse plots and figures that highlight the formed contacts only:
+* Since :numref:`interface_matrix` is bound to incorporate a lot of blank pixels, ``mdciao`` will also produce sparse plots and figures that highlight the formed contacts only:
 
  .. figure:: imgs/interface.overall@3.5_Ang.Fig.5.png
       :scale: 15%
@@ -67,7 +68,7 @@ Highlights
       :name: interface_bars
 
 
-      (click to enlarge) Upper panel: most frequent contacts sorted by frequency. The lower panel aggreates and sorts the upper panel into per-residue frequencies, showing their average participation in the interface (same info will be written to `interface.overall@3.5_Ang.xlsx`). Also, the number of shown contacts can be controllod either with the `--n_ctcs` and/or `--min_freq` parameters of `mdc_interface.py`.
+      (click to enlarge) **Upper panel**: most frequent contacts sorted by frequency, i.e. for each non-white pixel of :numref:`interface_bars`, there is a bar shown. **Lower panel**: per-residue aggregated contact-frequencies, showing each residue's average participation in the interface (same info will be written to `interface.overall@3.5_Ang.xlsx`). Also, the number of shown contacts/bars can be controlled either with the `--n_ctcs` and/or `--min_freq` parameters of `mdc_interface.py`.
 
 * A very convenient way to incorporate the molecular topology into the visualization of contact frequencies are the so-called `FlarePlots <https://github.com/GPCRviz/flareplot>`_ (cool live-demo `here <https://gpcrviz.github.io/flareplot/>`_). These show the molecular topology (residues, fragments) on a circle with curves connecting the residues for which a given frequency has been computed. The `mdc_interface.py example`_ above will also generate a flareplot:
 
@@ -76,15 +77,15 @@ Highlights
       :align: left
       :name: fig_flare
 
-      (click to enlarge) FlarePlot of the frequencies shown in the upper pannel of :numfig:`interface_bars`. Residues are shown as dots on the outer circumference, split into fragments following any available labelling (BW or CGN) information. The contact frequencies are represented as lines connecting residue pairs, with an opacity proportional to the frequencie's value. The secondary stucture of each residue is also included. (Note: This plot is always produced as .pdf to be able to zoom into it as much as needed. Click the zoomed-in inset at the top of the page to read the labels clearly)
+      (click to enlarge) FlarePlot of the frequencies shown in the upper pannel of :numref:`interface_bars`. Residues are shown as dots on the outer circumference, split into fragments following any available labelling (BW or CGN) information. The contact frequencies are represented as lines connecting residue pairs, with an opacity proportional to the frequencie's value. The secondary stucture of each residue is also included. (Note: This plot is always produced as .pdf to be able to zoom into it as much as needed. Click the zoomed-in inset at the top of the page to read the labels clearly)
 
-* Similar to how :numfig:`fig_flare` maps contact frequencies (:numfig:`interface_bars`, upper panel) onto the molecular topology, the next figure maps the **lower** panel :numfig:`interface_bars` on the molecular geometry. It simply puts the values shown there in the `temperature factor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_  of a pdb file, representing the calculated interface as a *heatmap*
+* Similar to how the flareplot (:numref:`fig_flare`) maps contact frequencies (:numref:`interface_bars`, upper panel) onto the molecular topology, the next figure maps the **lower** panel :numref:`interface_bars` on the molecular geometry. It simply puts the values shown there in the `temperature factor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_  of a pdb file, representing the calculated interface as a *heatmap*
 
  .. figure:: imgs/interface_BRG.png
       :scale: 50%
       :align: left
 
-      (click to enlarge) 3D visualization of the interface as heatmap at hand using `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_. Note, for the figure at the top of the page the option signal_beta=True has been passed to the cli.interface method of the API. At the moment this is not possible just by using `mdc_interface.py`, sorry!
+      (click to enlarge) 3D visualization of the interface as heatmap at hand using `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_. Note, for the blue/read figure at the top of the page the option signal_beta=True has been passed to the :obj:`mdciao.cli.interface` method of the API. At the moment this is not possible just by using `mdc_interface.py`, sorry!
 
 
 * A different approach is to look **only** for a particular set of pre-defined contacts. Simply writing this set into a human readable `JSON <https://www.json.org/>`_ file will allow `mdc_sites.py` to compute and present these (and only these) contacts, as in the example file `tip.json`::

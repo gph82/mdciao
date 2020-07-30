@@ -61,7 +61,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # Number figures
 numfig = True
-numfig_format = {'figure': '<b>Fig. %s:</b>'}
+numfig_format = {'figure': 'Fig. %s'}
 
 
 # -- Options for HTML output -------------------------------------------------

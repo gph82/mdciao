@@ -8,7 +8,7 @@ Workshop
 For our August workshop  you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_ and follow the `Installation from source`_.
 
 .. note::
- As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. For beginners, see the below paragraph
+ As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into.
 
 
 Python versions
@@ -54,6 +54,7 @@ Installation from source
 
 This should install ``mdciao`` along with all its dependencies. Optionally using `develop` instead of `install` means that the ``mdciao`` in your Python path points directly to the sources directory, s.t. changes in the source take effect immediately without re-installing
 
+.. _warning:
 .. warning::
  On some occasions the above command doesn't install `numpy`, `cython` or `mdtraj` properly. Should that happen to you, we recommend issuing::
 
@@ -111,8 +112,3 @@ MacOs and Windows
  python setup.py develop
 
 The needed dependencies should install automatically (see above the note about environments) and even if that fails for some reason, you should be able to use *some* package manager to install them manually.
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-

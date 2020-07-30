@@ -1,5 +1,5 @@
-Command line tools
-------------------
+Command line tools (quick intro)
+--------------------------------
 
 The best way to find out about ``mdciao``'s command-line tools is to use a command-line tool shipped with ``mdciao``::
 
@@ -37,4 +37,4 @@ What these tools do is:
 * mdc_compare
    Compare residue-residue contact frequencies from different files
 
-You can see their documentation by using the `-h` flag whe invoking them from the command line or by checking the help for the :ref:`cli_cli`.
+You can see their documentation by using the `-h` flag whe invoking them from the command line or by checking the help menu to your left.

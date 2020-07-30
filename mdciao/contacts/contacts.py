@@ -287,7 +287,7 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
         Optional keyword arguments to pass to :obj:`mdtraj.contacs`
 
         Note:
-        ----
+        -----
         If "scheme" is contained in mdcontacts_kwargs and scheme==COM,
         the center of mass will be computed
 

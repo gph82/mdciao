@@ -49,19 +49,7 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 
 .. include:: cli_stub.rst
 
-.. _API:
-
-API
----
-``mdciao`` ships not only with the mentioned command line tools, but also with a number of modules and submodules (loosely referred to as API from now on). These can be imported into the Python namespace by simply by issuing::
-
- import mdciao
-
-They allow the experienced user to create their own scripts or interactive workflows in IPython or even better, IPython JuPyTer notebooks. Head to the :ref:`api_ref` for a more detailed description.
-
-All API objects and functions are extensively documented. Please use the powerful hinting capabilities of the IPython terminal (e.g. `Tab` for autocomplete or `cmd?+Enter`) or the `JuPyter Notebooks <https://www.dataquest.io/blog/jupyter-notebook-tips-tricks-shortcuts/>`_.
-
-.. include:: api_note.rst
+.. include:: api_stub.rst
 
 .. |Python Package| image::
    https://github.com/gph82/mdciao/workflows/Python%20package/badge.svg
@@ -72,15 +60,10 @@ All API objects and functions are extensively documented. Please use the powerfu
    :target: https://codecov.io/gh/gph82/mdciao
 
 
-
 .. toctree::
-   :maxdepth: 2
-   :caption: home
    :hidden:
 
-   installation
+   Home <index>
+   Installation
    cli_cli/cli_cli
    api/api
-
-
-
