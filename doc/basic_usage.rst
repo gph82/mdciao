@@ -1,10 +1,6 @@
-.. _minimal_example:
-
+.. _`Basic Usage`:
 Basic Usage
 -----------
-
-.. toctree::
-   :maxdepth: 2
 
 .. _`3D visualization`:
 

@@ -64,6 +64,6 @@ and calculates the  time-traces of residue-residue distances, and from there, **
    :hidden:
 
    Home <index>
-   Installation
+   installation
    cli_cli/cli_cli
    api/api

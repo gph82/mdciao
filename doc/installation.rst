@@ -5,16 +5,38 @@ Installation
 
 Workshop
 --------
-For our August workshop  you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_ and follow the `Installation from source`_.
+For our August workshop, ``mdciao`` should already be installed. Please issue the following command from the terminal before using ``mdciao``::
 
-.. note::
- As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into.
+ [mkf@molgraph01 ~]$ mdc_help
 
+
+ # For activating the mdciao python environment,
+ # issue the two following commands
+ eval "$(/usr/people/mkf/miniconda3/bin/conda shell.bash hook)"
+ conda activate py36_for_mdciao
+
+
+ # For deactivating, please use this (two times):
+ conda deactivate
+ conda deactivate
+
+
+This will provide the instructions on how to activate the python environment for ``mdciao``.
+
+The sources have already been downloaded and installed here::
+
+ [mkf@molgraph01 ~]$ cd Programs/mdciao
+ [mkf@molgraph01 mdciao]$ ls
+ doc  LICENSE.txt  mdciao  mdciao.egg-info  README.rst  requirements.txt  scripts  setup.py  tests
+
+
+You can re-download the sources anytime from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_ and follow the `Installation from source`_.
 
 Python versions
 ---------------
 At the moment, ``mdciao`` is CI-tested only for GNU/Linux OSs and Python versions
 3.6 and 3.7. See this warning_ for problems during installation from source.
+
 
 Installation via package manager
 --------------------------------
@@ -29,8 +51,12 @@ or::
 
  conda install mdciao
 
+.. note::
+ As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into.
+
 Installation from source
 ------------------------
+
 .. warning::
  * At the moment, the repository is private. For our August workshop  you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_.
  * Please also see the note on :ref:`hk` if you are planning to run ``mdciao`` on our group cluster.
@@ -74,7 +100,7 @@ python interpreter and environment
 ----------------------------------
 `conda <https://docs.conda.io/en/latest/>`_ and `pip <https://pypi.org/project/pip/>`_ are very popular, user friendly package managers. **A very nice feature** of `conda` is that it installs its own ``python`` interpreter, separate from the system's Python. It does so in the user's home directory, s.t. no root privileges are needed.
 
-This means that it's very hard to "break" local Python installations (your own or shared installations, like in clusters). So, don't be afraid to use conda and mess up your Python environment as many times as you like. Wiping and re-installing is easy (delete `~/anaconda3` or `~/miniconda3` from your home directory) and won't not alter your existing Python installation at all!
+This means that it's very hard to "break" local Python installations (your own or shared installations, like in clusters). So, don't be afraid to use conda and mess up your Python environment as many times as you like. Wiping and re-installing is easy (delete `~/anaconda3` or `~/miniconda3` from your home directory) and you won't alter your OS-wide Python installation at all!
 
 If you already have conda, and don't want to clutter the ``base`` environment, we recommend you create a new environment::
 

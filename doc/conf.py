@@ -79,3 +79,9 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 html_sidebars = { '**': ['localtoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'] }
+
+latex_elements = {
+  "papersize":"a4paper",
+    'extraclassoptions': 'openany,oneside'
+
+}
