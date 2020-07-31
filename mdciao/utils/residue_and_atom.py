@@ -50,7 +50,7 @@ def find_AA(top, AA_pattern):
                 2: lambda rr: rr.name,
                 3: lambda rr: rr.name}
 
-    if AA_pattern.isalpha():
+    if AA_pattern[-1].isalpha():
         lenA = len(AA_pattern)
         assert lenA in [1,2,3], ValueError("purely alphabetic patterns must have " 
                                      " either 1, 2, or 3 letters, not  %s" % (AA_pattern))
