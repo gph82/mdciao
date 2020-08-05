@@ -499,7 +499,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                           fragment_names="",
                           fragment_colors=None,
                           graphic_ext=".pdf",
-                          table_ext=None,
+                          table_ext=".dat",
                           BW_uniprot="None",
                           CGN_PDB="None",
                           output_dir='.',
@@ -526,9 +526,19 @@ def residue_neighborhoods(topology, trajectories, residues,
     :obj:`mdciao.contacts.ContactPair`-objects with a shared residue,
     called the `anchor_residue`.
 
-    The contact frequencies will be printed, plotted and saved, as well as the distance time-traces
-    used for their computation. The user may be prompted when necessary,
-    although this behaviour can be turned off.
+    The contact frequencies will be printed, plotted and saved. The residue-residue
+    distance time-traces used for their computation will b
+
+    Note
+    ----
+    The time-independent figure is always shown (e.g. "neighborhood.overall@3.5_Ang.pdf"),
+    whereas the time-dependent figures (e.g. "neighborhood.GDP395.time_trace@3.5_Ang.pdf")
+    are never shown, because the number of time-traces becomes very high very quickly.
+    It's easier to look at them with an outside viewer.
+
+
+    The user may be prompted when necessary,
+    although this behaviour can be turned off with :obj:`accept_guess`
 
     Input can be from disk and/or from memory (see below).
 
@@ -544,6 +554,8 @@ def residue_neighborhoods(topology, trajectories, residues,
     topology : str or :obj:`mdtraj.Trajectory`
         This geometry is used as a topology and
         as a reference geometry for :obj:`nlist_cutoff_Ang`.
+        If str, it's the full path to the topology file,
+        e.g. 'sims/prot.pdb')
     trajectories : str or :obj:`mdtraj.Trajectory`
         The MD-trajectories to calculate the frequencies from.
         This input is pretty flexible. For more info check
@@ -557,7 +569,8 @@ def residue_neighborhoods(topology, trajectories, residues,
     residues : int, iterable of ints or str
         The residue(s) for which the neighborhood will be computed.
         This input is pretty flexible wrt to strings and numbers,
-        which are interpreted as sequence indices unless :obj:`res_idxs` is True
+        which are interpreted as sequence indices unless
+        :obj:`res_idxs` is True
         Valid inputs are are:
          * residues = [1,10,11,12]
          * residues = '1,10,11,12'
@@ -574,7 +587,7 @@ def residue_neighborhoods(topology, trajectories, residues,
         Whether the indices of :obj:`residues` should be understood as
          * zero-indexed, residue serial indices or
          * residue sequence, eg. 30 in GLU30, this is called 'resSeq'
-         in an :mdtraj.core.Residue`-object
+         in an :obj:`mdtraj.core.Residue`-object
     ctc_cutoff_Ang : float, default is 3.5
         Any residue-residue distance is considered a contact if d<=ctc_cutoff_Ang
     stride : int, default is 1
@@ -604,11 +617,37 @@ def residue_neighborhoods(topology, trajectories, residues,
     pbc : bool, default is True
         Use periodic boundary conditions
     ylim_Ang : float, default is 10
-    fragments
-    fragment_names
-    fragment_colors
-    graphic_ext
-    table_ext
+    fragments : list, default is ["lig_resSeq+"]
+        Fragment control. For compatibility reasons, it has
+        to be a list, event if it only has one element.
+        Possible values are
+        *  ["lig_resSeq+"] or ["chains"] or [None]
+         Use whatever fragments come out of using
+         :obj:`mdciao.fragments.get_fragments` with this method
+        * [np.arange(10),np.arange(10,20)]
+         This are the fragments, expressed as residue indices
+        * ["0-10","10-20"]
+         Expand these ranges and interpret them as residue indices
+        Fragments need not cover all the topology, but they cannot
+        overlap.
+    fragment_names : string or list of strings, default is ""
+        If string, it has to be a list of comma-separated values.
+        If you want unnamed fragments, use None or "None" (both work)
+        Has to contain names for all fragments that result from
+        :obj:`fragments` or more.
+        mdciao wil try to use :obj:`utils.str_and_dict.replace4latex`
+        to generate LaTeX expressions from stuff like "Galpha"
+        You can use fragment_names="None" or "" to avoid using fragment names
+    fragment_colors : None, boolean or list, default is None
+        Assign colors to fragments. These colors will be used
+        to color-code the frequency bars. If True, colors
+        will be automatically selected, otherwise picked
+        from the list. Use with cautions, plots
+        get shrill quickly
+    graphic_ext : str, default is ".pdf"
+        The extension (=format) of the saved figures
+    table_ext : str, default is ".dat"
+        The extension (=format) of the saved tables
     BW_uniprot
     CGN_PDB
     output_dir
@@ -889,7 +928,7 @@ def residue_neighborhoods(topology, trajectories, residues,
     return {"ctc_idxs": ctc_idxs_small,
             'ctcs_trajs': ctcs_trajs,
             'time_array': time_arrays,
-            "neighborhoods":neighborhoods}
+            "neighborhoods": neighborhoods}
 
 def interface(
         topology=None,
