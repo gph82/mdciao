@@ -1087,7 +1087,7 @@ def _top2consensus_map(consensus_dict, top,
         out_list[int(idx)]=consensus_dict[AA + str(resSeq)]
 
     if keep_consensus:
-        out_list = _fill_consensus_gaps(out_list, top, verbose=True)
+        out_list = _fill_consensus_gaps(out_list, top, verbose=False)
     return out_list
 
 def _fill_consensus_gaps(consensus_list, top, verbose=False):
