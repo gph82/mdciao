@@ -37,7 +37,7 @@ if a.keys is not None:
 else:
     file_dict = a.files
 
-colordict =  a.colors.split(",")
+colors =  a.colors.split(",")
 
 mut_dict = {}
 if a.mutations is not None:
@@ -46,11 +46,12 @@ if a.mutations is not None:
         mut_dict[key.replace(" ","")]=val.replace(" ","")
 
 # Call the method
-myfig, freqs, posret = compare(file_dict, colordict=colordict,
+myfig, freqs, posret = compare(file_dict,
+                               colors=colors,
                                anchor=a.anchor,
                                mutations_dict=mut_dict,
                                figsize=None,
-                               width=None)
+                               )
 myfig.tight_layout()
 fname = "%s.%s"%(a.output_desc,a.graphic_ext.strip("."))
 myfig.savefig(fname)

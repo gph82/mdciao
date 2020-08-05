@@ -245,7 +245,7 @@ def compare_groups_of_contacts(groups,
                                                         figsize=figsize,
                                                         **kwargs_plot_unified_freq_dicts)
     if anchor is not None:
-        _plt.text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom")
+        _plt.text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom", fontsize=fontsize)
     _plt.gcf().tight_layout()
     #_plt.show()
 
@@ -425,7 +425,6 @@ def plot_unified_freq_dicts(freqs,
             figsize = [x_figsize,y_figsize]
         if vertical_plot:
             figsize = figsize[::-1]
-
         myfig = _plt.figure(figsize=figsize)
     else:
         _plt.sca(ax)
