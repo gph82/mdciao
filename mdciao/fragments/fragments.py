@@ -529,6 +529,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
         # What we have is list residue idxs as strings like 0-100, 101-200, 201-300
         fragments_as_residue_idxs =[_mdcu.lists.rangeexpand(ifrag.strip(",")) for ifrag in fragment_input]
         for ii, ifrag in enumerate(fragments_as_residue_idxs):
+            _mdcu.lists.assert_no_intersection(fragments_as_residue_idxs, word="fragments")
             if not all([aa in range(top.n_residues) for aa in ifrag]):
                 print("Fragment %u has idxs outside of the geometry (total n_residues %u): %s"%(ii, top.n_residues,
                                                                          set(ifrag).difference(range(top.n_residues))))
