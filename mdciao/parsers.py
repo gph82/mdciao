@@ -120,7 +120,7 @@ def _parser_add_distro(parser):
     parser.set_defaults(distro=False)
 
 def _parser_add_smooth(parser):
-    parser.add_argument("--n_smooth_hw", type=int,
+    parser.add_argument("--n_smooth_hw", "-ns", type=int,
                         help="Number of frames one half of the averaging window for the time-traces. Default is 0, which means no averaging.",
                         default=0)
 
