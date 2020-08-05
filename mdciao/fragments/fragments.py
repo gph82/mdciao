@@ -26,12 +26,12 @@ import mdciao.utils as _mdcu
 from  pandas import unique as _pandas_unique
 from msmtools.estimation import connected_sets as _connected_sets
 
-_allowed_fragment_methods = ['resSeq',
+_allowed_fragment_methods = ['chains',
+                             'resSeq',
                              'resSeq+',
                              'lig_resSeq+',
                              'bonds',
                              'resSeq_bonds',
-                             'chains',
                              "None",
                              ]
 
