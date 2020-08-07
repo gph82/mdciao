@@ -66,9 +66,9 @@ def freqs2flare(freqs, res_idxs_pairs,
     between two residues.
 
     One can control separately what residues and what curves
-    ultimately get get shown, allowing for "contactless" residues
-    to still appear as dots in the circle. This is very helpful to
-    to highligty the molecular topology. For example, it's useful to
+    ultimately get shown, allowing for "contactless" residues
+    to still appear as dots in the circle. This is very helpful
+    to highlight the molecular topology. For example, it's useful to
     show an entire TM-helix even if only the residues in its middle
     have contacts. Furthermore, it allows for re-use of a "background"
     of residues on top of which different sets of curves (e.g. with
