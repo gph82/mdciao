@@ -649,7 +649,7 @@ def overlappers(text_objects_1, text_objects_2):
     # We could be computing the same boxes two times but makes for
     # better readability and more consistent return values
     boxes_2 = [t.get_window_extent(renderer=t.axes.figure.canvas.get_renderer()) for t in text_objects_2]
-    return [t2 for t2, b2 in zip(text_objects_2,boxes_2) if any([(b1 is not b2 and b1.overlaps(b2)) for b1 in boxes_1])]
+    return [t2 for t2, b2 in zip(text_objects_2,boxes_2) if any([(t1 is not t2 and b1.overlaps(b2)) for t1, b1 in zip(text_objects_1,boxes_1)])]
 
 
 def un_overlap_via_fontsize(text_objects, fac=.95, maxiter=50):
