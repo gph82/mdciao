@@ -180,6 +180,14 @@ def freqs2flare(freqs, res_idxs_pairs,
     shortenAAs: boolean, default is True
         Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
         is parsed
+    sparse : boolean, default is False
+        Show only those residues that appear in the initial :obj:`res_idxs_pairs`
+
+        Note
+        ----
+        There is a hidden development option for this argument where a residue
+        list is passed, meaning, show these residues regardless of any other
+        option that has been passed. Perhaps sparse changes in the future.
 
     Returns
     -------
@@ -203,10 +211,14 @@ def freqs2flare(freqs, res_idxs_pairs,
         "res_idxs_pairs array do not match %u vs %u"%(freqs.shape[1], len(res_idxs_pairs))
 
     # Residue handling/bookkepping
-    if sparse:
-        residx_array = _np.unique(res_idxs_pairs)
+    if isinstance(sparse,bool):
+        if sparse:
+            residx_array = _np.unique(res_idxs_pairs)
+        else:
+            residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1]+1)
     else:
-        residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1]+1)
+        residx_array = sparse
+        sparse=False
 
     if fragments is None:
         residues_as_fragments = [residx_array]
