@@ -5,37 +5,7 @@ Installation
 
 Workshop
 --------
-For our August workshop, ``mdciao`` should already be installed. Please issue the following command from the terminal before using ``mdciao``::
-
- [mkf@molgraph01 ~]$ mdc_help
-
-
- # For activating the mdciao python environment,
- # issue the two following commands
- eval "$(/usr/people/mkf/miniconda3/bin/conda shell.bash hook)"
- conda activate py36_for_mdciao
-
-
- # For deactivating, please use this (two times):
- conda deactivate
- conda deactivate
-
-
-This will provide the instructions on how to activate the python environment for ``mdciao``.
-
-The sources have already been downloaded and installed here::
-
- [mkf@molgraph01 ~]$ cd Programs/mdciao
- [mkf@molgraph01 mdciao]$ ls
- doc  LICENSE.txt  mdciao  mdciao.egg-info  README.rst  requirements.txt  scripts  setup.py  tests
-
-
-You can re-download the sources anytime from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_ and follow the `Installation from source`_.
-
-Python versions
----------------
-At the moment, ``mdciao`` is CI-tested only for GNU/Linux OSs and Python versions
-3.6 and 3.7. See this warning_ for problems during installation from source.
+At the moment ``mdciao`` is yet not published, so you have to download the source from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_ and follow the `Installation from source`_.
 
 
 Installation via package manager
@@ -53,6 +23,7 @@ or::
 
 .. note::
  As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into.
+
 
 Installation from source
 ------------------------
@@ -96,7 +67,24 @@ This should install ``mdciao`` along with all its dependencies. Optionally using
 
  **before** installing ``mdciao``.
 
-python interpreter and environment
+Operating systems and Python versions
+-------------------------------------
+``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and Mac OSs. Compatible Python versions are currently 3.6 and 3.7. So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
+
+
+Windows
+-------
+
+CI tests are failing currently because an build issue I cannot resolve.
+In principle, one should could try to install and run ``mdciao`` on Windows (as long as you have a working Python installation) and are able to run::
+
+ python setup.py develop
+
+The needed dependencies should install automatically (see above the note about environments) and even if that fails for some reason, you should be able to use *some* package manager to install them manually.
+
+
+
+Python interpreter and environment
 ----------------------------------
 `conda <https://docs.conda.io/en/latest/>`_ and `pip <https://pypi.org/project/pip/>`_ are very popular, user friendly package managers. **A very nice feature** of `conda` is that it installs its own ``python`` interpreter, separate from the system's Python. It does so in the user's home directory, s.t. no root privileges are needed.
 
@@ -129,12 +117,3 @@ Hildiknecht
   eval "$(conda shell.bash hook)" # if its the first time
 
  Then you should be able to follow the above instructions no problem!
-
-MacOs and Windows
------------------
-
-``mdciao`` has been thoroughly tested only in GNU/Linux so far, but you should be able to install and run ``mdciao`` on MacOs/Windows as long as you have a working Python installation and are able to run::
-
- python setup.py develop
-
-The needed dependencies should install automatically (see above the note about environments) and even if that fails for some reason, you should be able to use *some* package manager to install them manually.
