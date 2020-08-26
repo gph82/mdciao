@@ -1812,7 +1812,7 @@ def compatible_consensus_fragments(top,
         else:
             #print(existing_val, "ex not None")
             #print(new_val, "new val")
-            assert(existing_val==new_val)
+            assert existing_val==new_val, (new_val, existing_val, ii, top.residue(ii))
 
     new_frags = {}
     for iCL in CLs:
