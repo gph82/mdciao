@@ -53,7 +53,7 @@ from joblib import \
 
 def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                                                 residxs_pairs, top,
-                                                n_ctcs=5,
+                                                ctcs_kept=5,
                                                 restrict_to_resSeq=None,
                                                 interactive=False,
                                                 fraction=.9
@@ -79,15 +79,19 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
         were computed.
     top : :obj:`mdtraj.Topology`
         The topology from which the residues come
-    n_ctcs : integer, default is 5
-        Number of contacts to report per residue.
+    ctcs_kept : integer or float, default is 5
+        Control how many contacts to report per residue. There's two
+        types of behaviour:
+        * If int, it means directly keep these many contacts
+        * if float, it must be in in [0,1] and represents a fraction
+          of the total number of contacts to keep
     restrict_to_resSeq: iterable, default is None
         Only cycle through the residues in :obj:`res_idxs` with these resSeq indices.
     interactive : boolean, default is False
-        After reporting each neighborhood up to :obj:`n_ctcs` partners,
+        After reporting each neighborhood up to :obj:`ctcs_kept`,
         ask the user how many should be kept
     fraction : float, default is .9
-        report how many contacts (as in :obj:`n_ctcs`) one needs
+        report how many contacts one needs to keep
         to arrive at this fraction of the overall contacts.
 
     Returns
@@ -101,7 +105,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
         means that for the residue with the index 300, the :obj:`residxs_pairs`
         on the 100-th and 200-th position, e.g. contain the pairs for its most
         frequent neighbors, e.g. [30-45] and [30-145].
-        :obj:`n_ctcs` controls the length of the output, see also option 'interactive')
+        :obj:`ctcs_kept` controls the length of the output, see also option 'interactive')
     """
     assert len(ctc_freqs) == len(residxs_pairs)
 
@@ -114,11 +118,21 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
         restrict_to_resSeq = [restrict_to_resSeq]
     for residx in res_idxs:
         resSeq = top.residue(residx).resSeq
+        _fraction = fraction
         if resSeq in restrict_to_resSeq:
             order_mask = _np.array([ii for ii in order if residx in residxs_pairs[ii]],dtype=int)
             print("#idx   freq      contact       fragments     res_idxs      ctc_idx  Sum")
             isum = 0
             seen_ctcs = []
+            total_n_ctcs = _np.array(ctc_freqs)[order_mask].sum()
+            if ctcs_kept.is_integer():
+                n_ctcs = int(ctcs_kept)
+            else:
+                if total_n_ctcs>0:
+                    n_ctcs = _target_frac_sum(ctc_freqs[order_mask], ctcs_kept)
+                    _fraction = None
+                else:
+                    n_ctcs = 0
             for ii, oo in enumerate(order_mask[:n_ctcs]):
                 pair = residxs_pairs[oo]
                 idx1, idx2 = _mdcu.lists.put_this_idx_first_in_pair(residx, pair)
@@ -128,12 +142,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 seen_ctcs.append(imean)
                 print("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
-            total_n_ctcs = _np.array(ctc_freqs)[order_mask].sum()
-            nc = _np.argwhere(_np.cumsum(_np.array(ctc_freqs)[order_mask]) >= total_n_ctcs * fraction)[0] + 1
-            print("These %u contacts capture %3.1f of the total frequency %3.1f (over %u contacts)."
-                  " %u ctcs already capture %3.1f%% of %3.1f." %
-                  (ii + 1, isum, total_n_ctcs, len(order_mask), nc, fraction * 100, total_n_ctcs))
-
+            _contact_fraction_informer(n_ctcs, ctc_freqs[order_mask], or_frac=_fraction)
             if interactive:
                 try:
                     answer = input("How many do you want to keep (Hit enter for None)?\n")
@@ -142,7 +151,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 if len(answer) == 0:
                     pass
                 else:
-                    answer = _np.arange(_np.min((int(answer), n_ctcs)))
+                    answer = _np.arange(_np.min((int(answer), ctcs_kept)))
                     selection[residx] = order_mask[answer]
             else:
                 seen_ctcs = _np.array(seen_ctcs)
@@ -3942,3 +3951,54 @@ def _sum_ctc_freqs_by_atom_type(atom_pairs, counts):
     for key, count in zip(atom_pairs, counts):
         dict_out[key] += count
     return dict_out
+
+def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
+    r"""
+    What fraction of the sum(ctc_freqs) is kept by using the first n_kept contacts
+    Parameters
+    ----------
+    n_kept : int
+        The number of contacts to compute the fraction for
+    ctc_freqs : array-like of floats
+        The frequencies in descending order
+    or_frac : float, default is .9
+        Orientation fraction, i.e. print how many contacts
+        would be needed to caputre this fraction of the
+        neighborhood. Can be None and nothing will be printed
+
+    Returns
+    -------
+    None
+
+    """
+    assert all(_np.diff(ctc_freqs)<=0), "Values must be in descending order!"
+    captured_freq = ctc_freqs[:n_kept].sum()
+    total_freq = ctc_freqs.sum()
+    print("These %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u contacts)" %
+          (n_kept, captured_freq, captured_freq / total_freq * 100, total_freq, len(ctc_freqs)))
+    if or_frac is not None:
+        ncf = _target_frac_sum(ctc_freqs,or_frac)
+        print("As orientation value, %u ctcs already capture %3.1f%% of %3.2f." % (ncf, or_frac * 100, total_freq))
+        print("The %u-th contact has a frequency of %4.2f"%(ncf, ctc_freqs[ncf]))
+        print()
+
+def _target_frac_sum(val_desc_order, frac):
+    r"""
+    How many entries of :obj:`val` one has to take to get a fraction >= :obj:`frac` of sum(val)
+    Parameters
+    ----------
+    val_desc_order : array like of floats
+        The values that the determine the sum of which a fraction will be taken
+        The have to be in descending order
+    frac : float
+        The target fraction of sum(val) that is needed
+
+    Returns
+    -------
+    n : int
+        The number of entries of :obj:`val` to that constitute a fraction :obj:`frac` of sum(val)
+    """
+
+    assert all(_np.diff(val_desc_order)<=0), "Values must be in descending order!"
+    assert 0<=frac<=1, "Fraction has to be in [0,1] ,not %s"%frac
+    return _np.argwhere(_np.cumsum(val_desc_order) / _np.sum(val_desc_order) >= frac).reshape(-1)[1]
