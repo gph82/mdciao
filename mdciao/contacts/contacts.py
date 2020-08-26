@@ -125,7 +125,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
             isum = 0
             seen_ctcs = []
             total_n_ctcs = _np.array(ctc_freqs)[order_mask].sum()
-            if ctcs_kept.is_integer():
+            if float(ctcs_kept).is_integer():
                 n_ctcs = int(ctcs_kept)
             else:
                 if total_n_ctcs>0:
