@@ -252,8 +252,12 @@ def _finder_writer(full_local_path,
                 _DF.to_excel(full_local_path)
             else:
                 # see https://github.com/pandas-dev/pandas/issues/10415
-                with open(full_local_path,"w") as f:
-                    f.write(_DF.to_string(index=False,header=True))
+                # This saves all values tab-separated s.t.
+                # the resulting file can be re-read by pandas.read_csv
+                _np.savetxt(full_local_path, _DF.to_numpy(str),
+                fmt='40%s',
+                delimiter="\t", header='\t'.join(_DF.keys()), comments='')
+
 
             print("wrote %s for future use" % full_local_path)
         return _DF, return_name
