@@ -693,7 +693,7 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
-          "\n with a stride of %u frames)" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
+          "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
     refgeom = _load_any_geom(topology)
 
@@ -719,7 +719,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                                                   sort=sort,
                                                   pick_this_fragment_by_default=None,
                                                   additional_naming_dicts={"BW": {ii:val for ii, val in enumerate(BWresidx2conlab)},
-                                                              "CGN": {ii:val for ii, val in enumerate(CGNresidx2conlab)}}
+                                                                           "CGN": {ii:val for ii, val in enumerate(CGNresidx2conlab)}}
                                                   )
     print("\nWill compute neighborhoods for the residues")
     print("%s" % residues)
@@ -1019,8 +1019,8 @@ def interface(
     graphic_ext = graphic_ext.strip(".")
 
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
-    print("Will compute contact frequencies for :\n%s"
-          "\n with a stride of %u frames)" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
+    print("Will compute contact frequencies for trajectories:\n%s"
+          "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
     refgeom = _load_any_geom(topology)
 
