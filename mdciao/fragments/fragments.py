@@ -260,7 +260,7 @@ def get_fragments(top,
     fragments = [fragments[ii] for ii in _np.argsort([ifrag[0] for ifrag in fragments])]
     # Inform of the first result
     if verbose:
-        print("Auto-detected fragments with method %s"%str(method))
+        print("Auto-detected fragments with method '%s'"%str(method))
         print_fragments(fragments,top)
     # Join if necessary
     if join_fragments is not None:
@@ -399,8 +399,13 @@ def overview(topology,
 
     fragments_out = {}
     for method in try_methods:
-        fragments_out[method] = get_fragments(topology,
-                                              method=method)
+        try:
+            fragments_out[method] = get_fragments(topology,
+                                                  method=method)
+        except Exception as e:
+            print("The method %s did not work:"%method)
+            print(e)
+            print()
         print()
 
     _mdcu.residue_and_atom.parse_and_list_AAs_input(AAs, topology)
