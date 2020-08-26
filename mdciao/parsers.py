@@ -277,10 +277,13 @@ def _parser_add_fragment_names(parser):
                              "'TM1, TM2, TM3,'",
                         default="")
 
-def _parser_add_n_ctcs(parser, default=5):
-    parser.add_argument("-nc", "--n_ctcs", type=int,
-                        help="Only the first n_ctcs most-frequent contacts "
-                             "will be written to the ouput. Default is %u."%default,
+def _parser_add_ctc_control(parser, default=5):
+    parser.add_argument("-cc", "--ctc_control", type=float,
+                        help="Control the number of reported contacts. "
+                             "Can be an integer (keep the first n contacts) or "
+                             "a float representing a fraction [0,1] of the total"
+                             "number of contacts."
+                             "Default is %u."%default,
                         default=default)
 
 def _parser_add_pop(parser):

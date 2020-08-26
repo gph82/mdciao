@@ -485,7 +485,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                           res_idxs=False,
                           ctc_cutoff_Ang=3.5,
                           stride=1,
-                          n_ctcs=5,
+                          ctc_control=5,
                           n_nearest=4,
                           chunksize_in_frames=10000,
                           nlist_cutoff_Ang=15,
@@ -592,8 +592,8 @@ def residue_neighborhoods(topology, trajectories, residues,
         Any residue-residue distance is considered a contact if d<=ctc_cutoff_Ang
     stride : int, default is 1
         Stride the input data by this number of frames
-    n_ctcs : int, default is 5
-        Only include the first :obj:`n_ctcs` in each neighborhood
+    ctc_control : int, default is 5
+        Only include the first :obj:`ctc_control` in each neighborhood
     n_nearest : int, default is 4
         Exclude these many bonded neighbors for each residue, i.e
     chunksize_in_frames : int, default is 10000
@@ -775,10 +775,10 @@ def residue_neighborhoods(topology, trajectories, residues,
         ctcs_mean = _np.mean(_mdcctcs._linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10),0)
 
     final_look = _mdcctcs.select_and_report_residue_neighborhood_idxs(ctcs_mean, res_idxs_list,
-                                                             fragments_as_residue_idxs, ctc_idxs_small,
-                                                             refgeom.top,
-                                                             interactive=False,
-                                                             n_ctcs=n_ctcs)
+                                                                      fragments_as_residue_idxs, ctc_idxs_small,
+                                                                      refgeom.top,
+                                                                      interactive=False,
+                                                                      ctcs_kept=ctc_control)
 
     # Create the neighborhoods as groups of contact_pair objects
     neighborhoods = {}
@@ -842,7 +842,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                                               n_nearest,
                                               switch_off_Ang=switch_off_Ang,
                                               jax=jax,
-                                              xmax=n_ctcs,
+                                              xmax=_np.max([ihood.n_ctcs for ihood in neighborhoods.values() if ihood is not None]),
                                               label_fontsize_factor=panelsize2font / panelsize,
                                               shorten_AAs=short_AA_names,
                                               color=ihood.partner_fragment_colors
@@ -946,7 +946,7 @@ def interface(
         graphic_ext=".pdf",
         gray_background=False,
         interface_cutoff_Ang=35,
-        n_ctcs=20,
+        ctc_control=20,
         n_smooth_hw=0,
         output_desc="interface",
         output_dir=".",
@@ -988,7 +988,7 @@ def interface(
     graphic_ext
     gray_background
     interface_cutoff_Ang
-    n_ctcs
+    ctc_control
     n_smooth_hw
     output_desc
     output_dir
@@ -1099,6 +1099,12 @@ def interface(
     tot_freq = ctc_frequency.sum()
     order = _np.argsort(ctc_frequency)[::-1]
     ctc_objs = []
+    if float(ctc_control).is_integer(): # float is needed in case the API-call gets an int passed
+        n_ctcs = int(ctc_control)
+    else:
+        n_ctcs = _mdcctcs.contacts._target_frac_sum(ctc_frequency[order], ctc_control)
+    #TODO still unsure about where it's best to put this
+    _mdcctcs.contacts._contact_fraction_informer(n_ctcs, ctc_frequency[order], or_frac=.9)
     for ii, idx in enumerate(order[:n_ctcs]):
         ifreq = ctc_frequency[idx]
         if ifreq > min_freq:
@@ -1147,7 +1153,7 @@ def interface(
     ctc_grp_intf.plot_freqs_as_bars(ctc_cutoff_Ang,
                                     title,
                                     jax=histoax[0],
-                                    xlim=_np.min((n_ctcs,ctc_grp_intf.n_ctcs)),
+                                    xlim=_np.min((n_ctcs, ctc_grp_intf.n_ctcs)),
                                     label_fontsize_factor=panelsize2font / panelsize,
                                     shorten_AAs=short_AA_names,
                                     truncate_at=min_freq,
