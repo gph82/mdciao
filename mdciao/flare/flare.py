@@ -385,7 +385,8 @@ def circle_plot_residues(fragments,
         if dot_radius_in_pts < 1.5:
             print(ValueError("Drawing this many of residues (%u) in "
                              "a panel %3.1f inches wide/high "
-                             "forces too small dotsizes and fontsizes. If crowding effects "
+                             "forces too small dotsizes and fontsizes.\n"
+                             "If crowding effects "
                              "occur, either reduce the number of residues or increase "
                              "the panel size"%(n_positions, panelsize)))
         if not arc:
