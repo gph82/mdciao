@@ -392,7 +392,7 @@ def parser_for_rn():
     parser.set_defaults(res_idxs=False)
 
     _parser_add_stride(parser)
-    _parser_add_n_ctcs(parser)
+    _parser_add_ctc_control(parser)
     _parser_add_n_neighbors(parser)
     _parser_add_chunk(parser)
     _parser_add_smooth(parser)
@@ -570,7 +570,7 @@ def parser_for_interface():
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [1]", default=None)
     _parser_add_cutoff(parser)
-    _parser_add_n_ctcs(parser, default=50)
+    _parser_add_ctc_control(parser, default=50)
     parser.add_argument("-mf", "--min_freq", type=float, default=.05,
                         help="Do not show frequencies smaller than this. If you notice the output being"
                              "truncated a values too far away from this, you need to increase the"
