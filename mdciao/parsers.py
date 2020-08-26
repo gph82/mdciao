@@ -578,6 +578,10 @@ def parser_for_interface():
                              "cutoff in the reference topology. Otherwise, a large number of "
                              "non-necessary distances (e.g. between N-terminus and G-protein) are computed. Default is 35.",
                         default=35)
+    parser.add_argument('--cmap',type=str,help="The colormap for the contact matrix. Default is 'binary' which is "
+                                                 "black and white, but you can choose anthing from here: "
+                                                 "https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html",
+                        default="binary")
     _parser_add_n_neighbors(parser, default=0)
     _parser_add_stride(parser)
     _parser_add_smooth(parser)

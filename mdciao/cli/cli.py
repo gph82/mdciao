@@ -965,6 +965,7 @@ def interface(
         title=None,
         min_freq=.10,
         contact_matrix=True,
+        cmap='binary',
         flareplot=True
 ):
     r"""Contact-frequencies between residues belonging
@@ -1189,7 +1190,8 @@ def interface(
     if contact_matrix:
         ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
                                                                  colorbar=True,
-                                                                 grid=True)
+                                                                 grid=True,
+                                                                 cmap=cmap)
 
         iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
                       fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
