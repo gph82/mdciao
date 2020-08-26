@@ -841,7 +841,8 @@ class LabelerCGN(LabelerConsensus):
         self._dataframe, self._tablefile = CGN_finder(PDB_input,
                                                       local_path=local_path,
                                                       try_web_lookup=try_web_lookup,
-                                                      verbose=verbose)
+                                                      verbose=verbose,
+                                                      write_to_disk=write_to_disk)
         # The title of the column with this field varies between CGN and BW
         AAresSeq_key = [key for key in list(self.dataframe.keys()) if key.lower() not in ["CGN".lower(), "Sort number".lower()]]
         assert len(AAresSeq_key)==1

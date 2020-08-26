@@ -428,7 +428,7 @@ def _fragment_overview(a,labtype):
     """
     if labtype == "CGN":
         val = a.PDB_code_or_txtfile
-        obj = _mdcnomenc.LabelerCGN(val)
+        obj = _mdcnomenc.LabelerCGN(val, write_to_disk=a.write_to_disk)
 
     elif labtype == "BW":
         val = a.BW_uniprot_or_file
