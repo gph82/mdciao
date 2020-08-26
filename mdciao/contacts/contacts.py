@@ -142,7 +142,10 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 seen_ctcs.append(imean)
                 print("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
-            _contact_fraction_informer(n_ctcs, ctc_freqs[order_mask], or_frac=_fraction)
+            if n_ctcs>0:
+                _contact_fraction_informer(n_ctcs, ctc_freqs[order_mask], or_frac=_fraction)
+            else:
+                print("No contacts here!")
             if interactive:
                 try:
                     answer = input("How many do you want to keep (Hit enter for None)?\n")
