@@ -3977,13 +3977,16 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
     assert all(_np.diff(ctc_freqs)<=0), "Values must be in descending order!"
     captured_freq = ctc_freqs[:n_kept].sum()
     total_freq = ctc_freqs.sum()
-    print("These %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u contacts)" %
-          (n_kept, captured_freq, captured_freq / total_freq * 100, total_freq, len(ctc_freqs)))
-    if or_frac is not None:
-        ncf = _target_frac_sum(ctc_freqs,or_frac)
-        print("As orientation value, %u ctcs already capture %3.1f%% of %3.2f." % (ncf, or_frac * 100, total_freq))
-        print("The %u-th contact has a frequency of %4.2f"%(ncf, ctc_freqs[ncf]))
-        print()
+    if total_freq==0:
+        print("No contacts formed at this frequency")
+    else:
+        print("These %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u contacts)" %
+              (n_kept, captured_freq, captured_freq / total_freq * 100, total_freq, len(ctc_freqs)))
+        if or_frac is not None:
+            ncf = _target_frac_sum(ctc_freqs,or_frac)
+            print("As orientation value, %u ctcs already capture %3.1f%% of %3.2f." % (ncf, or_frac * 100, total_freq))
+            print("The %u-th contact has a frequency of %4.2f"%(ncf, ctc_freqs[ncf]))
+            print()
 
 def _target_frac_sum(val_desc_order, frac):
     r"""
