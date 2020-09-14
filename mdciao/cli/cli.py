@@ -966,7 +966,8 @@ def interface(
         min_freq=.10,
         contact_matrix=True,
         cmap='binary',
-        flareplot=True
+        flareplot=True,
+        savefiles=True,
 ):
     r"""Contact-frequencies between residues belonging
     to different fragments of the molecular topology
@@ -1180,30 +1181,31 @@ def interface(
     fname_mat   = fname_histo.replace("overall@", "matrix@")
     fname_flare = '.'.join([fname_wo_ext.replace("overall@", "flare@"),'pdf'])
 
-    print("The following files have been created")
-    histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
-    print(fname_histo)
-    ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
-    print(fname_excel)
-    ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fname_dat)
-    print(fname_dat)
-    ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom,
-                                      #interface_sign=True
-                                      )
-    print(fname_pdb)
+    if savefiles:
+        print("The following files have been created")
+        histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
+        print(fname_histo)
+        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
+        print(fname_excel)
+        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fname_dat)
+        print(fname_dat)
+        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom,
+                                          #interface_sign=True
+                                          )
+        print(fname_pdb)
 
-    #TODO bury this in plots?
-    if contact_matrix:
-        ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
-                                                                 colorbar=True,
-                                                                 grid=True,
-                                                                 cmap=cmap)
+        #TODO bury this in plots?
+        if contact_matrix:
+            ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
+                                                                     colorbar=True,
+                                                                     grid=True,
+                                                                     cmap=cmap)
 
-        iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
-                      fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
-        ifig.tight_layout()
-        ifig.savefig(fname_mat)
-        print(fname_mat)
+            iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
+                          fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
+            ifig.tight_layout()
+            ifig.savefig(fname_mat)
+            print(fname_mat)
     if flareplot:
         flare_frags, flare_labs = fragments_as_residue_idxs, None
         if len(consensus_labelers) > 0:
@@ -1229,8 +1231,9 @@ def interface(
                                                          colors=_mdcfu.col_list_from_input_and_fragments(True, flare_frags),
                                                          )
         ifig.tight_layout()
-        ifig.savefig(fname_flare,bbox_inches="tight")
-        print(fname_flare)
+        if savefiles:
+            ifig.savefig(fname_flare,bbox_inches="tight")
+            print(fname_flare)
 
     if plot_timedep or separate_N_ctcs:
         myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
@@ -1244,18 +1247,18 @@ def interface(
                                                shorten_AAs=short_AA_names,
                                                skip_timedep=not plot_timedep,
                                                t_unit=t_unit)
-
-        _manage_timedep_ploting_and_saving_options(ctc_grp_intf, myfig,
-                                                   ctc_cutoff_Ang,
-                                                   output_desc,
-                                                   graphic_ext,
-                                                   output_dir=output_dir,
-                                                   graphic_dpi=graphic_dpi,
-                                                   plot_timedep=plot_timedep,
-                                                   table_ext=table_ext,
-                                                   t_unit=t_unit,
-                                                   separate_N_ctcs=separate_N_ctcs
-                                                   )
+        if savefiles:
+            _manage_timedep_ploting_and_saving_options(ctc_grp_intf, myfig,
+                                                       ctc_cutoff_Ang,
+                                                       output_desc,
+                                                       graphic_ext,
+                                                       output_dir=output_dir,
+                                                       graphic_dpi=graphic_dpi,
+                                                       plot_timedep=plot_timedep,
+                                                       table_ext=table_ext,
+                                                       t_unit=t_unit,
+                                                       separate_N_ctcs=separate_N_ctcs
+                                                       )
         if len(myfig)==0:
             print("No figures of time-traces were produced because only 1 frame was provided")
 
