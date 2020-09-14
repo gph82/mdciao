@@ -727,7 +727,7 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse=False, fragments=None):
             "The input fragments do not contain all residues residx_array, " \
             "their set difference is %s" % (set(res_idxs).difference(_np.hstack(fragments)))
         residues_as_fragments = fragments
-        if not sparse:
+        if isinstance(sparse,bool) and not sparse:
             pass
         else:
             residues_as_fragments = [_np.intersect1d(ifrag, res_idxs) for ifrag in fragments]
