@@ -111,6 +111,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
 
     order = _np.argsort(ctc_freqs)[::-1]
     selection = {}
+    ctc_freqs = _np.array(ctc_freqs)
     if restrict_to_resSeq is None:
         restrict_to_resSeq = [top.residue(ii).resSeq for ii in res_idxs]
 
@@ -129,7 +130,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 n_ctcs = int(ctcs_kept)
             else:
                 if total_n_ctcs>0:
-                    n_ctcs = _target_frac_sum(ctc_freqs[order_mask], ctcs_kept)
+                    n_ctcs = _idx_at_fraction(ctc_freqs[order_mask], ctcs_kept)+1
                     _fraction = None
                 else:
                     n_ctcs = 0
@@ -3957,11 +3958,12 @@ def _sum_ctc_freqs_by_atom_type(atom_pairs, counts):
 
 def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
     r"""
-    What fraction of the sum(ctc_freqs) is kept by using the first n_kept contacts
+    Return the fraction of the sum(ctc_freqs) kept by using the first :obj:`n_kept` contacts
+
     Parameters
     ----------
     n_kept : int
-        The number of contacts to compute the fraction for
+        The number of contacts kept
     ctc_freqs : array-like of floats
         The frequencies in descending order
     or_frac : float, default is .9
@@ -3983,14 +3985,14 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
         print("These %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u contacts)" %
               (n_kept, captured_freq, captured_freq / total_freq * 100, total_freq, len(ctc_freqs)))
         if or_frac is not None:
-            ncf = _target_frac_sum(ctc_freqs,or_frac)
-            print("As orientation value, %u ctcs already capture %3.1f%% of %3.2f." % (ncf, or_frac * 100, total_freq))
-            print("The %u-th contact has a frequency of %4.2f"%(ncf, ctc_freqs[ncf]))
+            idx = _idx_at_fraction(ctc_freqs, or_frac)
+            print("As orientation value, %u ctcs already capture %3.1f%% of %3.2f." % (idx+1, or_frac * 100, total_freq))
+            print("The %u-th contact has a frequency of %4.2f"%(idx, ctc_freqs[idx]))
             print()
 
-def _target_frac_sum(val_desc_order, frac):
+def _idx_at_fraction(val_desc_order, frac):
     r"""
-    How many entries of :obj:`val` one has to take to get a fraction >= :obj:`frac` of sum(val)
+    Index of :obj:`val` where np.cumsum(val)/np.sum(val)>= frac for the first time
     Parameters
     ----------
     val_desc_order : array like of floats
@@ -4002,9 +4004,11 @@ def _target_frac_sum(val_desc_order, frac):
     Returns
     -------
     n : int
-        The number of entries of :obj:`val` to that constitute a fraction :obj:`frac` of sum(val)
+        Index of val where the fraction is attained for the first time.
+        For the number of entries of :obj:`val`, just use n+1
     """
 
     assert all(_np.diff(val_desc_order)<=0), "Values must be in descending order!"
     assert 0<=frac<=1, "Fraction has to be in [0,1] ,not %s"%frac
-    return _np.argwhere(_np.cumsum(val_desc_order) / _np.sum(val_desc_order) >= frac).reshape(-1)[1]
+    normalized_cumsum = _np.cumsum(val_desc_order) / _np.sum(val_desc_order) >= frac
+    return _np.flatnonzero(normalized_cumsum>=frac)[0]
