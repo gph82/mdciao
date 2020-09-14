@@ -308,7 +308,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                                           )
     else:
         alphas = []
-    return iax, idxs_of_pairs2plot
+    return iax, idxs_of_pairs2plot, None,
 
 def circle_plot_residues(fragments,
                          fontsize=None,
@@ -473,7 +473,6 @@ def circle_plot_residues(fragments,
             bad_dot_bb =    CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
             overlap = bad_txt_bb.overlaps(bad_dot_bb)
             counter+=1
-            #print(overlappers, counter)
 
         assert not overlap, ValueError("Tried to 'un'-overlap textlabels and residue markers %u times without success"%n_max)
 
@@ -534,6 +533,7 @@ def circle_plot_residues(fragments,
                                    zorder=10))
 
     # Do we have names?
+    frag_labels = None
     if fragment_names is not None:
         span = (2*(r + running_r_pad))
         frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of panel space)
@@ -574,7 +574,7 @@ def circle_plot_residues(fragments,
     iax.set_xticks([])
     iax.set_xlim([center[0] - r - running_r_pad, center[0] + r + running_r_pad])
     iax.set_ylim([center[1] - r - running_r_pad, center[1] + r + running_r_pad])
-    return iax, xy
+    return iax, xy, labels, frag_labels
 
 
 def add_bezier_curves(iax,
