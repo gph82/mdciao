@@ -26,6 +26,10 @@ class Test_overview(unittest.TestCase):
     def test_select_method(self):
         mdcfragments.overview(self.geom.top, "resSeq")
 
+    def test_bonds_on_gro_does_not_fail(self):
+        mdcfragments.overview(md.load(test_filenames.file_for_no_bonds_gro).top, "bonds")
+
+
 class Test_print_frag(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.top_pdb)

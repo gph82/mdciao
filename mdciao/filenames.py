@@ -38,7 +38,7 @@ class filenames(object):
         # pdbs for testing
         self.small_monomer = path.join(self.bogus_pdb_path,
                                        "2_3AA_chains_and_two_ligs_monomer.pdb")
-        self.file_for_no_bonds_pdb = path.join(self.bogus_pdb_path,
+        self.file_for_no_bonds_gro = path.join(self.bogus_pdb_path,
                                        "2_3AA_chains_and_two_ligs_monomer.gro")
         self.small_dimer = path.join(self.bogus_pdb_path,
                                      "2_3AA_chains_and_two_ligs_dimer.pdb")

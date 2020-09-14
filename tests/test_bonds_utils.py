@@ -12,7 +12,7 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.small_monomer)
         self.geom_force_resSeq_breaks = md.load(test_filenames.small_monomer_LYS99)
-        self.geom_no_bonds = md.load(test_filenames.file_for_no_bonds_pdb)
+        self.geom_no_bonds = md.load(test_filenames.file_for_no_bonds_gro)
         self.geom_no_bonds.top._bonds=[]
 
     def test_bond_matrix(self):
