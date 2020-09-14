@@ -33,9 +33,18 @@ Status
 ``mdciao`` is in its initial development, with versions 0.Y.Z. Anything MAY change at any time.
 `The public API SHOULD NOT be considered stable <https://semver.org/#spec-item-4>`_.
 
-Python versions
-===============
-At the moment, ``mdciao`` is CI-tested only for GNU/Linux OSs and Python versions
+TODOs
+=====
+This is an informal list of known issues and TODOs:
+ * overhaul the "printing" system with proper warnings
+ * progressbar not very informative for one chunked trajs or parallel runs
+ * improve sequence alignment choices
+ * heuristics for proper font-sizing of flareplots could be optimized
+ * parallel execution with memory mdtraj.Trajectory objects should be better
+
+System Requirements
+===================
+At the moment, ``mdciao`` is CI-tested only for GNU/Linux and MacOS and Python versions
 3.6 and 3.7
 
 Authors
