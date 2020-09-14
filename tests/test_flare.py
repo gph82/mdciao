@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 class TestFlare(TestCase):
 
     def test_works(self):
-        myax, _ = flare.freqs2flare([1, 1, 1],
+        myax, _, _ = flare.freqs2flare([1, 1, 1],
                                     np.array([[0, 1], [1, 2], [2, 3]]),
                                     exclude_neighbors=0,
                                     )
@@ -25,7 +25,7 @@ class TestFlare(TestCase):
     def test_options_only_curves(self):
         myfig = plt.figure(figsize=(5,5))
         iax = plt.gca()
-        iax , _ = flare.freqs2flare(np.array([[1, 1, 1]]),
+        iax , _, _ = flare.freqs2flare(np.array([[1, 1, 1]]),
                                     np.array([[0, 1], [1, 2], [2, 3]]),
                                     fragments=[[0, 1], [2, 3]],
                                     exclude_neighbors=0,
@@ -38,14 +38,14 @@ class TestFlare(TestCase):
 
     def test_options_sparse(self):
         myfig, myax = plt.subplots(1,2,sharex=True, sharey=True, figsize=(10,5))
-        iax , _ = flare.freqs2flare(np.array([[1, 1, 1]]),
+        iax , _, _= flare.freqs2flare(np.array([[1, 1, 1]]),
                                     np.array([[0, 1], [1, 2], [2, 3]]),
                                     fragments=[[0, 1], [2, 3],np.arange(4,15)],
                                     exclude_neighbors=0,
                                     iax=myax[0]
 
                                     )
-        iax, _ = flare.freqs2flare(np.array([[1, 1, 1]]),
+        iax, _ , _  = flare.freqs2flare(np.array([[1, 1, 1]]),
                                    np.array([[0, 1], [1, 2], [2, 3]]),
                                    fragments=[[0, 1], [2, 3], np.arange(4, 15)],
                                    exclude_neighbors=0,
@@ -60,7 +60,7 @@ class TestFlare(TestCase):
 class TestCirclePlotResidues(TestCase):
 
     def test_works(self):
-        iax, _ =  flare.circle_plot_residues([np.arange(50),
+        iax, _, _, _ =  flare.circle_plot_residues([np.arange(50),
                                               np.arange(50,100)],
                                              ss_array=["H"]*100,
                                              fragment_names=["A","B"])
@@ -70,7 +70,7 @@ class TestCirclePlotResidues(TestCase):
 class TestAddBezier(TestCase):
 
     def test_works(self):
-        iax, xy = flare.circle_plot_residues([np.arange(5),
+        iax, xy, _, _ = flare.circle_plot_residues([np.arange(5),
                                              np.arange(5, 10)],
                                             #ss_array=["H"] * 10,
                                             #fragment_names=["A", "B"]

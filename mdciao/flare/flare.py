@@ -215,38 +215,13 @@ def freqs2flare(freqs, res_idxs_pairs,
         "The size of the contact array and the " \
         "res_idxs_pairs array do not match %u vs %u"%(freqs.shape[1], len(res_idxs_pairs))
 
-    # Residue handling/bookkepping
-    if isinstance(sparse,bool):
-        if sparse:
-            residx_array = _np.unique(res_idxs_pairs)
-        else:
-            if fragments is None:
-                residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1]+1)
-            else:
-                # TODO check the sparse logic with the next assertion
-                from mdciao.utils.lists import assert_no_intersection as _no_intersect
-                _no_intersect(fragments, word="fragments")
-                residx_array = _np.hstack(fragments) # I think these defeats the next assertion
-    else:
-        residx_array = sparse
-        sparse=False
-
-    if fragments is None:
-        residues_as_fragments = [residx_array]
-    else:
-        from mdciao.utils.lists import assert_no_intersection as _no_intersect
-        _no_intersect(fragments, word="fragments")
-        if sparse:
-            residues_as_fragments = [_np.intersect1d(ifrag,residx_array) for ifrag in fragments]
-        else:
-            residues_as_fragments = fragments
-    residues_to_plot_as_dots = _np.hstack(residues_as_fragments)
-    assert set(residx_array).issubset(residues_to_plot_as_dots), \
-        "The input fragments do not contain all residues residx_array, " \
-        "their set difference is %s"%(set(residx_array).difference(residues_to_plot_as_dots))
+    # Figure out the combination of sparse/fragments options
+    residues_as_fragments = _futils._parse_residue_and_fragments(res_idxs_pairs,
+                                                                 sparse=sparse,
+                                                                 fragments=fragments)
 
     # Create a map
-    residx2markeridx = _futils.value2position_map(residues_to_plot_as_dots)
+    residx2markeridx = _futils.value2position_map(_np.hstack(residues_as_fragments))
 
     if plot_curves_only:
         assert iax is not None, ("You cannot use "
@@ -308,7 +283,8 @@ def freqs2flare(freqs, res_idxs_pairs,
                                           )
     else:
         alphas = []
-    return iax, idxs_of_pairs2plot, None,
+
+    return iax, idxs_of_pairs2plot, None
 
 def circle_plot_residues(fragments,
                          fontsize=None,

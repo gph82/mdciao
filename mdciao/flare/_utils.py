@@ -23,6 +23,7 @@
 import numpy as _np
 from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
+from mdciao.utils.lists import assert_no_intersection as _no_intersect
 
 _mycolors = _colorstring.split(",")
 
@@ -679,3 +680,57 @@ def un_overlap_via_fontsize(text_objects, fac=.95, maxiter=50):
     while any(overlappers(text_objects, text_objects)) and counter < maxiter:
         [t1.set_size(t1.get_size() * fac) for t1 in text_objects]
         counter += 1
+
+#TODO RENAME
+def _parse_residue_and_fragments(res_idxs_pairs, sparse=False, fragments=None):
+    r""" Decide what residues the user wants to get a dot.
+
+        Typically, the output of this function will get parsed to :obj:`circle_plot_residues`
+
+        Note
+        ----
+        I've outsourced this decision-making here because it's not clear to me yet
+        what the best interplay in sparse vs fragment could be
+
+    Parameters
+    ----------
+    res_idxs_pairs : np.ndarray
+        (N,2)-array with N residue pairs
+    sparse : boolean or iterable of ints, default is False
+        * If False, return an array (0,np.max(res_idxs_pairs)+1)
+        * If True,  return only np.unique(res_idxs_pairs)
+        * If iterable of ints, override everything and return this indices
+
+    fragments : None or list
+        List of integer lists representing how the residues
+        are grouped together in fragments. Their union
+        must always be a superset of whatever set resulted
+        of the chosen :obj:`sparse`: option. If sparse is False,
+        residues present here will be added to the output even
+        if they don't contain any relevant residue
+
+    """
+    if isinstance(sparse, bool):
+        if sparse:
+            res_idxs = _np.unique(res_idxs_pairs)
+        else:
+            res_idxs = _np.arange(_np.unique(res_idxs_pairs)[-1] + 1)
+    else:
+        res_idxs = sparse
+
+
+    if fragments is None:
+        residues_as_fragments = [res_idxs]
+    else:
+        _no_intersect(fragments, word="fragments")
+        assert set(res_idxs).issubset(_np.hstack(fragments)), \
+            "The input fragments do not contain all residues residx_array, " \
+            "their set difference is %s" % (set(res_idxs).difference(_np.hstack(fragments)))
+        residues_as_fragments = fragments
+        if not sparse:
+            pass
+        else:
+            residues_as_fragments = [_np.intersect1d(ifrag, res_idxs) for ifrag in fragments]
+            residues_as_fragments = [ifrag for ifrag in residues_as_fragments if len(ifrag)>0]
+
+    return residues_as_fragments
