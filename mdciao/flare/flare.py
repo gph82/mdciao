@@ -281,10 +281,8 @@ def freqs2flare(freqs, res_idxs_pairs,
                                           bezier_linecolor=bezier_linecolor,
                                           signed_alphas=signed_colors
                                           )
-    else:
-        alphas = []
 
-    return iax, idxs_of_pairs2plot, None
+    return iax, idxs_of_pairs2plot
 
 def circle_plot_residues(fragments,
                          fontsize=None,
