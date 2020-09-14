@@ -485,7 +485,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                           res_idxs=False,
                           ctc_cutoff_Ang=3.5,
                           stride=1,
-                          n_ctcs=5,
+                          ctc_control=5,
                           n_nearest=4,
                           chunksize_in_frames=10000,
                           nlist_cutoff_Ang=15,
@@ -592,8 +592,8 @@ def residue_neighborhoods(topology, trajectories, residues,
         Any residue-residue distance is considered a contact if d<=ctc_cutoff_Ang
     stride : int, default is 1
         Stride the input data by this number of frames
-    n_ctcs : int, default is 5
-        Only include the first :obj:`n_ctcs` in each neighborhood
+    ctc_control : int, default is 5
+        Only include the first :obj:`ctc_control` in each neighborhood
     n_nearest : int, default is 4
         Exclude these many bonded neighbors for each residue, i.e
     chunksize_in_frames : int, default is 10000
@@ -693,7 +693,7 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
-          "\n with a stride of %u frames)" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
+          "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
     refgeom = _load_any_geom(topology)
 
@@ -719,7 +719,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                                                   sort=sort,
                                                   pick_this_fragment_by_default=None,
                                                   additional_naming_dicts={"BW": {ii:val for ii, val in enumerate(BWresidx2conlab)},
-                                                              "CGN": {ii:val for ii, val in enumerate(CGNresidx2conlab)}}
+                                                                           "CGN": {ii:val for ii, val in enumerate(CGNresidx2conlab)}}
                                                   )
     print("\nWill compute neighborhoods for the residues")
     print("%s" % residues)
@@ -775,10 +775,10 @@ def residue_neighborhoods(topology, trajectories, residues,
         ctcs_mean = _np.mean(_mdcctcs._linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10),0)
 
     final_look = _mdcctcs.select_and_report_residue_neighborhood_idxs(ctcs_mean, res_idxs_list,
-                                                             fragments_as_residue_idxs, ctc_idxs_small,
-                                                             refgeom.top,
-                                                             interactive=False,
-                                                             n_ctcs=n_ctcs)
+                                                                      fragments_as_residue_idxs, ctc_idxs_small,
+                                                                      refgeom.top,
+                                                                      interactive=False,
+                                                                      ctcs_kept=ctc_control)
 
     # Create the neighborhoods as groups of contact_pair objects
     neighborhoods = {}
@@ -842,7 +842,7 @@ def residue_neighborhoods(topology, trajectories, residues,
                                               n_nearest,
                                               switch_off_Ang=switch_off_Ang,
                                               jax=jax,
-                                              xmax=n_ctcs,
+                                              xmax=_np.max([ihood.n_ctcs for ihood in neighborhoods.values() if ihood is not None]),
                                               label_fontsize_factor=panelsize2font / panelsize,
                                               shorten_AAs=short_AA_names,
                                               color=ihood.partner_fragment_colors
@@ -946,7 +946,7 @@ def interface(
         graphic_ext=".pdf",
         gray_background=False,
         interface_cutoff_Ang=35,
-        n_ctcs=20,
+        ctc_control=20,
         n_smooth_hw=0,
         output_desc="interface",
         output_dir=".",
@@ -966,7 +966,8 @@ def interface(
         min_freq=.10,
         contact_matrix=True,
         cmap='binary',
-        flareplot=True
+        flareplot=True,
+        savefiles=True,
 ):
     r"""Contact-frequencies between residues belonging
     to different fragments of the molecular topology
@@ -988,7 +989,7 @@ def interface(
     graphic_ext
     gray_background
     interface_cutoff_Ang
-    n_ctcs
+    ctc_control
     n_smooth_hw
     output_desc
     output_dir
@@ -1019,8 +1020,8 @@ def interface(
     graphic_ext = graphic_ext.strip(".")
 
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
-    print("Will compute contact frequencies for :\n%s"
-          "\n with a stride of %u frames)" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
+    print("Will compute contact frequencies for trajectories:\n%s"
+          "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
     refgeom = _load_any_geom(topology)
 
@@ -1099,6 +1100,12 @@ def interface(
     tot_freq = ctc_frequency.sum()
     order = _np.argsort(ctc_frequency)[::-1]
     ctc_objs = []
+    if float(ctc_control).is_integer(): # float is needed in case the API-call gets an int passed
+        n_ctcs = int(ctc_control)
+    else:
+        n_ctcs = _mdcctcs.contacts._idx_at_fraction(ctc_frequency[order], ctc_control)
+    #TODO still unsure about where it's best to put this
+    _mdcctcs.contacts._contact_fraction_informer(n_ctcs, ctc_frequency[order], or_frac=.9)
     for ii, idx in enumerate(order[:n_ctcs]):
         ifreq = ctc_frequency[idx]
         if ifreq > min_freq:
@@ -1147,7 +1154,7 @@ def interface(
     ctc_grp_intf.plot_freqs_as_bars(ctc_cutoff_Ang,
                                     title,
                                     jax=histoax[0],
-                                    xlim=_np.min((n_ctcs,ctc_grp_intf.n_ctcs)),
+                                    xlim=_np.min((n_ctcs, ctc_grp_intf.n_ctcs)),
                                     label_fontsize_factor=panelsize2font / panelsize,
                                     shorten_AAs=short_AA_names,
                                     truncate_at=min_freq,
@@ -1174,30 +1181,31 @@ def interface(
     fname_mat   = fname_histo.replace("overall@", "matrix@")
     fname_flare = '.'.join([fname_wo_ext.replace("overall@", "flare@"),'pdf'])
 
-    print("The following files have been created")
-    histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
-    print(fname_histo)
-    ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
-    print(fname_excel)
-    ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fname_dat)
-    print(fname_dat)
-    ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom,
-                                      #interface_sign=True
-                                      )
-    print(fname_pdb)
+    if savefiles:
+        print("The following files have been created")
+        histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
+        print(fname_histo)
+        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
+        print(fname_excel)
+        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fname_dat)
+        print(fname_dat)
+        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom,
+                                          #interface_sign=True
+                                          )
+        print(fname_pdb)
 
-    #TODO bury this in plots?
-    if contact_matrix:
-        ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
-                                                                 colorbar=True,
-                                                                 grid=True,
-                                                                 cmap=cmap)
+        #TODO bury this in plots?
+        if contact_matrix:
+            ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
+                                                                     colorbar=True,
+                                                                     grid=True,
+                                                                     cmap=cmap)
 
-        iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
-                      fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
-        ifig.tight_layout()
-        ifig.savefig(fname_mat)
-        print(fname_mat)
+            iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
+                          fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
+            ifig.tight_layout()
+            ifig.savefig(fname_mat)
+            print(fname_mat)
     if flareplot:
         flare_frags, flare_labs = fragments_as_residue_idxs, None
         if len(consensus_labelers) > 0:
@@ -1223,8 +1231,9 @@ def interface(
                                                          colors=_mdcfu.col_list_from_input_and_fragments(True, flare_frags),
                                                          )
         ifig.tight_layout()
-        ifig.savefig(fname_flare,bbox_inches="tight")
-        print(fname_flare)
+        if savefiles:
+            ifig.savefig(fname_flare,bbox_inches="tight")
+            print(fname_flare)
 
     if plot_timedep or separate_N_ctcs:
         myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
@@ -1238,18 +1247,18 @@ def interface(
                                                shorten_AAs=short_AA_names,
                                                skip_timedep=not plot_timedep,
                                                t_unit=t_unit)
-
-        _manage_timedep_ploting_and_saving_options(ctc_grp_intf, myfig,
-                                                   ctc_cutoff_Ang,
-                                                   output_desc,
-                                                   graphic_ext,
-                                                   output_dir=output_dir,
-                                                   graphic_dpi=graphic_dpi,
-                                                   plot_timedep=plot_timedep,
-                                                   table_ext=table_ext,
-                                                   t_unit=t_unit,
-                                                   separate_N_ctcs=separate_N_ctcs
-                                                   )
+        if savefiles:
+            _manage_timedep_ploting_and_saving_options(ctc_grp_intf, myfig,
+                                                       ctc_cutoff_Ang,
+                                                       output_desc,
+                                                       graphic_ext,
+                                                       output_dir=output_dir,
+                                                       graphic_dpi=graphic_dpi,
+                                                       plot_timedep=plot_timedep,
+                                                       table_ext=table_ext,
+                                                       t_unit=t_unit,
+                                                       separate_N_ctcs=separate_N_ctcs
+                                                       )
         if len(myfig)==0:
             print("No figures of time-traces were produced because only 1 frame was provided")
 

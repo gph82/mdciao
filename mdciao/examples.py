@@ -78,7 +78,7 @@ class ExamplesCLTs(object):
                 "%s %s" % (self.pdb, self.xtc),
                 " --frag_idxs_group_1 0-2",
                 " --frag_idxs_group_2 3",
-                " --n_ctcs 20",
+                " --ctc_control 20",
                 " --BW_uniprot %s" % self.BW_file,
                 " --CGN_PDB %s" % self.CGN_file,
                 ]

@@ -277,10 +277,13 @@ def _parser_add_fragment_names(parser):
                              "'TM1, TM2, TM3,'",
                         default="")
 
-def _parser_add_n_ctcs(parser, default=5):
-    parser.add_argument("-nc", "--n_ctcs", type=int,
-                        help="Only the first n_ctcs most-frequent contacts "
-                             "will be written to the ouput. Default is %u."%default,
+def _parser_add_ctc_control(parser, default=5):
+    parser.add_argument("-cc", "--ctc_control", type=float,
+                        help="Control the number of reported contacts. "
+                             "Can be an integer (keep the first n contacts) or "
+                             "a float representing a fraction [0,1] of the total"
+                             "number of contacts."
+                             "Default is %u."%default,
                         default=default)
 
 def _parser_add_pop(parser):
@@ -389,7 +392,7 @@ def parser_for_rn():
     parser.set_defaults(res_idxs=False)
 
     _parser_add_stride(parser)
-    _parser_add_n_ctcs(parser)
+    _parser_add_ctc_control(parser)
     _parser_add_n_neighbors(parser)
     _parser_add_chunk(parser)
     _parser_add_smooth(parser)
@@ -567,7 +570,7 @@ def parser_for_interface():
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [1]", default=None)
     _parser_add_cutoff(parser)
-    _parser_add_n_ctcs(parser, default=50)
+    _parser_add_ctc_control(parser, default=50)
     parser.add_argument("-mf", "--min_freq", type=float, default=.05,
                         help="Do not show frequencies smaller than this. If you notice the output being"
                              "truncated a values too far away from this, you need to increase the"

@@ -828,7 +828,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
             ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
                                                                             self.by_bonds_geom, ctc_residxs_pairs,
                                                                             self.geom.top,
-                                                                            n_ctcs=5, restrict_to_resSeq=None,
+                                                                            ctcs_kept=5, restrict_to_resSeq=None,
                                                                             interactive=True)
             assert ctc_freq[0] == 0
             assert ctc_freq[1] == 0
@@ -838,7 +838,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
             ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
                                                                             self.by_bonds_geom, ctc_residxs_pairs,
                                                                             self.geom.top,
-                                                                            n_ctcs=5, restrict_to_resSeq=None,
+                                                                            ctcs_kept=5, restrict_to_resSeq=None,
                                                                             interactive=True)
             assert ctc_freq[0] == 0
             assert (_np.array_equal(ctc_freq[1], [0, 1]))
@@ -852,7 +852,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
             ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
                                                                             self.by_bonds_geom, ctc_residxs_pairs,
                                                                             self.geom.top,
-                                                                            n_ctcs=5, restrict_to_resSeq=1,
+                                                                            ctcs_kept=5, restrict_to_resSeq=1,
                                                                             interactive=True)
             assert ctc_freq == {}
 
@@ -865,7 +865,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
             ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
                                                                             self.by_bonds_geom, ctc_residxs_pairs,
                                                                             self.geom.top,
-                                                                            n_ctcs=5, restrict_to_resSeq=None,
+                                                                            ctcs_kept=5, restrict_to_resSeq=None,
                                                                             interactive=True)
             assert ctc_freq == {}
 
@@ -876,7 +876,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
         ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
                                                                         self.by_bonds_geom, ctc_residxs_pairs,
                                                                         self.geom.top,
-                                                                        n_ctcs=5, restrict_to_resSeq=None,
+                                                                        ctcs_kept=5, restrict_to_resSeq=None,
                                                                         interactive=False)
         assert (_np.array_equal(ctc_freq[0], [0]))
         assert (_np.array_equal(ctc_freq[1], [0, 1]))
@@ -891,7 +891,7 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
             ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, resname2residx,
                                                                             self.by_bonds_geom, ctc_residxs_pairs,
                                                                             self.geom.top,
-                                                                            n_ctcs=5, restrict_to_resSeq=None,
+                                                                            ctcs_kept=5, restrict_to_resSeq=None,
                                                                             interactive=True)
             assert ctc_freq == {}
 
@@ -2066,6 +2066,17 @@ class Test_linear_switchoff(unittest.TestCase):
         _np.testing.assert_almost_equal(CG.frequency_per_contact(3, switch_off_Ang=1),
                                         [_np.mean(self.linearized), _np.mean(self.linearized)],
                                         )
+
+class Test_idx_at_fraction(unittest.TestCase):
+
+    def test_works(self):
+        ncf = contacts.contacts._idx_at_fraction([1, 1, 1], frac=2 / 3)
+        _np.testing.assert_equal(ncf,1)
+
+    def test_one_value(self):
+        ncf = contacts.contacts._idx_at_fraction([1], frac=2 / 3)
+        _np.testing.assert_equal(ncf,0)
+
 
 class TestContactPairHashingEqualitySaving(TestBaseClassContactGroup):
 
