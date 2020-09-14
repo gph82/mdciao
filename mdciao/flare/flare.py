@@ -56,6 +56,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 padding_beginning=0,
                 padding_end=0,
                 lw=5,
+                signed_colors=None,
                 ):
     r"""
     Plot contact frequencies as `flare plots` (TODO insert refs)
@@ -188,6 +189,10 @@ def freqs2flare(freqs, res_idxs_pairs,
         There is a hidden development option for this argument where a residue
         list is passed, meaning, show these residues regardless of any other
         option that has been passed. Perhaps sparse changes in the future.
+    signed_colors = dict, default is None
+        Provide a color dictionary, e.g. {-1:"b", +1:"r}
+        to give different colors to positive and negative
+        alpha values. If None, defaults to :obj:`bezier_linecolor`
 
     Returns
     -------
@@ -215,7 +220,13 @@ def freqs2flare(freqs, res_idxs_pairs,
         if sparse:
             residx_array = _np.unique(res_idxs_pairs)
         else:
-            residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1]+1)
+            if fragments is None:
+                residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1]+1)
+            else:
+                # TODO check the sparse logic with the next assertion
+                from mdciao.utils.lists import assert_no_intersection as _no_intersect
+                _no_intersect(fragments, word="fragments")
+                residx_array = _np.hstack(fragments) # I think these defeats the next assertion
     else:
         residx_array = sparse
         sparse=False
@@ -240,15 +251,16 @@ def freqs2flare(freqs, res_idxs_pairs,
     if plot_curves_only:
         assert iax is not None, ("You cannot use "
                                  "plot_curves_only=True and iax=None. Makes no sense")
-        xy = _futils.cartify_fragments(fragments,
+        xy = _futils.cartify_fragments(residues_as_fragments,
                                        r=r,
                                        angle_offset=angle_offset,
                                        padding_initial=padding_beginning,
                                        padding_final=padding_end,
+                                       padding_between_fragments=1,
                                        )
         xy += center
     else:
-        iax, xy = circle_plot_residues(residues_as_fragments,
+        iax, xy, __, __ = circle_plot_residues(residues_as_fragments,
                                        fontsize=fontsize,
                                        colors=colors,
                                        panelsize=panelsize,
@@ -272,7 +284,7 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     # All formed contacts
     ctcs_averaged = _np.average(freqs, axis=0)
-    idxs_of_formed_contacts = _np.argwhere(ctcs_averaged>freq_cutoff).squeeze()
+    idxs_of_formed_contacts = _np.argwhere(_np.abs(ctcs_averaged)>freq_cutoff).squeeze()
     plot_this_pair_lambda = _futils.should_this_residue_pair_get_a_curve(residues_as_fragments,
                                                                          select_residxs=select_residxs,
                                                                          mute_fragments=mute_fragments,
@@ -292,6 +304,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                                           center=center,
                                           lw=lw,
                                           bezier_linecolor=bezier_linecolor,
+                                          signed_alphas=signed_colors
                                           )
     else:
         alphas = []
@@ -371,6 +384,10 @@ def circle_plot_residues(fragments,
         # Do this first to have an idea of the points per axis unit necessary for the plot
         iax.set_xlim([center[0] - r, center[0] +  r])
         iax.set_ylim([center[1] - r, center[1] +  r])
+    else:
+        if not iax.figure.get_tight_layout():
+            print("The passed figure was not instantiated with tight_layout=True\n"
+                  "This may lead to some errors in the flareplot fontsizes.")
 
     iax.set_aspect('equal')
 
@@ -566,9 +583,11 @@ def add_bezier_curves(iax,
                       center=[0,0],
                       lw=1,
                       bezier_linecolor='k',
+                      signed_alphas=None,
+                      correct_adjacent_nodes=True
                       ):
     r"""
-    Generate a bezier curves. Uses
+    Generate and plot bezier curves using :obj:`bezier.Curves` as a base class
 
     Parameters
     ----------
@@ -581,13 +600,26 @@ def add_bezier_curves(iax,
         the pairs in :obj:`nodepairs_xy`.
         If None is provided, it will be set to 1
         for all curves. If provided,
-        must be of len(nodepairs_xy)
-    center
-    lw
-    bezier_linecolor
+        must be of len(nodepairs_xy).
+    center : array-like with two floats, default is [0,0]
+    lw : int, default is 1
+    bezier_linecolor: :obj:`matplotlib` color, default is "k"
+    signed_alphas : dict, default is None
+        Provide a color dictionary, e.g. {-1:"b", +1:"r}
+        to give different colors to positive and negative
+        alpha values. Overwrites whatever is in :obj:`bezier_linecolor`.
+        If None, defaults to :obj:`bezier_linecolor`
+    correct_adjacent_nodes : boolean, default is True
+        If two nodes are too close to each other,
+        use a shifted center for the Bezier curve so
+        that it's visually easier to find. Currently,
+        adjacent is hard-coded to mean "nodes are ten
+        times closer to each other than to the center"
 
     Returns
     -------
+    bz_curves : list
+        The :obj:`bezier.Curves` plotted
 
     """
     if alphas is None:
@@ -595,13 +627,26 @@ def add_bezier_curves(iax,
 
     assert len(alphas)==len(nodepairs_xy)
 
+    if signed_alphas in [None,{}]:
+        signed_alphas={-1:bezier_linecolor,
+                       +1:bezier_linecolor}
+
     bz_curves=[]
     for nodes, ialpha in zip(nodepairs_xy, alphas):
-        bz_curves.append(_futils.create_flare_bezier_2(nodes, center=center))
+
+        d_nodes = _np.sqrt(((nodes[0] - nodes[1]) ** 2).sum())
+        r = _np.mean([_np.linalg.norm(nodes[0] - center), _np.linalg.norm(nodes[1] - center)])
+        pair_center = (nodes[0] + nodes[1]) / 2
+        pc2c = center - pair_center
+        if correct_adjacent_nodes and r / 10 > d_nodes:
+            _center = pair_center + pc2c / 10
+        else:
+            _center = center
+        bz_curves.append(_futils.create_flare_bezier_2(nodes, center=_center))
         bz_curves[-1].plot(50,
                            ax=iax,
-                           alpha=ialpha,
-                           color=bezier_linecolor,
+                           alpha=_np.abs(ialpha),
+                           color=signed_alphas[_np.sign(ialpha)],
                            lw=lw,  # _np.sqrt(markersize),
                            zorder=-1
                            )

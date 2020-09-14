@@ -379,7 +379,9 @@ def should_this_residue_pair_get_a_curve(
     Parameters
     ----------
     fragments : iterable if iterable of ints
-        How residue idxs are divided into fragments
+        How residue idxs are divided into fragments.
+        Any residue not contained here will
+        not get a curve.
     mute_fragments : iterable of ints, default is None
         Idxs of fragments to be muted: any residue pair
         containing at least one residue in these fragments
@@ -412,6 +414,8 @@ def should_this_residue_pair_get_a_curve(
         False if any of the muting conditions apply, otherwise True
     """
 
+    is_pair_not_muted_bc_missing_in_fragment_def = lambda pair : len(_np.intersect1d(pair,_np.hstack(fragments)))==2
+
     # Condition residues
     if select_residxs is not None:
         is_pair_not_muted_bc_direct_selection = lambda pair: len(_np.intersect1d(pair, select_residxs)) > 0
@@ -433,7 +437,8 @@ def should_this_residue_pair_get_a_curve(
 
     lambda_out = lambda res_pair : is_pair_not_muted_bc_nearest_neighbors(res_pair) and \
                                    is_pair_not_muted_bc_anchor_and_mute_fragments(res_pair) and \
-                                   is_pair_not_muted_bc_direct_selection(res_pair)
+                                   is_pair_not_muted_bc_direct_selection(res_pair) and \
+                                   is_pair_not_muted_bc_missing_in_fragment_def(res_pair)
 
     return lambda_out
 
