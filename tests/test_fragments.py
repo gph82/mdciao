@@ -598,6 +598,20 @@ class Test_splice_fragments(unittest.TestCase):
                                                   [12, 13, 14]])
         _np.testing.assert_array_equal(newnames, ["A", "?", "B", "?", "C"])
 
+    def test_works_naming(self):
+        fragments = [[0, 1, 2, 3],
+                     [6, 7, 8],
+                     [12, 13, 14]]
+        fragnames = ["A", "B", "C"]
+        newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames, orphan_name='orphan_%u')
+
+        _np.testing.assert_array_equal(newfrags, [[0, 1, 2, 3],
+                                                  [4, 5],
+                                                  [6, 7, 8],
+                                                  [9, 10, 11],
+                                                  [12, 13, 14]])
+        _np.testing.assert_array_equal(newnames, ["A", "orphan_0", "B", "orphan_1", "C"])
+
     def test_nmax(self):
         fragments = [[0, 1, 2, 3],
                      [6, 7, 8],

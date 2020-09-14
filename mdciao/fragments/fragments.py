@@ -302,7 +302,7 @@ def get_fragments(top,
 
 def _get_fragments_by_jumps_in_sequence(sequence,jump=1):
     r"""
-    Return the array in :obj:`sequence` chopped into sub-arrays (=fragments=
+    Return the array in :obj:`sequence` chopped into sub-arrays (=fragments)
     where there's a jump in the sequence
 
     Parameters
@@ -681,6 +681,9 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
         If None, the highest value (max) of fragments is
         used
     orphan_name : str, default is ?
+        If the str contains a '%' character
+        it will be used as a format identifier
+        to use as orphan_name%ii
 
 
     Returns
@@ -691,6 +694,7 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
         The new names, where the "orphans" have gotten the name orphan_char
 
     """
+    assert len(fragments)==len(fragnames)
     if highest_res_idx is None:
         highest_res_idx = _np.max(_np.hstack(fragments))
 
@@ -701,7 +705,10 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
         full_frags.append(_np.arange(ifrag[0],ifrag[-1]+1))
     orphans = _np.delete(_np.arange(highest_res_idx + 1), _np.hstack(full_frags))
     orphans = _get_fragments_by_jumps_in_sequence(orphans)[1]
-    orphans_labels = [orphan_name for __ in orphans]
+    if '%' in orphan_name:
+        orphans_labels = [orphan_name%ii for ii, __ in enumerate(orphans)]
+    else:
+        orphans_labels = [orphan_name for __ in orphans]
     new_frags = orphans + full_frags
     new_labels = orphans_labels + fragnames
     idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
