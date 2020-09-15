@@ -104,16 +104,6 @@ class Test_rangeexpand(unittest.TestCase):
         assert (lists.rangeexpand("1-2, 3,4") == [1, 2, 3, 4])
         assert (lists.rangeexpand("1-2, 03, 4") == [1, 2, 3, 4])
 
-class Test_pull_one_up_at_this_pos(unittest.TestCase):
-    def test_pull_one_up_at_this_pos_just_works(self):
-        assert(lists.pull_one_up_at_this_pos([1,2,3],1,"~") == [1, 3, '~'])
-        assert(lists.pull_one_up_at_this_pos("string",1,"~") == ['s', 'r', 'i', 'n', 'g', '~'])
-        assert(lists.pull_one_up_at_this_pos([1,2,3],1,10) == [1, 3, 10])
-        assert(lists.pull_one_up_at_this_pos([1,2,3],1,[99]) == [1, 3, [99]])
-
-    def test_pull_one_up_at_this_pos_verbose_works(self):
-        assert(lists.pull_one_up_at_this_pos([1,2,3],1,"~",verbose=True) == [1, 3, '~'])
-
 class Test_assert_min_len(unittest.TestCase):
     def test_assert_min_len_just_works(self):
         lists.assert_min_len([['a', 'b'], ['c', 'd'],[1, 2]])
