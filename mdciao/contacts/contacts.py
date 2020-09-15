@@ -3178,7 +3178,7 @@ class ContactGroup(object):
             _md.compute_dssp(traj)[0]
 
         kwargs_freqs2flare["top"]=self.top
-        iax, _ = _mdcflare.freqs2flare(self.frequency_per_contact(ctc_cutoff_Ang),
+        iax, _, _ = _mdcflare.freqs2flare(self.frequency_per_contact(ctc_cutoff_Ang),
                                        self.res_idxs_pairs,
                                        **kwargs_freqs2flare,
                                        )

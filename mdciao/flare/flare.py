@@ -224,6 +224,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     residx2markeridx = _futils.value2position_map(_np.hstack(residues_as_fragments))
 
     if plot_curves_only:
+        plot_attribs = {}
         assert iax is not None, ("You cannot use "
                                  "plot_curves_only=True and iax=None. Makes no sense")
         xy = _futils.cartify_fragments(residues_as_fragments,
@@ -235,7 +236,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                                        )
         xy += center
     else:
-        iax, xy, __, __ = circle_plot_residues(residues_as_fragments,
+        iax, xy, plot_attribs = circle_plot_residues(residues_as_fragments,
                                        fontsize=fontsize,
                                        colors=colors,
                                        panelsize=panelsize,
@@ -281,8 +282,10 @@ def freqs2flare(freqs, res_idxs_pairs,
                                           bezier_linecolor=bezier_linecolor,
                                           signed_alphas=signed_colors
                                           )
+        plot_attribs["bezier_lw"] = lw
+        plot_attribs["bezier_curves"] = bezier_curves
 
-    return iax, idxs_of_pairs2plot
+    return iax, idxs_of_pairs2plot, plot_attribs
 
 def circle_plot_residues(fragments,
                          fontsize=None,
@@ -310,31 +313,67 @@ def circle_plot_residues(fragments,
 
     Parameters
     ----------
-    fragments
-    r
-    angle_offset
-    padding_beginning
-    padding_end
-    center
-    radial_padding_units
-    ss_array
-    plot_curves_only
-    fragment_names
-    iax
-    residx2markeridx
+    fragments : list
+        List of iterables of residue idxs defining how the
+        residues are split into fragments. If no
+        :obj:`textlabels` are provided, the idxs
+        themselves become the labels
+    r : scalar
+        The radius of the circle, in axis inuts
+    angle_offset : scalar
+        Where the circle starts, in degrees. 0 means 3 o'clock,
+        90 12 o'clock etc. It's the phi of polar coordinates
+    padding_beginning : int, default is 1
+        Put this many empty positions before the first dot
+    padding_between_fragments : int, default is 1
+        Put this many empty positions between fragments
+    padding_end : int, default is 1
+        Put this many empty positions after the last dot
+    center : pair of floats
+        where the circle is centered, in axis units
+    ss_array : dict, list or array
+        One-letter codes (H,B,E,C) denoting secondary
+        structure. Has to be indexable by whatever
+        indices are on :obj:`fragments`
+    fragment_names : list
+        The names of the fragments
+    iax : :obj:`matplotlib.Axis`, default is None
+        An axis to draw the dots on. It's parent
+        figure has to have a tight_layout=True
+        attribute. If no axis is passed,
+        one will be created.
+    replacement_labels : dict or boolean, default is True
+        Whether to put textlabels on the dots. If
+        * False : no labels at all
+        * True : labels are the indices in :obj:`fragments`
+        * dict : residue_idx-keyed individual label replacements
+         Typical cases could be a mutated residue that you want
+         to show as R38A instead of just A38, or use
+         e.g. BW or CGN consensus labels.
     fontsize
     colors
-    residues_to_plot_as_dots
     markersize
-    textlabels
-    shortenAAs
-    highlight_residxs
-    aa_offset
-    top
+    top : :obj:`mdtraj.Topology`, default is None
+        If provided, residue labels wil be auto-generated from
+        here
+    shortenAAs : boolean, default is True
+        If :obj:`top` is not None, use "E50" rather than "GLU50"
+    aa_offset : int, default is 0
+        If :obj:`top` is not None, add this number to the
+        resSeq value, s.t. e.g. "E50" becomes "E55" if the
+        sequence numbers need to be shifted
+    highlight_residxs : iterable of ints, default is None
+        In case you don't want to construct a whole
+        color list for :obj:`colors`, you can simply
+        input a subset of :obj:`res_idxs` here and
+        they will be shown in red.
 
     Returns
     -------
+    iax, xy, outdict
 
+    outdict: dict
+         Contains :obj:`matplotlib` objects (the dots and their labels)
     """
     debug = False
 
@@ -436,7 +475,6 @@ def circle_plot_residues(fragments,
                                                    padding_beginning=padding_beginning,
                                                    padding_end=padding_end,
                                                    padding_between_fragments=padding_between_fragments,
-                                                   shortenAAs=shortenAAs,
                                                    highlight_residxs=highlight_residxs, top=top,
                                                    aa_offset=aa_offset,
                                                    replacement_labels=replacement_labels)
@@ -548,7 +586,10 @@ def circle_plot_residues(fragments,
     iax.set_xticks([])
     iax.set_xlim([center[0] - r - running_r_pad, center[0] + r + running_r_pad])
     iax.set_ylim([center[1] - r - running_r_pad, center[1] + r + running_r_pad])
-    return iax, xy, labels, frag_labels
+    return iax, xy, {"fragment_labels":frag_labels,
+                     "dot_labels":labels,
+                     "dots":CPs,
+                     "SS_labels":ss_labels}
 
 
 def add_bezier_curves(iax,
@@ -640,21 +681,19 @@ def add_fragmented_residue_labels(fragments,
                                   ):
     r"""
     Like add_labels but starting from the fragments
+
     Parameters
     ----------
     fragments
+    iax
+    fontsize
     center
     r
     angle_offset
     padding_beginning
     padding_end
-    iax
-    residues_to_plot_as_dots
-    fontsize
-    shortenAAs
-    highlight_residxs
-    top
-    aa_offset
+    padding_between_fragments
+    add_res_labs_kwargs
 
     Returns
     -------

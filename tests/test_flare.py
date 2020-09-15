@@ -60,17 +60,24 @@ class TestFlare(TestCase):
 class TestCirclePlotResidues(TestCase):
 
     def test_works(self):
-        iax, _, _, _ =  flare.circle_plot_residues([np.arange(50),
-                                              np.arange(50,100)],
-                                             ss_array=["H"]*100,
-                                             fragment_names=["A","B"])
+        iax, _, cpr_dict =  flare.circle_plot_residues([np.arange(50),
+                                                        np.arange(50, 100)],
+                                                       ss_array=["H"] * 100,
+                                                       fragment_names=["A", "B"],
+                                                       textlabels={0:"first",99:"last"})
+        for key in ["fragment_labels",
+                    "dot_labels",
+                    "dots",
+                    "SS_labels"
+                    ]:
+            assert key in cpr_dict.keys()
 
         #iax.figure.savefig("test.png")
 
 class TestAddBezier(TestCase):
 
     def test_works(self):
-        iax, xy, _, _ = flare.circle_plot_residues([np.arange(5),
+        iax, xy, cpr_dict = flare.circle_plot_residues([np.arange(5),
                                              np.arange(5, 10)],
                                             #ss_array=["H"] * 10,
                                             #fragment_names=["A", "B"]
