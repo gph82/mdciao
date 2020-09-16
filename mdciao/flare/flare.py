@@ -53,8 +53,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 bezier_linecolor='k',
                 plot_curves_only=False,
                 textlabels=True,
-                padding_beginning=0,
-                padding_end=0,
+                padding=[1,1,1],
                 lw=5,
                 signed_colors=None,
                 ):
@@ -201,8 +200,6 @@ def freqs2flare(freqs, res_idxs_pairs,
     plotted_pairs : 2D np.ndarray
     """
 
-    padding_end += 5 #todo dangerous?
-
     if _np.ndim(freqs)==1:
         freqs = _np.reshape(freqs,(1, -1))
     elif _np.ndim(freqs)==2:
@@ -230,30 +227,27 @@ def freqs2flare(freqs, res_idxs_pairs,
         xy = _futils.cartify_fragments(residues_as_fragments,
                                        r=r,
                                        angle_offset=angle_offset,
-                                       padding_initial=padding_beginning,
-                                       padding_final=padding_end,
-                                       padding_between_fragments=1,
+                                       padding=padding,
                                        )
         xy += center
     else:
         iax, xy, plot_attribs = circle_plot_residues(residues_as_fragments,
-                                       fontsize=fontsize,
-                                       colors=colors,
-                                       panelsize=panelsize,
-                                       padding_beginning=padding_beginning,
-                                       padding_end=padding_end,
-                                       center=center,
-                                       ss_array=ss_array,
-                                       fragment_names=fragment_names,
-                                       iax=iax,
-                                       markersize=markersize,
-                                       textlabels=textlabels,
-                                       shortenAAs=shortenAAs,
-                                       highlight_residxs=highlight_residxs,
-                                       aa_offset=aa_offset,
-                                       top=top,
-                                       r=r,
-                                       angle_offset=angle_offset)
+                                                     fontsize=fontsize,
+                                                     colors=colors,
+                                                     panelsize=panelsize,
+                                                     padding=padding,
+                                                     center=center,
+                                                     ss_array=ss_array,
+                                                     fragment_names=fragment_names,
+                                                     iax=iax,
+                                                     markersize=markersize,
+                                                     textlabels=textlabels,
+                                                     shortenAAs=shortenAAs,
+                                                     highlight_residxs=highlight_residxs,
+                                                     aa_offset=aa_offset,
+                                                     top=top,
+                                                     r=r,
+                                                     angle_offset=angle_offset)
 
         circle_radius_in_pts = iax.artists[0].radius * _points2dataunits(iax).mean()
         lw = circle_radius_in_pts # ??
@@ -294,9 +288,7 @@ def circle_plot_residues(fragments,
                          r=1,
                          panelsize=4,
                          angle_offset=0,
-                         padding_beginning=1,
-                         padding_end=1,
-                         padding_between_fragments=1,
+                         padding=[1,1,1],
                          center=[0,0],
                          ss_array=None,
                          fragment_names=None,
@@ -323,12 +315,10 @@ def circle_plot_residues(fragments,
     angle_offset : scalar
         Where the circle starts, in degrees. 0 means 3 o'clock,
         90 12 o'clock etc. It's the phi of polar coordinates
-    padding_beginning : int, default is 1
-        Put this many empty positions before the first dot
-    padding_between_fragments : int, default is 1
-        Put this many empty positions between fragments
-    padding_end : int, default is 1
-        Put this many empty positions after the last dot
+    padding : list, default is [1,1,1]
+        * first integer : Put this many empty positions before the first dot
+        * second integer: Put this many empty positions between fragments
+        * third integer : Put this many empty positions after the last dot
     center : pair of floats
         where the circle is centered, in axis units
     ss_array : dict, list or array
@@ -380,12 +370,10 @@ def circle_plot_residues(fragments,
     xy = _futils.cartify_fragments(fragments,
                                    r=r,
                                    angle_offset=angle_offset,
-                                   padding_initial=padding_beginning,
-                                   padding_final=padding_end,
-                                   padding_between_fragments=padding_between_fragments)
+                                   padding=padding)
     xy += center
 
-    n_positions = len(xy) + padding_beginning + padding_end + len(fragments)*padding_between_fragments
+    n_positions = len(xy) + padding[0] + len(fragments)*padding[1] + padding[2]
 
     # TODO review variable names
     # TODO this color mess needs to be cleaned up
@@ -433,9 +421,7 @@ def circle_plot_residues(fragments,
                               center=center,
                               r=2*r,  # don't understand this 2 here
                               angle_offset=angle_offset,
-                              padding_initial=padding_beginning,
-                              padding_final=padding_end,
-                              padding_between_fragments=padding_between_fragments,
+                              padding=padding,
                               lw=2 * lw
                               )
             running_r_pad += 4 * lw
@@ -464,7 +450,9 @@ def circle_plot_residues(fragments,
         overlap = True
         counter = 0
         while overlap and counter < n_max:
-            running_r_pad += dot_radius * maxlen / 2
+            running_r_pad += dot_radius * maxlen # / 2 This is a fudge.
+            # The problem is that re-scaling at a later point might induce overlap
+            # in this labels again, so I am anticipating that by adding some extra padding here
             [ilab.remove() for ilab in labels]
             labels = add_fragmented_residue_labels(fragments,
                                                    iax,
@@ -472,10 +460,9 @@ def circle_plot_residues(fragments,
                                                    center=center,
                                                    r=r + running_r_pad,
                                                    angle_offset=angle_offset,
-                                                   padding_beginning=padding_beginning,
-                                                   padding_end=padding_end,
-                                                   padding_between_fragments=padding_between_fragments,
-                                                   highlight_residxs=highlight_residxs, top=top,
+                                                   padding=padding,
+                                                   highlight_residxs=highlight_residxs,
+                                                   top=top,
                                                    aa_offset=aa_offset,
                                                    replacement_labels=replacement_labels)
             lab_lenths = [len(itext.get_text()) for itext in labels]
@@ -489,7 +476,6 @@ def circle_plot_residues(fragments,
         assert not overlap, ValueError("Tried to 'un'-overlap textlabels and residue markers %u times without success"%n_max)
 
         running_r_pad += dot_radius*maxlen/2
-
     if debug:
         iax.add_artist(_plt.Circle(center,
                                    radius=r + running_r_pad,
@@ -514,9 +500,7 @@ def circle_plot_residues(fragments,
                                                       center=center,
                                                       r=r + running_r_pad,
                                                       angle_offset=angle_offset,
-                                                      padding_beginning=padding_beginning,
-                                                      padding_end=padding_end,
-                                                      padding_between_fragments=padding_between_fragments,
+                                                      padding=padding,
                                                       shortenAAs=shortenAAs,
                                                       highlight_residxs=highlight_residxs, top=top,
                                                       aa_offset=aa_offset,
@@ -535,7 +519,6 @@ def circle_plot_residues(fragments,
             counter += 1
 
         running_r_pad += dot_radius
-
     if debug:
         iax.add_artist(_plt.Circle(center,
                                    radius=r + running_r_pad,
@@ -581,7 +564,6 @@ def circle_plot_residues(fragments,
             frag_fontsize_in_pts = frag_labels[0].get_size()
 
         running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
-
     iax.set_yticks([])
     iax.set_xticks([])
     iax.set_xlim([center[0] - r - running_r_pad, center[0] + r + running_r_pad])
@@ -674,9 +656,7 @@ def add_fragmented_residue_labels(fragments,
                                   center=[0,0],
                                   r=1,
                                   angle_offset=0,
-                                  padding_beginning=0,
-                                  padding_end=0,
-                                  padding_between_fragments=0,
+                                  padding=[0,0,0],
                                   **add_res_labs_kwargs,
                                   ):
     r"""
@@ -690,9 +670,7 @@ def add_fragmented_residue_labels(fragments,
     center
     r
     angle_offset
-    padding_beginning
-    padding_end
-    padding_between_fragments
+    padding
     add_res_labs_kwargs
 
     Returns
@@ -704,9 +682,7 @@ def add_fragmented_residue_labels(fragments,
                                                      r=r,
                                                      return_angles=True,
                                                      angle_offset=angle_offset,
-                                                     padding_initial=padding_beginning,
-                                                     padding_final=padding_end,
-                                                     padding_between_fragments=padding_between_fragments)
+                                                     padding=padding)
     xy_labels += center
 
     residues_to_plot_as_dots = _np.hstack(fragments)

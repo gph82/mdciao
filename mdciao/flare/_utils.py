@@ -222,9 +222,7 @@ def cartify_fragments(fragments,
         return _np.vstack(xy).T, angles
 
 def pad_fragment_positions(fragments,
-                           padding_initial=0,
-                           padding_final=0,
-                           padding_between_fragments=0,
+                           padding=[0,0,0],
                            pad_value=None):
     r"""
     Provided a list of fragments, introduce a number of :obj:`pad_value` between them
@@ -232,22 +230,22 @@ def pad_fragment_positions(fragments,
     Parameters
     ----------
     fragments : list of iterables
-    padding_initial : int, default is 0
-        Number of padding values to put at the very beginning of the fragment list
-    padding_final : int, default is 0
-        Number of padding values to put at the very end of the fragment list
-    padding_between_fragments : int, default is 0
-        Number of padding values to put at the beginning of each fragment
-    pad_value : arbitryry, default is None
+    padding : list of ints, default is [0,0,0]
+        Each integer controls the number of padding values used:
+        * at the very beginning of the fragment list
+        * at the beginning of each fragment
+        * at the very end of the fragment list
+
+    pad_value : arbritary, default is None
         What value to pad with (None, np.NaN, 0, "X") etc
 
     Returns
     -------
     padded_fragments : list
     """
-    padding_initial = [pad_value for ii in range(padding_initial)]
-    padding_final = [pad_value for ii in range(padding_final)]
-    padded_frags = [_np.hstack(([pad_value] * padding_between_fragments, iseg)) for iseg in fragments]
+    padding_initial = [pad_value for ii in range(padding[0])]
+    padding_final = [pad_value for ii in range(padding[2])]
+    padded_frags = [_np.hstack(([pad_value] * padding[1], iseg)) for iseg in fragments]
 
     if len(padding_initial) > 0:
         padded_frags = padding_initial + padded_frags
@@ -657,6 +655,44 @@ def overlappers(text_objects_1, text_objects_2):
     boxes_2 = [t.get_window_extent(renderer=t.axes.figure.canvas.get_renderer()) for t in text_objects_2]
     return [t2 for t2, b2 in zip(text_objects_2,boxes_2) if any([(t1 is not t2 and b1.overlaps(b2)) for t1, b1 in zip(text_objects_1,boxes_1)])]
 
+def overlappers_one_to_one(objects_1, objects_2,break_loop=True):
+    r"""
+    Check for overlaps of the i-th element of each list (no cross-pairs)
+
+
+    Parameters
+    ----------
+    objects_1 : list
+        List of objects with get_window_extent method
+
+    objects_2 : list
+        List of objects with get_window_extent method
+
+    break_loop : bool, default is False
+        Break the loop at the first overlap
+
+    Returns
+    -------
+    overlappers : list
+        List with the idxs of the pairs that overlap
+        If break_loop is True, will contain only
+        the first entry
+
+
+    """
+
+    assert len(objects_1)==len(objects_2)
+    res = []
+    for ii, (obj1,obj2) in enumerate(zip(objects_1,objects_2)):
+        b1 = obj1.get_window_extent(renderer=obj1.axes.figure.canvas.get_renderer())
+        b2 = obj2.get_window_extent(renderer=obj2.axes.figure.canvas.get_renderer())
+        if b1.overlaps(b2):
+            res.append(ii)
+            if break_loop:
+                break
+    return res
+
+
 
 def un_overlap_via_fontsize(text_objects, fac=.95, maxiter=50):
     r"""
@@ -685,12 +721,12 @@ def un_overlap_via_fontsize(text_objects, fac=.95, maxiter=50):
 def _parse_residue_and_fragments(res_idxs_pairs, sparse=False, fragments=None):
     r""" Decide what residues the user wants to get a dot.
 
-        Typically, the output of this function will get parsed to :obj:`circle_plot_residues`
+    Typically, the output of this function will get parsed to :obj:`circle_plot_residues`
 
-        Note
-        ----
-        I've outsourced this decision-making here because it's not clear to me yet
-        what the best interplay in sparse vs fragment could be
+    Note
+    ----
+    I've outsourced this decision-making here because it's not clear to me yet
+    what the best interplay in sparse vs fragment could be
 
     Parameters
     ----------
@@ -710,27 +746,30 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse=False, fragments=None):
         if they don't contain any relevant residue
 
     """
-    if isinstance(sparse, bool):
-        if sparse:
-            res_idxs = _np.unique(res_idxs_pairs)
-        else:
-            res_idxs = _np.arange(_np.unique(res_idxs_pairs)[-1] + 1)
-    else:
-        res_idxs = sparse
 
-
+    res_idxs = _np.unique(res_idxs_pairs)
     if fragments is None:
-        residues_as_fragments = [res_idxs]
+        if isinstance(sparse,bool):
+            if sparse:
+                residues_as_fragments=[res_idxs]
+            else:
+                residues_as_fragments=[_np.arange(res_idxs[-1] + 1)]
+        else:
+            residues_as_fragments=[sparse]
     else:
+        # Checks
         _no_intersect(fragments, word="fragments")
         assert set(res_idxs).issubset(_np.hstack(fragments)), \
             "The input fragments do not contain all residues residx_array, " \
             "their set difference is %s" % (set(res_idxs).difference(_np.hstack(fragments)))
-        residues_as_fragments = fragments
-        if isinstance(sparse,bool) and not sparse:
-            pass
+        if isinstance(sparse,bool):
+            if sparse:
+                residues_as_fragments = [_np.intersect1d(ifrag,res_idxs) for ifrag in fragments]
+            else:
+                residues_as_fragments = fragments
         else:
-            residues_as_fragments = [_np.intersect1d(ifrag, res_idxs) for ifrag in fragments]
-            residues_as_fragments = [ifrag for ifrag in residues_as_fragments if len(ifrag)>0]
+            residues_as_fragments = [_np.intersect1d(ifrag, sparse) for ifrag in fragments]
+
+        residues_as_fragments = [ifrag for ifrag in residues_as_fragments if len(ifrag) > 0]
 
     return residues_as_fragments
