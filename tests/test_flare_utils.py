@@ -90,7 +90,7 @@ class TestCartify(TestCase):
 
     def test_padding_between(self):
         XY = _utils.cartify_fragments([[0], [1]],
-                                     padding_between_fragments=1,  # The first and 3rd positions should be empty
+                                     padding=[0,1,0],# The first and 3rd positions should be empty
                                      )
         np.testing.assert_array_almost_equal(XY,
                                              [
@@ -100,7 +100,7 @@ class TestCartify(TestCase):
 
     def test_padding_initial(self):
         XY = _utils.cartify_fragments([[0, 1]],
-                                     padding_initial=2
+                                     padding=[2,0,0],
                                      )
         np.testing.assert_array_almost_equal(XY, [[-1, 0],
                                                   [0, 1],
@@ -108,7 +108,7 @@ class TestCartify(TestCase):
 
     def test_padding_final(self):
         XY = _utils.cartify_fragments([[0, 1]],
-                                     padding_final=2
+                                     padding=[0,0,2],
                                      )
         np.testing.assert_array_almost_equal(XY, [[ 1, 0],
                                                   [ 0,-1],
