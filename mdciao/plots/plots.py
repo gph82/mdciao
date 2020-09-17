@@ -168,7 +168,8 @@ def compare_groups_of_contacts(groups,
         see :obj:`_mdcu.str_and_dict.unify_freq_dicts` for more info
     per_residue : bool, default is False
         Unify dictionaries by residue and not by pairs
-    kwargs_plot_unified_freq_dicts
+    kwargs_plot_unified_freq_dicts : kwargs
+        remove_identities
 
     Returns
     -------
@@ -296,6 +297,7 @@ def plot_unified_freq_dicts(freqs,
                             ylim=1,
                             panelheight_inches=5,
                             inch_per_contacts=1,
+                            assign_w_color=False
                             ):
     r"""
     Plot unified frequency dictionaries (= with identical keys) for different systems
@@ -354,7 +356,9 @@ def plot_unified_freq_dicts(freqs,
         instead of horizontally (better for large number of frequencies)
 
     ylim
-
+    assign_w_color : boolean, default is False
+        If there are contacts where only one system (as in keys, of :obj:`freqs`)
+        appears, color the textlabel of that contact with the system's color
     Returns
     -------
 
@@ -362,46 +366,45 @@ def plot_unified_freq_dicts(freqs,
     _fontsize=_rcParams["font.size"]
     _rcParams["font.size"] = fontsize
     #make copies of dicts
-    freqs_work = {key:{key2:val2 for key2, val2 in val.items()} for key, val in freqs.items()}
+    freqs_by_sys_by_ctc = {key:{key2:val2 for key2, val2 in val.items()} for key, val in freqs.items()}
 
-    master_keys = list(freqs_work.keys())
-    all_keys = list(freqs_work[master_keys[0]].keys())
-
-    for mk in master_keys[1:]:
-        assert len(all_keys)==len(list(freqs_work[mk].keys()))
+    system_keys = list(freqs_by_sys_by_ctc.keys())
+    all_ctc_keys = list(freqs_by_sys_by_ctc[system_keys[0]].keys())
+    for sk in system_keys[1:]:
+        assert len(all_ctc_keys)==len(list(freqs_by_sys_by_ctc[sk].keys())), "This is not a unified dictionary"
 
     # Pop the keys for higher freqs
     keys_popped_above = []
     if remove_identities:
-        for key in all_keys:
-            if all([val[key]>=identity_cutoff for val in freqs_work.values()]):
-                [idict.pop(key) for idict in freqs_work.values()]
+        for key in all_ctc_keys:
+            if all([val[key]>=identity_cutoff for val in freqs_by_sys_by_ctc.values()]):
+                [idict.pop(key) for idict in freqs_by_sys_by_ctc.values()]
                 keys_popped_above.append(key)
-        all_keys = [key for key in all_keys if key not in keys_popped_above]
+        all_ctc_keys = [key for key in all_ctc_keys if key not in keys_popped_above]
 
     dicts_values_to_sort = {"mean":{},
                          "std": {},
                          "keep":{}}
-    for ii, key in enumerate(all_keys):
-        dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_work.values()])*len(freqs_work)
-        dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_work.values()])
-        dicts_values_to_sort["keep"][key] = len(all_keys)-ii+lower_cutoff_val # trick to keep the same logic
+    for ii, key in enumerate(all_ctc_keys):
+        dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])*len(freqs_by_sys_by_ctc)
+        dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
+        dicts_values_to_sort["keep"][key] = len(all_ctc_keys)-ii+lower_cutoff_val # trick to keep the same logic
 
     # Find the keys lower sort property
-    keys_popped_below = []
-    for ii, (key, val) in enumerate(dicts_values_to_sort[sort_by].items()):
+    ctc_keys_popped_below = []
+    for ii, (ctc, val) in enumerate(dicts_values_to_sort[sort_by].items()):
         if val <= lower_cutoff_val:
-            [idict.pop(key) for idict in freqs_work.values()]
-            keys_popped_below.append(key)
-            all_keys.remove(key)
+            [idict.pop(ctc) for idict in freqs_by_sys_by_ctc.values()]
+            ctc_keys_popped_below.append(ctc)
+            all_ctc_keys.remove(ctc)
 
     # Pop them form the needed dict
-    final_ordered_dict = {key:val for key, val in dicts_values_to_sort[sort_by].items() if key not in keys_popped_below}
+    sorted_value_by_ctc_by_sys = {key:val for key, val in dicts_values_to_sort[sort_by].items() if key not in ctc_keys_popped_below}
 
     # Prepare the dict that stores the order for plotting
     # and the values used for that sorting
-    final_ordered_dict = {key:val for (key, val)  in
-                          sorted(final_ordered_dict.items(),
+    sorted_value_by_ctc_by_sys = {key:val for (key, val)  in
+                                 sorted(sorted_value_by_ctc_by_sys.items(),
                                  key = lambda item : item[1],
                                  reverse = True
                           )
@@ -409,32 +412,40 @@ def plot_unified_freq_dicts(freqs,
 
     # Prepare the dict
     if colordict is None:
-        colordict = {key:val for key,val in zip(master_keys, _colorstring.split(","))}
+        colordict = {key:val for key,val in zip(system_keys, _colorstring.split(","))}
+
+    winners = {}
+    for ctc_key in all_ctc_keys:
+        _vals = _np.array([val[ctc_key] for val in freqs_by_sys_by_ctc.values()])
+        if _np.sum(_vals> lower_cutoff_val) == 1 and assign_w_color:
+            winners[ctc_key] = colordict[system_keys[_vals.argmax()]]
+        else:
+            winners[ctc_key] = 'k'
 
     # Prepare the positions of the bars
     if width is None:
-        width = .5/len(master_keys)
+        width = .5/len(system_keys)
     delta = {}
-    for ii, key in enumerate(master_keys):
+    for ii, key in enumerate(system_keys):
         delta[key] = width * ii
 
     if ax is None:
         if figsize is None:
             y_figsize=panelheight_inches
-            x_figsize=inch_per_contacts*len(final_ordered_dict)
+            x_figsize=inch_per_contacts*len(sorted_value_by_ctc_by_sys)
             figsize = [x_figsize,y_figsize]
         if vertical_plot:
             figsize = figsize[::-1]
         myfig = _plt.figure(figsize=figsize)
+        ax = _plt.gca()
     else:
-        _plt.sca(ax)
         myfig = ax.figure
 
-    for jj, (skey, sfreq) in enumerate(freqs_work.items()):
+    for jj, (skey, sfreq) in enumerate(freqs_by_sys_by_ctc.items()):
         # Sanity check
-        assert len(sfreq) == len(final_ordered_dict), "This shouldnt happen"
+        assert len(sfreq) == len(sorted_value_by_ctc_by_sys), "This shouldnt happen"
 
-        bar_array = [sfreq[key] for key in final_ordered_dict.keys()]
+        bar_array = [sfreq[key] for key in sorted_value_by_ctc_by_sys.keys()]
         x_array = _np.arange(len(bar_array))
 
         # Label
@@ -442,8 +453,8 @@ def plot_unified_freq_dicts(freqs,
         if len(keys_popped_above)>0:
             label = label[:-1]+", +%2.1f above threshold)"%\
                     (_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
-        if len(keys_popped_below) > 0:
-            not_shown_sigma = _np.sum([freqs[skey][nskey] for nskey in keys_popped_below])
+        if len(ctc_keys_popped_below) > 0:
+            not_shown_sigma = _np.sum([freqs[skey][nskey] for nskey in ctc_keys_popped_below])
             if not_shown_sigma>0:
                 label = label[:-1] + ", +%2.1f below threshold)" % (not_shown_sigma)
         label = _mdcu.str_and_dict.replace4latex(label)
@@ -463,40 +474,47 @@ def plot_unified_freq_dicts(freqs,
 
     _plt.legend()
     if vertical_plot:
-        for ii, key in enumerate(final_ordered_dict.keys()):
+        for ii, key in enumerate(sorted_value_by_ctc_by_sys.keys()):
             # 1) centered in the middle of the bar, since plt.bar(align="center")
             # 2) displaced by one half width*nbars
             iix = ii \
                   - width / 2 \
-                  + len(freqs_work) * width / 2
+                  + len(freqs_by_sys_by_ctc) * width / 2
             _plt.text(0 - .05, iix, key,
                       ha="right",
                       #rotation=45,
                       )
         _plt.yticks([])
         _plt.xlim(0, ylim)
-        _plt.ylim(0 - width, ii + width * len(freqs_work))
+        _plt.ylim(0 - width, ii + width * len(freqs_by_sys_by_ctc))
         _plt.xticks([0, .25, .50, .75, 1])
         [_plt.gca().axvline(ii, ls=":", color="k", zorder=-1) for ii in [.25, .5, .75]]
         _plt.gca().invert_yaxis()
 
         if sort_by == "std":
-            _plt.plot(list(final_ordered_dict.values()), _np.arange(len(all_keys)), color='k', alpha=.25, ls=':')
+            _plt.plot(list(sorted_value_by_ctc_by_sys.values()), _np.arange(len(all_ctc_keys)), color='k', alpha=.25, ls=':')
 
     else:
-        for ii, key in enumerate(final_ordered_dict.keys()):
+        for ii, key in enumerate(sorted_value_by_ctc_by_sys.keys()):
             # 1) centered in the middle of the bar, since plt.bar(align="center")
             # 2) displaced by one half width*nbars
             iix = ii\
                   -width/2\
-                  +len(freqs_work)*width/2
+                  +len(freqs_by_sys_by_ctc)*width/2
             _plt.text(iix, ylim + .05, key,
-                      ha="center",
+                      #ha="center",
+                      ha='left',
                       rotation=45,
+                      color=winners[key]
                       )
             #_plt.gca().axvline(iix) (visual aid)
-        _plt.xticks([])
-        _plt.xlim(0 - width, ii + width * len(freqs_work))
+        _plt.xticks(_np.arange(len(sorted_value_by_ctc_by_sys))-width, [])
+
+        _plt.xlim(0 - width, ii + width * len(freqs_by_sys_by_ctc))
+        _ax = ax.twiny()
+        _ax.set_xlim(ax.get_xlim())
+        _plt.xticks(ax.get_xticks(), [])
+        _plt.sca(ax)
         if ylim<=1:
             yticks = [0, .25, .50, .75, 1]
         else:
@@ -504,14 +522,14 @@ def plot_unified_freq_dicts(freqs,
         _plt.yticks(yticks)
         [_plt.gca().axhline(ii, ls=":", color="k", zorder=-1) for ii in yticks[1:-1]]
         if sort_by == "std":
-            _plt.plot(list(final_ordered_dict.values()),
+            _plt.plot(list(sorted_value_by_ctc_by_sys.values()),
                       color='k', alpha=.25, ls=':')
 
         _plt.ylim(0, ylim)
 
-    # Create a dictionary explaining the plot
-    out_dict = {key:{ss: val[ss] for ss in final_ordered_dict.keys()} for key, val in freqs_work.items()}
-    out_dict.update({sort_by: {key : _np.round(val,2) for key, val in final_ordered_dict.items()}})
+    # Create a by-state dictionary explaining the plot
+    out_dict = {key:{ss: val[ss] for ss in sorted_value_by_ctc_by_sys.keys()} for key, val in freqs_by_sys_by_ctc.items()}
+    out_dict.update({sort_by: {key : _np.round(val,2) for key, val in sorted_value_by_ctc_by_sys.items()}})
 
     _rcParams["font.size"] = _fontsize
     return myfig, _plt.gca(),  out_dict

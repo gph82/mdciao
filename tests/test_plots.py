@@ -46,7 +46,7 @@ class TestPlotContactMatrix(unittest.TestCase):
 class Test_plot_unified_freq_dicts(unittest.TestCase):
 
     def setUp(self):
-        self.CG1_freqdict = {"0-1":1,  "0-2":.75, "0-3":.50, "4-6":.25}
+        self.CG1_freqdict =          {"0-1":1,  "0-2":.75, "0-3":.50, "4-6":.25}
         self.CG1_freqdict_shuffled = {"0-2":.75, "0-1":1, "0-3":.50, "4-6":.25}
 
         self.CG2_freqdict = {"0-1":.95, "0-2":.65, "0-3":.35, "4-6":0}
@@ -153,6 +153,19 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
                                                   {"CG1":"r", "CG1copy":"b"}, ylim=2.25, ax=ax)
         assert myax is ax
+        _plt.close("all")
+
+    def test_plot_unified_freq_dictsfigsize_None(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG1copy": self.CG1_freqdict},
+                                                        {"CG1": "r", "CG1copy": "b"}, ylim=2.25,
+                                                        figsize=None)
+        _plt.close("all")
+
+    def test_plot_unified_freq_dictswinner(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": {"0-1":0, "0-2":1},
+                                                         "CG12": {"0-1":1, "0-2":0}},
+                                                        figsize=None,
+                                                        assign_w_color=True)
         _plt.close("all")
 
     def test_plot_just_one_dict(self):
