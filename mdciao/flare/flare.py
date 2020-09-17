@@ -53,9 +53,9 @@ def freqs2flare(freqs, res_idxs_pairs,
                 bezier_linecolor='k',
                 plot_curves_only=False,
                 textlabels=True,
-                padding_beginning=0,
-                padding_end=0,
+                padding=[1,1,1],
                 lw=5,
+                signed_colors=None,
                 ):
     r"""
     Plot contact frequencies as `flare plots` (TODO insert refs)
@@ -188,6 +188,10 @@ def freqs2flare(freqs, res_idxs_pairs,
         There is a hidden development option for this argument where a residue
         list is passed, meaning, show these residues regardless of any other
         option that has been passed. Perhaps sparse changes in the future.
+    signed_colors = dict, default is None
+        Provide a color dictionary, e.g. {-1:"b", +1:"r}
+        to give different colors to positive and negative
+        alpha values. If None, defaults to :obj:`bezier_linecolor`
 
     Returns
     -------
@@ -195,8 +199,6 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     plotted_pairs : 2D np.ndarray
     """
-
-    padding_end += 5 #todo dangerous?
 
     if _np.ndim(freqs)==1:
         freqs = _np.reshape(freqs,(1, -1))
@@ -210,69 +212,49 @@ def freqs2flare(freqs, res_idxs_pairs,
         "The size of the contact array and the " \
         "res_idxs_pairs array do not match %u vs %u"%(freqs.shape[1], len(res_idxs_pairs))
 
-    # Residue handling/bookkepping
-    if isinstance(sparse,bool):
-        if sparse:
-            residx_array = _np.unique(res_idxs_pairs)
-        else:
-            residx_array = _np.arange(_np.unique(res_idxs_pairs)[-1]+1)
-    else:
-        residx_array = sparse
-        sparse=False
-
-    if fragments is None:
-        residues_as_fragments = [residx_array]
-    else:
-        from mdciao.utils.lists import assert_no_intersection as _no_intersect
-        _no_intersect(fragments, word="fragments")
-        if sparse:
-            residues_as_fragments = [_np.intersect1d(ifrag,residx_array) for ifrag in fragments]
-        else:
-            residues_as_fragments = fragments
-    residues_to_plot_as_dots = _np.hstack(residues_as_fragments)
-    assert set(residx_array).issubset(residues_to_plot_as_dots), \
-        "The input fragments do not contain all residues residx_array, " \
-        "their set difference is %s"%(set(residx_array).difference(residues_to_plot_as_dots))
+    # Figure out the combination of sparse/fragments options
+    residues_as_fragments = _futils._parse_residue_and_fragments(res_idxs_pairs,
+                                                                 sparse=sparse,
+                                                                 fragments=fragments)
 
     # Create a map
-    residx2markeridx = _futils.value2position_map(residues_to_plot_as_dots)
+    residx2markeridx = _futils.value2position_map(_np.hstack(residues_as_fragments))
 
     if plot_curves_only:
+        plot_attribs = {}
         assert iax is not None, ("You cannot use "
                                  "plot_curves_only=True and iax=None. Makes no sense")
-        xy = _futils.cartify_fragments(fragments,
+        xy = _futils.cartify_fragments(residues_as_fragments,
                                        r=r,
                                        angle_offset=angle_offset,
-                                       padding_initial=padding_beginning,
-                                       padding_final=padding_end,
+                                       padding=padding,
                                        )
         xy += center
     else:
-        iax, xy = circle_plot_residues(residues_as_fragments,
-                                       fontsize=fontsize,
-                                       colors=colors,
-                                       panelsize=panelsize,
-                                       padding_beginning=padding_beginning,
-                                       padding_end=padding_end,
-                                       center=center,
-                                       ss_array=ss_array,
-                                       fragment_names=fragment_names,
-                                       iax=iax,
-                                       markersize=markersize,
-                                       textlabels=textlabels,
-                                       shortenAAs=shortenAAs,
-                                       highlight_residxs=highlight_residxs,
-                                       aa_offset=aa_offset,
-                                       top=top,
-                                       r=r,
-                                       angle_offset=angle_offset)
+        iax, xy, plot_attribs = circle_plot_residues(residues_as_fragments,
+                                                     fontsize=fontsize,
+                                                     colors=colors,
+                                                     panelsize=panelsize,
+                                                     padding=padding,
+                                                     center=center,
+                                                     ss_array=ss_array,
+                                                     fragment_names=fragment_names,
+                                                     iax=iax,
+                                                     markersize=markersize,
+                                                     textlabels=textlabels,
+                                                     shortenAAs=shortenAAs,
+                                                     highlight_residxs=highlight_residxs,
+                                                     aa_offset=aa_offset,
+                                                     top=top,
+                                                     r=r,
+                                                     angle_offset=angle_offset)
 
         circle_radius_in_pts = iax.artists[0].radius * _points2dataunits(iax).mean()
         lw = circle_radius_in_pts # ??
 
     # All formed contacts
     ctcs_averaged = _np.average(freqs, axis=0)
-    idxs_of_formed_contacts = _np.argwhere(ctcs_averaged>freq_cutoff).squeeze()
+    idxs_of_formed_contacts = _np.argwhere(_np.abs(ctcs_averaged)>freq_cutoff).squeeze()
     plot_this_pair_lambda = _futils.should_this_residue_pair_get_a_curve(residues_as_fragments,
                                                                          select_residxs=select_residxs,
                                                                          mute_fragments=mute_fragments,
@@ -292,10 +274,12 @@ def freqs2flare(freqs, res_idxs_pairs,
                                           center=center,
                                           lw=lw,
                                           bezier_linecolor=bezier_linecolor,
+                                          signed_alphas=signed_colors
                                           )
-    else:
-        alphas = []
-    return iax, idxs_of_pairs2plot
+        plot_attribs["bezier_lw"] = lw
+        plot_attribs["bezier_curves"] = bezier_curves
+
+    return iax, idxs_of_pairs2plot, plot_attribs
 
 def circle_plot_residues(fragments,
                          fontsize=None,
@@ -304,9 +288,7 @@ def circle_plot_residues(fragments,
                          r=1,
                          panelsize=4,
                          angle_offset=0,
-                         padding_beginning=1,
-                         padding_end=1,
-                         padding_between_fragments=1,
+                         padding=[1,1,1],
                          center=[0,0],
                          ss_array=None,
                          fragment_names=None,
@@ -323,43 +305,75 @@ def circle_plot_residues(fragments,
 
     Parameters
     ----------
-    fragments
-    r
-    angle_offset
-    padding_beginning
-    padding_end
-    center
-    radial_padding_units
-    ss_array
-    plot_curves_only
-    fragment_names
-    iax
-    residx2markeridx
+    fragments : list
+        List of iterables of residue idxs defining how the
+        residues are split into fragments. If no
+        :obj:`textlabels` are provided, the idxs
+        themselves become the labels
+    r : scalar
+        The radius of the circle, in axis inuts
+    angle_offset : scalar
+        Where the circle starts, in degrees. 0 means 3 o'clock,
+        90 12 o'clock etc. It's the phi of polar coordinates
+    padding : list, default is [1,1,1]
+        * first integer : Put this many empty positions before the first dot
+        * second integer: Put this many empty positions between fragments
+        * third integer : Put this many empty positions after the last dot
+    center : pair of floats
+        where the circle is centered, in axis units
+    ss_array : dict, list or array
+        One-letter codes (H,B,E,C) denoting secondary
+        structure. Has to be indexable by whatever
+        indices are on :obj:`fragments`
+    fragment_names : list
+        The names of the fragments
+    iax : :obj:`matplotlib.Axis`, default is None
+        An axis to draw the dots on. It's parent
+        figure has to have a tight_layout=True
+        attribute. If no axis is passed,
+        one will be created.
+    replacement_labels : dict or boolean, default is True
+        Whether to put textlabels on the dots. If
+        * False : no labels at all
+        * True : labels are the indices in :obj:`fragments`
+        * dict : residue_idx-keyed individual label replacements
+         Typical cases could be a mutated residue that you want
+         to show as R38A instead of just A38, or use
+         e.g. BW or CGN consensus labels.
     fontsize
     colors
-    residues_to_plot_as_dots
     markersize
-    textlabels
-    shortenAAs
-    highlight_residxs
-    aa_offset
-    top
+    top : :obj:`mdtraj.Topology`, default is None
+        If provided, residue labels wil be auto-generated from
+        here
+    shortenAAs : boolean, default is True
+        If :obj:`top` is not None, use "E50" rather than "GLU50"
+    aa_offset : int, default is 0
+        If :obj:`top` is not None, add this number to the
+        resSeq value, s.t. e.g. "E50" becomes "E55" if the
+        sequence numbers need to be shifted
+    highlight_residxs : iterable of ints, default is None
+        In case you don't want to construct a whole
+        color list for :obj:`colors`, you can simply
+        input a subset of :obj:`res_idxs` here and
+        they will be shown in red.
 
     Returns
     -------
+    iax, xy, outdict
 
+    outdict: dict
+         Contains :obj:`matplotlib` objects (the dots and their labels)
     """
     debug = False
 
     xy = _futils.cartify_fragments(fragments,
                                    r=r,
                                    angle_offset=angle_offset,
-                                   padding_initial=padding_beginning,
-                                   padding_final=padding_end,
-                                   padding_between_fragments=padding_between_fragments)
+                                   padding=padding)
     xy += center
 
-    n_positions = len(xy) + padding_beginning + padding_end + len(fragments)*padding_between_fragments
+    n_positions = len(xy) + padding[0] + len(fragments)*padding[1] + padding[2]
 
     # TODO review variable names
     # TODO this color mess needs to be cleaned up
@@ -371,6 +385,10 @@ def circle_plot_residues(fragments,
         # Do this first to have an idea of the points per axis unit necessary for the plot
         iax.set_xlim([center[0] - r, center[0] +  r])
         iax.set_ylim([center[1] - r, center[1] +  r])
+    else:
+        if not iax.figure.get_tight_layout():
+            print("The passed figure was not instantiated with tight_layout=True\n"
+                  "This may lead to some errors in the flareplot fontsizes.")
 
     iax.set_aspect('equal')
 
@@ -403,9 +421,7 @@ def circle_plot_residues(fragments,
                               center=center,
                               r=2*r,  # don't understand this 2 here
                               angle_offset=angle_offset,
-                              padding_initial=padding_beginning,
-                              padding_final=padding_end,
-                              padding_between_fragments=padding_between_fragments,
+                              padding=padding,
                               lw=2 * lw
                               )
             running_r_pad += 4 * lw
@@ -434,7 +450,9 @@ def circle_plot_residues(fragments,
         overlap = True
         counter = 0
         while overlap and counter < n_max:
-            running_r_pad += dot_radius * maxlen / 2
+            running_r_pad += dot_radius * maxlen # / 2 This is a fudge.
+            # The problem is that re-scaling at a later point might induce overlap
+            # in this labels again, so I am anticipating that by adding some extra padding here
             [ilab.remove() for ilab in labels]
             labels = add_fragmented_residue_labels(fragments,
                                                    iax,
@@ -442,11 +460,9 @@ def circle_plot_residues(fragments,
                                                    center=center,
                                                    r=r + running_r_pad,
                                                    angle_offset=angle_offset,
-                                                   padding_beginning=padding_beginning,
-                                                   padding_end=padding_end,
-                                                   padding_between_fragments=padding_between_fragments,
-                                                   shortenAAs=shortenAAs,
-                                                   highlight_residxs=highlight_residxs, top=top,
+                                                   padding=padding,
+                                                   highlight_residxs=highlight_residxs,
+                                                   top=top,
                                                    aa_offset=aa_offset,
                                                    replacement_labels=replacement_labels)
             lab_lenths = [len(itext.get_text()) for itext in labels]
@@ -456,12 +472,10 @@ def circle_plot_residues(fragments,
             bad_dot_bb =    CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
             overlap = bad_txt_bb.overlaps(bad_dot_bb)
             counter+=1
-            #print(overlappers, counter)
 
         assert not overlap, ValueError("Tried to 'un'-overlap textlabels and residue markers %u times without success"%n_max)
 
         running_r_pad += dot_radius*maxlen/2
-
     if debug:
         iax.add_artist(_plt.Circle(center,
                                    radius=r + running_r_pad,
@@ -486,9 +500,7 @@ def circle_plot_residues(fragments,
                                                       center=center,
                                                       r=r + running_r_pad,
                                                       angle_offset=angle_offset,
-                                                      padding_beginning=padding_beginning,
-                                                      padding_end=padding_end,
-                                                      padding_between_fragments=padding_between_fragments,
+                                                      padding=padding,
                                                       shortenAAs=shortenAAs,
                                                       highlight_residxs=highlight_residxs, top=top,
                                                       aa_offset=aa_offset,
@@ -507,7 +519,6 @@ def circle_plot_residues(fragments,
             counter += 1
 
         running_r_pad += dot_radius
-
     if debug:
         iax.add_artist(_plt.Circle(center,
                                    radius=r + running_r_pad,
@@ -517,6 +528,7 @@ def circle_plot_residues(fragments,
                                    zorder=10))
 
     # Do we have names?
+    frag_labels = None
     if fragment_names is not None:
         span = (2*(r + running_r_pad))
         frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of panel space)
@@ -552,12 +564,14 @@ def circle_plot_residues(fragments,
             frag_fontsize_in_pts = frag_labels[0].get_size()
 
         running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
-
     iax.set_yticks([])
     iax.set_xticks([])
     iax.set_xlim([center[0] - r - running_r_pad, center[0] + r + running_r_pad])
     iax.set_ylim([center[1] - r - running_r_pad, center[1] + r + running_r_pad])
-    return iax, xy
+    return iax, xy, {"fragment_labels":frag_labels,
+                     "dot_labels":labels,
+                     "dots":CPs,
+                     "SS_labels":ss_labels}
 
 
 def add_bezier_curves(iax,
@@ -566,9 +580,11 @@ def add_bezier_curves(iax,
                       center=[0,0],
                       lw=1,
                       bezier_linecolor='k',
+                      signed_alphas=None,
+                      correct_adjacent_nodes=True
                       ):
     r"""
-    Generate a bezier curves. Uses
+    Generate and plot bezier curves using :obj:`bezier.Curves` as a base class
 
     Parameters
     ----------
@@ -581,13 +597,26 @@ def add_bezier_curves(iax,
         the pairs in :obj:`nodepairs_xy`.
         If None is provided, it will be set to 1
         for all curves. If provided,
-        must be of len(nodepairs_xy)
-    center
-    lw
-    bezier_linecolor
+        must be of len(nodepairs_xy).
+    center : array-like with two floats, default is [0,0]
+    lw : int, default is 1
+    bezier_linecolor: :obj:`matplotlib` color, default is "k"
+    signed_alphas : dict, default is None
+        Provide a color dictionary, e.g. {-1:"b", +1:"r}
+        to give different colors to positive and negative
+        alpha values. Overwrites whatever is in :obj:`bezier_linecolor`.
+        If None, defaults to :obj:`bezier_linecolor`
+    correct_adjacent_nodes : boolean, default is True
+        If two nodes are too close to each other,
+        use a shifted center for the Bezier curve so
+        that it's visually easier to find. Currently,
+        adjacent is hard-coded to mean "nodes are ten
+        times closer to each other than to the center"
 
     Returns
     -------
+    bz_curves : list
+        The :obj:`bezier.Curves` plotted
 
     """
     if alphas is None:
@@ -595,13 +624,26 @@ def add_bezier_curves(iax,
 
     assert len(alphas)==len(nodepairs_xy)
 
+    if signed_alphas in [None,{}]:
+        signed_alphas={-1:bezier_linecolor,
+                       +1:bezier_linecolor}
+
     bz_curves=[]
     for nodes, ialpha in zip(nodepairs_xy, alphas):
-        bz_curves.append(_futils.create_flare_bezier_2(nodes, center=center))
+
+        d_nodes = _np.sqrt(((nodes[0] - nodes[1]) ** 2).sum())
+        r = _np.mean([_np.linalg.norm(nodes[0] - center), _np.linalg.norm(nodes[1] - center)])
+        pair_center = (nodes[0] + nodes[1]) / 2
+        pc2c = center - pair_center
+        if correct_adjacent_nodes and r / 10 > d_nodes:
+            _center = pair_center + pc2c / 10
+        else:
+            _center = center
+        bz_curves.append(_futils.create_flare_bezier_2(nodes, center=_center))
         bz_curves[-1].plot(50,
                            ax=iax,
-                           alpha=ialpha,
-                           color=bezier_linecolor,
+                           alpha=_np.abs(ialpha),
+                           color=signed_alphas[_np.sign(ialpha)],
                            lw=lw,  # _np.sqrt(markersize),
                            zorder=-1
                            )
@@ -614,28 +656,22 @@ def add_fragmented_residue_labels(fragments,
                                   center=[0,0],
                                   r=1,
                                   angle_offset=0,
-                                  padding_beginning=0,
-                                  padding_end=0,
-                                  padding_between_fragments=0,
+                                  padding=[0,0,0],
                                   **add_res_labs_kwargs,
                                   ):
     r"""
     Like add_labels but starting from the fragments
+
     Parameters
     ----------
     fragments
+    iax
+    fontsize
     center
     r
     angle_offset
-    padding_beginning
-    padding_end
-    iax
-    residues_to_plot_as_dots
-    fontsize
-    shortenAAs
-    highlight_residxs
-    top
-    aa_offset
+    padding
+    add_res_labs_kwargs
 
     Returns
     -------
@@ -646,9 +682,7 @@ def add_fragmented_residue_labels(fragments,
                                                      r=r,
                                                      return_angles=True,
                                                      angle_offset=angle_offset,
-                                                     padding_initial=padding_beginning,
-                                                     padding_final=padding_end,
-                                                     padding_between_fragments=padding_between_fragments)
+                                                     padding=padding)
     xy_labels += center
 
     residues_to_plot_as_dots = _np.hstack(fragments)

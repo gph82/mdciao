@@ -383,35 +383,6 @@ def assert_no_intersection(list_of_lists_of_integers, word='iterables'):
                 assert len(_np.intersect1d(l1, l2)) == 0, 'input %s %u and %u have these elements ' \
                                                           'in common: %s:\n%s\nvs\n%s'%(word, ii, jj, set(l1).intersection(l2), l1, l2)
 
-# TODO consider using np.delete in the code originally?
-# TODO there is no code using this?
-def pull_one_up_at_this_pos(iterable_in, idx, padding='~',
-                            verbose=False):
-    """
-
-    Parameters
-    ----------
-    iterable_in : iterable
-    idx : int or None
-        index which needs to be removed (zero-based index), or None if nothing needs to be replaced
-    padding : replacement to be appended to the end of iterable. Could be string, int, iterable and so on
-    verbose : boolean
-            be verbose
-
-    Returns
-    -------
-    iterable without the element at the position idx on iterable_in
-
-    """
-
-    iterable_out = [ii for ii in iterable_in[:idx]]
-    iterable_out += iterable_in[idx + 1:]
-    iterable_out.append(padding)
-    if verbose:
-        for ii, (old, new) in enumerate(zip(iterable_in, iterable_out)):
-            print(ii, old, new)
-    return iterable_out
-
 def put_this_idx_first_in_pair(idx, pair):
     """
     Returns the original pair if the value already appears first, else returns reversed pair
