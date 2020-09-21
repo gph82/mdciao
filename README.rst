@@ -37,10 +37,12 @@ TODOs
 =====
 This is an informal list of known issues and TODOs:
  * overhaul the "printing" system with proper warnings
- * progressbar not very informative for one chunked trajs or parallel runs
+ * progressbar not very informative for one chunked trajectory or parallel runs
  * improve sequence alignment choices
  * heuristics for proper font-sizing of flareplots could be optimized
  * parallel execution with memory mdtraj.Trajectory objects should be better
+ * document API cli methods (it's almost 1:1 the cli tools documented in the cli parsers)
+ * The interface between API methods and cli scripts could be better, using sth like `click <https://click.palletsprojects.com/en/7.x/>`_
 
 System Requirements
 ===================
