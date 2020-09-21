@@ -1305,9 +1305,8 @@ def sites(topology,
     graphic_ext = graphic_ext.strip(".")
     # Inform about trajectories
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
-
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
-        "\n ".join(site_files),
+        "\n ".join([_mdcsites.site2str(ss) for ss in site_files]),
         _mdcu.str_and_dict.inform_about_trajectories(xtcs),
           stride))
 
@@ -1324,8 +1323,7 @@ def sites(topology,
                                                           fragments_as_residue_idxs,
                                                           accept_guess=accept_guess,
                                                           write_to_disk_BW=write_to_disk_BW)
-
-    sites = [_mdcsites.sitefile2sitedict(ff) for ff in site_files]
+    sites = [_mdcsites.load(ff) for ff in site_files]
     ctc_idxs_small, AAresSeq2residxs = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
                                                                     fragments=fragments_as_residue_idxs,
                                                                     default_fragment_idx=default_fragment_index,

@@ -27,14 +27,14 @@ import numpy as _np
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
 
-def sitefile2sitedict(sitefile):
+def load(site):
     r"""
-    Open a json file defining a site and turn into a site dictionary
+    Load a site object from a json- file or a dictionary.
 
     Examples
     --------
     >>> This could be inside a json file named site.json
-    {"sitename":"interesting contacts",
+    {"name":"interesting contacts",
     "bonds": {"AAresSeq": [
             "L394-K270",
             "D381-Q229",
@@ -46,7 +46,11 @@ def sitefile2sitedict(sitefile):
 
     Parameters
     ----------
-    sitefile : str
+    sitefile : str or dict
+        If a dict is passed, it's checked that the dictionary
+        has the needed keys to function as a site.
+        If the json file does not have a name, the filename
+        will be used as name
 
     Returns
     -------
@@ -58,17 +62,23 @@ def sitefile2sitedict(sitefile):
         And site["bonds"] is itself a dictionary with only one key ATM, "AAresSeq"
 
     """
-    with open(sitefile, "r") as f:
-        idict = _jsonload(f)
+    if isinstance(site, dict):
+        idict = site
+    else:
+        with open(site, "r") as f:
+            idict = _jsonload(f)
     try:
         idict["bonds"]["AAresSeq"] = [item.split("-") for item in idict["bonds"]["AAresSeq"] if item[0] != '#']
         idict["n_bonds"] = len(idict["bonds"]["AAresSeq"])
     except:
-        print("Malformed .json file for the site %s" % sitefile)
-    if "sitename" not in idict.keys():
-        idict["name"] = _psplitext(_psplit(sitefile)[-1])[0]
-    else:
-        idict["name"] = _psplit(idict["sitename"])[-1]
+        print("Malformed .json file for the site %s" % site)
+
+    if "name" not in idict.keys():
+        if isinstance(site,str):
+            idict["name"] = _psplitext(_psplit(site)[-1])[0]
+        else:
+            raise ValueError("A 'name'-key is mandatory when passing a dictionary")
+
     return idict
 
 def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
@@ -76,7 +86,7 @@ def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
                           **residues_from_descriptors_kwargs):
 
     r"""
-    For a list of site dictionaries (see :obj:`sitefile2sitedict`), return
+    For a list of site dictionaries (see :obj:`load`), return
     a dictionary with keyed by all needed residue names and valued
     with their residue indices in :obj:`top`
 
@@ -139,7 +149,7 @@ def sites_to_res_pairs(site_dicts, top,
     Parameters
     ----------
     site_dicts : list of dicts
-        Check :obj:`sitefile2sitedict` for how these dics look like
+        Check :obj:`load` for how these dics look like
     top : :obj:`mdtraj.Topology`
     fragments : list, default is None
         You can pass along a fragment definition so that
@@ -164,3 +174,13 @@ def sites_to_res_pairs(site_dicts, top,
     AAresSeq2residxs = sites_to_AAresSeqdict(site_dicts, top, fragments)
     res_idxs_pairs = _np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in site_dicts]))
     return res_idxs_pairs, AAresSeq2residxs
+
+def site2str(site):
+    r""" Produce a printable str for sitefile (json) or site-dict"""
+    if isinstance(site,str):
+        return site
+    elif isinstance(site,dict):
+        assert "name" in site.keys()
+        return 'site dict with name %s'%site["name"]
+    else:
+        raise ValueError("What is this site %s? Only dicts or files are accepted"%site)
