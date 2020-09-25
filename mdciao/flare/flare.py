@@ -450,7 +450,7 @@ def circle_plot_residues(fragments,
         overlap = True
         counter = 0
         while overlap and counter < n_max:
-            running_r_pad += dot_radius * maxlen # / 2 This is a fudge.
+            running_r_pad += dot_radius * maxlen  / 2 # This is a fudge.
             # The problem is that re-scaling at a later point might induce overlap
             # in this labels again, so I am anticipating that by adding some extra padding here
             [ilab.remove() for ilab in labels]
