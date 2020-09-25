@@ -318,7 +318,7 @@ def freq_file2dict(ifile, defrag=None):
 def freq_ascii2dict(ifile, comment=["#"]):
     r"""
     Reads an ascii file that contains contact frequencies (1st) column and
-    contact labels . Columns are separeted by tabs or spaces.
+    contact labels . Columns are separated by tabs or spaces.
 
     Contact labels have to come after the frequency in the
     form of "res1 res2, "res1-res2" or "res1 - res2",
