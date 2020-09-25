@@ -46,7 +46,7 @@ def get_sorted_trajectories(trajectories):
         - for an input pattern, sorted trajectory filenames that match that pattern
         - for filename, one list containing that filename
         - for a list of filenames, a sorted list of filenames
-        - one :obj:`mdtraj.Trajectory` object (i.e: does nothing)
+        - for one :obj:`mdtraj.Trajectory` object, a list containing that object
         - list of :obj:`mdtraj.Trajectory` objects (i.e. does nothing)
 
 
@@ -249,7 +249,7 @@ def unify_freq_dicts(freqs,
 
     if len(not_shared)>0:
         print("These interactions are not shared:\n%s" % (', '.join(not_shared)))
-        print("Their cummulative ctc freq is %f. " % _np.sum(
+        print("Their cumulative ctc freq is %f. " % _np.sum(
             [[ifreq[key] for ifreq in freqs_work.values()] for key in not_shared]))
 
     return freqs_work
@@ -335,7 +335,7 @@ def freq_ascii2dict(ifile, comment=["#"]):
 
     comment : list of chars
         Any line starting with any of these
-        charecters will be ignored
+        characters will be ignored
     Returns
     -------
     freqdict : dictionary
