@@ -209,7 +209,7 @@ def _parse_fragment_naming_options(fragment_names, fragments):
         * "None","none": fragment names will be None
         * comma-separated values, with as many values
         as fragments are in :obj:`fragments:
-        If list, we do nothing (for compatiblity with API use of CLI tools)
+        If list, we do nothing (for compatibility with API use of CLI tools)
     fragments: list
         existing fragment definitions (iterables of residue indices)
          to apply the :obj:`fragment_names` to.
@@ -332,7 +332,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
     -------
 
     """
-    firstname = output_desc
+    firstname = output_desc.replace(" ","_")
     lastname = ""
     # TODO manage interface and sites appropiately
     if ctc_grp.is_neighborhood:
@@ -774,7 +774,7 @@ def residue_neighborhoods(residues,
                                                        consolidate=False,
                                                        n_jobs=n_jobs,
                                                        )
-    print() # to make sure we don't overwrite outut
+    print() # to make sure we don't overwrite output
     actcs = _np.vstack(ctcs_trajs)
     if switch_off_Ang is None:
         ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
@@ -867,7 +867,7 @@ def residue_neighborhoods(residues,
     print("The following files have been created")
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     print(fname)
-    # TDOO undecided about this
+    # TODO undecided about this
     # TODO this code is repeated in sites...can we abstract this oafa?
     if table_ext is not None:
         for ihood in neighborhoods.values():
@@ -899,7 +899,7 @@ def residue_neighborhoods(residues,
     if plot_timedep or separate_N_ctcs:
         for ihood in neighborhoods.values():
             # TODO this plot_N_ctcs and skip_timedep is very bad, but ATM my only chance without major refactor
-            # TODO perhaps it would be better to burry dt in the plotting directly?
+            # TODO perhaps it would be better to bury dt in the plotting directly?
             myfig = ihood.plot_timedep_ctcs(panelheight,
                                             color_scheme=_my_color_schemes(curve_color),
                                             ctc_cutoff_Ang=ctc_cutoff_Ang,
@@ -1015,6 +1015,11 @@ def interface(
     table_ext
     title
     min_freq
+    sparse_flare_frags: bool, default is True
+        When deciding what fragments to put on
+        the flareplot, use only those fragments
+        where at least one residue is involved
+        in the interface
 
     Returns
     -------
@@ -1035,7 +1040,7 @@ def interface(
 
     refgeom = _load_any_geom(topology)
 
-    # TODO this is a backwards-compat issue that should be handled elsehere
+    # TODO this is a backwards-compat issue that should be handled elsewhere
     if not isinstance(fragments[0],str):
         fragments= [','.join([str(ii) for ii in _mdcu.lists.force_iterable(ifrag)]) for ifrag in fragments]
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
@@ -1078,7 +1083,7 @@ def interface(
              '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]]))),
              interface_cutoff_Ang), end="")
 
-    ctcs, ctc_idxs = _md.compute_contacts(refgeom, _np.vstack(ctc_idxs))
+    ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs))
     print("done!")
 
     ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
@@ -1182,7 +1187,7 @@ def interface(
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
     # TODO manage filenames better, avoid overwriting here when file exists
-    fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc, ctc_cutoff_Ang)
+    fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc.replace(" ","_"), ctc_cutoff_Ang)
     fname_wo_ext = _path.join(output_dir, fname_wo_ext)
     fname_histo = ".".join([fname_wo_ext, graphic_ext])
     fname_excel = ".".join([fname_wo_ext,"xlsx"])
@@ -1329,7 +1334,7 @@ def sites(site_files,
     # Inform about fragments
     refgeom = _load_any_geom(topology)
 
-    # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elswhere
+    # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elsewhere
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, consensus_maps, __ = \
@@ -1358,7 +1363,7 @@ def sites(site_files,
                                        scheme=scheme,
                                        n_jobs=n_jobs)
 
-    # Abstract each site to a group of contactsfragments
+    # Abstract each site to a group of contacts and fragments
     site_as_gc = {}
     ctc_pairs_iterators = iter(ctc_idxs_small)
     ctc_value_idx = iter(_np.arange(len(ctc_idxs_small)))  # there has to be a better way
