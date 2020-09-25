@@ -171,15 +171,14 @@ def _parse_consensus_option(option, consensus_type,
 def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                       fragments_as_residue_idxs,
                                                       accept_guess=False,
-                                                      write_to_disk_BW=False,
+                                                      save_nomenclature_files=False,
                                                       verbose=True):
     fragment_defs, consensus_maps, consensus_labelers = {}, [], {}
     for key, option in option_dict.items():
         map_CL, CL = _parse_consensus_option(option, key, top, fragments_as_residue_idxs,
                                            return_Labeler=True,
                                            accept_guess=accept_guess,
-                                           write_to_disk={"BW":write_to_disk_BW,
-                                                          "CGN":False}[key])
+                                           write_to_disk=save_nomenclature_files)
         consensus_maps.append(map_CL)
         if CL is not None:
             consensus_labelers[key] = CL
@@ -512,7 +511,7 @@ def residue_neighborhoods(residues,
                           graphic_dpi=150,
                           short_AA_names=False,
                           allow_same_fragment_ctcs=True,
-                          write_to_disk_BW=False,
+                          save_nomenclature_files=False,
                           plot_timedep=True,
                           n_cols=4,
                           distro=False,
@@ -663,7 +662,7 @@ def residue_neighborhoods(residues,
     graphic_dpi
     short_AA_names
     allow_same_fragment_ctcs
-    write_to_disk_BW
+    save_nomenclature_files
     plot_timedep : bool, default is False
         Plot and save time-traces of the contacts
     n_cols
@@ -709,11 +708,12 @@ def residue_neighborhoods(residues,
 
     # Do we want BW definitions
     BWresidx2conlab = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments_as_residue_idxs,
-                                              write_to_disk=write_to_disk_BW,
+                                              write_to_disk=save_nomenclature_files,
                                               accept_guess=accept_guess)
 
     # Dow we want CGN definitions:
     CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs,
+                                               write_to_disk=save_nomenclature_files,
                                                accept_guess=accept_guess)
 
     #TODO refactor into rangeexpand_residues2residxs?
@@ -963,7 +963,6 @@ def interface(
         accept_guess=False,
         n_jobs=1,
         n_nearest=0,
-        write_to_disk_BW=False,
         sort_by_av_ctcs=True,
         scheme="closest-heavy",
         separate_N_ctcs=False,
@@ -974,6 +973,7 @@ def interface(
         cmap='binary',
         flareplot=True,
         savefiles=True,
+        save_nomenclature_files=False
 ):
     r"""Contact-frequencies between residues belonging
     to different fragments of the molecular topology
@@ -1006,7 +1006,6 @@ def interface(
     accept_guess
     n_jobs
     n_nearest
-    write_to_disk_BW
     sort_by_av_ctcs
     scheme
     separate_N_ctcs
@@ -1044,7 +1043,7 @@ def interface(
                                                           refgeom.top,
                                                           fragments_as_residue_idxs,
                                                           accept_guess=accept_guess,
-                                                          write_to_disk_BW=write_to_disk_BW)
+                                                          save_nomenclature_files=save_nomenclature_files)
     if user_wants_consenus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(fragment_defs, ng=2)
@@ -1294,7 +1293,7 @@ def sites(site_files,
           gray_background=False,
           graphic_dpi=150,
           short_AA_names=False,
-          write_to_disk_BW=False,
+          save_nomenclature_files=False,
           ylim_Ang=10,
           n_jobs=1,
           accept_guess=False,
@@ -1332,7 +1331,7 @@ def sites(site_files,
                                                           refgeom.top,
                                                           fragments_as_residue_idxs,
                                                           accept_guess=accept_guess,
-                                                          write_to_disk_BW=write_to_disk_BW)
+                                                          save_nomenclature_files=save_nomenclature_files)
     sites = [_mdcsites.load(ff) for ff in site_files]
     ctc_idxs_small, AAresSeq2residxs = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
                                                                     fragments=fragments_as_residue_idxs,
