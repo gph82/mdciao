@@ -135,7 +135,7 @@ def PDB_finder(PDB_code, local_path='.',
             return_file = file2read
         except (OSError, FileNotFoundError):
             if verbose:
-                print("No local PDB file for %s found in directory %s" % (PDB_code, local_path), end="")
+                print("No local PDB file for %s found in directory '%s'" % (PDB_code, local_path), end="")
             if try_web_lookup:
                 _geom, return_file = md_load_rscb(PDB_code,
                                                   verbose=verbose,
@@ -732,7 +732,9 @@ class LabelerConsensus(object):
 
         else:
             if map_conlab is None:
-                print("creating a temporary map_conlab, this is dangerous")
+                print("Creating a temporary map of residue idxs to consensus labels.\n"
+                      "Please refer to the documentation for advantages of parsing an \n"
+                      "existing map as argument.")
                 if min_hit_rate > 0:
                     chains = _mdcfrg.get_fragments(top, verbose=False)
                     answer = guess_nomenclature_fragments(self, top, chains, min_hit_rate=min_hit_rate)
@@ -926,6 +928,12 @@ class LabelerBW(LabelerConsensus):
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
+
+        self._uniprot_name = uniprot_name
+
+    @property
+    def uniprot_name(self):
+        return self._uniprot_name
 
     @property
     def fragments_as_idxs(self):
