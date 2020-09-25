@@ -481,7 +481,9 @@ def _fragment_overview(a,labtype):
                         pass
                 print(line)
             
-def residue_neighborhoods(topology, trajectories, residues,
+def residue_neighborhoods(residues,
+                          topology,
+                          trajectories=None,
                           res_idxs=False,
                           ctc_cutoff_Ang=3.5,
                           stride=1,
@@ -551,21 +553,6 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     Parameters
     ----------
-    topology : str or :obj:`mdtraj.Trajectory`
-        This geometry is used as a topology and
-        as a reference geometry for :obj:`nlist_cutoff_Ang`.
-        If str, it's the full path to the topology file,
-        e.g. 'sims/prot.pdb')
-    trajectories : str or :obj:`mdtraj.Trajectory`
-        The MD-trajectories to calculate the frequencies from.
-        This input is pretty flexible. For more info check
-        :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
-        Accepted values are:
-         * pattern, e.g. "*.ext"
-         * one string containing a filename
-         * list of filenames
-         * one :obj:`mdtraj.Trajectory` object
-         * list of :obj:`mdtraj.Trajectory` objects
     residues : int, iterable of ints or str
         The residue(s) for which the neighborhood will be computed.
         This input is pretty flexible wrt to strings and numbers,
@@ -581,6 +568,24 @@ def residue_neighborhoods(topology, trajectories, residues,
          * residues = '1,10-12,GLU*,GDP*,E30'
          Please refer to :obj:`mdciao.utils.residue_and_atom.rangeexpand_residues2residxs`
          for more info
+    topology : str or :obj:`mdtraj.Trajectory`
+        This geometry is used as a topology and
+        as a reference geometry for :obj:`nlist_cutoff_Ang`.
+        If str, it's the full path to the topology file,
+        e.g. 'sims/prot.pdb')
+    trajectories : str, :obj:`mdtraj.Trajectory`, or None
+        The MD-trajectories to calculate the frequencies from.
+        This input is pretty flexible. For more info check
+        :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
+        Accepted values are:
+         * pattern, e.g. "*.ext"
+         * one string containing a filename
+         * list of filenames
+         * one :obj:`mdtraj.Trajectory` object
+         * list of :obj:`mdtraj.Trajectory` objects
+         * None
+        If None, the :obj:`mdtraj.Trajectory` object
+        given in :obj:`topology` is used as trajectories
     Other Parameters
     ----------------
     res_idxs : bool, default is False
@@ -690,7 +695,8 @@ def residue_neighborhoods(topology, trajectories, residues,
 
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
-
+    if trajectories is None:
+        trajectories = topology
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
@@ -1019,6 +1025,8 @@ def interface(
     _offer_to_create_dir(output_dir)
     graphic_ext = graphic_ext.strip(".")
 
+    if trajectories is None:
+        trajectories = topology
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for trajectories:\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
@@ -1265,9 +1273,9 @@ def interface(
     return ctc_grp_intf
 
 
-def sites(topology,
-          trajectories,
-          site_files,
+def sites(site_files,
+          topology,
+          trajectories=None,
           ctc_cutoff_Ang=3.5,
           stride=1,
           scheme="closest-heavy",
@@ -1304,6 +1312,8 @@ def sites(topology,
         table_ext = table_ext.strip(".")
     graphic_ext = graphic_ext.strip(".")
     # Inform about trajectories
+    if trajectories is None:
+        trajectories = topology
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
         "\n ".join([_mdcsites.site2str(ss) for ss in site_files]),
