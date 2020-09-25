@@ -177,14 +177,14 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["1.0"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                      "200,395",
-                                      output_dir=tmpdir)
+                cli.residue_neighborhoods("200,395",
+                                          self.geom, [self.traj, self.traj_reverse],
+                                          output_dir=tmpdir)
 
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                   "1043",
+              cli.residue_neighborhoods("1043",
+                                        self.geom, [self.traj, self.traj_reverse],
                                    fragment_colors=True,
                                    allow_same_fragment_ctcs=False,
                                    short_AA_names=True,
@@ -194,36 +194,31 @@ class Test_residue_neighborhood(TestCLTBaseClass):
 
     def test_excel(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                   "395",
+              cli.residue_neighborhoods("395", self.geom, [self.traj, self.traj_reverse],
                                    table_ext=".xlsx",
                                    output_dir=tmpdir)
 
     def test_distro(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                   "395",
+              cli.residue_neighborhoods("395", self.geom, [self.traj, self.traj_reverse],
                                    distro=True,
                                    output_dir=tmpdir)
 
     def test_AAs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                   "395",
+              cli.residue_neighborhoods("395",self.geom, [self.traj, self.traj_reverse],
                                    short_AA_names=True,
                                    output_dir=tmpdir)
 
     def test_colors(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                  "395",
+             cli.residue_neighborhoods("395",self.geom, [self.traj, self.traj_reverse],
                                   short_AA_names=True,
                                   fragment_colors=True,
                                   output_dir=tmpdir)
 
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                  "395",
+             cli.residue_neighborhoods("395",self.geom, [self.traj, self.traj_reverse],
                                   short_AA_names=True,
                                   fragment_colors='c',
                                   output_dir=tmpdir)
@@ -232,7 +227,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         # This is more of an argparse fail
         # TODO consider throwing exception
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             assert None ==  cli.residue_neighborhoods(self.geom, [self.traj,
+             assert None ==  cli.residue_neighborhoods(None, self.geom, [self.traj,
                                                               self.traj_reverse],
                                                   None,
                                                   distro=True,
@@ -241,15 +236,13 @@ class Test_residue_neighborhood(TestCLTBaseClass):
     def test_wrong_input_resSeq_idxs(self):
         with pytest.raises(ValueError):
             with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-                  cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                       "AX*",
+                  cli.residue_neighborhoods("AX*", self.geom, [self.traj, self.traj_reverse],
                                        distro=True,
                                        output_dir=tmpdir)
 
     def test_nomenclature_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                  "R131",
+             cli.residue_neighborhoods("R131",self.geom, [self.traj, self.traj_reverse],
                                   BW_uniprot=test_filenames.adrb2_human_xlsx,
                                   output_dir=tmpdir,
                                   accept_guess=True
@@ -261,8 +254,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             shutil.copy(test_filenames.pdb_3SN6, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
-                cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                      "R131",
+                cli.residue_neighborhoods("R131",self.geom, [self.traj, self.traj_reverse],
                                       CGN_PDB="3SN6",
                                       output_dir=tmpdir,
                                       accept_guess=True
@@ -273,8 +265,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             shutil.copy(test_filenames.pdb_3SN6,tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
-                cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                      "R131",
+                cli.residue_neighborhoods("R131",self.geom, [self.traj, self.traj_reverse],
                                       CGN_PDB="3SN6",
                                       BW_uniprot=test_filenames.adrb2_human_xlsx,
                                       output_dir=tmpdir,
@@ -282,15 +273,13 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                       )
 
     def test_no_contacts_at_allp(self):
-         cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                              "R131",
+         cli.residue_neighborhoods("R131",self.geom, [self.traj, self.traj_reverse],
                               ctc_cutoff_Ang=.1,
                               )
 
     def test_some_CG_have_no_contacts(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                  "0-3",
+             cli.residue_neighborhoods("0-3",self.geom, [self.traj, self.traj_reverse],
                                   ctc_cutoff_Ang=3.2,
                                   res_idxs=True,
                                   output_dir=tmpdir,
@@ -301,14 +290,12 @@ class Test_sites(TestCLTBaseClass):
 
     def test_sites(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.sites(self.geom, [self.traj, self.traj_reverse],
-                  [test_filenames.tip_json],
+             cli.sites([test_filenames.tip_json], self.geom, [self.traj, self.traj_reverse],
                   output_dir=tmpdir)
 
     def test_scheme_CA(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.sites(self.geom, [self.traj, self.traj_reverse],
-                  [test_filenames.tip_json],
+             cli.sites([test_filenames.tip_json], self.geom, [self.traj, self.traj_reverse],
                   output_dir=tmpdir,
                   scheme="COM")
 
