@@ -22,6 +22,7 @@
 
 import argparse
 from mdciao.plots.plots import _colorstring
+from mdciao.examples import ExamplesCLTs as _xCLT
 
 # https://stackoverflow.com/questions/3853722/python-argparse-how-to-insert-newline-in-the-help-text
 class SmartFormatter(argparse.HelpFormatter):
@@ -701,11 +702,18 @@ def parser_for_compare_neighborhoods():
     return parser
 
 def parser_for_examples():
-    desc1 = "Wrapper script to showcase and optionally run examples of the " \
-            "command-line-tools that ship with mdciao.\n" \
-            "\nTo show available comands and nothing more " \
-            "type 'mdc_examples.py' followed by any of '?/l/list'"
-    parser = argparse.ArgumentParser(description=desc1)
+    desc1 = "Wrapper script to showcase and optionally run examples of the\n " \
+            "command-line-tools that ship with mdciao.\n"
+    ex = _xCLT()
+    epilogue = "Available command line tools are:\n"
+    epilogue += "\n".join([" * %s.py"%key for key in ex.clts])
+    epilogue += "\n\nYou can type for example:\n > mdc_interface.py  -h\n" \
+                " to view the command's documentation or\n" \
+                " > mdc_examples.py interf\n" \
+                " to show and/or run an example of that command "
+    parser = argparse.ArgumentParser(description=desc1, epilog=epilogue,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter
+                                     )
     parser.add_argument("clt",
                         default=None,
                         type=str,
@@ -717,8 +725,12 @@ def parser_for_examples():
                         dest="execute",
                         help="whether to execute the command after showing it. "
                              "Default is False.")
+    parser.add_argument("--short_options","-so",help="Use the short option flags rather than the long ones",
+                        action="store_true",
+                        dest="short")
     parser.set_defaults(execute=False)
 
     parser.set_defaults(show_list=False)
+    parser.set_defaults(short=False)
 
     return parser

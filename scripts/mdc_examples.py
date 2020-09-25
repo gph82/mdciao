@@ -28,23 +28,23 @@ from os import path
 from fnmatch import filter as _fnfilter
 execute = True
 list = False
-ex = ExamplesCLTs()
-
+import sys
 parser = parser_for_examples()
-#print(_inform_of_parser(parser))
-args = parser.parse_args()
-clt = args.clt
-if args.clt in ["l","lists","?"]:
-    print("Availble command line tools are")
-    print("\n".join([" * %s.py"%key for key in ex.clts]))
-    print("Issue:\n"
-          " * 'mdc_command.py -h' to view the command's documentation or\n"
-          " * 'mdc_examples.py mdc_command' to show and/or run an example of that command ")
+if len(sys.argv)==1:
+    args = parser.parse_args(args=["-h"])
 else:
-    if args.clt.endswith(".py"):
-        clt = path.splitext(args.clt)[0]
-    clts = _fnfilter(ex.clts,"*%s*"%clt)
-    for clt in clts:
-        ex.show(clt)
-        if args.execute:
-            ex.run(clt, show=False)
+    args = parser.parse_args(args=None)
+
+#print(_inform_of_parser(parser))
+#args = parser.parse_args()
+
+clt = args.clt
+ex = ExamplesCLTs(short=args.short)
+
+if args.clt.endswith(".py"):
+    clt = path.splitext(args.clt)[0]
+clts = _fnfilter(ex.clts,"*%s*"%clt)
+for clt in clts:
+    ex.show(clt)
+    if args.execute:
+        ex.run(clt, show=False)

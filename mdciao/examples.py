@@ -26,10 +26,17 @@ from subprocess import run as _run
 mdc_path = _path.split(mdc_path[0])[0]
 cwd = _getcwd()
 
+long2short = {"--residues" : "-r",
+              "--n_smooth_hw" : "-ns",
+              "--table_ext" : "-tx",
+              "--BW_uniprot" : "--BW",
+              "--CGN_PDB"   : "--CGN"
+              }
 
+long2long = {key:key for key in long2short.keys()}
 
 class ExamplesCLTs(object):
-    def __init__(self, test=False):
+    def __init__(self, test=False, short=False):
         from mdciao.filenames import filenames
         filenames = filenames()
         self.xtc = filenames.traj_xtc
@@ -53,15 +60,20 @@ class ExamplesCLTs(object):
             self.pdb_3SN6 = _path.relpath(filenames.pdb_3SN6,cwd)
 
         self.test = test
+
+        if short:
+            self.opt_dict=long2short
+        else:
+            self.opt_dict = long2long
     @property
     def mdc_neighborhoods(self):
         return ["mdc_neighborhoods.py",
                 "%s %s" % (self.pdb, self.xtc),
-                "--residues L394",
-                "--n_smooth_hw 1",
-                "--table xlsx",
-                "--BW_uniprot %s" % self.BW_file,
-                "--CGN_PDB %s" % self.CGN_file,
+                self.opt_dict["--residues"] + " L394",
+                self.opt_dict["--n_smooth_hw"] + " 1",
+                self.opt_dict["--table_ext"] + " xlsx",
+                self.opt_dict["--BW_uniprot"] + " %s" % self.BW_file,
+                self.opt_dict["--CGN_PDB"] + " %s" % self.CGN_file,
                 ]
     @property
     def mdc_sites(self):
