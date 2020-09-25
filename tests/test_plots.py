@@ -296,5 +296,36 @@ class Test_plot_w_smoothing_auto(unittest.TestCase):
                               n_smooth_hw=1,
                               gray_background=True)
 
+class Test_color_by_values(unittest.TestCase):
+    def setUp(self):
+        self.freqs_by_sys_by_ctc = {"WT":   {"A": 1, "B": .0,  "C": 1.0},
+                                    "mut1": {"A": 0, "B": .0,  "C": .25},
+                                    "mut2": {"A": 1, "B": .75, "C": .25}}
+        self.colordict = {"WT": "r", "mut1": "b", "mut2": "g"}
+        from mdciao.plots import plots as _plots
+        self.plots = _plots
+
+
+    def test_runs(self):
+        info = self.plots._color_by_values(["A", "B", "C"], self.freqs_by_sys_by_ctc,
+                                           self.colordict)
+        _np.testing.assert_equal(info,
+                                 {"A": ("-", self.colordict["mut1"]),
+                                  # the label gets the color of mut1 (only one winner)
+                                  "B": ("+", self.colordict["mut2"]),
+                                  # the label gets the color of mut2 (only one loser)
+                                  "C": ("", "k")})  # nothing happens, neither winners nor losers
+
+    def test_runs_wo_action(self):
+        info = self.plots._color_by_values(["A", "B", "C"], self.freqs_by_sys_by_ctc,
+                                           self.colordict,
+                                           assign_w_color=False,
+                                           )
+
+        # nothing happens
+        _np.testing.assert_equal(info,
+                                 {"A": ("", "k"),
+                                  "B": ("", "k"),
+                                  "C": ("", "k")})
 if __name__ == '__main__':
     unittest.main()

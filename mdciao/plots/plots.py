@@ -99,6 +99,7 @@ def compare_groups_of_contacts(groups,
                                AA_format='short',
                                defrag='@',
                                per_residue=False,
+                               title='comparison',
                                **kwargs_plot_unified_freq_dicts,
                                ):
     r"""
@@ -229,7 +230,7 @@ def compare_groups_of_contacts(groups,
                                     fontsize=fontsize,
                                     **kwargs_plot_unified_freq_dicts)
             if anchor is not None:
-                _plt.gca().text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom")
+                _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim()))*.05, 1.05, "%s and:" % anchor, ha="right", va="bottom")
 
         myfig.tight_layout()
         # _plt.show()
@@ -238,15 +239,19 @@ def compare_groups_of_contacts(groups,
         kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
         kwargs_plot_unified_freq_dicts["remove_identities"] = False
 
+    if ctc_cutoff_Ang is not None:
+        title = title+'@%2.1f AA'%ctc_cutoff_Ang
+
     myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
                                                         colordict=colors,
                                                         ax=ax,
                                                         width=width,
                                                         fontsize=fontsize,
                                                         figsize=figsize,
+                                                        title=title,
                                                         **kwargs_plot_unified_freq_dicts)
     if anchor is not None:
-        _plt.text(0 - width * 2, 1.05, "%s and:" % anchor, ha="right", va="bottom", fontsize=fontsize)
+        _plt.text(0 - _np.abs(_np.diff(_plt.gca().get_xlim()))*.05, 1.05, "%s and:" % anchor, ha="right", va="bottom", fontsize=fontsize)
     _plt.gcf().tight_layout()
     #_plt.show()
 
@@ -297,7 +302,8 @@ def plot_unified_freq_dicts(freqs,
                             ylim=1,
                             panelheight_inches=5,
                             inch_per_contacts=1,
-                            assign_w_color=False
+                            assign_w_color=False,
+                            title=None,
                             ):
     r"""
     Plot unified frequency dictionaries (= with identical keys) for different systems
@@ -413,14 +419,8 @@ def plot_unified_freq_dicts(freqs,
     # Prepare the dict
     if colordict is None:
         colordict = {key:val for key,val in zip(system_keys, _colorstring.split(","))}
-
-    winners = {}
-    for ctc_key in all_ctc_keys:
-        _vals = _np.array([val[ctc_key] for val in freqs_by_sys_by_ctc.values()])
-        if _np.sum(_vals> lower_cutoff_val) == 1 and assign_w_color:
-            winners[ctc_key] = colordict[system_keys[_vals.argmax()]]
-        else:
-            winners[ctc_key] = 'k'
+    winners = _color_by_values(all_ctc_keys, freqs_by_sys_by_ctc, colordict,
+                               lower_cutoff_val=lower_cutoff_val, assign_w_color=assign_w_color)
 
     # Prepare the positions of the bars
     if width is None:
@@ -501,11 +501,11 @@ def plot_unified_freq_dicts(freqs,
             iix = ii\
                   -width/2\
                   +len(freqs_by_sys_by_ctc)*width/2
-            _plt.text(iix, ylim + .05, key,
+            _plt.text(iix, ylim + .05, winners[key][0]+key,
                       #ha="center",
                       ha='left',
                       rotation=45,
-                      color=winners[key]
+                      color=winners[key][1]
                       )
             #_plt.gca().axvline(iix) (visual aid)
         _plt.xticks(_np.arange(len(sorted_value_by_ctc_by_sys))-width, [])
@@ -526,6 +526,9 @@ def plot_unified_freq_dicts(freqs,
                       color='k', alpha=.25, ls=':')
 
         _plt.ylim(0, ylim)
+        if title is not None:
+            ax.set_title(_mdcu.str_and_dict.replace4latex(title),
+                          pad=_rcParams["axes.titlepad"] + titlepadding_in_points_no_clashes_w_texts(ax))
 
     # Create a by-state dictionary explaining the plot
     out_dict = {key:{ss: val[ss] for ss in sorted_value_by_ctc_by_sys.keys()} for key, val in freqs_by_sys_by_ctc.items()}
@@ -707,3 +710,46 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
     return iax, pixelsize
 
 _colorstring = 'tab:blue,tab:orange,tab:green,tab:red,tab:purple,tab:brown,tab:pink,tab:gray,tab:olive,tab:cyan'
+
+
+def _color_by_values(all_ctc_keys, freqs_by_sys_by_ctc, colordict,
+                     lower_cutoff_val=0,
+                     assign_w_color=True):
+    r""" Helper method to decide how represent a contact text label:
+
+    How the label is presented depends on:
+        * If all freqs are zero except one: the text label gets
+        assigned the "winner"'s color and the sign '+'
+        * If all are non-zero except one, the text label gets
+        assinged the "looser"'s color and the sign '-'
+
+    For the method to work, :obj:`freqs_by_sys_by_ctc` has
+    to be a unified frequency dictionary, i.e. all of the
+    sub-dicts here have to have the same keys
+
+    Parameters
+    ----------
+    all_ctc_keys : iterable of strings
+        The contact keys that :obj:`freqs_by_sys_by_ctc` use
+    freqs_by_sys_by_ctc : dict of dicts
+        Unified frequency dictionary, keyed first by system
+        and secondly with the keys in all_ctc_keys
+
+    #TODO better variable naming, some things could be done outside the method
+    """
+
+    winners = {}
+    for ctc_key in all_ctc_keys:
+        system_keys = list(freqs_by_sys_by_ctc.keys())
+        _vals = _np.array([val[ctc_key] for val in freqs_by_sys_by_ctc.values()])
+        idx_loosers = _np.flatnonzero(_vals <= lower_cutoff_val)
+        idx_winners = _np.flatnonzero(_vals > lower_cutoff_val)
+        winners[ctc_key] = ("", "k")
+        if assign_w_color:
+            if  len(idx_winners) == 1:
+                winners[ctc_key] = ('+', colordict[system_keys[_vals.argmax()]])
+            else:
+                if len(idx_loosers) == 1:
+                    winners[ctc_key] = ('-', colordict[system_keys[_vals.argmin()]])
+
+    return winners
