@@ -519,6 +519,7 @@ def residue_neighborhoods(residues,
                           separate_N_ctcs=False,
                           accept_guess=False,
                           switch_off_Ang=None,
+                          plot_atomtypes=False,
                           ):
     r"""Per-residue neighborhoods based on contact frequencies between pairs
     of residues.
@@ -851,7 +852,8 @@ def residue_neighborhoods(residues,
                                               xmax=_np.max([ihood.n_ctcs for ihood in neighborhoods.values() if ihood is not None]),
                                               label_fontsize_factor=panelsize2font / panelsize,
                                               shorten_AAs=short_AA_names,
-                                              color=ihood.partner_fragment_colors
+                                              color=ihood.partner_fragment_colors,
+                                              plot_atomtypes=plot_atomtypes
                                               )
 
     if not distro:

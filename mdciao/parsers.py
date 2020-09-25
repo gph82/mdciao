@@ -440,6 +440,7 @@ def parser_for_rn():
     _parser_add_ylim_Ang(parser)
     _paser_add_guess(parser)
     _parser_add_switch(parser)
+    _parser_add_atomtypes(parser)
     return parser
 
 def _parser_add_switch(parser):
