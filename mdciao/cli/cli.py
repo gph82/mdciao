@@ -974,6 +974,7 @@ def interface(
         contact_matrix=True,
         cmap='binary',
         flareplot=True,
+        sparse_flare_frags = True,
         savefiles=True,
         save_nomenclature_files=False
 ):
@@ -1228,6 +1229,10 @@ def interface(
                                                                       highest_res_idx=refgeom.top.n_residues - 1,
                                                                       orphan_name=""
                                                                       )
+        if sparse_flare_frags:
+            idxs = [ii for ii, ff in enumerate(flare_frags) if len(_np.intersect1d(_np.hstack(intf_frags_as_residxs), ff))>0]
+            flare_frags = [flare_frags[ii] for ii in idxs]
+            flare_labs = [flare_labs[ii] for ii in idxs]
 
         ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
                                                          consensus_maps=consensus_maps,
