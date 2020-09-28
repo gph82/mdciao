@@ -1038,6 +1038,7 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
 '''
 
 def _top2consensus_map(consensus_dict, top,
+                       min_hit_rate=.5,
                        restrict_to_residxs=None,
                        keep_consensus=False,
                        verbose=False,
@@ -1050,8 +1051,8 @@ def _top2consensus_map(consensus_dict, top,
 
     For the alignment details see :obj:`my_Bioalign`
 
-    If no consensus numbering
-    is found after the alignment, the residues entry will be None
+    If no consensus numbering is found after the alignment,
+    the residue's entry will be None
 
     Parameters
     ----------
@@ -1060,6 +1061,17 @@ def _top2consensus_map(consensus_dict, top,
         Typically comes from :obj:`ConsensusLabeler.AA2conlab`
     top :
         :py:class:`mdtraj.Topology` object
+    min_hit_rate : float, default 0
+        With big topologies and many fragments,
+        the alignment method (:obj:`mdciao.sequence.my_bioalign`)
+        sometimes yields sub-optimal results. A value
+        :obj:`min_hit_rate` >0, e.g. .5 means that a pre-alignment
+        takes place to populate :obj:`restrict_to_residxs`
+        with indices of those the fragments
+        (:obj:`mdciao.fragments.get_fragments` defaults)
+        with more than 50% alignment in the pre-alignment.
+        If :obj:`min_hit_rate`>0, :obj`restrict_to_residx`
+        has to be None.
     restrict_to_residxs: iterable of integers, default is None
         Use only these residues for alignment and labelling purposes
         Helps "guide" the alignment method. E.g., one might be
@@ -1081,6 +1093,14 @@ def _top2consensus_map(consensus_dict, top,
     map : list
         list of length top.n_residues containing consensus labels
     """
+
+    seq_consensus= ''.join([_mdcu.residue_and_atom.name_from_AA(key) for key in consensus_dict.keys()])
+
+    if min_hit_rate>0:
+        assert restrict_to_residxs is None
+        frags = _mdcfrg.get_fragments(top, verbose=False)
+        hits = guess_nomenclature_fragments(seq_consensus, top, min_hit_rate=min_hit_rate, fragments=frags)
+        restrict_to_residxs = _np.hstack([frags[ii] for ii in hits])
 
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
