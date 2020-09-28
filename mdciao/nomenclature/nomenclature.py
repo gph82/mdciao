@@ -1519,7 +1519,8 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
     return AA_dict
 '''
 
-def guess_nomenclature_fragments(CLin, top, fragments,
+def guess_nomenclature_fragments(refseq, top,
+                                 fragments=None,
                                  min_hit_rate=.6,
                                  verbose=False):
     """Guess what fragments in the topology best match
@@ -1534,11 +1535,15 @@ def guess_nomenclature_fragments(CLin, top, fragments,
 
     Parameters
     ----------
-    CLin:
-        :class:`LabelerConsensus` object
+    refseq: str or :class:`LabelerConsensus`
+        If not str, the sequence will
+        be gotten from obj:`LabelerConsensus.seq` method
+
     top:
         :py:class:`mdtraj.Topology` object
-    fragments : How :obj:`top` is split into fragments
+    fragments : iterable of iterables of idxs
+        How :obj:`top` is split into fragments
+        If None, will be generated using get_fragments defaults
     min_hit_rate: float, default is .6
         Only fragments with hit rates higher than this
         will be returned as a guess
@@ -1551,14 +1556,25 @@ def guess_nomenclature_fragments(CLin, top, fragments,
         indices of the fragments with higher hit-rate than :obj:`cutoff`
 
     """
-    idx2conlab = CLin.top2map(top, fill_gaps=False)
+
+    if fragments is None:
+        fragments = _mdcfrg.get_fragments(top, verbose=False)
+
+    if isinstance(refseq, LabelerConsensus):
+        seq_consensus = refseq.seq
+    else:
+        assert isinstance(refseq,str)
+        seq_consensus = refseq
+
+    df = _mdcu.sequence.align_tops_or_seqs(top, seq_consensus)
+    hit_idxs = df[df["match"]]["idx_0"].values
     hits, guess = [], []
     for ii, ifrag in enumerate(fragments):
-        hit = [idx2conlab[jj] for jj in ifrag if idx2conlab[jj] is not None]
-        if len(hit)/len(ifrag)>=min_hit_rate:
+        hit = _np.intersect1d(ifrag,hit_idxs)
+        if len(hit) / len(ifrag) >= min_hit_rate:
             guess.append(ii)
         if verbose:
-            print(ii, len(hit)/len(ifrag))
+            print(ii, len(hit) / len(ifrag))
         hits.append(hit)
     return guess
 
