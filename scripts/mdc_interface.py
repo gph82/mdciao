@@ -34,6 +34,6 @@ if not a.fragmentify:
 
 # Make a dictionary out ot of it and pop the positional keywords
 b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
-for key in ["topology","fragmentify"]:
+for key in ["fragmentify"]:
     b.pop(key)
-neighborhood = interface(a.topology, **b)
+neighborhood = interface(**b)

@@ -1222,7 +1222,7 @@ def interface(
             ifig.savefig(fname_mat)
             print(fname_mat)
     if flareplot:
-        flare_frags, flare_labs = fragments_as_residue_idxs, None
+        flare_frags, flare_labs = fragments_as_residue_idxs, None # Not sure about what's best here
         if len(consensus_labelers) > 0:
             # This is because frag_defs could be missing a lot of stuff depending
             # on user input, check the next method's doc
@@ -1237,7 +1237,8 @@ def interface(
         if sparse_flare_frags:
             idxs = [ii for ii, ff in enumerate(flare_frags) if len(_np.intersect1d(_np.hstack(intf_frags_as_residxs), ff))>0]
             flare_frags = [flare_frags[ii] for ii in idxs]
-            flare_labs = [flare_labs[ii] for ii in idxs]
+            if flare_labs is not None:
+                flare_labs = [flare_labs[ii] for ii in idxs]
 
         ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
                                                          consensus_maps=consensus_maps,
