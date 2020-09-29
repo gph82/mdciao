@@ -533,16 +533,18 @@ class LabelerConsensus(object):
         return self._tablefile
 
     def conlab2residx(self,top,
-                      restrict_to_residxs=None,
                       map=None,
-                      keep_consensus=False):
+                      **top2map_kwargs,
+                     ):
         r"""
         Returns a dictionary keyed by consensus labels and valued
         by residue indices of the input topology in :obj:`top`.
 
         The default behaviour is to internally align :obj:`top`
-        with :obj:`self.top` on the fly using :obj:`_top2consensus_map`
-
+        with the object's available consensus dictionary
+        on the fly using :obj:`self.top2map`. See the docs
+        there for **top2map_kwargs, in particular
+        restrict_to_residxs, keep_consensus, and min_hit_rate
 
         Note
         ----
@@ -563,29 +565,23 @@ class LabelerConsensus(object):
         actually matches the residues of :obj:`top` in any way,
         so that the output can be rubbish and go unnoticed.
 
-
         Parameters
         ----------
         top : :obj:`mdtraj.Topology`
-        restrict_to_residxs : iterable of indices, default is None
-            Align using only these indices, see :obj:`_top2consensus_map`
-            for more info. Has no effect if :obj:`map` is None
         map : list, default is None
             A pre-computed residx2consensuslabel map, i.e. the
             output of a previous, external call to :obj:`_top2consensus_map`
             If it contains duplicates, it is a malformed list.
             See the note above for more info
 
-        keep_consensus : bool, default is False
-            Wheater to autofill consensus labels on the fly
         Returns
         -------
-        dict : keyed by consensus labels and valued with residue idxs???
+        dict : keyed by consensus labels and valued with residue idxs
         """
         if map is None:
-            map = _top2consensus_map(self.AA2conlab, top,
-                                     restrict_to_residxs=restrict_to_residxs,
-                                     keep_consensus=keep_consensus)
+            map = self.top2map(top,
+                               **top2map_kwargs,
+                              )
         out_dict = {}
         for ii,imap in enumerate(map):
             if imap is not None and str(imap).lower()!="none":
@@ -601,15 +597,16 @@ class LabelerConsensus(object):
                     out_dict[imap]=ii
         return out_dict
 
-    def top2map(self, top, restrict_to_residxs=None, fill_gaps=False,
-                verbose=False):
+    def top2map(self, top,
+                **kwargs):
+
         r""" Align the sequence of :obj:`top` to the sequence used
         to initialize this :obj:`LabelerConsensus` and return a
-        list list of consenus labels for each residue in :obj:`top`.
+        list list of consensus labels for each residue in :obj:`top`.
 
         The if a consensus label is returned as None it means one
         of two things:
-         * this position was sucessfully aligned with a
+         * this position was successfully aligned with a
            match but the data used to initialize this
            :obj:`ConsensusLabeler` did not contain a label
          * this position has a label in the original data
@@ -617,7 +614,7 @@ class LabelerConsensus(object):
            bc of a point mutation)
 
         A heuristic to "autofill" the second case can be
-        turned on using :obj:`fill_gaps`, see :obj:`_fill_consensus_gaps`
+        turned on using :obj:`test_top2defs_returns_all_keys`, see :obj:`_fill_consensus_gaps`
         for more info
 
         Note
@@ -630,10 +627,21 @@ class LabelerConsensus(object):
         ----------
         top :
             :py:class:`mdtraj.Topology` object
+        min_hit_rate : float, default is .5
+            With big topologies and many fragments,
+            the alignment method (:obj:`mdciao.sequence.my_bioalign`)
+            sometimes yields sub-optimal results. A value
+            :obj:`min_hit_rate` >0, e.g. .5 means that a pre-alignment
+            takes place to populate :obj:`restrict_to_residxs`
+            with indices of those the fragments
+            (:obj:`mdciao.fragments.get_fragments` defaults)
+            with more than 50% alignment in the pre-alignment.
+            If :obj:`min_hit_rate`>0, :obj`restrict_to_residx`
+            has to be None.
         restrict_to_residxs: iterable of integers, default is None
             Use only these residues for alignment and labelling options.
             The return list will still be of length=top.n_residues
-        fill_gaps: boolean, default is False
+        guess_consensus: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
             :obj:`_fill_consensus_gaps`
 
@@ -643,18 +651,15 @@ class LabelerConsensus(object):
         """
 
         return _top2consensus_map(self.AA2conlab, top,
-                                  restrict_to_residxs=restrict_to_residxs,
-                                  keep_consensus=fill_gaps,
-                                  verbose=verbose,
+                                  **kwargs,
                                   )
 
     def top2defs(self, top, map_conlab=None,
                  return_defs=False,
                  fragments=None,
-                 fill_gaps=False,
-                 min_hit_rate=.5,
-                 verbose=True,
-                 new_method=False,
+                 verbose=False,
+                 alt_method=False,
+                 **kwargs
                  ):
         r"""
         Prints the definitions of subdomains that the
@@ -670,8 +675,10 @@ class LabelerConsensus(object):
         map_conlab:  list, default is None
             The user can parse an existing map of residue idxs to
             consensus labels. Otherwise this
-            method will generate one on the fly. It is recommended (but
-            not needed) to pre-compute and pass such a map cases where:
+            method will generate one on the fly using :obj:`self.top2map`,
+             for which the kwargs are thought.
+             It is recommended (but not needed) to pre-compute
+             and pass such a map cases where:
             * the user is sure that the map is the same every time
             the method gets called.
             * the on-the-fly creation of the map slows down the workflow
@@ -691,6 +698,10 @@ class LabelerConsensus(object):
             keep in case of clashes.
 
             Check :obj:`check_if_subfragment` for more info
+
+        alt_method : bool, default is None
+            Try an alternative method, currently testing it.
+            Do not use this ATM
 
         fill_gaps: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
@@ -716,10 +727,10 @@ class LabelerConsensus(object):
             Dictionary with subdomain names as keys and lists of indices as values
         """
 
-        if new_method:
-            if min_hit_rate > 0:
+        if alt_method:
+            if kwargs["min_hit_rate"] > 0:
                 chains = _mdcfrg.get_fragments(top, verbose=False)
-                answer = guess_nomenclature_fragments(self, top, chains, min_hit_rate=min_hit_rate)
+                answer = guess_nomenclature_fragments(self, top, chains, min_hit_rate=kwargs["min_hit_rate"])
                 restrict_to_residxs = _np.hstack([chains[ii] for ii in answer])
             else:
                 restrict_to_residxs = None
@@ -728,20 +739,15 @@ class LabelerConsensus(object):
             frags =  self.fragments_as_idxs
             defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
             defs = {key:val for key, val in defs.items() if len(val)>0}
-            map_conlab = self.top2map(top, fill_gaps=fill_gaps, verbose=False, restrict_to_residxs=restrict_to_residxs)
+            map_conlab = self.top2map(top, guess_consensus=kwargs["guess_consensus"], verbose=False, restrict_to_residxs=restrict_to_residxs)
 
         else:
             if map_conlab is None:
                 print("Creating a temporary map of residue idxs to consensus labels.\n"
                       "Please refer to the documentation for advantages of parsing an \n"
                       "existing map as argument.")
-                if min_hit_rate > 0:
-                    chains = _mdcfrg.get_fragments(top, verbose=False)
-                    answer = guess_nomenclature_fragments(self, top, chains, min_hit_rate=min_hit_rate)
-                    restrict_to_residxs = _np.hstack([chains[ii] for ii in answer])
-                else:
-                    restrict_to_residxs = None
-                map_conlab = self.top2map(top, fill_gaps=fill_gaps, verbose=False, restrict_to_residxs=restrict_to_residxs  )
+                kwargs["verbose"] = verbose
+                map_conlab = self.top2map(top, **kwargs)
 
             conlab2residx = self.conlab2residx(top, map=map_conlab)
             defs = _defdict(list)
@@ -1040,7 +1046,7 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
 def _top2consensus_map(consensus_dict, top,
                        min_hit_rate=.5,
                        restrict_to_residxs=None,
-                       keep_consensus=False,
+                       guess_consensus=False,
                        verbose=False,
                        ):
     r"""
@@ -1061,7 +1067,7 @@ def _top2consensus_map(consensus_dict, top,
         Typically comes from :obj:`ConsensusLabeler.AA2conlab`
     top :
         :py:class:`mdtraj.Topology` object
-    min_hit_rate : float, default 0
+    min_hit_rate : float, default .5
         With big topologies and many fragments,
         the alignment method (:obj:`mdciao.sequence.my_bioalign`)
         sometimes yields sub-optimal results. A value
@@ -1078,7 +1084,7 @@ def _top2consensus_map(consensus_dict, top,
         passing an Ballesteros-Weinstein in :obj:`consensus_dict` but
         the topology also contains the whole G-protein. If available,
         one can pass here the indices of residues of the receptor
-    keep_consensus : boolean default is False
+    guess_consensus : boolean default is False
         Even if there is a consensus mismatch with the sequence of the input
         :obj:`consensus_dict`, try to relabel automagically, s.t.
         * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
@@ -1100,12 +1106,14 @@ def _top2consensus_map(consensus_dict, top,
         assert restrict_to_residxs is None
         frags = _mdcfrg.get_fragments(top, verbose=False)
         hits = guess_nomenclature_fragments(seq_consensus, top, min_hit_rate=min_hit_rate, fragments=frags)
-        restrict_to_residxs = _np.hstack([frags[ii] for ii in hits])
+        if len(hits)==0:
+            restrict_to_residxs = None
+        else:
+            restrict_to_residxs = _np.hstack([frags[ii] for ii in hits])
 
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
     seq = ''.join([_mdcu.residue_and_atom.shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
-    seq_consensus= ''.join([_mdcu.residue_and_atom.name_from_AA(key) for key in consensus_dict.keys()])
     alignment = _mdcu.sequence.alignment_result_to_list_of_dicts(_mdcu.sequence.my_bioalign(seq, seq_consensus)[0],
                                                                  restrict_to_residxs, # THIS IS THE CULPRIT OF THE FINAL ConsensusLabeler not having the frag definitions of the idxs not having all fragments
                                                                  [_mdcu.residue_and_atom.int_from_AA_code(key) for key
@@ -1119,7 +1127,7 @@ def _top2consensus_map(consensus_dict, top,
     for idx, resSeq, AA in alignment[["idx_0","idx_1", "AA_1"]].values:
         out_list[int(idx)]=consensus_dict[AA + str(resSeq)]
 
-    if keep_consensus:
+    if guess_consensus:
         out_list = _fill_consensus_gaps(out_list, top, verbose=False)
     return out_list
 
@@ -1791,7 +1799,7 @@ _CGN_fragments = ['G.HN',
 def compatible_consensus_fragments(top,
                                    existing_consensus_maps,
                                    CLs,
-                                   fill_gaps=True):
+                                   guess_consensus=True):
     r"""
     Expand (if possible) a list existing consensus maps using
     :obj:`mdciao.nomenclature.LabelerConsensus` objects
@@ -1842,7 +1850,7 @@ def compatible_consensus_fragments(top,
                                       for idx in range(top.n_residues)]
 
     # Same here
-    new_maps = [iCL.top2map(top, fill_gaps=fill_gaps,verbose=False) for iCL in CLs]
+    new_maps = [iCL.top2map(top, guess_consensus=guess_consensus, verbose=False) for iCL in CLs]
     unified_new_consensus_map = [choose_between_consensus_dicts(idx,new_maps,no_key=None) for idx in range(top.n_residues)]
 
     # Now incorporate new labels while checking with clashes with old ones
