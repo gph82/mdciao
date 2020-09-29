@@ -157,8 +157,11 @@ def _parse_consensus_option(option, consensus_type,
         else:
             restrict_to_residxs = _np.hstack([fragments[ii] for ii in answer])
         map_out = LC_out.top2map(top,
+                                 min_hit_rate=0, # We need give-up the re-guessing here,
+                                 # because explicitely done it before with an option for
+                                 # interactivity
                                  restrict_to_residxs=restrict_to_residxs,
-                                 fill_gaps=True,
+                                 guess_consensus=True,
                              #    verbose=True,
                                  )
     if not return_Labeler:
