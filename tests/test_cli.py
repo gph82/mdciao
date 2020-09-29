@@ -181,6 +181,13 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                           self.geom, [self.traj, self.traj_reverse],
                                           output_dir=tmpdir)
 
+    def test_no_trajs(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            input_values = (val for val in ["1.0"])
+            with mock.patch('builtins.input', lambda *x: next(input_values)):
+                cli.residue_neighborhoods("200,395",
+                                          self.geom, None,
+                                          output_dir=tmpdir)
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
               cli.residue_neighborhoods("1043",
@@ -299,6 +306,19 @@ class Test_sites(TestCLTBaseClass):
                   output_dir=tmpdir,
                   scheme="COM")
 
+    def test_w_table_xlsx(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+             cli.sites([test_filenames.tip_json], self.geom, [self.traj, self.traj_reverse],
+                  output_dir=tmpdir,
+                  scheme="COM",
+                       table_ext=".xlsx")
+
+    def test_w_table_dat(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+             cli.sites([test_filenames.tip_json], self.geom, [self.traj, self.traj_reverse],
+                  output_dir=tmpdir,
+                  scheme="COM",
+                       table_ext=".dat")
 
 class Test_interface(TestCLTBaseClass):
 
@@ -308,7 +328,19 @@ class Test_interface(TestCLTBaseClass):
                           frag_idxs_group_1=[0],
                           frag_idxs_group_2=[1],
                           output_dir=tmpdir,
+                          flareplot=True,
+                          )
+
+    def test_no_trajs(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            cli.interface(self.geom,
+                          trajectories=None,
+                          frag_idxs_group_1=[0],
+                          frag_idxs_group_2=[1],
+                          output_dir=tmpdir,
                           flareplot=False,
+                          plot_timedep=False,
+                          savefiles=False
                           )
 
     def test_interface_wo_frag_idxs_groups(self):
@@ -380,6 +412,24 @@ class Test_interface(TestCLTBaseClass):
                                   BW_uniprot="adrb2_human",
                                   accept_guess=True,
                                   flareplot=False
+                                  )
+    @unittest.skip("There's a problem with re-alignment messing up the consensus labels "
+                   "when all the topology is used for the flareplot, this is a WIP")
+    def test_w_nomenclature_CGN_BW_fragments_are_consensus_and_flareplot(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            input_values = (val for val in ["TM6", "*H5"])
+            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
+            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
+            with remember_cwd():
+                os.chdir(tmpdir)
+                with mock.patch('builtins.input', lambda *x: next(input_values)):
+                    cli.interface(self.geom, [self.traj, self.traj_reverse],
+                                  output_dir=tmpdir,
+                                  fragments=["consensus"],
+                                  CGN_PDB="3SN6",
+                                  BW_uniprot="adrb2_human",
+                                  accept_guess=True,
                                   )
 
 class Test_parse_consensus_option(unittest.TestCase):
@@ -544,6 +594,28 @@ class Test_fragment_overview(unittest.TestCase):
         a.__setattr__("topology",test_filenames.top_pdb)
         a.__setattr__("labels","3.50")
         cli._fragment_overview(a, "BW")
+
+    def test_no_top(self):
+        a = parser_for_BW_overview()
+        a = a.parse_args([test_filenames.adrb2_human_xlsx])
+        a.__setattr__("labels","3.50")
+        cli._fragment_overview(a, "BW")
+
+class Test_compare(unittest.TestCase):
+
+    def setUp(self):
+        self.CG1 = contacts.ContactGroup([contacts.ContactPair([0,1],[[.1, .1]], [[0., 1.]]),
+                                 contacts.ContactPair([0,2],[[.1, .2]], [[0., 1.]])])
+
+        self.CG2 = contacts.ContactGroup([contacts.ContactPair([0,1],[[.1, .1, .1]], [[0., 1., 2.]]),
+                                 contacts.ContactPair([0,3],[[.1, .2, .2]], [[0., 1., 2.]])])
+
+    def test_just_works(self):
+        myfig, freqs, __ = cli.compare({"CG1": self.CG1, "CG2": self.CG2},
+                                       ctc_cutoff_Ang=1.5)
+        myfig.tight_layout()
+        # myfig.savefig("1.test.png",bbox_inches="tight")
+        _plt.close("all")
 
 if __name__ == '__main__':
     unittest.main()
