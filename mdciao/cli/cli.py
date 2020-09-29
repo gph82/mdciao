@@ -443,12 +443,8 @@ def _fragment_overview(a,labtype):
 
     if a.topology is not None:
         top = _md.load(a.topology).top
-        fragments = _mdcfrg.get_fragments(top,method="lig_resSeq+",
-                                  verbose=False)
-        frag_idxs = _mdcnomenc.guess_nomenclature_fragments(obj, top, fragments)
-
-        map_conlab = obj.top2map(top, restrict_to_residxs=_np.hstack([fragments[ii] for ii in frag_idxs]))
-        obj.top2defs(top, map_conlab=map_conlab, fill_gaps=a.fill_gaps)
+        map_conlab = obj.top2map(top)
+        obj.top2defs(top, map_conlab=map_conlab, guess_consensus=a.fill_gaps)
 
         _mdcu.residue_and_atom.parse_and_list_AAs_input(a.AAs, top, map_conlab)
         if str(a.labels).lower() != "none":
