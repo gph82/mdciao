@@ -40,7 +40,7 @@ Installation from source
 
    </strike>
 
-* |ss| Clone `mdciao's github repository <https://github.com/gph82/mdciao>`_ |se| `Download and unzip the sources <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_ to your preferred `programs` or `software` folder.
+*  Clone or download `mdciao's github repository <https://github.com/gph82/mdciao>`_ to your preferred `programs` or `software` folder.
 
 * If you are not familiar with Python environments, please read this `python interpreter and environment`_ note before continuing.
 
