@@ -1,4 +1,5 @@
-.. _`Basic Usage`:
+.. _`Basic-Usage`:
+
 Basic Usage
 -----------
 

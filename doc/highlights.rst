@@ -68,7 +68,7 @@ Highlights
       :name: interface_bars
 
 
-      (click to enlarge) **Upper panel**: most frequent contacts sorted by frequency, i.e. for each non-white pixel of :numref:`interface_bars`, there is a bar shown. **Lower panel**: per-residue aggregated contact-frequencies, showing each residue's average participation in the interface (same info will be written to `interface.overall@3.5_Ang.xlsx`). Also, the number of shown contacts/bars can be controlled either with the `--n_ctcs` and/or `--min_freq` parameters of `mdc_interface.py`.
+      (click to enlarge) **Upper panel**: most frequent contacts sorted by frequency, i.e. for each non-white pixel of :numref:`interface_bars`, there is a bar shown. **Lower panel**: per-residue aggregated contact-frequencies, showing each residue's average participation in the interface (same info will be written to `interface.overall@3.5_Ang.xlsx`). Also, the number of shown contacts/bars can be controlled either with the `--ctc_control` and/or `--min_freq` parameters of `mdc_interface.py`.
 
 * A very convenient way to incorporate the molecular topology into the visualization of contact frequencies are the so-called `FlarePlots <https://github.com/GPCRviz/flareplot>`_ (cool live-demo `here <https://gpcrviz.github.io/flareplot/>`_). These show the molecular topology (residues, fragments) on a circle with curves connecting the residues for which a given frequency has been computed. The `mdc_interface.py example`_ above will also generate a flareplot:
 
