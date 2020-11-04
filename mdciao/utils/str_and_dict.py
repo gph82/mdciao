@@ -254,6 +254,54 @@ def unify_freq_dicts(freqs,
 
     return freqs_work
 
+def average_freq_dict(freqs,
+                      weights=None,
+                      **unify_freq_dicts_kwargs
+                     ):
+    r"""
+    Average frequencies (or anything) over dictionaries.
+
+    Typically, the input :obj:`freqs` are keyed first by system,
+    then by contact label, e.g. {"T300":{"GDP-R201":1.0},
+                                "T320":{"GDP-R201":.25},
+                                "MUT":{"GDP-L201":25}}
+
+    The input data need not be unified, the method calls
+    :obj:`unify_freq_dicts` internally. In the example above
+    you have to call it with the arg replacement_dict={"L201:R201"}
+    so tha it can understand that mutation when unifying
+
+
+    Parameters
+    ----------
+    freqs : dict of dicts
+        The dictionaries containing frequence dictionaries,
+
+    weights : dict, default is None
+        relative weights of each dictionary
+
+    unify_freq_dicts_kwargs
+
+    Returns
+    -------
+    averaged_dict : dict
+        an averaged dictionary keyed only with the
+
+
+    """
+    freqs_work = unify_freq_dicts(freqs,**unify_freq_dicts_kwargs)
+
+    sys_keys = list(freqs_work.keys())
+    frq_keys = list(freqs_work[sys_keys[0]].keys())
+    averaged_dict = {}
+    if weights is None:
+        weights = {key:1 for key in sys_keys}
+    for fk in frq_keys:
+        averaged_dict[fk] = _np.average([freqs_work[isys][fk] for isys in sys_keys],
+                                        weights=[weights[isys] for isys in sys_keys])
+
+    return averaged_dict
+
 def sum_dict_per_residue(idict, sep):
     r"""Return a "per-residue" sum of values from a "per-residue-pair" keyed dictionary
 
@@ -287,10 +335,17 @@ def freq_file2dict(ifile, defrag=None):
     r"""
     Read a file containing the frequencies ("freq") and labels ("label")
     of pre-computed contacts
+
     Parameters
     ----------
     ifile : str
         Path to file, can be a .xlsx, .dat, .txt
+
+    defrag : str, default is None
+        If passed a string, e.g "@", the fragment information
+        of the contact label will be deleted upon reading,
+        so that R131@frag1 becomes R131. This is done
+        by calling :obj:`defrag_key` internally
 
     Returns
     -------

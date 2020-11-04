@@ -368,6 +368,26 @@ class Test_unify_freq_dicts(unittest.TestCase):
         self.assertDictEqual(out_dict["K40A"], test_dict["K40A"])
         self.assertDictEqual(out_dict["prot"], test_dict["prot"])
 
+
+class Test_average_freq_dicts(unittest.TestCase):
+
+    def setUp(self):
+        self.freq_dicts = {"T300": {"GLU30-LYS40": 1.0,
+                                    "LYS60-GLU30": .1},
+                           "T310": {"GLU30-LYS40": .5,
+                                    }
+                           }
+
+
+
+    def test_works(self):
+        av_frqs = str_and_dict.average_freq_dict(self.freq_dicts)
+        self.assertDictEqual(av_frqs,{"GLU30-LYS40":.75,"GLU30-LYS60":.05})
+
+    def test_weights(self):
+        av_frqs = str_and_dict.average_freq_dict(self.freq_dicts, weights={"T300":0, "T310":1})
+        self.assertDictEqual(av_frqs, {"GLU30-LYS40": .5, "GLU30-LYS60": .0})
+
 class Test_str_latex(unittest.TestCase):
 
     def setUp(self):
@@ -410,7 +430,7 @@ class Test_freq_file2dict(unittest.TestCase):
 
     def setUp(self):
         self.freqs = {"0-1":0.3, "0-2":.4}
-
+        self.freqs_frags = {"0@TM1-1@TM2": 0.3, "0@TM1-2@TM2": .4}
 
     def test_works_w_ascii(self):
         with _TDir(suffix="_test_mdciao") as tempdir:
@@ -451,6 +471,22 @@ class Test_freq_file2dict(unittest.TestCase):
                                                                              )
 
             freqsin = str_and_dict.freq_file2dict(tmpfile)
+            self.assertEqual(freqsin["0-1"],.3)
+            self.assertEqual(freqsin["0-2"],.4)
+            assert len(freqsin) == 2
+
+    def test_works_w_excel_w_header_defrag(self):
+        with _TDir(suffix="_test_mdciao") as tempdir:
+            tmpfile = "freqfile.xlsx"
+            tmpfile =  path.join(tempdir,tmpfile)
+            with _XW(tmpfile) as writer:
+                _DF.from_dict({"freq" : list(self.freqs.values()),
+                               "label": list(self.freqs.keys())}, ).to_excel(writer,
+                                                                             index=False,
+                                                                             startrow=1
+                                                                             )
+
+            freqsin = str_and_dict.freq_file2dict(tmpfile, defrag="@")
             self.assertEqual(freqsin["0-1"],.3)
             self.assertEqual(freqsin["0-2"],.4)
             assert len(freqsin) == 2
