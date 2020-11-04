@@ -349,5 +349,32 @@ class Test_parse_and_list_AAs_input(unittest.TestCase):
         np.testing.assert_equal(out[0],"0 GLU30 3.50")
         np.testing.assert_equal(out[1], "No %s found in the input topology"%"GLU31")
 
+
+class Test_find_CA(unittest.TestCase):
+    def setUp(self):
+        self.geom = md.load(test_filenames.pdb_3SN6)
+        self.top = self.geom.top
+
+    def test_works(self):
+        CA = residue_and_atom.find_CA(self.top.residue(10))
+        assert CA.name=="CA"
+
+    def test_rules(self):
+        res = residue_and_atom.find_AA(self.top,"P0G")[0]
+        res = self.top.residue(res)
+        CA = residue_and_atom.find_CA(res, CA_dict={"P0G":"CAA"})
+        assert CA.name=="CAA"
+
+    def test_just_one(self):
+        geom = self.geom.atom_slice(self.top.select("name O"))
+        res = geom.top.residue(10)
+        CA = residue_and_atom.find_CA(res)
+        assert CA.name == "O"
+
+    def test_raises(self):
+        with pytest.raises(NotImplementedError):
+            CA = residue_and_atom.find_CA(self.top.residue(10), CA_name="CX")
+
+
 if __name__ == '__main__':
     unittest.main()

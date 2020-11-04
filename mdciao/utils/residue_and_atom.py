@@ -420,26 +420,52 @@ def parse_and_list_AAs_input(AAs, top, map_conlab=None):
                         print(idx,rr)
         print()
 
-def find_CA(res, default="CA"):
-    r""" Return the CA atom (or something equivalent) for this residue"""
+def find_CA(res, CA_name="CA", CA_dict=None):
+    r""" Return the CA atom (or something equivalent) for this residue
 
-    CA_atom = list(res.atoms_by_name(default))
+
+    Parameters
+    ----------
+    res : :obj:`mdtraj.Residue` object
+
+    CA_name : str, default is "CA"
+        The name by which you identify the CA.
+        This overrules anything that's parsed
+        in the :obj:`CA_dict`, i.e. if the
+        residue you are passing has both
+        an atom "CA" and an entry
+        in the CA_dict, the "CA" atom will
+        be returned.
+
+    CA_dict : dict, default is None
+        You can provide a dictionary keyed
+        with residue names and valued
+        with strings that identify a "CA"-equivalent
+        atom (e.g. in ligands)
+        If None, the default :obj:`_CA_rules` are used:
+        _CA_rules = {"GDP": "C1", "P0G":"C12"}
+
+    """
+
+    if CA_dict is None:
+        CA_dict = _CA_rules
+
+    CA_atom = list(res.atoms_by_name(CA_name))
     if len(CA_atom) == 1:
         pass
     elif len(CA_atom) == 0:
         if res.n_atoms == 1:
-            return list(res.atoms())[0]
+            return list(res.atoms)[0]
         else:
             try:
-                CA_atom = list(res.atoms_by_name(_CA_rules[res.name]))
+                CA_atom = list(res.atoms_by_name(CA_dict[res.name]))
                 assert len(CA_atom) == 1
-            except:
+            except KeyError:
                 raise NotImplementedError(
-                    "This method does not know what the 'CA' of a %s is.Known res are %s" % (res, _CA_rules.keys()))
-
+                    "This method does not know what the 'CA' of a %s is. Known 'CA'-equivalents are %s" % (res, CA_dict.keys()))
     else:
         raise ValueError("More than one CA atom for %s:%s"%(res,CA_atom))
     return CA_atom[0]
 
 
-_CA_rules = {"GDP": "C1"}
+_CA_rules = {"GDP": "C1", "P0G":"C12"}
