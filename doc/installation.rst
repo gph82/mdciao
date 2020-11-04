@@ -27,7 +27,7 @@ or::
 |se|
 
 .. note::
- As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into.
+ As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. More info on how to do this in the note about the `Python interpreter and environment`_.
 
 Installation from source
 ------------------------
@@ -93,13 +93,14 @@ Python interpreter and environment
 
 This means that it's very hard to "break" local Python installations (your own or shared installations, like in clusters). So, don't be afraid to use conda and mess up your Python environment as many times as you like. Wiping and re-installing is easy (delete `~/anaconda3` or `~/miniconda3` from your home directory) and you won't alter your OS-wide Python installation at all!
 
-If you already have conda, and don't want to clutter the ``base`` environment, we recommend you create a new environment::
+If you already have ``conda``, and don't want to clutter the ``base`` environment, we recommend you create a new environment::
 
  conda create -n for_mdciao
  conda activate for_mdciao
 
+If you prefer ``pip``, please see their documentation on `creating a virtual environment <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`_.
 
-If neither `pip` nor `conda` is installed in your system, we recommend you install the bare-bones conda distribution, `miniconda` and build from there:
+If neither ``pip`` nor ``conda`` is installed in your system, we recommend you install the bare-bones conda distribution, ``miniconda`` and build from there:
 
 * Download the latest miniconda from `here <https://docs.conda.io/en/latest/miniconda.html>`_
 * Install by issuing::
