@@ -31,7 +31,7 @@ def top2residue_bond_matrix(top,
         results in case of .gro files, because
         :obj:`mdtraj.Topology.create_standard_bonds`
         needs chain information to avoid creating
-        bonds between residues that follow one nother
+        bonds between residues that follow one another
 
 
         
@@ -49,7 +49,8 @@ def top2residue_bond_matrix(top,
         else:
             raise ValueError("\nThe parsed topology does not contain bonds!\n"
                              "If your input is a .gro file, you are advised\n"
-                             "to generate a .pdb file before continuing")
+                             "to generate a .pdb with chain information \n"
+                             "file before continuing.")
 
     residue_bond_matrix = _np.zeros((top.n_residues, top.n_residues), dtype=int)
     for ibond in top._bonds:
