@@ -1,6 +1,6 @@
 Command-line-interface
 ======================
-We refer to the command-line-tools collectively as the command-line-interface, or CLI. Their options go well beyond those shown in the `Basic Usage`_, so please use these pages or the ``mdc_command.py -h`` syntax to get help.
+We refer to the command-line-tools collectively as the command-line-interface, or CLI. Their options go well beyond those shown in the :ref:`Basic Usage`_, so please use these pages or the ``mdc_command.py -h`` syntax to get help.
 
 .. toctree::
    :maxdepth: 2
