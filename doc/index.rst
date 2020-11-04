@@ -59,6 +59,8 @@ and calculates the  time-traces of residue-residue distances, and from there, **
    https://codecov.io/gh/gph82/mdciao/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/gph82/mdciao
 
+.. there's this issue about the self-referencing TOC that I cannot solve
+.. https://github.com/sphinx-doc/sphinx/issues/4602
 
 .. toctree::
    :hidden:

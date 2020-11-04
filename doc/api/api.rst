@@ -3,7 +3,7 @@ API-reference
 
 .. automodule:: mdciao
 
-.. include:: ../api_note.rst
+.. include:: ../api_note
 
 
 

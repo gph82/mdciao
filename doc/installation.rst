@@ -3,34 +3,8 @@
 Installation
 ============
 
-Workshop
---------
-At the moment ``mdciao`` is yet not published, so you have to download the source from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_ and follow the `Installation from source`_.
-
-
 Installation via package manager
 --------------------------------
-.. warning::
- None of these methods work yet, as ``mdciao`` is not yet published to those package managers. Please use the Installation from the source
-
-We recommend you install ``mdciao`` either via the `pip <https://pypi.org/project/pip/>`_ Python package installer or the `conda <https://conda.io/en/latest/>`_ Python package manager::
-
- pip install mdciao
-
-or::
-
- conda install mdciao
-
-.. note::
- As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into.
-
-
-Installation from source
-------------------------
-
-.. warning::
- * At the moment, the repository is private. For our August workshop  you can download the sources from `here <http://proteinformatics.uni-leipzig.de/mdciao/mdciao-master.zip>`_.
- * Please also see the note on :ref:`hk` if you are planning to run ``mdciao`` on our group cluster.
 
 .. |ss| raw:: html
 
@@ -40,16 +14,45 @@ Installation from source
 
    </strike>
 
-*  Clone or download `mdciao's github repository <https://github.com/gph82/mdciao>`_ to your preferred `programs` or `software` folder.
+.. warning::
+ None of these methods work yet, as ``mdciao`` is not yet published to those package managers. Please use the `Installation from source`_
 
-* If you are not familiar with Python environments, please read this `python interpreter and environment`_ note before continuing.
+|ss| We recommend you install ``mdciao`` either via the `pip <https://pypi.org/project/pip/>`_ Python package installer or the `conda <https://conda.io/en/latest/>`_ Python package manager::
 
-* ``cd`` to the unzipped directory and execute the ``setup.py`` file::
+ pip install mdciao
+
+or::
+
+ conda install mdciao
+|se|
+
+.. note::
+ As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into.
+
+Installation from source
+------------------------
+
+* Clone or download `mdciao's github repository <https://github.com/gph82/mdciao>`_ to your preferred ``programs`` or ``software`` folder. If you are using a terminal and have   `git <https://git-scm.com/downloads>`_ installed, simply: ::
+
+   git clone https://github.com/gph82/mdciao.git
+
+  If you don't have `git <https://git-scm.com/downloads>`_, you can use `wget <https://www.gnu.org/software/wget/>`_ (or MacOs equivalent) to download::
+
+   wget https://github.com/gph82/mdciao/archive/master.zip
+
+  and if you don't have ``wget`` simply browse to `mdciao's github repository <https://github.com/gph82/mdciao>`_ and download from there via your browser.
+
+* If you are not familiar with Python environments, please read this `Python interpreter and environment`_ note before continuing.
+
+* ``cd`` to the (unzipped) ``mdciao`` directory and execute the ``setup.py`` file::
 
    python setup.py install
 
 
 This should install ``mdciao`` along with all its dependencies. Optionally using `develop` instead of `install` means that the ``mdciao`` in your Python path points directly to the sources directory, s.t. changes in the source take effect immediately without re-installing
+
+.. note::
+ Please see the note on :ref:`hk` if you are planning to run ``mdciao`` on our group cluster.
 
 .. _warning:
 .. warning::
