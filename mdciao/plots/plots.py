@@ -440,7 +440,7 @@ def plot_unified_freq_dicts(freqs,
         ax = _plt.gca()
     else:
         myfig = ax.figure
-
+        _plt.sca(ax)
     for jj, (skey, sfreq) in enumerate(freqs_by_sys_by_ctc.items()):
         # Sanity check
         assert len(sfreq) == len(sorted_value_by_ctc_by_sys), "This shouldnt happen"
@@ -451,12 +451,16 @@ def plot_unified_freq_dicts(freqs,
         # Label
         label = '%s (Sigma= %2.1f)'%(skey, _np.sum(list(sfreq.values())))
         if len(keys_popped_above)>0:
-            label = label[:-1]+", +%2.1f above threshold)"%\
+            extra = "above threshold"
+            f = identity_cutoff
+            label = label[:-1]+", +%2.1fa)"%\
                     (_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
         if len(ctc_keys_popped_below) > 0:
             not_shown_sigma = _np.sum([freqs[skey][nskey] for nskey in ctc_keys_popped_below])
             if not_shown_sigma>0:
-                label = label[:-1] + ", +%2.1f below threshold)" % (not_shown_sigma)
+                extra = "below threshold"
+                f = lower_cutoff_val
+                label = label[:-1] + ", +%2.1fb)" % (not_shown_sigma)
         label = _mdcu.str_and_dict.replace4latex(label)
 
         if not vertical_plot:
@@ -753,3 +757,47 @@ def _color_by_values(all_ctc_keys, freqs_by_sys_by_ctc, colordict,
                     winners[ctc_key] = ('-', colordict[system_keys[_vals.argmin()]])
 
     return winners
+
+def _plot_freqbars_baseplot(freqs,
+                            jax=None,
+                            truncate_at=None,
+                            bar_width_in_inches=.75,
+                            color=["tab:blue"],
+                            ):
+    r"""
+    Base method for plotting the contact frequencies
+
+    Parameters
+    ----------
+    freqs : iterable
+        The values to plot
+    jax : :obj:`matplotlib.Axes`, default is None
+        If None is passed, one will be created
+    truncate_at : float, default is None
+        Only plot frequencies above this value (between 0 and 1)
+    bar_width_in_inches : float, default is .75
+        The width of the axis will vary with the number of plotted
+        frequencies. This allows for plotting different :obj:`ContactGroup`
+        objects each with different number of contacts and still appear
+        uniform and have consistant bar_width across all barplots
+    Returns
+    -------
+    jax : :obj:`matplotlib.Axes`
+    """
+
+    if truncate_at is not None:
+        freqs = _np.array(freqs)[_np.array(freqs)>truncate_at]
+    xvec = _np.arange(len(freqs))
+    if jax is None:
+        _plt.figure(figsize=(_np.max((7,bar_width_in_inches*len(freqs))),5))
+        jax = _plt.gca()
+
+    patches = jax.bar(xvec, freqs,
+                      width=.25,
+                      color=color
+                      )
+    jax.set_yticks([.25, .50, .75, 1])
+    jax.set_ylim([0, 1])
+    jax.set_xticks([])
+    [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
+    return jax
