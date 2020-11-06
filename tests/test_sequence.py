@@ -27,7 +27,11 @@ class Test_top2seq(unittest.TestCase):
         top = md.load(test_filenames.small_monomer).top
         seq = sequence.top2seq(top, replacement_letter="Y")
         _np.testing.assert_array_equal("EVWIEKYY", seq)
+
 class Test_align_tops(unittest.TestCase):
+
+    # The actual alignment tests are happening at alignment_result_to_list_of_dicts,
+    # see those tests for alignment
 
     def test_works_w_itself(self):
         top = md.load(test_filenames.small_monomer).top
@@ -40,6 +44,12 @@ class Test_align_tops(unittest.TestCase):
         df = sequence.align_tops_or_seqs(top, top, return_DF=False)
         assert isinstance(df, list)
         #print(df)
+
+    def test_works_w_itself_strs(self):
+        top = md.load(test_filenames.small_monomer).top
+        str1 = sequence.top2seq(top)
+        df = sequence.align_tops_or_seqs(str1, str1, return_DF=False)
+        assert isinstance(df, list)
 
     def test_works_w_dimer(self):
         top2 = md.load(test_filenames.small_dimer).top

@@ -402,6 +402,11 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
                                                       _np.arange(15, 40)]
                                            )
 
+    def test_fragments_as_idxs(self):
+        frags_as_idsx = self.cgn_local.fragments_as_idxs
+        _np.testing.assert_array_equal([len(ifrag) for ifrag in frags_as_idsx], [len(ifrag) for ifrag in self.cgn_local.fragments])
+        _np.testing.assert_array_equal(list(frags_as_idsx.keys()),
+                                       self.cgn_local.fragment_names)
 
 class TestLabelerBW_local_woPDB(unittest.TestCase):
 
@@ -483,6 +488,11 @@ class TestLabelerBW_local(unittest.TestCase):
         self.assertSequenceEqual(self.BW_local_w_pdb.fragment_names,
                                  list(self.BW_local_w_pdb.fragments.keys()))
 
+    def test_fragments_as_idxs(self):
+        frags_as_idsx = self.BW_local_w_pdb.fragments_as_idxs
+        self.assertSequenceEqual([len(ifrag) for ifrag in frags_as_idsx], [len(ifrag) for ifrag in self.BW_local_w_pdb.fragments])
+        self.assertSequenceEqual(list(frags_as_idsx.keys()),
+                                 self.BW_local_w_pdb.fragment_names)
 class Test_choose_between_consensus_dicts(unittest.TestCase):
 
     def test_works(self):
@@ -615,7 +625,7 @@ class Test_fill_CGN_gaps(unittest.TestCase):
         self.cons_list_in = ['G.HN.26', None, 'G.HN.28', 'G.HN.29', 'G.HN.30']
 
     def test_fill_CGN_gaps_just_works_with_CGN(self):
-        fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.top_mut)
+        fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.top_mut, verbose=True)
         self.assertEqual(fill_cgn,self.cons_list_out)
 
 
@@ -628,7 +638,7 @@ class Test_fill_BW_gaps(unittest.TestCase):
                              "3.50", '3.51', '3.52']
 
     def test_fill_CGN_gaps_just_works_with_BW(self):
-        fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.geom.top)
+        fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.geom.top, verbose=True)
         self.assertEqual(fill_cgn, self.cons_list_out)
 
 @unittest.skip("This method apperas unused at the moment")
