@@ -22,10 +22,8 @@
 ##############################################################################
 from mdciao.parsers import parser_for_compare_neighborhoods
 from mdciao.cli import compare
-from matplotlib import pyplot as plt
 import matplotlib
 matplotlib.use('TkAgg')
-from pandas import DataFrame
 # Get and instantiate parser
 parser = parser_for_compare_neighborhoods()
 a  = parser.parse_args()
@@ -53,10 +51,4 @@ myfig, freqs, posret = compare(file_dict,
                                output_desc=a.output_desc,
                                **b,
                                )
-myfig.tight_layout()
-fname = "%s.%s"%(a.output_desc,a.graphic_ext.strip("."))
-myfig.savefig(fname)
-fname = "%s.xlsx"%a.output_desc
-DataFrame.from_dict(posret).to_excel(fname)
-plt.show()
 
