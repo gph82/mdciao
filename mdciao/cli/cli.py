@@ -36,7 +36,10 @@ my_frag_colors=[
 from os import path as _path, mkdir as _mkdir
 import numpy as _np
 import mdtraj as _md
-from matplotlib import pyplot as _plt, rcParams as _rcParams
+from matplotlib import pyplot as _plt, rcParams as _rcParams, colors as _mplcolors
+
+from pandas import DataFrame as _DF
+from pandas import ExcelWriter as _ExcelWriter
 
 from inspect import signature as _signature
 from fnmatch import filter as _filter
