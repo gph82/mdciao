@@ -25,33 +25,6 @@ import mdtraj as _md
 import matplotlib.pyplot as _plt
 from matplotlib import rcParams as _rcParams
 
-# careful do not introduce circ deps
-from .command_line_tools import _t_unit2dt, \
-    _offer_to_create_dir, \
-    _parse_fragment_naming_options, \
-    _parse_consensus_option
-
-from joblib import Parallel as _Parallel, delayed as _delayed
-
-from os import path as _path
-
-from mdciao.fragments import \
-    get_fragments, \
-    interactive_fragment_picker_by_resSeq as _interactive_fragment_picker_by_resSeq
-
-from mdciao.nomenclature_utils import \
-    _choose_between_consensus_dicts
-
-from mdciao.list_utils import iterate_and_inform_lambdas,\
-    rangeexpand, \
-    in_what_fragment, \
-    _replace4latex
-
-from mdciao.plots import plot_w_smoothing_auto
-
-from mdciao.fragments import _my_frag_colors as mycolors
-
-
 def xtcs2dihs(xtcs, top, dih_idxs, stride=1, consolidate=True,
               chunksize=1000, return_time=False,
               n_jobs=1,
@@ -783,3 +756,4 @@ def _dih_idxs_for_residue(res_idxs, geom):
         quad_idx = {key:_np.argwhere(val==ii).squeeze() for key, val in quad_idxs_2_res_idxs.items()}
         dict_out[ii] = {key:quads[key][val] for key, val in quad_idx.items() if _np.size(val)>0}
     return dict_out
+
