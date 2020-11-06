@@ -1,7 +1,7 @@
 mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 ==============================================================================
 
-|Python Package| |Coverage|
+|Python Package| |Coverage| |License|
 
 .. figure:: doc/imgs/banner.png
    :scale: 33%
@@ -66,3 +66,6 @@ Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2020 (in preparat
 .. |Coverage| image::
    https://codecov.io/gh/gph82/mdciao/branch/master/graph/badge.svg?
    :target: https://codecov.io/gh/gph82/mdciao
+
+.. |License| image::
+    https://img.shields.io/github/license/gph82/mdciao
