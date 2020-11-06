@@ -1539,7 +1539,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                                     self.cp2_w_anchor_and_frags_and_top],
                                    )
-        jax = CG.plot_neighborhood_distributions()
+        jax = CG.plot_distance_distributions()
         assert isinstance(jax, Axes)
         _plt.close("all")
 
@@ -1547,10 +1547,10 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                                     self.cp2_w_anchor_and_frags_and_top],
                                    )
-        jax = CG.plot_neighborhood_distributions(shorten_AAs=True,
-                                                 ctc_cutoff_Ang=3,
-                                                 xlim=[-1, 5],
-                                                 n_nearest=1)
+        jax = CG.plot_distance_distributions(shorten_AAs=True,
+                                             ctc_cutoff_Ang=3,
+                                             xlim=[-1, 5],
+                                             n_nearest=1)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
