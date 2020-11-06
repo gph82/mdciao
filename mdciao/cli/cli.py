@@ -316,6 +316,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
                                                table_ext=".dat",
                                                t_unit="ps",
                                                title=None,
+                                               savefiles=True,
                                                ):
     r"""
     CLTs share this part and have the same options to save files of timedep plots
@@ -369,19 +370,20 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
     elif len(myfig) == 2:
         fnames = [fname_timedep, fname_N_ctcs]
 
-    for iname, ifig in zip(fnames, myfig):
-        fname = _path.join(output_dir, iname)
-        ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
-        ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-        _plt.close(ifig)
-        print(fname)
+    if savefiles:
+        for iname, ifig in zip(fnames, myfig):
+            fname = _path.join(output_dir, iname)
+            ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
+            ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+            _plt.close(ifig)
+            print(fname)
 
-    # even if no figures were produced, the files should still be saved
-    if plot_timedep:
-        ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True)
-    if separate_N_ctcs:
-        ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True,
-                           ctc_cutoff_Ang=ctc_cutoff_Ang)
+        # even if no figures were produced, the files should still be saved
+        if plot_timedep:
+            ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True)
+        if separate_N_ctcs:
+            ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True,
+                               ctc_cutoff_Ang=ctc_cutoff_Ang)
     print()
 
 #TODO introduce coverage exclusion labels
@@ -522,6 +524,7 @@ def residue_neighborhoods(residues,
                           accept_guess=False,
                           switch_off_Ang=None,
                           plot_atomtypes=False,
+                          savefiles=True,
                           ):
     r"""Per-residue neighborhoods based on contact frequencies between pairs
     of residues.
@@ -865,13 +868,16 @@ def residue_neighborhoods(residues,
     bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
     fname = _path.join(output_dir, fname)
-    bar_fig.savefig(fname, dpi=graphic_dpi)
-    print("The following files have been created")
+    if savefiles:
+        bar_fig.savefig(fname, dpi=graphic_dpi)
+        print("The following files have been created")
+        print(fname)
+
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     print(fname)
     # TODO undecided about this
     # TODO this code is repeated in sites...can we abstract this oafa?
-    if table_ext is not None:
+    if table_ext is not None and savefiles:
         for ihood in neighborhoods.values():
             fname = '%s.%s@%2.1f_Ang.%s' % (output_desc,
                                             ihood.anchor_res_and_fragment_str.replace('*', ""),
@@ -1423,10 +1429,11 @@ def sites(site_files,
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
     fname = _path.join(output_dir, fname)
-    histofig.savefig(fname, dpi=graphic_dpi)
+    if savefiles:
+        histofig.savefig(fname, dpi=graphic_dpi)
+        print("The following files have been created")
+        print(fname)
     _plt.close(histofig)
-    print("The following files have been created")
-    print(fname)
     for site_name, isite_nh in site_as_gc.items():
         fname_no_time = '%s.%s@%2.1f_Ang.%s' % (output_desc,
                                         site_name.strip().replace(" ","_"),
@@ -1453,21 +1460,25 @@ def sites(site_files,
                                            )[0]
         # One title for all axes on top
         myfig.axes[0].set_title("site: %s" % (isite["name"]))
-        _plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+        if savefiles:
+            _plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+            print(fname)
+
+            if table_ext is not None and savefiles:
+                if table_ext == 'xlsx':
+                    isite_nh.frequency_spreadsheet(ctc_cutoff_Ang, fname_no_time,
+                                                write_interface=False,
+                                                by_atomtypes=True,
+                                                # AA_format="long",
+                                                split_label="join"
+                                                )
+                else:
+                    with open(fname_no_time, 'w') as f:
+                        f.write(isite_nh.frequency_str_ASCII_file(ctc_cutoff_Ang))
+                print(fname_no_time)
         _plt.close(myfig)
-        print(fname)
-        if table_ext is not None:
-            if table_ext == 'xlsx':
-                isite_nh.frequency_spreadsheet(ctc_cutoff_Ang, fname_no_time,
-                                            write_interface=False,
-                                            by_atomtypes=True,
-                                            # AA_format="long",
-                                            split_label="join"
-                                            )
-            else:
-                with open(fname_no_time, 'w') as f:
-                    f.write(isite_nh.frequency_str_ASCII_file(ctc_cutoff_Ang))
-            print(fname_no_time)
+
+    return site_as_gc
 
 def compare(file_dict, graphic_ext=".pdf", output_desc="freq_comparison",**kwargs):
     myfig, freqs, plotted_freqs = _mdcplots.compare_groups_of_contacts(file_dict, **kwargs)
