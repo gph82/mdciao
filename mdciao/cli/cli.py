@@ -842,13 +842,13 @@ def residue_neighborhoods(residues,
                                    neighborhoods.values()):
         if ihood is not None:
             if distro:
-                ihood.plot_neighborhood_distributions(nbins=20,
-                                                      jax=jax,
-                                                      label_fontsize_factor=panelsize2font/panelsize,
-                                                      shorten_AAs=short_AA_names,
-                                                      ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                      n_nearest= n_nearest
-                                                      )
+                ihood.plot_distance_distributions(nbins=20,
+                                                  jax=jax,
+                                                  label_fontsize_factor=panelsize2font/panelsize,
+                                                  shorten_AAs=short_AA_names,
+                                                  ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                  n_nearest= n_nearest
+                                                  )
             else:
                 ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
                                               n_nearest,
@@ -1320,7 +1320,9 @@ def sites(site_files,
           accept_guess=False,
           table_ext=None,
           output_desc="sites",
-          plot_atomtypes=False
+          plot_atomtypes=False,
+          distro=False,
+          savefiles=True,
           ):
 
     ylim_Ang = _np.float(ylim_Ang)
@@ -1411,13 +1413,21 @@ def sites(site_files,
     _rcParams["font.size"] = panelsize * panelsize2font
     for jax, (site_name, isite_nh) in zip(histoax.flatten(),
                                        site_as_gc.items()):
-        isite_nh.plot_freqs_as_bars(ctc_cutoff_Ang, site_name,
-                                    jax=jax,
-                                    xlim=_np.max([ss["n_bonds"] for ss in sites]),
-                                    label_fontsize_factor=panelsize2font / panelsize,
-                                    shorten_AAs=short_AA_names,
-                                    plot_atomtypes=plot_atomtypes,
-                                    )
+        if distro:
+            isite_nh.plot_distance_distributions(nbins=20,
+                                                 jax=jax,
+                                                 label_fontsize_factor=panelsize2font / panelsize,
+                                                 shorten_AAs=short_AA_names,
+                                                 ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                 )
+        else:
+            isite_nh.plot_freqs_as_bars(ctc_cutoff_Ang, site_name,
+                                        jax=jax,
+                                        xlim=_np.max([ss["n_bonds"] for ss in sites]),
+                                        label_fontsize_factor=panelsize2font / panelsize,
+                                        shorten_AAs=short_AA_names,
+                                        plot_atomtypes=plot_atomtypes,
+                                        )
         print()
         print(isite_nh.frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}))
         print()
