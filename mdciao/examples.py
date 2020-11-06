@@ -110,6 +110,24 @@ class ExamplesCLTs(object):
 
     @property
     def mdc_compare(self):
+        return ["mdc_neighborhoods.py",
+                "%s %s" % (self.pdb, self.xtc),
+                self.opt_dict["--residues"] + " L394",
+                self.opt_dict["--n_smooth_hw"] + " 1",
+                self.opt_dict["--table_ext"] + " xlsx",
+                "--ctc_cutoff_Ang 3",
+                "\n\n",
+                "mdc_neighborhoods.py",
+                "%s %s" % (self.pdb, self.xtc),
+                self.opt_dict["--residues"] + " L394",
+                self.opt_dict["--n_smooth_hw"] + " 1",
+                self.opt_dict["--table_ext"] + " xlsx",
+                "--ctc_cutoff_Ang 4",
+                "\n\n"
+                "mdc_compare.py",
+                "neighborhood.LEU394@frag0@3.0_Ang.xlsx",
+                "neighborhood.LEU394@frag0@4.0_Ang.xlsx"
+                ]
         pass
 
     @property

@@ -36,21 +36,22 @@ if a.keys is not None:
     file_dict = {key:val for key, val in zip(keys, a.files)}
 else:
     file_dict = a.files
+a.colors = a.colors.split(",")
+b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
+for key in ["files", "mutations", "keys","output_desc"]:
+    b.pop(key)
+b["figsize"]=None
+b["mutations_dict"] = {}
+#b["colors"] =
 
-colors =  a.colors.split(",")
-
-mut_dict = {}
 if a.mutations is not None:
     for pair in a.mutations.split(","):
         key, val = pair.split(":")
-        mut_dict[key.replace(" ","")]=val.replace(" ","")
+        b["mutations_dict"][key.replace(" ","")]=val.replace(" ","")
 
-# Call the method
 myfig, freqs, posret = compare(file_dict,
-                               colors=colors,
-                               anchor=a.anchor,
-                               mutations_dict=mut_dict,
-                               figsize=None,
+                               output_desc=a.output_desc,
+                               **b,
                                )
 myfig.tight_layout()
 fname = "%s.%s"%(a.output_desc,a.graphic_ext.strip("."))

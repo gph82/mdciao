@@ -1466,8 +1466,43 @@ def sites(site_files,
                     f.write(isite_nh.frequency_str_ASCII_file(ctc_cutoff_Ang))
             print(fname_no_time)
 
-    return
+def compare(file_dict, graphic_ext=".pdf", output_desc="freq_comparison",**kwargs):
+    myfig, freqs, plotted_freqs = _mdcplots.compare_groups_of_contacts(file_dict, **kwargs)
+    myfig.tight_layout()
 
-def compare(*args, **kwargs):
-    myfig, freqs, plotted_freqs = _mdcplots.compare_groups_of_contacts(*args, **kwargs)
+    output_desc=output_desc.strip(".").replace(" ","_")
+    fname = "%s.%s" % (output_desc, graphic_ext.strip("."))
+    print("Created files")
+    myfig.savefig(fname)
+    print(fname)
+    fname_excel = "%s.xlsx" % output_desc
+    writer = _ExcelWriter(fname_excel, engine='xlsxwriter')
+    workbook = writer.book
+    sheet1_name = "plotted frequencies"
+    writer.sheets[sheet1_name] = workbook.add_worksheet(sheet1_name)
+    offset = 0
+    header = 'pairs by contact frequency'
+    if "anchor" in kwargs.keys():
+        header+= "(anchor was %s)"%kwargs["anchor"]
+    writer.sheets[sheet1_name].write_string(0, offset,header
+                                            )
+    offset += 1
+    _DF.from_dict(plotted_freqs).round({"freq": 2, "sum": 2}).to_excel(writer,
+                                                                       sheet_name=sheet1_name,
+                                                                       startrow=offset,
+                                                                       startcol=0,
+                                                                       )
+    # offset = 0
+    sheet2_name = "all frequencies"
+    writer.sheets[sheet2_name] = workbook.add_worksheet(sheet2_name)
+    writer.sheets[sheet2_name].write_string(offset, 0, 'pairs by contact frequency')
+    _DF.from_dict(freqs).round({"freq": 2, "sum": 2}).to_excel(writer,
+                                                               sheet_name=sheet2_name,
+                                                               startrow=offset,
+                                                               startcol=0,
+                                                               )
+    writer.save()
+    print(fname_excel)
+    #_plt.show()
+
     return myfig, freqs, plotted_freqs
