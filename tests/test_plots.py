@@ -7,6 +7,7 @@ from matplotlib import pyplot as _plt
 from mdciao.contacts import ContactGroup, ContactPair
 
 from mdciao import plots
+from mdciao.plots.plots import _plot_freqbars_baseplot
 
 from tempfile import TemporaryDirectory as _TDir
 import os
@@ -327,5 +328,24 @@ class Test_color_by_values(unittest.TestCase):
                                  {"A": ("", "k"),
                                   "B": ("", "k"),
                                   "C": ("", "k")})
+
+class Test_freqs_baseplot(unittest.TestCase):
+
+    def test_baseplot_minimal(self):
+        jax = _plot_freqbars_baseplot([1,2,3])
+        assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
+
+    def test_baseplot_pass_ax(self):
+        _plt.plot()
+        jax = _plt.gca()
+        assert jax is _plot_freqbars_baseplot([1,2,3], jax=jax)
+        _plt.close("all")
+
+    def test_baseplot_truncate(self):
+
+        jax = _plot_freqbars_baseplot([1,2,3], truncate_at=.5)
+
+        _plt.close("all")
 if __name__ == '__main__':
     unittest.main()
