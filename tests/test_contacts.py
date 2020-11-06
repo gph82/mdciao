@@ -898,7 +898,8 @@ class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
 
 class TestBaseClassContactGroup(unittest.TestCase):
     def setUp(self):
-        self.top = md.load(test_filenames.actor_pdb).top
+        self.geom = md.load(test_filenames.actor_pdb)
+        self.top = self.geom.top
 
         self.cp1 = contacts.ContactPair([0, 1], [[.1, .2, .3], [.4]], [[1, 2, 3], [1]])
         self.cp2 = contacts.ContactPair([0, 2], [[.15, .35, .25], [.16]], [[1, 2, 3], [1]])
@@ -992,6 +993,18 @@ class TestBaseClassContactGroup(unittest.TestCase):
                                                      ],
                                                      top=self.top
                                                      )
+        self.cp1_w_atom_types_0_1_switched = contacts.ContactPair([1, 0],
+                                                     [[.15, .25, .35, .45]],
+                                                     [[0, 1, 2, 3]],
+                                                     atom_pair_trajs=[
+                                                        [[self.atom_SC1, self.atom_BB0],
+                                                         [self.atom_BB1, self.atom_BB0],
+                                                         [self.atom_BB1, self.atom_BB0],
+                                                         [self.atom_BB1, self.atom_BB0]]
+                                                     ],
+                                                     top=self.top
+                                                     )
+
 
 
 class TestContactGroup(TestBaseClassContactGroup):
@@ -1277,6 +1290,14 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(freq_dict[1], 2 / 5)
         _np.testing.assert_equal(freq_dict[2], 1 / 5)
 
+    def test_frequency_per_residue_idx_return_array(self):
+        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
+        freq_dict = CP.frequency_sum_per_residue_idx_dict(2)
+        freq_array = CP.frequency_sum_per_residue_idx_dict(2, return_array=True)
+        _np.testing.assert_array_equal(list(freq_dict.values()),freq_array[freq_array>0])
+
+
     def test_frequency_per_residue_name(self):
         CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                                     self.cp2_w_anchor_and_frags_and_top])
@@ -1423,25 +1444,6 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
 class TestContactGroupPlots(TestBaseClassContactGroup):
 
-    def test_baseplot_minimal(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
-        jax = CG._plot_freqbars_baseplot(2)
-        assert isinstance(jax, _plt.Axes)
-        _plt.close("all")
-
-    def test_baseplot_pass_ax(self):
-        _plt.plot()
-        jax = _plt.gca()
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
-        assert jax is CG._plot_freqbars_baseplot(2, jax=jax)
-        _plt.close("all")
-
-    def test_baseplot_truncate(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
-        jax = CG._plot_freqbars_baseplot(2, truncate_at=.5)
-        # TODO I would like to test that jax.patches(?) or equivalent has length 1 instead of 2
-        _plt.close("all")
-
     def test_plot_freqs_as_bars_just_runs(self):
         CG = contacts.ContactGroup([self.cp1, self.cp2])
         jax = CG.plot_freqs_as_bars(2, "test_site")
@@ -1459,6 +1461,22 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         jax = CG.plot_freqs_as_bars(2, "test_site", xlim=20)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
+
+    def test_plot_freqs_as_flareplot_just_runs(self):
+        # This is just to test that it runs without error
+        # the minimal examples here cannot test the full flareplot
+        # TODO add full-fledged example here?
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs])
+        ifig, iax = CG.plot_freqs_as_flareplot(10,)
+
+    def test_plot_freqs_as_flareplot_just_runs_w_options(self):
+        # This is just to test that it runs without error
+        # the minimal examples here cannot test the full flareplot
+        # TODO add full-fledged example here?
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs])
+        ifig, iax = CG.plot_freqs_as_flareplot(10,SS=self.geom)
+        ifig.tight_layout()
+        ifig.savefig("test.pdf")
 
     def test_plot_neighborhood_raises(self):
         CG = contacts.ContactGroup([self.cp1, self.cp2])
@@ -1483,6 +1501,21 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         jax = _plt.gca()
         assert jax is CG.plot_neighborhood_freqs(2, 0, jax=jax)
         _plt.close("all")
+
+    def test_plot_get_hatches_for_plotting_atomtypes(self):
+        CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp1_w_atom_types_0_1_switched, self.cp2_w_atom_types])
+        df = CG._get_hatches_for_plotting(3.5)
+        # This checks that the inversion ["BB-SC"]-["SC-BB"] takes place when needed
+        _np.testing.assert_array_equal(df.values[0, :], [2 / 3, 0, 1 / 3, 0])
+        _np.testing.assert_array_equal(df.values[1, :], [2 / 3, 0, 0, 1 / 3])
+        _np.testing.assert_array_equal(df.values[2, :], [0, 0, 2 / 3, 1 / 3])
+
+    def test_plot_add_hatching_by_atomtypes(self):
+        CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp1_w_atom_types_0_1_switched, self.cp2_w_atom_types])
+        # Minimal plot
+        iax = CG.plot_freqs_as_bars(3.5,title_label="test", plot_atomtypes=True)
+        _plt.close("all")
+
 
     def test_plot_timedep_ctcs(self):
         from matplotlib.pyplot import Figure
@@ -1638,6 +1671,17 @@ class TestContactGroupASCII(TestBaseClassContactGroup):
         istr = CG.frequency_str_ASCII_file(2.5, by_atomtypes=False)
         self.assertEqual(istr[0], "#")
         self.assertIsInstance(istr, str)
+
+    def test_frequency_str_ASCII_file(self):
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top])
+
+        with _TDir() as tmpdir:
+            tfile = path.join(tmpdir,'freqfile.dat')
+            istr = CG.frequency_str_ASCII_file(2.5, by_atomtypes=False, ascii_file=tfile)
+            from mdciao.utils.str_and_dict import freq_file2dict
+            newfreq = freq_file2dict(tfile)
+            _np.testing.assert_array_equal(list(newfreq.values()),CG.frequency_per_contact(2.5))
 
 
 class TestContactGroupTrajdicts(TestBaseClassContactGroup):
