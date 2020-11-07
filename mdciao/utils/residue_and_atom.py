@@ -52,8 +52,9 @@ def find_AA(top, AA_pattern):
 
     if AA_pattern[-1].isalpha():
         lenA = len(AA_pattern)
-        assert lenA in [1,2,3], ValueError("purely alphabetic patterns must have " 
-                                     " either 1, 2, or 3 letters, not  %s" % (AA_pattern))
+        if lenA not in [1,2,3]:
+            raise ValueError("purely alphabetic patterns must have "
+                             " either 1, 2, or 3 letters, not  %s" % (AA_pattern))
 
 
         return [rr.index for rr in top.residues if AA_pattern == '%s' % (get_name[lenA](rr))]
@@ -192,10 +193,13 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
                                  sort=False,
                                  **residues_from_descriptors_kwargs):
     r"""
-    Generalized range-expander for a string containing residue descriptors.
+    Generalized range-expander from residue descriptors.
 
     Residue descriptors can be anything that :obj:`find_AA` understands.
     Expanding a range means getting "2-5,7" as input and returning "2,3,4,5,7"
+
+    If an int or an iterable of ints is passed, it will be converted they will
+    be string-ified automatically
 
     To dis-ambiguate descriptors, a fragment definition and a topology are needed
 
@@ -213,7 +217,7 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
 
     Parameters
     ----------
-    range_as_str : string
+    range_as_str : string, int or iterable of ints
     fragments : list of iterable of residue indices
     top : :obj:`mdtraj.Topology` object
     interpret_as_res_idxs : bool, default is False
@@ -230,6 +234,10 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     """
     residxs_out = []
     #print("For the range", range_as_str)
+    if not isinstance(range_as_str,str):
+        range_as_str = _force_iterable(range_as_str)
+        assert all([isinstance(ii,int) for ii in range_as_str])
+        range_as_str= ','.join([str(ii) for ii in range_as_str])
     for r in range_as_str.split(','):
         assert not r.startswith("-")
         if "*" in r or "?" in r:
@@ -253,7 +261,7 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
                 for_extending, __ = residues_from_descriptors(resnames, fragments, top,
                                                             **residues_from_descriptors_kwargs)
                 if None in for_extending:
-                    raise ValueError("The input range contains '%s' which "
+                    raise ValueError("The input range of residue resSeqs contains '%s' which "
                                      "returns an untreatable range %s!" % (r, for_extending))
                 if "-" in r:  # it was a pair
                     assert len(for_extending)==2

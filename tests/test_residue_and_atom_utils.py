@@ -37,8 +37,12 @@ class Test_find_by_AA(unittest.TestCase):
         assert (residue_and_atom.find_AA(self.geom.top, 'w 32')) == []   # spaces between characters won't work
 
     def test_malformed_input(self):
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             residue_and_atom.find_AA(self.geom.top, "GLUTAMINE")
+
+    def test_malformed_code(self):
+        with pytest.raises(ValueError):
+            residue_and_atom.find_AA(self.geom.top, "ARGI200")
 
     def test_ambiguity(self):
         # AMBIGUOUS definition i.e. each residue is present in multiple fragments
@@ -321,6 +325,23 @@ class Test_rangeexpand_residues2residxs(unittest.TestCase):
                                                                          self.fragments,
                                                                          self.top,
                                                                          )
+
+    def test_rangeexpand_w_ints_fails_as_resSeq(self):
+        with pytest.raises(ValueError):
+            residue_and_atom.rangeexpand_residues2residxs([0, 10, 20],
+                                                          self.fragments,
+                                                          self.top,
+                                                          )
+
+    def test_rangeexpand_w_ints_fails(self):
+        expanded_range = residue_and_atom.rangeexpand_residues2residxs([0, 10, 20],
+                                                                       self.fragments,
+                                                                       self.top,
+                                                                       interpret_as_res_idxs=True
+                                                                       )
+        print("exxxxx",expanded_range,type(expanded_range))
+        np.testing.assert_array_equal(expanded_range,[0,10,20])
+
 
 class Test_parse_and_list_AAs_input(unittest.TestCase):
     def setUp(self):
