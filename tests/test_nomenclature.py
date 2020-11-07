@@ -408,6 +408,23 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         _np.testing.assert_array_equal(list(frags_as_idsx.keys()),
                                        self.cgn_local.fragment_names)
 
+    def test_PDB_full_path_exists(self):
+        self.cgn_local = nomenclature.LabelerCGN(self._CGN_3SN6_file,
+                                    try_web_lookup=False,
+                                    local_path=self.tmpdir,
+                                    )
+
+    # These tests only test it runs, not that the alignment is correct
+    #  those checks are done in sequence tests
+    def test_aligntop_with_self(self):
+        top2self, self2top, df = self.cgn_local.aligntop(self.cgn_local.seq)
+        self.assertDictEqual(top2self,self2top)
+    def test_aligntop_with_self_residxs(self):
+        top2self, self2top, df = self.cgn_local.aligntop(self.cgn_local.seq, restrict_idxs=[2,3])
+        self.assertDictEqual(top2self,self2top)
+        self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
+        self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
+
 class TestLabelerBW_local_woPDB(unittest.TestCase):
 
     # The setup is in itself a test
@@ -493,6 +510,17 @@ class TestLabelerBW_local(unittest.TestCase):
         self.assertSequenceEqual([len(ifrag) for ifrag in frags_as_idsx], [len(ifrag) for ifrag in self.BW_local_w_pdb.fragments])
         self.assertSequenceEqual(list(frags_as_idsx.keys()),
                                  self.BW_local_w_pdb.fragment_names)
+
+    # These tests only test it runs, not that the alignment is correct
+    #  those checks are done in sequence tests
+    def test_aligntop_with_self(self):
+        top2self, self2top, df = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq)
+        self.assertDictEqual(top2self,self2top)
+    def test_aligntop_with_self_residxs(self):
+        top2self, self2top, df = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq, restrict_idxs=[2,3])
+        self.assertDictEqual(top2self,self2top)
+        self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
+        self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
 class Test_choose_between_consensus_dicts(unittest.TestCase):
 
     def test_works(self):

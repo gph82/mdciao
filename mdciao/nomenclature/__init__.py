@@ -1,7 +1,7 @@
 r"""
 Get and manipulate consensus nomenclature:
 
- * `Ballesteros-Weinstein-Numbering (BW) <https://doi.org/10.1016/S1043-9471(05)80049-7>`_ [1]
+ * `Ballesteros-Weinstein-Numbering (BW) <https://doi.org/10.1016/S1043-9471(05)80049-7>`_ [1] [#]_
 
 
  * `Common G-alpha Numbering (CGN) <https://doi.org/10.1038/nature14663>`_ [2]
@@ -9,7 +9,7 @@ Get and manipulate consensus nomenclature:
 
 It uses either local files or accesses the following databases:
 
- * `GPCRCdb <https://gpcrdb.org/>`_ [3]
+ * `GPCRdb <https://gpcrdb.org/>`_ [3]
 
  * `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_ [2]
 
@@ -45,6 +45,7 @@ Classes
     LabelerCGN
 
 .. _`references below`:
+
 References
 ==========
 

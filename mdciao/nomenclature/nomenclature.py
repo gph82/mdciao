@@ -278,32 +278,61 @@ def BW_finder(BW_descriptor,
               write_to_disk=False):
     r"""
     Return a :obj:`pandas.DataFrame` containing
-    a Ballesteros-Weinstein numbering.
+    a `Ballesteros-Weinstein-Numbering (BW)
+    <https://doi.org/10.1016/S1043-9471(05)80049-7>`_ [1].
 
-    There a different ways of doing the same thing
-    (for compatibility reasons).
+    The lookup is first local and then online
+    on the `GPCRdb <https://gpcrdb.org/>`_ [3].
 
-    This method wraps (with some lambdas) around
-    :obj:`_finder_writer`
+    This method wraps (with some python lambdas) around
+    :obj:`_finder_writer`.
 
     Parameters
     ----------
     BW_descriptor : str
-        Anything that can be used to try and find
-        the needed information, locally or online:
+        Anything that can be used to find the needed
+        BW information, locally or online:
          * a uniprot descriptor, e.g. `adrb2_human`
-         * a full local filename
-         * a part of a local filename
-
-    format
-    local_path
-    try_web_lookup
-    verbose
-    dont_fail
-    write_to_disk
+         * a full local filename, e.g. `my_BW.txt` or
+           `path/to/my_BW.txt`
+         * the "basename" filename, `adrb2_human` if
+         `adrb2_human.xlsx` exists on :obj:`local_path` (see below :obj:`format`)
+        All these ways of doing the same thing (descriptor, basename, fullname,
+        localpath, fullpath) are for compatibility with other methods.
+    format : str, default is "%s.xlsx".
+        If :obj:`BW_descriptor` is not readable directly,
+        try to find "BW_descriptor.xlsx" locally on :obj:`local_path`
+    local_path : str, default is "."
+        If :obj:`BW_descriptor` doesn't find the file locally,
+        then try "local_path/BW_descriptor" before trying online
+    try_web_lookup : boolean, default is True.
+        If local lookup variants fail, go online, else Fail
+    verbose : bool, default is False
+        Be verbose.
+    dont_fail : bool, default is False
+        If True, when the lookup fails None will
+        be returned. By default the method raises
+        an exception if it could not find the info.
+    write_to_disk : boolean, default is False
+        Save the found BW info locally.
 
     Returns
     -------
+    df : DataFrame or None
+        The BW information as :obj:`pandas.DataFrame`
+
+    References
+    ----------
+    * [1] Juan A. Ballesteros, Harel Weinstein,
+     *[19] Integrated methods for the construction of three-dimensional models and computational probing
+     of structure-function relations in G protein-coupled receptors*,
+     Editor(s): Stuart C. Sealfon, Methods in Neurosciences, Academic Press, Volume 25, 1995
+     `<https://doi.org/10.1016/S1043-9471(05)80049-7>`_
+
+    * [3] Gáspár Pándy-Szekeres, Christian Munk, Tsonko M Tsonkov, Stefan Mordalski, Kasper Harpsøe, Alexander S Hauser, Andrzej J Bojarski, David E Gloriam,
+     *GPCRdb in 2018: adding GPCR structure models and ligands*,
+     Nucleic Acids Research, Volume 46, Issue D1, 4 January 2018, Pages D440–D446,
+     `<https://doi.org/10.1093/nar/gkx1109>`_
 
     """
 
@@ -907,8 +936,11 @@ class LabelerBW(LabelerConsensus):
         uniprot_name : str
             Descriptor by which to find the nomenclature,
             it gets directly passed to :obj:`BW_finder`
-            Can be several different things:
-             *
+            Can be several anything that can be used to try and find,
+            the needed information, locally or online:
+            * a uniprot descriptor, e.g. `adrb2_human`
+            * a full local filename
+            * a part of a local filename
         ref_PDB
         local_path
         format
@@ -1588,10 +1620,11 @@ def guess_nomenclature_fragments(refseq, top,
     if fragments is None:
         fragments = _mdcfrg.get_fragments(top, verbose=False)
 
-    if isinstance(refseq, LabelerConsensus):
+    try:
         seq_consensus = refseq.seq
-    else:
-        assert isinstance(refseq,str)
+    except AttributeError:
+        assert isinstance(refseq,str),"refseq has to be either a %s with a 'seq' method or a string" \
+                                      "but not a %s."%(LabelerConsensus,type(str))
         seq_consensus = refseq
 
     df = _mdcu.sequence.align_tops_or_seqs(top, seq_consensus)
