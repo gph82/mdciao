@@ -494,7 +494,7 @@ def _fragment_overview(a,labtype):
     else:
         for key, frag in obj.fragments.items():
             print("fragment %s with %u AAs:"%(key, len(frag)))
-            from pandas import DataFrame as _DF
+
             idf = _DF.from_dict({"residue"  : frag,
                                  "consensus": obj.fragments_as_conlabs[key]})
 
@@ -795,8 +795,6 @@ def residue_neighborhoods(residues,
     print("Will compute contact frequencies for :\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
-    refgeom = _load_any_geom(topology)
-
     fragments_as_residue_idxs, __ = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
@@ -963,7 +961,6 @@ def residue_neighborhoods(residues,
         print(fname)
 
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
-    print(fname)
     # TODO undecided about this
     # TODO this code is repeated in sites...can we abstract this oafa?
     if table_ext is not None and savefiles:
