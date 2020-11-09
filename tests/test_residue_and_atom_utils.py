@@ -352,7 +352,6 @@ class Test_rangeexpand_residues2residxs(unittest.TestCase):
                                                                        self.top,
                                                                        interpret_as_res_idxs=True
                                                                        )
-        print("exxxxx",expanded_range,type(expanded_range))
         np.testing.assert_array_equal(expanded_range,[0,10,20])
 
 
