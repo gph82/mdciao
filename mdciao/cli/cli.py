@@ -699,7 +699,7 @@ def residue_neighborhoods(residues,
     BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
-        If `mdciao.nomenclature.Labeler_BW`, use this object direcly
+        If `mdciao.nomenclature.Labeler_BW`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
@@ -1114,7 +1114,7 @@ def interface(
         str, e.g. "adrb2_human", try to locate a local
         filename or do a web lookup in the GPCRdb. If
         `mdciao.nomenclature.Labeler_BW`, use this object
-        direcly (allows for object re-use when in API mode)
+        directly (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and
         references.
     CGN_PDB : str, default is 'None'
@@ -1124,7 +1124,7 @@ def interface(
         https://www.mrc-lmb.cam.ac.uk/CGN/ and
         http://www.rcsb.org/. If
         :obj:`mdciao.nomenclature.LabelerCGN`    , use this
-        object direcly (allows for object re-use when in API
+        object directly (allows for object re-use when in API
         mode) See :obj:`mdciao.nomenclature` for more info
         and references.
     chunksize_in_frames : int, default is 10000
@@ -1160,7 +1160,7 @@ def interface(
         If there's more than one "GLU30", the user gets asked to
         disambiguate. The resulting fragments need not cover all of the topology,
         they only need to not overlap.
-    fragment_names : str, default is ''
+    fragment_names : str or list, default is ''
         If string, it has to be a list of comma-separated
         values. If you want unnamed fragments, use None,
         "None", or "". Has to contain names for all
@@ -1220,7 +1220,7 @@ def interface(
         sort by sum of frequencies (~average number of
         contacts). Default is True.
     scheme : str, default is 'closest-heavy'
-        Type for scheme for computing distance between
+        Type of scheme for computing distance between
         residues. Choices are {'ca', 'closest', 'closest-
         heavy', 'sidechain', 'sidechain-heavy'}. See
         :obj:`mdtraj.compute_distances` documentation for more info
@@ -1558,6 +1558,9 @@ def sites(site_files,
           savefiles=True,
           ):
     r"""
+
+    Compute distances between groups of contact-pairs that are
+    already pre-defined as sites
 
     Parameters
     ----------
