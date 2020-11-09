@@ -207,6 +207,12 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                    table_ext=".xlsx",
                                    output_dir=tmpdir)
 
+    def test_no_table(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+              cli.residue_neighborhoods("395", self.geom, [self.traj, self.traj_reverse],
+                                   table_ext=None,
+                                   output_dir=tmpdir)
+
     def test_distro(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
               cli.residue_neighborhoods("395", self.geom, [self.traj, self.traj_reverse],
