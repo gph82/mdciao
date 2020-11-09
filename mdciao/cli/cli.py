@@ -479,7 +479,7 @@ def _fragment_overview(a,labtype):
     if a.topology is not None:
         top = _md.load(a.topology).top
         map_conlab = obj.top2map(top)
-        obj.top2defs(top, map_conlab=map_conlab, guess_consensus=a.fill_gaps)
+        obj.top2defs(top, map_conlab=map_conlab, guess_consensus=a.fill_gaps, verbose=True)
 
         _mdcu.residue_and_atom.parse_and_list_AAs_input(a.AAs, top, map_conlab)
         if str(a.labels).lower() != "none":
@@ -1096,8 +1096,8 @@ def interface(
     trajectories : list
         The MD-trajectories to calculate the frequencies
         from. This input is pretty flexible. For more info
-        check :obj:`mdciao.utils.str_and_dict.get_sorted_tra
-        jectories`. Accepted values are:
+        check :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
+        Accepted values are:
 
         * pattern, e.g."*.ext"
         * one string containing a filename
