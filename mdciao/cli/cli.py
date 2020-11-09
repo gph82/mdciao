@@ -1776,10 +1776,9 @@ def sites(site_files,
                                                fragment_names=[fragment_names[idx] for idx in fragment_idxs],
                                                atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in
                                                                 at_pair_trajs]
-
                                                #colors=[fragcolors[idx] for idx in idxs]
                                                ))
-        site_as_gc[key] = _mdcctcs.ContactGroup(site_as_gc[key])
+        site_as_gc[key] = _mdcctcs.ContactGroup(site_as_gc[key], name='site %s'%key)
 
     panelheight = 3
     n_cols = _np.min((4, len(sites)))
@@ -1847,26 +1846,30 @@ def sites(site_files,
                                            shorten_AAs=short_AA_names,
                                            plot_N_ctcs=True,
                                            ylim_Ang=ylim_Ang,
-                                           )[0]
-        # One title for all axes on top
-        myfig.axes[0].set_title("site: %s" % (isite["name"]))
-        if savefiles:
-            _plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-            print(fname)
+                                           )
+        if len(myfig) == 0:
+            print("No figures of time-traces were produced because only 1 frame was provided")
+        else:
+            myfig = myfig[0]
+            # One title for all axes on top
+            myfig.axes[0].set_title("site: %s" % (isite["name"]))
+            if savefiles:
+                _plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+                print(fname)
 
-            if table_ext is not None and savefiles:
-                if table_ext == 'xlsx':
-                    isite_nh.frequency_spreadsheet(ctc_cutoff_Ang, fname_no_time,
-                                                write_interface=False,
-                                                by_atomtypes=True,
-                                                # AA_format="long",
-                                                split_label="join"
-                                                )
-                else:
-                    with open(fname_no_time, 'w') as f:
-                        f.write(isite_nh.frequency_str_ASCII_file(ctc_cutoff_Ang))
-                print(fname_no_time)
-        _plt.close(myfig)
+                if table_ext is not None and savefiles:
+                    if table_ext == 'xlsx':
+                        isite_nh.frequency_spreadsheet(ctc_cutoff_Ang, fname_no_time,
+                                                    write_interface=False,
+                                                    by_atomtypes=True,
+                                                    # AA_format="long",
+                                                    split_label="join"
+                                                    )
+                    else:
+                        with open(fname_no_time, 'w') as f:
+                            f.write(isite_nh.frequency_str_ASCII_file(ctc_cutoff_Ang))
+                    print(fname_no_time)
+            _plt.close(myfig)
 
     return site_as_gc
 
