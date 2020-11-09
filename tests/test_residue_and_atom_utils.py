@@ -142,6 +142,19 @@ class Test_residues_from_descriptors_no_ambiguity(unittest.TestCase):
         # GLU30 is in the 1st fragment
         # GDP382 is in the 4th fragment
 
+    def test_overlaping_frags(self):
+        residues = ["GLU30"]
+        with pytest.raises(ValueError):
+            residue_and_atom.residues_from_descriptors(residues, [np.arange(self.geom.n_residues),
+                                                                  [np.arange(self.geom.n_residues)]],
+                                                       self.geom.top)
+
+    def test_not_in_fragment(self):
+        residues = ["GLU30"]
+        with pytest.raises(ValueError):
+            residue_and_atom.residues_from_descriptors(residues, [np.arange(3,5)],
+                                                       self.geom.top)
+
 
 class Test_residues_from_descriptors(unittest.TestCase):
 

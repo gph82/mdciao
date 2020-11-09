@@ -132,8 +132,16 @@ def residues_from_descriptors(residue_descriptors,
             residxs.append(None)
             fragidxs.append(None)
         elif len(cands) == 1:
+            if len(cand_fragments)>1:
+                raise ValueError("Your fragment definitions overlap, "
+                                 "res_idx %u (%s) is found in fragments  %s"%
+                                 (cands[0], top.residue(cands[0]), ', '.join([str(fr) for fr in cand_fragments])))
+            elif len(cand_fragments)==0:
+
+                raise ValueError("Your fragment definitions do not contain "
+                                 "the residue of interest %u (%s)."%
+                                 (cands[0], top.residue(cands[0])))
             residxs.append(cands[0])
-            assert len(cand_fragments)==1, ValueError("It seems your fragment definitions overlap, .e.g. res_idx %u (%s) is found in fragments  %s"%(residxs[-1], top.residue(residxs[-1]), cand_fragments))
             fragidxs.append(cand_fragments[0])
         else:
             istr = "ambiguous definition for AA %s" % key
