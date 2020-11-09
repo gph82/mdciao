@@ -748,6 +748,8 @@ def residue_neighborhoods(residues,
 
     _offer_to_create_dir(output_dir)
 
+    refgeom = _load_any_geom(topology)
+
     # String comparison to allow for command line argparse-use directly
     if str(table_ext).lower() != 'none' and str(table_ext).lower().strip(".") in ["dat", "txt", "xlsx"]:
         table_ext = str(table_ext).lower().strip(".")
