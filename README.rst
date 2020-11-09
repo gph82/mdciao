@@ -16,7 +16,7 @@ Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the 
 * `Ballesteros-Weinstein-Numbering (BW) <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_
 * `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_
 
-consensus-nomenclature schemes by either using local files or on-the-fly lookups of the `GPRC.db <https://gpcrdb.org/>`_
+consensus-nomenclature schemes by either using local files or on-the-fly lookups of the `GPCRdb <https://gpcrdb.org/>`_
 and/or `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_
 
 Licenses
