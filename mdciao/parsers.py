@@ -127,7 +127,7 @@ def _parser_add_smooth(parser):
 
 def _parser_add_scheme(parser):
     parser.add_argument("--scheme",type=str, default='closest-heavy',
-                        help="Type for scheme for computing distance between residues. Choices are "
+                        help="Type of scheme for computing distance between residues. Choices are "
                              "{'ca', 'closest', 'closest-heavy', 'sidechain', 'sidechain-heavy'}. "
                              "See mdtraj documentation for more info")
 
@@ -143,7 +143,7 @@ def _parser_add_t_unit(parser):
 
 def _parser_add_curve_color(parser):
     parser.add_argument("--curve_color", type=str,
-                        help="Type of color used for the curves. Default is auto. Alternatives are 'Peter' or 'Hobat'",
+                        help="Type of color used for the curves. Default is auto. Alternatives are 'P' or 'H'",
                         default="auto")
 
 def _parser_add_gray_backgroud(parser):
@@ -543,6 +543,7 @@ def parser_for_sites():
     _parser_add_table_ext(parser)
     _parser_add_atomtypes(parser)
     _paser_add_guess(parser)
+    _parser_add_distro(parser)
     return parser
 
 def parser_for_densities():
@@ -697,6 +698,8 @@ def parser_for_compare_neighborhoods():
     parser.add_argument("-k","--keys", type=str,default=None, help="The keys used to label the files, e.g. 'WT,MUT'")
     parser.add_argument("-c","--colors", type=str, default=_colorstring, help='Colors to use for the dicts, defaults to "%s"'%", ".join(_colorstring.split(",")))
     parser.add_argument("-m","--mutations",type=str, default=None,help='A replacement dictionary, to be able to re-label residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes all GLUs to ARGs and all LYS to PHEs')
+    parser.add_argument("-t", "--title", type=str, default=None,
+                        help='Title of the plot. Default is None which will take mdciao.plots.compare_groups_of_contacts"s default.')
     _parser_add_output_desc(parser,"freq_comparison")
     _parser_add_graphic_ext(parser)
     return parser
@@ -749,40 +752,75 @@ def _parser2dict(a):
             #print()
     return out
 
-def _parser2signature(parsername, method):
-    parser = eval(parsername)()
-    parser_dict = _parser2dict(parser)
-    from docstring_parser import parse as _docstring_parse
+def _fuzzy_match_dict(key,indict):
     import numpy as _np
+    from fuzzywuzzy import fuzz
+    cand_keys = list(indict.keys())
+
+    ratios = [fuzz.ratio(key, key2) for key2 in cand_keys]
+    #print("RRR",ratios, indict)
+    try:
+        best_key = cand_keys[_np.argmax(ratios)]
+        print(key, best_key, _np.max(ratios))
+        return best_key, indict[best_key]
+    except:
+        return None, None
+
+def _parser2signature(parsername, method1, alt_method=None):
+    from docstring_parser import parse as _docstring_parse
     from inspect import signature as _signature
     from textwrap import wrap
-    from fuzzywuzzy import fuzz
-    sig = _signature(method)
-    ex_docstring = {pp.arg_name:pp for pp in _docstring_parse(method.__doc__).params}
-    signature_keys = list(sig.parameters.keys())
-    argparse_keys = list(parser_dict.keys())
-    docstring_keys = list(ex_docstring.keys())
-    for key in signature_keys:
+
+    parser = eval(parsername)()
+    parser_dict = _parser2dict(parser)
+
+    sig1 = _signature(method1)
+    sig_keys1 = list(sig1.parameters.keys())
+
+    sig1_docstrs = {pp.arg_name:pp for pp in _docstring_parse(method1.__doc__).params}
+
+    sig_alt_keys = None
+    if alt_method is not None:
+        sig_alt = _signature(alt_method)
+        sig_alt_keys = list(sig_alt.parameters.keys())
+
+        sig_alt_docstrs = {pp.arg_name: pp for pp in _docstring_parse(alt_method.__doc__).params}
+
+    for sig_key in sig_keys1:
         # print(key)
-        ratios = [fuzz.ratio(key, key2) for key2 in argparse_keys]
-        key2 = argparse_keys[_np.argmax(ratios)]
-        ratios = [fuzz.ratio(key, key3) for key3 in docstring_keys]
-        key3 = docstring_keys[_np.argmax(ratios)]
-        p = sig.parameters[key]
-        print(key, key2, _np.max(ratios))
+        docstr_key, docstr = _fuzzy_match_dict(sig_key,sig1_docstrs)
+        p = sig1.parameters[sig_key]
         if isinstance(p.default, str):
             val = "'%s'" % p.default
         else:
             val = "%s" % str(p.default)
         print("Signature:")
-        print("%s : %s, default is %s" % (key, type(p.default).__name__, val))
-        print("'%s' %s docstring (BEST match )"%(key3,method.__name__))
+        print("%s : %s, default is %s" % (sig_key, type(p.default).__name__, val))
+        print("'%s' %s docstring (BEST match )" % (docstr_key, method1.__name__))
         try:
-            print("\n".join(wrap(ex_docstring[key3].description, 60, initial_indent="        ", subsequent_indent="        ")))
+            print("\n".join(wrap(docstr.description,
+                                 60,
+                                 initial_indent="        ",
+                                 subsequent_indent="        ")))
         except AttributeError:
             print("")
-        print("'%s' CLI documentation: (BEST match )"%key2)
-        print("\n".join(wrap(parser_dict[key2], 60, initial_indent="        ", subsequent_indent="        ")))
+        arg_key, arg_val = _fuzzy_match_dict(sig_key,parser_dict)
+        print("'%s' CLI documentation: (BEST match )"%arg_key)
+        print("\n".join(wrap(arg_val,
+                             60,
+                             initial_indent="        ",
+                             subsequent_indent="        ")))
+        if sig_alt_keys is not None:
+            alt_key, alt_val = _fuzzy_match_dict(sig_key,sig_alt_docstrs)
+            print("'%s' %s docstring (BEST match )" % (alt_key, alt_method.__name__))
+            try:
+                print("\n".join(wrap(alt_val.description,
+                                     60,
+                                     initial_indent="        ",
+                                     subsequent_indent="        ")))
+            except AttributeError:
+                print("")
+
         input("\n")
 
 def _list_parsers():
