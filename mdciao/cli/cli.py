@@ -1261,6 +1261,10 @@ def interface(
     Returns
     -------
 
+    CG_interface : :obj:`mdciao.contacts.ContactGroup`
+        The object containing the :obj:`mdciao.contacts.ContactPair`
+        objects tha conform the interface.
+
     """
     if str(title).lower()=="none":
         title = output_desc
@@ -1702,6 +1706,10 @@ def sites(site_files,
 
     Returns
     -------
+    CG_site : dictionary
+        Keyed with the site name, its values are the
+        :obj:`mdciao.contacts.ContactGroup`-objects,
+        that conform each site
 
     """
 
