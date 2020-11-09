@@ -15,7 +15,7 @@ Installation via package manager
    </strike>
 
 .. warning::
- None of these methods work yet, as ``mdciao`` is not yet published to those package managers. Please use the `Installation from source`_
+ Please use the `Installation from source`_, since ``mdciao`` is not yet published to these package managers.
 
 |ss| We recommend you install ``mdciao`` either via the `pip <https://pypi.org/project/pip/>`_ Python package installer or the `conda <https://conda.io/en/latest/>`_ Python package manager::
 
