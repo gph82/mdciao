@@ -1664,9 +1664,9 @@ class ContactGroup(object):
 
         # Sanity checks about having grouped this contacts together
         if self._n_ctcs==0:
-            raise NotImplementedError("A ContactGroup has been initialized with no contacts\n"
-                                      "probably because no residues were found within the \n"
-                                      "cutoff!")
+            raise NotImplementedError("A ContactGroup has been initialized with no contacts,\n"
+                                      "probably because no residues were found within the cutoff."
+                                      )
             # TODO imppelment an empty CG or a propety self.empty?
         else:
             # All contacts have the same number of trajs
