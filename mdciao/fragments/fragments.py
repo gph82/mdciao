@@ -537,7 +537,6 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
         fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
                                                   verbose=False)
     elif str(fragment_input[0]) in _allowed_fragment_methods:
-        user_wants_consensus = True
         method = fragment_input[0]
         fragments_as_residue_idxs = get_fragments(top, method=method,
                                                   verbose=False)
