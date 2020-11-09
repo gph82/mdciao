@@ -182,6 +182,13 @@ def CGN_finder(identifier,
     Returns
     -------
     DF : :obj:`DataFrame` with the consensus nomenclature
+
+    References
+    ----------
+    * [2] Flock, T., Ravarani, C., Sun, D. et al.,
+     *Universal allosteric mechanism for Gα activation by GPCRs.*
+     Nature 524, 173–179 (2015)
+     `<https://doi.org/10.1038/nature14663>`
     """
     file2read = format%identifier
     file2read = _path.join(local_path, file2read)
@@ -191,6 +198,8 @@ def CGN_finder(identifier,
     url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
     web_lookup_lambda = local_lookup_lambda
 
+    print("Please cite the following 3rd party publications.\n"
+          " * https://doi.org/10.1038/nature14663 (Babu et al 2015)")
     return _finder_writer(file2read, local_lookup_lambda,
                           url, web_lookup_lambda,
                           try_web_lookup=try_web_lookup,
@@ -329,7 +338,8 @@ def BW_finder(BW_descriptor,
      Editor(s): Stuart C. Sealfon, Methods in Neurosciences, Academic Press, Volume 25, 1995
      `<https://doi.org/10.1016/S1043-9471(05)80049-7>`_
 
-    * [3] Gáspár Pándy-Szekeres, Christian Munk, Tsonko M Tsonkov, Stefan Mordalski, Kasper Harpsøe, Alexander S Hauser, Andrzej J Bojarski, David E Gloriam,
+    * [3] Gáspár Pándy-Szekeres, Christian Munk, Tsonko M Tsonkov, Stefan Mordalski,
+     Kasper Harpsøe, Alexander S Hauser, Andrzej J Bojarski, David E Gloriam,
      *GPCRdb in 2018: adding GPCR structure models and ligands*,
      Nucleic Acids Research, Volume 46, Issue D1, 4 January 2018, Pages D440–D446,
      `<https://doi.org/10.1093/nar/gkx1109>`_
@@ -349,7 +359,9 @@ def BW_finder(BW_descriptor,
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
                                                         converters={"BW": str}).replace({_np.nan: None})
     web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
-
+    print("Please cite the following 3rd party publications.\n"
+          " * https://doi.org/10.1016/S1043-9471(05)80049-7 (Weinstein et al 1995)\n"
+          " * https://doi.org/10.1093/nar/gkx1109 (Gloriam et al 2018")
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
                           try_web_lookup=try_web_lookup,
