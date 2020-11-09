@@ -539,7 +539,7 @@ def add_residue_labels(iax,
         and offset here
     colors : list of len(res_idxs), default is None,
         Individual residue colors, default is black
-    replacement_labels : dict, defaut is None
+    replacement_labels : dict, default is None
         Input individual replacements for residue labels here,
         keyed with residue idxs
         Typical cases could be a mutated residue that you want
