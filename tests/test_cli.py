@@ -53,6 +53,8 @@ from pandas import \
 from os import \
     path as _path
 
+import numpy as _np
+
 class TestCLTBaseClass(unittest.TestCase):
 
     def setUp(self):
@@ -292,6 +294,14 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                   output_dir=tmpdir,
                                   )
 
+    def test_no_bonds_fail(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            top = self.geom[0]
+            top.top._bonds = []
+            with pytest.raises(ValueError):
+                cli.residue_neighborhoods("R131",
+                                        top, [self.traj, self.traj_reverse],
+                                        output_dir=tmpdir)
 
 class Test_sites(TestCLTBaseClass):
 
@@ -319,6 +329,17 @@ class Test_sites(TestCLTBaseClass):
                   output_dir=tmpdir,
                   scheme="COM",
                        table_ext=".dat")
+    def test_sites_no_traj(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+             cli.sites([test_filenames.tip_json], self.geom,
+                       output_dir=tmpdir)
+
+    def test_sites_distro(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+             cli.sites([test_filenames.tip_json], self.geom,
+                       [self.traj, self.traj_reverse],
+                       distro=True,
+                       output_dir=tmpdir)
 
 class Test_interface(TestCLTBaseClass):
 
@@ -477,6 +498,13 @@ class Test_parse_consensus_option(unittest.TestCase):
             self.assertEqual(lblr,BW)
             self.assertIsInstance(residx2conlab,list)
 
+    def test_no_answer(self):
+        BW = LabelerBW(test_filenames.adrb2_human_xlsx)
+        residx2conlab, lblr = cli._parse_consensus_option(BW, "BW",
+                                                          self.geom.top,
+                                                          [_np.arange(10)],
+                                                          return_Labeler=True)
+
 class Test_offer_to_create_dir(unittest.TestCase):
 
     def test_creates_dir(self):
@@ -524,6 +552,10 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
         self.assertSequenceEqual([None,None,None,None],
                                  fragnames)
 
+    def test_list(self):
+        fragnames = cli._parse_fragment_naming_options(["A","B","C","D"], self.fragments)
+        self.assertSequenceEqual(["A","B","C","D"],
+                                 fragnames)
     def test_csv(self):
         fragnames = cli._parse_fragment_naming_options("TM1,TM2,ICL3,H8", self.fragments)
         self.assertSequenceEqual(["TM1","TM2","ICL3","H8"],
