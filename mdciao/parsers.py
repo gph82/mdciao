@@ -149,7 +149,7 @@ def _parser_add_curve_color(parser):
 def _parser_add_gray_backgroud(parser):
     parser.add_argument('--gray-background', dest='gray_background', action='store_true',
                         help="Use gray background when using smoothing windows"
-                             " Defaut is False")
+                             " Default is False")
     parser.add_argument('--no-gray-background', dest='gray_background', action='store_false')
     parser.set_defaults(gray_background=False)
 
@@ -232,21 +232,21 @@ def _parser_add_graphic_ext(parser):
 def _parser_add_no_fragfrag(parser):
     parser.add_argument('--same_fragment', dest='same_fragment', action='store_true',
                         help="Allow contact partners in the same fragment, default is True"
-                             " Defaut is True")
+                             " Default is True")
     parser.add_argument('--no-same_fragment', dest='same_fragment', action='store_false')
     parser.set_defaults(allow_same_fragment_ctcs=True)
 
 def _parser_add_pbc(parser):
     parser.add_argument('--no-pbc', dest='pbc',
                         help="Do not consider periodic boundary conditions when computing distances."
-                             " Defaut is to consider them",
+                             " Default is to consider them",
                         action='store_false')
     parser.set_defaults(pbc=True)
 
 def _parser_add_short_AA_names(parser):
     parser.add_argument('-sa','--short_AAs', dest='short_AA_names', action='store_true',
                         help="Use one-letter aminoacid names when possible, e.g. K145 insted of Lys145."
-                             " Defaut is False")
+                             " Default is False")
     parser.set_defaults(short_AA_names=False)
 
 def _parser_add_output_desc(parser, default='output_sites'):
@@ -355,7 +355,7 @@ def _parser_add_residues(parser):
 
 def _parser_add_no_frag(parser):
     parser.add_argument('-nf',"--no-fragments", dest='fragmentify',action='store_false',
-                        help="Do not use fragments. Defautl is to use them")
+                        help="Do not use fragments. Default is to use them")
     parser.set_defaults(fragmentify=True)
 
 #TODO unify _ vs - in arguments
@@ -370,7 +370,7 @@ def _parser_add_frag_colors(parser):
 def _paser_add_guess(parser):
     parser.add_argument("-ni", "-no-interactive",
                         dest="accept_guess", action="store_true",
-                        help="Try not to be interactive. This can make wrong choices for the user, advanded only.")
+                        help="Try not to be interactive. This can make wrong choices for the user, advanced only.")
     parser.set_defaults(accept_guess=False)
 
 # TODO group the parser better!
@@ -408,7 +408,7 @@ def parser_for_rn():
     _parser_add_no_frag(parser)
     _parser_add_frag_colors(parser)
     parser.add_argument('--no-sort', dest='sort',
-                        help="Don't sort the residues by their index. Defaut is to sort them.",
+                        help="Don't sort the residues by their index. Default is to sort them.",
                         action='store_false')
     parser.set_defaults(sort=True)
 
@@ -463,13 +463,13 @@ def parser_for_dih():
     #_parser_add_fragments(parser)
     _parser_add_fragment_names(parser)
 
-    parser.add_argument('--sort', dest='sort', action='store_true', help="Sort the resSeq_idxs list. Defaut is True")
+    parser.add_argument('--sort', dest='sort', action='store_true', help="Sort the resSeq_idxs list. Default is True")
     parser.add_argument('--no-sort', dest='sort', action='store_false')
     parser.set_defaults(sort=True)
 
     #parser.add_argument('--pbc', dest='pbc', action='store_true',
     #                    help="Consider periodic boundary conditions when computing distances."
-    #                         " Defaut is True")
+    #                         " Default is True")
     #parser.add_argument('--no-pbc', dest='pbc', action='store_false')
     #parser.set_defaults(pbc=True)
 
@@ -607,7 +607,7 @@ def parser_for_interface():
     parser.add_argument('--sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_true',
                         help="When presenting the results summarized by residue, "
                              " sort by sum of frequencies (~average number of contacts)."
-                             " Defaut is True.")
+                             " Default is True.")
     parser.add_argument('--no-sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_false')
     parser.set_defaults(sort_by_av_ctcs=True)
     _parser_add_scheme(parser)
@@ -734,3 +734,57 @@ def parser_for_examples():
     parser.set_defaults(short=False)
 
     return parser
+
+def _parser2dict(a):
+    out = {"description": a.description}
+    for ag in a._action_groups:
+        #print(ag)
+        for ga in ag._group_actions:
+            #print(ga)
+            #varname = [os.strip("-") for os in ga.option_strings if os.startswith("--")]
+            try:
+                out[ga.dest] = " ".join(ga.help.splitlines()).replace("  "," ")
+            except:
+                pass
+            #print()
+    return out
+
+def _parser2signature(parsername, method):
+    parser = eval(parsername)()
+    parser_dict = _parser2dict(parser)
+    from docstring_parser import parse as _docstring_parse
+    import numpy as _np
+    from inspect import signature as _signature
+    from textwrap import wrap
+    from fuzzywuzzy import fuzz
+    sig = _signature(method)
+    ex_docstring = {pp.arg_name:pp for pp in _docstring_parse(method.__doc__).params}
+    signature_keys = list(sig.parameters.keys())
+    argparse_keys = list(parser_dict.keys())
+    docstring_keys = list(ex_docstring.keys())
+    for key in signature_keys:
+        # print(key)
+        ratios = [fuzz.ratio(key, key2) for key2 in argparse_keys]
+        key2 = argparse_keys[_np.argmax(ratios)]
+        ratios = [fuzz.ratio(key, key3) for key3 in docstring_keys]
+        key3 = docstring_keys[_np.argmax(ratios)]
+        p = sig.parameters[key]
+        print(key, key2, _np.max(ratios))
+        if isinstance(p.default, str):
+            val = "'%s'" % p.default
+        else:
+            val = "%s" % str(p.default)
+        print("Signature:")
+        print("%s : %s, default is %s" % (key, type(p.default).__name__, val))
+        print("'%s' %s docstring (BEST match )"%(key3,method.__name__))
+        try:
+            print("\n".join(wrap(ex_docstring[key3].description, 60, initial_indent="        ", subsequent_indent="        ")))
+        except AttributeError:
+            print("")
+        print("'%s' CLI documentation: (BEST match )"%key2)
+        print("\n".join(wrap(parser_dict[key2], 60, initial_indent="        ", subsequent_indent="        ")))
+        input("\n")
+
+def _list_parsers():
+    return [pp for pp in globals() if pp.startswith("parser_for")]
+
