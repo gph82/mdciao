@@ -450,6 +450,21 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
                                                                        self.top,
                                                                        verbose=True)
 
+    def test_arrays(self):
+        fragments, conlab = _fragments_strings_to_fragments([_np.arange(10),
+                                                             "11-100",
+                                                             "200-210"],
+                                                            self.top,
+                                                            verbose=True)
+
+    def test_fragment_outside(self):
+        fragments, conlab = _fragments_strings_to_fragments([_np.arange(10),
+                                                             "11-100",
+                                                             "200-2100"],
+                                                            self.top,
+                                                            verbose=True)
+
+
 
 class Test_frag_dict_2_frag_groups(unittest.TestCase):
 

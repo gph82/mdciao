@@ -414,8 +414,8 @@ def overview(topology,
 
 def _assert_method_allowed(method):
     assert str(method) in _allowed_fragment_methods, ('input method %s is not known. ' \
-                                                 'Know methods are %s ' %
-                                                 (method, "\n".join(_allowed_fragment_methods)))
+                                                      'Know methods are\n%s ' %
+                                                      (method, "\n".join(_allowed_fragment_methods)))
 
 def check_if_subfragment(sub_frag, fragname, fragments, top,
                          map_conlab=None,
@@ -491,10 +491,10 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
 
 def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     r"""
-    Method to help implement the input options wrt
-    to fragments of :obj:`parsers.parser_for_interface`
 
-    Check the documentation of interface (-h) for more details
+    #TODO rename the strings to something else
+    Try to understand how the the user wants to fragment the topology
+    Pretty flexible
 
     Check also :obj:`rangeexpand` to understand the expressions
 
@@ -510,7 +510,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
         user_wants_consensus as False
         * [['exp1']] : this str represents the
         residues in one fragment (eg. "0-3,5" : 0,1,2,3,5).
-        Assume that the missing residues the other fragment.
+        Assume that any missing residues belong the other fragment.
         Return the two fragments and user_wants_consensus as False
         * [["exp1"],
            ["exp2"],
@@ -518,6 +518,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
         These strs are the fragments expressed as residue
         indices. Evaluate them and return them. Return
         user_wants_consensus as False
+        * exp can also b ["LEU30-GLU40"]
         * None or "None"
 
     top : :obj:`mdtraj.Topology`
@@ -529,34 +530,39 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     """
     user_wants_consensus = False
     assert isinstance(fragment_input,list)
-    if ("".join(fragment_input).replace("-","").replace(",","")).isnumeric():
-        method = "user input by residue index"
-        # What we have is list residue idxs as strings like 0-100, 101-200, 201-300
-        fragments_as_residue_idxs =[_mdcu.lists.rangeexpand(ifrag.strip(",")) for ifrag in fragment_input]
-        for ii, ifrag in enumerate(fragments_as_residue_idxs):
-            _mdcu.lists.assert_no_intersection(fragments_as_residue_idxs, word="fragments")
-            if not all([aa in range(top.n_residues) for aa in ifrag]):
-                print("Fragment %u has idxs outside of the geometry (total n_residues %u): %s"%(ii, top.n_residues,
-                                                                         set(ifrag).difference(range(top.n_residues))))
 
+    if str(fragment_input[0]).lower()=="consensus":
+        user_wants_consensus = True
+        method = 'resSeq+'
+        fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
+                                                  verbose=False)
+    elif str(fragment_input[0]) in _allowed_fragment_methods:
+        user_wants_consensus = True
+        method = fragment_input[0]
+        fragments_as_residue_idxs = get_fragments(top, method=method,
+                                                  verbose=False)
+    else:
+        method = "user input by residue array or range"
+        fragments_as_residue_idxs = []
+        for fri in fragment_input:
+            if not isinstance(fri,str):
+                fragments_as_residue_idxs.append(fri)
+            else:
+                fragments_as_residue_idxs.append(_mdcu.residue_and_atom.rangeexpand_residues2residxs(fri,
+                                                                                [_np.arange(top.n_residues)],
+                                                                                top,
+                                                                                interpret_as_res_idxs=fri.replace("-","").isnumeric()))
         if len(fragment_input)==1:
             assert isinstance(fragment_input[0],str)
-            method += "(only one fragment provided, assuming the rest of residues are fragment 2)"
+            method += " (only one fragment provided, assuming the rest of residues are fragment 2)"
             fragments_as_residue_idxs.append(_np.delete(_np.arange(top.n_residues), fragments_as_residue_idxs[0]))
-    elif len(fragment_input)==1:
-        if fragment_input[0].lower()=="consensus":
-            user_wants_consensus = True
-            method = 'resSeq+ (for later user_wants_consensus labelling)'
-            fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
-                                                      verbose=False)
-        else:
-            method = fragment_input[0]
-            fragments_as_residue_idxs = get_fragments(top, method=method,
-                                                      verbose=False)
-    if verbose:
-        print("Using method '%s' these fragments were found"%method)
-        for ii, ifrag in enumerate(fragments_as_residue_idxs):
-            print_frag(ii, top, ifrag)
+
+    for ii, ifrag in enumerate(fragments_as_residue_idxs):
+        _mdcu.lists.assert_no_intersection(fragments_as_residue_idxs, word="fragments")
+        if not all([aa in range(top.n_residues) for aa in ifrag]):
+            print("Fragment %u has idxs outside of "
+                  "the geometry (total n_residues %u): %s" % (
+                  ii, top.n_residues, set(ifrag).difference(range(top.n_residues))))
 
     return fragments_as_residue_idxs, user_wants_consensus
 
