@@ -213,7 +213,7 @@ def _parser_add_output_dir(parser):
 
 def _parser_add_nomenclature(parser):
     parser.add_argument("--BW_uniprot", type=str,
-                        help="Look for Ballesteros-Weinstein definitions in the GPRCmd using a uniprot code, "
+                        help="Look for Ballesteros-Weinstein definitions in the GPCRdb using a uniprot code, "
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                              "Default is None.",
                         default='None')
@@ -656,7 +656,7 @@ def parser_for_BW_overview():
     parser.add_argument("BW_uniprot_or_file", type=str,
                         help="Get Ballesteros-Weinstein definitions from here.\n"
                              "If a file is not found locally, look for\n"
-                             " Ballesteros-Weinstein definitions in the GPRCmd\n"
+                             " Ballesteros-Weinstein definitions in the GPCRdb\n"
                              "using this string as uniprot code, "
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                         )
