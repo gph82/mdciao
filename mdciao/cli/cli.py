@@ -1530,6 +1530,157 @@ def sites(site_files,
           distro=False,
           savefiles=True,
           ):
+    r"""
+
+    Parameters
+    ----------
+    site_files : list, default is None
+        List of sites to compute. Sites can be either
+        paths to site file(s) in json formats or
+        directly a site dictionary. A site dictionary
+        is something like {"name":"site",
+                           "bonds":{"AAresSeq":["GLU30-ARG40",
+                                                "LYS31-W70"]}}
+        See :obj:`mdciao.sites` for more info
+    topology :
+        Topology file
+    trajectories :
+        The MD-trajectories to calculate the frequencies
+        from. This input is pretty flexible. For more info check
+        :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
+        Accepted values are:
+         * pattern, e.g. "*.ext"
+         * one string containing a filename
+         * list of filenames
+         * one :obj:`mdtraj.Trajectory` object
+         * list of :obj:`mdtraj.Trajectory` objects  * None
+        If None, the :obj:`mdtraj.Trajectory` object given
+        in :obj:`topology` is used as trajectories
+    ctc_cutoff_Ang : float, default is 3.5
+        Any residue-residue distance is considered a contact
+        if d<=ctc_cutoff_Ang
+    stride : int, default is 1
+        Stride the input data by this number of frames
+    scheme : str, default is 'closest-heavy'
+        Type of scheme for computing distance between
+        residues. Choices are {'ca', 'closest', 'closest-
+        heavy', 'sidechain', 'sidechain-heavy'}. See mdtraj
+        documentation for more info
+    chunksize_in_frames : int, default is 10000
+        Stream through the trajectory data in chunks of this
+        many frames Can lead to memory errors if
+        :obj:`n_jobs` makes it so that e.g. 4 trajectories
+        of 10000 frames each are loaded to memory and their
+        residue-residue distances computed
+    n_smooth_hw : int, default is 0
+        Plots of the time-traces will be smoothed using a
+        window of 2*n_smooth_hw
+    pbc : bool, default is True
+        Use periodic boundary conditions
+    BW_uniprot : str, default is 'None'
+        Try to find Ballesteros-Weinstein definitions. If
+        str, e.g. "adrb2_human", try to locate a local
+        filename or do a web lookup in the GPCRdb. If
+        `mdciao.nomenclature.Labeler_BW`, use this object
+        directly (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and
+        references.
+    CGN_PDB : str, default is 'None'
+        Try to find Common G-alpha Numbering definitions. If
+        str, e.g. "3SN6", try to locate local filenames
+        ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups in
+        https://www.mrc-lmb.cam.ac.uk/CGN/ and
+        http://www.rcsb.org/. If
+        :obj:`mdciao.nomenclature.LabelerCGN`, use this
+        object directly (allows for object re-use when in
+        API mode) See :obj:`mdciao.nomenclature` for more
+        info and references.
+    fragments : list, default is ['lig_resSeq+']
+        Fragment control. For compatibility reasons, it has
+        to be a list, even if it only has one element.
+        There exist several input modes:
+
+        * ["consensus"] : use things like "TM*" or "G.H*", i.e.
+         Ballesteros-Weinstein or CGN-sub-subunit labels.
+        * List of len 1 with some fragmentation heuristic, e.g.
+         ["lig_resSeq+"]. will use the default of
+         :obj:`mdciao.fragments.get_fragments`. See there for
+         info on defaults and other heuristics.
+        * List of len N that can mix different possibilities:
+          * iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
+          * ranges expressed as integer strings, "20-30"
+          * ranges expressed as residue descriptors ["GLU30-LEU40"]
+        Numeric expressions are interepreted as zero-indexed and unique
+        residue serial indices, i.e. 30-40 does not necessarily equate
+        "GLU30-LEU40" unless serial and sequence index coincide.
+        If there's more than one "GLU30", the user gets asked to
+        disambiguate. The resulting fragments need not cover all of the topology,
+        they only need to not overlap.
+    default_fragment_index : NoneType, default is None
+        In case a residue identified as, e.g, "GLU30", appears
+        more than one time in the topology, e.g. in case of
+        a dimer, pass which fragment/monomer should be chosen
+        by default. The default behaviour (None)
+        will prompt the user when necessary
+    fragment_names : str or list, default is ''
+        If string, it has to be a list of comma-separated
+        values. If you want unnamed fragments, use None,
+        "None", or "". Has to contain names for all
+        fragments that result from :obj:`fragments` or more.
+        mdciao wil try to use :obj:`replace4latex` to
+        generate LaTeX expressions from stuff like "Galpha"
+        You can use fragment_names="None" or "" to avoid
+        using fragment names
+    output_dir : str, default is '.'
+        directory to which the results are written
+    graphic_ext : str, default is '.pdf'
+        Extension of the output graphics, default is .pdf
+    t_unit : str, default is 'ns'
+        Unit used for the temporal axis.
+    curve_color : str, default is 'auto'
+        Type of color used for the curves. Alternatives are
+        "P" or "H"
+    gray_background : bool, default is False
+        Use gray background when using smoothing windows
+    graphic_dpi : int, default is 150
+        Dots per Inch (DPI) of the graphic output. Only has
+        an effect for bitmap outputs.
+    short_AA_names : bool, default is False
+        Use one-letter aminoacid names when possible, e.g.
+        K145 insted of Lys145.
+    save_nomenclature_files : bool, default is False
+        Save available nomenclature definitions to disk so
+        that they can be accessed locally in later uses.
+    ylim_Ang : int, default is 10
+        Limit in Angstrom of the y-axis of the time-traces.
+        Switch to any other float or 'auto' for automatic scaling
+    n_jobs : int, default is 1
+        Number of processors to use. The parallelization is
+        done over trajectories and not over contacts, beyond
+        n_jobs>n_trajs parallelization will not have any
+        effect
+    accept_guess : bool, default is False
+        Accept mdciao's guesses regarding fragment
+        identification using nomenclature labels
+    table_ext : NoneType, default is None
+        Extension for tabled files (.dat, .txt, .xlsx).
+        Default is None, which does not write anything.
+    output_desc :
+        Descriptor for output files.
+    plot_atomtypes : bool, default is False
+        Add the atom-types to the frequency bars by
+        'hatching' them. '--' is sidechain-sidechain '|' is
+        backbone-backbone '\' is backbone-sidechain '/' is
+        sidechain-backbone. See Fig XX for an example
+    distro : bool, default is False
+        Plot distance distributions instead of contact bar plots
+    savefiles : bool, default is True
+        Write the figures and tables to disk.
+
+    Returns
+    -------
+
+    """
 
     ylim_Ang = _np.float(ylim_Ang)
     _offer_to_create_dir(output_dir)
