@@ -204,6 +204,7 @@ def _parse_fragment_naming_options(fragment_names, fragments):
     r"""
     Helper method for the CLTs to understand what/how the user wants
     the fragments to be named
+
     Parameters
     ----------
     fragment_names : str or list
@@ -638,14 +639,21 @@ def residue_neighborhoods(residues,
         to be a list, even if it only has one element.
         There exist several input modes:
 
-        * Use some fragmentation heuristic, e.g.
-         ["lig_resSeq+"]. See :obj:`mdciao.fragments.get_fragments` for other heuristics
-        * Input fragments directly as iterables of residue indices, e.g.
-         [np.arange(10),np.arange(10,20)]
-        * Input fragments as ranges using strings, e.g.
-         ["0-10","10-20", "R30-GLU40"]
-        You can combine both last options, e.g. [range(10),"20-30"].
-        The resulting fragments need not cover all of the topology,
+        * ["consensus"] : use things like "TM*" or "G.H*", i.e.
+         Ballesteros-Weinstein or CGN-sub-subunit labels.
+        * List of len 1 with some fragmentation heuristic, e.g.
+         ["lig_resSeq+"]. will use the default of
+         :obj:`mdciao.fragments.get_fragments`. See there for
+         info on defaults and other heuristics.
+        * List of len N that can mix different possibilities:
+          * iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
+          * ranges expressed as integer strings, "20-30"
+          * ranges expressed as residue descriptors ["GLU30-LEU40"]
+        Numeric expressions are interepreted as zero-indexed and unique
+        residue serial indices, i.e. 30-40 does not necessarily equate
+        "GLU30-LEU40" unless serial and sequence index coincide.
+        If there's more than one "GLU30", the user gets asked to
+        disambiguate. The resulting fragments need not cover all of the topology,
         they only need to not overlap.
     fragment_names : string or list of strings, default is ""
         If string, it has to be a list of comma-separated values.
@@ -675,7 +683,7 @@ def residue_neighborhoods(residues,
         Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
         try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
-        If :obj:`mdciao.nomenclature.LabelerCGN', use this object direcly
+        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     output_dir : str, default is '.'
@@ -1049,44 +1057,184 @@ def interface(
 
     Parameters
     ----------
-    topology
-    trajectories
-    frag_idxs_group_1
-    frag_idxs_group_2
-    BW_uniprot
-    CGN_PDB
-    chunksize_in_frames
-    ctc_cutoff_Ang
-    curve_color
-    fragments
-    fragment_names
-    graphic_dpi
-    graphic_ext
-    gray_background
-    interface_cutoff_Ang
-    ctc_control
-    n_smooth_hw
-    output_desc
-    output_dir
-    short_AA_names
-    stride
-    t_unit
-    plot_timedep
-    accept_guess
-    n_jobs
-    n_nearest
-    sort_by_av_ctcs
-    scheme
-    separate_N_ctcs
-    table_ext
-    title
-    min_freq
+    topology : str or :obj:`mdtraj.Trajectory` object
+        This geometry is used as a topology and as a
+        reference geometry for :obj:`nlist_cutoff_Ang`. If
+        str, it's the full path to the topology file, e.g.
+        'sims/prot.pdb')
+    trajectories : list
+        The MD-trajectories to calculate the frequencies
+        from. This input is pretty flexible. For more info
+        check :obj:`mdciao.utils.str_and_dict.get_sorted_tra
+        jectories`. Accepted values are:
+
+        * pattern, e.g."*.ext"
+        * one string containing a filename
+        * list of filenames
+        * one :obj:`mdtraj.Trajectory` object
+        * list of :obj:`mdtraj.Trajectory` objects
+        * None
+        If None, the :obj:`mdtraj.Trajectory` object given
+        in :obj:`topology` is used as trajectories
+    frag_idxs_group_1 : NoneType, default is None
+        Indices of the fragments that belong to the group_1.
+        Defaults to None which will prompt the user of
+        information, except when only two fragments are
+        present. Then it defaults to [0]
+    frag_idxs_group_2 : NoneType, default is None
+        Indices of the fragments that belong to the group_2.
+        Defaults to None which will prompt the user of
+        information, except when only two fragments are
+        present. Then it defaults to [1]
+    BW_uniprot : str, default is 'None'
+        Try to find Ballesteros-Weinstein definitions. If
+        str, e.g. "adrb2_human", try to locate a local
+        filename or do a web lookup in the GPCRdb. If
+        `mdciao.nomenclature.Labeler_BW`, use this object
+        direcly (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and
+        references.
+    CGN_PDB : str, default is 'None'
+        Try to find Common G-alpha Numbering definitions. If
+        str, e.g. "3SN6", try to locate local filenames
+        ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups in
+        https://www.mrc-lmb.cam.ac.uk/CGN/ and
+        http://www.rcsb.org/. If
+        :obj:`mdciao.nomenclature.LabelerCGN`    , use this
+        object direcly (allows for object re-use when in API
+        mode) See :obj:`mdciao.nomenclature` for more info
+        and references.
+    chunksize_in_frames : int, default is 10000
+        Stream through the trajectory data in chunks of this
+        many frames Can lead to memory errors if
+        :obj:`n_jobs` makes it so that e.g. 4 trajectories
+        of 10000 frames each are loaded to memory and their
+        residue-residue distances computed
+    ctc_cutoff_Ang : float, default is 3.5
+        Any residue-residue distance is considered a contact
+        if d<=ctc_cutoff_Ang
+    curve_color : str, default is 'auto'
+        Type of color used for the curves. Alternatives are
+        "P" or "H"
+    fragments : list, default is ['lig_resSeq+']
+        Fragment control. For compatibility reasons, it has
+        to be a list, even if it only has one element.
+        There exist several input modes:
+
+        * ["consensus"] : use things like "TM*" or "G.H*", i.e.
+         Ballesteros-Weinstein or CGN-sub-subunit labels.
+        * List of len 1 with some fragmentation heuristic, e.g.
+         ["lig_resSeq+"]. will use the default of
+         :obj:`mdciao.fragments.get_fragments`. See there for
+         info on defaults and other heuristics.
+        * List of len N that can mix different possibilities:
+          * iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
+          * ranges expressed as integer strings, "20-30"
+          * ranges expressed as residue descriptors ["GLU30-LEU40"]
+        Numeric expressions are interepreted as zero-indexed and unique
+        residue serial indices, i.e. 30-40 does not necessarily equate
+        "GLU30-LEU40" unless serial and sequence index coincide.
+        If there's more than one "GLU30", the user gets asked to
+        disambiguate. The resulting fragments need not cover all of the topology,
+        they only need to not overlap.
+    fragment_names : str, default is ''
+        If string, it has to be a list of comma-separated
+        values. If you want unnamed fragments, use None,
+        "None", or "". Has to contain names for all
+        fragments that result from :obj:`fragments` or more.
+        mdciao wil try to use :obj:`replace4latex` to
+        generate LaTeX expressions from stuff like "Galpha"
+        You can use fragment_names="None" or "" to avoid
+        using fragment names
+    graphic_dpi : int, default is 150
+        Dots per Inch (DPI) of the graphic output. Only has
+        an effect for bitmap outputs.
+    graphic_ext : str, default is '.pdf'
+        The extension (=format) of the saved figures
+    gray_background : bool, default is False
+        Use gray background when using smoothing windows
+    interface_cutoff_Ang : int, default is 35
+        The interface between both groups is defined as the
+        set of group_1-group_2-distances that are within
+        this cutoff in the reference topology. Otherwise, a
+        large number of non-necessary distances (e.g.
+        between N-terminus and G-protein) are computed.
+        Default is 35.
+    ctc_control : int, default is 20
+        Control the number of reported contacts. Can be an
+        integer (keep the first n contacts) or a float
+        representing a fraction [0,1] of the total number of
+        contacts.Default is 5.
+    n_smooth_hw : int, default is 0
+        Plots of the time-traces will be smoothed using a
+        window of 2*n_smooth_hw
+    output_desc : str, default is 'interface'
+        Descriptor for output files.
+    output_dir : str, default is '.'
+        Directory to which the results are written.
+    short_AA_names : bool, default is False
+        Use one-letter aminoacid names when possible, e.g.
+        K145 insted of Lys145.
+    stride : int, default is 1
+        Stride the input data by this number of frames
+    t_unit : str, default is 'ns'
+        Unit used for the temporal axis.
+    plot_timedep : bool, default is True
+        Plot and save time-traces of the contacts
+    accept_guess : bool, default is False
+        Accept mdciao's guesses regarding fragment
+        identification using nomenclature labels
+    n_jobs : int, default is 1
+        Number of processors to use. The parallelization is
+        done over trajectories and not over contacts, beyond
+        n_jobs>n_trajs parallelization will not have any
+        effect.
+    n_nearest : int, default is 0
+        Exclude these many bonded neighbors for each
+        residue, i.e
+    sort_by_av_ctcs : bool, default is True
+        When presenting the results summarized by residue,
+        sort by sum of frequencies (~average number of
+        contacts). Default is True.
+    scheme : str, default is 'closest-heavy'
+        Type for scheme for computing distance between
+        residues. Choices are {'ca', 'closest', 'closest-
+        heavy', 'sidechain', 'sidechain-heavy'}. See
+        :obj:`mdtraj.compute_distances` documentation for more info
+    separate_N_ctcs : bool, default is False
+        Separate the plot with the total number contacts
+        from the time-trace plot.
+    table_ext : NoneType, default is None
+        The extension (=format) of the saved tables
+    title : NoneType, default is None
+        Name of the system. Used for figure titles (not
+        filenames) Defaults to :obj:`output_desc` if None is given
+    min_freq : float, default is 0.1
+        Do not show frequencies smaller than this. If you
+        notice the output beingtruncated a values too far
+        away from this, you need to increase the'n_ctcs'
+        parameter
+    contact_matrix : bool, default is True
+        Produce a plot of the interface contact matrix
+    cmap : str, default is 'binary'
+        The colormap for the contact matrix. Default is
+        'binary' which is black and white, but you can
+        choose anthing from here:
+        https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html
+    flareplot : bool, default is True
+        Produce a flare plot of interface the contact
+        matrix. The format will .pdf no matter the value of
+        :obj:`graphic_ext`
     sparse_flare_frags: bool, default is True
         When deciding what fragments to put on
         the flareplot, use only those fragments
         where at least one residue is involved
         in the interface
-
+    savefiles : bool, default is True
+        Write the figures and tables to disk.
+    save_nomenclature_files : bool, default is False
+        Save available nomenclature definitions to disk so
+        that they can be accessed locally in later uses.
     Returns
     -------
 
