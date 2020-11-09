@@ -231,6 +231,9 @@ def _parse_fragment_naming_options(fragment_names, fragments):
     #TODO fragment naming should be handled at the object level?
 
     if isinstance(fragment_names,(list, _np.ndarray)):
+        assert len(fragment_names) == len(
+            fragments), "Mismatch between nr. fragments and fragment names %s vs %s (%s)" % (
+            len(fragments), len(fragment_names), fragment_names)
         return fragment_names
     if fragment_names == '':
         fragment_names = ['frag%u' % ii for ii in range(len(fragments))]
@@ -809,10 +812,6 @@ def residue_neighborhoods(residues,
                                                write_to_disk=save_nomenclature_files,
                                                accept_guess=accept_guess)
 
-    #TODO refactor into rangeexpand_residues2residxs?
-    # for compatibility for interactive execution
-    if not isinstance(residues,str):
-        residues= ','.join([str(ii) for ii in _mdcu.lists.force_iterable(residues)])
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
                                                   interpret_as_res_idxs=res_idxs,
                                                   sort=sort,
@@ -1278,9 +1277,6 @@ def interface(
 
     refgeom = _load_any_geom(topology)
 
-    # TODO this is a backwards-compat issue that should be handled elsewhere
-    if not isinstance(fragments[0],str):
-        fragments= [','.join([str(ii) for ii in _mdcu.lists.force_iterable(ifrag)]) for ifrag in fragments]
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, consensus_maps, consensus_labelers = \
