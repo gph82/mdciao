@@ -41,7 +41,7 @@ This is an informal list of known issues and TODOs:
  * improve sequence alignment choices
  * heuristics for proper font-sizing of flareplots could be optimized
  * parallel execution with memory mdtraj.Trajectory objects should be better
- * document API cli methods (it's almost 1:1 the cli tools documented in the cli parsers)
+ * harmonize documentation API cli methods (mdciao.cli) and the CLI scripts (mdc_*)
  * The interface between API methods and cli scripts could be better, using sth like `click <https://click.palletsprojects.com/en/7.x/>`_
  * The API-cli methods (interface, neighborhoods, sites, etc) have very similar flows but a lot of code repetition, I am sure some patterns/boilerplate could be outsourced/refactored even more.
  * color handling of the flare-plots is buggy because it tries to guess too many things. Undecided about best decision.
