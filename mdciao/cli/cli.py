@@ -297,7 +297,7 @@ def _parse_coloring_options(color_option, n,
         if len(color_option)==1:
             colors = [color_option[0] for __ in range(n)]
     elif isinstance(color_option,list):
-        if len(color_option)>n:
+        if len(color_option)<n:
             raise ValueError("Not enough input values %s for expected output of size n %u"%(color_option,n))
         else:
             colors = color_option[:n]
@@ -395,10 +395,33 @@ def _cmdstr2cmdtuple(cmd):
     return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
 """
 
-def _my_color_schemes(istr):
-    return {"peter": ["red", "purple", "gold", "darkorange"],
-            "hobat": ["m", "darkgreen", "darkorange", "navy"],
-            "auto":  _plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]
+def _color_schemes(istr):
+    r"""
+    Choose or generate a color scheme
+
+    Parameters
+    ----------
+    istr : str
+        * colorname,
+        * csv colorname list,
+        * color scheme name, currently
+         * "P" : ["red", "purple", "gold", "darkorange"]
+         * "H" : ["m", "darkgreen", "darkorange", "navy"],
+        * "auto" :obj:`matplotlib` prop_cycle
+
+    Returns
+    -------
+        list of colorlike strings
+
+    """
+    if "," in istr:
+        return istr.split(",")
+    elif _mplcolors.is_color_like(istr):
+        return [istr]
+    else:
+        return {"p": ["red", "purple", "gold", "darkorange"],
+                "h": ["m", "darkgreen", "darkorange", "navy"],
+                "auto":  _plt.rcParams['axes.prop_cycle'].by_key()["color"]}[str(istr).lower()]
 
 def _load_any_geom(geom):
     r"""
@@ -975,7 +998,7 @@ def residue_neighborhoods(residues,
             # TODO this plot_N_ctcs and skip_timedep is very bad, but ATM my only chance without major refactor
             # TODO perhaps it would be better to bury dt in the plotting directly?
             myfig = ihood.plot_timedep_ctcs(panelheight,
-                                            color_scheme=_my_color_schemes(curve_color),
+                                            color_scheme=_color_schemes(curve_color),
                                             ctc_cutoff_Ang=ctc_cutoff_Ang,
                                             switch_off_Ang=switch_off_Ang,
                                             dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
@@ -1471,7 +1494,7 @@ def interface(
 
     if plot_timedep or separate_N_ctcs:
         myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
-                                               color_scheme=_my_color_schemes(curve_color),
+                                               color_scheme=_color_schemes(curve_color),
                                                ctc_cutoff_Ang=ctc_cutoff_Ang,
                                                dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
                                                gray_background=gray_background,
@@ -1815,7 +1838,7 @@ def sites(site_files,
                                         graphic_ext)
         fname = _path.join(output_dir,fname)
         myfig = isite_nh.plot_timedep_ctcs(panelheight,
-                                           color_scheme=_my_color_schemes(curve_color),
+                                           color_scheme=_color_schemes(curve_color),
                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
                                            n_smooth_hw=n_smooth_hw,
                                            dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],

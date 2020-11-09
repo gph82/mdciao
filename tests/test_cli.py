@@ -538,6 +538,41 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
         with pytest.raises(NotImplementedError):
             cli._parse_fragment_naming_options("TM1,danger", self.fragments)
 
+class Test_parse_parse_coloring_options(unittest.TestCase):
+
+    def test_none(self):
+        color = cli._parse_coloring_options(None,2)
+        self.assertSequenceEqual(["blue","blue"], color)
+
+    def test_True(self):
+        color = cli._parse_coloring_options(True,2)
+        self.assertSequenceEqual(['magenta', 'yellow'], color)
+
+    def test_string(self):
+        color = cli._parse_coloring_options("salmon",2)
+        self.assertSequenceEqual(['salmon', 'salmon'], color)
+
+    def test_list(self):
+        color = cli._parse_coloring_options(["pink", "salmon"],2)
+        self.assertSequenceEqual(["pink", "salmon"], color)
+
+    def test_raises(self):
+        with pytest.raises(ValueError):
+            color = cli._parse_coloring_options(["pink", "salmon"],3)
+
+class Test_color_schemes(unittest.TestCase):
+
+    def test_scheme_P(self):
+        self.assertSequenceEqual(cli._color_schemes("P"),["red", "purple", "gold", "darkorange"])
+
+    def test_auto(self):
+        self.assertEqual(len(cli._color_schemes("auto")),10)
+
+    def test_color(self):
+        self.assertEqual(cli._color_schemes("blue"),["blue"])
+
+    def test_csv(self):
+        self.assertEqual(cli._color_schemes("blue,red"),["blue","red"])
 
 
 class Test_fragment_overview(unittest.TestCase):
