@@ -521,6 +521,10 @@ class TestLabelerBW_local(unittest.TestCase):
         self.assertDictEqual(top2self,self2top)
         self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
+
+    def test_uniprot_name(self):
+        self.assertEqual(self.BW_local_w_pdb.uniprot_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
+
 class Test_choose_between_consensus_dicts(unittest.TestCase):
 
     def test_works(self):
