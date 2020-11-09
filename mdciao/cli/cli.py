@@ -831,7 +831,19 @@ def residue_neighborhoods(residues,
                                                    BWresidx2conlab[idx], CGNresidx2conlab[idx]))
 
     # Create a neighborlist
-    nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
+    naive_bonds=False #WIP, perhaps expose
+    try:
+        nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
+    except ValueError as e:
+        print(e)
+        #print("You can use naive bond-listing by using serial indices with the\n"
+        #      "option --naive_bonds. Use this option at your own risk")
+        if naive_bonds:
+            print("Creating naive bond list with residue serial index.")
+            nl =[_np.arange(_np.max((0,ii-n_nearest)),_np.min((ii+n_nearest+1,refgeom.top.n_residues))).tolist() for ii in range(refgeom.top.n_residues)]
+        else:
+            raise(e)
+
 
     # Use it to prune the contact indices
     ctc_idxs = _np.vstack(
