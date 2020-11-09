@@ -505,8 +505,8 @@ def residue_neighborhoods(residues,
                           fragment_colors=None,
                           graphic_ext=".pdf",
                           table_ext=".dat",
-                          BW_uniprot="None",
-                          CGN_PDB="None",
+                          BW_uniprot=None,
+                          CGN_PDB=None,
                           output_dir='.',
                           output_desc='neighborhood',
                           t_unit='ns',
@@ -534,11 +534,11 @@ def residue_neighborhoods(residues,
     called the `anchor_residue`.
 
     The contact frequencies will be printed, plotted and saved. The residue-residue
-    distance time-traces used for their computation will b
+    distance time-traces used for their computation will be also returned
 
     Note
     ----
-    The time-independent figure is always shown (e.g. "neighborhood.overall@3.5_Ang.pdf"),
+    The time-independent figures (e.g. "neighborhood.overall@3.5_Ang.pdf") are always shown
     whereas the time-dependent figures (e.g. "neighborhood.GDP395.time_trace@3.5_Ang.pdf")
     are never shown, because the number of time-traces becomes very high very quickly.
     It's easier to look at them with an outside viewer.
@@ -569,7 +569,7 @@ def residue_neighborhoods(residues,
          * residues = '1,10-12'
          * residues = [1]
          * residues = 1
-         * residues = 1
+         * residues = '1'
          * residues = '1,10-12,GLU*,GDP*,E30'
          Please refer to :obj:`mdciao.utils.residue_and_atom.rangeexpand_residues2residxs`
          for more info
@@ -602,8 +602,11 @@ def residue_neighborhoods(residues,
         Any residue-residue distance is considered a contact if d<=ctc_cutoff_Ang
     stride : int, default is 1
         Stride the input data by this number of frames
-    ctc_control : int, default is 5
-        Only include the first :obj:`ctc_control` in each neighborhood
+    ctc_control : int or float, default is 5
+        Control the number of reported contacts. Can be an
+        integer (keep the first n contacts) or a float
+        representing a fraction [0,1] of the total number of
+        contacts.Default is 5.
     n_nearest : int, default is 4
         Exclude these many bonded neighbors for each residue, i.e
     chunksize_in_frames : int, default is 10000
@@ -626,26 +629,30 @@ def residue_neighborhoods(residues,
         Sort the input :obj:`residues` according to their indices
     pbc : bool, default is True
         Use periodic boundary conditions
-    ylim_Ang : float, default is 10
+    ylim_Ang : float, default is 15
+        Limit in Angstrom of the y-axis of the time-traces.
+        Default is 15. Switch to any other float or 'auto'
+        for automatic scaling
     fragments : list, default is ["lig_resSeq+"]
         Fragment control. For compatibility reasons, it has
-        to be a list, event if it only has one element.
-        Possible values are
-        *  ["lig_resSeq+"] or ["chains"] or [None]
-         Use whatever fragments come out of using
-         :obj:`mdciao.fragments.get_fragments` with this method
-        * [np.arange(10),np.arange(10,20)]
-         This are the fragments, expressed as residue indices
-        * ["0-10","10-20"]
-         Expand these ranges and interpret them as residue indices
-        Fragments need not cover all the topology, but they cannot
-        overlap.
+        to be a list, even if it only has one element.
+        There exist several input modes:
+
+        * Use some fragmentation heuristic, e.g.
+         ["lig_resSeq+"]. See :obj:`mdciao.fragments.get_fragments` for other heuristics
+        * Input fragments directly as iterables of residue indices, e.g.
+         [np.arange(10),np.arange(10,20)]
+        * Input fragments as ranges using strings, e.g.
+         ["0-10","10-20", "R30-GLU40"]
+        You can combine both last options, e.g. [range(10),"20-30"].
+        The resulting fragments need not cover all of the topology,
+        they only need to not overlap.
     fragment_names : string or list of strings, default is ""
         If string, it has to be a list of comma-separated values.
-        If you want unnamed fragments, use None or "None" (both work)
+        If you want unnamed fragments, use None, "None", or "".
         Has to contain names for all fragments that result from
         :obj:`fragments` or more.
-        mdciao wil try to use :obj:`utils.str_and_dict.replace4latex`
+        mdciao wil try to use :obj:`replace4latex`
         to generate LaTeX expressions from stuff like "Galpha"
         You can use fragment_names="None" or "" to avoid using fragment names
     fragment_colors : None, boolean or list, default is None
@@ -658,30 +665,79 @@ def residue_neighborhoods(residues,
         The extension (=format) of the saved figures
     table_ext : str, default is ".dat"
         The extension (=format) of the saved tables
-    BW_uniprot
-    CGN_PDB
-    output_dir
-    output_desc
-    t_unit
-    curve_color
-    gray_background
-    graphic_dpi
-    short_AA_names
-    allow_same_fragment_ctcs
-    save_nomenclature_files
-    plot_timedep : bool, default is False
+    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
+        Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
+        try to locate a local filename or do a web lookup in the GPCRdb.
+        If `mdciao.nomenclature.Labeler_BW`, use this object direcly
+        (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and references.
+    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+        Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
+        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        If :obj:`mdciao.nomenclature.LabelerCGN', use this object direcly
+        (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and references.
+    output_dir : str, default is '.'
+        directory to which the results are written.
+    output_desc : str, default is 'neighborhood'
+        Descriptor for output files.
+    t_unit : str, default is 'ns'
+        Unit used for the temporal axis.
+    curve_color : str, default is 'auto'
+        Type of color used for the curves. Alternatives are "P" or "H"
+    gray_background : bool, default is False
+        Use gray background when using smoothing windows
+    graphic_dpi : int, default is 150
+        Dots per Inch (DPI) of the graphic output. Only has
+        an effect for bitmap outputs.
+    short_AA_names : bool, default is False
+        Use one-letter aminoacid names when possible, e.g.
+        K145 insted of Lys145.
+    allow_same_fragment_ctcs : bool, default is True
+        Allow contacts whithin the same fragment.
+    save_nomenclature_files : bool, default is False
+        Save available nomenclature definitions to disk so
+        that they can be accessed locally in later uses.
+    plot_timedep : bool, default is True
         Plot and save time-traces of the contacts
-    n_cols
-    distro
-    n_jobs
-    separate_N_ctcs
+    n_cols : int, default is 4
+        number of columns of the overall plot.
+    distro : bool, default is False
+        Plot distance distributions instead of contact bar
+        plots
+    n_jobs : int, default is 1
+        Number of processors to use. The parallelization is
+        done over trajectories and not over contacts, beyond
+        n_jobs>n_trajs parallelization will not have any
+        effect.
+    separate_N_ctcs : bool, default is False
+        Separate the plot with the total number contacts
+        from the time-trace plot.
     accept_guess : bool, default is False
         Accept mdciao's guesses regarding fragment
         identification using nomenclature labels
-    switch_off_Ang
+    switch_off_Ang : NoneType, default is None
+        Use a linear switchoff instead of a crisp one.
+    plot_atomtypes : bool, default is False
+        Add the atom-types to the frequency bars by
+        'hatching' them. '--' is sidechain-sidechain '|' is
+        backbone-backbone '\' is backbone-sidechain '/' is
+        sidechain-backbone. See Fig XX for an example
+    savefiles : bool, default is True
+        Write the figures and tables to disk.
+
 
     Returns
     -------
+    out_dict : dict
+        * neighborhoods : dictionary keyed by unique, zero-indexed residue indices.
+         The values are :obj:`mdciao.contacts.ContactGroup` objects
+        * ctc_idxs : 2D np.ndarray with the residue indices of the contact pairs within obj`:nlist_cutoff_Ang` in at least one frame
+        * ctcs_trajs : list of per-traj 2D np.ndarrays with the mindist between the residues of "ctc_idxs"
+        * time_array : list of per-traj time-arrays
+
+        Usually, only *neighborhoods* is usefull, other entries are there for debugging
 
     """
 
