@@ -565,9 +565,10 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     for ii, ifrag in enumerate(fragments_as_residue_idxs):
         _mdcu.lists.assert_no_intersection(fragments_as_residue_idxs, word="fragments")
         if not all([aa in range(top.n_residues) for aa in ifrag]):
-            print("Fragment %u has idxs outside of "
-                  "the geometry (total n_residues %u): %s" % (
+            print("Fragment %u's definition had idxs outside of "
+                  "the geometry (total n_residues %u) that have been deleted %s " % (
                   ii, top.n_residues, set(ifrag).difference(range(top.n_residues))))
+            fragments_as_residue_idxs[ii]=[jj for jj in ifrag if jj<top.n_residues]
 
     if verbose:
         print("Using method '%s' these fragments were found" % method)
