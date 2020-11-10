@@ -43,9 +43,14 @@ jobs:
     #    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     #    # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
     #    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest and coverage
+    - name: Test with pytest and coverage MacOs one single thread
+      if: runner.os == 'macOs'
       run: |
-        pytest -n 8 -vs --cov=./ --cov-report=xml --disable-warnings 
+        pytest -vs --cov=./ --cov-report=xml --disable-warnings 
+    - name: Test with pytest and coverage Linux 8 threads
+      if: runner.os == 'Linux'
+      run: |
+        pytest -n 8-vs --cov=./ --cov-report=xml --disable-warnings 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
