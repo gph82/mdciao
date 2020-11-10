@@ -33,6 +33,14 @@ Status
 ``mdciao`` is in its initial development, with versions 0.Y.Z. Anything MAY change at any time.
 `The public API SHOULD NOT be considered stable <https://semver.org/#spec-item-4>`_.
 
+.. |ss| raw:: html
+
+   <strike>
+
+.. |se| raw:: html
+
+   </strike>
+
 TODOs
 =====
 This is an informal list of known issues and TODOs:
@@ -49,7 +57,7 @@ This is an informal list of known issues and TODOs:
 
 System Requirements
 ===================
-At the moment, ``mdciao`` is CI-tested only for GNU/Linux and MacOS and Python versions
+At the moment, ``mdciao`` is CI-tested only for GNU/Linux and |ss|MacOS|se| (see this `mdtraj issue <https://github.com/mdtraj/mdtraj/issues/1594>`_) and Python versions
 3.6 and 3.7
 
 Authors
