@@ -503,8 +503,11 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     ----------
     fragment_input : list of strings
         Many cases are possible
-        * ["consensus"] : fragment using "resSeq+"
-        and return user_wants_consensus as True
+        * ["consensus"] : user wants to use
+        consenus labels such as "TM6" etc.
+        Using "resSeq+" heuristic to fragment, and
+        returns :obj:`user_wants_consensus` as True,
+        this will trigger further prompts
         * [method] : fragment using "method"
         (see :obj:`get_fragments`) and return
         user_wants_consensus as False
@@ -539,7 +542,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     elif str(fragment_input[0]) in _allowed_fragment_methods:
         method = fragment_input[0]
         fragments_as_residue_idxs = get_fragments(top, method=method,
-                                                  verbose=False)
+                                                  verbose=True)
     else:
         method = "user input by residue array or range"
         fragments_as_residue_idxs = []
