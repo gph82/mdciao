@@ -11,10 +11,7 @@ def remember_cwd():
         yield
     finally:
         os.chdir(curdir)
-from sys import platform
-@unittest.skipUnless(platform.lower()=="linux","on MacOs the ExamplesCLTs.run() method "
-                                               "gets suck on iterating the traj via jobblib, see e.g. "
-                                               "https://github.com/gph82/mdciao/runs/1380480404")
+
 class Test_ExamplesCLTs(unittest.TestCase):
 
     # It's already a test!
