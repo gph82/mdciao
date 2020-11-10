@@ -533,7 +533,10 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     """
     user_wants_consensus = False
     assert isinstance(fragment_input,list)
-
+    if len(fragment_input)==1 and isinstance(fragment_input[0],str) and " " in fragment_input[0]:
+        fragment_input = fragment_input[0].split(" ")
+    #if len(fragment_input)==1 and isinstance(fragment_input[0],str) and "," in fragment_input[0]:
+    #    fragment_input=fragment_input[0].split(",")
     if str(fragment_input[0]).lower()=="consensus":
         user_wants_consensus = True
         method = 'resSeq+'
@@ -542,7 +545,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     elif str(fragment_input[0]) in _allowed_fragment_methods:
         method = fragment_input[0]
         fragments_as_residue_idxs = get_fragments(top, method=method,
-                                                  verbose=True)
+                                                  verbose=False)
     else:
         method = "user input by residue array or range"
         fragments_as_residue_idxs = []
@@ -553,10 +556,10 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
                 fragments_as_residue_idxs.append(_mdcu.residue_and_atom.rangeexpand_residues2residxs(fri,
                                                                                 [_np.arange(top.n_residues)],
                                                                                 top,
-                                                                                interpret_as_res_idxs=fri.replace("-","").isnumeric()))
+                                                                                interpret_as_res_idxs=fri.replace("-","").replace(",","").isnumeric()))
         if len(fragment_input)==1:
             assert isinstance(fragment_input[0],str)
-            method += " (only one fragment provided, assuming the rest of residues are fragment 2)"
+            method += " with only one fragment provided (all other residues are fragment 2)"
             fragments_as_residue_idxs.append(_np.delete(_np.arange(top.n_residues), fragments_as_residue_idxs[0]))
 
     for ii, ifrag in enumerate(fragments_as_residue_idxs):
@@ -565,6 +568,11 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
             print("Fragment %u has idxs outside of "
                   "the geometry (total n_residues %u): %s" % (
                   ii, top.n_residues, set(ifrag).difference(range(top.n_residues))))
+
+    if verbose:
+        print("Using method '%s' these fragments were found" % method)
+        for ii, ifrag in enumerate(fragments_as_residue_idxs):
+            print_frag(ii, top, ifrag)
 
     return fragments_as_residue_idxs, user_wants_consensus
 
