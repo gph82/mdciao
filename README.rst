@@ -41,6 +41,10 @@ Status
 
    </strike>
 
+Documentation
+=============
+Currently, docs are hosted at `<https://proteinformatics.uni-leipzig.de/mdciao/>`_, but this can change in the future.
+
 TODOs
 =====
 This is an informal list of known issues and TODOs:
@@ -57,7 +61,7 @@ This is an informal list of known issues and TODOs:
 
 System Requirements
 ===================
-At the moment, ``mdciao`` is CI-tested only for GNU/Linux and |ss|MacOS|se| (see this `mdtraj issue <https://github.com/mdtraj/mdtraj/issues/1594>`_) and Python versions
+At the moment, ``mdciao`` is CI-tested only for GNU/Linux and |ss| MacOS |se| (see this `mdtraj issue <https://github.com/mdtraj/mdtraj/issues/1594>`_) and Python versions
 3.6 and 3.7
 
 Authors
