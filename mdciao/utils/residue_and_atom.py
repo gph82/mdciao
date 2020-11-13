@@ -79,7 +79,7 @@ def residues_from_descriptors(residue_descriptors,
                               fragments, top,
                               pick_this_fragment_by_default=None,
                               fragment_names=None,
-                              additional_naming_dicts=None,
+                              additional_resnaming_dicts=None,
                               extra_string_info='',
                               ):
     r"""
@@ -105,6 +105,14 @@ def residues_from_descriptors(residue_descriptors,
         If None, the user will we prompted
     fragment_names:
         list of strings providing informative names input :obj:`fragments`
+    additional_resnaming_dicts : dict of dicts, default is None
+        Dictionary of dictionaries. Lower-level dicts are keyed
+        with residue indices and valued with additional residue names.
+        Higher-level keys can be whatever. Use case is e.g. if "R131"
+        needs to be disambiguated bc. it pops up in many fragments.
+        You can pass {"BW":{895:"3.50", ...} here and that label
+        will be displayed next to the residue. :obj:`mdciao.cli`
+        methods use this.
     extra_string_info: string with any additional info to be printed in case of ambiguity
 
     Returns
@@ -125,7 +133,6 @@ def residues_from_descriptors(residue_descriptors,
     for key in residue_descriptors:
         cands = _np.array(find_AA(top, str(key)))
         cand_fragments =   _force_iterable(_np.squeeze(_in_what_N_fragments(cands, fragments)))
-
         # TODO refactor into smaller methods
         if len(cands) == 0:
             print("No residue found with descriptor %s" % key)
@@ -146,15 +153,16 @@ def residues_from_descriptors(residue_descriptors,
         else:
             istr = "ambiguous definition for AA %s" % key
             istr += extra_string_info
+            print(istr)
             cand_chars = _np.hstack([['%s.%u'%(key,ii) for ii in range(n)] for key, n in _Counter(cand_fragments).items()]).tolist()
             for cc, ss, char in zip(cands, cand_fragments, cand_chars):
                 fname = " "
                 if fragment_names is not None:
                     fname = ' (%s) ' % fragment_names[ss]
                 istr = '%-6s %10s in fragment %2u%swith residue index %2u' % (char+')', top.residue(cc), ss, fname, cc)
-                if additional_naming_dicts is not None:
+                if additional_resnaming_dicts is not None:
                     extra = ''
-                    for key1, val1 in additional_naming_dicts.items():
+                    for key1, val1 in additional_resnaming_dicts.items():
                         if cc in val1.keys() and val1[cc] is not None:
                             extra += '%s: %s ' % (key1, val1[cc])
                     if len(extra) > 0:
@@ -206,10 +214,13 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     Residue descriptors can be anything that :obj:`find_AA` understands.
     Expanding a range means getting "2-5,7" as input and returning "2,3,4,5,7"
 
-    If an int or an iterable of ints is passed, it will be converted they will
-    be string-ified automatically
-
     To dis-ambiguate descriptors, a fragment definition and a topology are needed
+
+    TODO
+    ----
+    Internally, if an int or an iterable of ints is passed, they
+    will be string-ified on-the-fly to work with the method "as-is",
+    because the method was initiall developed to interpret CLI-strings
 
     Note
     ----

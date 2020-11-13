@@ -276,10 +276,10 @@ class Test_residues_from_descriptors(unittest.TestCase):
         consensus_dicts = {"BW": {0: "3.50"},
                            "CGN": {2: "CGNt"}}
         residue_and_atom.residues_from_descriptors(residues, self.by_bonds_geom2frags,
-                                                 self.geom2frags.top,
-                                                 additional_naming_dicts=consensus_dicts,
-                                                 pick_this_fragment_by_default=0
-                                                 )
+                                                   self.geom2frags.top,
+                                                   additional_resnaming_dicts=consensus_dicts,
+                                                   pick_this_fragment_by_default=0
+                                                   )
 
     def test_answer_letters(self):
         residues = ["GLU30", "TRP32"]
