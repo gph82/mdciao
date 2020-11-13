@@ -1155,10 +1155,11 @@ def interface(
         * ["consensus"] : use things like "TM*" or "G.H*", i.e.
          Ballesteros-Weinstein or CGN-sub-subunit labels.
         * List of len 1 with some fragmentation heuristic, e.g.
-         ["lig_resSeq+"]. will use the default of
+         ["lig_resSeq+"] : will use the default of
          :obj:`mdciao.fragments.get_fragments`. See there for
          info on defaults and other heuristics.
         * List of len N that can mix different possibilities:
+
           * iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
           * ranges expressed as integer strings, "20-30"
           * ranges expressed as residue descriptors ["GLU30-LEU40"]
