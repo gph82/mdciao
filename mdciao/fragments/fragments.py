@@ -549,14 +549,17 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     else:
         method = "user input by residue array or range"
         fragments_as_residue_idxs = []
+        temp_fragments=get_fragments(top,verbose=False)
         for fri in fragment_input:
             if not isinstance(fri,str):
                 fragments_as_residue_idxs.append(fri)
             else:
                 fragments_as_residue_idxs.append(_mdcu.residue_and_atom.rangeexpand_residues2residxs(fri,
-                                                                                [_np.arange(top.n_residues)],
-                                                                                top,
-                                                                                interpret_as_res_idxs=fri.replace("-","").replace(",","").isnumeric()))
+                                                                                                    temp_fragments,
+                                                                                                    top,
+                                                                                                    interpret_as_res_idxs=fri.replace("-","").replace(",","").isnumeric(),
+                                                                                                     extra_string_info="\nThis fragmentation is only for disambiguation purposes:",
+                                                                                                    ))
         if len(fragment_input)==1:
             assert isinstance(fragment_input[0],str)
             method += " with only one fragment provided (all other residues are fragment 2)"
