@@ -198,7 +198,7 @@ def CGN_finder(identifier,
     url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
     web_lookup_lambda = local_lookup_lambda
 
-    print("Please cite the following 3rd party publications.\n"
+    print("Using CGN-nomenclature, please cite the following 3rd party publications:\n"
           " * https://doi.org/10.1038/nature14663 (Babu et al 2015)")
     return _finder_writer(file2read, local_lookup_lambda,
                           url, web_lookup_lambda,
@@ -359,9 +359,9 @@ def BW_finder(BW_descriptor,
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
                                                         converters={"BW": str}).replace({_np.nan: None})
     web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
-    print("Please cite the following 3rd party publications.\n"
+    print("Using BW-nomenclature, please cite the following 3rd party publications:\n"
           " * https://doi.org/10.1016/S1043-9471(05)80049-7 (Weinstein et al 1995)\n"
-          " * https://doi.org/10.1093/nar/gkx1109 (Gloriam et al 2018")
+          " * https://doi.org/10.1093/nar/gkx1109 (Gloriam et al 2018)")
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
                           try_web_lookup=try_web_lookup,
@@ -1782,11 +1782,46 @@ def sort_consensus_labels(subset, sorted_superset,
     return labs_out
 
 def sort_BW_consensus_labels(labels, **kwargs):
-    return sort_consensus_labels(labels, _GCPR_fragments, **kwargs)
+    return sort_consensus_labels(labels, _GPCR_fragments, **kwargs)
 def sort_CGN_consensus_labels(labels, **kwargs):
     return sort_consensus_labels(labels, _CGN_fragments, **kwargs)
 
-_GCPR_fragments=["NT",
+def conslabel2fraglabel(labelres,defrag="@",prefix_GCPR=True):
+    r"""
+    Return a fragment label from a full consensus following some norms
+    Parameters
+    ----------
+    labelres
+
+    Returns
+    -------
+    labelfrag
+    """
+
+    label = labelres.split(defrag)[-1]
+    label = label.rsplit(".",maxsplit=1)[0]
+    if prefix_GCPR and str(label) in _GPCR_num2lett.keys():
+        label = _GPCR_num2lett[label]
+    return label
+
+_GPCR_num2lett = {
+    "1": "TM1 ",
+    "12": "ICL1",
+    "2": "TM2",
+    "23": "ECL1",
+    "3": "TM3",
+    "34": "ICL2",
+    "4": "TM4",
+    "45": "ECL2",
+    "5": "TM5",
+    "56": "ICL3",
+    "6": "TM6",
+    "67": "ECL3",
+    "7": "TM7",
+    "8": "H8",
+}
+
+_GPCR_fragments=["NT",
                  "1", "TM1 ",
                  "12","ICL1",
                  "2", "TM2",
