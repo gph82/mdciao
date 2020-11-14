@@ -44,6 +44,9 @@ ex = ExamplesCLTs(short=args.short)
 if args.clt.endswith(".py"):
     clt = path.splitext(args.clt)[0]
 clts = _fnfilter(ex.clts,"*%s*"%clt)
+if len(clts)==0:
+    print("'%s' did not return any command-line-tool."%clt)
+    print(parser.epilog)
 for clt in clts:
     ex.show(clt)
     if args.execute:
