@@ -960,8 +960,8 @@ def residue_neighborhoods(residues,
                                               )
 
     if not distro:
-        xmax = _np.max([jax.patches[-1].get_x()+jax.patches[-1].get_width()/2 for jax in bar_ax.flatten()
-                        if len(jax.patches)>0])+.5
+        non_nan_rightermost_patches = [[p for p in jax.patches if not _np.isnan(p.get_x())][-1] for jax in bar_ax.flatten() if len(jax.patches)>0]
+        xmax = _np.nanmax([p.get_x()+p.get_width()/2 for p in non_nan_rightermost_patches])+.5
         [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
     bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
     fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
