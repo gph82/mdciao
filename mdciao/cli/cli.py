@@ -816,7 +816,7 @@ def residue_neighborhoods(residues,
                                                   interpret_as_res_idxs=res_idxs,
                                                   sort=sort,
                                                   pick_this_fragment_by_default=None,
-                                                  additional_naming_dicts={"BW": {ii:val for ii, val in enumerate(BWresidx2conlab)},
+                                                  additional_resnaming_dicts={"BW": {ii:val for ii, val in enumerate(BWresidx2conlab)},
                                                                            "CGN": {ii:val for ii, val in enumerate(CGNresidx2conlab)}}
                                                   )
     print("\nWill compute neighborhoods for the residues")
