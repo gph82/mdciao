@@ -39,8 +39,8 @@ extensions = [
 # Napoleon Settings for showing class documentation's init doc
 #napoleon_include_init_with_doc = True
 
-intersphinx_mapping = {'mdtraj': ('http://mdtraj.org/1.9.3/', None),
-                       'md': ('http://mdtraj.org/1.9.3/', None),
+intersphinx_mapping = {'mdtraj': ('http://mdtraj.org/1.9.4/', None),
+                       'md': ('http://mdtraj.org/1.9.4/', None),
                        'matplotlib': ('https://matplotlib.org/',None),
                        'pandas': ('https://pandas.pydata.org/docs/',None)}
 
