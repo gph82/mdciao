@@ -121,15 +121,18 @@ def delete_exp_in_keys(idict, exp, sep="-"):
     """
 
     out_dict = {}
+    deleted_half_keys=[]
     for names, val in idict.items():
-        new_name = delete_pattern_in_ctc_label(exp,names,sep)
+        new_name, dhk = delete_pattern_in_ctc_label(exp,names,sep)
+        deleted_half_keys.extend(dhk)
         out_dict[new_name]=val
-    return out_dict
+    return out_dict,deleted_half_keys
 
 def delete_pattern_in_ctc_label(pattern, label, sep):
     new_name = [name for name in label.split(sep) if pattern not in name]
+    deleted_half_keys = [name for name in label.split(sep) if pattern in name]
     assert len(new_name) == 1, new_name
-    return new_name[0]
+    return new_name[0], deleted_half_keys
 
 def unify_freq_dicts(freqs,
                      exclude=None,
