@@ -135,7 +135,9 @@ def compare_groups_of_contacts(groups,
         This string will be deleted from the contact labels,
         leaving only the partner-residue to identify the contact.
         The deletion takes place after the :obj:`mutations_dict`
-        has been applied.
+        has been applied. The final anchor label will be that
+        of the deleted keys (allows for keeping e.g. pre-existing
+        consensus nomenclature).
         No consistency-checks are carried out, i.e. use
         at your own risk
     width : float, default is .2
@@ -214,7 +216,11 @@ def compare_groups_of_contacts(groups,
         idict = {_mdcu.str_and_dict.replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
 
         if anchor is not None:
-            idict = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
+            idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
+            if len(_np.unique(deleted_half_keys))>1:
+                raise ValueError("The anchor patterns differ by key, this is strange: %s"%deleted_half_keys)
+            else:
+                anchor=_mdcu.str_and_dict.defrag_key(deleted_half_keys[0],defrag=defrag,sep=" ")
         freqs[key] = idict
 
     if plot_singles:

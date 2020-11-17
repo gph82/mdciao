@@ -118,6 +118,9 @@ def delete_exp_in_keys(idict, exp, sep="-"):
     dict:
         dictionary with the same values but the keys lack the
         segment containing :obj:`exp`
+
+    dhk : list
+        List with the deleted half-keys
     """
 
     out_dict = {}
