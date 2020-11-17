@@ -552,6 +552,8 @@ def residue_neighborhoods(residues,
                           switch_off_Ang=None,
                           plot_atomtypes=False,
                           savefiles=True,
+                          figures=True,
+                          pre_computed_contact_matrix=None
                           ):
     r"""Per-residue neighborhoods based on contact frequencies between pairs
     of residues.
@@ -760,7 +762,12 @@ def residue_neighborhoods(residues,
         sidechain-backbone. See Fig XX for an example
     savefiles : bool, default is True
         Write the figures and tables to disk.
-
+    figures : bool, default is True
+        Draw figures
+    pre_computed_distance_matrix : (m,m) np.ndarray, default is None
+        The distance matrix here will speed up the
+        pre-computing of likely neighbors. Usecase
+        are several API-calls following each other
 
     Returns
     -------
@@ -855,11 +862,25 @@ def residue_neighborhoods(residues,
         fragment_idxs = [[_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair] for pair in ctc_idxs]
         ctc_idxs = [ctc_idxs[ii] for (ii,pair) in enumerate(fragment_idxs) if pair[0]!=pair[1]]
 
-
     print(
-        "\nPre-computing likely neighborhoods by reducing the neighbor-list to %u Angstrom in the reference geom %s..." % (
-            nlist_cutoff_Ang, topology), end="", flush=True)
-    ctcs, ctc_idxs = _md.compute_contacts(refgeom, _np.vstack(ctc_idxs), periodic=pbc)
+        "\nPre-computing likely neighborhoods by reducing the neighbor-list\n"
+        "to those within %u Angstrom"%nlist_cutoff_Ang,
+        end=" ",flush=True)
+
+    if pre_computed_contact_matrix is not None:
+        if not pre_computed_contact_matrix.shape[0]==pre_computed_contact_matrix.shape[1]==refgeom.top.n_residues:
+            raise ValueError("Matrix doesn't have expected size (%u,%u), but shape (%u,%u)"%(refgeom.top.n_residues,
+                                                                                             refgeom.top.n_residues,
+                                                                                             pre_computed_contact_matrix.shape[0],
+                                                                                             pre_computed_contact_matrix.shape[1]))
+        ctcs = [_np.array([pre_computed_contact_matrix[ii][jj] for (ii,jj) in ctc_idxs],ndmin=2)]
+        print("using the pre_computed_contact_matrix...", end="",flush=True)
+        ctc_idxs=_np.array(ctc_idxs)
+    else:
+        print("in the first frame of reference geom\n'%s:...'" % topology,
+              #end="",
+              flush=True)
+        ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs), periodic=pbc)
     print("done!")
 
     ctc_idxs_small = _np.argwhere(ctcs[0] < nlist_cutoff_Ang / 10).squeeze()
@@ -924,52 +945,53 @@ def residue_neighborhoods(residues,
         print("The following residues have no neighbors at %2.1f Ang, their frequency histograms will be empty"%ctc_cutoff_Ang)
         print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
 
-    panelheight = 3
-    n_cols = _np.min((n_cols, len(res_idxs_list)))
-    n_rows = _np.ceil(len(res_idxs_list) / n_cols).astype(int)
-    panelsize = 4
-    panelsize2font = 3.5
-    bar_fig, bar_ax = _plt.subplots(n_rows, n_cols,
-                                    sharex=True,
-                                    sharey=True,
-                                    figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
+    if figures:
+        panelheight = 3
+        n_cols = _np.min((n_cols, len(res_idxs_list)))
+        n_rows = _np.ceil(len(res_idxs_list) / n_cols).astype(int)
+        panelsize = 4
+        panelsize2font = 3.5
+        bar_fig, bar_ax = _plt.subplots(n_rows, n_cols,
+                                        sharex=True,
+                                        sharey=True,
+                                        figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
 
-    # One loop for the histograms
-    _rcParams["font.size"]=panelsize*panelsize2font
-    for jax, ihood in zip(bar_ax.flatten(),
-                                   neighborhoods.values()):
-        if ihood is not None:
-            if distro:
-                ihood.plot_distance_distributions(nbins=20,
+        # One loop for the histograms
+        _rcParams["font.size"]=panelsize*panelsize2font
+        for jax, ihood in zip(bar_ax.flatten(),
+                                       neighborhoods.values()):
+            if ihood is not None:
+                if distro:
+                    ihood.plot_distance_distributions(nbins=20,
+                                                      jax=jax,
+                                                      label_fontsize_factor=panelsize2font/panelsize,
+                                                      shorten_AAs=short_AA_names,
+                                                      ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                      n_nearest= n_nearest
+                                                      )
+                else:
+                    ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
+                                                  n_nearest,
+                                                  switch_off_Ang=switch_off_Ang,
                                                   jax=jax,
-                                                  label_fontsize_factor=panelsize2font/panelsize,
+                                                  xmax=_np.max([ihood.n_ctcs for ihood in neighborhoods.values() if ihood is not None]),
+                                                  label_fontsize_factor=panelsize2font / panelsize,
                                                   shorten_AAs=short_AA_names,
-                                                  ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                  n_nearest= n_nearest
+                                                  color=ihood.partner_fragment_colors,
+                                                  plot_atomtypes=plot_atomtypes
                                                   )
-            else:
-                ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
-                                              n_nearest,
-                                              switch_off_Ang=switch_off_Ang,
-                                              jax=jax,
-                                              xmax=_np.max([ihood.n_ctcs for ihood in neighborhoods.values() if ihood is not None]),
-                                              label_fontsize_factor=panelsize2font / panelsize,
-                                              shorten_AAs=short_AA_names,
-                                              color=ihood.partner_fragment_colors,
-                                              plot_atomtypes=plot_atomtypes
-                                              )
 
-    if not distro:
-        non_nan_rightermost_patches = [[p for p in jax.patches if not _np.isnan(p.get_x())][-1] for jax in bar_ax.flatten() if len(jax.patches)>0]
-        xmax = _np.nanmax([p.get_x()+p.get_width()/2 for p in non_nan_rightermost_patches])+.5
-        [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
-    bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
-    fname = _path.join(output_dir, fname)
-    if savefiles:
-        bar_fig.savefig(fname, dpi=graphic_dpi)
-        print("The following files have been created")
-        print(fname)
+        if not distro:
+            non_nan_rightermost_patches = [[p for p in jax.patches if not _np.isnan(p.get_x())][-1] for jax in bar_ax.flatten() if len(jax.patches)>0]
+            xmax = _np.nanmax([p.get_x()+p.get_width()/2 for p in non_nan_rightermost_patches])+.5
+            [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
+        bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
+        fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
+        fname = _path.join(output_dir, fname)
+        if savefiles:
+            bar_fig.savefig(fname, dpi=graphic_dpi)
+            print("The following files have been created")
+            print(fname)
 
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     # TODO undecided about this
@@ -997,11 +1019,11 @@ def residue_neighborhoods(residues,
                     f.write(ihood.frequency_str_ASCII_file(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang))
             print(fname)
 
-    #TODO make a method out of this to use in all CLTs
-    # TODO perhaps use https://github.com/python-attrs/attrs
-    # to avoid boilerplate
-    # Thi is very ugly
-    if plot_timedep or separate_N_ctcs:
+    if figures and (plot_timedep or separate_N_ctcs):
+        # TODO make a method out of this to use in all CLTs
+        # TODO perhaps use https://github.com/python-attrs/attrs
+        # to avoid boilerplate
+        # Thi is very ugly
         for ihood in neighborhoods.values():
             # TODO this plot_N_ctcs and skip_timedep is very bad, but ATM my only chance without major refactor
             # TODO perhaps it would be better to bury dt in the plotting directly?
