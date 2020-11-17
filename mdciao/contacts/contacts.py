@@ -479,8 +479,8 @@ class Residues(object):
         self._partner_residue = None
         if self._anchor_residue_index is not None:
             assert self._anchor_residue_index in self.idxs_pair
-            self._anchor_index = _np.argwhere(self.idxs_pair == self.anchor_residue_index).squeeze()
-            self._partner_index = _np.argwhere(self.idxs_pair != self.anchor_residue_index).squeeze()
+            self._anchor_index = int(_np.argwhere(self.idxs_pair == self.anchor_residue_index))
+            self._partner_index = int(_np.argwhere(self.idxs_pair != self.anchor_residue_index))
             self._partner_residue_index = self.idxs_pair[self.partner_index]
             if top is not None:
                 self._anchor_residue =  top.residue(self.anchor_residue_index)
@@ -572,6 +572,7 @@ class Residues(object):
     @property
     def anchor_index(self):
         """
+        The index [0,1] of the anchor residue
 
         Returns
         -------
@@ -1011,7 +1012,7 @@ class ContactPair(object):
             is anything that :obj:`matplotlib.colors` recognizes
         anchor_residue_idx : int, default is None
             Label this residue as the `anchor` of the contact, i.e. the residue
-            that's shared accross a number of contacts. Has to be in :obj:`res_idxs_pair`.
+            that's shared across a number of contacts. Has to be in :obj:`res_idxs_pair`.
 
             Note
             ----
@@ -2594,7 +2595,14 @@ class ContactGroup(object):
         shorten_AAs : bool, default is None
         label_fontsize_factor : float
         truncate_at : float, default is None
-
+        display_sort : boolean, default is False
+            The frequencies are by default plotted in the order
+            in which the :obj:`ContactPair`-objects are stored
+            in the :obj:`ContactGroup`-object's _contact_pairs
+            This order depends on the ctc_cutoff_Ang originally
+            used to instantiate this :obj:`ContactPair`
+            If True, you can re-sort them with this cutoff for
+            display purposes only (the original order is untouched)
         Returns
         -------
         jax : :obj:`matplotlib.pyplot.Axes`
@@ -3236,7 +3244,7 @@ class ContactGroup(object):
             kwargs_freqs2flare["textlabels"] = textlabels
 
         from_tuple = False
-        if not SS or SS is None:
+        if SS is None or isinstance(SS,bool) and not SS:
             kwargs_freqs2flare["ss_array"] = None
         elif isinstance(SS, _md.Trajectory):
             kwargs_freqs2flare["ss_array"] = _md.compute_dssp(SS[0],simplified=True)[0]
