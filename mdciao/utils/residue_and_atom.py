@@ -255,7 +255,7 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     #print("For the range", range_as_str)
     if not isinstance(range_as_str,str):
         range_as_str = _force_iterable(range_as_str)
-        assert all([isinstance(ii,int) for ii in range_as_str])
+        assert all([isinstance(ii,(int,_np.int64)) for ii in range_as_str]),(range_as_str,[type(ii)  for ii in range_as_str])
         range_as_str= ','.join([str(ii) for ii in range_as_str])
     for r in range_as_str.split(','):
         assert not r.startswith("-")
