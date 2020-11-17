@@ -1408,7 +1408,7 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     idx : int
         index for which the relabeling is needed
     consensus_maps : list
-        The item sin the list should be "gettable" by using :obj:`idx`,
+        The items in the list should be "gettable" by using :obj:`idx`,
         either by being lists, arrays, or dicts, s.t.,
         the corresponding value should be the label.
     no_key : str
