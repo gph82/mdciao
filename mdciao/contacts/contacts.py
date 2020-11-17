@@ -195,6 +195,69 @@ def load(filename,return_copy=True):
 
     return obj
 
+def load_archive(filename, **cp_kwargs):
+    mapping = {
+        'res_idxs_pair': 'residues.idxs_pair',
+        'ctc_trajs': 'time_traces.ctc_trajs',
+        'time_trajs': 'time_traces.time_trajs',
+        'atom_pair_trajs': 'time_traces.atom_pair_trajs',
+        'fragment_idxs': 'fragments.idxs',
+        'fragment_names': 'fragments.names',
+        'fragment_colors': 'fragments.colors',
+        'anchor_residue_idx': 'residues.anchor_residue_index',
+        'consensus_labels': 'residues.consensus_labels',
+        }
+
+    if isinstance(filename,str):
+        a = _np.load(filename, allow_pickle=True)[()]
+    elif isinstance(filename,dict):
+        a = filename
+
+    cp_args = ["residues.idxs_pair", "time_traces.ctc_trajs", "time_traces.time_trajs"]
+
+    contact_pairs = [ContactPair(*[cp[arg] for arg in cp_args],
+                                 **{key: cp[val] for key, val in mapping.items() if mapping[key] not in cp_args},
+                                 **cp_kwargs,
+                                 ) for cp in a["list_of_contact_objects"]]
+
+    a.pop("list_of_contact_objects")
+
+    return ContactGroup(contact_pairs, **a)
+
+
+def load_hd5(obj):
+    import h5py
+    if _path.exists(obj):
+        data = h5py.File(obj)
+
+    neighborhoods = {}
+    for key, CG in data.items():
+        # print(key)
+        archive = {}
+        neighborhood_archs = list(
+            [{key: _np.array(val) for key, val in dict(val).items()} for key, val in CG.items() if key.isdigit()])
+        neighborhood_archs = [stringify_dict_vals(idict) for idict in neighborhood_archs]
+        archive["list_of_contact_objects"] = neighborhood_archs
+        for key2, val in CG.items():
+            if not key2.isdigit():
+                archive[key2] = stringify_arrays(_np.array(val))
+        neighborhoods[int(key)] = load_archive(archive)
+    return neighborhoods
+
+def stringify_dict_vals(idict):
+    for key, val in idict.items():
+        try:
+            val = stringify_arrays(val)
+            # print(key)
+            idict[key] = val
+        except:
+            pass
+    return idict
+
+
+def stringify_arrays(val):
+    _np.array([a.decode() for a in val.reshape(-1)]).reshape(val.shape)
+
 def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
                chunksize=1000, return_times_and_atoms=False,
                n_jobs=1,
@@ -320,7 +383,7 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 
     """
     # The creation of lambdas managing the file(xtc,pdb) vs traj case
-    # elswhere allows to keep the code here simple
+    # elsewhere allows to keep the code here simple
     iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
     ictcs, itime, iaps = [],[],[]
     running_f = 0
@@ -1169,17 +1232,7 @@ class ContactPair(object):
 
     def __hash__(self):
         tohash = []
-        for attr in ["residues.idxs_pair",
-                     "time_traces.ctc_trajs",
-                     "time_traces.time_trajs",
-                     "topology",
-                     "time_traces.trajs",
-                     "time_traces.atom_pair_trajs",
-                     "fragments.idxs",
-                     "fragments.names",
-                     "fragments.colors",
-                     "residues.anchor_residue_index",
-                     "residues.consensus_labels"]:
+        for attr in self._hashable_attrs:
             if "." in attr:
                 attr1, attr2 = attr.split(".")
                 gattr = getattr(getattr(self, attr1), attr2)
@@ -1190,6 +1243,20 @@ class ContactPair(object):
 
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
+
+    @property
+    def _hashable_attrs(self):
+        return ["residues.idxs_pair",
+                "time_traces.ctc_trajs",
+                "time_traces.time_trajs",
+                "topology",
+                "time_traces.trajs",
+                "time_traces.atom_pair_trajs",
+                "fragments.idxs",
+                "fragments.names",
+                "fragments.colors",
+                "residues.anchor_residue_index",
+                "residues.consensus_labels"]
 
     def save(self,filename):
         r"""Save this :obj:`ContactPair` as a pickle
@@ -1204,6 +1271,33 @@ class ContactPair(object):
 
         """
         _save_as_pickle(self, filename,verbose=False) # Better not be verbose here
+
+    def _serialized_as_dict(self):
+        r"""
+        Serialize light-weight attributes (everything except mdtraj and mdtops) into
+        a dictionary
+
+        Returns
+        -------
+        tosave : dict
+
+        """
+        tosave = {}
+
+        for attr in self._hashable_attrs:
+            #print(attr)
+            if "." in attr:
+                attr1, attr2 = attr.split(".")
+                value = getattr(getattr(self, attr1), attr2)
+            else:
+                value = getattr(self, attr)
+            # print(value)
+            if attr=="time_traces.trajs":
+                if isinstance(value[0], _md.Trajectory):
+                    value = ['mdtraj.%02u' % ii for ii, __ in enumerate(value)]
+            if not isinstance(value, _md.Topology):
+                tosave[attr] = value
+        return tosave
 
     def binarize_trajs(self, ctc_cutoff_Ang,
                        switch_off_Ang=None
@@ -2666,7 +2760,8 @@ class ContactGroup(object):
         if xlim is not None:
             jax.set_xlim([-.5, xlim + 1 - .5])
 
-        jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
+        if self.is_neighborhood:
+            jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
         if plot_atomtypes:
             self._add_hatching_by_atomtypes(jax, ctc_cutoff_Ang, display_order=order,switch_off_Ang=switch_off_Ang)
 
@@ -2837,7 +2932,7 @@ class ContactGroup(object):
             lowbar_fspts = _rcParams["font.size"] * .75
         lowbar_fsaus = lowbar_fspts / pd
         leg2 = jax.legend(ebars, _hatchets.keys(),
-                          loc=[0, -1.75 * lowbar_fsaus],  # fudged
+                          loc=[0, -2 * lowbar_fsaus],  # fudged
                           ncol=4,
                           framealpha=0,
                           frameon=False,
@@ -3578,7 +3673,7 @@ class ContactGroup(object):
                    self_descriptor="mdciaoCG"
                    ):
         r"""
-        Save time-traces to disc.
+        Save time-traces to disk.
 
         Filenames will be created based on the property
         :obj:`self.trajlabels`, but using only the basenames and
@@ -3638,11 +3733,14 @@ class ContactGroup(object):
             savename = savename_fmt % (prepend_filename.strip("."), self_descriptor.strip("."), ixtc_basename, ext.strip("."))
             savename = savename.replace(" ","_")
             savename = _path.join(output_dir, savename)
-            if ext == 'xlsx':
+            if ext.endswith('xlsx'):
                 _DF(idict["data"],
                     columns=idict["header"]).to_excel(savename,
                                                       float_format='%6.3f',
                                                       index=False)
+            elif ext.endswith("npy"):
+                print("am I here?",savename)
+                _np.save(savename,idict)
             else:
                 _np.savetxt(savename, idict["data"],
                             ' '.join(["%6.3f" for __ in idict["header"]]),
@@ -3664,6 +3762,28 @@ class ContactGroup(object):
 
         """
         _save_as_pickle(self, filename)
+
+    def archive(self,filename=None):
+        r""" Save this :obj:`ContactGroup`'s list of :obj:`ContactPairs` as a list of dictionaries that
+        can be used to re-instantiate an equivalent :obj:`ContactGroup`
+
+        The method :obj:`ContactGroup.save` creates a pickle that has a lot of redundant information
+
+        Parameters
+        ----------
+        filename : str, default is None
+            Has to end in "npy". Default is
+            to return the dictionary
+        """
+
+        tosave =  {"list_of_contact_objects": [cp._serialized_as_dict() for cp in self._contacts],
+                            "interface_residxs":self.interface_residxs,
+                            "name":self.name}
+        if filename is not None:
+            assert filename.endswith("npy")
+            _np.save(filename,tosave)
+        else:
+            return tosave
 
     def copy(self):
         r"""copy this object by re-instantiating another :obj:`ContactGroup` object

@@ -800,7 +800,7 @@ def residue_neighborhoods(residues,
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
     if trajectories is None:
-        trajectories = topology
+        trajectories = topology # TODO we could already load refgeom here, right?
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
@@ -1411,7 +1411,8 @@ def interface(
             #print(ii, ifreq.round(2), cum_freq.round(2), (cum_freq.sum()/tot_freq*100).round(2))
 
     ctc_grp_intf = _mdcctcs.ContactGroup(ctc_objs,
-                                interface_residxs=interface_residx_short)
+                                interface_residxs=interface_residx_short,
+                                         name=title)
     print()
     print(ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))
     print()
