@@ -1828,6 +1828,14 @@ class TestContactGroupSavetrajs(TestBaseClassContactGroup):
             CG.save_trajs("test", "dat", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
+    def test_save_trajs_no_anchor_npy(self):
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs])
+        with _TDir(suffix='_test_mdciao') as tempdir:
+            CG.save_trajs("test", "npy", verbose=True, t_unit="ns",
+                          output_dir=tempdir)
+
+
     def test_save_trajs_w_anchor(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                                     self.cp2_w_anchor_and_frags_and_top],
