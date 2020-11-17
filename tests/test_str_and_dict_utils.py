@@ -69,13 +69,16 @@ class Test_replace_w_dict(unittest.TestCase):
     assert outkey=="word I don't love"
 
 class Test_delete_exp_inkeys(unittest.TestCase):
-    indict = {"GLU30-LYS40":True,
-              "ARG40-GLU30":False}
 
-    outdict = str_and_dict.delete_exp_in_keys(indict, "GLU30")
-    assert len(outdict)==2
-    assert outdict["LYS40"]
-    assert not outdict["ARG40"]
+    def test_runs(self):
+        indict = {"GLU30-LYS40":True,
+                  "ARG40-GLU30":False}
+
+        outdict, deleted = str_and_dict.delete_exp_in_keys(indict, "GLU30")
+        self.assertEqual(deleted,["GLU30","GLU30"])
+        assert len(outdict)==2
+        assert outdict["LYS40"]
+        assert not outdict["ARG40"]
 
 
 class Test_iterate_and_inform_lambdas(unittest.TestCase):
@@ -412,7 +415,7 @@ class Test_auto_fragment_string(unittest.TestCase):
         assert str_and_dict.choose_between_good_and_better_strings("fragA", "3.50") == "3.50"
 
     def test_only_option(self):
-        self.assertEquals(str_and_dict.choose_between_good_and_better_strings("fragA", None),"fragA")
+        self.assertEqual(str_and_dict.choose_between_good_and_better_strings("fragA", None),"fragA")
 
     def test_only_better_option(self):
         assert str_and_dict.choose_between_good_and_better_strings(None, "3.50") == "3.50"
