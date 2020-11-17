@@ -981,6 +981,8 @@ class TestBaseClassContactGroup(unittest.TestCase):
                                                      ],
                                                      top=self.top
                                                      )
+        #At 3.5, the above cp1 gives BB-SC, BB-BB, BB-BB:
+        # 2/3 BB-BB, 1/3 BB-SC
         self.cp2_w_atom_types = contacts.ContactPair([0, 2],
                                                      [[.15, .25, .35, .45]],
                                                      [[0, 1, 2, 3]],
@@ -1002,8 +1004,11 @@ class TestBaseClassContactGroup(unittest.TestCase):
                                                          [self.atom_BB1, self.atom_BB0],
                                                          [self.atom_BB1, self.atom_BB0]]
                                                      ],
-                                                     top=self.top
+                                                     top=self.top,
+                                                    anchor_residue_idx=0,
                                                      )
+        #At 3.5, the above cp1 gives SC-BB, BB-BB, BB-BB:
+        # 2/3 BB-BB, 1/3 SC-BB
 
 
 
@@ -1399,6 +1404,16 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
         _np.testing.assert_array_equal(mat, mat_ref)
 
+    def test_frequency_to_bfactor_just_runs(self):
+        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    ],
+                                   interface_residxs=[[0],[1,2]])
+        with _TDir() as tmpdir:
+            pdb=path.join(tmpdir,"as_betas.pdb")
+            betas = CP.frequency_to_bfactor(3.5,pdb, self.geom, interface_sign=True)
+        assert len(betas) == self.geom.n_atoms
+
     def test_interface_frequency_matrix(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
@@ -1462,6 +1477,34 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
+    def test_plot_freqs_as_bars_display_sort(self):
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG.plot_freqs_as_bars(2, "test_site", display_sort=True)
+
+
+    def test_plot_freqs_as_bars_total_freq(self):
+        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG.plot_freqs_as_bars(2, "test_site", total_freq=CG.frequency_per_contact(2).sum())
+
+    def test_plot_freqs_as_bars_no_neighborhood(self):
+        CG = contacts.ContactGroup([self.cp1, self.cp2],name="test site")
+        jax = CG.plot_freqs_as_bars(2)
+        assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
+
+    def test_plot_freqs_as_bars_no_neighborhood_fails(self):
+        with pytest.raises(AssertionError):
+            CG = contacts.ContactGroup([self.cp1, self.cp2])
+            CG.plot_freqs_as_bars(2,)
+
+    def test_plot_add_hatching_by_atomtypes(self):
+        CG = contacts.ContactGroup([self.cp1_w_atom_types,
+                                    self.cp1_w_atom_types_0_1_switched,
+                                    self.cp2_w_atom_types])
+        # Minimal plot
+        iax = CG.plot_freqs_as_bars(3.5,title_label="test", plot_atomtypes=True)
+        _plt.close("all")
+
     def test_plot_freqs_as_flareplot_just_runs(self):
         # This is just to test that it runs without error
         # the minimal examples here cannot test the full flareplot
@@ -1473,10 +1516,29 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         # This is just to test that it runs without error
         # the minimal examples here cannot test the full flareplot
         # TODO add full-fledged example here?
-        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs])
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs],
+                                   top=self.top)
         ifig, iax = CG.plot_freqs_as_flareplot(10,SS=self.geom)
         ifig.tight_layout()
-        ifig.savefig("test.pdf")
+        _plt.close("all")
+        #ifig.savefig("test.pdf")
+
+    def test_plot_freqs_as_flareplot_just_runs_w_consensus_maps(self):
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs],
+                                   top=self.top)
+        ifig, iax = CG.plot_freqs_as_flareplot(10,SS=self.geom,
+                                               consensus_maps=[["GPH"]*self.top.n_residues])
+        ifig.tight_layout()
+        _plt.close("all")
+
+    def test_plot_freqs_as_flareplot_just_runs_w_SS_array(self):
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs],
+                                   top=self.top)
+        ifig, iax = CG.plot_freqs_as_flareplot(10,
+                                              SS=_np.array(["H"]*self.top.n_residues))
+        ifig.tight_layout()
+        _plt.close("all")
+
 
     def test_plot_neighborhood_raises(self):
         CG = contacts.ContactGroup([self.cp1, self.cp2])
@@ -1503,18 +1565,11 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _plt.close("all")
 
     def test_plot_get_hatches_for_plotting_atomtypes(self):
-        CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp1_w_atom_types_0_1_switched, self.cp2_w_atom_types])
+        CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp1_w_atom_types_0_1_switched])
         df = CG._get_hatches_for_plotting(3.5)
         # This checks that the inversion ["BB-SC"]-["SC-BB"] takes place when needed
         _np.testing.assert_array_equal(df.values[0, :], [2 / 3, 0, 1 / 3, 0])
-        _np.testing.assert_array_equal(df.values[1, :], [2 / 3, 0, 0, 1 / 3])
-        _np.testing.assert_array_equal(df.values[2, :], [0, 0, 2 / 3, 1 / 3])
-
-    def test_plot_add_hatching_by_atomtypes(self):
-        CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp1_w_atom_types_0_1_switched, self.cp2_w_atom_types])
-        # Minimal plot
-        iax = CG.plot_freqs_as_bars(3.5,title_label="test", plot_atomtypes=True)
-        _plt.close("all")
+        _np.testing.assert_array_equal(df.values[1, :], [2 / 3, 0, 1 / 3, 0])
 
 
     def test_plot_timedep_ctcs(self):

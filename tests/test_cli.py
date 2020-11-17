@@ -309,6 +309,32 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                         top, [self.traj, self.traj_reverse],
                                         output_dir=tmpdir)
 
+    def test_precomputed(self):
+        CG1 = list(cli.residue_neighborhoods([1043],
+                                             self.geom, [self.traj, self.traj_reverse],
+                                             res_idxs=True,
+                                             savefiles=False,
+                                             figures=False)["neighborhoods"].values())[0]
+        CG2 = list(cli.residue_neighborhoods([1043],
+                                             self.geom, [self.traj, self.traj_reverse],
+                                             res_idxs=True,
+                                             savefiles=False,
+                                             figures=False,
+                                             pre_computed_contact_matrix=_np.zeros((self.geom.n_residues,
+                                                                                   self.geom.n_residues)))[
+                       "neighborhoods"].values())[0]
+        _np.testing.assert_array_equal(CG1.frequency_per_contact(3.5), CG2.frequency_per_contact(3.5))
+
+    def test_precomputed_raises(self):
+        with pytest.raises(ValueError):
+            cli.residue_neighborhoods([1043],
+                                      self.geom, [self.traj, self.traj_reverse],
+                                      res_idxs=True,
+                                      savefiles=False,
+                                      figures=False,
+                                      pre_computed_contact_matrix=_np.zeros((self.geom.n_residues,
+                                                                             self.geom.n_residues + 1)))
+
 class Test_sites(TestCLTBaseClass):
 
     def test_sites(self):
@@ -685,7 +711,7 @@ class Test_compare(unittest.TestCase):
 
     def test_just_works(self):
         myfig, freqs, __ = cli.compare({"CG1": self.CG1, "CG2": self.CG2},
-                                       ctc_cutoff_Ang=1.5)
+                                       ctc_cutoff_Ang=1.5, anchor="0")
         myfig.tight_layout()
         # myfig.savefig("1.test.png",bbox_inches="tight")
         _plt.close("all")
