@@ -2751,7 +2751,7 @@ class ContactGroup(object):
         df = _DF(list_of_dicts, columns=_hatchets).fillna(0) # Letting pandas work for us filling zeroes
         swap_order = [ii for ii, ictc in enumerate(self._contacts) if ictc.residues.anchor_index==1]
         if len(swap_order)>0:
-            df.loc[swap_order,["SC-BB", "BB-SC"]] = df.loc[swap_order,["BB-SC", "SC-BB"]]
+            df.loc[swap_order,["SC-BB", "BB-SC"]] = df.loc[swap_order,["BB-SC", "SC-BB"]].values
         return df
 
     def _add_hatching_by_atomtypes(self, jax, ctc_cutoff_Ang, display_order=False, switch_off_Ang=None,
