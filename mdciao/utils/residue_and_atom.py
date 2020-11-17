@@ -220,7 +220,7 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     ----
     Internally, if an int or an iterable of ints is passed, they
     will be string-ified on-the-fly to work with the method "as-is",
-    because the method was initiall developed to interpret CLI-strings
+    because the method was initially developed to interpret CLI-strings
 
     Note
     ----
