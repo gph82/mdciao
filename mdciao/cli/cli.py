@@ -883,7 +883,7 @@ def residue_neighborhoods(residues,
         ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs), periodic=pbc)
     print("done!")
 
-    ctc_idxs_small = _np.argwhere(ctcs[0] < nlist_cutoff_Ang / 10).squeeze()
+    ctc_idxs_small = _np.flatnonzero(ctcs[0] < nlist_cutoff_Ang / 10)
     _, ctc_idxs_small = _md.compute_contacts(refgeom, ctc_idxs[ctc_idxs_small])
     ctc_idxs_small = _mdcu.lists.unique_list_of_iterables_by_tuple_hashing(ctc_idxs_small)
 
