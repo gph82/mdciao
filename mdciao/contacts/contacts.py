@@ -1209,7 +1209,7 @@ class ContactPair(object):
         """
         _save_as_pickle(self, filename,verbose=False) # Better not be verbose here
 
-    def _serialized_as_dict(self):
+    def _serialized_as_dict(self,exclude=None):
         r"""
         Serialize light-weight attributes (everything except mdtraj and mdtops) into
         a dictionary
@@ -1219,10 +1219,10 @@ class ContactPair(object):
         tosave : dict
 
         """
+        if exclude is None:
+            exclude=[]
         tosave = {}
-
-        for attr in self._hashable_attrs:
-            #print(attr)
+        for attr in set(self._hashable_attrs).difference(exclude):
             if "." in attr:
                 attr1, attr2 = attr.split(".")
                 value = getattr(getattr(self, attr1), attr2)
@@ -3700,7 +3700,7 @@ class ContactGroup(object):
         """
         _save_as_pickle(self, filename)
 
-    def archive(self,filename=None):
+    def archive(self,filename=None, **kwargs):
         r""" Save this :obj:`ContactGroup`'s list of :obj:`ContactPairs` as a list of dictionaries that
         can be used to re-instantiate an equivalent :obj:`ContactGroup`
 
@@ -3713,9 +3713,9 @@ class ContactGroup(object):
             to return the dictionary
         """
 
-        tosave =  {"list_of_contact_objects": [cp._serialized_as_dict() for cp in self._contacts],
-                            "interface_residxs":self.interface_residxs,
-                            "name":self.name}
+        tosave = {"serialized_CPs": [cp._serialized_as_dict(**kwargs) for cp in self._contacts],
+                  "interface_residxs": self.interface_residxs,
+                  "name": self.name}
         if filename is not None:
             assert filename.endswith("npy")
             _np.save(filename,tosave)
