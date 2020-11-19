@@ -482,7 +482,10 @@ def plot_unified_freq_dicts(freqs,
                       label=label,
                       )
 
-    _plt.legend()
+    try:
+        _plt.legend()
+    except:
+        pass
     if vertical_plot:
         for ii, key in enumerate(sorted_value_by_ctc_by_sys.keys()):
             # 1) centered in the middle of the bar, since plt.bar(align="center")
@@ -645,7 +648,7 @@ def titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
 
     """
 
-    max_y_texts = _np.max([_get_highest_y_of_bbox_in_axes_units(txt) for txt in jax.texts])
+    max_y_texts = _np.max([_get_highest_y_of_bbox_in_axes_units(txt) for txt in jax.texts]+[0])
     dy = max_y_texts - jax.get_ylim()[1]
     data2pts = _points2dataunits(jax)[1]
     pad_in_points = _np.max([0,dy])*data2pts
