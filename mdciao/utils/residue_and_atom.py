@@ -56,7 +56,6 @@ def find_AA(top, AA_pattern):
             raise ValueError("purely alphabetic patterns must have "
                              " either 1, 2, or 3 letters, not  %s" % (AA_pattern))
 
-
         return [rr.index for rr in top.residues if AA_pattern == '%s' % (get_name[lenA](rr))]
     elif AA_pattern.isdigit():
         return [rr.index for rr in top.residues if rr.resSeq == int(AA_pattern)]
@@ -280,7 +279,7 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
                 for_extending, __ = residues_from_descriptors(resnames, fragments, top,
                                                             **residues_from_descriptors_kwargs)
                 if None in for_extending:
-                    raise ValueError("The input range of residue resSeqs contains '%s' which "
+                    raise ValueError("The input range of residues contains '%s' which "
                                      "returns an untreatable range %s!" % (r, for_extending))
                 if "-" in r:  # it was a pair
                     assert len(for_extending)==2
