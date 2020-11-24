@@ -222,7 +222,6 @@ def compare_groups_of_contacts(groups,
             else:
                 anchor=_mdcu.str_and_dict.defrag_key(deleted_half_keys[0],defrag=defrag,sep=" ")
         freqs[key] = idict
-
     if plot_singles:
         nrows = len(freqs)
         myfig, myax = _plt.subplots(nrows, 1,
@@ -236,7 +235,8 @@ def compare_groups_of_contacts(groups,
                                     fontsize=fontsize,
                                     **kwargs_plot_unified_freq_dicts)
             if anchor is not None:
-                _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim()))*.05, 1.05, "%s and:" % anchor, ha="right", va="bottom")
+                _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim()))*.05, 1.05, "%s and:" % _mdcu.str_and_dict.replace4latex(anchor.replace("@","^")),
+                                ha="right", va="bottom")
 
         myfig.tight_layout()
         # _plt.show()
@@ -257,7 +257,8 @@ def compare_groups_of_contacts(groups,
                                                         title=title,
                                                         **kwargs_plot_unified_freq_dicts)
     if anchor is not None:
-        _plt.text(0 - _np.abs(_np.diff(_plt.gca().get_xlim()))*.05, 1.05, "%s and:" % anchor, ha="right", va="bottom", fontsize=fontsize)
+        _plt.text(0 - _np.abs(_np.diff(_plt.gca().get_xlim()))*.05, 1.05, "%s and:" % _mdcu.str_and_dict.replace4latex(anchor.replace("@","^")),
+                                                                                                                       ha="right", va="bottom", fontsize=fontsize)
     _plt.gcf().tight_layout()
     #_plt.show()
 
@@ -514,7 +515,14 @@ def plot_unified_freq_dicts(freqs,
             iix = ii\
                   -width/2\
                   +len(freqs_by_sys_by_ctc)*width/2
-            _plt.text(iix, ylim + .05, winners[key][0]+key,
+            txt = key.replace("@", "^")
+            if "-" in txt:
+                txt = winners[key][0]+"-".join([_mdcu.str_and_dict.replace4latex(w) for w in txt.split("-")])
+            else:
+                txt = _mdcu.str_and_dict.replace4latex(txt  )
+
+
+            _plt.text(iix, ylim + .05, txt,
                       #ha="center",
                       ha='left',
                       rotation=45,
