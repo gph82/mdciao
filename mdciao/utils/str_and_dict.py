@@ -441,70 +441,66 @@ def _find_latex_chunks(istr, blockers=['$$','\$']):
 
 def replace4latex(istr):
     r"""
-    One of two things:
-        Prepares the input for latex rendering (in matplotlib, e.g.)
-        For strings with greek letters or underscores.
-        "alpha = 7"-> "$\alpha$ = 7"
-        "C_2"      -> "$C_2$"
-        "C^2"      -> "$C^2$"
+    Prepares the input for latex rendering (in matplotlib, e.g.)
+
+    For strings with greek letters or underscores.
+     * "alpha = 7"-> "$\alpha$ = 7"
+     * "C_2"      -> "$C_2$"
+     * "C^2"      -> "$C^2$"
 
     Parameters
     ----------
     istr: str
-        "There's an alpha and a beta here, also C_2"
+        "There's an alpha and a beta here, also C_200"
 
     Returns
     -------
     alpha: str
-        'There's an $\alpha$ and a $\beta$ here, also $C_2$'
+        'There's an $\alpha$ and a $\beta$ here, also $C_{200}$'
 
     """
-    chars_that_latexify_word = ["_", "^"]
-    for c in chars_that_latexify_word:
+
+    for gl in _symbols:
+        if gl in istr:
+            istr = _latexify(gl,istr)
+
+    for c in ["_", "^"]:
         for word in istr.split():
             if c in word:
-                istr, __ = _latexify(word, istr)
-
-    for gl in ['alpha','beta','gamma', 'mu', "Sigma"]+ \
-              ["AA",
-               #"Ang"
-               ]:
-        if gl in istr:
-            still2latex = True
-            idx=0
-            #TODO do proper recursion here, it's too late at night now
-            while still2latex:
-                istr, still2latex = _latexify(gl,istr,symbol=True, idx=idx)
-                idx+=1
-                if idx>100:
-                    print("More than 100 occurrences of %s in str, this is not sane"%gl)
-                    break
+                istr = _latexify(word, istr)
 
     return istr
 
-def _latexify(word, istr, symbol=False, idx=0):
-    spans = [m.span() for m in _re.finditer(word, istr)]
-    try:
-        span = spans[idx] # to be able to be out of range
+_symbols =  ['alpha','beta','gamma', 'mu', "Sigma"]+["AA"]
+_scripts =  ["^","_"]
+
+def _latexify(word, istr):
+    # Look for appearances of this word in the whole string
+    spans = [m.span() for m in _re.finditer(word.replace("^","\^"), istr)]
+
+    for ii in range(len(spans)):
+        span = spans[ii]
         latex_ranges = _find_latex_chunks(istr)
+        add_dollar_signs = lambda istr : "$"+istr+"$"
         if any([set(lr).issuperset(span) for lr in latex_ranges]):
+            add_dollar_signs = lambda istr:  istr
             # This substring is already within a latex chunk, can't do anything
             # except check if it's been enclosed in dollars but no \symbol, e.g. $beta_2$
-            if symbol:
-                if istr[span[0] - 1] != '\\':
-                    new = '\%s' % word
+        if word in _symbols:
+            if istr[span[0] - 1] != '\\':
+                new = add_dollar_signs('\%s' % word)
+                istr = istr[:span[0]] + new + istr[span[1]:]
+        for char in _scripts:
+            if char in word:
+                try:
+                    word1,word2 = word.split(char)
+                    new = add_dollar_signs('%s%s{%s}'%(word1,char,word2))
                     istr = istr[:span[0]] + new + istr[span[1]:]
-        else:
-            new = '$%s$' % word
-            if symbol:
-                if istr[span[0] - 1] != '\\':
-                    new = '$\%s$' % word
-            istr = istr[:span[0]] + new + istr[span[1]:]
-        still2latex=True
-    except IndexError:
-        still2latex=False
-
-    return istr,still2latex
+                except ValueError as e:
+                    print("Cannot latexify word with more than one instance of %s in the same word: %s"%(char,word))
+        spans = [m.span() for m in _re.finditer(word, istr)]
+    istr = istr.replace("$$","")
+    return istr
 
 def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
     r"""
