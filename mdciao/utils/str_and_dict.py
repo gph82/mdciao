@@ -134,7 +134,7 @@ def delete_exp_in_keys(idict, exp, sep="-"):
 def delete_pattern_in_ctc_label(pattern, label, sep):
     new_name = [name for name in label.split(sep) if pattern not in name]
     deleted_half_keys = [name for name in label.split(sep) if pattern in name]
-    assert len(new_name) == 1, new_name
+    assert len(new_name) == 1, (new_name, pattern)
     return new_name[0], deleted_half_keys
 
 def unify_freq_dicts(freqs,
@@ -494,7 +494,7 @@ def _latexify(word, istr):
             if char in word:
                 try:
                     word1,word2 = word.split(char)
-                    new = add_dollar_signs('%s%s{%s}'%(word1,char,word2))
+                    new = word1+add_dollar_signs("%s{\mathrm{%s}}"%(char,word2))
                     istr = istr[:span[0]] + new + istr[span[1]:]
                 except ValueError as e:
                     print("Cannot latexify word with more than one instance of %s in the same word: %s"%(char,word))
