@@ -574,7 +574,7 @@ def add_tilted_labels_to_patches(jax, labels,
         iy += .01
         if iy > trunc_y_labels_at:
             iy = trunc_y_labels_at
-        jax.text(ix, iy, _mdcu.str_and_dict.replace4latex(ilab),
+        jax.text(ix, iy, _mdcu.str_and_dict.replace4latex(ilab.replace("@","^")),
                  va='bottom',
                  ha='left',
                  rotation=45,
