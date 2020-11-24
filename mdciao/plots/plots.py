@@ -469,23 +469,23 @@ def plot_unified_freq_dicts(freqs,
                 label = label[:-1] + ", +%2.1fb)" % (not_shown_sigma)
         label = _mdcu.str_and_dict.replace4latex(label)
 
-        if not vertical_plot:
-            _plt.bar(x_array + delta[skey], bar_array,
-                     width=width,
-                     color=colordict[skey],
-                     label=label,
-                     )
-        else:
-            _plt.barh(x_array + delta[skey], bar_array,
-                      height=width,
-                      color=colordict[skey],
-                      label=label,
-                      )
+        if len(bar_array)>0:
+            if not vertical_plot:
+                _plt.bar(x_array + delta[skey], bar_array,
+                         width=width,
+                         color=colordict[skey],
+                         label=label,
+                         )
+            else:
+                _plt.barh(x_array + delta[skey], bar_array,
+                          height=width,
+                          color=colordict[skey],
+                          label=label,
+                          )
 
-    try:
-        _plt.legend()
-    except:
-        pass
+
+            _plt.legend()
+
     if vertical_plot:
         for ii, key in enumerate(sorted_value_by_ctc_by_sys.keys()):
             # 1) centered in the middle of the bar, since plt.bar(align="center")
