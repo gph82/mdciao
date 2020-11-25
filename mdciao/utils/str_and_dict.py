@@ -476,8 +476,8 @@ _scripts =  ["^","_"]
 
 def _latexify(word, istr):
     # Look for appearances of this word in the whole string
-    spans = [m.span() for m in _re.finditer(word.replace("^","\^"), istr)]
-
+    _word = word.replace("^", "\^").replace("\\","\\\\")
+    spans = [m.span() for m in _re.finditer(_word, istr)]
     for ii in range(len(spans)):
         span = spans[ii]
         latex_ranges = _find_latex_chunks(istr)
@@ -494,12 +494,14 @@ def _latexify(word, istr):
             if char in word:
                 try:
                     word1,word2 = word.split(char)
-                    new = word1+add_dollar_signs("%s{\mathrm{%s}}"%(char,word2))
-                    istr = istr[:span[0]] + new + istr[span[1]:]
+                    if word2[0] not in ["{","\\"]:
+                        new = word1+add_dollar_signs("%s{\mathrm{%s}}"%(char,word2))
+                        istr = istr[:span[0]] + new + istr[span[1]:]
                 except ValueError as e:
                     print("Cannot latexify word with more than one instance of %s in the same word: %s"%(char,word))
         spans = [m.span() for m in _re.finditer(word, istr)]
     istr = istr.replace("$$","")
+    print("finished first run")
     return istr
 
 def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
