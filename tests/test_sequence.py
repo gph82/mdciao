@@ -78,6 +78,27 @@ class Test_maptops(unittest.TestCase):
         for key, val in top22top1.items():
             top1.residue(val).code == top2.residue(key).code
 
+class Test_df2maps(unittest.TestCase):
+
+    def test_works(self):
+        df_good = sequence.align_tops_or_seqs("AABBCC", "AADDCC")
+        map1, map2 = sequence.df2maps(df_good)
+        self.assertDictEqual(map1,map2)
+        self.assertDictEqual(map1,{ii:ii for ii in range(len(map1))})
+
+    def test_works_only_matches(self):
+        df_good = sequence.align_tops_or_seqs("AABBCC", "AADDCC")
+        map1, map2 = sequence.df2maps(df_good, allow_nonmatch=False)
+        self.assertDictEqual(map1,map2)
+        self.assertDictEqual(map1,{0:0, 1:1, 4:4, 5:5})
+
+    def test_detects_insertion(self):
+        df_bad = sequence.align_tops_or_seqs("AABBFFFFFCC", "AADDCC")
+        map1, map2 = sequence.df2maps(df_bad)
+        self.assertDictEqual(map1, {0: 0, 1: 1, 9: 4, 10: 5})
+        self.assertDictEqual(map2, {0: 0, 1: 1, 4: 9, 5: 10})
+
+
 class Test_my_bioalign(unittest.TestCase):
 
     def test_works(self):

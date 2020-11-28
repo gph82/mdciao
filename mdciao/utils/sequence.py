@@ -20,6 +20,7 @@ Functions
 import numpy as _np
 from pandas import DataFrame as _DF
 from Bio.pairwise2 import align as _Bioalign
+from .lists import contiguous_ranges as _cranges
 
 def print_verbose_dataframe(df):
     r"""
@@ -331,15 +332,28 @@ def maptops(top0,
 
     return df2maps(df)
 
-def df2maps(df):
+def df2maps(df, allow_nonmatch=True):
     r"""Map the columns "idx_0" and "idx_1" of an alignment
     (a :obj:`pandas.DataFrame`)
-
 
     Parameters
     ----------
     df : :obj:`pandas.DataFrame`
         Typically comes from  :obj:`align_tops_or_seqs`
+    allow_nonmatch : bool, default is True
+        Allow to map between ranges of residues that
+        don't match, as long as nonmatching
+        ranges are equal in length, s.t.
+        A A
+        A A
+        B D
+        B D
+        C C
+        C C
+        maps BB to DD
+
+    Non-matching first or last ranges will never be
+    mapped
 
     Returns
     -------
@@ -349,12 +363,22 @@ def df2maps(df):
         top1_to_top0[20] = 10
 
     """
+    match_ranges = _cranges(df["match"].values)
+    _df = df.copy()
+    for rr in match_ranges[False]:
+        try:
+            if allow_nonmatch and all(_df.loc[[rr[0]-1,rr[-1]+1]]["match"]) and \
+                    all(["-" not in df[key].values for key in ["AA_1","AA_1"]]): #this checks for no insertions in the alignment ("=equal length ranges")
+                _df.at[rr,"match"]=True
+        except KeyError:
+            continue
+    top0_to_top1 = {key: val for key, val in zip(_df[_df["match"] == True]["idx_0"].to_list(),
+                                                 _df[_df["match"] == True]["idx_1"].to_list())}
 
-    top0_to_top1 = {key : val for key, val in zip(df[df["match"] == True]["idx_0"].to_list(),
-                                                  df[df["match"] == True]["idx_1"].to_list())}
     top1_to_top0 = {val:key for key, val in top0_to_top1.items()}
 
     return top0_to_top1, top1_to_top0
+
 '''
 # todo this is a bit of overkill, one alignment per residue
 def residx_in_seq_by_alignment(ridx1, top1,
