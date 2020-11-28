@@ -74,7 +74,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
     fragment: iterable of indices
         The fragment in question, with zero-indexed residue indices
     fragment_desc: str, default is "fragment"
-        Who to call the fragments, e.g. segment, block, monomer, chain
+        How to call the fragments, e.g. segment, block, monomer, chain
     idx2label : iterable or dictionary
         Pass along any consensus labels here
     resSeq_jumps : bool, default is True
@@ -724,12 +724,15 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
             print("Fragment %s has holes in it but will be considered from %u to %u regardless"%(iname,ifrag[0],ifrag[-1]))
         full_frags.append(_np.arange(ifrag[0],ifrag[-1]+1))
     orphans = _np.delete(_np.arange(highest_res_idx + 1), _np.hstack(full_frags))
-    orphans = _get_fragments_by_jumps_in_sequence(orphans)[1]
-    if '%' in orphan_name:
-        orphans_labels = [orphan_name%ii for ii, __ in enumerate(orphans)]
+    if len(orphans)>0:
+        orphans = _get_fragments_by_jumps_in_sequence(orphans)[1]
+        if '%' in orphan_name:
+            orphans_labels = [orphan_name%ii for ii, __ in enumerate(orphans)]
+        else:
+            orphans_labels = [orphan_name for __ in orphans]
+        new_frags = orphans + full_frags
+        new_labels = orphans_labels + fragnames
+        idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
+        return [list(new_frags[ii]) for ii in idxs], [new_labels[ii] for ii in idxs]
     else:
-        orphans_labels = [orphan_name for __ in orphans]
-    new_frags = orphans + full_frags
-    new_labels = orphans_labels + fragnames
-    idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
-    return [list(new_frags[ii]) for ii in idxs], [new_labels[ii] for ii in idxs]
+        return fragments, fragnames
