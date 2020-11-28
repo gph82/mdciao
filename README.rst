@@ -56,10 +56,10 @@ This is an informal list of known issues and TODOs:
  * parallel execution with memory mdtraj.Trajectory objects should be better
  * harmonize documentation API cli methods (mdciao.cli) and the CLI scripts (mdc_*)
  * The interface between API methods and cli scripts could be better, using sth like `click <https://click.palletsprojects.com/en/7.x/>`_
- * The API-cli methods (interface, neighborhoods, sites, etc) have very similar flows but a lot of code repetition, I am sure some patterns/boilerplate could be outsourced/refactored even more.
+ * The API-cli methods (interface, neighborhoods, sites, etc) have very similar flows but a lot of code repetition, I am sure `some patterns/boilerplate could be outsourced/refactored even more <https://en.wikipedia.org/wiki/Technical_debt>`_.
  * color handling of the flare-plots is buggy because it tries to guess too many things. Undecided about best decision.
  * Most of the tests were written against a very rigid API that mimicked the CLI closely. Now the API is more flexible
- and many `<tests could be re-written or deleted https://en.wikipedia.org/wiki/Technical_debt>`_ , like those needing
+ and many `tests could be re-written or deleted <https://en.wikipedia.org/wiki/Technical_debt>`_ , like those needing
  mock-input or writing to tempdirs because writing figures or files could not be avoided.
 
 System Requirements

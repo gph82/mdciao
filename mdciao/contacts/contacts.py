@@ -2677,7 +2677,7 @@ class ContactGroup(object):
                 label_dotref += '\nSigma = %2.1f' % sigma  # sum over all bc we did not truncate
                 jax.plot(_np.nan, _np.nan, 'o',
                          color=self.anchor_fragment_color,
-                         label=_mdcu.str_and_dict.replace4latex(label_dotref))
+                         label=_mdcu.str_and_dict.replace4latex(label_dotref.replace("@","^")))
         else:
             if sum_freqs:
                 title+= " of '%s' (Sigma = %2.1f)\n" % (title_label,sigma)
