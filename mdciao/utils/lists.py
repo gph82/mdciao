@@ -9,6 +9,32 @@ Miscellaneous operations on list or list-like objects
 
 import numpy as _np
 
+from itertools import groupby as _groupby
+from collections import defaultdict as _defdict
+def contiguous_ranges(list_in):
+    r"""
+    For every unique entry in :obj:`list_in` return the contiguous ranges in list
+
+    Parameters
+    ----------
+    list_in : list
+
+    Returns
+    -------
+    ranges : dict
+        The keys are with unique entries of list_in, values are the ranges
+        in which the entry appears
+
+    """
+    offset = 0
+    _ranges = _defdict(list)
+    for key, grpr in _groupby(list_in):
+        l = len(list(grpr))
+        irange = _np.arange(offset, offset + l)
+        _ranges[key].append(irange)
+        offset+=l
+    return dict(_ranges)
+
 def re_warp(array_in, lengths):
     """Return iterable ::py:obj:array_in as a list of arrays, each
      one with the length specified in lengths

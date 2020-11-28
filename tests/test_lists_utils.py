@@ -211,6 +211,19 @@ class test_hash_list(unittest.TestCase):
 
         lists.hash_list(ilist)
 
+class Test_contiguous_ranges(unittest.TestCase):
+
+    def test_works(self):
+        input = ["A","A", "A","0","A","A","0","0"]
+        out_dict = lists.contiguous_ranges(input)
+        print(out_dict)
+        _np.testing.assert_array_equal(out_dict["A"][0],[0,1,2])
+        _np.testing.assert_array_equal(out_dict["A"][1],[4,5])
+        _np.testing.assert_equal(2,len(out_dict["A"]))
+        _np.testing.assert_array_equal(out_dict["0"][0],[3])
+        _np.testing.assert_array_equal(out_dict["0"][1],[6,7])
+        _np.testing.assert_equal(2,len(out_dict["0"]))
+
 if __name__ == '__main__':
     unittest.main()
 
