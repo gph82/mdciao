@@ -325,6 +325,14 @@ class Test_rangeexpand_residues2residxs(unittest.TestCase):
                                                                      )
         np.testing.assert_array_equal(expanded_range,[3,6])
 
+    def test_rangeexpand_resSeq_one_number_w_comma(self):
+        expanded_range =   residue_and_atom.rangeexpand_residues2residxs("381,",
+                                                                     self.fragments,
+                                                                     self.top,
+                                                                     sort=True
+                                                                     )
+        np.testing.assert_array_equal(expanded_range,[6])
+
 
     def test_rangeexpand_raises_on_empty_range(self):
         with pytest.raises(ValueError):
