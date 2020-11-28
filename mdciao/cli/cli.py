@@ -1103,7 +1103,8 @@ def interface(
         flareplot=True,
         sparse_flare_frags = True,
         savefiles=True,
-        save_nomenclature_files=False
+        save_nomenclature_files=False,
+        figures=False
 ):
     r"""Contact-frequencies between residues belonging
     to different fragments of the molecular topology
@@ -1289,6 +1290,8 @@ def interface(
     save_nomenclature_files : bool, default is False
         Save available nomenclature definitions to disk so
         that they can be accessed locally in later uses.
+    figures : bool, default is True
+        Draw figures
     Returns
     -------
 
@@ -1423,134 +1426,140 @@ def interface(
     print(dfs[0].round({"freq":2}))
     print()
     print(dfs[1].round({"freq":2}))
-    panelheight = 3
-    n_cols = 1
-    n_rows = 2
-    panelsize = 4
-    panelsize2font = 3.5
-    fudge = 7
-    histofig, histoax = _plt.subplots(n_rows, n_cols, sharex=True, sharey=False,
-                                      figsize=(n_cols * panelsize * _np.ceil(ctc_grp_intf.n_ctcs/fudge),
-                                              n_rows * panelsize),
-                                      )
-
-    # One loop for the histograms
-    _rcParams["font.size"] = panelsize * panelsize2font
-    ctc_grp_intf.plot_freqs_as_bars(ctc_cutoff_Ang,
-                                    title,
-                                    jax=histoax[0],
-                                    xlim=_np.min((n_ctcs, ctc_grp_intf.n_ctcs)),
-                                    label_fontsize_factor=panelsize2font / panelsize,
-                                    shorten_AAs=short_AA_names,
-                                    truncate_at=min_freq,
-                                    total_freq=tot_freq
-                                    )
-
-    ctc_grp_intf.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
-                                             title,
-                                             jax=histoax[1],
-                                             list_by_interface=True,
-                                             label_fontsize_factor=panelsize2font / panelsize,
-                                             truncate_at=.05,
-                                             sort=sort_by_av_ctcs,
-                                             )
-    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
     # TODO manage filenames better, avoid overwriting here when file exists
-    fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc.replace(" ","_"), ctc_cutoff_Ang)
+    fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc.replace(" ", "_"), ctc_cutoff_Ang)
     fname_wo_ext = _path.join(output_dir, fname_wo_ext)
     fname_histo = ".".join([fname_wo_ext, graphic_ext])
-    fname_excel = ".".join([fname_wo_ext,"xlsx"])
+    fname_excel = ".".join([fname_wo_ext, "xlsx"])
     fname_dat = ".".join([fname_wo_ext, "dat"])
     fname_pdb = ".".join([fname_wo_ext, "as_bfactors.pdb"])
-    fname_mat   = fname_histo.replace("overall@", "matrix@")
-    fname_flare = '.'.join([fname_wo_ext.replace("overall@", "flare@"),'pdf'])
+    fname_mat = fname_histo.replace("overall@", "matrix@")
+    fname_flare = '.'.join([fname_wo_ext.replace("overall@", "flare@"), 'pdf'])
 
     if savefiles:
         print("The following files have been created")
-        histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
-        print(fname_histo)
         ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
         print(fname_excel)
         ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fname_dat)
         print(fname_dat)
-        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom,
-                                          #interface_sign=True
+        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom[0],
+                                          # interface_sign=True
                                           )
         print(fname_pdb)
 
-        #TODO bury this in plots?
+    if figures:
+        panelheight = 3
+        n_cols = 1
+        n_rows = 2
+        panelsize = 4
+        panelsize2font = 3.5
+        fudge = 7
+        histofig, histoax = _plt.subplots(n_rows, n_cols, sharex=True, sharey=False,
+                                          figsize=(n_cols * panelsize * _np.ceil(ctc_grp_intf.n_ctcs/fudge),
+                                                  n_rows * panelsize),
+                                          )
+
+        # One loop for the histograms
+        _rcParams["font.size"] = panelsize * panelsize2font
+        ctc_grp_intf.plot_freqs_as_bars(ctc_cutoff_Ang,
+                                        title,
+                                        jax=histoax[0],
+                                        xlim=_np.min((n_ctcs, ctc_grp_intf.n_ctcs)),
+                                        label_fontsize_factor=panelsize2font / panelsize,
+                                        shorten_AAs=short_AA_names,
+                                        truncate_at=min_freq,
+                                        total_freq=tot_freq
+                                        )
+
+        ctc_grp_intf.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
+                                                 title,
+                                                 jax=histoax[1],
+                                                 list_by_interface=True,
+                                                 label_fontsize_factor=panelsize2font / panelsize,
+                                                 truncate_at=.05,
+                                                 sort=sort_by_av_ctcs,
+                                                 )
+        histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
+
+        # TODO bury this in plots?
         if contact_matrix:
-            ifig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
+            cmat_fig, iax = ctc_grp_intf.plot_interface_frequency_matrix(ctc_cutoff_Ang,
                                                                      colorbar=True,
                                                                      grid=True,
                                                                      cmap=cmap)
 
             iax.set_title("'%s'  as contact matrix" % _mdcu.str_and_dict.replace4latex(title),
-                          fontsize = iax.get_xticklabels()[0].get_fontsize()*2)
-            ifig.tight_layout()
-            ifig.savefig(fname_mat)
+                          fontsize=iax.get_xticklabels()[0].get_fontsize() * 2)
+            cmat_fig.tight_layout()
+
+
+        if savefiles:
+            histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
+            print(fname_histo)
+            cmat_fig.savefig(fname_mat)
             print(fname_mat)
-    if flareplot:
-        flare_frags, flare_labs = fragments_as_residue_idxs, None # Not sure about what's best here
-        if len(consensus_labelers) > 0:
-            # This is because frag_defs could be missing a lot of stuff depending
-            # on user input, check the next method's doc
-            consensus_frags = _mdcnomenc.compatible_consensus_fragments(refgeom.top, consensus_maps,
-                                                             consensus_labelers.values())
 
-            flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(consensus_frags.values()),
-                                                                      list(consensus_frags.keys()),
-                                                                      highest_res_idx=refgeom.top.n_residues - 1,
-                                                                      orphan_name=""
-                                                                      )
-        if sparse_flare_frags:
-            idxs = [ii for ii, ff in enumerate(flare_frags) if len(_np.intersect1d(_np.hstack(intf_frags_as_residxs), ff))>0]
-            flare_frags = [flare_frags[ii] for ii in idxs]
-            if flare_labs is not None:
-                flare_labs = [flare_labs[ii] for ii in idxs]
+        if flareplot:
+            flare_frags, flare_labs = fragments_as_residue_idxs, fragment_names # Not sure about what's best here
+            if len(consensus_labelers) > 0:
+                # This is because frag_defs could be missing a lot of stuff depending
+                # on user input, check the next method's doc
+                consensus_frags = _mdcnomenc.compatible_consensus_fragments(refgeom.top, consensus_maps,
+                                                                 consensus_labelers.values())
 
-        ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
-                                                         consensus_maps=consensus_maps,
-                                                         SS=refgeom,
-                                                         fragment_names=flare_labs,
-                                                         fragments=flare_frags,
-                                                         sparse=_np.hstack(flare_frags),
-                                                         #panelsize=_np.max(ifig.get_size_inches()),
-                                                         # TODO deal with the color madness
-                                                         colors=_mdcfu.col_list_from_input_and_fragments(True, flare_frags),
-                                                         )
-        ifig.tight_layout()
-        if savefiles:
-            ifig.savefig(fname_flare,bbox_inches="tight")
-            print(fname_flare)
+                flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(consensus_frags.values()),
+                                                                          list(consensus_frags.keys()),
+                                                                          highest_res_idx=refgeom.top.n_residues - 1,
+                                                                          orphan_name=""
+                                                                          )
+            if sparse_flare_frags:
+                idxs = [ii for ii, ff in enumerate(flare_frags) if len(_np.intersect1d(_np.hstack(intf_frags_as_residxs), ff))>0]
+                flare_frags = [flare_frags[ii] for ii in idxs]
+                if flare_labs is not None:
+                    flare_labs = [flare_labs[ii] for ii in idxs]
 
-    if plot_timedep or separate_N_ctcs:
-        myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
-                                               color_scheme=_color_schemes(curve_color),
-                                               ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                               dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
-                                               gray_background=gray_background,
-                                               n_smooth_hw=n_smooth_hw,
-                                               plot_N_ctcs=True,
-                                               pop_N_ctcs=separate_N_ctcs,
-                                               shorten_AAs=short_AA_names,
-                                               skip_timedep=not plot_timedep,
-                                               t_unit=t_unit)
-        if savefiles:
-            _manage_timedep_ploting_and_saving_options(ctc_grp_intf, myfig,
-                                                       ctc_cutoff_Ang,
-                                                       output_desc,
-                                                       graphic_ext,
-                                                       output_dir=output_dir,
-                                                       graphic_dpi=graphic_dpi,
-                                                       plot_timedep=plot_timedep,
-                                                       table_ext=table_ext,
-                                                       t_unit=t_unit,
-                                                       separate_N_ctcs=separate_N_ctcs
-                                                       )
-        if len(myfig)==0:
-            print("No figures of time-traces were produced because only 1 frame was provided")
+            ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
+                                                             consensus_maps=consensus_maps,
+                                                             SS=refgeom,
+                                                             fragment_names=flare_labs,
+                                                             fragments=flare_frags,
+                                                             sparse=_np.hstack(flare_frags),
+                                                             #panelsize=_np.max(ifig.get_size_inches()),
+                                                             # TODO deal with the color madness
+                                                             colors=_mdcfu.col_list_from_input_and_fragments(True, flare_frags),
+                                                             )
+            ifig.tight_layout()
+            if savefiles:
+                ifig.savefig(fname_flare,bbox_inches="tight")
+                print(fname_flare)
+
+        if plot_timedep or separate_N_ctcs:
+            myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
+                                                   color_scheme=_color_schemes(curve_color),
+                                                   ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                   dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
+                                                   gray_background=gray_background,
+                                                   n_smooth_hw=n_smooth_hw,
+                                                   plot_N_ctcs=True,
+                                                   pop_N_ctcs=separate_N_ctcs,
+                                                   shorten_AAs=short_AA_names,
+                                                   skip_timedep=not plot_timedep,
+                                                   t_unit=t_unit)
+            if savefiles:
+                _manage_timedep_ploting_and_saving_options(ctc_grp_intf, myfig,
+                                                           ctc_cutoff_Ang,
+                                                           output_desc,
+                                                           graphic_ext,
+                                                           output_dir=output_dir,
+                                                           graphic_dpi=graphic_dpi,
+                                                           plot_timedep=plot_timedep,
+                                                           table_ext=table_ext,
+                                                           t_unit=t_unit,
+                                                           separate_N_ctcs=separate_N_ctcs
+                                                           )
+            if len(myfig)==0:
+                print("No figures of time-traces were produced because only 1 frame was provided")
 
     return ctc_grp_intf
 
