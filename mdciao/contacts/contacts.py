@@ -3204,9 +3204,6 @@ class ContactGroup(object):
             "Average nr. contacts @%2.1f $\AA$ \nper residue of '%s'"
             % (ctc_cutoff_Ang, _mdcu.str_and_dict.replace4latex(title_str)))
 
-        #TODO AFAIK this has been taken care of in the label-producing properties
-        #label_bars = [ilab.replace("@None", "") for ilab in label_bars]
-
         _mdcplots.add_tilted_labels_to_patches(jax,
                                       label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
                                       label_fontsize_factor=label_fontsize_factor,
@@ -3232,7 +3229,12 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang : float,
+        ctc_cutoff_Ang : float
+        consensus_maps : list, default is None
+            List containing dictionaries of consensus labels.
+            The items in the list should be "gettable" by residue index
+            either by being lists, arrays, or dicts, s.t.,
+            the corresponding value should be the label.
         SS : secondary structure information, default is None
             Whether and how to include information about
             secondary structure. Can be many things
