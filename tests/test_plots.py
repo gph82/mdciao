@@ -205,7 +205,7 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
                                                             ctc_cutoff_Ang=1.5,
                                                             per_residue=True)
         myfig.tight_layout()
-        myfig.savefig("1.per_residue.test.png",bbox_inches="tight")
+        #myfig.savefig("1.per_residue.test.png",bbox_inches="tight")
         _plt.close("all")
 
 

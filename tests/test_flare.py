@@ -55,7 +55,7 @@ class TestFlare(TestCase):
                                    )
 
         iax.figure.tight_layout()
-        iax.figure.savefig("test.png")
+        #iax.figure.savefig("test.png")
 
 class TestCirclePlotResidues(TestCase):
 
