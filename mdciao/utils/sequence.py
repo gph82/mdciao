@@ -365,13 +365,14 @@ def df2maps(df, allow_nonmatch=True):
     """
     match_ranges = _cranges(df["match"].values)
     _df = df.copy()
-    for rr in match_ranges[False]:
-        try:
-            if allow_nonmatch and all(_df.loc[[rr[0]-1,rr[-1]+1]]["match"]) and \
-                    all(["-" not in df[key].values for key in ["AA_1","AA_1"]]): #this checks for no insertions in the alignment ("=equal length ranges")
-                _df.at[rr,"match"]=True
-        except KeyError:
-            continue
+    if False in match_ranges.keys():
+        for rr in match_ranges[False]:
+            try:
+                if allow_nonmatch and all(_df.loc[[rr[0]-1,rr[-1]+1]]["match"]) and \
+                        all(["-" not in df[key].values for key in ["AA_1","AA_1"]]): #this checks for no insertions in the alignment ("=equal length ranges")
+                    _df.at[rr,"match"]=True
+            except KeyError:
+                continue
     top0_to_top1 = {key: val for key, val in zip(_df[_df["match"] == True]["idx_0"].to_list(),
                                                  _df[_df["match"] == True]["idx_1"].to_list())}
 
