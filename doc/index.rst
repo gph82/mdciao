@@ -6,7 +6,7 @@
 mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 ==============================================================================
 
-|Python Package| |Coverage|
+|Python Package| |Coverage| |License|
 
 .. figure:: imgs/banner.png
    :scale: 33%
@@ -60,6 +60,9 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 .. |Coverage| image::
    https://codecov.io/gh/gph82/mdciao/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/gph82/mdciao
+
+.. |License| image::
+    https://img.shields.io/github/license/gph82/mdciao
 
 .. there's this issue about the self-referencing TOC that I cannot solve
 .. https://github.com/sphinx-doc/sphinx/issues/4602

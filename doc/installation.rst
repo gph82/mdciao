@@ -36,7 +36,8 @@ Installation from source
 
    git clone https://github.com/gph82/mdciao.git
 
-  If you don't have `git <https://git-scm.com/downloads>`_, you can use `wget <https://www.gnu.org/software/wget/>`_ (or MacOs equivalent) to download::
+
+  Cloning with ``git`` will allow you to easily get fixes and new features if you *pull* regularly. If you don't have `git <https://git-scm.com/downloads>`_, you can use `wget <https://www.gnu.org/software/wget/>`_ (or MacOs equivalent) to simply download a *snapshot* of the repository at its current status (you'll have to re-dowload again every time to get fixes and new features)::
 
    wget https://github.com/gph82/mdciao/archive/master.zip
 
@@ -72,7 +73,7 @@ This should install ``mdciao`` along with all its dependencies. Optionally using
 
 Operating systems and Python versions
 -------------------------------------
-``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and Mac OSs. Compatible Python versions are currently 3.6 and 3.7. So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
+``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and |ss| MacOS |se| (waiting on this `mdtraj fix to get released <https://github.com/mdtraj/mdtraj/issues/1594>`_) OSs. Compatible Python versions are currently 3.6, 3.7, and 3.8. So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
 
 
 Windows

@@ -59,13 +59,13 @@ This is an informal list of known issues and TODOs:
  * The API-cli methods (interface, neighborhoods, sites, etc) have very similar flows but a lot of code repetition, I am sure `some patterns/boilerplate could be outsourced/refactored even more <https://en.wikipedia.org/wiki/Technical_debt>`_.
  * color handling of the flare-plots is buggy because it tries to guess too many things. Undecided about best decision.
  * Most of the tests were written against a very rigid API that mimicked the CLI closely. Now the API is more flexible
- and many `tests could be re-written or deleted <https://en.wikipedia.org/wiki/Technical_debt>`_ , like those needing
- mock-input or writing to tempdirs because writing figures or files could not be avoided.
+   and many `tests could be re-written or deleted <https://en.wikipedia.org/wiki/Technical_debt>`_ , like those needing
+   mock-input or writing to tempdirs because writing figures or files could not be avoided.
 
 System Requirements
 ===================
-At the moment, ``mdciao`` is CI-tested only for GNU/Linux and |ss| MacOS |se| (see this `mdtraj issue <https://github.com/mdtraj/mdtraj/issues/1594>`_) and Python versions
-3.6 and 3.7
+At the moment, ``mdciao`` is CI-tested only for GNU/Linux and |ss| MacOS |se| (waiting on this `mdtraj fix to get released <https://github.com/mdtraj/mdtraj/issues/1594>`_) and Python versions
+3.6, 3.7, and 3.8. 
 
 Authors
 =======
