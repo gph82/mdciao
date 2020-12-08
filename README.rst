@@ -61,11 +61,13 @@ This is an informal list of known issues and TODOs:
  * Most of the tests were written against a very rigid API that mimicked the CLI closely. Now the API is more flexible
    and many `tests could be re-written or deleted <https://en.wikipedia.org/wiki/Technical_debt>`_ , like those needing
    mock-input or writing to tempdirs because writing figures or files could not be avoided.
+ * Not moving to py39 until the he dependency `bezier <https://github.com/dhermes/bezier>`_ gets Python 3.9 wheels (`see this issue <https://github.com/dhermes/bezier/issues/243#issuecomment-707205685)>`_).
+
 
 System Requirements
 ===================
 At the moment, ``mdciao`` is CI-tested only for GNU/Linux and |ss| MacOS |se| (waiting on this `mdtraj fix to get released <https://github.com/mdtraj/mdtraj/issues/1594>`_) and Python versions
-3.6, 3.7, and 3.8. 
+3.6, 3.7, and 3.8.
 
 Authors
 =======

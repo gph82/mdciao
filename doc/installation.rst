@@ -15,7 +15,9 @@ Installation via package manager
    </strike>
 
 .. warning::
- Please use the `Installation from source`_, since ``mdciao`` is not yet published to these package managers.
+ Please use the `Installation from source`_.
+
+ The first stable release of ``mdciao`` is near, but some development (and bugfixes!) are still needed before uploading `mdciao` to `conda` or `pip`. Until then, please use the `Installation from source`_.
 
 |ss| We recommend you install ``mdciao`` either via the `pip <https://pypi.org/project/pip/>`_ Python package installer or the `conda <https://conda.io/en/latest/>`_ Python package manager::
 
@@ -31,6 +33,12 @@ or::
 
 Installation from source
 ------------------------
+
+.. note::
+ If you are not familiar with Python environments, please read this `Python interpreter and environment`_ note before continuing.
+
+.. warning::
+ Only Python 3.6, 3.7, and 3.8 are supported at the moment. The dependency `bezier <https://github.com/dhermes/bezier>`_ does not have Python 3.9 wheels (`see this issue <https://github.com/dhermes/bezier/issues/243#issuecomment-707205685)>`_). See the notes on `Python interpreter and environment`_ to create a 3.6, 3.7, or 3.8 Python environment.
 
 * Clone or download `mdciao's github repository <https://github.com/gph82/mdciao>`_ to your preferred ``programs`` or ``software`` folder. If you are using a terminal and have   `git <https://git-scm.com/downloads>`_ installed, simply: ::
 
@@ -90,9 +98,9 @@ The needed dependencies should install automatically (see above the note about e
 
 Python interpreter and environment
 ----------------------------------
-`conda <https://docs.conda.io/en/latest/>`_ and `pip <https://pypi.org/project/pip/>`_ are very popular, user friendly package managers. **A very nice feature** of `conda` is that it installs its own ``python`` interpreter, separate from the system's Python. It does so in the user's home directory, s.t. no root privileges are needed.
+`conda <https://docs.conda.io/en/latest/>`_ and `pip <https://pypi.org/project/pip/>`_ are very popular, user friendly package managers. **A very nice feature** of `conda` is that it installs its own ``python`` interpreter, separate from the system's Python. It does so in the user's home directory, s.t. no root privileges are needed at any moment.
 
-This means that it's very hard to "break" local Python installations (your own or shared installations, like in clusters). So, don't be afraid to use conda and mess up your Python environment as many times as you like. Wiping and re-installing is easy (delete `~/anaconda3` or `~/miniconda3` from your home directory) and you won't alter your OS-wide Python installation at all!
+This means that it's very hard to "break" local Python installations (your own or shared installations, like in clusters). So, don't be afraid to use conda and mess up your Python environment as many times as you like. Wiping and re-installing individual environments is easy (`conda remove -n my_test_env --all`), same with entire conda installations (delete `~/anaconda3` or `~/miniconda3` from your home directory). None of this will alter your OS-wide Python installation at all!
 
 If you already have ``conda``, and don't want to clutter the ``base`` environment, we recommend you create a new environment::
 
