@@ -1104,7 +1104,7 @@ def interface(
         sparse_flare_frags = True,
         savefiles=True,
         save_nomenclature_files=False,
-        figures=False
+        figures=True
 ):
     r"""Contact-frequencies between residues belonging
     to different fragments of the molecular topology
