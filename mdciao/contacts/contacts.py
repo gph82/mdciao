@@ -1736,16 +1736,20 @@ class ContactGroup(object):
             # First update to this TODO, rely less and less on _type_of_attrs
             # and get them new every time from the underlying .residue objects)
             self._trajlabels = ref_ctc.labels.trajstrs
-            self._residx2resname = {}
+            self._residx2resnameshort = {}
+            self._residx2resnamelong = {}
             self._residx2fragnamebest = {}
-            for conslab, val, ridx, fragname in zip(_np.hstack(self.consensus_labels),
-                                                    _np.hstack(self.residue_names_short),
-                                                    _np.hstack(self.res_idxs_pairs),
-                                                    _np.hstack(self.fragment_names_best)):
-                if ridx not in self._residx2resname.keys():
-                    self._residx2resname[ridx] = val
+            for conslab, rnshort, rnlong, ridx, fragname in zip(_np.hstack(self.consensus_labels),
+                                                                _np.hstack(self.residue_names_short),
+                                                                _np.hstack(self.residue_names_long),
+                                                                _np.hstack(self.res_idxs_pairs),
+                                                                _np.hstack(self.fragment_names_best)):
+                if ridx not in self._residx2resnameshort.keys():
+                    self._residx2resnameshort[ridx] = rnshort
+                    self._residx2resnamelong[ridx] = rnlong
                 else:
-                    assert self._residx2resname[ridx]==val, (self._residx2resname[ridx], val)
+                    assert self._residx2resnameshort[ridx] == rnshort, (self._residx2resnameshort[ridx], rnshort)
+                    assert self._residx2resnamelong[ridx] == rnlong, (self._residx2resnamelong[ridx], rnlong)
 
                 if ridx not in self._residx2fragnamebest.keys():
                     self._residx2fragnamebest[ridx] = fragname
@@ -1767,7 +1771,7 @@ class ContactGroup(object):
 
             # Append the missing ones
             for ii in self._residxs_missing_conslabels:
-                self._resname2cons[self._residx2resname[ii]]=None
+                self._resname2cons[self._residx2resnameshort[ii]]=None
             """
 
             if self._interface_residxs is not None:
@@ -1856,6 +1860,10 @@ class ContactGroup(object):
         return [ictc.residues.names_short for ictc in self._contacts]
 
     @property
+    def residue_names_long(self):
+        return [ictc.residues.names for ictc in self._contacts]
+
+    @property
     def fragment_names_best(self):
         return [ictc.labels.fragment_labels_best(fmt="%s") for ictc in self._contacts]
 
@@ -1918,16 +1926,23 @@ class ContactGroup(object):
 
     @property
     def residx2resnameshort(self):
-        return self._residx2resname
+        return self._residx2resnameshort
+
+    @property
+    def residx2resnamelong(self):
+        return self._residx2resnamelong
 
     @property
     def residx2fragnamebest(self):
         return self._residx2fragnamebest
 
-    def residx2resnamefragnamebest(self,fragsep="@"):
+    def residx2resnamefragnamebest(self,fragsep="@",shorten_AAs=True):
         idict   = {}
         for key in _np.unique(self.res_idxs_pairs):
-            val = self.residx2resnameshort[key]
+            if shorten_AAs:
+                val = self.residx2resnameshort[key]
+            else:
+                val = self.residx2resnamelong[key]
             ifrag = self.residx2fragnamebest[key]
             if len(ifrag) > 0:
                 val += "%s%s" % (fragsep, ifrag)
@@ -2206,6 +2221,7 @@ class ContactGroup(object):
     def frequency_sum_per_residue_names_dict(self, ctc_cutoff_Ang,
                                              switch_off_Ang=None,
                                              sort=True,
+                                             shorten_AAs=False,
                                              list_by_interface=False,
                                              return_as_dataframe=False,
                                              fragsep="@"):
@@ -2251,7 +2267,7 @@ class ContactGroup(object):
         for ifreq in freqs:
             idict = {}
             for idx, val in ifreq.items():
-                key = self.residx2resnamefragnamebest()[idx]
+                key = self.residx2resnamefragnamebest(shorten_AAs=shorten_AAs)[idx]
                 idict[key] = val
             dict_out.append(idict)
 
@@ -3171,6 +3187,7 @@ class ContactGroup(object):
         freqs_dict = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
                                                                switch_off_Ang=switch_off_Ang,
                                                                sort=sort,
+                                                               shorten_AAs=shorten_AAs,
                                                                list_by_interface=list_by_interface)
 
         # TODO the method plot_freqs_as_bars is very similar but
