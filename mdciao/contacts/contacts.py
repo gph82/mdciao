@@ -2221,7 +2221,7 @@ class ContactGroup(object):
     def frequency_sum_per_residue_names_dict(self, ctc_cutoff_Ang,
                                              switch_off_Ang=None,
                                              sort=True,
-                                             shorten_AAs=False,
+                                             shorten_AAs=True,
                                              list_by_interface=False,
                                              return_as_dataframe=False,
                                              fragsep="@"):
@@ -2229,7 +2229,6 @@ class ContactGroup(object):
         Dictionary of aggregated :obj:`frequency_per_contact` keyed
         by residue names, using the most informative label possible
         (ATM it is residue@frag, see :obj:`ContactPair.labels` for more info on this)
-        TODO add option the type of residue name we are using
 
         Parameters
         ----------
@@ -2238,6 +2237,8 @@ class ContactGroup(object):
             Sort by dictionary by descending order of frequencies
             TODO dicts have order since py 3.6 and it is useful for creating
             TODO a dataframe, then excel_table that's already sorted by descending frequencies
+        shorten_AAs : bool, default is True
+            Use E30 instead of GLU30
         list_by_interface : bool, default is False, NotImplemented
             group the freq_dict by interface residues
         return_as_dataframe : bool, default is False
