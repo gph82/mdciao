@@ -582,7 +582,12 @@ def add_tilted_labels_to_patches(jax, labels,
         iy += .01
         if iy > trunc_y_labels_at:
             iy = trunc_y_labels_at
-        jax.text(ix, iy, _mdcu.str_and_dict.replace4latex(ilab.replace("@","^")),
+        txt = ilab.replace("@","^")
+        if "-" in txt:
+            txt = '-'.join(_mdcu.str_and_dict.replace4latex(word) for word in txt.split("-"))
+        else:
+            txt = _mdcu.str_and_dict.replace4latex(txt)
+        jax.text(ix, iy, txt,
                  va='bottom',
                  ha='left',
                  rotation=45,
