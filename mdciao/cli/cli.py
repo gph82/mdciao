@@ -1478,6 +1478,7 @@ def interface(
                                                  list_by_interface=True,
                                                  label_fontsize_factor=panelsize2font / panelsize,
                                                  truncate_at=.05,
+                                                 shorten_AAs=short_AA_names,
                                                  sort=sort_by_av_ctcs,
                                                  )
         histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
