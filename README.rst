@@ -43,7 +43,7 @@ Status
 
 Documentation
 =============
-Currently, docs are hosted at `<https://proteinformatics.uni-leipzig.de/mdciao/>`_, but this can change in the future.
+Currently, docs are hosted at `<https://proteinformatics.org/mdciao/>`_, but this can change in the future.
 
 TODOs
 =====
