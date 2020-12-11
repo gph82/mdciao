@@ -3275,7 +3275,7 @@ class ContactGroup(object):
               gives the SS-info for the residue
               with that idx
         kwargs_freqs2flare: optargs
-            Keyword arguments for :obj:`mdciao.flare.freqs2flare
+            Keyword arguments for :obj:`mdciao.flare.freqs2flare`
             except for :obj:`top` and :obj:`ss_array`
 
         Returns
