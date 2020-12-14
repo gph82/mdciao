@@ -361,7 +361,7 @@ def freq_file2dict(ifile, defrag=None):
     """
     ext = _path.splitext(ifile)[-1]
     if ext.lower() == ".xlsx":
-        df = _read_excel(ifile)
+        df = _read_excel(ifile, engine="openpyxl")
         if "freq" in df.keys() and "label" in df.keys():
             res = {key: val for key, val in zip(df["label"].values, df["freq"].values)}
         else:

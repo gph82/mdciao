@@ -26,7 +26,7 @@ setup(
                     "msmtools",
                     "scipy",
                     "joblib",
-                    "xlrd",
+                    "openpyxl",
                     "biopython",
                     "ipython",
                     "XlsxWriter",

@@ -67,7 +67,7 @@ def table2BW_by_AAcode(tablefile,
     """
 
     if isinstance(tablefile,str):
-        df = _read_excel(tablefile, header=0)
+        df = _read_excel(tablefile, header=0, engine="openpyxl")
     else:
         df = tablefile
 
@@ -356,8 +356,9 @@ def BW_finder(BW_descriptor,
     url = "%s/%s" % (GPCRmd, BW_descriptor)
 
     local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
+                                                        engine="openpyxl",
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
-                                                        converters={"BW": str}).replace({_np.nan: None})
+                                                        converters={"BW": str}).replace({_np.nan: None},)
     web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
     print("Using BW-nomenclature, please cite the following 3rd party publications:\n"
           " * https://doi.org/10.1016/S1043-9471(05)80049-7 (Weinstein et al 1995)\n"
