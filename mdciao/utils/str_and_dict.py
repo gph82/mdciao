@@ -503,6 +503,151 @@ def _latexify(word, istr):
     istr = istr.replace("$$","")
     return istr
 
+def _label2componentsdict(istr,sep="-",defrag="@",
+                          assume_ctc_label=True):
+    r"""
+    Identify the components of label like 'residue1@frag1-residue2@frag2' and return them as dictionary
+
+    Parameters
+    ----------
+    istr : str
+        Can be of any of these forms:
+        * res1
+        * res1@frag1
+        * res1@frag1-res2
+        * res1@frag1-res2@frag2
+        * res1-res2@frag2
+        * res1-res2
+
+        The fragment names can contain the separator, e.g.
+        'res1@B2AR-CT-res2@Gprot' is possible, but residue
+        names cannot.
+
+        The special case 'res1@frag1-r2' is handled with
+        the parameter :obj:`assume_ctc_label` (see below)
+
+        Labels have to start with a residue.
+    sep : char, default is "-"
+        The character that separates pairs of labels
+    defrag : char, default is "@"
+        The character that separates residues form their host fragment
+    assume_ctc_label : bool, default is True
+        In special cases of the form 'res1@frag1-r2', assume
+        this is a contact label, i.e. 'r2' does not
+        belong to the name of the fragment of res1, but is
+        the second residue.
+
+    Returns
+    -------
+    label : dict
+        A dictionary tuple with the components present in :obj:`istr`.
+        Keys can be 'res1','frag1','res2','frag2'
+    """
+    assert len(sep)==len(defrag)==1, "The 'sep' and 'defrag' arguments have to have both len 1, have " \
+                                     "instead %s (%u) %s (%u)"%(sep,len(sep),defrag,len(defrag))
+
+    bits = {}
+
+    if defrag not in istr:
+        for ii, ires in enumerate(istr.split(sep),start=1):
+            bits["res%u"%ii]=ires
+    else:
+        spans = [0] + _np.hstack([m.span() for m in _re.finditer(defrag, istr)]).tolist() + [len(istr)]
+
+        # Counters
+        r, f = 1, 1
+        for ii, jj in _np.reshape(spans, (-1, 2)):
+            iw = istr[ii:jj + 1]
+            #print(iw, ii, jj)
+
+            if sep in iw and ii == 0:
+                ires, jres = iw.replace(defrag,"").split(sep)
+                bits["res%u"%r]=ires
+                r+=1
+                bits["res%u"%r]=jres
+                r+=1
+                f+=1 # because we've already established res1 hasn't any fragment
+            else:
+                if defrag not in iw:
+                    if sep not in iw or not assume_ctc_label:
+                        bits["frag%u"%f]=iw
+                        f+=1
+                    elif sep in iw and assume_ctc_label:
+                        ires, ifrag = [jw[::-1] for jw in iw[::-1].split(sep, 1)]
+                        if "res1" in bits.keys():
+                            if "frag1" in bits.keys():
+                                bits["frag%u"%f]=iw
+                                f+=1
+                            else:
+                                if "res2" in bits.keys():
+                                    bits["frag%u" % f] = iw
+                                else:
+                                    bits["frag%u"%f]=ifrag
+                                    f+=1
+                                    bits["res%u"%r]=ires
+                                    r+=1
+
+                else:
+                    assert iw.endswith(defrag)
+                    if sep not in iw:
+                        bits["res%u"%r]=iw.split(defrag)[0]
+                        r+=1
+                    else:
+                        ires, ifrag = [jw[::-1] for jw in iw[::-1][1:].split(sep, 1)]
+                        bits["frag%u"%f]=ifrag
+                        bits["res%u"%r]=ires
+                        f+=1
+                        r+=1
+
+
+    return bits
+
+def splitlabel(label, sep="-", defrag="@"):
+    #TODO propagate this to all times we use "split" in the code
+    r"""
+    Split a contact label. Analogous to label.split(sep) but more robust
+    because fragment names can contain the separator character.
+
+    Parameters
+    ----------
+    label : str
+        Can be of any of these forms:
+         * res1
+         * res1@frag1
+         * res1@frag1-res2
+         * res1@frag1-res2@frag2
+         * res1-res2@frag2
+         * res1-res2
+
+        The fragment names can contain the separator, e.g.
+        'res1@B2AR-CT-res2@Gprot' is possible. Residue
+        names cannot contain the separator.
+
+        The method assumes that labels start with a residue,
+        (see above), else you'll get weird behaviour.
+    sep : char, default is "-"
+        The character that separates pairs of labels
+    defrag : char, default is "@"
+        The character that separates residues form their host fragment
+
+    Returns
+    -------
+    split : list
+        A list equivalent to having used label.split(sep)
+        but the separator is ignored in the fragment labels.
+    """
+
+    bits = _label2componentsdict(label,sep=sep,defrag=defrag)
+
+    split = [bits["res1"]]
+    if "frag1" in bits.keys():
+        split[0] += "%s%s" % (defrag,bits["frag1"])
+    if "res2" in bits.keys():
+        split.append(bits["res2"])
+        if "frag2" in bits.keys():
+            split[1] += "%s%s" % (defrag,bits["frag2"])
+    return split
+
 def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
     r"""
     Given a trajectory (as object or file), returns
