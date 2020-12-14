@@ -5,9 +5,9 @@ name: Python package
 
 on:
   push:
-    branches: [ deprecate_xlrd ]
+    branches: [ master ]
   pull_request:
-    branches: [ deprecate_xlrd ]
+    branches: [ master ]
   workflow_dispatch:
   
 
