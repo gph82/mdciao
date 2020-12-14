@@ -66,6 +66,7 @@ def get_sorted_trajectories(trajectories):
 
 def inform_about_trajectories(trajectories):
     r"""
+    Return a string that informs about the trajectories
 
     Parameters
     ----------
