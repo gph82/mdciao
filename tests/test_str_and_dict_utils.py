@@ -707,5 +707,10 @@ class Test_defrag(unittest.TestCase):
         label = 'res1@frag1    '
         np.testing.assert_equal("res1", str_and_dict.defrag_key(label))
 
+class Test_replace_regex_special_chars():
+    def test_works(self):
+        word ="[]()^"
+        assert str_and_dict._replace_regex_special_chars(word,"!!!!!")
+
 if __name__ == '__main__':
     unittest.main()

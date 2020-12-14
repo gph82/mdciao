@@ -475,10 +475,42 @@ def replace4latex(istr):
 _symbols =  ['alpha','beta','gamma', 'mu', "Sigma"]+["AA"]
 _scripts =  ["^","_"]
 
+def _replace_regex_special_chars(word,
+                                 repl_char="!",
+                                 special_chars=["^", "[", "]", "(", ")"]):
+    r"""
+    Ad-hoc method to replace special regexp-chars with something else before
+    computing char positions using regexp.finditer
+
+    Note:
+    this method only makes sense because downstream from here, finditer is used
+    to search a substring in a string and special chars break that search.
+
+    Note:
+    somewhere, a dev that knows how to use regex is crying
+
+    Parameters
+    ----------
+    word : str
+    repl_char : char, default is '!'
+        The replacement character
+    special_chars : list
+        The characters that trigger replacement
+
+    Returns
+    -------
+    word : str
+        A string with all special characters repaced with :obj:`repl_char`
+
+    """
+    for sp in special_chars:
+        word = word.replace(sp, repl_char)
+    return word
+
 def _latexify(word, istr):
     # Look for appearances of this word in the whole string
-    _word = word.replace("^", "!").replace("\\","\\\\") #regex hack: avoid usage of special char by replacing with very unlikely
-    spans = [m.span() for m in _re.finditer(_word, istr.replace("^","!"))]
+    _word = _replace_regex_special_chars(word).replace("\\","\\\\")
+    spans = [m.span() for m in _re.finditer(_replace_regex_special_chars(_word), _replace_regex_special_chars(istr))]
     for ii in range(len(spans)):
         span = spans[ii]
         latex_ranges = _find_latex_chunks(istr)
