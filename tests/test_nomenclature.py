@@ -256,7 +256,7 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                                    "TM2" : ["T66","V67"]})
     def test_table2B_by_AAcode_already_DF(self):
         from pandas import read_excel
-        df = read_excel(self.file, header=0)
+        df = read_excel(self.file, header=0, engine="openpyxl")
 
         table2BW = nomenclature.table2BW_by_AAcode(tablefile=df)
         self.assertDictEqual(table2BW,
