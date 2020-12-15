@@ -216,7 +216,7 @@ def alignment_result_to_list_of_dicts(ialg,
             idict["match"]=True
 
     if verbose:
-        print("\nAlignment")
+        print("\nAlignment:")
         order = [key_idx_seq_1, key_AA_code_seq_1, key_full_resname_seq_1,
                                 key_AA_code_seq_0, key_resSeq_seq_0, key_full_resname_seq_0, key_idx_seq_0, "match"]
         print_verbose_dataframe(_DF(alignment_dict)[order])
@@ -227,7 +227,9 @@ def alignment_result_to_list_of_dicts(ialg,
 def align_tops_or_seqs(top0, top1, substitutions=None,
                        seq_0_res_idxs=None,
                        seq_1_res_idxs=None,
-                       return_DF=True):
+                       return_DF=True,
+                       verbose=False,
+                       ):
     r""" Align two sequence-containing objects, i.e. strings and/or
     :obj:`mdtraj.Topology` objects)
 
@@ -251,6 +253,7 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
     return_DF : bool, default is True
         If false, a list of alignment dictionaries instead
         of a dataframe will be returned
+    verbose : bool, default is False
 
     Returns
     -------
@@ -296,7 +299,7 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
                                                    seq_0_res_idxs=seq_0_res_idxs,
                                                    seq_1_res_idxs=seq_1_res_idxs,
                                                    topology_1=top14a,
-                                                   #verbose=True,
+                                                   verbose=verbose,
                                                    )
 
     if return_DF:
