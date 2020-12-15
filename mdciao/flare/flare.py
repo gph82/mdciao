@@ -38,7 +38,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 center=_np.array([0,0]),
                 r=1,
                 mute_fragments=None,
-                anchor_segments=None,
+                anchor_fragments=None,
                 ss_array=None,
                 panelsize=10,
                 angle_offset=0,
@@ -94,7 +94,7 @@ def freqs2flare(freqs, res_idxs_pairs,
           below this cutoff
         * :obj:`select_residxs` plot only the curves where these residues appear
         * :obj:`mute_fragments` do not plot curves from/to this fragment
-        * :obj:`anchor_segments` only plot curves from/to this fragment
+        * :obj:`anchor_fragments` only plot curves from/to this fragment
 
     Parameters
     ----------
@@ -126,7 +126,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         appear in. They can be any integers that could represent
         a residue. The only hard condition is that the set
         of np.unique(res_idxs_pairs) must be contained
-        within np.hstack(segments)
+        within :obj:`fragments`
     exclude_neighbors: int, default is 1
         Do not show contacts where the partners are separated by
         these many residues. If no :obj:`top` is passed, the
@@ -138,7 +138,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         Parse an axis to draw on, otherwise one will be created
         using :obj:`panelsize`
     fragment_names: iterable of strings, default is None
-        The names of the segments used in :obj:`fragments`
+        The names of the fragments used in :obj:`fragments`
     panelsize: float, default is 10
         Size in inches of the panel (=figsize in matplotlib).
         Will be ignored if a pre-existing axis object is parsed
@@ -163,7 +163,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     anchor_fragments: iterable of integers, default is None
         Curves **not** involving these fragments will be
         **not** be shown, i.e. it is the complementary
-         of :obj:`mut_fragments`. Both cannot be passed
+         of :obj:`mute_fragments`. Both cannot be passed
          simulataneously.
     top: :md:`Topology object, default is None
         If provided a top, residue names (e.g. GLU30) will be used
@@ -186,7 +186,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         * False, defaults to blue. If a single string is given
         * One string uses that color for all residues (e.g. "r" or "red" for all red)
         * A list of strings of len = number of drawn residues, which is
-        equal to len(np.hstack(segments)). Any other length will produce an error
+        equal to len(np.hstack(fragments)). Any other length will produce an error
     fontsize: int, default is None
     lw: float, default is None
         Line width of the contact lines
@@ -283,7 +283,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     plot_this_pair_lambda = _futils.should_this_residue_pair_get_a_curve(residues_as_fragments,
                                                                          select_residxs=select_residxs,
                                                                          mute_fragments=mute_fragments,
-                                                                         anchor_fragments=anchor_segments,
+                                                                         anchor_fragments=anchor_fragments,
                                                                          top=top, exclude_neighbors=exclude_neighbors)
 
     idxs_of_pairs2plot = _np.intersect1d(idxs_of_formed_contacts,
