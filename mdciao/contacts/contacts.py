@@ -1817,6 +1817,12 @@ class ContactGroup(object):
 
     @property
     def n_ctcs(self):
+        r"""
+        The number of contact pairs (:obj:`mdciao.contacts.ContactPair` -objects) stored in this object
+        Returns
+        -------
+
+        """
         return self._n_ctcs
 
     @property
@@ -1853,6 +1859,13 @@ class ContactGroup(object):
 
     @property
     def res_idxs_pairs(self):
+        r"""
+        List of pairs of residue indices of the contacts in this object
+
+        Returns
+        -------
+
+        """
         return _np.vstack([ictc.residues.idxs_pair for ictc in self._contacts])
 
     @property

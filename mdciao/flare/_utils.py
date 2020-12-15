@@ -534,9 +534,7 @@ def add_residue_labels(iax,
     shortenAAs: bool, default is True
         Use the short-code for the AAS (GLU30->E30)
     aa_offset : int, default is 0
-        In case the resSeq idxs of the topologies
-        don't match the desired sequence, provide
-        and offset here
+        Add this number to the resSeq value
     colors : list of len(res_idxs), default is None,
         Individual residue colors, default is black
     replacement_labels : dict, default is None

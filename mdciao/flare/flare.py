@@ -58,12 +58,14 @@ def freqs2flare(freqs, res_idxs_pairs,
                 signed_colors=None,
                 ):
     r"""
-    Plot contact frequencies as `flare plots` (TODO insert refs)
+    Plot contact frequencies as `flare plots`.
 
     The residues are plotted as dots lying on a circle of radius
-    :obj:`r`, with Bezier curves of variable opacity connecting TODO ref
+    :obj:`r`, with Bezier curves of variable opacity connecting
     the dots. The curve opacity represents the contact frequency, :obj:`freq`,
     between two residues.
+
+    For more info see the links here :obj:`mdciao.flare`.
 
     One can control separately what residues and what curves
     ultimately get shown, allowing for "contactless" residues
@@ -98,7 +100,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     ----------
     freqs : numpy.ndarray
         The contact frequency to show in the flareplot. The
-        linewidsths of the bezier curves connecting residue
+        opacity of the bezier curves connecting residue
         pairs will be proportional to this number. Can
         have different shapes:
 
@@ -107,8 +109,16 @@ def freqs2flare(freqs, res_idxs_pairs,
         * (m,n)
           m is the number of frames, in this case,
           an average over m will be done automatically.
+
+        If you already have an :obj:`mdciao.contacts.ContactGroup`-object,
+        simply pass the result of calling
+        :obj:`mdciao.contacts.ContactGroup.frequency_per_contact` (with
+        a given cutoff)
     res_idxs_pairs : iterable of pairs
-        residue indices for which the above N contacts stand
+        pairs of residue indices for the above N contact frequencies.
+        If you already have an :obj:`mdciao.contacts.ContactGroup`-object,
+        simply pass the result of calling
+        :obj:`mdciao.contacts.ContactGroup.res_idxs_pairs`
     fragments: list of lists of integers, default is None
         The residue indices to be drawn as a circle for the
         flareplot. These dots that will be plotted
@@ -137,13 +147,16 @@ def freqs2flare(freqs, res_idxs_pairs,
     r: float, default is 1
         In axis units, the radius of the flareplot
     textlabels : bool or array_like, default is True
-        If
-        * True: the dots representing the residues
-          will be provided a label, either their
-          serial index or the residue name, e.g. GLU30
-        * False: no labeling
-        * array_like : will be passed as label_replacement
-        to XXX via XXX #todo
+        How to label the residue dots. Gets passed directly
+        to :obj:`mdciao.flare.circle_plot_residues`.
+        Options are:
+         * True: the dots representing the residues
+           will get a label automatically, either their
+           serial index or the residue name, e.g. GLU30, if
+           a :obj:`top` was passed.
+         * False: no labeling
+         * array_like : will be passed as :obj:`replacement_labels`
+           to :obj:`mdciao.flare.add_fragmented_residue_labels`
     mute_fragments: iterable of integers, default is None
         Curves involving these fragments will be hidden. Fragments
         are expressed as indices of :obj:`fragments`
@@ -188,10 +201,22 @@ def freqs2flare(freqs, res_idxs_pairs,
         There is a hidden development option for this argument where a residue
         list is passed, meaning, show these residues regardless of any other
         option that has been passed. Perhaps sparse changes in the future.
-    signed_colors = dict, default is None
-        Provide a color dictionary, e.g. {-1:"b", +1:"r}
+    bezier_linecolor : color-like, default is 'k'
+        The color of the bezier curves connecting the residues.
+        Can be a character, string or RGB value (not RGBA)
+    padding : iterable of len 3, default is [1,1,1]
+        The padding, expressed as empty dot positions. Each number is
+        used for:
+         * the beginning of the flareplot, before the first residue
+         * between fragments
+         * at the end of the plot, after the last residue
+    signed_colors : dict, default is None
+        Provide a color dictionary, e.g. {-1:"b", +1:"r"}
         to give different colors to positive and negative
         alpha values. If None, defaults to :obj:`bezier_linecolor`
+    aa_offset : int, default is 0
+        Add this number to the resSeq value
+
 
     Returns
     -------
@@ -332,14 +357,19 @@ def circle_plot_residues(fragments,
         figure has to have a tight_layout=True
         attribute. If no axis is passed,
         one will be created.
-    replacement_labels : dict or boolean, default is True
-        Whether to put textlabels on the dots. If
-        * False : no labels at all
-        * True : labels are the indices in :obj:`fragments`
-        * dict : residue_idx-keyed individual label replacements
-         Typical cases could be a mutated residue that you want
-         to show as R38A instead of just A38, or use
-         e.g. BW or CGN consensus labels.
+    textlabels : bool or array_like, default is True
+        How to label the residue dots
+         * True: the dots representing the residues
+           will get a label automatically, either their
+           serial index or the residue name, e.g. GLU30, if
+           a :obj:`top` was passed.
+         * False: no labeling
+         * array_like : will be passed as :obj:`replacement_labels`
+           to :obj:`mdciao.flare.add_fragmented_residue_labels`.
+           These labels act as replacement and can cover all or just
+           some residue, e.g. a mutated residue that you want
+           to show as R38A instead of just A38, or use
+           e.g. BW or CGN consensus labels.
     fontsize
     colors
     markersize
@@ -349,9 +379,7 @@ def circle_plot_residues(fragments,
     shortenAAs : boolean, default is True
         If :obj:`top` is not None, use "E50" rather than "GLU50"
     aa_offset : int, default is 0
-        If :obj:`top` is not None, add this number to the
-        resSeq value, s.t. e.g. "E50" becomes "E55" if the
-        sequence numbers need to be shifted
+        Add this number to the resSeq value
     highlight_residxs : iterable of ints, default is None
         In case you don't want to construct a whole
         color list for :obj:`colors`, you can simply
