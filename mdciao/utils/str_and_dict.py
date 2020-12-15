@@ -133,8 +133,8 @@ def delete_exp_in_keys(idict, exp, sep="-"):
     return out_dict,deleted_half_keys
 
 def delete_pattern_in_ctc_label(pattern, label, sep):
-    new_name = [name for name in label.split(sep) if pattern not in name]
-    deleted_half_keys = [name for name in label.split(sep) if pattern in name]
+    new_name = [name for name in splitlabel(label, sep) if pattern not in name]
+    deleted_half_keys = [name for name in splitlabel(label,sep) if pattern in name]
     assert len(new_name) == 1, (new_name, pattern)
     return new_name[0], deleted_half_keys
 
@@ -194,7 +194,7 @@ def unify_freq_dicts(freqs,
 
     # Order key alphabetically using the separator_key
     def order_key(key, sep):
-        split_key = key.split(sep)
+        split_key = splitlabel(key,sep)
         return sep.join([split_key[ii] for ii in _np.argsort(split_key)])
 
     # Create a copy, with re-ordered keys if needed
@@ -333,7 +333,7 @@ def sum_dict_per_residue(idict, sep):
     """
     out_dict = _defdict(list)
     for key, freq in idict.items():
-        key1, key2 = key.split(sep) #This will fail if sep is not in key or sep does not separate in two
+        key1, key2 = splitlabel(key, sep) #This will fail if sep is not in key or sep does not separate in two
         out_dict[key1].append(freq)
         out_dict[key2].append(freq)
     return {key:_np.sum(val) for key, val in out_dict.items()}
@@ -843,4 +843,4 @@ def defrag_key(key, defrag="@", sep="-"):
     -------
 
     """
-    return sep.join([kk.split(defrag,1)[0].strip(" ") for kk in key.split(sep)])
+    return sep.join([kk.split(defrag,1)[0].strip(" ") for kk in splitlabel(key,sep)])

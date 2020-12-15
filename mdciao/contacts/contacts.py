@@ -1356,7 +1356,7 @@ class ContactPair(object):
         else:
             raise ValueError(AA_format)
         if split_label:
-            label= '%-15s - %-15s'%tuple(label.split('-'))
+            label= '%-15s - %-15s'%tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
         return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
                 "label":label.rstrip(" "),
                 "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)

@@ -517,7 +517,7 @@ def plot_unified_freq_dicts(freqs,
                   +len(freqs_by_sys_by_ctc)*width/2
             txt = key.replace("@", "^")
             if "-" in txt:
-                txt = winners[key][0]+"-".join([_mdcu.str_and_dict.replace4latex(w) for w in txt.split("-")])
+                txt = winners[key][0]+"-".join([_mdcu.str_and_dict.replace4latex(w) for w in _mdcu.str_and_dict.splitlabel(txt,"-")])
             else:
                 txt = _mdcu.str_and_dict.replace4latex(txt  )
 
@@ -584,7 +584,7 @@ def add_tilted_labels_to_patches(jax, labels,
             iy = trunc_y_labels_at
         txt = ilab.replace("@","^")
         if "-" in txt:
-            txt = '-'.join(_mdcu.str_and_dict.replace4latex(word) for word in txt.split("-"))
+            txt = '-'.join(_mdcu.str_and_dict.replace4latex(word) for word in _mdcu.str_and_dict.splitlabel(txt,"-"))
         else:
             txt = _mdcu.str_and_dict.replace4latex(txt)
         jax.text(ix, iy, txt,
