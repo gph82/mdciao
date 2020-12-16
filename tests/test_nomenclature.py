@@ -834,3 +834,8 @@ class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 
         self.assertDictEqual(frag_defs, reconstructed_defs)
 
+
+class Test_conslabel2fraglabel(unittest.TestCase):
+
+    def test_just_works(self):
+        self.assertEqual("TM3",nomenclature.conslabel2fraglabel("GLU30@3.50"))
