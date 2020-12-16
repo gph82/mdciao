@@ -699,7 +699,8 @@ class LabelerConsensus(object):
     def top2defs(self, top, map_conlab=None,
                  return_defs=False,
                  fragments=None,
-                 verbose=False,
+                 show_alignment=False,
+                 verbose=True,
                  alt_method=False,
                  **kwargs
                  ):
@@ -788,7 +789,7 @@ class LabelerConsensus(object):
                 print("Creating a temporary map of residue idxs to consensus labels.\n"
                       "Please refer to the documentation for advantages of parsing an \n"
                       "existing map as argument.")
-                kwargs["verbose"] = verbose
+                kwargs["verbose"] = show_alignment
                 map_conlab = self.top2map(top, **kwargs)
 
             conlab2residx = self.conlab2residx(top, map=map_conlab)
