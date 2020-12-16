@@ -839,3 +839,28 @@ class Test_conslabel2fraglabel(unittest.TestCase):
 
     def test_just_works(self):
         self.assertEqual("TM3",nomenclature.conslabel2fraglabel("GLU30@3.50"))
+
+class Test_alignment_df2_conslist(unittest.TestCase):
+
+    def setUp(self):
+        self.list_of_dicts = [
+            {"idx_0": 0,
+             "idx_1": 0,
+             "match": True,
+             "AA_1": "GLU"},
+            {"idx_0": 1,
+             "idx_1": 1,
+             "match": False,
+             "AA_1": "ARG"},
+            {"idx_0": 2,
+             "idx_1": 2,
+             "match": True,
+             "AA_1": "PHE"},
+        ]
+        self.df  = DataFrame(self.list_of_dicts)
+        self.consensus_dict = {"GLU0":"3.50",
+                               "ARG1":"3.51",
+                               "PHE2":"3.52"}
+    def test_works(self):
+        out_list = nomenclature.alignment_df2_conslist(self.df,3,self.consensus_dict)
+        self.assertListEqual(out_list, ["3.50",None,"3.52"])

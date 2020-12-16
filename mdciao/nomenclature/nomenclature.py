@@ -1160,6 +1160,7 @@ def _top2consensus_map(consensus_dict, top,
 
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
+
     seq = ''.join([_mdcu.residue_and_atom.shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
     alignment = _mdcu.sequence.alignment_result_to_list_of_dicts(_mdcu.sequence.my_bioalign(seq, seq_consensus)[0],
                                                                  restrict_to_residxs, # THIS IS THE CULPRIT OF THE FINAL ConsensusLabeler not having the frag definitions of the idxs not having all fragments
@@ -1168,14 +1169,20 @@ def _top2consensus_map(consensus_dict, top,
                                                                  topology_0=top,
                                                                  verbose=verbose
                                                                  )
-    alignment = _DataFrame(alignment)
-    alignment = alignment[alignment["match"] == True]
-    out_list = [None for __ in top.residues]
-    for idx, resSeq, AA in alignment[["idx_0","idx_1", "AA_1"]].values:
-        out_list[int(idx)]=consensus_dict[AA + str(resSeq)]
 
+    alignment = _DataFrame(alignment)
+
+    out_list = alignment_df2_conslist(alignment, top.n_residues, consensus_dict)
     if guess_consensus:
         out_list = _fill_consensus_gaps(out_list, top, verbose=False)
+    return out_list
+
+def alignment_df2_conslist(alignment_as_df, n_residues, consensus_dict):
+    #_mdcu.sequence.df2maps(alignment_as_df)
+    alignment_as_df = alignment_as_df[alignment_as_df["match"] == True]
+    out_list = [None for __ in range(n_residues)]
+    for idx, resSeq, AA in alignment_as_df[["idx_0", "idx_1", "AA_1"]].values:
+        out_list[int(idx)] = consensus_dict[AA + str(resSeq)]
     return out_list
 
 def _fill_consensus_gaps(consensus_list, top, verbose=False):
