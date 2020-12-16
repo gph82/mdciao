@@ -1089,7 +1089,7 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
         return out_list
 '''
 
-def _top2consensus_map(consensus_dict, top,
+def _top2consensus_map(AA2conlab_dict, top,
                        min_hit_rate=.5,
                        restrict_to_residxs=None,
                        guess_consensus=False,
@@ -1108,8 +1108,9 @@ def _top2consensus_map(consensus_dict, top,
 
     Parameters
     ----------
-    consensus_dict : dictionary
-        AA-codes as keys and nomenclature as values, e.g. AA2CGN["K25"] -> G.HN.42
+    AA2conlab_dict : dictionary
+        AA-codes as keys and nomenclature as values,
+        e.g. AA2CGN["K25"] -> G.HN.42
         Typically comes from :obj:`ConsensusLabeler.AA2conlab`
     top :
         :py:class:`mdtraj.Topology` object
@@ -1127,12 +1128,12 @@ def _top2consensus_map(consensus_dict, top,
     restrict_to_residxs: iterable of integers, default is None
         Use only these residues for alignment and labelling purposes
         Helps "guide" the alignment method. E.g., one might be
-        passing an Ballesteros-Weinstein in :obj:`consensus_dict` but
+        passing an Ballesteros-Weinstein in :obj:`AA2conlab_dict` but
         the topology also contains the whole G-protein. If available,
         one can pass here the indices of residues of the receptor
     guess_consensus : boolean default is False
         Even if there is a consensus mismatch with the sequence of the input
-        :obj:`consensus_dict`, try to relabel automagically, s.t.
+        :obj:`AA2conlab_dict`, try to relabel automagically, s.t.
         * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
         will be grouped relabeled as
         * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
@@ -1146,7 +1147,7 @@ def _top2consensus_map(consensus_dict, top,
         list of length top.n_residues containing consensus labels
     """
 
-    seq_consensus= ''.join([_mdcu.residue_and_atom.name_from_AA(key) for key in consensus_dict.keys()])
+    seq_consensus= ''.join([_mdcu.residue_and_atom.name_from_AA(key) for key in AA2conlab_dict.keys()])
 
     if min_hit_rate>0:
         assert restrict_to_residxs is None
@@ -1162,16 +1163,16 @@ def _top2consensus_map(consensus_dict, top,
 
     seq = ''.join([_mdcu.residue_and_atom.shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
     alignment = _mdcu.sequence.alignment_result_to_list_of_dicts(_mdcu.sequence.my_bioalign(seq, seq_consensus)[0],
-                                                                 restrict_to_residxs, # THIS IS THE CULPRIT OF THE FINAL ConsensusLabeler not having the frag definitions of the idxs not having all fragments
+                                                                 restrict_to_residxs,  # THIS IS THE CULPRIT OF THE FINAL ConsensusLabeler not having the frag definitions of the idxs not having all fragments
                                                                  [_mdcu.residue_and_atom.int_from_AA_code(key) for key
-                                                                  in consensus_dict],
+                                                                  in AA2conlab_dict],
                                                                  topology_0=top,
                                                                  verbose=verbose
                                                                  )
 
     alignment = _DataFrame(alignment)
 
-    out_list = alignment_df2_conslist(alignment, consensus_dict)
+    out_list = alignment_df2_conslist(alignment, AA2conlab_dict)
     out_list = out_list+[None for __ in range(top.n_residues-len(out_list))]
     # TODO we could do this padding in the alignment_df2_conslist method itself
     # with an n_residues optarg, IDK about best design choice
@@ -1180,7 +1181,7 @@ def _top2consensus_map(consensus_dict, top,
     return out_list
 
 def alignment_df2_conslist(alignment_as_df,
-                           consensus_dict,
+                           AA2conlab_dict,
                            allow_nonmatch=False):
     r"""
     Build a list with consensus labels out of an alignment and a consensus dictionary.
@@ -1190,10 +1191,11 @@ def alignment_df2_conslist(alignment_as_df,
     alignment_as_df : :obj:`pandas.DataFrame`
         The alignment of the target sequence
         to the reference sequence
-    consensus_dict : dict
+    AA2conlab_dict : dict
         Dictionary keyed with AA names of the
         reference sequence and valued with
-        the consensus labels, {"R131":"3.50"}
+        the consensus labels, {"R131":"3.50"}.
+        Typically comes from :obj:`ConsensusLabeler.AA2conlab`
     allow_nonmatch : bool, default is False
         If True, the consensus labels of
         non-matching residues will be used,
@@ -1220,7 +1222,7 @@ def alignment_df2_conslist(alignment_as_df,
     _df = _df[_df["match"]]
 
     for idx, resSeq, AA in _df[["idx_0", "idx_1", "AA_1"]].values:
-        out_list[int(idx)] = consensus_dict[AA + str(resSeq)]
+        out_list[int(idx)] = AA2conlab_dict[AA + str(resSeq)]
     return out_list
 
 def _fill_consensus_gaps(consensus_list, top, verbose=False):
