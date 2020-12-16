@@ -1172,16 +1172,53 @@ def _top2consensus_map(consensus_dict, top,
 
     alignment = _DataFrame(alignment)
 
-    out_list = alignment_df2_conslist(alignment, top.n_residues, consensus_dict)
+    out_list = alignment_df2_conslist(alignment, consensus_dict)
     if guess_consensus:
         out_list = _fill_consensus_gaps(out_list, top, verbose=False)
     return out_list
 
-def alignment_df2_conslist(alignment_as_df, n_residues, consensus_dict):
-    #_mdcu.sequence.df2maps(alignment_as_df)
-    alignment_as_df = alignment_as_df[alignment_as_df["match"] == True]
+def alignment_df2_conslist(alignment_as_df,
+                           consensus_dict,
+                           allow_nonmatch=False):
+    r"""
+    Build a list with consensus labels out of an alignment and a consensus dictionary.
+
+    Parameters
+    ----------
+    alignment_as_df : :obj:`pandas.DataFrame`
+        The alignment of the target sequence
+        to the reference sequence
+    consensus_dict : dict
+        Dictionary keyed with AA names of the
+        reference sequence and valued with
+        the consensus labels, {"R131":"3.50"}
+    allow_nonmatch : bool, default is False
+        If True, the consensus labels of
+        non-maching residues will be used,
+        if there's alignment, e.g. if a
+        mutation exists at a position
+        there won't be a match, but still
+        that consensus label is usable/informative
+
+    Returns
+    -------
+    consensus_labels : list
+        List of consensus labels
+        or None (when not available)
+        The number of residues (length of list)
+        is inferred :obj:`alignment_as_df`
+
+    """
+
+    n_residues = _np.sum([ichar.isalpha() for ichar in alignment_as_df["AA_0"].values])
+    if allow_nonmatch:
+        _df = _mdcu.sequence.re_match_df(alignment_as_df)
+    else:
+        _df = alignment_as_df
+    _df = _df[_df["match"]]
+
     out_list = [None for __ in range(n_residues)]
-    for idx, resSeq, AA in alignment_as_df[["idx_0", "idx_1", "AA_1"]].values:
+    for idx, resSeq, AA in _df[["idx_0", "idx_1", "AA_1"]].values:
         out_list[int(idx)] = consensus_dict[AA + str(resSeq)]
     return out_list
 
