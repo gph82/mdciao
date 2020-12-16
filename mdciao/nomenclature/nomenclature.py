@@ -782,7 +782,6 @@ class LabelerConsensus(object):
             frags =  self.fragments_as_idxs
             defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
             defs = {key:val for key, val in defs.items() if len(val)>0}
-            map_conlab = self.top2map(top, guess_consensus=kwargs["guess_consensus"], verbose=False, restrict_to_residxs=restrict_to_residxs)
 
         else:
             if map_conlab is None:
