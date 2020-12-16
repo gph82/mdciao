@@ -629,7 +629,6 @@ class Test_map2defs(unittest.TestCase):
 
 class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
 
-    #TODO add test for special case restrict_to_residxs
     def setUp(self):
         super(Test_top2consensus_map,self).setUp()
         self.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
@@ -642,12 +641,29 @@ class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
 
         self.assertEqual(cons_list[:5], self.cons_list_test)
 
+    def test_top2consensus_map_just_wo_min_hit(self):
+        cons_list = _top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
+                                       top=self.top_3SN6,
+                                       min_hit_rate=0)
+
+        self.assertEqual(cons_list[:5], self.cons_list_test)
+
+    def test_top2consensus_map_just_w_no_hits(self):
+        cons_list = _top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
+                                       top=self.top_3SN6,
+                                       min_hit_rate=2)
+
+        self.assertEqual(cons_list[:5], self.cons_list_test)
+
+
+
     def test_top2consensus_map_keep_consensus_is_true(self):
         cons_list = _top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
                                        top=self.top_mut,
                                        guess_consensus=True)
 
         self.assertEqual(cons_list[:5], self.cons_list_test)
+
 
 class Test_fill_CGN_gaps(unittest.TestCase):
     def setUp(self):
