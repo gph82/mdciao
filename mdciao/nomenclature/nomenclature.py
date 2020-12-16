@@ -778,7 +778,7 @@ class LabelerConsensus(object):
             else:
                 restrict_to_residxs = None
 
-            top2self, self2top, df = self.aligntop(top, restrict_to_residxs)
+            top2self, self2top, df = self.aligntop(top, restrict_to_residxs, verbose=show_alignment)
             frags =  self.fragments_as_idxs
             defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
             defs = {key:val for key, val in defs.items() if len(val)>0}
@@ -817,7 +817,7 @@ class LabelerConsensus(object):
         if return_defs:
             return {key:val for key, val in defs.items()}
 
-    def aligntop(self, top, restrict_idxs=None):
+    def aligntop(self, top, restrict_idxs=None,verbose=False):
         r""" Analogous to :obj:`mdciao.sequence.maptops` but using
         :obj:`ConsensusLabelers.seq` as the second sequence"""
 
@@ -825,7 +825,8 @@ class LabelerConsensus(object):
         df = _mdcu.sequence.align_tops_or_seqs(top,
                                                seq_self,
                                                seq_0_res_idxs=restrict_idxs,
-                                               return_DF=True)
+                                               return_DF=True,
+                                               verbose=verbose)
         top2self, self2top = _mdcu.sequence.df2maps(df)
         return top2self, self2top, df
 
