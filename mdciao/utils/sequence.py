@@ -366,22 +366,66 @@ def df2maps(df, allow_nonmatch=True):
         top1_to_top0[20] = 10
 
     """
-    match_ranges = _cranges(df["match"].values)
-    _df = df.copy()
-    if False in match_ranges.keys():
-        for rr in match_ranges[False]:
-            try:
-                if allow_nonmatch and all(_df.loc[[rr[0]-1,rr[-1]+1]]["match"]) and \
-                        all(["-" not in df[key].values for key in ["AA_1","AA_1"]]): #this checks for no insertions in the alignment ("=equal length ranges")
-                    _df.at[rr,"match"]=True
-            except KeyError:
-                continue
+    if allow_nonmatch:
+        _df = re_match_df(df)
+    else:
+        _df = df
+
     top0_to_top1 = {key: val for key, val in zip(_df[_df["match"] == True]["idx_0"].to_list(),
                                                  _df[_df["match"] == True]["idx_1"].to_list())}
 
     top1_to_top0 = {val:key for key, val in top0_to_top1.items()}
 
     return top0_to_top1, top1_to_top0
+
+def re_match_df(df):
+    r"""
+    Return a copy of an alignment :obj:`pandas.Dataframe` with True 'match'-values
+    for non-matching blocks that have equal length.
+
+    For instance,
+        A A True
+        A A True
+        B D False
+        B D False
+        C C True
+        C C True
+    gets re_matched to:
+        A A True
+        A A True
+        B D True
+        B D True
+        C C True
+        C C True
+
+    The input :obj:`DataFrame` is left untouched and only a copy is returned
+
+
+    Parameters
+    ----------
+    df : :obj:`pandas.DataFrame`
+        Typically comes from  :obj:`align_tops_or_seqs`
+
+    Returns
+    -------
+    _df : :obj:`pandas.DataFrame`
+        A re_matched copy of :obj:`df`
+
+    """
+
+    match_ranges = _cranges(df["match"].values)
+    _df = df.copy()
+    if False in match_ranges.keys():
+        for rr in match_ranges[False]:
+            try:
+                if all(_df.loc[[rr[0] - 1, rr[-1] + 1]]["match"]) and \
+                        all(["-" not in df[key].values for key in ["AA_1",
+                                                                   "AA_1"]]):  # this checks for no insertions in the alignment ("=equal length ranges")
+                    _df.at[rr, "match"] = True
+            except KeyError:
+                continue
+
+    return _df
 
 '''
 # todo this is a bit of overkill, one alignment per residue

@@ -78,6 +78,20 @@ class Test_maptops(unittest.TestCase):
         for key, val in top22top1.items():
             top1.residue(val).code == top2.residue(key).code
 
+class Test_re_match_df(unittest.TestCase):
+
+    def test_works(self):
+        df = sequence.align_tops_or_seqs("AABBCC", "AADDCC")
+        df_re_matched = sequence.re_match_df(df)
+
+        assert all(df_re_matched["match"].values)
+
+    def test_detects_insertion(self):
+        df = sequence.align_tops_or_seqs("AABBFFFFFCC", "AADDCC")
+        df_re_matched = sequence.re_match_df(df)
+        print(df_re_matched)
+        self.assertListEqual(df_re_matched["match"].values.tolist(),[True,True,False,False,False,False,False,False,False,True,True])
+
 class Test_df2maps(unittest.TestCase):
 
     def test_works(self):
