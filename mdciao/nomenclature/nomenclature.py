@@ -1173,6 +1173,9 @@ def _top2consensus_map(consensus_dict, top,
     alignment = _DataFrame(alignment)
 
     out_list = alignment_df2_conslist(alignment, consensus_dict)
+    out_list = out_list+[None for __ in range(top.n_residues-len(out_list))]
+    # TODO we could do this padding in the alignment_df2_conslist method itself
+    # with an n_residues optarg, IDK about best design choice
     if guess_consensus:
         out_list = _fill_consensus_gaps(out_list, top, verbose=False)
     return out_list
@@ -1194,7 +1197,7 @@ def alignment_df2_conslist(alignment_as_df,
         the consensus labels, {"R131":"3.50"}
     allow_nonmatch : bool, default is False
         If True, the consensus labels of
-        non-maching residues will be used,
+        non-matching residues will be used,
         if there's alignment, e.g. if a
         mutation exists at a position
         there won't be a match, but still
@@ -1203,21 +1206,20 @@ def alignment_df2_conslist(alignment_as_df,
     Returns
     -------
     consensus_labels : list
-        List of consensus labels
-        or None (when not available)
-        The number of residues (length of list)
-        is inferred :obj:`alignment_as_df`
-
+        List of consensus labels (when available, else None)
+         up to the highest residue idx in "idx_0"
+         of the alignment DF
     """
 
-    n_residues = _np.sum([ichar.isalpha() for ichar in alignment_as_df["AA_0"].values])
+    n_residues = _np.max([int(ival) for ival in alignment_as_df["idx_0"].values if str(ival).isdigit()])
+    out_list = [None for __ in range(n_residues+1)]
+
     if allow_nonmatch:
         _df = _mdcu.sequence.re_match_df(alignment_as_df)
     else:
         _df = alignment_as_df
     _df = _df[_df["match"]]
 
-    out_list = [None for __ in range(n_residues)]
     for idx, resSeq, AA in _df[["idx_0", "idx_1", "AA_1"]].values:
         out_list[int(idx)] = consensus_dict[AA + str(resSeq)]
     return out_list

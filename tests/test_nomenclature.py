@@ -862,5 +862,5 @@ class Test_alignment_df2_conslist(unittest.TestCase):
                                "ARG1":"3.51",
                                "PHE2":"3.52"}
     def test_works(self):
-        out_list = nomenclature.alignment_df2_conslist(self.df,3,self.consensus_dict)
+        out_list = nomenclature.alignment_df2_conslist(self.df,self.consensus_dict)
         self.assertListEqual(out_list, ["3.50",None,"3.52"])
