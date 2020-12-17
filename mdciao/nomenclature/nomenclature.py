@@ -703,12 +703,14 @@ class LabelerConsensus(object):
                                   **kwargs,
                                   )
 
-    def top2defs(self, top, map_conlab=None,
+    def top2defs(self, top,
+                 #map_conlab=None,
                  return_defs=False,
                  fragments=None,
                  show_alignment=False,
                  verbose=True,
-                 alt_method=False,
+                 #alt_method=False,
+                 min_hit_rate=.5,
                  **kwargs
                  ):
         r"""
@@ -777,19 +779,24 @@ class LabelerConsensus(object):
             Dictionary with subdomain names as keys and lists of indices as values
         """
 
-        if alt_method:
-            if kwargs["min_hit_rate"] > 0:
-                chains = _mdcfrg.get_fragments(top, verbose=False)
-                answer = guess_nomenclature_fragments(self, top, chains, min_hit_rate=kwargs["min_hit_rate"])
-                restrict_to_residxs = _np.hstack([chains[ii] for ii in answer])
-            else:
-                restrict_to_residxs = None
+        #if alt_method:
+        if min_hit_rate > 0:
+            restrict_to_residxs = guess_nomenclature_fragments(self, top,
+                                                               _mdcfrg.get_fragments(top, verbose=False),
+                                                               min_hit_rate=min_hit_rate,
+                                                               return_residue_idxs=True,
+                                                               empty=None)
 
-            top2self, self2top, df = self.aligntop(top, restrict_to_residxs, verbose=show_alignment)
-            frags =  self.fragments_as_idxs
-            defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
-            defs = {key:val for key, val in defs.items() if len(val)>0}
+        else:
+            restrict_to_residxs = None
 
+        top2self, self2top, __ = self.aligntop(top, restrict_to_residxs, verbose=show_alignment)
+        map_conlab = [self.idx2conlab[top2self[topidx]] if topidx in top2self.keys() else None for topidx in range(top.n_residues)]
+        frags =  self.fragments_as_idxs
+        defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
+        defs = {key:val for key, val in defs.items() if len(val)>0}
+
+        """
         else:
             if map_conlab is None:
                 print("Creating a temporary map of residue idxs to consensus labels.\n"
@@ -804,8 +811,8 @@ class LabelerConsensus(object):
                 for iBW in ifrag:
                     if iBW in conlab2residx.keys():
                         defs[key].append(conlab2residx[iBW])
-
-        defs = {key:val for key,val in defs.items()}
+        """
+        defs = dict(defs)
         new_defs = {}
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
