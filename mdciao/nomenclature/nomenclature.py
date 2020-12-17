@@ -533,13 +533,19 @@ class LabelerConsensus(object):
 
     @property
     def AA2conlab(self):
-        r""" Dictionary with AA-codes as keys, so that e.g.
+        r""" Dictionary with short AA-codes as keys, so that e.g.
             * self.AA2BW["R131"] -> '3.50'
             * self.conlab2AA["R201"] -> "G.hfs2.2" """
 
 
         return self._AA2conlab
 
+    @property
+    def idx2conlab(self):
+        r""" List of consensus labels in the order (=idx) they appear in the original dataframe
+
+        This index is the row-index of the table, don't count on it being aligned with anything"""
+        return self._idx2conlab
     @property
     def fragment_names(self):
         r"""Name of the fragments according to the consensus labels
@@ -818,7 +824,10 @@ class LabelerConsensus(object):
 
     def aligntop(self, top, restrict_idxs=None,verbose=False):
         r""" Analogous to :obj:`mdciao.sequence.maptops` but using
-        :obj:`ConsensusLabelers.seq` as the second sequence"""
+        :obj:`ConsensusLabelers.seq` as the second sequence.
+
+        The indices of self are indices (row-indices) of the original dataframe,
+        which are the the ones in :obj:`ConsensusLabelers.seq`"""
 
         seq_self = self.seq
         df = _mdcu.sequence.align_tops_or_seqs(top,
@@ -902,6 +911,9 @@ class LabelerCGN(LabelerConsensus):
         self._AA2conlab = {key: self._dataframe[self._dataframe[PDB_input] == key]["CGN"].to_list()[0]
                            for key in self._dataframe[PDB_input].to_list()}
 
+        self._idx2conlab = self.dataframe["CGN"].values.tolist()
+
+
         self._fragments = _defdict(list)
         for ires, key in self.AA2conlab.items():
             try:
@@ -975,6 +987,7 @@ class LabelerBW(LabelerConsensus):
         # The title of the column with this field varies between CGN and BW
         self._AAresSeq_key = "AAresSeq"
         self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
+        self._idx2conlab = self.dataframe["BW"].values.tolist()
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
                                   local_path=local_path,
