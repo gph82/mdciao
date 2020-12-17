@@ -1165,11 +1165,8 @@ def _top2consensus_map(AA2conlab_dict, top,
     if min_hit_rate>0:
         assert restrict_to_residxs is None
         frags = _mdcfrg.get_fragments(top, verbose=False)
-        hits = guess_nomenclature_fragments(seq_consensus, top, min_hit_rate=min_hit_rate, fragments=frags)
-        if len(hits)==0:
-            restrict_to_residxs = None
-        else:
-            restrict_to_residxs = _np.hstack([frags[ii] for ii in hits])
+        restrict_to_residxs = guess_nomenclature_fragments(seq_consensus, top, min_hit_rate=min_hit_rate, fragments=frags,
+                                            return_residue_idxs=True,empty=None)
 
     if restrict_to_residxs is None:
         restrict_to_residxs = [residue.index for residue in top.residues]
