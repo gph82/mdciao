@@ -1644,7 +1644,9 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
 def guess_nomenclature_fragments(refseq, top,
                                  fragments=None,
                                  min_hit_rate=.6,
-                                 verbose=False):
+                                 verbose=False,
+                                 return_residue_idxs=False,
+                                 empty=list):
     """Guess what fragments in the topology best match
     the consensus labels in a :obj:`LabelerConsensus` object
 
@@ -1671,11 +1673,17 @@ def guess_nomenclature_fragments(refseq, top,
         will be returned as a guess
     verbose: boolean
         be verbose
-
+    return_residue_idxs : bool, default is False
+        Return the list residue indices directly,
+        instead of returning a list of fragment idxs.
+    empty : class, list or None, default is list
+        What to return in case of an emtpy guess,
+        an empty list or a None
     Returns
     -------
     guess: list
-        indices of the fragments with higher hit-rate than :obj:`cutoff`
+        indices of the fragments (or residues) with higher hit-rate than :obj:`cutoff`
+
 
     """
 
@@ -1699,6 +1707,16 @@ def guess_nomenclature_fragments(refseq, top,
         if verbose:
             print(ii, len(hit) / len(ifrag))
         hits.append(hit)
+
+    guessed_res_idxs=[]
+    if len(guess)>0:
+        guessed_res_idxs = _np.hstack([fragments[ii] for ii in guess])
+
+    if return_residue_idxs:
+        guess = guessed_res_idxs
+
+    if empty is None and len(guess)==0:
+        guess = None
     return guess
 
 
