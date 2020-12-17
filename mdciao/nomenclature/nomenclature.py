@@ -652,7 +652,7 @@ class LabelerConsensus(object):
         to initialize this :obj:`LabelerConsensus` and return a
         list list of consensus labels for each residue in :obj:`top`.
 
-        The if a consensus label is returned as None it means one
+        If a consensus label is returned as None it means one
         of two things:
          * this position was successfully aligned with a
            match but the data used to initialize this
@@ -662,7 +662,8 @@ class LabelerConsensus(object):
            bc of a point mutation)
 
         A heuristic to "autofill" the second case can be
-        turned on using :obj:`test_top2defs_returns_all_keys`, see :obj:`_fill_consensus_gaps`
+        turned on using :obj:`test_top2defs_returns_all_keys`,
+        see :obj:`_fill_consensus_gaps`
         for more info
 
         Note
