@@ -548,60 +548,6 @@ class Test_choose_between_consensus_dicts(unittest.TestCase):
                                            )
 
 
-@unittest.skip("The tested method appears to be unused")
-class Test_guess_missing_BWs(unittest.TestCase):
-    #TODO change this test to reflect the new changes Guillermo recently added
-    def setUp(self):
-        self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
-        self.geom = md.load(test_filenames.file_for_test_pdb)
-
-    def _test_guess_missing_BWs_just_works(self):
-        table2BW = table2BW_by_AAcode(tablefile=self.file)
-        guess_BW = guess_missing_BWs(table2BW, self.geom.top, restrict_to_residxs=None)
-        self.assertDictEqual(guess_BW,
-                             {0: '1.29*',
-                              1: '1.30*',
-                              2: '1.31*',
-                              3: '1.27*',
-                              4: '1.26',
-                              5: '1.27*',
-                              6: '1.28*',
-                              7: '1.28*'})
-
-@unittest.skip("The tested method appears to be unused")
-class Test_top2CGN_by_AAcode(unittest.TestCase):
-    #TODO change this test to reflect the new changes Guillermo recently added
-    def setUp(self):
-        self.cgn = LabelerCGN("3SN6",
-                              local_path=test_filenames.examples_path)
-        self.geom = md.load(test_filenames.file_for_test_pdb)
-
-    def _test_top2CGN_by_AAcode_just_works(self):
-        top2CGN = top2CGN_by_AAcode(self.geom.top, self.cgn)
-        self.assertDictEqual(top2CGN,
-                             {0: 'G.HN.27',
-                              1: 'G.HN.53',
-                              2: 'H.HC.11',
-                              3: 'H.hdhe.4',
-                              4: 'G.S2.3',
-                              5: 'G.S2.5',
-                              6: None,
-                              7: 'G.S2.6'})
-
-@unittest.skip("This method appears unused at the moment")
-class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
-    def setUp(self):
-        self.segment_dict = {'TM1': [20, 21, 22], 'TM2': [30, 33, 34], 'TM3': [40, 48], 'TM4': [50, 56],
-                             'TM5': [60, 61],'TM6': [70], 'TM7': [80, 81, 82, 83, 89], 'H8': [90, 91, 92, 93, 94, 95]}
-
-    def test_add_loop_definitions_to_TM_residx_dict_just_works(self):
-        add_defs = add_loop_definitions_to_TM_residx_dict(self.segment_dict)
-        self.assertEqual(add_defs['ICL1'],[23, 29])
-        self.assertEqual(add_defs['ECL1'], [35, 39])
-        self.assertEqual(add_defs['ICL2'], [49, 49])
-        self.assertEqual(add_defs['ECL2'], [57, 59])
-        self.assertEqual(add_defs['ECL3'], [71, 79])
-
 class Test_map2defs(unittest.TestCase):
     def setUp(self):
         self.cons_list =  ['3.67','G.H5.1','G.H5.6','5.69']
