@@ -68,15 +68,27 @@ class Test_align_tops(unittest.TestCase):
 
 class Test_maptops(unittest.TestCase):
 
-     def test_works(self):
-        top1 = md.load(test_filenames.pdb_3CAP).top
-        top2 = md.load(test_filenames.pdb_1U19).top
-        top12top2, top22top1 = sequence.maptops(top1,top1)
+    @classmethod
+    def setUpClass(cls):
+        cls.top1 = md.load(test_filenames.pdb_3CAP).top
+        cls.top2 = md.load(test_filenames.pdb_1U19).top
+
+    def test_works(self):
+        top12top2, top22top1 = sequence.maptops(self.top1, self.top2)
         for key, val in top12top2.items():
-            top2.residue(val).code == top1.residue(key).code
+            self.top2.residue(val).code == self.top1.residue(key).code
 
         for key, val in top22top1.items():
-            top1.residue(val).code == top2.residue(key).code
+            self.top1.residue(val).code == self.top2.residue(key).code
+    def test_works_nonmatch(self):
+        seq2 = list(sequence.top2seq(self.top2))
+        seq2[10:13] = "LOL"
+        seq2 = "".join(seq2)
+        top12top2, top22top1 = sequence.maptops(self.top1,seq2)
+        assert all([key not in top12top2.values() for key in [10,11,12]])
+        # Now allow nonmatches
+        top12top2, top22top1 = sequence.maptops(self.top1,seq2, allow_nonmatch=True)
+        assert all([key in top12top2.keys() for key in [10,11,12]])
 
 class Test_re_match_df(unittest.TestCase):
 
