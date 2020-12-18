@@ -830,16 +830,28 @@ class LabelerConsensus(object):
         if return_defs:
             return {key:val for key, val in defs.items()}
 
-    def aligntop(self, top, restrict_idxs=None,verbose=False):
-        r""" Analogous to :obj:`mdciao.sequence.maptops` but using
-        :obj:`ConsensusLabelers.seq` as the second sequence.
+        return dict(defs.items())
+
+    def aligntop(self, top, restrict_idxs=None, min_hit_rate=0,
+                 verbose=False,):
+        r""" Align a topology with the object's sequence.
+        Wraps around :obj:`mdciao.sequence.maptops`
 
         The indices of self are indices (row-indices) of the original dataframe,
         which are the the ones in :obj:`ConsensusLabelers.seq`"""
 
-        seq_self = self.seq
+        if min_hit_rate > 0:
+            assert restrict_idxs is None
+            restrict_idxs = guess_nomenclature_fragments(self.seq,
+                                                         top,
+                                                         _mdcfrg.get_fragments(top, verbose=False),
+                                                         min_hit_rate=min_hit_rate,
+                                                         return_residue_idxs=True, empty=None)
+        if restrict_idxs is None:
+            restrict_idxs = _np.arange(len(top))
+
         df = _mdcu.sequence.align_tops_or_seqs(top,
-                                               seq_self,
+                                               self.seq,
                                                seq_0_res_idxs=restrict_idxs,
                                                return_DF=True,
                                                verbose=verbose)
