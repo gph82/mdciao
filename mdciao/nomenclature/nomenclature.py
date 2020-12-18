@@ -1216,11 +1216,11 @@ def alignment_df2_conslist(alignment_as_df,
         Typically comes from :obj:`ConsensusLabeler.AA2conlab`
     allow_nonmatch : bool, default is False
         If True, the consensus labels of
-        non-matching residues will be used,
-        if there's alignment, e.g. if a
-        mutation exists at a position
-        there won't be a match, but still
-        that consensus label is usable/informative
+        non-matching residues will be used
+        if there's alignment. E.g. if a
+        position is mutated there's no
+        identity match, but still want to
+        use that consensus label.
 
     Returns
     -------
