@@ -190,11 +190,10 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
             consensus_labelers[key] = CL
             if verbose:
                 print("These are the %s fragments mapped onto your topology:"%key)
-                fragment_defs.update(CL.top2defs(top,
-                                                 map_conlab=map_CL,
-                                                 fragments=fragments_as_residue_idxs,
-                                                 return_defs=True,
-                                                 verbose=verbose))
+                fragment_defs.update(CL.top2frags(top,
+                                                  #map_conlab=map_CL,
+                                                  fragments=fragments_as_residue_idxs,
+                                                  verbose=verbose))
             if not accept_guess:
                 input("Hit enter to continue!\n")
 
@@ -478,9 +477,8 @@ def _fragment_overview(a,labtype):
 
     if a.topology is not None:
         top = _md.load(a.topology).top
-        map_conlab = obj.top2map(top)
-        obj.top2defs(top, map_conlab=map_conlab, guess_consensus=a.fill_gaps, verbose=True)
-
+        map_conlab = obj.top2map(top,
+                                 guess_consensus=a.fill_gaps)
         _mdcu.residue_and_atom.parse_and_list_AAs_input(a.AAs, top, map_conlab)
         if str(a.labels).lower() != "none":
             labels = [aa.strip(" ") for aa in a.labels.split(",")]

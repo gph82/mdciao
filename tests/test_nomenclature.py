@@ -368,11 +368,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
             self.cgn_local.conlab2residx(self.cgn_local.top, map=map)
 
     def test_top2map_just_passes(self):
-        # the true test of this is in the test of _top2consensus_map
-        self.cgn_local.top2map(self.cgn_local.top)
-
-    def test_top2defs_returns_all_keys(self):
-        defs = self.cgn_local.top2defs(self.cgn_local.top, return_defs=True)
+        defs = self.cgn_local.top2frags(self.cgn_local.top)
         self.assertSequenceEqual(list(defs.keys()),
                                  _CGN_fragments)
 
@@ -380,13 +376,12 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
 
         input_values = (val for val in ["0-1"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            defs = self.cgn_local.top2defs(self.cgn_local.top,
-                                           return_defs=True,
-                                           fragments=[_np.arange(0,10),
+            defs = self.cgn_local.top2frags(self.cgn_local.top,
+                                            fragments=[_np.arange(0,10),
                                                       _np.arange(10,15),
                                                       _np.arange(15,20)
                                                       ]
-                                           )
+                                            )
             self.assertSequenceEqual(list(defs.keys()),
                                      _CGN_fragments)
             _np.testing.assert_array_equal(defs["G.HN"],_np.arange(0,15))
@@ -395,12 +390,11 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         input_values = (val for val in ["0-2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
             with pytest.raises(ValueError):
-                self.cgn_local.top2defs(self.cgn_local.top,
-                                        return_defs=True,
-                                           fragments=[_np.arange(0, 10),
+                self.cgn_local.top2frags(self.cgn_local.top,
+                                         fragments=[_np.arange(0, 10),
                                                       _np.arange(10, 15),
                                                       _np.arange(15, 40)]
-                                           )
+                                         )
 
     def test_fragments_as_idxs(self):
         frags_as_idsx = self.cgn_local.fragments_as_idxs
@@ -794,9 +788,10 @@ class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
         # Obtain the full objects first
         full_map = self.cgn_local.top2map(self.top,
                                           verbose=False)
-        frag_defs = self.cgn_local.top2defs(self.top,
-                                            verbose=False, return_defs=True,
-                                            map_conlab=full_map)
+        frag_defs = self.cgn_local.top2frags(self.top,
+                                             verbose=False,
+                                             #map_conlab=full_map
+                                             )
         idxs_to_restrict_to = frag_defs["G.H5"]
         incomplete_map = [full_map[idx] if idx in idxs_to_restrict_to else None for idx in range(self.top.n_residues)]
 

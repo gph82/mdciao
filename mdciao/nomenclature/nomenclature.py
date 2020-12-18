@@ -703,22 +703,16 @@ class LabelerConsensus(object):
                                   **kwargs,
                                   )
 
-    def top2defs(self, top,
-                 #map_conlab=None,
-                 return_defs=False,
-                 fragments=None,
-                 show_alignment=False,
-                 verbose=True,
-                 #alt_method=False,
-                 min_hit_rate=.5,
-                 **kwargs
-                 ):
+    def top2frags(self, top,
+                  fragments=None,
+                  show_alignment=False,
+                  verbose=True,
+                  min_hit_rate=.5,
+                  ):
         r"""
-        Prints the definitions of subdomains that the
-        consensus nomenclature contains and map it out
+        Return the subdomains derived from the
+        consensus nomenclature and map it out
         in terms of residue indices of the input :obj:`top`
-
-        Does not return anything unless explicitly asked to.
 
         Parameters
         ----------
@@ -736,9 +730,6 @@ class LabelerConsensus(object):
             * the on-the-fly creation of the map slows down the workflow
             * in critical cases when alignment is poor and
             naming errors are likely
-        return_defs: boolean, default is False
-            If True, apart from printing the definitions,
-            they are returned as a dictionary
         fragments: iterable of integers, default is None
             The user can parse an existing list of fragment-definitions
             (via residue idxs) to check if newly found, consensus
@@ -750,10 +741,6 @@ class LabelerConsensus(object):
             keep in case of clashes.
 
             Check :obj:`check_if_subfragment` for more info
-
-        alt_method : bool, default is None
-            Try an alternative method, currently testing it.
-            Do not use this ATM
 
         fill_gaps: boolean, default is False
             Try to fill gaps in the consensus nomenclature by calling
@@ -773,46 +760,24 @@ class LabelerConsensus(object):
              are used for a second alignment to create a
              better the on-the-fly :obj:`map_conlab`
 
+        verbose : bool, default is True
+            Also print the definitions
+
+
         Returns
         -------
-        defs : dictionary (if return_defs is True)
-            Dictionary with subdomain names as keys and lists of indices as values
+        defs : dictionary
+            Dictionary with subdomain names as keys
+            and lists of indices as values
         """
-
-        #if alt_method:
-        if min_hit_rate > 0:
-            restrict_to_residxs = guess_nomenclature_fragments(self, top,
-                                                               _mdcfrg.get_fragments(top, verbose=False),
-                                                               min_hit_rate=min_hit_rate,
-                                                               return_residue_idxs=True,
-                                                               empty=None)
-
-        else:
-            restrict_to_residxs = None
-
-        top2self, self2top, __ = self.aligntop(top, restrict_to_residxs, verbose=show_alignment)
+        # TODO to avoid aligning each time, one could provide the df
+        # as optarg
+        top2self, self2top, df = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment)
         map_conlab = [self.idx2conlab[top2self[topidx]] if topidx in top2self.keys() else None for topidx in range(top.n_residues)]
         frags =  self.fragments_as_idxs
         defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
         defs = {key:val for key, val in defs.items() if len(val)>0}
 
-        """
-        else:
-            if map_conlab is None:
-                print("Creating a temporary map of residue idxs to consensus labels.\n"
-                      "Please refer to the documentation for advantages of parsing an \n"
-                      "existing map as argument.")
-                kwargs["verbose"] = show_alignment
-                map_conlab = self.top2map(top, **kwargs)
-
-            conlab2residx = self.conlab2residx(top, map=map_conlab)
-            defs = _defdict(list)
-            for key, ifrag in self.fragments_as_conlabs.items():
-                for iBW in ifrag:
-                    if iBW in conlab2residx.keys():
-                        defs[key].append(conlab2residx[iBW])
-        """
-        defs = dict(defs)
         new_defs = {}
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
@@ -827,8 +792,6 @@ class LabelerConsensus(object):
                                return_string=True)
             if verbose:
                 print(istr)
-        if return_defs:
-            return {key:val for key, val in defs.items()}
 
         return dict(defs.items())
 
@@ -2046,12 +2009,11 @@ def compatible_consensus_fragments(top,
 
     new_frags = {}
     for iCL in CLs:
-        new_frags.update(iCL.top2defs(top,
-                                      map_conlab=unified_new_consensus_map,
-                                      return_defs=True,
-                                      verbose=False))
+        new_frags.update(iCL.top2frags(top,
+                                       #map_conlab=unified_new_consensus_map,
+                                       verbose=False))
 
-    # This should hold anyway bc of top2defs calling conlab2residx
+    # This should hold anyway bc of top2frags calling conlab2residx
     _mdcu.lists.assert_no_intersection(new_frags.values())
 
     return new_frags
