@@ -220,9 +220,14 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     Returns
     -------
-    iax : :obj:`matplotlib.Axis`
+    iax : :obj:`matplotlib.axes.Axes`
+        You can do iax.figure.savefig("figure.png") to
+        save the figure. Checkout
+        :obj:`matplotlib.figure.Figure.savefig` for more options
 
     plotted_pairs : 2D np.ndarray
+
+    plot_attribs : dict
     """
 
     if _np.ndim(freqs)==1:
