@@ -575,11 +575,12 @@ class Test_map2defs(unittest.TestCase):
 
 class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
 
-    def setUp(self):
-        super(Test_top2consensus_map,self).setUp()
-        self.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
-        self.top_mut = md.load(test_filenames.pdb_3SN6_mut).top
-        self.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
+    @classmethod
+    def setUpClass(cls):
+        super(Test_top2consensus_map,cls).setUp(cls)
+        cls.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
+        cls.top_mut = md.load(test_filenames.pdb_3SN6_mut).top
+        cls.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
 
     def test_top2consensus_map_just_works(self): #generally works
         cons_list = _top2consensus_map(AA2conlab_dict=self.cgn_local.AA2conlab,
@@ -649,22 +650,26 @@ class Test_fill_BW_gaps_old(unittest.TestCase):
 
 class Test_guess_by_nomenclature(unittest.TestCase):
 
-    def setUp(self):
-        self.BW_local_w_pdb = nomenclature.LabelerBW("adrb2_human",
-                                        ref_PDB="3SN6",
-                                        format="%s_full.xlsx",
-                                        local_path=test_filenames.test_data_path)
-        self.fragments = get_fragments(self.BW_local_w_pdb.top)
+    @classmethod
+    def setUpClass(cls):
+        BW_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
+
+        cls.BW_local_w_pdb = nomenclature.LabelerBW(BW_file,
+                                                    ref_PDB="3SN6",
+                                                    local_path=test_filenames.RSCB_pdb_path,
+                                                    format="%s",
+                                                    )
+        cls.fragments = get_fragments(cls.BW_local_w_pdb.top)
 
     def test_works_on_enter(self):
         import mock
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
-                                           self.BW_local_w_pdb.top,
-                                           self.fragments,
-                                                              "BW")
-            self.assertEqual(answer,"3")
+                                                        self.BW_local_w_pdb.top,
+                                                        self.fragments,
+                                                        "BW")
+            self.assertEqual(answer, "3")
 
     def test_works_return_answer_as_list(self):
         import mock
