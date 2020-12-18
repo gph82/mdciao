@@ -231,7 +231,7 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
                        verbose=False,
                        ):
     r""" Align two sequence-containing objects, i.e. strings and/or
-    :obj:`mdtraj.Topology` objects)
+    :obj:`mdtraj.Topology` objects
 
     Returns a :obj:`pandas.DataFrame`
 
@@ -311,16 +311,19 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
 
 def maptops(top0,
             top1,
+            allow_nonmatch=False,
             ):
-    r""" map matching residues via their serial indices
-    between topologies using a sequence alignment
-
-    Mis-matched positions and gaps are missing from the result
+    r""" map residues between topologies or sequences
+    via their serial indices a sequence alignment
 
     Parameters
     ----------
-    top0 : :obj:`md.Topology`
-    top1:  :obj:`md.Topology`
+    top0 : :obj:`md.Topology` or str
+    top1:  :obj:`md.Topology` or str
+    allow_nonmatch : bool, default is False
+        If true, non-matches of
+        equal length will be
+        considered matches
 
     Returns
     -------
@@ -333,7 +336,7 @@ def maptops(top0,
     df = align_tops_or_seqs(top0, top1,
                             return_DF=True)
 
-    return df2maps(df)
+    return df2maps(df,allow_nonmatch=allow_nonmatch)
 
 def df2maps(df, allow_nonmatch=True):
     r"""Map the columns "idx_0" and "idx_1" of an alignment
