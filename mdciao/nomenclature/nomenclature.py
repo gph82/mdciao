@@ -662,7 +662,7 @@ class LabelerConsensus(object):
            bc of a point mutation)
 
         A heuristic to "autofill" the second case can be
-        turned on using :obj:`test_top2defs_returns_all_keys`,
+        turned on using :obj:`autofill_consensus`,
         see :obj:`_fill_consensus_gaps`
         for more info
 
@@ -711,6 +711,7 @@ class LabelerConsensus(object):
                   show_alignment=False,
                   verbose=True,
                   min_hit_rate=.5,
+                  input_dataframe=None
                   ):
         r"""
         Return the subdomains derived from the
@@ -749,6 +750,13 @@ class LabelerConsensus(object):
         verbose : bool, default is True
             Also print the definitions
 
+        input_dataframe : :obj:`pandas.DataFrame`, default is None
+            Expert option, use at your own risk.
+            Instead of aligning :obj:`top` to
+            the object's sequence to derive
+            fragment definitions, input
+            an existing alignment here, e.g.
+            the self.most_recent_aligment
 
         Returns
         -------
@@ -757,15 +765,18 @@ class LabelerConsensus(object):
             and lists of indices as values
         """
 
-        # TODO to avoid aligning each time, one could provide the df
-        # as optarg
-        top2self, self2top, df = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment)
-        map_conlab = [self.idx2conlab[top2self[topidx]] if topidx in top2self.keys() else None for topidx in range(top.n_residues)]
+        if input_dataframe is None:
+            top2self, self2top = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment)
+        else:
+            top2self, self2top = _mdcu.sequence.df2maps(input_dataframe)
+
         frags =  self.fragments_as_idxs
         defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
         defs = {key:val for key, val in defs.items() if len(val)>0}
 
         new_defs = {}
+        map_conlab = [self.idx2conlab[top2self[topidx]] if topidx in top2self.keys() else None for topidx in range(top.n_residues)]
+
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
                 new_defs[key] = _mdcfrg.check_if_subfragment(res_idxs, key, fragments, top, map_conlab)
@@ -801,8 +812,6 @@ class LabelerConsensus(object):
                                                          _mdcfrg.get_fragments(top, verbose=False),
                                                          min_hit_rate=min_hit_rate,
                                                          return_residue_idxs=True, empty=None)
-        if restrict_idxs is None:
-            restrict_idxs = _np.arange(len(top))
 
         df = _mdcu.sequence.align_tops_or_seqs(top,
                                                self.seq,
