@@ -367,12 +367,19 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         with pytest.raises(ValueError):
             self.cgn_local.conlab2residx(self.cgn_local.top, map=map)
 
-    def test_top2map_just_passes(self):
+    def test_top2frags_just_passes(self):
         defs = self.cgn_local.top2frags(self.cgn_local.top)
         self.assertSequenceEqual(list(defs.keys()),
                                  _CGN_fragments)
 
-    def test_top2defs_defs_are_broken_in_frags(self):
+    def test_top2frags_gets_dataframe(self):
+        self.cgn_local.aligntop(self.cgn_local.top)
+        defs = self.cgn_local.top2frags(self.cgn_local.top,
+                                        input_dataframe=self.cgn_local.most_recent_alignment)
+        self.assertSequenceEqual(list(defs.keys()),
+                                 _CGN_fragments)
+
+    def test_top2frags_defs_are_broken_in_frags(self):
 
         input_values = (val for val in ["0-1"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
@@ -386,7 +393,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
                                      _CGN_fragments)
             _np.testing.assert_array_equal(defs["G.HN"],_np.arange(0,15))
 
-    def test_top2defs_defs_are_broken_in_frags_bad_input(self):
+    def test_top2frags_defs_are_broken_in_frags_bad_input(self):
         input_values = (val for val in ["0-2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
             with pytest.raises(ValueError):
