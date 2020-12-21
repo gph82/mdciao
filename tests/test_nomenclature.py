@@ -601,7 +601,7 @@ class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
     def test_top2consensus_map_keep_consensus_is_true(self):
         cons_list = _top2consensus_map(AA2conlab_dict=self.cgn_local.AA2conlab,
                                        top=self.top_mut,
-                                       guess_consensus=True)
+                                       autofill_consensus=True)
 
         self.assertEqual(cons_list[:5], self.cons_list_test)
 
@@ -799,7 +799,7 @@ class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
         reconstructed_defs = nomenclature.compatible_consensus_fragments(self.top,
                                                                          [incomplete_map],
                                                                          [self.cgn_local],
-                                                                         guess_consensus=False)
+                                                                         autofill_consensus=False)
 
         self.assertDictEqual(frag_defs, reconstructed_defs)
 

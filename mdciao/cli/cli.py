@@ -149,10 +149,10 @@ def _parse_consensus_option(option, consensus_type,
 
     if LC_out is not None:
         answer = _mdcnomenc.guess_by_nomenclature(LC_out, top, fragments, consensus_type,
-                                        return_str=False,
-                                        accept_guess=accept_guess,
-                                        #verbose=True
-                                        )
+                                                  return_str=False,
+                                                  accept_guess=accept_guess,
+                                                  # verbose=True
+                                                  )
         if answer is None:
             print("No fragments belonging to the nomenclature data\n"
                   " could be guessed based on your fragments, this might be a weird case")
@@ -164,7 +164,7 @@ def _parse_consensus_option(option, consensus_type,
                                  # because explicitely done it before with an option for
                                  # interactivity
                                  restrict_to_residxs=restrict_to_residxs,
-                                 guess_consensus=True,
+                                 autofill_consensus=True,
                              #    verbose=True,
                                  )
     if not return_Labeler:
@@ -478,7 +478,7 @@ def _fragment_overview(a,labtype):
     if a.topology is not None:
         top = _md.load(a.topology).top
         map_conlab = obj.top2map(top,
-                                 guess_consensus=a.fill_gaps)
+                                 autofill_consensus=a.fill_gaps)
         _mdcu.residue_and_atom.parse_and_list_AAs_input(a.AAs, top, map_conlab)
         if str(a.labels).lower() != "none":
             labels = [aa.strip(" ") for aa in a.labels.split(",")]
@@ -1504,8 +1504,9 @@ def interface(
             if len(consensus_labelers) > 0:
                 # This is because frag_defs could be missing a lot of stuff depending
                 # on user input, check the next method's doc
-                consensus_frags = _mdcnomenc.compatible_consensus_fragments(refgeom.top, consensus_maps,
-                                                                 consensus_labelers.values())
+                consensus_frags = _mdcnomenc.compatible_consensus_fragments(refgeom.top,
+                                                                            consensus_maps,
+                                                                            consensus_labelers.values())
 
                 flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(consensus_frags.values()),
                                                                           list(consensus_frags.keys()),

@@ -690,9 +690,12 @@ class LabelerConsensus(object):
         restrict_to_residxs: iterable of integers, default is None
             Use only these residues for alignment and labelling options.
             The return list will still be of length=top.n_residues
-        guess_consensus: boolean, default is False
-            Try to fill gaps in the consensus nomenclature by calling
-            :obj:`_fill_consensus_gaps`
+        autofill_consensus : boolean default is False
+            Even if there is a consensus mismatch with the sequence of the input
+            :obj:`AA2conlab_dict`, try to relabel automagically, s.t.
+            * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
+            will be grouped relabeled as
+            * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
 
         Returns
         -------
@@ -718,21 +721,9 @@ class LabelerConsensus(object):
         ----------
         top:
             :py:class:`mdtraj.Topology` object
-        map_conlab:  list, default is None
-            The user can parse an existing map of residue idxs to
-            consensus labels. Otherwise this
-            method will generate one on the fly using :obj:`self.top2map`,
-             for which the kwargs are thought.
-             It is recommended (but not needed) to pre-compute
-             and pass such a map cases where:
-            * the user is sure that the map is the same every time
-            the method gets called.
-            * the on-the-fly creation of the map slows down the workflow
-            * in critical cases when alignment is poor and
-            naming errors are likely
         fragments: iterable of integers, default is None
             The user can parse an existing list of fragment-definitions
-            (via residue idxs) to check if newly found, consensus
+            (via residue idxs) to check if the newly found, consensus
             definitions (:obj:`defs`) clash with the input in :obj:`fragments`.
             *Clash* means that the consensus definitions span over more
             than one of the fragments in defined in :obj:`fragments`.
@@ -742,23 +733,18 @@ class LabelerConsensus(object):
 
             Check :obj:`check_if_subfragment` for more info
 
-        fill_gaps: boolean, default is False
-            Try to fill gaps in the consensus nomenclature by calling
-            :obj:`_fill_consensus_gaps`. It has no effect if the user inputs
-            the map
-
         min_hit_rate : float, default is .5
-            If :obj:`map_conlab` is not provided, such a map will
-            be generated on the fly using the whole topology, i.e.
-            the whole sequence for an initial alignment.
-            With big topologies, the alignment method
+            With big topologies, like a receptor-Gprotein system,
+            the "brute-force" alignment method
             (check :obj:`mdciao.sequence.my_bioalign`)
-            sometimes yields sub-optimal results.
-            :obj:`min_hit_rate` = .5 means that
-             only the fragments (:obj:`mdciao.fragments.get_fragments` defaults)
-             with more than 50% alignment in the original alignment
-             are used for a second alignment to create a
-             better the on-the-fly :obj:`map_conlab`
+            sometimes yields sub-optimal results, e.g.
+            finding short snippets of reference sequence
+            that align in a completely wrong part of the topology.
+            To avoid this, an initial, exploratory alignment
+            is carried out. :obj:`min_hit_rate` = .5 means that
+            only the fragments (:obj:`mdciao.fragments.get_fragments` defaults)
+            with more than 50% alignment in this exploration
+            are used to improve the second alignment
 
         verbose : bool, default is True
             Also print the definitions
@@ -770,6 +756,7 @@ class LabelerConsensus(object):
             Dictionary with subdomain names as keys
             and lists of indices as values
         """
+
         # TODO to avoid aligning each time, one could provide the df
         # as optarg
         top2self, self2top, df = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment)
@@ -795,7 +782,9 @@ class LabelerConsensus(object):
 
         return dict(defs.items())
 
-    def aligntop(self, top, restrict_idxs=None, min_hit_rate=0,
+    def aligntop(self, top,
+                 restrict_idxs=None,
+                 min_hit_rate=0,
                  verbose=False,):
         r""" Align a topology with the object's sequence.
         Wraps around :obj:`mdciao.sequence.maptops`
@@ -1088,7 +1077,7 @@ def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=Fal
 def _top2consensus_map(AA2conlab_dict, top,
                        min_hit_rate=.5,
                        restrict_to_residxs=None,
-                       guess_consensus=False,
+                       autofill_consensus=False,
                        verbose=False,
                        ):
     r"""
@@ -1127,7 +1116,7 @@ def _top2consensus_map(AA2conlab_dict, top,
         passing an Ballesteros-Weinstein in :obj:`AA2conlab_dict` but
         the topology also contains the whole G-protein. If available,
         one can pass here the indices of residues of the receptor
-    guess_consensus : boolean default is False
+    autofill_consensus : boolean default is False
         Even if there is a consensus mismatch with the sequence of the input
         :obj:`AA2conlab_dict`, try to relabel automagically, s.t.
         * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
@@ -1145,7 +1134,7 @@ def _top2consensus_map(AA2conlab_dict, top,
 
     seq_consensus= ''.join([_mdcu.residue_and_atom.name_from_AA(key) for key in AA2conlab_dict.keys()])
 
-    if min_hit_rate>0:
+    if min_hit_rate > 0:
         assert restrict_to_residxs is None
         frags = _mdcfrg.get_fragments(top, verbose=False)
         restrict_to_residxs = guess_nomenclature_fragments(seq_consensus, top, min_hit_rate=min_hit_rate, fragments=frags,
@@ -1169,7 +1158,7 @@ def _top2consensus_map(AA2conlab_dict, top,
     out_list = out_list+[None for __ in range(top.n_residues-len(out_list))]
     # TODO we could do this padding in the alignment_df2_conslist method itself
     # with an n_residues optarg, IDK about best design choice
-    if guess_consensus:
+    if autofill_consensus:
         out_list = _fill_consensus_gaps(out_list, top, verbose=False)
     return out_list
 
@@ -1940,7 +1929,7 @@ _CGN_fragments = ['G.HN',
 def compatible_consensus_fragments(top,
                                    existing_consensus_maps,
                                    CLs,
-                                   guess_consensus=True):
+                                   autofill_consensus=True):
     r"""
     Expand (if possible) a list existing consensus maps using
     :obj:`mdciao.nomenclature.LabelerConsensus` objects
@@ -1991,7 +1980,7 @@ def compatible_consensus_fragments(top,
                                       for idx in range(top.n_residues)]
 
     # Same here
-    new_maps = [iCL.top2map(top, guess_consensus=guess_consensus, verbose=False) for iCL in CLs]
+    new_maps = [iCL.top2map(top, autofill_consensus=autofill_consensus, verbose=False) for iCL in CLs]
     unified_new_consensus_map = [choose_between_consensus_dicts(idx,new_maps,no_key=None) for idx in range(top.n_residues)]
 
     # Now incorporate new labels while checking with clashes with old ones
