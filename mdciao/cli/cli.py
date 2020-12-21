@@ -145,7 +145,6 @@ def _parse_consensus_option(option, consensus_type,
     #todo add a class check here instead of failing later on
     else:
         LC_out = option
-        #print("The transformer was provided already")
 
     if LC_out is not None:
         answer = _mdcnomenc.guess_by_nomenclature(LC_out, top, fragments, consensus_type,
@@ -191,7 +190,7 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
             if verbose:
                 print("These are the %s fragments mapped onto your topology:"%key)
                 fragment_defs.update(CL.top2frags(top,
-                                                  #map_conlab=map_CL,
+                                                  input_dataframe=CL.most_recent_alignment,
                                                   fragments=fragments_as_residue_idxs,
                                                   verbose=verbose))
             if not accept_guess:
