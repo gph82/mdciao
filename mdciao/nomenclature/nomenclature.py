@@ -790,7 +790,9 @@ class LabelerConsensus(object):
         Wraps around :obj:`mdciao.sequence.maptops`
 
         The indices of self are indices (row-indices) of the original dataframe,
-        which are the the ones in :obj:`ConsensusLabelers.seq`"""
+        which are the the ones in :obj:`ConsensusLabelers.seq`
+
+        Populates self.most_recent_alignment"""
 
         if min_hit_rate > 0:
             assert restrict_idxs is None
@@ -808,7 +810,18 @@ class LabelerConsensus(object):
                                                return_DF=True,
                                                verbose=verbose)
         top2self, self2top = _mdcu.sequence.df2maps(df)
-        return top2self, self2top, df
+
+        self._last_alignment_df = df
+
+        return top2self, self2top
+
+    @property
+    def most_recent_alignment(self):
+        try:
+            return self._last_alignment_df
+        except AttributeError:
+            print("No alignment has been carried out with this object yet")
+            return None
 
 class LabelerCGN(LabelerConsensus):
     """

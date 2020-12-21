@@ -411,10 +411,10 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     # These tests only test it runs, not that the alignment is correct
     #  those checks are done in sequence tests
     def test_aligntop_with_self(self):
-        top2self, self2top, df = self.cgn_local.aligntop(self.cgn_local.seq)
+        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq)
         self.assertDictEqual(top2self,self2top)
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top, df = self.cgn_local.aligntop(self.cgn_local.seq, restrict_idxs=[2,3])
+        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq, restrict_idxs=[2,3])
         self.assertDictEqual(top2self,self2top)
         self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
@@ -508,10 +508,11 @@ class TestLabelerBW_local(unittest.TestCase):
     # These tests only test it runs, not that the alignment is correct
     #  those checks are done in sequence tests
     def test_aligntop_with_self(self):
-        top2self, self2top, df = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq)
+        top2self, self2top = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq)
         self.assertDictEqual(top2self,self2top)
+        self.assertIsInstance(self.BW_local_w_pdb.most_recent_alignment,DataFrame)
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top, df = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq, restrict_idxs=[2,3])
+        top2self, self2top = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq, restrict_idxs=[2,3])
         self.assertDictEqual(top2self,self2top)
         self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
