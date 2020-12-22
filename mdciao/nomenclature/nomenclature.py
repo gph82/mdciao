@@ -1827,6 +1827,7 @@ _CGN_fragments = ['G.HN',
                  'G.s6h5',
                  'G.H5']
 
+# TODO this method is not used anywhere anymore, consider deleting
 def compatible_consensus_fragments(top,
                                    existing_consensus_maps,
                                    CLs,
