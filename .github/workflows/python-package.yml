@@ -50,7 +50,8 @@ jobs:
     # if: runner.os == 'macOs'
     - name: Test with pytest and coverage Linux 8 threads
       run: |
-        pytest -n 8 -vs --cov=./ --cov-report=xml --disable-warnings 
+        echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
+        pytest -n 8 -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
