@@ -664,6 +664,20 @@ class Test_splice_fragments(unittest.TestCase):
                                                   [9,10,11],
                                                   [12,13,14]])
 
+    def test_use_existing_frags(self):
+        fragments = [[0, 1, 2, 3],
+                     #[4, 5, 6, 7],
+                     [8, 9, 10]]
+        fragnames = ["A", "C"]
+        newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames,
+                                                                  other_fragments={"ex1":[4, 5]})
+
+        _np.testing.assert_array_equal(newfrags, [[0, 1, 2, 3],
+                                                  [4, 5],
+                                                  [6, 7],
+                                                  [8, 9, 10],
+                                                 ])
+        _np.testing.assert_array_equal(newnames, ["A", "ex1", "?", "C"])
 
 
 if __name__ == '__main__':
