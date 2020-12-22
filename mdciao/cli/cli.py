@@ -1500,16 +1500,11 @@ def interface(
         if flareplot:
             flare_frags, flare_labs = fragments_as_residue_idxs, fragment_names # Not sure about what's best here
             if len(consensus_labelers) > 0:
-                # This is because frag_defs could be missing a lot of stuff depending
-                # on user input, check the next method's doc
-                consensus_frags = _mdcnomenc.compatible_consensus_fragments(refgeom.top,
-                                                                            consensus_maps,
-                                                                            consensus_labelers.values())
-
                 flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(consensus_frags.values()),
                                                                           list(consensus_frags.keys()),
                                                                           highest_res_idx=refgeom.top.n_residues - 1,
-                                                                          orphan_name=""
+                                                                          orphan_name="",
+                                                                          other_fragments={fn:ifrag for fn, ifrag in zip(fragment_names, fragments_as_residue_idxs)}
                                                                           )
             if sparse_flare_frags:
                 idxs = [ii for ii, ff in enumerate(flare_frags) if len(_np.intersect1d(_np.hstack(intf_frags_as_residxs), ff))>0]
