@@ -317,7 +317,7 @@ def col_list_from_input_and_fragments(colors,
         if colors:
             to_tile = _mycolors
         else:
-            to_tile = default_color
+            to_tile = [default_color]
         jcolors = _np.tile(to_tile, _np.ceil(len(residxs_as_fragments) / len(to_tile)).astype("int"))
         col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
     elif isinstance(colors, str):

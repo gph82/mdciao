@@ -124,7 +124,7 @@ class TestColors(TestCase):
 
     def test_works_False(self):
         colorlist = _utils.col_list_from_input_and_fragments(False, self.fragments)
-        np.testing.assert_array_equal(["tab:blue"] * 6, colorlist)
+        np.testing.assert_array_equal(["gray"] * 6, colorlist)
 
     def test_works_True(self):
         colorlist = _utils.col_list_from_input_and_fragments(True, self.fragments)
@@ -155,7 +155,7 @@ class TestColors(TestCase):
 
     def test_works_one_frag(self):
         colorlist = _utils.col_list_from_input_and_fragments(False, [0, 1, 2])
-        np.testing.assert_array_equal(["tab:blue"] * 3, colorlist)
+        np.testing.assert_array_equal(["gray"] * 3, colorlist)
 
 class TestLambaCurve(TestCase):
 
