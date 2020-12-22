@@ -23,7 +23,7 @@
 import numpy as _np
 from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
-from mdciao.utils.lists import assert_no_intersection as _no_intersect
+from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp as _re_warp
 
 _mycolors = _colorstring.split(",")
 
@@ -442,10 +442,10 @@ def should_this_residue_pair_get_a_curve(
     return lambda_out
 
 def add_fragment_labels(fragments,
-                        iax,
-                        xy,
                         fragment_names,
-                        residx2xyidx,
+                        iax,
+                        angle_offset=0,
+                        padding=[0,0,0],
                         fontsize=5,
                         center=[0,0],
                         r=1.0):
@@ -459,9 +459,16 @@ def add_fragment_labels(fragments,
     Parameters
     ----------
     fragments : iterable if iterables of ints
-    iax : :obj:`matplotlib.Axes`
-    xy : iterable of (x,y) tuples
     fragment_names  :iterable of strs, len(fragments)
+    iax : :obj:`~matplotlib.axes.Axes`
+    angle_offset : scalar
+        Where the circle starts, in degrees. 0 means 3 o'clock,
+        90 12 o'clock etc. It's the phi of polar coordinates
+    padding : list, default is [0,0,0]
+        * first integer : Put this many empty positions before the first dot
+        * second integer: Put this many empty positions between fragments
+        * third integer : Put this many empty positions after the last dot
+    center : pair of floats
     residx2xyidx : np.ndarray
         map to use idxs of :obj:`fragments` on :obj:`xy`,
         since almost always these will never coincide
@@ -474,10 +481,15 @@ def add_fragment_labels(fragments,
     fragment_labels : list of the :obj:`matplotlib.text.Text` objects
 
     """
-    _xy = _np.array(xy)
+    _xy = cartify_fragments(fragments,
+                            r=r,
+                            angle_offset=angle_offset,
+                            padding=padding)
+    _xy += center
     fragment_labels = []
-    for seg_idxs, iname in zip(fragments, fragment_names):
-        xseg, yseg = _xy[residx2xyidx[seg_idxs]].mean(0) - center
+    residx2xyidx = _re_warp(_np.arange(len(_np.hstack(fragments))), [len(ifrag) for ifrag in fragments])
+    for seg_idxs, iname in zip(residx2xyidx, fragment_names):
+        xseg, yseg = _xy[seg_idxs].mean(0) - center
         rho, phi = cart2pol(xseg, yseg)
         xseg, yseg = pol2cart(r , phi) + _np.array(center)
 

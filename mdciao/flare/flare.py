@@ -567,9 +567,12 @@ def circle_plot_residues(fragments,
         frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of panel space)
         frag_fontsize_in_pts = frag_fontsize_in_aus * _points2dataunits(iax).mean()
         frag_labels = _futils.add_fragment_labels(fragments,
-                                                  iax, xy,
-                                                  fragment_names,
-                                                  residx2markeridx,
+                                                  [replace4latex(ifrag) for ifrag in fragment_names],
+                                                  iax,
+                                                  angle_offset=angle_offset,
+                                                  padding=padding,
+                                                  #xy,
+                                                  #residx2markeridx,
                                                   fontsize=frag_fontsize_in_pts,
                                                   center=center,
                                                   r=r + running_r_pad
@@ -585,9 +588,11 @@ def circle_plot_residues(fragments,
             [fl.remove() for fl in frag_labels]
             running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
             frag_labels = _futils.add_fragment_labels(fragments,
-                                                      iax, xy,
                                                       [replace4latex(ifrag) for ifrag in fragment_names],
-                                                      residx2markeridx,
+                                                      iax, #xy,
+                                                      #residx2markeridx,
+                                                      angle_offset=angle_offset,
+                                                      padding=padding,
                                                       fontsize=frag_fontsize_in_pts,
                                                       center=center,
                                                       r=r + running_r_pad

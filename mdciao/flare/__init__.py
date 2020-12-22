@@ -41,6 +41,8 @@ Note
    freqs2flare
    circle_plot_residues
    add_bezier_curves
+   add_fragment_labels
 
 """
 from .flare import freqs2flare, circle_plot_residues, add_bezier_curves
+from ._utils import add_fragment_labels

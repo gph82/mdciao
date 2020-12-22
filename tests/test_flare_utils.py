@@ -7,6 +7,7 @@ from mdciao.plots.plots import _colorstring
 from mdciao.filenames import filenames
 import mdtraj as md
 from matplotlib import pyplot as plt
+from mdciao.flare import circle_plot_residues
 
 
 filenames = filenames()
@@ -296,21 +297,18 @@ class TestFragmentLabels(TestCase):
         iax.set_aspect("equal")
         iax.set_xlim([-1, 1])
         iax.set_ylim([-1, 1])
-        fragments = [[10,20],[30,40]]
-        xy = [[1, 0],
-              [0, -1],
-              [-1, 0],
-              [0, 1]]
-        _utils.add_residue_labels(iax,
-                                  xy,
-                                  [10,20,30,40],
-                                  10)
+        fragments = [np.arange(10),np.arange(10,20)]
+        _, _, plattrb = circle_plot_residues(fragments,
+                             iax=iax,
+                             padding=[0,0,0])
 
-        _utils.add_fragment_labels(fragments, iax, xy, ["frag_10_20", "frag_30_40"],
-                                   _utils.value2position_map([10,20,30,40]))
+        _utils.add_fragment_labels(fragments, ["frag_10_20", "frag_30_40"],
+                                   iax,
+                                   r=plattrb["r"])
         ifig = plt.gcf()
         ifig.tight_layout()
-        plt.savefig('test.png',bbox_inches="tight")
+        #plt.savefig('test.png',bbox_inches="tight")
+        plt.close("all")
 
     def _test_works_options(self):
         top = md.load(filenames.actor_pdb).top
