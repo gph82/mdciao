@@ -57,12 +57,14 @@ import numpy as _np
 
 class TestCLTBaseClass(unittest.TestCase):
 
-    def setUp(self):
-        self.geom = md.load(test_filenames.top_pdb)
-        self.traj = md.load(test_filenames.traj_xtc, top=self.geom.top)
-        self.traj_reverse = md.load(test_filenames.traj_xtc, top=self.geom.top)[::-1]
+    @classmethod
+    def setUpClass(cls):
+        cls.geom = md.load(test_filenames.top_pdb)
+        cls.traj = md.load(test_filenames.traj_xtc, top=cls.geom.top)
+        cls.traj_reverse = md.load(test_filenames.traj_xtc, top=cls.geom.top)[::-1]
 
 class Test_manage_timdep_plot_options(TestCLTBaseClass):
+
 
     def setUp(self):
         super(Test_manage_timdep_plot_options, self).setUp()
