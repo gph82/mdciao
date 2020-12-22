@@ -65,25 +65,25 @@ class TestCLTBaseClass(unittest.TestCase):
 
 class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
-
-    def setUp(self):
-        super(Test_manage_timdep_plot_options, self).setUp()
-        ctc_idxs = [[353,348],
-                    [353,972],
-                    [353,347]]
+    @classmethod
+    def setUpClass(cls):
+        super(Test_manage_timdep_plot_options, cls).setUpClass()
+        ctc_idxs = [[353, 348],
+                    [353, 972],
+                    [353, 347]]
         CPs = [contacts.ContactPair(pair,
-                           [md.compute_contacts(itraj, [pair])[0].squeeze() for itraj in
-                            [self.traj,
-                             self.traj_reverse[:10]]],
-                           [self.traj.time,
-                            self.traj_reverse.time[:10]],
-                           top=self.geom.top,
-                           anchor_residue_idx=353)
+                                    [md.compute_contacts(itraj, [pair])[0].squeeze() for itraj in
+                                     [cls.traj,
+                                      cls.traj_reverse[:10]]],
+                                    [cls.traj.time,
+                                     cls.traj_reverse.time[:10]],
+                                    top=cls.geom.top,
+                                    anchor_residue_idx=353)
                for pair in ctc_idxs]
 
-        self.ctc_grp = contacts.ContactGroup(CPs,
-                                    top=self.geom.top,
-                                    )
+        cls.ctc_grp = contacts.ContactGroup(CPs,
+                                            top=cls.geom.top,
+                                            )
 
     """
     1:     0.55   LEU394-ARG389       0-0         353-348        33     0.55
@@ -489,8 +489,9 @@ class Test_interface(TestCLTBaseClass):
 
 class Test_parse_consensus_option(unittest.TestCase):
 
-    def setUp(self):
-        self.geom = md.load(test_filenames.top_pdb)
+    @classmethod
+    def setUpClass(cls):
+        cls.geom = md.load(test_filenames.top_pdb)
 
     def test_empty(self):
         residx2conlab= cli._parse_consensus_option(None, None, self.geom.top,
