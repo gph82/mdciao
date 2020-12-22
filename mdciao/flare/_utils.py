@@ -451,7 +451,7 @@ def add_fragment_labels(fragments,
                         center=[0,0],
                         r=1.0):
     r"""
-    Add fragment names to a flareplot
+    Add fragment labels to a flareplot
 
     Very similar to :obj:`add_residue_labels` but does not
     "radiate" the labels, it puts them in the angular
@@ -462,24 +462,21 @@ def add_fragment_labels(fragments,
     fragments : iterable if iterables of ints
     fragment_names  :iterable of strs, len(fragments)
     iax : :obj:`~matplotlib.axes.Axes`
-    angle_offset : scalar
+    angle_offset : scalar, scalar default is 0
         Where the circle starts, in degrees. 0 means 3 o'clock,
         90 12 o'clock etc. It's the phi of polar coordinates
     padding : list, default is [0,0,0]
         * first integer : Put this many empty positions before the first dot
         * second integer: Put this many empty positions between fragments
         * third integer : Put this many empty positions after the last dot
-    center : pair of floats
-    residx2xyidx : np.ndarray
-        map to use idxs of :obj:`fragments` on :obj:`xy`,
-        since almost always these will never coincide
     center : pair for floats, default is (0,0)
         The center of the flareplot
-
+    r : scalar, default is 1
+        The radius at which the labes will be put
 
     Returns
     -------
-    fragment_labels : list of the :obj:`matplotlib.text.Text` objects
+    fragment_labels : list of the :obj:`~matplotlib.text.Text` objects
 
     """
     _xy = cartify_fragments(fragments,
