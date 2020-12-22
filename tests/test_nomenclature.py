@@ -17,8 +17,8 @@ from mdciao.nomenclature.nomenclature import \
     _CGN_fragments, \
     _BW_web_lookup, \
     _fill_consensus_gaps, \
-    _map2defs,\
-    _top2consensus_map
+    _map2defs
+    #_top2consensus_map
 #TODO make these imports cleaner
 from mdciao.filenames import filenames
 
@@ -421,7 +421,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq)
         self.assertDictEqual(top2self,self2top)
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq, restrict_idxs=[2,3])
+        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq, restrict_to_residxs=[2, 3])
         self.assertDictEqual(top2self,self2top)
         self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
@@ -519,7 +519,7 @@ class TestLabelerBW_local(unittest.TestCase):
         self.assertDictEqual(top2self,self2top)
         self.assertIsInstance(self.BW_local_w_pdb.most_recent_alignment,DataFrame)
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq, restrict_idxs=[2,3])
+        top2self, self2top = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq, restrict_to_residxs=[2, 3])
         self.assertDictEqual(top2self,self2top)
         self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
@@ -575,6 +575,7 @@ class Test_map2defs(unittest.TestCase):
         with pytest.raises(AssertionError):
             _map2defs(self.cons_list_wo_dots)
 
+@unittest.skip("top2consensus will be deprecated soon")
 class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
 
     @classmethod
@@ -794,10 +795,14 @@ class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 
     def test_works(self):
         # Obtain the full objects first
-        full_map = self.cgn_local.top2map(self.top,
-                                          verbose=False)
+        full_map = self.cgn_local.top2labels(self.top,
+                                             autofill_consensus=True,
+                                             #verbose=True
+                                             )
+
         frag_defs = self.cgn_local.top2frags(self.top,
                                              verbose=False,
+                                             #show_alignment=True,
                                              #map_conlab=full_map
                                              )
         idxs_to_restrict_to = frag_defs["G.H5"]
@@ -826,27 +831,33 @@ class Test_alignment_df2_conslist(unittest.TestCase):
              "idx_1": 0,
              "match": True,
              "AA_0": "GLU",
-             "AA_1": "GLU"},
+             "AA_1": "GLU",
+             "conlab":"3.50",
+             },
             {"idx_0": 1,
              "idx_1": 1,
              "match": False,
              "AA_0": "LYS",
-             "AA_1": "ARG"},
+             "AA_1": "ARG",
+             "conlab": "3.51",
+             },
             {"idx_0": 2,
              "idx_1": 2,
              "match": True,
              "AA_0": "PHE",
-             "AA_1": "PHE"},
+             "AA_1": "PHE",
+             "conlab":"3.52",
+             },
         ]
         cls.df  = DataFrame(cls.list_of_dicts)
-        cls.consensus_dict = {"GLU0": "3.50",
-                              "ARG1": "3.51",
-                              "PHE2": "3.52"}
+        #cls.consensus_dict = {"GLU0": "3.50",
+        #                      "ARG1": "3.51",
+        #                      "PHE2": "3.52"}
 
     def test_works(self):
-        out_list = nomenclature.alignment_df2_conslist(self.df, self.consensus_dict)
+        out_list = nomenclature.alignment_df2_conslist(self.df)
         self.assertListEqual(out_list, ["3.50", None, "3.52"])
 
     def test_works_nonmatch(self):
-        out_list = nomenclature.alignment_df2_conslist(self.df, self.consensus_dict, allow_nonmatch=True)
+        out_list = nomenclature.alignment_df2_conslist(self.df, allow_nonmatch=True)
         self.assertListEqual(out_list, ["3.50", "3.51", "3.52"])

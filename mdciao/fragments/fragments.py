@@ -533,6 +533,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     """
     user_wants_consensus = False
     assert isinstance(fragment_input,list)
+    #TODO the following line is untested, the usecase not mentioned in the docs...?
     if len(fragment_input)==1 and isinstance(fragment_input[0],str) and " " in fragment_input[0]:
         fragment_input = fragment_input[0].split(" ")
     #if len(fragment_input)==1 and isinstance(fragment_input[0],str) and "," in fragment_input[0]:
