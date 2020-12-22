@@ -121,7 +121,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         :obj:`mdciao.contacts.ContactGroup.res_idxs_pairs`
     fragments: list of lists of integers, default is None
         The residue indices to be drawn as a circle for the
-        flareplot. These dots that will be plotted
+        flareplot. These are the dots that will be plotted
         on that circle regardless of how many contacts they
         appear in. They can be any integers that could represent
         a residue. The only hard condition is that the set
@@ -132,11 +132,16 @@ def freqs2flare(freqs, res_idxs_pairs,
         these many residues. If no :obj:`top` is passed, the
         neighborhood-condition is checked using residue
         serial-numbers, assuming the molecule only has one long peptidic-chain.
-    freq_cutoff: float, default is 0
+    freq_cutoff : float, default is 0
         Contact frequencies lower than this value will not be shown
-    iax: :obj:`matplotlib.Axes`, default is None
+    iax : :obj:`~matplotlib.axes.Axes`, default is None
         Parse an axis to draw on, otherwise one will be created
-        using :obj:`panelsize`
+        using :obj:`panelsize`. In case you want to
+        re-use the same cirlce of residues as a
+        background to plot different sets
+        of :obj:`freqs`, **YOU HAVE TO USE THE SAME**
+        :obj:`fragments` **on all calls**, else the
+        bezier lines will be placed erroneously.
     fragment_names: iterable of strings, default is None
         The names of the fragments used in :obj:`fragments`
     panelsize: float, default is 10
@@ -165,7 +170,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         **not** be shown, i.e. it is the complementary
          of :obj:`mute_fragments`. Both cannot be passed
          simulataneously.
-    top: :md:`Topology object, default is None
+    top: :obj:`~mdtraj.Topology` object, default is None
         If provided a top, residue names (e.g. GLU30) will be used
         instead of residue indices. Will fail if the residue indices
         in :obj:`res_idxs_pairs` can not be used to call :obj:`top.residue(ii)`
@@ -181,12 +186,12 @@ def freqs2flare(freqs, res_idxs_pairs,
     select_residxs : iterable of ints, default is None
         Only the residues here can be connected with a Bezier curve
     colors: boolean, default is True
-        Color control.
-        * True uses one different color per segment (see visualize._mycolors)
-        * False, defaults to blue. If a single string is given
-        * One string uses that color for all residues (e.g. "r" or "red" for all red)
-        * A list of strings of len = number of drawn residues, which is
-        equal to len(np.hstack(fragments)). Any other length will produce an error
+        Color control. Can take different inputs
+         * True: use one different color per segment
+         * False: defaults to gray.
+         * str or char: use that color for all residues (e.g. "r" or "red")
+         * A list of strings of len = number of drawn residues, which is
+           equal to len(np.hstack(fragments)). Any other length will produce an error
     fontsize: int, default is None
     lw: float, default is None
         Line width of the contact lines
@@ -220,14 +225,20 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     Returns
     -------
-    iax : :obj:`matplotlib.axes.Axes`
+    iax : :obj:`~matplotlib.axes.Axes`
         You can do iax.figure.savefig("figure.png") to
         save the figure. Checkout
-        :obj:`matplotlib.figure.Figure.savefig` for more options
+        :obj:`~matplotlib.figure.Figure.savefig` for more options
 
     plotted_pairs : 2D np.ndarray
 
     plot_attribs : dict
+        Objects of the plot if the user wants
+        to manipulate them further or re-use
+        some attributes:
+        "bezier_lw", "bezier_curves",
+        "fragment_labels", "dot_labels",
+        "dots", "SS_labels"
     """
 
     if _np.ndim(freqs)==1:
@@ -357,7 +368,7 @@ def circle_plot_residues(fragments,
         indices are on :obj:`fragments`
     fragment_names : list
         The names of the fragments
-    iax : :obj:`matplotlib.Axis`, default is None
+    iax : :obj:`~matplotlib.axes.Axes`, default is None
         An axis to draw the dots on. It's parent
         figure has to have a tight_layout=True
         attribute. If no axis is passed,
@@ -396,7 +407,10 @@ def circle_plot_residues(fragments,
     iax, xy, outdict
 
     outdict: dict
-         Contains :obj:`matplotlib` objects (the dots and their labels)
+         Contains :obj:`matplotlib` objects
+         like the dots and their labels:
+         "fragment_labels", "dot_labels",
+         "dots", "SS_labels", "r",
     """
     debug = False
 
@@ -609,7 +623,8 @@ def circle_plot_residues(fragments,
     return iax, xy, {"fragment_labels":frag_labels,
                      "dot_labels":labels,
                      "dots":CPs,
-                     "SS_labels":ss_labels}
+                     "SS_labels":ss_labels,
+                     "r": r+running_r_pad}
 
 
 def add_bezier_curves(iax,
@@ -626,7 +641,7 @@ def add_bezier_curves(iax,
 
     Parameters
     ----------
-    iax : :obj:`matplotlib.Axes`
+    iax : :obj:`~matplotlib.axes.Axes`
     nodepairs_xy : iterable of pairs of pairs of floats
         Each item is a pair of pairs [(x1,y1),(x2,y2)]
         to be connected with bezier curves 1<--->2
@@ -702,13 +717,24 @@ def add_fragmented_residue_labels(fragments,
 
     Parameters
     ----------
-    fragments
-    iax
-    fontsize
-    center
-    r
-    angle_offset
-    padding
+    fragments : iterable of iterables
+        List of iterables of residue idxs defining how the
+        residues are split into fragments. If no
+        :obj:`textlabels` are provided, the idxs
+        themselves become the labels
+    iax : :obj:`~matplotlib.axes.Axes`
+    fontsize : int
+    r : scalar
+        The radius of the circle, in axis inuts
+    angle_offset : scalar
+        Where the circle starts, in degrees. 0 means 3 o'clock,
+        90 12 o'clock etc. It's the phi of polar coordinates
+    padding : list, default is [1,1,1]
+        * first integer : Put this many empty positions before the first dot
+        * second integer: Put this many empty positions between fragments
+        * third integer : Put this many empty positions after the last dot
+    center : pair of floats
+        where the circle is centered, in axis units
     add_res_labs_kwargs
 
     Returns

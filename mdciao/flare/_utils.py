@@ -771,7 +771,7 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse=False, fragments=None):
         _no_intersect(fragments, word="fragments")
         assert set(res_idxs).issubset(_np.hstack(fragments)), \
             "The input fragments do not contain all residues residx_array, " \
-            "their set difference is %s" % (set(res_idxs).difference(_np.hstack(fragments)))
+            "their set difference is %s" % sorted(set(res_idxs).difference(_np.hstack(fragments)))
         if isinstance(sparse,bool):
             if sparse:
                 residues_as_fragments = [_np.intersect1d(ifrag,res_idxs) for ifrag in fragments]

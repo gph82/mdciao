@@ -318,8 +318,8 @@ def maptops(top0,
 
     Parameters
     ----------
-    top0 : :obj:`md.Topology` or str
-    top1:  :obj:`md.Topology` or str
+    top0 : :obj:`~mdtraj.Topology` or str
+    top1:  :obj:`~mdtraj.Topology` or str
     allow_nonmatch : bool, default is False
         If true, non-matches of
         equal length will be

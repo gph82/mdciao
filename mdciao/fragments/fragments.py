@@ -43,7 +43,7 @@ def print_fragments(fragments, top, **print_frag_kwargs):
     ----------
     fragments : dict or list
         Iterable with the sets of residue indexes
-    top : :obj:`md.Topology`
+    top : :obj:`~mdtraj.Topology`
     print_frag_kwargs : opt, keyword args for :obj:`print_frag`
 
     Returns
