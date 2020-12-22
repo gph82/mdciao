@@ -94,9 +94,7 @@ def create_flare_bezier_2(nodes,
     nodes = _np.vstack((_np.array((nodes[0], center, nodes[1]),dtype="float")))
     return my_BZCURVE(nodes.T, degree=2)
 
-#TODO rename circle?
-#TODO rename offset->start
-def regspace_angles(npoints, circle=360, offset=0, clockwise=True):
+def regspace_angles(npoints, circle=360, clockwise=True):
     r"""Return the angular values for spreading n points equidistantly in a circle
 
     Note
@@ -113,8 +111,6 @@ def regspace_angles(npoints, circle=360, offset=0, clockwise=True):
         number of points
     circle : float, default is 360
         size of the circle in degrees
-    offset : float, default is 0
-        Where the circle is supposed to start
     clockwise : boolean, default is True
         In which direction the angle array grows.
 
@@ -129,7 +125,7 @@ def regspace_angles(npoints, circle=360, offset=0, clockwise=True):
         fac=-1
     else:
         fac=1
-    angles = _np.hstack([fac*(ii * dang)+offset for ii in range(npoints)])
+    angles = _np.hstack([fac*(ii * dang) for ii in range(npoints)])
     return angles
 
 def fragment_selection_parser(fragments,
@@ -211,8 +207,7 @@ def cartify_fragments(fragments,
     spaced_segments = _np.hstack(padded_fragment_list)
     spaced_angles = regspace_angles(len(spaced_segments),
                                     circle=2 * _np.pi,
-                                    offset=angle_offset * _np.pi / 180
-                                    )
+                                    )+angle_offset * _np.pi / 180
     angles = _np.hstack([spaced_angles[ii] for ii, idx in enumerate(spaced_segments) if idx is not None])
     xy = pol2cart(_np.ones_like(angles) * r, angles)
 

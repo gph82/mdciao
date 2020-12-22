@@ -25,15 +25,6 @@ class TestAngulateSegments(TestCase):
         np.testing.assert_array_equal(angles,
                                       [0, 36, 72, 108, 144, 180, 216, 252, 288, 324])
 
-    @skip("Not sure offset means")
-    def test_offset(self):
-        angles = _utils.regspace_angles(10, circle=360,
-                                       offset=45)
-
-
-        print(angles)
-        raise NotImplementedError
-
 
 class TestFragmentSelectionParser(TestCase):
 
