@@ -575,46 +575,6 @@ class Test_map2defs(unittest.TestCase):
         with pytest.raises(AssertionError):
             _map2defs(self.cons_list_wo_dots)
 
-@unittest.skip("top2consensus will be deprecated soon")
-class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
-
-    @classmethod
-    def setUpClass(cls):
-        super(Test_top2consensus_map,cls).setUp(cls)
-        cls.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
-        cls.top_mut = md.load(test_filenames.pdb_3SN6_mut).top
-        cls.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
-
-    def test_top2consensus_map_just_works(self): #generally works
-        cons_list = _top2consensus_map(AA2conlab_dict=self.cgn_local.AA2conlab,
-                                       top=self.top_3SN6)
-
-        self.assertEqual(cons_list[:5], self.cons_list_test)
-
-    def test_top2consensus_map_just_wo_min_hit(self):
-        cons_list = _top2consensus_map(AA2conlab_dict=self.cgn_local.AA2conlab,
-                                       top=self.top_3SN6,
-                                       min_hit_rate=0)
-
-        self.assertEqual(cons_list[:5], self.cons_list_test)
-
-    def test_top2consensus_map_just_w_no_hits(self):
-        cons_list = _top2consensus_map(AA2conlab_dict=self.cgn_local.AA2conlab,
-                                       top=self.top_3SN6,
-                                       min_hit_rate=2)
-
-        self.assertEqual(cons_list[:5], self.cons_list_test)
-
-
-
-    def test_top2consensus_map_keep_consensus_is_true(self):
-        cons_list = _top2consensus_map(AA2conlab_dict=self.cgn_local.AA2conlab,
-                                       top=self.top_mut,
-                                       autofill_consensus=True)
-
-        self.assertEqual(cons_list[:5], self.cons_list_test)
-
-
 class Test_fill_CGN_gaps(unittest.TestCase):
     def setUp(self):
         self.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
