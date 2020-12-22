@@ -669,14 +669,6 @@ class Test_fragment_overview(unittest.TestCase):
         a.__setattr__("topology",test_filenames.pdb_3SN6)
         cli._fragment_overview(a, "BW")
 
-    @unittest.skip("not here yet")
-    def test_BW_descriptor(self):
-        assert False
-
-    @unittest.skip("not here yet")
-    def test_CGN_descriptor(self):
-        assert False
-
     def test_raises(self):
         with pytest.raises(ValueError):
             cli._fragment_overview(None, "BWx")
