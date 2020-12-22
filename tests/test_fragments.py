@@ -243,35 +243,6 @@ class Test_get_fragments_other_options(unittest.TestCase):
         assert _np.allclose(by_bonds[3], [7])
 
 @unittest.skip("interactive_fragment_picker_by_AAresSeq will be deprecated soon")
-class Test_interactive_fragment_picker_no_ambiguity(unittest.TestCase):
-
-    def setUp(self):
-        self.geom = md.load(test_filenames.top_pdb)
-        self.by_bonds_geom = mdcfragments.get_fragments(self.geom.top,
-                                                        verbose=True,
-                                                        method='bonds')
-
-    def test_interactive_fragment_picker_by_AAresSeq_no_ambiguous(self):
-        residues = ["GLU30", "GDP382"]
-        resname2residx, resname2fragidx = mdcfragments.interactive_fragment_picker_by_AAresSeq(residues, self.by_bonds_geom,
-                                                                                               self.geom.top)
-        # Checking if residue names gives the correct corresponding residue id
-        assert (resname2residx["GLU30"]) == 0  # GLU30 is the 1st residue
-        assert (resname2residx["GDP382"]) == 7  # GDP382 is the 8th residue
-
-        # Checking if the residue name give the correct corresponding fragment id
-        assert (resname2fragidx["GLU30"]) == 0  # GLU30 is in the 1st fragment
-        assert (resname2fragidx["GDP382"]) == 3  # GDP382 is in the 4th fragment
-
-
-    def test_interactive_fragment_picker_by_AAresSeq_not_present(self):
-        residues = ["Glu30"]
-        resname2residx, resname2fragidx = mdcfragments.interactive_fragment_picker_by_AAresSeq(residues, self.by_bonds_geom,
-                                                                                               self.geom.top)
-        assert (resname2residx["Glu30"] == None)
-        assert (resname2fragidx["Glu30"] == None)
-
-@unittest.skip("interactive_fragment_picker_by_AAresSeq will be deprecated soon")
 class Test_interactive_fragment_picker_with_ambiguity(unittest.TestCase):
 
     def setUp(self):
