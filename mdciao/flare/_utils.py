@@ -276,6 +276,7 @@ def pol2cart(rho, phi):
 # todo CLEAN THIS COLOR MESS
 def col_list_from_input_and_fragments(colors,
                                       residxs_as_fragments,
+                                      default_color="gray",
                                       ):
     r"""
     per-residue color list taking possible fragmentation into account
@@ -285,7 +286,7 @@ def col_list_from_input_and_fragments(colors,
     ----------
     colors : can be of different types
         * False
-            All returned colors will be "tab:blue"
+            All returned colors will be the default color
         * True
             All returned colors will differ by fragment
         * string (anything matplotlib can understand as color)
@@ -316,7 +317,7 @@ def col_list_from_input_and_fragments(colors,
         if colors:
             to_tile = _mycolors
         else:
-            to_tile = _mycolors[:1]
+            to_tile = default_color
         jcolors = _np.tile(to_tile, _np.ceil(len(residxs_as_fragments) / len(to_tile)).astype("int"))
         col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
     elif isinstance(colors, str):
