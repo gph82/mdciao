@@ -468,8 +468,7 @@ class Test_interface(TestCLTBaseClass):
                                   accept_guess=True,
                                   flareplot=False
                                   )
-    @unittest.skip("There's a problem with re-alignment messing up the consensus labels "
-                   "when all the topology is used for the flareplot, this is a WIP")
+
     def test_w_nomenclature_CGN_BW_fragments_are_consensus_and_flareplot(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["TM6", "*H5"])
