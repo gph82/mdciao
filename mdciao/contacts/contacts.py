@@ -1674,7 +1674,7 @@ class ContactGroup(object):
 
             #TODO document what happens if there is no overlap
 
-        top : :obj:`md.Topology`, default is None
+        top : :obj:`~mdtraj.Topology`, default is None
 
         name : string, default is None
             Optional name you want to give this object,

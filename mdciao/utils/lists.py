@@ -274,7 +274,7 @@ def in_what_fragment(residx,
 
     # TODO deal with np.int64 etc
     assert type(residx) in (int, _np.int64), "Incorrect input: residx should be int, and not %s" % type(residx)
-    assert does_not_contain_strings(list_of_nonoverlapping_lists_of_residxs)
+    assert does_not_contain_strings(list_of_nonoverlapping_lists_of_residxs), list_of_nonoverlapping_lists_of_residxs
 
     if fragment_names is not None:
         assert len(fragment_names) == len(list_of_nonoverlapping_lists_of_residxs)

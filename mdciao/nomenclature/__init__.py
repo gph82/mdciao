@@ -1,7 +1,7 @@
 r"""
 Get and manipulate consensus nomenclature:
 
- * `Ballesteros-Weinstein-Numbering (BW) <https://doi.org/10.1016/S1043-9471(05)80049-7>`_ [1] [#]_
+ * `Ballesteros-Weinstein-Numbering (BW) <https://doi.org/10.1016/S1043-9471(05)80049-7>`_ [1]
 
 
  * `Common G-alpha Numbering (CGN) <https://doi.org/10.1038/nature14663>`_ [2]
@@ -64,7 +64,7 @@ References
    Kasper Harpsøe, Alexander S Hauser, Andrzej J Bojarski, David E Gloriam,
    *GPCRdb in 2018: adding GPCR structure models and ligands*,
    Nucleic Acids Research, Volume 46, Issue D1, 4 January 2018, Pages D440–D446,
-   <https://doi.org/10.1093/nar/gkx1109>`_
+   `<https://doi.org/10.1093/nar/gkx1109>`_
 
  * [4] Helen M. Berman, John Westbrook, Zukang Feng, Gary Gilliland, T. N. Bhat,
    Helge Weissig, Ilya N. Shindyalov, Philip E. Bourne,
@@ -72,7 +72,7 @@ References
    Nucleic Acids Research, Volume 28, Issue 1, 1 January 2000, Pages 235–242,
    `<https://doi.org/10.1093/nar/28.1.235>`_
 
-  * [5] Vignir Isberg, Chris de Graaf, Andrea Bortolato, Vadim Cherezov, Vsevolod Katritch,
+ * [5] Vignir Isberg, Chris de Graaf, Andrea Bortolato, Vadim Cherezov, Vsevolod Katritch,
    Fiona H. Marshall, Stefan Mordalski, Jean-Philippe Pin, Raymond C. Stevens, Gerrit  Vriend, David E. Gloriam,
    *Generic GPCR residue numbers – aligning topology maps while minding the gaps*,
    Trends in Pharmacological Sciences, Volume 36, Issue 1, 2015, Pages 22-31,

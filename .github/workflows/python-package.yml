@@ -5,9 +5,9 @@ name: Python package
 
 on:
   push:
-    branches: [ master ]
+    branches: [ deprecate_top2defs ]
   pull_request:
-    branches: [ master ]
+    branches: [ deprecate_top2defs ]
   workflow_dispatch:
   
 

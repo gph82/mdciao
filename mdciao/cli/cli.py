@@ -90,7 +90,7 @@ def _parse_consensus_option(option, consensus_type,
     while making them usable at the API-level
 
     Internally, it instantiates a :obj:`LabelerConsensus` object to use
-    its :obj:`LabelerConsensus.top2map` method
+    its :obj:`LabelerConsensus.top2labels` method
     
     A guess is performed on-the-fly using :obj:`guess_by_nomenclature`
     to better align :obj:`top` to the :obj:`LabelerConsensus`.
@@ -118,8 +118,7 @@ def _parse_consensus_option(option, consensus_type,
     fragments : iterable of iterables of ints
         How the :obj:`top` is fragmented. Helps
         to identify what part of :obj:`top`
-        to align to the consensus sequence and produce
-        the residx2conlab map
+        to align to the consensus sequence
     return_Labeler : bool, default is False
         Whether to return the object itself
     accept_guess : bool, default is False
@@ -145,28 +144,27 @@ def _parse_consensus_option(option, consensus_type,
     #todo add a class check here instead of failing later on
     else:
         LC_out = option
-        #print("The transformer was provided already")
 
     if LC_out is not None:
         answer = _mdcnomenc.guess_by_nomenclature(LC_out, top, fragments, consensus_type,
-                                        return_str=False,
-                                        accept_guess=accept_guess,
-                                        #verbose=True
-                                        )
+                                                  return_str=False,
+                                                  accept_guess=accept_guess,
+                                                  # verbose=True
+                                                  )
         if answer is None:
             print("No fragments belonging to the nomenclature data\n"
                   " could be guessed based on your fragments, this might be a weird case")
             restrict_to_residxs = None
         else:
             restrict_to_residxs = _np.hstack([fragments[ii] for ii in answer])
-        map_out = LC_out.top2map(top,
-                                 min_hit_rate=0, # We need give-up the re-guessing here,
-                                 # because explicitely done it before with an option for
-                                 # interactivity
-                                 restrict_to_residxs=restrict_to_residxs,
-                                 guess_consensus=True,
-                             #    verbose=True,
-                                 )
+        map_out = LC_out.top2labels(top,
+                                    min_hit_rate=0,  # We need give-up the re-guessing here,
+                                    # because explicitely done it before with an option for
+                                    # interactivity
+                                    restrict_to_residxs=restrict_to_residxs,
+                                    autofill_consensus=True,
+                                    #    verbose=True,
+                                    )
     if not return_Labeler:
         return map_out
     else:
@@ -179,7 +177,7 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                       accept_guess=False,
                                                       save_nomenclature_files=False,
                                                       verbose=True):
-    fragment_defs, consensus_maps, consensus_labelers = {}, [], {}
+    consensus_frags, consensus_maps, consensus_labelers = {}, [], {}
     for key, option in option_dict.items():
         map_CL, CL = _parse_consensus_option(option, key, top, fragments_as_residue_idxs,
                                            return_Labeler=True,
@@ -190,15 +188,16 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
             consensus_labelers[key] = CL
             if verbose:
                 print("These are the %s fragments mapped onto your topology:"%key)
-                fragment_defs.update(CL.top2defs(top,
-                                                 map_conlab=map_CL,
-                                                 fragments=fragments_as_residue_idxs,
-                                                 return_defs=True,
-                                                 verbose=verbose))
+                consensus_frags.update(CL.top2frags(top,
+                                                  input_dataframe=CL.most_recent_alignment,
+                                                  fragments=fragments_as_residue_idxs,
+                                                  verbose=verbose))
             if not accept_guess:
                 input("Hit enter to continue!\n")
 
-    return fragment_defs, consensus_maps, consensus_labelers
+    _mdcu.lists.assert_no_intersection(list(consensus_frags.values()),"consensus fragment")
+
+    return consensus_frags, consensus_maps, consensus_labelers
 
 def _parse_fragment_naming_options(fragment_names, fragments):
     r"""
@@ -478,9 +477,8 @@ def _fragment_overview(a,labtype):
 
     if a.topology is not None:
         top = _md.load(a.topology).top
-        map_conlab = obj.top2map(top)
-        obj.top2defs(top, map_conlab=map_conlab, guess_consensus=a.fill_gaps, verbose=True)
-
+        map_conlab = obj.top2labels(top,
+                                    autofill_consensus=a.fill_gaps)
         _mdcu.residue_and_atom.parse_and_list_AAs_input(a.AAs, top, map_conlab)
         if str(a.labels).lower() != "none":
             labels = [aa.strip(" ") for aa in a.labels.split(",")]
@@ -1041,6 +1039,7 @@ def residue_neighborhoods(residues,
                                             t_unit=t_unit,
                                             ylim_Ang=ylim_Ang,
                                             )
+
             # One title for all axes on top
             title = ihood.anchor_res_and_fragment_str
             if short_AA_names:
@@ -1284,7 +1283,9 @@ def interface(
         When deciding what fragments to put on
         the flareplot, use only those fragments
         where at least one residue is involved
-        in the interface
+        in the interface. If consensus labels
+        are being used, this applies to the
+        fragments derived from the nomenclature
     savefiles : bool, default is True
         Write the figures and tables to disk.
     save_nomenclature_files : bool, default is False
@@ -1317,7 +1318,7 @@ def interface(
 
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
-    fragment_defs, consensus_maps, consensus_labelers = \
+    consensus_frags, consensus_maps, consensus_labelers = \
         _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
                                                            "CGN": CGN_PDB},
                                                           refgeom.top,
@@ -1326,7 +1327,7 @@ def interface(
                                                           save_nomenclature_files=save_nomenclature_files)
     if user_wants_consenus:
         intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(fragment_defs, ng=2)
+        intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2)
 
     else:
         intf_frags_as_residxs, \
@@ -1504,15 +1505,11 @@ def interface(
         if flareplot:
             flare_frags, flare_labs = fragments_as_residue_idxs, fragment_names # Not sure about what's best here
             if len(consensus_labelers) > 0:
-                # This is because frag_defs could be missing a lot of stuff depending
-                # on user input, check the next method's doc
-                consensus_frags = _mdcnomenc.compatible_consensus_fragments(refgeom.top, consensus_maps,
-                                                                 consensus_labelers.values())
-
                 flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(consensus_frags.values()),
                                                                           list(consensus_frags.keys()),
                                                                           highest_res_idx=refgeom.top.n_residues - 1,
-                                                                          orphan_name=""
+                                                                          orphan_name="",
+                                                                          other_fragments={fn:ifrag for fn, ifrag in zip(fragment_names, fragments_as_residue_idxs)}
                                                                           )
             if sparse_flare_frags:
                 idxs = [ii for ii, ff in enumerate(flare_frags) if len(_np.intersect1d(_np.hstack(intf_frags_as_residxs), ff))>0]
