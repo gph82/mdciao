@@ -560,7 +560,8 @@ def plot_unified_freq_dicts(freqs,
 
 def add_tilted_labels_to_patches(jax, labels,
                                  label_fontsize_factor=1,
-                                 trunc_y_labels_at=.65):
+                                 trunc_y_labels_at=.65,
+                                 allow_splitting=True):
     r"""
     Iterate through :obj:`jax.patches` and place the text strings
     in :obj:`labels` on top of it.
@@ -582,11 +583,10 @@ def add_tilted_labels_to_patches(jax, labels,
         iy += .01
         if iy > trunc_y_labels_at:
             iy = trunc_y_labels_at
-        txt = ilab.replace("@","^")
-        if "-" in txt:
-            txt = '-'.join(_mdcu.str_and_dict.replace4latex(word) for word in _mdcu.str_and_dict.splitlabel(txt,"-"))
+        if "-" in ilab and allow_splitting:
+            txt = '-'.join(_mdcu.str_and_dict.replace4latex(word.replace("@","^")) for word in _mdcu.str_and_dict.splitlabel(ilab,"-"))
         else:
-            txt = _mdcu.str_and_dict.replace4latex(txt)
+            txt = _mdcu.str_and_dict.replace4latex(ilab.replace("@","^"))
         jax.text(ix, iy, txt,
                  va='bottom',
                  ha='left',
