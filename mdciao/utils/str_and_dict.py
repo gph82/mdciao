@@ -748,6 +748,16 @@ def choose_between_good_and_better_strings(good_option, better_option,
         else:
             return fmt % better_option
 
+def choose_options_descencing(option_list,
+                              fmt="%s",
+                              never_use=["none","na"]):
+
+    for option in option_list:
+        if str(option).lower() not in never_use:
+            return fmt%str(option)
+    return ""
+
+
 def fnmatch_ex(patterns_as_csv, list_of_keys):
     r"""
     Match the keys in :obj:`list_of_keys` against some naming patterns
