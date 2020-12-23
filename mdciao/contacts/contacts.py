@@ -863,6 +863,13 @@ class _ContactStrings(object):
         -------
         list of two strings
         """
+
+        return [_mdcu.str_and_dict.choose_options_descencing([self._residues.consensus_labels[ii],
+                                                              self._fragments.consensus[ii],
+                                                              self._fragnames[ii]],
+                                                             fmt=fmt)
+                for ii in [0,1]]
+
         return [_mdcu.str_and_dict.choose_between_good_and_better_strings(self._fragnames[ii],
                                                        self._residues.consensus_labels[ii],
                                                        fmt=fmt)
