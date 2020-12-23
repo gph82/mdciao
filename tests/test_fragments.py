@@ -71,11 +71,22 @@ class Test_print_fragments(unittest.TestCase):
         mdcfragments.print_fragments(frags, self.geom.top)
 
 class Test_get_fragments_methods(unittest.TestCase):
-    def setUp(self):
-        self.geom = md.load(test_filenames.small_monomer)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.geom = md.load(test_filenames.small_monomer)
 
     def test_resSeq(self):
         by_resSeq = mdcfragments.get_fragments(self.geom.top,
+                                               method='resSeq')
+
+        assert _np.allclose(by_resSeq[0], [0, 1, 2])
+        assert _np.allclose(by_resSeq[1], [3, 4])
+        assert _np.allclose(by_resSeq[2], [5])
+        assert _np.allclose(by_resSeq[3], [6, 7])
+
+    def test_resSeq_file(self):
+        by_resSeq = mdcfragments.get_fragments(test_filenames.small_monomer,
                                                method='resSeq')
 
         assert _np.allclose(by_resSeq[0], [0, 1, 2])

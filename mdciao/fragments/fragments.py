@@ -130,11 +130,13 @@ def get_fragments(top,
                   join_fragments=None,
                   **kwargs_residues_from_descriptors):
     """
-    Given an :obj:`mdtraj.Topology` return its residues grouped into fragments using different methods.
+    Group residues of a molecular topology into fragments using different methods.
 
     Parameters
     ----------
-    top : :py:class:`mdtraj.Topology`
+    top : :obj:`~mdtraj.Topology` or str
+        When str, path to filename
+
     method : str, default is 'lig_resSeq+'
         The method passed will be the basis for creating fragments. Check the following options
         with the example sequence
@@ -184,7 +186,7 @@ def get_fragments(top,
     verbose : boolean, optional
         Be verbose
     kwargs_residues_from_descriptors : optional
-        additional arguments, see :obj:`residues_from_descriptors`
+        additional arguments, see :obj:`~mdciao.residue_and_atom.residues_from_descriptors`
 
     Returns
     -------
@@ -195,6 +197,9 @@ def get_fragments(top,
     """
 
     _assert_method_allowed(method)
+
+    if isinstance(top, str):
+        top = _md.load(top).top
 
     # Auto detect fragments by resSeq
     fragments_resSeq = _get_fragments_by_jumps_in_sequence([rr.resSeq for rr in top.residues])[0]
