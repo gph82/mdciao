@@ -1325,6 +1325,9 @@ def interface(
                                                           fragments_as_residue_idxs,
                                                           accept_guess=accept_guess,
                                                           save_nomenclature_files=save_nomenclature_files)
+    top2confrag = _np.full(refgeom.top.n_residues, None)
+    for key, val in consensus_frags.items():
+        top2confrag[val] = key
     if user_wants_consenus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2)
@@ -1402,15 +1405,17 @@ def interface(
                                                                 no_key=None) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             ctc_objs.append(_mdcctcs.ContactPair(pair,
-                                        [itraj[:, idx] for itraj in ctcs],
-                                        times,
-                                        top=refgeom.top,
-                                        consensus_labels=consensus_labels,
-                                        trajs=xtcs,
-                                        fragment_idxs=fragment_idxs,
-                                        fragment_names=[fragment_names[idx] for idx in fragment_idxs],
-                                        atom_pair_trajs=[itraj[:, [idx*2, idx*2+1]] for itraj in at_pair_trajs]
-                                        ))
+                                                 [itraj[:, idx] for itraj in ctcs],
+                                                 times,
+                                                 top=refgeom.top,
+                                                 consensus_labels=consensus_labels,
+                                                 trajs=xtcs,
+                                                 fragment_idxs=fragment_idxs,
+                                                 fragment_names=[fragment_names[idx] for idx in fragment_idxs],
+                                                 consensus_fragnames=[top2confrag[idx] for idx in pair],
+                                                 atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in
+                                                                  at_pair_trajs]
+                                                 ))
             cum_freq = ctc_frequency[order[:ii+1]].sum()
             #print(ii, ifreq.round(2), cum_freq.round(2), (cum_freq.sum()/tot_freq*100).round(2))
 

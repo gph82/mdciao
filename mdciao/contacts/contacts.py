@@ -898,6 +898,7 @@ class _Fragments(object):
                  fragment_idxs=None,
                  fragment_names=None,
                  fragment_colors=None,
+                 consensus_fragnames=None
                  ):
         self._fragment_idxs = fragment_idxs
         if fragment_colors is None:
@@ -915,6 +916,13 @@ class _Fragments(object):
         else:
             assert len(fragment_names)==2
             self._fragment_names = fragment_names
+
+        if consensus_fragnames is None:
+            self._consensus_fragnames = [None,None]
+        else:
+            assert len(consensus_fragnames)==2
+            self._consensus_fragnames = consensus_fragnames
+
 
     @property
     def names(self):
@@ -947,6 +955,16 @@ class _Fragments(object):
 
         """
         return self._fragment_colors
+
+    @property
+    def consensus(self):
+        """
+        name of fragments according to consensus nomenclature
+        Returns
+        -------
+
+        """
+        return self._consensus_fragnames
 
 class ContactPair(object):
     r"""Container for a contacts between two residues
@@ -990,7 +1008,8 @@ class ContactPair(object):
                  fragment_names=None,
                  fragment_colors=None,
                  anchor_residue_idx=None,
-                 consensus_labels=None):
+                 consensus_labels=None,
+                 consensus_fragnames=None):
         """
 
         Parameters
@@ -1034,6 +1053,8 @@ class ContactPair(object):
              - :obj:`partner_residue_name` will contain the partner residue as an :obj:`mdtraj.core.Topology.Residue` object
         consensus_labels : iterable of strings, default is None
             Consensus nomenclature of the residues of :obj:`res_idxs_pair`
+        consensus_fragnames : iterable of strings, default is None
+            Consensus fragments names of the residues of :obj:`res_idxs_pair`
 
         """
 
@@ -1057,7 +1078,8 @@ class ContactPair(object):
 
         self._attribute_fragments = _Fragments(fragment_idxs,
                                                fragment_names,
-                                               fragment_colors)
+                                               fragment_colors,
+                                               consensus_fragnames)
 
 
         self._ctc_strings = _ContactStrings(self._attribute_n.n_trajs,
