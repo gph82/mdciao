@@ -3243,10 +3243,11 @@ class ContactGroup(object):
             % (ctc_cutoff_Ang, _mdcu.str_and_dict.replace4latex(title_str)))
 
         _mdcplots.add_tilted_labels_to_patches(jax,
-                                      label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
-                                      label_fontsize_factor=label_fontsize_factor,
-                                      trunc_y_labels_at=.65*_np.max(freqs)
-                                      )
+                                               label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
+                                               label_fontsize_factor=label_fontsize_factor,
+                                               trunc_y_labels_at=.65 * _np.max(freqs),
+                                               allow_splitting=False,
+                                               )
 
         if xmax is not None:
             jax.set_xlim([-.5, xmax + 1 - .5])
