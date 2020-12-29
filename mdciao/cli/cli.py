@@ -427,15 +427,15 @@ def _color_schemes(istr):
 
 def _load_any_geom(geom):
     r"""
-    Helper method for command-line-tools to create :obj:`mdtraj.Trajectories`
-    from either filenames or :obj:`mdtraj.Trajectories` (i.e. do nothing)
+    Helper method for command-line-tools to create a :obj:`~mdtraj.Trajectory`
+    from either filenames or :obj:`mdtraj.Trajectory` (i.e. do nothing)
     Parameters
     ----------
-    geom : str or :obj:`mdtraj.Trajectory`
+    geom : str or :obj:`~mdtraj.Trajectory`
 
     Returns
     -------
-    outgeom : :obj:`mdtraj.Trajectory`
+    outgeom : :obj:`~mdtraj.Trajectory`
     """
     if isinstance(geom, str):
         outgeom = _md.load(geom)
