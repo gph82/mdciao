@@ -734,26 +734,34 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
                   (ixtc, traj_idx, stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
     return iterate, inform
 
-def choose_between_good_and_better_strings(good_option, better_option,
-                                           fmt="%s",
-                                           never_use=[None, "None", "NA", "na"]):
-    if good_option in never_use:
-        if better_option in never_use:
-            return ""
-        else:
-            return fmt % better_option
-    elif good_option not in never_use:
-        if better_option in never_use:
-            return fmt % good_option
-        else:
-            return fmt % better_option
-
-def choose_options_descencing(option_list,
+def choose_options_descencing(options,
                               fmt="%s",
-                              never_use=["none","na"]):
+                              dont_accept=["none", "na"]):
+    r"""
+    Return the first entry that's acceptable according to some rule
 
-    for option in option_list:
-        if str(option).lower() not in never_use:
+    If no is found, "" is returned
+    Parameters
+    ----------
+    options : list
+    fmt : str, default is "%s"
+        You can specify a different
+        format here. Will only
+        apply in case something
+        is returned
+    dont_accept : list
+        Move down the list if
+        current item is one
+        of these
+
+    Returns
+    -------
+    best : str
+        Either the best entry in :obj:`options`
+        or "" if no option was found
+    """
+    for option in options:
+        if str(option).lower() not in dont_accept:
             return fmt%str(option)
     return ""
 

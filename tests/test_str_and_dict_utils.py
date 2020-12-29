@@ -408,26 +408,29 @@ class Test_str_latex(unittest.TestCase):
 
 class Test_auto_fragment_string(unittest.TestCase):
 
+    def test_one_bad(self):
+        assert str_and_dict.choose_options_descencing([None]) == ""
+
     def test_both_bad(self):
-        assert str_and_dict.choose_between_good_and_better_strings(None, None) == ""
+        assert str_and_dict.choose_options_descencing([None, None]) == ""
 
     def test_both_good(self):
-        assert str_and_dict.choose_between_good_and_better_strings("fragA", "3.50") == "3.50"
+        assert str_and_dict.choose_options_descencing(["3.50","fragA"]) == "3.50"
 
     def test_only_option(self):
-        self.assertEqual(str_and_dict.choose_between_good_and_better_strings("fragA", None),"fragA")
+        self.assertEqual(str_and_dict.choose_options_descencing([None, "fragA"]),"fragA")
 
     def test_only_better_option(self):
-        assert str_and_dict.choose_between_good_and_better_strings(None, "3.50") == "3.50"
+        assert str_and_dict.choose_options_descencing(["3.50",None]) == "3.50"
 
     def test_pick_best_label_just_works(self):
-        assert (str_and_dict.choose_between_good_and_better_strings("Print this instead", "Print this") == "Print this")
+        assert (str_and_dict.choose_options_descencing(["Print this","Print this instead"]) == "Print this")
 
     def test_pick_best_label_exclude_works(self):
-        assert(str_and_dict.choose_between_good_and_better_strings("Print this instead", None) == "Print this instead")
-        assert(str_and_dict.choose_between_good_and_better_strings("Print this instead", "None") == "Print this instead")
-        assert(str_and_dict.choose_between_good_and_better_strings("Print this instead", "NA") == "Print this instead")
-        assert(str_and_dict.choose_between_good_and_better_strings("Print this instead", "na") == "Print this instead")
+        assert(str_and_dict.choose_options_descencing([None,  "Print this instead"]) == "Print this instead")
+        assert(str_and_dict.choose_options_descencing(["None","Print this instead"]) == "Print this instead")
+        assert(str_and_dict.choose_options_descencing(["NA",  "Print this instead"]) == "Print this instead")
+        assert(str_and_dict.choose_options_descencing(["na",  "Print this instead"]) == "Print this instead")
 
 class Test_freq_file2dict(unittest.TestCase):
 

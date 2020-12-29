@@ -21,6 +21,7 @@
 ##############################################################################
 
 import numpy as _np
+import mdtraj as _md
 from mdtraj.core.residue_names import _AMINO_ACID_CODES
 import mdciao.utils as _mdcu
 from  pandas import unique as _pandas_unique
@@ -93,9 +94,9 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
     maplabel_first, maplabel_last = "", ""
     try:
         if idx2label is not None:
-            maplabel_first = _mdcu.str_and_dict.choose_between_good_and_better_strings(None, idx2label[fragment[0]],
+            maplabel_first = _mdcu.str_and_dict.choose_options_descencing([idx2label[fragment[0]]],
                                                                                        fmt="@%s")
-            maplabel_last = _mdcu.str_and_dict.choose_between_good_and_better_strings(None, idx2label[fragment[-1]],
+            maplabel_last = _mdcu.str_and_dict.choose_options_descencing([idx2label[fragment[-1]]],
                                                                                       fmt="@%s")
 
         rfirst, rlast = [top.residue(ii) for ii in [fragment[0], fragment[-1]]]
