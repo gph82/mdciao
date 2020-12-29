@@ -688,8 +688,8 @@ class _NeighborhoodNames(object):
         -------
 
         """
-        return _mdcu.str_and_dict.choose_between_good_and_better_strings(self.partner_fragment,
-                                                      self.partner_fragment_consensus)
+        return _mdcu.str_and_dict.choose_options_descencing([self.partner_fragment_consensus,
+                                                             self.partner_fragment])
 
     @property
     def anchor_fragment_best(self):
@@ -699,8 +699,8 @@ class _NeighborhoodNames(object):
         -------
 
         """
-        return _mdcu.str_and_dict.choose_between_good_and_better_strings(self.anchor_fragment,
-                                                      self.anchor_fragment_consensus)
+        return _mdcu.str_and_dict.choose_options_descencing([self.anchor_fragment_consensus,
+                                                             self.anchor_fragment])
 
     @property
     def anchor_res_and_fragment_str(self):
@@ -779,8 +779,10 @@ class _ContactStrings(object):
         self._fragments = fragment_container
         if self._fragments is None:
             self._fragnames = [None, None]
+            self._fragnames_consensus = [None, None]
         else:
             self._fragnames = self._fragments.names
+            self._fragnames_consensus = self._fragments.consensus
 
     @property
     def trajstrs(self):
@@ -865,18 +867,10 @@ class _ContactStrings(object):
         """
 
         return [_mdcu.str_and_dict.choose_options_descencing([self._residues.consensus_labels[ii],
-                                                              self._fragments.consensus[ii],
+                                                              self._fragnames_consensus[ii],
                                                               self._fragnames[ii]],
                                                              fmt=fmt)
                 for ii in [0,1]]
-
-        return [_mdcu.str_and_dict.choose_between_good_and_better_strings(self._fragnames[ii],
-                                                       self._residues.consensus_labels[ii],
-                                                       fmt=fmt)
-                for ii in [0,1]]
-
-
-
 
     def __str__(self):
         istr = ["%s at %s with properties"%(type(self),id(self))]
@@ -3334,7 +3328,7 @@ class ContactGroup(object):
                 clab = _mdcn.choose_between_consensus_dicts(rr.index, consensus_maps,
                                                             no_key=None)
                 rlab = '%s%s' % (_mdcu.residue_and_atom.shorten_AA(rr, keep_index=True, substitute_fail="long"),
-                                 _mdcu.str_and_dict.choose_between_good_and_better_strings(None, clab, fmt='@%s'))
+                                 _mdcu.str_and_dict.choose_options_descencing([clab], fmt='@%s'))
                 textlabels.append(rlab)
             kwargs_freqs2flare["textlabels"] = textlabels
 
