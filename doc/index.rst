@@ -45,14 +45,6 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 
  However, both these issues (if/when they arise) can be spotted easily by looking at the time-traces of said contacts and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
 
-.. include:: basic_usage.rst
-
-.. include:: highlights.rst
-
-.. include:: cli_stub.rst
-
-.. include:: api_stub.rst
-
 .. |Python Package| image::
    https://github.com/gph82/mdciao/workflows/Python%20package/badge.svg
    :target: https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22
@@ -70,7 +62,7 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 .. toctree::
    :hidden:
 
-   Home <index>
    installation
+   overview
    cli_cli/cli_cli
    api/api
