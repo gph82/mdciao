@@ -688,8 +688,8 @@ class _NeighborhoodNames(object):
         -------
 
         """
-        return _mdcu.str_and_dict.choose_between_good_and_better_strings(self.partner_fragment,
-                                                      self.partner_fragment_consensus)
+        return _mdcu.str_and_dict.choose_options_descencing([self.partner_fragment_consensus,
+                                                             self.partner_fragment])
 
     @property
     def anchor_fragment_best(self):
@@ -699,8 +699,8 @@ class _NeighborhoodNames(object):
         -------
 
         """
-        return _mdcu.str_and_dict.choose_between_good_and_better_strings(self.anchor_fragment,
-                                                      self.anchor_fragment_consensus)
+        return _mdcu.str_and_dict.choose_options_descencing([self.anchor_fragment_consensus,
+                                                             self.anchor_fragment])
 
     @property
     def anchor_res_and_fragment_str(self):
@@ -779,8 +779,10 @@ class _ContactStrings(object):
         self._fragments = fragment_container
         if self._fragments is None:
             self._fragnames = [None, None]
+            self._fragnames_consensus = [None, None]
         else:
             self._fragnames = self._fragments.names
+            self._fragnames_consensus = self._fragments.consensus
 
     @property
     def trajstrs(self):
@@ -863,13 +865,12 @@ class _ContactStrings(object):
         -------
         list of two strings
         """
-        return [_mdcu.str_and_dict.choose_between_good_and_better_strings(self._fragnames[ii],
-                                                       self._residues.consensus_labels[ii],
-                                                       fmt=fmt)
+
+        return [_mdcu.str_and_dict.choose_options_descencing([self._residues.consensus_labels[ii],
+                                                              self._fragnames_consensus[ii],
+                                                              self._fragnames[ii]],
+                                                             fmt=fmt)
                 for ii in [0,1]]
-
-
-
 
     def __str__(self):
         istr = ["%s at %s with properties"%(type(self),id(self))]
@@ -891,6 +892,7 @@ class _Fragments(object):
                  fragment_idxs=None,
                  fragment_names=None,
                  fragment_colors=None,
+                 consensus_fragnames=None
                  ):
         self._fragment_idxs = fragment_idxs
         if fragment_colors is None:
@@ -908,6 +910,13 @@ class _Fragments(object):
         else:
             assert len(fragment_names)==2
             self._fragment_names = fragment_names
+
+        if consensus_fragnames is None:
+            self._consensus_fragnames = [None,None]
+        else:
+            assert len(consensus_fragnames)==2
+            self._consensus_fragnames = consensus_fragnames
+
 
     @property
     def names(self):
@@ -940,6 +949,16 @@ class _Fragments(object):
 
         """
         return self._fragment_colors
+
+    @property
+    def consensus(self):
+        """
+        name of fragments according to consensus nomenclature
+        Returns
+        -------
+
+        """
+        return self._consensus_fragnames
 
 class ContactPair(object):
     r"""Container for a contacts between two residues
@@ -983,7 +1002,8 @@ class ContactPair(object):
                  fragment_names=None,
                  fragment_colors=None,
                  anchor_residue_idx=None,
-                 consensus_labels=None):
+                 consensus_labels=None,
+                 consensus_fragnames=None):
         """
 
         Parameters
@@ -1027,6 +1047,8 @@ class ContactPair(object):
              - :obj:`partner_residue_name` will contain the partner residue as an :obj:`mdtraj.core.Topology.Residue` object
         consensus_labels : iterable of strings, default is None
             Consensus nomenclature of the residues of :obj:`res_idxs_pair`
+        consensus_fragnames : iterable of strings, default is None
+            Consensus fragments names of the residues of :obj:`res_idxs_pair`
 
         """
 
@@ -1050,7 +1072,8 @@ class ContactPair(object):
 
         self._attribute_fragments = _Fragments(fragment_idxs,
                                                fragment_names,
-                                               fragment_colors)
+                                               fragment_colors,
+                                               consensus_fragnames)
 
 
         self._ctc_strings = _ContactStrings(self._attribute_n.n_trajs,
@@ -1356,7 +1379,7 @@ class ContactPair(object):
         else:
             raise ValueError(AA_format)
         if split_label:
-            label= '%-15s - %-15s'%tuple(label.split('-'))
+            label= '%-15s - %-15s'%tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
         return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
                 "label":label.rstrip(" "),
                 "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)
@@ -1674,7 +1697,7 @@ class ContactGroup(object):
 
             #TODO document what happens if there is no overlap
 
-        top : :obj:`md.Topology`, default is None
+        top : :obj:`~mdtraj.Topology`, default is None
 
         name : string, default is None
             Optional name you want to give this object,
@@ -1817,6 +1840,12 @@ class ContactGroup(object):
 
     @property
     def n_ctcs(self):
+        r"""
+        The number of contact pairs (:obj:`mdciao.contacts.ContactPair` -objects) stored in this object
+        Returns
+        -------
+
+        """
         return self._n_ctcs
 
     @property
@@ -1853,6 +1882,13 @@ class ContactGroup(object):
 
     @property
     def res_idxs_pairs(self):
+        r"""
+        List of pairs of residue indices of the contacts in this object
+
+        Returns
+        -------
+
+        """
         return _np.vstack([ictc.residues.idxs_pair for ictc in self._contacts])
 
     @property
@@ -3223,10 +3259,11 @@ class ContactGroup(object):
             % (ctc_cutoff_Ang, _mdcu.str_and_dict.replace4latex(title_str)))
 
         _mdcplots.add_tilted_labels_to_patches(jax,
-                                      label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
-                                      label_fontsize_factor=label_fontsize_factor,
-                                      trunc_y_labels_at=.65*_np.max(freqs)
-                                      )
+                                               label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
+                                               label_fontsize_factor=label_fontsize_factor,
+                                               trunc_y_labels_at=.65 * _np.max(freqs),
+                                               allow_splitting=False,
+                                               )
 
         if xmax is not None:
             jax.set_xlim([-.5, xmax + 1 - .5])
@@ -3291,7 +3328,7 @@ class ContactGroup(object):
                 clab = _mdcn.choose_between_consensus_dicts(rr.index, consensus_maps,
                                                             no_key=None)
                 rlab = '%s%s' % (_mdcu.residue_and_atom.shorten_AA(rr, keep_index=True, substitute_fail="long"),
-                                 _mdcu.str_and_dict.choose_between_good_and_better_strings(None, clab, fmt='@%s'))
+                                 _mdcu.str_and_dict.choose_options_descencing([clab], fmt='@%s'))
                 textlabels.append(rlab)
             kwargs_freqs2flare["textlabels"] = textlabels
 

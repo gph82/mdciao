@@ -57,31 +57,33 @@ import numpy as _np
 
 class TestCLTBaseClass(unittest.TestCase):
 
-    def setUp(self):
-        self.geom = md.load(test_filenames.top_pdb)
-        self.traj = md.load(test_filenames.traj_xtc, top=self.geom.top)
-        self.traj_reverse = md.load(test_filenames.traj_xtc, top=self.geom.top)[::-1]
+    @classmethod
+    def setUpClass(cls):
+        cls.geom = md.load(test_filenames.top_pdb)
+        cls.traj = md.load(test_filenames.traj_xtc, top=cls.geom.top)
+        cls.traj_reverse = md.load(test_filenames.traj_xtc, top=cls.geom.top)[::-1]
 
 class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
-    def setUp(self):
-        super(Test_manage_timdep_plot_options, self).setUp()
-        ctc_idxs = [[353,348],
-                    [353,972],
-                    [353,347]]
+    @classmethod
+    def setUpClass(cls):
+        super(Test_manage_timdep_plot_options, cls).setUpClass()
+        ctc_idxs = [[353, 348],
+                    [353, 972],
+                    [353, 347]]
         CPs = [contacts.ContactPair(pair,
-                           [md.compute_contacts(itraj, [pair])[0].squeeze() for itraj in
-                            [self.traj,
-                             self.traj_reverse[:10]]],
-                           [self.traj.time,
-                            self.traj_reverse.time[:10]],
-                           top=self.geom.top,
-                           anchor_residue_idx=353)
+                                    [md.compute_contacts(itraj, [pair])[0].squeeze() for itraj in
+                                     [cls.traj,
+                                      cls.traj_reverse[:10]]],
+                                    [cls.traj.time,
+                                     cls.traj_reverse.time[:10]],
+                                    top=cls.geom.top,
+                                    anchor_residue_idx=353)
                for pair in ctc_idxs]
 
-        self.ctc_grp = contacts.ContactGroup(CPs,
-                                    top=self.geom.top,
-                                    )
+        cls.ctc_grp = contacts.ContactGroup(CPs,
+                                            top=cls.geom.top,
+                                            )
 
     """
     1:     0.55   LEU394-ARG389       0-0         353-348        33     0.55
@@ -466,8 +468,7 @@ class Test_interface(TestCLTBaseClass):
                                   accept_guess=True,
                                   flareplot=False
                                   )
-    @unittest.skip("There's a problem with re-alignment messing up the consensus labels "
-                   "when all the topology is used for the flareplot, this is a WIP")
+
     def test_w_nomenclature_CGN_BW_fragments_are_consensus_and_flareplot(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["TM6", "*H5"])
@@ -487,8 +488,9 @@ class Test_interface(TestCLTBaseClass):
 
 class Test_parse_consensus_option(unittest.TestCase):
 
-    def setUp(self):
-        self.geom = md.load(test_filenames.top_pdb)
+    @classmethod
+    def setUpClass(cls):
+        cls.geom = md.load(test_filenames.top_pdb)
 
     def test_empty(self):
         residx2conlab= cli._parse_consensus_option(None, None, self.geom.top,
@@ -666,14 +668,6 @@ class Test_fragment_overview(unittest.TestCase):
         a = a.parse_args(["adrb2_human"])
         a.__setattr__("topology",test_filenames.pdb_3SN6)
         cli._fragment_overview(a, "BW")
-
-    @unittest.skip("not here yet")
-    def test_BW_descriptor(self):
-        assert False
-
-    @unittest.skip("not here yet")
-    def test_CGN_descriptor(self):
-        assert False
 
     def test_raises(self):
         with pytest.raises(ValueError):

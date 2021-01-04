@@ -38,7 +38,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 center=_np.array([0,0]),
                 r=1,
                 mute_fragments=None,
-                anchor_segments=None,
+                anchor_fragments=None,
                 ss_array=None,
                 panelsize=10,
                 angle_offset=0,
@@ -58,12 +58,14 @@ def freqs2flare(freqs, res_idxs_pairs,
                 signed_colors=None,
                 ):
     r"""
-    Plot contact frequencies as `flare plots` (TODO insert refs)
+    Plot contact frequencies as `flare plots`.
 
     The residues are plotted as dots lying on a circle of radius
-    :obj:`r`, with Bezier curves of variable opacity connecting TODO ref
+    :obj:`r`, with Bezier curves of variable opacity connecting
     the dots. The curve opacity represents the contact frequency, :obj:`freq`,
     between two residues.
+
+    For more info see the links here :obj:`mdciao.flare`.
 
     One can control separately what residues and what curves
     ultimately get shown, allowing for "contactless" residues
@@ -92,13 +94,13 @@ def freqs2flare(freqs, res_idxs_pairs,
           below this cutoff
         * :obj:`select_residxs` plot only the curves where these residues appear
         * :obj:`mute_fragments` do not plot curves from/to this fragment
-        * :obj:`anchor_segments` only plot curves from/to this fragment
+        * :obj:`anchor_fragments` only plot curves from/to this fragment
 
     Parameters
     ----------
     freqs : numpy.ndarray
         The contact frequency to show in the flareplot. The
-        linewidsths of the bezier curves connecting residue
+        opacity of the bezier curves connecting residue
         pairs will be proportional to this number. Can
         have different shapes:
 
@@ -107,28 +109,41 @@ def freqs2flare(freqs, res_idxs_pairs,
         * (m,n)
           m is the number of frames, in this case,
           an average over m will be done automatically.
+
+        If you already have an :obj:`mdciao.contacts.ContactGroup`-object,
+        simply pass the result of calling
+        :obj:`mdciao.contacts.ContactGroup.frequency_per_contact` (with
+        a given cutoff)
     res_idxs_pairs : iterable of pairs
-        residue indices for which the above N contacts stand
+        pairs of residue indices for the above N contact frequencies.
+        If you already have an :obj:`mdciao.contacts.ContactGroup`-object,
+        simply pass the result of calling
+        :obj:`mdciao.contacts.ContactGroup.res_idxs_pairs`
     fragments: list of lists of integers, default is None
         The residue indices to be drawn as a circle for the
-        flareplot. These dots that will be plotted
+        flareplot. These are the dots that will be plotted
         on that circle regardless of how many contacts they
         appear in. They can be any integers that could represent
         a residue. The only hard condition is that the set
         of np.unique(res_idxs_pairs) must be contained
-        within np.hstack(segments)
+        within :obj:`fragments`
     exclude_neighbors: int, default is 1
         Do not show contacts where the partners are separated by
         these many residues. If no :obj:`top` is passed, the
         neighborhood-condition is checked using residue
         serial-numbers, assuming the molecule only has one long peptidic-chain.
-    freq_cutoff: float, default is 0
+    freq_cutoff : float, default is 0
         Contact frequencies lower than this value will not be shown
-    iax: :obj:`matplotlib.Axes`, default is None
+    iax : :obj:`~matplotlib.axes.Axes`, default is None
         Parse an axis to draw on, otherwise one will be created
-        using :obj:`panelsize`
+        using :obj:`panelsize`. In case you want to
+        re-use the same cirlce of residues as a
+        background to plot different sets
+        of :obj:`freqs`, **YOU HAVE TO USE THE SAME**
+        :obj:`fragments` **on all calls**, else the
+        bezier lines will be placed erroneously.
     fragment_names: iterable of strings, default is None
-        The names of the segments used in :obj:`fragments`
+        The names of the fragments used in :obj:`fragments`
     panelsize: float, default is 10
         Size in inches of the panel (=figsize in matplotlib).
         Will be ignored if a pre-existing axis object is parsed
@@ -137,22 +152,25 @@ def freqs2flare(freqs, res_idxs_pairs,
     r: float, default is 1
         In axis units, the radius of the flareplot
     textlabels : bool or array_like, default is True
-        If
-        * True: the dots representing the residues
-          will be provided a label, either their
-          serial index or the residue name, e.g. GLU30
-        * False: no labeling
-        * array_like : will be passed as label_replacement
-        to XXX via XXX #todo
+        How to label the residue dots. Gets passed directly
+        to :obj:`mdciao.flare.circle_plot_residues`.
+        Options are:
+         * True: the dots representing the residues
+           will get a label automatically, either their
+           serial index or the residue name, e.g. GLU30, if
+           a :obj:`top` was passed.
+         * False: no labeling
+         * array_like : will be passed as :obj:`replacement_labels`
+           to :obj:`mdciao.flare.add_fragmented_residue_labels`
     mute_fragments: iterable of integers, default is None
         Curves involving these fragments will be hidden. Fragments
         are expressed as indices of :obj:`fragments`
     anchor_fragments: iterable of integers, default is None
         Curves **not** involving these fragments will be
         **not** be shown, i.e. it is the complementary
-         of :obj:`mut_fragments`. Both cannot be passed
+         of :obj:`mute_fragments`. Both cannot be passed
          simulataneously.
-    top: :md:`Topology object, default is None
+    top: :obj:`~mdtraj.Topology` object, default is None
         If provided a top, residue names (e.g. GLU30) will be used
         instead of residue indices. Will fail if the residue indices
         in :obj:`res_idxs_pairs` can not be used to call :obj:`top.residue(ii)`
@@ -168,12 +186,12 @@ def freqs2flare(freqs, res_idxs_pairs,
     select_residxs : iterable of ints, default is None
         Only the residues here can be connected with a Bezier curve
     colors: boolean, default is True
-        Color control.
-        * True uses one different color per segment (see visualize._mycolors)
-        * False, defaults to blue. If a single string is given
-        * One string uses that color for all residues (e.g. "r" or "red" for all red)
-        * A list of strings of len = number of drawn residues, which is
-        equal to len(np.hstack(segments)). Any other length will produce an error
+        Color control. Can take different inputs
+         * True: use one different color per segment
+         * False: defaults to gray.
+         * str or char: use that color for all residues (e.g. "r" or "red")
+         * A list of strings of len = number of drawn residues, which is
+           equal to len(np.hstack(fragments)). Any other length will produce an error
     fontsize: int, default is None
     lw: float, default is None
         Line width of the contact lines
@@ -188,16 +206,39 @@ def freqs2flare(freqs, res_idxs_pairs,
         There is a hidden development option for this argument where a residue
         list is passed, meaning, show these residues regardless of any other
         option that has been passed. Perhaps sparse changes in the future.
-    signed_colors = dict, default is None
-        Provide a color dictionary, e.g. {-1:"b", +1:"r}
+    bezier_linecolor : color-like, default is 'k'
+        The color of the bezier curves connecting the residues.
+        Can be a character, string or RGB value (not RGBA)
+    padding : iterable of len 3, default is [1,1,1]
+        The padding, expressed as empty dot positions. Each number is
+        used for:
+         * the beginning of the flareplot, before the first residue
+         * between fragments
+         * at the end of the plot, after the last residue
+    signed_colors : dict, default is None
+        Provide a color dictionary, e.g. {-1:"b", +1:"r"}
         to give different colors to positive and negative
         alpha values. If None, defaults to :obj:`bezier_linecolor`
+    aa_offset : int, default is 0
+        Add this number to the resSeq value
+
 
     Returns
     -------
-    iax : :obj:`matplotlib.Axis`
+    iax : :obj:`~matplotlib.axes.Axes`
+        You can do iax.figure.savefig("figure.png") to
+        save the figure. Checkout
+        :obj:`~matplotlib.figure.Figure.savefig` for more options
 
     plotted_pairs : 2D np.ndarray
+
+    plot_attribs : dict
+        Objects of the plot if the user wants
+        to manipulate them further or re-use
+        some attributes:
+        "bezier_lw", "bezier_curves",
+        "fragment_labels", "dot_labels",
+        "dots", "SS_labels"
     """
 
     if _np.ndim(freqs)==1:
@@ -258,7 +299,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     plot_this_pair_lambda = _futils.should_this_residue_pair_get_a_curve(residues_as_fragments,
                                                                          select_residxs=select_residxs,
                                                                          mute_fragments=mute_fragments,
-                                                                         anchor_fragments=anchor_segments,
+                                                                         anchor_fragments=anchor_fragments,
                                                                          top=top, exclude_neighbors=exclude_neighbors)
 
     idxs_of_pairs2plot = _np.intersect1d(idxs_of_formed_contacts,
@@ -327,19 +368,24 @@ def circle_plot_residues(fragments,
         indices are on :obj:`fragments`
     fragment_names : list
         The names of the fragments
-    iax : :obj:`matplotlib.Axis`, default is None
+    iax : :obj:`~matplotlib.axes.Axes`, default is None
         An axis to draw the dots on. It's parent
         figure has to have a tight_layout=True
         attribute. If no axis is passed,
         one will be created.
-    replacement_labels : dict or boolean, default is True
-        Whether to put textlabels on the dots. If
-        * False : no labels at all
-        * True : labels are the indices in :obj:`fragments`
-        * dict : residue_idx-keyed individual label replacements
-         Typical cases could be a mutated residue that you want
-         to show as R38A instead of just A38, or use
-         e.g. BW or CGN consensus labels.
+    textlabels : bool or array_like, default is True
+        How to label the residue dots
+         * True: the dots representing the residues
+           will get a label automatically, either their
+           serial index or the residue name, e.g. GLU30, if
+           a :obj:`top` was passed.
+         * False: no labeling
+         * array_like : will be passed as :obj:`replacement_labels`
+           to :obj:`mdciao.flare.add_fragmented_residue_labels`.
+           These labels act as replacement and can cover all or just
+           some residue, e.g. a mutated residue that you want
+           to show as R38A instead of just A38, or use
+           e.g. BW or CGN consensus labels.
     fontsize
     colors
     markersize
@@ -349,9 +395,7 @@ def circle_plot_residues(fragments,
     shortenAAs : boolean, default is True
         If :obj:`top` is not None, use "E50" rather than "GLU50"
     aa_offset : int, default is 0
-        If :obj:`top` is not None, add this number to the
-        resSeq value, s.t. e.g. "E50" becomes "E55" if the
-        sequence numbers need to be shifted
+        Add this number to the resSeq value
     highlight_residxs : iterable of ints, default is None
         In case you don't want to construct a whole
         color list for :obj:`colors`, you can simply
@@ -363,7 +407,10 @@ def circle_plot_residues(fragments,
     iax, xy, outdict
 
     outdict: dict
-         Contains :obj:`matplotlib` objects (the dots and their labels)
+         Contains :obj:`matplotlib` objects
+         like the dots and their labels:
+         "fragment_labels", "dot_labels",
+         "dots", "SS_labels", "r",
     """
     debug = False
 
@@ -534,9 +581,12 @@ def circle_plot_residues(fragments,
         frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of panel space)
         frag_fontsize_in_pts = frag_fontsize_in_aus * _points2dataunits(iax).mean()
         frag_labels = _futils.add_fragment_labels(fragments,
-                                                  iax, xy,
-                                                  fragment_names,
-                                                  residx2markeridx,
+                                                  [replace4latex(ifrag) for ifrag in fragment_names],
+                                                  iax,
+                                                  angle_offset=angle_offset,
+                                                  padding=padding,
+                                                  #xy,
+                                                  #residx2markeridx,
                                                   fontsize=frag_fontsize_in_pts,
                                                   center=center,
                                                   r=r + running_r_pad
@@ -552,9 +602,11 @@ def circle_plot_residues(fragments,
             [fl.remove() for fl in frag_labels]
             running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
             frag_labels = _futils.add_fragment_labels(fragments,
-                                                      iax, xy,
                                                       [replace4latex(ifrag) for ifrag in fragment_names],
-                                                      residx2markeridx,
+                                                      iax, #xy,
+                                                      #residx2markeridx,
+                                                      angle_offset=angle_offset,
+                                                      padding=padding,
                                                       fontsize=frag_fontsize_in_pts,
                                                       center=center,
                                                       r=r + running_r_pad
@@ -571,7 +623,8 @@ def circle_plot_residues(fragments,
     return iax, xy, {"fragment_labels":frag_labels,
                      "dot_labels":labels,
                      "dots":CPs,
-                     "SS_labels":ss_labels}
+                     "SS_labels":ss_labels,
+                     "r": r+running_r_pad}
 
 
 def add_bezier_curves(iax,
@@ -588,7 +641,7 @@ def add_bezier_curves(iax,
 
     Parameters
     ----------
-    iax : :obj:`matplotlib.Axes`
+    iax : :obj:`~matplotlib.axes.Axes`
     nodepairs_xy : iterable of pairs of pairs of floats
         Each item is a pair of pairs [(x1,y1),(x2,y2)]
         to be connected with bezier curves 1<--->2
@@ -664,13 +717,24 @@ def add_fragmented_residue_labels(fragments,
 
     Parameters
     ----------
-    fragments
-    iax
-    fontsize
-    center
-    r
-    angle_offset
-    padding
+    fragments : iterable of iterables
+        List of iterables of residue idxs defining how the
+        residues are split into fragments. If no
+        :obj:`textlabels` are provided, the idxs
+        themselves become the labels
+    iax : :obj:`~matplotlib.axes.Axes`
+    fontsize : int
+    r : scalar
+        The radius of the circle, in axis inuts
+    angle_offset : scalar
+        Where the circle starts, in degrees. 0 means 3 o'clock,
+        90 12 o'clock etc. It's the phi of polar coordinates
+    padding : list, default is [1,1,1]
+        * first integer : Put this many empty positions before the first dot
+        * second integer: Put this many empty positions between fragments
+        * third integer : Put this many empty positions after the last dot
+    center : pair of floats
+        where the circle is centered, in axis units
     add_res_labs_kwargs
 
     Returns

@@ -23,7 +23,7 @@
 import numpy as _np
 from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
-from mdciao.utils.lists import assert_no_intersection as _no_intersect
+from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp as _re_warp
 
 _mycolors = _colorstring.split(",")
 
@@ -94,9 +94,7 @@ def create_flare_bezier_2(nodes,
     nodes = _np.vstack((_np.array((nodes[0], center, nodes[1]),dtype="float")))
     return my_BZCURVE(nodes.T, degree=2)
 
-#TODO rename circle?
-#TODO rename offset->start
-def regspace_angles(npoints, circle=360, offset=0, clockwise=True):
+def regspace_angles(npoints, circle=360, clockwise=True):
     r"""Return the angular values for spreading n points equidistantly in a circle
 
     Note
@@ -113,8 +111,6 @@ def regspace_angles(npoints, circle=360, offset=0, clockwise=True):
         number of points
     circle : float, default is 360
         size of the circle in degrees
-    offset : float, default is 0
-        Where the circle is supposed to start
     clockwise : boolean, default is True
         In which direction the angle array grows.
 
@@ -129,7 +125,7 @@ def regspace_angles(npoints, circle=360, offset=0, clockwise=True):
         fac=-1
     else:
         fac=1
-    angles = _np.hstack([fac*(ii * dang)+offset for ii in range(npoints)])
+    angles = _np.hstack([fac*(ii * dang) for ii in range(npoints)])
     return angles
 
 def fragment_selection_parser(fragments,
@@ -211,8 +207,7 @@ def cartify_fragments(fragments,
     spaced_segments = _np.hstack(padded_fragment_list)
     spaced_angles = regspace_angles(len(spaced_segments),
                                     circle=2 * _np.pi,
-                                    offset=angle_offset * _np.pi / 180
-                                    )
+                                    )+angle_offset * _np.pi / 180
     angles = _np.hstack([spaced_angles[ii] for ii, idx in enumerate(spaced_segments) if idx is not None])
     xy = pol2cart(_np.ones_like(angles) * r, angles)
 
@@ -276,6 +271,7 @@ def pol2cart(rho, phi):
 # todo CLEAN THIS COLOR MESS
 def col_list_from_input_and_fragments(colors,
                                       residxs_as_fragments,
+                                      default_color="gray",
                                       ):
     r"""
     per-residue color list taking possible fragmentation into account
@@ -285,7 +281,7 @@ def col_list_from_input_and_fragments(colors,
     ----------
     colors : can be of different types
         * False
-            All returned colors will be "tab:blue"
+            All returned colors will be the default color
         * True
             All returned colors will differ by fragment
         * string (anything matplotlib can understand as color)
@@ -316,7 +312,7 @@ def col_list_from_input_and_fragments(colors,
         if colors:
             to_tile = _mycolors
         else:
-            to_tile = _mycolors[:1]
+            to_tile = [default_color]
         jcolors = _np.tile(to_tile, _np.ceil(len(residxs_as_fragments) / len(to_tile)).astype("int"))
         col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
     elif isinstance(colors, str):
@@ -442,15 +438,15 @@ def should_this_residue_pair_get_a_curve(
     return lambda_out
 
 def add_fragment_labels(fragments,
-                        iax,
-                        xy,
                         fragment_names,
-                        residx2xyidx,
+                        iax,
+                        angle_offset=0,
+                        padding=[0,0,0],
                         fontsize=5,
                         center=[0,0],
                         r=1.0):
     r"""
-    Add fragment names to a flareplot
+    Add fragment labels to a flareplot
 
     Very similar to :obj:`add_residue_labels` but does not
     "radiate" the labels, it puts them in the angular
@@ -459,25 +455,34 @@ def add_fragment_labels(fragments,
     Parameters
     ----------
     fragments : iterable if iterables of ints
-    iax : :obj:`matplotlib.Axes`
-    xy : iterable of (x,y) tuples
     fragment_names  :iterable of strs, len(fragments)
-    residx2xyidx : np.ndarray
-        map to use idxs of :obj:`fragments` on :obj:`xy`,
-        since almost always these will never coincide
+    iax : :obj:`~matplotlib.axes.Axes`
+    angle_offset : scalar, scalar default is 0
+        Where the circle starts, in degrees. 0 means 3 o'clock,
+        90 12 o'clock etc. It's the phi of polar coordinates
+    padding : list, default is [0,0,0]
+        * first integer : Put this many empty positions before the first dot
+        * second integer: Put this many empty positions between fragments
+        * third integer : Put this many empty positions after the last dot
     center : pair for floats, default is (0,0)
         The center of the flareplot
-
+    r : scalar, default is 1
+        The radius at which the labes will be put
 
     Returns
     -------
-    fragment_labels : list of the :obj:`matplotlib.text.Text` objects
+    fragment_labels : list of the :obj:`~matplotlib.text.Text` objects
 
     """
-    _xy = _np.array(xy)
+    _xy = cartify_fragments(fragments,
+                            r=r,
+                            angle_offset=angle_offset,
+                            padding=padding)
+    _xy += center
     fragment_labels = []
-    for seg_idxs, iname in zip(fragments, fragment_names):
-        xseg, yseg = _xy[residx2xyidx[seg_idxs]].mean(0) - center
+    residx2xyidx = _re_warp(_np.arange(len(_np.hstack(fragments))), [len(ifrag) for ifrag in fragments])
+    for seg_idxs, iname in zip(residx2xyidx, fragment_names):
+        xseg, yseg = _xy[seg_idxs].mean(0) - center
         rho, phi = cart2pol(xseg, yseg)
         xseg, yseg = pol2cart(r , phi) + _np.array(center)
 
@@ -534,9 +539,7 @@ def add_residue_labels(iax,
     shortenAAs: bool, default is True
         Use the short-code for the AAS (GLU30->E30)
     aa_offset : int, default is 0
-        In case the resSeq idxs of the topologies
-        don't match the desired sequence, provide
-        and offset here
+        Add this number to the resSeq value
     colors : list of len(res_idxs), default is None,
         Individual residue colors, default is black
     replacement_labels : dict, default is None
@@ -761,7 +764,7 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse=False, fragments=None):
         _no_intersect(fragments, word="fragments")
         assert set(res_idxs).issubset(_np.hstack(fragments)), \
             "The input fragments do not contain all residues residx_array, " \
-            "their set difference is %s" % (set(res_idxs).difference(_np.hstack(fragments)))
+            "their set difference is %s" % sorted(set(res_idxs).difference(_np.hstack(fragments)))
         if isinstance(sparse,bool):
             if sparse:
                 residues_as_fragments = [_np.intersect1d(ifrag,res_idxs) for ifrag in fragments]

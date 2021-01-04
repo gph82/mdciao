@@ -21,6 +21,7 @@
 ##############################################################################
 
 import numpy as _np
+import mdtraj as _md
 from mdtraj.core.residue_names import _AMINO_ACID_CODES
 import mdciao.utils as _mdcu
 from  pandas import unique as _pandas_unique
@@ -43,7 +44,7 @@ def print_fragments(fragments, top, **print_frag_kwargs):
     ----------
     fragments : dict or list
         Iterable with the sets of residue indexes
-    top : :obj:`md.Topology`
+    top : :obj:`~mdtraj.Topology`
     print_frag_kwargs : opt, keyword args for :obj:`print_frag`
 
     Returns
@@ -93,9 +94,9 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
     maplabel_first, maplabel_last = "", ""
     try:
         if idx2label is not None:
-            maplabel_first = _mdcu.str_and_dict.choose_between_good_and_better_strings(None, idx2label[fragment[0]],
+            maplabel_first = _mdcu.str_and_dict.choose_options_descencing([idx2label[fragment[0]]],
                                                                                        fmt="@%s")
-            maplabel_last = _mdcu.str_and_dict.choose_between_good_and_better_strings(None, idx2label[fragment[-1]],
+            maplabel_last = _mdcu.str_and_dict.choose_options_descencing([idx2label[fragment[-1]]],
                                                                                       fmt="@%s")
 
         rfirst, rlast = [top.residue(ii) for ii in [fragment[0], fragment[-1]]]
@@ -130,11 +131,13 @@ def get_fragments(top,
                   join_fragments=None,
                   **kwargs_residues_from_descriptors):
     """
-    Given an :obj:`mdtraj.Topology` return its residues grouped into fragments using different methods.
+    Group residues of a molecular topology into fragments using different methods.
 
     Parameters
     ----------
-    top : :py:class:`mdtraj.Topology`
+    top : :obj:`~mdtraj.Topology` or str
+        When str, path to filename
+
     method : str, default is 'lig_resSeq+'
         The method passed will be the basis for creating fragments. Check the following options
         with the example sequence
@@ -184,7 +187,7 @@ def get_fragments(top,
     verbose : boolean, optional
         Be verbose
     kwargs_residues_from_descriptors : optional
-        additional arguments, see :obj:`residues_from_descriptors`
+        additional arguments, see :obj:`~mdciao.residue_and_atom.residues_from_descriptors`
 
     Returns
     -------
@@ -195,6 +198,9 @@ def get_fragments(top,
     """
 
     _assert_method_allowed(method)
+
+    if isinstance(top, str):
+        top = _md.load(top).top
 
     # Auto detect fragments by resSeq
     fragments_resSeq = _get_fragments_by_jumps_in_sequence([rr.resSeq for rr in top.residues])[0]
@@ -433,7 +439,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     using :obj:`get_fragments`, with method "resSeq+", meaning
     we have fragments for the receptor, Ga,Gb,Gg
 
-    The purpusose is to check whether the BW-fragmentation is
+    The purpose is to check whether the BW-fragmentation is
     contained in the previous fragmentation:
     * [0,1,2,3] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
     is not a clash, bc TM6 is contained in fragments[0]
@@ -533,6 +539,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     """
     user_wants_consensus = False
     assert isinstance(fragment_input,list)
+    #TODO the following line is untested, the usecase not mentioned in the docs...?
     if len(fragment_input)==1 and isinstance(fragment_input[0],str) and " " in fragment_input[0]:
         fragment_input = fragment_input[0].split(" ")
     #if len(fragment_input)==1 and isinstance(fragment_input[0],str) and "," in fragment_input[0]:
@@ -681,10 +688,11 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
     return groups_as_residue_idxs, groups_as_keys
 
 def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
-                            orphan_name="?"):
+                            orphan_name="?",
+                            other_fragments=None):
     r"""
     Return a fragment list where residues not present in :obj:`fragments` are
-    now new interstitial fragments.
+    now new interstitial ('orphan') fragments.
 
     "not-present" means outside of the ranges of each fragment, s.t.
     an existing fragment like [0,1,5,6] is actually considered [0,1,2,3,4,5,6]
@@ -704,6 +712,18 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
         If the str contains a '%' character
         it will be used as a format identifier
         to use as orphan_name%ii
+    other_fragments : dict, default is None
+        A second set of fragment-definitions.
+        If these other fragments are contained
+        in the newly found orphans, then the
+        orphans are re-shaped and renamed
+        using this info. Typical usecase
+        is for :obj:`fragments` to be
+        consensus fragments (that don't
+        necessarily cover the whole topology)
+        and :obj:`other_fragments` to
+        come from :obj:`fragments.get_fragments`
+        and cover the whole topology
 
 
     Returns
@@ -730,9 +750,23 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
             orphans_labels = [orphan_name%ii for ii, __ in enumerate(orphans)]
         else:
             orphans_labels = [orphan_name for __ in orphans]
-        new_frags = orphans + full_frags
-        new_labels = orphans_labels + fragnames
+        # The idea is that now orphans could be supersets of existing
+        # fragments, s.t.
+        if other_fragments is not None:
+            popped = []
+            for ii in range(len(orphans)):
+                for xname,xfrag in other_fragments.items():
+                    if xname not in popped and set(xfrag).issubset(orphans[ii]):
+                        orphans[ii] = sorted(set(orphans[ii]).difference(xfrag))
+                        popped.append(xname)
+                        orphans.append(xfrag)
+                        orphans_labels.append(xname)
+        still_orphans = [ii for ii, oo in enumerate(orphans) if len(oo)>0]
+        new_frags = [orphans[oo] for oo in still_orphans] + full_frags
+        new_labels =[orphans_labels[oo] for oo in still_orphans] + fragnames
         idxs = _np.argsort([ifrag[0] for ifrag in new_frags])
-        return [list(new_frags[ii]) for ii in idxs], [new_labels[ii] for ii in idxs]
+        new_frags, new_names = [list(new_frags[ii]) for ii in idxs], [new_labels[ii] for ii in idxs]
+
+        return new_frags, new_names
     else:
         return fragments, fragnames

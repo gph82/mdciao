@@ -17,8 +17,8 @@ from mdciao.nomenclature.nomenclature import \
     _CGN_fragments, \
     _BW_web_lookup, \
     _fill_consensus_gaps, \
-    _map2defs,\
-    _top2consensus_map
+    _map2defs
+    #_top2consensus_map
 #TODO make these imports cleaner
 from mdciao.filenames import filenames
 
@@ -256,7 +256,7 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                                    "TM2" : ["T66","V67"]})
     def test_table2B_by_AAcode_already_DF(self):
         from pandas import read_excel
-        df = read_excel(self.file, header=0)
+        df = read_excel(self.file, header=0, engine="openpyxl")
 
         table2BW = nomenclature.table2BW_by_AAcode(tablefile=df)
         self.assertDictEqual(table2BW,
@@ -367,40 +367,41 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         with pytest.raises(ValueError):
             self.cgn_local.conlab2residx(self.cgn_local.top, map=map)
 
-    def test_top2map_just_passes(self):
-        # the true test of this is in the test of _top2consensus_map
-        self.cgn_local.top2map(self.cgn_local.top)
-
-    def test_top2defs_returns_all_keys(self):
-        defs = self.cgn_local.top2defs(self.cgn_local.top, return_defs=True)
+    def test_top2frags_just_passes(self):
+        defs = self.cgn_local.top2frags(self.cgn_local.top)
         self.assertSequenceEqual(list(defs.keys()),
                                  _CGN_fragments)
 
-    def test_top2defs_defs_are_broken_in_frags(self):
+    def test_top2frags_gets_dataframe(self):
+        self.cgn_local.aligntop(self.cgn_local.top)
+        defs = self.cgn_local.top2frags(self.cgn_local.top,
+                                        input_dataframe=self.cgn_local.most_recent_alignment)
+        self.assertSequenceEqual(list(defs.keys()),
+                                 _CGN_fragments)
+
+    def test_top2frags_defs_are_broken_in_frags(self):
 
         input_values = (val for val in ["0-1"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            defs = self.cgn_local.top2defs(self.cgn_local.top,
-                                           return_defs=True,
-                                           fragments=[_np.arange(0,10),
+            defs = self.cgn_local.top2frags(self.cgn_local.top,
+                                            fragments=[_np.arange(0,10),
                                                       _np.arange(10,15),
                                                       _np.arange(15,20)
                                                       ]
-                                           )
+                                            )
             self.assertSequenceEqual(list(defs.keys()),
                                      _CGN_fragments)
             _np.testing.assert_array_equal(defs["G.HN"],_np.arange(0,15))
 
-    def test_top2defs_defs_are_broken_in_frags_bad_input(self):
+    def test_top2frags_defs_are_broken_in_frags_bad_input(self):
         input_values = (val for val in ["0-2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
             with pytest.raises(ValueError):
-                self.cgn_local.top2defs(self.cgn_local.top,
-                                        return_defs=True,
-                                           fragments=[_np.arange(0, 10),
+                self.cgn_local.top2frags(self.cgn_local.top,
+                                         fragments=[_np.arange(0, 10),
                                                       _np.arange(10, 15),
                                                       _np.arange(15, 40)]
-                                           )
+                                         )
 
     def test_fragments_as_idxs(self):
         frags_as_idsx = self.cgn_local.fragments_as_idxs
@@ -417,10 +418,10 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     # These tests only test it runs, not that the alignment is correct
     #  those checks are done in sequence tests
     def test_aligntop_with_self(self):
-        top2self, self2top, df = self.cgn_local.aligntop(self.cgn_local.seq)
+        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq)
         self.assertDictEqual(top2self,self2top)
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top, df = self.cgn_local.aligntop(self.cgn_local.seq, restrict_idxs=[2,3])
+        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq, restrict_to_residxs=[2, 3])
         self.assertDictEqual(top2self,self2top)
         self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
@@ -514,10 +515,11 @@ class TestLabelerBW_local(unittest.TestCase):
     # These tests only test it runs, not that the alignment is correct
     #  those checks are done in sequence tests
     def test_aligntop_with_self(self):
-        top2self, self2top, df = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq)
+        top2self, self2top = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq)
         self.assertDictEqual(top2self,self2top)
+        self.assertIsInstance(self.BW_local_w_pdb.most_recent_alignment,DataFrame)
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top, df = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq, restrict_idxs=[2,3])
+        top2self, self2top = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq, restrict_to_residxs=[2, 3])
         self.assertDictEqual(top2self,self2top)
         self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
@@ -548,60 +550,6 @@ class Test_choose_between_consensus_dicts(unittest.TestCase):
                                            )
 
 
-@unittest.skip("The tested method appears to be unused")
-class Test_guess_missing_BWs(unittest.TestCase):
-    #TODO change this test to reflect the new changes Guillermo recently added
-    def setUp(self):
-        self.file = path.join(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx)
-        self.geom = md.load(test_filenames.file_for_test_pdb)
-
-    def _test_guess_missing_BWs_just_works(self):
-        table2BW = table2BW_by_AAcode(tablefile=self.file)
-        guess_BW = guess_missing_BWs(table2BW, self.geom.top, restrict_to_residxs=None)
-        self.assertDictEqual(guess_BW,
-                             {0: '1.29*',
-                              1: '1.30*',
-                              2: '1.31*',
-                              3: '1.27*',
-                              4: '1.26',
-                              5: '1.27*',
-                              6: '1.28*',
-                              7: '1.28*'})
-
-@unittest.skip("The tested method appears to be unused")
-class Test_top2CGN_by_AAcode(unittest.TestCase):
-    #TODO change this test to reflect the new changes Guillermo recently added
-    def setUp(self):
-        self.cgn = LabelerCGN("3SN6",
-                              local_path=test_filenames.examples_path)
-        self.geom = md.load(test_filenames.file_for_test_pdb)
-
-    def _test_top2CGN_by_AAcode_just_works(self):
-        top2CGN = top2CGN_by_AAcode(self.geom.top, self.cgn)
-        self.assertDictEqual(top2CGN,
-                             {0: 'G.HN.27',
-                              1: 'G.HN.53',
-                              2: 'H.HC.11',
-                              3: 'H.hdhe.4',
-                              4: 'G.S2.3',
-                              5: 'G.S2.5',
-                              6: None,
-                              7: 'G.S2.6'})
-
-@unittest.skip("This method appears unused at the moment")
-class Test_add_loop_definitions_to_TM_residx_dict(unittest.TestCase):
-    def setUp(self):
-        self.segment_dict = {'TM1': [20, 21, 22], 'TM2': [30, 33, 34], 'TM3': [40, 48], 'TM4': [50, 56],
-                             'TM5': [60, 61],'TM6': [70], 'TM7': [80, 81, 82, 83, 89], 'H8': [90, 91, 92, 93, 94, 95]}
-
-    def test_add_loop_definitions_to_TM_residx_dict_just_works(self):
-        add_defs = add_loop_definitions_to_TM_residx_dict(self.segment_dict)
-        self.assertEqual(add_defs['ICL1'],[23, 29])
-        self.assertEqual(add_defs['ECL1'], [35, 39])
-        self.assertEqual(add_defs['ICL2'], [49, 49])
-        self.assertEqual(add_defs['ECL2'], [57, 59])
-        self.assertEqual(add_defs['ECL3'], [71, 79])
-
 class Test_map2defs(unittest.TestCase):
     def setUp(self):
         self.cons_list =  ['3.67','G.H5.1','G.H5.6','5.69']
@@ -627,28 +575,6 @@ class Test_map2defs(unittest.TestCase):
         with pytest.raises(AssertionError):
             _map2defs(self.cons_list_wo_dots)
 
-class Test_top2consensus_map(TestClassSetUpTearDown_CGN_local):
-
-    #TODO add test for special case restrict_to_residxs
-    def setUp(self):
-        super(Test_top2consensus_map,self).setUp()
-        self.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
-        self.top_mut = md.load(test_filenames.pdb_3SN6_mut).top
-        self.cons_list_test = ['G.HN.26','G.HN.27','G.HN.28','G.HN.29','G.HN.30']
-
-    def test_top2consensus_map_just_works(self): #generally works
-        cons_list = _top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
-                                                    top=self.top_3SN6)
-
-        self.assertEqual(cons_list[:5], self.cons_list_test)
-
-    def test_top2consensus_map_keep_consensus_is_true(self):
-        cons_list = _top2consensus_map(consensus_dict=self.cgn_local.AA2conlab,
-                                       top=self.top_mut,
-                                       guess_consensus=True)
-
-        self.assertEqual(cons_list[:5], self.cons_list_test)
-
 class Test_fill_CGN_gaps(unittest.TestCase):
     def setUp(self):
         self.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
@@ -673,36 +599,28 @@ class Test_fill_BW_gaps(unittest.TestCase):
         fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.geom.top, verbose=True)
         self.assertEqual(fill_cgn, self.cons_list_out)
 
-@unittest.skip("This method apperas unused at the moment")
-class Test_fill_BW_gaps_old(unittest.TestCase):
-    def setUp(self):
-        self.geom = md.load(test_filenames.file_for_top2consensus_map) # this file does not exist anymore
-        self.cons_list_in = ['1.25', '1.26', None, '1.28']
-        self.cons_list_out = ['1.25', '1.26', '1.27', '1.28']
-
-    def test_fill_BW_gaps_just_works(self):
-        fill_bw = nomenclature._fill_BW_gaps(self.cons_list_in, self.geom.top)
-        self.assertEqual(fill_bw,self.cons_list_out)
-
-
 class Test_guess_by_nomenclature(unittest.TestCase):
 
-    def setUp(self):
-        self.BW_local_w_pdb = nomenclature.LabelerBW("adrb2_human",
-                                        ref_PDB="3SN6",
-                                        format="%s_full.xlsx",
-                                        local_path=test_filenames.test_data_path)
-        self.fragments = get_fragments(self.BW_local_w_pdb.top)
+    @classmethod
+    def setUpClass(cls):
+        BW_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
+
+        cls.BW_local_w_pdb = nomenclature.LabelerBW(BW_file,
+                                                    ref_PDB="3SN6",
+                                                    local_path=test_filenames.RSCB_pdb_path,
+                                                    format="%s",
+                                                    )
+        cls.fragments = get_fragments(cls.BW_local_w_pdb.top)
 
     def test_works_on_enter(self):
         import mock
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
-                                           self.BW_local_w_pdb.top,
-                                           self.fragments,
-                                                              "BW")
-            self.assertEqual(answer,"3")
+                                                        self.BW_local_w_pdb.top,
+                                                        self.fragments,
+                                                        "BW")
+            self.assertEqual(answer, "3")
 
     def test_works_return_answer_as_list(self):
         import mock
@@ -737,32 +655,55 @@ class Test_guess_by_nomenclature(unittest.TestCase):
 
 class Test_guess_nomenclature_fragments(unittest.TestCase):
     # The setup is in itself a test
-    def setUp(self):
-        self.BW_local_w_pdb = nomenclature.LabelerBW("adrb2_human",
-                                        ref_PDB="3SN6",
-                                        format="%s_full.xlsx",
-                                        local_path=test_filenames.test_data_path)
-        self.fragments = get_fragments(self.BW_local_w_pdb.top)
+    @classmethod
+    def setUpClass(cls):
+        BW_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
+
+        cls.BW_local_w_pdb = nomenclature.LabelerBW(BW_file,
+                                                     ref_PDB="3SN6",
+                                                     local_path=test_filenames.RSCB_pdb_path,
+                                                     format="%s",
+                                                     )
+        cls.fragments = get_fragments(cls.BW_local_w_pdb.top,verbose=False)
 
     def test_finds_frags(self):
         guessed_frags = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb,
-                                                     self.BW_local_w_pdb.top,
-                                                     fragments=self.fragments,
-                                                     verbose=True)
+                                                                  self.BW_local_w_pdb.top,
+                                                                  fragments=self.fragments,
+                                                                  verbose=True,
+                                                                  )
         _np.testing.assert_array_equal([3],guessed_frags)
+
+    def test_finds_frags_res(self):
+        guessed_res = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb,
+                                                                  self.BW_local_w_pdb.top,
+                                                                  fragments=self.fragments,
+                                                                  return_residue_idxs=True
+                                                                )
+        _np.testing.assert_array_equal(self.fragments[3], guessed_res)
 
     def test_finds_frags_no_frags(self):
         guessed_frags = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb,
                                                      self.BW_local_w_pdb.top,
-                                                     verbose=True)
+                                                                  )
         _np.testing.assert_array_equal([3],guessed_frags)
 
     def test_finds_frags_seq_as_str(self):
         guessed_frags = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb.seq,
                                                                   self.BW_local_w_pdb.top,
                                                                   fragments=self.fragments,
-                                                                  verbose=True)
+                                                                  )
         _np.testing.assert_array_equal([3], guessed_frags)
+
+    def test_finds_frags_nothing_None(self):
+        seq = "THISSENTENCEWILLNEVERALIGN"
+        guessed_frags = nomenclature.guess_nomenclature_fragments(seq,
+                                                                  self.BW_local_w_pdb.top,
+                                                                  fragments=self.fragments,
+                                                                  empty=None
+                                                                  )
+        print(guessed_frags)
+        assert  guessed_frags is None
 
 if __name__ == '__main__':
     unittest.main()
@@ -802,11 +743,16 @@ class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 
     def test_works(self):
         # Obtain the full objects first
-        full_map = self.cgn_local.top2map(self.top,
-                                          verbose=False)
-        frag_defs = self.cgn_local.top2defs(self.top,
-                                            verbose=False, return_defs=True,
-                                            map_conlab=full_map)
+        full_map = self.cgn_local.top2labels(self.top,
+                                             autofill_consensus=True,
+                                             #verbose=True
+                                             )
+
+        frag_defs = self.cgn_local.top2frags(self.top,
+                                             verbose=False,
+                                             #show_alignment=True,
+                                             #map_conlab=full_map
+                                             )
         idxs_to_restrict_to = frag_defs["G.H5"]
         incomplete_map = [full_map[idx] if idx in idxs_to_restrict_to else None for idx in range(self.top.n_residues)]
 
@@ -814,7 +760,52 @@ class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
         reconstructed_defs = nomenclature.compatible_consensus_fragments(self.top,
                                                                          [incomplete_map],
                                                                          [self.cgn_local],
-                                                                         guess_consensus=False)
+                                                                         autofill_consensus=False)
 
         self.assertDictEqual(frag_defs, reconstructed_defs)
 
+
+class Test_conslabel2fraglabel(unittest.TestCase):
+
+    def test_just_works(self):
+        self.assertEqual("TM3",nomenclature.conslabel2fraglabel("GLU30@3.50"))
+
+class Test_alignment_df2_conslist(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.list_of_dicts = [
+            {"idx_0": 0,
+             "idx_1": 0,
+             "match": True,
+             "AA_0": "GLU",
+             "AA_1": "GLU",
+             "conlab":"3.50",
+             },
+            {"idx_0": 1,
+             "idx_1": 1,
+             "match": False,
+             "AA_0": "LYS",
+             "AA_1": "ARG",
+             "conlab": "3.51",
+             },
+            {"idx_0": 2,
+             "idx_1": 2,
+             "match": True,
+             "AA_0": "PHE",
+             "AA_1": "PHE",
+             "conlab":"3.52",
+             },
+        ]
+        cls.df  = DataFrame(cls.list_of_dicts)
+        #cls.consensus_dict = {"GLU0": "3.50",
+        #                      "ARG1": "3.51",
+        #                      "PHE2": "3.52"}
+
+    def test_works(self):
+        out_list = nomenclature.alignment_df2_conslist(self.df)
+        self.assertListEqual(out_list, ["3.50", None, "3.52"])
+
+    def test_works_nonmatch(self):
+        out_list = nomenclature.alignment_df2_conslist(self.df, allow_nonmatch=True)
+        self.assertListEqual(out_list, ["3.50", "3.51", "3.52"])

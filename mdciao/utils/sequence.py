@@ -216,7 +216,7 @@ def alignment_result_to_list_of_dicts(ialg,
             idict["match"]=True
 
     if verbose:
-        print("\nAlignment")
+        print("\nAlignment:")
         order = [key_idx_seq_1, key_AA_code_seq_1, key_full_resname_seq_1,
                                 key_AA_code_seq_0, key_resSeq_seq_0, key_full_resname_seq_0, key_idx_seq_0, "match"]
         print_verbose_dataframe(_DF(alignment_dict)[order])
@@ -227,9 +227,11 @@ def alignment_result_to_list_of_dicts(ialg,
 def align_tops_or_seqs(top0, top1, substitutions=None,
                        seq_0_res_idxs=None,
                        seq_1_res_idxs=None,
-                       return_DF=True):
+                       return_DF=True,
+                       verbose=False,
+                       ):
     r""" Align two sequence-containing objects, i.e. strings and/or
-    :obj:`mdtraj.Topology` objects)
+    :obj:`mdtraj.Topology` objects
 
     Returns a :obj:`pandas.DataFrame`
 
@@ -251,6 +253,7 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
     return_DF : bool, default is True
         If false, a list of alignment dictionaries instead
         of a dataframe will be returned
+    verbose : bool, default is False
 
     Returns
     -------
@@ -296,7 +299,7 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
                                                    seq_0_res_idxs=seq_0_res_idxs,
                                                    seq_1_res_idxs=seq_1_res_idxs,
                                                    topology_1=top14a,
-                                                   #verbose=True,
+                                                   verbose=verbose,
                                                    )
 
     if return_DF:
@@ -308,16 +311,19 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
 
 def maptops(top0,
             top1,
+            allow_nonmatch=False,
             ):
-    r""" map matching residues via their serial indices
-    between topologies using a sequence alignment
-
-    Mis-matched positions and gaps are missing from the result
+    r""" map residues between topologies or sequences
+    via their serial indices a sequence alignment
 
     Parameters
     ----------
-    top0 : :obj:`md.Topology`
-    top1:  :obj:`md.Topology`
+    top0 : :obj:`~mdtraj.Topology` or str
+    top1:  :obj:`~mdtraj.Topology` or str
+    allow_nonmatch : bool, default is False
+        If true, non-matches of
+        equal length will be
+        considered matches
 
     Returns
     -------
@@ -330,7 +336,7 @@ def maptops(top0,
     df = align_tops_or_seqs(top0, top1,
                             return_DF=True)
 
-    return df2maps(df)
+    return df2maps(df,allow_nonmatch=allow_nonmatch)
 
 def df2maps(df, allow_nonmatch=True):
     r"""Map the columns "idx_0" and "idx_1" of an alignment
@@ -363,16 +369,11 @@ def df2maps(df, allow_nonmatch=True):
         top1_to_top0[20] = 10
 
     """
-    match_ranges = _cranges(df["match"].values)
-    _df = df.copy()
-    if False in match_ranges.keys():
-        for rr in match_ranges[False]:
-            try:
-                if allow_nonmatch and all(_df.loc[[rr[0]-1,rr[-1]+1]]["match"]) and \
-                        all(["-" not in df[key].values for key in ["AA_1","AA_1"]]): #this checks for no insertions in the alignment ("=equal length ranges")
-                    _df.at[rr,"match"]=True
-            except KeyError:
-                continue
+    if allow_nonmatch:
+        _df = re_match_df(df)
+    else:
+        _df = df
+
     top0_to_top1 = {key: val for key, val in zip(_df[_df["match"] == True]["idx_0"].to_list(),
                                                  _df[_df["match"] == True]["idx_1"].to_list())}
 
@@ -380,61 +381,51 @@ def df2maps(df, allow_nonmatch=True):
 
     return top0_to_top1, top1_to_top0
 
-'''
-# todo this is a bit of overkill, one alignment per residue
-def residx_in_seq_by_alignment(ridx1, top1,
-                               top2,
-                               subset_1=None,
-                               verbose=False,
-                               fail_if_no_match=True):
+def re_match_df(df):
     r"""
-    For a given residue index in a given topology, return the equivalent
-    residue index in a second topology
+    Return a copy of an alignment :obj:`pandas.Dataframe` with True 'match'-values
+    for non-matching blocks that have equal length.
+
+    For instance,
+        A A True
+        A A True
+        B D False
+        B D False
+        C C True
+        C C True
+    gets re_matched to:
+        A A True
+        A A True
+        B D True
+        B D True
+        C C True
+        C C True
+
+    The input :obj:`DataFrame` is left untouched and only a copy is returned
+
+
     Parameters
     ----------
-    ridx1: int
-    top1: mdtraj.Topology
-    top2: mdtraj.Topology
-    subset_1: iterable of integers, default is None
-        Restrict the alignment to these indices of top1
+    df : :obj:`pandas.DataFrame`
+        Typically comes from  :obj:`align_tops_or_seqs`
 
     Returns
     -------
-    ridx2: int
-        Index so that top2.residue(ridx2) will return the residue equivalent
-        to top1.residue(ridx1)
+    _df : :obj:`pandas.DataFrame`
+        A re_matched copy of :obj:`df`
 
     """
-    if subset_1 is None:
-        subset_1 = _np.arange(top1.n_residues)
 
-    assert ridx1 in subset_1
+    match_ranges = _cranges(df["match"].values)
+    _df = df.copy()
+    if False in match_ranges.keys():
+        for rr in match_ranges[False]:
+            try:
+                if all(_df.loc[[rr[0] - 1, rr[-1] + 1]]["match"]) and \
+                        all(["-" not in df[key].values[rr] for key in ["AA_0",
+                                                                   "AA_1"]]):  # this checks for no insertions in the alignment ("=equal length ranges")
+                    _df.at[rr, "match"] = True
+            except KeyError:
+                continue
 
-    top1_seq, top2_seq = [''.join([str(rr.code).replace("None","X") for rr in itop.residues])
-                        for itop in [top1, top2]]
-
-    top1_seq = ''.join([top1_seq[ii] for ii in subset_1])
-    ires = alignment_result_to_list_of_dicts(
-        my_bioalign(top1_seq, top2_seq)[0],
-        top1, subset_1,
-        _np.arange(top2.n_residues),
-        )
-
-    idf = _DF(ires)
-    if verbose:
-        print_verbose_dataframe(idf)
-    jdf = idf[idf["idx_0"] == _np.argwhere(subset_1==ridx1)[0,0]]
-    #print(jdf)
-    assert len(jdf)==1
-    if not list(jdf["match"])[0]==True:
-        #print("Sorry, no match after trying to align %s!"%top1.residue(ridx1))
-        print("Sorry, no match after trying to align %s!"%top1.residue(ridx1))
-        if fail_if_no_match:
-            print_verbose_dataframe(idf)
-            raise Exception
-        else:
-            print("returning other stuff")
-            print(jdf)
-
-    return list(jdf["idx_1"])[0]
-'''
+    return _df

@@ -67,7 +67,7 @@ def table2BW_by_AAcode(tablefile,
     """
 
     if isinstance(tablefile,str):
-        df = _read_excel(tablefile, header=0)
+        df = _read_excel(tablefile, header=0, engine="openpyxl")
     else:
         df = tablefile
 
@@ -94,7 +94,7 @@ def table2BW_by_AAcode(tablefile,
 def PDB_finder(PDB_code, local_path='.',
                try_web_lookup=True,
                verbose=True):
-    r"""Return an :obj:`mdtraj.Trajectory` by loading a local
+    r"""Return an :obj:`~mdtraj.Trajectory` by loading a local
     file or optionally looking up online, see :obj:`md_load_rscb`
 
     Note
@@ -120,7 +120,7 @@ def PDB_finder(PDB_code, local_path='.',
 
     Returns
     -------
-    geom : :obj:`mdtraj.Trajectory`
+    geom : :obj:`~mdtraj.Trajectory`
     return_file : str with filename,
         Will contain an url if web_lookup was necessary
     """
@@ -286,7 +286,7 @@ def BW_finder(BW_descriptor,
               dont_fail=False,
               write_to_disk=False):
     r"""
-    Return a :obj:`pandas.DataFrame` containing
+    Return a :obj:`~pandas.DataFrame` containing
     a `Ballesteros-Weinstein-Numbering (BW)
     <https://doi.org/10.1016/S1043-9471(05)80049-7>`_ [1].
 
@@ -303,9 +303,10 @@ def BW_finder(BW_descriptor,
         BW information, locally or online:
          * a uniprot descriptor, e.g. `adrb2_human`
          * a full local filename, e.g. `my_BW.txt` or
-           `path/to/my_BW.txt`
+          `path/to/my_BW.txt`
          * the "basename" filename, `adrb2_human` if
-         `adrb2_human.xlsx` exists on :obj:`local_path` (see below :obj:`format`)
+          `adrb2_human.xlsx` exists on :obj:`local_path`
+          (see below :obj:`format`)
         All these ways of doing the same thing (descriptor, basename, fullname,
         localpath, fullpath) are for compatibility with other methods.
     format : str, default is "%s.xlsx".
@@ -328,7 +329,7 @@ def BW_finder(BW_descriptor,
     Returns
     -------
     df : DataFrame or None
-        The BW information as :obj:`pandas.DataFrame`
+        The BW information as :obj:`~pandas.DataFrame`
 
     References
     ----------
@@ -356,8 +357,9 @@ def BW_finder(BW_descriptor,
     url = "%s/%s" % (GPCRmd, BW_descriptor)
 
     local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
+                                                        engine="openpyxl",
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
-                                                        converters={"BW": str}).replace({_np.nan: None})
+                                                        converters={"BW": str}).replace({_np.nan: None},)
     web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
     print("Using BW-nomenclature, please cite the following 3rd party publications:\n"
           " * https://doi.org/10.1016/S1043-9471(05)80049-7 (Weinstein et al 1995)\n"
@@ -433,9 +435,9 @@ def md_load_rscb(PDB,
                  verbose=False,
                  return_url=False):
     r"""
-    Input a PDB code get an :obj:`mdtraj.Trajectory` object.
+    Input a PDB code get an :obj:`~mdtraj.Trajectory` object.
 
-    Thinly wraps around :obj:`mdtraj.load_pdb` by constructing
+    Thinly wraps around :obj:`~mdtraj.load_pdb` by constructing
     the url for the user.
 
     Parameters
@@ -450,7 +452,7 @@ def md_load_rscb(PDB,
 
     Returns
     -------
-    traj : :obj:`mdtraj.Trajectory`
+    traj : :obj:`~mdtraj.Trajectory`
     url  : str, optional
     """
     url = '%s/%s.pdb' % (web_address, PDB)
@@ -467,7 +469,7 @@ class LabelerConsensus(object):
 
     At the moment child classe are
      * :obj:`LabelerBW` for Ballesteros-Weinstein (BW)
-     * :obj:`LabelerCGN`for Common-Gprotein-nomenclature (CGN)
+     * :obj:`LabelerCGN` for Common-Gprotein-nomenclature (CGN)
 
     The consensus labels are abbreviated to 'conlab' throughout
 
@@ -508,13 +510,13 @@ class LabelerConsensus(object):
 
     @property
     def geom(self):
-        r""" :obj:`mdtraj.Trajectory` with with what was found
+        r""" :obj:`~mdtraj.Trajectory` with with what was found
         (locally or online) using :obj:`ref_PDB`"""
         return self._geom_PDB
 
     @property
     def top(self):
-        r""" :obj:`mdtraj.Topology` with with what was found
+        r""" :obj:`~mdtraj.Topology` with with what was found
                 (locally or online) using :obj:`ref_PDB`"""
         return self._geom_PDB.top
 
@@ -532,13 +534,19 @@ class LabelerConsensus(object):
 
     @property
     def AA2conlab(self):
-        r""" Dictionary with AA-codes as keys, so that e.g.
+        r""" Dictionary with short AA-codes as keys, so that e.g.
             * self.AA2BW["R131"] -> '3.50'
             * self.conlab2AA["R201"] -> "G.hfs2.2" """
 
 
         return self._AA2conlab
 
+    @property
+    def idx2conlab(self):
+        r""" List of consensus labels in the order (=idx) they appear in the original dataframe
+
+        This index is the row-index of the table, don't count on it being aligned with anything"""
+        return self._idx2conlab
     @property
     def fragment_names(self):
         r"""Name of the fragments according to the consensus labels
@@ -566,6 +574,13 @@ class LabelerConsensus(object):
 
     @property
     def dataframe(self):
+        r"""
+        :obj:`~pandas.DataFrame` summarizing this object's information
+
+        Returns
+        -------
+        df : :obj:`~pandas.DataFrame`
+        """
         return self._dataframe
 
     @property
@@ -573,18 +588,18 @@ class LabelerConsensus(object):
         r""" The file used to instantiate this transformer"""
         return self._tablefile
 
-    def conlab2residx(self,top,
+    def conlab2residx(self, top,
                       map=None,
-                      **top2map_kwargs,
-                     ):
+                      **top2labels_kwargs,
+                      ):
         r"""
         Returns a dictionary keyed by consensus labels and valued
         by residue indices of the input topology in :obj:`top`.
 
         The default behaviour is to internally align :obj:`top`
         with the object's available consensus dictionary
-        on the fly using :obj:`self.top2map`. See the docs
-        there for **top2map_kwargs, in particular
+        on the fly using :obj:`self.top2labels`. See the docs
+        there for **top2labels_kwargs, in particular
         restrict_to_residxs, keep_consensus, and min_hit_rate
 
         Note
@@ -608,7 +623,7 @@ class LabelerConsensus(object):
 
         Parameters
         ----------
-        top : :obj:`mdtraj.Topology`
+        top : :obj:`~mdtraj.Topology`
         map : list, default is None
             A pre-computed residx2consensuslabel map, i.e. the
             output of a previous, external call to :obj:`_top2consensus_map`
@@ -620,9 +635,9 @@ class LabelerConsensus(object):
         dict : keyed by consensus labels and valued with residue idxs
         """
         if map is None:
-            map = self.top2map(top,
-                               **top2map_kwargs,
-                              )
+            map = self.top2labels(top,
+                                  **top2labels_kwargs,
+                                  )
         out_dict = {}
         for ii,imap in enumerate(map):
             if imap is not None and str(imap).lower()!="none":
@@ -638,14 +653,15 @@ class LabelerConsensus(object):
                     out_dict[imap]=ii
         return out_dict
 
-    def top2map(self, top,
-                **kwargs):
+    def top2labels(self, top,
+                   autofill_consensus=True,
+                   **aligntop_kwargs):
 
         r""" Align the sequence of :obj:`top` to the sequence used
         to initialize this :obj:`LabelerConsensus` and return a
-        list list of consensus labels for each residue in :obj:`top`.
+        list of consensus labels for each residue in :obj:`top`.
 
-        The if a consensus label is returned as None it means one
+        If a consensus label is returned as None it means one
         of two things:
          * this position was successfully aligned with a
            match but the data used to initialize this
@@ -655,19 +671,25 @@ class LabelerConsensus(object):
            bc of a point mutation)
 
         A heuristic to "autofill" the second case can be
-        turned on using :obj:`test_top2defs_returns_all_keys`, see :obj:`_fill_consensus_gaps`
+        turned on using :obj:`autofill_consensus`,
+        see :obj:`_fill_consensus_gaps`
         for more info
 
         Note
         ----
-        This method simply wraps around :obj:`_top2consensus_map`
-        using the object's own data, see the doc on that method
-        for more info.
+        This method uses :obj:`aligntop` internally,
+        see the doc on that method for more info.
 
         Parameters
         ----------
         top :
-            :py:class:`mdtraj.Topology` object
+            :obj:`~mdtraj.Topology` object
+        autofill_consensus : boolean default is False
+            Even if there is a consensus mismatch with the sequence of the input
+            :obj:`AA2conlab_dict`, try to relabel automagically, s.t.
+             * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
+             will be grouped relabeled as
+             * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
         min_hit_rate : float, default is .5
             With big topologies and many fragments,
             the alignment method (:obj:`mdciao.sequence.my_bioalign`)
@@ -680,57 +702,48 @@ class LabelerConsensus(object):
             If :obj:`min_hit_rate`>0, :obj`restrict_to_residx`
             has to be None.
         restrict_to_residxs: iterable of integers, default is None
-            Use only these residues for alignment and labelling options.
+            Instead of guessing using :obj:`min_hit_rate`,
+            use only these residues for alignment and labelling options.
             The return list will still be of length=top.n_residues
-        guess_consensus: boolean, default is False
-            Try to fill gaps in the consensus nomenclature by calling
-            :obj:`_fill_consensus_gaps`
 
         Returns
         -------
         map : list of len = top.n_residues with the consensus labels
         """
 
-        return _top2consensus_map(self.AA2conlab, top,
-                                  **kwargs,
-                                  )
+        self.aligntop(top, **aligntop_kwargs)
+        out_list = alignment_df2_conslist(self.most_recent_alignment)
+        out_list = out_list + [None for __ in range(top.n_residues - len(out_list))]
+        # TODO we could do this padding in the alignment_df2_conslist method itself
+        # with an n_residues optarg, IDK about best design choice
+        if autofill_consensus:
+            out_list = _fill_consensus_gaps(out_list, top, verbose=False)
+        return out_list
 
-    def top2defs(self, top, map_conlab=None,
-                 return_defs=False,
-                 fragments=None,
-                 verbose=False,
-                 alt_method=False,
-                 **kwargs
-                 ):
+    def top2frags(self, top,
+                  fragments=None,
+                  min_hit_rate=.5,
+                  input_dataframe=None,
+                  show_alignment=False,
+                  verbose=True,
+                  ):
         r"""
-        Prints the definitions of subdomains that the
-        consensus nomenclature contains and map it out
+        Return the subdomains derived from the
+        consensus nomenclature and map it out
         in terms of residue indices of the input :obj:`top`
 
-        Does not return anything unless explicitly asked to.
+        Note
+        ----
+        This method uses :obj:`aligntop` internally,
+        see the doc on that method for more info.
 
         Parameters
         ----------
         top:
-            :py:class:`mdtraj.Topology` object
-        map_conlab:  list, default is None
-            The user can parse an existing map of residue idxs to
-            consensus labels. Otherwise this
-            method will generate one on the fly using :obj:`self.top2map`,
-             for which the kwargs are thought.
-             It is recommended (but not needed) to pre-compute
-             and pass such a map cases where:
-            * the user is sure that the map is the same every time
-            the method gets called.
-            * the on-the-fly creation of the map slows down the workflow
-            * in critical cases when alignment is poor and
-            naming errors are likely
-        return_defs: boolean, default is False
-            If True, apart from printing the definitions,
-            they are returned as a dictionary
+            :py:class:`~mdtraj.Topology` object
         fragments: iterable of integers, default is None
             The user can parse an existing list of fragment-definitions
-            (via residue idxs) to check if newly found, consensus
+            (via residue idxs) to check if the newly found, consensus
             definitions (:obj:`defs`) clash with the input in :obj:`fragments`.
             *Clash* means that the consensus definitions span over more
             than one of the fragments in defined in :obj:`fragments`.
@@ -739,66 +752,52 @@ class LabelerConsensus(object):
             keep in case of clashes.
 
             Check :obj:`check_if_subfragment` for more info
-
-        alt_method : bool, default is None
-            Try an alternative method, currently testing it.
-            Do not use this ATM
-
-        fill_gaps: boolean, default is False
-            Try to fill gaps in the consensus nomenclature by calling
-            :obj:`_fill_consensus_gaps`. It has no effect if the user inputs
-            the map
-
         min_hit_rate : float, default is .5
-            If :obj:`map_conlab` is not provided, such a map will
-            be generated on the fly using the whole topology, i.e.
-            the whole sequence for an initial alignment.
-            With big topologies, the alignment method
+            With big topologies, like a receptor-Gprotein system,
+            the "brute-force" alignment method
             (check :obj:`mdciao.sequence.my_bioalign`)
-            sometimes yields sub-optimal results.
-            :obj:`min_hit_rate` = .5 means that
-             only the fragments (:obj:`mdciao.fragments.get_fragments` defaults)
-             with more than 50% alignment in the original alignment
-             are used for a second alignment to create a
-             better the on-the-fly :obj:`map_conlab`
+            sometimes yields sub-optimal results, e.g.
+            finding short snippets of reference sequence
+            that align in a completely wrong part of the topology.
+            To avoid this, an initial, exploratory alignment
+            is carried out. :obj:`min_hit_rate` = .5 means that
+            only the fragments (:obj:`mdciao.fragments.get_fragments` defaults)
+            with more than 50% alignment in this exploration
+            are used to improve the second alignment
+        input_dataframe : :obj:`~pandas.DataFrame`, default is None
+            Expert option, use at your own risk.
+            Instead of aligning :obj:`top` to
+            the object's sequence to derive
+            fragment definitions, input
+            an existing alignment here, e.g.
+            the self.most_recent_alignment
+        show_alignment : bool, default is False,
+            Show the entire alignment as :obj:`~pandas.DataFrame`
+        verbose : bool, default is True
+            Also print the definitions
 
         Returns
         -------
-        defs : dictionary (if return_defs is True)
-            Dictionary with subdomain names as keys and lists of indices as values
+        defs : dictionary
+            Dictionary with subdomain names as keys
+            and lists of indices as values
         """
 
-        if alt_method:
-            if kwargs["min_hit_rate"] > 0:
-                chains = _mdcfrg.get_fragments(top, verbose=False)
-                answer = guess_nomenclature_fragments(self, top, chains, min_hit_rate=kwargs["min_hit_rate"])
-                restrict_to_residxs = _np.hstack([chains[ii] for ii in answer])
-            else:
-                restrict_to_residxs = None
-
-            top2self, self2top, df = self.aligntop(top, restrict_to_residxs)
-            frags =  self.fragments_as_idxs
-            defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
-            defs = {key:val for key, val in defs.items() if len(val)>0}
-            map_conlab = self.top2map(top, guess_consensus=kwargs["guess_consensus"], verbose=False, restrict_to_residxs=restrict_to_residxs)
-
+        if input_dataframe is None:
+            top2self, self2top = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment)
         else:
-            if map_conlab is None:
-                print("Creating a temporary map of residue idxs to consensus labels.\n"
-                      "Please refer to the documentation for advantages of parsing an \n"
-                      "existing map as argument.")
-                kwargs["verbose"] = verbose
-                map_conlab = self.top2map(top, **kwargs)
+            top2self, self2top = _mdcu.sequence.df2maps(input_dataframe)
 
-            conlab2residx = self.conlab2residx(top, map=map_conlab)
-            defs = _defdict(list)
-            for key, ifrag in self.fragments_as_conlabs.items():
-                for iBW in ifrag:
-                    if iBW in conlab2residx.keys():
-                        defs[key].append(conlab2residx[iBW])
+        # TODO "topmaps" are more straighfdw than dataframes
+        # but in pple we could make a lot of the next bookeeping as df2xxx functions
 
-        defs = {key:val for key,val in defs.items()}
+        frags =  self.fragments_as_idxs
+        defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
+        defs = {key:val for key, val in defs.items() if len(val)>0}
+
         new_defs = {}
+        map_conlab = [self.idx2conlab[top2self[topidx]] if topidx in top2self.keys() else None for topidx in range(top.n_residues)]
+
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
                 new_defs[key] = _mdcfrg.check_if_subfragment(res_idxs, key, fragments, top, map_conlab)
@@ -812,20 +811,84 @@ class LabelerConsensus(object):
                                return_string=True)
             if verbose:
                 print(istr)
-        if return_defs:
-            return {key:val for key, val in defs.items()}
 
-    def aligntop(self, top, restrict_idxs=None):
-        r""" Analogous to :obj:`mdciao.sequence.maptops` but using
-        :obj:`ConsensusLabelers.seq` as the second sequence"""
+        return dict(defs)
 
-        seq_self = self.seq
+    def aligntop(self, top,
+                 restrict_to_residxs=None,
+                 min_hit_rate=0,
+                 verbose=False):
+        r""" Align a topology with the object's sequence.
+        Returns two maps (top2self, self2top) and
+        populates the attribute self.most_recent_alignment
+
+        Wraps around :obj:`mdciao.utils.sequence.align_tops_or_seqs`
+
+        The indices of self are indices (row-indices)
+        of the original :obj:`LabelerConsensus.dataframe`,
+        which are the the ones in :obj:`ConsensusLabelers.seq`
+
+        top : :obj:`~mdtraj.Topology` object
+        restrict_to_residxs: iterable of integers, default is None
+            Use only these residues for alignment and labelling purposes
+            Helps "guide" the alignment method. E.g., one might be
+            passing an Ballesteros-Weinstein in :obj:`AA2conlab_dict` but
+            the topology also contains the whole G-protein. If available,
+            one can pass here the indices of residues of the receptor
+        min_hit_rate : float, default .5
+            With big topologies and many fragments,
+            the alignment method (:obj:`mdciao.sequence.my_bioalign`)
+            sometimes yields sub-optimal results. A value
+            :obj:`min_hit_rate` >0, e.g. .5 means that a pre-alignment
+            takes place to populate :obj:`restrict_to_residxs`
+            with indices of those the fragments
+            (:obj:`mdciao.fragments.get_fragments` defaults)
+            with more than 50% alignment in the pre-alignment.
+            If :obj:`min_hit_rate`>0, :obj`restrict_to_residx`
+            has to be None.
+        verbose: boolean, default is False
+            be verbose
+        """
+
+        if min_hit_rate > 0:
+            assert restrict_to_residxs is None
+            restrict_to_residxs = guess_nomenclature_fragments(self.seq,
+                                                               top,
+                                                               _mdcfrg.get_fragments(top, verbose=False),
+                                                               min_hit_rate=min_hit_rate,
+                                                               return_residue_idxs=True, empty=None)
+
         df = _mdcu.sequence.align_tops_or_seqs(top,
-                                               seq_self,
-                                               seq_0_res_idxs=restrict_idxs,
-                                               return_DF=True)
+                                               self.seq,
+                                               seq_0_res_idxs=restrict_to_residxs,
+                                               return_DF=True,
+                                               verbose=verbose)
         top2self, self2top = _mdcu.sequence.df2maps(df)
-        return top2self, self2top, df
+
+        conlab = _np.full(len(df),None)
+        conlab[_np.flatnonzero(df["idx_0"].isin(top2self.keys()))]=self.dataframe.iloc[list(top2self.values())][self._nomenclature_key]
+        df = df.join(_DataFrame({"conlab": conlab}))
+
+        self._last_alignment_df = df
+
+        return top2self, self2top
+
+    @property
+    def most_recent_alignment(self):
+        r"""A :obj:`~pandas.DataFrame` with the most recent alignment
+
+        Expert use only
+
+        Returns
+        -------
+        df : :obj:`~pandas.DataFrame`
+
+        """
+        try:
+            return self._last_alignment_df
+        except AttributeError:
+            print("No alignment has been carried out with this object yet")
+            return None
 
 class LabelerCGN(LabelerConsensus):
     """
@@ -880,6 +943,9 @@ class LabelerCGN(LabelerConsensus):
             * www.mrc-lmb.cam.ac.uk (for CGN)
             * rcsb.org (for the PDB)
         """
+
+        self._nomenclature_key="CGN"
+
         # TODO see fragment_overview...are there clashes
         if _path.exists(PDB_input):
             local_path, basename = _path.split(PDB_input)
@@ -893,12 +959,15 @@ class LabelerCGN(LabelerConsensus):
                                                       verbose=verbose,
                                                       write_to_disk=write_to_disk)
         # The title of the column with this field varies between CGN and BW
-        AAresSeq_key = [key for key in list(self.dataframe.keys()) if key.lower() not in ["CGN".lower(), "Sort number".lower()]]
+        AAresSeq_key = [key for key in list(self.dataframe.keys()) if key.lower() not in [self._nomenclature_key.lower(), "Sort number".lower()]]
         assert len(AAresSeq_key)==1
         self._AAresSeq_key = AAresSeq_key
 
-        self._AA2conlab = {key: self._dataframe[self._dataframe[PDB_input] == key]["CGN"].to_list()[0]
+        self._AA2conlab = {key: self._dataframe[self._dataframe[PDB_input] == key][self._nomenclature_key].to_list()[0]
                            for key in self._dataframe[PDB_input].to_list()}
+
+        self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
+
 
         self._fragments = _defdict(list)
         for ires, key in self.AA2conlab.items():
@@ -961,6 +1030,7 @@ class LabelerBW(LabelerConsensus):
         write_to_disk
         """
 
+        self._nomenclature_key = "BW"
         # TODO now that the finder call is the same we could
         # avoid cde repetition here
         self._dataframe, self._tablefile = BW_finder(uniprot_name,
@@ -973,6 +1043,7 @@ class LabelerBW(LabelerConsensus):
         # The title of the column with this field varies between CGN and BW
         self._AAresSeq_key = "AAresSeq"
         self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
+        self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
                                   local_path=local_path,
@@ -998,182 +1069,44 @@ class LabelerBW(LabelerConsensus):
         return {key: list(self.dataframe[self.dataframe["protein_segment"] == key].index) for key in
                 self.dataframe["protein_segment"].unique()}
 
-# TODO the new fragment_idxs from the BW labeler takes care of this
-'''
-def guess_missing_BWs(input_BW_dict,top, restrict_to_residxs=None, keep_keys=False):
-    """
-    Estimates the BW for residues which are not present in the nomenclature file.
 
-    Parameters
-    ----------
-    input_BW_dict : dictionary
-        BW dictionary with residue names as the key and their corresponding BW notation
-    top : :py:class:`mdtraj.Topology`
-    restrict_to_residxs: list, optional
-        residue indexes for which the BW needs to be estimated. (Default value is None, which means all).
-
-    Returns
-    -------
-    BW : list
-        list of len=top.n_residues including estimated missing BW-names,
-        it also retains all the values from the input dictionary.
-
-    """
-
-    if restrict_to_residxs is None:
-        restrict_to_residxs = [residue.index for residue in top.residues]
-
-    #TODO keep this until we are sure there are no consquences
-    out_list = [None for __ in top.residues]
-    for rr in restrict_to_residxs:
-        residue = top.residue(rr)
-        key = '%s%s'%(residue.code,residue.resSeq)
-        try:
-            (key, input_BW_dict[key])
-            #print(key, input_BW_dict[key])
-            out_list[residue.index] = input_BW_dict[key]
-        except KeyError:
-            resSeq = _int_from_AA_code(key)
-            try:
-                key_above = [key for key in input_BW_dict.keys() if _int_from_AA_code(key)>resSeq][0]
-                resSeq_above = _int_from_AA_code(key_above)
-                delta_above = int(_np.abs([resSeq - resSeq_above]))
-            except IndexError:
-                delta_above = 0
-            try:
-                key_below = [key for key in input_BW_dict.keys() if _int_from_AA_code(key)<resSeq][-1]
-                resSeq_below = _int_from_AA_code(key_below)
-                delta_below = int(_np.abs([resSeq-resSeq_below]))
-            except IndexError:
-                delta_below = 0
-
-            if delta_above<=delta_below:
-                closest_BW_key = key_above
-                delta = -delta_above
-            elif delta_above>delta_below:
-                closest_BW_key = key_below
-                delta = delta_below
-            else:
-                print(delta_above, delta_below)
-                raise Exception
-
-            if residue.index in restrict_to_residxs:
-                closest_BW=input_BW_dict[closest_BW_key]
-                base, exp = [int(ii) for ii in closest_BW.split('.')]
-                new_guessed_val = '%s.%u*'%(base,exp+delta)
-                #guessed_BWs[key] = new_guessed_val
-                out_list[residue.index] = new_guessed_val
-                #print(key, new_guessed_val, residue.index, residue.index in restrict_to_residxs)
-            else:
-                pass
-                #new_guessed_val = None
-
-            # print("closest",closest_BW_key,closest_BW, key, new_guessed_val )
-
-    #input_BW_dict.update(guessed_BWs)
-
-    if keep_keys:
-        guessed_BWs = {}
-        used_keys = []
-        for res_idx, val in enumerate(out_list):
-            new_key = _shorten_AA(top.residue(res_idx))
-            if new_key in input_BW_dict.keys():
-                assert val==input_BW_dict[new_key],"This should not have happened %s %s %s"%(val, new_key, input_BW_dict[new_key])
-            assert new_key not in used_keys
-            guessed_BWs[new_key]=val
-            used_keys.append(new_key)
-        return guessed_BWs
-    else:
-        return out_list
-'''
-
-def _top2consensus_map(consensus_dict, top,
-                       min_hit_rate=.5,
-                       restrict_to_residxs=None,
-                       guess_consensus=False,
-                       verbose=False,
-                       ):
+def alignment_df2_conslist(alignment_as_df,
+                           allow_nonmatch=False):
     r"""
-    Align the sequence of :obj:`top` to consensus
-    dictionary's sequence (typically in :obj:`ContactLabeler.AA2conlab`))
-    and return a list of consensus numbering for each residue
-     in :obj:`top`.
-
-    For the alignment details see :obj:`my_Bioalign`
-
-    If no consensus numbering is found after the alignment,
-    the residue's entry will be None
+    Build a list with consensus labels out of an alignment and a consensus dictionary.
 
     Parameters
     ----------
-    consensus_dict : dictionary
-        AA-codes as keys and nomenclature as values, e.g. AA2CGN["K25"] -> G.HN.42
-        Typically comes from :obj:`ConsensusLabeler.AA2conlab`
-    top :
-        :py:class:`mdtraj.Topology` object
-    min_hit_rate : float, default .5
-        With big topologies and many fragments,
-        the alignment method (:obj:`mdciao.sequence.my_bioalign`)
-        sometimes yields sub-optimal results. A value
-        :obj:`min_hit_rate` >0, e.g. .5 means that a pre-alignment
-        takes place to populate :obj:`restrict_to_residxs`
-        with indices of those the fragments
-        (:obj:`mdciao.fragments.get_fragments` defaults)
-        with more than 50% alignment in the pre-alignment.
-        If :obj:`min_hit_rate`>0, :obj`restrict_to_residx`
-        has to be None.
-    restrict_to_residxs: iterable of integers, default is None
-        Use only these residues for alignment and labelling purposes
-        Helps "guide" the alignment method. E.g., one might be
-        passing an Ballesteros-Weinstein in :obj:`consensus_dict` but
-        the topology also contains the whole G-protein. If available,
-        one can pass here the indices of residues of the receptor
-    guess_consensus : boolean default is False
-        Even if there is a consensus mismatch with the sequence of the input
-        :obj:`consensus_dict`, try to relabel automagically, s.t.
-        * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
-        will be grouped relabeled as
-        * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
-
-    verbose: boolean, default is False
-        be verbose
+    alignment_as_df : :obj:`~pandas.DataFrame`
+        The alignment of the target sequence
+        to the reference sequence
+    allow_nonmatch : bool, default is False
+        If True, the consensus labels of
+        non-matching residues will be used
+        if there's alignment. E.g. if a
+        position is mutated there's no
+        identity match, but still want to
+        use that consensus label.
 
     Returns
     -------
-    map : list
-        list of length top.n_residues containing consensus labels
+    consensus_labels : list
+        List of consensus labels (when available, else None)
+         up to the highest residue idx in "idx_0"
+         of the alignment DF
     """
 
-    seq_consensus= ''.join([_mdcu.residue_and_atom.name_from_AA(key) for key in consensus_dict.keys()])
+    n_residues = _np.max([int(ival) for ival in alignment_as_df["idx_0"].values if str(ival).isdigit()])
+    out_list = _np.full(n_residues+1, None)
 
-    if min_hit_rate>0:
-        assert restrict_to_residxs is None
-        frags = _mdcfrg.get_fragments(top, verbose=False)
-        hits = guess_nomenclature_fragments(seq_consensus, top, min_hit_rate=min_hit_rate, fragments=frags)
-        if len(hits)==0:
-            restrict_to_residxs = None
-        else:
-            restrict_to_residxs = _np.hstack([frags[ii] for ii in hits])
+    if allow_nonmatch:
+        _df = _mdcu.sequence.re_match_df(alignment_as_df)
+    else:
+        _df = alignment_as_df
+    _df = _df[_df["match"]]
 
-    if restrict_to_residxs is None:
-        restrict_to_residxs = [residue.index for residue in top.residues]
-    seq = ''.join([_mdcu.residue_and_atom.shorten_AA(top.residue(ii), keep_index=False, substitute_fail='X') for ii in restrict_to_residxs])
-    alignment = _mdcu.sequence.alignment_result_to_list_of_dicts(_mdcu.sequence.my_bioalign(seq, seq_consensus)[0],
-                                                                 restrict_to_residxs, # THIS IS THE CULPRIT OF THE FINAL ConsensusLabeler not having the frag definitions of the idxs not having all fragments
-                                                                 [_mdcu.residue_and_atom.int_from_AA_code(key) for key
-                                                                  in consensus_dict],
-                                                                 topology_0=top,
-                                                                 verbose=verbose
-                                                                 )
-    alignment = _DataFrame(alignment)
-    alignment = alignment[alignment["match"] == True]
-    out_list = [None for __ in top.residues]
-    for idx, resSeq, AA in alignment[["idx_0","idx_1", "AA_1"]].values:
-        out_list[int(idx)]=consensus_dict[AA + str(resSeq)]
-
-    if guess_consensus:
-        out_list = _fill_consensus_gaps(out_list, top, verbose=False)
-    return out_list
+    out_list[_df["idx_0"].values.astype(int)] = _df["conlab"].values
+    return out_list.tolist()
 
 def _fill_consensus_gaps(consensus_list, top, verbose=False):
     r""" Try to fill CGN consensus nomenclature gaps based on adjacent labels
@@ -1198,7 +1131,7 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
         List of length top.n_residues with the original consensus labels
         Supossedly, it contains some "None" entries inside sub-domains
     top :
-        :py:class:`mdtraj.Topology` object
+        :py:class:`~mdtraj.Topology` object
     verbose : boolean, default is False
 
     Returns
@@ -1268,7 +1201,7 @@ def _fill_BW_gaps(consensus_list, top, verbose=False):
         List of length top.n_residues with the original consensus labels
         Supossedly, it contains some "None" entries inside sub-domains
     top :
-        :py:class:`mdtraj.Topology` object
+        :py:class:`~mdtraj.Topology` object
     verbose : boolean, default is False
 
     Returns
@@ -1329,7 +1262,7 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
     Parameters
     ----------
     top :
-        :py:class:`mdtraj.Topology` object
+        :py:class:`~mdtraj.Topology` object
     ref_CGN_tf :
         :class:`LabelerCGN` object
     restrict_to_residxs: list, optional, default is None
@@ -1594,7 +1527,9 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
 def guess_nomenclature_fragments(refseq, top,
                                  fragments=None,
                                  min_hit_rate=.6,
-                                 verbose=False):
+                                 verbose=False,
+                                 return_residue_idxs=False,
+                                 empty=list):
     """Guess what fragments in the topology best match
     the consensus labels in a :obj:`LabelerConsensus` object
 
@@ -1612,7 +1547,7 @@ def guess_nomenclature_fragments(refseq, top,
         be gotten from obj:`LabelerConsensus.seq` method
 
     top:
-        :py:class:`mdtraj.Topology` object
+        :py:class:`~mdtraj.Topology` object
     fragments : iterable of iterables of idxs
         How :obj:`top` is split into fragments
         If None, will be generated using get_fragments defaults
@@ -1621,11 +1556,17 @@ def guess_nomenclature_fragments(refseq, top,
         will be returned as a guess
     verbose: boolean
         be verbose
-
+    return_residue_idxs : bool, default is False
+        Return the list residue indices directly,
+        instead of returning a list of fragment idxs.
+    empty : class, list or None, default is list
+        What to return in case of an emtpy guess,
+        an empty list or a None
     Returns
     -------
     guess: list
-        indices of the fragments with higher hit-rate than :obj:`cutoff`
+        indices of the fragments (or residues) with higher hit-rate than :obj:`cutoff`
+
 
     """
 
@@ -1649,6 +1590,16 @@ def guess_nomenclature_fragments(refseq, top,
         if verbose:
             print(ii, len(hit) / len(ifrag))
         hits.append(hit)
+
+    guessed_res_idxs=[]
+    if len(guess)>0:
+        guessed_res_idxs = _np.hstack([fragments[ii] for ii in guess])
+
+    if return_residue_idxs:
+        guess = guessed_res_idxs
+
+    if empty is None and len(guess)==0:
+        guess = None
     return guess
 
 
@@ -1876,15 +1827,14 @@ _CGN_fragments = ['G.HN',
                  'G.s6h5',
                  'G.H5']
 
+# TODO this method is not used anywhere anymore, consider deleting
 def compatible_consensus_fragments(top,
                                    existing_consensus_maps,
                                    CLs,
-                                   guess_consensus=True):
+                                   autofill_consensus=True):
     r"""
-    Expand (if possible) a list existing consensus maps using
-    :obj:`mdciao.nomenclature.LabelerConsensus` objects
-
-
+    Expand (if possible) a list existing consensus maps
+    using :obj:`LabelerConsensus` objects
 
     Note
     ----
@@ -1892,6 +1842,7 @@ def compatible_consensus_fragments(top,
     The origin of this plot is that :obj:`mdciao.cli.interface` needs
     all consensus labels it can get to prettify flareplots.
 
+    #TODO this is no longer the case
     However, in the case of direct-selection by residue index (and possibly
     other cases), these consensus maps don't carry information about indices
     that were excluded when aligning the topology to a reference sequence
@@ -1908,7 +1859,7 @@ def compatible_consensus_fragments(top,
 
     Parameters
     ----------
-    top : :obj:`mdtraj.Topology`
+    top : :obj:`~mdtraj.Topology`
     existing_consensus_maps : list
         List of individual consensus maps, typically BW
         or CGN maps. These list are maps in this sense:
@@ -1930,7 +1881,7 @@ def compatible_consensus_fragments(top,
                                       for idx in range(top.n_residues)]
 
     # Same here
-    new_maps = [iCL.top2map(top, guess_consensus=guess_consensus, verbose=False) for iCL in CLs]
+    new_maps = [iCL.top2labels(top, autofill_consensus=autofill_consensus, verbose=False) for iCL in CLs]
     unified_new_consensus_map = [choose_between_consensus_dicts(idx,new_maps,no_key=None) for idx in range(top.n_residues)]
 
     # Now incorporate new labels while checking with clashes with old ones
@@ -1948,12 +1899,11 @@ def compatible_consensus_fragments(top,
 
     new_frags = {}
     for iCL in CLs:
-        new_frags.update(iCL.top2defs(top,
-                                      map_conlab=unified_new_consensus_map,
-                                      return_defs=True,
-                                      verbose=False))
+        new_frags.update(iCL.top2frags(top,
+                                       #map_conlab=unified_new_consensus_map,
+                                       verbose=False))
 
-    # This should hold anyway bc of top2defs calling conlab2residx
+    # This should hold anyway bc of top2frags calling conlab2residx
     _mdcu.lists.assert_no_intersection(new_frags.values())
 
     return new_frags

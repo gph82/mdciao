@@ -66,6 +66,7 @@ def get_sorted_trajectories(trajectories):
 
 def inform_about_trajectories(trajectories):
     r"""
+    Return a string that informs about the trajectories
 
     Parameters
     ----------
@@ -132,8 +133,8 @@ def delete_exp_in_keys(idict, exp, sep="-"):
     return out_dict,deleted_half_keys
 
 def delete_pattern_in_ctc_label(pattern, label, sep):
-    new_name = [name for name in label.split(sep) if pattern not in name]
-    deleted_half_keys = [name for name in label.split(sep) if pattern in name]
+    new_name = [name for name in splitlabel(label, sep) if pattern not in name]
+    deleted_half_keys = [name for name in splitlabel(label,sep) if pattern in name]
     assert len(new_name) == 1, (new_name, pattern)
     return new_name[0], deleted_half_keys
 
@@ -193,7 +194,7 @@ def unify_freq_dicts(freqs,
 
     # Order key alphabetically using the separator_key
     def order_key(key, sep):
-        split_key = key.split(sep)
+        split_key = splitlabel(key,sep)
         return sep.join([split_key[ii] for ii in _np.argsort(split_key)])
 
     # Create a copy, with re-ordered keys if needed
@@ -332,7 +333,7 @@ def sum_dict_per_residue(idict, sep):
     """
     out_dict = _defdict(list)
     for key, freq in idict.items():
-        key1, key2 = key.split(sep) #This will fail if sep is not in key or sep does not separate in two
+        key1, key2 = splitlabel(key, sep) #This will fail if sep is not in key or sep does not separate in two
         out_dict[key1].append(freq)
         out_dict[key2].append(freq)
     return {key:_np.sum(val) for key, val in out_dict.items()}
@@ -360,7 +361,7 @@ def freq_file2dict(ifile, defrag=None):
     """
     ext = _path.splitext(ifile)[-1]
     if ext.lower() == ".xlsx":
-        df = _read_excel(ifile)
+        df = _read_excel(ifile, engine="openpyxl")
         if "freq" in df.keys() and "label" in df.keys():
             res = {key: val for key, val in zip(df["label"].values, df["freq"].values)}
         else:
@@ -474,10 +475,42 @@ def replace4latex(istr):
 _symbols =  ['alpha','beta','gamma', 'mu', "Sigma"]+["AA"]
 _scripts =  ["^","_"]
 
+def _replace_regex_special_chars(word,
+                                 repl_char="!",
+                                 special_chars=["^", "[", "]", "(", ")"]):
+    r"""
+    Ad-hoc method to replace special regexp-chars with something else before
+    computing char positions using regexp.finditer
+
+    Note:
+    this method only makes sense because downstream from here, finditer is used
+    to search a substring in a string and special chars break that search.
+
+    Note:
+    somewhere, a dev that knows how to use regex is crying
+
+    Parameters
+    ----------
+    word : str
+    repl_char : char, default is '!'
+        The replacement character
+    special_chars : list
+        The characters that trigger replacement
+
+    Returns
+    -------
+    word : str
+        A string with all special characters repaced with :obj:`repl_char`
+
+    """
+    for sp in special_chars:
+        word = word.replace(sp, repl_char)
+    return word
+
 def _latexify(word, istr):
     # Look for appearances of this word in the whole string
-    _word = word.replace("^", "!").replace("\\","\\\\") #regex hack: avoid usage of special char by replacing with very unlikely
-    spans = [m.span() for m in _re.finditer(_word, istr.replace("^","!"))]
+    _word = _replace_regex_special_chars(word).replace("\\","\\\\")
+    spans = [m.span() for m in _re.finditer(_replace_regex_special_chars(_word), _replace_regex_special_chars(istr))]
     for ii in range(len(spans)):
         span = spans[ii]
         latex_ranges = _find_latex_chunks(istr)
@@ -502,6 +535,151 @@ def _latexify(word, istr):
         spans = [m.span() for m in _re.finditer(word, istr)]
     istr = istr.replace("$$","")
     return istr
+
+def _label2componentsdict(istr,sep="-",defrag="@",
+                          assume_ctc_label=True):
+    r"""
+    Identify the components of label like 'residue1@frag1-residue2@frag2' and return them as dictionary
+
+    Parameters
+    ----------
+    istr : str
+        Can be of any of these forms:
+        * res1
+        * res1@frag1
+        * res1@frag1-res2
+        * res1@frag1-res2@frag2
+        * res1-res2@frag2
+        * res1-res2
+
+        The fragment names can contain the separator, e.g.
+        'res1@B2AR-CT-res2@Gprot' is possible, but residue
+        names cannot.
+
+        The special case 'res1@frag1-r2' is handled with
+        the parameter :obj:`assume_ctc_label` (see below)
+
+        Labels have to start with a residue.
+    sep : char, default is "-"
+        The character that separates pairs of labels
+    defrag : char, default is "@"
+        The character that separates residues form their host fragment
+    assume_ctc_label : bool, default is True
+        In special cases of the form 'res1@frag1-r2', assume
+        this is a contact label, i.e. 'r2' does not
+        belong to the name of the fragment of res1, but is
+        the second residue.
+
+    Returns
+    -------
+    label : dict
+        A dictionary tuple with the components present in :obj:`istr`.
+        Keys can be 'res1','frag1','res2','frag2'
+    """
+    assert len(sep)==len(defrag)==1, "The 'sep' and 'defrag' arguments have to have both len 1, have " \
+                                     "instead %s (%u) %s (%u)"%(sep,len(sep),defrag,len(defrag))
+
+    bits = {}
+
+    if defrag not in istr:
+        for ii, ires in enumerate(istr.split(sep),start=1):
+            bits["res%u"%ii]=ires
+    else:
+        spans = [0] + _np.hstack([m.span() for m in _re.finditer(defrag, istr)]).tolist() + [len(istr)]
+
+        # Counters
+        r, f = 1, 1
+        for ii, jj in _np.reshape(spans, (-1, 2)):
+            iw = istr[ii:jj + 1]
+            #print(iw, ii, jj)
+
+            if sep in iw and ii == 0:
+                ires, jres = iw.replace(defrag,"").split(sep)
+                bits["res%u"%r]=ires
+                r+=1
+                bits["res%u"%r]=jres
+                r+=1
+                f+=1 # because we've already established res1 hasn't any fragment
+            else:
+                if defrag not in iw:
+                    if sep not in iw or not assume_ctc_label:
+                        bits["frag%u"%f]=iw
+                        f+=1
+                    elif sep in iw and assume_ctc_label:
+                        ires, ifrag = [jw[::-1] for jw in iw[::-1].split(sep, 1)]
+                        if "res1" in bits.keys():
+                            if "frag1" in bits.keys():
+                                bits["frag%u"%f]=iw
+                                f+=1
+                            else:
+                                if "res2" in bits.keys():
+                                    bits["frag%u" % f] = iw
+                                else:
+                                    bits["frag%u"%f]=ifrag
+                                    f+=1
+                                    bits["res%u"%r]=ires
+                                    r+=1
+
+                else:
+                    assert iw.endswith(defrag)
+                    if sep not in iw:
+                        bits["res%u"%r]=iw.split(defrag)[0]
+                        r+=1
+                    else:
+                        ires, ifrag = [jw[::-1] for jw in iw[::-1][1:].split(sep, 1)]
+                        bits["frag%u"%f]=ifrag
+                        bits["res%u"%r]=ires
+                        f+=1
+                        r+=1
+
+
+    return bits
+
+def splitlabel(label, sep="-", defrag="@"):
+    #TODO propagate this to all times we use "split" in the code
+    r"""
+    Split a contact label. Analogous to label.split(sep) but more robust
+    because fragment names can contain the separator character.
+
+    Parameters
+    ----------
+    label : str
+        Can be of any of these forms:
+         * res1
+         * res1@frag1
+         * res1@frag1-res2
+         * res1@frag1-res2@frag2
+         * res1-res2@frag2
+         * res1-res2
+
+        The fragment names can contain the separator, e.g.
+        'res1@B2AR-CT-res2@Gprot' is possible. Residue
+        names cannot contain the separator.
+
+        The method assumes that labels start with a residue,
+        (see above), else you'll get weird behaviour.
+    sep : char, default is "-"
+        The character that separates pairs of labels
+    defrag : char, default is "@"
+        The character that separates residues form their host fragment
+
+    Returns
+    -------
+    split : list
+        A list equivalent to having used label.split(sep)
+        but the separator is ignored in the fragment labels.
+    """
+
+    bits = _label2componentsdict(label,sep=sep,defrag=defrag)
+
+    split = [bits["res1"]]
+    if "frag1" in bits.keys():
+        split[0] += "%s%s" % (defrag,bits["frag1"])
+    if "res2" in bits.keys():
+        split.append(bits["res2"])
+        if "frag2" in bits.keys():
+            split[1] += "%s%s" % (defrag,bits["frag2"])
+    return split
 
 def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
     r"""
@@ -556,19 +734,37 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
                   (ixtc, traj_idx, stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
     return iterate, inform
 
-def choose_between_good_and_better_strings(good_option, better_option,
-                                           fmt="%s",
-                                           never_use=[None, "None", "NA", "na"]):
-    if good_option in never_use:
-        if better_option in never_use:
-            return ""
-        else:
-            return fmt % better_option
-    elif good_option not in never_use:
-        if better_option in never_use:
-            return fmt % good_option
-        else:
-            return fmt % better_option
+def choose_options_descencing(options,
+                              fmt="%s",
+                              dont_accept=["none", "na"]):
+    r"""
+    Return the first entry that's acceptable according to some rule
+
+    If no is found, "" is returned
+    Parameters
+    ----------
+    options : list
+    fmt : str, default is "%s"
+        You can specify a different
+        format here. Will only
+        apply in case something
+        is returned
+    dont_accept : list
+        Move down the list if
+        current item is one
+        of these
+
+    Returns
+    -------
+    best : str
+        Either the best entry in :obj:`options`
+        or "" if no option was found
+    """
+    for option in options:
+        if str(option).lower() not in dont_accept:
+            return fmt%str(option)
+    return ""
+
 
 def fnmatch_ex(patterns_as_csv, list_of_keys):
     r"""
@@ -665,4 +861,4 @@ def defrag_key(key, defrag="@", sep="-"):
     -------
 
     """
-    return sep.join([kk.split(defrag,1)[0].strip(" ") for kk in key.split(sep)])
+    return sep.join([kk.split(defrag,1)[0].strip(" ") for kk in splitlabel(key,sep)])

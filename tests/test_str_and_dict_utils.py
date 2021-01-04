@@ -408,26 +408,29 @@ class Test_str_latex(unittest.TestCase):
 
 class Test_auto_fragment_string(unittest.TestCase):
 
+    def test_one_bad(self):
+        assert str_and_dict.choose_options_descencing([None]) == ""
+
     def test_both_bad(self):
-        assert str_and_dict.choose_between_good_and_better_strings(None, None) == ""
+        assert str_and_dict.choose_options_descencing([None, None]) == ""
 
     def test_both_good(self):
-        assert str_and_dict.choose_between_good_and_better_strings("fragA", "3.50") == "3.50"
+        assert str_and_dict.choose_options_descencing(["3.50","fragA"]) == "3.50"
 
     def test_only_option(self):
-        self.assertEqual(str_and_dict.choose_between_good_and_better_strings("fragA", None),"fragA")
+        self.assertEqual(str_and_dict.choose_options_descencing([None, "fragA"]),"fragA")
 
     def test_only_better_option(self):
-        assert str_and_dict.choose_between_good_and_better_strings(None, "3.50") == "3.50"
+        assert str_and_dict.choose_options_descencing(["3.50",None]) == "3.50"
 
     def test_pick_best_label_just_works(self):
-        assert (str_and_dict.choose_between_good_and_better_strings("Print this instead", "Print this") == "Print this")
+        assert (str_and_dict.choose_options_descencing(["Print this","Print this instead"]) == "Print this")
 
     def test_pick_best_label_exclude_works(self):
-        assert(str_and_dict.choose_between_good_and_better_strings("Print this instead", None) == "Print this instead")
-        assert(str_and_dict.choose_between_good_and_better_strings("Print this instead", "None") == "Print this instead")
-        assert(str_and_dict.choose_between_good_and_better_strings("Print this instead", "NA") == "Print this instead")
-        assert(str_and_dict.choose_between_good_and_better_strings("Print this instead", "na") == "Print this instead")
+        assert(str_and_dict.choose_options_descencing([None,  "Print this instead"]) == "Print this instead")
+        assert(str_and_dict.choose_options_descencing(["None","Print this instead"]) == "Print this instead")
+        assert(str_and_dict.choose_options_descencing(["NA",  "Print this instead"]) == "Print this instead")
+        assert(str_and_dict.choose_options_descencing(["na",  "Print this instead"]) == "Print this instead")
 
 class Test_freq_file2dict(unittest.TestCase):
 
@@ -536,6 +539,159 @@ class Test_aggregate_freq_dict_per_residue(unittest.TestCase):
         np.testing.assert_equal(out_dict["C"], 10 + 1000)
         np.testing.assert_equal(out_dict["D"], 1000 + 100)
 
+class Test_label2componentsdict(unittest.TestCase):
+
+    def setUp(self):
+        self.w = {
+            1: "r1",
+            2: "r1@f1",
+            3: "r1@f1-r2",
+            4: "r1@f1-r2",
+            5: "r1@f1-r2@f2",
+            6: "r1@f1-1-r2@f2",
+            7: "r1@f1-r2@f2-2",
+            8: "r1@f1-1-r2@f2-2",
+            9: "r1-r2",
+           10: "r1-r2@f2",
+           11: "r1-r2@f2-1",
+           12: "r1@f1-1-1-r2@f2-2-2"
+        }
+
+    def test_1(self):
+        self.assertDictEqual({"res1": "r1"},
+                             str_and_dict._label2componentsdict(self.w[1]),
+                             self.w[1])
+
+    def test_2(self):
+        self.assertDictEqual({"res1": "r1",
+                              "frag1": "f1"},
+                             str_and_dict._label2componentsdict(self.w[2]),
+                             self.w[2])
+
+    def test_3(self):
+        self.assertDictEqual({"res1": "r1",
+                              "frag1": "f1",
+                              "res2": "r2"
+                              },
+                             str_and_dict._label2componentsdict(self.w[3]),
+                             self.w[3])
+
+    def test_4_assume_False(self):
+        self.assertDictEqual({"res1": "r1",
+                              "frag1": "f1-r2",
+                              },
+                             str_and_dict._label2componentsdict(self.w[4],
+                                                                assume_ctc_label=False),
+                             self.w[4])
+
+    def test_5(self):
+        self.assertDictEqual({"res1": "r1",
+                              "frag1": "f1",
+                              "res2": "r2",
+                              "frag2": "f2"},
+                             str_and_dict._label2componentsdict(self.w[5]),
+                             self.w[5])
+
+
+    def test_6(self):
+        self.assertDictEqual({"res1": "r1",
+                              "frag1": "f1-1",
+                              "res2": "r2",
+                              "frag2": "f2"},
+                             str_and_dict._label2componentsdict(self.w[6]),
+                             self.w[6])
+
+    def test_7(self):
+        self.assertDictEqual({"res1": "r1",
+                              "frag1": "f1",
+                              "res2": "r2",
+                              "frag2": "f2-2"},
+                             str_and_dict._label2componentsdict(self.w[7]),
+                             self.w[7])
+
+    def test_8(self):
+        self.assertDictEqual({"res1": "r1",
+                              "frag1": "f1-1",
+                              "res2": "r2",
+                              "frag2": "f2-2"},
+                             str_and_dict._label2componentsdict(self.w[8]),
+                             self.w[8])
+
+    def test_9(self):
+        self.assertDictEqual({"res1": "r1",
+                              "res2": "r2",
+                              },
+                             str_and_dict._label2componentsdict(self.w[9]),
+                             self.w[9])
+
+    def test_10(self):
+        self.assertDictEqual({"res1": "r1",
+                              "res2": "r2",
+                              "frag2":"f2",
+                              },
+                             str_and_dict._label2componentsdict(self.w[10]),
+                             self.w[10])
+
+    def test_11(self):
+        self.assertDictEqual({"res1": "r1",
+                              "res2": "r2",
+                              "frag2": "f2-1",
+                              },
+                             str_and_dict._label2componentsdict(self.w[11]),
+                             self.w[11])
+
+    def test_12(self):
+        self.assertDictEqual({"res1": "r1",
+                              "res2": "r2",
+                              "frag1": "f1-1-1",
+                              "frag2": "f2-2-2",
+                              },
+                             str_and_dict._label2componentsdict(self.w[12]),
+                             self.w[11])
+
+class Test_splitlabel(unittest.TestCase):
+
+    def setUp(self):
+        self.w = {
+            3: "r1@f1-r2",
+            5: "r1@f1-r2@f2",
+            6: "r1@f1-1-r2@f2",
+            7: "r1@f1-r2@f2-2",
+            8: "r1@f1-1-r2@f2-2",
+            9: "r1-r2",
+           10: "r1-r2@f2",
+           11: "r1-r2@f2-1",
+           12: "r1@f1-1-1-r2@f2-2-2"
+
+        }
+
+    def test_3(self):
+        self.assertListEqual(["r1@f1","r2"], str_and_dict.splitlabel(self.w[3]))
+
+    def test_5(self):
+        self.assertListEqual(["r1@f1","r2@f2"], str_and_dict.splitlabel(self.w[5]))
+
+    def test_6(self):
+        self.assertListEqual(["r1@f1-1","r2@f2"], str_and_dict.splitlabel(self.w[6]))
+
+    def test_7(self):
+        self.assertListEqual(["r1@f1","r2@f2-2"], str_and_dict.splitlabel(self.w[7]))
+
+    def test_8(self):
+        self.assertListEqual(["r1@f1-1","r2@f2-2"], str_and_dict.splitlabel(self.w[8]))
+
+    def test_9(self):
+        self.assertListEqual(["r1","r2"], str_and_dict.splitlabel(self.w[9]))
+
+    def test_10(self):
+        self.assertListEqual(["r1","r2@f2"], str_and_dict.splitlabel(self.w[10]))
+
+    def test_11(self):
+        self.assertListEqual(["r1","r2@f2-1"], str_and_dict.splitlabel(self.w[11]))
+
+    def test_12(self):
+        self.assertListEqual(["r1@f1-1-1", "r2@f2-2-2"], str_and_dict.splitlabel(self.w[12]))
+
 class Test_defrag(unittest.TestCase):
 
     def test_works(self):
@@ -553,6 +709,11 @@ class Test_defrag(unittest.TestCase):
     def test_works_just_one(self):
         label = 'res1@frag1    '
         np.testing.assert_equal("res1", str_and_dict.defrag_key(label))
+
+class Test_replace_regex_special_chars():
+    def test_works(self):
+        word ="[]()^"
+        assert str_and_dict._replace_regex_special_chars(word,"!!!!!")
 
 if __name__ == '__main__':
     unittest.main()

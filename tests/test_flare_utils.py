@@ -7,6 +7,7 @@ from mdciao.plots.plots import _colorstring
 from mdciao.filenames import filenames
 import mdtraj as md
 from matplotlib import pyplot as plt
+from mdciao.flare import circle_plot_residues
 
 
 filenames = filenames()
@@ -23,15 +24,6 @@ class TestAngulateSegments(TestCase):
 
         np.testing.assert_array_equal(angles,
                                       [0, 36, 72, 108, 144, 180, 216, 252, 288, 324])
-
-    @skip("Not sure offset means")
-    def test_offset(self):
-        angles = _utils.regspace_angles(10, circle=360,
-                                       offset=45)
-
-
-        print(angles)
-        raise NotImplementedError
 
 
 class TestFragmentSelectionParser(TestCase):
@@ -123,7 +115,7 @@ class TestColors(TestCase):
 
     def test_works_False(self):
         colorlist = _utils.col_list_from_input_and_fragments(False, self.fragments)
-        np.testing.assert_array_equal(["tab:blue"] * 6, colorlist)
+        np.testing.assert_array_equal(["gray"] * 6, colorlist)
 
     def test_works_True(self):
         colorlist = _utils.col_list_from_input_and_fragments(True, self.fragments)
@@ -154,7 +146,7 @@ class TestColors(TestCase):
 
     def test_works_one_frag(self):
         colorlist = _utils.col_list_from_input_and_fragments(False, [0, 1, 2])
-        np.testing.assert_array_equal(["tab:blue"] * 3, colorlist)
+        np.testing.assert_array_equal(["gray"] * 3, colorlist)
 
 class TestLambaCurve(TestCase):
 
@@ -296,21 +288,18 @@ class TestFragmentLabels(TestCase):
         iax.set_aspect("equal")
         iax.set_xlim([-1, 1])
         iax.set_ylim([-1, 1])
-        fragments = [[10,20],[30,40]]
-        xy = [[1, 0],
-              [0, -1],
-              [-1, 0],
-              [0, 1]]
-        _utils.add_residue_labels(iax,
-                                  xy,
-                                  [10,20,30,40],
-                                  10)
+        fragments = [np.arange(10),np.arange(10,20)]
+        _, _, plattrb = circle_plot_residues(fragments,
+                             iax=iax,
+                             padding=[0,0,0])
 
-        _utils.add_fragment_labels(fragments, iax, xy, ["frag_10_20", "frag_30_40"],
-                                   _utils.value2position_map([10,20,30,40]))
+        _utils.add_fragment_labels(fragments, ["frag_10_20", "frag_30_40"],
+                                   iax,
+                                   r=plattrb["r"])
         ifig = plt.gcf()
         ifig.tight_layout()
-        plt.savefig('test.png',bbox_inches="tight")
+        #plt.savefig('test.png',bbox_inches="tight")
+        plt.close("all")
 
     def _test_works_options(self):
         top = md.load(filenames.actor_pdb).top
