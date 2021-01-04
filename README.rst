@@ -51,6 +51,7 @@ This is an informal list of known issues and TODOs:
  * overhaul the "printing" system with proper warnings
  * progressbar not very informative for one chunked trajectory or parallel runs
  * the "consensus" fragmentation sometimes breaks automatic flareplot labelling
+ * Building the docs with sphinx v>2.4.4 doesn't autogen a class' method's linked doc
  * improve sequence alignment choices
  * heuristics for proper font-sizing of flareplots could be optimized
  * parallel execution with memory mdtraj.Trajectory objects should be better
