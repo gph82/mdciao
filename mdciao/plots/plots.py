@@ -517,11 +517,10 @@ def plot_unified_freq_dicts(freqs,
                   +len(freqs_by_sys_by_ctc)*width/2
             txt = key.replace("@", "^")
             if "-" in txt:
-                txt = winners[key][0]+"-".join([_mdcu.str_and_dict.replace4latex(w) for w in _mdcu.str_and_dict.splitlabel(txt,"-")])
+                txt = "-".join([_mdcu.str_and_dict.replace4latex(w) for w in _mdcu.str_and_dict.splitlabel(txt,"-")])
             else:
-                txt = _mdcu.str_and_dict.replace4latex(txt  )
-
-
+                txt = _mdcu.str_and_dict.replace4latex(txt)
+            txt = winners[key][0] + txt
             _plt.text(iix, ylim + .05, txt,
                       #ha="center",
                       ha='left',
