@@ -206,13 +206,13 @@ def _parse_fragment_naming_options(fragment_names, fragments):
 
     Parameters
     ----------
-    fragment_names : str or list
+    fragment_names : None, str or list
         If str, we assume it comes directly from the
         command line option --fragment_names,
         see :obj:`parsers._parser_add_fragment_names. Can be different
         things:
         * "" : fragment names will be named frag0,frag1,frag2 ... as needed
-        * "None","none": fragment names will be None
+        * None, "None","none": fragment names will be None
         * comma-separated values, with as many values
         as fragments are in :obj:`fragments:
         If list, we do nothing (for compatibility with API use of CLI tools)
@@ -236,9 +236,10 @@ def _parse_fragment_naming_options(fragment_names, fragments):
         return fragment_names
     if fragment_names == '':
         fragment_names = ['frag%u' % ii for ii in range(len(fragments))]
-    elif fragment_names.lower()=="none":
+    elif str(fragment_names).lower()=="none":
         fragment_names = [None for __ in fragments]
     else:
+        #TODO get rid of this danger nonsens
         assert isinstance(fragment_names, str), "Argument --names invalid: %s" % fragment_names
         if 'danger' not in fragment_names.lower():
             fragment_names = [ff.strip(" ") for ff in fragment_names.split(",")]
