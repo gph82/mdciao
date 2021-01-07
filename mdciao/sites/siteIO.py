@@ -23,6 +23,7 @@
 from json import load as _jsonload
 from os.path import splitext as _psplitext, split as _psplit
 import numpy as _np
+from copy import deepcopy as _dcopy
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
@@ -63,7 +64,7 @@ def load(site):
 
     """
     if isinstance(site, dict):
-        idict = site
+        idict = _dcopy(site)
     else:
         with open(site, "r") as f:
             idict = _jsonload(f)
