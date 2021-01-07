@@ -341,37 +341,38 @@ class Test_sites(TestCLTBaseClass):
 
     def test_sites(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.sites([test_filenames.tip_json], self.geom, [self.traj, self.traj_reverse],
+             cli.sites([test_filenames.tip_json],[self.traj, self.traj_reverse], self.geom,
                   output_dir=tmpdir)
 
     def test_scheme_CA(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.sites([test_filenames.tip_json], self.geom, [self.traj, self.traj_reverse],
+             cli.sites([test_filenames.tip_json], [self.traj, self.traj_reverse],self.geom,
                   output_dir=tmpdir,
                   scheme="COM")
 
     def test_w_table_xlsx(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.sites([test_filenames.tip_json], self.geom, [self.traj, self.traj_reverse],
+             cli.sites([test_filenames.tip_json],[self.traj, self.traj_reverse], self.geom,
                   output_dir=tmpdir,
                   scheme="COM",
                        table_ext=".xlsx")
 
     def test_w_table_dat(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.sites([test_filenames.tip_json], self.geom, [self.traj, self.traj_reverse],
+             cli.sites([test_filenames.tip_json], [self.traj, self.traj_reverse],self.geom,
                   output_dir=tmpdir,
                   scheme="COM",
                        table_ext=".dat")
-    def test_sites_no_traj(self):
+    def test_sites_no_top(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.sites([test_filenames.tip_json], self.geom,
+             cli.sites([test_filenames.tip_json], [self.traj, self.traj_reverse],
                        output_dir=tmpdir)
 
     def test_sites_distro(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.sites([test_filenames.tip_json], self.geom,
+             cli.sites([test_filenames.tip_json],
                        [self.traj, self.traj_reverse],
+                       self.geom,
                        distro=True,
                        output_dir=tmpdir)
 
