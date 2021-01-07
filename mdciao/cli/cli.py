@@ -1569,8 +1569,8 @@ def interface(
 
 
 def sites(site_files,
-          topology,
-          trajectories=None,
+          trajectories,
+          topology=None,
           ctc_cutoff_Ang=3.5,
           stride=1,
           scheme="closest-heavy",
@@ -1614,8 +1614,6 @@ def sites(site_files,
                            "bonds":{"AAresSeq":["GLU30-ARG40",
                                                 "LYS31-W70"]}}
         See :obj:`mdciao.sites` for more info
-    topology :
-        Topology file
     trajectories :
         The MD-trajectories to calculate the frequencies
         from. This input is pretty flexible. For more info check
@@ -1624,10 +1622,14 @@ def sites(site_files,
          * pattern, e.g. "*.ext"
          * one string containing a filename
          * list of filenames
-         * one :obj:`mdtraj.Trajectory` object
-         * list of :obj:`mdtraj.Trajectory` objects  * None
-        If None, the :obj:`mdtraj.Trajectory` object given
-        in :obj:`topology` is used as trajectories
+         * one :obj:`~mdtraj.Trajectory` object
+         * list of :obj:`~mdtraj.Trajectory` objects
+    topology : str or :obj:`~mdtraj.Trajectory`, default is None
+        The topology associated with the :obj:`trajectories`
+        If None, the topology of the first :obj:`trajectory` will
+        be used, i.e. when no :obj:`topology` is passed, the first
+        :obj:`trajectory` has to be either a .gro or .pdb file, or
+        an :obj:`~mdtraj.Trajectory` object
     ctc_cutoff_Ang : float, default is 3.5
         Any residue-residue distance is considered a contact
         if d<=ctc_cutoff_Ang
@@ -1767,16 +1769,17 @@ def sites(site_files,
         table_ext = table_ext.strip(".")
     graphic_ext = graphic_ext.strip(".")
     # Inform about trajectories
-    if trajectories is None:
-        trajectories = topology
+
     xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
+    if topology is None:
+        # TODO in case the xtc[0] is a pdb/grofile, it will be read twice
+        refgeom = _load_any_geom(xtcs[0])[0]
+    else:
+        refgeom = _load_any_geom(topology)
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
         "\n ".join([_mdcsites.site2str(ss) for ss in site_files]),
         _mdcu.str_and_dict.inform_about_trajectories(xtcs),
           stride))
-
-    # Inform about fragments
-    refgeom = _load_any_geom(topology)
 
     # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elsewhere
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
