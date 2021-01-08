@@ -63,6 +63,7 @@ This is an informal list of known issues and TODOs:
    and many `tests could be re-written or deleted <https://en.wikipedia.org/wiki/Technical_debt>`_ , like those needing
    mock-input or writing to tempdirs because writing figures or files could not be avoided.
  * Not moving to py39 until the he dependency `bezier <https://github.com/dhermes/bezier>`_ gets Python 3.9 wheels (`see this issue <https://github.com/dhermes/bezier/issues/243#issuecomment-707205685)>`_).
+ * pinned mdtraj<=1.9.4 see https://github.com/mdtraj/mdtraj/issues/1613
 
 
 System Requirements

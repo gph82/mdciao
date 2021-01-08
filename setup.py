@@ -20,7 +20,7 @@ setup(
     install_requires=[
                     "cython",
                     "numpy>=1.18.1",
-                    "mdtraj",
+                    "mdtraj<=1.9.4",
                     "pandas",
                     "matplotlib",
                     "msmtools",
