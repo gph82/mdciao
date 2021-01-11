@@ -2921,16 +2921,27 @@ class ContactGroup(object):
         except IndexError:
             lowbar_fspts = _rcParams["font.size"] * .75
         lowbar_fsaus = lowbar_fspts / pd
-        leg2 = jax.legend(ebars, _hatchets.keys(),
-                          loc=[0, -2 * lowbar_fsaus],  # fudged
-                          ncol=4,
-                          framealpha=0,
-                          frameon=False,
-                          fontsize=lowbar_fspts,
-                          handletextpad=.1,
-                          columnspacing=1,
-                          handlelength=1.,
-                          )
+        y_leg = -2 * lowbar_fsaus  # fudged to "close enough"
+        place_legend = lambda y: getattr(jax, "legend")(ebars, _hatchets.keys(),
+                                                        loc=[0, y],
+                                                        ncol=4,
+                                                        framealpha=0,
+                                                        frameon=False,
+                                                        fontsize=lowbar_fspts,
+                                                        handletextpad=.1,
+                                                        columnspacing=1,
+                                                        handlelength=1.)
+        leg2 = place_legend(y_leg)
+
+        cc, rend = 0, jax.figure.canvas.get_renderer()
+        while jax.bbox.overlaps(leg2.get_window_extent(renderer=rend)):
+            leg2.remove()
+            y_leg += y_leg*.05
+            leg2 = place_legend(y_leg)
+            #print(cc,y_leg)
+            cc+=1
+            if cc>5:
+                break
         if leg1 is not None:
             jax.add_artist(leg1)
 
