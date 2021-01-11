@@ -264,7 +264,7 @@ def _finder_writer(full_local_path,
                 # This saves all values tab-separated s.t.
                 # the resulting file can be re-read by pandas.read_csv
                 _np.savetxt(full_local_path, _DF.to_numpy(str),
-                fmt='40%s',
+                fmt='%10s',
                 delimiter="\t", header='\t'.join(_DF.keys()), comments='')
 
 
