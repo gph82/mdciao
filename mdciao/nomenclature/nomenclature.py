@@ -192,7 +192,8 @@ def CGN_finder(identifier,
     """
     file2read = format%identifier
     file2read = _path.join(local_path, file2read)
-    local_lookup_lambda = lambda file2read : _read_csv(file2read, delimiter='\t')
+    rep = lambda istr : [istr.replace(" ","") if isinstance(istr,str) else istr][0]
+    local_lookup_lambda = lambda file2read :_read_csv(file2read, delimiter='\t').applymap(rep)
 
     web_address = "www.mrc-lmb.cam.ac.uk"
     url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
@@ -1687,7 +1688,7 @@ def _map2defs(cons_list, splitchar="."):
             elif key[0].isalpha(): # it means it CGN
                 new_key = '.'.join(key.split(splitchar)[:-1])
             else:
-                raise Exception(new_key)
+                raise Exception([ii, splitchar])
             defs[new_key].append(ii)
     return {key: _np.array(val) for key, val in defs.items()}
 
