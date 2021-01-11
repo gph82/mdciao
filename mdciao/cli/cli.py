@@ -480,6 +480,7 @@ def _fragment_overview(a,labtype):
         top = _md.load(a.topology).top
         map_conlab = obj.top2labels(top,
                                     autofill_consensus=a.fill_gaps)
+        obj.top2frags(top,input_dataframe=obj.most_recent_alignment)
         _mdcu.residue_and_atom.parse_and_list_AAs_input(a.AAs, top, map_conlab)
         if str(a.labels).lower() != "none":
             labels = [aa.strip(" ") for aa in a.labels.split(",")]
