@@ -2995,9 +2995,9 @@ class ContactGroup(object):
             label_dotref = _mdcu.str_and_dict.defrag_key(label_dotref,defrag=defrag)
             label_bars = [_mdcu.str_and_dict.defrag_key(ilab,defrag=defrag) for ilab in label_bars]
         # Cosmetics
-        title_str = "distribution for %s"%_mdcu.str_and_dict.replace4latex(label_dotref)
+        title_str = "distribution for %s"%_mdcu.str_and_dict.replace4latex(label_dotref.replace("@","^"))
         if ctc_cutoff_Ang is not None:
-            title_str += "\nclosest residues <= @%2.1f $\AA$"%(ctc_cutoff_Ang)
+            title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)
             jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
         if n_nearest is not None:
             title_str += "\n%u nearest bonded neighbors excluded" % (n_nearest)
@@ -3009,7 +3009,7 @@ class ContactGroup(object):
                 if ii==0:
                     freqs = self.frequency_per_contact(ctc_cutoff_Ang)
                 label+=" (%u%%)"%(freqs[ii]*100)
-            jax.plot(x[:-1] * 10, h, label=label)
+            jax.plot(x[:-1] * 10, h, label=_mdcu.str_and_dict.replace4latex(label.replace("@","^")))
             jax.fill_between(x[:-1]*10, h, alpha=.15)
         if xlim is not None:
             jax.set_xlim(xlim)
