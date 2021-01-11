@@ -530,8 +530,8 @@ def _latexify(word, istr):
                     if word2[0] not in ["{","\\"]:
                         new = word1+add_dollar_signs("%s{\mathrm{%s}}"%(char,word2))
                         istr = istr[:span[0]] + new + istr[span[1]:]
-                except ValueError as e:
-                    print("Cannot latexify word with more than one instance of %s in the same word: %s"%(char,word))
+                except (ValueError, IndexError) as e:
+                    print("Cannot latexify word with more than one instance of %s in the same word: %s (%s,%s)"%(char,word,word1,word2))
         spans = [m.span() for m in _re.finditer(word, istr)]
     istr = istr.replace("$$","")
     return istr
