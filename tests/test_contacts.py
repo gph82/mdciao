@@ -42,7 +42,7 @@ test_filenames = filenames()
 class TestBaseClassContacts(unittest.TestCase):
     def setUp(self):
         self.pdb_file = test_filenames.top_pdb
-        self.file_xtc = test_filenames.traj_xtc
+        self.file_xtc = test_filenames.traj_xtc_stride_20
         self.top = md.load(self.pdb_file).top
         self.traj = md.load(self.file_xtc, top=self.top)
         self.ctc_idxs = [[10, 20], [20, 30]]
@@ -151,7 +151,7 @@ class Test_trajs2ctcs(TestBaseClassContacts):
 
 class BaseClassForTestingAttributes(unittest.TestCase):
     def setUp(self):
-        self.trajs = md.load(test_filenames.traj_xtc, top=test_filenames.top_pdb)[:3]
+        self.trajs = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)[:3]
         self.trajs = [self.trajs[:2],
                       self.trajs[:3]]
         self.ctc_trajs = [[1, 2], [10, 11, 12]]
@@ -444,7 +444,7 @@ class TestContactStrings(unittest.TestCase):
         assert cls.trajstrs[0] == "traj 0" and cls.trajstrs[1] == "traj 1", cls.trajstrs
 
     def test_trajlabels_w_mdtrajs(self):
-        mdtrajs = md.load(test_filenames.traj_xtc,
+        mdtrajs = md.load(test_filenames.traj_xtc_stride_20,
                           top=test_filenames.top_pdb)[:5]
         mdtrajs = [mdtrajs, mdtrajs]
         cls = _ContactStrings(2,
@@ -2317,7 +2317,7 @@ class TestGroupOfGroupsOfContactsBasic(TestBaseClassGroupOfGroupsOfContacts):
 class Test_modified_mdtraj_contacts(unittest.TestCase):
 
     def setUp(self):
-        self.traj = md.load(test_filenames.traj_xtc, top=test_filenames.top_pdb)
+        self.traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
 
     def test_works(self):
         ctcs_ref, residxs_ref = md.compute_contacts(self.traj, [[10, 20], [100, 200]])

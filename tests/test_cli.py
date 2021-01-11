@@ -60,8 +60,8 @@ class TestCLTBaseClass(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.geom = md.load(test_filenames.top_pdb)
-        cls.traj = md.load(test_filenames.traj_xtc, top=cls.geom.top)
-        cls.traj_reverse = md.load(test_filenames.traj_xtc, top=cls.geom.top)[::-1]
+        cls.traj = md.load(test_filenames.traj_xtc_stride_20, top=cls.geom.top)
+        cls.traj_reverse = md.load(test_filenames.traj_xtc_stride_20, top=cls.geom.top)[::-1]
 
 class Test_manage_timdep_plot_options(TestCLTBaseClass):
 

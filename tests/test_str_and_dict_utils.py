@@ -20,14 +20,14 @@ test_filenames = filenames()
 class Test_get_sorted_trajectories(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.top_pdb)
-        self.traj = md.load(test_filenames.traj_xtc, top=self.geom.top)
-        self.traj_reverse = md.load(test_filenames.traj_xtc, top=self.geom.top)[::-1]
+        self.traj = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)
+        self.traj_reverse = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)[::-1]
 
     def test_glob_with_pattern(self):
         str_and_dict.get_sorted_trajectories(path.join(test_filenames.example_path,"*.xtc"))
 
     def test_glob_with_filename(self):
-        str_and_dict.get_sorted_trajectories(test_filenames.traj_xtc)
+        str_and_dict.get_sorted_trajectories(test_filenames.traj_xtc_stride_20)
 
     def test_with_one_trajectory_object(self):
         list_out = str_and_dict.get_sorted_trajectories(self.traj)
@@ -48,16 +48,16 @@ class Test_get_sorted_trajectories(unittest.TestCase):
 class Test_inform_about_trajectories(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.top_pdb)
-        self.traj = md.load(test_filenames.traj_xtc, top=self.geom.top)
-        self.traj_reverse = md.load(test_filenames.traj_xtc, top=self.geom.top)[::-1]
+        self.traj = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)
+        self.traj_reverse = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)[::-1]
 
     def test_fails_no_list(self):
         with pytest.raises(AssertionError):
-            str_and_dict.inform_about_trajectories(test_filenames.traj_xtc)
+            str_and_dict.inform_about_trajectories(test_filenames.traj_xtc_stride_20)
 
     def test_list_of_files(self):
-        str_and_dict.inform_about_trajectories([test_filenames.traj_xtc,
-                                                test_filenames.traj_xtc])
+        str_and_dict.inform_about_trajectories([test_filenames.traj_xtc_stride_20,
+                                                test_filenames.traj_xtc_stride_20])
 
     def test_list_of_trajs(self):
         str_and_dict.inform_about_trajectories([self.traj,
@@ -84,7 +84,7 @@ class Test_delete_exp_inkeys(unittest.TestCase):
 class Test_iterate_and_inform_lambdas(unittest.TestCase):
 
     def setUp(self):
-        self.filename = test_filenames.traj_xtc
+        self.filename = test_filenames.traj_xtc_stride_20
         self.pdb = test_filenames.top_pdb
         self.top = md.load(self.pdb).top
         self.traj = md.load(self.filename, top=self.top)
