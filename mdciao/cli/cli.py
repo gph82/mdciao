@@ -256,7 +256,7 @@ def _parse_fragment_naming_options(fragment_names, fragments):
 
 # TODO mix and match with the color options of flareplots
 def _parse_coloring_options(color_option, n,
-                            default_color="blue",
+                            default_color="tab:blue",
                             color_cycle=my_frag_colors
                             ):
     r"""
