@@ -609,7 +609,7 @@ class Test_parse_parse_coloring_options(unittest.TestCase):
 
     def test_none(self):
         color = cli._parse_coloring_options(None,2)
-        self.assertSequenceEqual(["blue","blue"], color)
+        self.assertSequenceEqual(["tab:blue","tab:blue"], color)
 
     def test_True(self):
         color = cli._parse_coloring_options(True,2)
