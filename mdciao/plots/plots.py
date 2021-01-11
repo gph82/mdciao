@@ -645,7 +645,7 @@ def _points2dataunits(jax):
 def titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
     r"""
     Compute amount of upward padding need to avoid overlap between
-    he axis title and any text object in the axis
+    the axis title and any text object in the axis
 
     Parameters
     ----------
