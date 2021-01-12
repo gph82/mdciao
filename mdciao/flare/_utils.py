@@ -24,6 +24,11 @@ import numpy as _np
 from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
 from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp as _re_warp
+from matplotlib.colors import to_rgb as _to_rgb
+
+#https://stackoverflow.com/a/33375738
+def _make_rgb_transparent(rgb, bg_rgb, alpha):
+    return [alpha * c1 + (1 - alpha) * c2 for (c1, c2) in zip(rgb, bg_rgb)]
 
 _mycolors = _colorstring.split(",")
 
@@ -272,6 +277,7 @@ def pol2cart(rho, phi):
 def col_list_from_input_and_fragments(colors,
                                       residxs_as_fragments,
                                       default_color="gray",
+                                      alpha=1,
                                       ):
     r"""
     per-residue color list taking possible fragmentation into account
@@ -332,6 +338,9 @@ def col_list_from_input_and_fragments(colors,
         col_list = _np.hstack([[val] * len(iseg) for val, iseg in zip(colors.values(), residxs_as_fragments)])
     else:
         raise Exception
+
+    if alpha!=1:
+        col_list = [_make_rgb_transparent(_to_rgb(col),[1,1,1], alpha) for col in col_list]
 
     return col_list
 
