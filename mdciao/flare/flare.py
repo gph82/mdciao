@@ -456,9 +456,10 @@ def circle_plot_residues(fragments,
                              "the panel size"%(n_positions, panelsize)))
         if not arc:
             CPs = [_CP(ixy,
-                     radius=dot_radius,
-                     color=col_list[ii],
-                     zorder=10) for ii, ixy in enumerate(xy)]
+                       radius=dot_radius,
+                       facecolor=col_list[ii],
+                       edgecolor=None,
+                       zorder=10) for ii, ixy in enumerate(xy)]
             [iax.add_artist(iCP) for iCP in CPs]
             running_r_pad += dot_radius
         else:
