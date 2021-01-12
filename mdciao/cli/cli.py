@@ -1305,9 +1305,9 @@ Defaults to None which will prompt the user of
         When deciding what fragments to put on
         the flareplot, use only those fragments
         where at least one residue is involved
-        in the interface. If consensus labels
-        are being used, this applies to the
-        fragments derived from the nomenclature
+        in the interface. Fragments means
+        whatever resulted the fragmentation
+        heuristic in :obj:`fragments`.
     savefiles : bool, default is True
         Write the figures and tables to disk.
     save_nomenclature_files : bool, default is False
