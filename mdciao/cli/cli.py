@@ -1046,6 +1046,7 @@ def residue_neighborhoods(residues,
             title = ihood.anchor_res_and_fragment_str
             if short_AA_names:
                 title = ihood.anchor_res_and_fragment_str_short
+            title = _mdcu.str_and_dict.replace4latex(title.replace("@","^"))
             if n_nearest >0:
                 title += "\n%u nearest bonded neighbors excluded" % (n_nearest)
             _manage_timedep_ploting_and_saving_options(ihood, myfig,

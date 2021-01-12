@@ -1623,6 +1623,9 @@ class ContactPair(object):
         if shorten_AAs:
             ctc_label = self.labels.w_fragments_short_AA
 
+        ctc_label = '-'.join(_mdcu.str_and_dict.replace4latex(word.replace("@", "^")) for word in
+                       _mdcu.str_and_dict.splitlabel(ctc_label, "-"))
+
         if ctc_cutoff_Ang > 0:
             ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang) * 100)
 
