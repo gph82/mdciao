@@ -1532,7 +1532,7 @@ def interface(
                                                              sparse=_np.hstack(flare_frags),
                                                              #panelsize=_np.max(ifig.get_size_inches()),
                                                              # TODO deal with the color madness
-                                                             colors=_mdcfu.col_list_from_input_and_fragments(True, flare_frags),
+                                                             colors=_mdcfu.col_list_from_input_and_fragments(True, intf_frags_as_residxs, alpha=.75),
                                                              )
             ifig.tight_layout()
             if savefiles:
