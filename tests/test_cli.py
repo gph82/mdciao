@@ -182,7 +182,8 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             input_values = (val for val in ["1.0"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
                 cli.residue_neighborhoods("200,395",
-                                          self.geom, [self.traj, self.traj_reverse],
+                                          [self.traj, self.traj_reverse],
+                                          self.geom,
                                           output_dir=tmpdir)
 
     def test_no_trajs(self):
@@ -190,13 +191,14 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             input_values = (val for val in ["1.0"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
                 cli.residue_neighborhoods("200,395",
-                                          self.geom, None,
+                                          self.geom,
                                           output_dir=tmpdir)
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
               cli.residue_neighborhoods("1043",
-                                        self.geom, [self.traj, self.traj_reverse],
-                                   fragment_colors=True,
+                                        [self.traj, self.traj_reverse],
+                                        self.geom,
+                                        fragment_colors=True,
                                    allow_same_fragment_ctcs=False,
                                    short_AA_names=True,
                                    res_idxs=True,
@@ -205,38 +207,50 @@ class Test_residue_neighborhood(TestCLTBaseClass):
 
     def test_excel(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods("395", self.geom, [self.traj, self.traj_reverse],
-                                   table_ext=".xlsx",
+              cli.residue_neighborhoods("395",
+                                        [self.traj, self.traj_reverse],
+                                        self.geom,
+                                        table_ext=".xlsx",
                                    output_dir=tmpdir)
 
     def test_no_table(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods("395", self.geom, [self.traj, self.traj_reverse],
-                                   table_ext=None,
+              cli.residue_neighborhoods("395",
+                                        [self.traj, self.traj_reverse],
+                                        self.geom,
+                                        table_ext=None,
                                    output_dir=tmpdir)
 
     def test_distro(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods("395", self.geom, [self.traj, self.traj_reverse],
+              cli.residue_neighborhoods("395",
+                                        [self.traj, self.traj_reverse],
+                                        self.geom,
                                    distro=True,
                                    output_dir=tmpdir)
 
     def test_AAs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods("395",self.geom, [self.traj, self.traj_reverse],
+              cli.residue_neighborhoods("395",
+                                        [self.traj, self.traj_reverse],
+                                        self.geom,
                                    short_AA_names=True,
                                    output_dir=tmpdir)
 
     def test_colors(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods("395",self.geom, [self.traj, self.traj_reverse],
+             cli.residue_neighborhoods("395",
+                                       [self.traj, self.traj_reverse],
+                                       self.geom,
                                   short_AA_names=True,
                                   fragment_colors=True,
                                   output_dir=tmpdir)
 
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods("395",self.geom, [self.traj, self.traj_reverse],
-                                  short_AA_names=True,
+             cli.residue_neighborhoods("395",
+                                       [self.traj, self.traj_reverse],
+                                       self.geom,
+                                       short_AA_names=True,
                                   fragment_colors='c',
                                   output_dir=tmpdir)
 
@@ -244,23 +258,28 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         # This is more of an argparse fail
         # TODO consider throwing exception
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             assert None ==  cli.residue_neighborhoods(None, self.geom, [self.traj,
-                                                              self.traj_reverse],
-                                                  None,
+             assert None ==  cli.residue_neighborhoods(None,
+                                                       [self.traj,self.traj_reverse],
+                                                       self.geom,
+                                                       None,
                                                   distro=True,
                                                   output_dir=tmpdir)
 
     def test_wrong_input_resSeq_idxs(self):
         with pytest.raises(ValueError):
             with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-                  cli.residue_neighborhoods("AX*", self.geom, [self.traj, self.traj_reverse],
-                                       distro=True,
+                  cli.residue_neighborhoods("AX*",
+                                            [self.traj, self.traj_reverse],
+                                            self.geom,
+                                            distro=True,
                                        output_dir=tmpdir)
 
     def test_nomenclature_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods("R131",self.geom, [self.traj, self.traj_reverse],
-                                  BW_uniprot=test_filenames.adrb2_human_xlsx,
+             cli.residue_neighborhoods("R131",
+                                       [self.traj, self.traj_reverse],
+                                       self.geom,
+                                       BW_uniprot=test_filenames.adrb2_human_xlsx,
                                   output_dir=tmpdir,
                                   accept_guess=True
                                   )
@@ -271,8 +290,10 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             shutil.copy(test_filenames.pdb_3SN6, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
-                cli.residue_neighborhoods("R131",self.geom, [self.traj, self.traj_reverse],
-                                      CGN_PDB="3SN6",
+                cli.residue_neighborhoods("R131",
+                                          [self.traj, self.traj_reverse],
+                                          self.geom,
+                                          CGN_PDB="3SN6",
                                       output_dir=tmpdir,
                                       accept_guess=True
                                       )
@@ -282,7 +303,9 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             shutil.copy(test_filenames.pdb_3SN6,tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
-                cli.residue_neighborhoods("R131",self.geom, [self.traj, self.traj_reverse],
+                cli.residue_neighborhoods("R131",
+                                          [self.traj, self.traj_reverse],
+                                          self.geom,
                                       CGN_PDB="3SN6",
                                       BW_uniprot=test_filenames.adrb2_human_xlsx,
                                       output_dir=tmpdir,
@@ -290,14 +313,18 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                       )
 
     def test_no_contacts_at_allp(self):
-         cli.residue_neighborhoods("R131",self.geom, [self.traj, self.traj_reverse],
-                              ctc_cutoff_Ang=.1,
+         cli.residue_neighborhoods("R131",
+                                   [self.traj, self.traj_reverse],
+                                   self.geom,
+                                   ctc_cutoff_Ang=.1,
                               )
 
     def test_some_CG_have_no_contacts(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods("0-3",self.geom, [self.traj, self.traj_reverse],
-                                  ctc_cutoff_Ang=3.2,
+             cli.residue_neighborhoods("0-3",
+                                       [self.traj, self.traj_reverse],
+                                       self.geom,
+                                       ctc_cutoff_Ang=3.2,
                                   res_idxs=True,
                                   output_dir=tmpdir,
                                   )
@@ -308,17 +335,20 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             top.top._bonds = []
             with pytest.raises(ValueError):
                 cli.residue_neighborhoods("R131",
-                                        top, [self.traj, self.traj_reverse],
-                                        output_dir=tmpdir)
+                                        [self.traj, self.traj_reverse],
+                                          top,
+                                          output_dir=tmpdir)
 
     def test_precomputed(self):
         CG1 = list(cli.residue_neighborhoods([1043],
-                                             self.geom, [self.traj, self.traj_reverse],
+                                             [self.traj, self.traj_reverse],
+                                             self.geom,
                                              res_idxs=True,
                                              savefiles=False,
                                              figures=False)["neighborhoods"].values())[0]
         CG2 = list(cli.residue_neighborhoods([1043],
-                                             self.geom, [self.traj, self.traj_reverse],
+                                             [self.traj, self.traj_reverse],
+                                             self.geom,
                                              res_idxs=True,
                                              savefiles=False,
                                              figures=False,
@@ -330,7 +360,8 @@ class Test_residue_neighborhood(TestCLTBaseClass):
     def test_precomputed_raises(self):
         with pytest.raises(ValueError):
             cli.residue_neighborhoods([1043],
-                                      self.geom, [self.traj, self.traj_reverse],
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
                                       res_idxs=True,
                                       savefiles=False,
                                       figures=False,
