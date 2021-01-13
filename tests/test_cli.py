@@ -163,16 +163,6 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
                                   output_dir=tmpdir)
     """
 
-
-class TestJustRunsAllFewestOptions(TestCLTBaseClass):
-
-    @unittest.skip("contact map is not being exposed anywhere ATM")
-    def test_contact_map(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            contact_map(self.geom, [self.traj,
-                                    self.traj_reverse],
-                        output_dir=tmpdir)
-
 class Test_residue_neighborhood(TestCLTBaseClass):
 
     @patch('builtins.input', lambda *args: '4')
