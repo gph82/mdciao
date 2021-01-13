@@ -401,17 +401,17 @@ class Test_interface(TestCLTBaseClass):
 
     def test_interface(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            cli.interface(self.geom, [self.traj, self.traj_reverse],
+            cli.interface([self.traj, self.traj_reverse],
+                          self.geom,
                           frag_idxs_group_1=[0],
                           frag_idxs_group_2=[1],
                           output_dir=tmpdir,
                           flareplot=True,
                           )
 
-    def test_no_trajs(self):
+    def test_no_top(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            cli.interface(self.geom,
-                          trajectories=None,
+            cli.interface([self.traj, self.traj_reverse],
                           frag_idxs_group_1=[0],
                           frag_idxs_group_2=[1],
                           output_dir=tmpdir,
@@ -424,14 +424,16 @@ class Test_interface(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["0-1", "2,3"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
-                cli.interface(self.geom, [self.traj, self.traj_reverse],
+                cli.interface([self.traj, self.traj_reverse],
+                              self.geom,
                               output_dir=tmpdir,
                               flareplot=False
                               )
 
     def test_w_just_one_fragment_by_user(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            cli.interface(self.geom, [self.traj, self.traj_reverse],
+            cli.interface([self.traj, self.traj_reverse],
+                          self.geom,
                           output_dir=tmpdir,
                           fragments=["0-5"],
                           flareplot=False,
@@ -439,7 +441,8 @@ class Test_interface(TestCLTBaseClass):
 
     def test_w_just_one_fragment_by_user_and_n_ctcs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            cli.interface(self.geom, [self.traj, self.traj_reverse],
+            cli.interface([self.traj, self.traj_reverse],
+                          self.geom,
                           output_dir=tmpdir,
                           fragments=["0-5"],
                           n_nearest=1,
@@ -448,7 +451,8 @@ class Test_interface(TestCLTBaseClass):
 
     def test_w_just_two_fragments_by_user(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            cli.interface(self.geom, [self.traj, self.traj_reverse],
+            cli.interface([self.traj, self.traj_reverse],
+                          self.geom,
                           frag_idxs_group_1=[0],
                           frag_idxs_group_2=[1],
                           output_dir=tmpdir,
@@ -463,7 +467,8 @@ class Test_interface(TestCLTBaseClass):
             shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
-                cli.interface(self.geom, [self.traj, self.traj_reverse],
+                cli.interface([self.traj, self.traj_reverse],
+                              self.geom,
                               output_dir=tmpdir,
                               fragments=["967-1001",  # TM6
                                          "328-353"],  # a5
@@ -482,7 +487,8 @@ class Test_interface(TestCLTBaseClass):
             with remember_cwd():
                 os.chdir(tmpdir)
                 with mock.patch('builtins.input', lambda *x: next(input_values)):
-                    cli.interface(self.geom, [self.traj, self.traj_reverse],
+                    cli.interface([self.traj, self.traj_reverse],
+                                  self.geom,
                                   output_dir=tmpdir,
                                   fragments=["consensus"],
                                   CGN_PDB="3SN6",
@@ -500,7 +506,8 @@ class Test_interface(TestCLTBaseClass):
             with remember_cwd():
                 os.chdir(tmpdir)
                 with mock.patch('builtins.input', lambda *x: next(input_values)):
-                    cli.interface(self.geom, [self.traj, self.traj_reverse],
+                    cli.interface([self.traj, self.traj_reverse],
+                                  self.geom,
                                   output_dir=tmpdir,
                                   fragments=["consensus"],
                                   CGN_PDB="3SN6",

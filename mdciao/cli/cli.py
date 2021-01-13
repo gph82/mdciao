@@ -1133,25 +1133,22 @@ def interface(
 
     Parameters
     ----------
-    topology : str or :obj:`mdtraj.Trajectory` object
-        This geometry is used as a topology and as a
-        reference geometry for :obj:`nlist_cutoff_Ang`. If
-        str, it's the full path to the topology file, e.g.
-        'sims/prot.pdb')
-    trajectories : list
+    trajectories :
         The MD-trajectories to calculate the frequencies
-        from. This input is pretty flexible. For more info
-        check :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
+        from. This input is pretty flexible. For more info check
+        :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
         Accepted values are:
-
-        * pattern, e.g."*.ext"
-        * one string containing a filename
-        * list of filenames
-        * one :obj:`mdtraj.Trajectory` object
-        * list of :obj:`mdtraj.Trajectory` objects
-        * None
-        If None, the :obj:`mdtraj.Trajectory` object given
-        in :obj:`topology` is used as trajectories
+         * pattern, e.g. "*.ext"
+         * one string containing a filename
+         * list of filenames
+         * one :obj:`~mdtraj.Trajectory` object
+         * list of :obj:`~mdtraj.Trajectory` objects
+    topology : str or :obj:`~mdtraj.Trajectory`, default is None
+        The topology associated with the :obj:`trajectories`
+        If None, the topology of the first :obj:`trajectory` will
+        be used, i.e. when no :obj:`topology` is passed, the first
+        :obj:`trajectory` has to be either a .gro or .pdb file, or
+        an :obj:`~mdtraj.Trajectory` object
     frag_idxs_group_1 : NoneType, default is None
         Indices of the fragments that belong to the group_1.
         Defaults to None which will prompt the user of
@@ -1331,13 +1328,9 @@ def interface(
     _offer_to_create_dir(output_dir)
     graphic_ext = graphic_ext.strip(".")
 
-    if trajectories is None:
-        trajectories = topology
-    xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
+    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories,topology)
     print("Will compute contact frequencies for trajectories:\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
-
-    refgeom = _load_any_geom(topology)
 
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
