@@ -445,6 +445,31 @@ def _load_any_geom(geom):
 
     return outgeom
 
+def _trajsNtop2xtcsNrefgeom(trajectories,topology):
+    r"""
+    Inform about trajs and load necessary tops in different scenarios
+
+    Parameters
+    ----------
+    trajectories: check get_sorted_trajectories
+    topology : str, top
+
+    Returns
+    -------
+    xtcs, refgeom
+    xtcs : whatever get_sorted_trajectories returns
+    refgeom : :obj:`mdtraj.Trajectory` object
+
+    """
+    # Inform about trajectories
+    xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
+    if topology is None:
+        # TODO in case the xtc[0] is a pdb/grofile, it will be read one more time later
+        refgeom = _load_any_geom(xtcs[0])[0]
+    else:
+        refgeom = _load_any_geom(topology)
+    return xtcs,refgeom
+
 def _fragment_overview(a,labtype):
     r"""
     provide the CLTs BW_overview and CGN_overview
@@ -787,12 +812,7 @@ def residue_neighborhoods(residues,
 
     _offer_to_create_dir(output_dir)
 
-    xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
-    if topology is None:
-        # TODO in case the xtc[0] is a pdb/grofile, it will be read twice
-        refgeom = _load_any_geom(xtcs[0])[0]
-    else:
-        refgeom = _load_any_geom(topology)
+    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories,topology)
 
     # String comparison to allow for command line argparse-use directly
     if str(table_ext).lower() != 'none' and str(table_ext).lower().strip(".") in ["dat", "txt", "xlsx"]:
@@ -1068,8 +1088,8 @@ def residue_neighborhoods(residues,
             "neighborhoods": neighborhoods}
 
 def interface(
+        trajectories,
         topology=None,
-        trajectories=None,
         frag_idxs_group_1=None,
         frag_idxs_group_2=None,
         BW_uniprot="None",
@@ -1770,14 +1790,9 @@ def sites(site_files,
     if table_ext is not None:
         table_ext = table_ext.strip(".")
     graphic_ext = graphic_ext.strip(".")
-    # Inform about trajectories
 
-    xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
-    if topology is None:
-        # TODO in case the xtc[0] is a pdb/grofile, it will be read twice
-        refgeom = _load_any_geom(xtcs[0])[0]
-    else:
-        refgeom = _load_any_geom(topology)
+    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories,topology)
+
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
         "\n ".join([_mdcsites.site2str(ss) for ss in site_files]),
         _mdcu.str_and_dict.inform_about_trajectories(xtcs),
