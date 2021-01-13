@@ -512,8 +512,8 @@ def _fragment_overview(a,labtype):
                 print(line)
             
 def residue_neighborhoods(residues,
-                          topology,
-                          trajectories=None,
+                          trajectories,
+                          topology=None,
                           res_idxs=False,
                           ctc_cutoff_Ang=3.5,
                           stride=1,
@@ -602,11 +602,6 @@ def residue_neighborhoods(residues,
          * residues = '1,10-12,GLU*,GDP*,E30'
          Please refer to :obj:`mdciao.utils.residue_and_atom.rangeexpand_residues2residxs`
          for more info
-    topology : str or :obj:`mdtraj.Trajectory`
-        This geometry is used as a topology and
-        as a reference geometry for :obj:`nlist_cutoff_Ang`.
-        If str, it's the full path to the topology file,
-        e.g. 'sims/prot.pdb')
     trajectories : str, :obj:`mdtraj.Trajectory`, or None
         The MD-trajectories to calculate the frequencies from.
         This input is pretty flexible. For more info check
@@ -617,9 +612,12 @@ def residue_neighborhoods(residues,
          * list of filenames
          * one :obj:`mdtraj.Trajectory` object
          * list of :obj:`mdtraj.Trajectory` objects
-         * None
-        If None, the :obj:`mdtraj.Trajectory` object
-        given in :obj:`topology` is used as trajectories
+    topology : str or :obj:`~mdtraj.Trajectory`, default is None
+        The topology associated with the :obj:`trajectories`
+        If None, the topology of the first :obj:`trajectory` will
+        be used, i.e. when no :obj:`topology` is passed, the first
+        :obj:`trajectory` has to be either a .gro or .pdb file, or
+        an :obj:`~mdtraj.Trajectory` object
     Other Parameters
     ----------------
     res_idxs : bool, default is False
@@ -789,7 +787,12 @@ def residue_neighborhoods(residues,
 
     _offer_to_create_dir(output_dir)
 
-    refgeom = _load_any_geom(topology)
+    xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
+    if topology is None:
+        # TODO in case the xtc[0] is a pdb/grofile, it will be read twice
+        refgeom = _load_any_geom(xtcs[0])[0]
+    else:
+        refgeom = _load_any_geom(topology)
 
     # String comparison to allow for command line argparse-use directly
     if str(table_ext).lower() != 'none' and str(table_ext).lower().strip(".") in ["dat", "txt", "xlsx"]:
@@ -799,9 +802,6 @@ def residue_neighborhoods(residues,
 
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
-    if trajectories is None:
-        trajectories = topology # TODO we could already load refgeom here, right?
-    xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
     print("Will compute contact frequencies for :\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
