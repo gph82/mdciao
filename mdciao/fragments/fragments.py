@@ -596,7 +596,7 @@ def frag_list_2_frag_groups(frag_list,
     two fragments out of list of fragments. This is used
     by CLTs interface
 
-    Promt the user when disambguation is needed.
+    Prompt the user when disambiguation is needed.
 
     Parameters
     ----------
@@ -605,7 +605,7 @@ def frag_list_2_frag_groups(frag_list,
     frag_idxs_group_1 : iterable of ints, or str default is None
         When str, it has to be a rangeexpand exprs, e.g. 2-5,10
     frag_idxs_group_2 : iterable of ints, or str default is None
-
+        When str, it has to be a rangeexpand exprs, e.g. 2-5,10
 
     Returns
     -------
