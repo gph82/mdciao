@@ -515,6 +515,14 @@ class Test_interface(TestCLTBaseClass):
                                   accept_guess=True,
                                   )
 
+
+class Test_pdb(TestCLTBaseClass):
+
+    def test_works(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            geom = cli.pdb("3SN6", filename=None)
+            isinstance(geom,md.Trajectory)
+
 class Test_parse_consensus_option(unittest.TestCase):
 
     @classmethod

@@ -136,7 +136,9 @@ class ExamplesCLTs(object):
                 "%s" % (self.pdb)
                 ]
         pass
-
+    @property
+    def mdc_pdb(self):
+        return ["mdc_pdb.py 3SN6"]
 
     @property
     def clts(self):

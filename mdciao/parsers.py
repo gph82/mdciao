@@ -83,7 +83,7 @@ def _parser_add_topology(parser):
     parser.add_argument('topology', type=str, help='Topology file')
 
 def _parser_add_cutoff(parser):
-    parser.add_argument("--ctc_cutoff_Ang", type=float,
+    parser.add_argument("--ctc_cutoff_Ang", "-co", type=float,
                         help="The cutoff distance between two residues for them to be considered in contact. "
                              "Default is 3.5 Angstrom.",
                         default=3.5)
@@ -669,6 +669,19 @@ def parser_for_BW_overview():
     _parser_add_AAs(parser)
     _parser_add_conslabels(parser)
 
+    return parser
+
+def parser_for_pdb():
+    parser = argparse.ArgumentParser(description='Lookup a four-letter PDB-code in the RCSB PDB and save it locally.')
+
+    parser.add_argument("code", type=str,
+                        help="four-letter PDB code"
+                        )
+    parser.add_argument("--ext","-x", type=str, default=".pdb",
+                        help="extension of file to be saved. Default is '.pdb'")
+    parser.add_argument("--filename","-n", type=str, default=None,
+                        help="Filename (with extension) to save to. If parsed, "
+                             "'--ext' will be ignored. Default is to save '$code.pdb'")
     return parser
 
 def parser_for_CGN_overview():

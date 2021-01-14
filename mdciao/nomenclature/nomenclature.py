@@ -372,77 +372,6 @@ def BW_finder(BW_descriptor,
                           dont_fail=dont_fail,
                           write_to_disk=write_to_disk)
 
-def _url2json(url,timeout,verbose):
-    r""" Wraps around :obj:`requests.get` and tries to do :obj:`requests.Response.json`
-
-    Parameters
-    ----------
-    url : str
-    timeout : int
-        seconds
-    verbose : bool
-
-    Returns
-    -------
-    dict
-
-    """
-    if verbose:
-        print("Calling %s..." % url, end="")
-    a = _requests.get(url, timeout=timeout)
-    if verbose:
-        print("done!")
-    try:
-        json = a.json()
-    except:
-        json = ValueError('Could not create a json out of  %s\n'
-                          'Please check with if that is a valid url'%url)
-    return json
-
-def pdb2ref(pdb, url ="https://data.rcsb.org/rest/v1/core/entry/",
-            timeout=5):
-    r"""
-    Print the primary citation of a pdb code via web lookup
-
-    The citation object is returned as a dict,
-    check these links for more info
-    * https://data.rcsb.org/index.html#data-api
-    * https://data.rcsb.org/data-attributes.html
-
-    Parameters
-    ----------
-    pdb : str
-        four-leter pdb-code
-    url : str
-        the base URL for the look-ups
-    timeout : int
-        passed to the :obj:`requests.get` API,
-        'How many seconds to wait for the server to send data
-        before giving up'
-
-    Returns
-    -------
-    ref : dict
-        Whatever is contained in "rcsb_primary_citation"
-        of https://data.rcsb.org/data-attributes.html
-    """
-    url = url.strip("/")+"/" + pdb.strip("/")
-    ref = _url2json(url,timeout,verbose=False)
-    try:
-        ref = ref["rcsb_primary_citation"]
-    except KeyError:
-        print(url,":", ref["message"])
-        return
-
-    cite = "https://doi.org/"+ref["pdbx_database_id_doi"]
-    print("Please cite the following 3rd party publication:")
-    print(cite,
-          #end=","
-          )
-    print(" * "+ref["title"])
-    print("   "+ref["rcsb_authors"][0],"et al.,", ref["rcsb_journal_abbrev"], ref["year"])
-    return ref
-
 def _BW_web_lookup(url, verbose=True,
                    timeout=5):
     r"""
@@ -1653,6 +1582,7 @@ def guess_nomenclature_fragments(refseq, top,
                                       "but not a %s."%(LabelerConsensus,type(str))
         seq_consensus = refseq
 
+    # TODO create a method out of this
     df = _mdcu.sequence.align_tops_or_seqs(top, seq_consensus)
     hit_idxs = df[df["match"]]["idx_0"].values
     hits, guess = [], []

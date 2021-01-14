@@ -73,6 +73,13 @@ class Test_ExamplesCLTs(unittest.TestCase):
                                 )
         assert CP.returncode == 0
 
+    def test_mdc_pdb(self):
+        with remember_cwd():
+            os.chdir(self.tmpdir)
+            CP = self.xCLTs.run("mdc_pdb",
+                                #show=True
+                                )
+        assert CP.returncode == 0
 
 if __name__ == '__main__':
     unittest.main()

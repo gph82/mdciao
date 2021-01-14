@@ -809,28 +809,3 @@ class Test_alignment_df2_conslist(unittest.TestCase):
     def test_works_nonmatch(self):
         out_list = nomenclature.alignment_df2_conslist(self.df, allow_nonmatch=True)
         self.assertListEqual(out_list, ["3.50", "3.51", "3.52"])
-
-
-class Test_pdb2ref(unittest.TestCase):
-
-    def test_works(self):
-        cite = nomenclature.pdb2ref("3SN6")
-        assert isinstance(cite,dict)
-        assert all([key in cite.keys() for key in ["title", "rcsb_authors", "rcsb_journal_abbrev","year"]])
-
-    def test_work_wrong_PDB(self):
-        cite = nomenclature.pdb2ref("0SN6")
-        assert cite is None
-
-class Test_url2json(unittest.TestCase):
-
-    def test_works(self):
-        idict = nomenclature.nomenclature._url2json("https://data.rcsb.org/rest/v1/core/entry/3SN6",
-                                                    5,True)
-        assert isinstance(idict,dict)
-
-    def test_work_wrong_url(self):
-        idict = nomenclature.nomenclature._url2json("https://data.rsbc.org/rest/v1/core/entry/13SN6",
-                                                    5,True)
-        assert isinstance(idict,ValueError)
-

@@ -12,6 +12,7 @@ Welcome to mdciao! Below you will find the submodules exposed the API
     plots
     utils
     flare
+    pdb
 """
 
 from . import contacts
@@ -21,3 +22,4 @@ from . import plots
 from . import sites
 from . import cli
 from . import flare
+from . import pdb

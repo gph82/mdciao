@@ -49,7 +49,7 @@ from itertools import product as _iterpd
 import mdciao.contacts as _mdcctcs
 import mdciao.fragments as _mdcfrg
 import mdciao.nomenclature as _mdcnomenc
-
+import mdciao.pdb as _mdcpdb
 import mdciao.sites as _mdcsites
 import mdciao.plots as _mdcplots
 
@@ -1979,3 +1979,33 @@ def compare(file_dict, graphic_ext=".pdf", output_desc="freq_comparison",**kwarg
     #_plt.show()
 
     return myfig, freqs, plotted_freqs
+
+def pdb(code,
+        filename=None,
+        verbose=True,
+        url="https://files.rcsb.org/download/",
+        ):
+    r""" Return a :obj:`~mdtraj.Trajectory` from a four-letter PDB code via RSCB PBB lookup
+
+    Thinly wraps around :obj:`mdciao.pdb.pdb2traj`, which wraps around :obj:`mdtraj.load_pdb`
+    and prints the corresponding citation.
+
+    Will return None if lookup fails
+
+    Parameters
+    ----------
+    code : str
+        four-letter code, e.g. 3SN6
+    filename : str, default is None
+        if str, save to this file,
+        eventually overwriting
+    verbose : bool, default is False
+    url : str, default is 'https://files.rcsb.org/download'
+        base URL for lookups
+
+    Returns
+    -------
+    traj : :obj:`~mdtraj.Trajectory` or None):
+    """
+
+    return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
