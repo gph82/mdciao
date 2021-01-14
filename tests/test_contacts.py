@@ -1460,8 +1460,8 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(table["freq"].array, [3 / 4, 3 / 4])
         _np.testing.assert_array_equal(table["label"].array, ["E30-V31", "E30-W32"])
         _np.testing.assert_array_equal(table["sum"].array, [3 / 4, 3 / 4 + 3 / 4])
-        _np.testing.assert_equal(table["by_atomtypes"][0], "(66% BB-BB, 33% BB-SC)")
-        _np.testing.assert_equal(table["by_atomtypes"][1], "(66% BB-SC, 33% SC-BB)")
+        _np.testing.assert_equal(table["by_atomtypes"][0], "66% BB-BB, 33% BB-SC")
+        _np.testing.assert_equal(table["by_atomtypes"][1], "66% BB-SC, 33% SC-BB")
 
 class TestContactGroupPlots(TestBaseClassContactGroup):
 
