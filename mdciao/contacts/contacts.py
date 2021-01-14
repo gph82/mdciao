@@ -2429,7 +2429,7 @@ class ContactGroup(object):
 
         if by_atomtypes:
             idf = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang)
-            idf = ['(%s)' % (', '.join(['%2u%% %s' % (val * 100, key) for key, val in sorted(idict.items(),key=lambda item: item[1],reverse=True)])) for idict in idf]
+            idf = ['%s' % (', '.join(['%2u%% %s' % (val * 100, key) for key, val in sorted(idict.items(),key=lambda item: item[1],reverse=True)])) for idict in idf]
             df2return = df2return.join(_DF.from_dict({"by_atomtypes": idf}))
 
         return df2return
