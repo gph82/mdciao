@@ -218,5 +218,12 @@ class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
                                                    #verbose=True
                                                    )
 
+class Test_superpose_w_CA_align(unittest.TestCase):
+
+    def test_works(self):
+        geom_3CAP = md.load(test_filenames.pdb_3CAP)
+        geom_1U19 = md.load(test_filenames.pdb_1U19)
+        sequence.superpose_w_CA_align(geom_3CAP,geom_1U19,verbose=True)
+
 if __name__ == '__main__':
     unittest.main()
