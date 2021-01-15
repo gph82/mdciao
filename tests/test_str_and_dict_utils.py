@@ -715,5 +715,18 @@ class Test_replace_regex_special_chars():
         word ="[]()^"
         assert str_and_dict._replace_regex_special_chars(word,"!!!!!")
 
+class Test_latex_mathmode(unittest.TestCase):
+
+    def test_works(self):
+        self.assertEqual("$\\mathrm{There's an }\\alpha\\mathrm{ and a }\\beta\\mathrm{ here, also C_200}$",
+                         str_and_dict.latex_mathmode("There's an alpha and a beta here, also C_200"))
+
+class Test_latex_superscript_one_fragment(unittest.TestCase):
+
+    def test_works(self):
+        self.assertEqual(str_and_dict._latex_superscript_one_fragment("GLU30@beta_2AR"),
+                         "GLU30$^{\\beta\\mathrm{_2AR}}$")
+    def test_no_fragment(self):
+        self.assertEqual(str_and_dict._latex_superscript_one_fragment("GLU30"),"GLU30")
 if __name__ == '__main__':
     unittest.main()

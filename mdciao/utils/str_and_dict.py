@@ -536,6 +536,100 @@ def _latexify(word, istr):
     istr = istr.replace("$$","")
     return istr
 
+def latex_mathmode(istr, enclose=True):
+    r"""
+    Prepend *symbol* words with "\\ " and protect *non-symbol* words with '\\mathrm{}'
+
+    * *symbol* words are things that can
+      be interpreted by LaTeX in math mode, e.g.
+      '\\alpha' or '\\AA'
+    * *non-symbol* words are everything else
+
+    Works "opposite" to :obj:`replace4latex` and for the moment
+    it's my (very bad) solution for latexifying contact-labels' fragments
+    as super indices where the the fragments themselves contain
+    sub-indices (GLU30^$\beta_2AR}
+
+
+    >>> replace4latex("There's an alpha and a beta here, also C_200")
+    "There's an $\alpha$ and a $\beta$ here, also $C_{200}$"
+
+    >>> latex_mathmode("There's an alpha and a beta here, also C_200")
+    "$\\mathrm{There's an }\\alpha\\mathrm{ and a }\\beta\\mathrm{ here, also C_200}$"
+
+    Parameters
+    ----------
+    istr : string
+    enclose : bool, default is True
+        Return string enclosed in
+        dollar-signs: '$string$'
+        Use False for cases where
+        the LaTeX math-mode is already
+        active
+
+    Returns
+    -------
+    istr : string
+    """
+    output = []
+    exp = "(%s)" % "|".join(["\%s" % ss if ss == "^" else "%s" % ss for ss in _symbols])
+    for word in _re.split(exp, istr):
+        if len(word) > 0:
+            if word in _symbols:
+                word = "\\%s" % word
+            else:
+                word = "\\mathrm{%s}" % word
+            output.append(word)
+    output = "".join(output)
+    if enclose:
+        output= "$%s$"%output
+    return output
+
+def latex_superscript_fragments(contact_label, defrag="@"):
+    r"""
+    Format fragment descriptors as Latex math-mode superscripts
+
+    Thinly wrap around :obj:`_latex_superscript_one_fragment` with :obj:`splitlabel`
+
+    Parameters
+    ----------
+    contact_label : str
+        contact label of any form,
+        as long as to AAs are joined
+        with '-' character
+    defrag : char, default is '@'
+        The character to divide
+        residue and fragment label
+    Returns
+    -------
+    contact_label : str
+
+    """
+    return '-'.join(_latex_superscript_one_fragment(w, defrag=defrag) for w in splitlabel(contact_label, "-"))
+
+def _latex_superscript_one_fragment(label, defrag="@"):
+    r"""
+    Format s.t. the fragment descriptor appears as superindex in LaTeX math-mode
+
+    Parameters
+    ----------
+    label : str
+        Contact label, "GLU30" and
+        optionally "GLU30@beta_2AR"
+    defrag : char, default is '@'
+        The character to divide
+        residue and fragment label
+
+    Returns
+    -------
+    label : str
+    """
+    words = label.split(defrag,maxsplit=1)
+    if len(words)==1:
+        return label
+    elif len(words)==2:
+       return words[0] +"$^{%s}$" % latex_mathmode(words[1], enclose=False)
+
 def _label2componentsdict(istr,sep="-",defrag="@",
                           assume_ctc_label=True):
     r"""
@@ -636,7 +730,6 @@ def _label2componentsdict(istr,sep="-",defrag="@",
     return bits
 
 def splitlabel(label, sep="-", defrag="@"):
-    #TODO propagate this to all times we use "split" in the code
     r"""
     Split a contact label. Analogous to label.split(sep) but more robust
     because fragment names can contain the separator character.
