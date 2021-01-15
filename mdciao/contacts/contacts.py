@@ -3274,7 +3274,7 @@ class ContactGroup(object):
                                                label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
                                                label_fontsize_factor=label_fontsize_factor,
                                                trunc_y_labels_at=.65 * _np.max(freqs),
-                                               allow_splitting=False,
+                                               single_label=True,
                                                )
 
         if xmax is not None:

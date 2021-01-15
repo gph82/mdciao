@@ -558,7 +558,7 @@ def plot_unified_freq_dicts(freqs,
 def add_tilted_labels_to_patches(jax, labels,
                                  label_fontsize_factor=1,
                                  trunc_y_labels_at=.65,
-                                 allow_splitting=True):
+                                 single_label=False):
     r"""
     Iterate through :obj:`jax.patches` and place the text strings
     in :obj:`labels` on top of it.
