@@ -1622,10 +1622,7 @@ class ContactPair(object):
         ctc_label = self.labels.w_fragments
         if shorten_AAs:
             ctc_label = self.labels.w_fragments_short_AA
-
-        ctc_label = '-'.join(_mdcu.str_and_dict.replace4latex(word.replace("@", "^")) for word in
-                       _mdcu.str_and_dict.splitlabel(ctc_label, "-"))
-
+        ctc_label = _mdcu.str_and_dict.latex_superscript_fragments(ctc_label)
         if ctc_cutoff_Ang > 0:
             ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang) * 100)
 
@@ -2733,7 +2730,7 @@ class ContactGroup(object):
                 label_dotref += '\nSigma = %2.1f' % sigma  # sum over all bc we did not truncate
                 jax.plot(_np.nan, _np.nan, 'o',
                          color=self.anchor_fragment_color,
-                         label=_mdcu.str_and_dict.replace4latex(label_dotref.replace("@","^")))
+                         label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
         else:
             if sum_freqs:
                 title+= " of '%s' (Sigma = %2.1f)\n" % (title_label,sigma)
@@ -3009,7 +3006,7 @@ class ContactGroup(object):
             label_dotref = _mdcu.str_and_dict.defrag_key(label_dotref,defrag=defrag)
             label_bars = [_mdcu.str_and_dict.defrag_key(ilab,defrag=defrag) for ilab in label_bars]
         # Cosmetics
-        title_str = "distribution for %s"%_mdcu.str_and_dict.replace4latex(label_dotref.replace("@","^"))
+        title_str = "distribution for %s"%_mdcu.str_and_dict.latex_superscript_fragments(label_dotref)
         if ctc_cutoff_Ang is not None:
             title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)
             jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
@@ -3019,11 +3016,12 @@ class ContactGroup(object):
 
         # Base plot
         for ii, ((h, x), label) in enumerate(zip(self.distributions_of_distances(nbins=nbins), label_bars)):
+            label = _mdcu.str_and_dict.latex_superscript_fragments(label)
             if ctc_cutoff_Ang is not None:
                 if ii==0:
                     freqs = self.frequency_per_contact(ctc_cutoff_Ang)
                 label+=" (%u%%)"%(freqs[ii]*100)
-            jax.plot(x[:-1] * 10, h, label=_mdcu.str_and_dict.replace4latex(label.replace("@","^")))
+            jax.plot(x[:-1] * 10, h, label=label)
             jax.fill_between(x[:-1]*10, h, alpha=.15)
         if xlim is not None:
             jax.set_xlim(xlim)
@@ -3276,7 +3274,7 @@ class ContactGroup(object):
                                                label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
                                                label_fontsize_factor=label_fontsize_factor,
                                                trunc_y_labels_at=.65 * _np.max(freqs),
-                                               allow_splitting=False,
+                                               single_label=True,
                                                )
 
         if xmax is not None:
