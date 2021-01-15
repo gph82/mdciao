@@ -235,7 +235,8 @@ def compare_groups_of_contacts(groups,
                                     fontsize=fontsize,
                                     **kwargs_plot_unified_freq_dicts)
             if anchor is not None:
-                _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim()))*.05, 1.05, "%s and:" % _mdcu.str_and_dict.replace4latex(anchor.replace("@","^")),
+                _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
+                                "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
                                 ha="right", va="bottom")
 
         myfig.tight_layout()
@@ -257,8 +258,9 @@ def compare_groups_of_contacts(groups,
                                                         title=title,
                                                         **kwargs_plot_unified_freq_dicts)
     if anchor is not None:
-        _plt.text(0 - _np.abs(_np.diff(_plt.gca().get_xlim()))*.05, 1.05, "%s and:" % _mdcu.str_and_dict.replace4latex(anchor.replace("@","^")),
-                                                                                                                       ha="right", va="bottom", fontsize=fontsize)
+        _plt.text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
+                  "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
+                  ha="right", va="bottom", fontsize=fontsize)
     _plt.gcf().tight_layout()
     #_plt.show()
 
@@ -515,11 +517,7 @@ def plot_unified_freq_dicts(freqs,
             iix = ii\
                   -width/2\
                   +len(freqs_by_sys_by_ctc)*width/2
-            txt = key.replace("@", "^")
-            if "-" in txt:
-                txt = "-".join([_mdcu.str_and_dict.replace4latex(w) for w in _mdcu.str_and_dict.splitlabel(txt,"-")])
-            else:
-                txt = _mdcu.str_and_dict.replace4latex(txt)
+            txt = _mdcu.str_and_dict.latex_superscript_fragments(key)
             txt = winners[key][0] + txt
             _plt.text(iix, ylim + .05, txt,
                       #ha="center",
@@ -582,10 +580,10 @@ def add_tilted_labels_to_patches(jax, labels,
         iy += .01
         if iy > trunc_y_labels_at:
             iy = trunc_y_labels_at
-        if "-" in ilab and allow_splitting:
-            txt = '-'.join(_mdcu.str_and_dict.replace4latex(word.replace("@","^")) for word in _mdcu.str_and_dict.splitlabel(ilab,"-"))
+        if single_label:
+            txt = _mdcu.str_and_dict._latex_superscript_one_fragment(ilab)
         else:
-            txt = _mdcu.str_and_dict.replace4latex(ilab.replace("@","^"))
+            txt = _mdcu.str_and_dict.latex_superscript_fragments(ilab)
         jax.text(ix, iy, txt,
                  va='bottom',
                  ha='left',
