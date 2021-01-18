@@ -1010,8 +1010,6 @@ class TestBaseClassContactGroup(unittest.TestCase):
         #At 3.5, the above cp1 gives SC-BB, BB-BB, BB-BB:
         # 2/3 BB-BB, 1/3 SC-BB
 
-
-
 class TestContactGroup(TestBaseClassContactGroup):
 
 
@@ -1465,34 +1463,43 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(table["by_atomtypes"][0], "(66% BB-BB, 33% BB-SC)")
         _np.testing.assert_equal(table["by_atomtypes"][1], "(66% BB-SC, 33% SC-BB)")
 
-
 class TestContactGroupPlots(TestBaseClassContactGroup):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupPlots,cls).setUp(cls)
+        cls.CG_cp1_cp2 = contacts.ContactGroup([cls.cp1, cls.cp2])
+        cls.CG_cp1_cp2_both_w_anchor_and_frags = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags,
+             cls.cp2_w_anchor_and_frags],
+            neighbors_excluded=0
+        )
+
     def test_plot_freqs_as_bars_just_runs(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         jax = CG.plot_freqs_as_bars(2, "test_site")
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs_labels_short(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         jax = CG.plot_freqs_as_bars(2, "test_site", shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs_labels_xlim(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         jax = CG.plot_freqs_as_bars(2, "test_site", xlim=20)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_freqs_as_bars_display_sort(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         CG.plot_freqs_as_bars(2, "test_site", display_sort=True)
 
 
     def test_plot_freqs_as_bars_total_freq(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         CG.plot_freqs_as_bars(2, "test_site", total_freq=CG.frequency_per_contact(2).sum())
 
     def test_plot_freqs_as_bars_no_neighborhood(self):
@@ -1503,7 +1510,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_freqs_as_bars_no_neighborhood_fails(self):
         with pytest.raises(AssertionError):
-            CG = contacts.ContactGroup([self.cp1, self.cp2])
+            CG = self.CG_cp1_cp2
             CG.plot_freqs_as_bars(2,)
 
     def test_plot_add_hatching_by_atomtypes(self):
@@ -1550,20 +1557,18 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
 
     def test_plot_neighborhood_raises(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         with pytest.raises(AssertionError):
             CG.plot_neighborhood_freqs(2, 0)
 
     def test_plot_neighborhood_works_minimal(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_neighborhood_freqs(2, 0)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_neighborhood_works_options(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_neighborhood_freqs(2, 0, shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
         jax = CG.plot_neighborhood_freqs(2, 0, xmax=10)
@@ -1582,20 +1587,16 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
 
     def test_plot_timedep_ctcs(self):
-        from matplotlib.pyplot import Figure
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1)
         _np.testing.assert_equal(len(figs), 1)
-        assert isinstance(figs[0], Figure)
-        ifig: Figure = figs[0]
+        assert isinstance(figs[0], _plt.Figure)
+        ifig = figs[0]
         _np.testing.assert_equal(len(ifig.axes), 2 + 1)  # 2 + twinx
         _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_no_pop(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1)
         ifig = figs[0]
         _np.testing.assert_equal(len(figs), 1)
@@ -1603,9 +1604,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_w_pop(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
                                     pop_N_ctcs=True)
         _np.testing.assert_equal(len(figs), 2)
@@ -1614,17 +1613,13 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_empty(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1, skip_timedep=True)
         _np.testing.assert_equal(len(figs), 0)
         _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_w_valid_cutoff(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
                                     skip_timedep=True)
         _np.testing.assert_equal(len(figs), 1)
@@ -1632,18 +1627,13 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _plt.close("all")
 
     def test_plot_neighborhood_distributions_just_works(self):
-        from matplotlib.pyplot import Axes
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_distance_distributions()
-        assert isinstance(jax, Axes)
+        assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_neighborhood_distributions_just_works_w_options(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_distance_distributions(shorten_AAs=True,
                                              ctc_cutoff_Ang=3,
                                              xlim=[-1, 5],
@@ -1652,17 +1642,13 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _plt.close("all")
 
     def test_plot_frequency_sums_as_bars_just_works(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_frequency_sums_as_bars(2.0, "test", xmax=4)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_frequency_sums_as_bars_no_interface_raises(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         with pytest.raises(AssertionError):
             jax = CG.plot_frequency_sums_as_bars(2.0, "test", list_by_interface=True)
 
