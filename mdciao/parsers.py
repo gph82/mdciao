@@ -705,14 +705,30 @@ def parser_for_CGN_overview():
     return parser
 
 def parser_for_compare_neighborhoods():
-    parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies from different files by generating a comparison plot and table")
-    parser.add_argument("files", type=str, nargs="+", help="Files (ASCII or .xlsx) containing the frequencies and labels in the first columns")
-    parser.add_argument("-a","--anchor",type=str,default=None, help="A residue that appears in all contacts. It will be eliminated from the labels for clarity.")
-    parser.add_argument("-k","--keys", type=str,default=None, help="The keys used to label the files, e.g. 'WT,MUT'")
-    parser.add_argument("-c","--colors", type=str, default=_colorstring, help='Colors to use for the dicts, defaults to "%s"'%", ".join(_colorstring.split(",")))
-    parser.add_argument("-m","--mutations",type=str, default=None,help='A replacement dictionary, to be able to re-label residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes all GLUs to ARGs and all LYS to PHEs')
+    parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies "
+                                                 "from different files by generating a comparison plot and table")
+    parser.add_argument("files", type=str, nargs="+",
+                        help="Files (ASCII or .xlsx) containing the frequencies and labels in the first columns")
+    parser.add_argument("-a","--anchor",type=str,default=None,
+                        help="A residue that appears in all contacts. "
+                             "It will be eliminated from the labels for clarity.")
+    parser.add_argument("-k","--keys", type=str,default=None,
+                        help="The keys used to label the files, e.g. 'WT,MUT'")
+    parser.add_argument("-c","--colors", type=str, default=_colorstring,
+                        help='Colors to use for the dicts, defaults to "%s"'%", ".join(_colorstring.split(",")))
+    parser.add_argument("-m","--mutations",type=str, default=None,
+                        help='A replacement dictionary, to be able to re-label '
+                             'residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes '
+                             'all GLUs to ARGs and all LYS to PHEs')
     parser.add_argument("-t", "--title", type=str, default=None,
-                        help='Title of the plot. Default is None which will take mdciao.plots.compare_groups_of_contacts"s default.')
+                        help='Title of the plot. Default is None which will '
+                             'take mdciao.plots.compare_groups_of_contacts"s default.')
+    parser.add_argument("-p","--pop", dest="plot",
+                        help="pop-up an interactive figure before closing. "
+                             "Default is not to pop-up but directly save to file",
+                        action="store_true",
+                        )
+    parser.set_defaults(plot=False)
     _parser_add_output_desc(parser,"freq_comparison")
     _parser_add_graphic_ext(parser)
     return parser
