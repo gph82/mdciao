@@ -1687,12 +1687,12 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                               label_type="blergh")
         _plt.close("all")
 
-
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
     def test_frequency_spreadsheedt_just_works(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
         with _TDir(suffix='_test_mdciao') as tmpdir:
             CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"),
                                      write_interface=False)
@@ -1708,7 +1708,8 @@ class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
     def test_frequency_spreadsheet_raises_w_interface(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
         with pytest.raises(AssertionError):
             with _TDir(suffix='_test_mdciao') as tmpdir:
                 CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"))
