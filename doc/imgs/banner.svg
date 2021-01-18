@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -16,7 +14,10 @@
    height="699.89276"
    viewBox="0 0 1906.1615 699.89276"
    sodipodi:docname="banner.svg"
-   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)">
+   inkscape:version="1.0.1 (1.0.1+r74)"
+   inkscape:export-filename="/home/guille/Programs/mdciao/doc/imgs/banner.png"
+   inkscape:export-xdpi="93.510002"
+   inkscape:export-ydpi="93.510002">
   <metadata
      id="metadata8">
     <rdf:RDF>
@@ -25,7 +26,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -33,10 +34,10 @@
      id="defs6">
     <clipPath
        clipPathUnits="userSpaceOnUse"
-       id="clipPath45">
+       id="clipPath182">
       <rect
-         style="opacity:0.5;vector-effect:none;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.15465027;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-         id="rect47"
+         style="opacity:0.5;vector-effect:none;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.15465;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect184"
          width="1098.8793"
          height="645.83258"
          x="-1216.1829"
@@ -50,50 +51,53 @@
      objecttolerance="10"
      gridtolerance="10"
      guidetolerance="10"
-     inkscape:pageopacity="0"
+     inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:window-width="3840"
-     inkscape:window-height="2119"
+     inkscape:window-width="2560"
+     inkscape:window-height="1399"
      id="namedview4"
      showgrid="false"
      inkscape:zoom="0.9878721"
-     inkscape:cx="1074.9433"
-     inkscape:cy="339.33811"
-     inkscape:window-x="0"
+     inkscape:cx="892.6945"
+     inkscape:cy="440.56579"
+     inkscape:window-x="1"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg2"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
-     fit-margin-bottom="0" />
+     fit-margin-bottom="0"
+     inkscape:document-rotation="0"
+     inkscape:pagecheckerboard="true" />
+  <image
+     sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/neighborhoods.overall@3.5_Ang.Fig.Fig.1.png"
+     xlink:href="neighborhoods.overall@3.5_Ang.Fig.Fig.1.png"
+     style="opacity:1"
+     y="9.9999971"
+     x="1188.2666"
+     id="image230"
+     preserveAspectRatio="none"
+     height="358.94739"
+     width="717.89478" />
   <image
      sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/table_screenshot.png"
      xlink:href="table_screenshot.png"
-     width="654.32526"
-     height="264.76004"
-     preserveAspectRatio="none"
-     id="image117"
+     y="404.37711"
      x="1222.5728"
-     y="404.37711" />
+     id="image117"
+     preserveAspectRatio="none"
+     height="264.76004"
+     width="654.32526" />
   <image
      sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/neighborhoods.LEU394@G.H5.26.time_trace@3.5_Ang.Fig.2.consensus.png"
      xlink:href="neighborhoods.LEU394@G.H5.26.time_trace@3.5_Ang.Fig.2.consensus.png"
-     transform="matrix(1.1023522,0,0,1.1023522,1280.7029,51.717039)"
-     clip-path="url(#clipPath45)"
-     width="1028.5731"
-     height="1884.594"
-     preserveAspectRatio="none"
-     id="image20"
+     y="-46.915169"
      x="-1161.791"
-     y="-46.915169" />
-  <image
-     sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/neighborhoods.overall@3.5_Ang.Fig.1.consensus.png"
-     xlink:href="neighborhoods.overall@3.5_Ang.Fig.1.consensus.png"
-     y="9.9999971"
-     x="1188.2666"
-     id="image31"
+     id="image20"
      preserveAspectRatio="none"
-     height="358.94742"
-     width="717.89484" />
+     height="1885.9421"
+     width="1028.5731"
+     clip-path="url(#clipPath182)"
+     transform="matrix(1.1023522,0,0,1.1023522,1280.7029,51.717039)" />
 </svg>
