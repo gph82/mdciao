@@ -2973,6 +2973,8 @@ class ContactGroup(object):
         Plot distance distributions for the distance trajectories
         of the contacts
 
+        The title will get try to get the name from :obj:`self.name`
+
         Parameters
         ----------
         nbins : int, default is 10
@@ -2998,7 +3000,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.pyplot.Axes`
 
         """
         if jax is None:
@@ -3006,20 +3008,23 @@ class ContactGroup(object):
             jax = _plt.gca()
 
         if self.is_neighborhood:
-            label_dotref = self.anchor_res_and_fragment_str
+            title = self.anchor_res_and_fragment_str
             label_bars = self.partner_res_and_fragment_labels
             if shorten_AAs:
-                label_dotref = self.anchor_res_and_fragment_str_short
+                title = self.anchor_res_and_fragment_str_short
                 label_bars = self.partner_res_and_fragment_labels_short
         else:
-            label_dotref = self.name
+            title = self.name
+            if title is None:
+                title = self.__class__.__name__
             label_bars = self.ctc_labels_w_fragments_short_AA
 
         if defrag is not None:
-            label_dotref = _mdcu.str_and_dict.defrag_key(label_dotref,defrag=defrag)
+            title = _mdcu.str_and_dict.defrag_key(title,defrag=defrag)
             label_bars = [_mdcu.str_and_dict.defrag_key(ilab,defrag=defrag) for ilab in label_bars]
+
         # Cosmetics
-        title_str = "distribution for %s"%_mdcu.str_and_dict.latex_superscript_fragments(label_dotref)
+        title_str = "distribution for %s"%_mdcu.str_and_dict.latex_superscript_fragments(title)
         if ctc_cutoff_Ang is not None:
             title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)
             jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)

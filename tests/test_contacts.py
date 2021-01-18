@@ -1626,13 +1626,13 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _np.testing.assert_equal(len(figs[0].axes), 1)  # Just nctc
         _plt.close("all")
 
-    def test_plot_neighborhood_distributions_just_works(self):
+    def test_plot_distance_distributions_just_works(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_distance_distributions()
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
-    def test_plot_neighborhood_distributions_just_works_w_options(self):
+    def test_plot_plot_distance_distributions_just_works_w_options(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_distance_distributions(shorten_AAs=True,
                                              ctc_cutoff_Ang=3,
@@ -1640,6 +1640,25 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                              n_nearest=1)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
+
+    def test_plot_plot_distance_distributions_no_neighborhood(self):
+            CG = self.CG_cp1_cp2
+            jax = CG.plot_distance_distributions(shorten_AAs=True,
+                                                 ctc_cutoff_Ang=3,
+                                                 xlim=[-1, 5],
+                                                 n_nearest=1)
+            assert isinstance(jax, _plt.Axes)
+            _plt.close("all")
+
+    def test_plot_plot_distance_distributions_no_neighborhood_defrag(self):
+            CG = self.CG_cp1_cp2
+            jax = CG.plot_distance_distributions(shorten_AAs=True,
+                                                 ctc_cutoff_Ang=3,
+                                                 xlim=[-1, 5],
+                                                 n_nearest=1,
+                                                 defrag="@")
+            assert isinstance(jax, _plt.Axes)
+            _plt.close("all")
 
     def test_plot_frequency_sums_as_bars_just_works(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
@@ -1941,7 +1960,6 @@ class TestContactGroupSavetrajs(TestBaseClassContactGroup):
             CG.save_trajs("test_None", "dat", verbose=True, t_unit="ns",
                           ctc_cutoff_Ang=2.5,
                           output_dir=tempdir)
-
 
 class TestContactGroupInterface(TestBaseClassContactGroup):
 
