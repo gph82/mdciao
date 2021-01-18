@@ -987,11 +987,9 @@ def residue_neighborhoods(residues,
                                                       label_fontsize_factor=panelsize2font/panelsize,
                                                       shorten_AAs=short_AA_names,
                                                       ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                      n_nearest= n_nearest
                                                       )
                 else:
                     ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
-                                                  n_nearest,
                                                   switch_off_Ang=switch_off_Ang,
                                                   jax=jax,
                                                   xmax=_np.max([ihood.n_ctcs for ihood in neighborhoods.values() if ihood is not None]),

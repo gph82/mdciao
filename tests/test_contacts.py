@@ -1559,23 +1559,23 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
     def test_plot_neighborhood_raises(self):
         CG = self.CG_cp1_cp2
         with pytest.raises(AssertionError):
-            CG.plot_neighborhood_freqs(2, 0)
+            CG.plot_neighborhood_freqs(2)
 
     def test_plot_neighborhood_works_minimal(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        jax = CG.plot_neighborhood_freqs(2, 0)
+        jax = CG.plot_neighborhood_freqs(2)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_neighborhood_works_options(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        jax = CG.plot_neighborhood_freqs(2, 0, shorten_AAs=True)
+        jax = CG.plot_neighborhood_freqs(2, shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
-        jax = CG.plot_neighborhood_freqs(2, 0, xmax=10)
+        jax = CG.plot_neighborhood_freqs(2,xmax=10)
         assert isinstance(jax, _plt.Axes)
         _plt.plot()
         jax = _plt.gca()
-        assert jax is CG.plot_neighborhood_freqs(2, 0, jax=jax)
+        assert jax is CG.plot_neighborhood_freqs(2, jax=jax)
         _plt.close("all")
 
     def test_plot_get_hatches_for_plotting_atomtypes(self):
@@ -1636,8 +1636,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_distance_distributions(shorten_AAs=True,
                                              ctc_cutoff_Ang=3,
-                                             xlim=[-1, 5],
-                                             n_nearest=1)
+                                             xlim=[-1, 5])
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
@@ -1646,7 +1645,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
             jax = CG.plot_distance_distributions(shorten_AAs=True,
                                                  ctc_cutoff_Ang=3,
                                                  xlim=[-1, 5],
-                                                 n_nearest=1)
+                                                )
             assert isinstance(jax, _plt.Axes)
             _plt.close("all")
 
@@ -1655,7 +1654,6 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
             jax = CG.plot_distance_distributions(shorten_AAs=True,
                                                  ctc_cutoff_Ang=3,
                                                  xlim=[-1, 5],
-                                                 n_nearest=1,
                                                  defrag="@")
             assert isinstance(jax, _plt.Axes)
             _plt.close("all")

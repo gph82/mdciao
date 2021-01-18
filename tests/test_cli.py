@@ -83,6 +83,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
         cls.ctc_grp = contacts.ContactGroup(CPs,
                                             top=cls.geom.top,
+                                            neighbors_excluded=0,
                                             )
 
     """

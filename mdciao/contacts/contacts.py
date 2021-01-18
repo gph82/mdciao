@@ -2675,7 +2675,6 @@ class ContactGroup(object):
                            total_freq=None,
                            plot_atomtypes=False,
                            display_sort=False,
-                           n_nearest=None,
                            sum_freqs=True,
                            ):
         r"""
@@ -2702,11 +2701,11 @@ class ContactGroup(object):
             display purposes only (the original order is untouched)
         Returns
         -------
-        jax : :obj:`matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.pyplot.Axes`
 
         """
-        # Base plot
 
+        # Base plot
         if title_label is None and not self.is_neighborhood:
             assert self.name is not None, ("Cannot use a 'nameless' ContactGroup and 'title_label'=None.\n"
                                            "Either instantiate self.name or pass a 'title_label' ")
@@ -2733,7 +2732,7 @@ class ContactGroup(object):
         sigma = _np.sum([ipatch.get_height() for ipatch in jax.patches])
         title = "Contact frequency @%2.1f AA"%ctc_cutoff_Ang
         if self.is_neighborhood:
-            title+="\n%s nearest bonded neighbors excluded\n" % (str(n_nearest).replace("None","no"))
+            title+="\n%s nearest bonded neighbors excluded\n" % (str(self.neighbors_excluded).replace("None","no"))
             label_dotref = self.anchor_res_and_fragment_str
             label_bars = self.partner_res_and_fragment_labels
             if shorten_AAs:
@@ -2771,7 +2770,6 @@ class ContactGroup(object):
         return jax
 
     def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
-                                n_nearest,
                                 switch_off_Ang=None,
                                 color=["tab:blue"],
                                 xmax=None,
@@ -2790,7 +2788,6 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang : float
-        n_nearest : int
         xmax : int, default is None
             Default behaviour is to go to n_ctcs, use this
             parameter to homogenize different calls to this
@@ -2813,7 +2810,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.pyplot.Axes`
         """
 
         assert self.is_neighborhood, "This ContactGroup is not a neighborhood, use ContactGroup.plot_freqs_as_bars() instead"
@@ -2821,7 +2818,6 @@ class ContactGroup(object):
         jax = self.plot_freqs_as_bars(ctc_cutoff_Ang,
                                       jax=jax,
                                       xlim=xmax,
-                                      n_nearest=n_nearest,
                                       shorten_AAs=shorten_AAs,
                                       truncate_at=None,
                                       plot_atomtypes=plot_atomtypes,
@@ -2964,7 +2960,6 @@ class ContactGroup(object):
                                     jax=None,
                                     shorten_AAs=False,
                                     ctc_cutoff_Ang=None,
-                                    n_nearest=None,
                                     label_fontsize_factor=1,
                                     max_handles_per_row=4,
                                     defrag=None):
@@ -2991,8 +2986,6 @@ class ContactGroup(object):
             Include in the legend of the plot how much of the
             distribution is below this cutoff. A vertical line
             will be draw at this x-value
-        n_nearest : int, default is None
-            Add a line to the title specifying if any
             nearest bonded neighbors were excluded
         label_fontsize_factor
         max_handles_per_row: int, default is 4
@@ -3028,8 +3021,8 @@ class ContactGroup(object):
         if ctc_cutoff_Ang is not None:
             title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)
             jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
-        if n_nearest is not None:
-            title_str += "\n%u nearest bonded neighbors excluded" % (n_nearest)
+        if self.neighbors_excluded not in [None,0]:
+            title_str += "\n%u nearest bonded neighbors excluded" % (self.neighbors_excluded)
         jax.set_title(title_str)
 
         # Base plot
