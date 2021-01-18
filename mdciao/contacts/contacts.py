@@ -1675,6 +1675,7 @@ class ContactGroup(object):
                  interface_residxs=None,
                  top=None,
                  name=None,
+                 neighbors_excluded=None,
                  use_AA_when_conslab_is_missing=True,#TODO this is for the interfaces
                  ):
         r"""
@@ -1709,7 +1710,9 @@ class ContactGroup(object):
         self._contacts = list_of_contact_objects
         self._n_ctcs  = len(list_of_contact_objects)
         self._interface_residxs = interface_residxs
+        self._neighbors_excluded = neighbors_excluded
         self._is_interface = False
+        self._is_neighborhood = False
         self._name = name
         if top is None:
             self._top = self._unique_topology_from_ctcs()
@@ -1825,9 +1828,22 @@ class ContactGroup(object):
             else:
                 self._interface_residxs = [[],[]]
 
+            if self.shared_anchor_residue_index is not None:
+                self._is_neighborhood=True
+                if self.neighbors_excluded is None:
+                    raise ValueError("This ContactGroup looks like a neighborhood,\n"
+                                     "(all contacts share the residue %s), "
+                                     "but no 'neighbors_excluded' have been parsed!\n"
+                                     "If you're trying to build a site object,\n"
+                                     "use 'neighbors_excluded'=0', else input right number"
+                                     "'neighbors_excluded'")
 
     #todo again the dicussion about named tuples vs a miriad of properties
-    # I am opting for properties because of easyness of documenting i
+    # I am opting for properties because of easiness of documenting i
+
+    @property
+    def neighbors_excluded(self):
+        return self._neighbors_excluded
 
     @property
     def name(self):
@@ -1987,10 +2003,7 @@ class ContactGroup(object):
 
     @property
     def is_neighborhood(self):
-        if self.shared_anchor_residue_index is None:
-            return False
-        else:
-            return True
+        return self._is_neighborhood
 
     #TODO make this a property at instantiation and build neighborhoods a posteriori?
     @property
