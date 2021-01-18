@@ -1876,59 +1876,58 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
         with pytest.raises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="fs")
 
-
 class TestContactGroupSavetrajs(TestBaseClassContactGroup):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupSavetrajs,cls).setUp(cls)
+        cls.CG_cp1_cp2_both_w_anchor_and_frags_and_top = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags_and_top,
+             cls.cp2_w_anchor_and_frags_and_top],
+            neighbors_excluded=0
+        )
+        cls.CG_cp1_cp2_both_wtop_and_conslabs = contacts.ContactGroup(
+            [cls.cp1_wtop_and_conslabs,
+             cls.cp2_wtop_and_conslabs])
     def test_save_trajs_no_anchor(self):
-        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
-                                    self.cp2_wtop_and_conslabs])
+        CG = self.CG_cp1_cp2_both_wtop_and_conslabs
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "dat", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_no_anchor_npy(self):
-        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
-                                    self.cp2_wtop_and_conslabs])
+        CG = self.CG_cp1_cp2_both_wtop_and_conslabs
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "npy", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
 
     def test_save_trajs_w_anchor(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "dat", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_no_anchor_excel(self):
-        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
-                                    self.cp2_wtop_and_conslabs])
+        CG = self.CG_cp1_cp2_both_wtop_and_conslabs
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "xlsx", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_excel(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "xlsx", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_None(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", None, verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_basename(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         # Overwrite the trajlabels for the basename to work
         CG._trajlabels = ["../non/existing/dir/traj1.xtc",
                           "../non/existing/dir/traj2.xtc"]
@@ -1937,9 +1936,7 @@ class TestContactGroupSavetrajs(TestBaseClassContactGroup):
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_cutoff(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test_None", "dat", verbose=True, t_unit="ns",
                           ctc_cutoff_Ang=2.5,
