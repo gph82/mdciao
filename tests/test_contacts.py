@@ -1714,18 +1714,19 @@ class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
             with _TDir(suffix='_test_mdciao') as tmpdir:
                 CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"))
 
-
 class TestContactGroupASCII(TestBaseClassContactGroup):
-    def test_frequency_str_ASCII_file(self):
+    def test_frequency_str_ASCII_file_str(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
         istr = CG.frequency_str_ASCII_file(2.5, by_atomtypes=False)
         self.assertEqual(istr[0], "#")
         self.assertIsInstance(istr, str)
 
     def test_frequency_str_ASCII_file(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
 
         with _TDir() as tmpdir:
             tfile = path.join(tmpdir,'freqfile.dat')
