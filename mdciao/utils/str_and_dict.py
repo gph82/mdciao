@@ -955,3 +955,46 @@ def defrag_key(key, defrag="@", sep="-"):
 
     """
     return sep.join([kk.split(defrag,1)[0].strip(" ") for kk in splitlabel(key,sep)])
+
+class FilenameGenerator(object):
+    r"""
+    Generate per project filenames when you need them
+
+    This is a WIP to consolidate all filenaming
+    ATM it's only used by :obj:`mdciao.cli.interface`, but the
+    idea is to expand it to all cli methods, share more code
+
+    A named tuple would've been enough if not for residue
+    specific naming
+
+    """
+
+    def __init__(self,output_desc,ctc_cutoff_Ang,output_dir,graphic_ext):
+
+        graphic_ext = graphic_ext.strip(".")
+        fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc.replace(" ", "_"), ctc_cutoff_Ang)
+        self.fname_wo_ext = _path.join(output_dir, fname_wo_ext)
+        self.graphic_ext = graphic_ext.strip(".")
+
+    @property
+    def fname_histo(self):
+        return ".".join([self.fname_wo_ext, self.graphic_ext])
+    @property
+    def fname_excel(self):
+        return ".".join([self.fname_wo_ext, "xlsx"])
+
+    @property
+    def fname_dat(self):
+        return ".".join([self.fname_wo_ext, "dat"])
+
+    @property
+    def fname_pdb(self):
+        return ".".join([self.fname_wo_ext, "as_bfactors.pdb"])
+
+    @property
+    def fname_mat(self):
+        return self.fname_histo.replace("overall@", "matrix@")
+
+    @property
+    def fname_flare(self):
+        return '.'.join([self.fname_wo_ext.replace("overall@", "flare@"), 'pdf'])

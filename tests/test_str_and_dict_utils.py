@@ -730,3 +730,37 @@ class Test_latex_superscript_one_fragment(unittest.TestCase):
         self.assertEqual(str_and_dict._latex_superscript_one_fragment("GLU30"),"GLU30")
 if __name__ == '__main__':
     unittest.main()
+
+class Test_FilenameGenerator(unittest.TestCase):
+
+    def test_just_runs(self):
+        """
+        from collections import namedtuple as _ntup
+        graphic_ext = graphic_ext.strip(".")
+        fn = _ntup("project_filenames", ["fname_histo","fname_excel","fname_dat","fname_pdb","fname_mat","fname_flare"])
+        fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc.replace(" ", "_"), ctc_cutoff_Ang)
+        fname_wo_ext = _path.join(output_dir, fname_wo_ext)
+        fname_histo = ".".join([fname_wo_ext, graphic_ext])
+        fname_excel = ".".join([fname_wo_ext, "xlsx"])
+        fname_dat = ".".join([fname_wo_ext, "dat"])
+        fname_pdb = ".".join([fname_wo_ext, "as_bfactors.pdb"])
+        fname_mat = fname_histo.replace("overall@", "matrix@")
+        fname_flare = '.'.join([fname_wo_ext.replace("overall@", "flare@"), 'pdf'])
+
+        Returns
+        -------
+
+        """
+        fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png")
+        self.assertEqual(fn.fname_histo,"project/beta2_Gs.overall@3.5_Ang.png")
+        self.assertEqual(fn.fname_excel,"project/beta2_Gs.overall@3.5_Ang.xlsx")
+        self.assertEqual(fn.fname_dat,"project/beta2_Gs.overall@3.5_Ang.dat")
+        self.assertEqual(fn.fname_pdb,"project/beta2_Gs.overall@3.5_Ang.as_bfactors.pdb")
+        self.assertEqual(fn.fname_mat,"project/beta2_Gs.matrix@3.5_Ang.png")
+        self.assertEqual(fn.fname_flare,"project/beta2_Gs.flare@3.5_Ang.pdf")
+
+
+
+
+
+
