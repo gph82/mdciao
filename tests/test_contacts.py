@@ -1805,12 +1805,19 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
         with pytest.raises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="fs")
 
-
 class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupBintrajdicts,cls).setUp(cls)
+        cls.CG = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags_and_top,
+             cls.cp2_w_anchor_and_frags_and_top],
+            neighbors_excluded=0
+        )
+
     def test_to_per_traj_dicts_for_saving_bintrajs(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5)
         bintrajs_per_traj = CG.binarize_trajs(2.5, order="traj")
 
@@ -1829,8 +1836,7 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        bintrajs_per_traj[1][:, 1])
 
     def test_to_per_traj_dicts_for_saving_bintrajs_ns(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="ns")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1842,8 +1848,7 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-3)
 
     def test_to_per_traj_dicts_for_saving_bintrajs_mus(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="mus")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1855,8 +1860,7 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-6)
 
     def test_to_per_traj_dicts_for_saving_bintrajs_ms(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="ms")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1868,8 +1872,7 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-9)
 
     def test_to_per_traj_dicts_for_saving_bintrajs_tunits_raises(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         with pytest.raises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="fs")
 
