@@ -1449,7 +1449,7 @@ def interface(
     print()
     print(dfs[1].round({"freq":2}))
 
-    fn = _mdcu.str_and_dict._filenames(output_desc,ctc_cutoff_Ang,output_dir, graphic_ext)
+    fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir, graphic_ext)
     if savefiles:
         print("The following files have been created")
         ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fn.fname_excel, sort=sort_by_av_ctcs)
