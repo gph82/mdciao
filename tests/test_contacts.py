@@ -1014,40 +1014,40 @@ class TestBaseClassContactGroup(unittest.TestCase):
 
 class TestContactGroup(TestBaseClassContactGroup):
 
-    def test_works_minimal(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+
+    def setUp(self):
+        super(TestContactGroup, self).setUp()
+        # test_works_minimal no top
+        self.CG_cp1_cp2 = contacts.ContactGroup([self.cp1, self.cp2])
+        assert self.CG_cp1_cp2.topology is self.CG_cp1_cp2.top is None
+
+        # test_works_minimal_w top
+        self.CG_cp1_wtop_cp2_wtop = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop], top=self.top)
+        assert self.CG_cp1_wtop_cp2_wtop.topology is self.CG_cp1_wtop_cp2_wtop.top is self.top
 
     def test_works_minimal_top_raises(self):
         with pytest.raises(AssertionError):
-            CG = contacts.ContactGroup([self.cp1, self.cp2], top=self.top)
-
-    def test_works_minimal_top_works(self):
-        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop], top=self.top)
+            contacts.ContactGroup([self.cp1, self.cp2], top=self.top)
 
     def test_n_properties(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         _np.testing.assert_equal(CG.n_ctcs, 2)
         _np.testing.assert_equal(CG.n_trajs, 2)
         _np.testing.assert_array_equal(CG.n_frames, [3, 1])
 
     def test_time_properties(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         _np.testing.assert_equal(3, CG.time_max)
         _np.testing.assert_array_equal([1, 2, 3], CG.time_arrays[0])
         _np.testing.assert_array_equal([1], CG.time_arrays[1])
 
-    def test_tops(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
-        assert CG.topology is CG.top is None
-        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop])
-        assert CG.topology is CG.top is self.top
-
+    def test_wrong_top_raises(self):
         with pytest.raises(ValueError):
             contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop,
                                    self.cp3_wtop_other])
 
     def test_Residues(self):
-        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        CG = self.CG_cp1_wtop_cp2_wtop
         _np.testing.assert_array_equal([[0, 1],
                                         [0, 2]],
                                        CG.res_idxs_pairs)
@@ -1058,7 +1058,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.residue_names_short[1][1], "W32")
 
     def test_labels(self):
-        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        CG = self.CG_cp1_wtop_cp2_wtop
         _np.testing.assert_equal(CG.ctc_labels[0], "GLU30-VAL31")
         _np.testing.assert_equal(CG.ctc_labels[1], "GLU30-TRP32")
         _np.testing.assert_equal(CG.ctc_labels_short[0], "E30-V31")
@@ -1139,7 +1139,9 @@ class TestContactGroup(TestBaseClassContactGroup):
 
     def test_fragment_names_best_fragnames(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+                                    self.cp2_w_anchor_and_frags],
+                                   neighbors_excluded=0
+                                   )
 
         _np.testing.assert_array_equal(CG.fragment_names_best[0], ["fragA", "fragB"])
         _np.testing.assert_array_equal(CG.fragment_names_best[1], ["fragA", "fragC"])
@@ -1158,7 +1160,7 @@ class TestContactGroup(TestBaseClassContactGroup):
                                    self.cp3_wtop_and_wrong_conslabs])
 
     def test_neighborhoods_raises(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         _np.testing.assert_equal(CG.shared_anchor_residue_index, None)
         with pytest.raises(AssertionError):
             CG.anchor_res_and_fragment_str
@@ -1175,7 +1177,9 @@ class TestContactGroup(TestBaseClassContactGroup):
 
     def test_neighborhoods(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+                                    self.cp2_w_anchor_and_frags],
+                                   neighbors_excluded=0
+                                   )
         assert CG.is_neighborhood
         _np.testing.assert_equal(CG.shared_anchor_residue_index, 0)
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str, "0@fragA")
@@ -1188,18 +1192,24 @@ class TestContactGroup(TestBaseClassContactGroup):
 
     def test_neighborhood_w_partner_color(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+                                    self.cp2_w_anchor_and_frags],
+                                   neighbors_excluded=0
+                                   )
         _np.testing.assert_array_equal(["b", "g"], CG.partner_fragment_colors)
 
     def test_neighborhoods_wrong_anchor_color(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
                                     self.cp2_w_anchor_and_frags,
-                                    self.cp3_w_anchor_and_frags_wrong_anchor_color])
+                                    self.cp3_w_anchor_and_frags_wrong_anchor_color],
+                                   neighbors_excluded=0
+                                   )
         assert CG.anchor_fragment_color is None
 
     def test_neighborhoods_w_top(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0
+                                   )
         _np.testing.assert_equal(CG.shared_anchor_residue_index, 0)
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str, "GLU30@fragA")
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str_short, "E30@fragA")
@@ -1209,14 +1219,14 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.partner_res_and_fragment_labels_short[1], "W32@fragC")
 
     def test_residx2ctcidx(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         _np.testing.assert_array_equal(CG.residx2ctcidx(1), [[0, 1]])
         _np.testing.assert_array_equal(CG.residx2ctcidx(2), [[1, 1]])
         _np.testing.assert_array_equal(CG.residx2ctcidx(0), [[0, 0],
                                                              [1, 0]])
 
     def test_binarize_trajs(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         bintrajs = CG.binarize_trajs(2.5)
         _np.testing.assert_array_equal([1, 1, 0], bintrajs[0][0])
         _np.testing.assert_array_equal([0], bintrajs[0][1])
@@ -1244,7 +1254,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_array_equal([0], traj_2_ctc_3)
 
     def test_distance_distributions(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         h1, x1 = self.cp1.distro_overall_trajs(bins=10)
         h2, x2 = self.cp2.distro_overall_trajs(bins=10)
         distros = CG.distributions_of_distances(nbins=10)
