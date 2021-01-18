@@ -1735,12 +1735,19 @@ class TestContactGroupASCII(TestBaseClassContactGroup):
             newfreq = freq_file2dict(tfile)
             _np.testing.assert_array_equal(list(newfreq.values()),CG.frequency_per_contact(2.5))
 
-
 class TestContactGroupTrajdicts(TestBaseClassContactGroup):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupTrajdicts,cls).setUp(cls)
+        cls.CG = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags_and_top,
+             cls.cp2_w_anchor_and_frags_and_top],
+            neighbors_excluded=0
+        )
+
     def test_to_per_traj_dicts_for_saving(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving()
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1758,8 +1765,7 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
                                        self.cp2_w_anchor_and_frags_and_top.time_traces.ctc_trajs[1] * 10)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_ns(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="ns")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1771,8 +1777,7 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-3)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_mus(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="mus")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1784,8 +1789,7 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-6)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_ms(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="ms")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1797,8 +1801,7 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-9)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_raises(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         with pytest.raises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="fs")
 
