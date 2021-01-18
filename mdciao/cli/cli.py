@@ -953,7 +953,7 @@ def residue_neighborhoods(residues,
                                    atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in at_pair_trajs]
                                    ))
         try:
-            neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs)
+            neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs, neighbors_excluded=n_nearest)
         except NotImplementedError as e:
             print(e)
             empty_CGs.append(res_idx)
