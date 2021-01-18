@@ -1449,26 +1449,17 @@ def interface(
     print()
     print(dfs[1].round({"freq":2}))
 
-    # TODO manage filenames better, avoid overwriting here when file exists
-    fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc.replace(" ", "_"), ctc_cutoff_Ang)
-    fname_wo_ext = _path.join(output_dir, fname_wo_ext)
-    fname_histo = ".".join([fname_wo_ext, graphic_ext])
-    fname_excel = ".".join([fname_wo_ext, "xlsx"])
-    fname_dat = ".".join([fname_wo_ext, "dat"])
-    fname_pdb = ".".join([fname_wo_ext, "as_bfactors.pdb"])
-    fname_mat = fname_histo.replace("overall@", "matrix@")
-    fname_flare = '.'.join([fname_wo_ext.replace("overall@", "flare@"), 'pdf'])
-
+    fn = _mdcu.str_and_dict._filenames(output_desc,ctc_cutoff_Ang,output_dir, graphic_ext)
     if savefiles:
         print("The following files have been created")
-        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fname_excel, sort=sort_by_av_ctcs)
-        print(fname_excel)
-        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fname_dat)
-        print(fname_dat)
-        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fname_pdb, refgeom[0],
+        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fn.fname_excel, sort=sort_by_av_ctcs)
+        print(fn.fname_excel)
+        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fn.fname_dat)
+        print(fn.fname_dat)
+        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fname_pdb, refgeom[0],
                                           # interface_sign=True
                                           )
-        print(fname_pdb)
+        print(fn.fname_pdb)
 
     if figures:
         panelheight = 3
@@ -1518,10 +1509,10 @@ def interface(
 
 
         if savefiles:
-            histofig.savefig(fname_histo, dpi=graphic_dpi, bbox_inches="tight")
-            print(fname_histo)
-            cmat_fig.savefig(fname_mat)
-            print(fname_mat)
+            histofig.savefig(fn.fname_histo, dpi=graphic_dpi, bbox_inches="tight")
+            print(fn.fname_histo)
+            cmat_fig.savefig(fn.fname_mat)
+            print(fn.fname_mat)
 
         if flareplot:
             flare_frags, flare_labs = fragments_as_residue_idxs, fragment_names # Not sure about what's best here
@@ -1550,8 +1541,8 @@ def interface(
                                                              )
             ifig.tight_layout()
             if savefiles:
-                ifig.savefig(fname_flare,bbox_inches="tight")
-                print(fname_flare)
+                ifig.savefig(fn.fname_flare,bbox_inches="tight")
+                print(fn.fname_flare)
 
         if plot_timedep or separate_N_ctcs:
             myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
