@@ -20,7 +20,7 @@
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
 
-from json import load as _jsonload
+from json import load as _jsonload, JSONDecodeError as _JSONDecodeError
 from os.path import splitext as _psplitext, split as _psplit
 import numpy as _np
 from copy import deepcopy as _dcopy
@@ -30,11 +30,20 @@ import mdciao.utils as _mdcu
 
 def load(site):
     r"""
-    Load a site object from a json- file or a dictionary.
+    Return a site object from a dat or json file file or a dictionary.
 
-    Examples
-    --------
-    >>> This could be inside a json file named site.json
+    Simplest format is for the datfile to look  like this::
+    >>> cat site.dat
+    # contacts to look at :
+    L394-K270
+    D381-Q229
+    Q384-Q229
+    R385-Q229
+    D381-K232
+    Q384-I135
+
+    But you can also annotate it in json format if you want
+    >>> cat site.json
     {"name":"interesting contacts",
     "bonds": {"AAresSeq": [
             "L394-K270",
@@ -48,11 +57,11 @@ def load(site):
     Parameters
     ----------
     sitefile : str or dict
+        Path to the ascii file. If the file isn't
+        a json file, or doesn't contain the 'name'-field,
+        the filename itself will be used as name.
         If a dict is passed, it's checked that the dictionary
         has the needed keys to function as a site.
-        If the json file does not have a name, the filename
-        will be used as name
-
     Returns
     -------
     site : dict
@@ -60,19 +69,24 @@ def load(site):
          * bonds
          * nbonds
          * name
-        And site["bonds"] is itself a dictionary with only one key ATM, "AAresSeq"
+        site["bonds"] is itself a dictionary
+        with only one key ATM, "AAresSeq",
+        valued with a list of pairs, e.g ["L394","K270"]
 
     """
     if isinstance(site, dict):
         idict = _dcopy(site)
     else:
-        with open(site, "r") as f:
-            idict = _jsonload(f)
+        try:
+            with open(site, "r") as f:
+                idict = _jsonload(f)
+        except _JSONDecodeError as e:
+            idict = dat2site(site)
     try:
         idict["bonds"]["AAresSeq"] = [item.split("-") for item in idict["bonds"]["AAresSeq"] if item[0] != '#']
         idict["n_bonds"] = len(idict["bonds"]["AAresSeq"])
     except:
-        print("Malformed .json file for the site %s" % site)
+        print("Malformed file for the site %s:\n%s" % (site,idict))
 
     if "name" not in idict.keys():
         if isinstance(site,str):
@@ -185,3 +199,33 @@ def site2str(site):
         return 'site dict with name %s'%site["name"]
     else:
         raise ValueError("What is this site %s? Only dicts or files are accepted"%site)
+
+def dat2site(dat,comment="#",
+             bonds="AAresSeq"):
+    r""" Read a non-json (.dat, .txt...) file and turn it into a site dictionary
+
+    Parameters
+    ----------
+    dat : string
+        Filename
+    comment : str, default is "#"
+        Ignore lines starting with
+        the characters in this string
+    bonds : str, default "AAresSeq"
+        How to interpret the file.
+        Default is to interpret them
+        in the AAresSeq format, e.g.
+        "GLU30-ARG131"
+    Returns
+    -------
+    site : a dictionary
+     Same format as return of :obj:`load`
+     "name" will be whatever :obj:`dat` was,
+     without the extension
+
+
+
+    """
+    with open(dat,"r") as f:
+        lines = f.read().splitlines()
+    return {"name": _psplitext(_psplit(dat)[-1])[0],"bonds":{"AAresSeq":[line.replace(" ","") for line in lines if line.strip(" ")[0] not in comment]}}
