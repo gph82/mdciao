@@ -2783,7 +2783,7 @@ class ContactGroup(object):
         Wrapper around :obj:`ContactGroup.plot_freqs_as_bars`
         for plotting neighborhoods
 
-        #TODO perhaps get rid of the wrapper altoghether. ATM it would break the API
+        #TODO perhaps get rid of the wrapper altogether. ATM it would break the API
 
         Parameters
         ----------
