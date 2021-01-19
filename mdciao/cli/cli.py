@@ -965,6 +965,8 @@ def residue_neighborhoods(residues,
         print("The following residues have no neighbors at %2.1f Ang, their frequency histograms will be empty"%ctc_cutoff_Ang)
         print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
 
+    fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir,graphic_ext)
+
     if figures:
         panelheight = 3
         bar_fig = _figure_overall(n_cols, neighborhoods, ctc_cutoff_Ang,
@@ -974,27 +976,21 @@ def residue_neighborhoods(residues,
                                   plot_atomtypes=plot_atomtypes,
                                   switch_off_Ang=switch_off_Ang)
         if savefiles:
-            fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
-            fname = _path.join(output_dir, fname)
-            bar_fig.savefig(fname, dpi=graphic_dpi)
+            bar_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
             print("The following files have been created")
-            print(fname)
+            print(fn.fullpath_overall_fig)
 
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     # TODO undecided about this
     # TODO this code is repeated in sites...can we abstract this oafa?
     if table_ext is not None and savefiles:
         for ihood in neighborhoods.values():
-            fname = '%s.%s@%2.1f_Ang.%s' % (output_desc,
-                                            ihood.anchor_res_and_fragment_str.replace('*', ""),
-                                            ctc_cutoff_Ang,
-                                            table_ext)
-            fname = _path.join(output_dir, fname)
-
+            fname=fn.fname_per_residue_table(ihood.anchor_res_and_fragment_str, table_ext)
             #TODO can't the frequency_spreadsheet handle this now?
             # TODO this code is repeated in sites...can we abstract this oafa?
             if table_ext=='xlsx':
-                ihood.frequency_spreadsheet(ctc_cutoff_Ang, fname,
+                ihood.frequency_spreadsheet(ctc_cutoff_Ang,
+                                            fname,
                                             switch_off_Ang=switch_off_Ang,
                                             write_interface=False,
                                             by_atomtypes=True,
@@ -1494,14 +1490,14 @@ def interface(
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir, graphic_ext)
     if savefiles:
         print("The following files have been created")
-        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fn.fname_excel, sort=sort_by_av_ctcs)
-        print(fn.fname_excel)
-        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fn.fname_dat)
-        print(fn.fname_dat)
-        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fname_pdb, refgeom[0],
+        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort=sort_by_av_ctcs)
+        print(fn.fullpath_overall_excel)
+        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fn.fullpath_overall_dat)
+        print(fn.fullpath_overall_dat)
+        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fullpath_pdb, refgeom[0],
                                           # interface_sign=True
                                           )
-        print(fn.fname_pdb)
+        print(fn.fullpath_pdb)
 
     if figures:
         panelheight = 3
@@ -1551,9 +1547,9 @@ def interface(
 
 
         if savefiles:
-            histofig.savefig(fn.fname_overall, dpi=graphic_dpi, bbox_inches="tight")
-            cmat_fig.savefig(fn.fname_mat)
-            print(fn.fname_mat)
+            histofig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi, bbox_inches="tight")
+            cmat_fig.savefig(fn.fullpath_matrix)
+            print(fn.fullpath_matrix)
 
         if flareplot:
             flare_frags, flare_labs = fragments_as_residue_idxs, fragment_names # Not sure about what's best here
@@ -1582,8 +1578,8 @@ def interface(
                                                              )
             ifig.tight_layout()
             if savefiles:
-                ifig.savefig(fn.fname_flare,bbox_inches="tight")
-                print(fn.fname_flare)
+                ifig.savefig(fn.fullpath_flare_pdf, bbox_inches="tight")
+                print(fn.fullpath_flare_pdf)
 
         if plot_timedep or separate_N_ctcs:
             myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
