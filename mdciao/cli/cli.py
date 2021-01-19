@@ -953,7 +953,7 @@ def residue_neighborhoods(residues,
                                    atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in at_pair_trajs]
                                    ))
         try:
-            neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs)
+            neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs, neighbors_excluded=n_nearest)
         except NotImplementedError as e:
             print(e)
             empty_CGs.append(res_idx)
@@ -965,69 +965,31 @@ def residue_neighborhoods(residues,
         print("The following residues have no neighbors at %2.1f Ang, their frequency histograms will be empty"%ctc_cutoff_Ang)
         print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
 
+    fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir,graphic_ext)
+
     if figures:
         panelheight = 3
-        n_cols = _np.min((n_cols, len(res_idxs_list)))
-        n_rows = _np.ceil(len(res_idxs_list) / n_cols).astype(int)
-        panelsize = 4
-        panelsize2font = 3.5
-        bar_fig, bar_ax = _plt.subplots(n_rows, n_cols,
-                                        sharex=True,
-                                        sharey=True,
-                                        figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
-
-        # One loop for the histograms
-        _rcParams["font.size"]=panelsize*panelsize2font
-        for jax, ihood in zip(bar_ax.flatten(),
-                                       neighborhoods.values()):
-            if ihood is not None:
-                if distro:
-                    ihood.plot_distance_distributions(nbins=20,
-                                                      jax=jax,
-                                                      label_fontsize_factor=panelsize2font/panelsize,
-                                                      shorten_AAs=short_AA_names,
-                                                      ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                      n_nearest= n_nearest
-                                                      )
-                else:
-                    ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
-                                                  n_nearest,
-                                                  switch_off_Ang=switch_off_Ang,
-                                                  jax=jax,
-                                                  xmax=_np.max([ihood.n_ctcs for ihood in neighborhoods.values() if ihood is not None]),
-                                                  label_fontsize_factor=panelsize2font / panelsize,
-                                                  shorten_AAs=short_AA_names,
-                                                  color=ihood.partner_fragment_colors,
-                                                  plot_atomtypes=plot_atomtypes
-                                                  )
-
-        if not distro:
-            non_nan_rightermost_patches = [[p for p in jax.patches if not _np.isnan(p.get_x())][-1] for jax in bar_ax.flatten() if len(jax.patches)>0]
-            xmax = _np.nanmax([p.get_x()+p.get_width()/2 for p in non_nan_rightermost_patches])+.5
-            [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
-        bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
-        fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
-        fname = _path.join(output_dir, fname)
+        bar_fig = _mdcplots.CG_panels(n_cols, neighborhoods, ctc_cutoff_Ang,
+                                  distro=distro,
+                                  short_AA_names=short_AA_names,
+                                  plot_atomtypes=plot_atomtypes,
+                                  switch_off_Ang=switch_off_Ang)
         if savefiles:
-            bar_fig.savefig(fname, dpi=graphic_dpi)
+            bar_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
             print("The following files have been created")
-            print(fname)
+            print(fn.fullpath_overall_fig)
 
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     # TODO undecided about this
     # TODO this code is repeated in sites...can we abstract this oafa?
     if table_ext is not None and savefiles:
         for ihood in neighborhoods.values():
-            fname = '%s.%s@%2.1f_Ang.%s' % (output_desc,
-                                            ihood.anchor_res_and_fragment_str.replace('*', ""),
-                                            ctc_cutoff_Ang,
-                                            table_ext)
-            fname = _path.join(output_dir, fname)
-
+            fname=fn.fname_per_residue_table(ihood.anchor_res_and_fragment_str, table_ext)
             #TODO can't the frequency_spreadsheet handle this now?
             # TODO this code is repeated in sites...can we abstract this oafa?
             if table_ext=='xlsx':
-                ihood.frequency_spreadsheet(ctc_cutoff_Ang, fname,
+                ihood.frequency_spreadsheet(ctc_cutoff_Ang,
+                                            fname,
                                             switch_off_Ang=switch_off_Ang,
                                             write_interface=False,
                                             by_atomtypes=True,
@@ -1452,14 +1414,14 @@ def interface(
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir, graphic_ext)
     if savefiles:
         print("The following files have been created")
-        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fn.fname_excel, sort=sort_by_av_ctcs)
-        print(fn.fname_excel)
-        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fn.fname_dat)
-        print(fn.fname_dat)
-        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fname_pdb, refgeom[0],
+        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort=sort_by_av_ctcs)
+        print(fn.fullpath_overall_excel)
+        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fn.fullpath_overall_dat)
+        print(fn.fullpath_overall_dat)
+        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fullpath_pdb, refgeom[0],
                                           # interface_sign=True
                                           )
-        print(fn.fname_pdb)
+        print(fn.fullpath_pdb)
 
     if figures:
         panelheight = 3
@@ -1509,10 +1471,9 @@ def interface(
 
 
         if savefiles:
-            histofig.savefig(fn.fname_histo, dpi=graphic_dpi, bbox_inches="tight")
-            print(fn.fname_histo)
-            cmat_fig.savefig(fn.fname_mat)
-            print(fn.fname_mat)
+            histofig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi, bbox_inches="tight")
+            cmat_fig.savefig(fn.fullpath_matrix)
+            print(fn.fullpath_matrix)
 
         if flareplot:
             flare_frags, flare_labs = fragments_as_residue_idxs, fragment_names # Not sure about what's best here
@@ -1541,8 +1502,8 @@ def interface(
                                                              )
             ifig.tight_layout()
             if savefiles:
-                ifig.savefig(fn.fname_flare,bbox_inches="tight")
-                print(fn.fname_flare)
+                ifig.savefig(fn.fullpath_flare_pdf, bbox_inches="tight")
+                print(fn.fullpath_flare_pdf)
 
         if plot_timedep or separate_N_ctcs:
             myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
@@ -1836,37 +1797,12 @@ def sites(site_files,
                                                #colors=[fragcolors[idx] for idx in idxs]
                                                ))
         site_as_gc[key] = _mdcctcs.ContactGroup(site_as_gc[key], name='site %s'%key)
-
-    panelheight = 3
-    n_cols = _np.min((4, len(sites)))
-    n_rows = _np.ceil(len(sites) / n_cols).astype(int)
-    panelsize = 4
-    panelsize2font = 3.5
-    histofig, histoax = _plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
-                                      figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
-
-    # One loop for the histograms
-    _rcParams["font.size"] = panelsize * panelsize2font
-    for jax, (site_name, isite_nh) in zip(histoax.flatten(),
-                                       site_as_gc.items()):
-        if distro:
-            isite_nh.plot_distance_distributions(nbins=20,
-                                                 jax=jax,
-                                                 label_fontsize_factor=panelsize2font / panelsize,
-                                                 shorten_AAs=short_AA_names,
-                                                 ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                 )
-        else:
-            isite_nh.plot_freqs_as_bars(ctc_cutoff_Ang, site_name,
-                                        jax=jax,
-                                        xlim=_np.max([ss["n_bonds"] for ss in sites]),
-                                        label_fontsize_factor=panelsize2font / panelsize,
-                                        shorten_AAs=short_AA_names,
-                                        plot_atomtypes=plot_atomtypes,
-                                        )
-        print()
-        print(isite_nh.frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}))
-        print()
+    panelheight=4
+    histofig = _mdcplots.CG_panels(4, site_as_gc, ctc_cutoff_Ang,
+                               distro=distro,
+                               short_AA_names=short_AA_names,
+                               plot_atomtypes=plot_atomtypes,
+                               verbose=True)
 
     if scheme!="closest-heavy":
         scheme_desc='%s.'%scheme

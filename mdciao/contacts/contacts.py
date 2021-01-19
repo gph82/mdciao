@@ -1675,6 +1675,7 @@ class ContactGroup(object):
                  interface_residxs=None,
                  top=None,
                  name=None,
+                 neighbors_excluded=None,
                  use_AA_when_conslab_is_missing=True,#TODO this is for the interfaces
                  ):
         r"""
@@ -1709,7 +1710,9 @@ class ContactGroup(object):
         self._contacts = list_of_contact_objects
         self._n_ctcs  = len(list_of_contact_objects)
         self._interface_residxs = interface_residxs
+        self._neighbors_excluded = neighbors_excluded
         self._is_interface = False
+        self._is_neighborhood = False
         self._name = name
         if top is None:
             self._top = self._unique_topology_from_ctcs()
@@ -1825,9 +1828,22 @@ class ContactGroup(object):
             else:
                 self._interface_residxs = [[],[]]
 
+            if self.shared_anchor_residue_index is not None:
+                self._is_neighborhood=True
+                if self.neighbors_excluded is None:
+                    raise ValueError("This ContactGroup looks like a neighborhood,\n"
+                                     "(all contacts share the residue %s), "
+                                     "but no 'neighbors_excluded' have been parsed!\n"
+                                     "If you're trying to build a site object,\n"
+                                     "use 'neighbors_excluded'=0', else input right number"
+                                     "'neighbors_excluded'")
 
     #todo again the dicussion about named tuples vs a miriad of properties
-    # I am opting for properties because of easyness of documenting i
+    # I am opting for properties because of easiness of documenting i
+
+    @property
+    def neighbors_excluded(self):
+        return self._neighbors_excluded
 
     @property
     def name(self):
@@ -1987,10 +2003,7 @@ class ContactGroup(object):
 
     @property
     def is_neighborhood(self):
-        if self.shared_anchor_residue_index is None:
-            return False
-        else:
-            return True
+        return self._is_neighborhood
 
     #TODO make this a property at instantiation and build neighborhoods a posteriori?
     @property
@@ -2662,7 +2675,6 @@ class ContactGroup(object):
                            total_freq=None,
                            plot_atomtypes=False,
                            display_sort=False,
-                           n_nearest=None,
                            sum_freqs=True,
                            ):
         r"""
@@ -2689,11 +2701,11 @@ class ContactGroup(object):
             display purposes only (the original order is untouched)
         Returns
         -------
-        jax : :obj:`matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.pyplot.Axes`
 
         """
-        # Base plot
 
+        # Base plot
         if title_label is None and not self.is_neighborhood:
             assert self.name is not None, ("Cannot use a 'nameless' ContactGroup and 'title_label'=None.\n"
                                            "Either instantiate self.name or pass a 'title_label' ")
@@ -2720,14 +2732,15 @@ class ContactGroup(object):
         sigma = _np.sum([ipatch.get_height() for ipatch in jax.patches])
         title = "Contact frequency @%2.1f AA"%ctc_cutoff_Ang
         if self.is_neighborhood:
-            title+="\n%s nearest bonded neighbors excluded\n" % (str(n_nearest).replace("None","no"))
+            title+="\n%s nearest bonded neighbors excluded\n" % (str(self.neighbors_excluded).replace("None","no"))
             label_dotref = self.anchor_res_and_fragment_str
             label_bars = self.partner_res_and_fragment_labels
             if shorten_AAs:
                 label_dotref = self.anchor_res_and_fragment_str_short
                 label_bars = self.partner_res_and_fragment_labels_short
             if sum_freqs:
-                label_dotref += '\nSigma = %2.1f' % sigma  # sum over all bc we did not truncate
+                label_dotref = "\n".join([_mdcu.str_and_dict.latex_superscript_fragments(label_dotref),
+                                          _mdcu.str_and_dict.replace4latex('Sigma = %2.1f' % sigma)])  # sum over all bc we did not truncate
                 jax.plot(_np.nan, _np.nan, 'o',
                          color=self.anchor_fragment_color,
                          label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
@@ -2758,7 +2771,6 @@ class ContactGroup(object):
         return jax
 
     def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
-                                n_nearest,
                                 switch_off_Ang=None,
                                 color=["tab:blue"],
                                 xmax=None,
@@ -2772,12 +2784,11 @@ class ContactGroup(object):
         Wrapper around :obj:`ContactGroup.plot_freqs_as_bars`
         for plotting neighborhoods
 
-        #TODO perhaps get rid of the wrapper altoghether. ATM it would break the API
+        #TODO perhaps get rid of the wrapper altogether. ATM it would break the API
 
         Parameters
         ----------
         ctc_cutoff_Ang : float
-        n_nearest : int
         xmax : int, default is None
             Default behaviour is to go to n_ctcs, use this
             parameter to homogenize different calls to this
@@ -2800,7 +2811,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.pyplot.Axes`
         """
 
         assert self.is_neighborhood, "This ContactGroup is not a neighborhood, use ContactGroup.plot_freqs_as_bars() instead"
@@ -2808,7 +2819,6 @@ class ContactGroup(object):
         jax = self.plot_freqs_as_bars(ctc_cutoff_Ang,
                                       jax=jax,
                                       xlim=xmax,
-                                      n_nearest=n_nearest,
                                       shorten_AAs=shorten_AAs,
                                       truncate_at=None,
                                       plot_atomtypes=plot_atomtypes,
@@ -2951,7 +2961,6 @@ class ContactGroup(object):
                                     jax=None,
                                     shorten_AAs=False,
                                     ctc_cutoff_Ang=None,
-                                    n_nearest=None,
                                     label_fontsize_factor=1,
                                     max_handles_per_row=4,
                                     defrag=None):
@@ -2959,6 +2968,8 @@ class ContactGroup(object):
         r"""
         Plot distance distributions for the distance trajectories
         of the contacts
+
+        The title will get try to get the name from :obj:`self.name`
 
         Parameters
         ----------
@@ -2976,8 +2987,6 @@ class ContactGroup(object):
             Include in the legend of the plot how much of the
             distribution is below this cutoff. A vertical line
             will be draw at this x-value
-        n_nearest : int, default is None
-            Add a line to the title specifying if any
             nearest bonded neighbors were excluded
         label_fontsize_factor
         max_handles_per_row: int, default is 4
@@ -2985,7 +2994,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.pyplot.Axes`
 
         """
         if jax is None:
@@ -2993,25 +3002,28 @@ class ContactGroup(object):
             jax = _plt.gca()
 
         if self.is_neighborhood:
-            label_dotref = self.anchor_res_and_fragment_str
+            title = self.anchor_res_and_fragment_str
             label_bars = self.partner_res_and_fragment_labels
             if shorten_AAs:
-                label_dotref = self.anchor_res_and_fragment_str_short
+                title = self.anchor_res_and_fragment_str_short
                 label_bars = self.partner_res_and_fragment_labels_short
         else:
-            label_dotref = self.name
+            title = self.name
+            if title is None:
+                title = self.__class__.__name__
             label_bars = self.ctc_labels_w_fragments_short_AA
 
         if defrag is not None:
-            label_dotref = _mdcu.str_and_dict.defrag_key(label_dotref,defrag=defrag)
+            title = _mdcu.str_and_dict.defrag_key(title,defrag=defrag)
             label_bars = [_mdcu.str_and_dict.defrag_key(ilab,defrag=defrag) for ilab in label_bars]
+
         # Cosmetics
-        title_str = "distribution for %s"%_mdcu.str_and_dict.latex_superscript_fragments(label_dotref)
+        title_str = "distribution for %s"%_mdcu.str_and_dict.latex_superscript_fragments(title)
         if ctc_cutoff_Ang is not None:
             title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)
             jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
-        if n_nearest is not None:
-            title_str += "\n%u nearest bonded neighbors excluded" % (n_nearest)
+        if self.neighbors_excluded not in [None,0]:
+            title_str += "\n%u nearest bonded neighbors excluded" % (self.neighbors_excluded)
         jax.set_title(title_str)
 
         # Base plot
