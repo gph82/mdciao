@@ -2739,7 +2739,8 @@ class ContactGroup(object):
                 label_dotref = self.anchor_res_and_fragment_str_short
                 label_bars = self.partner_res_and_fragment_labels_short
             if sum_freqs:
-                label_dotref += '\nSigma = %2.1f' % sigma  # sum over all bc we did not truncate
+                label_dotref = "\n".join([_mdcu.str_and_dict.latex_superscript_fragments(label_dotref),
+                                          _mdcu.str_and_dict.replace4latex('Sigma = %2.1f' % sigma)])  # sum over all bc we did not truncate
                 jax.plot(_np.nan, _np.nan, 'o',
                          color=self.anchor_fragment_color,
                          label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
