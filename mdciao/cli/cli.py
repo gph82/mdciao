@@ -967,7 +967,12 @@ def residue_neighborhoods(residues,
 
     if figures:
         panelheight = 3
-        bar_fig = _figure_overall(n_cols, res_idxs_list, neighborhoods, distro, short_AA_names, ctc_cutoff_Ang, plot_atomtypes, switch_off_Ang, output_desc, output_dir, savefiles, graphic_ext, graphic_dpi)
+        bar_fig = _figure_overall(n_cols, neighborhoods, ctc_cutoff_Ang,
+                                  n_panels=len(res_idxs_list),
+                                  distro=distro,
+                                  short_AA_names=short_AA_names,
+                                  plot_atomtypes=plot_atomtypes,
+                                  switch_off_Ang=switch_off_Ang)
         if savefiles:
             fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
             fname = _path.join(output_dir, fname)
@@ -1049,7 +1054,14 @@ def residue_neighborhoods(residues,
             'time_array': time_arrays,
             "neighborhoods": neighborhoods}
 
-def _figure_overall(n_cols, res_idxs_list, CG_list, distro, short_AA_names, ctc_cutoff_Ang, plot_atomtypes, switch_off_Ang):
+def _figure_overall(n_cols, CG_list, ctc_cutoff_Ang,
+                    n_panels=None,
+                    distro=False,
+                    short_AA_names=False,
+                    plot_atomtypes=False,
+                    switch_off_Ang=0,
+                    panelsize=4,
+                    panelsize2font = 3.5):
     r"""
     Generates one figure containing the per-:obj:`~mdciao.contacts.ContactGroup` info as individual panels
 
@@ -1059,11 +1071,12 @@ def _figure_overall(n_cols, res_idxs_list, CG_list, distro, short_AA_names, ctc_
     Parameters
     ----------
     n_cols
-    res_idxs_list
     CG_list
+    ctc_cutoff_Ang
+    n_panels
+
     distro
     short_AA_names
-    ctc_cutoff_Ang
     plot_atomtypes
     switch_off_Ang
 
@@ -1072,10 +1085,11 @@ def _figure_overall(n_cols, res_idxs_list, CG_list, distro, short_AA_names, ctc_
     fig : :obj:`~matplotlib.Figure`
 
     """
-    n_cols = _np.min((n_cols, len(res_idxs_list)))
-    n_rows = _np.ceil(len(res_idxs_list) / n_cols).astype(int)
-    panelsize = 4
-    panelsize2font = 3.5
+    if n_panels is None:
+        n_panels = len(CG_list)
+    n_cols = _np.min((n_cols, n_panels))
+    n_rows = _np.ceil(n_panels / n_cols).astype(int)
+
     bar_fig, bar_ax = _plt.subplots(n_rows, n_cols,
                                     sharex=True,
                                     sharey=True,
@@ -1111,6 +1125,8 @@ def _figure_overall(n_cols, res_idxs_list, CG_list, distro, short_AA_names, ctc_
         xmax = _np.nanmax([p.get_x() + p.get_width() / 2 for p in non_nan_rightermost_patches]) + .5
         [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
     bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
+
+    return bar_fig
 
 
 def interface(
@@ -1535,8 +1551,7 @@ def interface(
 
 
         if savefiles:
-            histofig.savefig(fn.fname_histo, dpi=graphic_dpi, bbox_inches="tight")
-            print(fn.fname_histo)
+            histofig.savefig(fn.fname_overall, dpi=graphic_dpi, bbox_inches="tight")
             cmat_fig.savefig(fn.fname_mat)
             print(fn.fname_mat)
 
