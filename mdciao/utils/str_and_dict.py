@@ -973,28 +973,28 @@ class FilenameGenerator(object):
 
         graphic_ext = graphic_ext.strip(".")
         fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc.replace(" ", "_"), ctc_cutoff_Ang)
-        self.fname_wo_ext = _path.join(output_dir, fname_wo_ext)
+        self.base_fname = _path.join(output_dir, fname_wo_ext)
         self.graphic_ext = graphic_ext.strip(".")
 
     @property
-    def fname_histo(self):
-        return ".".join([self.fname_wo_ext, self.graphic_ext])
+    def fname_overall(self):
+        return ".".join([self.base_fname, self.graphic_ext])
     @property
     def fname_excel(self):
-        return ".".join([self.fname_wo_ext, "xlsx"])
+        return ".".join([self.base_fname, "xlsx"])
 
     @property
     def fname_dat(self):
-        return ".".join([self.fname_wo_ext, "dat"])
+        return ".".join([self.base_fname, "dat"])
 
     @property
     def fname_pdb(self):
-        return ".".join([self.fname_wo_ext, "as_bfactors.pdb"])
+        return ".".join([self.base_fname, "as_bfactors.pdb"])
 
     @property
     def fname_mat(self):
-        return self.fname_histo.replace("overall@", "matrix@")
+        return self.fname_overall.replace("overall@", "matrix@")
 
     @property
     def fname_flare(self):
-        return '.'.join([self.fname_wo_ext.replace("overall@", "flare@"), 'pdf'])
+        return '.'.join([self.base_fname.replace("overall@", "flare@"), 'pdf'])
