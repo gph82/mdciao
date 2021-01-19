@@ -967,46 +967,10 @@ def residue_neighborhoods(residues,
 
     if figures:
         panelheight = 3
-        n_cols = _np.min((n_cols, len(res_idxs_list)))
-        n_rows = _np.ceil(len(res_idxs_list) / n_cols).astype(int)
-        panelsize = 4
-        panelsize2font = 3.5
-        bar_fig, bar_ax = _plt.subplots(n_rows, n_cols,
-                                        sharex=True,
-                                        sharey=True,
-                                        figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
-
-        # One loop for the histograms
-        _rcParams["font.size"]=panelsize*panelsize2font
-        for jax, ihood in zip(bar_ax.flatten(),
-                                       neighborhoods.values()):
-            if ihood is not None:
-                if distro:
-                    ihood.plot_distance_distributions(nbins=20,
-                                                      jax=jax,
-                                                      label_fontsize_factor=panelsize2font/panelsize,
-                                                      shorten_AAs=short_AA_names,
-                                                      ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                      )
-                else:
-                    ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
-                                                  switch_off_Ang=switch_off_Ang,
-                                                  jax=jax,
-                                                  xmax=_np.max([ihood.n_ctcs for ihood in neighborhoods.values() if ihood is not None]),
-                                                  label_fontsize_factor=panelsize2font / panelsize,
-                                                  shorten_AAs=short_AA_names,
-                                                  color=ihood.partner_fragment_colors,
-                                                  plot_atomtypes=plot_atomtypes
-                                                  )
-
-        if not distro:
-            non_nan_rightermost_patches = [[p for p in jax.patches if not _np.isnan(p.get_x())][-1] for jax in bar_ax.flatten() if len(jax.patches)>0]
-            xmax = _np.nanmax([p.get_x()+p.get_width()/2 for p in non_nan_rightermost_patches])+.5
-            [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
-        bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
-        fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
-        fname = _path.join(output_dir, fname)
+        bar_fig = _figure_overall(n_cols, res_idxs_list, neighborhoods, distro, short_AA_names, ctc_cutoff_Ang, plot_atomtypes, switch_off_Ang, output_desc, output_dir, savefiles, graphic_ext, graphic_dpi)
         if savefiles:
+            fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
+            fname = _path.join(output_dir, fname)
             bar_fig.savefig(fname, dpi=graphic_dpi)
             print("The following files have been created")
             print(fname)
@@ -1084,6 +1048,70 @@ def residue_neighborhoods(residues,
             'ctcs_trajs': ctcs_trajs,
             'time_array': time_arrays,
             "neighborhoods": neighborhoods}
+
+def _figure_overall(n_cols, res_idxs_list, CG_list, distro, short_AA_names, ctc_cutoff_Ang, plot_atomtypes, switch_off_Ang):
+    r"""
+    Generates one figure containing the per-:obj:`~mdciao.contacts.ContactGroup` info as individual panels
+
+    Internally, prepares the subplots and iterates around plot_distance_distributions
+    or plot_neighborhood_freqs
+
+    Parameters
+    ----------
+    n_cols
+    res_idxs_list
+    CG_list
+    distro
+    short_AA_names
+    ctc_cutoff_Ang
+    plot_atomtypes
+    switch_off_Ang
+
+    Returns
+    -------
+    fig : :obj:`~matplotlib.Figure`
+
+    """
+    n_cols = _np.min((n_cols, len(res_idxs_list)))
+    n_rows = _np.ceil(len(res_idxs_list) / n_cols).astype(int)
+    panelsize = 4
+    panelsize2font = 3.5
+    bar_fig, bar_ax = _plt.subplots(n_rows, n_cols,
+                                    sharex=True,
+                                    sharey=True,
+                                    figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
+
+    # One loop for the histograms
+    _rcParams["font.size"] = panelsize * panelsize2font
+    for jax, ihood in zip(bar_ax.flatten(),
+                          CG_list.values()):
+        if ihood is not None:
+            if distro:
+                ihood.plot_distance_distributions(nbins=20,
+                                                  jax=jax,
+                                                  label_fontsize_factor=panelsize2font / panelsize,
+                                                  shorten_AAs=short_AA_names,
+                                                  ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                  )
+            else:
+                ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
+                                              switch_off_Ang=switch_off_Ang,
+                                              jax=jax,
+                                              xmax=_np.max([ihood.n_ctcs for ihood in CG_list.values() if
+                                                            ihood is not None]),
+                                              label_fontsize_factor=panelsize2font / panelsize,
+                                              shorten_AAs=short_AA_names,
+                                              color=ihood.partner_fragment_colors,
+                                              plot_atomtypes=plot_atomtypes
+                                              )
+
+    if not distro:
+        non_nan_rightermost_patches = [[p for p in jax.patches if not _np.isnan(p.get_x())][-1] for jax in
+                                       bar_ax.flatten() if len(jax.patches) > 0]
+        xmax = _np.nanmax([p.get_x() + p.get_width() / 2 for p in non_nan_rightermost_patches]) + .5
+        [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
+    bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
+
 
 def interface(
         trajectories,
