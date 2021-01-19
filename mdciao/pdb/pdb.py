@@ -50,7 +50,7 @@ def _url2json(url,timeout,verbose):
         json = a.json()
     except:
         json = ValueError('Could not create a json out of  %s\n'
-                          'Please check with if that is a valid url'%url)
+                          'Please check (e.g. via browser) if that is a valid url'%url)
     return json
 
 def pdb2ref(pdb, url="https://data.rcsb.org/rest/v1/core/entry/",
