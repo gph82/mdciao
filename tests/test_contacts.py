@@ -24,6 +24,7 @@ from scipy.spatial.distance import cdist
 from mdciao.filenames import filenames
 import pytest
 from mdciao import contacts
+from pandas import DataFrame as _DF
 import pickle
 
 from mdciao.fragments import get_fragments
@@ -1317,7 +1318,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_residue_name(self):
         CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names(2)
+        freq_dict = CP.frequency_sum_per_residue_names(2)[0]
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
@@ -1325,7 +1326,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_residue_name_no_sort(self):
         CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names(2, sort=False)
+        freq_dict = CP.frequency_sum_per_residue_names(2, sort=False)[0]
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
@@ -1334,18 +1335,14 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_per_residue_name_dataframe(self):
         CP = self.CG
         freq_dict = CP.frequency_sum_per_residue_names(2,
-                                                       return_as_dataframe=True)
+                                                       return_as_dataframe=True)[0]
         assert len(freq_dict) == 3
+        assert isinstance(freq_dict,_DF)
         _np.testing.assert_array_equal(freq_dict["label"].array, ["E30@fragA", "V31@fragB", "W32@fragC"])
         _np.testing.assert_array_equal(freq_dict["freq"].array, [2 / 5 + 1 / 5,
                                                                  2 / 5,
                                                                  1 / 5])
 
-    def test_frequency_per_residue_name_interface_raises(self):
-        CP = self.CG
-        with pytest.raises(AssertionError):
-            CP.frequency_sum_per_residue_names(2,
-                                               list_by_interface=True)
 
     def test_frequency_dict_by_consensus_labels_fails(self):
         CP = self.CG
