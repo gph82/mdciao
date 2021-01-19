@@ -1661,11 +1661,6 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
-    def test_plot_frequency_sums_as_bars_no_interface_raises(self):
-        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        with pytest.raises(AssertionError):
-            jax = CG.plot_frequency_sums_as_bars(2.0, "test", list_by_interface=True)
-
     def test_plot_interface_frequency_matrix(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
