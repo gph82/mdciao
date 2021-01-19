@@ -3247,22 +3247,19 @@ class ContactGroup(object):
 
         """
 
-        # Base dict
-        freqs_dict = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
-                                                               switch_off_Ang=switch_off_Ang,
-                                                               sort=sort,
-                                                               shorten_AAs=shorten_AAs,
-                                                               list_by_interface=list_by_interface)
+        # Base list of dicts
+        frq_dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
+                                                          switch_off_Ang=switch_off_Ang,
+                                                          sort=sort,
+                                                          shorten_AAs=shorten_AAs,
+                                                          list_by_interface=list_by_interface)
 
         # TODO the method plot_freqs_as_bars is very similar but
         # i think it's better to keep them separated
 
-        # TODO this code is repeated in table_by_residue
-        if list_by_interface:
-            label_bars = list(freqs_dict[0].keys())+list(freqs_dict[1].keys())
-            freqs = _np.array(list(freqs_dict[0].values())+list(freqs_dict[1].values()))
-        else:
-            label_bars, freqs = list(freqs_dict.keys()),_np.array(list(freqs_dict.values()))
+        # [j for i in klist for j in i]
+        label_bars = [j for idict in frq_dict_list for j in idict.keys()]
+        freqs = _np.array([j for idict in frq_dict_list for j in idict.values()])
 
         # Truncate
         label_bars = [label_bars[ii] for ii in _np.argwhere(freqs>truncate_at).squeeze()]
@@ -3296,7 +3293,7 @@ class ContactGroup(object):
             jax.set_xlim([-.5, xmax + 1 - .5])
 
         if list_by_interface and interface_vline:
-            xpos = len([ifreq for ifreq in freqs_dict[0].values() if ifreq >truncate_at])
+            xpos = len([ifreq for ifreq in frq_dict_list[0].values() if ifreq >truncate_at])
             jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
         return jax
 
