@@ -2267,17 +2267,17 @@ class ContactGroup(object):
         else:
             return dict_sum
 
-    def frequency_sum_per_residue_names_dict(self, ctc_cutoff_Ang,
-                                             switch_off_Ang=None,
-                                             sort=True,
-                                             shorten_AAs=True,
-                                             list_by_interface=False,
-                                             return_as_dataframe=False,
-                                             fragsep="@"):
+    def frequency_sum_per_residue_names(self, ctc_cutoff_Ang,
+                                        switch_off_Ang=None,
+                                        sort=True,
+                                        shorten_AAs=True,
+                                        list_by_interface=False,
+                                        return_as_dataframe=False,
+                                        fragsep="@"):
         r"""
-        Dictionary of aggregated :obj:`frequency_per_contact` keyed
-        by residue names, using the most informative label possible
-        (ATM it is residue@frag, see :obj:`ContactPair.labels` for more info on this)
+        Aggregate the frequencies of :obj:`frequency_per_contact` keyed
+        by residue name, using the most informative names possible,
+        see :obj:`self.residx2resnamefragnamebest` for more info on this
 
         Parameters
         ----------
@@ -2288,14 +2288,19 @@ class ContactGroup(object):
             TODO a dataframe, then excel_table that's already sorted by descending frequencies
         shorten_AAs : bool, default is True
             Use E30 instead of GLU30
-        list_by_interface : bool, default is False, NotImplemented
+        list_by_interface : bool, default is False
             group the freq_dict by interface residues
         return_as_dataframe : bool, default is False
-            Return an :obj:`pandas.DataFrame` with the column names labels and freqs
+            Return an :obj:`~pandas.DataFrame` with the column names labels and freqs
         fragsep : str, default is @
             String to separate residue@fragname
         Returns
         -------
+        res : list
+            list of dictionaries (or dataframes).
+            If :obj:`list_by_interface` is True,
+            then the list has two items, default
+            (False) is to be of len=1
 
         """
         freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)
@@ -2313,27 +2318,25 @@ class ContactGroup(object):
                      for idict in freqs]
 
         # Use the residue@frag representation but avoid empty fragments
-        dict_out = []
+        list_out = []
         for ifreq in freqs:
             idict = {}
             for idx, val in ifreq.items():
                 key = self.residx2resnamefragnamebest(shorten_AAs=shorten_AAs)[idx]
                 idict[key] = val
-            dict_out.append(idict)
+            list_out.append(idict)
 
         if return_as_dataframe:
-            dict_out = [_DF({"label": list(idict.keys()),
-                             "freq": list(idict.values())}) for idict in dict_out]
+            list_out = [_DF({"label": list(idict.keys()),
+                             "freq": list(idict.values())}) for idict in list_out]
 
-        if len(dict_out)==1:
-            dict_out = dict_out[0]
-        return dict_out
+        return list_out
 
     """"
     # TODO this seems to be unused
     def frequency_table_by_residue(self, ctc_cutoff_Ang,
                                    list_by_interface=False):
-        dict_list = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
+        dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                      list_by_interface=list_by_interface)
 
         if list_by_interface:
