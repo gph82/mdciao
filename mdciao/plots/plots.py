@@ -667,6 +667,106 @@ def titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
 
     return pad_in_points
 
+
+def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
+               draw_empty=True,
+               distro=False,
+               short_AA_names=False,
+               plot_atomtypes=False,
+               switch_off_Ang=0,
+               panelsize=4,
+               panelsize2font=3.5,
+               verbose=False):
+    r"""
+    One figure with each obj:`~mdciao.contacts.ContactGroup` as individual panel
+
+    Wraps around plot_distance_distributions, plot_neighborhood_freqs
+
+    Parameters
+    ----------
+    n_cols : int
+        number of columns of the subplot
+    CG_dict : dict
+        dictionary of
+        obj:`~mdciao.contacts.ContactGroup` objects
+    ctc_cutoff_Ang : float
+    draw_empty : bool, default is True
+        To give a visual cue that some
+        CGs are empty, the corresponding
+        panels are drawn empty (it also
+        ensures same panel position regardless
+        of the result).
+    distro : bool, default is False
+
+    short_AA_names
+    plot_atomtypes
+    switch_off_Ang
+
+    Returns
+    -------
+    fig : :obj:`~matplotlib.Figure`
+
+    """
+    if draw_empty:
+        n_panels = len(CG_dict)
+    else:
+        n_panels = len([CG for CG in CG_dict.values() if CG is not None])
+
+    n_cols = _np.min((n_cols, n_panels))
+    n_rows = _np.ceil(n_panels / n_cols).astype(int)
+
+    bar_fig, bar_ax = _plt.subplots(n_rows, n_cols,
+                                    sharex=True,
+                                    sharey=True,
+                                    figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
+
+    # One loop for the histograms
+    _rcParams["font.size"] = panelsize * panelsize2font
+    for jax, (iname, ihood) in zip(bar_ax.flatten(),
+                                   CG_dict.items()):
+        if ihood is not None:
+            if distro:
+                ihood.plot_distance_distributions(nbins=20,
+                                                  jax=jax,
+                                                  label_fontsize_factor=panelsize2font / panelsize,
+                                                  shorten_AAs=short_AA_names,
+                                                  ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                  )
+            else:
+                xmax = _np.max([ihood.n_ctcs for ihood in CG_dict.values() if
+                                ihood is not None])
+                if ihood.is_neighborhood:
+                    ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
+                                                  switch_off_Ang=switch_off_Ang,
+                                                  jax=jax,
+                                                  xmax=xmax,
+                                                  label_fontsize_factor=panelsize2font / panelsize,
+                                                  shorten_AAs=short_AA_names,
+                                                  color=ihood.partner_fragment_colors,
+                                                  plot_atomtypes=plot_atomtypes
+                                                  )
+                else:
+                    ihood.plot_freqs_as_bars(ctc_cutoff_Ang, iname,
+                                                jax=jax,
+                                                xlim=xmax,
+                                                label_fontsize_factor=panelsize2font / panelsize,
+                                                shorten_AAs=short_AA_names,
+                                                plot_atomtypes=plot_atomtypes,
+                                                )
+                    if verbose:
+                        print()
+                        print(ihood.frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}))
+                        print()
+
+    if not distro:
+        non_nan_rightermost_patches = [[p for p in jax.patches if not _np.isnan(p.get_x())][-1] for jax in
+                                       bar_ax.flatten() if len(jax.patches) > 0]
+        xmax = _np.nanmax([p.get_x() + p.get_width() / 2 for p in non_nan_rightermost_patches]) + .5
+        [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
+    bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
+
+    return bar_fig
+
 def plot_contact_matrix(mat, labels, pixelsize=1,
                         transpose=False, grid=False,
                         cmap="binary",

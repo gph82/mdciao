@@ -1,5 +1,6 @@
 import unittest
 from mdciao.filenames import filenames
+from mdciao.sites import siteIO
 import pytest
 
 import numpy as _np
@@ -8,7 +9,7 @@ import mdtraj as _md
 test_filenames = filenames()
 import mdciao
 
-class Test_sitefile2site(unittest.TestCase):
+class Test_load(unittest.TestCase):
 
     def test_runs(self):
         site = mdciao.sites.load(test_filenames.GDP_json)
@@ -43,6 +44,25 @@ class Test_sitefile2site(unittest.TestCase):
         site = mdciao.sites.load(test_filenames.GDP_name_json)
         _np.testing.assert_equal(site["name"], "siteGDP")
 
+    def test_runs_with_dat(self):
+        site = mdciao.sites.load(test_filenames.tip_dat)
+        site_test = mdciao.sites.load(test_filenames.tip_json)
+        self.assertDictEqual(site["bonds"], site_test["bonds"])
+        self.assertEqual(site["name"],"tip")
+        self.assertEqual(site["n_bonds"],site_test["n_bonds"])
+
+class Test_dat2site(unittest.TestCase):
+
+    def test_works(self):
+        site = siteIO.dat2site(test_filenames.tip_dat)
+        self.assertDictEqual(site, {"bonds": {"AAresSeq": [
+            "L394-K270",
+            "D381-Q229",
+            "Q384-Q229",
+            "R385-Q229",
+            "D381-K232",
+            "Q384-I135"
+        ]}, "name":"tip"})
 class Test_sites_to_AAresSeqdict(unittest.TestCase):
     def setUp(self):
         self.GDP_json = test_filenames.GDP_json

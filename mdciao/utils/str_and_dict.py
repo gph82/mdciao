@@ -955,3 +955,77 @@ def defrag_key(key, defrag="@", sep="-"):
 
     """
     return sep.join([kk.split(defrag,1)[0].strip(" ") for kk in splitlabel(key,sep)])
+
+class FilenameGenerator(object):
+    r"""
+    Generate per project filenames when you need them
+
+    This is a WIP to consolidate all filenaming
+    ATM it's only used by :obj:`mdciao.cli.interface`, but the
+    idea is to expand it to all cli methods, share more code
+
+    A named tuple would've been enough if not for residue
+    specific naming
+
+    """
+
+    def __init__(self,output_desc,ctc_cutoff_Ang,output_dir,graphic_ext):
+
+        self._graphic_ext = graphic_ext.strip(".")
+        self._output_desc = output_desc
+        self._ctc_cutoff_Ang = ctc_cutoff_Ang
+        self._output_dir = output_dir
+
+    @property
+    def output_dir(self):
+        return self._output_dir
+    @property
+    def basename_wo_ext(self):
+        return "%s.overall@%2.1f_Ang" % (self.output_desc,
+                                         self.ctc_cutoff_Ang)
+    @property
+    def ctc_cutoff_Ang(self):
+        return self._ctc_cutoff_Ang
+
+    @property
+    def output_desc(self):
+        return self._output_desc.replace(" ","_")
+
+    @property
+    def fullpath_overall_no_ext(self):
+        return _path.join(self.output_dir, self.basename_wo_ext)
+
+    @property
+    def graphic_ext(self):
+        return self._graphic_ext
+
+    @property
+    def fullpath_overall_fig(self):
+        return ".".join([self.fullpath_overall_no_ext, self.graphic_ext])
+
+    def fname_per_residue_table(self,istr, table_ext):
+        fname = '%s.%s@%2.1f_Ang.%s' % (self.output_desc,
+                                        istr.replace('*', ""),
+                                        self.ctc_cutoff_Ang,
+                                        table_ext)
+        return _path.join(self.output_dir, fname)
+
+    @property
+    def fullpath_overall_excel(self):
+        return ".".join([self.fullpath_overall_no_ext, "xlsx"])
+
+    @property
+    def fullpath_overall_dat(self):
+        return ".".join([self.fullpath_overall_no_ext, "dat"])
+
+    @property
+    def fullpath_pdb(self):
+        return ".".join([self.fullpath_overall_no_ext, "as_bfactors.pdb"])
+
+    @property
+    def fullpath_matrix(self):
+        return self.fullpath_overall_fig.replace("overall@", "matrix@")
+
+    @property
+    def fullpath_flare_pdf(self):
+        return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"), 'pdf'])

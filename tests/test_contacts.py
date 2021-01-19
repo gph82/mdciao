@@ -1010,44 +1010,42 @@ class TestBaseClassContactGroup(unittest.TestCase):
         #At 3.5, the above cp1 gives SC-BB, BB-BB, BB-BB:
         # 2/3 BB-BB, 1/3 SC-BB
 
-
-
 class TestContactGroup(TestBaseClassContactGroup):
 
-    def test_works_minimal(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+
+    def setUp(self):
+        super(TestContactGroup, self).setUp()
+        # test_works_minimal no top
+        self.CG_cp1_cp2 = contacts.ContactGroup([self.cp1, self.cp2])
+        assert self.CG_cp1_cp2.topology is self.CG_cp1_cp2.top is None
+
+        # test_works_minimal_w top
+        self.CG_cp1_wtop_cp2_wtop = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop], top=self.top)
+        assert self.CG_cp1_wtop_cp2_wtop.topology is self.CG_cp1_wtop_cp2_wtop.top is self.top
 
     def test_works_minimal_top_raises(self):
         with pytest.raises(AssertionError):
-            CG = contacts.ContactGroup([self.cp1, self.cp2], top=self.top)
-
-    def test_works_minimal_top_works(self):
-        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop], top=self.top)
+            contacts.ContactGroup([self.cp1, self.cp2], top=self.top)
 
     def test_n_properties(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         _np.testing.assert_equal(CG.n_ctcs, 2)
         _np.testing.assert_equal(CG.n_trajs, 2)
         _np.testing.assert_array_equal(CG.n_frames, [3, 1])
 
     def test_time_properties(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         _np.testing.assert_equal(3, CG.time_max)
         _np.testing.assert_array_equal([1, 2, 3], CG.time_arrays[0])
         _np.testing.assert_array_equal([1], CG.time_arrays[1])
 
-    def test_tops(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
-        assert CG.topology is CG.top is None
-        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop])
-        assert CG.topology is CG.top is self.top
-
+    def test_wrong_top_raises(self):
         with pytest.raises(ValueError):
             contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop,
                                    self.cp3_wtop_other])
 
     def test_Residues(self):
-        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        CG = self.CG_cp1_wtop_cp2_wtop
         _np.testing.assert_array_equal([[0, 1],
                                         [0, 2]],
                                        CG.res_idxs_pairs)
@@ -1058,7 +1056,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.residue_names_short[1][1], "W32")
 
     def test_labels(self):
-        CG = contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop])
+        CG = self.CG_cp1_wtop_cp2_wtop
         _np.testing.assert_equal(CG.ctc_labels[0], "GLU30-VAL31")
         _np.testing.assert_equal(CG.ctc_labels[1], "GLU30-TRP32")
         _np.testing.assert_equal(CG.ctc_labels_short[0], "E30-V31")
@@ -1139,7 +1137,9 @@ class TestContactGroup(TestBaseClassContactGroup):
 
     def test_fragment_names_best_fragnames(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+                                    self.cp2_w_anchor_and_frags],
+                                   neighbors_excluded=0
+                                   )
 
         _np.testing.assert_array_equal(CG.fragment_names_best[0], ["fragA", "fragB"])
         _np.testing.assert_array_equal(CG.fragment_names_best[1], ["fragA", "fragC"])
@@ -1158,7 +1158,7 @@ class TestContactGroup(TestBaseClassContactGroup):
                                    self.cp3_wtop_and_wrong_conslabs])
 
     def test_neighborhoods_raises(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         _np.testing.assert_equal(CG.shared_anchor_residue_index, None)
         with pytest.raises(AssertionError):
             CG.anchor_res_and_fragment_str
@@ -1175,7 +1175,9 @@ class TestContactGroup(TestBaseClassContactGroup):
 
     def test_neighborhoods(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+                                    self.cp2_w_anchor_and_frags],
+                                   neighbors_excluded=0
+                                   )
         assert CG.is_neighborhood
         _np.testing.assert_equal(CG.shared_anchor_residue_index, 0)
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str, "0@fragA")
@@ -1188,18 +1190,24 @@ class TestContactGroup(TestBaseClassContactGroup):
 
     def test_neighborhood_w_partner_color(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+                                    self.cp2_w_anchor_and_frags],
+                                   neighbors_excluded=0
+                                   )
         _np.testing.assert_array_equal(["b", "g"], CG.partner_fragment_colors)
 
     def test_neighborhoods_wrong_anchor_color(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
                                     self.cp2_w_anchor_and_frags,
-                                    self.cp3_w_anchor_and_frags_wrong_anchor_color])
+                                    self.cp3_w_anchor_and_frags_wrong_anchor_color],
+                                   neighbors_excluded=0
+                                   )
         assert CG.anchor_fragment_color is None
 
     def test_neighborhoods_w_top(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0
+                                   )
         _np.testing.assert_equal(CG.shared_anchor_residue_index, 0)
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str, "GLU30@fragA")
         _np.testing.assert_equal(CG.anchor_res_and_fragment_str_short, "E30@fragA")
@@ -1209,14 +1217,14 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_equal(CG.partner_res_and_fragment_labels_short[1], "W32@fragC")
 
     def test_residx2ctcidx(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         _np.testing.assert_array_equal(CG.residx2ctcidx(1), [[0, 1]])
         _np.testing.assert_array_equal(CG.residx2ctcidx(2), [[1, 1]])
         _np.testing.assert_array_equal(CG.residx2ctcidx(0), [[0, 0],
                                                              [1, 0]])
 
     def test_binarize_trajs(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         bintrajs = CG.binarize_trajs(2.5)
         _np.testing.assert_array_equal([1, 1, 0], bintrajs[0][0])
         _np.testing.assert_array_equal([0], bintrajs[0][1])
@@ -1244,7 +1252,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_array_equal([0], traj_2_ctc_3)
 
     def test_distance_distributions(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         h1, x1 = self.cp1.distro_overall_trajs(bins=10)
         h2, x2 = self.cp2.distro_overall_trajs(bins=10)
         distros = CG.distributions_of_distances(nbins=10)
@@ -1270,25 +1278,30 @@ class TestContactGroup(TestBaseClassContactGroup):
             CP.plot_interface_frequency_matrix(None)
         assert CP.interface_frequency_matrix(None) is None
 
-
 class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupFrequencies,cls).setUp(cls)
+        cls.CG = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags_and_top,
+             cls.cp2_w_anchor_and_frags_and_top],
+            neighbors_excluded=0
+        )
+
     def test_frequency_dict(self):
-        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CP = self.CG
         freqdcit = CP.frequency_dict(2, split_label=False)
         self.assertDictEqual(freqdcit, {"E30@fragA-V31@fragB" : 2 / 5,
                                         "E30@fragA-W32@fragC" : 1 / 5})
 
     def test_frequency_per_contact(self):
-        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CP = self.CG
         freqs = CP.frequency_per_contact(2)
         _np.testing.assert_array_equal([2 / 5, 1 / 5], freqs)
 
     def test_frequency_per_residue_idx(self):
-        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CP = self.CG
         freq_dict = CP.frequency_sum_per_residue_idx_dict(2)
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict[0], 2 / 5 + 1 / 5)
@@ -1296,16 +1309,14 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(freq_dict[2], 1 / 5)
 
     def test_frequency_per_residue_idx_return_array(self):
-        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CP = self.CG
         freq_dict = CP.frequency_sum_per_residue_idx_dict(2)
         freq_array = CP.frequency_sum_per_residue_idx_dict(2, return_array=True)
         _np.testing.assert_array_equal(list(freq_dict.values()),freq_array[freq_array>0])
 
 
     def test_frequency_per_residue_name(self):
-        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CP = self.CG
         freq_dict = CP.frequency_sum_per_residue_names_dict(2)
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
@@ -1313,8 +1324,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(freq_dict["W32@fragC"], 1 / 5)
 
     def test_frequency_per_residue_name_no_sort(self):
-        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CP = self.CG
         freq_dict = CP.frequency_sum_per_residue_names_dict(2, sort=False)
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
@@ -1322,8 +1332,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(freq_dict["W32@fragC"], 1 / 5)
 
     def test_frequency_per_residue_name_dataframe(self):
-        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CP = self.CG
         freq_dict = CP.frequency_sum_per_residue_names_dict(2,
                                                             return_as_dataframe=True)
         assert len(freq_dict) == 3
@@ -1333,15 +1342,13 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
                                                                  1 / 5])
 
     def test_frequency_per_residue_name_interface_raises(self):
-        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CP = self.CG
         with pytest.raises(AssertionError):
             CP.frequency_sum_per_residue_names_dict(2,
                                                     list_by_interface=True)
 
     def test_frequency_dict_by_consensus_labels_fails(self):
-        CP = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CP = self.CG
 
         with pytest.raises(AssertionError):
             CP.frequency_dict_by_consensus_labels(2)
@@ -1456,34 +1463,43 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(table["by_atomtypes"][0], "66% BB-BB, 33% BB-SC")
         _np.testing.assert_equal(table["by_atomtypes"][1], "66% BB-SC, 33% SC-BB")
 
-
 class TestContactGroupPlots(TestBaseClassContactGroup):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupPlots,cls).setUp(cls)
+        cls.CG_cp1_cp2 = contacts.ContactGroup([cls.cp1, cls.cp2])
+        cls.CG_cp1_cp2_both_w_anchor_and_frags = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags,
+             cls.cp2_w_anchor_and_frags],
+            neighbors_excluded=0
+        )
+
     def test_plot_freqs_as_bars_just_runs(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         jax = CG.plot_freqs_as_bars(2, "test_site")
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs_labels_short(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         jax = CG.plot_freqs_as_bars(2, "test_site", shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_freqs_as_bars_just_runs_labels_xlim(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         jax = CG.plot_freqs_as_bars(2, "test_site", xlim=20)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_freqs_as_bars_display_sort(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         CG.plot_freqs_as_bars(2, "test_site", display_sort=True)
 
 
     def test_plot_freqs_as_bars_total_freq(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         CG.plot_freqs_as_bars(2, "test_site", total_freq=CG.frequency_per_contact(2).sum())
 
     def test_plot_freqs_as_bars_no_neighborhood(self):
@@ -1494,7 +1510,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_freqs_as_bars_no_neighborhood_fails(self):
         with pytest.raises(AssertionError):
-            CG = contacts.ContactGroup([self.cp1, self.cp2])
+            CG = self.CG_cp1_cp2
             CG.plot_freqs_as_bars(2,)
 
     def test_plot_add_hatching_by_atomtypes(self):
@@ -1541,27 +1557,25 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
 
     def test_plot_neighborhood_raises(self):
-        CG = contacts.ContactGroup([self.cp1, self.cp2])
+        CG = self.CG_cp1_cp2
         with pytest.raises(AssertionError):
-            CG.plot_neighborhood_freqs(2, 0)
+            CG.plot_neighborhood_freqs(2)
 
     def test_plot_neighborhood_works_minimal(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
-        jax = CG.plot_neighborhood_freqs(2, 0)
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
+        jax = CG.plot_neighborhood_freqs(2)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_neighborhood_works_options(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
-        jax = CG.plot_neighborhood_freqs(2, 0, shorten_AAs=True)
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
+        jax = CG.plot_neighborhood_freqs(2, shorten_AAs=True)
         assert isinstance(jax, _plt.Axes)
-        jax = CG.plot_neighborhood_freqs(2, 0, xmax=10)
+        jax = CG.plot_neighborhood_freqs(2,xmax=10)
         assert isinstance(jax, _plt.Axes)
         _plt.plot()
         jax = _plt.gca()
-        assert jax is CG.plot_neighborhood_freqs(2, 0, jax=jax)
+        assert jax is CG.plot_neighborhood_freqs(2, jax=jax)
         _plt.close("all")
 
     def test_plot_get_hatches_for_plotting_atomtypes(self):
@@ -1573,20 +1587,16 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
 
     def test_plot_timedep_ctcs(self):
-        from matplotlib.pyplot import Figure
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags])
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1)
         _np.testing.assert_equal(len(figs), 1)
-        assert isinstance(figs[0], Figure)
-        ifig: Figure = figs[0]
+        assert isinstance(figs[0], _plt.Figure)
+        ifig = figs[0]
         _np.testing.assert_equal(len(ifig.axes), 2 + 1)  # 2 + twinx
         _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_no_pop(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1)
         ifig = figs[0]
         _np.testing.assert_equal(len(figs), 1)
@@ -1594,9 +1604,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_w_pop(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
                                     pop_N_ctcs=True)
         _np.testing.assert_equal(len(figs), 2)
@@ -1605,55 +1613,59 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_empty(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1, skip_timedep=True)
         _np.testing.assert_equal(len(figs), 0)
         _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_w_valid_cutoff(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags,
-                                    self.cp2_w_anchor_and_frags],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
                                     skip_timedep=True)
         _np.testing.assert_equal(len(figs), 1)
         _np.testing.assert_equal(len(figs[0].axes), 1)  # Just nctc
         _plt.close("all")
 
-    def test_plot_neighborhood_distributions_just_works(self):
-        from matplotlib.pyplot import Axes
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+    def test_plot_distance_distributions_just_works(self):
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_distance_distributions()
-        assert isinstance(jax, Axes)
-        _plt.close("all")
-
-    def test_plot_neighborhood_distributions_just_works_w_options(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
-        jax = CG.plot_distance_distributions(shorten_AAs=True,
-                                             ctc_cutoff_Ang=3,
-                                             xlim=[-1, 5],
-                                             n_nearest=1)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
+    def test_plot_plot_distance_distributions_just_works_w_options(self):
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
+        jax = CG.plot_distance_distributions(shorten_AAs=True,
+                                             ctc_cutoff_Ang=3,
+                                             xlim=[-1, 5])
+        assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
+
+    def test_plot_plot_distance_distributions_no_neighborhood(self):
+            CG = self.CG_cp1_cp2
+            jax = CG.plot_distance_distributions(shorten_AAs=True,
+                                                 ctc_cutoff_Ang=3,
+                                                 xlim=[-1, 5],
+                                                )
+            assert isinstance(jax, _plt.Axes)
+            _plt.close("all")
+
+    def test_plot_plot_distance_distributions_no_neighborhood_defrag(self):
+            CG = self.CG_cp1_cp2
+            jax = CG.plot_distance_distributions(shorten_AAs=True,
+                                                 ctc_cutoff_Ang=3,
+                                                 xlim=[-1, 5],
+                                                 defrag="@")
+            assert isinstance(jax, _plt.Axes)
+            _plt.close("all")
+
     def test_plot_frequency_sums_as_bars_just_works(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_frequency_sums_as_bars(2.0, "test", xmax=4)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_frequency_sums_as_bars_no_interface_raises(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         with pytest.raises(AssertionError):
             jax = CG.plot_frequency_sums_as_bars(2.0, "test", list_by_interface=True)
 
@@ -1692,12 +1704,12 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                               label_type="blergh")
         _plt.close("all")
 
-
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
     def test_frequency_spreadsheedt_just_works(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
         with _TDir(suffix='_test_mdciao') as tmpdir:
             CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"),
                                      write_interface=False)
@@ -1713,23 +1725,25 @@ class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
     def test_frequency_spreadsheet_raises_w_interface(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
         with pytest.raises(AssertionError):
             with _TDir(suffix='_test_mdciao') as tmpdir:
                 CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"))
 
-
 class TestContactGroupASCII(TestBaseClassContactGroup):
-    def test_frequency_str_ASCII_file(self):
+    def test_frequency_str_ASCII_file_str(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
         istr = CG.frequency_str_ASCII_file(2.5, by_atomtypes=False)
         self.assertEqual(istr[0], "#")
         self.assertIsInstance(istr, str)
 
     def test_frequency_str_ASCII_file(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
 
         with _TDir() as tmpdir:
             tfile = path.join(tmpdir,'freqfile.dat')
@@ -1738,12 +1752,19 @@ class TestContactGroupASCII(TestBaseClassContactGroup):
             newfreq = freq_file2dict(tfile)
             _np.testing.assert_array_equal(list(newfreq.values()),CG.frequency_per_contact(2.5))
 
-
 class TestContactGroupTrajdicts(TestBaseClassContactGroup):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupTrajdicts,cls).setUp(cls)
+        cls.CG = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags_and_top,
+             cls.cp2_w_anchor_and_frags_and_top],
+            neighbors_excluded=0
+        )
+
     def test_to_per_traj_dicts_for_saving(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving()
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1761,8 +1782,7 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
                                        self.cp2_w_anchor_and_frags_and_top.time_traces.ctc_trajs[1] * 10)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_ns(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="ns")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1774,8 +1794,7 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-3)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_mus(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="mus")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1787,8 +1806,7 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-6)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_ms(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="ms")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1800,17 +1818,23 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-9)
 
     def test_to_per_traj_dicts_for_saving_with_tunits_raises(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         with pytest.raises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="fs")
 
-
 class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupBintrajdicts,cls).setUp(cls)
+        cls.CG = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags_and_top,
+             cls.cp2_w_anchor_and_frags_and_top],
+            neighbors_excluded=0
+        )
+
     def test_to_per_traj_dicts_for_saving_bintrajs(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5)
         bintrajs_per_traj = CG.binarize_trajs(2.5, order="traj")
 
@@ -1829,8 +1853,7 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        bintrajs_per_traj[1][:, 1])
 
     def test_to_per_traj_dicts_for_saving_bintrajs_ns(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="ns")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1842,8 +1865,7 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-3)
 
     def test_to_per_traj_dicts_for_saving_bintrajs_mus(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="mus")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1855,8 +1877,7 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-6)
 
     def test_to_per_traj_dicts_for_saving_bintrajs_ms(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="ms")
 
         data_traj_0 = list_of_dicts[0]["data"]
@@ -1868,64 +1889,62 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
                                        self.cp1_w_anchor_and_frags_and_top.time_traces.time_trajs[1] * 1e-9)
 
     def test_to_per_traj_dicts_for_saving_bintrajs_tunits_raises(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top])
+        CG = self.CG
         with pytest.raises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="fs")
 
-
 class TestContactGroupSavetrajs(TestBaseClassContactGroup):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupSavetrajs,cls).setUp(cls)
+        cls.CG_cp1_cp2_both_w_anchor_and_frags_and_top = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags_and_top,
+             cls.cp2_w_anchor_and_frags_and_top],
+            neighbors_excluded=0
+        )
+        cls.CG_cp1_cp2_both_wtop_and_conslabs = contacts.ContactGroup(
+            [cls.cp1_wtop_and_conslabs,
+             cls.cp2_wtop_and_conslabs])
     def test_save_trajs_no_anchor(self):
-        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
-                                    self.cp2_wtop_and_conslabs])
+        CG = self.CG_cp1_cp2_both_wtop_and_conslabs
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "dat", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_no_anchor_npy(self):
-        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
-                                    self.cp2_wtop_and_conslabs])
+        CG = self.CG_cp1_cp2_both_wtop_and_conslabs
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "npy", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
 
     def test_save_trajs_w_anchor(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "dat", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_no_anchor_excel(self):
-        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
-                                    self.cp2_wtop_and_conslabs])
+        CG = self.CG_cp1_cp2_both_wtop_and_conslabs
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "xlsx", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_excel(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", "xlsx", verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_None(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test", None, verbose=True, t_unit="ns",
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_basename(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         # Overwrite the trajlabels for the basename to work
         CG._trajlabels = ["../non/existing/dir/traj1.xtc",
                           "../non/existing/dir/traj2.xtc"]
@@ -1934,14 +1953,11 @@ class TestContactGroupSavetrajs(TestBaseClassContactGroup):
                           output_dir=tempdir)
 
     def test_save_trajs_w_anchor_cutoff(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   )
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags_and_top
         with _TDir(suffix='_test_mdciao') as tempdir:
             CG.save_trajs("test_None", "dat", verbose=True, t_unit="ns",
                           ctc_cutoff_Ang=2.5,
                           output_dir=tempdir)
-
 
 class TestContactGroupInterface(TestBaseClassContactGroup):
 

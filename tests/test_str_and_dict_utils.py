@@ -730,3 +730,21 @@ class Test_latex_superscript_one_fragment(unittest.TestCase):
         self.assertEqual(str_and_dict._latex_superscript_one_fragment("GLU30"),"GLU30")
 if __name__ == '__main__':
     unittest.main()
+
+class Test_FilenameGenerator(unittest.TestCase):
+
+    def test_just_runs(self):
+
+        fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png")
+        self.assertEqual(fn.fullpath_overall_fig, "project/beta2_Gs.overall@3.5_Ang.png")
+        self.assertEqual(fn.fullpath_overall_excel, "project/beta2_Gs.overall@3.5_Ang.xlsx")
+        self.assertEqual(fn.fullpath_overall_dat, "project/beta2_Gs.overall@3.5_Ang.dat")
+        self.assertEqual(fn.fullpath_pdb, "project/beta2_Gs.overall@3.5_Ang.as_bfactors.pdb")
+        self.assertEqual(fn.fullpath_matrix, "project/beta2_Gs.matrix@3.5_Ang.png")
+        self.assertEqual(fn.fullpath_flare_pdf, "project/beta2_Gs.flare@3.5_Ang.pdf")
+
+
+
+
+
+
