@@ -1579,8 +1579,8 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp1_w_atom_types_0_1_switched])
         df = CG._get_hatches_for_plotting(3.5)
         # This checks that the inversion ["BB-SC"]-["SC-BB"] takes place when needed
-        _np.testing.assert_array_equal(df.values[0, :], [2 / 3, 0, 1 / 3, 0])
-        _np.testing.assert_array_equal(df.values[1, :], [2 / 3, 0, 1 / 3, 0])
+        _np.testing.assert_array_equal(df.values[0, :], [2 / 3, 0, 1 / 3, 0, 0, 0, 0, 0])
+        _np.testing.assert_array_equal(df.values[1, :], [2 / 3, 0, 1 / 3, 0, 0, 0, 0, 0])
 
 
     def test_plot_timedep_ctcs(self):
