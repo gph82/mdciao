@@ -2360,7 +2360,7 @@ class ContactGroup(object):
         Note
         ----
         Will fail if not all residues have consensus labels
-        TODO this is very similar to :obj:`frequency_sum_per_residue_names_dict`,
+        TODO this is very similar to :obj:`frequency_sum_per_residue_names`,
         look at the usecase closesely and try to unify both methods
 
         Parameters
@@ -2447,17 +2447,68 @@ class ContactGroup(object):
 
         return df2return
 
-    def frequency_spreadsheet(self, ctc_cutoff_Ang,
+    def frequency_table(self, ctc_cutoff_Ang,
+                        fname,
+                        switch_off_Ang=None,
+                        sort=False,
+                        write_interface=True,
+                        **freq_dataframe_kwargs):
+        r"""
+        Print and/or save frequencies as a formatted table
+
+        Internally, it calls :obj:`self.frequency_spreadsheet` and/or
+        :obj:`self.frequency_str_ASCII_file` depending on the
+        extension of :obj:`fname`
+
+        If you want a :obj:`~pandas.DataFrame` use
+        :obj:`self.frequency_dataframe`
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        fname : str or None
+            Full path to the desired filename
+            Spreadsheet extensions are currently
+            only '.xslx', all other extensions
+            save to formatted ascii. `None`
+            returns the formatted ascii string.
+        switch_off_Ang : float, default is None,
+        sort : check frequency_sum_per_residue_names
+        write_interface : check frequency_sum_per_residue_names
+        freq_dataframe_kwargs
+
+        Returns
+        -------
+
+        """
+
+        if _path.splitext(str(fname))[1] in ["xlsx"]:
+            freq_dataframe_kwargs["split_label"] = False
+            main_DF = self.frequency_dataframe(ctc_cutoff_Ang,
+                                               switch_off_Ang=switch_off_Ang,
+                                               **freq_dataframe_kwargs)
+            idfs = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
+                                                        switch_off_Ang=switch_off_Ang,
+                                                        sort=sort,
+                                                        list_by_interface=write_interface,
+                                                        return_as_dataframe=True)
+            self.frequency_spreadsheet(main_DF,idfs,ctc_cutoff_Ang,fname)
+        else:
+            freq_dataframe_kwargs["split_label"] = True
+            main_DF = self.frequency_dataframe(ctc_cutoff_Ang,
+                                               switch_off_Ang=switch_off_Ang,
+                                               **freq_dataframe_kwargs)
+            return self.frequency_str_ASCII_file(main_DF,ascii_file=fname)
+
+    def frequency_spreadsheet(self, sheet1_dataframe,
+                              sheet2_dataframes,
+                              ctc_cutoff_Ang,
                               fname_excel,
-                              switch_off_Ang=None,
-                              sort=False,
-                              write_interface=True,
-                              offset=0,
                               sheet1_name="pairs by frequency",
                               sheet2_name='residues by frequency',
-                              **freq_dataframe_kwargs):
+                              ):
         r"""
-        Write an Excel file with the :obj:`pandas.Dataframe` that is
+        Write an Excel file with the :obj:`~pandas.Dataframe` that is
         returned by :obj:`self.frequency_dataframe`. You can
         control that call with obj:`freq_dataframe_kwargs`
 
@@ -2469,9 +2520,6 @@ class ContactGroup(object):
             Sort by descing order of frequency
         write_interface: bool, default is True
             Treat contact group as interface
-        offset : int, default is 0
-            First line at which to start writing the table. For future devleopment
-            TODO do not expose this, perhaps?
         freq_dataframe_kwargs: dict, default is {}
             Optional arguments to :obj:`self.frequency_dataframe`, like by_atomtypes (bool)
 
@@ -2479,14 +2527,12 @@ class ContactGroup(object):
         -------
 
         """
-
-        main_DF = self.frequency_dataframe(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, **freq_dataframe_kwargs)
-
+        offset = 0
         columns = ["label",
                    "freq",
                    "sum",
                    ]
-        if "by_atomtypes" in freq_dataframe_kwargs.keys() and freq_dataframe_kwargs["by_atomtypes"]:
+        if "by_atomtypes" in sheet1_dataframe.keys():
             columns += ["by_atomtypes"]
 
         writer = _ExcelWriter(fname_excel, engine='xlsxwriter')
@@ -2495,52 +2541,43 @@ class ContactGroup(object):
         writer.sheets[sheet1_name].write_string(0, offset,
                                       'pairs by contact frequency at %2.1f Angstrom' % ctc_cutoff_Ang)
         offset+=1
-        main_DF.round({"freq": 2, "sum": 2}).to_excel(writer,
-                                                      index=False,
-                                                      sheet_name=sheet1_name,
-                                                      startrow=offset,
-                                                      startcol=0,
-                                                      columns=columns,
-                                                      )
+        sheet1_dataframe.round({"freq": 2, "sum": 2}).to_excel(writer,
+                                                               index=False,
+                                                               sheet_name=sheet1_name,
+                                                               startrow=offset,
+                                                               startcol=0,
+                                                               columns=columns,
+                                                               )
         offset = 0
         writer.sheets[sheet2_name] = workbook.add_worksheet(sheet2_name)
         writer.sheets[sheet2_name].write_string(offset, 0, 'Av. # ctcs (<%2.1f Ang) by residue '%ctc_cutoff_Ang)
 
         offset += 1
 
-        idfs = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
-                                                         switch_off_Ang=switch_off_Ang,
-                                                         sort=sort,
-                                                         list_by_interface=write_interface,
-                                                         return_as_dataframe=True)
-        if not write_interface:
-            idfs=[idfs]
-        idfs[0].round({"freq": 2}).to_excel(writer,
-                                            sheet_name=sheet2_name,
-                                            startrow=offset,
-                                            startcol=0,
-                                            columns=[
+        sheet2_dataframes[0].round({"freq": 2}).to_excel(writer,
+                                                         sheet_name=sheet2_name,
+                                                         startrow=offset,
+                                                         startcol=0,
+                                                         columns=[
                                                 "label",
                                                 "freq"],
-                                            index=False
-                                            )
-        if write_interface:
+                                                         index=False
+                                                         )
+        if len(sheet2_dataframes)>1:
             #Undecided about best placement for these
-            idfs[1].round({"freq": 2}).to_excel(writer,
-                                                     sheet_name=sheet2_name,
-                                                     startrow=offset,
-                                                     startcol=2+1,
-                                                     columns=[
+            sheet2_dataframes[1].round({"freq": 2}).to_excel(writer,
+                                                             sheet_name=sheet2_name,
+                                                             startrow=offset,
+                                                             startcol=2+1,
+                                                             columns=[
                                                          "label",
                                                          "freq"],
-                                                     index=False
-                                                     )
+                                                             index=False
+                                                             )
 
         writer.save()
 
-    def frequency_str_ASCII_file(self, ctc_cutoff_Ang,
-                                 switch_off_Ang=None,
-                                 by_atomtypes=True,
+    def frequency_str_ASCII_file(self, idf,
                                  ascii_file=None):
         r"""
         Return a string with the frequencies
@@ -2560,12 +2597,7 @@ class ContactGroup(object):
         -------
 
         """
-        # TODO can't the frequency_spreadsheet handle this now?
-        idf = self.frequency_dataframe(ctc_cutoff_Ang,
-                                       switch_off_Ang=switch_off_Ang,
-                                        by_atomtypes=by_atomtypes,
-                                        # AA_format="long",
-                                        split_label="join")
+
         idf = idf.round({"freq": 2, "sum": 2})
         istr = idf.to_string(index=False,
                              header=True,
@@ -3210,7 +3242,7 @@ class ContactGroup(object):
                                     sort=True,
                                     interface_vline=False):
         r"""
-        Bar plot with per-residue sums of frequencies (TODO nr. of neighbors?, cumulative freq? SIP?)
+        Bar plot with per-residue sums of frequencies (called \Sigma in mdciao)
 
         Parameters
         ----------

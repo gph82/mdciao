@@ -1317,7 +1317,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_residue_name(self):
         CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names_dict(2)
+        freq_dict = CP.frequency_sum_per_residue_names(2)
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
@@ -1325,7 +1325,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_residue_name_no_sort(self):
         CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names_dict(2, sort=False)
+        freq_dict = CP.frequency_sum_per_residue_names(2, sort=False)
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
@@ -1333,8 +1333,8 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_residue_name_dataframe(self):
         CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names_dict(2,
-                                                            return_as_dataframe=True)
+        freq_dict = CP.frequency_sum_per_residue_names(2,
+                                                       return_as_dataframe=True)
         assert len(freq_dict) == 3
         _np.testing.assert_array_equal(freq_dict["label"].array, ["E30@fragA", "V31@fragB", "W32@fragC"])
         _np.testing.assert_array_equal(freq_dict["freq"].array, [2 / 5 + 1 / 5,
@@ -1344,8 +1344,8 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_per_residue_name_interface_raises(self):
         CP = self.CG
         with pytest.raises(AssertionError):
-            CP.frequency_sum_per_residue_names_dict(2,
-                                                    list_by_interface=True)
+            CP.frequency_sum_per_residue_names(2,
+                                               list_by_interface=True)
 
     def test_frequency_dict_by_consensus_labels_fails(self):
         CP = self.CG
@@ -1677,7 +1677,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                    self.cp5_wtop_and_wo_conslabs],
                                   interface_residxs=[[0, 3, 5], [1, 2, 4]])
         print(I.frequency_dataframe(2))
-        print(I.frequency_sum_per_residue_names_dict(2))
+        print(I.frequency_sum_per_residue_names(2))
         print(I.interface_labels_consensus)
         ifig, iax = I.plot_interface_frequency_matrix(2,
                                                       label_type="best")
@@ -1693,7 +1693,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                    self.cp5_wtop_and_wo_conslabs],
                                   interface_residxs=[[0, 3, 5], [1, 2, 4]])
         print(I.frequency_dataframe(2))
-        print(I.frequency_sum_per_residue_names_dict(2))
+        print(I.frequency_sum_per_residue_names(2))
         print(I.interface_labels_consensus)
         ifig, iax = I.plot_interface_frequency_matrix(2,
                                                       label_type="consensus")
@@ -2090,9 +2090,9 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                                      [2, 1, 5]])
         print(I.frequency_dataframe(2))
         print(I.interface_residxs)
-        idicts = I.frequency_sum_per_residue_names_dict(2,
-                                                        sort=False,
-                                                        list_by_interface=True)
+        idicts = I.frequency_sum_per_residue_names(2,
+                                                   sort=False,
+                                                   list_by_interface=True)
 
         assert len(idicts) == 2
         items0, items1 = list(idicts[0].items()), list(idicts[1].items())
@@ -2112,8 +2112,8 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                   interface_residxs=[[3, 0, 4],
                                                      [2, 1, 5]])
 
-        idicts = I.frequency_sum_per_residue_names_dict(2,
-                                                        list_by_interface=True)
+        idicts = I.frequency_sum_per_residue_names(2,
+                                                   list_by_interface=True)
 
         assert len(idicts) == 2
         items0, items1 = list(idicts[0].items()), list(idicts[1].items())
