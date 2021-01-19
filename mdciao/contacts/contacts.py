@@ -2932,7 +2932,7 @@ class ContactGroup(object):
             lowbar_fspts = _rcParams["font.size"] * .75
         lowbar_fsaus = lowbar_fspts / pd
         y_leg = -2 * lowbar_fsaus  # fudged to "close enough"
-        place_legend = lambda y: getattr(jax, "legend")(ebars, _hatchets.keys(),
+        place_legend = lambda y: getattr(jax, "legend")(ebars, [key for (ii, key) in enumerate(_hatchets.keys()) if w_hatched_lists[:,ii].sum()>0],
                                                         loc=[0, y],
                                                         ncol=4,
                                                         framealpha=0,
@@ -3827,10 +3827,16 @@ class ContactGroup(object):
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
 
-_hatchets = {"BB-BB":"||",
-             "SC-SC":"--",
-             "BB-SC":"///",
-             "SC-BB":'\\\\\\'}
+
+_hatchets = {"BB-BB": "||",
+             "SC-SC": "--",
+             "BB-SC": "///",
+             "SC-BB": '\\\\\\',
+             "X-SC": "///",
+             "SC-X": "///",
+             "BB-X": "||",
+             "X-BB": "||"
+             }
 
 class GroupOfInterfaces(object):
     r"""Container for :obj:`ContactGroup` objects
