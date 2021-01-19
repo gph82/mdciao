@@ -985,20 +985,13 @@ def residue_neighborhoods(residues,
     if table_ext is not None and savefiles:
         for ihood in neighborhoods.values():
             fname=fn.fname_per_residue_table(ihood.anchor_res_and_fragment_str, table_ext)
-            #TODO can't the frequency_spreadsheet handle this now?
-            # TODO this code is repeated in sites...can we abstract this oafa?
-            if table_ext=='xlsx':
-                ihood.frequency_spreadsheet(ctc_cutoff_Ang,
-                                            fname,
-                                            switch_off_Ang=switch_off_Ang,
-                                            write_interface=False,
-                                            by_atomtypes=True,
-                                            # AA_format="long",
-                                            split_label="join"
-                                            )
-            else:
-                with open(fname, 'w') as f:
-                    f.write(ihood.frequency_str_ASCII_file(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang))
+            ihood.frequency_table(ctc_cutoff_Ang,
+                                  fname,
+                                  switch_off_Ang=switch_off_Ang,
+                                  write_interface=False,
+                                  by_atomtypes=True,
+                                  # AA_format="long",
+                                  )
             print(fname)
 
     if figures and (plot_timedep or separate_N_ctcs):
@@ -1403,10 +1396,10 @@ def interface(
     print()
     print(ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))
     print()
-    dfs = ctc_grp_intf.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
-                                                            list_by_interface=True,
-                                                            return_as_dataframe=True,
-                                                            sort=sort_by_av_ctcs)
+    dfs = ctc_grp_intf.frequency_sum_per_residue_names(ctc_cutoff_Ang,
+                                                       list_by_interface=True,
+                                                       return_as_dataframe=True,
+                                                       sort=sort_by_av_ctcs)
     print(dfs[0].round({"freq":2}))
     print()
     print(dfs[1].round({"freq":2}))
@@ -1414,9 +1407,9 @@ def interface(
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir, graphic_ext)
     if savefiles:
         print("The following files have been created")
-        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort=sort_by_av_ctcs)
+        ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort=sort_by_av_ctcs)
         print(fn.fullpath_overall_excel)
-        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fn.fullpath_overall_dat)
+        ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_dat)
         print(fn.fullpath_overall_dat)
         ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fullpath_pdb, refgeom[0],
                                           # interface_sign=True
@@ -1849,18 +1842,13 @@ def sites(site_files,
             if savefiles:
                 _plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
                 print(fname)
-
                 if table_ext is not None and savefiles:
-                    if table_ext == 'xlsx':
-                        isite_nh.frequency_spreadsheet(ctc_cutoff_Ang, fname_no_time,
-                                                    write_interface=False,
-                                                    by_atomtypes=True,
-                                                    # AA_format="long",
-                                                    split_label="join"
-                                                    )
-                    else:
-                        with open(fname_no_time, 'w') as f:
-                            f.write(isite_nh.frequency_str_ASCII_file(ctc_cutoff_Ang))
+                    isite_nh.frequency_table(ctc_cutoff_Ang,
+                                          fname_no_time,
+                                          write_interface=False,
+                                          by_atomtypes=True,
+                                          # AA_format="long",
+                                          )
                     print(fname_no_time)
             _plt.close(myfig)
 
