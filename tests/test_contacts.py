@@ -1704,39 +1704,42 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                               label_type="blergh")
         _plt.close("all")
 
+class TestContactGroupTable(TestBaseClassContactGroup):
+
+    def test_excel(self):
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
+        with _TDir(suffix='_test_mdciao') as tmpdir:
+            CG.frequency_table(2.5, path.join(tmpdir, "test.xlsx"))
+
+    def test_dat(self):
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
+        with _TDir(suffix='_test_mdciao') as tmpdir:
+            CG.frequency_table(2.5, path.join(tmpdir, "test.dat"))
+
+
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
-    def test_frequency_spreadsheedt_just_works(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   neighbors_excluded=0)
-        with _TDir(suffix='_test_mdciao') as tmpdir:
-            CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"),
-                                     write_interface=False)
-
-    def test_frequency_spreadsheedt_breakdown(self):
+    def test_frequency_spreadsheet_just_works(self):
         CG = contacts.ContactGroup([self.cp1_w_atom_types,
-                                    self.cp2_w_atom_types])
+                                    self.cp2_w_atom_types],
+                                   interface_residxs=[[0], [1, 2]]
+                                   )
         with _TDir(suffix='_test_mdciao') as tmpdir:
-            CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"),
-                                     write_interface=False,
-                                     by_atomtypes=True
-                                     )
+            CG.frequency_table(2.5, path.join(tmpdir, "test.xlsx"),
+                               by_atomtypes=True)
 
-    def test_frequency_spreadsheet_raises_w_interface(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   neighbors_excluded=0)
-        with pytest.raises(AssertionError):
-            with _TDir(suffix='_test_mdciao') as tmpdir:
-                CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"))
 
 class TestContactGroupASCII(TestBaseClassContactGroup):
     def test_frequency_str_ASCII_file_str(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                                     self.cp2_w_anchor_and_frags_and_top],
                                    neighbors_excluded=0)
-        istr = CG.frequency_str_ASCII_file(2.5, by_atomtypes=False)
+
+        istr = CG.frequency_table(2.5,None)
         self.assertEqual(istr[0], "#")
         self.assertIsInstance(istr, str)
 
@@ -1747,7 +1750,7 @@ class TestContactGroupASCII(TestBaseClassContactGroup):
 
         with _TDir() as tmpdir:
             tfile = path.join(tmpdir,'freqfile.dat')
-            istr = CG.frequency_str_ASCII_file(2.5, by_atomtypes=False, ascii_file=tfile)
+            CG.frequency_table(2.5, tfile, by_atomtypes=False)
             from mdciao.utils.str_and_dict import freq_file2dict
             newfreq = freq_file2dict(tfile)
             _np.testing.assert_array_equal(list(newfreq.values()),CG.frequency_per_contact(2.5))
