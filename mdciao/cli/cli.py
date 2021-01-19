@@ -969,8 +969,7 @@ def residue_neighborhoods(residues,
 
     if figures:
         panelheight = 3
-        bar_fig = _figure_overall(n_cols, neighborhoods, ctc_cutoff_Ang,
-                                  n_panels=len(res_idxs_list),
+        bar_fig = _mdcplots.CG_panels(n_cols, neighborhoods, ctc_cutoff_Ang,
                                   distro=distro,
                                   short_AA_names=short_AA_names,
                                   plot_atomtypes=plot_atomtypes,
@@ -1049,81 +1048,6 @@ def residue_neighborhoods(residues,
             'ctcs_trajs': ctcs_trajs,
             'time_array': time_arrays,
             "neighborhoods": neighborhoods}
-
-def _figure_overall(n_cols, CG_list, ctc_cutoff_Ang,
-                    n_panels=None,
-                    distro=False,
-                    short_AA_names=False,
-                    plot_atomtypes=False,
-                    switch_off_Ang=0,
-                    panelsize=4,
-                    panelsize2font = 3.5):
-    r"""
-    Generates one figure containing the per-:obj:`~mdciao.contacts.ContactGroup` info as individual panels
-
-    Internally, prepares the subplots and iterates around plot_distance_distributions
-    or plot_neighborhood_freqs
-
-    Parameters
-    ----------
-    n_cols
-    CG_list
-    ctc_cutoff_Ang
-    n_panels
-
-    distro
-    short_AA_names
-    plot_atomtypes
-    switch_off_Ang
-
-    Returns
-    -------
-    fig : :obj:`~matplotlib.Figure`
-
-    """
-    if n_panels is None:
-        n_panels = len(CG_list)
-    n_cols = _np.min((n_cols, n_panels))
-    n_rows = _np.ceil(n_panels / n_cols).astype(int)
-
-    bar_fig, bar_ax = _plt.subplots(n_rows, n_cols,
-                                    sharex=True,
-                                    sharey=True,
-                                    figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
-
-    # One loop for the histograms
-    _rcParams["font.size"] = panelsize * panelsize2font
-    for jax, ihood in zip(bar_ax.flatten(),
-                          CG_list.values()):
-        if ihood is not None:
-            if distro:
-                ihood.plot_distance_distributions(nbins=20,
-                                                  jax=jax,
-                                                  label_fontsize_factor=panelsize2font / panelsize,
-                                                  shorten_AAs=short_AA_names,
-                                                  ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                  )
-            else:
-                ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
-                                              switch_off_Ang=switch_off_Ang,
-                                              jax=jax,
-                                              xmax=_np.max([ihood.n_ctcs for ihood in CG_list.values() if
-                                                            ihood is not None]),
-                                              label_fontsize_factor=panelsize2font / panelsize,
-                                              shorten_AAs=short_AA_names,
-                                              color=ihood.partner_fragment_colors,
-                                              plot_atomtypes=plot_atomtypes
-                                              )
-
-    if not distro:
-        non_nan_rightermost_patches = [[p for p in jax.patches if not _np.isnan(p.get_x())][-1] for jax in
-                                       bar_ax.flatten() if len(jax.patches) > 0]
-        xmax = _np.nanmax([p.get_x() + p.get_width() / 2 for p in non_nan_rightermost_patches]) + .5
-        [iax.set_xlim([-.5, xmax]) for iax in bar_ax.flatten()]
-    bar_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
-
-    return bar_fig
-
 
 def interface(
         trajectories,
@@ -1873,37 +1797,12 @@ def sites(site_files,
                                                #colors=[fragcolors[idx] for idx in idxs]
                                                ))
         site_as_gc[key] = _mdcctcs.ContactGroup(site_as_gc[key], name='site %s'%key)
-
-    panelheight = 3
-    n_cols = _np.min((4, len(sites)))
-    n_rows = _np.ceil(len(sites) / n_cols).astype(int)
-    panelsize = 4
-    panelsize2font = 3.5
-    histofig, histoax = _plt.subplots(n_rows, n_cols, sharex=True, sharey=True,
-                                      figsize=(n_cols * panelsize * 2, n_rows * panelsize), squeeze=False)
-
-    # One loop for the histograms
-    _rcParams["font.size"] = panelsize * panelsize2font
-    for jax, (site_name, isite_nh) in zip(histoax.flatten(),
-                                       site_as_gc.items()):
-        if distro:
-            isite_nh.plot_distance_distributions(nbins=20,
-                                                 jax=jax,
-                                                 label_fontsize_factor=panelsize2font / panelsize,
-                                                 shorten_AAs=short_AA_names,
-                                                 ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                 )
-        else:
-            isite_nh.plot_freqs_as_bars(ctc_cutoff_Ang, site_name,
-                                        jax=jax,
-                                        xlim=_np.max([ss["n_bonds"] for ss in sites]),
-                                        label_fontsize_factor=panelsize2font / panelsize,
-                                        shorten_AAs=short_AA_names,
-                                        plot_atomtypes=plot_atomtypes,
-                                        )
-        print()
-        print(isite_nh.frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}))
-        print()
+    panelheight=4
+    histofig = _mdcplots.CG_panels(4, site_as_gc, ctc_cutoff_Ang,
+                               distro=distro,
+                               short_AA_names=short_AA_names,
+                               plot_atomtypes=plot_atomtypes,
+                               verbose=True)
 
     if scheme!="closest-heavy":
         scheme_desc='%s.'%scheme
