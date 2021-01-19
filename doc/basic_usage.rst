@@ -8,7 +8,7 @@ Basic Usage
 Below you will find a very simple example of how to use `mdciao` from the command-line. Keep scrolling to the `Highlights`_ for more elaborate CLI-examples or visit the `example_notebooks`_ for API walkthroughs.
 
 .. note::
-   The simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples. You can also download `mdciao_example.zip <http://proteinformatics.org/mdciao/mdciao_example.zip>`_ and follow along.
+   **3D visualization**: the simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples. You can also download `mdciao_example.zip <http://proteinformatics.org/mdciao/mdciao_example.zip>`_ and follow along.
 
 This basic command::
 
