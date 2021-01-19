@@ -2120,6 +2120,8 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(items1[1], ["W32@5.50", 1 / 3])
         _np.testing.assert_array_equal(items1[2], ["G35", 1 / 3])
 
+    # smh repeated from testing ContactGroup itself,
+    # leaving it here
     def test_frequency_spreadsheet_w_interface(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
@@ -2128,7 +2130,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                   interface_residxs=[[3, 0, 4],
                                                      [2, 1, 5]])
         with _TDir(suffix='_test_mdciao') as tmpdir:
-            I.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"))
+            I.frequency_table(2.5, path.join(tmpdir, "test.xlsx"))
 
     def test_plot_frequency_sums_as_bars(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
