@@ -971,30 +971,61 @@ class FilenameGenerator(object):
 
     def __init__(self,output_desc,ctc_cutoff_Ang,output_dir,graphic_ext):
 
-        graphic_ext = graphic_ext.strip(".")
-        fname_wo_ext = "%s.overall@%2.1f_Ang" % (output_desc.replace(" ", "_"), ctc_cutoff_Ang)
-        self.base_fname = _path.join(output_dir, fname_wo_ext)
-        self.graphic_ext = graphic_ext.strip(".")
+        self._graphic_ext = graphic_ext.strip(".")
+        self._output_desc = output_desc
+        self._ctc_cutoff_Ang = ctc_cutoff_Ang
+        self._output_dir = output_dir
 
     @property
-    def fname_overall(self):
-        return ".".join([self.base_fname, self.graphic_ext])
+    def output_dir(self):
+        return self._output_dir
     @property
-    def fname_excel(self):
-        return ".".join([self.base_fname, "xlsx"])
+    def basename_wo_ext(self):
+        return "%s.overall@%2.1f_Ang" % (self.output_desc,
+                                         self.ctc_cutoff_Ang)
+    @property
+    def ctc_cutoff_Ang(self):
+        return self._ctc_cutoff_Ang
 
     @property
-    def fname_dat(self):
-        return ".".join([self.base_fname, "dat"])
+    def output_desc(self):
+        return self._output_desc.replace(" ","_")
 
     @property
-    def fname_pdb(self):
-        return ".".join([self.base_fname, "as_bfactors.pdb"])
+    def fullpath_overall_no_ext(self):
+        return _path.join(self.output_dir, self.basename_wo_ext)
 
     @property
-    def fname_mat(self):
-        return self.fname_overall.replace("overall@", "matrix@")
+    def graphic_ext(self):
+        return self._graphic_ext
 
     @property
-    def fname_flare(self):
-        return '.'.join([self.base_fname.replace("overall@", "flare@"), 'pdf'])
+    def fullpath_overall_fig(self):
+        return ".".join([self.fullpath_overall_no_ext, self.graphic_ext])
+
+    def fname_per_residue_table(self,istr, table_ext):
+        fname = '%s.%s@%2.1f_Ang.%s' % (self.output_desc,
+                                        istr.replace('*', ""),
+                                        self.ctc_cutoff_Ang,
+                                        table_ext)
+        return _path.join(self.output_dir, fname)
+
+    @property
+    def fullpath_overall_excel(self):
+        return ".".join([self.fullpath_overall_no_ext, "xlsx"])
+
+    @property
+    def fullpath_overall_dat(self):
+        return ".".join([self.fullpath_overall_no_ext, "dat"])
+
+    @property
+    def fullpath_pdb(self):
+        return ".".join([self.fullpath_overall_no_ext, "as_bfactors.pdb"])
+
+    @property
+    def fullpath_matrix(self):
+        return self.fullpath_overall_fig.replace("overall@", "matrix@")
+
+    @property
+    def fullpath_flare_pdf(self):
+        return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"), 'pdf'])
