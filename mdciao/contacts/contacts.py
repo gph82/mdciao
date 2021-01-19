@@ -2289,7 +2289,8 @@ class ContactGroup(object):
         shorten_AAs : bool, default is True
             Use E30 instead of GLU30
         list_by_interface : bool, default is False
-            group the freq_dict by interface residues
+            group the freq_dict by interface residues.
+            Only has an effect if self.is_interface
         return_as_dataframe : bool, default is False
             Return an :obj:`~pandas.DataFrame` with the column names labels and freqs
         fragsep : str, default is @
@@ -2305,9 +2306,8 @@ class ContactGroup(object):
         """
         freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)
 
-        if list_by_interface:
-            assert self.is_interface
-            freqs = [{idx:freqs[idx] for idx in iint} for iint in self.interface_residxs]
+        if list_by_interface and self.is_interface:
+                freqs = [{idx:freqs[idx] for idx in iint} for iint in self.interface_residxs]
         else:
             freqs = [freqs] #this way it is a list either way
 
@@ -2469,7 +2469,7 @@ class ContactGroup(object):
         fname : str or None
             Full path to the desired filename
             Spreadsheet extensions are currently
-            only '.xslx', all other extensions
+            only '.xlsx', all other extensions
             save to formatted ascii. `None`
             returns the formatted ascii string.
         switch_off_Ang : float, default is None,
@@ -2482,7 +2482,7 @@ class ContactGroup(object):
 
         """
 
-        if _path.splitext(str(fname))[1] in ["xlsx"]:
+        if _path.splitext(str(fname))[1] in [".xlsx"]:
             freq_dataframe_kwargs["split_label"] = False
             main_DF = self.frequency_dataframe(ctc_cutoff_Ang,
                                                switch_off_Ang=switch_off_Ang,
