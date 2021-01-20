@@ -993,21 +993,27 @@ class FilenameGenerator(object):
     r"""
     Generate per project filenames when you need them
 
-    This is a WIP to consolidate all filenaming
-    ATM it's only used by :obj:`mdciao.cli.interface`, but the
-    idea is to expand it to all cli methods, share more code
+    This is a WIP to consolidate all filenaming in one place,
+    s.t. all sanitizing and project-specific naming operations happen
+    here and not in the cli methods
 
-    A named tuple would've been enough if not for residue
-    specific naming
+    A named tuple would've been enough, but we need some
+     methods for dynamic naming (e.g. per-residue or per-traj)
 
     """
 
-    def __init__(self,output_desc,ctc_cutoff_Ang,output_dir,graphic_ext):
+    def __init__(self, output_desc, ctc_cutoff_Ang, output_dir, graphic_ext, table_ext, graphic_dpi, t_unit):
 
         self._graphic_ext = graphic_ext.strip(".")
-        self._output_desc = output_desc
+        self._output_desc = output_desc.strip(".")
         self._ctc_cutoff_Ang = ctc_cutoff_Ang
         self._output_dir = output_dir
+        self._graphic_dpi = graphic_dpi
+        self._t_unit = t_unit
+        if str(table_ext).lower() != 'none' and str(table_ext).lower().strip(".") in ["dat", "txt", "xlsx", "ods"]:
+            self._table_ext = str(table_ext).lower().strip(".")
+        else:
+            self._table_ext = None
 
     @property
     def output_dir(self):
@@ -1033,18 +1039,29 @@ class FilenameGenerator(object):
         return self._graphic_ext
 
     @property
+    def graphic_dpi(self):
+        return self._graphic_dpi
+    @property
+    def table_ext(self):
+        return self._table_ext
+
+    @property
+    def t_unit(self):
+        return self._t_unit
+    @property
     def fullpath_overall_fig(self):
         return ".".join([self.fullpath_overall_no_ext, self.graphic_ext])
 
-    def fname_per_residue_table(self,istr, table_ext):
+    def fname_per_residue_table(self,istr):
+        assert self.table_ext is not None
         fname = '%s.%s@%2.1f_Ang.%s' % (self.output_desc,
                                         istr.replace('*', "").replace(" ","_"),
                                         self.ctc_cutoff_Ang,
-                                        table_ext)
+                                        self.table_ext)
         return _path.join(self.output_dir, fname)
 
-    def fname_per_site_table(self, istr, table_ext):
-        return self.fname_per_residue_table(istr, table_ext)
+    def fname_per_site_table(self, istr):
+        return self.fname_per_residue_table(istr)
 
 
     def fname_timetrace_fig(self, surname):
