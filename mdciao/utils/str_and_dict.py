@@ -963,6 +963,32 @@ def defrag_key(key, defrag="@", sep="-"):
     """
     return sep.join([kk.split(defrag,1)[0].strip(" ") for kk in splitlabel(key,sep)])
 
+def df_str_formatters(df):
+    r"""
+    Return formatters for :obj:`~pandas.DataFrame.to_string'
+
+    In principle, this should be solved by
+    https://github.com/pandas-dev/pandas/issues/13032,
+    but I cannot get it to work
+
+    Parameters
+    ----------
+    df : :obj:`~pandas.DataFrame`
+
+    Returns
+    -------
+    formatters : dict
+        Keyed with :obj:`df`-keys
+        and valued with lambdas
+        s.t. formatters[key][istr]=formatted_istr
+
+    """
+    formatters = {}
+    for key in df.keys():
+        fmt = "%%-%us"%max([len(ii)+1 for ii in df[key]])
+        formatters[key]=lambda istr : fmt%istr
+    return formatters
+
 class FilenameGenerator(object):
     r"""
     Generate per project filenames when you need them
