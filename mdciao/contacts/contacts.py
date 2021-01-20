@@ -2479,7 +2479,9 @@ class ContactGroup(object):
 
         Returns
         -------
-
+        table : None or str
+            If :obj:`fname` is none, then return
+            the table as formatted string, using
         """
 
         if _path.splitext(str(fname))[1] in [".xlsx"]:
@@ -2601,8 +2603,9 @@ class ContactGroup(object):
         idf = idf.round({"freq": 2, "sum": 2})
         istr = idf.to_string(index=False,
                              header=True,
-                             justify='left',
-                             # justify = 'right'
+                             #How to justify the column labels (https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_string.html)
+                             justify="center",
+                             formatters=_mdcu.str_and_dict.df_str_formatters(idf[[key for key in ["by_atomtypes","label"] if key in idf.keys()]])
                              )
         istr = '#%s\n'%istr[1:]
         if ascii_file is None:
