@@ -1057,7 +1057,7 @@ def interface(
         sort_by_av_ctcs=True,
         scheme="closest-heavy",
         separate_N_ctcs=False,
-        table_ext=None,
+        table_ext="dat",
         title=None,
         min_freq=.10,
         contact_matrix=True,
@@ -1218,7 +1218,7 @@ def interface(
     separate_N_ctcs : bool, default is False
         Separate the plot with the total number contacts
         from the time-trace plot.
-    table_ext : NoneType, default is None
+    table_ext : str, default is "dat"
         The extension (=format) of the saved tables
     title : NoneType, default is None
         Name of the system. Used for figure titles (not
@@ -1530,7 +1530,7 @@ def sites(site_files,
           ylim_Ang=10,
           n_jobs=1,
           accept_guess=False,
-          table_ext=None,
+          table_ext="dat",
           output_desc="sites",
           plot_atomtypes=False,
           distro=False,
@@ -1673,9 +1673,8 @@ def sites(site_files,
     accept_guess : bool, default is False
         Accept mdciao's guesses regarding fragment
         identification using nomenclature labels
-    table_ext : NoneType, default is None
+    table_ext : str, default is dat
         Extension for tabled files (.dat, .txt, .xlsx).
-        Default is None, which does not write anything.
     output_desc :
         Descriptor for output files.
     plot_atomtypes : bool, default is False
