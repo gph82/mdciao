@@ -1,6 +1,7 @@
 import mdtraj as md
 import unittest
 from mdciao.filenames import filenames
+from mdciao.utils import str_and_dict
 test_filenames : filenames = filenames()
 import pytest
 
@@ -97,32 +98,19 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
     def test_works(self):
         with _TDir(suffix="_test_mdciao") as tmpdir:
-            myfig = self.ctc_grp.plot_timedep_ctcs(3,
-                                                   ctc_cutoff_Ang=3,
-                                                   plot_N_ctcs=True,
-                                                   pop_N_ctcs=False,
-                                                   skip_timedep=False,
-                                                   )
-
-            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp,
-                                                           myfig, 3,
-                                                                   "test_neigh", "png",
-                                                           output_dir=tmpdir,
-                                                           )
+            myfig = self.ctc_grp.plot_timedep_ctcs(3,ctc_cutoff_Ang=3)
+            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png",None,150,"ps")
+            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig)
         _plt.close("all")
 
     def test_separate_N_ctcs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             myfig = self.ctc_grp.plot_timedep_ctcs(3,
                                                    ctc_cutoff_Ang=3,
-                                                   plot_N_ctcs=True,
                                                    pop_N_ctcs=True,
-                                                   skip_timedep=False,
                                                    )
-            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp,
-                                                           myfig, 3,
-                                                                   "test_neigh", "png",
-                                                           output_dir=tmpdir,
+            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png",None,150,"ps")
+            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp,fn,myfig,
                                                            separate_N_ctcs=True,
                                                            )
             _plt.close("all")
@@ -130,15 +118,20 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             myfig = self.ctc_grp.plot_timedep_ctcs(3,
                                                    ctc_cutoff_Ang=3,
-                                                   plot_N_ctcs=True,
                                                    pop_N_ctcs=True,
                                                    skip_timedep=True,
-
                                                    )
-            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp,
-                                                           myfig, 3,
-                                                                   "test_neigh", "png",
-                                                           output_dir=tmpdir,
+            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png",None,150,"ps")
+            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig,
+                                                           separate_N_ctcs=True,
+                                                           plot_timedep=False,
+                                                           )
+            _plt.close("all")
+
+    def test_no_files(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            fn = str_and_dict.FilenameGenerator("test_neig", 3, tmpdir, "png", None, 150, "ps")
+            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, [],
                                                            separate_N_ctcs=True,
                                                            plot_timedep=False,
                                                            )
