@@ -308,59 +308,47 @@ def _parse_coloring_options(color_option, n,
     return colors
 
 # TODO Consider putting the figure instantiation also here
-def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
+def _manage_timedep_ploting_and_saving_options(ctc_grp,
+                                               fn,
                                                myfig,
-                                               ctc_cutoff_Ang,
-                                               output_desc,
-                                               graphic_ext,
-                                               output_dir=".",
-                                               graphic_dpi=150,
                                                plot_timedep=True,
                                                separate_N_ctcs=False,
-                                               table_ext=".dat",
-                                               t_unit="ps",
                                                title=None,
-                                               savefiles=True,
+                                               savefiles=True
                                                ):
     r"""
-    CLTs share this part and have the same options to save files of timedep plots
+    Towards a common function for saving/managing timedep files
+    for neighborhoods, sites, and interfaces
 
     Parameters
     ----------
-    ctc_grp
-    myfig
-    ctc_cutoff_Ang
-    output_desc
-    graphic_ext
-    output_dir
-    graphic_dpi
-    plot_timedep
-    separate_N_ctcs
-    table_ext
-    t_unit
-
+    ctc_grp : :obj:`mdciao.contacts.ContactGroup`
+    fn : :obj:`mdciao.utils.str_and_dict.FilenameGenerator`
+    myfig :obj:`matplotlib.Figure`
+    plot_timedep : bool, default is True
+    separate_N_ctcs : bool, defaul tis True
+    t_unit : str or None, default is None
+    savefiles : bool, default is True
     Returns
     -------
 
     """
-    firstname = output_desc.replace(" ","_")
     lastname = ""
     # TODO manage interface and sites appropiately
     if ctc_grp.is_neighborhood:
         lastname = "%s"%ctc_grp.anchor_res_and_fragment_str.replace('*', "")
 
     if title is None:
-        title = output_desc #TODO consider using lastname
+        title = fn.output_desc #TODO consider using lastname
+    fname_timedep = ('%s.%s.time_trace@%2.1f_Ang.%s' % (fn.output_desc,
+                                                        lastname,
+                                                        fn.ctc_cutoff_Ang,
+                                                        fn.graphic_ext)).replace("..", ".")
 
-    fname_timedep = ('%s.%s.time_trace@%2.1f_Ang.%s' % (firstname,
-                                                           lastname,
-                                                           ctc_cutoff_Ang,
-                                                           graphic_ext.strip("."))).replace("..", ".")
-
-    fname_N_ctcs = ('%s.%s.time_trace@%2.1f_Ang.N_ctcs.%s' % (firstname,
-                                                                 lastname,
-                                                                 ctc_cutoff_Ang,
-                                                                 graphic_ext.strip("."))).replace("..", ".")
+    fname_N_ctcs = ('%s.%s.time_trace@%2.1f_Ang.N_ctcs.%s' % (fn.output_desc,
+                                                              lastname,
+                                                              fn.ctc_cutoff_Ang,
+                                                              fn.graphic_ext)).replace("..", ".")
 
 
     # Differentiate the type of figures we can have
@@ -376,27 +364,19 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
 
     if savefiles:
         for iname, ifig in zip(fnames, myfig):
-            fname = _path.join(output_dir, iname)
+            fname = _path.join(fn.output_dir, iname)
             ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
-            ifig.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
+            ifig.savefig(fname, bbox_inches="tight", dpi=fn.graphic_dpi)
             _plt.close(ifig)
             print(fname)
 
         # even if no figures were produced, the files should still be saved
         if plot_timedep:
-            ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True)
+            ctc_grp.save_trajs(fn.output_desc, fn.table_ext, fn.output_dir, t_unit=fn.t_unit, verbose=True)
         if separate_N_ctcs:
-            ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True,
-                               ctc_cutoff_Ang=ctc_cutoff_Ang)
+            ctc_grp.save_trajs(fn.output_desc, fn.table_ext, fn.output_dir, t_unit=fn.t_unit, verbose=True,
+                               ctc_cutoff_Ang=fn.ctc_cutoff_Ang)
     print()
-
-#TODO introduce coverage exclusion labels
-# like https://coverage.readthedocs.io/en/v4.5.x/excluding.html
-# or refactor these methods into another test branch
-"""
-def _cmdstr2cmdtuple(cmd):
-    return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
-"""
 
 def _color_schemes(istr):
     r"""
@@ -811,14 +791,9 @@ def residue_neighborhoods(residues,
         return None
 
     _offer_to_create_dir(output_dir)
-
-    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories,topology)
-
-    # String comparison to allow for command line argparse-use directly
-    if str(table_ext).lower() != 'none' and str(table_ext).lower().strip(".") in ["dat", "txt", "xlsx"]:
-        table_ext = str(table_ext).lower().strip(".")
-    else:
-        table_ext = None
+    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories, topology)
+    fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
+                                              graphic_ext, table_ext, graphic_dpi, t_unit)
 
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
@@ -965,8 +940,6 @@ def residue_neighborhoods(residues,
         print("The following residues have no neighbors at %2.1f Ang, their frequency histograms will be empty"%ctc_cutoff_Ang)
         print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
 
-    fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir,graphic_ext)
-
     if figures:
         panelheight = 3
         bar_fig = _mdcplots.CG_panels(n_cols, neighborhoods, ctc_cutoff_Ang,
@@ -982,23 +955,16 @@ def residue_neighborhoods(residues,
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     # TODO undecided about this
     # TODO this code is repeated in sites...can we abstract this oafa?
-    if table_ext is not None and savefiles:
+    if fn.table_ext is not None and savefiles:
         for ihood in neighborhoods.values():
-            fname=fn.fname_per_residue_table(ihood.anchor_res_and_fragment_str, table_ext)
-            #TODO can't the frequency_spreadsheet handle this now?
-            # TODO this code is repeated in sites...can we abstract this oafa?
-            if table_ext=='xlsx':
-                ihood.frequency_spreadsheet(ctc_cutoff_Ang,
-                                            fname,
-                                            switch_off_Ang=switch_off_Ang,
-                                            write_interface=False,
-                                            by_atomtypes=True,
-                                            # AA_format="long",
-                                            split_label="join"
-                                            )
-            else:
-                with open(fname, 'w') as f:
-                    f.write(ihood.frequency_str_ASCII_file(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang))
+            fname=fn.fname_per_residue_table(ihood.anchor_res_and_fragment_str)
+            ihood.frequency_table(ctc_cutoff_Ang,
+                                  fname,
+                                  switch_off_Ang=switch_off_Ang,
+                                  write_interface=False,
+                                  by_atomtypes=True,
+                                  # AA_format="long",
+                                  )
             print(fname)
 
     if figures and (plot_timedep or separate_N_ctcs):
@@ -1031,17 +997,11 @@ def residue_neighborhoods(residues,
             title = _mdcu.str_and_dict.latex_superscript_fragments(title)
             if n_nearest >0:
                 title += "\n%u nearest bonded neighbors excluded" % (n_nearest)
-            _manage_timedep_ploting_and_saving_options(ihood, myfig,
-                                                       ctc_cutoff_Ang,
-                                                       output_desc,
-                                                       graphic_ext,
-                                                       output_dir=output_dir,
-                                                       graphic_dpi=graphic_dpi,
+            _manage_timedep_ploting_and_saving_options(ihood,fn,myfig,
                                                        plot_timedep=plot_timedep,
-                                                       table_ext=table_ext,
-                                                       t_unit=t_unit,
                                                        separate_N_ctcs=separate_N_ctcs,
-                                                       title=title
+                                                       title=title,
+                                                       savefiles=savefiles
                                                        )
 
     return {"ctc_idxs": ctc_idxs_small,
@@ -1288,11 +1248,11 @@ Defaults to None which will prompt the user of
     if str(title).lower()=="none":
         title = output_desc
 
-    output_desc = output_desc.strip(".")
     _offer_to_create_dir(output_dir)
-    graphic_ext = graphic_ext.strip(".")
-
     xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories,topology)
+    fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir,
+                                              graphic_ext, table_ext, graphic_dpi,t_unit)
+
     print("Will compute contact frequencies for trajectories:\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
@@ -1405,20 +1365,19 @@ Defaults to None which will prompt the user of
     print()
     print(ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))
     print()
-    dfs = ctc_grp_intf.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
-                                                            list_by_interface=True,
-                                                            return_as_dataframe=True,
-                                                            sort=sort_by_av_ctcs)
+    dfs = ctc_grp_intf.frequency_sum_per_residue_names(ctc_cutoff_Ang,
+                                                       list_by_interface=True,
+                                                       return_as_dataframe=True,
+                                                       sort=sort_by_av_ctcs)
     print(dfs[0].round({"freq":2}))
     print()
     print(dfs[1].round({"freq":2}))
 
-    fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir, graphic_ext)
     if savefiles:
         print("The following files have been created")
-        ctc_grp_intf.frequency_spreadsheet(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort=sort_by_av_ctcs)
+        ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort=sort_by_av_ctcs)
         print(fn.fullpath_overall_excel)
-        ctc_grp_intf.frequency_str_ASCII_file(ctc_cutoff_Ang, ascii_file=fn.fullpath_overall_dat)
+        ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_dat)
         print(fn.fullpath_overall_dat)
         ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fullpath_pdb, refgeom[0],
                                           # interface_sign=True
@@ -1519,18 +1478,11 @@ Defaults to None which will prompt the user of
                                                    shorten_AAs=short_AA_names,
                                                    skip_timedep=not plot_timedep,
                                                    t_unit=t_unit)
-            if savefiles:
-                _manage_timedep_ploting_and_saving_options(ctc_grp_intf, myfig,
-                                                           ctc_cutoff_Ang,
-                                                           output_desc,
-                                                           graphic_ext,
-                                                           output_dir=output_dir,
-                                                           graphic_dpi=graphic_dpi,
-                                                           plot_timedep=plot_timedep,
-                                                           table_ext=table_ext,
-                                                           t_unit=t_unit,
-                                                           separate_N_ctcs=separate_N_ctcs
-                                                           )
+            _manage_timedep_ploting_and_saving_options(ctc_grp_intf, fn, myfig,
+                                                       plot_timedep=plot_timedep,
+                                                       separate_N_ctcs=separate_N_ctcs,
+                                                       savefiles=savefiles
+                                                       )
             if len(myfig)==0:
                 print("No figures of time-traces were produced because only 1 frame was provided")
 
@@ -1731,14 +1683,9 @@ def sites(site_files,
 
     ylim_Ang = _np.float(ylim_Ang)
     _offer_to_create_dir(output_dir)
-
-    # Prepare naming
-    output_desc = output_desc.rstrip(".")
-    if table_ext is not None:
-        table_ext = table_ext.strip(".")
-    graphic_ext = graphic_ext.strip(".")
-
-    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories,topology)
+    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories, topology)
+    fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
+                                              graphic_ext, table_ext, graphic_dpi, t_unit)
 
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
         "\n ".join([_mdcsites.site2str(ss) for ss in site_files]),
@@ -1811,26 +1758,23 @@ def sites(site_files,
     else:
         scheme_desc=''
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
-    fname = _path.join(output_dir, fname)
     if savefiles:
-        histofig.savefig(fname, dpi=graphic_dpi)
+        histofig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
         print("The following files have been created")
-        print(fname)
+        print(fn.fullpath_overall_fig)
     _plt.close(histofig)
+
     for site_name, isite_nh in site_as_gc.items():
-        fname_no_time = '%s.%s@%2.1f_Ang.%s' % (output_desc,
-                                        site_name.strip().replace(" ","_"),
-                                        ctc_cutoff_Ang,
-                                        table_ext)
-        fname_no_time = _path.join(output_dir, fname_no_time)
+        if fn.table_ext is not None:
+            isite_nh.frequency_table(ctc_cutoff_Ang,
+                                  fn.fname_per_site_table(site_name),
+                                  write_interface=False,
+                                  by_atomtypes=True,
+                                  # AA_format="long",
+                                  )
+            print(fn.fname_per_site_table(site_name))
 
-
-        fname = '%s.%s.time_trace@%2.1f_Ang.%s' % (output_desc,
-                                        site_name.strip().replace(" ","_"),
-                                        ctc_cutoff_Ang,
-                                        graphic_ext)
-        fname = _path.join(output_dir,fname)
+    for site_name, isite_nh in site_as_gc.items():
         myfig = isite_nh.plot_timedep_ctcs(panelheight,
                                            color_scheme=_color_schemes(curve_color),
                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
@@ -1849,26 +1793,59 @@ def sites(site_files,
             # One title for all axes on top
             myfig.axes[0].set_title("site: %s" % (isite["name"]))
             if savefiles:
-                _plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-                print(fname)
-
-                if table_ext is not None and savefiles:
-                    if table_ext == 'xlsx':
-                        isite_nh.frequency_spreadsheet(ctc_cutoff_Ang, fname_no_time,
-                                                    write_interface=False,
-                                                    by_atomtypes=True,
-                                                    # AA_format="long",
-                                                    split_label="join"
-                                                    )
-                    else:
-                        with open(fname_no_time, 'w') as f:
-                            f.write(isite_nh.frequency_str_ASCII_file(ctc_cutoff_Ang))
-                    print(fname_no_time)
-            _plt.close(myfig)
+                _plt.savefig(fn.fname_timetrace_fig(site_name), bbox_inches="tight", dpi=graphic_dpi)
+                print(fn.fname_timetrace_fig(site_name))
+                _plt.close(myfig)
 
     return site_as_gc
 
-def compare(file_dict, graphic_ext=".pdf", output_desc="freq_comparison",**kwargs):
+def compare(file_dict, graphic_ext=".pdf", output_desc="freq_comparison", pop=False, **kwargs):
+    r"""
+
+    Compare contact frequencies across different sets of data
+
+
+    Parameters
+    ----------
+    file_dict : iterable (list or dict)
+        The contact groups.
+        If dict, then the keys will be used as names
+        for the contact groups, e.g. "WT", "MUT" etc.
+        If list, then  the keys will be auto-generated.
+        The values can be:
+          * :obj:`~mdciao.contacts.ContactGroup` objects
+          * dictionaries where the keys are residue-pairs,
+            one letter-codes, no fragment info,
+            as in :obj:`mdciao.contacts.ContactGroup.ctc_labels_short`
+            and the values are contact frequencies
+          * files generated by (or in the same format as)
+            :obj:`~mdciao.contacts.ContactGroup.frequency_table`
+
+            * ascii-files with the contact labels in the second and frequencies in
+              the third column, see :obj:`~mdciao.contacts.ContactGroup.frequency_str_ASCII_file`
+            * .xlsx files with the header in the second row,
+              containing at least the column-names "label" and "freqs", see
+              :obj:`~mdciao.contacts.ContactGroup.frequency_spreadsheet`
+
+
+        Note
+        ----
+        If a :obj:`ContactGroup` is passed, then a :obj:`ctc_cutoff_Ang`
+        needs to be passed along, otherwise frequencies cannot be computed
+        on-the-fly : dict
+    graphic_ext : str, default is ".pdf"
+        The extension for figures
+    output_desc : str, default is 'freq_comparison'
+        Descriptor for output files.
+    pop : bool, default is True
+    kwargs : dict
+        Optional arguments for
+        :obj:`~mdciao.plots.compare_groups_of_contacts`
+
+    Returns
+    -------
+
+    """
     myfig, freqs, plotted_freqs = _mdcplots.compare_groups_of_contacts(file_dict, **kwargs)
     myfig.tight_layout()
 
@@ -1905,7 +1882,9 @@ def compare(file_dict, graphic_ext=".pdf", output_desc="freq_comparison",**kwarg
                                                                )
     writer.save()
     print(fname_excel)
-    #_plt.show()
+    if pop:
+        myfig.tight_layout()
+        _plt.show()
 
     return myfig, freqs, plotted_freqs
 

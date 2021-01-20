@@ -304,8 +304,8 @@ def _parser_add_graphic_dpi(parser):
 
 def _parser_add_table_ext(parser):
     parser.add_argument('-tx','--table_ext', type=str,
-                        help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
-                        default=None)
+                        help="Extension for tabled files (.dat, .txt, .xlsx, .ods). Default is '.dat'",
+                        default="dat")
 
 def _parser_add_write_to_disk(parser):
     parser.set_defaults(write_to_disk=False)
@@ -720,15 +720,14 @@ def parser_for_compare_neighborhoods():
                         help='A replacement dictionary, to be able to re-label '
                              'residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes '
                              'all GLUs to ARGs and all LYS to PHEs')
-    parser.add_argument("-t", "--title", type=str, default=None,
-                        help='Title of the plot. Default is None which will '
-                             'take mdciao.plots.compare_groups_of_contacts"s default.')
-    parser.add_argument("-p","--pop", dest="plot",
+    parser.add_argument("-t", "--title", type=str, default='comparison',
+                        help='Title of the plot. Default is "comparison"')
+    parser.add_argument("-p","--pop-up", dest="pop",
                         help="pop-up an interactive figure before closing. "
                              "Default is not to pop-up but directly save to file",
                         action="store_true",
                         )
-    parser.set_defaults(plot=False)
+    parser.set_defaults(pop=False)
     _parser_add_output_desc(parser,"freq_comparison")
     _parser_add_graphic_ext(parser)
     return parser

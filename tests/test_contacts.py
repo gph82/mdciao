@@ -24,6 +24,7 @@ from scipy.spatial.distance import cdist
 from mdciao.filenames import filenames
 import pytest
 from mdciao import contacts
+from pandas import DataFrame as _DF
 import pickle
 
 from mdciao.fragments import get_fragments
@@ -1317,7 +1318,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_residue_name(self):
         CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names_dict(2)
+        freq_dict = CP.frequency_sum_per_residue_names(2)[0]
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
@@ -1325,7 +1326,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_residue_name_no_sort(self):
         CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names_dict(2, sort=False)
+        freq_dict = CP.frequency_sum_per_residue_names(2, sort=False)[0]
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
@@ -1333,19 +1334,15 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_residue_name_dataframe(self):
         CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names_dict(2,
-                                                            return_as_dataframe=True)
+        freq_dict = CP.frequency_sum_per_residue_names(2,
+                                                       return_as_dataframe=True)[0]
         assert len(freq_dict) == 3
+        assert isinstance(freq_dict,_DF)
         _np.testing.assert_array_equal(freq_dict["label"].array, ["E30@fragA", "V31@fragB", "W32@fragC"])
         _np.testing.assert_array_equal(freq_dict["freq"].array, [2 / 5 + 1 / 5,
                                                                  2 / 5,
                                                                  1 / 5])
 
-    def test_frequency_per_residue_name_interface_raises(self):
-        CP = self.CG
-        with pytest.raises(AssertionError):
-            CP.frequency_sum_per_residue_names_dict(2,
-                                                    list_by_interface=True)
 
     def test_frequency_dict_by_consensus_labels_fails(self):
         CP = self.CG
@@ -1460,8 +1457,8 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(table["freq"].array, [3 / 4, 3 / 4])
         _np.testing.assert_array_equal(table["label"].array, ["E30-V31", "E30-W32"])
         _np.testing.assert_array_equal(table["sum"].array, [3 / 4, 3 / 4 + 3 / 4])
-        _np.testing.assert_equal(table["by_atomtypes"][0], "66% BB-BB, 33% BB-SC")
-        _np.testing.assert_equal(table["by_atomtypes"][1], "66% BB-SC, 33% SC-BB")
+        _np.testing.assert_equal(table["by_atomtypes"][0], " 66% BB-BB,  33% BB-SC")
+        _np.testing.assert_equal(table["by_atomtypes"][1], " 66% BB-SC,  33% SC-BB")
 
 class TestContactGroupPlots(TestBaseClassContactGroup):
 
@@ -1582,8 +1579,8 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp1_w_atom_types_0_1_switched])
         df = CG._get_hatches_for_plotting(3.5)
         # This checks that the inversion ["BB-SC"]-["SC-BB"] takes place when needed
-        _np.testing.assert_array_equal(df.values[0, :], [2 / 3, 0, 1 / 3, 0])
-        _np.testing.assert_array_equal(df.values[1, :], [2 / 3, 0, 1 / 3, 0])
+        _np.testing.assert_array_equal(df.values[0, :], [2 / 3, 0, 1 / 3, 0, 0, 0, 0, 0])
+        _np.testing.assert_array_equal(df.values[1, :], [2 / 3, 0, 1 / 3, 0, 0, 0, 0, 0])
 
 
     def test_plot_timedep_ctcs(self):
@@ -1664,11 +1661,6 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
-    def test_plot_frequency_sums_as_bars_no_interface_raises(self):
-        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        with pytest.raises(AssertionError):
-            jax = CG.plot_frequency_sums_as_bars(2.0, "test", list_by_interface=True)
-
     def test_plot_interface_frequency_matrix(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
@@ -1677,7 +1669,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                    self.cp5_wtop_and_wo_conslabs],
                                   interface_residxs=[[0, 3, 5], [1, 2, 4]])
         print(I.frequency_dataframe(2))
-        print(I.frequency_sum_per_residue_names_dict(2))
+        print(I.frequency_sum_per_residue_names(2))
         print(I.interface_labels_consensus)
         ifig, iax = I.plot_interface_frequency_matrix(2,
                                                       label_type="best")
@@ -1693,7 +1685,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                    self.cp5_wtop_and_wo_conslabs],
                                   interface_residxs=[[0, 3, 5], [1, 2, 4]])
         print(I.frequency_dataframe(2))
-        print(I.frequency_sum_per_residue_names_dict(2))
+        print(I.frequency_sum_per_residue_names(2))
         print(I.interface_labels_consensus)
         ifig, iax = I.plot_interface_frequency_matrix(2,
                                                       label_type="consensus")
@@ -1704,39 +1696,42 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                               label_type="blergh")
         _plt.close("all")
 
+class TestContactGroupTable(TestBaseClassContactGroup):
+
+    def test_excel(self):
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
+        with _TDir(suffix='_test_mdciao') as tmpdir:
+            CG.frequency_table(2.5, path.join(tmpdir, "test.xlsx"))
+
+    def test_dat(self):
+        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
+                                    self.cp2_w_anchor_and_frags_and_top],
+                                   neighbors_excluded=0)
+        with _TDir(suffix='_test_mdciao') as tmpdir:
+            CG.frequency_table(2.5, path.join(tmpdir, "test.dat"))
+
+
 class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
 
-    def test_frequency_spreadsheedt_just_works(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   neighbors_excluded=0)
-        with _TDir(suffix='_test_mdciao') as tmpdir:
-            CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"),
-                                     write_interface=False)
-
-    def test_frequency_spreadsheedt_breakdown(self):
+    def test_frequency_spreadsheet_just_works(self):
         CG = contacts.ContactGroup([self.cp1_w_atom_types,
-                                    self.cp2_w_atom_types])
+                                    self.cp2_w_atom_types],
+                                   interface_residxs=[[0], [1, 2]]
+                                   )
         with _TDir(suffix='_test_mdciao') as tmpdir:
-            CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"),
-                                     write_interface=False,
-                                     by_atomtypes=True
-                                     )
+            CG.frequency_table(2.5, path.join(tmpdir, "test.xlsx"),
+                               by_atomtypes=True)
 
-    def test_frequency_spreadsheet_raises_w_interface(self):
-        CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
-                                    self.cp2_w_anchor_and_frags_and_top],
-                                   neighbors_excluded=0)
-        with pytest.raises(AssertionError):
-            with _TDir(suffix='_test_mdciao') as tmpdir:
-                CG.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"))
 
 class TestContactGroupASCII(TestBaseClassContactGroup):
     def test_frequency_str_ASCII_file_str(self):
         CG = contacts.ContactGroup([self.cp1_w_anchor_and_frags_and_top,
                                     self.cp2_w_anchor_and_frags_and_top],
                                    neighbors_excluded=0)
-        istr = CG.frequency_str_ASCII_file(2.5, by_atomtypes=False)
+
+        istr = CG.frequency_table(2.5,None)
         self.assertEqual(istr[0], "#")
         self.assertIsInstance(istr, str)
 
@@ -1747,7 +1742,7 @@ class TestContactGroupASCII(TestBaseClassContactGroup):
 
         with _TDir() as tmpdir:
             tfile = path.join(tmpdir,'freqfile.dat')
-            istr = CG.frequency_str_ASCII_file(2.5, by_atomtypes=False, ascii_file=tfile)
+            CG.frequency_table(2.5, tfile, by_atomtypes=False)
             from mdciao.utils.str_and_dict import freq_file2dict
             newfreq = freq_file2dict(tfile)
             _np.testing.assert_array_equal(list(newfreq.values()),CG.frequency_per_contact(2.5))
@@ -2090,9 +2085,9 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                                      [2, 1, 5]])
         print(I.frequency_dataframe(2))
         print(I.interface_residxs)
-        idicts = I.frequency_sum_per_residue_names_dict(2,
-                                                        sort=False,
-                                                        list_by_interface=True)
+        idicts = I.frequency_sum_per_residue_names(2,
+                                                   sort=False,
+                                                   list_by_interface=True)
 
         assert len(idicts) == 2
         items0, items1 = list(idicts[0].items()), list(idicts[1].items())
@@ -2112,8 +2107,8 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                   interface_residxs=[[3, 0, 4],
                                                      [2, 1, 5]])
 
-        idicts = I.frequency_sum_per_residue_names_dict(2,
-                                                        list_by_interface=True)
+        idicts = I.frequency_sum_per_residue_names(2,
+                                                   list_by_interface=True)
 
         assert len(idicts) == 2
         items0, items1 = list(idicts[0].items()), list(idicts[1].items())
@@ -2125,6 +2120,8 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(items1[1], ["W32@5.50", 1 / 3])
         _np.testing.assert_array_equal(items1[2], ["G35", 1 / 3])
 
+    # smh repeated from testing ContactGroup itself,
+    # leaving it here
     def test_frequency_spreadsheet_w_interface(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
@@ -2133,7 +2130,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                   interface_residxs=[[3, 0, 4],
                                                      [2, 1, 5]])
         with _TDir(suffix='_test_mdciao') as tmpdir:
-            I.frequency_spreadsheet(2.5, path.join(tmpdir, "test.xlsx"))
+            I.frequency_table(2.5, path.join(tmpdir, "test.xlsx"))
 
     def test_plot_frequency_sums_as_bars(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
