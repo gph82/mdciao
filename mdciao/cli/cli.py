@@ -774,6 +774,9 @@ def residue_neighborhoods(residues,
         Save the frequency tables
     savetrajs : bool, default is False
         Save the timetraces
+    no_disk : bool, default is False
+        If True, don't save any files at all:
+        figs, tables, trajs, nomenclature
     figures : bool, default is True
         Draw figures
     pre_computed_distance_matrix : (m,m) np.ndarray, default is None
