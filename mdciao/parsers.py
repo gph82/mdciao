@@ -108,11 +108,17 @@ def _parser_add_chunk(parser,help="Trajectories are read in chunks of this size.
                         default=default)
 
 def _parser_add_time_traces(parser):
-    parser.add_argument('--time-trace', dest="plot_timedep", action='store_true',
-                        help='Plot time-traces of the contacts, default is True')
     parser.add_argument('--no-time-trace', dest="plot_timedep", action='store_false',
+                        help="Dont' plot the time-traces of the contacts. Default is to plot them."
                        )
     parser.set_defaults(plot_timedep=True)
+
+def _parser_add_savetrajs(parser):
+    parser.add_argument("-st","--save-trajs", dest="savetrajs", action='store_true',
+                         help="Save trajectory data, default is not to save it.")
+    parser.set_defaults(savetrajs=False)
+    pass
+
 
 def _parser_add_distro(parser):
     parser.add_argument('-d', '--distribution', dest="distro", action='store_true',
@@ -413,11 +419,6 @@ def parser_for_rn():
     parser.set_defaults(sort=True)
 
     _parser_add_pbc(parser)
-
-    parser.add_argument('--ask_fragment', dest='ask', action='store_true',
-                        help="Interactively ask for fragment assignment when input matches more than one resSeq")
-    parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
-    parser.set_defaults(ask=True)
     _parser_add_table_ext(parser)
     _parser_add_graphic_ext(parser)
 
@@ -433,6 +434,7 @@ def parser_for_rn():
     _parser_add_short_AA_names(parser)
     #_parser_add_no_fragfrag(parser)
     _parser_add_time_traces(parser)
+    _parser_add_savetrajs(parser)
     _parser_add_distro(parser)
     _parser_add_n_cols(parser)
     _parser_add_n_jobs(parser)
