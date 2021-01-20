@@ -99,7 +99,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
     def test_works(self):
         with _TDir(suffix="_test_mdciao") as tmpdir:
             myfig = self.ctc_grp.plot_timedep_ctcs(3,ctc_cutoff_Ang=3)
-            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png",None,150,"ps")
+            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig)
         _plt.close("all")
 
@@ -109,7 +109,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
                                                    ctc_cutoff_Ang=3,
                                                    pop_N_ctcs=True,
                                                    )
-            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png",None,150,"ps")
+            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp,fn,myfig,
                                                            separate_N_ctcs=True,
                                                            )
@@ -121,7 +121,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
                                                    pop_N_ctcs=True,
                                                    skip_timedep=True,
                                                    )
-            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png",None,150,"ps")
+            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig,
                                                            separate_N_ctcs=True,
                                                            plot_timedep=False,
@@ -130,7 +130,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
     def test_no_files(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            fn = str_and_dict.FilenameGenerator("test_neig", 3, tmpdir, "png", None, 150, "ps")
+            fn = str_and_dict.FilenameGenerator("test_neig", 3, tmpdir, "png", "dat", 150, "ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, [],
                                                            separate_N_ctcs=True,
                                                            plot_timedep=False,
