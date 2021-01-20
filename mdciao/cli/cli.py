@@ -529,7 +529,6 @@ def residue_neighborhoods(residues,
                           chunksize_in_frames=10000,
                           nlist_cutoff_Ang=15,
                           n_smooth_hw=0,
-                          ask=True,
                           #TODO re-think whether ask makes sense anymore
                           sort=True,
                           pbc=True,
