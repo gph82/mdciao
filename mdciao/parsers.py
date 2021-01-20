@@ -417,13 +417,9 @@ def parser_for_rn():
                         help="Don't sort the residues by their index. Default is to sort them.",
                         action='store_false')
     parser.set_defaults(sort=True)
-
     _parser_add_pbc(parser)
     _parser_add_table_ext(parser)
     _parser_add_graphic_ext(parser)
-
-
-
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
     _parser_add_output_desc(parser, default='neighborhood')
@@ -593,6 +589,7 @@ def parser_for_interface():
     _parser_add_stride(parser)
     _parser_add_smooth(parser)
     _parser_add_time_traces(parser)
+    _parser_add_savetrajs(parser)
     _parser_add_n_jobs(parser)
     _parser_add_fragment_names(parser)
     _parser_add_no_frag(parser)

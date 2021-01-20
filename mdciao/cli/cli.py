@@ -1064,8 +1064,11 @@ def interface(
         cmap='binary',
         flareplot=True,
         sparse_flare_frags = True,
-        savefiles=True,
         save_nomenclature_files=False,
+        no_disk=False,
+        savefigs=True,
+        savetabs=True,
+        savetrajs=False,
         figures=True
 ):
     r"""Contact-frequencies between residues belonging
@@ -1246,11 +1249,18 @@ def interface(
         in the interface. If consensus labels
         are being used, this applies to the
         fragments derived from the nomenclature
-    savefiles : bool, default is True
-        Write the figures and tables to disk.
     save_nomenclature_files : bool, default is False
         Save available nomenclature definitions to disk so
         that they can be accessed locally in later uses.
+    savefigs : bool, default is True
+        Save the figures
+    savetabs : bool, default is True
+        Save the frequency tables
+    savetrajs : bool, default is False
+        Save the timetraces
+    no_disk : bool, default is False
+        If True, don't save any files at all:
+        figs, tables, trajs, nomenclature
     figures : bool, default is True
         Draw figures
     Returns
@@ -1268,6 +1278,11 @@ def interface(
     xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories,topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir,
                                               graphic_ext, table_ext, graphic_dpi,t_unit)
+    if no_disk:
+        savetrajs = False
+        savefigs  = False
+        savetabs = False
+        save_nomenclature_files = False
 
     print("Will compute contact frequencies for trajectories:\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
@@ -1389,7 +1404,7 @@ def interface(
     print()
     print(dfs[1].round({"freq":2}))
 
-    if savefiles:
+    if savetabs:
         print("The following files have been created")
         ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort=sort_by_av_ctcs)
         print(fn.fullpath_overall_excel)
@@ -1447,7 +1462,7 @@ def interface(
             cmat_fig.tight_layout()
 
 
-        if savefiles:
+        if savefigs:
             histofig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi, bbox_inches="tight")
             cmat_fig.savefig(fn.fullpath_matrix)
             print(fn.fullpath_matrix)
@@ -1478,7 +1493,7 @@ def interface(
                                                              colors=_mdcfu.col_list_from_input_and_fragments(True, intf_frags_as_residxs, alpha=.75),
                                                              )
             ifig.tight_layout()
-            if savefiles:
+            if savefigs:
                 ifig.savefig(fn.fullpath_flare_pdf, bbox_inches="tight")
                 print(fn.fullpath_flare_pdf)
 
@@ -1497,7 +1512,8 @@ def interface(
             _manage_timedep_ploting_and_saving_options(ctc_grp_intf, fn, myfig,
                                                        plot_timedep=plot_timedep,
                                                        separate_N_ctcs=separate_N_ctcs,
-                                                       savefigs=savefiles
+                                                       savefigs=savefigs,
+                                                       savetrajs=savetrajs
                                                        )
             if len(myfig)==0:
                 print("No figures of time-traces were produced because only 1 frame was provided")
