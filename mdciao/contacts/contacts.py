@@ -1925,6 +1925,13 @@ class ContactGroup(object):
 
     @property
     def ctc_labels_short(self):
+        r"""
+        Short contact labels without fragment info, e.g. E30-R40
+
+        Returns
+        -------
+        labels : list
+        """
         return [ictc.labels.no_fragments_short_AA
                 for ictc in self._contacts]
 
