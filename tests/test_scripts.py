@@ -81,5 +81,13 @@ class Test_ExamplesCLTs(unittest.TestCase):
                                 )
         assert CP.returncode == 0
 
+class Test_ContactGroupL394(unittest.TestCase):
+
+    def test_works(self):
+        CG = mdciao.examples.ContactGroupL394()
+        assert isinstance(CG,mdciao.contacts.ContactGroup)
+
+
+
 if __name__ == '__main__':
     unittest.main()

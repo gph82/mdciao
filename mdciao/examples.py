@@ -20,7 +20,7 @@
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
 
-from os import path as _path, getcwd as _getcwd, chdir as _chdir
+from os import path as _path, getcwd as _getcwd, chdir as _chdir, link as _link
 from mdciao import __path__ as mdc_path
 from subprocess import run as _run
 mdc_path = _path.split(mdc_path[0])[0]
@@ -35,10 +35,25 @@ long2short = {"--residues" : "-r",
 
 long2long = {key:key for key in long2short.keys()}
 
+from mdciao.filenames import filenames
+filenames = filenames()
+
+
+import contextlib as _contextlib
+from mdciao.cli import residue_neighborhoods as _residue_neighborhoods
+from tempfile import TemporaryDirectory as _TDir
+import io as _io
+@_contextlib.contextmanager
+def remember_cwd():
+    curdir = _getcwd()
+    try:
+        yield
+    finally:
+        _chdir(curdir)
+
 class ExamplesCLTs(object):
     def __init__(self, test=False, short=False):
-        from mdciao.filenames import filenames
-        filenames = filenames()
+        #filenames = filenames()
         self.xtc = filenames.traj_xtc
         self.pdb = filenames.top_pdb
 
@@ -175,4 +190,29 @@ class ExamplesCLTs(object):
         if self.test:
             return CP
 
+def ContactGroupL394():
+    with _TDir(suffix="_mdciao_example_CG") as t:
+        for fn in [filenames.pdb_3SN6,filenames.traj_xtc,
+                   filenames.top_pdb,
+                   filenames.adrb2_human_xlsx, filenames.CGN_3SN6]:
+            _link(fn,_path.join(t,_path.basename(fn)))
 
+        with remember_cwd():
+            _chdir(t)
+            b = _io.StringIO()
+            try:
+                with _contextlib.redirect_stdout(b):
+                    return _residue_neighborhoods("L394",
+                                             _path.basename(filenames.traj_xtc),
+                                             topology=_path.basename(filenames.top_pdb),
+                                             n_smooth_hw=1,
+                                             table_ext=None,
+                                             figures=None,
+                                             BW_uniprot=_path.basename(filenames.adrb2_human_xlsx),
+                                             CGN_PDB=_path.basename(filenames.CGN_3SN6),
+                                             accept_guess=True)["neighborhoods"][353]
+
+            except Exception as e:
+                print(b.getvalue())
+                b.close()
+                raise e
