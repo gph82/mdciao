@@ -1010,10 +1010,13 @@ class FilenameGenerator(object):
         self._output_dir = output_dir
         self._graphic_dpi = graphic_dpi
         self._t_unit = t_unit
-        if str(table_ext).lower() != 'none' and str(table_ext).lower().strip(".") in ["dat", "txt", "xlsx", "ods"]:
-            self._table_ext = str(table_ext).lower().strip(".")
-        else:
-            self._table_ext = None
+        self._allowed_table_exts = ["dat", "txt", "xlsx", "ods"] #TODO what about npy?
+        assert str(table_ext).lower != "none"
+        self._table_ext = str(table_ext).lower().strip(".")
+        if self._table_ext not in self._allowed_table_exts:
+            raise ValueError("The table extension, cant be '%s', "
+                             "has be one of %s"%(table_ext,self._allowed_table_exts))
+
 
     @property
     def output_dir(self):
