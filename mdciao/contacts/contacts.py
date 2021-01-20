@@ -2463,12 +2463,12 @@ class ContactGroup(object):
         r"""
         Print and/or save frequencies as a formatted table
 
-        Internally, it calls :obj:`self.frequency_spreadsheet` and/or
-        :obj:`self.frequency_str_ASCII_file` depending on the
+        Internally, it calls :obj:`frequency_spreadsheet` and/or
+        :obj:`frequency_str_ASCII_file` depending on the
         extension of :obj:`fname`
 
         If you want a :obj:`~pandas.DataFrame` use
-        :obj:`self.frequency_dataframe`
+        :obj:`frequency_dataframe`
 
         Parameters
         ----------
