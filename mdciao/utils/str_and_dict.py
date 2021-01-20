@@ -18,7 +18,7 @@ import mdtraj as _md
 from .lists import re_warp
 from fnmatch import fnmatch as _fnmatch
 from pandas import read_excel as _read_excel
-from os import path as _path
+from os import path as _path, listdir as _ls
 import re as _re
 from collections import defaultdict as _defdict
 
@@ -52,7 +52,14 @@ def get_sorted_trajectories(trajectories):
 
     """
     if isinstance(trajectories,str):
-        trajectories = _glob(trajectories)
+        _trajectories = _glob(trajectories)
+        if len(_trajectories)==0:
+            raise FileNotFoundError("Couldn't find (or pattern-match) anything to '%s'.\n"
+                                    "ls $CWD[%s]:\n%s:"%(trajectories,
+                                                         _path.abspath(_path.curdir),
+                                                         "\n".join(_ls(_path.curdir))))
+        else:
+            trajectories=_trajectories
 
     if isinstance(trajectories[0],str):
         xtcs = sorted(trajectories)
@@ -1005,11 +1012,20 @@ class FilenameGenerator(object):
 
     def fname_per_residue_table(self,istr, table_ext):
         fname = '%s.%s@%2.1f_Ang.%s' % (self.output_desc,
-                                        istr.replace('*', ""),
+                                        istr.replace('*', "").replace(" ","_"),
                                         self.ctc_cutoff_Ang,
                                         table_ext)
         return _path.join(self.output_dir, fname)
 
+    def fname_per_site_table(self, istr, table_ext):
+        return self.fname_per_residue_table(istr, table_ext)
+
+
+    def fname_timetrace_fig(self, surname):
+        return '%s.%s.time_trace@%2.1f_Ang.%s' % (self.output_desc,
+                                                  surname.replace(" ", "_"),
+                                                  self.ctc_cutoff_Ang,
+                                                  self.graphic_ext)
     @property
     def fullpath_overall_excel(self):
         return ".".join([self.fullpath_overall_no_ext, "xlsx"])

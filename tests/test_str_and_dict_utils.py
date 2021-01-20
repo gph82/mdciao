@@ -39,6 +39,10 @@ class Test_get_sorted_trajectories(unittest.TestCase):
                                  self.traj_reverse])
 
 
+    def test_fails_if_not_traj_at_all(self):
+        with pytest.raises(FileNotFoundError):
+            str_and_dict.get_sorted_trajectories("bogus.xtc")
+
     def test_fails_if_not_trajs(self):
         with pytest.raises(AssertionError):
             str_and_dict.get_sorted_trajectories([self.traj,
