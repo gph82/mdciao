@@ -36,11 +36,10 @@ else:
     file_dict = a.files
 a.colors = a.colors.split(",")
 b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
-for key in ["files", "mutations", "keys","output_desc","plot"]:
+for key in ["files", "mutations", "keys","output_desc"]:
     b.pop(key)
-b["figsize"]=None
+#b["figsize"]=None
 b["mutations_dict"] = {}
-#b["colors"] =
 
 if a.mutations is not None:
     for pair in a.mutations.split(","):
@@ -48,10 +47,7 @@ if a.mutations is not None:
         b["mutations_dict"][key.replace(" ","")]=val.replace(" ","")
 
 myfig, freqs, posret = compare(file_dict,
-                               output_desc=a.output_desc,
-                               **b,
-                               )
-if a.plot:
-    matplotlib.pyplot.show()
-
+                           output_desc=a.output_desc,
+                           **b,
+                           )
 
