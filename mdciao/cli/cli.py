@@ -1795,26 +1795,24 @@ def sites(site_files,
     else:
         scheme_desc=''
     histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    fname = "%s.overall@%2.1f_Ang.%s" % (output_desc, ctc_cutoff_Ang, graphic_ext.strip("."))
-    fname = _path.join(output_dir, fname)
+    fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir,graphic_ext)
     if savefiles:
-        histofig.savefig(fname, dpi=graphic_dpi)
+        histofig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
         print("The following files have been created")
-        print(fname)
+        print(fn.fullpath_overall_fig)
     _plt.close(histofig)
+
     for site_name, isite_nh in site_as_gc.items():
-        fname_no_time = '%s.%s@%2.1f_Ang.%s' % (output_desc,
-                                        site_name.strip().replace(" ","_"),
-                                        ctc_cutoff_Ang,
-                                        table_ext)
-        fname_no_time = _path.join(output_dir, fname_no_time)
+        if table_ext is not None:
+            isite_nh.frequency_table(ctc_cutoff_Ang,
+                                  fn.fname_per_site_table(site_name,table_ext),
+                                  write_interface=False,
+                                  by_atomtypes=True,
+                                  # AA_format="long",
+                                  )
+            print(fn.fname_per_site_table(site_name,table_ext))
 
-
-        fname = '%s.%s.time_trace@%2.1f_Ang.%s' % (output_desc,
-                                        site_name.strip().replace(" ","_"),
-                                        ctc_cutoff_Ang,
-                                        graphic_ext)
-        fname = _path.join(output_dir,fname)
+    for site_name, isite_nh in site_as_gc.items():
         myfig = isite_nh.plot_timedep_ctcs(panelheight,
                                            color_scheme=_color_schemes(curve_color),
                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
@@ -1833,17 +1831,9 @@ def sites(site_files,
             # One title for all axes on top
             myfig.axes[0].set_title("site: %s" % (isite["name"]))
             if savefiles:
-                _plt.savefig(fname, bbox_inches="tight", dpi=graphic_dpi)
-                print(fname)
-                if table_ext is not None and savefiles:
-                    isite_nh.frequency_table(ctc_cutoff_Ang,
-                                          fname_no_time,
-                                          write_interface=False,
-                                          by_atomtypes=True,
-                                          # AA_format="long",
-                                          )
-                    print(fname_no_time)
-            _plt.close(myfig)
+                _plt.savefig(fn.fname_timetrace_fig(site_name), bbox_inches="tight", dpi=graphic_dpi)
+                print(fn.fname_timetrace_fig(site_name))
+                _plt.close(myfig)
 
     return site_as_gc
 
