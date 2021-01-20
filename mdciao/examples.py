@@ -190,12 +190,13 @@ class ExamplesCLTs(object):
         if self.test:
             return CP
 
-def ContactGroupL394():
+
+def ContactGroupL394(**kwargs):
     with _TDir(suffix="_mdciao_example_CG") as t:
-        for fn in [filenames.pdb_3SN6,filenames.traj_xtc,
+        for fn in [filenames.pdb_3SN6, filenames.traj_xtc,
                    filenames.top_pdb,
                    filenames.adrb2_human_xlsx, filenames.CGN_3SN6]:
-            _link(fn,_path.join(t,_path.basename(fn)))
+            _link(fn, _path.join(t, _path.basename(fn)))
 
         with remember_cwd():
             _chdir(t)
@@ -203,14 +204,15 @@ def ContactGroupL394():
             try:
                 with _contextlib.redirect_stdout(b):
                     return _residue_neighborhoods("L394",
-                                             _path.basename(filenames.traj_xtc),
-                                             topology=_path.basename(filenames.top_pdb),
-                                             n_smooth_hw=1,
-                                             table_ext=None,
-                                             figures=None,
-                                             BW_uniprot=_path.basename(filenames.adrb2_human_xlsx),
-                                             CGN_PDB=_path.basename(filenames.CGN_3SN6),
-                                             accept_guess=True)["neighborhoods"][353]
+                                                  _path.basename(filenames.traj_xtc),
+                                                  topology=_path.basename(filenames.top_pdb),
+                                                  n_smooth_hw=1,
+                                                  table_ext=None,
+                                                  figures=None,
+                                                  BW_uniprot=_path.basename(filenames.adrb2_human_xlsx),
+                                                  CGN_PDB=_path.basename(filenames.CGN_3SN6),
+                                                  accept_guess=True,
+                                                  **kwargs)["neighborhoods"][353]
 
             except Exception as e:
                 print(b.getvalue())
