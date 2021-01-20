@@ -314,7 +314,8 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
                                                plot_timedep=True,
                                                separate_N_ctcs=False,
                                                title=None,
-                                               savefiles=True
+                                               savefigs=True,
+                                               savetrajs=False,
                                                ):
     r"""
     Towards a common function for saving/managing timedep files
@@ -328,7 +329,8 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
     plot_timedep : bool, default is True
     separate_N_ctcs : bool, defaul tis True
     t_unit : str or None, default is None
-    savefiles : bool, default is True
+    savefigs : bool, default is True
+    savetrajs : bool, default is False
     Returns
     -------
 
@@ -362,7 +364,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
     elif len(myfig) == 2:
         fnames = [fname_timedep, fname_N_ctcs]
 
-    if savefiles:
+    if savefigs:
         for iname, ifig in zip(fnames, myfig):
             fname = _path.join(fn.output_dir, iname)
             ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
@@ -370,13 +372,13 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
             _plt.close(ifig)
             print(fname)
 
-        # even if no figures were produced, the files should still be saved
-        if plot_timedep:
-            ctc_grp.save_trajs(fn.output_desc, fn.table_ext, fn.output_dir, t_unit=fn.t_unit, verbose=True)
+    # even if no figures were produced or saved, we can still be save the trajs
+    if savetrajs:
+        ctc_grp.save_trajs(fn.output_desc, fn.table_ext, fn.output_dir, t_unit=fn.t_unit, verbose=True)
         if separate_N_ctcs:
             ctc_grp.save_trajs(fn.output_desc, fn.table_ext, fn.output_dir, t_unit=fn.t_unit, verbose=True,
                                ctc_cutoff_Ang=fn.ctc_cutoff_Ang)
-    print()
+        print()
 
 def _color_schemes(istr):
     r"""
@@ -556,7 +558,10 @@ def residue_neighborhoods(residues,
                           accept_guess=False,
                           switch_off_Ang=None,
                           plot_atomtypes=False,
-                          savefiles=True,
+                          no_disk=False,
+                          savefigs=True,
+                          savetabs=True,
+                          savetrajs=False,
                           figures=True,
                           pre_computed_contact_matrix=None
                           ):
@@ -763,8 +768,12 @@ def residue_neighborhoods(residues,
         'hatching' them. '--' is sidechain-sidechain '|' is
         backbone-backbone '\' is backbone-sidechain '/' is
         sidechain-backbone. See Fig XX for an example
-    savefiles : bool, default is True
-        Write the figures and tables to disk.
+    savefigs : bool, default is True
+        Save the figures
+    savetabs : bool, default is True
+        Save the frequency tables
+    savetrajs : bool, default is False
+        Save the timetraces
     figures : bool, default is True
         Draw figures
     pre_computed_distance_matrix : (m,m) np.ndarray, default is None
@@ -794,6 +803,11 @@ def residue_neighborhoods(residues,
     xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories, topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
                                               graphic_ext, table_ext, graphic_dpi, t_unit)
+    if no_disk:
+        savetrajs = False
+        savefigs  = False
+        savetabs = False
+        save_nomenclature_files = False
 
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
@@ -940,31 +954,31 @@ def residue_neighborhoods(residues,
         print("The following residues have no neighbors at %2.1f Ang, their frequency histograms will be empty"%ctc_cutoff_Ang)
         print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
 
+
     if figures:
-        panelheight = 3
-        bar_fig = _mdcplots.CG_panels(n_cols, neighborhoods, ctc_cutoff_Ang,
+        overall_fig = _mdcplots.CG_panels(n_cols, neighborhoods, ctc_cutoff_Ang,
                                   distro=distro,
                                   short_AA_names=short_AA_names,
                                   plot_atomtypes=plot_atomtypes,
                                   switch_off_Ang=switch_off_Ang)
-        if savefiles:
-            bar_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
+        if savefigs:
+            overall_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
             print("The following files have been created")
             print(fn.fullpath_overall_fig)
 
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
     # TODO undecided about this
     # TODO this code is repeated in sites...can we abstract this oafa?
-    if fn.table_ext is not None and savefiles:
-        for ihood in neighborhoods.values():
-            fname=fn.fname_per_residue_table(ihood.anchor_res_and_fragment_str)
-            ihood.frequency_table(ctc_cutoff_Ang,
-                                  fname,
-                                  switch_off_Ang=switch_off_Ang,
-                                  write_interface=False,
-                                  by_atomtypes=True,
-                                  # AA_format="long",
-                                  )
+    if savetabs:
+        for CG in neighborhoods.values():
+            fname = fn.fname_per_residue_table(CG.anchor_res_and_fragment_str)
+            CG.frequency_table(ctc_cutoff_Ang,
+                               fname,
+                               switch_off_Ang=switch_off_Ang,
+                               write_interface=False,
+                               by_atomtypes=True,
+                               # AA_format="long",
+                               )
             print(fname)
 
     if figures and (plot_timedep or separate_N_ctcs):
@@ -972,10 +986,11 @@ def residue_neighborhoods(residues,
         # TODO perhaps use https://github.com/python-attrs/attrs
         # to avoid boilerplate
         # Thi is very ugly
-        for ihood in neighborhoods.values():
+        for CG in neighborhoods.values():
             # TODO this plot_N_ctcs and skip_timedep is very bad, but ATM my only chance without major refactor
             # TODO perhaps it would be better to bury dt in the plotting directly?
-            myfig = ihood.plot_timedep_ctcs(panelheight,
+            panelheight = 3
+            myfig = CG.plot_timedep_ctcs(panelheight,
                                             color_scheme=_color_schemes(curve_color),
                                             ctc_cutoff_Ang=ctc_cutoff_Ang,
                                             switch_off_Ang=switch_off_Ang,
@@ -991,17 +1006,17 @@ def residue_neighborhoods(residues,
                                             )
 
             # One title for all axes on top
-            title = ihood.anchor_res_and_fragment_str
+            title = CG.anchor_res_and_fragment_str
             if short_AA_names:
-                title = ihood.anchor_res_and_fragment_str_short
+                title = CG.anchor_res_and_fragment_str_short
             title = _mdcu.str_and_dict.latex_superscript_fragments(title)
             if n_nearest >0:
                 title += "\n%u nearest bonded neighbors excluded" % (n_nearest)
-            _manage_timedep_ploting_and_saving_options(ihood,fn,myfig,
+            _manage_timedep_ploting_and_saving_options(CG, fn, myfig,
                                                        plot_timedep=plot_timedep,
                                                        separate_N_ctcs=separate_N_ctcs,
                                                        title=title,
-                                                       savefiles=savefiles
+                                                       savefigs=savetrajs
                                                        )
 
     return {"ctc_idxs": ctc_idxs_small,
@@ -1479,7 +1494,7 @@ def interface(
             _manage_timedep_ploting_and_saving_options(ctc_grp_intf, fn, myfig,
                                                        plot_timedep=plot_timedep,
                                                        separate_N_ctcs=separate_N_ctcs,
-                                                       savefiles=savefiles
+                                                       savefigs=savefiles
                                                        )
             if len(myfig)==0:
                 print("No figures of time-traces were produced because only 1 frame was provided")
