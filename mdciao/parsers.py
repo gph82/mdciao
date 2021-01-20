@@ -304,8 +304,8 @@ def _parser_add_graphic_dpi(parser):
 
 def _parser_add_table_ext(parser):
     parser.add_argument('-tx','--table_ext', type=str,
-                        help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
-                        default=None)
+                        help="Extension for tabled files (.dat, .txt, .xlsx, .ods). Default is '.dat'",
+                        default="dat")
 
 def _parser_add_write_to_disk(parser):
     parser.set_defaults(write_to_disk=False)
