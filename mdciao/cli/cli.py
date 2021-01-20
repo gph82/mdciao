@@ -331,7 +331,8 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
     myfig
     ctc_cutoff_Ang
     output_desc
-    graphic_ext
+    graphic_ext : str, default is ".pdf"
+        The extension (=format) of the saved figures
     output_dir
     graphic_dpi
     plot_timedep
@@ -389,14 +390,6 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,# : ContactGroup,
             ctc_grp.save_trajs(output_desc, table_ext, output_dir, t_unit=t_unit, verbose=True,
                                ctc_cutoff_Ang=ctc_cutoff_Ang)
     print()
-
-#TODO introduce coverage exclusion labels
-# like https://coverage.readthedocs.io/en/v4.5.x/excluding.html
-# or refactor these methods into another test branch
-"""
-def _cmdstr2cmdtuple(cmd):
-    return [ii.replace("nr", "nr ") for ii in cmd.replace("atomnr ", "atomnr").replace("'", "").split()]
-"""
 
 def _color_schemes(istr):
     r"""
