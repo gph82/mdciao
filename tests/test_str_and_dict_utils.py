@@ -738,14 +738,26 @@ if __name__ == '__main__':
 class Test_FilenameGenerator(unittest.TestCase):
 
     def test_just_runs(self):
-
-        fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png")
+        fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png", "dat",150,"ps")
         self.assertEqual(fn.fullpath_overall_fig, "project/beta2_Gs.overall@3.5_Ang.png")
         self.assertEqual(fn.fullpath_overall_excel, "project/beta2_Gs.overall@3.5_Ang.xlsx")
         self.assertEqual(fn.fullpath_overall_dat, "project/beta2_Gs.overall@3.5_Ang.dat")
         self.assertEqual(fn.fullpath_pdb, "project/beta2_Gs.overall@3.5_Ang.as_bfactors.pdb")
         self.assertEqual(fn.fullpath_matrix, "project/beta2_Gs.matrix@3.5_Ang.png")
         self.assertEqual(fn.fullpath_flare_pdf, "project/beta2_Gs.flare@3.5_Ang.pdf")
+        self.assertEqual(fn.table_ext,"dat")
+        self.assertEqual(fn.graphic_dpi,150)
+        self.assertEqual(fn.t_unit,"ps")
+        self.assertEqual(fn.fname_per_site_table("NPY"),'project/beta2_Gs.NPY@3.5_Ang.dat')
+        self.assertEqual(fn.fname_timetrace_fig("traj1"),'beta2_Gs.traj1.time_trace@3.5_Ang.png')
+
+    def test_table_ext_None(self):
+        fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png",None,150,"ps")
+        self.assertEqual(fn.table_ext,None)
+
+
+
+
 
 
 
