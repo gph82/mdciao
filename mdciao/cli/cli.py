@@ -1016,7 +1016,8 @@ def residue_neighborhoods(residues,
                                                        plot_timedep=plot_timedep,
                                                        separate_N_ctcs=separate_N_ctcs,
                                                        title=title,
-                                                       savefigs=savetrajs
+                                                       savefigs=savefigs,
+                                                       savetrajs=savetrajs
                                                        )
 
     return {"ctc_idxs": ctc_idxs_small,
