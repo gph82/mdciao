@@ -418,6 +418,11 @@ class Test_sites(TestCLTBaseClass):
 
 class Test_interface(TestCLTBaseClass):
 
+    @classmethod
+    def setUpClass(cls):
+        super(Test_interface, cls).setUpClass()
+        cls.no_disk = True  # doesn't seem to speed things up much
+
     def test_interface(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             cli.interface([self.traj, self.traj_reverse],
@@ -426,6 +431,7 @@ class Test_interface(TestCLTBaseClass):
                           frag_idxs_group_2=[1],
                           output_dir=tmpdir,
                           flareplot=True,
+                          no_disk=self.no_disk
                           )
 
     def test_no_top(self):
@@ -436,8 +442,8 @@ class Test_interface(TestCLTBaseClass):
                           output_dir=tmpdir,
                           flareplot=False,
                           plot_timedep=False,
-                          savefiles=False
-                          )
+                          no_disk = self.no_disk
+            )
 
     def test_interface_wo_frag_idxs_groups(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -446,7 +452,8 @@ class Test_interface(TestCLTBaseClass):
                 cli.interface([self.traj, self.traj_reverse],
                               self.geom,
                               output_dir=tmpdir,
-                              flareplot=False
+                              flareplot=False,
+                              no_disk=self.no_disk
                               )
 
     def test_w_just_one_fragment_by_user(self):
@@ -456,6 +463,7 @@ class Test_interface(TestCLTBaseClass):
                           output_dir=tmpdir,
                           fragments=["0-5"],
                           flareplot=False,
+                          no_disk=self.no_disk
                           )
 
     def test_w_just_one_fragment_by_user_and_n_ctcs(self):
@@ -465,7 +473,8 @@ class Test_interface(TestCLTBaseClass):
                           output_dir=tmpdir,
                           fragments=["0-5"],
                           n_nearest=1,
-                          flareplot=False
+                          flareplot=False,
+                          no_disk=self.no_disk
                           )
 
     def test_w_just_two_fragments_by_user(self):
@@ -477,7 +486,9 @@ class Test_interface(TestCLTBaseClass):
                           output_dir=tmpdir,
                           fragments=["0-5",
                                      "6-10"],
-                          flareplot=False)
+                          flareplot=False,
+                          no_disk=self.no_disk
+                          )
 
     def test_w_nomenclature_CGN_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -494,7 +505,8 @@ class Test_interface(TestCLTBaseClass):
                               CGN_PDB="3SN6",
                               BW_uniprot="adrb2_human",
                               accept_guess=True,
-                              flareplot=False
+                              flareplot=False,
+                              no_disk=self.no_disk
                               )
 
     def test_w_nomenclature_CGN_BW_fragments_are_consensus(self):
@@ -513,7 +525,8 @@ class Test_interface(TestCLTBaseClass):
                                   CGN_PDB="3SN6",
                                   BW_uniprot="adrb2_human",
                                   accept_guess=True,
-                                  flareplot=False
+                                  flareplot=False,
+                                  no_disk=self.no_disk
                                   )
 
     def test_w_nomenclature_CGN_BW_fragments_are_consensus_and_flareplot(self):
@@ -532,6 +545,7 @@ class Test_interface(TestCLTBaseClass):
                                   CGN_PDB="3SN6",
                                   BW_uniprot="adrb2_human",
                                   accept_guess=True,
+                                  #no_disk=self.no_disk
                                   )
 
 
