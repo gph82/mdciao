@@ -808,89 +808,100 @@ class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
         assert len(dict_out) == 4
 
 
-class Test_ctc_freq_reporter_by_residue_neighborhood(unittest.TestCase):
+class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.small_monomer)
-        self.by_bonds_geom = get_fragments(self.geom.top,
-                                           verbose=True,
-                                           auto_fragment_names=True,
-                                           method='bonds')
-        self.residues = ["GLU30", "VAL31"]
-        self.resname2residx, self.resname2fragidx = residues_from_descriptors(self.residues,
-                                                                                self.by_bonds_geom,
-                                                                                self.geom.top)
+        self.fragments = get_fragments(self.geom.top,
+                                       verbose=True,
+                                       auto_fragment_names=True,
+                                       method='bonds')
+        self.residues = ["GLU30", "VAL31"] #ie idxs 0 and 1
+        self.residxs, self.fragidxs = residues_from_descriptors(self.residues,
+                                                                self.fragments,
+                                                                self.geom.top)
 
-    def test_ctc_freq_reporter_by_residue_neighborhood_just_works(self):
-        ctcs_mean = [30, 5]
+    def test_select_and_report_residue_neighborhood_idxs_just_works(self):
+        ctc_freqs = [1, .5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
-
-        input_values = (val for val in ["1", "1"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
-            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
-                                                                            self.by_bonds_geom, ctc_residxs_pairs,
-                                                                            self.geom.top,
-                                                                            ctcs_kept=5, restrict_to_resSeq=None,
-                                                                            interactive=True)
-            assert ctc_freq[0] == 0
-            assert ctc_freq[1] == 0
 
         input_values = (val for val in ["1", "2"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 2
-            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
-                                                                            self.by_bonds_geom, ctc_residxs_pairs,
+        with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
+            per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freqs, self.residxs,
+                                                                            self.fragments, ctc_residxs_pairs,
                                                                             self.geom.top,
-                                                                            ctcs_kept=5, restrict_to_resSeq=None,
                                                                             interactive=True)
-            assert ctc_freq[0] == 0
-            assert (_np.array_equal(ctc_freq[1], [0, 1]))
+        _np.testing.assert_array_equal(per_residx_ctc_idxs[0],[0])
+        _np.testing.assert_array_equal(per_residx_ctc_idxs[1],[0,1])
 
-    def test_ctc_freq_reporter_by_residue_neighborhood_select_by_resSeq_is_int(self):
-        ctcs_mean = [30, 5]
+    def test_select_and_report_residue_neighborhood_idxs_select_by_resSeq(self):
+        ctc_freqs = [1., .5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
 
-        input_values = (val for val in ["1", "1"])
+        input_values = (val for val in ["2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
-            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
-                                                                            self.by_bonds_geom, ctc_residxs_pairs,
+            per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freqs, self.residxs,
+                                                                            self.fragments, ctc_residxs_pairs,
                                                                             self.geom.top,
-                                                                            ctcs_kept=5, restrict_to_resSeq=1,
+                                                                            restrict_to_resSeq=31,
                                                                             interactive=True)
-            assert ctc_freq == {}
+        assert len(per_residx_ctc_idxs) == 1
+        _np.testing.assert_array_equal(per_residx_ctc_idxs[1],[0,1])
 
-    def test_ctc_freq_reporter_by_residue_neighborhood_hit_enter(self):
-        ctcs_mean = [30, 5]
+    def test_select_and_report_residue_neighborhood_idxs_hit_enter(self):
+        ctc_freq = [1.,.5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
 
         input_values = (val for val in ["", ""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
-                                                                            self.by_bonds_geom, ctc_residxs_pairs,
+            per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.residxs,
+                                                                            self.fragments, ctc_residxs_pairs,
                                                                             self.geom.top,
-                                                                            ctcs_kept=5, restrict_to_resSeq=None,
                                                                             interactive=True)
-            assert ctc_freq == {}
+            assert per_residx_ctc_idxs == {}
 
-    def test_ctc_freq_reporter_by_residue_neighborhood_silent_is_true(self):
-        ctcs_mean = [30, 5]
+    def test_select_and_report_residue_neighborhood_idxs_no_interactive(self):
+        ctc_freq = [1.,.5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
-
-        ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, self.resname2residx,
-                                                                        self.by_bonds_geom, ctc_residxs_pairs,
+        per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.residxs,
+                                                                        self.fragments, ctc_residxs_pairs,
                                                                         self.geom.top,
-                                                                        ctcs_kept=5, restrict_to_resSeq=None,
                                                                         interactive=False)
-        assert (_np.array_equal(ctc_freq[0], [0]))
-        assert (_np.array_equal(ctc_freq[1], [0, 1]))
+        assert (_np.array_equal(per_residx_ctc_idxs[0], [0]))
+        assert (_np.array_equal(per_residx_ctc_idxs[1], [0, 1]))
 
-    def test_ctc_freq_reporter_by_residue_neighborhood_keyboard_interrupt(self):
-        ctcs_mean = [30, 5]
+    def test_select_and_report_residue_neighborhood_idxs_no_interactive_true_ctc_percentage(self):
+        ctc_freq = [1.,.5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
-        with unittest.mock.patch('builtins.input', side_effect=KeyboardInterrupt):
-            resname2residx, resname2fragidx = residues_from_descriptors("GLU30", self.by_bonds_geom,
-                                                                          self.geom.top)
 
-            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctcs_mean, resname2residx,
-                                                                            self.by_bonds_geom, ctc_residxs_pairs,
+        per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.residxs,
+                                                                        self.fragments, ctc_residxs_pairs,
+                                                                        self.geom.top,
+                                                                        ctcs_kept=.5, restrict_to_resSeq=None,
+                                                                        interactive=False)
+        assert (_np.array_equal(per_residx_ctc_idxs[0], [0]))
+
+
+    def test_select_and_report_residue_neighborhood_idxs_no_interactive_ctc_percentage_no_ctcs(self):
+        ctc_freq = [0, 0]
+        ctc_residxs_pairs = [[0, 1], [2, 1]]
+
+        per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.residxs,
+                                                                        self.fragments, ctc_residxs_pairs,
+                                                                        self.geom.top,
+                                                                        ctcs_kept=.5, restrict_to_resSeq=None,
+                                                                        interactive=False)
+        _np.testing.assert_array_equal(per_residx_ctc_idxs[0],[])
+        _np.testing.assert_array_equal(per_residx_ctc_idxs[1],[])
+
+    def test_select_and_report_residue_neighborhood_idxs_keyboard_interrupt(self):
+        ctc_freq = [1.,.5]
+        per_residx_ctc_idxs = [[0, 1], [2, 1]]
+        with unittest.mock.patch('builtins.input', side_effect=KeyboardInterrupt):
+            resname2residx, resname2fragidx = residues_from_descriptors("GLU30", self.fragments,
+                                                                        self.geom.top)
+
+            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, resname2residx,
+                                                                            self.fragments, per_residx_ctc_idxs,
                                                                             self.geom.top,
                                                                             ctcs_kept=5, restrict_to_resSeq=None,
                                                                             interactive=True)
