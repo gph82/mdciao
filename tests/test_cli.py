@@ -100,7 +100,8 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
         with _TDir(suffix="_test_mdciao") as tmpdir:
             myfig = self.ctc_grp.plot_timedep_ctcs(3,ctc_cutoff_Ang=3)
             fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
-            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig)
+            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig,
+                                                           savetrajs=True)
         _plt.close("all")
 
     def test_separate_N_ctcs(self):
@@ -112,6 +113,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
             fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp,fn,myfig,
                                                            separate_N_ctcs=True,
+                                                           savetrajs=True,
                                                            )
             _plt.close("all")
     def test_just_N_ctcs(self):
@@ -136,26 +138,6 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
                                                            plot_timedep=False,
                                                            )
             _plt.close("all")
-
-    """
-    def test_no_timedep_yes_N_ctcs(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                  "396",
-                                  plot_timedep=False,
-                                  separate_N_ctcs=True,
-                                  short_AA_names=True,
-                                  output_dir=tmpdir)
-
-    def test_separate_N_ctcs_no_time_trace(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            residue_neighborhoods(self.geom, [self.traj,
-                                              self.traj_reverse],
-                                  "396",
-                                  plot_timedep=False,
-                                  separate_N_ctcs=True,
-                                  output_dir=tmpdir)
-    """
 
 
 class Test_residue_neighborhood(TestCLTBaseClass):

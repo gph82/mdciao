@@ -1,5 +1,17 @@
 import unittest
 
+from tempfile import TemporaryDirectory as _TD
+import os
+import contextlib
+@contextlib.contextmanager
+def remember_cwd():
+    curdir = os.getcwd()
+    try:
+        yield
+    finally:
+        os.chdir(curdir)
+
+
 from mdciao import pdb
 class Test_pdb2ref(unittest.TestCase):
 
@@ -23,3 +35,12 @@ class Test_url2json(unittest.TestCase):
         idict = pdb.pdb._url2json("https://data.rsbc.org/rest/v1/core/entry/13SN6",
                                                     5,True)
         assert isinstance(idict,ValueError)
+
+
+class Test_pdb2traj(unittest.TestCase):
+    def test_works(self):
+        with _TD(suffix="_test_mdciao") as tmpdir:
+            pdb.pdb2traj("3SN6",os.path.join(tmpdir,"3SN6.pdb"))
+
+    def test_wrong_url(self):
+        pdb.pdb2traj("3SNXX")
