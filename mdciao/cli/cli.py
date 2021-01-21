@@ -356,6 +356,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
     # Differentiate the type of figures we can have
     if len(myfig) == 0:
         fnames = []
+        print("No figures of time-traces were produced because only 1 frame was provided")
     elif len(myfig) == 1:
         if plot_timedep:
             fnames = [fname_timedep]
@@ -1515,8 +1516,6 @@ def interface(
                                                        savefigs=savefigs,
                                                        savetrajs=savetrajs
                                                        )
-            if len(myfig)==0:
-                print("No figures of time-traces were produced because only 1 frame was provided")
 
     return ctc_grp_intf
 
@@ -1550,7 +1549,10 @@ def sites(site_files,
           output_desc="sites",
           plot_atomtypes=False,
           distro=False,
-          savefiles=True,
+          no_disk=False,
+          savefigs=True,
+          savetabs=True,
+          savetrajs=False,
           ):
     r"""
 
@@ -1700,6 +1702,15 @@ def sites(site_files,
         sidechain-backbone. See Fig XX for an example
     distro : bool, default is False
         Plot distance distributions instead of contact bar plots
+    savefigs : bool, default is True
+        Save the figures
+    savetabs : bool, default is True
+        Save the frequency tables
+    savetrajs : bool, default is False
+        Save the timetraces
+    no_disk : bool, default is False
+        If True, don't save any files at all:
+        figs, tables, trajs, nomenclature
     savefiles : bool, default is True
         Write the figures and tables to disk.
 
@@ -1717,6 +1728,11 @@ def sites(site_files,
     xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories, topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
                                               graphic_ext, table_ext, graphic_dpi, t_unit)
+    if no_disk:
+        savetrajs = False
+        savefigs  = False
+        savetabs = False
+        save_nomenclature_files = False
 
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
         "\n ".join([_mdcsites.site2str(ss) for ss in site_files]),
@@ -1777,8 +1793,7 @@ def sites(site_files,
                                                #colors=[fragcolors[idx] for idx in idxs]
                                                ))
         site_as_gc[key] = _mdcctcs.ContactGroup(site_as_gc[key], name='site %s'%key)
-    panelheight=4
-    histofig = _mdcplots.CG_panels(4, site_as_gc, ctc_cutoff_Ang,
+    overall_fig = _mdcplots.CG_panels(4, site_as_gc, ctc_cutoff_Ang,
                                distro=distro,
                                short_AA_names=short_AA_names,
                                plot_atomtypes=plot_atomtypes,
@@ -1788,24 +1803,28 @@ def sites(site_files,
         scheme_desc='%s.'%scheme
     else:
         scheme_desc=''
-    histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
-    if savefiles:
-        histofig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
+
+    overall_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
+    if any([savetabs,savefigs,savetrajs]):
         print("The following files have been created")
+
+    if savefigs:
+        overall_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
         print(fn.fullpath_overall_fig)
-    _plt.close(histofig)
+    _plt.close(overall_fig)
 
     for site_name, isite_nh in site_as_gc.items():
-        if fn.table_ext is not None:
+        if savetabs:
             isite_nh.frequency_table(ctc_cutoff_Ang,
-                                  fn.fname_per_site_table(site_name),
-                                  write_interface=False,
-                                  by_atomtypes=True,
-                                  # AA_format="long",
-                                  )
+                                     fn.fname_per_site_table(site_name),
+                                     write_interface=False,
+                                     by_atomtypes=True,
+                                     # AA_format="long",
+                                     )
             print(fn.fname_per_site_table(site_name))
 
     for site_name, isite_nh in site_as_gc.items():
+        panelheight = 4
         myfig = isite_nh.plot_timedep_ctcs(panelheight,
                                            color_scheme=_color_schemes(curve_color),
                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
@@ -1817,16 +1836,15 @@ def sites(site_files,
                                            plot_N_ctcs=True,
                                            ylim_Ang=ylim_Ang,
                                            )
-        if len(myfig) == 0:
-            print("No figures of time-traces were produced because only 1 frame was provided")
-        else:
-            myfig = myfig[0]
-            # One title for all axes on top
-            myfig.axes[0].set_title("site: %s" % (isite["name"]))
-            if savefiles:
-                _plt.savefig(fn.fname_timetrace_fig(site_name), bbox_inches="tight", dpi=graphic_dpi)
-                print(fn.fname_timetrace_fig(site_name))
-                _plt.close(myfig)
+
+        _manage_timedep_ploting_and_saving_options(isite_nh, fn, myfig,
+                                                   plot_timedep=True,
+                                                   separate_N_ctcs=False,
+                                                   title="site: %s" % site_name,
+                                                   savefigs=savefigs,
+                                                   savetrajs=savetrajs
+                                                   )
+
 
     return site_as_gc
 
