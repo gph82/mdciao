@@ -511,7 +511,6 @@ def parser_for_dih():
     return parser
 
 def parser_for_sites():
-    #todo THIS WILL BREAK PARSER FOR SITES!!!! HUH?
     parser = _parser_top_traj(description='Analyse a specific set of residue-residue contacts using a distance cutoff. '
                                           'The user has to provide one or more "site" files in a .json format')
 
@@ -542,6 +541,7 @@ def parser_for_sites():
     _parser_add_atomtypes(parser)
     _paser_add_guess(parser)
     _parser_add_distro(parser)
+    _parser_add_savetrajs(parser)
     return parser
 
 def parser_for_densities():
