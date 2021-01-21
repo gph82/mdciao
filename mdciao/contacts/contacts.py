@@ -144,7 +144,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 print("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
             if n_ctcs>0:
-                _contact_fraction_informer(n_ctcs, ctc_freqs[order_mask], or_frac=_fraction)
+                _contact_fraction_informer(_np.min([n_ctcs, len(order_mask)]), ctc_freqs[order_mask], or_frac=_fraction)
             else:
                 print("No contacts here!")
             if interactive:
@@ -162,8 +162,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 n_nonzeroes = (seen_ctcs > 0).astype(int).sum()
                 answer = _np.arange(_np.min((n_nonzeroes, n_ctcs)))
                 selection[residx] = order_mask[answer]
-    # TODO think about what's best to return here
-    # TODO think about making a pandas dataframe with all the above info
+
     return selection
 
 def _save_as_pickle(obj, filename,verbose=True):
