@@ -108,11 +108,17 @@ def _parser_add_chunk(parser,help="Trajectories are read in chunks of this size.
                         default=default)
 
 def _parser_add_time_traces(parser):
-    parser.add_argument('--time-trace', dest="plot_timedep", action='store_true',
-                        help='Plot time-traces of the contacts, default is True')
     parser.add_argument('--no-time-trace', dest="plot_timedep", action='store_false',
+                        help="Dont' plot the time-traces of the contacts. Default is to plot them."
                        )
     parser.set_defaults(plot_timedep=True)
+
+def _parser_add_savetrajs(parser):
+    parser.add_argument("-st","--save-trajs", dest="savetrajs", action='store_true',
+                         help="Save trajectory data, default is not to save it.")
+    parser.set_defaults(savetrajs=False)
+    pass
+
 
 def _parser_add_distro(parser):
     parser.add_argument('-d', '--distribution', dest="distro", action='store_true',
@@ -411,18 +417,9 @@ def parser_for_rn():
                         help="Don't sort the residues by their index. Default is to sort them.",
                         action='store_false')
     parser.set_defaults(sort=True)
-
     _parser_add_pbc(parser)
-
-    parser.add_argument('--ask_fragment', dest='ask', action='store_true',
-                        help="Interactively ask for fragment assignment when input matches more than one resSeq")
-    parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
-    parser.set_defaults(ask=True)
     _parser_add_table_ext(parser)
     _parser_add_graphic_ext(parser)
-
-
-
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
     _parser_add_output_desc(parser, default='neighborhood')
@@ -433,6 +430,7 @@ def parser_for_rn():
     _parser_add_short_AA_names(parser)
     #_parser_add_no_fragfrag(parser)
     _parser_add_time_traces(parser)
+    _parser_add_savetrajs(parser)
     _parser_add_distro(parser)
     _parser_add_n_cols(parser)
     _parser_add_n_jobs(parser)
@@ -513,7 +511,6 @@ def parser_for_dih():
     return parser
 
 def parser_for_sites():
-    #todo THIS WILL BREAK PARSER FOR SITES!!!! HUH?
     parser = _parser_top_traj(description='Analyse a specific set of residue-residue contacts using a distance cutoff. '
                                           'The user has to provide one or more "site" files in a .json format')
 
@@ -544,6 +541,7 @@ def parser_for_sites():
     _parser_add_atomtypes(parser)
     _paser_add_guess(parser)
     _parser_add_distro(parser)
+    _parser_add_savetrajs(parser)
     return parser
 
 def parser_for_densities():
@@ -591,6 +589,7 @@ def parser_for_interface():
     _parser_add_stride(parser)
     _parser_add_smooth(parser)
     _parser_add_time_traces(parser)
+    _parser_add_savetrajs(parser)
     _parser_add_n_jobs(parser)
     _parser_add_fragment_names(parser)
     _parser_add_no_frag(parser)

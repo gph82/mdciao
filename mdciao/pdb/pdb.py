@@ -136,7 +136,6 @@ def pdb2traj(code,
     except _HTTPError as e:
         print(url1, ":", e)
         geom = None
-
     if geom is not None:
         pdb2ref(code)
 

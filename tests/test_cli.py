@@ -99,8 +99,9 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
     def test_works(self):
         with _TDir(suffix="_test_mdciao") as tmpdir:
             myfig = self.ctc_grp.plot_timedep_ctcs(3,ctc_cutoff_Ang=3)
-            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png",None,150,"ps")
-            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig)
+            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
+            cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig,
+                                                           savetrajs=True)
         _plt.close("all")
 
     def test_separate_N_ctcs(self):
@@ -109,9 +110,10 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
                                                    ctc_cutoff_Ang=3,
                                                    pop_N_ctcs=True,
                                                    )
-            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png",None,150,"ps")
+            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp,fn,myfig,
                                                            separate_N_ctcs=True,
+                                                           savetrajs=True,
                                                            )
             _plt.close("all")
     def test_just_N_ctcs(self):
@@ -121,7 +123,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
                                                    pop_N_ctcs=True,
                                                    skip_timedep=True,
                                                    )
-            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png",None,150,"ps")
+            fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig,
                                                            separate_N_ctcs=True,
                                                            plot_timedep=False,
@@ -130,145 +132,146 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
     def test_no_files(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            fn = str_and_dict.FilenameGenerator("test_neig", 3, tmpdir, "png", None, 150, "ps")
+            fn = str_and_dict.FilenameGenerator("test_neig", 3, tmpdir, "png", "dat", 150, "ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, [],
                                                            separate_N_ctcs=True,
                                                            plot_timedep=False,
                                                            )
             _plt.close("all")
 
-    """
-    def test_no_timedep_yes_N_ctcs(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            residue_neighborhoods(self.geom, [self.traj, self.traj_reverse],
-                                  "396",
-                                  plot_timedep=False,
-                                  separate_N_ctcs=True,
-                                  short_AA_names=True,
-                                  output_dir=tmpdir)
-
-    def test_separate_N_ctcs_no_time_trace(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            residue_neighborhoods(self.geom, [self.traj,
-                                              self.traj_reverse],
-                                  "396",
-                                  plot_timedep=False,
-                                  separate_N_ctcs=True,
-                                  output_dir=tmpdir)
-    """
 
 class Test_residue_neighborhood(TestCLTBaseClass):
 
+    @classmethod
+    def setUpClass(cls):
+        super(Test_residue_neighborhood, cls).setUpClass()
+        cls.no_disk = True  # doesn't seem to speed things up much
+
+    @patch('builtins.input', lambda *args: '4')
+    def test_neighborhoods_no_disk_works(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            with remember_cwd():
+                os.chdir(tmpdir)
+                input_values = (val for val in ["1.0"])
+                with mock.patch('builtins.input', lambda *x: next(input_values)):
+                    cli.residue_neighborhoods("200,395",
+                                              self.traj,
+                                              self.geom,
+                                              no_disk=True
+                                              )
+                assert len(os.listdir(".")) == 0
+
     @patch('builtins.input', lambda *args: '4')
     def test_neighborhoods(self):
-
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["1.0"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
                 cli.residue_neighborhoods("200,395",
                                           [self.traj, self.traj_reverse],
                                           self.geom,
-                                          output_dir=tmpdir)
+                                          output_dir=tmpdir,
+                                          no_disk=self.no_disk)
 
-    def test_no_trajs(self):
+    def test_no_top(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["1.0"])
             with mock.patch('builtins.input', lambda *x: next(input_values)):
                 cli.residue_neighborhoods("200,395",
                                           self.geom,
-                                          output_dir=tmpdir)
+                                          output_dir=tmpdir,
+                                          no_disk=self.no_disk)
+
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods("1043",
-                                        [self.traj, self.traj_reverse],
-                                        self.geom,
-                                        fragment_colors=True,
-                                   allow_same_fragment_ctcs=False,
-                                   short_AA_names=True,
-                                   res_idxs=True,
-                                   table_ext=".dat",
-                                   output_dir=tmpdir)
+            cli.residue_neighborhoods("1043",
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
+                                      fragment_colors=True,
+                                      allow_same_fragment_ctcs=False,
+                                      short_AA_names=True,
+                                      res_idxs=True,
+                                      output_dir=tmpdir,
+                                      no_disk=self.no_disk)
 
     def test_excel(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods("395",
-                                        [self.traj, self.traj_reverse],
-                                        self.geom,
-                                        table_ext=".xlsx",
-                                   output_dir=tmpdir)
-
-    def test_no_table(self):
-        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods("395",
-                                        [self.traj, self.traj_reverse],
-                                        self.geom,
-                                        table_ext=None,
-                                   output_dir=tmpdir)
+            cli.residue_neighborhoods("395",
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
+                                      table_ext=".xlsx",
+                                      output_dir=tmpdir)
 
     def test_distro(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods("395",
-                                        [self.traj, self.traj_reverse],
-                                        self.geom,
-                                   distro=True,
-                                   output_dir=tmpdir)
+            cli.residue_neighborhoods("395",
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
+                                      distro=True,
+                                      output_dir=tmpdir,
+                                      no_disk=self.no_disk)
 
     def test_AAs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-              cli.residue_neighborhoods("395",
-                                        [self.traj, self.traj_reverse],
-                                        self.geom,
-                                   short_AA_names=True,
-                                   output_dir=tmpdir)
+            cli.residue_neighborhoods("395",
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
+                                      short_AA_names=True,
+                                      output_dir=tmpdir,
+                                      no_disk=self.no_disk)
 
     def test_colors(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods("395",
-                                       [self.traj, self.traj_reverse],
-                                       self.geom,
-                                  short_AA_names=True,
-                                  fragment_colors=True,
-                                  output_dir=tmpdir)
+            cli.residue_neighborhoods("395",
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
+                                      short_AA_names=True,
+                                      fragment_colors=True,
+                                      output_dir=tmpdir,
+                                      no_disk=self.no_disk)
 
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods("395",
-                                       [self.traj, self.traj_reverse],
-                                       self.geom,
-                                       short_AA_names=True,
-                                  fragment_colors='c',
-                                  output_dir=tmpdir)
+            cli.residue_neighborhoods("395",
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
+                                      short_AA_names=True,
+                                      fragment_colors='c',
+                                      output_dir=tmpdir,
+                                      no_disk=self.no_disk)
 
     def test_no_residues_returns_None(self):
         # This is more of an argparse fail
         # TODO consider throwing exception
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             assert None ==  cli.residue_neighborhoods(None,
-                                                       [self.traj,self.traj_reverse],
-                                                       self.geom,
-                                                       None,
-                                                  distro=True,
-                                                  output_dir=tmpdir)
+            assert None == cli.residue_neighborhoods(None,
+                                                     [self.traj, self.traj_reverse],
+                                                     self.geom,
+                                                     None,
+                                                     distro=True,
+                                                     output_dir=tmpdir,
+                                                     no_disk=self.no_disk)
 
     def test_wrong_input_resSeq_idxs(self):
         with pytest.raises(ValueError):
             with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-                  cli.residue_neighborhoods("AX*",
-                                            [self.traj, self.traj_reverse],
-                                            self.geom,
-                                            distro=True,
-                                       output_dir=tmpdir)
+                cli.residue_neighborhoods("AX*",
+                                          [self.traj, self.traj_reverse],
+                                          self.geom,
+                                          distro=True,
+                                          output_dir=tmpdir,
+                                          no_disk=self.no_disk)
 
     def test_nomenclature_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods("R131",
-                                       [self.traj, self.traj_reverse],
-                                       self.geom,
-                                       BW_uniprot=test_filenames.adrb2_human_xlsx,
-                                  output_dir=tmpdir,
-                                  accept_guess=True
-                                  )
-    def test_nomenclature_CGN(self):
+            cli.residue_neighborhoods("R131",
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
+                                      BW_uniprot=test_filenames.adrb2_human_xlsx,
+                                      output_dir=tmpdir,
+                                      accept_guess=True,
+                                      no_disk=self.no_disk
+                                      )
 
+    def test_nomenclature_CGN(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             shutil.copy(test_filenames.CGN_3SN6, tmpdir)
             shutil.copy(test_filenames.pdb_3SN6, tmpdir)
@@ -278,40 +281,44 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                           [self.traj, self.traj_reverse],
                                           self.geom,
                                           CGN_PDB="3SN6",
-                                      output_dir=tmpdir,
-                                      accept_guess=True
-                                      )
+                                          output_dir=tmpdir,
+                                          accept_guess=True,
+                                          no_disk=self.no_disk
+                                          )
+
     def test_nomenclature_CGN_and_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            shutil.copy(test_filenames.CGN_3SN6,tmpdir)
-            shutil.copy(test_filenames.pdb_3SN6,tmpdir)
+            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
+            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
                 cli.residue_neighborhoods("R131",
                                           [self.traj, self.traj_reverse],
                                           self.geom,
-                                      CGN_PDB="3SN6",
-                                      BW_uniprot=test_filenames.adrb2_human_xlsx,
-                                      output_dir=tmpdir,
-                                      accept_guess=True
-                                      )
+                                          CGN_PDB="3SN6",
+                                          BW_uniprot=test_filenames.adrb2_human_xlsx,
+                                          output_dir=tmpdir,
+                                          accept_guess=True,
+                                          no_disk=self.no_disk
+                                          )
 
     def test_no_contacts_at_allp(self):
-         cli.residue_neighborhoods("R131",
-                                   [self.traj, self.traj_reverse],
-                                   self.geom,
-                                   ctc_cutoff_Ang=.1,
-                              )
+        cli.residue_neighborhoods("R131",
+                                  [self.traj, self.traj_reverse],
+                                  self.geom,
+                                  ctc_cutoff_Ang=.1,
+                                  )
 
     def test_some_CG_have_no_contacts(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-             cli.residue_neighborhoods("0-3",
-                                       [self.traj, self.traj_reverse],
-                                       self.geom,
-                                       ctc_cutoff_Ang=3.2,
-                                  res_idxs=True,
-                                  output_dir=tmpdir,
-                                  )
+            cli.residue_neighborhoods("0-3",
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
+                                      ctc_cutoff_Ang=3.2,
+                                      res_idxs=True,
+                                      output_dir=tmpdir,
+                                      no_disk=self.no_disk
+                                      )
 
     def test_no_bonds_fail(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -319,7 +326,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             top.top._bonds = []
             with pytest.raises(ValueError):
                 cli.residue_neighborhoods("R131",
-                                        [self.traj, self.traj_reverse],
+                                          [self.traj, self.traj_reverse],
                                           top,
                                           output_dir=tmpdir)
 
@@ -328,16 +335,16 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                              [self.traj, self.traj_reverse],
                                              self.geom,
                                              res_idxs=True,
-                                             savefiles=False,
+                                             no_disk=True,
                                              figures=False)["neighborhoods"].values())[0]
         CG2 = list(cli.residue_neighborhoods([1043],
                                              [self.traj, self.traj_reverse],
                                              self.geom,
                                              res_idxs=True,
-                                             savefiles=False,
+                                             no_disk=True,
                                              figures=False,
                                              pre_computed_contact_matrix=_np.zeros((self.geom.n_residues,
-                                                                                   self.geom.n_residues)))[
+                                                                                    self.geom.n_residues)))[
                        "neighborhoods"].values())[0]
         _np.testing.assert_array_equal(CG1.frequency_per_contact(3.5), CG2.frequency_per_contact(3.5))
 
@@ -347,7 +354,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                       [self.traj, self.traj_reverse],
                                       self.geom,
                                       res_idxs=True,
-                                      savefiles=False,
+                                      no_disk=False,
                                       figures=False,
                                       pre_computed_contact_matrix=_np.zeros((self.geom.n_residues,
                                                                              self.geom.n_residues + 1)))
@@ -393,6 +400,11 @@ class Test_sites(TestCLTBaseClass):
 
 class Test_interface(TestCLTBaseClass):
 
+    @classmethod
+    def setUpClass(cls):
+        super(Test_interface, cls).setUpClass()
+        cls.no_disk = True  # doesn't seem to speed things up much
+
     def test_interface(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             cli.interface([self.traj, self.traj_reverse],
@@ -401,6 +413,7 @@ class Test_interface(TestCLTBaseClass):
                           frag_idxs_group_2=[1],
                           output_dir=tmpdir,
                           flareplot=True,
+                          no_disk=self.no_disk
                           )
 
     def test_no_top(self):
@@ -411,8 +424,8 @@ class Test_interface(TestCLTBaseClass):
                           output_dir=tmpdir,
                           flareplot=False,
                           plot_timedep=False,
-                          savefiles=False
-                          )
+                          no_disk = self.no_disk
+            )
 
     def test_interface_wo_frag_idxs_groups(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -421,7 +434,8 @@ class Test_interface(TestCLTBaseClass):
                 cli.interface([self.traj, self.traj_reverse],
                               self.geom,
                               output_dir=tmpdir,
-                              flareplot=False
+                              flareplot=False,
+                              no_disk=self.no_disk
                               )
 
     def test_w_just_one_fragment_by_user(self):
@@ -431,6 +445,7 @@ class Test_interface(TestCLTBaseClass):
                           output_dir=tmpdir,
                           fragments=["0-5"],
                           flareplot=False,
+                          no_disk=self.no_disk
                           )
 
     def test_w_just_one_fragment_by_user_and_n_ctcs(self):
@@ -440,7 +455,8 @@ class Test_interface(TestCLTBaseClass):
                           output_dir=tmpdir,
                           fragments=["0-5"],
                           n_nearest=1,
-                          flareplot=False
+                          flareplot=False,
+                          no_disk=self.no_disk
                           )
 
     def test_w_just_two_fragments_by_user(self):
@@ -452,7 +468,9 @@ class Test_interface(TestCLTBaseClass):
                           output_dir=tmpdir,
                           fragments=["0-5",
                                      "6-10"],
-                          flareplot=False)
+                          flareplot=False,
+                          no_disk=self.no_disk
+                          )
 
     def test_w_nomenclature_CGN_BW(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -469,7 +487,8 @@ class Test_interface(TestCLTBaseClass):
                               CGN_PDB="3SN6",
                               BW_uniprot="adrb2_human",
                               accept_guess=True,
-                              flareplot=False
+                              flareplot=False,
+                              no_disk=self.no_disk
                               )
 
     def test_w_nomenclature_CGN_BW_fragments_are_consensus(self):
@@ -488,7 +507,8 @@ class Test_interface(TestCLTBaseClass):
                                   CGN_PDB="3SN6",
                                   BW_uniprot="adrb2_human",
                                   accept_guess=True,
-                                  flareplot=False
+                                  flareplot=False,
+                                  no_disk=self.no_disk
                                   )
 
     def test_w_nomenclature_CGN_BW_fragments_are_consensus_and_flareplot(self):
@@ -507,6 +527,7 @@ class Test_interface(TestCLTBaseClass):
                                   CGN_PDB="3SN6",
                                   BW_uniprot="adrb2_human",
                                   accept_guess=True,
+                                  #no_disk=self.no_disk
                                   )
 
 

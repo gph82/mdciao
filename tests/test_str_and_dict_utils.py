@@ -751,9 +751,9 @@ class Test_FilenameGenerator(unittest.TestCase):
         self.assertEqual(fn.fname_per_site_table("NPY"),'project/beta2_Gs.NPY@3.5_Ang.dat')
         self.assertEqual(fn.fname_timetrace_fig("traj1"),'beta2_Gs.traj1.time_trace@3.5_Ang.png')
 
-    def test_table_ext_None(self):
-        fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png",None,150,"ps")
-        self.assertEqual(fn.table_ext,None)
+    def test_table_ext_None_raises(self):
+        with pytest.raises(ValueError):
+            fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png",None,150,"ps")
 
 
 

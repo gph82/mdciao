@@ -207,7 +207,6 @@ def ContactGroupL394(**kwargs):
                                                   _path.basename(filenames.traj_xtc),
                                                   topology=_path.basename(filenames.top_pdb),
                                                   n_smooth_hw=1,
-                                                  table_ext=None,
                                                   figures=None,
                                                   BW_uniprot=_path.basename(filenames.adrb2_human_xlsx),
                                                   CGN_PDB=_path.basename(filenames.CGN_3SN6),
