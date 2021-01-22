@@ -501,7 +501,7 @@ def find_CA(res, CA_name="CA", CA_dict=None):
 _CA_rules = {"GDP": "C1", "P0G":"C12"}
 
 def residue_line(item_desc, residue, frag_idx,
-                 additional_resnaming_dicts=None,
+                 consensus_maps=None,
                  fragment_names=None,
                  table=False):
     r"""Return a string that describes the residue
@@ -522,7 +522,7 @@ def residue_line(item_desc, residue, frag_idx,
         Fragment index
     fragment_names : list, default is None
         Fragment names
-    additional_resnaming_dicts : dict of dicts, default is None
+    consensus_maps : dict of indexables, default is None
         Dictionary of dictionaries. Lower-level dicts are keyed
         with residue indices and valued with additional residue names.
         Higher-level keys can be whatever. Use case is e.g. if "R131"
@@ -551,18 +551,22 @@ def residue_line(item_desc, residue, frag_idx,
 
     if not table:
         istr = '%-6s %10s in fragment %u%swith residue index %2u' % (item_desc + ')', residue, frag_idx, fragname, res_idx)
-        if additional_resnaming_dicts is not None:
+        if consensus_maps is not None:
             extra = ''
-            for key1, val1 in additional_resnaming_dicts.items():
-                if res_idx in val1.keys() and val1[res_idx] is not None:
-                    extra += '%s: %s ' % (key1, val1[res_idx])
+            for key1, val1 in consensus_maps.items():
+                try:
+                    jstr = val1[res_idx]
+                    if jstr is not None:
+                        extra += '%s: %s ' % (key1, val1[res_idx])
+                except (KeyError,IndexError):
+                    pass
             if len(extra) > 0:
                 istr = istr + ' (%s)' % extra.rstrip(" ")
     else:
         add_dicts = [None,None]
-        if additional_resnaming_dicts is not None:
+        if consensus_maps is not None:
             for ii, key in enumerate(["BW","CGN"]):
-                add_dicts[ii]=additional_resnaming_dicts.get(key)
+                add_dicts[ii]=consensus_maps.get(key)
                 if add_dicts[ii] is not None:
                     add_dicts[ii]=add_dicts[ii][res_idx]
         istr = '%10s  %10u  %10u %10u %10s %10s' % (residue, res_idx,

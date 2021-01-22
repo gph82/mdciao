@@ -426,6 +426,6 @@ class Test_residue_line(unittest.TestCase):
         top = md.load(test_filenames.top_pdb).top
         res = top.residue(861)
         istr = residue_and_atom.residue_line("0.0", res, 3,
-                                             additional_resnaming_dicts={"BW": {861: "3.50"}},
+                                             consensus_maps={"BW": {861: "3.50"}},
                                              fragment_names=["frag0","frag1","frag2","frag3"])
         assert istr=="0.0)       ARG131 in fragment 3 (frag3) with residue index 861 (BW: 3.50)"
