@@ -172,7 +172,8 @@ def residues_from_descriptors(residue_descriptors,
                         istr = istr + ' (%s)' % extra.rstrip(" ")
                 print(istr)
             if just_inform:
-                return
+                print()
+                continue
             if pick_this_fragment_by_default is None:
                 prompt = "Input one fragment idx out of %s and press enter (selects all matching residues in that fragment).\n" \
                          "Use one x.y descriptor in case of repeated fragment index.\n" \
