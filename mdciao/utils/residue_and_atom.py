@@ -99,7 +99,7 @@ def residues_from_descriptors(residue_descriptors,
         AAs of the form of "GLU30" or "E30" or 30, can be mixed
     fragments: iterable of iterables of integers
         The integers in the iterables of 'fragments' represent residue indices of that fragment
-    top: :obj:`mdtraj.Topology`
+    top: :obj:`~mdtraj.Topology`
     pick_this_fragment_by_default: None or integer.
         Pick this fragment without asking in case of ambiguity.
         If None, the user will we prompted
@@ -113,6 +113,8 @@ def residues_from_descriptors(residue_descriptors,
         You can pass {"BW":{895:"3.50", ...} here and that label
         will be displayed next to the residue. :obj:`mdciao.cli`
         methods use this.
+    just_inform : bool, default is False
+        Just inform about the AAs, don't ask for a selection
     extra_string_info: string with any additional info to be printed in case of ambiguity
 
     Returns
