@@ -1095,12 +1095,14 @@ def interface(
         an :obj:`~mdtraj.Trajectory` object
     frag_idxs_group_1 : NoneType, default is None
         Indices of the fragments that belong to the group_1.
+        Strings can be CSVs and include ranges, e.g. '1,3-4'.
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [0]
     frag_idxs_group_2 : NoneType, default is None
         Indices of the fragments that belong to the group_2.
-        Defaults to None which will prompt the user of
+	Strings can be CSVs and include ranges, e.g. '1,3-4'.        
+Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
     BW_uniprot : str, default is 'None'

@@ -2449,6 +2449,7 @@ class ContactGroup(object):
         if by_atomtypes:
             idf = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang)
             idf = ['%s' % (', '.join(['%3u%% %s' % (val * 100, key) for key, val in sorted(idict.items(),key=lambda item: item[1],reverse=True)])) for idict in idf]
+
             df2return = df2return.join(_DF.from_dict({"by_atomtypes": idf}))
 
         return df2return
@@ -3062,6 +3063,7 @@ class ContactGroup(object):
             label_bars = [_mdcu.str_and_dict.defrag_key(ilab,defrag=defrag) for ilab in label_bars]
 
         # Cosmetics
+
         title_str = "distribution for %s"%_mdcu.str_and_dict.latex_superscript_fragments(title)
         if ctc_cutoff_Ang is not None:
             title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)

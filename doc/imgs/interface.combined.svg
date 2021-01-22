@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -16,8 +14,8 @@
    height="1010.4"
    viewBox="0 0 2081.9605 1010.4"
    sodipodi:docname="interface.combined.svg"
-   inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   inkscape:export-filename="/home/perezheg/Programs/mdciao/doc/imgs/interface.combined.png"
+   inkscape:version="1.0.1 (1.0.1+r74)"
+   inkscape:export-filename="/home/guille/Programs/mdciao/doc/imgs/interface.combined.png"
    inkscape:export-xdpi="89.976242"
    inkscape:export-ydpi="89.976242">
   <metadata
@@ -43,38 +41,47 @@
      guidetolerance="10"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:window-width="1920"
-     inkscape:window-height="1007"
+     inkscape:window-width="2560"
+     inkscape:window-height="1399"
      id="namedview4"
      showgrid="false"
-     inkscape:zoom="0.49715151"
-     inkscape:cx="652.27242"
-     inkscape:cy="453.88664"
-     inkscape:window-x="0"
-     inkscape:window-y="36"
+     inkscape:zoom="0.27660153"
+     inkscape:cx="555.18618"
+     inkscape:cy="743.69792"
+     inkscape:window-x="1"
+     inkscape:window-y="0"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg2"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:pagecheckerboard="false" />
+     inkscape:pagecheckerboard="false"
+     inkscape:document-rotation="0" />
   <image
-     sodipodi:absref="/home/perezheg/Programs/mdciao/doc/imgs/interface.as_beta_vmd.png"
-     xlink:href="interface.as_beta_vmd.png"
-     width="957.22101"
-     height="1010.4"
+     sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/flare_inset.png"
+     xlink:href="flare_inset.png"
+     width="1038.4517"
+     height="971.35486"
      preserveAspectRatio="none"
-     id="image10"
-     x="1124.7395"
+     id="image231414"
+     x="0"
      y="0" />
   <image
-     sodipodi:absref="/home/perezheg/Programs/mdciao/doc/imgs/flare_inset.small.png"
-     xlink:href="flare_inset.small.png"
-     y="0"
-     x="0"
-     id="image825"
+     sodipodi:absref="/home/guille/Programs/mdciao/doc/imgs/interface.as_beta_vmd.png"
+     xlink:href="interface.as_beta_vmd.png"
+     width="910.03375"
+     height="994.63837"
      preserveAspectRatio="none"
-     height="1010.4"
-     width="991.20001" />
+     id="image231462"
+     x="1124.7395"
+     y="0" />
+  <path
+     style="fill:none;stroke:#ff0000;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:9,9;stroke-dashoffset:0"
+     d="m 1036.3574,422.30236 c 188.0972,64.93609 188.0972,64.93609 188.0972,64.93609"
+     id="path8" />
+  <path
+     style="fill:none;stroke:#ff0000;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:9,9;stroke-dashoffset:0"
+     d="M 1038.4517,971.35486 C 1368.8391,800.32662 1368.8391,800.32662 1368.8391,800.32662"
+     id="path10" />
 </svg>
