@@ -3099,7 +3099,7 @@ class ContactGroup(object):
                           plot_N_ctcs=True,
                           pop_N_ctcs=False,
                           skip_timedep=False,
-                          **plot_contact_kwargs,
+                          **plot_timetrace_kwargs,
                           ):
         r"""
         For each trajectory, plot the time-traces of the all the contacts
@@ -3121,7 +3121,7 @@ class ContactGroup(object):
             Skip plotting the individual timetraces and plot only
             the time trace of overall formed contacts. This sets
             pop_N_ctcs to True internally
-        plot_contact_kwargs
+        plot_timetrace_kwargs
 
         Returns
         -------
@@ -3139,8 +3139,8 @@ class ContactGroup(object):
 
 
         """
-        valid_cutoff = "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
-                       and plot_contact_kwargs["ctc_cutoff_Ang"] > 0
+        valid_cutoff = "ctc_cutoff_Ang" in plot_timetrace_kwargs.keys() \
+                       and plot_timetrace_kwargs["ctc_cutoff_Ang"] > 0
 
 
         figs_to_return = []
@@ -3174,7 +3174,7 @@ class ContactGroup(object):
             # Plot individual contacts
             for ictc in self._contacts:
                 ictc._plot_timetrace(next(axes_iter),
-                                     **plot_contact_kwargs
+                                     **plot_timetrace_kwargs
                                      )
 
             # Cosmetics
@@ -3195,15 +3195,15 @@ class ContactGroup(object):
                     figs_to_return.append(fig_N_ctcs)
                 else:
                     iax = next(axes_iter)
-            ctc_cutoff_Ang = plot_contact_kwargs.pop("ctc_cutoff_Ang")
+            ctc_cutoff_Ang = plot_timetrace_kwargs.pop("ctc_cutoff_Ang")
             for pkey in ["shorten_AAs", "ylim_Ang"]:
                 try:
-                    plot_contact_kwargs.pop(pkey)
+                    plot_timetrace_kwargs.pop(pkey)
                 except KeyError:
                     pass
             self._plot_timedep_Nctcs(iax,
                                      ctc_cutoff_Ang,
-                                     **plot_contact_kwargs,
+                                     **plot_timetrace_kwargs,
                                      )
         [ifig.tight_layout(pad=0, h_pad=0, w_pad=0) for ifig in figs_to_return]
         return figs_to_return
