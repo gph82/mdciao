@@ -159,17 +159,7 @@ def residues_from_descriptors(residue_descriptors,
                 print(istr)
             cand_chars = _np.hstack([['%s.%u'%(key,ii) for ii in range(n)] for key, n in _Counter(cand_fragments).items()]).tolist()
             for cc, ss, char in zip(cands, cand_fragments, cand_chars):
-                fname = " "
-                if fragment_names is not None:
-                    fname = ' (%s) ' % fragment_names[ss]
-                istr = '%-6s %10s in fragment %2u%swith residue index %2u' % (char+')', top.residue(cc), ss, fname, cc)
-                if additional_resnaming_dicts is not None:
-                    extra = ''
-                    for key1, val1 in additional_resnaming_dicts.items():
-                        if cc in val1.keys() and val1[cc] is not None:
-                            extra += '%s: %s ' % (key1, val1[cc])
-                    if len(extra) > 0:
-                        istr = istr + ' (%s)' % extra.rstrip(" ")
+                istr = residue_line(char, top.residue(cc), ss, additional_resnaming_dicts)
                 print(istr)
             if just_inform:
                 print()
@@ -509,3 +499,56 @@ def find_CA(res, CA_name="CA", CA_dict=None):
 
 
 _CA_rules = {"GDP": "C1", "P0G":"C12"}
+
+def residue_line(item_desc, residue, frag_idx,
+                 additional_resnaming_dicts=None,
+                 fragment_names=None):
+    r"""Return a string that describes the residue
+
+    Can be used justo to inform or to help dis-ambiguating:
+    0.0)        GLU10 in fragment 0 with residue index  6 (CGN: G.HN.27)
+    ...
+    1.0)        GLU10 in fragment 1 with residue index 363
+
+
+    Parameters
+    ----------
+    item_desc : str
+        Description for the item of the list,
+        "1.0" or "3.2"
+    residue : :obj:`~mdtraj.core.Residue`
+    frag_idx : int
+        Fragment index
+    fragment_names : list, default is None
+        Fragment names
+    additional_resnaming_dicts : dict of dicts, default is None
+        Dictionary of dictionaries. Lower-level dicts are keyed
+        with residue indices and valued with additional residue names.
+        Higher-level keys can be whatever. Use case is e.g. if "R131"
+        needs to be disambiguated bc. it pops up in many fragments.
+        You can pass {"BW":{895:"3.50", ...} here and that label
+        will be displayed next to the residue.
+    Returns
+    -------
+    istr : str
+        An informative string about this residue, that
+        can be used to dis-ambiguate via the unique
+        item descriptor, e.g:
+        3.1)       GLU122 in fragment 3 with residue index 852 (BW: 3.41)
+
+    """
+    res_idx = residue.index
+
+    fragname = " "
+    if fragment_names is not None:
+        fragname = ' (%s) ' % fragment_names[frag_idx]
+
+    istr = '%-6s %10s in fragment %u%swith residue index %2u' % (item_desc + ')', residue, frag_idx, fragname, res_idx)
+    if additional_resnaming_dicts is not None:
+        extra = ''
+        for key1, val1 in additional_resnaming_dicts.items():
+            if res_idx in val1.keys() and val1[res_idx] is not None:
+                extra += '%s: %s ' % (key1, val1[res_idx])
+        if len(extra) > 0:
+            istr = istr + ' (%s)' % extra.rstrip(" ")
+    return istr
