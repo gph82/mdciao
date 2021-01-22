@@ -246,7 +246,7 @@ def in_what_N_fragments(idxs, fragment_list):
     assert all([does_not_contain_strings(ifrag) for ifrag in fragment_list]), ("Input 'fragment_list'  cannot contain strings")
 
     result = (_np.vstack([_np.in1d(idxs, iseg) for ii, iseg in enumerate(fragment_list)])).T
-    return [_np.argwhere(row).squeeze() for row in result]
+    return [_np.flatnonzero(row) for row in result]
 
 def in_what_fragment(residx,
                      list_of_nonoverlapping_lists_of_residxs,
