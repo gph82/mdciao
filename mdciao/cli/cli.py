@@ -192,8 +192,8 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                   input_dataframe=CL.most_recent_alignment,
                                                   fragments=fragments_as_residue_idxs,
                                                   verbose=verbose))
-            if not accept_guess:
-                input("Hit enter to continue!\n")
+                if not accept_guess:
+                    input("Hit enter to continue!\n")
 
     _mdcu.lists.assert_no_intersection(list(consensus_frags.values()),"consensus fragment")
 
