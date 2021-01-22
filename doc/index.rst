@@ -11,12 +11,11 @@ mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 .. figure:: imgs/banner.png
    :scale: 33%
 
+.. _my-reference-label:
 .. figure:: imgs/interface.combined.png
    :scale: 33%
 
 ``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an API to construct your own analysis workflow.
-
-Go right to the :ref:`Installation` page and if you want to try the examples below yourself.
 
 Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org.org>`_ for visualizaton. It tries to automatically use the
 
@@ -45,14 +44,6 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 
  However, both these issues (if/when they arise) can be spotted easily by looking at the time-traces of said contacts and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
 
-.. include:: basic_usage.rst
-
-.. include:: highlights.rst
-
-.. include:: cli_stub.rst
-
-.. include:: api_stub.rst
-
 .. |Python Package| image::
    https://github.com/gph82/mdciao/workflows/Python%20package/badge.svg
    :target: https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22
@@ -70,7 +61,7 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 .. toctree::
    :hidden:
 
-   Home <index>
    installation
+   overview
    cli_cli/cli_cli
    api/api

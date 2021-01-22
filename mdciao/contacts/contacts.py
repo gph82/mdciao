@@ -144,7 +144,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 print("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
             if n_ctcs>0:
-                _contact_fraction_informer(n_ctcs, ctc_freqs[order_mask], or_frac=_fraction)
+                _contact_fraction_informer(_np.min([n_ctcs, len(order_mask)]), ctc_freqs[order_mask], or_frac=_fraction)
             else:
                 print("No contacts here!")
             if interactive:
@@ -162,8 +162,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 n_nonzeroes = (seen_ctcs > 0).astype(int).sum()
                 answer = _np.arange(_np.min((n_nonzeroes, n_ctcs)))
                 selection[residx] = order_mask[answer]
-    # TODO think about what's best to return here
-    # TODO think about making a pandas dataframe with all the above info
+
     return selection
 
 def _save_as_pickle(obj, filename,verbose=True):
@@ -1622,7 +1621,7 @@ class ContactPair(object):
         ctc_label = self.labels.w_fragments
         if shorten_AAs:
             ctc_label = self.labels.w_fragments_short_AA
-
+        ctc_label = _mdcu.str_and_dict.latex_superscript_fragments(ctc_label)
         if ctc_cutoff_Ang > 0:
             ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang) * 100)
 
@@ -1675,6 +1674,7 @@ class ContactGroup(object):
                  interface_residxs=None,
                  top=None,
                  name=None,
+                 neighbors_excluded=None,
                  use_AA_when_conslab_is_missing=True,#TODO this is for the interfaces
                  ):
         r"""
@@ -1709,7 +1709,9 @@ class ContactGroup(object):
         self._contacts = list_of_contact_objects
         self._n_ctcs  = len(list_of_contact_objects)
         self._interface_residxs = interface_residxs
+        self._neighbors_excluded = neighbors_excluded
         self._is_interface = False
+        self._is_neighborhood = False
         self._name = name
         if top is None:
             self._top = self._unique_topology_from_ctcs()
@@ -1825,9 +1827,22 @@ class ContactGroup(object):
             else:
                 self._interface_residxs = [[],[]]
 
+            if self.shared_anchor_residue_index is not None:
+                self._is_neighborhood=True
+                if self.neighbors_excluded is None:
+                    raise ValueError("This ContactGroup looks like a neighborhood,\n"
+                                     "(all contacts share the residue %s), "
+                                     "but no 'neighbors_excluded' have been parsed!\n"
+                                     "If you're trying to build a site object,\n"
+                                     "use 'neighbors_excluded'=0', else input right number"
+                                     "'neighbors_excluded'")
 
     #todo again the dicussion about named tuples vs a miriad of properties
-    # I am opting for properties because of easyness of documenting i
+    # I am opting for properties because of easiness of documenting i
+
+    @property
+    def neighbors_excluded(self):
+        return self._neighbors_excluded
 
     @property
     def name(self):
@@ -1909,6 +1924,13 @@ class ContactGroup(object):
 
     @property
     def ctc_labels_short(self):
+        r"""
+        Short contact labels without fragment info, e.g. E30-R40
+
+        Returns
+        -------
+        labels : list
+        """
         return [ictc.labels.no_fragments_short_AA
                 for ictc in self._contacts]
 
@@ -1987,10 +2009,7 @@ class ContactGroup(object):
 
     @property
     def is_neighborhood(self):
-        if self.shared_anchor_residue_index is None:
-            return False
-        else:
-            return True
+        return self._is_neighborhood
 
     #TODO make this a property at instantiation and build neighborhoods a posteriori?
     @property
@@ -2254,17 +2273,17 @@ class ContactGroup(object):
         else:
             return dict_sum
 
-    def frequency_sum_per_residue_names_dict(self, ctc_cutoff_Ang,
-                                             switch_off_Ang=None,
-                                             sort=True,
-                                             shorten_AAs=True,
-                                             list_by_interface=False,
-                                             return_as_dataframe=False,
-                                             fragsep="@"):
+    def frequency_sum_per_residue_names(self, ctc_cutoff_Ang,
+                                        switch_off_Ang=None,
+                                        sort=True,
+                                        shorten_AAs=True,
+                                        list_by_interface=False,
+                                        return_as_dataframe=False,
+                                        fragsep="@"):
         r"""
-        Dictionary of aggregated :obj:`frequency_per_contact` keyed
-        by residue names, using the most informative label possible
-        (ATM it is residue@frag, see :obj:`ContactPair.labels` for more info on this)
+        Aggregate the frequencies of :obj:`frequency_per_contact` keyed
+        by residue name, using the most informative names possible,
+        see :obj:`self.residx2resnamefragnamebest` for more info on this
 
         Parameters
         ----------
@@ -2275,21 +2294,26 @@ class ContactGroup(object):
             TODO a dataframe, then excel_table that's already sorted by descending frequencies
         shorten_AAs : bool, default is True
             Use E30 instead of GLU30
-        list_by_interface : bool, default is False, NotImplemented
-            group the freq_dict by interface residues
+        list_by_interface : bool, default is False
+            group the freq_dict by interface residues.
+            Only has an effect if self.is_interface
         return_as_dataframe : bool, default is False
-            Return an :obj:`pandas.DataFrame` with the column names labels and freqs
+            Return an :obj:`~pandas.DataFrame` with the column names labels and freqs
         fragsep : str, default is @
             String to separate residue@fragname
         Returns
         -------
+        res : list
+            list of dictionaries (or dataframes).
+            If :obj:`list_by_interface` is True,
+            then the list has two items, default
+            (False) is to be of len=1
 
         """
         freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)
 
-        if list_by_interface:
-            assert self.is_interface
-            freqs = [{idx:freqs[idx] for idx in iint} for iint in self.interface_residxs]
+        if list_by_interface and self.is_interface:
+                freqs = [{idx:freqs[idx] for idx in iint} for iint in self.interface_residxs]
         else:
             freqs = [freqs] #this way it is a list either way
 
@@ -2300,27 +2324,25 @@ class ContactGroup(object):
                      for idict in freqs]
 
         # Use the residue@frag representation but avoid empty fragments
-        dict_out = []
+        list_out = []
         for ifreq in freqs:
             idict = {}
             for idx, val in ifreq.items():
                 key = self.residx2resnamefragnamebest(shorten_AAs=shorten_AAs)[idx]
                 idict[key] = val
-            dict_out.append(idict)
+            list_out.append(idict)
 
         if return_as_dataframe:
-            dict_out = [_DF({"label": list(idict.keys()),
-                             "freq": list(idict.values())}) for idict in dict_out]
+            list_out = [_DF({"label": list(idict.keys()),
+                             "freq": list(idict.values())}) for idict in list_out]
 
-        if len(dict_out)==1:
-            dict_out = dict_out[0]
-        return dict_out
+        return list_out
 
     """"
     # TODO this seems to be unused
     def frequency_table_by_residue(self, ctc_cutoff_Ang,
                                    list_by_interface=False):
-        dict_list = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
+        dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                      list_by_interface=list_by_interface)
 
         if list_by_interface:
@@ -2344,7 +2366,7 @@ class ContactGroup(object):
         Note
         ----
         Will fail if not all residues have consensus labels
-        TODO this is very similar to :obj:`frequency_sum_per_residue_names_dict`,
+        TODO this is very similar to :obj:`frequency_sum_per_residue_names`,
         look at the usecase closesely and try to unify both methods
 
         Parameters
@@ -2426,22 +2448,76 @@ class ContactGroup(object):
 
         if by_atomtypes:
             idf = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang)
-            idf = ['(%s)' % (', '.join(['%2u%% %s' % (val * 100, key) for key, val in sorted(idict.items(),key=lambda item: item[1],reverse=True)])) for idict in idf]
+            idf = ['%s' % (', '.join(['%3u%% %s' % (val * 100, key) for key, val in sorted(idict.items(),key=lambda item: item[1],reverse=True)])) for idict in idf]
+
             df2return = df2return.join(_DF.from_dict({"by_atomtypes": idf}))
 
         return df2return
 
-    def frequency_spreadsheet(self, ctc_cutoff_Ang,
+    def frequency_table(self, ctc_cutoff_Ang,
+                        fname,
+                        switch_off_Ang=None,
+                        sort=False,
+                        write_interface=True,
+                        **freq_dataframe_kwargs):
+        r"""
+        Print and/or save frequencies as a formatted table
+
+        Internally, it calls :obj:`frequency_spreadsheet` and/or
+        :obj:`frequency_str_ASCII_file` depending on the
+        extension of :obj:`fname`
+
+        If you want a :obj:`~pandas.DataFrame` use
+        :obj:`frequency_dataframe`
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        fname : str or None
+            Full path to the desired filename
+            Spreadsheet extensions are currently
+            only '.xlsx', all other extensions
+            save to formatted ascii. `None`
+            returns the formatted ascii string.
+        switch_off_Ang : float, default is None,
+        sort : check frequency_sum_per_residue_names
+        write_interface : check frequency_sum_per_residue_names
+        freq_dataframe_kwargs
+
+        Returns
+        -------
+        table : None or str
+            If :obj:`fname` is none, then return
+            the table as formatted string, using
+        """
+
+        if _path.splitext(str(fname))[1] in [".xlsx"]:
+            freq_dataframe_kwargs["split_label"] = False
+            main_DF = self.frequency_dataframe(ctc_cutoff_Ang,
+                                               switch_off_Ang=switch_off_Ang,
+                                               **freq_dataframe_kwargs)
+            idfs = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
+                                                        switch_off_Ang=switch_off_Ang,
+                                                        sort=sort,
+                                                        list_by_interface=write_interface,
+                                                        return_as_dataframe=True)
+            self.frequency_spreadsheet(main_DF,idfs,ctc_cutoff_Ang,fname)
+        else:
+            freq_dataframe_kwargs["split_label"] = True
+            main_DF = self.frequency_dataframe(ctc_cutoff_Ang,
+                                               switch_off_Ang=switch_off_Ang,
+                                               **freq_dataframe_kwargs)
+            return self.frequency_str_ASCII_file(main_DF,ascii_file=fname)
+
+    def frequency_spreadsheet(self, sheet1_dataframe,
+                              sheet2_dataframes,
+                              ctc_cutoff_Ang,
                               fname_excel,
-                              switch_off_Ang=None,
-                              sort=False,
-                              write_interface=True,
-                              offset=0,
                               sheet1_name="pairs by frequency",
                               sheet2_name='residues by frequency',
-                              **freq_dataframe_kwargs):
+                              ):
         r"""
-        Write an Excel file with the :obj:`pandas.Dataframe` that is
+        Write an Excel file with the :obj:`~pandas.Dataframe` that is
         returned by :obj:`self.frequency_dataframe`. You can
         control that call with obj:`freq_dataframe_kwargs`
 
@@ -2453,9 +2529,6 @@ class ContactGroup(object):
             Sort by descing order of frequency
         write_interface: bool, default is True
             Treat contact group as interface
-        offset : int, default is 0
-            First line at which to start writing the table. For future devleopment
-            TODO do not expose this, perhaps?
         freq_dataframe_kwargs: dict, default is {}
             Optional arguments to :obj:`self.frequency_dataframe`, like by_atomtypes (bool)
 
@@ -2463,14 +2536,12 @@ class ContactGroup(object):
         -------
 
         """
-
-        main_DF = self.frequency_dataframe(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, **freq_dataframe_kwargs)
-
+        offset = 0
         columns = ["label",
                    "freq",
                    "sum",
                    ]
-        if "by_atomtypes" in freq_dataframe_kwargs.keys() and freq_dataframe_kwargs["by_atomtypes"]:
+        if "by_atomtypes" in sheet1_dataframe.keys():
             columns += ["by_atomtypes"]
 
         writer = _ExcelWriter(fname_excel, engine='xlsxwriter')
@@ -2479,52 +2550,43 @@ class ContactGroup(object):
         writer.sheets[sheet1_name].write_string(0, offset,
                                       'pairs by contact frequency at %2.1f Angstrom' % ctc_cutoff_Ang)
         offset+=1
-        main_DF.round({"freq": 2, "sum": 2}).to_excel(writer,
-                                                      index=False,
-                                                      sheet_name=sheet1_name,
-                                                      startrow=offset,
-                                                      startcol=0,
-                                                      columns=columns,
-                                                      )
+        sheet1_dataframe.round({"freq": 2, "sum": 2}).to_excel(writer,
+                                                               index=False,
+                                                               sheet_name=sheet1_name,
+                                                               startrow=offset,
+                                                               startcol=0,
+                                                               columns=columns,
+                                                               )
         offset = 0
         writer.sheets[sheet2_name] = workbook.add_worksheet(sheet2_name)
         writer.sheets[sheet2_name].write_string(offset, 0, 'Av. # ctcs (<%2.1f Ang) by residue '%ctc_cutoff_Ang)
 
         offset += 1
 
-        idfs = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
-                                                         switch_off_Ang=switch_off_Ang,
-                                                         sort=sort,
-                                                         list_by_interface=write_interface,
-                                                         return_as_dataframe=True)
-        if not write_interface:
-            idfs=[idfs]
-        idfs[0].round({"freq": 2}).to_excel(writer,
-                                            sheet_name=sheet2_name,
-                                            startrow=offset,
-                                            startcol=0,
-                                            columns=[
+        sheet2_dataframes[0].round({"freq": 2}).to_excel(writer,
+                                                         sheet_name=sheet2_name,
+                                                         startrow=offset,
+                                                         startcol=0,
+                                                         columns=[
                                                 "label",
                                                 "freq"],
-                                            index=False
-                                            )
-        if write_interface:
+                                                         index=False
+                                                         )
+        if len(sheet2_dataframes)>1:
             #Undecided about best placement for these
-            idfs[1].round({"freq": 2}).to_excel(writer,
-                                                     sheet_name=sheet2_name,
-                                                     startrow=offset,
-                                                     startcol=2+1,
-                                                     columns=[
+            sheet2_dataframes[1].round({"freq": 2}).to_excel(writer,
+                                                             sheet_name=sheet2_name,
+                                                             startrow=offset,
+                                                             startcol=2+1,
+                                                             columns=[
                                                          "label",
                                                          "freq"],
-                                                     index=False
-                                                     )
+                                                             index=False
+                                                             )
 
         writer.save()
 
-    def frequency_str_ASCII_file(self, ctc_cutoff_Ang,
-                                 switch_off_Ang=None,
-                                 by_atomtypes=True,
+    def frequency_str_ASCII_file(self, idf,
                                  ascii_file=None):
         r"""
         Return a string with the frequencies
@@ -2544,17 +2606,13 @@ class ContactGroup(object):
         -------
 
         """
-        # TODO can't the frequency_spreadsheet handle this now?
-        idf = self.frequency_dataframe(ctc_cutoff_Ang,
-                                       switch_off_Ang=switch_off_Ang,
-                                        by_atomtypes=by_atomtypes,
-                                        # AA_format="long",
-                                        split_label="join")
+
         idf = idf.round({"freq": 2, "sum": 2})
         istr = idf.to_string(index=False,
                              header=True,
-                             justify='left',
-                             # justify = 'right'
+                             #How to justify the column labels (https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_string.html)
+                             justify="center",
+                             formatters=_mdcu.str_and_dict.df_str_formatters(idf[[key for key in ["by_atomtypes","label"] if key in idf.keys()]])
                              )
         istr = '#%s\n'%istr[1:]
         if ascii_file is None:
@@ -2662,7 +2720,6 @@ class ContactGroup(object):
                            total_freq=None,
                            plot_atomtypes=False,
                            display_sort=False,
-                           n_nearest=None,
                            sum_freqs=True,
                            ):
         r"""
@@ -2689,11 +2746,11 @@ class ContactGroup(object):
             display purposes only (the original order is untouched)
         Returns
         -------
-        jax : :obj:`matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.pyplot.Axes`
 
         """
-        # Base plot
 
+        # Base plot
         if title_label is None and not self.is_neighborhood:
             assert self.name is not None, ("Cannot use a 'nameless' ContactGroup and 'title_label'=None.\n"
                                            "Either instantiate self.name or pass a 'title_label' ")
@@ -2720,17 +2777,18 @@ class ContactGroup(object):
         sigma = _np.sum([ipatch.get_height() for ipatch in jax.patches])
         title = "Contact frequency @%2.1f AA"%ctc_cutoff_Ang
         if self.is_neighborhood:
-            title+="\n%s nearest bonded neighbors excluded\n" % (str(n_nearest).replace("None","no"))
+            title+="\n%s nearest bonded neighbors excluded\n" % (str(self.neighbors_excluded).replace("None","no"))
             label_dotref = self.anchor_res_and_fragment_str
             label_bars = self.partner_res_and_fragment_labels
             if shorten_AAs:
                 label_dotref = self.anchor_res_and_fragment_str_short
                 label_bars = self.partner_res_and_fragment_labels_short
             if sum_freqs:
-                label_dotref += '\nSigma = %2.1f' % sigma  # sum over all bc we did not truncate
+                label_dotref = "\n".join([_mdcu.str_and_dict.latex_superscript_fragments(label_dotref),
+                                          _mdcu.str_and_dict.replace4latex('Sigma = %2.1f' % sigma)])  # sum over all bc we did not truncate
                 jax.plot(_np.nan, _np.nan, 'o',
                          color=self.anchor_fragment_color,
-                         label=_mdcu.str_and_dict.replace4latex(label_dotref.replace("@","^")))
+                         label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
         else:
             if sum_freqs:
                 title+= " of '%s' (Sigma = %2.1f)\n" % (title_label,sigma)
@@ -2758,7 +2816,6 @@ class ContactGroup(object):
         return jax
 
     def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
-                                n_nearest,
                                 switch_off_Ang=None,
                                 color=["tab:blue"],
                                 xmax=None,
@@ -2772,12 +2829,11 @@ class ContactGroup(object):
         Wrapper around :obj:`ContactGroup.plot_freqs_as_bars`
         for plotting neighborhoods
 
-        #TODO perhaps get rid of the wrapper altoghether. ATM it would break the API
+        #TODO perhaps get rid of the wrapper altogether. ATM it would break the API
 
         Parameters
         ----------
         ctc_cutoff_Ang : float
-        n_nearest : int
         xmax : int, default is None
             Default behaviour is to go to n_ctcs, use this
             parameter to homogenize different calls to this
@@ -2800,7 +2856,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.pyplot.Axes`
         """
 
         assert self.is_neighborhood, "This ContactGroup is not a neighborhood, use ContactGroup.plot_freqs_as_bars() instead"
@@ -2808,7 +2864,6 @@ class ContactGroup(object):
         jax = self.plot_freqs_as_bars(ctc_cutoff_Ang,
                                       jax=jax,
                                       xlim=xmax,
-                                      n_nearest=n_nearest,
                                       shorten_AAs=shorten_AAs,
                                       truncate_at=None,
                                       plot_atomtypes=plot_atomtypes,
@@ -2921,16 +2976,27 @@ class ContactGroup(object):
         except IndexError:
             lowbar_fspts = _rcParams["font.size"] * .75
         lowbar_fsaus = lowbar_fspts / pd
-        leg2 = jax.legend(ebars, _hatchets.keys(),
-                          loc=[0, -2 * lowbar_fsaus],  # fudged
-                          ncol=4,
-                          framealpha=0,
-                          frameon=False,
-                          fontsize=lowbar_fspts,
-                          handletextpad=.1,
-                          columnspacing=1,
-                          handlelength=1.,
-                          )
+        y_leg = -2 * lowbar_fsaus  # fudged to "close enough"
+        place_legend = lambda y: getattr(jax, "legend")(ebars, [key for (ii, key) in enumerate(_hatchets.keys()) if w_hatched_lists[:,ii].sum()>0],
+                                                        loc=[0, y],
+                                                        ncol=4,
+                                                        framealpha=0,
+                                                        frameon=False,
+                                                        fontsize=lowbar_fspts,
+                                                        handletextpad=.1,
+                                                        columnspacing=1,
+                                                        handlelength=1.)
+        leg2 = place_legend(y_leg)
+
+        cc, rend = 0, jax.figure.canvas.get_renderer()
+        while jax.bbox.overlaps(leg2.get_window_extent(renderer=rend)):
+            leg2.remove()
+            y_leg += y_leg*.05
+            leg2 = place_legend(y_leg)
+            #print(cc,y_leg)
+            cc+=1
+            if cc>5:
+                break
         if leg1 is not None:
             jax.add_artist(leg1)
 
@@ -2940,7 +3006,6 @@ class ContactGroup(object):
                                     jax=None,
                                     shorten_AAs=False,
                                     ctc_cutoff_Ang=None,
-                                    n_nearest=None,
                                     label_fontsize_factor=1,
                                     max_handles_per_row=4,
                                     defrag=None):
@@ -2948,6 +3013,8 @@ class ContactGroup(object):
         r"""
         Plot distance distributions for the distance trajectories
         of the contacts
+
+        The title will get try to get the name from :obj:`self.name`
 
         Parameters
         ----------
@@ -2965,8 +3032,6 @@ class ContactGroup(object):
             Include in the legend of the plot how much of the
             distribution is below this cutoff. A vertical line
             will be draw at this x-value
-        n_nearest : int, default is None
-            Add a line to the title specifying if any
             nearest bonded neighbors were excluded
         label_fontsize_factor
         max_handles_per_row: int, default is 4
@@ -2974,7 +3039,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.pyplot.Axes`
 
         """
         if jax is None:
@@ -2982,29 +3047,34 @@ class ContactGroup(object):
             jax = _plt.gca()
 
         if self.is_neighborhood:
-            label_dotref = self.anchor_res_and_fragment_str
+            title = self.anchor_res_and_fragment_str
             label_bars = self.partner_res_and_fragment_labels
             if shorten_AAs:
-                label_dotref = self.anchor_res_and_fragment_str_short
+                title = self.anchor_res_and_fragment_str_short
                 label_bars = self.partner_res_and_fragment_labels_short
         else:
-            label_dotref = self.name
+            title = self.name
+            if title is None:
+                title = self.__class__.__name__
             label_bars = self.ctc_labels_w_fragments_short_AA
 
         if defrag is not None:
-            label_dotref = _mdcu.str_and_dict.defrag_key(label_dotref,defrag=defrag)
+            title = _mdcu.str_and_dict.defrag_key(title,defrag=defrag)
             label_bars = [_mdcu.str_and_dict.defrag_key(ilab,defrag=defrag) for ilab in label_bars]
+
         # Cosmetics
-        title_str = "distribution for %s"%_mdcu.str_and_dict.replace4latex(label_dotref)
+
+        title_str = "distribution for %s"%_mdcu.str_and_dict.latex_superscript_fragments(title)
         if ctc_cutoff_Ang is not None:
-            title_str += "\nclosest residues <= @%2.1f $\AA$"%(ctc_cutoff_Ang)
+            title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)
             jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
-        if n_nearest is not None:
-            title_str += "\n%u nearest bonded neighbors excluded" % (n_nearest)
+        if self.neighbors_excluded not in [None,0]:
+            title_str += "\n%u nearest bonded neighbors excluded" % (self.neighbors_excluded)
         jax.set_title(title_str)
 
         # Base plot
         for ii, ((h, x), label) in enumerate(zip(self.distributions_of_distances(nbins=nbins), label_bars)):
+            label = _mdcu.str_and_dict.latex_superscript_fragments(label)
             if ctc_cutoff_Ang is not None:
                 if ii==0:
                     freqs = self.frequency_per_contact(ctc_cutoff_Ang)
@@ -3183,7 +3253,7 @@ class ContactGroup(object):
                                     sort=True,
                                     interface_vline=False):
         r"""
-        Bar plot with per-residue sums of frequencies (TODO nr. of neighbors?, cumulative freq? SIP?)
+        Bar plot with per-residue sums of frequencies (called \Sigma in mdciao)
 
         Parameters
         ----------
@@ -3220,22 +3290,19 @@ class ContactGroup(object):
 
         """
 
-        # Base dict
-        freqs_dict = self.frequency_sum_per_residue_names_dict(ctc_cutoff_Ang,
-                                                               switch_off_Ang=switch_off_Ang,
-                                                               sort=sort,
-                                                               shorten_AAs=shorten_AAs,
-                                                               list_by_interface=list_by_interface)
+        # Base list of dicts
+        frq_dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
+                                                          switch_off_Ang=switch_off_Ang,
+                                                          sort=sort,
+                                                          shorten_AAs=shorten_AAs,
+                                                          list_by_interface=list_by_interface)
 
         # TODO the method plot_freqs_as_bars is very similar but
         # i think it's better to keep them separated
 
-        # TODO this code is repeated in table_by_residue
-        if list_by_interface:
-            label_bars = list(freqs_dict[0].keys())+list(freqs_dict[1].keys())
-            freqs = _np.array(list(freqs_dict[0].values())+list(freqs_dict[1].values()))
-        else:
-            label_bars, freqs = list(freqs_dict.keys()),_np.array(list(freqs_dict.values()))
+        # [j for i in klist for j in i]
+        label_bars = [j for idict in frq_dict_list for j in idict.keys()]
+        freqs = _np.array([j for idict in frq_dict_list for j in idict.values()])
 
         # Truncate
         label_bars = [label_bars[ii] for ii in _np.argwhere(freqs>truncate_at).squeeze()]
@@ -3262,14 +3329,14 @@ class ContactGroup(object):
                                                label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
                                                label_fontsize_factor=label_fontsize_factor,
                                                trunc_y_labels_at=.65 * _np.max(freqs),
-                                               allow_splitting=False,
+                                               single_label=True,
                                                )
 
         if xmax is not None:
             jax.set_xlim([-.5, xmax + 1 - .5])
 
         if list_by_interface and interface_vline:
-            xpos = len([ifreq for ifreq in freqs_dict[0].values() if ifreq >truncate_at])
+            xpos = len([ifreq for ifreq in frq_dict_list[0].values() if ifreq >truncate_at])
             jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
         return jax
 
@@ -3803,10 +3870,16 @@ class ContactGroup(object):
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
 
-_hatchets = {"BB-BB":"||",
-             "SC-SC":"--",
-             "BB-SC":"///",
-             "SC-BB":'\\\\\\'}
+
+_hatchets = {"BB-BB": "||",
+             "SC-SC": "--",
+             "BB-SC": "///",
+             "SC-BB": '\\\\\\',
+             "X-SC": "///",
+             "SC-X": "///",
+             "BB-X": "||",
+             "X-BB": "||"
+             }
 
 class GroupOfInterfaces(object):
     r"""Container for :obj:`ContactGroup` objects
@@ -4195,7 +4268,7 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
         if or_frac is not None:
             idx = _idx_at_fraction(ctc_freqs, or_frac)
             print("As orientation value, %u ctcs already capture %3.1f%% of %3.2f." % (idx+1, or_frac * 100, total_freq))
-            print("The %u-th contact has a frequency of %4.2f"%(idx, ctc_freqs[idx]))
+            print("The %u-th contact has a frequency of %4.2f"%(idx+1, ctc_freqs[idx]))
             print()
 
 def _idx_at_fraction(val_desc_order, frac):

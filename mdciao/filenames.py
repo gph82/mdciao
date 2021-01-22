@@ -55,8 +55,11 @@ class filenames(object):
 
         # Traj
         self.top_pdb = path.join(self.example_path,"gs-b2ar.noH.pdb")
-        self.traj_xtc = path.join(self.example_path,"gs-b2ar.noH.stride.5.xtc")
-        self.traj_xtc = path.join(self.example_path,"gs-b2ar.noH.stride.20.xtc")
+        # TODO/NOTE the time-array of the stride_20 xtc does not start at zero,
+        # this helps debug things with time
+        # the unstrided xtc, used in examples and doc, DOES start at zero for clarity
+        self.traj_xtc_stride_20 = path.join(self.example_path, "gs-b2ar.noH.stride.20.xtc")
+        self.traj_xtc = path.join(self.example_path, "gs-b2ar.noH.stride.5.xtc")
 
         # nomenclature
         self.CGN_3SN6 = path.join(self.nomenclature_path,"CGN_3SN6.txt")
@@ -68,6 +71,9 @@ class filenames(object):
         self.GDP_json = path.join(self.json_path,"GDP.json")
         self.GDP_name_json = path.join(self.json_path,"GDP_name_XXX.json")
         self.tip_json = path.join(self.json_path,"tip.json")
+        self.tip_dat= path.join(self.json_path,"tip.dat")
+
+
 
 if __name__ == '__main__':
     pass

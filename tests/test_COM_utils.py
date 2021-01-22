@@ -10,7 +10,7 @@ class Test_COM_utils(unittest.TestCase):
     def setUp(self):
         super(Test_COM_utils,self).setUp()
         self.pdb_file = test_filenames.top_pdb
-        self.file_xtc = test_filenames.traj_xtc
+        self.file_xtc = test_filenames.traj_xtc_stride_20
         self.top = md.load(self.pdb_file).top
         self.traj = md.load(self.file_xtc, top=self.top)
 

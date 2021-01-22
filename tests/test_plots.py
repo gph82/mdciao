@@ -245,8 +245,7 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
     def test_with_freqdat(self):
         with _TDir(suffix="_test_mdciao") as tmpdir:
             freqfile = os.path.join(tmpdir,"freqtest.dat")
-            with open(freqfile,"w") as f:
-                f.write(self.CG2.frequency_str_ASCII_file(1.5, by_atomtypes=False))
+            self.CG2.frequency_table(1.5, freqfile)
             myfig, __, __ = plots.compare_groups_of_contacts({"CG1":self.CG1,
                                                         "CG2":self.CG2,
                                                         "CG2f":freqfile},
@@ -275,8 +274,7 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
     def test_with_CG_freqdict_file_as_list(self):
         with _TDir(suffix="_test_mdciao") as tmpdir:
             freqfile = os.path.join(tmpdir, "freqtest.dat")
-            with open(freqfile, "w") as f:
-                f.write(self.CG2.frequency_str_ASCII_file(1.5, by_atomtypes=False))
+            self.CG2.frequency_table(1.5,freqfile)
             myfig, __, __ = plots.compare_groups_of_contacts([self.CG1,
                                                               self.CG2,
                                                               {"0-1":1, "0-3":1/3},

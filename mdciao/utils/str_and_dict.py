@@ -18,7 +18,7 @@ import mdtraj as _md
 from .lists import re_warp
 from fnmatch import fnmatch as _fnmatch
 from pandas import read_excel as _read_excel
-from os import path as _path
+from os import path as _path, listdir as _ls
 import re as _re
 from collections import defaultdict as _defdict
 
@@ -52,7 +52,14 @@ def get_sorted_trajectories(trajectories):
 
     """
     if isinstance(trajectories,str):
-        trajectories = _glob(trajectories)
+        _trajectories = _glob(trajectories)
+        if len(_trajectories)==0:
+            raise FileNotFoundError("Couldn't find (or pattern-match) anything to '%s'.\n"
+                                    "ls $CWD[%s]:\n%s:"%(trajectories,
+                                                         _path.abspath(_path.curdir),
+                                                         "\n".join(_ls(_path.curdir))))
+        else:
+            trajectories=_trajectories
 
     if isinstance(trajectories[0],str):
         xtcs = sorted(trajectories)
@@ -530,11 +537,105 @@ def _latexify(word, istr):
                     if word2[0] not in ["{","\\"]:
                         new = word1+add_dollar_signs("%s{\mathrm{%s}}"%(char,word2))
                         istr = istr[:span[0]] + new + istr[span[1]:]
-                except ValueError as e:
+                except (ValueError, IndexError) as e:
                     print("Cannot latexify word with more than one instance of %s in the same word: %s"%(char,word))
         spans = [m.span() for m in _re.finditer(word, istr)]
     istr = istr.replace("$$","")
     return istr
+
+def latex_mathmode(istr, enclose=True):
+    r"""
+    Prepend *symbol* words with "\\ " and protect *non-symbol* words with '\\mathrm{}'
+
+    * *symbol* words are things that can
+      be interpreted by LaTeX in math mode, e.g.
+      '\\alpha' or '\\AA'
+    * *non-symbol* words are everything else
+
+    Works "opposite" to :obj:`replace4latex` and for the moment
+    it's my (very bad) solution for latexifying contact-labels' fragments
+    as super indices where the the fragments themselves contain
+    sub-indices (GLU30^$\beta_2AR}
+
+
+    >>> replace4latex("There's an alpha and a beta here, also C_200")
+    "There's an $\alpha$ and a $\beta$ here, also $C_{200}$"
+
+    >>> latex_mathmode("There's an alpha and a beta here, also C_200")
+    "$\\mathrm{There's an }\\alpha\\mathrm{ and a }\\beta\\mathrm{ here, also C_200}$"
+
+    Parameters
+    ----------
+    istr : string
+    enclose : bool, default is True
+        Return string enclosed in
+        dollar-signs: '$string$'
+        Use False for cases where
+        the LaTeX math-mode is already
+        active
+
+    Returns
+    -------
+    istr : string
+    """
+    output = []
+    exp = "(%s)" % "|".join(["\%s" % ss if ss == "^" else "%s" % ss for ss in _symbols])
+    for word in _re.split(exp, istr):
+        if len(word) > 0:
+            if word in _symbols:
+                word = "\\%s" % word
+            else:
+                word = "\\mathrm{%s}" % word
+            output.append(word)
+    output = "".join(output)
+    if enclose:
+        output= "$%s$"%output
+    return output
+
+def latex_superscript_fragments(contact_label, defrag="@"):
+    r"""
+    Format fragment descriptors as Latex math-mode superscripts
+
+    Thinly wrap around :obj:`_latex_superscript_one_fragment` with :obj:`splitlabel`
+
+    Parameters
+    ----------
+    contact_label : str
+        contact label of any form,
+        as long as to AAs are joined
+        with '-' character
+    defrag : char, default is '@'
+        The character to divide
+        residue and fragment label
+    Returns
+    -------
+    contact_label : str
+
+    """
+    return '-'.join(_latex_superscript_one_fragment(w, defrag=defrag) for w in splitlabel(contact_label, "-"))
+
+def _latex_superscript_one_fragment(label, defrag="@"):
+    r"""
+    Format s.t. the fragment descriptor appears as superindex in LaTeX math-mode
+
+    Parameters
+    ----------
+    label : str
+        Contact label, "GLU30" and
+        optionally "GLU30@beta_2AR"
+    defrag : char, default is '@'
+        The character to divide
+        residue and fragment label
+
+    Returns
+    -------
+    label : str
+    """
+    words = label.split(defrag,maxsplit=1)
+    if len(words)==1:
+        return label
+    elif len(words)==2:
+       return words[0] +"$^{%s}$" % latex_mathmode(words[1], enclose=False)
 
 def _label2componentsdict(istr,sep="-",defrag="@",
                           assume_ctc_label=True):
@@ -636,7 +737,6 @@ def _label2componentsdict(istr,sep="-",defrag="@",
     return bits
 
 def splitlabel(label, sep="-", defrag="@"):
-    #TODO propagate this to all times we use "split" in the code
     r"""
     Split a contact label. Analogous to label.split(sep) but more robust
     because fragment names can contain the separator character.
@@ -862,3 +962,132 @@ def defrag_key(key, defrag="@", sep="-"):
 
     """
     return sep.join([kk.split(defrag,1)[0].strip(" ") for kk in splitlabel(key,sep)])
+
+def df_str_formatters(df):
+    r"""
+    Return formatters for :obj:`~pandas.DataFrame.to_string'
+
+    In principle, this should be solved by
+    https://github.com/pandas-dev/pandas/issues/13032,
+    but I cannot get it to work
+
+    Parameters
+    ----------
+    df : :obj:`~pandas.DataFrame`
+
+    Returns
+    -------
+    formatters : dict
+        Keyed with :obj:`df`-keys
+        and valued with lambdas
+        s.t. formatters[key][istr]=formatted_istr
+
+    """
+    formatters = {}
+    for key in df.keys():
+        fmt = "%%-%us"%max([len(ii)+1 for ii in df[key]])
+        formatters[key]=lambda istr : fmt%istr
+    return formatters
+
+class FilenameGenerator(object):
+    r"""
+    Generate per project filenames when you need them
+
+    This is a WIP to consolidate all filenaming in one place,
+    s.t. all sanitizing and project-specific naming operations happen
+    here and not in the cli methods
+
+    A named tuple would've been enough, but we need some
+     methods for dynamic naming (e.g. per-residue or per-traj)
+
+    """
+
+    def __init__(self, output_desc, ctc_cutoff_Ang, output_dir, graphic_ext, table_ext, graphic_dpi, t_unit):
+
+        self._graphic_ext = graphic_ext.strip(".")
+        self._output_desc = output_desc.strip(".")
+        self._ctc_cutoff_Ang = ctc_cutoff_Ang
+        self._output_dir = output_dir
+        self._graphic_dpi = graphic_dpi
+        self._t_unit = t_unit
+        self._allowed_table_exts = ["dat", "txt", "xlsx", "ods"] #TODO what about npy?
+        assert str(table_ext).lower != "none"
+        self._table_ext = str(table_ext).lower().strip(".")
+        if self._table_ext not in self._allowed_table_exts:
+            raise ValueError("The table extension, cant be '%s', "
+                             "has be one of %s"%(table_ext,self._allowed_table_exts))
+
+
+    @property
+    def output_dir(self):
+        return self._output_dir
+    @property
+    def basename_wo_ext(self):
+        return "%s.overall@%2.1f_Ang" % (self.output_desc,
+                                         self.ctc_cutoff_Ang)
+    @property
+    def ctc_cutoff_Ang(self):
+        return self._ctc_cutoff_Ang
+
+    @property
+    def output_desc(self):
+        return self._output_desc.replace(" ","_")
+
+    @property
+    def fullpath_overall_no_ext(self):
+        return _path.join(self.output_dir, self.basename_wo_ext)
+
+    @property
+    def graphic_ext(self):
+        return self._graphic_ext
+
+    @property
+    def graphic_dpi(self):
+        return self._graphic_dpi
+    @property
+    def table_ext(self):
+        return self._table_ext
+
+    @property
+    def t_unit(self):
+        return self._t_unit
+    @property
+    def fullpath_overall_fig(self):
+        return ".".join([self.fullpath_overall_no_ext, self.graphic_ext])
+
+    def fname_per_residue_table(self,istr):
+        assert self.table_ext is not None
+        fname = '%s.%s@%2.1f_Ang.%s' % (self.output_desc,
+                                        istr.replace('*', "").replace(" ","_"),
+                                        self.ctc_cutoff_Ang,
+                                        self.table_ext)
+        return _path.join(self.output_dir, fname)
+
+    def fname_per_site_table(self, istr):
+        return self.fname_per_residue_table(istr)
+
+
+    def fname_timetrace_fig(self, surname):
+        return '%s.%s.time_trace@%2.1f_Ang.%s' % (self.output_desc,
+                                                  surname.replace(" ", "_"),
+                                                  self.ctc_cutoff_Ang,
+                                                  self.graphic_ext)
+    @property
+    def fullpath_overall_excel(self):
+        return ".".join([self.fullpath_overall_no_ext, "xlsx"])
+
+    @property
+    def fullpath_overall_dat(self):
+        return ".".join([self.fullpath_overall_no_ext, "dat"])
+
+    @property
+    def fullpath_pdb(self):
+        return ".".join([self.fullpath_overall_no_ext, "as_bfactors.pdb"])
+
+    @property
+    def fullpath_matrix(self):
+        return self.fullpath_overall_fig.replace("overall@", "matrix@")
+
+    @property
+    def fullpath_flare_pdf(self):
+        return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"), 'pdf'])

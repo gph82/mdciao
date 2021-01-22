@@ -16,6 +16,7 @@ class TestParsersRun(unittest.TestCase):
         parsers.parser_for_dih()
         parsers.parser_for_sites()
         parsers.parser_for_compare_neighborhoods()
+        parsers.parser_for_examples()
 
 class Test_inform_of_parser(unittest.TestCase):
 

@@ -596,7 +596,7 @@ def frag_list_2_frag_groups(frag_list,
     two fragments out of list of fragments. This is used
     by CLTs interface
 
-    Promt the user when disambguation is needed.
+    Prompt the user when disambiguation is needed.
 
     Parameters
     ----------
@@ -605,7 +605,7 @@ def frag_list_2_frag_groups(frag_list,
     frag_idxs_group_1 : iterable of ints, or str default is None
         When str, it has to be a rangeexpand exprs, e.g. 2-5,10
     frag_idxs_group_2 : iterable of ints, or str default is None
-
+        When str, it has to be a rangeexpand exprs, e.g. 2-5,10
 
     Returns
     -------
@@ -631,7 +631,7 @@ def frag_list_2_frag_groups(frag_list,
                 groups_as_fragidxs[ii] = _mdcu.lists.rangeexpand(input('Input group of fragments '
                                                                      '(e.g. 0,3 or 2-4,6) for group %u: ' % (ii + 1)))
             elif isinstance(ifrag_idxs, str):
-                groups_as_fragidxs[ii] = _mdcu.lists.rangeexpand(ifrag_idxs)
+                groups_as_fragidxs[ii] = _mdcu.lists.rangeexpand(ifrag_idxs.strip(","))
     groups_as_residxs = [sorted(_np.hstack([frag_list[ii] for ii in iint])) for iint in
                             groups_as_fragidxs]
 

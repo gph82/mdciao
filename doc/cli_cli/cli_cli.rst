@@ -19,3 +19,5 @@ a try!
    mdc_compare
    mdc_BW_overview
    mdc_CGN_overview
+   mdc_pdb
+

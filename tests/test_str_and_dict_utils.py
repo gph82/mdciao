@@ -20,14 +20,14 @@ test_filenames = filenames()
 class Test_get_sorted_trajectories(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.top_pdb)
-        self.traj = md.load(test_filenames.traj_xtc, top=self.geom.top)
-        self.traj_reverse = md.load(test_filenames.traj_xtc, top=self.geom.top)[::-1]
+        self.traj = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)
+        self.traj_reverse = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)[::-1]
 
     def test_glob_with_pattern(self):
         str_and_dict.get_sorted_trajectories(path.join(test_filenames.example_path,"*.xtc"))
 
     def test_glob_with_filename(self):
-        str_and_dict.get_sorted_trajectories(test_filenames.traj_xtc)
+        str_and_dict.get_sorted_trajectories(test_filenames.traj_xtc_stride_20)
 
     def test_with_one_trajectory_object(self):
         list_out = str_and_dict.get_sorted_trajectories(self.traj)
@@ -39,6 +39,10 @@ class Test_get_sorted_trajectories(unittest.TestCase):
                                  self.traj_reverse])
 
 
+    def test_fails_if_not_traj_at_all(self):
+        with pytest.raises(FileNotFoundError):
+            str_and_dict.get_sorted_trajectories("bogus.xtc")
+
     def test_fails_if_not_trajs(self):
         with pytest.raises(AssertionError):
             str_and_dict.get_sorted_trajectories([self.traj,
@@ -48,16 +52,16 @@ class Test_get_sorted_trajectories(unittest.TestCase):
 class Test_inform_about_trajectories(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.top_pdb)
-        self.traj = md.load(test_filenames.traj_xtc, top=self.geom.top)
-        self.traj_reverse = md.load(test_filenames.traj_xtc, top=self.geom.top)[::-1]
+        self.traj = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)
+        self.traj_reverse = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)[::-1]
 
     def test_fails_no_list(self):
         with pytest.raises(AssertionError):
-            str_and_dict.inform_about_trajectories(test_filenames.traj_xtc)
+            str_and_dict.inform_about_trajectories(test_filenames.traj_xtc_stride_20)
 
     def test_list_of_files(self):
-        str_and_dict.inform_about_trajectories([test_filenames.traj_xtc,
-                                                test_filenames.traj_xtc])
+        str_and_dict.inform_about_trajectories([test_filenames.traj_xtc_stride_20,
+                                                test_filenames.traj_xtc_stride_20])
 
     def test_list_of_trajs(self):
         str_and_dict.inform_about_trajectories([self.traj,
@@ -84,7 +88,7 @@ class Test_delete_exp_inkeys(unittest.TestCase):
 class Test_iterate_and_inform_lambdas(unittest.TestCase):
 
     def setUp(self):
-        self.filename = test_filenames.traj_xtc
+        self.filename = test_filenames.traj_xtc_stride_20
         self.pdb = test_filenames.top_pdb
         self.top = md.load(self.pdb).top
         self.traj = md.load(self.filename, top=self.top)
@@ -715,5 +719,48 @@ class Test_replace_regex_special_chars():
         word ="[]()^"
         assert str_and_dict._replace_regex_special_chars(word,"!!!!!")
 
+class Test_latex_mathmode(unittest.TestCase):
+
+    def test_works(self):
+        self.assertEqual("$\\mathrm{There's an }\\alpha\\mathrm{ and a }\\beta\\mathrm{ here, also C_200}$",
+                         str_and_dict.latex_mathmode("There's an alpha and a beta here, also C_200"))
+
+class Test_latex_superscript_one_fragment(unittest.TestCase):
+
+    def test_works(self):
+        self.assertEqual(str_and_dict._latex_superscript_one_fragment("GLU30@beta_2AR"),
+                         "GLU30$^{\\beta\\mathrm{_2AR}}$")
+    def test_no_fragment(self):
+        self.assertEqual(str_and_dict._latex_superscript_one_fragment("GLU30"),"GLU30")
 if __name__ == '__main__':
     unittest.main()
+
+class Test_FilenameGenerator(unittest.TestCase):
+
+    def test_just_runs(self):
+        fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png", "dat",150,"ps")
+        self.assertEqual(fn.fullpath_overall_fig, "project/beta2_Gs.overall@3.5_Ang.png")
+        self.assertEqual(fn.fullpath_overall_excel, "project/beta2_Gs.overall@3.5_Ang.xlsx")
+        self.assertEqual(fn.fullpath_overall_dat, "project/beta2_Gs.overall@3.5_Ang.dat")
+        self.assertEqual(fn.fullpath_pdb, "project/beta2_Gs.overall@3.5_Ang.as_bfactors.pdb")
+        self.assertEqual(fn.fullpath_matrix, "project/beta2_Gs.matrix@3.5_Ang.png")
+        self.assertEqual(fn.fullpath_flare_pdf, "project/beta2_Gs.flare@3.5_Ang.pdf")
+        self.assertEqual(fn.table_ext,"dat")
+        self.assertEqual(fn.graphic_dpi,150)
+        self.assertEqual(fn.t_unit,"ps")
+        self.assertEqual(fn.fname_per_site_table("NPY"),'project/beta2_Gs.NPY@3.5_Ang.dat')
+        self.assertEqual(fn.fname_timetrace_fig("traj1"),'beta2_Gs.traj1.time_trace@3.5_Ang.png')
+
+    def test_table_ext_None_raises(self):
+        with pytest.raises(ValueError):
+            fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png",None,150,"ps")
+
+
+
+
+
+
+
+
+
+

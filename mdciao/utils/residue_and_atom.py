@@ -80,6 +80,7 @@ def residues_from_descriptors(residue_descriptors,
                               fragment_names=None,
                               additional_resnaming_dicts=None,
                               extra_string_info='',
+                              just_inform=False,
                               ):
     r"""
     Returns residue idxs based on a list of residue descriptors.
@@ -152,7 +153,8 @@ def residues_from_descriptors(residue_descriptors,
         else:
             istr = "ambiguous definition for AA %s" % key
             istr += extra_string_info
-            print(istr)
+            if not just_inform:
+                print(istr)
             cand_chars = _np.hstack([['%s.%u'%(key,ii) for ii in range(n)] for key, n in _Counter(cand_fragments).items()]).tolist()
             for cc, ss, char in zip(cands, cand_fragments, cand_chars):
                 fname = " "
@@ -167,6 +169,8 @@ def residues_from_descriptors(residue_descriptors,
                     if len(extra) > 0:
                         istr = istr + ' (%s)' % extra.rstrip(" ")
                 print(istr)
+            if just_inform:
+                return
             if pick_this_fragment_by_default is None:
                 prompt = "Input one fragment idx out of %s and press enter (selects all matching residues in that fragment).\n" \
                          "Use one x.y descriptor in case of repeated fragment index.\n" \
@@ -279,8 +283,12 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
                 for_extending, __ = residues_from_descriptors(resnames, fragments, top,
                                                             **residues_from_descriptors_kwargs)
                 if None in for_extending:
+                    for idesc in [int_from_AA_code(str(r)), name_from_AA(r)]:
+                        if idesc not in [None,""]:
+                            print("Trying with '%s'"%idesc)
+                            residues_from_descriptors(idesc, fragments,top, just_inform=True)
                     raise ValueError("The input range of residues contains '%s' which "
-                                     "returns an untreatable range %s!" % (r, for_extending))
+                                     "returns an untreatable range %s!\nCheck the above list for help." % (r, for_extending))
                 if "-" in r:  # it was a pair
                     assert len(for_extending)==2
                     for_extending = _np.arange(for_extending[0],
@@ -299,7 +307,7 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
 
 def int_from_AA_code(key):
     """
-    Returns the integer part from a residue name.
+    Returns the integer part from a residue name, None if there isn't
 
     Parameters
     ----------
@@ -312,7 +320,10 @@ def int_from_AA_code(key):
         Integer part of the residue id, example- 30 if the input is "GLU30"
 
     """
-    return int(''.join([ii for ii in key if ii.isnumeric()]))
+    try:
+        return int(''.join([ii for ii in key if ii.isnumeric()]))
+    except ValueError:
+        return None
 
 def name_from_AA(key):
     """

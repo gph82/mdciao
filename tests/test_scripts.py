@@ -73,6 +73,30 @@ class Test_ExamplesCLTs(unittest.TestCase):
                                 )
         assert CP.returncode == 0
 
+    def test_mdc_pdb(self):
+        with remember_cwd():
+            os.chdir(self.tmpdir)
+            CP = self.xCLTs.run("mdc_pdb",
+                                #show=True
+                                )
+        assert CP.returncode == 0
+
+    def test_mdc_compare(self):
+        with remember_cwd():
+            os.chdir(self.tmpdir)
+            self.xCLTs.run("mdc_compare")
+
+
+class Test_ContactGroupL394(unittest.TestCase):
+
+    def test_works(self):
+        CG = mdciao.examples.ContactGroupL394()
+        assert isinstance(CG,mdciao.contacts.ContactGroup)
+
+    def test_except(self):
+        with self.assertRaises(Exception):
+            CG = mdciao.examples.ContactGroupL394(bogus_arg="bogus")
+
 
 if __name__ == '__main__':
     unittest.main()

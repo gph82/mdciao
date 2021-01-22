@@ -48,11 +48,12 @@ Currently, docs are hosted at `<https://proteinformatics.org/mdciao/>`_, but thi
 TODOs
 =====
 This is an informal list of known issues and TODOs:
- * overhaul the "printing" system with proper warnings
+ * overhaul the "printing" system with proper warnings (perhaps use `loguru <https://github.com/Delgan/loguru>`_
  * progressbar not very informative for one chunked trajectory or parallel runs
- * the "consensus" fragmentation sometimes breaks automatic flareplot labelling
+ * the "consensus" fragmentation sometimes breaks automatic flareplot labelling #should no longer be the case after https://github.com/gph82/mdciao/pull/21 (check)
  * Building the docs with sphinx v>2.4.4 doesn't autogen a class' method's linked doc
  * improve sequence alignment choices
+ * the affiliation of a residue to a fragment is done as "res@frag" on the string output and res^frag in figures, this implementation is simply using replace("@","^"), could be better
  * heuristics for proper font-sizing of flareplots could be optimized
  * parallel execution with memory mdtraj.Trajectory objects should be better
  * harmonize documentation API cli methods (mdciao.cli) and the CLI scripts (mdc_*)
@@ -63,6 +64,7 @@ This is an informal list of known issues and TODOs:
    and many `tests could be re-written or deleted <https://en.wikipedia.org/wiki/Technical_debt>`_ , like those needing
    mock-input or writing to tempdirs because writing figures or files could not be avoided.
  * Not moving to py39 until the he dependency `bezier <https://github.com/dhermes/bezier>`_ gets Python 3.9 wheels (`see this issue <https://github.com/dhermes/bezier/issues/243#issuecomment-707205685)>`_).
+ * pinned mdtraj<=1.9.4 see https://github.com/mdtraj/mdtraj/issues/1613
 
 
 System Requirements

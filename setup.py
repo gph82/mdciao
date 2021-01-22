@@ -47,6 +47,7 @@ setup(
              'scripts/mdc_CGN_overview.py',
              'scripts/mdc_compare.py',
              'scripts/mdc_examples.py',
+             'scripts/mdc_pdb.py',
              #'scripts/density_by_sites.py',
              #'scripts/site_figures.py',
              #'scripts/residue_dihedrals.py',

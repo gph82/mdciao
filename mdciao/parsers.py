@@ -83,7 +83,7 @@ def _parser_add_topology(parser):
     parser.add_argument('topology', type=str, help='Topology file')
 
 def _parser_add_cutoff(parser):
-    parser.add_argument("--ctc_cutoff_Ang", type=float,
+    parser.add_argument("--ctc_cutoff_Ang", "-co", type=float,
                         help="The cutoff distance between two residues for them to be considered in contact. "
                              "Default is 3.5 Angstrom.",
                         default=3.5)
@@ -108,11 +108,17 @@ def _parser_add_chunk(parser,help="Trajectories are read in chunks of this size.
                         default=default)
 
 def _parser_add_time_traces(parser):
-    parser.add_argument('--time-trace', dest="plot_timedep", action='store_true',
-                        help='Plot time-traces of the contacts, default is True')
     parser.add_argument('--no-time-trace', dest="plot_timedep", action='store_false',
+                        help="Dont' plot the time-traces of the contacts. Default is to plot them."
                        )
     parser.set_defaults(plot_timedep=True)
+
+def _parser_add_savetrajs(parser):
+    parser.add_argument("-st","--save-trajs", dest="savetrajs", action='store_true',
+                         help="Save trajectory data, default is not to save it.")
+    parser.set_defaults(savetrajs=False)
+    pass
+
 
 def _parser_add_distro(parser):
     parser.add_argument('-d', '--distribution', dest="distro", action='store_true',
@@ -304,8 +310,8 @@ def _parser_add_graphic_dpi(parser):
 
 def _parser_add_table_ext(parser):
     parser.add_argument('-tx','--table_ext', type=str,
-                        help="Extension for tabled files (.dat, .txt, .xlsx). Default is 'none', which does not write anything.",
-                        default=None)
+                        help="Extension for tabled files (.dat, .txt, .xlsx, .ods). Default is '.dat'",
+                        default="dat")
 
 def _parser_add_write_to_disk(parser):
     parser.set_defaults(write_to_disk=False)
@@ -411,18 +417,9 @@ def parser_for_rn():
                         help="Don't sort the residues by their index. Default is to sort them.",
                         action='store_false')
     parser.set_defaults(sort=True)
-
     _parser_add_pbc(parser)
-
-    parser.add_argument('--ask_fragment', dest='ask', action='store_true',
-                        help="Interactively ask for fragment assignment when input matches more than one resSeq")
-    parser.add_argument('--no-ask_fragment', dest='ask', action='store_false')
-    parser.set_defaults(ask=True)
     _parser_add_table_ext(parser)
     _parser_add_graphic_ext(parser)
-
-
-
     _parser_add_nomenclature(parser)
     _parser_add_output_dir(parser)
     _parser_add_output_desc(parser, default='neighborhood')
@@ -433,6 +430,7 @@ def parser_for_rn():
     _parser_add_short_AA_names(parser)
     #_parser_add_no_fragfrag(parser)
     _parser_add_time_traces(parser)
+    _parser_add_savetrajs(parser)
     _parser_add_distro(parser)
     _parser_add_n_cols(parser)
     _parser_add_n_jobs(parser)
@@ -513,7 +511,6 @@ def parser_for_dih():
     return parser
 
 def parser_for_sites():
-    #todo THIS WILL BREAK PARSER FOR SITES!!!! HUH?
     parser = _parser_top_traj(description='Analyse a specific set of residue-residue contacts using a distance cutoff. '
                                           'The user has to provide one or more "site" files in a .json format')
 
@@ -544,6 +541,7 @@ def parser_for_sites():
     _parser_add_atomtypes(parser)
     _paser_add_guess(parser)
     _parser_add_distro(parser)
+    _parser_add_savetrajs(parser)
     return parser
 
 def parser_for_densities():
@@ -564,11 +562,11 @@ def parser_for_interface():
 
     _parser_add_fragments(parser)
     parser.add_argument("-fg1","--frag_idxs_group_1", type=str,
-                        help="Indices of the fragments that belong to the group_1. "
+                        help="Indices of the fragments that belong to the group_1, as CSVs or range, e.g. '1,3-4'. "
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [0]", default=None)
     parser.add_argument("-fg2","--frag_idxs_group_2", type=str,
-                        help="Indices of the fragments that belong to the group_2. "
+                        help="Indices of the fragments that belong to the group_2, as CSVs or range, e.g. '1,3-4'. "
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [1]", default=None)
     _parser_add_cutoff(parser)
@@ -591,6 +589,7 @@ def parser_for_interface():
     _parser_add_stride(parser)
     _parser_add_smooth(parser)
     _parser_add_time_traces(parser)
+    _parser_add_savetrajs(parser)
     _parser_add_n_jobs(parser)
     _parser_add_fragment_names(parser)
     _parser_add_no_frag(parser)
@@ -671,6 +670,19 @@ def parser_for_BW_overview():
 
     return parser
 
+def parser_for_pdb():
+    parser = argparse.ArgumentParser(description='Lookup a four-letter PDB-code in the RCSB PDB and save it locally.')
+
+    parser.add_argument("code", type=str,
+                        help="four-letter PDB code"
+                        )
+    parser.add_argument("--ext","-x", type=str, default=".pdb",
+                        help="extension of file to be saved. Default is '.pdb'")
+    parser.add_argument("--filename","-n", type=str, default=None,
+                        help="Filename (with extension) to save to. If parsed, "
+                             "'--ext' will be ignored. Default is to save '$code.pdb'")
+    return parser
+
 def parser_for_CGN_overview():
     parser = argparse.ArgumentParser(description="Produce an overview of a G-alpha Numbering (CGN)-type"
                                                  " nomenclature, optionally mapping it on an input topology. "
@@ -692,14 +704,29 @@ def parser_for_CGN_overview():
     return parser
 
 def parser_for_compare_neighborhoods():
-    parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies from different files by generating a comparison plot and table")
-    parser.add_argument("files", type=str, nargs="+", help="Files (ASCII or .xlsx) containing the frequencies and labels in the first columns")
-    parser.add_argument("-a","--anchor",type=str,default=None, help="A residue that appears in all contacts. It will be eliminated from the labels for clarity.")
-    parser.add_argument("-k","--keys", type=str,default=None, help="The keys used to label the files, e.g. 'WT,MUT'")
-    parser.add_argument("-c","--colors", type=str, default=_colorstring, help='Colors to use for the dicts, defaults to "%s"'%", ".join(_colorstring.split(",")))
-    parser.add_argument("-m","--mutations",type=str, default=None,help='A replacement dictionary, to be able to re-label residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes all GLUs to ARGs and all LYS to PHEs')
-    parser.add_argument("-t", "--title", type=str, default=None,
-                        help='Title of the plot. Default is None which will take mdciao.plots.compare_groups_of_contacts"s default.')
+    parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies "
+                                                 "from different files by generating a comparison plot and table")
+    parser.add_argument("files", type=str, nargs="+",
+                        help="Files (ASCII or .xlsx) containing the frequencies and labels in the first columns")
+    parser.add_argument("-a","--anchor",type=str,default=None,
+                        help="A residue that appears in all contacts. "
+                             "It will be eliminated from the labels for clarity.")
+    parser.add_argument("-k","--keys", type=str,default=None,
+                        help="The keys used to label the files, e.g. 'WT,MUT'")
+    parser.add_argument("-c","--colors", type=str, default=_colorstring,
+                        help='Colors to use for the dicts, defaults to "%s"'%", ".join(_colorstring.split(",")))
+    parser.add_argument("-m","--mutations",type=str, default=None,
+                        help='A replacement dictionary, to be able to re-label '
+                             'residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes '
+                             'all GLUs to ARGs and all LYS to PHEs')
+    parser.add_argument("-t", "--title", type=str, default='comparison',
+                        help='Title of the plot. Default is "comparison"')
+    parser.add_argument("-p","--pop-up", dest="pop",
+                        help="pop-up an interactive figure before closing. "
+                             "Default is not to pop-up but directly save to file",
+                        action="store_true",
+                        )
+    parser.set_defaults(pop=False)
     _parser_add_output_desc(parser,"freq_comparison")
     _parser_add_graphic_ext(parser)
     return parser

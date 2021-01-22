@@ -429,3 +429,62 @@ def re_match_df(df):
                 continue
 
     return _df
+
+def superpose_w_CA_align(geom, ref,
+                         res_indices=None,
+                         ref_res_indices=None,
+                         verbose=False,
+                         allow_nonmatch=False):
+    r"""
+    Pre align on CA-atoms before calling :obj:`mdtraj.Trajectory.superpose`
+
+    Changes :obj:`geom` in place and returns it as well
+
+    Parameters
+    ----------
+    geom : :obj:`~mdtraj.Trajectory`
+    ref : :obj:`~mdtraj.Trajectory`
+    res_indices : iterable of ints, default is None
+        Use only these indices for the sequence alignment
+    ref_res_indices : iterable of ints, default is None
+        Use only these indices for the sequence alignment
+    allow_nonmatch : bool, default is True
+        Allow to map between ranges of residues that
+        don't match, as long as nonmatching
+        ranges are equal in length, s.t.
+        A A
+        A A
+        B D
+        B D
+        C C
+        C C
+        maps BB to DD
+
+    Non-matching first or last ranges will never be
+    mapped
+
+    Returns
+    -------
+    geom : :obj:`~mdtraj.Trajectory`
+
+    """
+    df = align_tops_or_seqs(geom.top, ref.top,
+                            seq_0_res_idxs=res_indices,
+                            seq_1_res_idxs=ref_res_indices)
+
+    g2rmap, _  = df2maps(df, allow_nonmatch=allow_nonmatch)
+    if verbose:
+        print_verbose_dataframe(df)
+    g_ats, r_ats = [],[]
+    for key, val in g2rmap.items():
+        g, r = None, None
+        try:
+            g = geom.top.residue(key).atom("CA").index
+            r = ref.top.residue(val).atom("CA").index
+        except KeyError:
+            pass
+        if None not in [g,r]:
+            g_ats.append(g)
+            r_ats.append(r)
+    geom.superpose(ref,atom_indices=g_ats, ref_atom_indices=r_ats)
+    return geom
