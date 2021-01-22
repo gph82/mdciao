@@ -844,10 +844,11 @@ def residue_neighborhoods(residues,
 
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
     for idx in res_idxs_list:
-        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, _mdcu.lists.in_what_fragment(idx,
-                                                                                                   fragments_as_residue_idxs),
-                                                   idx,
-                                                   BWresidx2conlab[idx], CGNresidx2conlab[idx]))
+        print(_mdcu.residue_and_atom.residue_line("", refgeom.top.residue(idx),
+                                                  _mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs),
+                                                  additional_resnaming_dicts={"BW": consensus_maps[0],
+                                                                              "CGN": consensus_maps[1]},
+                                                  table=True))
 
     # Create a neighborlist
     naive_bonds=False #WIP, perhaps expose

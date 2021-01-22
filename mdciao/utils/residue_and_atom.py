@@ -502,7 +502,8 @@ _CA_rules = {"GDP": "C1", "P0G":"C12"}
 
 def residue_line(item_desc, residue, frag_idx,
                  additional_resnaming_dicts=None,
-                 fragment_names=None):
+                 fragment_names=None,
+                 table=False):
     r"""Return a string that describes the residue
 
     Can be used justo to inform or to help dis-ambiguating:
@@ -528,6 +529,11 @@ def residue_line(item_desc, residue, frag_idx,
         needs to be disambiguated bc. it pops up in many fragments.
         You can pass {"BW":{895:"3.50", ...} here and that label
         will be displayed next to the residue.
+    table : bool, default is False
+        Assume a header has been aready printed
+        out and print the line with the
+        inline tags
+
     Returns
     -------
     istr : str
@@ -543,12 +549,24 @@ def residue_line(item_desc, residue, frag_idx,
     if fragment_names is not None:
         fragname = ' (%s) ' % fragment_names[frag_idx]
 
-    istr = '%-6s %10s in fragment %u%swith residue index %2u' % (item_desc + ')', residue, frag_idx, fragname, res_idx)
-    if additional_resnaming_dicts is not None:
-        extra = ''
-        for key1, val1 in additional_resnaming_dicts.items():
-            if res_idx in val1.keys() and val1[res_idx] is not None:
-                extra += '%s: %s ' % (key1, val1[res_idx])
-        if len(extra) > 0:
-            istr = istr + ' (%s)' % extra.rstrip(" ")
+    if not table:
+        istr = '%-6s %10s in fragment %u%swith residue index %2u' % (item_desc + ')', residue, frag_idx, fragname, res_idx)
+        if additional_resnaming_dicts is not None:
+            extra = ''
+            for key1, val1 in additional_resnaming_dicts.items():
+                if res_idx in val1.keys() and val1[res_idx] is not None:
+                    extra += '%s: %s ' % (key1, val1[res_idx])
+            if len(extra) > 0:
+                istr = istr + ' (%s)' % extra.rstrip(" ")
+    else:
+        add_dicts = [None,None]
+        if additional_resnaming_dicts is not None:
+            for ii, key in enumerate(["BW","CGN"]):
+                add_dicts[ii]=additional_resnaming_dicts.get(key)
+                if add_dicts[ii] is not None:
+                    add_dicts[ii]=add_dicts[ii][res_idx]
+        istr = '%10s  %10u  %10u %10u %10s %10s' % (residue, res_idx,
+                                                   frag_idx,
+                                                   residue.resSeq,
+                                                   add_dicts[0], add_dicts[1])
     return istr
