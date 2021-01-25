@@ -36,7 +36,7 @@ else:
     file_dict = a.files
 a.colors = a.colors.split(",")
 b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
-for key in ["files", "mutations", "keys","output_desc","plot"]:
+for key in ["files", "mutations", "keys","output_desc"]:
     b.pop(key)
 #b["figsize"]=None
 b["mutations_dict"] = {}
