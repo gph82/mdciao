@@ -228,4 +228,54 @@ def dat2site(dat,comment="#",
     """
     with open(dat,"r") as f:
         lines = f.read().splitlines()
-    return {"name": _psplitext(_psplit(dat)[-1])[0],"bonds":{"AAresSeq":[line.replace(" ","") for line in lines if line.strip(" ")[0] not in comment]}}
+    if bonds!="AAresSeq":
+        raise NotImplementedError
+    return {"name": _psplitext(_psplit(dat)[-1])[0],"bonds":{bonds:[line.replace(" ","") for line in lines if line.strip(" ")[0] not in comment]}}
+
+def txt2site(txtfile,fmt="AAresSeq"):
+    r""" Create a site-dict from a plain text file
+    TODO merge with dat2site
+
+    The expected format is something like
+    # interesting-contacts
+    R38-H387
+    GDP-R199
+    GDP-R201
+
+    The title line is optional, if present,
+    will be used as name
+
+    Parameters
+    ----------
+    txtfile : path to a file
+    fmt : str, default is 'AAresSeq'
+        The expected format of the file.
+        'AAresSeq' means that the pairs
+        are understood as AA-names
+        followed by a sequence index
+        Anything else will raise
+        a not implemented error
+
+
+    Returns
+    -------
+    site : dict
+        A site-dictionary with the usual format
+        If no title-line was given, the filename
+        witouth extension will be used as 'name'
+
+    """
+    with open(txtfile,"r") as f:
+        lines = f.read().splitlines()
+    offset=0
+    name = _psplitext(_psplit(txtfile)[-1])[0]
+    if lines[0].strip(" ").startswith("#"):
+        name = lines[0].split("#")[1].strip(" ")
+        offset +=1
+    assert fmt=="AAresSeq", NotImplementedError("Only 'AAresSeq is implmented for 'fmt' at the moment, can't do '%s'"%(fmt))
+    site={"bonds":{"AAresSeq":[]}}
+    for ii, line in enumerate(lines[offset:]):
+        assert line.count("-")==1, ValueError("The contact descriptor has to contain one (and just one) '-', got %s instead (%u-th line)"%(line, ii+1))
+        site["bonds"]["AAresSeq"].append(line)
+    site["name"]=name
+    return site
