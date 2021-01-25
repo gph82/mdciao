@@ -18,39 +18,42 @@ class Test_find_by_AA(unittest.TestCase):
         self.geom2frags = md.load(test_filenames.small_dimer)
 
     def test_full_long_AA_code(self):
-        self.assertSequenceEqual(residue_and_atom.find_AA(self.geom.top, "GLU30"),[0])
-        self.assertSequenceEqual(residue_and_atom.find_AA(self.geom.top, "LYS29"),[5])
+        self.assertSequenceEqual(residue_and_atom.find_AA("GLU30", self.geom.top), [0])
+        self.assertSequenceEqual(residue_and_atom.find_AA("LYS29", self.geom.top), [5])
 
     def test_full_short_AA_code(self):
-        self.assertSequenceEqual(residue_and_atom.find_AA(self.geom.top, 'E30'), [0])
-        self.assertSequenceEqual(residue_and_atom.find_AA(self.geom.top, 'W32'), [2])
+        self.assertSequenceEqual(residue_and_atom.find_AA('E30', self.geom.top), [0])
+        self.assertSequenceEqual(residue_and_atom.find_AA('W32', self.geom.top), [2])
 
     def test_short_AA_code(self):
-        self.assertSequenceEqual(residue_and_atom.find_AA(self.geom.top, 'E'), [0,4])
+        self.assertSequenceEqual(residue_and_atom.find_AA('E', self.geom.top), [0, 4])
 
     def test_short_long_AA_code(self):
-        self.assertSequenceEqual(residue_and_atom.find_AA(self.geom.top, 'GLU'), [0, 4])
+        self.assertSequenceEqual(residue_and_atom.find_AA('GLU', self.geom.top), [0, 4])
 
     def test_does_not_find_AA(self):
-        assert (residue_and_atom.find_AA(self.geom.top, "lys20")) == []   # small case won't give any result
-        assert (residue_and_atom.find_AA(self.geom.top, 'w32')) == []    # small case won't give any result
-        assert (residue_and_atom.find_AA(self.geom.top, 'w 32')) == []   # spaces between characters won't work
+        assert (residue_and_atom.find_AA("lys20", self.geom.top)) == []   # small case won't give any result
+        assert (residue_and_atom.find_AA('w32', self.geom.top)) == []    # small case won't give any result
+        assert (residue_and_atom.find_AA('w 32', self.geom.top)) == []   # spaces between characters won't work
 
+    #TODO use wildcards and extra dicts to test the new findAAsdd
+    @unittest.skip("findAA does not raise anymore")
     def test_malformed_input(self):
         with pytest.raises(ValueError):
-            residue_and_atom.find_AA(self.geom.top, "GLUTAMINE")
+            residue_and_atom.find_AA("GLUTAMINE", self.geom.top)
 
+    @unittest.skip("findAA does not raise anymore")
     def test_malformed_code(self):
         with pytest.raises(ValueError):
-            residue_and_atom.find_AA(self.geom.top, "ARGI200")
+            residue_and_atom.find_AA("ARGI200", self.geom.top)
 
     def test_ambiguity(self):
         # AMBIGUOUS definition i.e. each residue is present in multiple fragments
-        self.assertSequenceEqual(residue_and_atom.find_AA(self.geom2frags.top, "LYS28"), [5, 13]) # getting multiple idxs,as expected
-        self.assertSequenceEqual(residue_and_atom.find_AA(self.geom2frags.top, "K28"), [5, 13])
+        self.assertSequenceEqual(residue_and_atom.find_AA("LYS28", self.geom2frags.top), [5, 13]) # getting multiple idxs,as expected
+        self.assertSequenceEqual(residue_and_atom.find_AA("K28", self.geom2frags.top), [5, 13])
 
     def test_just_numbers(self):
-        np.testing.assert_array_equal(residue_and_atom.find_AA(self.geom2frags.top,"28"),[5,13])
+        np.testing.assert_array_equal(residue_and_atom.find_AA("28", self.geom2frags.top), [5, 13])
 
 class Test_int_from_AA_code(unittest.TestCase):
     def test_int_from_AA_code(self):
@@ -141,6 +144,16 @@ class Test_residues_from_descriptors_no_ambiguity(unittest.TestCase):
         self.assertSequenceEqual([0,3,0,3], fragidxs)
         # GLU30 is in the 1st fragment
         # GDP382 is in the 4th fragment
+
+    def test_no_ambiguous_just_inform(self):
+        residues = ["GLU30", 30]
+        residxs, fragidx = residue_and_atom.residues_from_descriptors(residues,
+                                                                      self.by_bonds_geom,
+                                                                      self.geom.top,
+                                                                      just_inform=True)
+
+        self.assertListEqual(residxs,[0,0])
+        self.assertListEqual(fragidx,[0,0])
 
     def test_overlaping_frags(self):
         residues = ["GLU30"]
@@ -250,6 +263,19 @@ class Test_residues_from_descriptors(unittest.TestCase):
                                                                         self.geom2frags.top)
             self.assertSequenceEqual([7, 7], residxs)
             self.assertSequenceEqual([3, 3], fragidx)
+
+    def test_ambiguous_just_inform(self):
+        residues = ["GLU30", 30]
+        residxs, fragidx = residue_and_atom.residues_from_descriptors(residues,
+                                                                      self.by_bonds_geom2frags,
+                                                                      self.geom2frags.top,
+                                                                      just_inform=True)
+
+        self.assertListEqual(residxs,[0,8])
+        self.assertListEqual(fragidx,[0,4])
+
+
+
 
     def test_fragment_name(self):
         residues = ["GLU30", 30]
@@ -401,7 +427,7 @@ class Test_find_CA(unittest.TestCase):
         assert CA.name=="CA"
 
     def test_rules(self):
-        res = residue_and_atom.find_AA(self.top,"P0G")[0]
+        res = residue_and_atom.find_AA("P0G", self.top)[0]
         res = self.top.residue(res)
         CA = residue_and_atom.find_CA(res, CA_dict={"P0G":"CAA"})
         assert CA.name=="CAA"

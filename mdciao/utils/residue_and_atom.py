@@ -16,10 +16,7 @@ import numpy as _np
 from  pandas import unique as _pandas_unique
 from mdciao.utils.lists import in_what_N_fragments as _in_what_N_fragments, force_iterable as _force_iterable
 from collections import Counter as _Counter
-
-def find_AA(top, AA_pattern):
-    """
-    Query the index of a residue(s) using a pattern.
+from pandas import DataFrame as _DF
 
 def residues_from_descriptors(residue_descriptors,
                               fragments, top,
@@ -45,7 +42,8 @@ def residues_from_descriptors(residue_descriptors,
     residue_descriptors: string or list of of strings
         AAs of the form of "GLU30" or "E30" or 30, can be mixed
     fragments: iterable of iterables of integers
-        The integers in the iterables of 'fragments' represent residue indices of that fragment
+        The integers in the iterables of 'fragments'
+        represent residue indices of that fragment
     top: :obj:`~mdtraj.Topology`
     pick_this_fragment_by_default: None or integer.
         Pick this fragment without asking in case of ambiguity.
@@ -80,7 +78,7 @@ def residues_from_descriptors(residue_descriptors,
         residue_descriptors = [residue_descriptors]
 
     for key in residue_descriptors:
-        cands = _np.array(find_AA(top, str(key)))
+        cands = _np.array(find_AA(str(key), top,extra_columns=additional_resnaming_dicts))
         cand_fragments =   _force_iterable(_np.squeeze(_in_what_N_fragments(cands, fragments)))
         # TODO refactor into smaller methods
         if len(cands) == 0:
@@ -99,6 +97,9 @@ def residues_from_descriptors(residue_descriptors,
                                  (cands[0], top.residue(cands[0])))
             residxs.append(cands[0])
             fragidxs.append(cand_fragments[0])
+            if just_inform:
+                istr = residue_line("0.0", top.residue(residxs[-1]), fragidxs[-1], additional_resnaming_dicts, fragment_names=fragment_names)
+                print(istr)
         else:
             istr = "ambiguous definition for AA %s" % key
             istr += extra_string_info
@@ -110,6 +111,8 @@ def residues_from_descriptors(residue_descriptors,
                 print(istr)
             if just_inform:
                 print()
+                residxs.extend([ii for ii in cands if ii not in residxs])
+                fragidxs.extend([ii for ii in cand_fragments if ii not in fragidxs])
                 continue
             if pick_this_fragment_by_default is None:
                 prompt = "Input one fragment idx out of %s and press enter (selects all matching residues in that fragment).\n" \
@@ -181,10 +184,10 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     ----------
     range_as_str : string, int or iterable of ints
     fragments : list of iterable of residue indices
-    top : :obj:`mdtraj.Topology` object
+    top : :obj:`~mdtraj.Topology` object
     interpret_as_res_idxs : bool, default is False
         If True, indices without residue names ("380-385") values will be interpreted as
-        residue indices, not resdiue sequential indices
+        residue indices, not residue sequential indices
     sort : bool
         sort the expanded range on return
     residues_from_descriptors_kwargs:
@@ -204,16 +207,17 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
         assert not r.startswith("-")
         if "*" in r or "?" in r:
             assert "-" not in r
-            filtered = find_AA(top, r)
+            filtered = find_AA(r, top, extra_columns= residues_from_descriptors_kwargs.get("additional_resnaming_dicts"))
             if len(filtered)==0:
                 raise ValueError("The input range contains '%s' which "
                                  "returns no residues!"%r)
-            residxs_out.extend(find_AA(top,r))
+            residxs_out.extend(filtered)
         else:
             resnames = r.split('-')
+            is_range = "-" in r
             if interpret_as_res_idxs:
                 # TODO clean the double "-" condiditon 
-                if "-" in r:  # it was a pair
+                if is_range:
                     assert len(resnames) == 2
                     for_extending = _np.arange(int(resnames[0]),
                                                int(resnames[-1]) + 1)
@@ -229,13 +233,12 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
                             residues_from_descriptors(idesc, fragments,top, just_inform=True)
                     raise ValueError("The input range of residues contains '%s' which "
                                      "returns an untreatable range %s!\nCheck the above list for help." % (r, for_extending))
-                if "-" in r:  # it was a pair
+                if is_range:  # it was a pair
                     assert len(for_extending)==2
                     for_extending = _np.arange(for_extending[0],
                                                for_extending[-1] + 1)
                 else: # it was something else
                     pass
-                    #for_extending = for_extending[0]
 
             residxs_out.extend(for_extending)
 
@@ -292,7 +295,7 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
 
     Parameters
     ----------
-    AA: :obj:`mdtraj.Topology.Residue` or a str
+    AA: :obj:`~mdtraj.Topology.Residue` or a str
         The residue in question
 
     substitute_fail: str, default is None
@@ -373,7 +376,7 @@ def parse_and_list_AAs_input(AAs, top, map_conlab=None):
         CSVs of AA descriptors, e.g.
         'GLU30,GLU*,GDP', anything that :obj:`find_AA` can read
         How AAs are being described
-    top : :obj:`mdtraj.Topology`
+    top : :obj:`~mdtraj.Topology`
         Topology where the AAs live
     map_conlab : dict, list or array, default is None
         maps residue indices to consensus labels
@@ -385,7 +388,7 @@ def parse_and_list_AAs_input(AAs, top, map_conlab=None):
     if str(AAs).lower()!="none":
         AAs = [aa.strip(" ") for aa in AAs.split(",")]
         for aa in AAs:
-            cands = find_AA(top,aa)
+            cands = find_AA(aa, top)
             if len(cands) == 0:
                 print("No %s found in the input topology" % aa)
             else:
@@ -510,16 +513,15 @@ def residue_line(item_desc, residue, frag_idx,
             if len(extra) > 0:
                 istr = istr + ' (%s)' % extra.rstrip(" ")
     else:
-        add_dicts = [None,None]
+        add_dicts = []
         if consensus_maps is not None:
-            for ii, key in enumerate(["BW","CGN"]):
-                add_dicts[ii]=consensus_maps.get(key)
-                if add_dicts[ii] is not None:
-                    add_dicts[ii]=add_dicts[ii][res_idx]
+            for key in ["BW","CGN"]:
+                add_dicts.append(_try_double_indexing(consensus_maps, key, res_idx))
+
         istr = '%10s  %10u  %10u %10u %10s %10s' % (residue, res_idx,
-                                                   frag_idx,
-                                                   residue.resSeq,
-                                                   add_dicts[0], add_dicts[1])
+                                                    frag_idx,
+                                                    residue.resSeq,
+                                                    add_dicts[0], add_dicts[1])
     return istr
 
 def _try_double_indexing(indexable, idx1, idx2):
