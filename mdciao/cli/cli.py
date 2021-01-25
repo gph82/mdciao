@@ -165,6 +165,7 @@ def _parse_consensus_option(option, consensus_type,
                                     autofill_consensus=True,
                                     #    verbose=True,
                                     )
+        print()
     if not return_Labeler:
         return map_out
     else:
@@ -821,34 +822,15 @@ def residue_neighborhoods(residues,
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
-    # Do we want BW definitions
-    BWresidx2conlab = _parse_consensus_option(BW_uniprot, 'BW', refgeom.top, fragments_as_residue_idxs,
-                                              write_to_disk=save_nomenclature_files,
-                                              accept_guess=accept_guess)
 
-    # Dow we want CGN definitions:
-    CGNresidx2conlab = _parse_consensus_option(CGN_PDB, 'CGN', refgeom.top, fragments_as_residue_idxs,
-                                               write_to_disk=save_nomenclature_files,
-                                               accept_guess=accept_guess)
+    mid_string = "\nWill compute neighborhoods for the residues\n" \
+                 "%s\nexcluding %u nearest neighbors" \
+                 "\n" % (residues,n_nearest)
+    res_idxs_list, consensus_maps = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
+                                                  midstring=mid_string, BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
+                                                  save_nomenclature_files=save_nomenclature_files,
+                                                  accept_guess=accept_guess, interpret_as_res_idxs=res_idxs, sort=sort)
 
-    res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(residues, fragments_as_residue_idxs, refgeom.top,
-                                                  interpret_as_res_idxs=res_idxs,
-                                                  sort=sort,
-                                                  pick_this_fragment_by_default=None,
-                                                  additional_resnaming_dicts={"BW": {ii:val for ii, val in enumerate(BWresidx2conlab)},
-                                                                           "CGN": {ii:val for ii, val in enumerate(CGNresidx2conlab)}}
-                                                  )
-    print("\nWill compute neighborhoods for the residues")
-    print("%s" % residues)
-    print("excluding %u nearest neighbors\n" % n_nearest)
-
-    print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
-    for idx in res_idxs_list:
-        print(_mdcu.residue_and_atom.residue_line("", refgeom.top.residue(idx),
-                                                  _mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs),
-                                                  additional_resnaming_dicts={"BW": consensus_maps[0],
-                                                                              "CGN": consensus_maps[1]},
-                                                  table=True))
 
     # Create a neighborlist
     naive_bonds=False #WIP, perhaps expose
@@ -931,7 +913,7 @@ def residue_neighborhoods(residues,
         CPs = []
         for idx in val:
             pair = ctc_idxs_small[idx]
-            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, [BWresidx2conlab, CGNresidx2conlab]) for idx in pair]
+            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps.values()) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             CPs.append(_mdcctcs.ContactPair(pair,
                                    [itraj[:, idx] for itraj in ctcs_trajs],
@@ -1969,3 +1951,57 @@ def pdb(code,
     """
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
+
+def _res_resolver(res_range, top, fragments, midstring=None, BW_uniprot=None, CGN_PDB=None,
+                  save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
+
+
+
+    consensus_maps = _parse_consensus_options_and_return_fragment_defs(
+        {"BW": BW_uniprot,
+         "CGN": CGN_PDB},
+        top,
+        fragments,
+        verbose=False,
+        save_nomenclature_files=save_nomenclature_files,
+        accept_guess=accept_guess)[1]
+    consensus_maps={"BW":consensus_maps[0],
+                    "CGN":consensus_maps[1]}
+
+    res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
+                                                                        pick_this_fragment_by_default=None,
+                                                                        additional_resnaming_dicts=consensus_maps,
+                                                                        **rangeexpand_residues2residxs_kwargs,
+                                                                        )
+
+    if midstring is not None:
+        print(midstring)
+
+    header = '%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split()))
+    print(header)
+    for idx in res_idxs_list:
+        print(_mdcu.residue_and_atom.residue_line("", top.residue(idx),
+                                                  _mdcu.lists.in_what_fragment(idx, fragments),
+                                                  consensus_maps=consensus_maps,
+                                                  table=True))
+    return res_idxs_list, consensus_maps
+
+def residue_selection(descriptor,
+                      top,BW_uniprot=None,
+                      CGN_PDB=None,
+                      save_nomenclature_files=False,
+                      accept_guess=False,
+                      fragments=None):
+
+    refgeom = _load_any_geom(top)
+
+    fragments_as_residue_idxs, __ = _mdcfrg.fragments._fragments_strings_to_fragments(fragments,
+                                                                                      refgeom.top, verbose=True)
+    _res_resolver(descriptor, refgeom.top, fragments_as_residue_idxs,
+                  midstring="Your selection '%s' yields:" % descriptor,
+                  BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
+                  save_nomenclature_files=save_nomenclature_files,
+                  accept_guess=accept_guess)
+
+
+    pass
