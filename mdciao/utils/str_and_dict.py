@@ -263,7 +263,7 @@ def unify_freq_dicts(freqs,
 
     if len(not_shared)>0:
         print("These interactions are not shared:\n%s" % (', '.join(not_shared)))
-        print("Their cumulative ctc freq is %f. " % _np.sum(
+        print("Their cumulative ctc freq is %3.2f. " % _np.sum(
             [[ifreq[key] for ifreq in freqs_work.values()] for key in not_shared]))
 
     return freqs_work
