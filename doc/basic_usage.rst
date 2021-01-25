@@ -34,13 +34,13 @@ will print the following to the terminal (some headers have been left out)::
  ./neighborhood.LEU394@3.5_Ang.dat
  ./neighborhood.LEU394.time_trace@3.5_Ang.pdf
 
-And produce the following figures (not the captions):
+produce the following figures (not the captions):
 
 .. figure:: imgs/neighborhoods.overall@3.5_Ang.Fig.1.png
    :scale: 50%
    :name: freqs
 
-   [``neighborhood.overall@3.5_Ang.png``] Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein, are shown. :math:`\Sigma` is the sum over frequencies and represents the average number of neighbors of LEU394. The stimulation started from the `3SN6 structure <https://www.rcsb.org/structure/3SN6>`_ (beta2 adrenergic receptor-Gs protein complex, no antibody). The stimulation itself can be seen interactively `in 3D here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_.
+   [``neighborhood.overall@3.5_Ang.png``] Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein, are shown. :math:`\Sigma` is the sum over frequencies and represents the average number of neighbors of LEU394. The simulation started from the `3SN6 structure <https://www.rcsb.org/structure/3SN6>`_ (beta2 adrenergic receptor-Gs protein complex, no antibody). The simulation itself can be seen interactively `in 3D here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_.
 
 Annotated figures with the timetraces of the above distances are also produced automatically:
 
