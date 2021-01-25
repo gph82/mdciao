@@ -48,7 +48,7 @@ class Test_load(unittest.TestCase):
         site = mdciao.sites.load(test_filenames.tip_dat)
         site_test = mdciao.sites.load(test_filenames.tip_json)
         self.assertDictEqual(site["bonds"], site_test["bonds"])
-        self.assertEqual(site["name"],"tip")
+        self.assertEqual(site["name"],"tip.json as plain ascii")
         self.assertEqual(site["n_bonds"],site_test["n_bonds"])
 
 class Test_dat2site(unittest.TestCase):
@@ -62,7 +62,8 @@ class Test_dat2site(unittest.TestCase):
             "R385-Q229",
             "D381-K232",
             "Q384-I135"
-        ]}, "name":"tip"})
+        ]}, "name":"tip.json as plain ascii"}
+                             )
 class Test_sites_to_AAresSeqdict(unittest.TestCase):
     def setUp(self):
         self.GDP_json = test_filenames.GDP_json

@@ -201,40 +201,8 @@ def site2str(site):
         raise ValueError("What is this site %s? Only dicts or files are accepted"%site)
 
 def dat2site(dat,comment="#",
-             bonds="AAresSeq"):
+             fmt="AAresSeq"):
     r""" Read a non-json (.dat, .txt...) file and turn it into a site dictionary
-
-    Parameters
-    ----------
-    dat : string
-        Filename
-    comment : str, default is "#"
-        Ignore lines starting with
-        the characters in this string
-    bonds : str, default "AAresSeq"
-        How to interpret the file.
-        Default is to interpret them
-        in the AAresSeq format, e.g.
-        "GLU30-ARG131"
-    Returns
-    -------
-    site : a dictionary
-     Same format as return of :obj:`load`
-     "name" will be whatever :obj:`dat` was,
-     without the extension
-
-
-
-    """
-    with open(dat,"r") as f:
-        lines = f.read().splitlines()
-    if bonds!="AAresSeq":
-        raise NotImplementedError
-    return {"name": _psplitext(_psplit(dat)[-1])[0],"bonds":{bonds:[line.replace(" ","") for line in lines if line.strip(" ")[0] not in comment]}}
-
-def txt2site(txtfile,fmt="AAresSeq"):
-    r""" Create a site-dict from a plain text file
-    TODO merge with dat2site
 
     The expected format is something like
     # interesting-contacts
@@ -247,35 +215,39 @@ def txt2site(txtfile,fmt="AAresSeq"):
 
     Parameters
     ----------
-    txtfile : path to a file
-    fmt : str, default is 'AAresSeq'
+    txtfile : str,
+        path to a file
+    comment : str, default is "#"
+        Ignore lines starting with
+        the characters in this string
+    fmt: str, default is "AAresSeq"
         The expected format of the file.
         'AAresSeq' means that the pairs
         are understood as AA-names
-        followed by a sequence index
+        followed by a sequence index:
+        "GLU30-ARG131".
         Anything else will raise
         a not implemented error
 
-
-    Returns
     -------
-    site : dict
-        A site-dictionary with the usual format
-        If no title-line was given, the filename
-        witouth extension will be used as 'name'
-
+    site : a dictionary
+     Same format as return of :obj:`load`
+     "name" will be whatever :obj:`dat` was,
+     without the extension
     """
-    with open(txtfile,"r") as f:
+    with open(dat,"r") as f:
         lines = f.read().splitlines()
-    offset=0
-    name = _psplitext(_psplit(txtfile)[-1])[0]
+    offset = 0
+    name = _psplitext(_psplit(dat)[-1])[0]
     if lines[0].strip(" ").startswith("#"):
         name = lines[0].split("#")[1].strip(" ")
         offset +=1
     assert fmt=="AAresSeq", NotImplementedError("Only 'AAresSeq is implmented for 'fmt' at the moment, can't do '%s'"%(fmt))
     site={"bonds":{"AAresSeq":[]}}
     for ii, line in enumerate(lines[offset:]):
-        assert line.count("-")==1, ValueError("The contact descriptor has to contain one (and just one) '-', got %s instead (%u-th line)"%(line, ii+1))
-        site["bonds"]["AAresSeq"].append(line)
+        if line.strip(" ")[0] not in comment:
+            assert line.count("-")==1, ValueError("The contact descriptor has to contain one (and just one) '-', got %s instead (%u-th line)"%(line, ii+1))
+            site["bonds"]["AAresSeq"].append(line)
     site["name"]=name
     return site
+
