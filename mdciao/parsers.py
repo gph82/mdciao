@@ -108,8 +108,8 @@ def _parser_add_chunk(parser,help="Trajectories are read in chunks of this size.
                         default=default)
 
 def _parser_add_time_traces(parser):
-    parser.add_argument('--no-time-trace', dest="plot_timedep", action='store_false',
-                        help="Dont' plot the time-traces of the contacts. Default is to plot them."
+    parser.add_argument("-nt",'--no-time-trace', dest="plot_timedep", action='store_false',
+                        help="Don't plot the time-traces of the contacts. Default is to plot them."
                        )
     parser.set_defaults(plot_timedep=True)
 
@@ -373,7 +373,7 @@ def _parser_add_frag_colors(parser):
                              " Why 'tab'? check https://matplotlib.org/3.1.1/tutorials/colors/colors.html !",
                         default="tab:blue")
 
-def _paser_add_guess(parser):
+def _parser_add_guess(parser):
     parser.add_argument("-ni", "-no-interactive",
                         dest="accept_guess", action="store_true",
                         help="Try not to be interactive. This can make wrong choices for the user, advanced only.")
@@ -436,7 +436,7 @@ def parser_for_rn():
     _parser_add_n_jobs(parser)
     _parser_add_pop(parser)
     _parser_add_ylim_Ang(parser)
-    _paser_add_guess(parser)
+    _parser_add_guess(parser)
     _parser_add_switch(parser)
     _parser_add_atomtypes(parser)
     return parser
@@ -539,7 +539,7 @@ def parser_for_sites():
     _parser_add_n_jobs(parser)
     _parser_add_table_ext(parser)
     _parser_add_atomtypes(parser)
-    _paser_add_guess(parser)
+    _parser_add_guess(parser)
     _parser_add_distro(parser)
     _parser_add_savetrajs(parser)
     return parser
@@ -614,7 +614,7 @@ def parser_for_interface():
     _parser_add_flare(parser)
     _parser_add_matrix(parser)
     _parser_add_pop(parser)
-    _paser_add_guess(parser)
+    _parser_add_guess(parser)
     _parser_add_title(parser)
     return parser
 
@@ -732,7 +732,7 @@ def parser_for_compare_neighborhoods():
     return parser
 
 def parser_for_examples():
-    desc1 = "Wrapper script to showcase and optionally run examples of the\n " \
+    desc1 = "Wrapper script to showcase and optionally run examples of the\n" \
             "command-line-tools that ship with mdciao.\n"
     ex = _xCLT()
     epilogue = "Available command line tools are:\n"
