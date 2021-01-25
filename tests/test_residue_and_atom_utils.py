@@ -429,3 +429,67 @@ class Test_residue_line(unittest.TestCase):
                                              consensus_maps={"BW": {861: "3.50"}},
                                              fragment_names=["frag0","frag1","frag2","frag3"])
         assert istr=="0.0)       ARG131 in fragment 3 (frag3) with residue index 861 (BW: 3.50)"
+
+    def test_table(self):
+        top = md.load(test_filenames.top_pdb).top
+        res = top.residue(861)
+        istr = residue_and_atom.residue_line("0.0", res, 3,
+                                             consensus_maps={"BW": {861: "3.50"}},
+                                             fragment_names=["frag0", "frag1", "frag2", "frag3"],
+                                             table=True)
+        assert istr == "    ARG131         861           3        131       3.50       None"
+
+    def test_double_indexing(self):
+        self.assertIs(residue_and_atom._try_double_indexing(None,0,1), None)
+        self.assertIs(residue_and_atom._try_double_indexing([["A"]],0,0),"A")
+
+class Test_top2lsd(unittest.TestCase):
+
+    def test_works(self):
+        top = md.load(test_filenames.small_monomer).top
+
+        lsd=residue_and_atom.top2lsd(top,extra_columns={"AAtype":{0:"normal",
+                                                                  7:"nucleotide"}})
+        self.assertDictEqual(lsd[0],
+                             {"residue":"GLU30",
+                              "index":0,
+                              "name":"GLU",
+                              "resSeq":30,
+                              "code":"E",
+                              "short":"E30",
+                              "AAtype":"normal"}
+                             )
+        self.assertDictEqual(lsd[7],
+                             {"residue":"GDP382",
+                              "index":7,
+                              "name":"GDP",
+                              "resSeq":382,
+                              "code":"X",
+                              "short":"X382",
+                              "AAtype":"nucleotide"}
+                             )
+
+
+class Test_lstop(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.top = md.load(test_filenames.small_monomer).top
+
+    def test_works(self):
+        idxs = residue_and_atom.find_AA("GLU", self.top)
+        self.assertEqual(idxs,[0,4])
+
+    def test_doesnt_grab_index(self):
+        idxs = residue_and_atom.find_AA(4, self.top)
+        self.assertEqual(idxs,[])
+
+    def test_dataframe(self):
+        from pandas import DataFrame
+        df = residue_and_atom.find_AA("GLU", self.top, return_df=True)
+        self.assertIsInstance(df,DataFrame)
+
+    def test_ls_AA_in_df(self):
+        df = residue_and_atom.find_AA("*", self.top, return_df=True)
+        idxs = residue_and_atom._ls_AA_in_df("GLU",df)
+        self.assertEqual(idxs,[0,4])

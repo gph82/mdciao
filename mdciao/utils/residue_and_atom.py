@@ -21,59 +21,6 @@ def find_AA(top, AA_pattern):
     """
     Query the index of a residue(s) using a pattern.
 
-    Parameters
-    ----------
-    top : :py:class:`mdtraj.Topology`
-    AA_pattern : string
-        Exact patterns work like this
-         * "GLU30" and "E30" are equivalent and return the index for GLU30
-         * "GLU" and "E" return indices for all GLUs
-         * "GL" will raise ValueError
-         * "30" will return GLU30 and LYS30
-
-        Wildcards are matched against full residue names
-         * "GLU*" will return indices for all GLUs (equivalent to GLU)
-         * "GLU3?" will only return indices all GLUs in the thirties
-         * "E*" will NOT return any GLUs
-
-    #TODO rewrite everything cleaner with fnmatch etc
-    #TODO handle cases when no residue was found uniformly accross mdciao either with None or []
-
-    Returns
-    -------
-    list
-        list of res_idxs where the residue is present,
-        so that top.residue(idx) would return the wanted AA
-
-    """
-    get_name = {1: lambda rr: rr.code,
-                2: lambda rr: rr.name,
-                3: lambda rr: rr.name}
-
-    if AA_pattern[-1].isalpha():
-        lenA = len(AA_pattern)
-        if lenA not in [1,2,3]:
-            raise ValueError("purely alphabetic patterns must have "
-                             " either 1, 2, or 3 letters, not  %s" % (AA_pattern))
-
-        return [rr.index for rr in top.residues if AA_pattern == '%s' % (get_name[lenA](rr))]
-    elif AA_pattern.isdigit():
-        return [rr.index for rr in top.residues if rr.resSeq == int(AA_pattern)]
-    elif "*" in AA_pattern or "?" in AA_pattern:
-        resnames = [str(rr) for rr in top.residues]
-        filtered = _fn_filter(resnames, AA_pattern)
-        filtered_idxs  = [ii for ii, resname in enumerate(resnames) if resname in filtered]
-        return  _np.unique(filtered_idxs)
-    else:
-        code = ''.join([ii for ii in AA_pattern if ii.isalpha()])
-        try:
-            return [rr.index for rr in top.residues if AA_pattern == '%s%u' % (get_name[len(code)](rr), rr.resSeq)]
-        except KeyError:
-            raise ValueError(
-                "The input AA %s must have an alphabetic code of either 3 or 1 letters, but not %s" % (AA_pattern, code))
-
-
-#TODO what happens when residue are not found?G1G1G1G1
 def residues_from_descriptors(residue_descriptors,
                               fragments, top,
                               pick_this_fragment_by_default=None,
@@ -574,3 +521,133 @@ def residue_line(item_desc, residue, frag_idx,
                                                    residue.resSeq,
                                                    add_dicts[0], add_dicts[1])
     return istr
+
+def _try_double_indexing(indexable, idx1, idx2):
+    try:
+        return indexable[idx1][idx2]
+    except (KeyError, IndexError,TypeError):
+        return None
+
+
+def top2lsd(top, substitute_fail="X",
+            extra_columns=None):
+    r"""
+    Return a list of per-residue attributes as dictionaries
+
+    Use :obj:`~pandas.DataFrame` on the return value for a nice table
+
+    Parameters
+    ----------
+    top : :obj:`~mdtraj.Topology`
+    substitute_fail : str, None, int, default is "X"
+        If there is no .code  attribute, different options are there
+        depending on the value of this parameter
+         * None : throw an exception when no short code is found (default)
+         * 'long' : keep the residue's long name, i.e. do nothing
+         * 'c': any alphabetic character, as long as it is of len=1
+         * 0 : the first alphabetic character in the residue's name
+    extra_columns : dictionary of indexables
+        Any other column you want to
+        include in the :obj:`~pandas.DataFrame`
+
+    Returns
+    -------
+    df : :obj:`~pandas.DataFrame`
+    """
+    list_of_dicts = []
+    for rr in top.residues:
+        rdict = {"residue": str(rr),
+                 "index": rr.index,
+                 "name": rr.name,
+                 "resSeq": rr.resSeq,
+                 "code": shorten_AA(rr, substitute_fail=substitute_fail, keep_index=False),
+                 "short": shorten_AA(rr, substitute_fail=substitute_fail, keep_index=True)}
+        if extra_columns is not None:
+            for key, val in extra_columns.items():
+                try:
+                    rdict[key] = val[rr.index]
+                except (KeyError, IndexError):
+                    rdict[key] = None
+        list_of_dicts.append(rdict)
+
+    return list_of_dicts
+
+def find_AA(AA_pattern, top,
+            extra_columns=None,
+            return_df=False):
+    r"""
+
+    Residue matching with UNIX-shell patterns
+
+    Similar to the shell command "ls",
+    using posix-style wildcards like
+    shown in the examples or here:
+    https://docs.python.org/3/library/fnmatch.html
+
+    Any other attribute that's passed
+    as :obj:`extra_columns` will be
+    matched as explained below, e.g.
+    "3.50" to get one residue in
+    the BW-nomenclature or "3.*"
+    to get the whole TM-helix 3
+
+    The examples use '*' as wildcard,
+    but '?' (as in 'ls') also works
+
+    Examples
+    --------
+        * 'PRO' : returns all PROs, matching
+          via the attribute "name"
+        * 'P'   : returns all PROs, matching
+          via the attribute "code"
+        * 'P*'  : returns all PROs,PHEs and
+          any other residue that starts with "P",
+          either in "name" or in "code"
+        * 'PRO39' : returns PRO39, matching
+          via full residue name (long)
+        * 'P39'  : returns PRO39, matching
+          via full residue name (short)
+        * 'PRO3*' : returns all PROs
+          with sequence indices that start
+          with 3, e.g. 'PRO39, PRO323, PRO330' etc
+        * '3' : returns all residues with
+          sequence indices 3
+        * '3*' : returns all residues with
+          sequence indices that start with 3
+
+
+    Parameters
+    ----------
+    AA_patt : str or int
+    top : :obj:`~mdtraj.Topology`
+    return_df : bool, default is False
+        Return the full :obj:`~pandas.DataFrame`
+        of the matching residues
+
+    Returns
+    -------
+    AAs : list or :obj:`~pandas.DataFrame`
+        List of serial residue indices, s.t.
+        top.residue(idx) would return the wanted residue.
+        With :obj:`return_df`, you can get the
+        full :obj:`~pandas.DataFrame` of the
+        matching residues.
+    """
+
+    lsd = top2lsd(top, substitute_fail="X", extra_columns=extra_columns)
+
+    idxs = [ii for ii, idict in enumerate(lsd) if _fn_filter([str(val) for key, val in idict.items() if key!="index"], str(AA_pattern))]
+
+    if return_df:
+        return _DF([lsd[ii] for ii in idxs])
+    else:
+        return idxs
+
+
+def _ls_AA_in_df(AA_patt, df):
+    r""" Same as find_AA but using dataframe syntax...between 10 and 100 times slower (200mus to 20ms)"""
+    from fnmatch import fnmatch as _fnmatch
+    _AA = str(AA_patt)
+    match = lambda val : _fnmatch(val,_AA)
+    idxs = _np.flatnonzero(df.applymap(lambda val: str(val)).applymap(match).values.any(1)).tolist()
+    return idxs
