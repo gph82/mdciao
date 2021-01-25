@@ -1986,22 +1986,84 @@ def _res_resolver(res_range, top, fragments, midstring=None, BW_uniprot=None, CG
                                                   table=True))
     return res_idxs_list, consensus_maps
 
-def residue_selection(descriptor,
-                      top,BW_uniprot=None,
+def residue_selection(expression,
+                      top, BW_uniprot=None,
                       CGN_PDB=None,
                       save_nomenclature_files=False,
                       accept_guess=False,
                       fragments=None):
+    r"""
+    Find residues in an input topology using Unix filename pattern matching
+    like in an 'ls' Unix operation.
 
+    Parameters
+    ----------
+    expression : str
+        Unix-like expressions and ranges are allowed, e.g.
+        'GLU,PH*,380-394,3.50,GH.5*.', as are consensus
+        descriptors if consensus labels are provided
+    top : str or :obj:`~mdtraj.Trajectory`
+        The topology to use
+     BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
+        Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
+        try to locate a local filename or do a web lookup in the GPCRdb.
+        If `mdciao.nomenclature.Labeler_BW`, use this object directly
+        See :obj:`mdciao.nomenclature` for more info and references.
+    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+        Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
+        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+    save_nomenclature_files : bool, default is False
+        Save available nomenclature definitions to disk so :
+    accept_guess : bool, default is False
+        Accept mdciao's guesses regarding fragment
+        identification using nomenclature labels
+     fragments : list, default is None
+        Fragment control.
+        * None: use the default :obj:`~mdciao.fragments.get_fragments`,
+          currently 'lig_resSeq+'
+        * ["consensus"] : use things like "TM*" or "G.H*", i.e.
+         Ballesteros-Weinstein or CGN-sub-subunit labels.
+        * List of len 1 with some fragmentation heuristic, e.g.
+         ["lig_resSeq+"]. will use the default of
+         :obj:`mdciao.fragments.get_fragments`. See there for
+         info on defaults and other heuristics.
+        * List of len N that can mix different possibilities:
+          * iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
+          * ranges expressed as integer strings, "20-30"
+          * ranges expressed as residue descriptors ["GLU30-LEU40"]
+        Numeric expressions are interepreted as zero-indexed and unique
+        residue serial indices, i.e. 30-40 does not necessarily equate
+        "GLU30-LEU40" unless serial and sequence index coincide.
+        If there's more than one "GLU30", the user gets asked to
+        disambiguate. The resulting fragments need not cover all of the topology,
+        they only need to not overlap.
+
+    Returns
+    -------
+    res_idxs_list : np.ndarray
+        The residue indices of the residues
+        that match the :obj:`expression`
+    frags : list of integers
+        Whatever fragments the user chose
+    consensus_maps : dict
+        Keys are currently just 'BW' and 'CGN'
+        Values are lists of len :obj:`topology.n_residues`
+        with the consensus labels. All labels
+        will be None if no consensus info
+        was provided
+
+    """
     refgeom = _load_any_geom(top)
 
-    fragments_as_residue_idxs, __ = _mdcfrg.fragments._fragments_strings_to_fragments(fragments,
-                                                                                      refgeom.top, verbose=True)
-    _res_resolver(descriptor, refgeom.top, fragments_as_residue_idxs,
-                  midstring="Your selection '%s' yields:" % descriptor,
-                  BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
-                  save_nomenclature_files=save_nomenclature_files,
-                  accept_guess=accept_guess)
+    _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(None),
+                                                                   refgeom.top, verbose=True)
+    res_idxs_list, consensus_maps = _res_resolver(expression, refgeom.top, _frags,
+                                                  midstring="Your selection '%s' yields:" % expression,
+                                                  BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
+                                                  save_nomenclature_files=save_nomenclature_files,
+                                                  accept_guess=accept_guess,
+                                                  just_inform=True)
 
-
-    pass
+    return res_idxs_list, _frags, consensus_maps

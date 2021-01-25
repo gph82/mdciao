@@ -764,3 +764,14 @@ class Test_compare(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class Test_residue_selection(unittest.TestCase):
+
+    def test_works(self):
+        residue_idxs, __, maps = cli.residue_selection("GLU30",test_filenames.small_monomer)
+
+        _np.testing.assert_array_equal(residue_idxs,[0])
+
+        self.assertListEqual(list(maps.keys()),["BW","CGN"])
+        {self.assertListEqual(val,[None]*len(maps["CGN"]))
+         for key, val in maps.items()}
