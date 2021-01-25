@@ -48,6 +48,7 @@ setup(
              'scripts/mdc_compare.py',
              'scripts/mdc_examples.py',
              'scripts/mdc_pdb.py',
+             'scripts/mdc_residues.py',
              #'scripts/density_by_sites.py',
              #'scripts/site_figures.py',
              #'scripts/residue_dihedrals.py',

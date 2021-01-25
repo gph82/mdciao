@@ -5,7 +5,7 @@ Basic Usage
 
 .. _`3D visualization`:
 
-Below you will find a very simple example of how to use `mdciao` from the command-line. Keep scrolling to the `Highlights`_ for more elaborate CLI-examples or visit the `example_notebooks`_ for API walkthroughs.
+Below you will find a very simple example of how to use ``mdciao`` from the command-line. Keep scrolling to the `Highlights`_ for more elaborate CLI-examples. API walkthroughts as example Jupyter notebooks will follow soon.
 
 .. note::
    **3D visualization**: the simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples. You can also download `mdciao_example.zip <http://proteinformatics.org/mdciao/mdciao_example.zip>`_ and follow along.
@@ -29,9 +29,10 @@ will print the following to the terminal (some headers have been left out)::
  The 4-th contact has a frequency of 0.23
 
  The following files have been created
+ The following files have been created
  ./neighborhood.overall@3.5_Ang.pdf
+ ./neighborhood.LEU394@3.5_Ang.dat
  ./neighborhood.LEU394.time_trace@3.5_Ang.pdf
- ./neighborhood.LEU394.traj.dat
 
 And produce the following figures (not the captions):
 
@@ -39,7 +40,7 @@ And produce the following figures (not the captions):
    :scale: 50%
    :name: freqs
 
-   Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein are shown. :math:`\Sigma` is the sum over frequencies and represents the average number of neighbors of LEU394. The stimulation started from the `3SN6 structure <https://www.rcsb.org/structure/3SN6>`_ (beta2 adrenergic receptor-Gs protein complex, no antibody). The stimulation itself can be seen interactively `in 3D here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_.
+   [``neighborhood.overall@3.5_Ang.png``] Using 3.5 AA as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein, are shown. :math:`\Sigma` is the sum over frequencies and represents the average number of neighbors of LEU394. The stimulation started from the `3SN6 structure <https://www.rcsb.org/structure/3SN6>`_ (beta2 adrenergic receptor-Gs protein complex, no antibody). The stimulation itself can be seen interactively `in 3D here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_.
 
 Annotated figures with the timetraces of the above distances are also produced automatically:
 
@@ -47,6 +48,6 @@ Annotated figures with the timetraces of the above distances are also produced a
    :scale: 33%
    :align: center
 
-   Time-traces of the residue-residue distances used for the frequencies in :numref:`freqs`. The last time-trace represents the total number of neighbors (:math:`\Sigma`) distances below the given cutoff) at any given moment in the trajectory. On average, LEU394 has around 1.7 non-bonded neighbors below the cutoff (see legend of :numref:`freqs`)
+   [``neighborhoods.LEU394.time_trace@3.5_Ang.png``] Time-traces of the residue-residue distances used for the frequencies in :numref:`freqs`. The last time-trace represents the total number of neighbors (:math:`\Sigma`) within the given cutoff at any given moment in the trajectory. On average, LEU394 has around 1.7 non-bonded neighbors below the cutoff (see legend of :numref:`freqs`).
 
-Anything that gets shown in any way to the output can be saved for later use as human readable ASCII-files, Excel-tables or NumPy `.npy` files for later use.
+Anything that gets shown in any way to the output can be saved for later use as human readable ASCII-files (``.dat,.txt``), spreadsheets (``.ods,.xlsx``) or NumPy (``.npy``) files.
