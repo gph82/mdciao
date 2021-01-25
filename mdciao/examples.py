@@ -151,13 +151,21 @@ class ExamplesCLTs(object):
                 "%s" % (self.pdb)
                 ]
         pass
+
     @property
     def mdc_pdb(self):
         return ["mdc_pdb.py 3SN6"]
 
     @property
-    def clts(self):
+    def mdc_residues(self):
+        return ["mdc_residues.py ",
+                "P0G,380-394,3.5* "
+                "%s"% (self.pdb),
+                " --BW_uniprot %s" % self.BW_file,
+                "-ni"]
 
+    @property
+    def clts(self):
         return [attr for attr in dir(self) if attr.startswith("mdc")]
 
     def _assert_clt_exists(self, clt):
@@ -175,7 +183,7 @@ class ExamplesCLTs(object):
         print("%s--------------"%("".join(["-" for _ in clt]))) # really?
         oneline = self._join_args(clt)
         print(oneline.replace(" -", " \n-"))
-        print("\n\nYou can re-run 'mdc_examples %s.py' with the  '-x' option to execute the command directly\n"
+        print("\n\nYou can re-run 'mdc_examples %s.py' with the '-x' option to execute the command directly\n"
               "or you can paste the line below into your terminal, add/edit options and then execute:\n"%clt)
         print(oneline)
 

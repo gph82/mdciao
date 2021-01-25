@@ -765,3 +765,15 @@ def parser_for_examples():
 
     return parser
 
+def parser_for_residues():
+    parser = argparse.ArgumentParser(description="Find residues in an input topology using Unix filename pattern matching\n"
+                                                 "like in an 'ls' Unix operation.",
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("residues",type=str,help="Unix-like expressions and ranges are allowed, e.g.\n"
+                                                 "'GLU,PH*,380-394,3.50,GH.5*.', as are consensus descriptors\n"
+                                                 "if consensus labels are provided")
+    _parser_add_nomenclature(parser)
+    _parser_add_topology(parser)
+    _parser_add_guess(parser)
+    _parser_add_fragments(parser)
+    return parser
