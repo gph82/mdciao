@@ -154,17 +154,17 @@ def _parse_consensus_option(option, consensus_type,
         if answer is None:
             print("No fragments belonging to the nomenclature data\n"
                   " could be guessed based on your fragments, this might be a weird case")
-            restrict_to_residxs = None
+            map_out = [None]*top.n_residues
         else:
             restrict_to_residxs = _np.hstack([fragments[ii] for ii in answer])
-        map_out = LC_out.top2labels(top,
-                                    min_hit_rate=0,  # We need give-up the re-guessing here,
-                                    # because explicitely done it before with an option for
-                                    # interactivity
-                                    restrict_to_residxs=restrict_to_residxs,
-                                    autofill_consensus=True,
-                                    #    verbose=True,
-                                    )
+            map_out = LC_out.top2labels(top,
+                                        min_hit_rate=0,  # We need give-up the re-guessing here,
+                                        # because explicitely done it before with an option for
+                                        # interactivity
+                                        restrict_to_residxs=restrict_to_residxs,
+                                        autofill_consensus=True,
+                                        #    verbose=True,
+                                        )
         print()
     if not return_Labeler:
         return map_out
