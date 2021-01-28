@@ -16,64 +16,8 @@ import numpy as _np
 from  pandas import unique as _pandas_unique
 from mdciao.utils.lists import in_what_N_fragments as _in_what_N_fragments, force_iterable as _force_iterable
 from collections import Counter as _Counter
+from pandas import DataFrame as _DF
 
-def find_AA(top, AA_pattern):
-    """
-    Query the index of a residue(s) using a pattern.
-
-    Parameters
-    ----------
-    top : :py:class:`mdtraj.Topology`
-    AA_pattern : string
-        Exact patterns work like this
-         * "GLU30" and "E30" are equivalent and return the index for GLU30
-         * "GLU" and "E" return indices for all GLUs
-         * "GL" will raise ValueError
-         * "30" will return GLU30 and LYS30
-
-        Wildcards are matched against full residue names
-         * "GLU*" will return indices for all GLUs (equivalent to GLU)
-         * "GLU3?" will only return indices all GLUs in the thirties
-         * "E*" will NOT return any GLUs
-
-    #TODO rewrite everything cleaner with fnmatch etc
-    #TODO handle cases when no residue was found uniformly accross mdciao either with None or []
-
-    Returns
-    -------
-    list
-        list of res_idxs where the residue is present,
-        so that top.residue(idx) would return the wanted AA
-
-    """
-    get_name = {1: lambda rr: rr.code,
-                2: lambda rr: rr.name,
-                3: lambda rr: rr.name}
-
-    if AA_pattern[-1].isalpha():
-        lenA = len(AA_pattern)
-        if lenA not in [1,2,3]:
-            raise ValueError("purely alphabetic patterns must have "
-                             " either 1, 2, or 3 letters, not  %s" % (AA_pattern))
-
-        return [rr.index for rr in top.residues if AA_pattern == '%s' % (get_name[lenA](rr))]
-    elif AA_pattern.isdigit():
-        return [rr.index for rr in top.residues if rr.resSeq == int(AA_pattern)]
-    elif "*" in AA_pattern or "?" in AA_pattern:
-        resnames = [str(rr) for rr in top.residues]
-        filtered = _fn_filter(resnames, AA_pattern)
-        filtered_idxs  = [ii for ii, resname in enumerate(resnames) if resname in filtered]
-        return  _np.unique(filtered_idxs)
-    else:
-        code = ''.join([ii for ii in AA_pattern if ii.isalpha()])
-        try:
-            return [rr.index for rr in top.residues if AA_pattern == '%s%u' % (get_name[len(code)](rr), rr.resSeq)]
-        except KeyError:
-            raise ValueError(
-                "The input AA %s must have an alphabetic code of either 3 or 1 letters, but not %s" % (AA_pattern, code))
-
-
-#TODO what happens when residue are not found?G1G1G1G1
 def residues_from_descriptors(residue_descriptors,
                               fragments, top,
                               pick_this_fragment_by_default=None,
@@ -98,8 +42,9 @@ def residues_from_descriptors(residue_descriptors,
     residue_descriptors: string or list of of strings
         AAs of the form of "GLU30" or "E30" or 30, can be mixed
     fragments: iterable of iterables of integers
-        The integers in the iterables of 'fragments' represent residue indices of that fragment
-    top: :obj:`mdtraj.Topology`
+        The integers in the iterables of 'fragments'
+        represent residue indices of that fragment
+    top: :obj:`~mdtraj.Topology`
     pick_this_fragment_by_default: None or integer.
         Pick this fragment without asking in case of ambiguity.
         If None, the user will we prompted
@@ -113,6 +58,8 @@ def residues_from_descriptors(residue_descriptors,
         You can pass {"BW":{895:"3.50", ...} here and that label
         will be displayed next to the residue. :obj:`mdciao.cli`
         methods use this.
+    just_inform : bool, default is False
+        Just inform about the AAs, don't ask for a selection
     extra_string_info: string with any additional info to be printed in case of ambiguity
 
     Returns
@@ -131,7 +78,7 @@ def residues_from_descriptors(residue_descriptors,
         residue_descriptors = [residue_descriptors]
 
     for key in residue_descriptors:
-        cands = _np.array(find_AA(top, str(key)))
+        cands = _np.array(find_AA(str(key), top,extra_columns=additional_resnaming_dicts))
         cand_fragments =   _force_iterable(_np.squeeze(_in_what_N_fragments(cands, fragments)))
         # TODO refactor into smaller methods
         if len(cands) == 0:
@@ -150,6 +97,9 @@ def residues_from_descriptors(residue_descriptors,
                                  (cands[0], top.residue(cands[0])))
             residxs.append(cands[0])
             fragidxs.append(cand_fragments[0])
+            if just_inform:
+                istr = residue_line("0.0", top.residue(residxs[-1]), fragidxs[-1], additional_resnaming_dicts, fragment_names=fragment_names)
+                print(istr)
         else:
             istr = "ambiguous definition for AA %s" % key
             istr += extra_string_info
@@ -157,20 +107,13 @@ def residues_from_descriptors(residue_descriptors,
                 print(istr)
             cand_chars = _np.hstack([['%s.%u'%(key,ii) for ii in range(n)] for key, n in _Counter(cand_fragments).items()]).tolist()
             for cc, ss, char in zip(cands, cand_fragments, cand_chars):
-                fname = " "
-                if fragment_names is not None:
-                    fname = ' (%s) ' % fragment_names[ss]
-                istr = '%-6s %10s in fragment %2u%swith residue index %2u' % (char+')', top.residue(cc), ss, fname, cc)
-                if additional_resnaming_dicts is not None:
-                    extra = ''
-                    for key1, val1 in additional_resnaming_dicts.items():
-                        if cc in val1.keys() and val1[cc] is not None:
-                            extra += '%s: %s ' % (key1, val1[cc])
-                    if len(extra) > 0:
-                        istr = istr + ' (%s)' % extra.rstrip(" ")
+                istr = residue_line(char, top.residue(cc), ss, additional_resnaming_dicts)
                 print(istr)
             if just_inform:
-                return
+                print()
+                residxs.extend([ii for ii in cands if ii not in residxs])
+                fragidxs.extend([ii for ii in cand_fragments if ii not in fragidxs])
+                continue
             if pick_this_fragment_by_default is None:
                 prompt = "Input one fragment idx out of %s and press enter (selects all matching residues in that fragment).\n" \
                          "Use one x.y descriptor in case of repeated fragment index.\n" \
@@ -241,10 +184,10 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     ----------
     range_as_str : string, int or iterable of ints
     fragments : list of iterable of residue indices
-    top : :obj:`mdtraj.Topology` object
+    top : :obj:`~mdtraj.Topology` object
     interpret_as_res_idxs : bool, default is False
         If True, indices without residue names ("380-385") values will be interpreted as
-        residue indices, not resdiue sequential indices
+        residue indices, not residue sequential indices
     sort : bool
         sort the expanded range on return
     residues_from_descriptors_kwargs:
@@ -264,16 +207,17 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
         assert not r.startswith("-")
         if "*" in r or "?" in r:
             assert "-" not in r
-            filtered = find_AA(top, r)
+            filtered = find_AA(r, top, extra_columns= residues_from_descriptors_kwargs.get("additional_resnaming_dicts"))
             if len(filtered)==0:
                 raise ValueError("The input range contains '%s' which "
                                  "returns no residues!"%r)
-            residxs_out.extend(find_AA(top,r))
+            residxs_out.extend(filtered)
         else:
             resnames = r.split('-')
+            is_range = "-" in r
             if interpret_as_res_idxs:
                 # TODO clean the double "-" condiditon 
-                if "-" in r:  # it was a pair
+                if is_range:
                     assert len(resnames) == 2
                     for_extending = _np.arange(int(resnames[0]),
                                                int(resnames[-1]) + 1)
@@ -289,13 +233,12 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
                             residues_from_descriptors(idesc, fragments,top, just_inform=True)
                     raise ValueError("The input range of residues contains '%s' which "
                                      "returns an untreatable range %s!\nCheck the above list for help." % (r, for_extending))
-                if "-" in r:  # it was a pair
+                if is_range:  # it was a pair
                     assert len(for_extending)==2
                     for_extending = _np.arange(for_extending[0],
                                                for_extending[-1] + 1)
                 else: # it was something else
                     pass
-                    #for_extending = for_extending[0]
 
             residxs_out.extend(for_extending)
 
@@ -352,7 +295,7 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
 
     Parameters
     ----------
-    AA: :obj:`mdtraj.Topology.Residue` or a str
+    AA: :obj:`~mdtraj.Topology.Residue` or a str
         The residue in question
 
     substitute_fail: str, default is None
@@ -433,7 +376,7 @@ def parse_and_list_AAs_input(AAs, top, map_conlab=None):
         CSVs of AA descriptors, e.g.
         'GLU30,GLU*,GDP', anything that :obj:`find_AA` can read
         How AAs are being described
-    top : :obj:`mdtraj.Topology`
+    top : :obj:`~mdtraj.Topology`
         Topology where the AAs live
     map_conlab : dict, list or array, default is None
         maps residue indices to consensus labels
@@ -445,7 +388,7 @@ def parse_and_list_AAs_input(AAs, top, map_conlab=None):
     if str(AAs).lower()!="none":
         AAs = [aa.strip(" ") for aa in AAs.split(",")]
         for aa in AAs:
-            cands = find_AA(top,aa)
+            cands = find_AA(aa, top)
             if len(cands) == 0:
                 print("No %s found in the input topology" % aa)
             else:
@@ -506,3 +449,207 @@ def find_CA(res, CA_name="CA", CA_dict=None):
 
 
 _CA_rules = {"GDP": "C1", "P0G":"C12"}
+
+def residue_line(item_desc, residue, frag_idx,
+                 consensus_maps=None,
+                 fragment_names=None,
+                 table=False):
+    r"""Return a string that describes the residue
+
+    Can be used justo to inform or to help dis-ambiguating:
+    0.0)        GLU10 in fragment 0 with residue index  6 (CGN: G.HN.27)
+    ...
+    1.0)        GLU10 in fragment 1 with residue index 363
+
+
+    Parameters
+    ----------
+    item_desc : str
+        Description for the item of the list,
+        "1.0" or "3.2"
+    residue : :obj:`~mdtraj.core.Residue`
+    frag_idx : int
+        Fragment index
+    fragment_names : list, default is None
+        Fragment names
+    consensus_maps : dict of indexables, default is None
+        Dictionary of dictionaries. Lower-level dicts are keyed
+        with residue indices and valued with additional residue names.
+        Higher-level keys can be whatever. Use case is e.g. if "R131"
+        needs to be disambiguated bc. it pops up in many fragments.
+        You can pass {"BW":{895:"3.50", ...} here and that label
+        will be displayed next to the residue.
+    table : bool, default is False
+        Assume a header has been aready printed
+        out and print the line with the
+        inline tags
+
+    Returns
+    -------
+    istr : str
+        An informative string about this residue, that
+        can be used to dis-ambiguate via the unique
+        item descriptor, e.g:
+        3.1)       GLU122 in fragment 3 with residue index 852 (BW: 3.41)
+
+    """
+    res_idx = residue.index
+
+    fragname = " "
+    if fragment_names is not None:
+        fragname = ' (%s) ' % fragment_names[frag_idx]
+
+    if not table:
+        istr = '%-6s %10s in fragment %u%swith residue index %2u' % (item_desc + ')', residue, frag_idx, fragname, res_idx)
+        if consensus_maps is not None:
+            extra = ''
+            for key1, val1 in consensus_maps.items():
+                try:
+                    jstr = val1[res_idx]
+                    if jstr is not None:
+                        extra += '%s: %s ' % (key1, val1[res_idx])
+                except (KeyError,IndexError):
+                    pass
+            if len(extra) > 0:
+                istr = istr + ' (%s)' % extra.rstrip(" ")
+    else:
+        add_dicts = []
+        if consensus_maps is not None:
+            for key in ["BW","CGN"]:
+                add_dicts.append(_try_double_indexing(consensus_maps, key, res_idx))
+
+        istr = '%10s  %10u  %10u %10u %10s %10s' % (residue, res_idx,
+                                                    frag_idx,
+                                                    residue.resSeq,
+                                                    add_dicts[0], add_dicts[1])
+    return istr
+
+def _try_double_indexing(indexable, idx1, idx2):
+    try:
+        return indexable[idx1][idx2]
+    except (KeyError, IndexError,TypeError):
+        return None
+
+
+def top2lsd(top, substitute_fail="X",
+            extra_columns=None):
+    r"""
+    Return a list of per-residue attributes as dictionaries
+
+    Use :obj:`~pandas.DataFrame` on the return value for a nice table
+
+    Parameters
+    ----------
+    top : :obj:`~mdtraj.Topology`
+    substitute_fail : str, None, int, default is "X"
+        If there is no .code  attribute, different options are there
+        depending on the value of this parameter
+         * None : throw an exception when no short code is found (default)
+         * 'long' : keep the residue's long name, i.e. do nothing
+         * 'c': any alphabetic character, as long as it is of len=1
+         * 0 : the first alphabetic character in the residue's name
+    extra_columns : dictionary of indexables
+        Any other column you want to
+        include in the :obj:`~pandas.DataFrame`
+
+    Returns
+    -------
+    df : :obj:`~pandas.DataFrame`
+    """
+    list_of_dicts = []
+    for rr in top.residues:
+        rdict = {"residue": str(rr),
+                 "index": rr.index,
+                 "name": rr.name,
+                 "resSeq": rr.resSeq,
+                 "code": shorten_AA(rr, substitute_fail=substitute_fail, keep_index=False),
+                 "short": shorten_AA(rr, substitute_fail=substitute_fail, keep_index=True)}
+        if extra_columns is not None:
+            for key, val in extra_columns.items():
+                try:
+                    rdict[key] = val[rr.index]
+                except (KeyError, IndexError):
+                    rdict[key] = None
+        list_of_dicts.append(rdict)
+
+    return list_of_dicts
+
+def find_AA(AA_pattern, top,
+            extra_columns=None,
+            return_df=False):
+    r"""
+
+    Residue matching with UNIX-shell patterns
+
+    Similar to the shell command "ls",
+    using posix-style wildcards like
+    shown in the examples or here:
+    https://docs.python.org/3/library/fnmatch.html
+
+    Any other attribute that's passed
+    as :obj:`extra_columns` will be
+    matched as explained below, e.g.
+    "3.50" to get one residue in
+    the BW-nomenclature or "3.*"
+    to get the whole TM-helix 3
+
+    The examples use '*' as wildcard,
+    but '?' (as in 'ls') also works
+
+    Examples
+    --------
+        * 'PRO' : returns all PROs, matching
+          via the attribute "name"
+        * 'P'   : returns all PROs, matching
+          via the attribute "code"
+        * 'P*'  : returns all PROs,PHEs and
+          any other residue that starts with "P",
+          either in "name" or in "code"
+        * 'PRO39' : returns PRO39, matching
+          via full residue name (long)
+        * 'P39'  : returns PRO39, matching
+          via full residue name (short)
+        * 'PRO3*' : returns all PROs
+          with sequence indices that start
+          with 3, e.g. 'PRO39, PRO323, PRO330' etc
+        * '3' : returns all residues with
+          sequence indices 3
+        * '3*' : returns all residues with
+          sequence indices that start with 3
+
+
+    Parameters
+    ----------
+    AA_patt : str or int
+    top : :obj:`~mdtraj.Topology`
+    return_df : bool, default is False
+        Return the full :obj:`~pandas.DataFrame`
+        of the matching residues
+
+    Returns
+    -------
+    AAs : list or :obj:`~pandas.DataFrame`
+        List of serial residue indices, s.t.
+        top.residue(idx) would return the wanted residue.
+        With :obj:`return_df`, you can get the
+        full :obj:`~pandas.DataFrame` of the
+        matching residues.
+    """
+
+    lsd = top2lsd(top, substitute_fail="X", extra_columns=extra_columns)
+
+    idxs = [ii for ii, idict in enumerate(lsd) if _fn_filter([str(val) for key, val in idict.items() if key!="index"], str(AA_pattern))]
+
+    if return_df:
+        return _DF([lsd[ii] for ii in idxs])
+    else:
+        return idxs
+
+
+def _ls_AA_in_df(AA_patt, df):
+    r""" Same as find_AA but using dataframe syntax...between 10 and 100 times slower (200mus to 20ms)"""
+    from fnmatch import fnmatch as _fnmatch
+    _AA = str(AA_patt)
+    match = lambda val : _fnmatch(val,_AA)
+    idxs = _np.flatnonzero(df.applymap(lambda val: str(val)).applymap(match).values.any(1)).tolist()
+    return idxs

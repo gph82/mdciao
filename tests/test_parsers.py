@@ -17,6 +17,7 @@ class TestParsersRun(unittest.TestCase):
         parsers.parser_for_sites()
         parsers.parser_for_compare_neighborhoods()
         parsers.parser_for_examples()
+        parsers.parser_for_residues()
 
 class Test_inform_of_parser(unittest.TestCase):
 

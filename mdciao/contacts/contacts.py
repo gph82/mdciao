@@ -77,7 +77,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
     residxs_pairs: iterable of integer pairs
         The residue pairs for which the contact frequencies in :obj:`ctc_freqs`
         were computed.
-    top : :obj:`mdtraj.Topology`
+    top : :obj:`~mdtraj.Topology`
         The topology from which the residues come
     ctcs_kept : integer or float, default is 5
         Control how many contacts to report per residue. There's two
@@ -106,6 +106,10 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
         on the 100-th and 200-th position, e.g. contain the pairs for its most
         frequent neighbors, e.g. [30-45] and [30-145].
         :obj:`ctcs_kept` controls the length of the output, see also option 'interactive')
+        Each i-th list is sorted by descending
+        frequency of the contacts of residue-i
+        and is truncated at freq==0 regardless
+        of :obj:`ctcs_kept`
     """
     assert len(ctc_freqs) == len(residxs_pairs)
 
@@ -135,16 +139,18 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 else:
                     n_ctcs = 0
             for ii, oo in enumerate(order_mask[:n_ctcs]):
+                ifreq = ctc_freqs[oo]
+                if ifreq.round(2)==0:
+                    break
+                isum += ifreq
                 pair = residxs_pairs[oo]
                 idx1, idx2 = _mdcu.lists.put_this_idx_first_in_pair(residx, pair)
-                s1, s2 = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in [idx1,idx2]]
-                imean = ctc_freqs[oo]
-                isum += imean
-                seen_ctcs.append(imean)
+                frg1, frg2 = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in [idx1,idx2]]
+                seen_ctcs.append(ifreq)
                 print("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
-                 '%u:' % (ii + 1), imean, top.residue(idx1), top.residue(idx2), s1, s2, idx1, idx2, oo, isum))
+                 '%u:' % (ii + 1), ifreq, top.residue(idx1), top.residue(idx2), frg1, frg2, idx1, idx2, oo, isum))
             if n_ctcs>0:
-                _contact_fraction_informer(_np.min([n_ctcs, len(order_mask)]), ctc_freqs[order_mask], or_frac=_fraction)
+                _contact_fraction_informer(_np.min([ii, len(order_mask)]), ctc_freqs[order_mask], or_frac=_fraction)
             else:
                 print("No contacts here!")
             if interactive:
@@ -3099,7 +3105,7 @@ class ContactGroup(object):
                           plot_N_ctcs=True,
                           pop_N_ctcs=False,
                           skip_timedep=False,
-                          **plot_contact_kwargs,
+                          **plot_timetrace_kwargs,
                           ):
         r"""
         For each trajectory, plot the time-traces of the all the contacts
@@ -3121,7 +3127,7 @@ class ContactGroup(object):
             Skip plotting the individual timetraces and plot only
             the time trace of overall formed contacts. This sets
             pop_N_ctcs to True internally
-        plot_contact_kwargs
+        plot_timetrace_kwargs
 
         Returns
         -------
@@ -3139,8 +3145,8 @@ class ContactGroup(object):
 
 
         """
-        valid_cutoff = "ctc_cutoff_Ang" in plot_contact_kwargs.keys() \
-                       and plot_contact_kwargs["ctc_cutoff_Ang"] > 0
+        valid_cutoff = "ctc_cutoff_Ang" in plot_timetrace_kwargs.keys() \
+                       and plot_timetrace_kwargs["ctc_cutoff_Ang"] > 0
 
 
         figs_to_return = []
@@ -3174,7 +3180,7 @@ class ContactGroup(object):
             # Plot individual contacts
             for ictc in self._contacts:
                 ictc._plot_timetrace(next(axes_iter),
-                                     **plot_contact_kwargs
+                                     **plot_timetrace_kwargs
                                      )
 
             # Cosmetics
@@ -3195,15 +3201,15 @@ class ContactGroup(object):
                     figs_to_return.append(fig_N_ctcs)
                 else:
                     iax = next(axes_iter)
-            ctc_cutoff_Ang = plot_contact_kwargs.pop("ctc_cutoff_Ang")
+            ctc_cutoff_Ang = plot_timetrace_kwargs.pop("ctc_cutoff_Ang")
             for pkey in ["shorten_AAs", "ylim_Ang"]:
                 try:
-                    plot_contact_kwargs.pop(pkey)
+                    plot_timetrace_kwargs.pop(pkey)
                 except KeyError:
                     pass
             self._plot_timedep_Nctcs(iax,
                                      ctc_cutoff_Ang,
-                                     **plot_contact_kwargs,
+                                     **plot_timetrace_kwargs,
                                      )
         [ifig.tight_layout(pad=0, h_pad=0, w_pad=0) for ifig in figs_to_return]
         return figs_to_return
@@ -4267,7 +4273,7 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
               (n_kept, captured_freq, captured_freq / total_freq * 100, total_freq, len(ctc_freqs)))
         if or_frac is not None:
             idx = _idx_at_fraction(ctc_freqs, or_frac)
-            print("As orientation value, %u ctcs already capture %3.1f%% of %3.2f." % (idx+1, or_frac * 100, total_freq))
+            print("As orientation value, the first %u ctcs already capture %3.1f%% of %3.2f." % (idx+1, or_frac * 100, total_freq))
             print("The %u-th contact has a frequency of %4.2f"%(idx+1, ctc_freqs[idx]))
             print()
 

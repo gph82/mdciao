@@ -23,8 +23,10 @@
 import requests as _requests
 
 from mdtraj import load_pdb as _load_pdb
+from tempfile import NamedTemporaryFile as _NamedTemporaryFile
+from shutil import copy as _copy
 
-from urllib.error import HTTPError as _HTTPError
+from urllib.error import HTTPError as _HTTPError, URLError as _URLError
 
 def _url2json(url,timeout,verbose):
     r""" Wraps around :obj:`requests.get` and tries to do :obj:`requests.Response.json`
@@ -121,21 +123,33 @@ def pdb2traj(code,
     traj : :obj:`~mdtraj.Trajectory` or None
 
     """
-    url1 = "%s/%s.pdb" % (url,code)
+    url1 = "%s/%s.pdb" % (url.strip("/"),code.strip("/"))
 
     #TODO use print_v elsewhere
     print_v = lambda s, **kwargs: [print(s, **kwargs) if verbose else None][0]
     print_v("Checking %s" % url1, end=" ...", flush=True)
+    geom = None
     try:
-        geom = _load_pdb(url1)
-        print_v("done")
-        if filename is not None:
-            print_v("Saving to %s..." % filename, end="", flush=True)
-            geom.save(filename)
-            print_v("done")
-    except _HTTPError as e:
+        a = _requests.get(url1)
+        if a.ok:
+            with _NamedTemporaryFile(mode="w", suffix=".pdb") as f:
+                f.writelines(a.text)
+                print_v("done")
+                geom = _load_pdb(f.name) #TODO use string.IO
+                if filename is not None:
+                    print_v("Saving to %s..." % filename, end="", flush=True)
+                    if filename.lower().endswith(".pdb"):
+                        _copy(f.name, filename)
+                    else:
+                        geom.save(filename)
+                    print_v(filename)
+        else:
+            raise _URLError(a.text,filename=url1)
+
+
+    except (_HTTPError, _URLError) as e:
         print(url1, ":", e)
-        geom = None
+
     if geom is not None:
         pdb2ref(code)
 

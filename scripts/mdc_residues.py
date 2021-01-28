@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 ##############################################################################
 #    This file is part of mdciao.
 #    
@@ -20,33 +21,19 @@
 #    You should have received a copy of the GNU Lesser General Public License
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
-from mdciao.parsers import parser_for_compare_neighborhoods
-from mdciao.cli import compare
-import matplotlib
-matplotlib.use('TkAgg')
+
+from mdciao.cli import residue_selection
+from mdciao.parsers import parser_for_residues
+
 # Get and instantiate parser
-parser = parser_for_compare_neighborhoods()
+parser = parser_for_residues()
 a  = parser.parse_args()
-nf = len(a.files)
-if a.keys is not None:
-    assert len(a.keys.split(","))==nf, "Mismatch number of files vs number of keys %u vs %u"%(nf,len(a.keys.split()))
-    keys = a.keys.split(",")
-    file_dict = {key:val for key, val in zip(keys, a.files)}
-else:
-    file_dict = a.files
-a.colors = a.colors.split(",")
+#_inform_of_parser(parser)
+
+# Make a dictionary out ot of it and pop the positional keywords
 b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
-for key in ["files", "mutations", "keys","output_desc"]:
-    b.pop(key)
-#b["figsize"]=None
-b["mutations_dict"] = {}
+b.pop("topology")
+b.pop("residues")
 
-if a.mutations is not None:
-    for pair in a.mutations.split(","):
-        key, val = pair.split(":")
-        b["mutations_dict"][key.replace(" ","")]=val.replace(" ","")
 
-myfig, freqs, posret = compare(file_dict,
-                           output_desc=a.output_desc,
-                           **b,
-                           )
+residue_selection(a.residues,a.topology,**b)

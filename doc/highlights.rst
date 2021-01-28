@@ -1,8 +1,13 @@
+.. https://stackoverflow.com/a/31332035 for forcing paragraph braks after figure captions
+.. |nbspc| unicode:: U+00A0 .. non-breaking space
+
+
+.. _Highlights:
+
 Highlights
 ----------
 
 .. _`initial example`:
-
 * paper-ready tables and figures from the command line::
 
    mdc_neighborhoods.py prot.pdb traj.xtc -r L394 --BW adrb2_human --CGN 3SN6 -ni -at #ni: not interactive, at: show atom-types
@@ -12,27 +17,10 @@ Highlights
       :align: left
       :name: highlights_1
 
-      (click to enlarge) **a)** most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein. A cutoff of 3.5 AA between heavy-atoms has been used. Residue labels combine residue names and consenus nomenclature. **b)** associated distance distributions, obtained by adding the ``-d`` flag to the CLI call. **c)** Automatically generated table using the ``-tx xlsx`` option.
+      (click to enlarge) **a)** contact frequencies for LEU394, as in :numref:`freqs`, but annotated with consensus nomenclature and atom types (``--BW,--CGN,-at`` options, see below). **b)** associated distance distributions, obtained by adding the ``-d`` flag to the CLI call. **c)** Automatically generated table using the ``-tx xlsx`` option.
 
-* easy input of target residues, e.g. the following is valid and will evaluate and show all these residues together::
-
-  -r GLU*,GDP,L394,380-394
-
-* fragmentation heuristics to easily identify molecules and/or molecular fragments. These heuristics will work on .pdf-files lacking `TER and CONNECT records <http://www.wwpdb .org/documentation/file-format-content/format33/v3.3.html>`_ or other file formats, like `.gro files <http://manual.gromacs.org/documentation/2020/reference-manual/file-formats.html#gro>`_, that simply don't include these records::
-
-   Auto-detected fragments with method lig_resSeq+
-   fragment      0 with  349 AAs            THR9(   0)- LEU394        (348 ) (0) resSeq jumps
-   fragment      1 with  340 AAs            GLN1( 349)- ASN340        (688 ) (1)
-   fragment      2 with  217 AAs            ASN5( 689)-ALA1160        (905 ) (2) resSeq jumps
-   fragment      3 with  284 AAs           GLU30( 906)- CYS341        (1189) (3) resSeq jumps
-   fragment      4 with  128 AAs            GLN1(1190)- SER128        (1317) (4)
-   fragment      5 with    1 AAs         P0G1601(1318)-P0G1601        (1318) (5)
-
-  In this example, we saved the crystal structure `3SN6 <https://www.rcsb.org/structure/3SN6>`_ as a .gro-file, and were able to recover the chains: :math:`G\alpha`, :math:`G\beta`, :math:`G\gamma`, :math:`\beta 2AR`, antibody, and ligand.  For clarity, we omitted the fragmentation in our `initial example`_ with the option ``-nf``, but all CLI tools do this fragmentation by default. Alternatively, one can use::
-
-   mdc_fragments.py prot.pdb
-
-  to produce an overview of all available fragmentation heuristics and their results without computing any contacts whatsoever.
+  |nbspc|
+.. _consensus_HL:
 
 * *automagically* map and incorporate consensus nomenclature like the `Ballesteros-Weinstein-Numbering <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_ (BW) or `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_  to the analysis, either from local files or over the network in the `GPRC.db <https://gpcrdb.org/>`_ and from `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_::
 
@@ -83,7 +71,73 @@ Highlights
       G.H5 with   26 AAs   THR369@G.H5.1    ( 328) -   LEU394@G.H5.26   (353 ) (G.H5)
    ...
 
+  |nbspc|
+.. _residues_HL:
 
+* easy residue selection, with an extended `UNIX-like pattern matching <https://docs.python.org/3/library/fnmatch.html>`_. You can preview residue selections like ``GLU,P0G,3.50,380-394,G.HN.*``, which means:
+
+  - *GLU**: all GLUs, equivalent to *GLU*
+  - *P0G*: the B2AR ligand (agonist)
+  - *3.50*: Ballesteros-Weinstein notation
+  - *380-394*: range of residues with sequence indices 380 to 394 (both incl.). This is the :math:`G\alpha_5`-subunit.
+  - *G.HN.** : CGN-nomenclature for the :math:`G\alpha_N`-subunit
+ You can check your selection **before** running a computation by using ``mdc_residues.py``::
+
+   >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --BW adrb2_human --CGN 3SN6 -ni
+   Your selection 'GLU*,P0G,380-394,G.HN.*' yields:
+     residue      residx    fragment      resSeq         BW        CGN
+       GLU10           6           0         10       None    G.HN.27
+       GLU15          11           0         15       None    G.HN.32
+   ...
+      GLU306        1008           3        306       7.33       None
+      GLU338        1040           3        338       8.56       None
+      P0G395        1043           4        395       None       None
+      ARG131         861           3        131       3.50       None
+      ARG380         339           0        380       None    G.H5.12
+      ASP381         340           0        381       None    G.H5.13
+   ...
+      LEU393         352           0        393       None    G.H5.25
+      LEU394         353           0        394       None    G.H5.26
+        THR9           5           0          9       None    G.HN.26
+       ASP11           7           0         11       None    G.HN.28
+       GLN12           8           0         12       None    G.HN.29
+   ...
+       GLN35          31           0         35       None    G.HN.52
+       VAL36          32           0         36       None    G.HN.53
+
+
+  |nbspc|
+.. _pdb_HL:
+
+* easy grabbing structures from the RSC PDB::
+
+   >>> mdc_pdb.py 3SN6 -o 3SN6.gro
+
+   Checking https://files.rcsb.org/download/3SN6.pdb ...done
+   Saving to 3SN6.gro...done
+   Please cite the following 3rd party publication:
+    * Crystal structure of the beta2 adrenergic receptor-Gs protein complex
+     Rasmussen, S.G. et al., Nature 2011
+     https://doi.org/10.1038/nature10361
+
+  |nbspc|
+.. _fragmentation_HL:
+
+* fragmentation heuristics to easily identify molecules and/or molecular fragments. These heuristics will work on .pdf-files lacking `TER and CONNECT records <http://www.wwpdb .org/documentation/file-format-content/format33/v3.3.html>`_ or other file formats, like `.gro files <http://manual.gromacs.org/documentation/2020/reference-manual/file-formats.html#gro>`_, that simply don't include these records::
+
+   Auto-detected fragments with method lig_resSeq+
+   fragment      0 with  349 AAs            THR9(   0)- LEU394        (348 ) (0) resSeq jumps
+   fragment      1 with  340 AAs            GLN1( 349)- ASN340        (688 ) (1)
+   fragment      2 with  217 AAs            ASN5( 689)-ALA1160        (905 ) (2) resSeq jumps
+   fragment      3 with  284 AAs           GLU30( 906)- CYS341        (1189) (3) resSeq jumps
+   fragment      4 with  128 AAs            GLN1(1190)- SER128        (1317) (4)
+   fragment      5 with    1 AAs         P0G1601(1318)-P0G1601        (1318) (5)
+
+  In this example, we saved the crystal structure `3SN6 <https://www.rcsb.org/structure/3SN6>`_ as a .gro-file (``mdc_pdb.py 3SN6 -o 3SN6.gro``). Still, we are able to recover the chains: :math:`G\alpha`, :math:`G\beta`, :math:`G\gamma`, :math:`\beta 2AR`, antibody, and ligand.  For clarity, we omitted the fragmentation in our `initial example`_ with the option ``-nf``, but all CLI tools do this fragmentation by default. Alternatively, one can use::
+
+   mdc_fragments.py prot.pdb
+
+  to get an overview of all available fragmentation heuristics and their results without computing any contacts whatsoever.
 
 .. _`mdc_interface.py example`:
 
@@ -121,7 +175,7 @@ Highlights
       :align: left
       :name: interface_matrix
 
-      (click to enlarge). Interface contact matrix between the :math:`\beta`2AR receptor and the :math:`G\alpha`-unit protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor (BW) and G-protein (CGN). Please note: this is **not a symmetric** contact-matrix. The y-axis shows residues in the :math:`G\alpha`-unit and the x-axis in the receptor.
+      [``interface.matrix@3.5_Ang.pdf``](click to enlarge). Interface contact matrix between the :math:`\beta`2AR receptor and the :math:`G\alpha`-unit protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor (BW) and G-protein (CGN). Please note: this is **not a symmetric** contact-matrix. The y-axis shows residues in the :math:`G\alpha`-unit and the x-axis in the receptor.
 
 * Since :numref:`interface_matrix` is bound to incorporate a lot of blank pixels, ``mdciao`` will also produce sparse plots and figures that highlight the formed contacts only:
 
@@ -131,7 +185,7 @@ Highlights
       :name: interface_bars
 
 
-      (click to enlarge) **Upper panel**: most frequent contacts sorted by frequency, i.e. for each non-empty pixel of :numref:`interface_matrix`, there is a bar shown. **Lower panel**: per-residue aggregated contact-frequencies, showing each residue's average participation in the interface (same info will be written to `interface.overall@3.5_Ang.xlsx`). Also, the number of shown contacts/bars can be controlled either with the `--ctc_control` and/or `--min_freq` parameters of `mdc_interface.py`.
+      [``interface.overall@3.5_Ang.pdf``](click to enlarge) **Upper panel**: most frequent contacts sorted by frequency, i.e. for each non-empty pixel of :numref:`interface_matrix`, there is a bar shown. **Lower panel**: per-residue aggregated contact-frequencies, showing each residue's average participation in the interface (same info will be written to `interface.overall@3.5_Ang.xlsx`). Also, the number of shown contacts/bars can be controlled either with the `--ctc_control` and/or `--min_freq` parameters of `mdc_interface.py`.
 
 * A very convenient way to incorporate the molecular topology into the visualization of contact frequencies are the so-called `FlarePlots <https://github.com/GPCRviz/flareplot>`_ (cool live-demo `here <https://gpcrviz.github.io/flareplot/>`_). These show the molecular topology (residues, fragments) on a circle with curves connecting the residues for which a given frequency has been computed. The `mdc_interface.py example`_ above will also generate a flareplot:
 
@@ -140,7 +194,7 @@ Highlights
       :align: left
       :name: fig_flare
 
-      (click to enlarge) FlarePlot of the frequencies shown in the figures :numref:`interface_matrix` and :numref:`interface_bars`. Residues are shown as dots on a circumference, split into fragments following any available labelling (BW or CGN) information. The contact frequencies are represented as lines connecting these dots/residues, with the line-opacity proportional to the frequencie's value. The secondary stucture of each residue is also included as color-coded letters: H(elix), B(eta), C(oil). We can clearly see the :math:`G\alpha_5`-subunit in contact with the receptor's TM3, ICL2, and TM5-ICL3-TM6 regions. Note that this plot is always produced as .pdf to be able to zoom into it as much as needed.
+      [``interface.flare@3.5_Ang.pdf``](click to enlarge) FlarePlot of the frequencies shown in the figures :numref:`interface_matrix` and :numref:`interface_bars`. Residues are shown as dots on a circumference, split into fragments following any available labelling (BW or CGN) information. The contact frequencies are represented as lines connecting these dots/residues, with the line-opacity proportional to the frequencie's value. The secondary stucture of each residue is also included as color-coded letters: H(elix), B(eta), C(oil). We can clearly see the :math:`G\alpha_5`-subunit in contact with the receptor's TM3, ICL2, and TM5-ICL3-TM6 regions. Note that this plot is always produced as .pdf to be able to zoom into it as much as needed.
 
 * Similar to how the flareplot (:numref:`fig_flare`) is mapping contact-frequencies (:numref:`interface_bars`, upper panel) onto the molecular topology, the next figure maps the **lower** panel :numref:`interface_bars` on the molecular geometry. It simply puts the values shown there in the `temperature factor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_  of a pdb file, representing the calculated interface as a *heatmap*
 
@@ -154,7 +208,7 @@ Highlights
 * A different approach is to look **only** for a particular set of pre-defined contacts. Simply writing this set into a human readable `JSON <https://www.json.org/>`_ file will allow `mdc_sites.py` to compute and present these (and only these) contacts, as in the example file `tip.json`::
 
 
-   cat tip.json
+   >>> cat tip.json
    {"name":"interface small",
    "bonds": {"AAresSeq": [
             "L394-K270",
@@ -169,56 +223,78 @@ Highlights
 
   The command::
 
-   mdc_sites.py prot.pdb traj.xtc --site tip.json -at -nf -sa #sa: short AA-names
+   >>> mdc_sites.py prot.pdb traj.xtc --site tip.json -at -nf -sa #sa: short AA-names
+   ...
+   The following files have been created
+   ./sites.overall@3.5_Ang.pdf
+   ...
 
   generates the following figure (tables are generated but not shown). The option ``-at`` (``--atomtypes``) generates the patterns ("hatching") of the bars. They indicate what atom types (sidechain or backbone) are responsible for the contact:
 
 .. figure:: imgs/sites.overall@3.5_Ang.Fig.6.png
       :scale: 50%
       :align: left
+      :name: sites_freq
 
-      (click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
+      [``sites.overall@3.5_Ang.pdf``](click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
 
-* compare contact frequencies coming from different calculations, to detect and show contact changes across different systems, e.g. to look for the effect of different ligands, mutations, pH-values etc. In this case, we compare R131@3.50 in an active and inactive :math:`\beta2 AR`. First, we grab the necessary structrures on the fly with ``mdc_pdb.py``::
+  |nbspc|
+.. _comparison_HL:
+
+* compare contact frequencies coming from different calculations, to detect and show contact changes across different systems. For example, to look for the effect of different ligands, mutations, pH-values etc. In this case, we compare the neighborhood of R131 (3.50 on the receptor) between our MD simulations and the crystal structure straight from the PDB. First, we grab the file on the fly with ``mdc_pdb.py``::
 
    >>> mdc_pdb.py 3SN6
-   Checking https://files.rcsb.org/download//3SN6.pdb ...done
+   Checking https://files.rcsb.org/download/3SN6.pdb ...done
    Saving to 3SN6.pdb...done
    Please cite the following 3rd party publication:
     * Crystal structure of the beta2 adrenergic receptor-Gs protein complex
       Rasmussen, S.G. et al., Nature 2011
       https://doi.org/10.1038/nature10361
 
-   >>> mdc_pdb.py 6OBA
-   Checking https://files.rcsb.org/download//6OBA.pdb ...done
-   Saving to 6OBA.pdb...done
-   Please cite the following 3rd party publication:
-    * An allosteric modulator binds to a conformational hub in the beta2adrenergic receptor.
-      Liu, X. et al., Nat Chem Biol 2020
-      https://doi.org/10.1038/s41589-020-0549-2
+  Now we use ``mdc_neighborhoods.py`` on it::
 
-  Now we use ``mdc_neighborhoods.py`` on both downloaded files::
-
-   >>> mdc_neighborhoods.py 3SN6.pdb 3SN6.pdb -r R131 -o 3SN6 -tx dat -nf
+   >>> mdc_neighborhoods.py 3SN6.pdb 3SN6.pdb -r R131 -o 3SN6 -co 4 -nf -o 3SN6.X
    ...
    #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
-   1:     1.00   ARG131-ILE278       0-0        1007-1126       97     1.00
+   1:     1.00   ARG131-TYR391       0-0        1007-345        14     1.00
+   2:     1.00   ARG131-TYR326       0-0        1007-1174      111     2.00
+   3:     1.00   ARG131-ILE278       0-0        1007-1126       97     3.00
+   These 3 contacts capture 3.00 (~100%) of the total frequency 3.00 (over 120 contacts)
    ...
    The following files have been created
    ...
-   ./3SN6.ARG131@3.5_Ang.dat
+   ./3SN6.X.ARG131@4.0_Ang.dat
 
-   >>> mdc_neighborhoods.py 6OBA.pdb 6OBA.pdb -r R131 -o 6OBA -tx dat -nf
+  Now we use ``mdc_neighborhoods.py`` on our data::
+
+   >>> mdc_neighborhoods.py prot.pdb traj.xtc -r L394 -co 4 -nf -o 3SN6.MD
    ...
    #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
-   1:     1.00   ARG131-TYR141       0-0         100-110        28     1.00
-   2:     1.00   ARG131-SER143       0-0         100-112        30     2.00
-   3:     1.00   ARG131-THR68        0-0         100-37          7     3.00
+   1:     0.87   ARG131-TYR391       0-0         861-350        12     0.87
+   2:     0.69   ARG131-TYR326       0-0         861-1028      104     1.55
+   3:     0.44   ARG131-TYR219       0-0         861-946        70     1.99
+   4:     0.12   ARG131-ILE278       0-0         861-980        92     2.11
+   These 4 contacts capture 2.11 (~99%) of the total frequency 2.11 (over 115 contacts)
    ...
    The following files have been created
    ...
-   ./6OBA.ARG131@3.5_Ang.dat
+   ./3SN6.MD.ARG131@4.0_Ang.dat
 
-  Please note that we have omitted most of the terminal output, and that we have used the option ``-o`` to label output-files differently. Now we can simply compare these output files:
+ Please note that we have omitted most of the terminal output, and that we have used the option ``-o`` to label output-files differently: ``3SN6.X`` and ``3SN6.MD``. Now we compare both these outputs::
 
+   >>> mdc_compare.py 3SN6.X.ARG131@4.0_Ang.dat 3SN6.MD.ARG131@4.0_Ang.dat -k Xray,MD -t "3SN6 cutoff 4AA" -a R131
+   These interactions are not shared:
+   Y219
+   Their cumulative ctc freq is 0.44.
+   Created files
+   freq_comparison.pdf
+   freq_comparison.xlsx
+
+
+ .. figure:: imgs/freq_comparison.png
+      :scale: 50%
+      :align: left
+      :name: comparisonfig
+
+      [``freq_comparison.pdf``]Neighborhood comparison for R131 between our MD simulations and the original 3SN6 crystal structure. We can see how the neighborhood *relaxes* and changes.  Some close residues, in particular I278, move further than 4 Ang away from R131. Analogously, we see how Y219 also enters the neighborhood. You can see these residues highlighted in the `3D visualization`_. We have used a custom title and custom keys for clarity of the figure (options ``-t`` and ``-k``). Also, since all contact labels share the 'R131'  label, we can remove it with the ``-a`` (anchor residue).
 
