@@ -3845,7 +3845,8 @@ class ContactGroup(object):
 
         tosave = {"serialized_CPs": [cp._serialized_as_dict(**kwargs) for cp in self._contacts],
                   "interface_residxs": self.interface_residxs,
-                  "name": self.name}
+                  "name": self.name,
+                  "neighbors_excluded":self.neighbors_excluded}
         if filename is not None:
             assert filename.endswith("npy")
             _np.save(filename,tosave)
