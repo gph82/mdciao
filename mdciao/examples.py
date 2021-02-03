@@ -57,10 +57,6 @@ class ExamplesCLTs(object):
         self.xtc = filenames.traj_xtc
         self.pdb = filenames.top_pdb
 
-        #pdb_full = _path.join(examples_path,"gs-b2ar.pdb")
-        #xtc_full = _path.join(examples_path,"gs-b2ar.xtc")
-        #xtc, pdb = xtc_full, pdb_full
-
         self.BW_file = filenames.adrb2_human_xlsx
         self.CGN_file = filenames.CGN_3SN6
         self.sitefile = filenames.tip_json
