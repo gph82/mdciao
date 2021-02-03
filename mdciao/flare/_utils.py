@@ -622,7 +622,7 @@ _SS2vmdcol = {'H':"purple", "E":"yellow","C":"cyan", "NA":"gray"}
 
 def value2position_map(unique_idxs):
     r"""
-    Return an array v2p so that v2p[idx]=pos, where pos is the position of idx in unique_idxs
+    Return an dictionary v2p so that v2p[idx]=pos, where pos is the position of idx in unique_idxs
 
     Parameters
     ----------
@@ -631,15 +631,13 @@ def value2position_map(unique_idxs):
 
     Returns
     -------
-    value2pos : np.ndarray
+    value2pos : dict
 
 
     """
     values, positions = _np.unique(unique_idxs, return_index=True)
     assert len(values)==len(positions)
-    value2pos = _np.zeros(_np.max(unique_idxs) + 1, dtype=int)
-    value2pos[:] = _np.nan
-    value2pos[values] = positions
+    value2pos = {key:val for key, val in zip(values, positions)}
     return value2pos
 
 def overlappers(text_objects_1, text_objects_2):
