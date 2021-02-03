@@ -39,6 +39,14 @@ setup(
                      #+doc_deps
     # tests_require=test_deps, # has been deprecated, gotta learn how to use tox
     ,
+    data_files=[
+        ('tests/data/examples', ['tests/data/examples/gs-b2ar.noH.stride.5.xtc']),
+        ('tests/data/examples', ['tests/data/examples/gs-b2ar.noH.pdb']),
+        ('tests/data/nomenclature', ['tests/data/nomenclature/adrb2_human.xlsx']),
+        ('tests/data/nomenclature', ['tests/data/nomenclature/CGN_3SN6.txt']),
+        ('tests/data/json', ['tests/data/json/tip.json']),
+        ('tests/data/RSCB_pdb', ['tests/data/RSCB_pdb/3SN6.pdb.gz']),
+    ],
     scripts=['scripts/mdc_neighborhoods.py',
              'scripts/mdc_sites.py',
              'scripts/mdc_interface.py',
