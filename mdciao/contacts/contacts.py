@@ -3500,6 +3500,41 @@ class ContactGroup(object):
         ifig.tight_layout()
         return ifig, iax
 
+    def retop(self,top, mapping, deepcopy=False):
+        r"""Return a copy of this object with a different topology.
+
+        Uses the :obj:`mapping` to generate new residue-indices
+        where necessary, using the rest of the attributes
+        (time-traces, labels, colors, fragments...) as they were
+
+        Wraps thinly around :obj:`mdciao.contacts.ContactPair.retop`
+
+        top : :obj:`~mdtraj.Topology`
+            The new topology
+        mapping : indexable (array, dict, list)
+            A mapping of old residue indices
+            to new residue indices. Usually,
+            comes from aligning the old and the
+            new topology using :obj:`mdciao.utils.sequence.maptops`
+        deepcopy : bool, default is False
+            Use :obj:`copy.deepcopy` on the attributes
+            when creating the new :obj:`ContactPair`.
+
+        Returns
+        -------
+        CG : :obj:`ContactGroup`
+        """
+        CPs = [CP.retop(top, mapping, deepcopy=deepcopy) for CP in self._contacts]
+        interface_residxs = None
+        if self.interface_residxs is not None:
+            interface_residxs = [[mapping[ii] for ii in iintf] for iintf in self.interface_residxs]
+
+        return ContactGroup(CPs,
+                            interface_residxs=interface_residxs,
+                            top=top, name=self.name,
+                            neighbors_excluded=self.neighbors_excluded,
+                            )
+
     @property
     def is_interface(self):
         r""" Whether this ContactGroup can be interpreted as an interface.

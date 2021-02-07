@@ -37,6 +37,9 @@ from tempfile import TemporaryDirectory as _TDir, TemporaryFile as _TFil
 
 import mdciao.utils.COM as mdcCOM
 
+from mdciao import cli as _mdcli
+from mdciao import utils as _mdcu
+
 #TODO break this up by object type? Testfile is huge
 test_filenames = filenames()
 
@@ -2238,6 +2241,27 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                             list_by_interface=True,
                                             interface_vline=True)
 
+class Test_retop_CG(unittest.TestCase):
+
+    def test_just_works(self):
+        intf = _mdcli.interface(md.load(test_filenames.actor_pdb),
+                                fragments=[_np.arange(868, 875 + 1),  # ICL2
+                                            _np.arange(328, 353 + 1)],  # Ga5,
+                                ctc_cutoff_Ang=30,
+                                no_disk=True,
+                                figures=False
+                                )
+        top3SN6 = md.load(test_filenames.pdb_3SN6)
+        df = _mdcu.sequence.align_tops_or_seqs(intf.top, top3SN6.top,
+                                                      #verbose=True,
+                                                      return_DF=True)
+        mapping, __ = _mdcu.sequence.df2maps(df,allow_nonmatch=False)
+
+        intf_retop = intf.retop(top3SN6.top, mapping)
+        for list1, list2 in zip(intf.interface_residxs,
+                                intf_retop.interface_residxs):
+            for r1, r2 in zip(list1, list2):
+                assert str(intf.top.residue(r1))==str(intf_retop.top.residue(r2))
 
 class Test_linear_switchoff(unittest.TestCase):
 
