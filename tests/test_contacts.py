@@ -2263,6 +2263,28 @@ class Test_retop_CG(unittest.TestCase):
             for r1, r2 in zip(list1, list2):
                 assert str(intf.top.residue(r1))==str(intf_retop.top.residue(r2))
 
+class Test_archive_CG(unittest.TestCase):
+
+    def test_just_works(self):
+        CG = examples.ContactGroupL394()
+        arch = CG.archive()
+
+        sCP = arch["serialized_CPs"][0]
+        contacts.ContactPair(sCP["residues.idxs_pair"],
+                             sCP["time_traces.ctc_trajs"],
+                             sCP["time_traces.time_trajs"],
+                             trajs=sCP["time_traces.trajs"],
+                             atom_pair_trajs=sCP["time_traces.atom_pair_trajs"],
+                             fragment_idxs=sCP["fragments.idxs"],
+                             fragment_names=sCP["fragments.names"],
+                             fragment_colors=sCP["fragments.colors"],
+                             )
+
+        assert CG.interface_residxs is arch["interface_residxs"]
+        assert CG.name is arch["name"]
+        assert CG.neighbors_excluded is arch["neighbors_excluded"]
+
+
 class Test_linear_switchoff(unittest.TestCase):
 
     def setUp(self):

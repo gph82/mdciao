@@ -3938,6 +3938,11 @@ class ContactGroup(object):
         filename : str, default is None
             Has to end in "npy". Default is
             to return the dictionary
+
+        Returns
+        -------
+        archive : dict
+
         """
 
         tosave = {"serialized_CPs": [cp._serialized_as_dict(**kwargs) for cp in self._contacts],
