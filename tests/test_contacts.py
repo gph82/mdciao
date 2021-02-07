@@ -24,6 +24,7 @@ from scipy.spatial.distance import cdist
 from mdciao.filenames import filenames
 import pytest
 from mdciao import contacts
+from mdciao import examples
 from pandas import DataFrame as _DF
 import pickle
 
@@ -782,6 +783,68 @@ class TestContactPair(unittest.TestCase):
             CP._plot_timetrace(iax,
                                ylim_Ang="max")
 
+    def test_retop(self):
+        CG = examples.ContactGroupL394()
+
+        CP : contacts.ContactPair = CG._contacts[0]
+
+        top = md.load(test_filenames.pdb_3SN6).top
+        #print(CP.top, CP.residues.idxs_pair)
+        #print(CP.residues.names_short)
+        #print([utils.residue_and_atom.find_AA(AA,top) for AA in CP.residues.names_short])
+        imap = {348:343,
+                353:348}
+        nCP : contacts.ContactPair = CP.retop(top,imap)
+        for attr in [
+            "time_traces.trajs",
+            "fragments.idxs",
+            "fragments.names",
+            "fragments.colors",
+            "residues.consensus_labels"
+        ]:
+            attr1, attr2 = attr.split(".")
+            assert getattr(getattr(CP,attr1),attr2) is getattr(getattr(nCP,attr1),attr2), attr
+            assert getattr(getattr(CP, attr1), attr2)==getattr(getattr(nCP, attr1), attr2)
+        assert nCP.residues.anchor_residue_index == 348
+        for attr in [
+            "time_traces.ctc_trajs",
+            "time_traces.time_trajs"
+        ]:
+            attr1, attr2 = attr.split(".")
+            l1, l2 = getattr(getattr(CP, attr1), attr2), getattr(getattr(nCP, attr1), attr2)
+            assert l1 is not l2
+            for traj, ntraj in zip(l1,l2):
+                _np.testing.assert_array_equal(traj,ntraj)
+
+    def test_retop_deepcopy(self):
+        CG = examples.ContactGroupL394()
+
+        CP: contacts.ContactPair = CG._contacts[0]
+
+        top = md.load(test_filenames.pdb_3SN6).top
+        imap = {348: 343,
+                353: 348}
+        nCP: contacts.ContactPair = CP.retop(top, imap, deepcopy=True)
+        for attr in [
+            "time_traces.trajs",
+            "fragments.idxs",
+            "fragments.names",
+            "fragments.colors",
+            "residues.consensus_labels"
+        ]:
+            attr1, attr2 = attr.split(".")
+            assert getattr(getattr(CP, attr1), attr2) is not getattr(getattr(nCP, attr1), attr2), attr
+            assert getattr(getattr(CP, attr1), attr2)==getattr(getattr(nCP, attr1), attr2)
+        assert nCP.residues.anchor_residue_index == 348
+        for attr in [
+            "time_traces.ctc_trajs",
+            "time_traces.time_trajs"
+        ]:
+            attr1, attr2 = attr.split(".")
+            l1, l2 = getattr(getattr(CP, attr1), attr2), getattr(getattr(nCP, attr1), attr2)
+            assert l1 is not l2
+            for traj, ntraj in zip(l1, l2):
+                _np.testing.assert_array_equal(traj, ntraj)
 
 class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
     def test_works(self):
