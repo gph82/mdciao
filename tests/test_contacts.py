@@ -846,6 +846,26 @@ class TestContactPair(unittest.TestCase):
             for traj, ntraj in zip(l1, l2):
                 _np.testing.assert_array_equal(traj, ntraj)
 
+    def test_serialize_as_dict(self):
+        CG = examples.ContactGroupL394()
+        CP: contacts.ContactPair = CG._contacts[0]
+        sCP = CP._serialized_as_dict()
+
+        assert sCP["residues.idxs_pair"] is CP.residues.idxs_pair
+        assert sCP["time_traces.ctc_trajs"] is CP.time_traces.ctc_trajs
+        assert sCP["time_traces.time_trajs"] is CP.time_traces.time_trajs
+        assert sCP.get("topology") is None
+        assert sCP["time_traces.trajs"] is CP.time_traces.trajs
+        assert sCP["time_traces.atom_pair_trajs"] is CP.time_traces.atom_pair_trajs
+        assert sCP["fragments.idxs"] is CP.fragments.idxs
+        assert sCP["fragments.names"] is CP.fragments.names
+        assert sCP["fragments.colors"] is CP.fragments.colors
+        assert sCP["residues.anchor_residue_index"] is CP.residues.anchor_residue_index
+        assert sCP["residues.consensus_labels"] is CP.residues.consensus_labels
+
+
+
+
 class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
     def test_works(self):
         top = md.load(test_filenames.top_pdb).top
