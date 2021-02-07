@@ -1301,11 +1301,21 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
             neighbors_excluded=0
         )
 
-    def test_frequency_dict(self):
+    def test_frequency_dicts(self):
         CP = self.CG
-        freqdcit = CP.frequency_dict(2, split_label=False)
+        freqdcit = CP.frequency_dicts(2, split_label=False)
         self.assertDictEqual(freqdcit, {"E30@fragA-V31@fragB" : 2 / 5,
                                         "E30@fragA-W32@fragC" : 1 / 5})
+
+    def test_frequency_dicts_sort(self):
+        CG = contacts.ContactGroup(
+            [self.cp2_w_anchor_and_frags_and_top,
+             self.cp1_w_anchor_and_frags_and_top],
+            neighbors_excluded=0
+        )
+        self.assertDictEqual(CG.frequency_dicts(2, split_label=False, sort=True),
+                             {"E30@fragA-W32@fragC": 1 / 5,
+                              "E30@fragA-V31@fragB": 2 / 5})
 
     def test_frequency_per_contact(self):
         CP = self.CG

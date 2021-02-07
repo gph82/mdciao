@@ -207,7 +207,7 @@ def compare_groups_of_contacts(groups,
             idict = _mdcu.str_and_dict.freq_file2dict(ifile)
         elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
             assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a ctc_cutoff_Ang parameter"
-            idict = ifile.frequency_dict(ctc_cutoff_Ang=ctc_cutoff_Ang,
+            idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
                                          AA_format=AA_format,
                                          split_label=False)
         else:

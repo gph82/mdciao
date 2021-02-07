@@ -2204,7 +2204,8 @@ class ContactGroup(object):
         return _np.vstack(ctc_idxs)
 
 
-    def frequency_dict(self, ctc_cutoff_Ang,
+    def frequency_dicts(self, ctc_cutoff_Ang,
+                       sort=False,
                        **kwargs):
         """
         Wraps around the method :obj:`ContactPair.frequency_dict`
@@ -2215,6 +2216,10 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang : float
             Cutoff in Angstrom. The comparison operator is "<="
+        sort : bool, default is False
+            Sort by descending frequency. Default
+            is to return in the same order
+            as :obj:`ContactGroup._contacts`
         kwargs : optional keyword arguments
             Check :obj:`ContactPair.frequency_dict`
 
@@ -2224,6 +2229,10 @@ class ContactGroup(object):
 
         """
         frequency_dicts = [cp.frequency_dict(ctc_cutoff_Ang=ctc_cutoff_Ang, **kwargs) for cp in self._contacts]
+        if sort:
+            frequency_dicts = sorted(frequency_dicts,
+                                     key=lambda value: value["freq"],
+                                     reverse=True)
         return {idict["label"] : idict["freq"] for idict in frequency_dicts}
 
     # TODO think about implementing a frequency class, but how
