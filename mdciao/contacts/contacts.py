@@ -1191,18 +1191,7 @@ class ContactPair(object):
         CP : :obj:`ContactPair`
 
         """
-        return ContactPair(
-            self.residues.idxs_pair,
-            self.time_traces.ctc_trajs,
-            self.time_traces.time_trajs,
-            top=self.topology,
-            trajs=self.time_traces.trajs,
-            atom_pair_trajs=self.time_traces.atom_pair_trajs,
-            fragment_idxs=self.fragments.idxs,
-            fragment_names=self.fragments.names,
-            fragment_colors=self.fragments.colors,
-            anchor_residue_idx=self.residues.anchor_residue_index,
-            consensus_labels=self.residues.consensus_labels)
+        return self.retop(self.top, _np.arange(len(self.top.n_residues)))
 
     def retop(self,top, mapping, deepcopy=False):
         r"""Return a copy of this object with a different topology.
