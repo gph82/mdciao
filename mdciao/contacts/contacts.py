@@ -33,6 +33,9 @@ import mdciao.flare as _mdcflare
 from ._md_compute_contacts import compute_contacts as _compute_contacts
 
 from pickle import dump as _pdump,load as _pload
+
+from copy import deepcopy as _deepcopy
+
 from collections import \
     defaultdict as _defdict, \
     Counter as _col_Counter
@@ -1100,6 +1103,12 @@ class ContactPair(object):
     #Trajectories
     @property
     def time_traces(self):
+        r"""
+        Contains time-traces stored as a :obj:`_TimeTraces` objects
+        Returns
+        -------
+
+        """
         return self._attribute_trajs
 
     # Accounting
@@ -1182,18 +1191,71 @@ class ContactPair(object):
         CP : :obj:`ContactPair`
 
         """
+        return self.retop(self.top, mapping={key:key for key in self.residues.idxs_pair})
+
+    def retop(self,top, mapping, deepcopy=False):
+        r"""Return a copy of this object with a different topology.
+
+        Uses the :obj:`mapping` to generate new residue-indices
+        where necessary, using the rest of the attributes
+        (time-traces, labels, colors, fragments...) as they were
+
+        TODO
+         * The atom_pair_trajs are not transferred to the new object
+         * Will fail is the map is missing the needed residues
+         * Generate mapping on-the-fly if mapping is None
+
+        Parameters
+        ----------
+        top : :obj:`~mdtraj.Topology`
+            The new topology
+        mapping : indexable (array, dict, list)
+            A mapping of old residue indices
+            to new residue indices. Usually,
+            comes from aligning the old and the
+            new topology using :obj:`mdciao.utils.sequence.maptops`
+        deepcopy : bool, default is False
+            Use :obj:`copy.deepcopy` on the attributes
+            when creating the new :obj:`ContactPair`.
+            If False, the identity holds:
+
+            >>> self.residues.consensus_labels is CP.residues.consensus_labels
+
+            If True, only the equality holds:
+
+            >>> self.residues.consensus_labels == CP.residues.consensus_labels
+
+            Note that :obj:`time_traces` are always created
+            new no matter what.
+
+
+        Returns
+        -------
+        CP : :obj:`ContactPair`
+            The .top and the residues.idxs_pair are new
+        """
+        new_pairs = [mapping[ii] for ii in self.residues.idxs_pair]
+        anchor_residue_index = None
+
+        if self.residues.anchor_residue_index is not None:
+            anchor_residue_index = mapping[self.residues.anchor_residue_index]
+        if deepcopy:
+            _copy = lambda x: _deepcopy(x)
+        else:
+            _copy = lambda x: x
+
         return ContactPair(
-            self.residues.idxs_pair,
-            self.time_traces.ctc_trajs,
-            self.time_traces.time_trajs,
-            top=self.topology,
-            trajs=self.time_traces.trajs,
-            atom_pair_trajs=self.time_traces.atom_pair_trajs,
-            fragment_idxs=self.fragments.idxs,
-            fragment_names=self.fragments.names,
-            fragment_colors=self.fragments.colors,
-            anchor_residue_idx=self.residues.anchor_residue_index,
-            consensus_labels=self.residues.consensus_labels)
+            new_pairs,
+            _copy(self.time_traces.ctc_trajs),
+            _copy(self.time_traces.time_trajs),
+            top=top,
+            trajs=_copy(self.time_traces.trajs),
+            atom_pair_trajs=_copy(self.time_traces.atom_pair_trajs),
+            fragment_idxs=_copy(self.fragments.idxs),
+            fragment_names=_copy(self.fragments.names),
+            fragment_colors=_copy(self.fragments.colors),
+            anchor_residue_idx=anchor_residue_index,
+            consensus_labels=_copy(self.residues.consensus_labels))
 
     def __hash__(self):
         tohash = []
@@ -3447,6 +3509,41 @@ class ContactGroup(object):
         ifig.tight_layout()
         return ifig, iax
 
+    def retop(self,top, mapping, deepcopy=False):
+        r"""Return a copy of this object with a different topology.
+
+        Uses the :obj:`mapping` to generate new residue-indices
+        where necessary, using the rest of the attributes
+        (time-traces, labels, colors, fragments...) as they were
+
+        Wraps thinly around :obj:`mdciao.contacts.ContactPair.retop`
+
+        top : :obj:`~mdtraj.Topology`
+            The new topology
+        mapping : indexable (array, dict, list)
+            A mapping of old residue indices
+            to new residue indices. Usually,
+            comes from aligning the old and the
+            new topology using :obj:`mdciao.utils.sequence.maptops`
+        deepcopy : bool, default is False
+            Use :obj:`copy.deepcopy` on the attributes
+            when creating the new :obj:`ContactPair`.
+
+        Returns
+        -------
+        CG : :obj:`ContactGroup`
+        """
+        CPs = [CP.retop(top, mapping, deepcopy=deepcopy) for CP in self._contacts]
+        interface_residxs = None
+        if self.interface_residxs is not None:
+            interface_residxs = [[mapping[ii] for ii in iintf] for iintf in self.interface_residxs]
+
+        return ContactGroup(CPs,
+                            interface_residxs=interface_residxs,
+                            top=top, name=self.name,
+                            neighbors_excluded=self.neighbors_excluded,
+                            )
+
     @property
     def is_interface(self):
         r""" Whether this ContactGroup can be interpreted as an interface.
@@ -3850,6 +3947,11 @@ class ContactGroup(object):
         filename : str, default is None
             Has to end in "npy". Default is
             to return the dictionary
+
+        Returns
+        -------
+        archive : dict
+
         """
 
         tosave = {"serialized_CPs": [cp._serialized_as_dict(**kwargs) for cp in self._contacts],

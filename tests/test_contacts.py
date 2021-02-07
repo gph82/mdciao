@@ -24,6 +24,7 @@ from scipy.spatial.distance import cdist
 from mdciao.filenames import filenames
 import pytest
 from mdciao import contacts
+from mdciao import examples
 from pandas import DataFrame as _DF
 import pickle
 
@@ -35,6 +36,9 @@ from matplotlib import pyplot as _plt
 from tempfile import TemporaryDirectory as _TDir, TemporaryFile as _TFil
 
 import mdciao.utils.COM as mdcCOM
+
+from mdciao import cli as _mdcli
+from mdciao import utils as _mdcu
 
 #TODO break this up by object type? Testfile is huge
 test_filenames = filenames()
@@ -781,6 +785,88 @@ class TestContactPair(unittest.TestCase):
         with pytest.raises(ValueError):
             CP._plot_timetrace(iax,
                                ylim_Ang="max")
+
+    def test_retop(self):
+        CG = examples.ContactGroupL394()
+
+        CP : contacts.ContactPair = CG._contacts[0]
+
+        top = md.load(test_filenames.pdb_3SN6).top
+        #print(CP.top, CP.residues.idxs_pair)
+        #print(CP.residues.names_short)
+        #print([utils.residue_and_atom.find_AA(AA,top) for AA in CP.residues.names_short])
+        imap = {348:343,
+                353:348}
+        nCP : contacts.ContactPair = CP.retop(top,imap)
+        for attr in [
+            "time_traces.trajs",
+            "fragments.idxs",
+            "fragments.names",
+            "fragments.colors",
+            "residues.consensus_labels"
+        ]:
+            attr1, attr2 = attr.split(".")
+            assert getattr(getattr(CP,attr1),attr2) is getattr(getattr(nCP,attr1),attr2), attr
+            assert getattr(getattr(CP, attr1), attr2)==getattr(getattr(nCP, attr1), attr2)
+        assert nCP.residues.anchor_residue_index == 348
+        for attr in [
+            "time_traces.ctc_trajs",
+            "time_traces.time_trajs"
+        ]:
+            attr1, attr2 = attr.split(".")
+            l1, l2 = getattr(getattr(CP, attr1), attr2), getattr(getattr(nCP, attr1), attr2)
+            assert l1 is not l2
+            for traj, ntraj in zip(l1,l2):
+                _np.testing.assert_array_equal(traj,ntraj)
+
+    def test_retop_deepcopy(self):
+        CG = examples.ContactGroupL394()
+
+        CP: contacts.ContactPair = CG._contacts[0]
+
+        top = md.load(test_filenames.pdb_3SN6).top
+        imap = {348: 343,
+                353: 348}
+        nCP: contacts.ContactPair = CP.retop(top, imap, deepcopy=True)
+        for attr in [
+            "time_traces.trajs",
+            "fragments.idxs",
+            "fragments.names",
+            "fragments.colors",
+            "residues.consensus_labels"
+        ]:
+            attr1, attr2 = attr.split(".")
+            assert getattr(getattr(CP, attr1), attr2) is not getattr(getattr(nCP, attr1), attr2), attr
+            assert getattr(getattr(CP, attr1), attr2)==getattr(getattr(nCP, attr1), attr2)
+        assert nCP.residues.anchor_residue_index == 348
+        for attr in [
+            "time_traces.ctc_trajs",
+            "time_traces.time_trajs"
+        ]:
+            attr1, attr2 = attr.split(".")
+            l1, l2 = getattr(getattr(CP, attr1), attr2), getattr(getattr(nCP, attr1), attr2)
+            assert l1 is not l2
+            for traj, ntraj in zip(l1, l2):
+                _np.testing.assert_array_equal(traj, ntraj)
+
+    def test_serialize_as_dict(self):
+        CG = examples.ContactGroupL394()
+        CP: contacts.ContactPair = CG._contacts[0]
+        sCP = CP._serialized_as_dict()
+
+        assert sCP["residues.idxs_pair"] is CP.residues.idxs_pair
+        assert sCP["time_traces.ctc_trajs"] is CP.time_traces.ctc_trajs
+        assert sCP["time_traces.time_trajs"] is CP.time_traces.time_trajs
+        assert sCP.get("topology") is None
+        assert sCP["time_traces.trajs"] is CP.time_traces.trajs
+        assert sCP["time_traces.atom_pair_trajs"] is CP.time_traces.atom_pair_trajs
+        assert sCP["fragments.idxs"] is CP.fragments.idxs
+        assert sCP["fragments.names"] is CP.fragments.names
+        assert sCP["fragments.colors"] is CP.fragments.colors
+        assert sCP["residues.anchor_residue_index"] is CP.residues.anchor_residue_index
+        assert sCP["residues.consensus_labels"] is CP.residues.consensus_labels
+
+
 
 
 class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
@@ -2164,6 +2250,59 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         iax = I.plot_frequency_sums_as_bars(2, "interface",
                                             list_by_interface=True,
                                             interface_vline=True)
+
+class Test_retop_CG(unittest.TestCase):
+
+    def test_just_works(self):
+        intf = _mdcli.interface(md.load(test_filenames.actor_pdb),
+                                fragments=[_np.arange(868, 875 + 1),  # ICL2
+                                            _np.arange(328, 353 + 1)],  # Ga5,
+                                ctc_cutoff_Ang=30,
+                                no_disk=True,
+                                figures=False
+                                )
+        top3SN6 = md.load(test_filenames.pdb_3SN6)
+        df = _mdcu.sequence.align_tops_or_seqs(intf.top, top3SN6.top,
+                                                      #verbose=True,
+                                                      return_DF=True)
+        mapping, __ = _mdcu.sequence.df2maps(df,allow_nonmatch=False)
+
+        intf_retop = intf.retop(top3SN6.top, mapping)
+        for list1, list2 in zip(intf.interface_residxs,
+                                intf_retop.interface_residxs):
+            for r1, r2 in zip(list1, list2):
+                assert str(intf.top.residue(r1))==str(intf_retop.top.residue(r2))
+
+class Test_archive_CG(unittest.TestCase):
+
+    def test_works(self):
+        CG = examples.ContactGroupL394()
+        arch = CG.archive()
+
+        sCP = arch["serialized_CPs"][0]
+        contacts.ContactPair(sCP["residues.idxs_pair"],
+                             sCP["time_traces.ctc_trajs"],
+                             sCP["time_traces.time_trajs"],
+                             trajs=sCP["time_traces.trajs"],
+                             atom_pair_trajs=sCP["time_traces.atom_pair_trajs"],
+                             fragment_idxs=sCP["fragments.idxs"],
+                             fragment_names=sCP["fragments.names"],
+                             fragment_colors=sCP["fragments.colors"],
+                             )
+
+        assert CG.interface_residxs is arch["interface_residxs"]
+        assert CG.name is arch["name"]
+        assert CG.neighbors_excluded is arch["neighbors_excluded"]
+
+    def test_saves_npy(self):
+        with _TDir() as t:
+            fname = path.join(t,"archive.npy")
+            CG = examples.ContactGroupL394()
+            CG.archive(fname)
+
+            loaded_CG = _np.load(fname,allow_pickle=True)[()]
+        for key in ["serialized_CPs", "interface_residxs", "name", "neighbors_excluded"]:
+            assert key in loaded_CG.keys()
 
 
 class Test_linear_switchoff(unittest.TestCase):
