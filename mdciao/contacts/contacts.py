@@ -1191,7 +1191,7 @@ class ContactPair(object):
         CP : :obj:`ContactPair`
 
         """
-        return self.retop(self.top, _np.arange(len(self.top.n_residues)))
+        return self.retop(self.top, mapping={key:key for key in self.residues.idxs_pair})
 
     def retop(self,top, mapping, deepcopy=False):
         r"""Return a copy of this object with a different topology.
