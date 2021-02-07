@@ -2265,7 +2265,7 @@ class Test_retop_CG(unittest.TestCase):
 
 class Test_archive_CG(unittest.TestCase):
 
-    def test_just_works(self):
+    def test_works(self):
         CG = examples.ContactGroupL394()
         arch = CG.archive()
 
@@ -2283,6 +2283,16 @@ class Test_archive_CG(unittest.TestCase):
         assert CG.interface_residxs is arch["interface_residxs"]
         assert CG.name is arch["name"]
         assert CG.neighbors_excluded is arch["neighbors_excluded"]
+
+    def test_saves_npy(self):
+        with _TDir() as t:
+            fname = path.join(t,"archive.npy")
+            CG = examples.ContactGroupL394()
+            CG.archive(fname)
+
+            loaded_CG = _np.load(fname,allow_pickle=True)[()]
+        for key in ["serialized_CPs", "interface_residxs", "name", "neighbors_excluded"]:
+            assert key in loaded_CG.keys()
 
 
 class Test_linear_switchoff(unittest.TestCase):
