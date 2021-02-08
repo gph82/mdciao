@@ -248,6 +248,8 @@ def compare_groups_of_contacts(groups,
 
     if ctc_cutoff_Ang is not None:
         title = title+'@%2.1f AA'%ctc_cutoff_Ang
+    if anchor is not None:
+        title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
 
     myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
                                                         colordict=colors,
@@ -257,10 +259,7 @@ def compare_groups_of_contacts(groups,
                                                         figsize=figsize,
                                                         title=title,
                                                         **kwargs_plot_unified_freq_dicts)
-    if anchor is not None:
-        _plt.text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
-                  "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
-                  ha="right", va="bottom", fontsize=fontsize)
+
     _plt.gcf().tight_layout()
     #_plt.show()
 
