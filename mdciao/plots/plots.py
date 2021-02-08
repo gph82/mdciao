@@ -545,8 +545,10 @@ def plot_unified_freq_dicts(freqs,
 
         _plt.ylim(0, ylim)
         if title is not None:
+            pad = _np.max([txt.get_window_extent(ax.figure.canvas.get_renderer()).height for txt in ax.texts])
             ax.set_title(_mdcu.str_and_dict.replace4latex(title),
-                          pad=_rcParams["axes.titlepad"] + titlepadding_in_points_no_clashes_w_texts(ax))
+                         pad=pad+_rcParams["axes.titlepad"]*2
+                         )
 
     # Create a by-state dictionary explaining the plot
     out_dict = {key:{ss: val[ss] for ss in sorted_value_by_ctc_by_sys.keys()} for key, val in freqs_by_sys_by_ctc.items()}
@@ -640,6 +642,7 @@ def _points2dataunits(jax):
     dx_in_dataunits, dy_in_dataunits = _np.diff(jax.get_xlim())[0], _np.diff(jax.get_ylim())[0]
     return _np.array((dx_pts/dx_in_dataunits, dy_pts / dy_in_dataunits)).T
 
+#TODO deprecate
 def titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
     r"""
     Compute amount of upward padding need to avoid overlap between

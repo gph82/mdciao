@@ -2878,8 +2878,9 @@ class ContactGroup(object):
                                       [label_bars[ii] for ii in order][:(jax.get_xlim()[1]).astype(int)+1], #can't remember this
                                       label_fontsize_factor=label_fontsize_factor
                                       )
+        pad = _np.max([txt.get_window_extent(jax.figure.canvas.get_renderer()).height for txt in jax.texts])
         jax.set_title(_mdcu.str_and_dict.replace4latex(title),
-                      pad=_rcParams["axes.titlepad"] + _mdcplots.titlepadding_in_points_no_clashes_w_texts(jax))
+                      pad=pad+_rcParams["axes.titlepad"]*2)
 
         #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
