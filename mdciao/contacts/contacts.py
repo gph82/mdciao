@@ -2835,7 +2835,7 @@ class ContactGroup(object):
             If None, the method will default to self.name
             If self.name is also None, the method will fail
         xlim : float, default is None
-        ax : :obj:`~matplotlib.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
         shorten_AAs : bool, default is None
         label_fontsize_factor : float
         truncate_at : float, default is None
@@ -2849,7 +2849,7 @@ class ContactGroup(object):
             display purposes only (the original order is untouched)
         Returns
         -------
-        ax : :obj:`~matplotlib.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
 
         """
 
@@ -2940,7 +2940,7 @@ class ContactGroup(object):
             parameter to homogenize different calls to this
             function over different contact groups, s.t.
             each subplot has equal xlimits
-        ax : :obj:`~matplotlib.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
         shorten_AAs
         label_fontsize_factor
         sum_freqs: bool, default is True
@@ -2957,7 +2957,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        ax : :obj:`~matplotlib.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
         """
 
         assert self.is_neighborhood, "This ContactGroup is not a neighborhood, use ContactGroup.plot_freqs_as_bars() instead"
@@ -3012,7 +3012,7 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        jax : :obj:`matplotlib.Axes`
+        jax : :obj:`~matplotlib.axes.Axes`
             The axis where the frequency bars where plotted
         ctc_cutoff_Ang : float
             The cutoff that was used (otherwise we cannot compute atomtype freqs)
@@ -3126,7 +3126,7 @@ class ContactGroup(object):
             Limits of the x-axis.
             Outlier can stretch the scale, this forces it
             to a given range
-        jax : :obj:`matplotlib.pyplot.Axes`, default is None
+        jax : :obj:`~matplotlib.axes.Axes`, default is None
             One will be created if None is passed
         shorten_AAs: bool, default is False
             Use amino-acid one-letter codes
@@ -3141,7 +3141,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`~matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.axes.Axes`
 
         """
         if jax is None:
@@ -3363,7 +3363,7 @@ class ContactGroup(object):
         title_str : str
         xmax : float, default is None
             X-axis will extend from -.5 to xmax+.5
-        jax : obj:`matplotlib.pyplot.Axes`, default is None
+        jax : obj:`~matplotlib.axes.Axes``, default is None
             If None, one will be created, else draw here
         shorten_AAs : boolean, default is False
             Unused ATM
@@ -3388,7 +3388,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        ax : :obj:`matplotlib.pyplot.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
 
         """
 
@@ -3700,7 +3700,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        iax : :obj:`matplotlib.pyplot.Axes`
+        iax : :obj:`~matplotlib.axes.Axes`
         fig : :obj:`matplotlib.pyplot.Figure`
 
         """

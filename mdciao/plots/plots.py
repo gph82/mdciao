@@ -45,7 +45,7 @@ def plot_w_smoothing_auto(ax, x, y,
 
     Parameters
     ----------
-    ax : :obj:`matplotlib.pyplot.Axes
+    ax : :obj:`~matplotlib.axes.Axes`
     x : iterable of floats
     y : iterable of floats
     label : str
@@ -142,7 +142,7 @@ def compare_groups_of_contacts(groups,
         at your own risk
     width : float, default is .2
         The witdth of the bars
-    ax : :obj:`matplotlib.pyplot.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
         Axis to draw on
     figsize : tuple, default is (10,5)
         The figure size in inches, in case it is
@@ -328,7 +328,7 @@ def plot_unified_freq_dicts(freqs,
         If None, .5/len(freqs) will be used, leaving
         50% of space free between contacts
 
-    ax : :obj:`matplotlib.pyplot.Axes`, default is None
+    ax : :obj:`~matplotlib.axes.Axes`, default is None
 
     figsize : iterable of len 2
         Figure size (x,y), in inches
@@ -632,7 +632,7 @@ def _points2dataunits(jax):
     Return a conversion factor for points 2 dataunits
     Parameters
     ----------
-    jax : obj:`matplotlib.Axes`
+    jax : obj:`~matplotlib.axes.Axes``
 
     Returns
     -------
@@ -805,7 +805,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
 
     Returns
     -------
-    ax : :obj:`matplotlib.pyplot.Axes` object
+    ax : :obj:`~matplotlib.axes.Axes` object
     pixelsize : float, size of the pixel
         Helpful in cases where this method is called
         with the default value, in case the value
@@ -896,7 +896,7 @@ def _plot_freqbars_baseplot(freqs,
     ----------
     freqs : iterable
         The values to plot
-    jax : :obj:`matplotlib.Axes`, default is None
+    jax : :obj:`~matplotlib.axes.Axes`, default is None
         If None is passed, one will be created
     truncate_at : float, default is None
         Only plot frequencies above this value (between 0 and 1)
@@ -907,7 +907,7 @@ def _plot_freqbars_baseplot(freqs,
         uniform and have consistant bar_width across all barplots
     Returns
     -------
-    jax : :obj:`matplotlib.Axes`
+    jax : :obj:`~matplotlib.axes.Axes`
     """
 
     if truncate_at is not None:

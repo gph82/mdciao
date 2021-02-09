@@ -528,7 +528,7 @@ def add_residue_labels(iax,
 
     Parameters
     ----------
-    iax : :obj:`matplotlib.Axes`
+    iax : :obj:`~matplotlib.axes.Axes`
     res_idxs : np.ndarray
         The residue indices to use as labels
     xy_labels : 2D-np.ndarray
