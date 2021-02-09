@@ -301,6 +301,8 @@ def plot_unified_freq_dicts(freqs,
                             width=.2,
                             ax=None,
                             figsize=(10, 5),
+                            panelheight_inches=5,
+                            inch_per_contacts=1,
                             fontsize=16,
                             lower_cutoff_val=0,
                             sort_by='mean',
@@ -308,10 +310,12 @@ def plot_unified_freq_dicts(freqs,
                             vertical_plot=False,
                             identity_cutoff=1,
                             ylim=1,
-                            panelheight_inches=5,
-                            inch_per_contacts=1,
+
                             assign_w_color=False,
                             title=None,
+                            verbose_legend=True,
+                            legend_rows=4,
+
                             ):
     r"""
     Plot unified frequency dictionaries (= with identical keys) for different systems
@@ -319,22 +323,28 @@ def plot_unified_freq_dicts(freqs,
     Parameters
     ----------
     freqs : dictionary of dictionaries
-        The first-level dict is keyed by system names, e.g freqs.keys() = ["WT","D10A","D10R"]
+        The first-level dict is keyed by system names,
+        e.g freqs.keys() = ["WT","D10A","D10R"]
         The second-level dict is keyed by contact names
     colordict : dict, default is None.
         What color each system gets. Default is some sane matplotlib values
     width : None or float, default is .2
-        Bar width of the bar plot.
-        If None, .5/len(freqs) will be used, leaving
-        50% of space free between contacts
-
+        Bar width each bar in the plot.
+        If None, .8/len(freqs) will be used, leaving
+        a .1 gap of free space between contacts.
     ax : :obj:`~matplotlib.axes.Axes`, default is None
-
+        Plot into this axis, else create one using
+        :obj:`figsize`.
     figsize : iterable of len 2
-        Figure size (x,y), in inches
-        If you are transposing the figure (:obj:`vertical_plot` is True),
-        you do not have to invert (y,x) this parameter here, it is
+        Figure size (x,y), in inches. If None,
+        one will be created using :obj:`panelheight_inches`
+        and :obj:`inch_per_contacts`.
+        If you are transposing the figure
+        using :obj:`vertical_plot`, you do not
+        have to invert (y,x) this parameter here, it is
         done automatically.
+    panelheight_inches : int, default is 5
+    inch_per_contacts : int, default is 1
     fontsize : int, default is 16
         Will be used in :obj:`matplotlib._rcParams["font.size"]
         # TODO be less invasive
@@ -342,20 +352,19 @@ def plot_unified_freq_dicts(freqs,
         Do not plot values lower than this. The cutoff is applied
         to whatever property is used in :obj:`sort_by` (mean or std)
     sort_by : str, default is "mean"
-        The sort_by by which to plot the contact. It is always descending
-        and the property can be:
+        The property by which to sort the contacts.
+        It is always descending and the property can be:
          * "mean" sort by mean frequency over all systems, making most
-         frequent contacts appear on top
+           frequent contacts appear on the left/top of the plot.
          * "std" sort by standard deviation over all frequencies, making
-         the contacts with most different values appear on top. This
-         highlights more "deviant" contacts and might hence be
-         more informative than "mean" in cases where a lot of
-         contacts have similar frequencies (high or low). If this option
-         is activated, a faint dotted line is incorporated into the plot
-         that marks the std for each contact group
+           the contacts with most different values appear on top. This
+           highlights more "deviant" contacts and might hence be
+           more informative than "mean" in cases where a lot of
+           contacts have similar frequencies (high or low). If this option
+           is activated, a faint dotted line is incorporated into the plot
+           that marks the std for each contact group
          * "keep" keep the contacts in whatever order they have in the
-         first dictionary
-         TODO check this actually works
+           first dictionary
     remove_identities : bool, default is False
         If True, the contacts where freq[sys][ctc] = 1 across all systems
         will not be plotted nor considered in the sum over contacts
@@ -364,17 +373,43 @@ def plot_unified_freq_dicts(freqs,
         If :obj:`remove_identities`, use this value to define what
         is considered an identity, s.t. contacts with values e.g. .95
         can also be removed
-        TODO conseder merging both identity paramters into one that is None or float
+        TODO consider merging both identity parameters into one that is None or float
     vertical_plot : bool, default is False
         Plot the bars vertically in descending sort_by
         instead of horizontally (better for large number of frequencies)
-
-    ylim
+    ylim : float, default is 1
+        The limit on the y-axis
     assign_w_color : boolean, default is False
         If there are contacts where only one system (as in keys, of :obj:`freqs`)
         appears, color the textlabel of that contact with the system's color
+    legend_rows : int, default is 4
+        The maximum number of rows per column of the legend.
+        If you have 10 systems, :obj:`legend_rows`=5 means
+        you'll get two columns, =2 means you'll get five.
+    verbose_legend : bool, default is True
+        Verbose legends inform about
+        contacts that were in the input but
+        have been left out of the plot. Contacts
+        are left out if they are:
+         * above the :obj:`identity_cutoff` or
+         * below the :obj:`lower_cutoff_val`
+        They will appear in the verbose legend
+        as "+ A.a + B.b", respectively
+        denoting the missing contacts that are
+        "a(bove" and b(elow)" with their respective
+        sums "A" and "B".
+
     Returns
     -------
+    fig : :obj:`~matplotlib.figure.Figure`
+    ax : :obj:`~matplotlib.axes.Axes`
+    freqs : dict
+        Dictionary of dictionaries with the plotted frequencies
+        in the plotted order. It's keyed with first wity
+        system-names first and contact-names second, like
+        the input. It has the :obj:`sort_by` strategy
+        as an extra key containing the value that resorted
+        of that strategy for each contact-name.
 
     """
     _fontsize=_rcParams["font.size"]
@@ -453,6 +488,9 @@ def plot_unified_freq_dicts(freqs,
     else:
         myfig = ax.figure
         _plt.sca(ax)
+    # Visual aides for debugging one-off errors in labelling, bar-position, and bar-width
+    #_plt.axvline(.5-wpad/2,color="r")
+    #_plt.axvline(-.5+wpad/2, color="r")
     for jj, (skey, sfreq) in enumerate(freqs_by_sys_by_ctc.items()):
         # Sanity check
         assert len(sfreq) == len(sorted_value_by_ctc_by_sys), "This shouldnt happen"
@@ -462,17 +500,18 @@ def plot_unified_freq_dicts(freqs,
 
         # Label
         label = '%s (Sigma= %2.1f)'%(skey, _np.sum(list(sfreq.values())))
-        if len(keys_popped_above)>0:
-            extra = "above threshold"
-            f = identity_cutoff
-            label = label[:-1]+", +%2.1fa)"%\
-                    (_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
-        if len(ctc_keys_popped_below) > 0:
-            not_shown_sigma = _np.sum([freqs[skey][nskey] for nskey in ctc_keys_popped_below])
-            if not_shown_sigma>0:
-                extra = "below threshold"
-                f = lower_cutoff_val
-                label = label[:-1] + ", +%2.1fb)" % (not_shown_sigma)
+        if verbose_legend:
+            if len(keys_popped_above)>0:
+                extra = "above threshold"
+                f = identity_cutoff
+                label = label[:-1]+", +%2.1fa)"%\
+                        (_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
+            if len(ctc_keys_popped_below) > 0:
+                not_shown_sigma = _np.sum([freqs[skey][nskey] for nskey in ctc_keys_popped_below])
+                if not_shown_sigma>0:
+                    extra = "below threshold"
+                    f = lower_cutoff_val
+                    label = label[:-1] + ", +%2.1fb)" % (not_shown_sigma)
         label = _mdcu.str_and_dict.replace4latex(label)
 
         if len(bar_array)>0:
@@ -490,7 +529,7 @@ def plot_unified_freq_dicts(freqs,
                           )
 
 
-            _plt.legend()
+            _plt.legend(ncol=_np.ceil(len(system_keys) / legend_rows).astype(int))
 
     if vertical_plot:
         for ii, key in enumerate(sorted_value_by_ctc_by_sys.keys()):
