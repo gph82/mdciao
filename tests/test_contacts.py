@@ -1641,7 +1641,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                     self.cp1_w_atom_types_0_1_switched,
                                     self.cp2_w_atom_types])
         # Minimal plot
-        iax = CG.plot_freqs_as_bars(3.5,title_label="test", plot_atomtypes=True)
+        iax = CG.plot_freqs_as_bars(3.5,title_label="test", atom_types=True)
         _plt.close("all")
 
     def test_plot_freqs_as_flareplot_just_runs(self):

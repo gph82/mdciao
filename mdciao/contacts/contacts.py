@@ -2821,7 +2821,7 @@ class ContactGroup(object):
                            label_fontsize_factor=1,
                            truncate_at=None,
                            total_freq=None,
-                           plot_atomtypes=False,
+                           atom_types=False,
                            display_sort=False,
                            sum_freqs=True,
                            ):
@@ -2913,9 +2913,9 @@ class ContactGroup(object):
             jax.set_xlim([-.5, xlim + 1 - .5])
 
         if self.is_neighborhood:
-            jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
-        if plot_atomtypes:
-            self._add_hatching_by_atomtypes(jax, ctc_cutoff_Ang, display_order=order,switch_off_Ang=switch_off_Ang)
+            ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
+        if atom_types:
+            self._add_hatching_by_atomtypes(ax, ctc_cutoff_Ang, display_order=order, switch_off_Ang=switch_off_Ang)
 
         return jax
 
