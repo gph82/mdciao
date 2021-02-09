@@ -620,7 +620,26 @@ class TestContactPair(unittest.TestCase):
                                        AA_format="just_consensus")
 
 
-
+    def test_frequency_dict_by_atom_types(self):
+        # From test_frequency_dict_formed_atom_pairs_overall_trajs_aggregate_by_atomtype_False(self):
+        # Completely bogus contact but testable
+        atom_BB_1 = list(self.geom.top.residue(0).atoms_by_name("CA"))[0].index
+        atom_BB_2 = list(self.geom.top.residue(0).atoms_by_name("N"))[0].index
+        atom_SC = list(self.geom.top.residue(1).atoms_by_name("CB"))[0].index
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 2.5, 1.3, 1.0]],
+                                   [[0, 1, 2, 3]],
+                                   atom_pair_trajs=[
+                                       [[atom_BB_1, atom_SC],
+                                        [atom_SC, atom_SC],
+                                        [atom_BB_2, atom_SC],
+                                        [atom_BB_1, atom_BB_2]
+                                        ],
+                                   ],
+                                   top=self.geom.top
+                                   )
+        res = cpt.frequency_dict(30,atom_types=True)
+        self.assertDictEqual(res["by_atomtypes"],{'BB-BB': 0.25, 'BB-SC': 0.5, 'SC-SC': 0.25})
 
     def test_distro_overall_trajs(self):
         cpt = contacts.ContactPair([0, 1],

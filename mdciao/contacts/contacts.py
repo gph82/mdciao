@@ -1409,7 +1409,9 @@ class ContactPair(object):
     def frequency_dict(self, ctc_cutoff_Ang,
                        switch_off_Ang=None,
                        AA_format='short',
-                       split_label=True):
+                       split_label=True,
+                       atom_types=False,
+                       ):
         """
         Returns the :obj:`frequency_overall_trajs` as a more informative
         dictionary with keys "freq", "residue idxs", "label"
@@ -1426,7 +1428,9 @@ class ContactPair(object):
             become easier-to-read in plain ascii formats
              - "E25@3.50____-    A35@4.50"
              - "A30@longfrag-    A35@4.50
-
+        atom_types : bool, default is false
+            Include the relative frequency of atom-type-pairs
+            involved in the contact
         Returns
         -------
         fdcit : dictionary
@@ -1447,10 +1451,17 @@ class ContactPair(object):
             raise ValueError(AA_format)
         if split_label:
             label= '%-15s - %-15s'%tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
-        return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
+
+        fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
                 "label":label.rstrip(" "),
                 "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)
                 }
+
+        if atom_types:
+            fdict.update({"by_atomtypes" :
+                              self.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,
+                                                                                         switch_off_Ang=switch_off_Ang)})
+        return fdict
 
     def distro_overall_trajs(self, bins=10):
         """
@@ -2495,7 +2506,8 @@ class ContactGroup(object):
 
     def frequency_dataframe(self, ctc_cutoff_Ang,
                             switch_off_Ang=None,
-                            by_atomtypes=False,
+                            atom_types=False,
+                            sort=False,
                             **ctc_fd_kwargs):
         r"""
         Output a formatted dataframe with fields "label", "freq" and "sum", optionally
@@ -2511,6 +2523,13 @@ class ContactGroup(object):
         by_atomtypes: bool, default is False
             Add a column where the contact is dis-aggregated by the atom-types involved,
             sidechain or backbone (SC or BB)
+        atom_types : bool, default is false
+            Include the relative frequency of atom-type-pairs
+            involved in the contact
+        sort : bool, default is False
+            Sort by descending frequency value,
+            default is to keep the order of
+            :obj:`self._contacts`
         ctc_fd_kwargs: named optional arguments
             Check :obj:`ContactPair.frequency_dict` for more info on e.g
             AA_format='short' and or split_label
