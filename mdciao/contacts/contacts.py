@@ -3037,16 +3037,17 @@ class ContactGroup(object):
         # Add the hatchet_legend
         leg1 = jax.get_legend()
         # Empty plots
+        _hatchets_to_plot = [key for ii, key in enumerate(_hatchets.keys()) if w_hatched_lists[:,ii].sum()>0]
         ebars = [
             jax.bar(_np.nan, _np.nan,
                     color="r",
                     #fill=True,
                     ec="w",
                     fc=color,
-                    hatch=val,
+                    hatch=_hatchets[key],
                     #width=.01,
                     lw=0)[0]
-            for val in _hatchets.values()]
+            for key in _hatchets_to_plot]
 
         pd = _mdcplots.plots._points2dataunits(jax)[1]
         try:
@@ -3055,7 +3056,7 @@ class ContactGroup(object):
             lowbar_fspts = _rcParams["font.size"] * .75
         lowbar_fsaus = lowbar_fspts / pd
         y_leg = -2 * lowbar_fsaus  # fudged to "close enough"
-        place_legend = lambda y: getattr(jax, "legend")(ebars, [key for (ii, key) in enumerate(_hatchets.keys()) if w_hatched_lists[:,ii].sum()>0],
+        place_legend = lambda y: getattr(jax, "legend")(ebars, _hatchets_to_plot,
                                                         loc=[0, y],
                                                         ncol=4,
                                                         framealpha=0,
