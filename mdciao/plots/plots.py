@@ -520,6 +520,7 @@ def plot_unified_freq_dicts(freqs,
                          width=width,
                          color=colordict[skey],
                          label=label,
+                         align="center",
                          )
             else:
                 _plt.barh(x_array + delta[skey], bar_array,
@@ -554,23 +555,24 @@ def plot_unified_freq_dicts(freqs,
 
     else:
         for ii, key in enumerate(sorted_value_by_ctc_by_sys.keys()):
-            # 1) centered in the middle of the bar, since plt.bar(align="center")
-            # 2) displaced by one half width*nbars
-            iix = ii\
-                  -width/2\
-                  +len(freqs_by_sys_by_ctc)*width/2
+            # 1) centered (ha="left") in the middle of the bar, since plt.bar(align="center")
+            # 2) slight correction of half-a-fontsize to the left
+            # 3) slight correction of one-a-fontsize upwards
+            xt = ii - _rcParams["font.size"] / _points2dataunits(ax)[0] / 2
+            yt =  ylim + _rcParams["font.size"] / _points2dataunits(ax)[1] #_np.diff(ax.get_ylim())*.05
             txt = _mdcu.str_and_dict.latex_superscript_fragments(key)
             txt = winners[key][0] + txt
-            _plt.text(iix, ylim + .05, txt,
+            _plt.text(xt, yt,
+                      txt,
                       #ha="center",
                       ha='left',
                       rotation=45,
                       color=winners[key][1]
                       )
             #_plt.gca().axvline(iix) (visual aid)
-        _plt.xticks(_np.arange(len(sorted_value_by_ctc_by_sys))-width, [])
+        _plt.xticks(_np.arange(len(sorted_value_by_ctc_by_sys)),[])
 
-        _plt.xlim(0 - width, ii + width * len(freqs_by_sys_by_ctc))
+        _plt.xlim(-.5, ii +.5)
         _ax = ax.twiny()
         _ax.set_xlim(ax.get_xlim())
         _plt.xticks(ax.get_xticks(), [])
@@ -678,6 +680,7 @@ def _points2dataunits(jax):
     p2d : float
         Conversion factor so that points * p2d = points_in_dataunits
 
+    TODO revise that this isn't indeed d2p!!!!
     """
     bbox = jax.get_window_extent()
     dx_pts, dy_pts = bbox.bounds[-2:]
