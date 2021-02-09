@@ -645,6 +645,29 @@ def _points2dataunits(jax):
     dx_in_dataunits, dy_in_dataunits = _np.diff(jax.get_xlim())[0], _np.diff(jax.get_ylim())[0]
     return _np.array((dx_pts/dx_in_dataunits, dy_pts / dy_in_dataunits)).T
 
+def highest_y_textobjects_in_Axes_units(ax):
+    r"""
+    Return the highest y-value of the bounding boxes of the text objects, in Axes units
+
+    Axes units are 0 at the left/bottom and 1 at the right/top of the axes (xlim, ylim)
+    For more info
+    https://matplotlib.org/3.1.1/tutorials/advanced/transforms_tutorial.html
+
+    Parameters
+    ----------
+    ax : :obj:`~matplotlib.axes.Axes`
+
+    Returns
+    -------
+    y : float
+    """
+
+    rend = ax.figure.canvas.get_renderer()
+    return _np.max(
+        [ax.transAxes.inverted().transform(txt.get_window_extent(rend).corners()[-1])[-1]
+         for txt in ax.texts]
+    )
+
 #TODO deprecate
 def titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
     r"""
