@@ -2905,7 +2905,11 @@ class ContactGroup(object):
                                                label_fontsize_factor=label_fontsize_factor
                                                )
 
-        #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
+        ax.set_title(_mdcu.str_and_dict.replace4latex(title),
+                     y = _np.max([1, _mdcplots.highest_y_textobjects_in_Axes_units(ax)])
+                     )
+
+        #ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
             ax.set_xlim([-.5, xlim + 1 - .5])
 
