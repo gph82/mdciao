@@ -65,6 +65,9 @@ This is an informal list of known issues and TODOs:
    mock-input or writing to tempdirs because writing figures or files could not be avoided.
  * Not moving to py39 until the he dependency `bezier <https://github.com/dhermes/bezier>`_ gets Python 3.9 wheels (`see this issue <https://github.com/dhermes/bezier/issues/243#issuecomment-707205685)>`_).
  * pinned mdtraj<=1.9.4 see https://github.com/mdtraj/mdtraj/issues/1613
+ * There's some inconsistencies in private vs public attributes of classes. An attribute might've "started" as private and is exceptionally used somewhere else until the number of exceptions is enough for it to make sense to be public, documented and well tested. I'm working on it.
+ * neighborlists could be computed much more efficiently
+ * There's many other TODOs spread throughout the code
 
 
 System Requirements
