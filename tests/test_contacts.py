@@ -1579,7 +1579,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_table_w_atom_types_and_names(self):
         CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types])
 
-        table = CG.frequency_dataframe(3.5, split_label=False, by_atomtypes=True)
+        table = CG.frequency_dataframe(3.5, split_label=False, atom_types=True)
         _np.testing.assert_array_equal(table["freq"].array, [3 / 4, 3 / 4])
         _np.testing.assert_array_equal(table["label"].array, ["E30-V31", "E30-W32"])
         _np.testing.assert_array_equal(table["sum"].array, [3 / 4, 3 / 4 + 3 / 4])
@@ -1848,7 +1848,7 @@ class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
                                    )
         with _TDir(suffix='_test_mdciao') as tmpdir:
             CG.frequency_table(2.5, path.join(tmpdir, "test.xlsx"),
-                               by_atomtypes=True)
+                               atom_types=True)
 
 
 class TestContactGroupASCII(TestBaseClassContactGroup):
@@ -1868,7 +1868,7 @@ class TestContactGroupASCII(TestBaseClassContactGroup):
 
         with _TDir() as tmpdir:
             tfile = path.join(tmpdir,'freqfile.dat')
-            CG.frequency_table(2.5, tfile, by_atomtypes=False)
+            CG.frequency_table(2.5, tfile, atom_types=False)
             from mdciao.utils.str_and_dict import freq_file2dict
             newfreq = freq_file2dict(tfile)
             _np.testing.assert_array_equal(list(newfreq.values()),CG.frequency_per_contact(2.5))

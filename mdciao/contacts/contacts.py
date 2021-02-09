@@ -2539,15 +2539,22 @@ class ContactGroup(object):
         -------
         df : :obj:`pandas.DataFrame`
         """
-        idf = _DF([ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, **ctc_fd_kwargs) for ictc in self._contacts])
+        idicts = [ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, atom_types=atom_types, **ctc_fd_kwargs) for ictc in self._contacts]
+        if atom_types is True:
+            for jdict in idicts:
+                istr =  '%s' % (', '.join(['%3u%% %s' % (val * 100, key)
+                                           for key, val in sorted(jdict["by_atomtypes"].items(),key=lambda item: item[1],reverse=True)]))
+                jdict.pop("by_atomtypes")
+                jdict["by_atomtypes"]=istr
+
+        idf = _DF(idicts)
+        if sort:
+            idf.sort_values("freq",
+                            ignore_index=True,
+                            inplace=True,
+                            ascending=False
+                            )
         df2return = idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
-
-        if by_atomtypes:
-            idf = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang)
-            idf = ['%s' % (', '.join(['%3u%% %s' % (val * 100, key) for key, val in sorted(idict.items(),key=lambda item: item[1],reverse=True)])) for idict in idf]
-
-            df2return = df2return.join(_DF.from_dict({"by_atomtypes": idf}))
-
         return df2return
 
     def frequency_table(self, ctc_cutoff_Ang,

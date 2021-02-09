@@ -962,7 +962,7 @@ def residue_neighborhoods(residues,
                                fname,
                                switch_off_Ang=switch_off_Ang,
                                write_interface=False,
-                               by_atomtypes=True,
+                               atom_types=True,
                                # AA_format="long",
                                )
             print(fname)
@@ -1803,7 +1803,7 @@ def sites(site_files,
             isite_nh.frequency_table(ctc_cutoff_Ang,
                                      fn.fname_per_site_table(site_name),
                                      write_interface=False,
-                                     by_atomtypes=True,
+                                     atom_types=True,
                                      # AA_format="long",
                                      )
             print(fn.fname_per_site_table(site_name))
