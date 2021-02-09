@@ -431,11 +431,15 @@ def plot_unified_freq_dicts(freqs,
                                lower_cutoff_val=lower_cutoff_val, assign_w_color=assign_w_color)
 
     # Prepare the positions of the bars
+    wpad=.2
+    maxwidth = (1-wpad)/len(system_keys)
     if width is None:
-        width = .5/len(system_keys)
-    delta = {}
-    for ii, key in enumerate(system_keys):
-        delta[key] = width * ii
+        width=maxwidth
+    else:
+        width=_np.min([width,maxwidth])
+    imax = (len(system_keys)-1)*width/2
+    ls = _np.linspace(-imax, imax, len(system_keys))
+    delta={key:val for key, val in zip(system_keys, ls)}
 
     if ax is None:
         if figsize is None:
@@ -740,7 +744,7 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                 if ihood.is_neighborhood:
                     ihood.plot_neighborhood_freqs(ctc_cutoff_Ang,
                                                   switch_off_Ang=switch_off_Ang,
-                                                  jax=jax,
+                                                  ax=jax,
                                                   xmax=xmax,
                                                   label_fontsize_factor=panelsize2font / panelsize,
                                                   shorten_AAs=short_AA_names,
@@ -749,12 +753,12 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                                                   )
                 else:
                     ihood.plot_freqs_as_bars(ctc_cutoff_Ang, iname,
-                                                jax=jax,
-                                                xlim=xmax,
-                                                label_fontsize_factor=panelsize2font / panelsize,
-                                                shorten_AAs=short_AA_names,
-                                                plot_atomtypes=plot_atomtypes,
-                                                )
+                                             ax=jax,
+                                             xlim=xmax,
+                                             label_fontsize_factor=panelsize2font / panelsize,
+                                             shorten_AAs=short_AA_names,
+                                             atom_types=plot_atomtypes,
+                                             )
                     if verbose:
                         print()
                         print(ihood.frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}))

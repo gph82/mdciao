@@ -2815,7 +2815,7 @@ class ContactGroup(object):
                            title_label=None,
                            switch_off_Ang=None,
                            xlim=None,
-                           jax=None,
+                           ax=None,
                            color=["tab:blue"],
                            shorten_AAs=False,
                            label_fontsize_factor=1,
@@ -2835,7 +2835,7 @@ class ContactGroup(object):
             If None, the method will default to self.name
             If self.name is also None, the method will fail
         xlim : float, default is None
-        jax : :obj:`matplotlib.pyplot.Axes`
+        ax : :obj:`~matplotlib.Axes`
         shorten_AAs : bool, default is None
         label_fontsize_factor : float
         truncate_at : float, default is None
@@ -2849,7 +2849,7 @@ class ContactGroup(object):
             display purposes only (the original order is untouched)
         Returns
         -------
-        jax : :obj:`~matplotlib.pyplot.Axes`
+        ax : :obj:`~matplotlib.Axes`
 
         """
 
@@ -2867,17 +2867,17 @@ class ContactGroup(object):
         else:
             order = _np.arange(len(freqs))
 
-        jax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
-                                                jax=jax,
-                                                color=color,
-                                                truncate_at=truncate_at)
+        ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
+                                                     jax=ax,
+                                                     color=color,
+                                                     truncate_at=truncate_at)
 
         label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
         if shorten_AAs:
             label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
         # Cosmetics
-        sigma = _np.sum([ipatch.get_height() for ipatch in jax.patches])
+        sigma = _np.sum([ipatch.get_height() for ipatch in ax.patches])
         title = "Contact frequency @%2.1f AA"%ctc_cutoff_Ang
         if self.is_neighborhood:
             title+="\n%s nearest bonded neighbors excluded\n" % (str(self.neighbors_excluded).replace("None","no"))
@@ -2889,9 +2889,9 @@ class ContactGroup(object):
             if sum_freqs:
                 label_dotref = "\n".join([_mdcu.str_and_dict.latex_superscript_fragments(label_dotref),
                                           _mdcu.str_and_dict.replace4latex('Sigma = %2.1f' % sigma)])  # sum over all bc we did not truncate
-                jax.plot(_np.nan, _np.nan, 'o',
-                         color=self.anchor_fragment_color,
-                         label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
+                ax.plot(_np.nan, _np.nan, 'o',
+                        color=self.anchor_fragment_color,
+                        label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
         else:
             if sum_freqs:
                 title+= " of '%s' (Sigma = %2.1f)\n" % (title_label,sigma)
@@ -2900,30 +2900,27 @@ class ContactGroup(object):
                                                                                            sigma / total_freq * 100,
                                                                                                    )
 
-        _mdcplots.add_tilted_labels_to_patches(jax,
-                                      [label_bars[ii] for ii in order][:(jax.get_xlim()[1]).astype(int)+1], #can't remember this
-                                      label_fontsize_factor=label_fontsize_factor
-                                      )
-        pad = _np.max([txt.get_window_extent(jax.figure.canvas.get_renderer()).height for txt in jax.texts])
-        jax.set_title(_mdcu.str_and_dict.replace4latex(title),
-                      pad=pad+_rcParams["axes.titlepad"]*2)
+        _mdcplots.add_tilted_labels_to_patches(ax,
+                                               [label_bars[ii] for ii in order][:(ax.get_xlim()[1]).astype(int) + 1],  #can't remember this
+                                               label_fontsize_factor=label_fontsize_factor
+                                               )
 
         #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
-            jax.set_xlim([-.5, xlim + 1 - .5])
+            ax.set_xlim([-.5, xlim + 1 - .5])
 
         if self.is_neighborhood:
             ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if atom_types:
             self._add_hatching_by_atomtypes(ax, ctc_cutoff_Ang, display_order=order, switch_off_Ang=switch_off_Ang)
 
-        return jax
+        return ax
 
     def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
                                 switch_off_Ang=None,
                                 color=["tab:blue"],
                                 xmax=None,
-                                jax=None,
+                                ax=None,
                                 shorten_AAs=False,
                                 label_fontsize_factor=1,
                                 sum_freqs=True,
@@ -2943,7 +2940,7 @@ class ContactGroup(object):
             parameter to homogenize different calls to this
             function over different contact groups, s.t.
             each subplot has equal xlimits
-        jax
+        ax : :obj:`~matplotlib.Axes`
         shorten_AAs
         label_fontsize_factor
         sum_freqs: bool, default is True
@@ -2960,24 +2957,24 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`~matplotlib.pyplot.Axes`
+        ax : :obj:`~matplotlib.Axes`
         """
 
         assert self.is_neighborhood, "This ContactGroup is not a neighborhood, use ContactGroup.plot_freqs_as_bars() instead"
 
-        jax = self.plot_freqs_as_bars(ctc_cutoff_Ang,
-                                      jax=jax,
-                                      xlim=xmax,
-                                      shorten_AAs=shorten_AAs,
-                                      truncate_at=None,
-                                      plot_atomtypes=plot_atomtypes,
-                                      display_sort=display_sort,
-                                      switch_off_Ang=switch_off_Ang,
-                                      label_fontsize_factor=label_fontsize_factor,
-                                      color=color,
-                                      sum_freqs=sum_freqs
-                                      )
-        return jax
+        ax = self.plot_freqs_as_bars(ctc_cutoff_Ang,
+                                     ax=ax,
+                                     xlim=xmax,
+                                     shorten_AAs=shorten_AAs,
+                                     truncate_at=None,
+                                     atom_types=plot_atomtypes,
+                                     display_sort=display_sort,
+                                     switch_off_Ang=switch_off_Ang,
+                                     label_fontsize_factor=label_fontsize_factor,
+                                     color=color,
+                                     sum_freqs=sum_freqs
+                                     )
+        return ax
 
     def _get_hatches_for_plotting(self, ctc_cutoff_Ang, switch_off_Ang=None):
         r"""

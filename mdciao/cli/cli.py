@@ -1417,7 +1417,7 @@ Defaults to None which will prompt the user of
         _rcParams["font.size"] = panelsize * panelsize2font
         ctc_grp_intf.plot_freqs_as_bars(ctc_cutoff_Ang,
                                         title,
-                                        jax=histoax[0],
+                                        ax=histoax[0],
                                         xlim=_np.min((n_ctcs, ctc_grp_intf.n_ctcs)),
                                         label_fontsize_factor=panelsize2font / panelsize,
                                         shorten_AAs=short_AA_names,

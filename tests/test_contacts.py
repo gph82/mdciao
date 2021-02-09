@@ -1698,7 +1698,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         assert isinstance(jax, _plt.Axes)
         _plt.plot()
         jax = _plt.gca()
-        assert jax is CG.plot_neighborhood_freqs(2, jax=jax)
+        assert jax is CG.plot_neighborhood_freqs(2, ax=jax)
         _plt.close("all")
 
     def test_plot_get_hatches_for_plotting_atomtypes(self):
