@@ -426,6 +426,13 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
 
+    def test_most_recent_labels_None(self):
+        assert self.cgn_local.most_recent_top2labels is None
+
+    def test_most_recent_labels_works(self):
+        labels = self.cgn_local.top2labels(self.cgn_local.top)
+        self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
+
 class TestLabelerBW_local_woPDB(unittest.TestCase):
 
     # The setup is in itself a test
