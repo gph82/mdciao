@@ -589,9 +589,8 @@ def plot_unified_freq_dicts(freqs,
 
         _plt.ylim(0, ylim)
         if title is not None:
-            pad = _np.max([txt.get_window_extent(ax.figure.canvas.get_renderer()).height for txt in ax.texts])
             ax.set_title(_mdcu.str_and_dict.replace4latex(title),
-                         pad=pad+_rcParams["axes.titlepad"]*2
+                         pad=_titlepadding_in_points_no_clashes_w_texts(ax)
                          )
 
     # Create a by-state dictionary explaining the plot
