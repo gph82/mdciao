@@ -280,7 +280,7 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
                  traj_idx,
                  **mdcontacts_kwargs):
     r"""
-    Wrapper for :obj:`mdtraj.contacs` for strided, chunked computation
+    Wrapper for :obj:`mdtraj.contacts` for strided, chunked computation
     of contacts
 
     Input can be directly :obj:`mdtraj.Trajectory` objects or
@@ -292,20 +292,20 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 
     Parameters
     ----------
-    top: `mdtraj.Topology`
-    itraj: `mdtraj.Trajctory` or filename
+    top: `~mdtraj.Topology`
+    itraj: `~mdtraj.Trajectory` or filename
     ctc_residxs_pairs: iterable of pairs of residue indices
         Distances to be computed
     chunksize: int
-        Size (in frames) of the "chunks" in which the contacs will be computed.
-        Decrease the chunksize if you run into memmory errors
+        Size (in frames) of the "chunks" in which the contacts will be computed.
+        Decrease the chunksize if you run into memory errors
     stride:int
         Stride with which the contacts will be streamed over
     traj_idx: int
         The index of the trajectory being computed. For completeness
         of the progress report
     mdcontacts_kwargs:
-        Optional keyword arguments to pass to :obj:`mdtraj.contacs`
+        Optional keyword arguments to pass to :obj:`mdtraj.contacts`
 
         Note:
         -----
