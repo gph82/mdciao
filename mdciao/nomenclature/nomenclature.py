@@ -193,6 +193,7 @@ def CGN_finder(identifier,
     file2read = format%identifier
     file2read = _path.join(local_path, file2read)
     rep = lambda istr : [istr.replace(" ","") if isinstance(istr,str) else istr][0]
+    # using  delim_whitespace=True splits "Sort Number" in two keys, not feasible to generalize ATM
     local_lookup_lambda = lambda file2read :_read_csv(file2read, delimiter='\t').applymap(rep)
 
     web_address = "www.mrc-lmb.cam.ac.uk"
@@ -663,6 +664,9 @@ class LabelerConsensus(object):
         to initialize this :obj:`LabelerConsensus` and return a
         list of consensus labels for each residue in :obj:`top`.
 
+        Populates the attributes :obj:`most_recent_top2labels` and
+        :obj:`most_recent_alignment`
+
         If a consensus label is returned as None it means one
         of two things:
          * this position was successfully aligned with a
@@ -720,6 +724,8 @@ class LabelerConsensus(object):
         # with an n_residues optarg, IDK about best design choice
         if autofill_consensus:
             out_list = _fill_consensus_gaps(out_list, top, verbose=False)
+
+        self._last_top2labels = out_list
         return out_list
 
     def top2frags(self, top,
@@ -888,6 +894,23 @@ class LabelerConsensus(object):
         """
         try:
             return self._last_alignment_df
+        except AttributeError:
+            print("No alignment has been carried out with this object yet")
+            return None
+
+    @property
+    def most_recent_top2labels(self):
+        r"""The most recent :obj:`self.top2labels`-result
+
+        Expert use only
+
+        Returns
+        -------
+        df : list
+
+        """
+        try:
+            return self._last_top2labels
         except AttributeError:
             print("No alignment has been carried out with this object yet")
             return None

@@ -1411,7 +1411,9 @@ class ContactPair(object):
     def frequency_dict(self, ctc_cutoff_Ang,
                        switch_off_Ang=None,
                        AA_format='short',
-                       split_label=True):
+                       split_label=True,
+                       atom_types=False,
+                       ):
         """
         Returns the :obj:`frequency_overall_trajs` as a more informative
         dictionary with keys "freq", "residue idxs", "label"
@@ -1428,7 +1430,9 @@ class ContactPair(object):
             become easier-to-read in plain ascii formats
              - "E25@3.50____-    A35@4.50"
              - "A30@longfrag-    A35@4.50
-
+        atom_types : bool, default is false
+            Include the relative frequency of atom-type-pairs
+            involved in the contact
         Returns
         -------
         fdcit : dictionary
@@ -1449,10 +1453,17 @@ class ContactPair(object):
             raise ValueError(AA_format)
         if split_label:
             label= '%-15s - %-15s'%tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
-        return {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
+
+        fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
                 "label":label.rstrip(" "),
                 "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)
                 }
+
+        if atom_types:
+            fdict.update({"by_atomtypes" :
+                              self.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,
+                                                                                         switch_off_Ang=switch_off_Ang)})
+        return fdict
 
     def distro_overall_trajs(self, bins=10):
         """
@@ -2268,7 +2279,8 @@ class ContactGroup(object):
         return _np.vstack(ctc_idxs)
 
 
-    def frequency_dict(self, ctc_cutoff_Ang,
+    def frequency_dicts(self, ctc_cutoff_Ang,
+                       sort=False,
                        **kwargs):
         """
         Wraps around the method :obj:`ContactPair.frequency_dict`
@@ -2279,6 +2291,10 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang : float
             Cutoff in Angstrom. The comparison operator is "<="
+        sort : bool, default is False
+            Sort by descending frequency. Default
+            is to return in the same order
+            as :obj:`ContactGroup._contacts`
         kwargs : optional keyword arguments
             Check :obj:`ContactPair.frequency_dict`
 
@@ -2288,6 +2304,10 @@ class ContactGroup(object):
 
         """
         frequency_dicts = [cp.frequency_dict(ctc_cutoff_Ang=ctc_cutoff_Ang, **kwargs) for cp in self._contacts]
+        if sort:
+            frequency_dicts = sorted(frequency_dicts,
+                                     key=lambda value: value["freq"],
+                                     reverse=True)
         return {idict["label"] : idict["freq"] for idict in frequency_dicts}
 
     # TODO think about implementing a frequency class, but how
@@ -2488,7 +2508,8 @@ class ContactGroup(object):
 
     def frequency_dataframe(self, ctc_cutoff_Ang,
                             switch_off_Ang=None,
-                            by_atomtypes=False,
+                            atom_types=False,
+                            sort=False,
                             **ctc_fd_kwargs):
         r"""
         Output a formatted dataframe with fields "label", "freq" and "sum", optionally
@@ -2504,6 +2525,13 @@ class ContactGroup(object):
         by_atomtypes: bool, default is False
             Add a column where the contact is dis-aggregated by the atom-types involved,
             sidechain or backbone (SC or BB)
+        atom_types : bool, default is false
+            Include the relative frequency of atom-type-pairs
+            involved in the contact
+        sort : bool, default is False
+            Sort by descending frequency value,
+            default is to keep the order of
+            :obj:`self._contacts`
         ctc_fd_kwargs: named optional arguments
             Check :obj:`ContactPair.frequency_dict` for more info on e.g
             AA_format='short' and or split_label
@@ -2513,15 +2541,22 @@ class ContactGroup(object):
         -------
         df : :obj:`pandas.DataFrame`
         """
-        idf = _DF([ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, **ctc_fd_kwargs) for ictc in self._contacts])
+        idicts = [ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, atom_types=atom_types, **ctc_fd_kwargs) for ictc in self._contacts]
+        if atom_types is True:
+            for jdict in idicts:
+                istr =  '%s' % (', '.join(['%3u%% %s' % (val * 100, key)
+                                           for key, val in sorted(jdict["by_atomtypes"].items(),key=lambda item: item[1],reverse=True)]))
+                jdict.pop("by_atomtypes")
+                jdict["by_atomtypes"]=istr
+
+        idf = _DF(idicts)
+        if sort:
+            idf.sort_values("freq",
+                            ignore_index=True,
+                            inplace=True,
+                            ascending=False
+                            )
         df2return = idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
-
-        if by_atomtypes:
-            idf = self.relative_frequency_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang)
-            idf = ['%s' % (', '.join(['%3u%% %s' % (val * 100, key) for key, val in sorted(idict.items(),key=lambda item: item[1],reverse=True)])) for idict in idf]
-
-            df2return = df2return.join(_DF.from_dict({"by_atomtypes": idf}))
-
         return df2return
 
     def frequency_table(self, ctc_cutoff_Ang,
@@ -2782,13 +2817,13 @@ class ContactGroup(object):
                            title_label=None,
                            switch_off_Ang=None,
                            xlim=None,
-                           jax=None,
+                           ax=None,
                            color=["tab:blue"],
                            shorten_AAs=False,
                            label_fontsize_factor=1,
                            truncate_at=None,
                            total_freq=None,
-                           plot_atomtypes=False,
+                           atom_types=False,
                            display_sort=False,
                            sum_freqs=True,
                            ):
@@ -2802,7 +2837,7 @@ class ContactGroup(object):
             If None, the method will default to self.name
             If self.name is also None, the method will fail
         xlim : float, default is None
-        jax : :obj:`matplotlib.pyplot.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
         shorten_AAs : bool, default is None
         label_fontsize_factor : float
         truncate_at : float, default is None
@@ -2816,7 +2851,7 @@ class ContactGroup(object):
             display purposes only (the original order is untouched)
         Returns
         -------
-        jax : :obj:`~matplotlib.pyplot.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
 
         """
 
@@ -2834,17 +2869,17 @@ class ContactGroup(object):
         else:
             order = _np.arange(len(freqs))
 
-        jax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
-                                                jax=jax,
-                                                color=color,
-                                                truncate_at=truncate_at)
+        ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
+                                                     jax=ax,
+                                                     color=color,
+                                                     truncate_at=truncate_at)
 
         label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
         if shorten_AAs:
             label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
         # Cosmetics
-        sigma = _np.sum([ipatch.get_height() for ipatch in jax.patches])
+        sigma = _np.sum([ipatch.get_height() for ipatch in ax.patches])
         title = "Contact frequency @%2.1f AA"%ctc_cutoff_Ang
         if self.is_neighborhood:
             title+="\n%s nearest bonded neighbors excluded\n" % (str(self.neighbors_excluded).replace("None","no"))
@@ -2856,9 +2891,9 @@ class ContactGroup(object):
             if sum_freqs:
                 label_dotref = "\n".join([_mdcu.str_and_dict.latex_superscript_fragments(label_dotref),
                                           _mdcu.str_and_dict.replace4latex('Sigma = %2.1f' % sigma)])  # sum over all bc we did not truncate
-                jax.plot(_np.nan, _np.nan, 'o',
-                         color=self.anchor_fragment_color,
-                         label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
+                ax.plot(_np.nan, _np.nan, 'o',
+                        color=self.anchor_fragment_color,
+                        label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
         else:
             if sum_freqs:
                 title+= " of '%s' (Sigma = %2.1f)\n" % (title_label,sigma)
@@ -2867,29 +2902,31 @@ class ContactGroup(object):
                                                                                            sigma / total_freq * 100,
                                                                                                    )
 
-        _mdcplots.add_tilted_labels_to_patches(jax,
-                                      [label_bars[ii] for ii in order][:(jax.get_xlim()[1]).astype(int)+1], #can't remember this
-                                      label_fontsize_factor=label_fontsize_factor
-                                      )
-        jax.set_title(_mdcu.str_and_dict.replace4latex(title),
-                      pad=_rcParams["axes.titlepad"] + _mdcplots.titlepadding_in_points_no_clashes_w_texts(jax))
+        _mdcplots.add_tilted_labels_to_patches(ax,
+                                               [label_bars[ii] for ii in order][:(ax.get_xlim()[1]).astype(int) + 1],  #can't remember this
+                                               label_fontsize_factor=label_fontsize_factor
+                                               )
 
-        #jax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
+        ax.set_title(_mdcu.str_and_dict.replace4latex(title),
+                     y = _np.max([1, _mdcplots.highest_y_textobjects_in_Axes_units(ax)])
+                     )
+
+        #ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
-            jax.set_xlim([-.5, xlim + 1 - .5])
+            ax.set_xlim([-.5, xlim + 1 - .5])
 
         if self.is_neighborhood:
-            jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor)
-        if plot_atomtypes:
-            self._add_hatching_by_atomtypes(jax, ctc_cutoff_Ang, display_order=order,switch_off_Ang=switch_off_Ang)
+            ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
+        if atom_types:
+            self._add_hatching_by_atomtypes(ax, ctc_cutoff_Ang, display_order=order, switch_off_Ang=switch_off_Ang)
 
-        return jax
+        return ax
 
     def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
                                 switch_off_Ang=None,
                                 color=["tab:blue"],
                                 xmax=None,
-                                jax=None,
+                                ax=None,
                                 shorten_AAs=False,
                                 label_fontsize_factor=1,
                                 sum_freqs=True,
@@ -2909,7 +2946,7 @@ class ContactGroup(object):
             parameter to homogenize different calls to this
             function over different contact groups, s.t.
             each subplot has equal xlimits
-        jax
+        ax : :obj:`~matplotlib.axes.Axes`
         shorten_AAs
         label_fontsize_factor
         sum_freqs: bool, default is True
@@ -2926,24 +2963,24 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`~matplotlib.pyplot.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
         """
 
         assert self.is_neighborhood, "This ContactGroup is not a neighborhood, use ContactGroup.plot_freqs_as_bars() instead"
 
-        jax = self.plot_freqs_as_bars(ctc_cutoff_Ang,
-                                      jax=jax,
-                                      xlim=xmax,
-                                      shorten_AAs=shorten_AAs,
-                                      truncate_at=None,
-                                      plot_atomtypes=plot_atomtypes,
-                                      display_sort=display_sort,
-                                      switch_off_Ang=switch_off_Ang,
-                                      label_fontsize_factor=label_fontsize_factor,
-                                      color=color,
-                                      sum_freqs=sum_freqs
-                                      )
-        return jax
+        ax = self.plot_freqs_as_bars(ctc_cutoff_Ang,
+                                     ax=ax,
+                                     xlim=xmax,
+                                     shorten_AAs=shorten_AAs,
+                                     truncate_at=None,
+                                     atom_types=plot_atomtypes,
+                                     display_sort=display_sort,
+                                     switch_off_Ang=switch_off_Ang,
+                                     label_fontsize_factor=label_fontsize_factor,
+                                     color=color,
+                                     sum_freqs=sum_freqs
+                                     )
+        return ax
 
     def _get_hatches_for_plotting(self, ctc_cutoff_Ang, switch_off_Ang=None):
         r"""
@@ -2981,7 +3018,7 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        jax : :obj:`matplotlib.Axes`
+        jax : :obj:`~matplotlib.axes.Axes`
             The axis where the frequency bars where plotted
         ctc_cutoff_Ang : float
             The cutoff that was used (otherwise we cannot compute atomtype freqs)
@@ -3029,16 +3066,17 @@ class ContactGroup(object):
         # Add the hatchet_legend
         leg1 = jax.get_legend()
         # Empty plots
+        _hatchets_to_plot = [key for ii, key in enumerate(_hatchets.keys()) if w_hatched_lists[:,ii].sum()>0]
         ebars = [
             jax.bar(_np.nan, _np.nan,
                     color="r",
                     #fill=True,
                     ec="w",
                     fc=color,
-                    hatch=val,
+                    hatch=_hatchets[key],
                     #width=.01,
                     lw=0)[0]
-            for val in _hatchets.values()]
+            for key in _hatchets_to_plot]
 
         pd = _mdcplots.plots._points2dataunits(jax)[1]
         try:
@@ -3047,7 +3085,7 @@ class ContactGroup(object):
             lowbar_fspts = _rcParams["font.size"] * .75
         lowbar_fsaus = lowbar_fspts / pd
         y_leg = -2 * lowbar_fsaus  # fudged to "close enough"
-        place_legend = lambda y: getattr(jax, "legend")(ebars, [key for (ii, key) in enumerate(_hatchets.keys()) if w_hatched_lists[:,ii].sum()>0],
+        place_legend = lambda y: getattr(jax, "legend")(ebars, _hatchets_to_plot,
                                                         loc=[0, y],
                                                         ncol=4,
                                                         framealpha=0,
@@ -3094,7 +3132,7 @@ class ContactGroup(object):
             Limits of the x-axis.
             Outlier can stretch the scale, this forces it
             to a given range
-        jax : :obj:`matplotlib.pyplot.Axes`, default is None
+        jax : :obj:`~matplotlib.axes.Axes`, default is None
             One will be created if None is passed
         shorten_AAs: bool, default is False
             Use amino-acid one-letter codes
@@ -3109,7 +3147,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`~matplotlib.pyplot.Axes`
+        jax : :obj:`~matplotlib.axes.Axes`
 
         """
         if jax is None:
@@ -3331,7 +3369,7 @@ class ContactGroup(object):
         title_str : str
         xmax : float, default is None
             X-axis will extend from -.5 to xmax+.5
-        jax : obj:`matplotlib.pyplot.Axes`, default is None
+        jax : obj:`~matplotlib.axes.Axes``, default is None
             If None, one will be created, else draw here
         shorten_AAs : boolean, default is False
             Unused ATM
@@ -3356,7 +3394,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        ax : :obj:`matplotlib.pyplot.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
 
         """
 
@@ -3668,7 +3706,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        iax : :obj:`matplotlib.pyplot.Axes`
+        iax : :obj:`~matplotlib.axes.Axes`
         fig : :obj:`matplotlib.pyplot.Figure`
 
         """

@@ -307,7 +307,7 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     if len(idxs_of_pairs2plot) > 0:
         pairs_of_nodes = [(xy[residx2markeridx[ii]],
-                           xy[residx2markeridx[jj]]) for (ii, jj) in res_idxs_pairs[idxs_of_pairs2plot]]
+                           xy[residx2markeridx[jj]]) for (ii, jj) in _np.array(res_idxs_pairs)[idxs_of_pairs2plot]]
         alphas = ctcs_averaged[idxs_of_pairs2plot]
         bezier_curves = add_bezier_curves(iax,
                                           pairs_of_nodes,

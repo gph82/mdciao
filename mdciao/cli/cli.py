@@ -962,7 +962,7 @@ def residue_neighborhoods(residues,
                                fname,
                                switch_off_Ang=switch_off_Ang,
                                write_interface=False,
-                               by_atomtypes=True,
+                               atom_types=True,
                                # AA_format="long",
                                )
             print(fname)
@@ -1417,7 +1417,7 @@ Defaults to None which will prompt the user of
         _rcParams["font.size"] = panelsize * panelsize2font
         ctc_grp_intf.plot_freqs_as_bars(ctc_cutoff_Ang,
                                         title,
-                                        jax=histoax[0],
+                                        ax=histoax[0],
                                         xlim=_np.min((n_ctcs, ctc_grp_intf.n_ctcs)),
                                         label_fontsize_factor=panelsize2font / panelsize,
                                         shorten_AAs=short_AA_names,
@@ -1803,7 +1803,7 @@ def sites(site_files,
             isite_nh.frequency_table(ctc_cutoff_Ang,
                                      fn.fname_per_site_table(site_name),
                                      write_interface=False,
-                                     by_atomtypes=True,
+                                     atom_types=True,
                                      # AA_format="long",
                                      )
             print(fn.fname_per_site_table(site_name))

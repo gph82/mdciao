@@ -620,7 +620,26 @@ class TestContactPair(unittest.TestCase):
                                        AA_format="just_consensus")
 
 
-
+    def test_frequency_dict_by_atom_types(self):
+        # From test_frequency_dict_formed_atom_pairs_overall_trajs_aggregate_by_atomtype_False(self):
+        # Completely bogus contact but testable
+        atom_BB_1 = list(self.geom.top.residue(0).atoms_by_name("CA"))[0].index
+        atom_BB_2 = list(self.geom.top.residue(0).atoms_by_name("N"))[0].index
+        atom_SC = list(self.geom.top.residue(1).atoms_by_name("CB"))[0].index
+        cpt = contacts.ContactPair([0, 1],
+                                   [[1.0, 2.5, 1.3, 1.0]],
+                                   [[0, 1, 2, 3]],
+                                   atom_pair_trajs=[
+                                       [[atom_BB_1, atom_SC],
+                                        [atom_SC, atom_SC],
+                                        [atom_BB_2, atom_SC],
+                                        [atom_BB_1, atom_BB_2]
+                                        ],
+                                   ],
+                                   top=self.geom.top
+                                   )
+        res = cpt.frequency_dict(30,atom_types=True)
+        self.assertDictEqual(res["by_atomtypes"],{'BB-BB': 0.25, 'BB-SC': 0.5, 'SC-SC': 0.25})
 
     def test_distro_overall_trajs(self):
         cpt = contacts.ContactPair([0, 1],
@@ -1387,11 +1406,21 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
             neighbors_excluded=0
         )
 
-    def test_frequency_dict(self):
+    def test_frequency_dicts(self):
         CP = self.CG
-        freqdcit = CP.frequency_dict(2, split_label=False)
+        freqdcit = CP.frequency_dicts(2, split_label=False)
         self.assertDictEqual(freqdcit, {"E30@fragA-V31@fragB" : 2 / 5,
                                         "E30@fragA-W32@fragC" : 1 / 5})
+
+    def test_frequency_dicts_sort(self):
+        CG = contacts.ContactGroup(
+            [self.cp2_w_anchor_and_frags_and_top,
+             self.cp1_w_anchor_and_frags_and_top],
+            neighbors_excluded=0
+        )
+        self.assertDictEqual(CG.frequency_dicts(2, split_label=False, sort=True),
+                             {"E30@fragA-W32@fragC": 1 / 5,
+                              "E30@fragA-V31@fragB": 2 / 5})
 
     def test_frequency_per_contact(self):
         CP = self.CG
@@ -1550,7 +1579,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_table_w_atom_types_and_names(self):
         CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types])
 
-        table = CG.frequency_dataframe(3.5, split_label=False, by_atomtypes=True)
+        table = CG.frequency_dataframe(3.5, split_label=False, atom_types=True)
         _np.testing.assert_array_equal(table["freq"].array, [3 / 4, 3 / 4])
         _np.testing.assert_array_equal(table["label"].array, ["E30-V31", "E30-W32"])
         _np.testing.assert_array_equal(table["sum"].array, [3 / 4, 3 / 4 + 3 / 4])
@@ -1612,7 +1641,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                     self.cp1_w_atom_types_0_1_switched,
                                     self.cp2_w_atom_types])
         # Minimal plot
-        iax = CG.plot_freqs_as_bars(3.5,title_label="test", plot_atomtypes=True)
+        iax = CG.plot_freqs_as_bars(3.5,title_label="test", atom_types=True)
         _plt.close("all")
 
     def test_plot_freqs_as_flareplot_just_runs(self):
@@ -1669,7 +1698,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         assert isinstance(jax, _plt.Axes)
         _plt.plot()
         jax = _plt.gca()
-        assert jax is CG.plot_neighborhood_freqs(2, jax=jax)
+        assert jax is CG.plot_neighborhood_freqs(2, ax=jax)
         _plt.close("all")
 
     def test_plot_get_hatches_for_plotting_atomtypes(self):
@@ -1819,7 +1848,7 @@ class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
                                    )
         with _TDir(suffix='_test_mdciao') as tmpdir:
             CG.frequency_table(2.5, path.join(tmpdir, "test.xlsx"),
-                               by_atomtypes=True)
+                               atom_types=True)
 
 
 class TestContactGroupASCII(TestBaseClassContactGroup):
@@ -1839,7 +1868,7 @@ class TestContactGroupASCII(TestBaseClassContactGroup):
 
         with _TDir() as tmpdir:
             tfile = path.join(tmpdir,'freqfile.dat')
-            CG.frequency_table(2.5, tfile, by_atomtypes=False)
+            CG.frequency_table(2.5, tfile, atom_types=False)
             from mdciao.utils.str_and_dict import freq_file2dict
             newfreq = freq_file2dict(tfile)
             _np.testing.assert_array_equal(list(newfreq.values()),CG.frequency_per_contact(2.5))
