@@ -231,14 +231,14 @@ Highlights
 
   generates the following figure (tables are generated but not shown). The option ``-at`` (``--atomtypes``) generates the patterns ("hatching") of the bars. They indicate what atom types (sidechain or backbone) are responsible for the contact:
 
-.. figure:: imgs/sites.overall@3.5_Ang.Fig.6.png
+ .. figure:: imgs/sites.overall@3.5_Ang.Fig.6.png
       :scale: 50%
       :align: left
       :name: sites_freq
 
       [``sites.overall@3.5_Ang.pdf``](click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
 
-  |nbspc|
+ |nbspc|
 .. _comparison_HL:
 
 * compare contact frequencies coming from different calculations, to detect and show contact changes across different systems. For example, to look for the effect of different ligands, mutations, pH-values etc. In this case, we compare the neighborhood of R131 (3.50 on the receptor) between our MD simulations and the crystal structure straight from the PDB. First, we grab the file on the fly with ``mdc_pdb.py``::

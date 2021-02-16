@@ -42,7 +42,7 @@ What these tools do is:
 * mdc_CGN_overview
    Map a Common G-alpha Numbering (CGN)-type nomenclature on an input topology Example :ref:`here <consensus_HL>`.
 * mdc_compare
-   Compare residue-residue contact frequencies from different files. Example :ref:`here <comparison>`  with :numref:`comparisonfig`.
+   Compare residue-residue contact frequencies from different files. Example :ref:`here <comparison_HL>`  with :numref:`comparisonfig`.
 * mdc_pdb
    Lookup a four-letter PDB-code in the RCSB PDB and save it locally. Example :ref:`here <pdb_HL>`.
 * mdc_residues
