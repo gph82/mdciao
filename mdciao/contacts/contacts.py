@@ -213,9 +213,10 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 
     Parameters
     ----------
-    trajs : list of strings
-        list of filenames with trajectory data. Typically xtcs,
-        but can be any type of file readable by :obj:`mdtraj`
+    trajs : list
+        list of trajectories. Each item can be a str
+        with the path to a file or an
+        :obj:`~mdtraj.Trajectory` object.
     top : str or :py:class:`mdtraj.Topology`
         Topology that matches :obj:xtcs
     ctc_residxs_pairs : iterable
@@ -253,6 +254,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         iterfunct = lambda a : _tqdm(a)
     else:
         iterfunct = lambda a : a
+    assert isinstance(trajs,list) #otherwise we will iterate through the frames of a single traj
     ictcs_itimes_iaps = _Parallel(n_jobs=n_jobs)(_delayed(per_traj_ctc)(top, itraj, ctc_residxs_pairs, chunksize, stride, ii,
                                                                         **mdcontacts_kwargs)
                                             for ii, itraj in enumerate(iterfunct(trajs)))
@@ -280,7 +282,7 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
                  traj_idx,
                  **mdcontacts_kwargs):
     r"""
-    Wrapper for :obj:`mdtraj.contacs` for strided, chunked computation
+    Wrapper for :obj:`mdtraj.contacts` for strided, chunked computation
     of contacts
 
     Input can be directly :obj:`mdtraj.Trajectory` objects or
@@ -292,20 +294,20 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 
     Parameters
     ----------
-    top: `mdtraj.Topology`
-    itraj: `mdtraj.Trajctory` or filename
+    top: `~mdtraj.Topology`
+    itraj: `~mdtraj.Trajectory` or filename
     ctc_residxs_pairs: iterable of pairs of residue indices
         Distances to be computed
     chunksize: int
-        Size (in frames) of the "chunks" in which the contacs will be computed.
-        Decrease the chunksize if you run into memmory errors
+        Size (in frames) of the "chunks" in which the contacts will be computed.
+        Decrease the chunksize if you run into memory errors
     stride:int
         Stride with which the contacts will be streamed over
     traj_idx: int
         The index of the trajectory being computed. For completeness
         of the progress report
     mdcontacts_kwargs:
-        Optional keyword arguments to pass to :obj:`mdtraj.contacs`
+        Optional keyword arguments to pass to :obj:`mdtraj.contacts`
 
         Note:
         -----
