@@ -589,9 +589,8 @@ def plot_unified_freq_dicts(freqs,
 
         _plt.ylim(0, ylim)
         if title is not None:
-            pad = _np.max([txt.get_window_extent(ax.figure.canvas.get_renderer()).height for txt in ax.texts])
             ax.set_title(_mdcu.str_and_dict.replace4latex(title),
-                         pad=pad+_rcParams["axes.titlepad"]*2
+                         pad=_titlepadding_in_points_no_clashes_w_texts(ax)
                          )
 
     # Create a by-state dictionary explaining the plot
@@ -710,31 +709,27 @@ def highest_y_textobjects_in_Axes_units(ax):
          for txt in ax.texts]
     )
 
-#TODO deprecate
-def titlepadding_in_points_no_clashes_w_texts(jax, min_pts4correction=6):
+def _titlepadding_in_points_no_clashes_w_texts(jax):
     r"""
-    Compute amount of upward padding need to avoid overlap between
-    the axis title and any text object in the axis
+    Compute amount of upward padding need to avoid overlap
+    between the axis title and any text object in the axis.
+
+    Returns None if no text objects are there
 
     Parameters
     ----------
-    jax : :obj:`matplotlib.Axis`
-    min_pts4correction : int, default is 4
-        Do not consider extensions smaller than this to
-        need correction. Helps with multiple axis in the same fig
+    jax : :obj:`~matplotlib.axes.Axes`
 
     Returns
     -------
-    pad_id_points : float
+    pad_id_points : float or None
 
     """
-
-    max_y_texts = _np.max([_get_highest_y_of_bbox_in_axes_units(txt) for txt in jax.texts]+[0])
-    dy = max_y_texts - jax.get_ylim()[1]
-    data2pts = _points2dataunits(jax)[1]
-    pad_in_points = _np.max([0,dy])*data2pts
-    if pad_in_points < min_pts4correction:
-        pad_in_points = 0
+    heights = [txt.get_window_extent(jax.figure.canvas.get_renderer()).height for txt in jax.texts]
+    if len(heights)>0:
+        pad_in_points = _np.max(heights)+_rcParams["axes.titlepad"]*2
+    else:
+        pad_in_points = None
 
     return pad_in_points
 
