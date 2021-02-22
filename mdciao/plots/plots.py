@@ -304,18 +304,16 @@ def plot_unified_freq_dicts(freqs,
                             panelheight_inches=5,
                             inch_per_contacts=1,
                             fontsize=16,
-                            lower_cutoff_val=0,
                             sort_by='mean',
+                            lower_cutoff_val=0,
                             remove_identities=False,
                             vertical_plot=False,
                             identity_cutoff=1,
                             ylim=1,
-
                             assign_w_color=False,
                             title=None,
-                            verbose_legend=True,
                             legend_rows=4,
-
+                            verbose_legend=True,
                             ):
     r"""
     Plot unified frequency dictionaries (= with identical keys) for different systems
@@ -348,15 +346,12 @@ def plot_unified_freq_dicts(freqs,
     fontsize : int, default is 16
         Will be used in :obj:`matplotlib._rcParams["font.size"]
         # TODO be less invasive
-    lower_cutoff_val : float, default is 0
-        Do not plot values lower than this. The cutoff is applied
-        to whatever property is used in :obj:`sort_by` (mean or std)
     sort_by : str, default is "mean"
         The property by which to sort the contacts.
         It is always descending and the property can be:
          * "mean" sort by mean frequency over all systems, making most
            frequent contacts appear on the left/top of the plot.
-         * "std" sort by standard deviation over all frequencies, making
+         * "std" sort by per-contact standard deviation over all systems, making
            the contacts with most different values appear on top. This
            highlights more "deviant" contacts and might hence be
            more informative than "mean" in cases where a lot of
@@ -365,9 +360,21 @@ def plot_unified_freq_dicts(freqs,
            that marks the std for each contact group
          * "keep" keep the contacts in whatever order they have in the
            first dictionary
+    lower_cutoff_val : float, default is 0
+        Hide contacts with small values. "values" changes
+        meaning depending on :obj:`sort_by`. If :obj:`sort_by` is:
+         * "mean" or "keep", then hide contacts where **all**
+           systems have frequencies lower than this value.
+         * "std", then hide contacts where the standard
+           deviation across systems *itself* is lower than this value.
+           This hides contacts where all systems are
+           similar, regardless of whether they're all
+           around 1, around .5 or around 0
     remove_identities : bool, default is False
-        If True, the contacts where freq[sys][ctc] = 1 across all systems
-        will not be plotted nor considered in the sum over contacts
+        If True, the contacts where
+        freq[sys][ctc] >= :obj:`identity_cutoff`
+        across all systems will not be plotted
+        nor considered in the sum over contacts
         TODO : the word identity might be confusing
     identity_cutoff : float, default is 1
         If :obj:`remove_identities`, use this value to define what
@@ -422,42 +429,39 @@ def plot_unified_freq_dicts(freqs,
     for sk in system_keys[1:]:
         assert len(all_ctc_keys)==len(list(freqs_by_sys_by_ctc[sk].keys())), "This is not a unified dictionary"
 
-    # Pop the keys for higher freqs
-    keys_popped_above = []
-    if remove_identities:
-        for key in all_ctc_keys:
-            if all([val[key]>=identity_cutoff for val in freqs_by_sys_by_ctc.values()]):
-                [idict.pop(key) for idict in freqs_by_sys_by_ctc.values()]
-                keys_popped_above.append(key)
-        all_ctc_keys = [key for key in all_ctc_keys if key not in keys_popped_above]
-
     dicts_values_to_sort = {"mean":{},
-                         "std": {},
-                         "keep":{}}
+                            "std": {},
+                            "keep":{}}
     for ii, key in enumerate(all_ctc_keys):
         dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])*len(freqs_by_sys_by_ctc)
         dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
         dicts_values_to_sort["keep"][key] = len(all_ctc_keys)-ii+lower_cutoff_val # trick to keep the same logic
 
-    # Find the keys lower sort property
-    ctc_keys_popped_below = []
-    for ii, (ctc, val) in enumerate(dicts_values_to_sort[sort_by].items()):
-        if val <= lower_cutoff_val:
-            [idict.pop(ctc) for idict in freqs_by_sys_by_ctc.values()]
+    # Pop the keys for higher freqs and lower values, stor
+    drop_below = {"std":  lambda ctc: dicts_values_to_sort["std"][ctc] <= lower_cutoff_val,
+                  "mean": lambda ctc: all([idict[ctc] <= lower_cutoff_val for idict in freqs_by_sys_by_ctc.values()]),
+                  }
+    drop_below["keep"]=drop_below["mean"]
+    drop_above = lambda ctc : all([idict[ctc]>=identity_cutoff for idict in freqs_by_sys_by_ctc.values()]) \
+                              and remove_identities
+    keys_popped_above, ctc_keys_popped_below = [], []
+    for ctc in all_ctc_keys:
+        if drop_below[sort_by](ctc):
             ctc_keys_popped_below.append(ctc)
-            all_ctc_keys.remove(ctc)
-
-    # Pop them form the needed dict
-    sorted_value_by_ctc_by_sys = {key:val for key, val in dicts_values_to_sort[sort_by].items() if key not in ctc_keys_popped_below}
+        if drop_above(ctc):
+            keys_popped_above.append(ctc)
+    for ctc in _np.unique(keys_popped_above+ctc_keys_popped_below):
+        [idict.pop(ctc) for idict in freqs_by_sys_by_ctc.values()]
+        all_ctc_keys.remove(ctc)
 
     # Prepare the dict that stores the order for plotting
     # and the values used for that sorting
-    sorted_value_by_ctc_by_sys = {key:val for (key, val)  in
-                                 sorted(sorted_value_by_ctc_by_sys.items(),
-                                 key = lambda item : item[1],
-                                 reverse = True
-                          )
-                          }
+    sorted_value_by_ctc_by_sys = {key: val for (key, val) in
+                                  sorted(dicts_values_to_sort[sort_by].items(),
+                                         key=lambda item: item[1],
+                                         reverse=True)
+                                         if key in all_ctc_keys
+                                  }
 
     # Prepare the dict
     if colordict is None:
