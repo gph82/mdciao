@@ -215,7 +215,7 @@ def dat2site(dat,comment="#",
 
     Parameters
     ----------
-    txtfile : str,
+    dat : str,
         path to a file
     comment : str, default is "#"
         Ignore lines starting with
@@ -242,7 +242,7 @@ def dat2site(dat,comment="#",
     if lines[0].strip(" ").startswith("#"):
         name = lines[0].split("#")[1].strip(" ")
         offset +=1
-    assert fmt=="AAresSeq", NotImplementedError("Only 'AAresSeq is implmented for 'fmt' at the moment, can't do '%s'"%(fmt))
+    assert fmt=="AAresSeq", NotImplementedError("Only 'AAresSeq is implemented for 'fmt' at the moment, can't do '%s'"%(fmt))
     site={"bonds":{"AAresSeq":[]}}
     for ii, line in enumerate(lines[offset:]):
         if line.strip(" ")[0] not in comment:
