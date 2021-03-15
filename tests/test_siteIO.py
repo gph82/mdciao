@@ -64,27 +64,6 @@ class Test_dat2site(unittest.TestCase):
             "Q384-I135"
         ]}, "name":"tip.json as plain ascii"}
                              )
-class Test_sites_to_AAresSeqdict(unittest.TestCase):
-    def setUp(self):
-        self.GDP_json = test_filenames.GDP_json
-        self.geom = _md.load(test_filenames.actor_pdb)
-        self.fragments = mdciao.fragments.get_fragments(self.geom.top)
-
-    def test_works(self):
-        site = mdciao.sites.load(self.GDP_json)
-        AAdict = mdciao.sites.sites_to_AAresSeqdict([site], self.geom.top, self.fragments)
-        for ibond in site["bonds"]["AAresSeq"]:
-            assert ibond[0] in AAdict.keys() and ibond[1] in AAdict.keys()
-
-    def test_raises_if_not_found(self):
-        site = mdciao.sites.load(test_filenames.GDP_name_json)
-        with pytest.raises(ValueError):
-            mdciao.sites.sites_to_AAresSeqdict([site], self.geom.top, self.fragments)
-
-    def test_does_not_raise_if_not_found(self):
-        site = mdciao.sites.load(test_filenames.GDP_name_json)
-        mdciao.sites.sites_to_AAresSeqdict([site], self.geom.top, self.fragments,
-                                                raise_if_not_found=False)
 
 class Test_site2str(unittest.TestCase):
 
