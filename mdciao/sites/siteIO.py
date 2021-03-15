@@ -98,7 +98,8 @@ def load(site):
 
 def sites_to_res_pairs(site_dicts, top,
                        fragments=None,
-                       **get_fragments_kwargs):
+                       **get_fragments_kwargs,
+                       ):
     r"""Take a list of dictionaries representing sites
     and return the pairs of res_idxs needed to compute
     all the contacts contained in them
@@ -122,18 +123,33 @@ def sites_to_res_pairs(site_dicts, top,
     Returns
     -------
     res_idxs_pairs : 2D np.ndarray
-        The residue indices in :obj:`top` of the contacts in :obj:`site_dicts`,
-        stacked together (might contain duplicates if the sites contain duplicates)
-    AAdict : dict
-        dictionary keyed by residue name and valued with the residue's index
-        in :obj:`top`. Please see the note in :obj:`sites_to_AAresSeqdict`
-        regarding duplicate residue names
+        Unique pairs contained in the :obj:`site_dicts`,
+        expressed as residue indices of :obj:`top`
+        [0,1] is considered != [0,1]
+    site_maps : list
+        For each site, a list with the indices of :obj:`res_idxs_pairs`
+        that match the site's bonds.
     """
     if fragments is None:
         fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
-    AAresSeq2residxs = sites_to_AAresSeqdict(site_dicts, top, fragments)
-    res_idxs_pairs = _np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in site_dicts]))
-    return res_idxs_pairs, AAresSeq2residxs
+
+    get_pair_lambda = {"AAresSeq":lambda bond :_mdcu.residue_and_atom.residues_from_descriptors(bond, fragments, top)[0],
+                       "residx" : lambda bond : bond}
+    res_idxs_pairs = []
+    pair2idx = {}
+    site_maps = []
+    for ii, site in enumerate(site_dicts):
+        imap=[]
+        for bond_type, bonds in site["bonds"].items():
+            for bond in bonds:
+                pair = tuple(get_pair_lambda[bond_type](bond))
+                if pair not in res_idxs_pairs:
+                    res_idxs_pairs.append(pair)
+                    pair2idx[pair]=len(res_idxs_pairs)-1
+                imap.append(pair2idx[pair])
+        site_maps.append(imap)
+    #print(site_maps)
+    return _np.vstack(res_idxs_pairs), site_maps
 
 def site2str(site):
     r""" Produce a printable str for sitefile (json) or site-dict"""
