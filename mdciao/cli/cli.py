@@ -1734,16 +1734,16 @@ def sites(site_files,
                                                           fragments_as_residue_idxs,
                                                           accept_guess=accept_guess,
                                                           save_nomenclature_files=save_nomenclature_files)
-    sites = [_mdcsites.load(ff) for ff in site_files]
-    ctc_idxs_small, AAresSeq2residxs = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
+    sites = [_mdcsites.x2site(ff) for ff in site_files]
+    ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
                                                                     fragments=fragments_as_residue_idxs,
                                                                     default_fragment_idx=default_fragment_index,
                                                                     fragment_names=fragment_names)
 
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
-    for idx in AAresSeq2residxs.values():
+    for idx in _np.unique(ctc_idxs_small):
         print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, _mdcu.lists.in_what_fragment(idx,
-                                                                                                   fragments_as_residue_idxs),
+                                                                                                               fragments_as_residue_idxs),
                                                    idx,
                                                    consensus_maps[0][idx], consensus_maps[1][idx]))
 
@@ -1755,14 +1755,11 @@ def sites(site_files,
 
     # Abstract each site to a group of contacts and fragments
     site_as_gc = {}
-    ctc_pairs_iterators = iter(ctc_idxs_small)
-    ctc_value_idx = iter(_np.arange(len(ctc_idxs_small)))  # there has to be a better way
-    for isite in sites:
+    for isite, imap in zip(sites,site_maps):
         key = isite["name"]
         site_as_gc[key] = []
-        for __ in range(isite["n_bonds"]):
-            pair = next(ctc_pairs_iterators)
-            idx = next(ctc_value_idx)
+        for idx in imap:
+            pair = ctc_idxs_small[idx]
             consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             site_as_gc[key].append(_mdcctcs.ContactPair(pair,
