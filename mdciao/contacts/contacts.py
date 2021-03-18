@@ -1264,8 +1264,10 @@ class ContactPair(object):
             A new CP with updated top and indices
         """
         new_pairs = [mapping[ii] for ii in self.residues.idxs_pair]
-        oldat2newat = _mapatoms(self.top, top, mapping, {ii: self.top.atom(ii).name for ii in _np.unique(self.time_traces.atom_pair_trajs)})
-        atom_pair_trajs = [oldat2newat[itraj] for itraj in self.time_traces.atom_pair_trajs]
+        atom_pair_trajs = None
+        if self.time_traces.atom_pair_trajs is not None:
+            oldat2newat = _mapatoms(self.top, top, mapping, {ii: self.top.atom(ii).name for ii in _np.unique(self.time_traces.atom_pair_trajs)})
+            atom_pair_trajs = [oldat2newat[itraj] for itraj in self.time_traces.atom_pair_trajs]
 
         anchor_residue_index = None
 
