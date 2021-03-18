@@ -70,8 +70,9 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
     ----------
     frag_idx: int or str
         Index or name of the fragment to be printed
-    top: :obj:`mdtraj.Topology`
-        Topology in which the fragment appears
+    top: :obj:`~mdtraj.Topology` or string
+        Topology or string (=AA sequence) to "grab"
+        the residue-names from when informing
     fragment: iterable of indices
         The fragment in question, with zero-indexed residue indices
     fragment_desc: str, default is "fragment"
@@ -98,21 +99,26 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                                                                                        fmt="@%s")
             maplabel_last = _mdcu.str_and_dict.choose_options_descencing([idx2label[fragment[-1]]],
                                                                                       fmt="@%s")
+        if isinstance(top,_md.Topology):
+            rfirst, rlast = [top.residue(ii) for ii in [fragment[0], fragment[-1]]]
 
-        rfirst, rlast = [top.residue(ii) for ii in [fragment[0], fragment[-1]]]
+        elif isinstance(top,str):
+            rfirst, rlast = [top[ii] for ii in [fragment[0], fragment[-1]]]
+        rfirst_index, rlast_index = [fragment[0],fragment[-1]]
+
         labfirst = "%8s%-10s" % (rfirst, maplabel_first)
         lablast = "%8s%-10s" % (rlast, maplabel_last)
         istr = "%s %6s with %4u AAs %8s%-10s (%4u) - %8s%-10s (%-4u) (%s) " % \
                (fragment_desc, str(frag_idx), len(fragment),
                 #labfirst,
                 rfirst, maplabel_first,
-                rfirst.index,
+                rfirst_index,
                 #lablast,
                 rlast, maplabel_last,
-                rlast.index,
+                rlast_index,
                 str(frag_idx))
 
-        if rlast.resSeq - rfirst.resSeq != len(fragment) - 1:
+        if isinstance(top,_md.Topology) and  rlast.resSeq - rfirst.resSeq != len(fragment) - 1:
             # print(ii, rj.resSeq-ri.resSeq, len(iseg)-1)
             istr += ' resSeq jumps'
     except:

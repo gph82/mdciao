@@ -10,7 +10,7 @@ from mdciao import fragments as mdcfragments
 from mdciao.fragments.fragments import _allowed_fragment_methods, _fragments_strings_to_fragments
 
 from mdciao.filenames import filenames
-
+from mdciao.utils.sequence import top2seq
 import pytest
 
 test_filenames = filenames()
@@ -37,6 +37,9 @@ class Test_print_frag(unittest.TestCase):
 
     def test_just_runs(self):
          mdcfragments.print_frag(0, self.geom.top, self.fragments[0])
+
+    def tes_just_runs_w_sequence(self):
+        mdcfragments.print_frag(0, top2seq(self.geom.top,"X"), self.fragments[0])
 
     def test_other_name(self):
          mdcfragments.print_frag(0, self.geom.top, self.fragments[0], fragment_desc="blob")
