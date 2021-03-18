@@ -1475,6 +1475,40 @@ class ContactPair(object):
         fdcit : dictionary
 
         """
+
+        label = self.label_flex(AA_format, split_label)
+
+        fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
+                "label":label.rstrip(" "),
+                "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)
+                }
+
+        if atom_types:
+            fdict.update({"by_atomtypes" :
+                              self.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,
+                                                                                         switch_off_Ang=switch_off_Ang)})
+        return fdict
+
+    def label_flex(self, AA_format,split_label):
+        r"""
+        A more flexible method to produce the label of this :obj:`ContactPair`
+
+        Parameters
+        ----------
+        AA_format : str, default is "short"
+            Amino-acid format ("E35" or "GLU25") for the value
+            fdict["label"]. Can also be "long"
+        split_label : bool, default is True
+            Split the labels so that stacked contact labels
+            become easier-to-read in plain ascii formats
+             - "E25@3.50____-    A35@4.50"
+             - "A30@longfrag-    A35@4.50
+
+        Returns
+        -------
+        label : str
+        """
+
         if AA_format== 'short':
             label = self.labels.w_fragments_short_AA
         elif AA_format== 'long':
