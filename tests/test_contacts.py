@@ -817,6 +817,10 @@ class TestContactPair(unittest.TestCase):
         imap = {348:343,
                 353:348}
         nCP : contacts.ContactPair = CP.retop(top,imap)
+        # Test the residx
+        _np.testing.assert_array_equal(nCP.residues.idxs_pair,[343,348])
+
+        # Test the non-nested attributes
         for attr in [
             "time_traces.trajs",
             "fragments.idxs",
@@ -828,6 +832,8 @@ class TestContactPair(unittest.TestCase):
             assert getattr(getattr(CP,attr1),attr2) is getattr(getattr(nCP,attr1),attr2), attr
             assert getattr(getattr(CP, attr1), attr2)==getattr(getattr(nCP, attr1), attr2)
         assert nCP.residues.anchor_residue_index == 348
+
+        # Thest the nested attributes
         for attr in [
             "time_traces.ctc_trajs",
             "time_traces.time_trajs"
@@ -837,6 +843,10 @@ class TestContactPair(unittest.TestCase):
             assert l1 is not l2
             for traj, ntraj in zip(l1,l2):
                 _np.testing.assert_array_equal(traj,ntraj)
+
+        # Test the pair indices
+        pair_freq = (CP.relative_frequency_of_formed_atom_pairs_overall_trajs(4, aggregate_by_atomtype=False))
+        _np.testing.assert_array_equal(pair_freq, nCP.relative_frequency_of_formed_atom_pairs_overall_trajs(4,aggregate_by_atomtype=False))
 
     def test_retop_deepcopy(self):
         CG = examples.ContactGroupL394()
