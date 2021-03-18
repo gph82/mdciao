@@ -2020,7 +2020,7 @@ def residue_selection(expression,
     accept_guess : bool, default is False
         Accept mdciao's guesses regarding fragment
         identification using nomenclature labels
-     fragments : list, default is None
+    fragments : list, default is None
         Fragment control.
         * None: use the default :obj:`~mdciao.fragments.get_fragments`,
           currently 'lig_resSeq+'
@@ -2058,7 +2058,7 @@ def residue_selection(expression,
     """
     refgeom = _load_any_geom(top)
 
-    _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(None),
+    _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
                                                                    refgeom.top, verbose=True)
     res_idxs_list, consensus_maps = _res_resolver(expression, refgeom.top, _frags,
                                                   midstring="Your selection '%s' yields:" % expression,
