@@ -796,7 +796,7 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                                    CG_dict.items()):
         if ihood is not None:
             if distro:
-                ihood.plot_distance_distributions(nbins=20,
+                ihood.plot_distance_distributions(bins=20,
                                                   jax=jax,
                                                   label_fontsize_factor=panelsize2font / panelsize,
                                                   shorten_AAs=short_AA_names,

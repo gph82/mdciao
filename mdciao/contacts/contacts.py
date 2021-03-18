@@ -1463,7 +1463,7 @@ class ContactPair(object):
             Cutoff in Angstrom. The comparison operator is "<="
         AA_format : str, default is "short"
             Amino-acid format ("E35" or "GLU25") for the value
-            fdict["label"]. Can also be "long"
+            fdict["label"]. Can also be "long" or "just_consensus"
         split_label : bool, default is True
             Split the labels so that stacked contact labels
             become easier-to-read in plain ascii formats
@@ -1491,15 +1491,16 @@ class ContactPair(object):
                                                                                          switch_off_Ang=switch_off_Ang)})
         return fdict
 
-    def label_flex(self, AA_format,split_label):
+    def label_flex(self, AA_format="short",split_label=True):
         r"""
         A more flexible method to produce the label of this :obj:`ContactPair`
 
         Parameters
         ----------
         AA_format : str, default is "short"
-            Amino-acid format ("E35" or "GLU25") for the value
-            fdict["label"]. Can also be "long"
+            Amino-acid format for the label, can
+            be "short" (A35@BW4.50), "long" (ALA35@4.50),
+            or "just_consensus" (4.50)
         split_label : bool, default is True
             Split the labels so that stacked contact labels
             become easier-to-read in plain ascii formats
@@ -2838,7 +2839,7 @@ class ContactGroup(object):
         """
         return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang,**kwargs) for ictc in self._contacts]
 
-    def distributions_of_distances(self, nbins=10):
+    def distributions_of_distances(self, bins=10):
         r"""
         Histograms each the distance values of each contact,
         returning a list with as many distributions as there
@@ -2846,7 +2847,7 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        nbins : int, default is 10
+        bins : int, default is 10
 
         Returns
         -------
@@ -2854,11 +2855,11 @@ class ContactGroup(object):
             List of len self.n_ctcs, each entry contains
             the counts and edges of the bins
         """
-        return [ictc.distro_overall_trajs(bins=nbins) for ictc in self._contacts]
+        return [ictc.distro_overall_trajs(bins=bins) for ictc in self._contacts]
 
     def distribution_dicts(self,
-                       nbins=10,
-                       **kwargs):
+                           bins=10,
+                           **kwargs):
         """
         Wraps around the method :obj:`ContactGroup.distributions_of_distances`
         and returns one distribution dict keyed by contact label (see kwargs and CP.label_flex
@@ -2873,7 +2874,8 @@ class ContactGroup(object):
         fdict : dictionary
 
         """
-        distro_dicts = {ictc.label_flex(**kwargs) : data for ictc, data in zip(self._contacts, self.distributions_of_distances(nbins=nbins))}
+        distro_dicts = {ictc.label_flex(**kwargs) : data for ictc, data in zip(self._contacts, self.distributions_of_distances(
+            bins=bins))}
 
 
         return distro_dicts
@@ -3195,7 +3197,7 @@ class ContactGroup(object):
             jax.add_artist(leg1)
 
     def plot_distance_distributions(self,
-                                    nbins=10,
+                                    bins=10,
                                     xlim=None,
                                     jax=None,
                                     shorten_AAs=False,
@@ -3212,7 +3214,7 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        nbins : int, default is 10
+        bins : int, default is 10
             How many bins to use for the distribution
         xlim : iterable of two floats, default is None
             Limits of the x-axis.
@@ -3267,7 +3269,7 @@ class ContactGroup(object):
         jax.set_title(title_str)
 
         # Base plot
-        for ii, ((h, x), label) in enumerate(zip(self.distributions_of_distances(nbins=nbins), label_bars)):
+        for ii, ((h, x), label) in enumerate(zip(self.distributions_of_distances(bins=bins), label_bars)):
             label = _mdcu.str_and_dict.latex_superscript_fragments(label)
             if ctc_cutoff_Ang is not None:
                 if ii==0:
