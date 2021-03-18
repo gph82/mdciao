@@ -1979,8 +1979,8 @@ class ContactGroup(object):
                                      "(all contacts share the residue %s), "
                                      "but no 'neighbors_excluded' have been parsed!\n"
                                      "If you're trying to build a site object,\n"
-                                     "use 'neighbors_excluded'=0', else input right number"
-                                     "'neighbors_excluded'")
+                                     "use 'neighbors_excluded'=0', else input the right number of"
+                                     "'neighbors_excluded'"%self.shared_anchor_residue_index)
 
     #todo again the dicussion about named tuples vs a miriad of properties
     # I am opting for properties because of easiness of documenting i
