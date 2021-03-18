@@ -151,6 +151,7 @@ def unify_freq_dicts(freqs,
                      replacement_dict=None,
                      defrag=None,
                      per_residue=False,
+                     distro=False,
                      ):
     r"""
     Provided with a dictionary of dictionaries, returns an equivalent,
@@ -261,7 +262,7 @@ def unify_freq_dicts(freqs,
             if key not in ifreq.keys():
                 ifreq[key] = 0
 
-    if len(not_shared)>0:
+    if len(not_shared)>0 and not distro:
         print("These interactions are not shared:\n%s" % (', '.join(not_shared)))
         print("Their cumulative ctc freq is %3.2f. " % _np.sum(
             [[ifreq[key] for ifreq in freqs_work.values()] for key in not_shared]))
@@ -815,6 +816,7 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
 
     """
     if isinstance(ixtc, _md.Trajectory):
+        # TODO it's time to use yield here, this is killing performance
         iterate = lambda ixtc: [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride], chunksize)]
         inform = lambda ixtc, traj_idx, chunk_idx, running_f: \
             print("Streaming over trajectory object nr. %3u (%6u frames, %6u with stride %2u) in chunks of "
