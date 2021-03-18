@@ -1538,6 +1538,7 @@ def sites(site_files,
           savefigs=True,
           savetabs=True,
           savetrajs=False,
+          figures=True,
           ):
     r"""
 
@@ -1698,6 +1699,8 @@ def sites(site_files,
         figs, tables, trajs, nomenclature
     savefiles : bool, default is True
         Write the figures and tables to disk.
+    figures : bool, default is True
+        Draw figures
 
     Returns
     -------
@@ -1805,27 +1808,28 @@ def sites(site_files,
                                      )
             print(fn.fname_per_site_table(site_name))
 
-    for site_name, isite_nh in site_as_gc.items():
-        panelheight = 4
-        myfig = isite_nh.plot_timedep_ctcs(panelheight,
-                                           color_scheme=_color_schemes(curve_color),
-                                           ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                           n_smooth_hw=n_smooth_hw,
-                                           dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
-                                           t_unit=t_unit,
-                                           gray_background=gray_background,
-                                           shorten_AAs=short_AA_names,
-                                           plot_N_ctcs=True,
-                                           ylim_Ang=ylim_Ang,
-                                           )
+    if figures:
+        for site_name, isite_nh in site_as_gc.items():
+            panelheight = 4
+            myfig = isite_nh.plot_timedep_ctcs(panelheight,
+                                               color_scheme=_color_schemes(curve_color),
+                                               ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                               n_smooth_hw=n_smooth_hw,
+                                               dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
+                                               t_unit=t_unit,
+                                               gray_background=gray_background,
+                                               shorten_AAs=short_AA_names,
+                                               plot_N_ctcs=True,
+                                               ylim_Ang=ylim_Ang,
+                                               )
 
-        _manage_timedep_ploting_and_saving_options(isite_nh, fn, myfig,
-                                                   plot_timedep=True,
-                                                   separate_N_ctcs=False,
-                                                   title="site: %s" % site_name,
-                                                   savefigs=savefigs,
-                                                   savetrajs=savetrajs
-                                                   )
+            _manage_timedep_ploting_and_saving_options(isite_nh, fn, myfig,
+                                                       plot_timedep=True,
+                                                       separate_N_ctcs=False,
+                                                       title="site: %s" % site_name,
+                                                       savefigs=savefigs,
+                                                       savetrajs=savetrajs
+                                                       )
 
 
     return site_as_gc
