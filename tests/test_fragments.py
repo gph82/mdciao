@@ -407,6 +407,48 @@ class Test_frag_list_2_frag_groups(unittest.TestCase):
         self.assertSequenceEqual([2,3], frags_out[1])
         self.assertEqual(len(frags_out), 2)
 
+
+class Test_match_fragments(unittest.TestCase):
+
+    def setUp(self):
+        self.geom = md.load(test_filenames.actor_pdb)
+        self.frags =mdcfragments.get_fragments(self.geom.top,verbose=False)
+
+    def test_works(self):
+        score, frg1, frg2 = mdcfragments.match_fragments(self.geom.top, self.geom.top)
+        diag = _np.diag(score)
+        _np.testing.assert_array_equal(diag, [len(ifrag) for ifrag in self.frags])
+        [_np.testing.assert_array_equal(ifrag,jfrag) for ifrag, jfrag in zip(self.frags,frg1)]
+        [_np.testing.assert_array_equal(ifrag,jfrag) for ifrag, jfrag in zip(self.frags,frg2)]
+
+    def test_works_probe_and_short(self):
+        score, _,_ = mdcfragments.match_fragments(self.geom.top, self.geom.top,probe=1)
+        diag = _np.diag(score)
+        _np.testing.assert_array_equal(diag,[ 1.,  1.,  1.,  1., _np.nan, _np.nan, _np.nan])
+
+    def test_works_off_diag(self):
+        seq0 = "AAA"+"BBBBAABBB"+"C"
+        frags0 = [[0, 1, 2],
+                  [3, 4, 5, 6, 7, 8, 9, 10, 11],
+                  [12]]
+
+        seq1 = "AA"
+        frags1 = [[0, 1]]
+
+        score, _, _ = mdcfragments.match_fragments(seq0,seq1,frags0=frags0,frags1=frags1,shortest=0)
+        myscore = _np.array([[2, 2, 0]],ndmin=2).T
+        _np.testing.assert_array_equal(score,myscore)
+
+        scorep0, _, _ = mdcfragments.match_fragments(seq0, seq1, frags0=frags0, frags1=frags1, shortest=0,
+                                                     probe=0)
+        myscore = _np.array([[2/3, 2/9, 0/12]], ndmin=2).T
+        _np.testing.assert_array_equal(scorep0,myscore)
+
+        scorep1, _, _ = mdcfragments.match_fragments(seq0, seq1, frags0=frags0, frags1=frags1, shortest=0,
+                                                     probe=1)
+        myscore = _np.array([[2/2, 2/2, 0/2]], ndmin=2).T
+        _np.testing.assert_array_equal(scorep1,myscore)
+
 class Test_intersecting_fragments(unittest.TestCase):
 
     def setUp(self):

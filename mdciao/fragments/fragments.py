@@ -312,6 +312,120 @@ def get_fragments(top,
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
 
+def match_fragments(seq0, seq1,
+                    frags0=None,
+                    frags1=None,
+                    probe=None,
+                    verbose=False,
+                    shortest=3):
+    r"""
+    Align fragments of seq0 and seq1 pairwise and return a matrix of scores.
+
+    The score is the absolute number matches between
+    two fragments. Depending on how informed
+    the user is about the topologies, their fragments,
+    their similarities, and what the user is trying
+    to do, this absolute measure can be just right or
+    be highly misleading, e.g:
+     * two fragments of ~500 AAs each can score
+       20 matches "easily", without this being meaningful
+     * two fragments of 11 AAs each having 10 matches
+       between them are almost identical
+     * however, in absolute terms, the first case has a
+       higher score
+
+    If you know what you're doing, you can specify
+    which one of the sequences is the :obj:`probe`, s.t.
+    the score is divided by the length the fragment of
+    the probe. E.g., if :obj:`probe` =1, it means
+    that you are interested in finding out if
+    fragments of :obj:`seq1` appear in fragments of :obj:`seq0`,
+    (the 'target' sequence), regardless of how long
+    the target fragments are. The score is
+    then normalized to 1, where 1 means you
+    found the entire probe fragment in the target fragment,
+    no matter how long the probe or the target were.
+
+
+    Parameters
+    ----------
+    seq0 : str or :obj:`~mdtraj.Topology`
+    seq1 : str or :obj:`~mdtraj.Topology`
+    frags0 : list or None, default is None
+        If None, :obj:`get_fragments` will
+        be called with the default options
+        to generate a fragment list.
+    frags1 : list or None, default is None
+        If None, :obj:`get_fragments` will
+        be called with the default options
+        to generate a fragment list.
+    probe : int, default is None
+        If None, scores are absolute numbers.
+        If 0, the scores are divided by
+        the seq0's fragment length. If 1,
+        by seq1's fragment length. In
+        these cases, the score is
+        always between 0 and 1,
+        regardless how long the probe
+        and the target fragments are.
+    shortest : int, default is 3
+        Fragments of len < :obj:`shortest`
+        won't produce a score but a np.NaN,
+        s.t. the :obj:`score` doesn't get
+        highjacked by very small :obj:`probe`
+        fragments, which will always yield
+        relative good scores.
+        Absolute scores (:obj:`probe` = None)
+        are not affected by this.
+    verbose : bool, default is False
+        Be verbose, affects all methods
+        called by the this method as well.
+
+    Returns
+    -------
+    score : 2D np.ndarray of shape(len(frags0),len(frags1))
+        Will be between 0 and 1 if a :obj:`probe`
+        is specified
+    frags0 : list
+        The fragments that were either provided
+        or generated on the fly. Their indices
+        are the row-indices of :obj:`score`
+    frags1 : list
+        The fragments that were either provided
+        or generated on the fly. Their indices
+        are the row-indices of :obj:`score`
+    """
+
+    frags = []
+    for iseq,ifrg in zip([seq0, seq1],
+                         [frags0, frags1]):
+        if ifrg is None:
+            if isinstance(iseq,_md.Topology):
+                ifrg = get_fragments(iseq,verbose=verbose)
+            else:
+                assert isinstance(iseq,str)
+                ifrg = _np.arange(len(iseq))
+        frags.append(ifrg)
+
+    score = _np.zeros((len(frags[0]),len(frags[1])),dtype=float)
+    for ii, ifrag in enumerate(frags[0]):
+        for jj,jfrag in enumerate(frags[1]):
+            df = _mdcu.sequence.align_tops_or_seqs(seq0, seq1,
+                                                   seq_0_res_idxs=frags[0][ii],
+                                                   seq_1_res_idxs=frags[1][jj],verbose=verbose)
+            score[ii,jj] = df["match"].sum()
+            if probe is not None:
+                if len([ifrag,jfrag][probe])<=shortest:
+                    score[ii,jj] = _np.nan
+                else:
+                    score[ii,jj]/=len([ifrag,jfrag][probe])
+
+            if verbose:
+                for tt, itop in enumerate([seq0,seq1]):
+                    print_frag(ii, seq0, ifrag, "seq%u fragment"%tt)
+                print(score[ii,jj].round(2))
+    return score, frags[0], frags[1]
+
 def _get_fragments_by_jumps_in_sequence(sequence,jump=1):
     r"""
     Return the array in :obj:`sequence` chopped into sub-arrays (=fragments)
@@ -536,7 +650,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
         * exp can also b ["LEU30-GLU40"]
         * None or "None"
 
-    top : :obj:`mdtraj.Topology`
+    top : :obj:`~mdtraj.Topology`
 
     Returns
     -------

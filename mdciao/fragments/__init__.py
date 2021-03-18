@@ -10,10 +10,12 @@ please note the API is not yet stable.
 
 .. autosummary::
    :toctree: generated/
+   :nosignatures:
 
     get_fragments
     print_frag
     overview
+    match_fragments
 
 
 """
