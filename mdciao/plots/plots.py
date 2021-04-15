@@ -336,7 +336,7 @@ def plot_unified_freq_dicts(freqs,
                             verbose_legend=True,
                             ):
     r"""
-    Plot unified frequency dictionaries (= with identical keys) for different systems
+    Plot unified (= with identical keys) frequency dictionaries for different systems
 
     Parameters
     ----------

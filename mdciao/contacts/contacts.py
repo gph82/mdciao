@@ -2841,7 +2841,7 @@ class ContactGroup(object):
 
     def distributions_of_distances(self, bins=10):
         r"""
-        Histograms each the distance values of each contact,
+        Histograms the distance values of each contact,
         returning a list with as many distributions as there
         are contacts.
 
