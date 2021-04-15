@@ -174,6 +174,9 @@ def compare_groups_of_contacts(groups,
         see :obj:`_mdcu.str_and_dict.unify_freq_dicts` for more info
     per_residue : bool, default is False
         Unify dictionaries by residue and not by pairs
+    distro : bool, default is False
+        Instead of plotting contact frequencies,
+        plot contact distributions
     kwargs_plot_unified_freq_dicts : kwargs
         remove_identities
 
@@ -209,10 +212,15 @@ def compare_groups_of_contacts(groups,
         if isinstance(ifile, str):
             idict = _mdcu.str_and_dict.freq_file2dict(ifile)
         elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
-            assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a ctc_cutoff_Ang parameter"
-            idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                         AA_format=AA_format,
-                                         split_label=False)
+            if distro:
+                idict = ifile.distribution_dicts(AA_format=AA_format,
+                                                 split_label=False,
+                                                 bins=_np.max([20, (_np.sqrt(ifile.n_frames_total) / 2).round().astype(int)]))
+            else:
+                assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a ctc_cutoff_Ang parameter"
+                idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                              AA_format=AA_format,
+                                              split_label=False)
         else:
             idict = {key:val for key, val in ifile.items()}
 
@@ -225,46 +233,55 @@ def compare_groups_of_contacts(groups,
             else:
                 anchor=_mdcu.str_and_dict.defrag_key(deleted_half_keys[0],defrag=defrag,sep=" ")
         freqs[key] = idict
-    if plot_singles:
-        nrows = len(freqs)
-        myfig, myax = _plt.subplots(nrows, 1,
-                                    sharey=True,
-                                    sharex=True,
-                                    figsize=(figsize[0], figsize[1]*nrows))
-        for iax, (key, ifreq) in zip(myax, freqs.items()):
-            plot_unified_freq_dicts({key: ifreq},
-                                    colordict=colors,
-                                    ax=iax, width=width,
-                                    fontsize=fontsize,
-                                    **kwargs_plot_unified_freq_dicts)
-            if anchor is not None:
-                _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
-                                "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
-                                ha="right", va="bottom")
 
-        myfig.tight_layout()
-        # _plt.show()
-    freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, per_residue=per_residue, defrag=defrag)
-    if per_residue:
-        kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
-        kwargs_plot_unified_freq_dicts["remove_identities"] = False
+    if distro:
+        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, distro=True)
+        myfig = plot_unified_distro_dicts(freqs, colordict=colors,
+                                          ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                          fontsize=fontsize,
+                                          **kwargs_plot_unified_freq_dicts)
+        plotted_freqs = None
+    else:
+        if plot_singles:
+            nrows = len(freqs)
+            myfig, myax = _plt.subplots(nrows, 1,
+                                        sharey=True,
+                                        sharex=True,
+                                        figsize=(figsize[0], figsize[1]*nrows))
+            for iax, (key, ifreq) in zip(myax, freqs.items()):
+                plot_unified_freq_dicts({key: ifreq},
+                                        colordict=colors,
+                                        ax=iax, width=width,
+                                        fontsize=fontsize,
+                                        **kwargs_plot_unified_freq_dicts)
+                if anchor is not None:
+                    _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
+                                    "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
+                                    ha="right", va="bottom")
 
-    if ctc_cutoff_Ang is not None:
-        title = title+'@%2.1f AA'%ctc_cutoff_Ang
-    if anchor is not None:
-        title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
+            myfig.tight_layout()
+            # _plt.show()
+        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, per_residue=per_residue, defrag=defrag)
+        if per_residue:
+            kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
+            kwargs_plot_unified_freq_dicts["remove_identities"] = False
 
-    myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
-                                                        colordict=colors,
-                                                        ax=ax,
-                                                        width=width,
-                                                        fontsize=fontsize,
-                                                        figsize=figsize,
-                                                        title=title,
-                                                        **kwargs_plot_unified_freq_dicts)
+        if ctc_cutoff_Ang is not None:
+            title = title+'@%2.1f AA'%ctc_cutoff_Ang
+        if anchor is not None:
+            title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
 
-    _plt.gcf().tight_layout()
-    #_plt.show()
+        myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
+                                                            colordict=colors,
+                                                            ax=ax,
+                                                            width=width,
+                                                            fontsize=fontsize,
+                                                            figsize=figsize,
+                                                            title=title,
+                                                            **kwargs_plot_unified_freq_dicts)
+
+        _plt.gcf().tight_layout()
+        #_plt.show()
 
     return myfig, freqs, plotted_freqs
 

@@ -298,6 +298,9 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
             #myfig.savefig("8.test.png")
             _plt.close("all")
 
+    def test_distro(self):
+        CG : ContactGroup = ContactGroupL394()
+        plots.compare_groups_of_contacts([CG,CG],distro=True)
 
 class Test_plot_w_smoothing_auto(unittest.TestCase):
 
