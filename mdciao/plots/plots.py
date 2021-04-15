@@ -33,6 +33,8 @@ import mdciao.utils as _mdcu
 
 from os import path as _path
 
+from collections import defaultdict as _defdict
+
 def plot_w_smoothing_auto(ax, x, y,
                           label,
                           color,
@@ -100,6 +102,7 @@ def compare_groups_of_contacts(groups,
                                defrag='@',
                                per_residue=False,
                                title='comparison',
+                               distro=False,
                                **kwargs_plot_unified_freq_dicts,
                                ):
     r"""
@@ -603,6 +606,110 @@ def plot_unified_freq_dicts(freqs,
 
     _rcParams["font.size"] = _fontsize
     return myfig, _plt.gca(),  out_dict
+
+def plot_unified_distro_dicts(distros,
+                              colordict=None,
+                              ctc_cutoff_Ang = None,
+                              panelheight_inches=5,
+                              fontsize=16,
+                              n_cols=1,
+                              legend_rows=4,
+                              ):
+    r"""
+    Plot unified (= with identical keys) distribution dictionaries for different systems
+
+    Parameters
+    ----------
+    distros : dictionary of dictionaries
+        The first-level dict is keyed by system names,
+        e.g distros.keys() = ["WT","D10A","D10R"].
+        The second-level dict is keyed by contact names
+    colordict : dict, default is None.
+        What color each system gets. Default is some sane matplotlib values
+    figsize : iterable of len 2
+        Figure size (x,y), in inches. If None,
+        one will be created using :obj:`panelheight_inches`
+        and :obj:`inch_per_contacts`.
+        If you are transposing the figure
+        using :obj:`vertical_plot`, you do not
+        have to invert (y,x) this parameter here, it is
+        done automatically.
+    panelheight_inches : int, default is 5
+        The height of each panel. Currently
+        the only control on figure size, which
+        is instantiateded as
+
+        >>> figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches)
+    fontsize : int, default is 16
+        Will be used in :obj:`matplotlib._rcParams["font.size"]
+        # TODO be less invasive
+    legend_rows : int, default is 4
+        The maximum number of rows per column of the legend.
+        If you have 10 systems, :obj:`legend_rows`=5 means
+        you'll get two columns, =2 means you'll get five.
+    kwargs_figure : optional keyword arguments
+        For :obj:`~matplotlib.pyplot.figure`, e.g.
+        `sharex` or `sharey` etc
+
+    Returns
+    -------
+    fig, axes : :obj:`~matplotlib.figure.Figure` and the axes array
+    """
+    _fontsize=_rcParams["font.size"]
+    _rcParams["font.size"] = fontsize
+
+    #make copies of dicts
+    distros_by_sys_by_ctc = {key:{key2:val2 for key2, val2 in val.items()} for key, val in distros.items()}
+
+    system_keys = list(distros_by_sys_by_ctc.keys())
+    all_ctc_keys = list(distros_by_sys_by_ctc[system_keys[0]].keys())
+    for sk in system_keys[1:]:
+        assert len(all_ctc_keys)==len(list(distros_by_sys_by_ctc[sk].keys())), "This is not a unified dictionary"
+
+    distros_by_ctc_by_sys = _defdict(dict)
+    for sys_key, sys_dict in distros_by_sys_by_ctc.items():
+        for ctc_key, val in sys_dict.items():
+            distros_by_ctc_by_sys[ctc_key][sys_key]=val
+    distros_by_ctc_by_sys = dict(distros_by_ctc_by_sys)
+
+    # Prepare the dict
+    if colordict is None:
+        colordict = {key:val for key,val in zip(system_keys, _colorstring.split(","))}
+
+    n_cols = _np.min((n_cols, len(all_ctc_keys)))
+    n_rows = _np.ceil(len(all_ctc_keys) / n_cols).astype(int)
+
+    myfig, myax = _plt.subplots(n_rows, n_cols,
+                                sharey=True,
+                                figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches), squeeze=False)
+
+
+    for iax, (ctc_key, per_sys_distros) in zip(myax.flatten(),distros_by_ctc_by_sys.items()):
+        iax.set_title(_mdcu.str_and_dict.replace4latex(ctc_key),
+                     #pad=_titlepadding_in_points_no_clashes_w_texts(ax)
+                     )
+
+        for sys_key, data in per_sys_distros.items():
+            label = sys_key
+            if not data in [0,None]:
+                h, x = data
+                if ctc_cutoff_Ang is not None:
+                    freq = (h[_np.flatnonzero(x[:-1]<=ctc_cutoff_Ang/10)]).sum()/h.sum()
+                    label += " (%u%%)" % (freq * 100)
+                h = h/h.max()
+                iax.plot(x[:-1] * 10, h, label=label, color=colordict[sys_key])
+                iax.fill_between(x[:-1] * 10, h, alpha=.15,color=colordict[sys_key])
+
+
+        if ctc_cutoff_Ang is not None:
+            iax.axvline(ctc_cutoff_Ang, zorder=10,alpha=.5, color="k",ls=":")
+        iax.set_xlabel("D / $\AA$")
+        iax.legend(ncol=_np.ceil(len(system_keys) / legend_rows).astype(int))
+        iax.set_ylim([0,1.1])
+    myfig.tight_layout()
+
+    _rcParams["font.size"] = _fontsize
+    return myfig, myax
 
 def add_tilted_labels_to_patches(jax, labels,
                                  label_fontsize_factor=1,

@@ -5,6 +5,7 @@ import pytest
 from matplotlib import pyplot as _plt
 
 from mdciao.contacts import ContactGroup, ContactPair
+from mdciao.examples import ContactGroupL394
 
 from mdciao import plots
 from mdciao.plots.plots import _plot_freqbars_baseplot
@@ -175,6 +176,20 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict},
                                                   {"CG1": "r"})
         #myfig.savefig("12.test_just_one.png",bbox_inches="tight")
+        _plt.close("all")
+
+class Test_plot_unified_distro_dicts(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.CGL394 = ContactGroupL394()
+        D1 = cls.CGL394.distribution_dicts()
+        D2 = {key: [val[0],val[1]+.02] for key,val in D1.items()}
+        cls.dicts = {"L394":D1,
+                     "L394shifted":D2}
+
+    def test_plot_unified_distro_dicts(self):
+        plots.plot_unified_distro_dicts(self.dicts, ctc_cutoff_Ang=3.5, n_cols=2,legend_rows=1)
         _plt.close("all")
 
 class Test_compare_groups_of_contacts(unittest.TestCase):
