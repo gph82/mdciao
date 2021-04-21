@@ -15,7 +15,7 @@ Functions
 from glob import glob as _glob
 import numpy as _np
 import mdtraj as _md
-from .lists import re_warp
+from .lists import re_warp, contiguous_ranges as _cranges
 from fnmatch import fnmatch as _fnmatch
 from pandas import read_excel as _read_excel
 from os import path as _path, listdir as _ls
@@ -780,6 +780,24 @@ def splitlabel(label, sep="-", defrag="@"):
         if "frag2" in bits.keys():
             split[1] += "%s%s" % (defrag,bits["frag2"])
     return split
+
+def intblocks_in_str(istr):
+    r"""
+    Return the integers that appear as contiguous blocks in strings
+
+    E.g.  "GLU30@3.50-GDP396@frag1" returns [30,3,50,396,1]
+
+    Parameters
+    ----------
+    istr : string
+
+    Returns
+    -------
+    ints : list
+
+    """
+    intblocks = _cranges([char.isdigit() for char in istr])[True]
+    return [int("".join([istr[idx] for idx in block])) for block in intblocks]
 
 def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
     r"""
