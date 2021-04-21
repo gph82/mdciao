@@ -1194,7 +1194,17 @@ Defaults to None which will prompt the user of
         effect.
     n_nearest : int, default is 0
         Exclude these many bonded neighbors for each
-        residue, i.e
+        residue. Usually, the chosen molecular
+        fragments belong to different chains and
+        don't share any bonds, so this parameter
+        has no effect. However, if you choose
+        to compare molecular fragments that
+        are bonded (e.g. the C-terminus with
+        the rest of the molecule), there's
+        one pair that'll be bonded across the
+        fragment-boundary, yielding one contact
+        that's always formed. Setting :obj:`n_nearest`
+        to 1 will delete this contact.
     sort_by_av_ctcs : bool, default is True
         When presenting the results summarized by residue,
         sort by sum of frequencies (~average number of
