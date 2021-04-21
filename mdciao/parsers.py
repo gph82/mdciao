@@ -89,7 +89,7 @@ def _parser_add_cutoff(parser):
                         default=3.5)
 
 def _parser_add_n_neighbors(parser, default=4):
-    parser.add_argument("--n_nearest", type=int,
+    parser.add_argument("--n_nearest","-nn", type=int,
                         help="Ignore this many nearest neighbors when computing neighbor lists."
                              " 'Near' means 'connected by this many bonds'. Default is %u."%default,
                         default=default)
