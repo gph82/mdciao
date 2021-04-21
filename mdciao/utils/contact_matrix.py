@@ -253,7 +253,7 @@ def contact_map(
     n_cols = 3
     n_rows = _np.ceil((len(xtcs)+1)/n_cols).astype(int)
     panelsize2font = 3.5
-    print("The following files have been created")
+    print("The following files have been created:")
     for key, val in ctc_map_dict.items():
         matfig, matax = plt.subplots(n_rows, n_cols,
                                          sharex=True,

@@ -663,7 +663,7 @@ def residue_dihedrals(topology, trajectories, resSeq_idxs,
     fname = "%s.overall.%s" % (output_desc.strip("."), graphic_ext.strip("."))
     fname = _path.join(output_dir, fname)
     histofig.savefig(fname, dpi=graphic_dpi)
-    print("The following files have been created")
+    print("The following files have been created:")
     print(fname)
 
     # One loop for the time resolved neighborhoods

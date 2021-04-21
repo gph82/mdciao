@@ -33,6 +33,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinxarg.ext",
     "sphinx.ext.intersphinx",
+    'sphinx_copybutton'
 #    "numpydoc",
 ]
 
@@ -87,3 +88,4 @@ latex_elements = {
 }
 
 html_last_updated_fmt=""
+copybutton_prompt_text = ">>> "

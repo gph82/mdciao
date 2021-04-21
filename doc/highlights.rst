@@ -83,27 +83,27 @@ Highlights
   - *G.HN.** : CGN-nomenclature for the :math:`G\alpha_N`-subunit
  You can check your selection **before** running a computation by using ``mdc_residues.py``::
 
-   >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --BW adrb2_human --CGN 3SN6 -ni
-   Your selection 'GLU*,P0G,380-394,G.HN.*' yields:
-     residue      residx    fragment      resSeq         BW        CGN
-       GLU10           6           0         10       None    G.HN.27
-       GLU15          11           0         15       None    G.HN.32
-   ...
-      GLU306        1008           3        306       7.33       None
-      GLU338        1040           3        338       8.56       None
-      P0G395        1043           4        395       None       None
-      ARG131         861           3        131       3.50       None
-      ARG380         339           0        380       None    G.H5.12
-      ASP381         340           0        381       None    G.H5.13
-   ...
-      LEU393         352           0        393       None    G.H5.25
-      LEU394         353           0        394       None    G.H5.26
-        THR9           5           0          9       None    G.HN.26
-       ASP11           7           0         11       None    G.HN.28
-       GLN12           8           0         12       None    G.HN.29
-   ...
-       GLN35          31           0         35       None    G.HN.52
-       VAL36          32           0         36       None    G.HN.53
+  >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --BW adrb2_human --CGN 3SN6 -ni
+  Your selection 'GLU*,P0G,380-394,G.HN.*' yields:
+    residue      residx    fragment      resSeq         BW        CGN
+      GLU10           6           0         10       None    G.HN.27
+      GLU15          11           0         15       None    G.HN.32
+  ...
+     GLU306        1008           3        306       7.33       None
+     GLU338        1040           3        338       8.56       None
+     P0G395        1043           4        395       None       None
+     ARG131         861           3        131       3.50       None
+     ARG380         339           0        380       None    G.H5.12
+     ASP381         340           0        381       None    G.H5.13
+  ...
+     LEU393         352           0        393       None    G.H5.25
+     LEU394         353           0        394       None    G.H5.26
+       THR9           5           0          9       None    G.HN.26
+      ASP11           7           0         11       None    G.HN.28
+      GLN12           8           0         12       None    G.HN.29
+  ...
+      GLN35          31           0         35       None    G.HN.52
+      VAL36          32           0         36       None    G.HN.53
 
 
   |nbspc|
@@ -141,12 +141,9 @@ Highlights
 
 .. _`mdc_interface.py example`:
 
-* use fragment definitions --like the ones above, 0 for the :math:`G\alpha`-unit and 3 for the receptor-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
+* use fragment definitions --like the ones above, `0` for the :math:`G\alpha`-unit and `3` for the receptor-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
 
-   mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --BW adrb2_human --CGN 3SN6 -t "3SN6 beta2AR-Galpha interface" -ni
-
-  This gives an (edited) output::
-
+   >>> mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --BW adrb2_human --CGN 3SN6 -t "3SN6 beta2AR-Galpha interface" -ni
    ...
    These 50 contacts capture 15.40 (~99%) of the total frequency 15.52 (over 21177 contacts)
    As orientation value, 31 ctcs already capture 90.0% of 15.52.
@@ -160,7 +157,7 @@ Highlights
    5   0.85   E392@G.H5.24    - T274@6.36      351 976   5.79
    6   0.68   Q384@G.H5.16    - Q229@5.68      343 956   6.46
    ...
-   The following files have been created
+   The following files have been created:
    ./interface.overall@3.5_Ang.xlsx
    ./interface.overall@3.5_Ang.dat
    ./interface.overall@3.5_Ang.as_bfactors.pdb
@@ -208,16 +205,16 @@ Highlights
 * A different approach is to look **only** for a particular set of pre-defined contacts. Simply writing this set into a human readable `JSON <https://www.json.org/>`_ file will allow `mdc_sites.py` to compute and present these (and only these) contacts, as in the example file `tip.json`::
 
 
-   >>> cat tip.json
-   {"name":"interface small",
-   "bonds": {"AAresSeq": [
-            "L394-K270",
-            "D381-Q229",
-            "Q384-Q229",
-            "R385-Q229",
-            "D381-K232",
-            "Q384-I135"
-            ]}}
+   >>> echo '
+   >>> {"name":"interface small",
+   >>> "bonds": {"AAresSeq": [
+   >>>         "L394-K270",
+   >>>         "D381-Q229",
+   >>>         "Q384-Q229",
+   >>>         "R385-Q229",
+   >>>         "D381-K232",
+   >>>         "Q384-I135"
+   >>>         ]}}' > tip.json
 
   One added bonus is that the same .json files can be used file across different setups as long as the specified residues are present.
 
@@ -225,7 +222,7 @@ Highlights
 
    >>> mdc_sites.py prot.pdb traj.xtc --site tip.json -at -nf -sa #sa: short AA-names
    ...
-   The following files have been created
+   The following files have been created:
    ./sites.overall@3.5_Ang.pdf
    ...
 
@@ -261,13 +258,13 @@ Highlights
    3:     1.00   ARG131-ILE278       0-0        1007-1126       97     3.00
    These 3 contacts capture 3.00 (~100%) of the total frequency 3.00 (over 120 contacts)
    ...
-   The following files have been created
+   The following files have been created:
    ...
    ./3SN6.X.ARG131@4.0_Ang.dat
 
   Now we use ``mdc_neighborhoods.py`` on our data::
 
-   >>> mdc_neighborhoods.py prot.pdb traj.xtc -r L394 -co 4 -nf -o 3SN6.MD
+   >>> mdc_neighborhoods.py prot.pdb traj.xtc -r R131 -co 4 -nf -o 3SN6.MD
    ...
    #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
    1:     0.87   ARG131-TYR391       0-0         861-350        12     0.87
@@ -276,7 +273,7 @@ Highlights
    4:     0.12   ARG131-ILE278       0-0         861-980        92     2.11
    These 4 contacts capture 2.11 (~99%) of the total frequency 2.11 (over 115 contacts)
    ...
-   The following files have been created
+   The following files have been created:
    ...
    ./3SN6.MD.ARG131@4.0_Ang.dat
 

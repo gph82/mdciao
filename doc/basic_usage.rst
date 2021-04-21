@@ -28,8 +28,7 @@ will print the following to the terminal (some headers have been left out)::
  As orientation value, 4 ctcs already capture 90.0% of 1.76.
  The 4-th contact has a frequency of 0.23
 
- The following files have been created
- The following files have been created
+ The following files have been created:
  ./neighborhood.overall@3.5_Ang.pdf
  ./neighborhood.LEU394@3.5_Ang.dat
  ./neighborhood.LEU394.time_trace@3.5_Ang.pdf

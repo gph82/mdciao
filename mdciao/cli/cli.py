@@ -949,7 +949,7 @@ def residue_neighborhoods(residues,
                                   switch_off_Ang=switch_off_Ang)
         if savefigs:
             overall_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
-            print("The following files have been created")
+            print("The following files have been created:")
             print(fn.fullpath_overall_fig)
 
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
@@ -1401,7 +1401,7 @@ Defaults to None which will prompt the user of
     print(dfs[1].round({"freq":2}))
 
     if savetabs:
-        print("The following files have been created")
+        print("The following files have been created:")
         ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort=sort_by_av_ctcs)
         print(fn.fullpath_overall_excel)
         ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_dat, atom_types=True)
@@ -1801,7 +1801,7 @@ def sites(site_files,
 
     overall_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
     if any([savetabs,savefigs,savetrajs]):
-        print("The following files have been created")
+        print("The following files have been created:")
 
     if savefigs:
         overall_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
