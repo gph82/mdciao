@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'mdciao'
-copyright = '2019, Guillermo Perez-Hernandez'
+copyright = '2019-2021, Guillermo Perez-Hernandez'
 author = 'Guillermo Perez-Hernandez'
 
 
@@ -85,3 +85,5 @@ latex_elements = {
     'extraclassoptions': 'openany,oneside'
 
 }
+
+html_last_updated_fmt=""
