@@ -2826,6 +2826,7 @@ class ContactGroup(object):
                            atom_types=False,
                            display_sort=False,
                            sum_freqs=True,
+                           defrag=None,
                            ):
         r"""
         Plot a contact frequencies as a bar plot
@@ -2901,7 +2902,8 @@ class ContactGroup(object):
                     title+="these %u most frequent contacts capture %4.2f %% of all contacts\n" % (self.n_ctcs,
                                                                                            sigma / total_freq * 100,
                                                                                                    )
-
+        if defrag is not None:
+            label_bars = [_mdcu.str_and_dict.defrag_key(ilab, defrag=defrag) for ilab in label_bars]
         _mdcplots.add_tilted_labels_to_patches(ax,
                                                [label_bars[ii] for ii in order][:(ax.get_xlim()[1]).astype(int) + 1],  #can't remember this
                                                label_fontsize_factor=label_fontsize_factor
