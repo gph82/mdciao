@@ -1195,16 +1195,23 @@ class ContactPair(object):
         """
         return self.retop(self.top, mapping={key:key for key in self.residues.idxs_pair})
 
-    def retop(self,top, mapping, deepcopy=False):
+    def retop(self,top, mapping, deepcopy=False, **CP_kwargs):
         r"""Return a copy of this object with a different topology.
 
-        Uses the :obj:`mapping` to generate new residue-indices
-        where necessary, using the rest of the attributes
-        (time-traces, labels, colors, fragments...) as they were
+        Uses the :obj:`mapping` to generate new residue- and
+        and atom-indices where necessary, using the rest
+        of the object's attributes (time-traces, labels, colors,
+        fragments...) as they were.
+
+        Note
+        ----
+        This method will (rightly) fail if:
+         * the mapping doesn't contain the needed residues
+         * the individual atoms of those residues cannot
+           be uniquely mapped between topologies
 
         TODO
-         * The atom_pair_trajs are not transferred to the new object
-         * Will fail is the map is missing the needed residues
+        ----
          * Generate mapping on-the-fly if mapping is None
 
         Parameters
@@ -1215,7 +1222,12 @@ class ContactPair(object):
             A mapping of old residue indices
             to new residue indices. Usually,
             comes from aligning the old and the
-            new topology using :obj:`mdciao.utils.sequence.maptops`
+            new topology using :obj:`mdciao.utils.sequence.maptops`.
+            These maps only contain (key,value) pairs
+            whenever there's been a "match", s.t
+            this method will fail if :obj:`maping`
+            doesn't contain all the residues in
+            this :obj:`ContactPair`.
         deepcopy : bool, default is False
             Use :obj:`copy.deepcopy` on the attributes
             when creating the new :obj:`ContactPair`.
@@ -1229,14 +1241,34 @@ class ContactPair(object):
 
             Note that :obj:`time_traces` are always created
             new no matter what.
+        CP_kwargs : dict
+            Optional keyword arguments to instantiate the
+            new :obj:`ContactPair`. Any key-value pairs
+             inputted here will update the internal
+             dictionary being used, which is:
 
+
+            >>>  {
+            "top": top,
+            "trajs": self.time_traces.trajs,
+            "fragment_idxs": self.fragments.idxs,
+            "fragment_names": self.fragments.names,
+            "fragment_colors": self.fragments.colors,
+            "anchor_residue_idx": anchor_residue_index,
+            "consensus_labels": self.residues.consensus_labels
+            }
 
         Returns
         -------
         CP : :obj:`ContactPair`
-            The .top and the residues.idxs_pair are new
+            A new CP with updated top and indices
         """
         new_pairs = [mapping[ii] for ii in self.residues.idxs_pair]
+        atom_pair_trajs = None
+        if self.time_traces.atom_pair_trajs is not None:
+            oldat2newat = _mapatoms(self.top, top, mapping, {ii: self.top.atom(ii).name for ii in _np.unique(self.time_traces.atom_pair_trajs)})
+            atom_pair_trajs = [oldat2newat[itraj] for itraj in self.time_traces.atom_pair_trajs]
+
         anchor_residue_index = None
 
         if self.residues.anchor_residue_index is not None:
@@ -1246,18 +1278,25 @@ class ContactPair(object):
         else:
             _copy = lambda x: x
 
+        mapping_kwargs = {
+            "top": top,
+            "trajs": _copy(self.time_traces.trajs),
+            "atom_pair_trajs": atom_pair_trajs,
+            "fragment_idxs": _copy(self.fragments.idxs),
+            "fragment_names": _copy(self.fragments.names),
+            "fragment_colors": _copy(self.fragments.colors),
+            "anchor_residue_idx": anchor_residue_index,
+            "consensus_labels": _copy(self.residues.consensus_labels)
+        }
+        for key, val in CP_kwargs.items():
+            mapping_kwargs[key]=val
+
         return ContactPair(
             new_pairs,
             _copy(self.time_traces.ctc_trajs),
             _copy(self.time_traces.time_trajs),
-            top=top,
-            trajs=_copy(self.time_traces.trajs),
-            atom_pair_trajs=_copy(self.time_traces.atom_pair_trajs),
-            fragment_idxs=_copy(self.fragments.idxs),
-            fragment_names=_copy(self.fragments.names),
-            fragment_colors=_copy(self.fragments.colors),
-            anchor_residue_idx=anchor_residue_index,
-            consensus_labels=_copy(self.residues.consensus_labels))
+            **mapping_kwargs,
+            )
 
     def __hash__(self):
         tohash = []
@@ -1424,7 +1463,7 @@ class ContactPair(object):
             Cutoff in Angstrom. The comparison operator is "<="
         AA_format : str, default is "short"
             Amino-acid format ("E35" or "GLU25") for the value
-            fdict["label"]. Can also be "long"
+            fdict["label"]. Can also be "long" or "just_consensus"
         split_label : bool, default is True
             Split the labels so that stacked contact labels
             become easier-to-read in plain ascii formats
@@ -1438,6 +1477,41 @@ class ContactPair(object):
         fdcit : dictionary
 
         """
+
+        label = self.label_flex(AA_format, split_label)
+
+        fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
+                "label":label.rstrip(" "),
+                "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)
+                }
+
+        if atom_types:
+            fdict.update({"by_atomtypes" :
+                              self.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,
+                                                                                         switch_off_Ang=switch_off_Ang)})
+        return fdict
+
+    def label_flex(self, AA_format="short",split_label=True):
+        r"""
+        A more flexible method to produce the label of this :obj:`ContactPair`
+
+        Parameters
+        ----------
+        AA_format : str, default is "short"
+            Amino-acid format for the label, can
+            be "short" (A35@BW4.50), "long" (ALA35@4.50),
+            or "just_consensus" (4.50)
+        split_label : bool, default is True
+            Split the labels so that stacked contact labels
+            become easier-to-read in plain ascii formats
+             - "E25@3.50____-    A35@4.50"
+             - "A30@longfrag-    A35@4.50
+
+        Returns
+        -------
+        label : str
+        """
+
         if AA_format== 'short':
             label = self.labels.w_fragments_short_AA
         elif AA_format== 'long':
@@ -1454,16 +1528,7 @@ class ContactPair(object):
         if split_label:
             label= '%-15s - %-15s'%tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
 
-        fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
-                "label":label.rstrip(" "),
-                "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)
-                }
-
-        if atom_types:
-            fdict.update({"by_atomtypes" :
-                              self.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,
-                                                                                         switch_off_Ang=switch_off_Ang)})
-        return fdict
+        return label
 
     def distro_overall_trajs(self, bins=10):
         """
@@ -1915,8 +1980,8 @@ class ContactGroup(object):
                                      "(all contacts share the residue %s), "
                                      "but no 'neighbors_excluded' have been parsed!\n"
                                      "If you're trying to build a site object,\n"
-                                     "use 'neighbors_excluded'=0', else input right number"
-                                     "'neighbors_excluded'")
+                                     "use 'neighbors_excluded'=0', else input the right number of"
+                                     "'neighbors_excluded'"%self.shared_anchor_residue_index)
 
     #todo again the dicussion about named tuples vs a miriad of properties
     # I am opting for properties because of easiness of documenting i
@@ -2774,15 +2839,15 @@ class ContactGroup(object):
         """
         return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang,**kwargs) for ictc in self._contacts]
 
-    def distributions_of_distances(self, nbins=10):
+    def distributions_of_distances(self, bins=10):
         r"""
-        Histograms each the distance values of each contact,
+        Histograms the distance values of each contact,
         returning a list with as many distributions as there
         are contacts.
 
         Parameters
         ----------
-        nbins : int, default is 10
+        bins : int, default is 10
 
         Returns
         -------
@@ -2790,7 +2855,30 @@ class ContactGroup(object):
             List of len self.n_ctcs, each entry contains
             the counts and edges of the bins
         """
-        return [ictc.distro_overall_trajs(bins=nbins) for ictc in self._contacts]
+        return [ictc.distro_overall_trajs(bins=bins) for ictc in self._contacts]
+
+    def distribution_dicts(self,
+                           bins=10,
+                           **kwargs):
+        """
+        Wraps around the method :obj:`ContactGroup.distributions_of_distances`
+        and returns one distribution dict keyed by contact label (see kwargs and CP.label_flex
+
+        Parameters
+        ----------
+        kwargs : optional keyword arguments
+            Check :obj:`ContactPair.frequency_dict`
+
+        Returns
+        -------
+        fdict : dictionary
+
+        """
+        distro_dicts = {ictc.label_flex(**kwargs) : data for ictc, data in zip(self._contacts, self.distributions_of_distances(
+            bins=bins))}
+
+
+        return distro_dicts
 
     def n_ctcs_timetraces(self, ctc_cutoff_Ang, switch_off_Ang=None):
         r"""
@@ -3111,7 +3199,7 @@ class ContactGroup(object):
             jax.add_artist(leg1)
 
     def plot_distance_distributions(self,
-                                    nbins=10,
+                                    bins=10,
                                     xlim=None,
                                     jax=None,
                                     shorten_AAs=False,
@@ -3128,7 +3216,7 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        nbins : int, default is 10
+        bins : int, default is 10
             How many bins to use for the distribution
         xlim : iterable of two floats, default is None
             Limits of the x-axis.
@@ -3183,7 +3271,7 @@ class ContactGroup(object):
         jax.set_title(title_str)
 
         # Base plot
-        for ii, ((h, x), label) in enumerate(zip(self.distributions_of_distances(nbins=nbins), label_bars)):
+        for ii, ((h, x), label) in enumerate(zip(self.distributions_of_distances(bins=bins), label_bars)):
             label = _mdcu.str_and_dict.latex_superscript_fragments(label)
             if ctc_cutoff_Ang is not None:
                 if ii==0:
@@ -4444,3 +4532,48 @@ def _idx_at_fraction(val_desc_order, frac):
     assert 0<=frac<=1, "Fraction has to be in [0,1] ,not %s"%frac
     normalized_cumsum = _np.cumsum(val_desc_order) / _np.sum(val_desc_order) >= frac
     return _np.flatnonzero(normalized_cumsum>=frac)[0]
+
+def _mapatoms(top0, top1,resmapping, atom0idx2atom_name):
+    r"""
+    Return a map (array) of atoms of top0 on top1
+
+    Will fail when more than two atoms of the same
+    residue have the same name
+
+    Parameters
+    ----------
+    top0 : :obj:`~mdtraj.Topology`
+    top1 : :obj:`~mdtraj.Topology`
+    resmapping : indexable (dict, list, array)
+        Indexed by residue indices in top0
+        valued with new residue indices in top1
+    atom0idx2atom_name : dict
+        Indexed by atom indices in top0,
+        valued with their name, e.g. "CA"
+
+    Returns
+    -------
+    atom0idx2atom1idx : 1D np.array
+        1D array of len top1.n_atoms, valued
+        with np.nan everywhere except for
+        the indices (=keys) of :obj:`atom0idx2atom_name`,
+        where its valued with the indices of their
+        equivalent top1 atoms.
+
+    """
+    atom0idx2atom1idx = _np.full(top0.n_atoms, _np.nan, dtype=int)
+    # it's safe to assume that the -9223372036854775808
+    # int-value for nan will break things (which we want) downstream
+
+    for ii, iname in atom0idx2atom_name.items():
+        old_atom = top0.atom(ii)
+        old_res = top0.residue(old_atom.residue.index)
+        new_res = top1.residue(resmapping[old_res.index])
+        new_atom = list(new_res.atoms_by_name(iname))
+        assert len(new_atom) == 1, "The old atom %s of old residue %s (idx %u) can't be uniquely identified " \
+                                   "in the new residue %s (idx %u): %s" % (str(old_atom),
+                                                                           str(old_res), old_res.index,
+                                                                           str(new_res), new_res.index, new_atom)
+        atom0idx2atom1idx[ii] = new_atom[0].index
+
+    return atom0idx2atom1idx

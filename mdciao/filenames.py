@@ -72,6 +72,8 @@ class filenames(object):
         self.GDP_name_json = path.join(self.json_path,"GDP_name_XXX.json")
         self.tip_json = path.join(self.json_path,"tip.json")
         self.tip_dat= path.join(self.json_path,"tip.dat")
+        self.tip_residx_dat= path.join(self.json_path,"tip_residx.dat")
+
 
 
 

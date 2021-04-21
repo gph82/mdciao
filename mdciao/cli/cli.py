@@ -1548,6 +1548,7 @@ def sites(site_files,
           savefigs=True,
           savetabs=True,
           savetrajs=False,
+          figures=True,
           ):
     r"""
 
@@ -1708,6 +1709,8 @@ def sites(site_files,
         figs, tables, trajs, nomenclature
     savefiles : bool, default is True
         Write the figures and tables to disk.
+    figures : bool, default is True
+        Draw figures
 
     Returns
     -------
@@ -1744,16 +1747,16 @@ def sites(site_files,
                                                           fragments_as_residue_idxs,
                                                           accept_guess=accept_guess,
                                                           save_nomenclature_files=save_nomenclature_files)
-    sites = [_mdcsites.load(ff) for ff in site_files]
-    ctc_idxs_small, AAresSeq2residxs = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
+    sites = [_mdcsites.x2site(ff) for ff in site_files]
+    ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
                                                                     fragments=fragments_as_residue_idxs,
                                                                     default_fragment_idx=default_fragment_index,
                                                                     fragment_names=fragment_names)
 
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
-    for idx in AAresSeq2residxs.values():
+    for idx in _np.unique(ctc_idxs_small):
         print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, _mdcu.lists.in_what_fragment(idx,
-                                                                                                   fragments_as_residue_idxs),
+                                                                                                               fragments_as_residue_idxs),
                                                    idx,
                                                    consensus_maps[0][idx], consensus_maps[1][idx]))
 
@@ -1765,14 +1768,11 @@ def sites(site_files,
 
     # Abstract each site to a group of contacts and fragments
     site_as_gc = {}
-    ctc_pairs_iterators = iter(ctc_idxs_small)
-    ctc_value_idx = iter(_np.arange(len(ctc_idxs_small)))  # there has to be a better way
-    for isite in sites:
+    for isite, imap in zip(sites,site_maps):
         key = isite["name"]
         site_as_gc[key] = []
-        for __ in range(isite["n_bonds"]):
-            pair = next(ctc_pairs_iterators)
-            idx = next(ctc_value_idx)
+        for idx in imap:
+            pair = ctc_idxs_small[idx]
             consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             site_as_gc[key].append(_mdcctcs.ContactPair(pair,
@@ -1818,27 +1818,28 @@ def sites(site_files,
                                      )
             print(fn.fname_per_site_table(site_name))
 
-    for site_name, isite_nh in site_as_gc.items():
-        panelheight = 4
-        myfig = isite_nh.plot_timedep_ctcs(panelheight,
-                                           color_scheme=_color_schemes(curve_color),
-                                           ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                           n_smooth_hw=n_smooth_hw,
-                                           dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
-                                           t_unit=t_unit,
-                                           gray_background=gray_background,
-                                           shorten_AAs=short_AA_names,
-                                           plot_N_ctcs=True,
-                                           ylim_Ang=ylim_Ang,
-                                           )
+    if figures:
+        for site_name, isite_nh in site_as_gc.items():
+            panelheight = 4
+            myfig = isite_nh.plot_timedep_ctcs(panelheight,
+                                               color_scheme=_color_schemes(curve_color),
+                                               ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                               n_smooth_hw=n_smooth_hw,
+                                               dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
+                                               t_unit=t_unit,
+                                               gray_background=gray_background,
+                                               shorten_AAs=short_AA_names,
+                                               plot_N_ctcs=True,
+                                               ylim_Ang=ylim_Ang,
+                                               )
 
-        _manage_timedep_ploting_and_saving_options(isite_nh, fn, myfig,
-                                                   plot_timedep=True,
-                                                   separate_N_ctcs=False,
-                                                   title="site: %s" % site_name,
-                                                   savefigs=savefigs,
-                                                   savetrajs=savetrajs
-                                                   )
+            _manage_timedep_ploting_and_saving_options(isite_nh, fn, myfig,
+                                                       plot_timedep=True,
+                                                       separate_N_ctcs=False,
+                                                       title="site: %s" % site_name,
+                                                       savefigs=savefigs,
+                                                       savetrajs=savetrajs
+                                                       )
 
 
     return site_as_gc
@@ -2029,7 +2030,7 @@ def residue_selection(expression,
     accept_guess : bool, default is False
         Accept mdciao's guesses regarding fragment
         identification using nomenclature labels
-     fragments : list, default is None
+    fragments : list, default is None
         Fragment control.
         * None: use the default :obj:`~mdciao.fragments.get_fragments`,
           currently 'lig_resSeq+'
@@ -2067,7 +2068,7 @@ def residue_selection(expression,
     """
     refgeom = _load_any_geom(top)
 
-    _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(None),
+    _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
                                                                    refgeom.top, verbose=True)
     res_idxs_list, consensus_maps = _res_resolver(expression, refgeom.top, _frags,
                                                   midstring="Your selection '%s' yields:" % expression,

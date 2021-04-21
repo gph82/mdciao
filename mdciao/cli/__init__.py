@@ -10,5 +10,6 @@ Programatic access to the CLI methods
    interface
    sites
    compare
+   residue_selection
 """
 from .cli import *

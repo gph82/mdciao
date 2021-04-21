@@ -28,40 +28,24 @@ from copy import deepcopy as _dcopy
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
 
-def load(site):
-    r"""
-    Return a site object from a dat or json file file or a dictionary.
-
-    Simplest format is for the datfile to look  like this::
-    >>> cat site.dat
-    # contacts to look at :
-    L394-K270
-    D381-Q229
-    Q384-Q229
-    R385-Q229
-    D381-K232
-    Q384-I135
-
-    But you can also annotate it in json format if you want
-    >>> cat site.json
-    {"name":"interesting contacts",
-    "bonds": {"AAresSeq": [
-            "L394-K270",
-            "D381-Q229",
-            "Q384-Q229",
-            "R385-Q229",
-            "D381-K232",
-            "Q384-I135"
-            ]}}
+def x2site(site, fmt="AAresSeq"):
+    """
+    Return a site dictionary from a dict or an ascii file
 
     Parameters
     ----------
-    sitefile : str or dict
+    site : str or dict
         Path to the ascii file. If the file isn't
         a json file, or doesn't contain the 'name'-field,
-        the filename itself will be used as name.
+        the filename itself will be used as 'name' in the output
         If a dict is passed, it's checked that the dictionary
         has the needed keys to function as a site.
+        See :obj:`mdciao.sites` for more info on how sites
+        are defined.
+    fmt: str, default is "AAresSeq"
+        The expected format in case of reading a file.
+        Only used when reading a file.
+
     Returns
     -------
     site : dict
@@ -70,8 +54,9 @@ def load(site):
          * nbonds
          * name
         site["bonds"] is itself a dictionary
-        with only one key ATM, "AAresSeq",
-        valued with a list of pairs, e.g ["L394","K270"]
+        valued with a list of pairs,
+        e.g ["L394","K270"] or [[10,20],[300-4]]],
+        depending on the type of bond specified
 
     """
     if isinstance(site, dict):
@@ -81,82 +66,38 @@ def load(site):
             with open(site, "r") as f:
                 idict = _jsonload(f)
         except _JSONDecodeError as e:
-            idict = dat2site(site)
+            idict = dat2site(site,fmt=fmt)
+
     try:
-        idict["bonds"]["AAresSeq"] = [item.split("-") for item in idict["bonds"]["AAresSeq"] if item[0] != '#']
-        idict["n_bonds"] = len(idict["bonds"]["AAresSeq"])
-    except:
+        bondtype = list(idict["bonds"].keys())
+        assert len(bondtype)==1 and bondtype[0] in ["AAresSeq","residx"]
+        bondtype = bondtype[0]
+        bonds = idict["bonds"][bondtype]
+        idict["n_bonds"] = len(bonds)
+        if isinstance(bonds[0][0],str):  # can only be str spearated by "-"
+            idict["bonds"][bondtype] = [item.split("-") for item in bonds if item[0] != '#' and "-" in item]
+            if bondtype=="residx":
+                idict["bonds"][bondtype] = [[int(pp) for pp in pair] for pair in  idict["bonds"][bondtype]]
+        else:
+            assert all([len(bond)==2 for bond in bonds]),bonds
+    except KeyError:
         print("Malformed file for the site %s:\n%s" % (site,idict))
+        raise
 
     if "name" not in idict.keys():
         if isinstance(site,str):
             idict["name"] = _psplitext(_psplit(site)[-1])[0]
         else:
-            raise ValueError("A 'name'-key is mandatory when passing a dictionary")
+            raise ValueError("A 'name'-key is mandatory when passing a site dictionary")
 
     return idict
 
-def sites_to_AAresSeqdict(list_of_site_dicts, top, fragments,
-                          raise_if_not_found=True,
-                          **residues_from_descriptors_kwargs):
-
-    r"""
-    For a list of site dictionaries (see :obj:`load`), return
-    a dictionary with keyed by all needed residue names and valued
-    with their residue indices in :obj:`top`
-
-    Note
-    ----
-    ATM it is not possible to have a residue name, e.g. ARG201 have different
-    meanings (=res_idxs) in different sitefiles. All sitefiles are defined
-    using AAresSeq names and all AAresSeq names need to mean the same
-    residue across all sitefiles.
-
-    TODO: The next (easy) step is to define another json entry with residue
-    indices
-
-    Parameters
-    ----------
-    list_of_site_dicts
-    top
-    fragments
-    raise_if_not_found : boolean, default is True
-        Fail if some of the residues are not found in the topology
-    residues_from_descriptors_kwargs :
-        see :obj:`mdciao.utils.residue_and_atom.residues_from_descriptors`
-
-    Returns
-    -------
-    AAresSeq2residxs : dict
-    """
-
-    # Unfold all the resseqs
-    AAresSeqs = [ss["bonds"]["AAresSeq"] for ss in list_of_site_dicts]
-    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
-    AAresSeqs = [item for sublist in AAresSeqs for item in sublist]
-    AAresSeqs = [key for key in _np.unique(AAresSeqs)]
-    residxs, _ = _mdcu.residue_and_atom.residues_from_descriptors(AAresSeqs, fragments, top,
-                                              **residues_from_descriptors_kwargs)
-    if None in residxs and raise_if_not_found:
-        raise ValueError("These residues of your input have not been found. Please revise it:\n%s" %
-                         ('\n'.join(["input %u"%ii for ii,__ in enumerate(residxs) if ii is None])))
-    long2input = {str(top.residue(idx)):AA for idx,AA in zip(residxs,AAresSeqs)if idx is not None}
-
-    AAresSeq2residxs = {}#key:None for key in AAresSeqs}
-    for idx in residxs:
-        if idx is not None:
-            key = long2input[str(top.residue(idx))]
-            #assert key in AAresSeqs  #otherwise _per_residue ... did not work
-            AAresSeq2residxs[key] = idx
-
-    return AAresSeq2residxs
-
 def sites_to_res_pairs(site_dicts, top,
                        fragments=None,
-                       **get_fragments_kwargs):
-    r"""Take a list of dictionaries representing sites
-    and return the pairs of res_idxs needed to compute
-    all the contacts contained in them
+                       **get_fragments_kwargs,
+                       ):
+    r"""Return the pairs of res_idxs needed to compute
+    all the contacts contained in all the input sites.
 
     The idea is to join all needed pairs of res_idxs
     in one list regardless of where they come from.
@@ -164,31 +105,46 @@ def sites_to_res_pairs(site_dicts, top,
     Parameters
     ----------
     site_dicts : list of dicts
-        Check :obj:`load` for how these dics look like
-    top : :obj:`mdtraj.Topology`
+        Check :obj:`x2site` for how these dicts look like
+    top : :obj:`~mdtraj.Topology`
     fragments : list, default is None
-        You can pass along a fragment definition so that
-        :obj:`sites_to_AAresSeqdict` has an easier time
-        understanding your input. Otherwise, one will
-        be created on-the-fly by :obj:`mdciao.fragments.get_fragments`
+        You can pass along fragment definitions so that
+        it's easier to de-duplicate any AA in your input.
+        Otherwise, these will be created on-the-fly
+        by :obj:`mdciao.fragments.get_fragments`
     get_fragments_kwargs :
         see :obj:`fragments.get_fragments`
 
     Returns
     -------
     res_idxs_pairs : 2D np.ndarray
-        The residue indices in :obj:`top` of the contacts in :obj:`site_dicts`,
-        stacked together (might contain duplicates if the sites contain duplicates)
-    AAdict : dict
-        dictionary keyed by residue name and valued with the residue's index
-        in :obj:`top`. Please see the note in :obj:`sites_to_AAresSeqdict`
-        regarding duplicate residue names
+        Unique pairs contained in the :obj:`site_dicts`,
+        expressed as residue indices of :obj:`top`
+        [0,1] is considered != [0,1]
+    site_maps : list
+        For each site, a list with the indices of :obj:`res_idxs_pairs`
+        that match the site's bonds.
     """
     if fragments is None:
         fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
-    AAresSeq2residxs = sites_to_AAresSeqdict(site_dicts, top, fragments)
-    res_idxs_pairs = _np.vstack(([[[AAresSeq2residxs[pp] for pp in pair] for pair in ss["bonds"]["AAresSeq"]] for ss in site_dicts]))
-    return res_idxs_pairs, AAresSeq2residxs
+
+    get_pair_lambda = {"AAresSeq":lambda bond :_mdcu.residue_and_atom.residues_from_descriptors(bond, fragments, top)[0],
+                       "residx" : lambda bond : bond}
+    res_idxs_pairs = []
+    pair2idx = {}
+    site_maps = []
+    for ii, site in enumerate(site_dicts):
+        imap=[]
+        for bond_type, bonds in site["bonds"].items():
+            for bond in bonds:
+                pair = tuple(get_pair_lambda[bond_type](bond))
+                if pair not in res_idxs_pairs:
+                    res_idxs_pairs.append(pair)
+                    pair2idx[pair]=len(res_idxs_pairs)-1
+                imap.append(pair2idx[pair])
+        site_maps.append(imap)
+    #print(site_maps)
+    return _np.vstack(res_idxs_pairs), site_maps
 
 def site2str(site):
     r""" Produce a printable str for sitefile (json) or site-dict"""
@@ -215,7 +171,7 @@ def dat2site(dat,comment="#",
 
     Parameters
     ----------
-    txtfile : str,
+    dat : str,
         path to a file
     comment : str, default is "#"
         Ignore lines starting with
@@ -226,12 +182,10 @@ def dat2site(dat,comment="#",
         are understood as AA-names
         followed by a sequence index:
         "GLU30-ARG131".
-        Anything else will raise
-        a not implemented error
 
     -------
     site : a dictionary
-     Same format as return of :obj:`load`
+     Same format as return of :obj:`x2site`
      "name" will be whatever :obj:`dat` was,
      without the extension
     """
@@ -242,12 +196,16 @@ def dat2site(dat,comment="#",
     if lines[0].strip(" ").startswith("#"):
         name = lines[0].split("#")[1].strip(" ")
         offset +=1
-    assert fmt=="AAresSeq", NotImplementedError("Only 'AAresSeq is implmented for 'fmt' at the moment, can't do '%s'"%(fmt))
-    site={"bonds":{"AAresSeq":[]}}
+    assert fmt in ["AAresSeq", "residx"], NotImplementedError("Only [AAresSeq, residx] are implemented for 'fmt' at the moment, can't do '%s'"%(fmt))
+    site={"bonds":{fmt:[]}}
     for ii, line in enumerate(lines[offset:]):
         if line.strip(" ")[0] not in comment:
             assert line.count("-")==1, ValueError("The contact descriptor has to contain one (and just one) '-', got %s instead (%u-th line)"%(line, ii+1))
-            site["bonds"]["AAresSeq"].append(line)
+            site["bonds"][fmt].append(line)
+            if fmt=="AAresSeq" and not any([chr.isalpha() for chr in line.replace("-","")]):
+                raise ValueError("This can't be a %s line %s, are you sure you don't mean fmt=%s"%(fmt,line,"residx"))
+            elif fmt=="residx" and not all([chr.isdigit() for chr in line.replace("-","")]):
+                raise ValueError("This can't be a %s line %s are you sure you don't mean fmt=%s"%(fmt,line,"AAresSeq"))
     site["name"]=name
     return site
 

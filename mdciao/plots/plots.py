@@ -33,6 +33,8 @@ import mdciao.utils as _mdcu
 
 from os import path as _path
 
+from collections import defaultdict as _defdict
+
 def plot_w_smoothing_auto(ax, x, y,
                           label,
                           color,
@@ -100,6 +102,7 @@ def compare_groups_of_contacts(groups,
                                defrag='@',
                                per_residue=False,
                                title='comparison',
+                               distro=False,
                                **kwargs_plot_unified_freq_dicts,
                                ):
     r"""
@@ -171,6 +174,9 @@ def compare_groups_of_contacts(groups,
         see :obj:`_mdcu.str_and_dict.unify_freq_dicts` for more info
     per_residue : bool, default is False
         Unify dictionaries by residue and not by pairs
+    distro : bool, default is False
+        Instead of plotting contact frequencies,
+        plot contact distributions
     kwargs_plot_unified_freq_dicts : kwargs
         remove_identities
 
@@ -206,10 +212,15 @@ def compare_groups_of_contacts(groups,
         if isinstance(ifile, str):
             idict = _mdcu.str_and_dict.freq_file2dict(ifile)
         elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
-            assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a ctc_cutoff_Ang parameter"
-            idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                         AA_format=AA_format,
-                                         split_label=False)
+            if distro:
+                idict = ifile.distribution_dicts(AA_format=AA_format,
+                                                 split_label=False,
+                                                 bins=_np.max([20, (_np.sqrt(ifile.n_frames_total) / 2).round().astype(int)]))
+            else:
+                assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a ctc_cutoff_Ang parameter"
+                idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                              AA_format=AA_format,
+                                              split_label=False)
         else:
             idict = {key:val for key, val in ifile.items()}
 
@@ -222,46 +233,55 @@ def compare_groups_of_contacts(groups,
             else:
                 anchor=_mdcu.str_and_dict.defrag_key(deleted_half_keys[0],defrag=defrag,sep=" ")
         freqs[key] = idict
-    if plot_singles:
-        nrows = len(freqs)
-        myfig, myax = _plt.subplots(nrows, 1,
-                                    sharey=True,
-                                    sharex=True,
-                                    figsize=(figsize[0], figsize[1]*nrows))
-        for iax, (key, ifreq) in zip(myax, freqs.items()):
-            plot_unified_freq_dicts({key: ifreq},
-                                    colordict=colors,
-                                    ax=iax, width=width,
-                                    fontsize=fontsize,
-                                    **kwargs_plot_unified_freq_dicts)
-            if anchor is not None:
-                _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
-                                "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
-                                ha="right", va="bottom")
 
-        myfig.tight_layout()
-        # _plt.show()
-    freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, per_residue=per_residue, defrag=defrag)
-    if per_residue:
-        kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
-        kwargs_plot_unified_freq_dicts["remove_identities"] = False
+    if distro:
+        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, distro=True)
+        myfig = plot_unified_distro_dicts(freqs, colordict=colors,
+                                          ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                          fontsize=fontsize,
+                                          **kwargs_plot_unified_freq_dicts)
+        plotted_freqs = None
+    else:
+        if plot_singles:
+            nrows = len(freqs)
+            myfig, myax = _plt.subplots(nrows, 1,
+                                        sharey=True,
+                                        sharex=True,
+                                        figsize=(figsize[0], figsize[1]*nrows))
+            for iax, (key, ifreq) in zip(myax, freqs.items()):
+                plot_unified_freq_dicts({key: ifreq},
+                                        colordict=colors,
+                                        ax=iax, width=width,
+                                        fontsize=fontsize,
+                                        **kwargs_plot_unified_freq_dicts)
+                if anchor is not None:
+                    _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
+                                    "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
+                                    ha="right", va="bottom")
 
-    if ctc_cutoff_Ang is not None:
-        title = title+'@%2.1f AA'%ctc_cutoff_Ang
-    if anchor is not None:
-        title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
+            myfig.tight_layout()
+            # _plt.show()
+        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, per_residue=per_residue, defrag=defrag)
+        if per_residue:
+            kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
+            kwargs_plot_unified_freq_dicts["remove_identities"] = False
 
-    myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
-                                                        colordict=colors,
-                                                        ax=ax,
-                                                        width=width,
-                                                        fontsize=fontsize,
-                                                        figsize=figsize,
-                                                        title=title,
-                                                        **kwargs_plot_unified_freq_dicts)
+        if ctc_cutoff_Ang is not None:
+            title = title+'@%2.1f AA'%ctc_cutoff_Ang
+        if anchor is not None:
+            title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
 
-    _plt.gcf().tight_layout()
-    #_plt.show()
+        myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
+                                                            colordict=colors,
+                                                            ax=ax,
+                                                            width=width,
+                                                            fontsize=fontsize,
+                                                            figsize=figsize,
+                                                            title=title,
+                                                            **kwargs_plot_unified_freq_dicts)
+
+        _plt.gcf().tight_layout()
+        #_plt.show()
 
     return myfig, freqs, plotted_freqs
 
@@ -316,7 +336,7 @@ def plot_unified_freq_dicts(freqs,
                             verbose_legend=True,
                             ):
     r"""
-    Plot unified frequency dictionaries (= with identical keys) for different systems
+    Plot unified (= with identical keys) frequency dictionaries for different systems
 
     Parameters
     ----------
@@ -612,6 +632,110 @@ def plot_unified_freq_dicts(freqs,
     _rcParams["font.size"] = _fontsize
     return myfig, _plt.gca(),  out_dict
 
+def plot_unified_distro_dicts(distros,
+                              colordict=None,
+                              ctc_cutoff_Ang = None,
+                              panelheight_inches=5,
+                              fontsize=16,
+                              n_cols=1,
+                              legend_rows=4,
+                              ):
+    r"""
+    Plot unified (= with identical keys) distribution dictionaries for different systems
+
+    Parameters
+    ----------
+    distros : dictionary of dictionaries
+        The first-level dict is keyed by system names,
+        e.g distros.keys() = ["WT","D10A","D10R"].
+        The second-level dict is keyed by contact names
+    colordict : dict, default is None.
+        What color each system gets. Default is some sane matplotlib values
+    figsize : iterable of len 2
+        Figure size (x,y), in inches. If None,
+        one will be created using :obj:`panelheight_inches`
+        and :obj:`inch_per_contacts`.
+        If you are transposing the figure
+        using :obj:`vertical_plot`, you do not
+        have to invert (y,x) this parameter here, it is
+        done automatically.
+    panelheight_inches : int, default is 5
+        The height of each panel. Currently
+        the only control on figure size, which
+        is instantiateded as
+
+        >>> figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches)
+    fontsize : int, default is 16
+        Will be used in :obj:`matplotlib._rcParams["font.size"]
+        # TODO be less invasive
+    legend_rows : int, default is 4
+        The maximum number of rows per column of the legend.
+        If you have 10 systems, :obj:`legend_rows`=5 means
+        you'll get two columns, =2 means you'll get five.
+    kwargs_figure : optional keyword arguments
+        For :obj:`~matplotlib.pyplot.figure`, e.g.
+        `sharex` or `sharey` etc
+
+    Returns
+    -------
+    fig, axes : :obj:`~matplotlib.figure.Figure` and the axes array
+    """
+    _fontsize=_rcParams["font.size"]
+    _rcParams["font.size"] = fontsize
+
+    #make copies of dicts
+    distros_by_sys_by_ctc = {key:{key2:val2 for key2, val2 in val.items()} for key, val in distros.items()}
+
+    system_keys = list(distros_by_sys_by_ctc.keys())
+    all_ctc_keys = list(distros_by_sys_by_ctc[system_keys[0]].keys())
+    for sk in system_keys[1:]:
+        assert len(all_ctc_keys)==len(list(distros_by_sys_by_ctc[sk].keys())), "This is not a unified dictionary"
+
+    distros_by_ctc_by_sys = _defdict(dict)
+    for sys_key, sys_dict in distros_by_sys_by_ctc.items():
+        for ctc_key, val in sys_dict.items():
+            distros_by_ctc_by_sys[ctc_key][sys_key]=val
+    distros_by_ctc_by_sys = dict(distros_by_ctc_by_sys)
+
+    # Prepare the dict
+    if colordict is None:
+        colordict = {key:val for key,val in zip(system_keys, _colorstring.split(","))}
+
+    n_cols = _np.min((n_cols, len(all_ctc_keys)))
+    n_rows = _np.ceil(len(all_ctc_keys) / n_cols).astype(int)
+
+    myfig, myax = _plt.subplots(n_rows, n_cols,
+                                sharey=True,
+                                figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches), squeeze=False)
+
+
+    for iax, (ctc_key, per_sys_distros) in zip(myax.flatten(),distros_by_ctc_by_sys.items()):
+        iax.set_title(_mdcu.str_and_dict.replace4latex(ctc_key),
+                     #pad=_titlepadding_in_points_no_clashes_w_texts(ax)
+                     )
+
+        for sys_key, data in per_sys_distros.items():
+            label = sys_key
+            if not data in [0,None]:
+                h, x = data
+                if ctc_cutoff_Ang is not None:
+                    freq = (h[_np.flatnonzero(x[:-1]<=ctc_cutoff_Ang/10)]).sum()/h.sum()
+                    label += " (%u%%)" % (freq * 100)
+                h = h/h.max()
+                iax.plot(x[:-1] * 10, h, label=label, color=colordict[sys_key])
+                iax.fill_between(x[:-1] * 10, h, alpha=.15,color=colordict[sys_key])
+
+
+        if ctc_cutoff_Ang is not None:
+            iax.axvline(ctc_cutoff_Ang, zorder=10,alpha=.5, color="k",ls=":")
+        iax.set_xlabel("D / $\AA$")
+        iax.legend(ncol=_np.ceil(len(system_keys) / legend_rows).astype(int))
+        iax.set_ylim([0,1.1])
+    myfig.tight_layout()
+
+    _rcParams["font.size"] = _fontsize
+    return myfig, myax
+
 def add_tilted_labels_to_patches(jax, labels,
                                  label_fontsize_factor=1,
                                  trunc_y_labels_at=.65,
@@ -804,7 +928,7 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                                    CG_dict.items()):
         if ihood is not None:
             if distro:
-                ihood.plot_distance_distributions(nbins=20,
+                ihood.plot_distance_distributions(bins=20,
                                                   jax=jax,
                                                   label_fontsize_factor=panelsize2font / panelsize,
                                                   shorten_AAs=short_AA_names,

@@ -80,23 +80,26 @@ def _residue_bond_matrix_to_triu_bonds(residue_bond_matrix):
             bonds.append([ii, jj])
     return bonds
 
-def bonded_neighborlist_from_top(top, n=1,verbose=False):
-    '''
-    Returns the bonded neighbors of all the residues in the topology file.
+
+def bonded_neighborlist_from_top(top, n=1, verbose=False):
+    """
+    Bonded neighbors of all the residues in the topology file.
 
     Parameters
     ----------
-    top : :py:class:`mdtraj.Topology`
-    n : int
-        Number of iterations in the residue. (Default is 1).
+    top : :obj:`~mdtraj.Topology`
+    n : int, default is 1
+        Number of bonded neighbors considered, i.e.
+        A-B-C has only [B] as neighbors if :obj:`n` = 1,
+        but [B,C] if :obj:`n` = 2
 
     Returns
     -------
-    list of list
-        For each residue in the topology file, the corresponding inner list will be the neighbors of
-        the corresponding residue.
-
-    '''
+    neighbor_list : list of lists
+        Lisf of len top.n_residues. The i-th  list
+        contains the :obj:`n` -bonded neighbors of
+        the i-th residue.
+    """
 
     #todo this is very slow and a bit of overkill if one is only interested in the
     #neighbors of one particular residue
@@ -107,11 +110,7 @@ def bonded_neighborlist_from_top(top, n=1,verbose=False):
             new_neighborlist = [ii for ii in ilist]
             for rn in ilist:
                 row = residue_bond_matrix[rn]
-                bonded = _np.argwhere(row == 1).squeeze()
-                # TODO look closer at corner cases
-                # todo is it worth importing force_iterable from list_utils?
-                if _np.ndim(bonded)==0: # Some special case residue like GLH might not produce bonds
-                     bonded=[bonded]
+                bonded = _np.flatnonzero(row)
                 toadd = [nn for nn in bonded if nn not in ilist and nn!=ridx]
                 if len(toadd):
                     #print("neighbor %u adds new neighbor %s:"%(rn, toadd))

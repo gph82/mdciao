@@ -817,6 +817,10 @@ class TestContactPair(unittest.TestCase):
         imap = {348:343,
                 353:348}
         nCP : contacts.ContactPair = CP.retop(top,imap)
+        # Test the residx
+        _np.testing.assert_array_equal(nCP.residues.idxs_pair,[343,348])
+
+        # Test the non-nested attributes
         for attr in [
             "time_traces.trajs",
             "fragments.idxs",
@@ -828,6 +832,8 @@ class TestContactPair(unittest.TestCase):
             assert getattr(getattr(CP,attr1),attr2) is getattr(getattr(nCP,attr1),attr2), attr
             assert getattr(getattr(CP, attr1), attr2)==getattr(getattr(nCP, attr1), attr2)
         assert nCP.residues.anchor_residue_index == 348
+
+        # Thest the nested attributes
         for attr in [
             "time_traces.ctc_trajs",
             "time_traces.time_trajs"
@@ -837,6 +843,10 @@ class TestContactPair(unittest.TestCase):
             assert l1 is not l2
             for traj, ntraj in zip(l1,l2):
                 _np.testing.assert_array_equal(traj,ntraj)
+
+        # Test the pair indices
+        pair_freq = (CP.relative_frequency_of_formed_atom_pairs_overall_trajs(4, aggregate_by_atomtype=False))
+        _np.testing.assert_array_equal(pair_freq, nCP.relative_frequency_of_formed_atom_pairs_overall_trajs(4,aggregate_by_atomtype=False))
 
     def test_retop_deepcopy(self):
         CG = examples.ContactGroupL394()
@@ -1372,11 +1382,20 @@ class TestContactGroup(TestBaseClassContactGroup):
         CG = self.CG_cp1_cp2
         h1, x1 = self.cp1.distro_overall_trajs(bins=10)
         h2, x2 = self.cp2.distro_overall_trajs(bins=10)
-        distros = CG.distributions_of_distances(nbins=10)
+        distros = CG.distributions_of_distances(bins=10)
         _np.testing.assert_array_equal(distros[0][0], h1)
         _np.testing.assert_array_equal(distros[0][1], x1)
         _np.testing.assert_array_equal(distros[1][0], h2)
         _np.testing.assert_array_equal(distros[1][1], x2)
+
+    def test_distirbution_dicts(self):
+        CG = self.CG_cp1_cp2
+        dicts = CG.distribution_dicts(bins=10,split_label=False)
+        _np.testing.assert_array_equal(list(dicts.keys()), ["0-1", "0-2"])
+        for a, b in zip(dicts.values(),CG.distributions_of_distances(bins=10)):
+            _np.testing.assert_array_equal(a[0],b[0])
+            _np.testing.assert_array_equal(a[1],b[1])
+
 
     def test_time_traces_n_ctcs(self):
         CP = contacts.ContactGroup([self.cp1, self.cp2, self.cp3])
