@@ -360,10 +360,15 @@ def plot_unified_freq_dicts(freqs,
            that marks the std for each contact group
          * "keep" keep the contacts in whatever order they have in the
            first dictionary
+         * "numeric" sort the contacts by the first number
+          that appears in the contact labels, e.g. "30" if
+          the label is "GLU30@3.50-GDP". You can use this
+          to order by resSeq if the AA to sort by is the
+          first one of the pair.
     lower_cutoff_val : float, default is 0
         Hide contacts with small values. "values" changes
         meaning depending on :obj:`sort_by`. If :obj:`sort_by` is:
-         * "mean" or "keep", then hide contacts where **all**
+         * "mean" or "keep" or "numeric", then hide contacts where **all**
            systems have frequencies lower than this value.
          * "std", then hide contacts where the standard
            deviation across systems *itself* is lower than this value.
@@ -431,17 +436,20 @@ def plot_unified_freq_dicts(freqs,
 
     dicts_values_to_sort = {"mean":{},
                             "std": {},
-                            "keep":{}}
+                            "keep":{},
+                            "numeric":{}}
     for ii, key in enumerate(all_ctc_keys):
         dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])*len(freqs_by_sys_by_ctc)
         dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
         dicts_values_to_sort["keep"][key] = len(all_ctc_keys)-ii+lower_cutoff_val # trick to keep the same logic
+        dicts_values_to_sort["numeric"][key] = _mdcu.str_and_dict.intblocks_in_str(key)[0]
 
     # Pop the keys for higher freqs and lower values, stor
     drop_below = {"std":  lambda ctc: dicts_values_to_sort["std"][ctc] <= lower_cutoff_val,
                   "mean": lambda ctc: all([idict[ctc] <= lower_cutoff_val for idict in freqs_by_sys_by_ctc.values()]),
                   }
     drop_below["keep"]=drop_below["mean"]
+    drop_below["numeric"]=drop_below["mean"]
     drop_above = lambda ctc : all([idict[ctc]>=identity_cutoff for idict in freqs_by_sys_by_ctc.values()]) \
                               and remove_identities
     keys_popped_above, ctc_keys_popped_below = [], []
@@ -459,10 +467,10 @@ def plot_unified_freq_dicts(freqs,
     sorted_value_by_ctc_by_sys = {key: val for (key, val) in
                                   sorted(dicts_values_to_sort[sort_by].items(),
                                          key=lambda item: item[1],
-                                         reverse=True)
+                                         reverse={True:False,
+                                                  False:True}[sort_by=="numeric"])
                                          if key in all_ctc_keys
                                   }
-
     # Prepare the dict
     if colordict is None:
         colordict = {key:val for key,val in zip(system_keys, _colorstring.split(","))}
