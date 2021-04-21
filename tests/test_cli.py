@@ -366,6 +366,11 @@ class Test_sites(TestCLTBaseClass):
              cli.sites([test_filenames.tip_json],[self.traj, self.traj_reverse], self.geom,
                   output_dir=tmpdir)
 
+    def test_sites_no_distk(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+             cli.sites([test_filenames.tip_json],[self.traj, self.traj_reverse], self.geom,
+                  no_disk=True)
+
     def test_scheme_CA(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
              cli.sites([test_filenames.tip_json], [self.traj, self.traj_reverse],self.geom,
