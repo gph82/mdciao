@@ -47,7 +47,8 @@ setup(
                     "requests",
                     "tqdm",
                     "natsort",
-                    "bezier",
+                    "bezier; python_version!='3.6'",
+                    "bezier<2020.2.3; python_version=='3.6'"
                      ]
                      +test_deps
                      #+doc_deps
