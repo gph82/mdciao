@@ -32,7 +32,9 @@ setup(
     install_requires=[
                     "cython",
                     "numpy>=1.18.1",
-                    "mdtraj<=1.9.4",
+                    "mdtraj",
+                    "astunparse; python_version!='3.8'",
+                    "astunparse<1.6.3; python_version=='3.8'",
                     "pandas",
                     "matplotlib",
                     "msmtools",
