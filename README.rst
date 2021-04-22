@@ -26,20 +26,13 @@ Licenses
 * ``mdciao`` uses a modified version of the method `mdtraj.compute_contacts <https://github.com/mdtraj/mdtraj/blob/70a94ff87a6c4223ca1be78c752ef3ef452d3d44/mdtraj/geometry/contact.py#L42>`_  of `mdtraj <https://mdtraj.org/>`_. This modified version is published along with ``mdciao`` and can be found in `contacts/_md_compute_contacts.py <mdciao/contacts/_md_compute_contacts.py>`_. Please see that file for details on the modifications.
 
 * Modules used by ``mdciao`` have different licenses. You can check any module's license in your Python environment using `pip-licenses <https://github.com/raimon49/pip-licenses>`_:
->>> pip-licenses | grep module_name
+
+  >>> pip-licenses | grep module_name
 
 Status
 ======
 ``mdciao`` is in its initial development, with versions 0.Y.Z. Anything MAY change at any time.
 `The public API SHOULD NOT be considered stable <https://semver.org/#spec-item-4>`_.
-
-.. |ss| raw:: html
-
-   <strike>
-
-.. |se| raw:: html
-
-   </strike>
 
 Documentation
 =============
@@ -63,8 +56,6 @@ This is an informal list of known issues and TODOs:
  * Most of the tests were written against a very rigid API that mimicked the CLI closely. Now the API is more flexible
    and many `tests could be re-written or deleted <https://en.wikipedia.org/wiki/Technical_debt>`_ , like those needing
    mock-input or writing to tempdirs because writing figures or files could not be avoided.
- * Not moving to py39 until the he dependency `bezier <https://github.com/dhermes/bezier>`_ gets Python 3.9 wheels (`see this issue <https://github.com/dhermes/bezier/issues/243#issuecomment-707205685)>`_).
- * pinned mdtraj<=1.9.4 see https://github.com/mdtraj/mdtraj/issues/1613
  * There's some inconsistencies in private vs public attributes of classes. An attribute might've "started" as private and is exceptionally used somewhere else until the number of exceptions is enough for it to make sense to be public, documented and well tested. I'm working on it.
  * neighborlists could be computed much more efficiently
  * There's many other TODOs spread throughout the code
@@ -72,8 +63,8 @@ This is an informal list of known issues and TODOs:
 
 System Requirements
 ===================
-At the moment, ``mdciao`` is CI-tested only for GNU/Linux and |ss| MacOS |se| (waiting on this `mdtraj fix to get released <https://github.com/mdtraj/mdtraj/issues/1594>`_) and Python versions
-3.6, 3.7, and 3.8.
+At the moment, ``mdciao`` is CI-tested only for GNU/Linux and Python versions
+3.6, 3.7, 3.8, 3.9. MacOS CI-tests are failing currently because of a segmentation error (139 and 11) when `calling mdtraj.dsssp <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_.
 
 Authors
 =======
