@@ -47,7 +47,12 @@ jobs:
     #  if: runner.os == 'macOs'
     #  run: |
     #    pytest -vs --cov=./ --cov-report=xml --disable-warnings --ignore-glob="test_scripts.py"
-    # if: runner.os == 'macOs'
+    if: runner.os == 'macOs'
+    - name: Test with pytest and coverage macOs 1 threads
+      run: |
+        echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
+        pytest -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
+    elif: runner.os == 'Linux'
     - name: Test with pytest and coverage Linux 8 threads
       run: |
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
