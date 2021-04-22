@@ -1,5 +1,8 @@
 from setuptools import setup, find_packages
 
+with open("README.rst", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 test_deps = [
     'coverage',
     'pytest',
@@ -15,7 +18,16 @@ doc_deps = [
 
 setup(
     name="mdciao",
-    version="0.0.1",
+    version="0.0.1.rc2",
+    author_email="guilleremo.perez@charite.de",
+    description="mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods",
+    url="https://github.com/gph82/mdciao",
+    project_urls={
+        "docs": "http://proteinformatics.org/mdciao",
+    },
+    python_requires=">=3.6",
+    long_description=long_description,
+    long_description_content_type="text/x-rst",
     packages=find_packages(),
     install_requires=[
                     "cython",
