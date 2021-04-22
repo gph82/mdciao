@@ -14,31 +14,25 @@ Installation via package manager
 
    </strike>
 
-.. warning::
- Please use the `Installation from source`_.
 
- The first stable release of ``mdciao`` is near, but some development (and bugfixes!) are still needed before uploading `mdciao` to `conda` or `pip`. Until then, please use the `Installation from source`_.
-
-|ss| We recommend you install ``mdciao`` either via the `pip <https://pypi.org/project/pip/>`_ Python package installer or the `conda <https://conda.io/en/latest/>`_ Python package manager::
+We recommend you install ``mdciao`` via the `pip <https://pypi.org/project/pip/>`_ Python package installer::
 
  pip install mdciao
 
-or::
-
- conda install mdciao
-|se|
+Installation via the `conda <https://conda.io/en/latest/>`_ Python package manager is not ready yet.
 
 .. note::
  As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. More info on how to do this in the note about the `Python interpreter and environment`_.
+
+.. warning::
+ The pip releases are actually still beta releases for easy installation. But development (and bugfixing) is still ongoing. For the latest ``mdciao`` version, please use the `Installation from source`_.
+
 
 Installation from source
 ------------------------
 
 .. note::
  If you are not familiar with Python environments, please read this `Python interpreter and environment`_ note before continuing.
-
-.. warning::
- Only Python 3.6, 3.7, and 3.8 are supported at the moment. The dependency `bezier <https://github.com/dhermes/bezier>`_ does not have Python 3.9 wheels (`see this issue <https://github.com/dhermes/bezier/issues/243#issuecomment-707205685)>`_). See the notes on `Python interpreter and environment`_ to create a 3.6, 3.7, or 3.8 Python environment.
 
 * Clone or download `mdciao's github repository <https://github.com/gph82/mdciao>`_ to your preferred ``programs`` or ``software`` folder. If you are using a terminal and have   `git <https://git-scm.com/downloads>`_ installed, simply: ::
 
@@ -60,12 +54,9 @@ Installation from source
 
 This should install ``mdciao`` along with all its dependencies. Optionally using `develop` instead of `install` means that the ``mdciao`` in your Python path points directly to the sources directory, s.t. changes in the source take effect immediately without re-installing
 
-.. note::
- Please see the note on :ref:`hk` if you are planning to run ``mdciao`` on our group cluster.
-
 .. _warning:
 .. warning::
- On some occasions the above command doesn't install `numpy`, `cython` or `mdtraj` properly. Should that happen to you, we recommend issuing::
+ On some occasions the above commands don't install `numpy`, `cython` or `mdtraj` properly. Should that happen to you, we recommend issuing::
 
   pip install cython
   pip install numpy
@@ -81,7 +72,7 @@ This should install ``mdciao`` along with all its dependencies. Optionally using
 
 Operating systems and Python versions
 -------------------------------------
-``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and |ss| MacOS |se| (waiting on this `mdtraj fix to get released <https://github.com/mdtraj/mdtraj/issues/1594>`_) OSs. Compatible Python versions are currently 3.6, 3.7, and 3.8. So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
+``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux (MacOs is failing, see `this <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_. Compatible Python versions are currently 3.6, 3.7, 3.8, 3.9. So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
 
 
 Windows
@@ -129,4 +120,4 @@ Hildiknecht
   module load anaconda
   eval "$(conda shell.bash hook)" # if its the first time
 
- Then you should be able to follow the above instructions no problem!
+ Then you should be able to install mdciao no problem!
