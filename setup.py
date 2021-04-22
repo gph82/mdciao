@@ -18,7 +18,7 @@ doc_deps = [
 
 setup(
     name="mdciao",
-    version="0.0.1.rc2",
+    version="0.0.1.rc4",
     author_email="guillermo.perez@charite.de",
     description="mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods",
     url="https://github.com/gph82/mdciao",
