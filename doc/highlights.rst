@@ -106,7 +106,7 @@ Highlights
       VAL36          32           0         36       None    G.HN.53
 
 
-  |nbspc|
+ |nbspc|
 .. _pdb_HL:
 
 * easy grabbing structures from the RSC PDB::
@@ -141,7 +141,7 @@ Highlights
 
 .. _`mdc_interface.py example`:
 
-* use fragment definitions --like the ones above, `0` for the :math:`G\alpha`-unit and `3` for the receptor-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
+* use fragment definitions --like the ones above, ``0`` for the :math:`G\alpha`-unit and ``3`` for the receptor-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
 
    >>> mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --BW adrb2_human --CGN 3SN6 -t "3SN6 beta2AR-Galpha interface" -ni
    ...
@@ -193,13 +193,26 @@ Highlights
 
       [``interface.flare@3.5_Ang.pdf``](click to enlarge) FlarePlot of the frequencies shown in the figures :numref:`interface_matrix` and :numref:`interface_bars`. Residues are shown as dots on a circumference, split into fragments following any available labelling (BW or CGN) information. The contact frequencies are represented as lines connecting these dots/residues, with the line-opacity proportional to the frequencie's value. The secondary stucture of each residue is also included as color-coded letters: H(elix), B(eta), C(oil). We can clearly see the :math:`G\alpha_5`-subunit in contact with the receptor's TM3, ICL2, and TM5-ICL3-TM6 regions. Note that this plot is always produced as .pdf to be able to zoom into it as much as needed.
 
-* Similar to how the flareplot (:numref:`fig_flare`) is mapping contact-frequencies (:numref:`interface_bars`, upper panel) onto the molecular topology, the next figure maps the **lower** panel :numref:`interface_bars` on the molecular geometry. It simply puts the values shown there in the `temperature factor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_  of a pdb file, representing the calculated interface as a *heatmap*
+* Similar to how the flareplot (:numref:`fig_flare`) is mapping contact-frequencies (:numref:`interface_bars`, upper panel) onto the molecular topology, the next figure maps the **lower** panel :numref:`interface_bars` on the molecular geometry. It simply puts the values shown there in the `temperature factor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_  of a pdb file, representing the calculated interface as a *heatmap*, which can be visualized in VMD using the `Beta coloring <https://www.ks.uiuc.edu/Research/vmd/vmd-1.7.1/ug/node74.html>`_.
 
  .. figure:: imgs/interface_BRG.png
       :scale: 70%
       :align: left
 
-      (click to enlarge) 3D visualization of the interface as heatmap (blue-green-red) using `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_. We clearly see the regions noted in :numref:`fig_flare` (TM5-ICL3-TM6 and :math:`G\alpha_5`-subunit) in particular the **residues** of :numref:`interface_bars` (lower panel) light up. Please note that for the homepage-banner (red-blue heatmap), the ``signed_colors`` argument has been used when calling the :obj:`mdciao.flare.freqs2flare` method of the API. At the moment this is not possible just by using ``mdc_interface.py``, sorry!
+      [``interface.overall@3.5_Ang.as_bfactors.pdb``](click to enlarge) 3D visualization of the interface as heatmap (blue-green-red) using `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_. We clearly see the regions noted in :numref:`fig_flare` (TM5-ICL3-TM6 and :math:`G\alpha_5`-subunit) in particular the **residues** of :numref:`interface_bars` (lower panel) light up. Please note that for the homepage-banner (red-blue heatmap), the ``signed_colors`` argument has been used when calling the :obj:`mdciao.flare.freqs2flare` method of the API. At the moment this is not possible just by using ``mdc_interface.py``, sorry!
+
+ You can use this snippet to generate a VMD `visualiazation state` file, ``view_mdciao_interface.vmd`` to view the heatmap::
+
+   echo 'mol new ./interface.overall@3.5_Ang.as_bfactors.pdb
+         mol modstyle 0 0 NewCartoon
+         mol modcolor 0 0 Beta
+         color scale method BGR ' > view_mdciao_interface.vmd
+   vmd -e view_mdciao_interface.vmd
+
+
+  ``view_mdciao_interface.vmd`` will work with any ``*.as_bfactors.pdb`` file that ``mdciao`` generates. For our example, you can also paste this viewpoint into your VMD console and generate a view equivalent to the above picture (results may vary with other files)::
+
+   molinfo top set {center_matrix rotate_matrix scale_matrix global_matrix} {{{1 0 0 -66.7954} {0 1 0 -66.6322} {0 0 1 -45.2629} {0 0 0 1}} {{-0.688392 0.720507 0.0835694 0} {-0.0925729 0.0269995 -0.995339 0} {-0.719405 -0.692919 0.0481138 0} {0 0 0 1}} {{0.0348044 0 0 0} {0 0.0348044 0 0} {0 0 0.0348044 0} {0 0 0 1}} {{1 0 0 0.15} {0 1 0 0.12} {0 0 1 0} {0 0 0 1}}}
 
 
 * A different approach is to look **only** for a particular set of pre-defined contacts. Simply writing this set into a human readable `JSON <https://www.json.org/>`_ file will allow `mdc_sites.py` to compute and present these (and only these) contacts, as in the example file `tip.json`::

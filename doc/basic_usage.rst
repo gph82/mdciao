@@ -7,8 +7,15 @@ Basic Usage
 
 Below you will find a very simple example of how to use ``mdciao`` from the command-line. Keep scrolling to the `Highlights`_ for more elaborate CLI-examples. API walkthroughts as example Jupyter notebooks will follow soon.
 
-.. note::
-   **3D visualization**: the simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples. You can also download `mdciao_example.zip <http://proteinformatics.org/mdciao/mdciao_example.zip>`_ and follow along.
+.. admonition:: Data and 3D visualization
+
+    The simulation data for generating these examples was kindly provided by Dr. H. Batebi. It can be 3D-visualized interactively `here <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ while checking out the examples. You can also download `mdciao_example.zip <http://proteinformatics.org/mdciao/mdciao_example.zip>`_ and follow along.
+
+.. admonition:: Copying Terminal Commands
+
+   All code snippets can be copied and pasted directly into your terminal using the `copy icon <https://sphinx-copybutton.readthedocs.io>`_ in the upper right of the snippet's frame:
+
+   >>> Click the button at end of the frame to copy this text ;)
 
 This basic command::
 
