@@ -66,3 +66,4 @@ and calculates the  time-traces of residue-residue distances, and from there, **
    overview
    cli_cli/cli_cli
    api/api
+   Tutorial.ipynb

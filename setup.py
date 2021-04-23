@@ -13,7 +13,9 @@ test_deps = [
 doc_deps = [
     "sphinx",
     "sphinx-argparse",
-    "sphinx-rtd-theme"
+    "sphinx-rtd-theme",
+    "npsphinx",
+    "sphinx-copybutton"
 ]
 
 setup(

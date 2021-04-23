@@ -33,7 +33,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinxarg.ext",
     "sphinx.ext.intersphinx",
-    'sphinx_copybutton'
+    'sphinx_copybutton',
+    'nbsphinx',
 #    "numpydoc",
 ]
 
