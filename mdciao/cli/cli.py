@@ -1515,7 +1515,7 @@ Defaults to None which will prompt the user of
     return ctc_grp_intf
 
 
-def sites(site_files,
+def sites(site_inputs,
           trajectories,
           topology=None,
           ctc_cutoff_Ang=3.5,
@@ -1557,7 +1557,7 @@ def sites(site_files,
 
     Parameters
     ----------
-    site_files : list, default is None
+    site_inputs : list, default is None
         List of sites to compute. Sites can be either
         paths to site file(s) in json formats or
         directly a site dictionary. A site dictionary
@@ -1733,7 +1733,7 @@ def sites(site_files,
         save_nomenclature_files = False
 
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
-        "\n ".join([_mdcsites.site2str(ss) for ss in site_files]),
+        "\n ".join([_mdcsites.site2str(ss) for ss in site_inputs]),
         _mdcu.str_and_dict.inform_about_trajectories(xtcs),
           stride))
 
@@ -1747,7 +1747,7 @@ def sites(site_files,
                                                           fragments_as_residue_idxs,
                                                           accept_guess=accept_guess,
                                                           save_nomenclature_files=save_nomenclature_files)
-    sites = [_mdcsites.x2site(ff) for ff in site_files]
+    sites = [_mdcsites.x2site(ff) for ff in site_inputs]
     ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
                                                                     fragments=fragments_as_residue_idxs,
                                                                     default_fragment_idx=default_fragment_index,
@@ -1958,7 +1958,7 @@ def pdb(code,
 
     Returns
     -------
-    traj : :obj:`~mdtraj.Trajectory` or None):
+    traj : :obj:`~mdtraj.Trajectory` or None
     """
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
