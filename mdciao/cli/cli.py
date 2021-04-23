@@ -1973,7 +1973,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, BW_uniprot=None, CG
          "CGN": CGN_PDB},
         top,
         fragments,
-        verbose=False,
+        verbose=True,
         save_nomenclature_files=save_nomenclature_files,
         accept_guess=accept_guess)[1]
     consensus_maps={"BW":consensus_maps[0],
@@ -2067,7 +2067,8 @@ def residue_selection(expression,
 
     """
     refgeom = _load_any_geom(top)
-
+    if fragments is None:
+        fragments = [_signature(_mdcfrg.get_fragments).parameters["method"].default]
     _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
                                                                    refgeom.top, verbose=True)
     res_idxs_list, consensus_maps = _res_resolver(expression, refgeom.top, _frags,
@@ -2078,3 +2079,34 @@ def residue_selection(expression,
                                                   just_inform=True)
 
     return res_idxs_list, _frags, consensus_maps
+
+
+def fragment_overview(topology,
+             methods=['all'],
+             AAs=None,
+             ):
+
+    """
+    Prints the fragments obtained by :obj:`get_fragments` for the available methods.
+
+    Optionally, you can pass along a list of residue
+    descriptors to be printed after the fragments have
+    been shown.
+
+    Parameters
+    ----------
+    topology :  :obj:`mdtraj.Topology`
+    methods : str or list of strings
+        method(s) to be used for obtaining fragments
+    AAs : list, default is None
+        Anything that :obj:`find_AA` can understand
+
+    Returns
+    -------
+    fragments_out : dict
+        The result of the fragmentation schemes keyed
+        by their method name
+
+    """
+
+    _mdcfrg.overview(topology,methods=methods, AAs=AAs)
