@@ -18,7 +18,7 @@ doc_deps = [
 
 setup(
     name="mdciao",
-    version="0.0.1.rc4",
+    version="0.0.1.beta0",
     author_email="guillermo.perez@charite.de",
     description="mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods",
     url="https://github.com/gph82/mdciao",
@@ -28,6 +28,15 @@ setup(
     python_requires=">=3.6",
     long_description=long_description,
     long_description_content_type="text/x-rst",
+    classifiers = {"Development Status :: 4 - Beta",
+                   "Programming Language :: Python :: 3",
+                   "Operating System :: OS Independent",
+                   "Intended Audience :: Science/Research",
+                   "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+                   "Topic :: Scientific/Engineering :: Chemistry",
+                   "Topic :: Scientific/Engineering :: Bio-Informatics",
+                   "Topic :: Scientific/Engineering :: Visualization",
+                   },
     packages=find_packages(),
     install_requires=[
                     "cython",
