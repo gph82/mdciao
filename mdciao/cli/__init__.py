@@ -12,5 +12,6 @@ Programatic access to the CLI methods
    compare
    residue_selection
    pdb
+   fragment_overview
 """
 from .cli import *
