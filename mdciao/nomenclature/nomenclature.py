@@ -1379,7 +1379,7 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
 
     """
     labels  = [idict[idx] for idict in consensus_maps]
-    good_label = [ilab for ilab in labels if str(ilab).lower()!="none"]
+    good_label = _np.unique([ilab for ilab in labels if str(ilab).lower()!="none"]).tolist()
     assert len(good_label)<=1, "There can only be one good label, but for residue %u found %s"%(idx, good_label)
     try:
         return good_label[0]
