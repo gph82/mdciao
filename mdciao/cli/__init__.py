@@ -11,5 +11,6 @@ Programatic access to the CLI methods
    sites
    compare
    residue_selection
+   pdb
 """
 from .cli import *
