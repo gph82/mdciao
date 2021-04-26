@@ -3204,6 +3204,7 @@ class ContactGroup(object):
                                     jax=None,
                                     shorten_AAs=False,
                                     ctc_cutoff_Ang=None,
+                                    legend_sort=True,
                                     label_fontsize_factor=1,
                                     max_handles_per_row=4,
                                     defrag=None):
@@ -3231,6 +3232,10 @@ class ContactGroup(object):
             distribution is below this cutoff. A vertical line
             will be draw at this x-value
             nearest bonded neighbors were excluded
+        legend_sort : boolean, default is True
+            Sort the legend in descending order of
+            frequency. Has only an effect when
+            :obj:`ctc_cutoff_Ang` is not None
         label_fontsize_factor
         max_handles_per_row: int, default is 4
             legend control
@@ -3262,7 +3267,7 @@ class ContactGroup(object):
 
         # Cosmetics
 
-        title_str = "distribution for %s"%_mdcu.str_and_dict.latex_superscript_fragments(title)
+        title_str = "Distance distribution(s) for %s"%_mdcu.str_and_dict.latex_superscript_fragments(title)
         if ctc_cutoff_Ang is not None:
             title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)
             jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
@@ -3289,6 +3294,13 @@ class ContactGroup(object):
                    ncol=_np.ceil(self.n_ctcs / max_handles_per_row).astype(int),
                    loc=1,
                    )
+        if ctc_cutoff_Ang is not None and legend_sort:
+            handles, labels = jax.get_legend_handles_labels()
+            jax.legend([handles[ii] for ii in _np.argsort(freqs)[::-1]], [labels[ii] for ii in _np.argsort(freqs)[::-1]],
+                       fontsize=_rcParams["font.size"] * label_fontsize_factor / self.n_ctcs ** .25,
+                       ncol=_np.ceil(self.n_ctcs / max_handles_per_row).astype(int),
+                       loc=1
+                       )
         jax.figure.tight_layout()
 
         return jax
