@@ -31,6 +31,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
+    "sphinx.ext.autosectionlabel",
     "sphinxarg.ext",
     "sphinx.ext.intersphinx",
     'sphinx_copybutton',

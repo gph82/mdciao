@@ -2,8 +2,6 @@
 .. |nbspc| unicode:: U+00A0 .. non-breaking space
 
 
-.. _Highlights:
-
 Highlights
 ----------
 

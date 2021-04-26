@@ -1,6 +1,0 @@
-fragments
-=========
-
-.. automodule:: mdciao.fragments
-
-

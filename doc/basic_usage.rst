@@ -5,7 +5,7 @@ Basic Usage
 
 .. _`3D visualization`:
 
-Below you will find a very simple example of how to use ``mdciao`` from the command-line. Keep scrolling to the `Highlights`_ for more elaborate CLI-examples. API walkthroughts as example Jupyter notebooks will follow soon.
+Below you will find a very simple example of how to use ``mdciao`` from the command-line. Keep scrolling to the :ref:`Highlights` for more elaborate CLI-examples or jump to the :ref:`Jupyter Notebook <Jupyter Notebook Tutorial>` for a minimal API walkthrough. More notebooks fill follow soon.
 
 .. admonition:: Data and 3D visualization
 

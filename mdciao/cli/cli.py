@@ -326,7 +326,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
     ----------
     ctc_grp : :obj:`mdciao.contacts.ContactGroup`
     fn : :obj:`mdciao.utils.str_and_dict.FilenameGenerator`
-    myfig :obj:`matplotlib.Figure`
+    myfig :obj:`matplotlib.figure.Figure`
     plot_timedep : bool, default is True
     separate_N_ctcs : bool, defaul tis True
     t_unit : str or None, default is None
@@ -1787,7 +1787,7 @@ def sites(site_inputs,
                                                                 at_pair_trajs]
                                                #colors=[fragcolors[idx] for idx in idxs]
                                                ))
-        site_as_gc[key] = _mdcctcs.ContactGroup(site_as_gc[key], name='site %s'%key)
+        site_as_gc[key] = _mdcctcs.ContactGroup(site_as_gc[key], name="site '%s'"%key)
     overall_fig = _mdcplots.CG_panels(4, site_as_gc, ctc_cutoff_Ang,
                                distro=distro,
                                short_AA_names=short_AA_names,
@@ -1844,7 +1844,7 @@ def sites(site_inputs,
 
     return site_as_gc
 
-def compare(file_dict, graphic_ext=".pdf", output_desc="freq_comparison", pop=False, **kwargs):
+def compare(datasets, graphic_ext=".pdf", output_desc="freq_comparison", pop=False, **kwargs):
     r"""
 
     Compare contact frequencies across different sets of data
@@ -1852,13 +1852,16 @@ def compare(file_dict, graphic_ext=".pdf", output_desc="freq_comparison", pop=Fa
 
     Parameters
     ----------
-    file_dict : iterable (list or dict)
-        The contact groups.
+    datasets : iterable (list or dict)
+        The datasets to compare with each other.
         If dict, then the keys will be used as names
         for the contact groups, e.g. "WT", "MUT" etc.
         If list, then  the keys will be auto-generated.
-        The values can be:
-          * :obj:`~mdciao.contacts.ContactGroup` objects
+        The entries of the list/dictionary can be:
+          * :obj:`~mdciao.contacts.ContactGroup` objects.
+            For these, a :obj:`ctc_cutoff_Ang` value
+            needs to be passed along, otherwise frequencies
+            cannot be computed on-the-fly.
           * dictionaries where the keys are residue-pairs,
             one letter-codes, no fragment info,
             as in :obj:`mdciao.contacts.ContactGroup.ctc_labels_short`
@@ -1871,27 +1874,30 @@ def compare(file_dict, graphic_ext=".pdf", output_desc="freq_comparison", pop=Fa
             * .xlsx files with the header in the second row,
               containing at least the column-names "label" and "freqs", see
               :obj:`~mdciao.contacts.ContactGroup.frequency_spreadsheet`
-
-
-        Note
-        ----
-        If a :obj:`ContactGroup` is passed, then a :obj:`ctc_cutoff_Ang`
-        needs to be passed along, otherwise frequencies cannot be computed
-        on-the-fly : dict
     graphic_ext : str, default is ".pdf"
         The extension for figures
     output_desc : str, default is 'freq_comparison'
         Descriptor for output files.
     pop : bool, default is True
+        Use :obj:`~matplotlib.pyplot.show` to
+        force the figure to be drawn.
     kwargs : dict
         Optional arguments for
         :obj:`~mdciao.plots.compare_groups_of_contacts`
 
     Returns
     -------
-
+    myfig : :obj:`~matplotlib.figure.Figure`
+        Figure with the comparison plot
+    freqs : dictionary
+        Unified frequency dictionaries,
+        including mutations and anchor
+    plotted_freqs : dictionary
+        Like :obj:`freqs` but sorted and purged
+        according to the user-defined input options,
+        s.t. it represents the plotted values
     """
-    myfig, freqs, plotted_freqs = _mdcplots.compare_groups_of_contacts(file_dict, **kwargs)
+    myfig, freqs, plotted_freqs = _mdcplots.compare_groups_of_contacts(datasets, **kwargs)
     myfig.tight_layout()
 
     output_desc=output_desc.strip(".").replace(" ","_")

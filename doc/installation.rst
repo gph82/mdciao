@@ -72,19 +72,7 @@ This should install ``mdciao`` along with all its dependencies. Optionally using
 
 Operating systems and Python versions
 -------------------------------------
-``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux (MacOs is failing, see `this <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_. Compatible Python versions are currently 3.6, 3.7, 3.8, 3.9. So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
-
-
-Windows
--------
-
-CI tests are failing currently because an build issue I cannot resolve.
-In principle, one should could try to install and run ``mdciao`` on Windows (as long as you have a working Python installation) and are able to run::
-
- python setup.py develop
-
-The needed dependencies should install automatically (see above the note about environments) and even if that fails for some reason, you should be able to use *some* package manager to install them manually.
-
+``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux (MacOs is failing, see `this <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_). Compatible Python versions are currently 3.6, 3.7, 3.8, and 3.9. So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
 
 
 Python interpreter and environment

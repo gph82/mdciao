@@ -182,12 +182,15 @@ def compare_groups_of_contacts(groups,
 
     Returns
     -------
-    myfig : :obj:`matplotlib.pyplot.Figure` object with the comparison plot
-
-    freqs : dictionary of unified frequency dictionaries, including mutations and anchor
-
-    plotted_freqs : the unified freq dictionary sorted and purged like the one in the plot
-
+    myfig : :obj:`~matplotlib.pyplot.Figure`
+        Figure with the comparison plot
+    freqs : dictionary
+        Unified frequency dictionaries,
+        including mutations and anchor
+    plotted_freqs : dictionary
+        Like :obj:`freqs` but sorted and purged
+        according to the user-defined input options,
+        s.t. it represents the plotted values
     """
     if isinstance(groups, dict):
         pass
@@ -906,7 +909,7 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
 
     Returns
     -------
-    fig : :obj:`~matplotlib.Figure`
+    fig : :obj:`~matplotlib.figure.Figure`
 
     """
     if draw_empty:

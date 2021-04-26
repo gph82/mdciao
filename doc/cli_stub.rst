@@ -1,4 +1,4 @@
-Command line tools
+Command Line Tools
 ------------------
 
 The best way to find out about all of ``mdciao``'s command-line tools is to use a command-line tool shipped with ``mdciao``::
@@ -30,7 +30,7 @@ The best way to find out about all of ``mdciao``'s command-line tools is to use 
 What these tools do is:
 
 * mdc_neighborhoods
-   Analyse residue neighborhoods using a distance cutoff. Example in :numref:`highlights_1`.
+   Analyse residue neighborhoods using a distance cutoff. Example in :numref:`highights_1`.
 * mdc_interface
    Analyse interfaces between any two groups of residues using a distance cutoff. Example :ref:`here <mdc_interface.py example>` with :numref:`interface_matrix`, :numref:`interface_bars`, and :numref:`fig_flare`, among others.
 * mdc_sites
@@ -48,4 +48,4 @@ What these tools do is:
 * mdc_residues
     Find residues in an input topology using Unix filename pattern matching. Example :ref:`here <residues_HL>`.
 
-You can see their documentation by using the ``-h`` flag whe invoking them from the command line, keep reading the `Highlights`_ or the :ref:`CLI-Reference`.
+You can see their documentation by using the ``-h`` flag when invoking them from the command line, keep reading the ref:`Highlights` or the :ref:`CLI Reference`.

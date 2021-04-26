@@ -1,4 +1,0 @@
-contacts
-========
-
-.. automodule:: mdciao.contacts

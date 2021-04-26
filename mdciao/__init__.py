@@ -1,5 +1,5 @@
 r"""
-Welcome to mdciao! Below you will find the submodules exposed the API
+Welcome to mdciao! Below you will find the submodules exposed by the API
 
 .. autosummary::
    :toctree: generated/
