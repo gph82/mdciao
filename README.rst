@@ -75,8 +75,8 @@ Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2020 (in preparat
 
 
 .. |Python Package| image::
-   https://github.com/gph82/mdciao/workflows/Python%20package/badge.svg
-   :target: https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22
+   https://github.com/gph82/mdciao/actions/workflows/python-package.yml/badge.svg
+   :target: https://github.com/gph82/mdciao/actions/workflows/python-package.yml
 
 .. |Coverage| image::
    https://codecov.io/gh/gph82/mdciao/branch/master/graph/badge.svg?
