@@ -36,7 +36,7 @@ Status
 
 Documentation
 =============
-Currently, docs are hosted at `<https://proteinformatics.org/mdciao/>`_, but this can change in the future.
+Currently, docs are hosted at `<http://proteinformatics.org/mdciao/>`_, but this can change in the future.
 
 TODOs
 =====
@@ -59,6 +59,7 @@ This is an informal list of known issues and TODOs:
  * There's some inconsistencies in private vs public attributes of classes. An attribute might've "started" as private and is exceptionally used somewhere else until the number of exceptions is enough for it to make sense to be public, documented and well tested. I'm working on it.
  * neighborlists could be computed much more efficiently
  * There's many other TODOs spread throughout the code
+ * Use `violing plots <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.violinplot.html>`_ instead of bars to inform about spread
 
 
 System Requirements
@@ -71,7 +72,7 @@ Authors
 ``mdciao`` is written and maintained by Guillermo Pérez-Hernández (`ORCID <http://orcid.org/0000-0002-9287-8704>`_) currently at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_ in the
 `Charité Universitäsmedizin Berlin <https://www.charite.de/>`_.
 
-Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2020 (in preparation)"
+Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2021 (in preparation)"
 
 
 .. |Python Package| image::
