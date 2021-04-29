@@ -1125,3 +1125,59 @@ def _plot_freqbars_baseplot(freqs,
     jax.set_xticks([])
     [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
     return jax
+
+def _plot_violin_baseplot(per_CP_timetraces,
+                          jax=None,
+                          violin_width_in_inches=.75,
+                          color="tab:blue",
+                          labels=None,
+                          offset=0
+                          ):
+    r"""
+    Base method for plotting the residue-residue distances as :obj:~`matplotlib.pyplot.violinplot`
+
+    Parameters
+    ----------
+    per_CP_timetraces : list
+        Each entry represents a contact-pair and
+        is itself a list of time-traces (one time-trace
+        per trajectory)
+    jax : :obj:`~matplotlib.axes.Axes`, default is None
+        If None is passed, one will be created
+    violin_width_in_inches : float, default is .75
+        The width of the axis will vary with the number of plotted
+        frequencies. This assigns this number of inches to each
+        contact in the x-axis. This allows for plotting different
+        :obj:`ContactGroup` objects each with different number of
+        contacts and still appear uniform
+    offset : float, default is 0
+        The offset for horizontal positions of the violins
+
+    Returns
+    -------
+    jax : :obj:`~matplotlib.axes.Axes`
+    """
+
+    xvec = _np.arange(len(per_CP_timetraces))+offset
+    if jax is None:
+        _plt.figure(figsize=(_np.max((7, violin_width_in_inches * len(per_CP_timetraces))), 5))
+        jax = _plt.gca()
+    else:
+        _plt.sca(jax)
+    per_CP_timetraces = [_np.hstack(dt) for dt in per_CP_timetraces]
+    means = [_np.mean(dt) for dt in per_CP_timetraces]
+    violins = _plt.violinplot(per_CP_timetraces,
+                              positions=xvec,
+                              showmeans=True,
+                              #showmedians=True,
+                              #widths=violin_width_in_inches,
+                              widths=.25,
+                              showextrema=False)
+    #_plt.plot(xvec, means, " o", color=color)
+    if labels is None:
+        jax.set_xticks([])
+    else:
+        _plt.xticks(xvec, labels, rotation=45, ha="right", va="top")
+    for col in violins["bodies"]:
+        col.set_color(color)
+    return jax, violins
