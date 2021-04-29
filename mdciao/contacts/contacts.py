@@ -3012,6 +3012,168 @@ class ContactGroup(object):
 
         return ax
 
+    def plot_violins(self,
+                     ctc_cutoff_Ang=None,
+                     title_label=None,
+                     switch_off_Ang=None,
+                     xlim=None,
+                     ax=None,
+                     color="tab:blue",
+                     shorten_AAs=False,
+                     label_fontsize_factor=1,
+                     truncate_at=None,
+                     total_freq=None,
+                     display_sort=False,
+                     sum_freqs=True,
+                     defrag=None,
+                     ):
+        r"""
+        Plot a residue residue distances as violin plots obj:~`matplotlib.pyplot.violinplot`
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        title_label : str, default is None
+            If None, the method will default to self.name
+            If self.name is also None, the method will fail
+        xlim : float, default is None
+        ax : :obj:`~matplotlib.axes.Axes`
+        shorten_AAs : bool, default is None
+        label_fontsize_factor : float
+        truncate_at_mean : float, default is None
+            Don't show violins with mean values
+            higher than this (in Angstrom). This
+            remains effectless for contacts in
+            which the mean is above the cutoff
+            BUT the frequency is != 0. This case
+            is very common, since a contact can be
+            formed at small distances but broken
+            at very large ones, s.t. the mean
+            (or median) values are meaningless.
+        display_sort : boolean, default is False
+            The contacts are by default plotted in the order
+            in which the :obj:`ContactPair`-objects are stored
+            in the :obj:`ContactGroup`.
+            This order depends on the ctc_cutoff_Ang originally
+            used to instantiate this :obj:`ContactGroup`, which
+            might be meaniningless here. Hence, a re-sorting is
+            offered here. This can happen in two ways:
+             * ctc_cutoff_Ang is None:
+               sort by ascending distance-mean-value
+             * ctc_cutoff_Ang has a value (e.g. 3.5):
+               sort by descending frequency value first
+               and ascending mean value second. This sounds
+               complicated but it's actually very natural: if a cutoff
+               is given, it means that you want frequent contacts
+               displayed first (=sorted by freq high to low).
+               infrequent ones (e.g. two contacts both
+               with freq 0) sorted with shorted distances first.
+        Returns
+        -------
+        ax : :obj:`~matplotlib.axes.Axes`
+
+        """
+
+        # Base plot
+        title = "violin plots"
+        sigma = None
+        if title_label is None and not self.is_neighborhood:
+            assert self.name is not None, ("Cannot use a 'nameless' ContactGroup and 'title_label'=None.\n"
+                                           "Either instantiate self.name or pass a 'title_label' ")
+            title_label = self.name
+
+        data4violin = [_np.hstack(cp.time_traces.ctc_trajs) * 10 for cp in self._contacts]
+        means = _np.array([_np.mean(dt) for dt in data4violin])
+
+        freqs = None
+        # TODO consolidate all the ifs  ctc_cufoff_Ang
+        if ctc_cutoff_Ang is not None:
+            freqs = self.frequency_per_contact(ctc_cutoff_Ang,
+                                               switch_off_Ang=switch_off_Ang,
+                                               )
+
+        if display_sort:
+            if ctc_cutoff_Ang is None:
+                order = _np.argsort(means)
+            else:
+                order = _np.lexsort((-means,freqs))[::-1]
+        else:
+            order = _np.arange(len(data4violin))
+
+        if truncate_at is not None:
+            if freqs is None:
+                order = [oo for oo in order if means[oo]<=truncate_at]
+            else:
+                order = [oo for oo in order if freqs[oo]>0]
+
+        label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
+        if shorten_AAs:
+            label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
+
+        cp: ContactPair
+
+        ax, violins = _mdcplots.plots._plot_violin_baseplot([data4violin[oo] for oo in order],
+                                                            jax=ax,
+                                                            color=color,
+                                                            )
+        
+        if ctc_cutoff_Ang is not None:
+            # Cosmetics
+            sigma = _np.sum(freqs)
+            title += "\ncontact frequency @%2.1f AA" % ctc_cutoff_Ang
+            ax.axhline(ctc_cutoff_Ang,ls="--",color="gray")
+
+
+        #TODO avoid code repetition
+        if self.is_neighborhood:
+            title += "\n%s nearest bonded neighbors excluded\n" % (str(self.neighbors_excluded).replace("None", "no"))
+            label_dotref = self.anchor_res_and_fragment_str
+            label_bars = self.partner_res_and_fragment_labels
+            if shorten_AAs:
+                label_dotref = self.anchor_res_and_fragment_str_short
+                label_bars = self.partner_res_and_fragment_labels_short
+            if sum_freqs and sigma is not None:
+                label_dotref = "\n".join([_mdcu.str_and_dict.latex_superscript_fragments(label_dotref),
+                                          _mdcu.str_and_dict.replace4latex(
+                                              'Sigma = %2.1f' % sigma)])  # sum over all bc we did not truncate
+            ax.plot(_np.nan, _np.nan, 'o',
+                    color=self.anchor_fragment_color,
+                    label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
+        else:
+            if sum_freqs and sigma is not None:
+                title += " of '%s' (Sigma = %2.1f)\n" % (title_label, sigma)
+                if total_freq is not None:
+                    title += "these %u most frequent contacts capture %4.2f %% of all contacts\n" % (self.n_ctcs,
+                                                                                                     sigma / total_freq * 100,
+                                                                                                     )
+
+        if defrag is not None:
+            label_bars = [_mdcu.str_and_dict.defrag_key(ilab, defrag=defrag) for ilab in label_bars]
+
+        ax.set_title(_mdcu.str_and_dict.replace4latex(title),
+                     #y=_np.max([1, _mdcplots.highest_y_textobjects_in_Axes_units(ax)])
+                     )
+        if ctc_cutoff_Ang is not None:
+            label_bars = ["%s\n(%u%%$\\leq%2.1f\\AA$)"%(ll, ff*100, ctc_cutoff_Ang) if ff>0 else "%s"%ll for ll,ff in zip(label_bars,freqs)]
+
+
+        _plt.xticks(_np.arange(len(order)), [label_bars[oo] for oo in order],
+                    rotation=45,ha="right", va="top")
+        # ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
+
+        if xlim is not None:
+            ax.set_xlim([-.5, xlim + 1 - .5])
+
+        #_plt.ylim(0)
+        _plt.ylabel("D / $\\AA$")
+
+        if self.is_neighborhood:
+            ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor,loc="best")
+
+        ax.figure.tight_layout()
+
+        return ax
+
     def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
                                 switch_off_Ang=None,
                                 color=["tab:blue"],
