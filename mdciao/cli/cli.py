@@ -872,8 +872,8 @@ def residue_neighborhoods(residues,
         print("using the pre_computed_contact_matrix...", end="",flush=True)
         ctc_idxs=_np.array(ctc_idxs)
     else:
-        print("in the first frame of reference geom\n'%s':..." % topology,
-              #end="",
+        print("in the first frame of reference geom\n'%s':..." % refgeom,
+              end="",
               flush=True)
         ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs), periodic=pbc)
     print("done!")
