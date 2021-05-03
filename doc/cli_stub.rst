@@ -30,7 +30,7 @@ The best way to find out about all of ``mdciao``'s command-line tools is to use 
 What these tools do is:
 
 * mdc_neighborhoods
-   Analyse residue neighborhoods using a distance cutoff. Example in :numref:`highights_1`.
+   Analyse residue neighborhoods using a distance cutoff. Example in :numref:`highlights_1`.
 * mdc_interface
    Analyse interfaces between any two groups of residues using a distance cutoff. Example :ref:`here <mdc_interface.py example>` with :numref:`interface_matrix`, :numref:`interface_bars`, and :numref:`fig_flare`, among others.
 * mdc_sites
