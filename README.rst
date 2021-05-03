@@ -41,7 +41,7 @@ Currently, docs are hosted at `<http://proteinformatics.org/mdciao/>`_, but this
 TODOs
 =====
 This is an informal list of known issues and TODOs:
- * overhaul the "printing" system with proper warnings (perhaps use `loguru <https://github.com/Delgan/loguru>`_
+ * overhaul the "printing" system with proper logging and warnings (perhaps use `loguru <https://github.com/Delgan/loguru>`_)
  * progressbar not very informative for one chunked trajectory or parallel runs
  * the "consensus" fragmentation sometimes breaks automatic flareplot labelling #should no longer be the case after https://github.com/gph82/mdciao/pull/21 (check)
  * Building the docs with sphinx v>2.4.4 doesn't autogen a class' method's linked doc
