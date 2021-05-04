@@ -2019,8 +2019,8 @@ def residue_selection(expression,
         Unix-like expressions and ranges are allowed, e.g.
         'GLU,PH*,380-394,3.50,GH.5*.', as are consensus
         descriptors if consensus labels are provided
-    top : str or :obj:`~mdtraj.Trajectory`
-        The topology to use
+    top : str, :obj:`~mdtraj.Trajectory`, or :obj:`~mdtraj.Topology`
+        The topology to use.
      BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
@@ -2072,12 +2072,16 @@ def residue_selection(expression,
         was provided
 
     """
-    refgeom = _load_any_geom(top)
+    if isinstance(top,_md.Topology):
+        _top = top
+    else:
+        _top = _load_any_geom(top).top
+
     if fragments is None:
         fragments = [_signature(_mdcfrg.get_fragments).parameters["method"].default]
     _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
-                                                                   refgeom.top, verbose=True)
-    res_idxs_list, consensus_maps = _res_resolver(expression, refgeom.top, _frags,
+                                                                   _top, verbose=True)
+    res_idxs_list, consensus_maps = _res_resolver(expression, _top, _frags,
                                                   midstring="Your selection '%s' yields:" % expression,
                                                   BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
                                                   save_nomenclature_files=save_nomenclature_files,
