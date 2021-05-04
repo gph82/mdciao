@@ -153,7 +153,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 print("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), ifreq, top.residue(idx1), top.residue(idx2), frg1, frg2, idx1, idx2, oo, isum))
             if n_ctcs>0:
-                _contact_fraction_informer(_np.min([ii, len(order_mask)]), ctc_freqs[order_mask], or_frac=_fraction)
+                _contact_fraction_informer(_np.min([ii+1, len(order_mask)]), ctc_freqs[order_mask], or_frac=_fraction)
             else:
                 print("No contacts here!")
             if interactive:
@@ -4676,8 +4676,8 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
     if total_freq==0:
         print("No contacts formed at this frequency")
     else:
-        print("These %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u contacts)" %
-              (n_kept, captured_freq, captured_freq / total_freq * 100, total_freq, len(ctc_freqs)))
+        print("These %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u input contacts)" %
+              (n_kept, captured_freq, _np.round(captured_freq / total_freq * 100), total_freq, len(ctc_freqs)))
         if or_frac is not None:
             idx = _idx_at_fraction(ctc_freqs, or_frac)
             print("As orientation value, the first %u ctcs already capture %3.1f%% of %3.2f." % (idx+1, or_frac * 100, total_freq))
