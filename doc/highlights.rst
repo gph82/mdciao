@@ -208,7 +208,7 @@ Highlights
    vmd -e view_mdciao_interface.vmd
 
 
-  ``view_mdciao_interface.vmd`` will work with any ``*.as_bfactors.pdb`` file that ``mdciao`` generates. For our example, you can also paste this viewpoint into your VMD console and generate a view equivalent to the above picture (results may vary with other files)::
+ ``view_mdciao_interface.vmd`` will work with any ``*.as_bfactors.pdb`` file that ``mdciao`` generates. For our example, you can also paste this viewpoint into your VMD console and generate a view equivalent to the above picture (results may vary with other files)::
 
    molinfo top set {center_matrix rotate_matrix scale_matrix global_matrix} {{{1 0 0 -66.7954} {0 1 0 -66.6322} {0 0 1 -45.2629} {0 0 0 1}} {{-0.688392 0.720507 0.0835694 0} {-0.0925729 0.0269995 -0.995339 0} {-0.719405 -0.692919 0.0481138 0} {0 0 0 1}} {{0.0348044 0 0 0} {0 0.0348044 0 0} {0 0 0.0348044 0} {0 0 0 1}} {{1 0 0 0.15} {0 1 0 0.12} {0 0 1 0} {0 0 0 1}}}
 
