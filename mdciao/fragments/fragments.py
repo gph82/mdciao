@@ -693,8 +693,8 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
             method += " with only one fragment provided (all other residues are fragment 2)"
             fragments_as_residue_idxs.append(_np.delete(_np.arange(top.n_residues), fragments_as_residue_idxs[0]))
 
+    _mdcu.lists.assert_no_intersection(fragments_as_residue_idxs, word="fragments")
     for ii, ifrag in enumerate(fragments_as_residue_idxs):
-        _mdcu.lists.assert_no_intersection(fragments_as_residue_idxs, word="fragments")
         if not all([aa in range(top.n_residues) for aa in ifrag]):
             print("Fragment %u's definition had idxs outside of "
                   "the geometry (total n_residues %u) that have been deleted %s " % (
