@@ -401,12 +401,20 @@ def assert_no_intersection(list_of_lists_of_integers, word='iterables'):
     Prints assertion message if inner lists have the same integer, else no output
 
     """
-    # Nested loops feasible here because the number of fragments will never become too large
-    for ii, l1 in enumerate(list_of_lists_of_integers):
-        for jj, l2 in enumerate(list_of_lists_of_integers):
-            if (ii != jj):
-                assert len(l1) != 0 or len(l2) != 0, (l1,l2, "Both lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html")
-                assert len(_np.intersect1d(l1, l2)) == 0, 'input %s %u and %u have these elements ' \
+    # Looping here because the number of fragments will never become too large
+    # Also of interest
+    # len(f1),len(f2)
+    # (196, 709)
+    # %timeit np.intersect1d(f1,f2);
+    # 24.4 µs ± 1.47 µs per loop (mean ± std. dev. of 7 runs, 10000 loops each)
+
+    # %timeit set(f1).intersection(f2);
+    # 84.9 µs ± 1.95 µs per loop (mean ± std. dev. of 7 runs, 10000 loops each)
+
+    for ii, jj in _np.vstack(_np.triu_indices(len(list_of_lists_of_integers), k=1)).T:
+        l1, l2 = list_of_lists_of_integers[ii], list_of_lists_of_integers[jj]
+        assert len(l1) != 0 or len(l2) != 0, (l1,l2, "Both lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html")
+        assert len(_np.intersect1d(l1, l2)) == 0, 'input %s %u and %u have these elements ' \
                                                           'in common: %s:\n%s\nvs\n%s'%(word, ii, jj, set(l1).intersection(l2), l1, l2)
 
 def put_this_idx_first_in_pair(idx, pair):
