@@ -1930,6 +1930,6 @@ def compatible_consensus_fragments(top,
                                        verbose=False))
 
     # This should hold anyway bc of top2frags calling conlab2residx
-    _mdcu.lists.assert_no_intersection(new_frags.values())
+    _mdcu.lists.assert_no_intersection(list(new_frags.values()))
 
     return new_frags
