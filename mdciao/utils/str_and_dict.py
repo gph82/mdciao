@@ -21,6 +21,7 @@ from pandas import read_excel as _read_excel
 from os import path as _path, listdir as _ls
 import re as _re
 from collections import defaultdict as _defdict
+from natsort.natsort import humansorted as _hsorted
 
 tunit2tunit = {"ps":  {"ps": 1, "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
@@ -52,7 +53,7 @@ def get_sorted_trajectories(trajectories):
 
     """
     if isinstance(trajectories,str):
-        _trajectories = _glob(trajectories)
+        _trajectories = _hsorted(_glob(trajectories))
         if len(_trajectories)==0:
             raise FileNotFoundError("Couldn't find (or pattern-match) anything to '%s'.\n"
                                     "ls $CWD[%s]:\n%s:"%(trajectories,
