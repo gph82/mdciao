@@ -61,8 +61,9 @@ def top2seq(top, replacement_letter="X"):
     return ''.join([str(rr.code).replace("None",replacement_letter) for rr in top.residues])
 
 def my_bioalign(seq1, seq2,
-                method="globalxs",
-                argstuple=(-1,0)):
+                method="globalms",
+                argstuple=(1,0,-1,0),
+                kwargs = {"penalize_end_gaps":False}):
     r"""
     Align two sequences using a method of :obj:`Bioalign`
 
@@ -100,18 +101,18 @@ def my_bioalign(seq1, seq2,
 
 
     """
-    allowed_method="globalxs"
-    allowed_tuple = (-1,0)
+    allowed_method="globalms"
+    allowed_tuple = (1, 0, -1,0)
     if method!=allowed_method:
         raise (NotImplementedError("At the moment only %s is "
                                    "allowed as alignment method"%method))
-    if argstuple[0]!=-1 or argstuple[1]!=0:
+    if not argstuple is allowed_tuple:
         raise NotImplementedError("At the moment only %s is "
                                    "allowed as argument tuple, got"
                                    "instead %s"%(str(allowed_tuple),
                                                     str(argstuple)))
 
-    return getattr(_Bioalign, method)(seq1, seq2, *argstuple)
+    return getattr(_Bioalign, method)(seq1, seq2, *argstuple,**kwargs)
 
 def alignment_result_to_list_of_dicts(ialg,
                                       seq_0_res_idxs,
