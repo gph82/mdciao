@@ -627,6 +627,8 @@ def plot_unified_freq_dicts(freqs,
             ax.set_title(_mdcu.str_and_dict.replace4latex(title),
                          pad=_titlepadding_in_points_no_clashes_w_texts(ax)
                          )
+        for ii in _np.arange(len(sorted_value_by_ctc_by_sys))[::2]:
+            ax.axvspan(ii-.5, ii+.5, color="lightgray",alpha=.25,zorder=-10)
 
     # Create a by-state dictionary explaining the plot
     out_dict = {key:{ss: val[ss] for ss in sorted_value_by_ctc_by_sys.keys()} for key, val in freqs_by_sys_by_ctc.items()}
@@ -1038,7 +1040,6 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
     return iax, pixelsize
 
 _colorstring = 'tab:blue,tab:orange,tab:green,tab:red,tab:purple,tab:brown,tab:pink,tab:gray,tab:olive,tab:cyan'
-
 
 def _color_by_values(all_ctc_keys, freqs_by_sys_by_ctc, colordict,
                      lower_cutoff_val=0,
