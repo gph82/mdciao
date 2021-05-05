@@ -815,8 +815,8 @@ def residue_neighborhoods(residues,
 
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
-    print("Will compute contact frequencies for :\n%s"
-          "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
+    print("Will compute contact frequencies for (%u items):\n%s"
+          "\n with a stride of %u frames" % (len(xtcs),_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
 
     fragments_as_residue_idxs, __ = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
