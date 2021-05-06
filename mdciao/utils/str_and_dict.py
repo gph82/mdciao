@@ -72,7 +72,7 @@ def get_sorted_trajectories(trajectories):
 
     return xtcs
 
-def inform_about_trajectories(trajectories):
+def inform_about_trajectories(trajectories, only_show_first_and_last=False):
     r"""
     Return a string that informs about the trajectories
 
@@ -80,13 +80,21 @@ def inform_about_trajectories(trajectories):
     ----------
     trajectories: list of strings or :obj:`mdtraj.Trajectory` objects
 
+
     Returns
     -------
-    nothing, just prints them as newline
+    listed_str : a string with the trajectory names separated by newlines
 
     """
+    ntraj = len(trajectories)
+    if isinstance(only_show_first_and_last,int) and only_show_first_and_last*2<ntraj:
+        n = only_show_first_and_last
+        _trajectories =trajectories[:n]+["...[long list: omitted %u items]..."%(ntraj-2*n)]+trajectories[-n:]
+
+    else:
+        _trajectories = trajectories
     assert isinstance(trajectories, list), "input has to be a list"
-    return "\n".join([str(itraj) for itraj in trajectories])
+    return "\n".join([str(itraj) for itraj in _trajectories])
 
 def replace_w_dict(input_str, exp_rep_dict):
     r"""
