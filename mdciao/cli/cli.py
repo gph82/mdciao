@@ -816,7 +816,7 @@ def residue_neighborhoods(residues,
     # More input control
     ylim_Ang=_np.float(ylim_Ang)
     print("Will compute contact frequencies for (%u items):\n%s"
-          "\n with a stride of %u frames" % (len(xtcs),_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
+          "\n with a stride of %u frames" % (len(xtcs),_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
     fragments_as_residue_idxs, __ = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
@@ -1281,7 +1281,7 @@ Defaults to None which will prompt the user of
         save_nomenclature_files = False
 
     print("Will compute contact frequencies for trajectories:\n%s"
-          "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs), stride))
+          "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
@@ -1734,8 +1734,7 @@ def sites(site_inputs,
 
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
         "\n ".join([_mdcsites.site2str(ss) for ss in site_inputs]),
-        _mdcu.str_and_dict.inform_about_trajectories(xtcs),
-          stride))
+        _mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15),stride))
 
     # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elsewhere
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
