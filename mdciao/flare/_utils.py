@@ -334,7 +334,7 @@ def col_list_from_input_and_fragments(colors,
         col_list = colors
 
     elif isinstance(colors, dict):
-        assert len(colors) == len(residxs_as_fragments)
+        assert len(colors) == len(residxs_as_fragments), (len(colors), len(residxs_as_fragments))
         col_list = _np.hstack([[val] * len(iseg) for val, iseg in zip(colors.values(), residxs_as_fragments)])
     else:
         raise Exception
