@@ -24,7 +24,8 @@ import numpy as _np
 
 from matplotlib import \
     rcParams as _rcParams, \
-    pyplot as _plt
+    pyplot as _plt, \
+    cm as _cm
 
 from mpl_toolkits.axes_grid1 import \
     make_axes_locatable as _make_axes_locatable
@@ -131,9 +132,15 @@ def compare_groups_of_contacts(groups,
         needs to be passed along, otherwise frequencies cannot be computed
         on-the-fly
 
-    colors : iterable (list or dict), default is None
-        Using the same keys as :obj:`dictionary_of_groups`,
-        a color for each group. Defaults to some sane matplotlib choices
+    colors : iterable (list or dict), or str, default is None
+        If list, the colors will be assigned in the same
+        order of :obj:`groups`. If dict, has to have the
+        same keys as :obj:`groups`. If str, it has to
+        be a case-sensitve colormap-name of matplotlib
+        (https://matplotlib.org/stable/tutorials/colors/colormaps.html)
+        If None, the 'tab10' colormap (tableau) is chosen
+        TODO: I could set the default to "tab10", but then it'd
+        be hard coded in a lot places
     anchor : str, default is None
         This string will be deleted from the contact labels,
         leaving only the partner-residue to identify the contact.
@@ -207,6 +214,12 @@ def compare_groups_of_contacts(groups,
         groups = _groups
 
     freqs = {key: {} for key in groups.keys()}
+    if isinstance(colors,str):
+        try:
+            colors = getattr(_cm,colors)(_np.arange(len(groups)))[:,:-1].tolist()
+        except AttributeError as e:
+            print("Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html")
+            raise e
     if isinstance(colors, list):
         assert len(colors) >= len(freqs)
         colors = {key:val for key, val in zip(freqs.keys(), colors)}
@@ -239,7 +252,7 @@ def compare_groups_of_contacts(groups,
 
     if distro:
         freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, distro=True)
-        myfig = plot_unified_distro_dicts(freqs, colordict=colors,
+        myfig, __ = plot_unified_distro_dicts(freqs, colordict=colors,
                                           ctc_cutoff_Ang=ctc_cutoff_Ang,
                                           fontsize=fontsize,
                                           **kwargs_plot_unified_freq_dicts)
