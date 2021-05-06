@@ -21,7 +21,7 @@ from pandas import read_excel as _read_excel
 from os import path as _path, listdir as _ls
 import re as _re
 from collections import defaultdict as _defdict
-from natsort.natsort import humansorted as _hsorted
+from natsort import natsorted as _natsorted
 
 tunit2tunit = {"ps":  {"ps": 1, "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
@@ -53,7 +53,7 @@ def get_sorted_trajectories(trajectories):
 
     """
     if isinstance(trajectories,str):
-        _trajectories = _hsorted(_glob(trajectories))
+        _trajectories = _glob(trajectories)
         if len(_trajectories)==0:
             raise FileNotFoundError("Couldn't find (or pattern-match) anything to '%s'.\n"
                                     "ls $CWD[%s]:\n%s:"%(trajectories,
@@ -63,7 +63,7 @@ def get_sorted_trajectories(trajectories):
             trajectories=_trajectories
 
     if isinstance(trajectories[0],str):
-        xtcs = sorted(trajectories)
+        xtcs = _natsorted(trajectories)
     elif isinstance(trajectories, _md.Trajectory):
         xtcs = [trajectories]
     else:
@@ -449,7 +449,7 @@ def _find_latex_chunks(istr, blockers=['$$','\$']):
     ranges = [_np.arange(ii,jj+1) for ii,jj in _np.reshape(matches,(-1,2))]
     return ranges
 
-def replace4latex(istr):
+def replace4latex(istr, use_dollars=True):
     r"""
     Prepares the input for latex rendering (in matplotlib, e.g.)
 
@@ -477,7 +477,7 @@ def replace4latex(istr):
     for c in ["_", "^"]:
         for word in istr.split():
             if c in word:
-                istr = _latexify(word, istr)
+                istr = _latexify(word, istr, use_dollars=use_dollars)
 
     return istr
 
@@ -516,14 +516,17 @@ def _replace_regex_special_chars(word,
         word = word.replace(sp, repl_char)
     return word
 
-def _latexify(word, istr):
+def _latexify(word, istr, use_dollars=True):
     # Look for appearances of this word in the whole string
     _word = _replace_regex_special_chars(word).replace("\\","\\\\")
     spans = [m.span() for m in _re.finditer(_replace_regex_special_chars(_word), _replace_regex_special_chars(istr))]
     for ii in range(len(spans)):
         span = spans[ii]
         latex_ranges = _find_latex_chunks(istr)
-        add_dollar_signs = lambda istr : "$"+istr+"$"
+        if use_dollars:
+            add_dollar_signs = lambda istr : "$"+istr+"$"
+        else:
+            add_dollar_signs = lambda istr: istr
         if any([set(lr).issuperset(span) for lr in latex_ranges]):
             add_dollar_signs = lambda istr:  istr
             # This substring is already within a latex chunk, can't do anything
@@ -637,7 +640,7 @@ def _latex_superscript_one_fragment(label, defrag="@"):
     if len(words)==1:
         return label
     elif len(words)==2:
-       return words[0] +"$^{%s}$" % latex_mathmode(words[1], enclose=False)
+       return words[0] +"$^{%s}$" % latex_mathmode(replace4latex(words[1], use_dollars=False), enclose=False)
 
 def _label2componentsdict(istr,sep="-",defrag="@",
                           assume_ctc_label=True):
