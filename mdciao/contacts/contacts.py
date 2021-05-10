@@ -3208,6 +3208,10 @@ class ContactGroup(object):
         if ctc_cutoff_Ang is not None:
             label_bars = ["%s\n(%u%%$\\leq%2.1f\\AA$)"%(ll, ff*100, ctc_cutoff_Ang) if ff>0 else "%s"%ll for ll,ff in zip(label_bars,freqs)]
 
+        if self.is_neighborhood:
+            label_bars = [_mdcu.str_and_dict._latex_superscript_one_fragment(ilab) for ilab in label_bars]
+        else:
+            label_bars = [_mdcu.str_and_dict.latex_superscript_fragments(ilab) for ilab in label_bars]
 
         _plt.xticks(_np.arange(len(order)), [label_bars[oo] for oo in order],
                     rotation=45,ha="right", va="top")
