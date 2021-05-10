@@ -8,7 +8,7 @@ from mdciao.contacts import ContactGroup, ContactPair
 from mdciao.examples import ContactGroupL394
 
 from mdciao import plots
-from mdciao.plots.plots import _plot_freqbars_baseplot
+from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict
 
 from tempfile import TemporaryDirectory as _TDir
 import os
@@ -365,3 +365,36 @@ class Test_freqs_baseplot(unittest.TestCase):
         _plt.close("all")
 if __name__ == '__main__':
     unittest.main()
+
+
+class Test_offset_dict(unittest.TestCase):
+
+    def test_one(self):
+        # Only one bar, padding is .2, hence position is 0 and width is 1-.2 = .8
+        res, width = _offset_dict(["A"])
+        self.assertDictEqual(res,{"A":0})
+        self.assertEqual(width,.8)
+
+    def test_two(self):
+
+        res, width = _offset_dict(["left","right"])
+
+        # Twice as many bars, with same padding, i.e. width = .8/2 = .4
+        self.assertEqual(width,.4)
+
+        # If width is .4 and there's two of them, they have to be centered around -.2 and +.2
+        self.assertDictEqual(res,{"left":  -.2,
+                                  "right":  .2})
+
+    def test_three(self):
+        res, width = _offset_dict(["left", "middle", "right"], width=.2)
+
+
+        # Three with fixed width .2 means -.2, 0, +.2
+        self.assertDictEqual(res, {"left": -.2,
+                                   "middle":0,
+                                   "right": +.2})
+
+        self.assertEqual(width,.2)
+
+

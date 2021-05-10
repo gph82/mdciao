@@ -514,16 +514,7 @@ def plot_unified_freq_dicts(freqs,
                                lower_cutoff_val=lower_cutoff_val, assign_w_color=assign_w_color)
 
     # Prepare the positions of the bars
-    wpad=.2
-    maxwidth = (1-wpad)/len(system_keys)
-    if width is None:
-        width=maxwidth
-    else:
-        width=_np.min([width,maxwidth])
-    imax = (len(system_keys)-1)*width/2
-    ls = _np.linspace(-imax, imax, len(system_keys))
-    delta={key:val for key, val in zip(system_keys, ls)}
-
+    delta, width = _offset_dict(system_keys, width=width)
     if ax is None:
         if figsize is None:
             y_figsize=panelheight_inches
