@@ -26,7 +26,7 @@ format is used:
 
 >>> cat site.json
 {"name":"interesting contacts",
-"bonds": {"AAresSeq": [
+"pairs": {"AAresSeq": [
         "L394-K270",
         "D381-Q229",
         "Q384-Q229",
@@ -38,7 +38,7 @@ format is used:
 Sites can also be used inside the Python script/session
 by using dictionaries, e.g.::
    my_site = {"name":"interesting contacts",
-              "bonds":{"AAresSeq":[
+              "pairs":{"AAresSeq":[
                         "L394-K270",
                         "D381-Q229",
                         "Q384-Q229",
@@ -47,10 +47,10 @@ by using dictionaries, e.g.::
                         "Q384-I135"
                         ]}}
 
-You can specify the "bonds" as "AAresSeq" (like above)
+You can specify the "pairs" as "AAresSeq" (like above)
 or as zero-indexed residue serial indices using "residx"::
    my_site = {"name":"interesting contacts",
-              "bonds":{"residx":[
+              "pairs":{"residx":[
                         "353-972",
                         "340-956",
                         "343-956",
@@ -62,7 +62,7 @@ or as zero-indexed residue serial indices using "residx"::
 In this last case, you can also directly use pairs of integers,
 instead of strings::
   my_site = {"name":"interesting contacts",
-             "bonds":{"residx":[
+             "pairs":{"residx":[
                       [353,972],
                       [340,956],
                       [343,956],

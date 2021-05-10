@@ -14,17 +14,17 @@ class Test_x2site(unittest.TestCase):
     def test_runs(self):
         site = mdciao.sites.x2site(test_filenames.GDP_json)
         _np.testing.assert_equal(site["name"],"GDP")
-        _np.testing.assert_equal(site["n_bonds"],5)
-        _np.testing.assert_equal(len(site["bonds"]["AAresSeq"]),5)
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][0], ['GDP396', 'ARG201'])
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][1], ['GDP396', 'THR204'])
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][2], ['GDP396', 'VAL202'])
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][3], ['THR204', 'SER54'])
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][4], ['MG397', 'THR204'])
+        _np.testing.assert_equal(site["n_pairs"],5)
+        _np.testing.assert_equal(len(site["pairs"]["AAresSeq"]),5)
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][0], ['GDP396', 'ARG201'])
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][1], ['GDP396', 'THR204'])
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][2], ['GDP396', 'VAL202'])
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][3], ['THR204', 'SER54'])
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][4], ['MG397', 'THR204'])
 
     def test_runs_w_residx(self):
         site = mdciao.sites.x2site({"name": "interesting contacts",
-                                    "bonds": {"residx": [
+                                    "pairs": {"residx": [
                                         "353-972",
                                         "340-956",
                                         "343-956",
@@ -32,7 +32,7 @@ class Test_x2site(unittest.TestCase):
                                         "340-959",
                                         "343-865"
                                     ]}})
-        self.assertDictEqual(site, {"bonds": {"residx": [
+        self.assertDictEqual(site, {"pairs": {"residx": [
             [353,972],
             [340,956],
             [343,956],
@@ -40,11 +40,11 @@ class Test_x2site(unittest.TestCase):
             [340,959],
             [343,865]
         ]}, "name": "interesting contacts",
-        "n_bonds":6}
+        "n_pairs":6}
                              )
 
     def test_runs_w_residx_no_str(self):
-        site = mdciao.sites.x2site({"bonds":
+        site = mdciao.sites.x2site({"pairs":
             {"residx": [
                 [353, 972],
                 [340, 956],
@@ -53,10 +53,10 @@ class Test_x2site(unittest.TestCase):
                 [340, 959],
                 [343, 865]]},
             "name": "interesting contacts",
-            "n_bonds": 6})
+            "n_pairs": 6})
         #it's the same dict repeated, nothing should change
 
-        self.assertDictEqual(site,{"bonds":
+        self.assertDictEqual(site,{"pairs":
             {"residx": [
                 [353, 972],
                 [340, 956],
@@ -65,7 +65,7 @@ class Test_x2site(unittest.TestCase):
                 [340, 959],
                 [343, 865]]},
             "name": "interesting contacts",
-            "n_bonds": 6})
+            "n_pairs": 6})
 
     def test_raises(self):
         with pytest.raises(KeyError):
@@ -78,19 +78,19 @@ class Test_x2site(unittest.TestCase):
                     [340, 959],
                     [343, 865]]},
                 "name": "interesting contacts",
-                "n_bonds": 6})
+                "n_pairs": 6})
 
 
     def test_runs_w_dict(self):
         site = mdciao.sites.x2site(test_filenames.GDP_json)
         _np.testing.assert_equal(site["name"], "GDP")
-        _np.testing.assert_equal(site["n_bonds"], 5)
-        _np.testing.assert_equal(len(site["bonds"]["AAresSeq"]), 5)
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][0], ['GDP396', 'ARG201'])
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][1], ['GDP396', 'THR204'])
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][2], ['GDP396', 'VAL202'])
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][3], ['THR204', 'SER54'])
-        _np.testing.assert_array_equal(site["bonds"]["AAresSeq"][4], ['MG397', 'THR204'])
+        _np.testing.assert_equal(site["n_pairs"], 5)
+        _np.testing.assert_equal(len(site["pairs"]["AAresSeq"]), 5)
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][0], ['GDP396', 'ARG201'])
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][1], ['GDP396', 'THR204'])
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][2], ['GDP396', 'VAL202'])
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][3], ['THR204', 'SER54'])
+        _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][4], ['MG397', 'THR204'])
         site = mdciao.sites.x2site(site)
 
     def test_raises_wo_name(self):
@@ -106,15 +106,15 @@ class Test_x2site(unittest.TestCase):
     def test_runs_with_dat(self):
         site = mdciao.sites.x2site(test_filenames.tip_dat)
         site_test = mdciao.sites.x2site(test_filenames.tip_json)
-        self.assertDictEqual(site["bonds"], site_test["bonds"])
+        self.assertDictEqual(site["pairs"], site_test["pairs"])
         self.assertEqual(site["name"],"tip.json as plain ascii")
-        self.assertEqual(site["n_bonds"],site_test["n_bonds"])
+        self.assertEqual(site["n_pairs"],site_test["n_pairs"])
 
 class Test_dat2site(unittest.TestCase):
 
     def test_works_AAresSeq(self):
         site = siteIO.dat2site(test_filenames.tip_dat)
-        self.assertDictEqual(site, {"bonds": {"AAresSeq": [
+        self.assertDictEqual(site, {"pairs": {"AAresSeq": [
             "L394-K270",
             "D381-Q229",
             "Q384-Q229",
@@ -126,7 +126,7 @@ class Test_dat2site(unittest.TestCase):
     def test_works_residx(self):
         site = siteIO.dat2site(test_filenames.tip_residx_dat,fmt="residx")
         print(site)
-        self.assertDictEqual(site, {"bonds": {"residx": [
+        self.assertDictEqual(site, {"pairs": {"residx": [
             "353-972",
             "340-956",
             "343-956",
@@ -162,7 +162,7 @@ class Test_sites_to_ctc_idxs(unittest.TestCase):
     def test_the_idxs_work_no_frags(self):
         site = mdciao.sites.x2site(self.GDP_json)
         ctc_idxs, __ = mdciao.sites.sites_to_res_pairs([site], self.geom.top)
-        for (ii,jj), (resi,resj) in zip(ctc_idxs,site["bonds"]["AAresSeq"]):
+        for (ii,jj), (resi,resj) in zip(ctc_idxs,site["pairs"]["AAresSeq"]):
             _np.testing.assert_equal(str(self.geom.top.residue(ii)),resi)
             _np.testing.assert_equal(str(self.geom.top.residue(jj)),resj)
 
@@ -170,7 +170,7 @@ class Test_sites_to_ctc_idxs(unittest.TestCase):
         site = mdciao.sites.x2site(self.GDP_json)
         ctc_idxs, __ = mdciao.sites.sites_to_res_pairs([site], self.geom.top,
                                                        fragments=self.fragments)
-        for (ii,jj), (resi,resj) in zip(ctc_idxs,site["bonds"]["AAresSeq"]):
+        for (ii,jj), (resi,resj) in zip(ctc_idxs,site["pairs"]["AAresSeq"]):
             _np.testing.assert_equal(str(self.geom.top.residue(ii)),resi)
             _np.testing.assert_equal(str(self.geom.top.residue(jj)),resj)
 

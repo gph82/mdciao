@@ -50,10 +50,10 @@ def x2site(site, fmt="AAresSeq"):
     -------
     site : dict
         Keys are:
-         * bonds
-         * nbonds
+         * pairs
+         * n_pairs
          * name
-        site["bonds"] is itself a dictionary
+        site["pairs"] is itself a dictionary
         valued with a list of pairs,
         e.g ["L394","K270"] or [[10,20],[300-4]]],
         depending on the type of bond specified
@@ -69,17 +69,17 @@ def x2site(site, fmt="AAresSeq"):
             idict = dat2site(site,fmt=fmt)
 
     try:
-        bondtype = list(idict["bonds"].keys())
+        bondtype = list(idict["pairs"].keys())
         assert len(bondtype)==1 and bondtype[0] in ["AAresSeq","residx"]
         bondtype = bondtype[0]
-        bonds = idict["bonds"][bondtype]
-        idict["n_bonds"] = len(bonds)
-        if isinstance(bonds[0][0],str):  # can only be str spearated by "-"
-            idict["bonds"][bondtype] = [item.split("-") for item in bonds if item[0] != '#' and "-" in item]
+        pairs = idict["pairs"][bondtype]
+        idict["n_pairs"] = len(pairs)
+        if isinstance(pairs[0][0],str):  # can only be str spearated by "-"
+            idict["pairs"][bondtype] = [item.split("-") for item in pairs if item[0] != '#' and "-" in item]
             if bondtype=="residx":
-                idict["bonds"][bondtype] = [[int(pp) for pp in pair] for pair in  idict["bonds"][bondtype]]
+                idict["pairs"][bondtype] = [[int(pp) for pp in pair] for pair in  idict["pairs"][bondtype]]
         else:
-            assert all([len(bond)==2 for bond in bonds]),bonds
+            assert all([len(bond)==2 for bond in pairs]),pairs
     except KeyError:
         print("Malformed file for the site %s:\n%s" % (site,idict))
         raise
@@ -118,12 +118,12 @@ def sites_to_res_pairs(site_dicts, top,
     Returns
     -------
     res_idxs_pairs : 2D np.ndarray
-        Unique pairs contained in the :obj:`site_dicts`,
+        Unique residue pairs contained in the :obj:`site_dicts`,
         expressed as residue indices of :obj:`top`
         [0,1] is considered != [0,1]
     site_maps : list
         For each site, a list with the indices of :obj:`res_idxs_pairs`
-        that match the site's bonds.
+        that match the site's pairs.
     """
     if fragments is None:
         fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
@@ -135,7 +135,7 @@ def sites_to_res_pairs(site_dicts, top,
     site_maps = []
     for ii, site in enumerate(site_dicts):
         imap=[]
-        for bond_type, bonds in site["bonds"].items():
+        for bond_type, bonds in site["pairs"].items():
             for bond in bonds:
                 pair = tuple(get_pair_lambda[bond_type](bond))
                 if pair not in res_idxs_pairs:
@@ -197,11 +197,11 @@ def dat2site(dat,comment="#",
         name = lines[0].split("#")[1].strip(" ")
         offset +=1
     assert fmt in ["AAresSeq", "residx"], NotImplementedError("Only [AAresSeq, residx] are implemented for 'fmt' at the moment, can't do '%s'"%(fmt))
-    site={"bonds":{fmt:[]}}
+    site={"pairs":{fmt:[]}}
     for ii, line in enumerate(lines[offset:]):
         if line.strip(" ")[0] not in comment:
             assert line.count("-")==1, ValueError("The contact descriptor has to contain one (and just one) '-', got %s instead (%u-th line)"%(line, ii+1))
-            site["bonds"][fmt].append(line)
+            site["pairs"][fmt].append(line)
             if fmt=="AAresSeq" and not any([chr.isalpha() for chr in line.replace("-","")]):
                 raise ValueError("This can't be a %s line %s, are you sure you don't mean fmt=%s"%(fmt,line,"residx"))
             elif fmt=="residx" and not all([chr.isdigit() for chr in line.replace("-","")]):
