@@ -1562,7 +1562,7 @@ def sites(site_inputs,
         paths to site file(s) in json formats or
         directly a site dictionary. A site dictionary
         is something like {"name":"site",
-                           "bonds":{"AAresSeq":["GLU30-ARG40",
+                           "pairs":{"AAresSeq":["GLU30-ARG40",
                                                 "LYS31-W70"]}}
         See :obj:`mdciao.sites` for more info
     trajectories :
