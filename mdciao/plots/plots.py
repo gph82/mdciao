@@ -683,8 +683,7 @@ def plot_unified_freq_dicts(freqs,
             ax.set_title(_mdcu.str_and_dict.replace4latex(title),
                          pad=_titlepadding_in_points_no_clashes_w_texts(ax)
                          )
-        for ii in _np.arange(len(sorted_value_by_ctc_by_sys))[::2]:
-            ax.axvspan(ii-.5, ii+.5, color="lightgray",alpha=.25,zorder=-10)
+        _add_grey_banded_bg(ax, len(sorted_value_by_ctc_by_sys))
 
     # Create a by-state dictionary explaining the plot
     out_dict = {key:{ss: val[ss] for ss in sorted_value_by_ctc_by_sys.keys()} for key, val in freqs_by_sys_by_ctc.items()}
@@ -692,6 +691,76 @@ def plot_unified_freq_dicts(freqs,
 
     _rcParams["font.size"] = _fontsize
     return myfig, _plt.gca(),  out_dict
+
+def _add_grey_banded_bg(ax, n):
+    r"""
+    Add a backdrop of gray bands that alternate with the white background
+
+    Helps visually assign vertical bar-plots to contact-groups when comparing, e..g
+    in violin plots
+
+    Parameters
+    ----------
+    ax : obj:`~matplotlib.axes.Axes``
+    n : int
+        Double the number of grey bands,
+        i.e. if n=10 five alternating gray bands
+        will be added to the :obj:`axis`,
+        visually framing 10 ContactGroups
+
+    Returns
+    -------
+    None
+    """
+    for ii in _np.arange(n)[::2]:
+        ax.axvspan(ii - .5, ii + .5, color="lightgray", alpha=.25, zorder=-10)
+
+
+def _offset_dict(keys, wpad=.2, width=None):
+    r"""
+    Compute the positive and negative offset-values
+    needed to center :obj:`n` bars of a given :obj:`width` around zero
+
+    The return value is a dict rather than a list
+    to best interface with the other plotting methods
+
+    Parameters
+    ----------
+    keys : list
+        list of strings
+    wpad : float, default is .2
+        The minimum distance between
+        adjacent groups of bars
+    width : float, default is None
+        The desired bar width. If
+        None, it gets computed automatically
+        to maximize space usage leaving
+        :obj:`wpad` axis space between
+        groups of bars. If you choose a
+        width that would extend the space occupied
+        by the bars beyond the wpad, it
+        gets resized to stay within the padding
+        area
+
+    Returns
+    -------
+    offsets : dict
+        keyed with :obj:`keys`, valued with the offsets
+    width : float
+        Either the input width
+        or the width resulting
+        from the (n,wpad) combination
+    """
+    n = len(keys)
+    maxwidth = (1 - wpad) / n
+    if width is None:
+        width = maxwidth
+    else:
+        width = _np.min([width, maxwidth])
+    imax = (n - 1) * width / 2
+    ls = _np.linspace(-imax, imax, n)
+    delta = {key: val for key, val in zip(keys, ls)}
+    return delta, width
 
 def plot_unified_distro_dicts(distros,
                               colors=None,
