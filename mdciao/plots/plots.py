@@ -214,15 +214,7 @@ def compare_groups_of_contacts(groups,
         groups = _groups
 
     freqs = {key: {} for key in groups.keys()}
-    if isinstance(colors,str):
-        try:
-            colors = getattr(_cm,colors)(_np.arange(len(groups)))[:,:-1].tolist()
-        except AttributeError as e:
-            print("Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html")
-            raise e
-    if isinstance(colors, list):
-        assert len(colors) >= len(freqs)
-        colors = {key:val for key, val in zip(freqs.keys(), colors)}
+    colors = _color_dict_guesser(colors, freqs.keys())
 
     for key, ifile in groups.items():
         if isinstance(ifile, str):
@@ -252,10 +244,10 @@ def compare_groups_of_contacts(groups,
 
     if distro:
         freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, is_freq=False)
-        myfig, __ = plot_unified_distro_dicts(freqs, colordict=colors,
-                                          ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                          fontsize=fontsize,
-                                          **kwargs_plot_unified_freq_dicts)
+        myfig, __ = plot_unified_distro_dicts(freqs, colors=colors,
+                                              ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                              fontsize=fontsize,
+                                              **kwargs_plot_unified_freq_dicts)
         plotted_freqs = None
     else:
         if plot_singles:
@@ -300,6 +292,66 @@ def compare_groups_of_contacts(groups,
         #_plt.show()
 
     return myfig, freqs, plotted_freqs
+
+def _color_dict_guesser(colors, key_list):
+    r"""
+    Helper function to construct a color dictionary from variable user input
+
+    Parameters
+    ----------
+    colors : None, str, list or dict
+        * None: use the first len(key_list) "tab10" colors
+        * str: name of the matplotlib colormap to interpolate to len(key_list) colors
+          https://matplotlib.org/stable/tutorials/colors/colormaps.html
+        * list: list of colors (["r","g","b"])
+          Turn this list into a dictionary keyed with :ob:`key_list`
+    key_list : list
+        List of strings to use as keys for the
+        color dictionary that will be ultimately returned
+
+    Returns
+    -------
+    colors : dict
+    """
+    if isinstance(colors,dict):
+        assert all([key in colors.keys() for key in key_list])
+        return colors
+    if colors is None:
+        return {key: val for key, val in zip(key_list, _colorstring.split(","))}
+
+    if isinstance(colors,str):
+       colors = _try_colormap_string(colors,len(key_list))
+
+    if isinstance(colors, list):
+        assert len(colors) >= len(key_list)
+        colors = {key:val for key, val in zip(key_list, colors)}
+
+    return colors
+
+def _try_colormap_string(colors, N):
+    r"""
+    Wrap the Exception thrown by matplotlib in a more informative error
+
+    Parameters
+    ----------
+    colors : string
+        Name of the matplotlib colormap, check
+        here for more info:
+        https://matplotlib.org/stable/tutorials/colors/colormaps.html
+    N : int
+        Number of colors
+
+    Returns
+    -------
+    colors : list
+        Len is :obj:`N`, each item is a np.ndarray of len(3)
+    """
+    try:
+        return getattr(_cm, colors)(_np.arange(N))[:, :-1].tolist()
+    except AttributeError as e:
+        print(
+            "Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html")
+        raise e
 
 """
 def add_hover_ctc_labels(iax, ctc_mat,
@@ -642,7 +694,7 @@ def plot_unified_freq_dicts(freqs,
     return myfig, _plt.gca(),  out_dict
 
 def plot_unified_distro_dicts(distros,
-                              colordict=None,
+                              colors=None,
                               ctc_cutoff_Ang = None,
                               panelheight_inches=5,
                               fontsize=16,
@@ -658,16 +710,15 @@ def plot_unified_distro_dicts(distros,
         The first-level dict is keyed by system names,
         e.g distros.keys() = ["WT","D10A","D10R"].
         The second-level dict is keyed by contact names
-    colordict : dict, default is None.
-        What color each system gets. Default is some sane matplotlib values
-    figsize : iterable of len 2
-        Figure size (x,y), in inches. If None,
-        one will be created using :obj:`panelheight_inches`
-        and :obj:`inch_per_contacts`.
-        If you are transposing the figure
-        using :obj:`vertical_plot`, you do not
-        have to invert (y,x) this parameter here, it is
-        done automatically.
+    colors : iterable (list or dict), or str, default is None
+        If list, the colors will be assigned in the same
+        order of :obj:`groups`. If dict, has to have the
+        same keys as :obj:`groups`. If str, it has to
+        be a case-sensitve colormap-name of matplotlib
+        (https://matplotlib.org/stable/tutorials/colors/colormaps.html)
+        If None, the 'tab10' colormap (tableau) is chosen
+        TODO: I could set the default to "tab10", but then it'd
+        be hard coded in a lot places
     panelheight_inches : int, default is 5
         The height of each panel. Currently
         the only control on figure size, which
@@ -681,10 +732,6 @@ def plot_unified_distro_dicts(distros,
         The maximum number of rows per column of the legend.
         If you have 10 systems, :obj:`legend_rows`=5 means
         you'll get two columns, =2 means you'll get five.
-    kwargs_figure : optional keyword arguments
-        For :obj:`~matplotlib.pyplot.figure`, e.g.
-        `sharex` or `sharey` etc
-
     Returns
     -------
     fig, axes : :obj:`~matplotlib.figure.Figure` and the axes array
@@ -707,8 +754,7 @@ def plot_unified_distro_dicts(distros,
     distros_by_ctc_by_sys = dict(distros_by_ctc_by_sys)
 
     # Prepare the dict
-    if colordict is None:
-        colordict = {key:val for key,val in zip(system_keys, _colorstring.split(","))}
+    colors = _color_dict_guesser(colors,system_keys)
 
     n_cols = _np.min((n_cols, len(all_ctc_keys)))
     n_rows = _np.ceil(len(all_ctc_keys) / n_cols).astype(int)
@@ -731,8 +777,8 @@ def plot_unified_distro_dicts(distros,
                     freq = (h[_np.flatnonzero(x[:-1]<=ctc_cutoff_Ang/10)]).sum()/h.sum()
                     label += " (%u%%)" % (freq * 100)
                 h = h/h.max()
-                iax.plot(x[:-1] * 10, h, label=label, color=colordict[sys_key])
-                iax.fill_between(x[:-1] * 10, h, alpha=.15,color=colordict[sys_key])
+                iax.plot(x[:-1] * 10, h, label=label, color=colors[sys_key])
+                iax.fill_between(x[:-1] * 10, h, alpha=.15, color=colors[sys_key])
 
 
         if ctc_cutoff_Ang is not None:

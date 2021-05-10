@@ -2,13 +2,14 @@ import unittest
 import numpy as _np
 import pytest
 
-from matplotlib import pyplot as _plt
+from matplotlib import pyplot as _plt, cm as _cm
+from matplotlib.colors import is_color_like, to_rgb
 
 from mdciao.contacts import ContactGroup, ContactPair
 from mdciao.examples import ContactGroupL394
 
 from mdciao import plots
-from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict
+from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict, _color_dict_guesser, _try_colormap_string
 
 from tempfile import TemporaryDirectory as _TDir
 import os
@@ -397,4 +398,37 @@ class Test_offset_dict(unittest.TestCase):
 
         self.assertEqual(width,.2)
 
+
+class Test_colormaps(unittest.TestCase):
+
+    def test_exception_works(self):
+        colors = _try_colormap_string("jet", 10)
+        self.assertEqual(len(colors),10)
+        assert all([is_color_like(col) for col in colors])
+
+    def test_exception_raises(self):
+        with self.assertRaises(AttributeError):
+            _try_colormap_string("Chet",10)
+
+    def test_color_dict_guesser_None(self):
+        colors = _color_dict_guesser(None, ["sys1","sys2","sys3"])
+        colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
+        ref_color = _np.array(list(_cm.get_cmap("tab10")([0,1,2])))[:,:-1]
+        _np.testing.assert_array_equal(colors_rgb_array, ref_color)
+        self.assertListEqual(list(colors.keys()), ["sys1","sys2","sys3"])
+
+    def test_color_dict_guesser_cmap(self):
+        colors = _color_dict_guesser("Set2", ["sys1", "sys2", "sys3"])
+        colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
+        ref_color = _np.array(list(_cm.get_cmap("Set2")([0, 1, 2])))[:, :-1]
+        _np.testing.assert_array_equal(colors_rgb_array, ref_color)
+        self.assertListEqual(list(colors.keys()), ["sys1", "sys2", "sys3"])
+
+    def test_color_dict_guesser_list(self):
+        colors = _color_dict_guesser(["r","g","b"], ["sys1", "sys2"])
+        self.assertDictEqual(colors, {"sys1":"r","sys2":"g"})
+
+    def test_color_dict_guesser_dict(self):
+        colors = _color_dict_guesser({"sys1": "r", "sys2": "g"}, ["sys1", "sys2"])
+        self.assertDictEqual(colors, {"sys1": "r", "sys2": "g"})
 
