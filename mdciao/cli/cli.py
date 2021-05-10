@@ -1084,8 +1084,8 @@ def interface(
         present. Then it defaults to [0]
     frag_idxs_group_2 : NoneType, default is None
         Indices of the fragments that belong to the group_2.
-	Strings can be CSVs and include ranges, e.g. '1,3-4'.        
-Defaults to None which will prompt the user of
+	    Strings can be CSVs and include ranges, e.g. '1,3-4'.
+        Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
     BW_uniprot : str, default is 'None'
@@ -1549,6 +1549,7 @@ def sites(site_inputs,
           savetabs=True,
           savetrajs=False,
           figures=True,
+          plot_timedep=False,
           ):
     r"""
 
@@ -1711,7 +1712,8 @@ def sites(site_inputs,
         Write the figures and tables to disk.
     figures : bool, default is True
         Draw figures
-
+    plot_timedep : bool, default is True
+        Plot time-traces of the contacts
     Returns
     -------
     CG_site : dictionary
@@ -1817,7 +1819,7 @@ def sites(site_inputs,
                                      )
             print(fn.fname_per_site_table(site_name))
 
-    if figures:
+    if figures and plot_timedep:
         for site_name, isite_nh in site_as_gc.items():
             panelheight = 4
             myfig = isite_nh.plot_timedep_ctcs(panelheight,
