@@ -1,4 +1,4 @@
-Overview
+Examples
 ========
 
 .. include:: basic_usage.rst
