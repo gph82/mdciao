@@ -160,7 +160,8 @@ def unify_freq_dicts(freqs,
                      replacement_dict=None,
                      defrag=None,
                      per_residue=False,
-                     distro=False,
+                     is_freq=True,
+                     val_missing=0,
                      ):
     r"""
     Provided with a dictionary of dictionaries, returns an equivalent,
@@ -200,6 +201,13 @@ def unify_freq_dicts(freqs,
             R201@frag1 and R201@frag3 will both be "R201"
     per_residue : bool, default is False
         Aggregate interactions to their residues
+    is_freq : bool, default is True
+        If the dictionaries is a actually
+        contain frequencies
+    val_missing : anything, default is 0
+        What value to asssign to the
+        missing keys (TODO check the name of this in pandas)
+
 
     Returns
     -------
@@ -269,9 +277,9 @@ def unify_freq_dicts(freqs,
     for ikey, ifreq in freqs_work.items():
         for key in all_keys:
             if key not in ifreq.keys():
-                ifreq[key] = 0
+                ifreq[key] = val_missing
 
-    if len(not_shared)>0 and not distro:
+    if len(not_shared)>0 and is_freq:
         print("These interactions are not shared:\n%s" % (', '.join(not_shared)))
         print("Their cumulative ctc freq is %3.2f. " % _np.sum(
             [[ifreq[key] for ifreq in freqs_work.values()] for key in not_shared]))
