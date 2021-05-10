@@ -218,7 +218,7 @@ Highlights
 
    >>> echo '
    >>> {"name":"interface small",
-   >>> "bonds": {"AAresSeq": [
+   >>> "pairs": {"AAresSeq": [
    >>>         "L394-K270",
    >>>         "D381-Q229",
    >>>         "Q384-Q229",
