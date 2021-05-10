@@ -2231,6 +2231,11 @@ class ContactGroup(object):
         return self._contacts[0].neighborhood.anchor_res_and_fragment_str_short.rstrip("@")
 
     @property
+    def anchor_res_and_fragment_str_short(self):
+        assert self.is_neighborhood
+        return self._contacts[0].neighborhood.anchor_res_and_fragment_str_short.rstrip("@")
+
+    @property
     def partner_res_and_fragment_labels(self):
         assert self.is_neighborhood
         return [ictc.neighborhood.partner_res_and_fragment_str.rstrip("@") for ictc in self._contacts]
