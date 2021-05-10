@@ -45,7 +45,6 @@ This is an informal list of known issues and TODOs:
  * progressbar not very informative for one chunked trajectory or parallel runs
  * the "consensus" fragmentation sometimes breaks automatic flareplot labelling #should no longer be the case after https://github.com/gph82/mdciao/pull/21 (check)
  * Building the docs with sphinx v>2.4.4 doesn't autogen a class' method's linked doc
- * improve sequence alignment choices
  * the affiliation of a residue to a fragment is done as "res@frag" on the string output and res^frag in figures, this implementation is simply using replace("@","^"), could be better
  * heuristics for proper font-sizing of flareplots could be optimized
  * parallel execution with memory mdtraj.Trajectory objects should be better
@@ -58,9 +57,8 @@ This is an informal list of known issues and TODOs:
    mock-input or writing to tempdirs because writing figures or files could not be avoided.
  * There's some inconsistencies in private vs public attributes of classes. An attribute might've "started" as private and is exceptionally used somewhere else until the number of exceptions is enough for it to make sense to be public, documented and well tested. I'm working on it.
  * neighborlists could be computed much more efficiently
+ * The labelling names should be harmonized (ctc_label, anchor_res...) and the logic of how/where it get's constructed (short_AA vs AA_format) is not obvious sometimes
  * There's many other TODOs spread throughout the code
- * Use `violin plots <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.violinplot.html>`_ instead of bars to inform about spread
-
 
 System Requirements
 ===================
