@@ -251,7 +251,7 @@ def compare_groups_of_contacts(groups,
         freqs[key] = idict
 
     if distro:
-        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, distro=True)
+        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, is_freq=False)
         myfig, __ = plot_unified_distro_dicts(freqs, colordict=colors,
                                           ctc_cutoff_Ang=ctc_cutoff_Ang,
                                           fontsize=fontsize,
