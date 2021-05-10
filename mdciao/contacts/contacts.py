@@ -2116,6 +2116,21 @@ class ContactGroup(object):
     def ctc_labels_w_fragments_short_AA(self):
         return [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
+    def gen_ctc_labels(self, **kwargs):
+        r"""
+        Thin Wrapper around the :obj:`ContactPair.gen_label()` method this object's ContactPairs
+
+        Parameters
+        ----------
+        **kwargs : dict,
+
+        Returns
+        -------
+        labels : list
+
+        """
+
+        return [cp.gen_label(**kwargs) for cp in self._contacts]
     @property
     def trajlabels(self):
         return self._trajlabels
