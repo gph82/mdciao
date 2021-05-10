@@ -317,10 +317,8 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
     """
 
     if isinstance(AA,str):
-        try:
-            res = '%s%u'%(_AMINO_ACID_CODES[name_from_AA(AA)], int_from_AA_code(AA))
-        except KeyError:
-            res = None
+        name = name_from_AA(AA)
+        res = '%s%u' % ([name if len(name) == 1 else _AMINO_ACID_CODES.get(name)][0], int_from_AA_code(AA))
     else:
         res = '%s%u'%(AA.code,AA.resSeq)
 
