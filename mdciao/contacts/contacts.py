@@ -1530,6 +1530,38 @@ class ContactPair(object):
 
         return label
 
+    # This will end up deprecating label_flex
+    def gen_label(self,
+                  AA_format="short",
+                  fragments=False,
+                  include_anchor=True):
+        if include_anchor:
+            if AA_format == "short":
+                if fragments:
+                    label = self.labels.w_fragments_short_AA
+                else:
+                    label = self.labels.no_fragments_short_AA
+            elif AA_format == "long":
+                if fragments:
+                    label = self.labels.w_fragments
+                else:
+                    label = self.labels.no_fragments
+            else:
+                raise ValueError(AA_format)
+        else:
+            if AA_format == "short":
+                if fragments:
+                    label = self.neighborhood.partner_res_and_fragment_str_short
+                else:
+                    label = self.neighborhood.partner_residue_short
+            elif AA_format == "long":
+                if fragments:
+                    label = self.neighborhood.partner_res_and_fragment_str
+                else:
+                    label = self.neighborhood.partner_residue
+
+        return label
+
     def distro_overall_trajs(self, bins=10):
         """
         Wrapper around :obj:`numpy.histogram` to produce a distribution
