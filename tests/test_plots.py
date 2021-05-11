@@ -460,18 +460,18 @@ class Test_plot_compare_violins(unittest.TestCase):
         cls.CGL394_larger  = ContactGroupL394(ctc_control=.99, ctc_cutoff_Ang=5)
 
     def test_works(self):
-        fig, ax = plots.compare_groups_of_contacts_violin({"small":self.CGL394, "big":self.CGL394_larger},
-                                                          anchor="L394",
-                                                          ylim=10, ctc_cutoff_Ang=4)
+        fig, ax = plots.compare_violins({"small":self.CGL394, "big":self.CGL394_larger},
+                                        anchor="L394",
+                                        ylim=10, ctc_cutoff_Ang=4)
 
         #fig.savefig("test.pdf")
         _plt.close("all")
 
     def test_works_no_defrag(self):
-        fig, ax = plots.compare_groups_of_contacts_violin({"small": self.CGL394, "big": self.CGL394_larger},
-                                                          anchor="L394",
-                                                          ylim=10, ctc_cutoff_Ang=4,
-                                                          defrag=None)
+        fig, ax = plots.compare_violins({"small": self.CGL394, "big": self.CGL394_larger},
+                                        anchor="L394",
+                                        ylim=10, ctc_cutoff_Ang=4,
+                                        defrag=None)
 
         fig.savefig("test.pdf")
         _plt.close("all")

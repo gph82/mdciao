@@ -717,7 +717,7 @@ def parser_for_compare_neighborhoods():
                         help='Colors to use for the dicts, defaults to "%s"'%", ".join(_colorstring.split(",")))
     parser.add_argument("-m","--mutations",type=str, default=None,
                         help='A replacement dictionary, to be able to re-label '
-                             'residues accross systems, e.g. "GLU:ARG,LYS:PHE" changes '
+                             'residues across systems, e.g. "GLU:ARG,LYS:PHE" changes '
                              'all GLUs to ARGs and all LYS to PHEs')
     parser.add_argument("-t", "--title", type=str, default='comparison',
                         help='Title of the plot. Default is "comparison"')

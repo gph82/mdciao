@@ -107,7 +107,7 @@ def compare_groups_of_contacts(groups,
                                **kwargs_plot_unified_freq_dicts,
                                ):
     r"""
-    Compare contact groups accros different systems using different plots and strategies
+    Compare contact groups across different systems using different plots and strategies
 
     Parameters
     ----------
@@ -133,14 +133,13 @@ def compare_groups_of_contacts(groups,
         on-the-fly
 
     colors : iterable (list or dict), or str, default is None
-        If list, the colors will be assigned in the same
-        order of :obj:`groups`. If dict, has to have the
-        same keys as :obj:`groups`. If str, it has to
-        be a case-sensitve colormap-name of matplotlib
-        (https://matplotlib.org/stable/tutorials/colors/colormaps.html)
-        If None, the 'tab10' colormap (tableau) is chosen
-        TODO: I could set the default to "tab10", but then it'd
-        be hard coded in a lot places
+        * If list, the colors will be assigned in the same
+          order of :obj:`groups`.
+        * If dict, has to have the
+          same keys as :obj:`groups`.
+        * If str, it has to be a case-sensitve colormap-name of matplotlib:
+          https://matplotlib.org/stable/tutorials/colors/colormaps.html
+        * If None, the 'tab10' colormap (tableau) is chosen
     anchor : str, default is None
         This string will be deleted from the contact labels,
         leaving only the partner-residue to identify the contact.
@@ -176,9 +175,9 @@ def compare_groups_of_contacts(groups,
         Needed value to compute frequencies on-the-fly
         if the input was using :obj:`ContactGroup` objects
     AA_format : str, default is "short"
-        see :obj:`ContactPair.frequency_dict` for more info
+        see :obj:`~mdciao.contacts.ContactPair.frequency_dict` for more info
     defrag : str, default is "@"
-        see :obj:`_mdcu.str_and_dict.unify_freq_dicts` for more info
+        see :obj:`~mdciao.utils.str_and_dict.unify_freq_dicts` for more info
     per_residue : bool, default is False
         Unify dictionaries by residue and not by pairs
     distro : bool, default is False
@@ -781,13 +780,13 @@ def plot_unified_distro_dicts(distros,
         e.g distros.keys() = ["WT","D10A","D10R"].
         The second-level dict is keyed by contact names
     colors : iterable (list or dict), or str, default is None
-        If list, the colors will be assigned in the same
-        order of :obj:`groups`. If dict, has to have the
-        same keys as :obj:`groups`. If str, it has to
-        be a case-sensitve colormap-name of matplotlib
-        (https://matplotlib.org/stable/tutorials/colors/colormaps.html)
-        If None, the 'tab10' colormap (tableau) is chosen
-        TODO: I could set the default to "tab10", but then it'd
+        * If list, the colors will be assigned in the same
+          order of :obj:`groups`.
+        * If dict, has to have the
+          same keys as :obj:`groups`.
+        * If str, it has to be a case-sensitve colormap-name of matplotlib:
+          https://matplotlib.org/stable/tutorials/colors/colormaps.html
+        * If None, the 'tab10' colormap (tableau) is chosen
         be hard coded in a lot places
     panelheight_inches : int, default is 5
         The height of each panel. Currently
@@ -867,52 +866,64 @@ def plot_unified_distro_dicts(distros,
     _rcParams["font.size"] = _fontsize
     return myfig, myax
 
-def compare_groups_of_contacts_violin(groups,
-                                      colors=None,
-                                      ctc_cutoff_Ang=None,
-                                      fontsize=16,
-                                      figsize=(10,7),
-                                      legend_rows=4,
-                                      mutations_dict={},
-                                      AA_format='short',
-                                      defrag='@',
-                                      anchor=None,
-                                      ylim=None,
-                                      ):
+def compare_violins(groups,
+                    colors=None,
+                    ctc_cutoff_Ang=None,
+                    fontsize=16,
+                    figsize=(10,7),
+                    mutations_dict={},
+                    legend_rows=4,
+                    AA_format='short',
+                    defrag='@',
+                    anchor=None,
+                    ylim=None,
+                    ):
     r"""
-    Plot unified (= with identical keys) distribution dictionaries for different systems
+    Plot all distance-distributions several :obj:`~mdciao.contacts.ContactGroup` s together using :obj:`~matplotlib.pyplot.violinplot` s
 
     Parameters
     ----------
     groups : dictionary of :obj:`~mdciao.contacts.ContactGroup`-objects
         The keys are the system/setup descriptors, e.g. "WT", "MUT" etc
     colors : iterable (list or dict), or str, default is None
-        If list, the colors will be assigned in the same
-        order of :obj:`groups`. If dict, has to have the
-        same keys as :obj:`groups`. If str, it has to
-        be a case-sensitve colormap-name of matplotlib
-        (https://matplotlib.org/stable/tutorials/colors/colormaps.html)
-        If None, the 'tab10' colormap (tableau) is chosen
+        * If list, the colors will be assigned in the same
+          order of :obj:`groups`.
+        * If dict, has to have the
+          same keys as :obj:`groups`.
+        * If str, it has to be a case-sensitve colormap-name of matplotlib:
+          https://matplotlib.org/stable/tutorials/colors/colormaps.html
+        * If None, the 'tab10' colormap (tableau) is chosen
         TODO: I could set the default to "tab10", but then it'd
         be hard coded in a lot places
     ctc_cutoff_Ang : float, default is None
-        If provided, draw a horizontal line in the panel
+        If provided, draw a horizontal line across the panel
         at this distance value.
-    figsize : iterable of len 2
-        Figure size (x,y), in inches. If None,
-        one will be created using :obj:`panelheight_inches`
-        and :obj:`inch_per_contacts`.
-        If you are transposing the figure
-        using :obj:`vertical_plot`, you do not
-        have to invert (y,x) this parameter here, it is
-        done automatically.
     fontsize : int, default is 16
-        Will be used in :obj:`matplotlib._rcParams["font.size"]
+        Will be used in :obj:`~matplotlib.rcParams` ["font.size"]
+    figsize : iterable of len 2
+        Figure size (x,y), in inches.
         # TODO be less invasive
+    mutations_dict : dictionary, default is {}
+        A mutation dictionary that contains allows to plot together
+        residues that would otherwise be identified as different
+        contacts. If there were two mutations, e.g A30K and D35A
+        the mutation dictionary will be {"A30":"K30", "D35":"A35"}.
+        You can also use this parameter for correcting indexing
+        offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}
     legend_rows : int, default is 4
         The maximum number of rows per column of the legend.
         If you have 10 systems, :obj:`legend_rows`=5 means
         you'll get two columns, =2 means you'll get five.
+    AA_format : str, default is "short"
+        see :obj:`~mdciao.contacts.ContactPair.frequency_dict` for more info
+    defrag : str, default is "@"
+        see :obj:`~mdciao.utils.str_and_dict.unify_freq_dicts` for more info
+    anchor : str, default is None
+        When str, e.g. "L394", that residue is eliminated
+        from the contact-labels. It is also checked
+        that all :obj:`~mdciao.contacts.ContactGroup`-objects
+        are indeed neighborhoods sharing this anchor, i.e.,
+        *some* sanity checks are carried out
     Returns
     -------
     fig : :obj:`~matplotlib.figure.Figure`

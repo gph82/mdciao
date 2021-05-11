@@ -8,6 +8,7 @@ Plotting functions
    plot_contact_matrix
    plot_unified_freq_dicts
    plot_unified_distro_dicts
+   compare_violins
 
 """
 
