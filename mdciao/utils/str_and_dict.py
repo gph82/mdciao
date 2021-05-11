@@ -87,13 +87,13 @@ def inform_about_trajectories(trajectories, only_show_first_and_last=False):
 
     """
     ntraj = len(trajectories)
+    assert isinstance(trajectories, list), "input has to be a list"
     if isinstance(only_show_first_and_last,int) and only_show_first_and_last*2<ntraj:
         n = only_show_first_and_last
         _trajectories =trajectories[:n]+["...[long list: omitted %u items]..."%(ntraj-2*n)]+trajectories[-n:]
 
     else:
         _trajectories = trajectories
-    assert isinstance(trajectories, list), "input has to be a list"
     return "\n".join([str(itraj) for itraj in _trajectories])
 
 def replace_w_dict(input_str, exp_rep_dict):
