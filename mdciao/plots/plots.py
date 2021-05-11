@@ -860,6 +860,158 @@ def plot_unified_distro_dicts(distros,
     _rcParams["font.size"] = _fontsize
     return myfig, myax
 
+def compare_groups_of_contacts_violin(groups,
+                                      colors=None,
+                                      ctc_cutoff_Ang=None,
+                                      fontsize=16,
+                                      figsize=(10,7),
+                                      legend_rows=4,
+                                      mutations_dict={},
+                                      AA_format='short',
+                                      defrag='@',
+                                      anchor=None,
+                                      ylim=None,
+                                      ):
+    r"""
+    Plot unified (= with identical keys) distribution dictionaries for different systems
+
+    Parameters
+    ----------
+    groups : dictionary of :obj:`~mdciao.contacts.ContactGroup`-objects
+        The keys are the system/setup descriptors, e.g. "WT", "MUT" etc
+    colors : iterable (list or dict), or str, default is None
+        If list, the colors will be assigned in the same
+        order of :obj:`groups`. If dict, has to have the
+        same keys as :obj:`groups`. If str, it has to
+        be a case-sensitve colormap-name of matplotlib
+        (https://matplotlib.org/stable/tutorials/colors/colormaps.html)
+        If None, the 'tab10' colormap (tableau) is chosen
+        TODO: I could set the default to "tab10", but then it'd
+        be hard coded in a lot places
+    ctc_cutoff_Ang : float, default is None
+        If provided, draw a horizontal line in the panel
+        at this distance value.
+    figsize : iterable of len 2
+        Figure size (x,y), in inches. If None,
+        one will be created using :obj:`panelheight_inches`
+        and :obj:`inch_per_contacts`.
+        If you are transposing the figure
+        using :obj:`vertical_plot`, you do not
+        have to invert (y,x) this parameter here, it is
+        done automatically.
+    fontsize : int, default is 16
+        Will be used in :obj:`matplotlib._rcParams["font.size"]
+        # TODO be less invasive
+    legend_rows : int, default is 4
+        The maximum number of rows per column of the legend.
+        If you have 10 systems, :obj:`legend_rows`=5 means
+        you'll get two columns, =2 means you'll get five.
+    Returns
+    -------
+    fig : :obj:`~matplotlib.figure.Figure`
+    ax :  :obj:`~matplotlib.axes.Axes`
+    """
+    _fontsize=_rcParams["font.size"]
+    _rcParams["font.size"] = fontsize
+
+    # Sanity checks
+    anchors = []
+    if anchor is not None:
+        for group in groups.values():
+            assert group.is_neighborhood
+            anchors.append(_mdcu.str_and_dict.replace_w_dict(group._contacts[0].neighborhood.anchor_residue_short, mutations_dict))
+        anchors = _np.unique(anchors)
+        assert len(anchors)==1, "More than one anchor found (%s), are you sure you should be comparing these neighborhoods?\n" \
+                                "Check if the 'mutations_dict' argument can help you"%anchors
+        assert anchors[0]==_mdcu.residue_and_atom.shorten_AA(anchor,keep_index=True)
+
+    # Gather data
+    data4violins_per_sys_per_ctc={}
+    for syskey, group in groups.items():
+        labels = group.gen_ctc_labels(AA_format=AA_format,
+                                      fragments=[True if defrag is None else False][0],
+                                      include_anchor=[True if anchor is None else False][0])
+        data4violins_per_sys_per_ctc[syskey] = {key : _np.hstack(cp.time_traces.ctc_trajs) * 10
+                                                for key, cp in zip(labels, group._contacts)}
+
+    # Unify it
+    data4violins_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(data4violins_per_sys_per_ctc,
+                                                                       replacement_dict=mutations_dict,
+                                                                       is_freq=False,
+                                                                       val_missing=_np.nan)
+    # Gather keys
+    all_sys_keys = list(groups.keys())
+    all_ctc_keys = list(data4violins_per_sys_per_ctc[all_sys_keys[0]])
+    data4violins_per_ctc_per_sys = {key:{sk:data4violins_per_sys_per_ctc[sk][key] for sk in all_sys_keys} for key in all_ctc_keys}
+    means_per_ctc_per_sys = {key:_np.nanmean(_np.hstack(list(val.values()))) for key, val in data4violins_per_ctc_per_sys.items()}
+
+    # Prepare the dict
+    colordict = _color_dict_guesser(colors, all_sys_keys)
+
+    sorting_idxs = _np.argsort(list(means_per_ctc_per_sys.values()))
+    key2ii = {all_ctc_keys[idx]: ii for ii, idx in enumerate(sorting_idxs)}
+    delta, width = _offset_dict(list(groups.keys()))
+
+    myfig = _plt.figure(figsize=figsize)
+    iax = _plt.gca()
+    """
+    for ctc_key, ii in key2ii.items():
+        iax.plot(ii, means_per_ctc_per_sys[ctc_key],"ok")
+        for syskey,sysdata_per_ctc in data4violins_per_sys_per_ctc.items():
+            iax.plot(ii+delta[syskey],_np.nanmean(sysdata_per_ctc[ctc_key]),"x", color=colordict[syskey])
+    """
+
+    _add_grey_banded_bg(_plt.gca(), len(all_ctc_keys))
+    for syskey in all_sys_keys:
+        positions = [key2ii[key]+delta[syskey] for key, val in data4violins_per_sys_per_ctc[syskey].items() if not val is _np.nan]
+        idata = [val for val in data4violins_per_sys_per_ctc[syskey].values() if val is not _np.nan]
+        violins = _plt.violinplot(idata, positions=positions,
+                                  widths=width,
+                                  showmeans=True,
+                                  showextrema=False,
+                                  )
+        for vio in violins["bodies"]:
+            vio.set_color(colordict[syskey])
+        _plt.plot(_np.nan, _np.nan, "d",color=colordict[syskey],
+                  #alpha=vio.get_alpha()*1.5,
+                  label=syskey)
+
+    # Cosmetics
+    if defrag is None:
+        prepare_str = lambda istr: _mdcu.str_and_dict.latex_superscript_fragments(istr)
+    else:
+        prepare_str = lambda istr: istr
+
+    if anchor is not None:
+        if defrag is None:
+            title = _mdcu.str_and_dict.replace_w_dict(group._contacts[0].neighborhood.anchor_res_and_fragment_str, mutations_dict)
+        else:
+            title = _mdcu.str_and_dict.replace_w_dict(group._contacts[0].neighborhood.anchor_residue_short,
+                                                      mutations_dict)
+        iax.set_title("%s neighborhood"%prepare_str(title))
+
+
+    if ctc_cutoff_Ang is not None:
+        iax.axhline(ctc_cutoff_Ang, color="gray",ls="--", zorder=-10)
+    _plt.xticks(_np.arange(len(all_ctc_keys)),[prepare_str(all_ctc_keys[ii]) for ii in sorting_idxs],
+                rotation=45,
+                va="top",
+                ha="right"
+                )
+    iax.set_xlim([0-.5,len(all_ctc_keys)-.5])
+    iax.set_ylabel("D / $\AA$")
+    if ylim is not None:
+        iax.set_ylim([iax.get_ylim()[0],ylim])
+
+
+    iax.legend(ncol=_np.ceil(len(all_sys_keys) / legend_rows).astype(int),loc="upper left")
+    myfig.tight_layout()
+
+
+    _rcParams["font.size"] = _fontsize
+    return myfig, iax
+
+
 def add_tilted_labels_to_patches(jax, labels,
                                  label_fontsize_factor=1,
                                  trunc_y_labels_at=.65,
@@ -932,7 +1084,7 @@ def _points2dataunits(jax):
     Return a conversion factor for points 2 dataunits
     Parameters
     ----------
-    jax : obj:`~matplotlib.axes.Axes``
+    jax : :obj:`~matplotlib.axes.Axes`
 
     Returns
     -------
@@ -1276,6 +1428,8 @@ def _plot_violin_baseplot(per_CP_timetraces,
     Returns
     -------
     jax : :obj:`~matplotlib.axes.Axes`
+    violins : dictionary
+        See :obj:`~matplotlib.pyplot.violinplot` for more info
     """
 
     xvec = _np.arange(len(per_CP_timetraces))+offset
@@ -1285,7 +1439,7 @@ def _plot_violin_baseplot(per_CP_timetraces,
     else:
         _plt.sca(jax)
     per_CP_timetraces = [_np.hstack(dt) for dt in per_CP_timetraces]
-    means = [_np.mean(dt) for dt in per_CP_timetraces]
+    #means = [_np.mean(dt) for dt in per_CP_timetraces]
     violins = _plt.violinplot(per_CP_timetraces,
                               positions=xvec,
                               showmeans=True,
@@ -1298,6 +1452,7 @@ def _plot_violin_baseplot(per_CP_timetraces,
         jax.set_xticks([])
     else:
         _plt.xticks(xvec, labels, rotation=45, ha="right", va="top")
-    for col in violins["bodies"]:
-        col.set_color(color)
+    violins["cmeans"].set_color(color)
+    for vio in violins["bodies"]:
+        vio.set_color(color)
     return jax, violins

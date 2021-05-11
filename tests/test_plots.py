@@ -9,7 +9,7 @@ from mdciao.contacts import ContactGroup, ContactPair
 from mdciao.examples import ContactGroupL394
 
 from mdciao import plots
-from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict, _color_dict_guesser, _try_colormap_string
+from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict, _color_dict_guesser, _try_colormap_string, _plot_violin_baseplot
 
 from tempfile import TemporaryDirectory as _TDir
 import os
@@ -431,4 +431,48 @@ class Test_colormaps(unittest.TestCase):
     def test_color_dict_guesser_dict(self):
         colors = _color_dict_guesser({"sys1": "r", "sys2": "g"}, ["sys1", "sys2"])
         self.assertDictEqual(colors, {"sys1": "r", "sys2": "g"})
+
+class Test_plot_violin_baseplot(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.CGL394 : ContactGroup = ContactGroupL394()
+        cp: ContactPair
+
+        cls.time_trajs = [cp.time_traces.ctc_trajs for cp in cls.CGL394._contacts]
+        cls.time_trajs_shifted = [[itraj+.25 for itraj in cp] for cp in cls.time_trajs]
+    def test_minimal(self):
+        iax, _ = _plot_violin_baseplot(self.time_trajs, labels=self.CGL394.ctc_labels)
+        #iax.figure.savefig("test.pdf")
+        _plt.close("all")
+
+    def test_second_axis(self):
+        iax, _ = _plot_violin_baseplot(self.time_trajs)
+        iax, _ = _plot_violin_baseplot(self.time_trajs_shifted, labels=self.CGL394.ctc_labels, jax=iax)
+        #iax.figure.savefig("test.pdf")
+        _plt.close("all")
+
+class Test_plot_compare_violins(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.CGL394 : ContactGroup = ContactGroupL394()
+        cls.CGL394_larger  = ContactGroupL394(ctc_control=.99, ctc_cutoff_Ang=5)
+
+    def test_works(self):
+        fig, ax = plots.compare_groups_of_contacts_violin({"small":self.CGL394, "big":self.CGL394_larger},
+                                                          anchor="L394",
+                                                          ylim=10, ctc_cutoff_Ang=4)
+
+        #fig.savefig("test.pdf")
+        _plt.close("all")
+
+    def test_works_no_defrag(self):
+        fig, ax = plots.compare_groups_of_contacts_violin({"small": self.CGL394, "big": self.CGL394_larger},
+                                                          anchor="L394",
+                                                          ylim=10, ctc_cutoff_Ang=4,
+                                                          defrag=None)
+
+        fig.savefig("test.pdf")
+        _plt.close("all")
 
