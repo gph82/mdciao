@@ -101,18 +101,23 @@ def my_bioalign(seq1, seq2,
 
 
     """
+    # This is to be able to raise the NotImplemented but also to hard-code the only allowd method here
     allowed_method="globalms"
     allowed_tuple = (1, 0, -1,0)
     if method!=allowed_method:
         raise (NotImplementedError("At the moment only %s is "
                                    "allowed as alignment method"%method))
-    if not argstuple is allowed_tuple:
+
+
+    if tuple(argstuple) == tuple(allowed_tuple):
+        return getattr(_Bioalign, method)(seq1, seq2, *argstuple, **kwargs)
+    else:
         raise NotImplementedError("At the moment only %s is "
                                    "allowed as argument tuple, got"
                                    "instead %s"%(str(allowed_tuple),
                                                     str(argstuple)))
 
-    return getattr(_Bioalign, method)(seq1, seq2, *argstuple,**kwargs)
+
 
 def alignment_result_to_list_of_dicts(ialg,
                                       seq_0_res_idxs,
