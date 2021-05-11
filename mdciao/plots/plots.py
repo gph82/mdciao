@@ -769,6 +769,7 @@ def plot_unified_distro_dicts(distros,
                               fontsize=16,
                               n_cols=1,
                               legend_rows=4,
+                              sharex=False,
                               ):
     r"""
     Plot unified (= with identical keys) distribution dictionaries for different systems
@@ -801,6 +802,11 @@ def plot_unified_distro_dicts(distros,
         The maximum number of rows per column of the legend.
         If you have 10 systems, :obj:`legend_rows`=5 means
         you'll get two columns, =2 means you'll get five.
+    sharex : bool, default is False
+        Whether the panels (subplots) will share their
+        x-axis. Can be True or "col", for sharing
+        across columns. See :obj:`~matplotlib.pyplot.subplots`
+        for more info.
     Returns
     -------
     fig, axes : :obj:`~matplotlib.figure.Figure` and the axes array
@@ -830,6 +836,7 @@ def plot_unified_distro_dicts(distros,
 
     myfig, myax = _plt.subplots(n_rows, n_cols,
                                 sharey=True,
+                                sharex=sharex,
                                 figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches), squeeze=False)
 
 
