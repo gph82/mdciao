@@ -2022,7 +2022,7 @@ def residue_selection(expression,
         descriptors if consensus labels are provided
     top : str, :obj:`~mdtraj.Trajectory`, or :obj:`~mdtraj.Topology`
         The topology to use.
-     BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
+    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If `mdciao.nomenclature.Labeler_BW`, use this object directly
