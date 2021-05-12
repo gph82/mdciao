@@ -509,22 +509,40 @@ def replace4latex(istr,
     r"""
     Return a string where symbols and super/sub-indices have been prepared for latex
 
+    One quirk: when sub- or superindexing, the following
+    types get protected in curly brackets to
+    avoid only sub/super indexing the first character:
 
-    >>>
+     * fully numeric: C_{300}
+     * fully alphabetical: GLY_{ACE}
+     * containing dots: L394^{G.H.26}
+
+    BUT mixed \beta_2AR are left like unprotected:
+
+    >>> replace4latex("mdciao can alpha Sigma_2 beta2AR ACE_GLY GLU30^3.50 no [frag1-WT] problem!")
+    'mdciao can $\\alpha$ $\\Sigma\\mathrm{_{2}}$ $\\beta\\mathrm{_2AR}$ $\\mathrm{{ACE}_{GLY}}$ $\\mathrm{GLU30^{3.50}}$ no [frag1-WT] problem!'
 
 
     Parameters
     ----------
-    istr
-    sindex
-    symbols
+    istr : str
+        The string to be prepare for LaTeX mathmode
+        If a $ sign is already in :obj:`istr`,
+        nothing will happen
+    sindex : list
+        The characters that indicate super- and sub-indices
+    symbols : list
+        The words that should be considered LaTeX symbols
 
     Returns
     -------
     lstr : str
+        The string with LaTex-mathmode insertions
     """
     pattern = " |" + "|".join(symbols)
     bits = [bit for bit in _re.split("(?i)(%s)" % pattern, istr) if len(bit) > 0]
+    if "$" in istr:
+        return istr
     for ii in range(len(bits)):
         if bits[ii].lower() in symbols:
             bits[ii] = "$\%s$" % bits[ii]
@@ -532,12 +550,11 @@ def replace4latex(istr,
             bits[ii] = "$%s$" % bits[ii]
         elif any([ss in bits[ii] for ss in sindex]):
             ibit = bits[ii]
-            # print(ibit)
             words = [word for word in _re.split("(%s)" % "|".join(["\%s" % ss for ss in sindex]), ibit)
                      if len(word) > 0]
             for ww in range(len(words)):
                 word = words[ww]
-                if word.isalpha() or word.isnumeric():
+                if word.isnumeric() or word.isalpha() or "." in word and word not in sindex: #Also gets 3.50
                     words[ww] = "{%s}" % word
             ibit = "".join(words)
             bits[ii] = "$\mathrm{%s}$" % ibit
