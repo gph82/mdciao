@@ -465,7 +465,7 @@ def _find_latex_chunks(istr, blockers=['$$','\$']):
     ranges = [_np.arange(ii,jj+1) for ii,jj in _np.reshape(matches,(-1,2))]
     return ranges
 
-def replace4latex(istr):
+def _replace4latex(istr):
     r"""
     Prepares the input for latex rendering (in matplotlib, e.g.)
 
@@ -499,6 +499,53 @@ def replace4latex(istr):
 
 _symbols =  ['alpha','beta','gamma', 'mu', "Sigma"]+["AA"]
 _scripts =  ["^","_"]
+
+
+def replace4latex(istr,
+                  sindex=["_", "^"],
+                  symbols=["alpha", "beta", "gamma", "sigma", "mu", "aa"],
+                  enclose_pure_text=False
+                  ):
+    r"""
+    Return a string where symbols and super/sub-indices have been prepared for latex
+
+
+    >>>
+
+
+    Parameters
+    ----------
+    istr
+    sindex
+    symbols
+
+    Returns
+    -------
+    lstr : str
+    """
+    pattern = " |" + "|".join(symbols)
+    bits = [bit for bit in _re.split("(?i)(%s)" % pattern, istr) if len(bit) > 0]
+    for ii in range(len(bits)):
+        if bits[ii].lower() in symbols:
+            bits[ii] = "$\%s$" % bits[ii]
+        elif any([ss == bits[ii] for ss in sindex]):
+            bits[ii] = "$%s$" % bits[ii]
+        elif any([ss in bits[ii] for ss in sindex]):
+            ibit = bits[ii]
+            # print(ibit)
+            words = [word for word in _re.split("(%s)" % "|".join(["\%s" % ss for ss in sindex]), ibit)
+                     if len(word) > 0]
+            for ww in range(len(words)):
+                word = words[ww]
+                if word.isalpha() or word.isnumeric():
+                    words[ww] = "{%s}" % word
+            ibit = "".join(words)
+            bits[ii] = "$\mathrm{%s}$" % ibit
+        else:
+            if enclose_pure_text and any([c.isalpha()  for c in bits[ii]]):
+                bits[ii] = "$\mathrm{%s}$" % bits[ii]
+
+    return "".join(bits).replace("$$", "")
 
 def _replace_regex_special_chars(word,
                                  repl_char="!",
@@ -653,7 +700,7 @@ def _latex_superscript_one_fragment(label, defrag="@"):
     if len(words)==1:
         return label
     elif len(words)==2:
-       return words[0] +"$^{%s}$" % latex_mathmode(words[1], enclose=False)
+        return words[0]+"$^{%s}$" %replace4latex(words[1], enclose_pure_text=True).replace("$","")
 
 def _label2componentsdict(istr,sep="-",defrag="@",
                           assume_ctc_label=True):
