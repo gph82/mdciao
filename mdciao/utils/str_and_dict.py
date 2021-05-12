@@ -539,10 +539,10 @@ def replace4latex(istr,
     lstr : str
         The string with LaTex-mathmode insertions
     """
-    pattern = " |" + "|".join(symbols)
-    bits = [bit for bit in _re.split("(?i)(%s)" % pattern, istr) if len(bit) > 0]
     if "$" in istr:
         return istr
+    pattern = " |" + "|".join(symbols)
+    bits = [bit for bit in _re.split("(?i)(%s)" % pattern, istr.replace("\n", " ? ")) if len(bit) > 0]
     for ii in range(len(bits)):
         if bits[ii].lower() in symbols:
             bits[ii] = "$\%s$" % bits[ii]
@@ -562,7 +562,7 @@ def replace4latex(istr,
             if enclose_pure_text and any([c.isalpha()  for c in bits[ii]]):
                 bits[ii] = "$\mathrm{%s}$" % bits[ii]
 
-    return "".join(bits).replace("$$", "")
+    return "".join(bits).replace("$$", "").replace(" ? ","\n")
 
 def _replace_regex_special_chars(word,
                                  repl_char="!",
