@@ -207,15 +207,18 @@ def ContactGroupL394(**kwargs):
             b = _io.StringIO()
             try:
                 with _contextlib.redirect_stdout(b):
+                    example_kwargs = {"topology": _path.basename(filenames.top_pdb),
+                                      "n_smooth_hw": 1,
+                                      "figures": False,
+                                      "BW_uniprot": _path.basename(filenames.adrb2_human_xlsx),
+                                      "CGN_PDB": _path.basename(filenames.CGN_3SN6),
+                                      "accept_guess": True}
+                    for key, val in kwargs.items():
+                        example_kwargs[key]=val
                     return _residue_neighborhoods("L394",
                                                   _path.basename(filenames.traj_xtc),
-                                                  topology=_path.basename(filenames.top_pdb),
-                                                  n_smooth_hw=1,
-                                                  figures=False,
-                                                  BW_uniprot=_path.basename(filenames.adrb2_human_xlsx),
-                                                  CGN_PDB=_path.basename(filenames.CGN_3SN6),
-                                                  accept_guess=True,
-                                                  **kwargs)["neighborhoods"][353]
+                                                  **example_kwargs,
+                                                  )["neighborhoods"][353]
 
             except Exception as e:
                 print(b.getvalue())
