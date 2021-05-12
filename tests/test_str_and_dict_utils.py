@@ -403,7 +403,7 @@ class Test_str_latex(unittest.TestCase):
 
     def test_works(self):
         np.testing.assert_array_equal(str_and_dict.replace4latex("There's an alpha and a beta here, also C_2"),
-                                    "There's an $\\alpha$ and a $\\beta$ here, also C$_{\\mathrm{2}}$")
+                                    "There's an $\\alpha$ and a $\\beta$ here, also $\\mathrm{{C}_{2}}$")
 
     def test_nothing_happens(self):
         istr = str_and_dict.replace4latex("There's an alpha and a beta here, also C_2")
