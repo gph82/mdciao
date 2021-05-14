@@ -6,6 +6,9 @@ mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 .. figure:: doc/imgs/banner.png
    :scale: 33%
 
+.. figure:: doc/imgs/distro_and_violin.png
+   :scale: 25%
+
 .. figure:: doc/imgs/interface.combined.png
    :scale: 33%
 
