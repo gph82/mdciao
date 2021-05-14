@@ -354,6 +354,12 @@ def _try_colormap_string(colors, N):
         print(
             "Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html")
         raise e
+def _is_colormapstring(istr):
+    try:
+        getattr(_cm, istr)
+        return True
+    except:
+        return False
 
 """
 def add_hover_ctc_labels(iax, ctc_mat,
@@ -1422,7 +1428,7 @@ def _plot_freqbars_baseplot(freqs,
 def _plot_violin_baseplot(per_CP_timetraces,
                           jax=None,
                           violin_width_in_inches=.75,
-                          color="tab:blue",
+                          colors="tab:blue",
                           labels=None,
                           offset=0
                           ):
@@ -1445,6 +1451,16 @@ def _plot_violin_baseplot(per_CP_timetraces,
         contacts and still appear uniform
     offset : float, default is 0
         The offset for horizontal positions of the violins
+    colors : list or str, default is "tab:blue"
+        The colors to be used. If list,
+        each violin will get one color
+        from the list. If string, depending on what string:
+        * if is_color_like(colors)=True
+         all violins get this color
+        * if string is a matplotlib colormap
+         interpolate N (=len(per_CP_timetraces)
+         colors on that colormap and assign
+         one to each violin
 
     Returns
     -------
@@ -1468,12 +1484,19 @@ def _plot_violin_baseplot(per_CP_timetraces,
                               #widths=violin_width_in_inches,
                               widths=.25,
                               showextrema=False)
-    #_plt.plot(xvec, means, " o", color=color)
+    #_plt.plot(xvec, means, " o", colors=colors)
     if labels is None:
         jax.set_xticks([])
     else:
         _plt.xticks(xvec, labels, rotation=45, ha="right", va="top")
-    violins["cmeans"].set_color(color)
-    for vio in violins["bodies"]:
-        vio.set_color(color)
+    if isinstance(colors, list):
+        assert len(colors)>=len(violins),"Not enough colors (%u) for the number of violins (%u)"%(len(colors),len(per_CP_timetraces))
+    elif _is_colormapstring(colors):
+        colors = _try_colormap_string(colors,len(per_CP_timetraces))
+    elif isinstance(colors,str):
+        colors = [colors]*len(per_CP_timetraces)
+
+    violins["cmeans"].set_color(colors)
+    for vio,col in zip(violins["bodies"],colors):
+        vio.set_color(col)
     return jax, violins
