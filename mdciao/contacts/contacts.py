@@ -25,6 +25,7 @@ import mdtraj as _md
 from os import path as _path
 
 import mdciao.plots as _mdcplots
+from mdciao.plots.plots import _add_grey_banded_bg #TODO prolly make public?
 import mdciao.utils as _mdcu
 import mdciao.nomenclature as _mdcn
 
@@ -3127,13 +3128,13 @@ class ContactGroup(object):
         """
 
         # Base plot
-        title = "violin plots"
         sigma = None
         if title_label is None and not self.is_neighborhood:
             assert self.name is not None, ("Cannot use a 'nameless' ContactGroup and 'title_label'=None.\n"
                                            "Either instantiate self.name or pass a 'title_label' ")
             title_label = self.name
-
+        if title_label is None:
+            title=""
         data4violin = [_np.hstack(cp.time_traces.ctc_trajs) * 10 for cp in self._contacts]
         means = _np.array([_np.mean(dt) for dt in data4violin])
 
@@ -3162,11 +3163,9 @@ class ContactGroup(object):
         if shorten_AAs:
             label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
-        cp: ContactPair
-
         ax, violins = _mdcplots.plots._plot_violin_baseplot([data4violin[oo] for oo in order],
                                                             jax=ax,
-                                                            color=color,
+                                                            colors=color,
                                                             )
         
         if ctc_cutoff_Ang is not None:
@@ -3188,8 +3187,10 @@ class ContactGroup(object):
                 label_dotref = "\n".join([_mdcu.str_and_dict.latex_superscript_fragments(label_dotref),
                                           _mdcu.str_and_dict.replace4latex(
                                               'Sigma = %2.1f' % sigma)])  # sum over all bc we did not truncate
-            ax.plot(_np.nan, _np.nan, 'o',
-                    color=self.anchor_fragment_color,
+            ax.plot(_np.nan, _np.nan,"",
+                    color=None, #self.anchor_fragment_color,
+                    ls=None,
+                    alpha=0,
                     label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
         else:
             if sum_freqs and sigma is not None:
@@ -3205,13 +3206,15 @@ class ContactGroup(object):
         ax.set_title(_mdcu.str_and_dict.replace4latex(title),
                      #y=_np.max([1, _mdcplots.highest_y_textobjects_in_Axes_units(ax)])
                      )
-        if ctc_cutoff_Ang is not None:
-            label_bars = ["%s\n(%u%%$\\leq%2.1f\\AA$)"%(ll, ff*100, ctc_cutoff_Ang) if ff>0 else "%s"%ll for ll,ff in zip(label_bars,freqs)]
 
         if self.is_neighborhood:
             label_bars = [_mdcu.str_and_dict._latex_superscript_one_fragment(ilab) for ilab in label_bars]
         else:
             label_bars = [_mdcu.str_and_dict.latex_superscript_fragments(ilab) for ilab in label_bars]
+
+        if ctc_cutoff_Ang is not None:
+            label_bars = ["%s\n(%u%%$\\leq%2.1f\\AA$)" % (ll, ff * 100, ctc_cutoff_Ang) if ff > 0 else "%s" % ll for
+                          ll, ff in zip(label_bars, freqs)]
 
         _plt.xticks(_np.arange(len(order)), [label_bars[oo] for oo in order],
                     rotation=45,ha="right", va="top")
@@ -3225,6 +3228,7 @@ class ContactGroup(object):
 
         if self.is_neighborhood:
             ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor,loc="best")
+        _add_grey_banded_bg(ax, len(label_bars))
 
         ax.figure.tight_layout()
 
