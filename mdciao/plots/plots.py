@@ -247,6 +247,9 @@ def compare_groups_of_contacts(groups,
                                               ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               fontsize=fontsize,
                                               **kwargs_plot_unified_freq_dicts)
+        if anchor is not None:
+            title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
+        myfig.suptitle(title, y=1, va="bottom", fontsize=_rcParams["font.size"]*2)
         plotted_freqs = None
     else:
         if plot_singles:
