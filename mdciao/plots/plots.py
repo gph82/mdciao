@@ -941,25 +941,21 @@ def compare_violins(groups,
     _fontsize=_rcParams["font.size"]
     _rcParams["font.size"] = fontsize
 
-    # Sanity checks
-    anchors = []
-    if anchor is not None:
-        for group in groups.values():
-            assert group.is_neighborhood
-            anchors.append(_mdcu.str_and_dict.replace_w_dict(group._contacts[0].neighborhood.anchor_residue_short, mutations_dict))
-        anchors = _np.unique(anchors)
-        assert len(anchors)==1, "More than one anchor found (%s), are you sure you should be comparing these neighborhoods?\n" \
-                                "Check if the 'mutations_dict' argument can help you"%anchors
-        assert anchors[0]==_mdcu.residue_and_atom.shorten_AA(anchor,keep_index=True)
-
     # Gather data
     data4violins_per_sys_per_ctc={}
     for syskey, group in groups.items():
         labels = group.gen_ctc_labels(AA_format=AA_format,
                                       fragments=[True if defrag is None else False][0],
-                                      include_anchor=[True if anchor is None else False][0])
-        data4violins_per_sys_per_ctc[syskey] = {key : _np.hstack(cp.time_traces.ctc_trajs) * 10
-                                                for key, cp in zip(labels, group._contacts)}
+                                      include_anchor=True)
+        idict = {key : _np.hstack(cp.time_traces.ctc_trajs) * 10
+                 for key, cp in zip(labels, group._contacts)}
+        if anchor is not None:
+            idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
+            if len(_np.unique(deleted_half_keys))>1:
+                raise ValueError("The anchor patterns differ by key, this is strange: %s"%deleted_half_keys)
+            else:
+                anchor=_mdcu.str_and_dict.defrag_key(deleted_half_keys[0],defrag=defrag,sep=" ")
+        data4violins_per_sys_per_ctc[syskey] = idict
 
     # Unify it
     data4violins_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(data4violins_per_sys_per_ctc,
@@ -1011,13 +1007,7 @@ def compare_violins(groups,
         prepare_str = lambda istr: istr
 
     if anchor is not None:
-        if defrag is None:
-            title = _mdcu.str_and_dict.replace_w_dict(group._contacts[0].neighborhood.anchor_res_and_fragment_str, mutations_dict)
-        else:
-            title = _mdcu.str_and_dict.replace_w_dict(group._contacts[0].neighborhood.anchor_residue_short,
-                                                      mutations_dict)
-        iax.set_title("%s neighborhood"%prepare_str(title))
-
+        iax.set_title("%s neighborhood"%prepare_str(anchor))
 
     if ctc_cutoff_Ang is not None:
         iax.axhline(ctc_cutoff_Ang, color="gray",ls="--", zorder=-10)
