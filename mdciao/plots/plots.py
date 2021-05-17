@@ -352,7 +352,7 @@ def _try_colormap_string(colors, N):
         return getattr(_cm, colors)(_np.arange(N))[:, :-1].tolist()
     except AttributeError as e:
         print(
-            "Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html")
+            "Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html"%colors)
         raise e
 def _is_colormapstring(istr):
     try:
@@ -997,6 +997,7 @@ def compare_violins(groups,
                                   showmeans=True,
                                   showextrema=False,
                                   )
+        violins["cmeans"].set_color(colordict[syskey])
         for vio in violins["bodies"]:
             vio.set_color(colordict[syskey])
         _plt.plot(_np.nan, _np.nan, "d",color=colordict[syskey],
