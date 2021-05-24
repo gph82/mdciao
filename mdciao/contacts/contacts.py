@@ -3806,6 +3806,15 @@ class ContactGroup(object):
               Do nothing
             * :obj:`mdtraj.Trajectory`
               Use this geometry to compute the SS
+            * string
+              Path to a filename, of which only
+              the first frame will be read. The
+              SS will be computed from there.
+              The file will be tried to read
+              first witouth topology information
+              (e.g. .pdb, .gro, .h5) will work,
+              and when this fails, self.top
+              will be passed (e.g. .xtc, .dcd)
             * array_like
               Use the SS from here, s.t.ss_inf[idx]
               gives the SS-info for the residue
@@ -3831,17 +3840,7 @@ class ContactGroup(object):
                 textlabels.append(rlab)
             kwargs_freqs2flare["textlabels"] = textlabels
 
-        from_tuple = False
-        if SS is None or isinstance(SS,bool) and not SS:
-            kwargs_freqs2flare["ss_array"] = None
-        elif isinstance(SS, _md.Trajectory):
-            kwargs_freqs2flare["ss_array"] = _md.compute_dssp(SS[0],simplified=True)[0]
-        elif SS is True:
-            from_tuple = [0,0,0]
-        elif len(SS)==3:
-            from_tuple = SS
-        else:
-            kwargs_freqs2flare["ss_array"] = SS
+        from_tuple, kwargs_freqs2flare["SS"] = _mdcu.residue_and_atom.get_SS(SS)
 
         # Introspect?
         if from_tuple:
@@ -3852,7 +3851,7 @@ class ContactGroup(object):
             else:
                 traj = traj[idx_frame]
                 assert isinstance(traj,_md.Trajectory)
-            kwargs_freqs2flare["ss_array"] = \
+            kwargs_freqs2flare["SS"] = \
             _md.compute_dssp(traj)[0]
 
         kwargs_freqs2flare["top"]=self.top
