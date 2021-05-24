@@ -24,6 +24,7 @@ import numpy as _np
 from . import _utils as _futils
 from mdciao.plots.plots import _points2dataunits
 from mdciao.utils.str_and_dict import replace4latex
+from mdciao.utils.residue_and_atom import get_SS as _get_SS
 
 from matplotlib import pyplot as _plt
 from matplotlib.patches import CirclePolygon as _CP
@@ -39,7 +40,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 r=1,
                 mute_fragments=None,
                 anchor_fragments=None,
-                ss_array=None,
+                SS=None,
                 panelsize=10,
                 angle_offset=0,
                 highlight_residxs=None,
@@ -174,11 +175,15 @@ def freqs2flare(freqs, res_idxs_pairs,
         If provided a top, residue names (e.g. GLU30) will be used
         instead of residue indices. Will fail if the residue indices
         in :obj:`res_idxs_pairs` can not be used to call :obj:`top.residue(ii)`
-    ss_array : 1D np.ndarray, default is None
-        Array containing secondary structure (ss) information to
-        be included in the flareplot. Indexed by residue index,
-        i.e. it can also be a dictionary as long as
-        ss_array[idx] returns the SS for residue with that residue idx
+    SS : any, default is None
+       Can be several things:
+       * Array containing secondary structure (ss) information to
+         be included in the flareplot. Indexed by residue index,
+         i.e. it can also be a dictionary as long as
+         SS[idx] returns the SS for residue with that residue idx
+       * Path to filename, will be passed to
+       :obj:`mdciao.utils.residue_and_atom.get_SS`, check
+       the docs there
     angle_offset : float, default is 0
         In degrees, where the flareplot "begins". Zero is xy = [1,0]
     highlight_residxs : iterable of ints, default is None
@@ -278,7 +283,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                                                      panelsize=panelsize,
                                                      padding=padding,
                                                      center=center,
-                                                     ss_array=ss_array,
+                                                     ss_array=_get_SS(SS, top=top)[1],
                                                      fragment_names=fragment_names,
                                                      iax=iax,
                                                      markersize=markersize,
