@@ -9,6 +9,8 @@ import io
 from contextlib import redirect_stdout
 from unittest.mock import patch
 import mock
+import mdtraj as _md
+import numpy as _np
 
 test_filenames = filenames()
 
@@ -519,3 +521,48 @@ class Test_lstop(unittest.TestCase):
         df = residue_and_atom.find_AA("*", self.top, return_df=True)
         idxs = residue_and_atom._ls_AA_in_df("GLU",df)
         self.assertEqual(idxs,[0,4])
+
+class Test_get_SS(unittest.TestCase):
+
+    def test_None(self):
+        from_tuple, ss_array = residue_and_atom.get_SS(None)
+        assert from_tuple is False
+        assert ss_array is None
+
+    def test_False(self):
+        from_tuple, ss_array = residue_and_atom.get_SS(False)
+        assert from_tuple is False
+        assert ss_array is None
+
+    def test_True(self):
+        from_tuple, ss_array = residue_and_atom.get_SS(True)
+        assert from_tuple == (0,0,0)
+        assert ss_array is None
+
+    def test_tuple(self):
+        from_tuple, ss_array = residue_and_atom.get_SS(tuple((1,1,1)))
+        assert from_tuple == (1,1,1)
+        assert ss_array is None
+
+    def test_list(self):
+        from_tuple, ss_array = residue_and_atom.get_SS([1,2,3,4])
+        assert from_tuple is False
+        self.assertListEqual(ss_array, [1,2,3,4])
+
+    def test_traj(self):
+        traj=_md.load(test_filenames.actor_pdb)
+        from_tuple, ss_array = residue_and_atom.get_SS(traj)
+        assert from_tuple is False
+        ss_ref = _md.compute_dssp(traj)[0]
+
+    def test_read_wo_top(self):
+        from_tuple, ss_array = residue_and_atom.get_SS(test_filenames.actor_pdb)
+        assert from_tuple is False
+        ss_ref = _md.compute_dssp(_md.load(test_filenames.actor_pdb))[0]
+        _np.testing.assert_array_equal(ss_array, ss_ref)
+
+    def test_read_w_top(self):
+        from_tuple, ss_array = residue_and_atom.get_SS(test_filenames.traj_xtc, top=test_filenames.top_pdb)
+        assert from_tuple is False
+        ss_ref = _md.compute_dssp(_md.load(test_filenames.traj_xtc, top=test_filenames.top_pdb))[0]
+        _np.testing.assert_array_equal(ss_array, ss_ref)

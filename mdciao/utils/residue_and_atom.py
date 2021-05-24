@@ -11,6 +11,7 @@ most elaborate and most higher-level.
 
 """
 from mdtraj.core.residue_names import _AMINO_ACID_CODES
+import mdtraj as _md
 from fnmatch import filter as _fn_filter
 import numpy as _np
 from  pandas import unique as _pandas_unique
@@ -651,3 +652,64 @@ def _ls_AA_in_df(AA_patt, df):
     match = lambda val : _fnmatch(val,_AA)
     idxs = _np.flatnonzero(df.applymap(lambda val: str(val)).applymap(match).values.any(1)).tolist()
     return idxs
+
+def get_SS(SS,top=None):
+    r"""
+    Try to guess what type of input for secondary-structre computation the user wants, and compute it
+    Parameters
+    ----------
+    SS : secondary structure information
+        Can be many things:
+        * triple of ints (CP_idx, traj_idx, frame_idx)
+          Nothing happens, the tuple is returned as
+          is and handled externally by the :obj:`ContactGroup`
+          that called this method.
+          Tuple representing a ContactPair, trajectory
+          See the docs there for more info
+        * True
+          same as [0,0,0]
+        * None or False
+          Do nothing
+        * :obj:`mdtraj.Trajectory`
+          Use this geometry to compute the SS
+        * string
+          Path to a filename, of which only
+          the first frame will be read. The
+          SS will be computed from there.
+          The file will be tried to read
+          first witouth topology information
+          (e.g. .pdb, .gro, .h5) will work,
+          and when this fails, self.top
+          will be passed (e.g. .xtc, .dcd)
+        * array_like
+          Use the SS from here, s.t.ss_inf[idx]
+          gives the SS-info for the residue
+          with that idx
+    top : :obj:`~mdtraj.Topology`, default is None
+
+    Returns
+    -------
+    from_tuple : bool
+        Whether the infor should be gotten from
+        a tuple or not
+    ss_array : np.ndarray or None
+    """
+    from_tuple = False
+    ss_array = None
+    if SS is None or (isinstance(SS, bool) and not SS):
+        pass
+    elif isinstance(SS, _md.Trajectory):
+        ss_array = _md.compute_dssp(SS[0], simplified=True)[0]
+    elif isinstance(SS, str):
+        try:
+            ss_array = _md.compute_dssp(_md.load(SS, frame=0), simplified=True)[0]
+        except ValueError as e:
+            ss_array = _md.compute_dssp(_md.load(SS, top=top, frame=0), simplified=True)[0]
+    elif SS is True:
+        from_tuple = (0, 0, 0)
+    elif len(SS) == 3:
+        from_tuple = SS
+    else:
+        ss_array = SS
+
+    return from_tuple, ss_array
