@@ -57,6 +57,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 padding=[1,1,1],
                 lw=5,
                 signed_colors=None,
+                subplot=False,
                 ):
     r"""
     Plot contact frequencies as `flare plots`.
@@ -226,7 +227,22 @@ def freqs2flare(freqs, res_idxs_pairs,
         alpha values. If None, defaults to :obj:`bezier_linecolor`
     aa_offset : int, default is 0
         Add this number to the resSeq value
-
+    plot_curves_only : bool, default is False
+        Only plot the curves connecting the dots, but
+        not the dots themselves or any other annotation.
+        (labels, fragment names or SS information).
+        The same caution as :obj:`iax` applies.
+    subplot : bool, default is False
+        If True, the method checks if
+        :obj:`iax` is the last axis in a
+        figure (=all other panels have
+        been already drawn) and then
+        transfers the last plot's
+        fontsizes and linewidths
+        to panels (if possible).
+        It will help produce more homogeneous
+        plots when heuristics about font-sizing
+        fail
 
     Returns
     -------
@@ -325,6 +341,11 @@ def freqs2flare(freqs, res_idxs_pairs,
         plot_attribs["bezier_lw"] = lw
         plot_attribs["bezier_curves"] = bezier_curves
 
+    if subplot:
+        if iax is iax.figure.axes[-1]:
+            [_futils.fontsize_apply(iax, jax) for jax in iax.figure.axes]
+            minwidth = min([_np.unique([line.get_linewidth() for line in jax.lines]) for jax in iax.figure.axes])
+            [[line.set_linewidth(minwidth) for line in jax.lines] for jax in iax.figure.axes]
     return iax, idxs_of_pairs2plot, plot_attribs
 
 def circle_plot_residues(fragments,

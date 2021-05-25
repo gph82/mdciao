@@ -37,22 +37,23 @@ class TestFlare(TestCase):
         #iax.figure.savefig("test.png")
 
     def test_options_sparse(self):
-        myfig, myax = plt.subplots(1,2,sharex=True, sharey=True, figsize=(10,5))
-        iax , _, _= flare.freqs2flare(np.array([[1, 1, 1]]),
-                                    np.array([[0, 1], [1, 2], [2, 3]]),
-                                    fragments=[[0, 1], [2, 3],np.arange(4,15)],
-                                    exclude_neighbors=0,
-                                    iax=myax[0]
+        myfig, myax = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(10, 5))
+        iax, _, _ = flare.freqs2flare(np.array([[1, 1, 1]]),
+                                      np.array([[0, 1], [1, 2], [2, 3]]),
+                                      fragments=[[0, 1], [2, 3], np.arange(4, 15)],
+                                      exclude_neighbors=0,
+                                      iax=myax[0]
 
-                                    )
-        iax, _ , _  = flare.freqs2flare(np.array([[1, 1, 1]]),
-                                   np.array([[0, 1], [1, 2], [2, 3]]),
-                                   fragments=[[0, 1], [2, 3], np.arange(4, 15)],
-                                   exclude_neighbors=0,
-                                   iax=myax[1],
-                                   sparse=True
+                                      )
+        iax, _, _ = flare.freqs2flare(np.array([[1, 1, 1]]),
+                                      np.array([[0, 1], [1, 2], [2, 3]]),
+                                      fragments=[[0, 1], [2, 3], np.arange(4, 15)],
+                                      exclude_neighbors=0,
+                                      iax=myax[1],
+                                      sparse=True,
+                                      subplot=True,
 
-                                   )
+                                      )
 
         iax.figure.tight_layout()
         #iax.figure.savefig("test.png")
