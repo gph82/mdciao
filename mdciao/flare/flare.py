@@ -581,9 +581,9 @@ def circle_plot_residues(fragments,
                                                       shortenAAs=shortenAAs,
                                                       highlight_residxs=highlight_residxs, top=top,
                                                       aa_offset=aa_offset,
-                                                      replacement_labels={ii: ss_array[ii] for ii in
+                                                      replacement_labels={ii: ss_array[ii].replace("NA","").replace("E","B") for ii in
                                                                           residues_to_plot_as_dots},
-                                                      colors=ss_colors,
+                                                      colors=[_futils._make_color_transparent(col, .8, "w") for col in ss_colors],
                                                       weight="bold")
             idx_longest_label = _np.argmax([len(itext.get_text()) for itext in ss_labels])
             # We're doing this "by hand" here because it's just two or at most 3 offenders
