@@ -432,6 +432,7 @@ def plot_unified_freq_dicts(freqs,
                             title=None,
                             legend_rows=4,
                             verbose_legend=True,
+                            half_sigma=False,
                             ):
     r"""
     Plot unified (= with identical keys) frequency dictionaries for different systems
@@ -528,6 +529,17 @@ def plot_unified_freq_dicts(freqs,
         denoting the missing contacts that are
         "a(bove" and b(elow)" with their respective
         sums "A" and "B".
+    half_sigma : bool, default is False
+        When True, instead of showing
+        Sigma=20, Sigma = 2x10 will
+        be shown. If a ContactGroup
+        has a Sigma=10 normally, when showing
+        per-residue values, that number
+        doubles, because each contact is
+        shown two times. Hence, showing
+        half-sigma allows to "keep" the
+        number 10 in the legend,
+        even though the shown Sigma is 20
 
     Returns
     -------
@@ -612,6 +624,12 @@ def plot_unified_freq_dicts(freqs,
     # Visual aides for debugging one-off errors in labelling, bar-position, and bar-width
     #_plt.axvline(.5-wpad/2,color="r")
     #_plt.axvline(-.5+wpad/2, color="r")
+    hs=1
+    two_times= ""
+    if half_sigma:
+        hs=.5
+        two_times="2 x "
+
     for jj, (skey, sfreq) in enumerate(freqs_by_sys_by_ctc.items()):
         # Sanity check
         assert len(sfreq) == len(sorted_value_by_ctc_by_sys), "This shouldnt happen"
@@ -620,19 +638,19 @@ def plot_unified_freq_dicts(freqs,
         x_array = _np.arange(len(bar_array))
 
         # Label
-        label = '%s (Sigma= %2.1f)'%(skey, _np.sum(list(sfreq.values())))
+        label = '%s (Sigma= %s%2.1f)'%(skey, two_times, _np.sum(list(sfreq.values()))*hs)
         if verbose_legend:
             if len(keys_popped_above)>0:
                 extra = "above threshold"
                 f = identity_cutoff
-                label = label[:-1]+", +%2.1fa)"%\
-                        (_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))
+                label = label[:-1]+", %s+%2.1fa)"%\
+                        (two_times,(_np.sum([freqs[skey][nskey] for nskey in keys_popped_above]))*hs)
             if len(ctc_keys_popped_below) > 0:
                 not_shown_sigma = _np.sum([freqs[skey][nskey] for nskey in ctc_keys_popped_below])
                 if not_shown_sigma>0:
                     extra = "below threshold"
                     f = lower_cutoff_val
-                    label = label[:-1] + ", +%2.1fb)" % (not_shown_sigma)
+                    label = label[:-1] + ", %s+%2.1fb)" % (two_times, not_shown_sigma*hs)
         label = _mdcu.str_and_dict.replace4latex(label)
 
         if len(bar_array)>0:
