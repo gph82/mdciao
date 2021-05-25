@@ -202,10 +202,11 @@ def unify_freq_dicts(freqs,
     per_residue : bool, default is False
         Aggregate interactions to their residues
     is_freq : bool, default is True
-        If the dictionaries is a actually
-        contain frequencies
+        If the dictionaries actually
+        contain frequencies or not.
+        If not, some checks are omitted
     val_missing : anything, default is 0
-        What value to asssign to the
+        What value to assign to the
         missing keys (TODO check the name of this in pandas)
 
 
