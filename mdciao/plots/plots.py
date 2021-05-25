@@ -180,7 +180,9 @@ def compare_groups_of_contacts(groups,
     defrag : str, default is "@"
         see :obj:`~mdciao.utils.str_and_dict.unify_freq_dicts` for more info
     per_residue : bool, default is False
-        Unify dictionaries by residue and not by pairs
+        Unify dictionaries by residue and not by pairs.
+        If True, :obj:`remove_identities` is set to False
+        automatically when calling :obj:`plot_unified_freq_dicts`
     distro : bool, default is False
         Instead of plotting contact frequencies,
         plot contact distributions
