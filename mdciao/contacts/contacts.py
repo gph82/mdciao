@@ -2879,6 +2879,38 @@ class ContactGroup(object):
 
         return mat
 
+    def frequency_delta(self, otherCG,ctc_cutoff_Ang):
+        r"""
+        Compute per-contact frequency differences between :obj:`self` and some other :obj:`ContactGroup`
+
+        The difference is defined as
+
+            :math:`\Delta_{AB} = freq_B - freq_A`,
+
+        i.e. the delta that occurs upon "reacting" from :obj:`self` to :obj:`otherCG`
+
+        No sanity checks are performed, residue indices are assumed to have the same
+        meaning in both :obj:`self` and :obj:`otherCG`
+
+        Parameters
+        ----------
+        otherCG : :obj:`ContactGroup`
+            The ContactGroup to compute the difference with
+        ctc_cutoff_Ang : float
+            The cutoff to use to compute the frequencies
+
+        Returns
+        -------
+        delta_freq : 1D np.ndarray
+            The value resulting from doing
+            otherCG.frequency_per_contact(ctc_cutoff_Ang)-self.frequency_per_ctc(ctc_cutoff_Ang
+        res_idxs_pairs : 2D np.ndarray of len(delta_freq)
+            The res_idxs_pairs for the :obj:`delta_freq`
+            values
+        """
+        return _delta_freq_pairs(    self.frequency_per_contact(ctc_cutoff_Ang),   self.res_idxs_pairs,
+                                 otherCG.frequency_per_contact(ctc_cutoff_Ang), otherCG.res_idxs_pairs)
+
     def relative_frequency_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang, switch_off_Ang=None, **kwargs):
         r"""
 
@@ -4810,3 +4842,33 @@ def _mapatoms(top0, top1,resmapping, atom0idx2atom_name):
         atom0idx2atom1idx[ii] = new_atom[0].index
 
     return atom0idx2atom1idx
+
+
+def _delta_freq_pairs(freqsA, pairsA, freqsB, pairsB):
+    r"""
+    Lower level method to run :obj:`ContactGroup.frequency_delta` in way that's easy to test
+
+    TODO: this could be done in a million different ways (e.g. also with pandas), I just
+    don't want to think about it much now
+    Parameters
+    ----------
+    freqsA
+    pairsA
+    freqsB
+    pairsB
+
+    Returns
+    -------
+
+    """
+    assert len(freqsA)==len(pairsA)
+    assert len(freqsB)==len(pairsB)
+    delta = _defdict(list)
+    for sign, (freqs, pairs) in zip([-1, +1], [[freqsA, pairsA],
+                                               [freqsB, pairsB]]):
+        for freq, pair in zip(freqs,pairs):
+            delta[tuple(sorted(pair))].append(sign * freq)
+    delta = {key: _np.sum(val) for key, val in delta.items()}
+    pairs = _np.array(list(delta.keys()))
+    delta = _np.array(list(delta.values()))
+    return delta, pairs

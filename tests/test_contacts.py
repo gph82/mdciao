@@ -1605,6 +1605,33 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(table["by_atomtypes"][0], " 66% BB-BB,  33% BB-SC")
         _np.testing.assert_equal(table["by_atomtypes"][1], " 66% BB-SC,  33% SC-BB")
 
+    def test_frequency_delta_low_level(self):
+        from mdciao.contacts.contacts import _delta_freq_pairs
+        delta, pairs = _delta_freq_pairs([1., .60, 1], [[0, 1],
+                                                      [2, 3],
+                                                      [0, 2]],
+                                         [.25, .50, 1], [[0, 1],
+                                                         [2, 0],
+                                                         [4, 2]])
+        assert len(delta)==len(pairs)==4
+        delta = {tuple(pp):dd for dd, pp in zip(delta,pairs)}
+        assert delta[tuple([0,1])]==.25-1
+        assert delta[tuple([0,2])]==.50-1
+        assert delta[tuple([2,3])]==-.60
+        assert delta[tuple([2,4])]==1
+
+    def test_frequency_delta(self):
+        CG1 = examples.ContactGroupL394(ctc_cutoff_Ang=3.5)
+        CG2 = examples.ContactGroupL394(ctc_cutoff_Ang=5)
+        CG1 : contacts.ContactGroup
+        from mdciao.contacts.contacts import _delta_freq_pairs
+        delta_ref, pairs_ref = _delta_freq_pairs(CG1.frequency_per_contact(3.5), CG1.res_idxs_pairs,
+                                         CG2.frequency_per_contact(3.5), CG2.res_idxs_pairs)
+        delta, pairs = CG1.frequency_delta(CG2, 3.5)
+        _np.testing.assert_array_equal(delta_ref, delta)
+        _np.testing.assert_array_equal(pairs_ref, pairs)
+
+
 class TestContactGroupPlots(TestBaseClassContactGroup):
 
     @classmethod
