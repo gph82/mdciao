@@ -455,7 +455,7 @@ def circle_plot_residues(fragments,
     # TODO review variable names
     # TODO this color mess needs to be cleaned up
     residues_to_plot_as_dots = _np.hstack(fragments)
-    col_list = _futils.col_list_from_input_and_fragments(colors, fragments)
+    col_list = _futils.col_list_from_input_and_fragments(colors, fragments,alpha=.80)
     if iax is None:
         _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
         iax = _plt.gca()
