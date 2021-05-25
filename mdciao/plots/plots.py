@@ -310,6 +310,7 @@ def compare_groups_of_contacts(groups,
                                                             fontsize=fontsize,
                                                             figsize=figsize,
                                                             title=title,
+                                                            half_sigma=per_residue,
                                                             **kwargs_plot_unified_freq_dicts)
 
         _plt.gcf().tight_layout()
@@ -989,6 +990,7 @@ def compare_violins(groups,
                                       include_anchor=True)
         idict = {key : _np.hstack(cp.time_traces.ctc_trajs) * 10
                  for key, cp in zip(labels, group._contacts)}
+        #TODO avoid repetition
         if anchor is not None:
             idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
             if len(_np.unique(deleted_half_keys))>1:
