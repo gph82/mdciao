@@ -27,8 +27,9 @@ from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp 
 from matplotlib.colors import to_rgb as _to_rgb
 
 #https://stackoverflow.com/a/33375738
-def _make_rgb_transparent(rgb, bg_rgb, alpha):
-    return [alpha * c1 + (1 - alpha) * c2 for (c1, c2) in zip(rgb, bg_rgb)]
+def _make_color_transparent(color_fg, alpha, color_bg="white"):
+    r"""Return a color that's a three-value RGB equivalent to a four valued (rgb+alpha) transparent color"""
+    return [alpha * c1 + (1 - alpha) * c2 for (c1, c2) in zip(_to_rgb(color_fg), _to_rgb(color_bg))]
 
 _mycolors = _colorstring.split(",")
 
@@ -340,7 +341,7 @@ def col_list_from_input_and_fragments(colors,
         raise Exception
 
     if alpha!=1:
-        col_list = [_make_rgb_transparent(_to_rgb(col),[1,1,1], alpha) for col in col_list]
+        col_list = [_make_color_transparent(_to_rgb(col), alpha) for col in col_list]
 
     return col_list
 
