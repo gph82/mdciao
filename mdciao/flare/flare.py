@@ -142,7 +142,8 @@ def freqs2flare(freqs, res_idxs_pairs,
         re-use the same cirlce of residues as a
         background to plot different sets
         of :obj:`freqs`, **YOU HAVE TO USE THE SAME**
-        :obj:`fragments` **on all calls**, else the
+        :obj:`fragments` and :obj:`sparse` values
+         **on all calls**, else the
         bezier lines will be placed erroneously.
     fragment_names: iterable of strings, default is None
         The names of the fragments used in :obj:`fragments`
@@ -209,7 +210,7 @@ def freqs2flare(freqs, res_idxs_pairs,
 
         Note
         ----
-        There is a hidden development option for this argument where a residue
+        There is a development option for this argument where a residue
         list is passed, meaning, show these residues regardless of any other
         option that has been passed. Perhaps sparse changes in the future.
     bezier_linecolor : color-like, default is 'k'
@@ -278,6 +279,9 @@ def freqs2flare(freqs, res_idxs_pairs,
     residues_as_fragments = _futils._parse_residue_and_fragments(res_idxs_pairs,
                                                                  sparse=sparse,
                                                                  fragments=fragments)
+    # Delete fragment names that won't be used
+    if fragment_names is not None and fragments is not None:
+        fragment_names = [fn for fr, fn in zip(fragments,fragment_names) if len(_np.intersect1d(fr,_np.hstack(residues_as_fragments)))>0]
 
     # Create a map
     residx2markeridx = _futils.value2position_map(_np.hstack(residues_as_fragments))
