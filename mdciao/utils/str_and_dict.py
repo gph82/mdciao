@@ -518,7 +518,7 @@ def replace4latex(istr,
      * fully alphabetical: GLY_{ACE}
      * containing dots: L394^{G.H.26}
 
-    BUT mixed \beta_2AR are left like unprotected:
+    BUT mixed \beta_2AR are left unprotected:
 
     >>> replace4latex("mdciao can alpha Sigma_2 beta2AR ACE_GLY GLU30^3.50 no [frag1-WT] problem!")
     'mdciao can $\\alpha$ $\\Sigma\\mathrm{_{2}}$ $\\beta\\mathrm{_2AR}$ $\\mathrm{{ACE}_{GLY}}$ $\\mathrm{GLU30^{3.50}}$ no [frag1-WT] problem!'
@@ -530,6 +530,9 @@ def replace4latex(istr,
         The string to be prepare for LaTeX mathmode
         If a $ sign is already in :obj:`istr`,
         nothing will happen
+        If a word in :obj:`istr` contains
+        the same :obj:`sindex` character more than
+        once, it'll be skyped (ask [Knut](https://tex.stackexchange.com/questions/253080/why-am-i-getting-a-double-subscript-error))
     sindex : list
         The characters that indicate super- and sub-indices
     symbols : list
@@ -551,6 +554,8 @@ def replace4latex(istr,
             bits[ii] = "$%s$" % bits[ii]
         elif any([ss in bits[ii] for ss in sindex]):
             ibit = bits[ii]
+            if any([ibit.count(ss)>1 for ss in sindex]):
+                continue
             words = [word for word in _re.split("(%s)" % "|".join(["\%s" % ss for ss in sindex]), ibit)
                      if len(word) > 0]
             for ww in range(len(words)):
