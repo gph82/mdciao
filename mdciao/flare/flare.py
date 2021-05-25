@@ -459,14 +459,13 @@ def circle_plot_residues(fragments,
     if iax is None:
         _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
         iax = _plt.gca()
-        # Do this first to have an idea of the points per axis unit necessary for the plot
-        iax.set_xlim([center[0] - r, center[0] +  r])
-        iax.set_ylim([center[1] - r, center[1] +  r])
     else:
         if not iax.figure.get_tight_layout():
             print("The passed figure was not instantiated with tight_layout=True\n"
                   "This may lead to some errors in the flareplot fontsizes.")
-
+    # Do this first to have an idea of the points per axis unit necessary for the plot
+    iax.set_xlim([center[0] - r, center[0] + r])
+    iax.set_ylim([center[1] - r, center[1] + r])
     iax.set_aspect('equal')
 
     # Create a map
