@@ -26,6 +26,9 @@ from mdciao.utils.bonds import bonded_neighborlist_from_top
 from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp as _re_warp
 from matplotlib.colors import to_rgb as _to_rgb
 
+from collections import Counter as _Counter
+from matplotlib.patches import CirclePolygon as _CP
+
 #https://stackoverflow.com/a/33375738
 def _make_color_transparent(color_fg, alpha, color_bg="white"):
     r"""Return a color that's a three-value RGB equivalent to a four valued (rgb+alpha) transparent color"""
@@ -784,3 +787,68 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse=False, fragments=None):
         residues_as_fragments = [ifrag for ifrag in residues_as_fragments if len(ifrag) > 0]
 
     return residues_as_fragments
+
+
+def fontsize_get(iax):
+    r"""
+    Scan text elements and return a dictionary with fontsizes
+    Parameters
+    ----------
+    iax : :obj:`~matplotlib.axes.Axes`
+
+    Returns
+    -------
+    sizes : dict
+        A dictionary with two lists,
+        keyed with "n_polygons" and "other"
+        * "n_polygons" contains a list in ascending
+        order with the fontsizes of text elements
+        of which there are as many as CirclePolygons
+        This fact is a strong hint that those text
+        elements correspond 1st to the residue-label texts
+        and 2nd to the residue-SS-label texts
+        * "other" contains all other fontsizes in
+        :obj:`iax`, most likely belonging to the
+        fragment-label texts
+    """
+    n_polygons = len([obj for obj in iax.artists if isinstance(obj, _CP)])
+    sizes = {"n_polygons": [],
+             "other": []}
+
+    c = _Counter([_np.round(txt.get_fontsize(), 2) for txt in iax.texts])
+
+    for key, val in c.items():
+        sizes[{True: "n_polygons",
+               False: "other"}[val == n_polygons]].append(key)
+
+    return {key: sorted(val) for key, val in sizes.items()}
+
+
+def fontsize_apply(axA, axB):
+    r"""
+    Map the fontsizes of axA to the text-objects of axB
+
+    Internally, :obj:`fontsize_get` is used
+    Parameters
+    ----------
+    axA : :obj:`~matplotlib.axes.Axes`
+    axB : :obj:`~matplotlib.axes.Axes`
+
+    Returns
+    -------
+
+    """
+    sizes1 = fontsize_get(axA)
+    sizes2 = fontsize_get(axB)
+
+    for key, val in sizes2.items():
+        assert len(sizes1[key]) == len(val)
+
+    fs2type = {}
+    for key, val in sizes2.items():
+        for ii, vv in enumerate(val):
+            fs2type[vv] = sizes1[key][ii]
+
+    for txt in axB.texts:
+        fs = _np.round(txt.get_fontsize(), 2)
+        txt.set_fontsize(fs2type[fs])

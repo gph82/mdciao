@@ -422,3 +422,26 @@ class Test_parse_residue_and_fragments(TestCase):
                                                                     fragments=fragments)
         np.testing.assert_equal(len(res_idxs_as_fragments), 3)
         np.testing.assert_array_equal(res_idxs_as_fragments, [[1], [10],[20]])
+
+class TestGetSetFonts(TestCase):
+
+    def test_get(self):
+        iax, _, _ = circle_plot_residues([np.arange(20)])
+
+        fs = _utils.fontsize_get(iax)
+        self.assertSequenceEqual(["n_polygons","other"],list(fs.keys()))
+        assert len(fs["other"])==0
+        assert len(fs["n_polygons"])==1
+        print(np.unique([tt.get_fontsize() for tt in iax.texts]))
+        self.assertSequenceEqual(fs["n_polygons"], np.unique([np.round(tt.get_fontsize(),2) for tt in iax.texts]))
+
+    def test_set(self):
+        iax1, _, _ = circle_plot_residues([np.arange(20)])
+        iax2, _, _ = circle_plot_residues([np.arange(40)])
+
+        fs1, fs2 = [_utils.fontsize_get(iax)["n_polygons"][0] for iax in [iax1,iax2]]
+        assert fs1!=fs2
+
+        _utils.fontsize_apply(iax1,iax2)
+        new_fs2 = _utils.fontsize_get(iax2)["n_polygons"][0]
+        assert fs1 == new_fs2
