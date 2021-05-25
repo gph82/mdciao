@@ -7,12 +7,13 @@ from matplotlib.colors import is_color_like, to_rgb
 
 from mdciao.contacts import ContactGroup, ContactPair
 from mdciao.examples import ContactGroupL394
-
+from mdciao.cli import interface as _cli_interface
 from mdciao import plots
 from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict, _color_dict_guesser, _try_colormap_string, _plot_violin_baseplot
 
 from tempfile import TemporaryDirectory as _TDir
 import os
+import mdtraj as _md
 
 from mdciao.filenames import filenames
 test_filenames = filenames()
@@ -302,6 +303,25 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
     def test_distro(self):
         CG : ContactGroup = ContactGroupL394()
         plots.compare_groups_of_contacts([CG,CG],distro=True)
+
+    def test_interface(self):
+        intf1 = _cli_interface(_md.load(test_filenames.actor_pdb),
+                                fragments=[_np.arange(868, 875 + 1),  # ICL2
+                                            _np.arange(328, 353 + 1)],  # Ga5,
+                                ctc_cutoff_Ang=30,
+                                no_disk=True,
+                                figures=False
+                                )
+        intf2 = _cli_interface(_md.load(test_filenames.actor_pdb),
+                                fragments=[_np.arange(860, 875 + 1),  # ICL2
+                                            _np.arange(320, 353 + 1)],  # Ga5,
+                                ctc_cutoff_Ang=30,
+                                no_disk=True,
+                                figures=False
+                                )
+        ifig, __, __  = plots.compare_groups_of_contacts({"1": intf1, "2":intf2}, ctc_cutoff_Ang=30,interface=True)
+        #ifig.savefig("test.png")
+
 
 class Test_plot_w_smoothing_auto(unittest.TestCase):
 

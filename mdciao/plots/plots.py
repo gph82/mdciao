@@ -104,6 +104,7 @@ def compare_groups_of_contacts(groups,
                                per_residue=False,
                                title='comparison',
                                distro=False,
+                               interface=False,
                                **kwargs_plot_unified_freq_dicts,
                                ):
     r"""
@@ -183,6 +184,12 @@ def compare_groups_of_contacts(groups,
     distro : bool, default is False
         Instead of plotting contact frequencies,
         plot contact distributions
+    interface : bool, default is False
+        As if per_residue=True and
+        then sorts the residues into
+        interface fragments. Will fail
+        if the passed :obj:`groups`
+        don't have self.is_interface==True
     kwargs_plot_unified_freq_dicts : kwargs
         remove_identities
 
@@ -212,6 +219,9 @@ def compare_groups_of_contacts(groups,
             _groups["%s (%u)"%(key,ii)]=item
         groups = _groups
 
+    if interface:
+        assert all([igroup.is_interface for igroup in groups.values()])
+
     freqs = {key: {} for key in groups.keys()}
     colors = _color_dict_guesser(colors, freqs.keys())
 
@@ -225,9 +235,17 @@ def compare_groups_of_contacts(groups,
                                                  bins=_np.max([20, (_np.sqrt(ifile.n_frames_total) / 2).round().astype(int)]))
             else:
                 assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a ctc_cutoff_Ang parameter"
-                idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
+                if not interface:
+                    idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               AA_format=AA_format,
                                               split_label=False)
+                else:
+                    idict = ifile.frequency_sum_per_residue_names(ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                                  shorten_AAs=[True if AA_format=="short" else False][0],
+                                                                  list_by_interface=True)
+                    idict[0].update(idict[1])
+                    idict=idict[0]
+                    kwargs_plot_unified_freq_dicts["sort_by"]="keep"
         else:
             idict = {key:val for key, val in ifile.items()}
 
@@ -271,7 +289,9 @@ def compare_groups_of_contacts(groups,
 
             myfig.tight_layout()
             # _plt.show()
-        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, per_residue=per_residue, defrag=defrag)
+        freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude,
+                                            per_residue=[per_residue if not interface else False][0],
+                                            defrag=defrag)
         if per_residue:
             kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
             kwargs_plot_unified_freq_dicts["remove_identities"] = False
