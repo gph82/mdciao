@@ -3952,6 +3952,7 @@ class ContactGroup(object):
                             interface_residxs=interface_residxs,
                             top=top, name=self.name,
                             neighbors_excluded=self.neighbors_excluded,
+                            max_cutoff_Ang=self.max_cutoff_Ang
                             )
 
     @property
@@ -4367,7 +4368,8 @@ class ContactGroup(object):
         tosave = {"serialized_CPs": [cp._serialized_as_dict(**kwargs) for cp in self._contacts],
                   "interface_residxs": self.interface_residxs,
                   "name": self.name,
-                  "neighbors_excluded":self.neighbors_excluded}
+                  "neighbors_excluded":self.neighbors_excluded,
+                  "max_cutoff_Ang":self.max_cutoff_Ang}
         if filename is not None:
             assert filename.endswith("npy")
             _np.save(filename,tosave)
@@ -4387,7 +4389,9 @@ class ContactGroup(object):
         """
         return ContactGroup([CP.copy() for CP in self._contacts],
                             interface_residxs=self.interface_residxs,
-                            top=self.top)
+                            top=self.top,
+                            neighbors_excluded=self.neighbors_excluded,
+                            max_cutoff_Ang=self.max_cutoff_Ang)
 
     def __hash__(self):
         return hash(tuple([hash(tuple([CP.__hash__() for CP in self._contacts])),
