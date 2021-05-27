@@ -135,6 +135,7 @@ def get_fragments(top,
                   atoms=False,
                   verbose=True,
                   join_fragments=None,
+                  salt=["Na+","Cl-"],
                   **kwargs_residues_from_descriptors):
     """
     Group residues of a molecular topology into fragments using different methods.
@@ -192,6 +193,11 @@ def get_fragments(top,
         otherwise an exception is thrown
     verbose : boolean, optional
         Be verbose
+    salt : list, default is ["Na+","Cl+"]
+        Residues that match these residue names and
+        have only one atom will be put together
+        in the last fragment. Use salt = []
+        to deactivate
     kwargs_residues_from_descriptors : optional
         additional arguments, see :obj:`~mdciao.residue_and_atom.residues_from_descriptors`
 
@@ -236,8 +242,6 @@ def get_fragments(top,
                     list_for_removing.remove(rr.index)
                     fragments[frag_idx]=_np.array(list_for_removing)
                     fragments.append([rr.index])
-
-
     # TODO check why this is not equivalent to "bonds" in the test_file
     elif method == 'molecules':
         raise NotImplementedError("method 'molecules' is not fully implemented yet")
@@ -270,6 +274,13 @@ def get_fragments(top,
         fragments = [_np.arange(top.n_residues)]
 
     fragments = [fragments[ii] for ii in _np.argsort([ifrag[0] for ifrag in fragments])]
+
+    # Remove salty ions
+    salt = [ss.lower() for ss in salt]
+    salty_ions = [(ff[0], fidx) for fidx, ff in enumerate(fragments) if len(ff)==1 and top.residue(ff[0]).n_atoms==1 and top.residue(ff[0]).name.lower() in salt]
+    if len(salty_ions)>0:
+        salty_ions = _np.vstack(salty_ions)
+        fragments = [ff for ii,ff in enumerate(fragments) if ii not in salty_ions[:,1]]+[sorted(salty_ions[:,0])]
     # Inform of the first result
     if verbose:
         print("Auto-detected fragments with method '%s'"%str(method))

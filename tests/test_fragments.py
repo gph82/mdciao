@@ -256,6 +256,12 @@ class Test_get_fragments_other_options(unittest.TestCase):
         assert _np.allclose(by_bonds[2], [6])
         assert _np.allclose(by_bonds[3], [7])
 
+    def test_ions(self):
+        geom = md.load(test_filenames.ions_pdb)
+        frags = mdcfragments.get_fragments(geom.top,verbose=False)
+        assert len(frags)==1
+        assert len(frags[0])==geom.n_residues==geom.n_atoms
+
 class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
 
     def setUp(self):

@@ -48,6 +48,8 @@ class filenames(object):
 
         self.actor_pdb = path.join(self.example_path,"prot1.pdb.gz")
 
+        self.ions_pdb = path.join(self.example_path,"ions.pdb")
+
         # Pure-PDBs
         self.pdb_3CAP = path.join(self.RSCB_pdb_path,"3cap.pdb.gz")
         self.pdb_1U19 = path.join(self.RSCB_pdb_path,"1u19.pdb.gz")
