@@ -1855,6 +1855,7 @@ class ContactGroup(object):
                  name=None,
                  neighbors_excluded=None,
                  use_AA_when_conslab_is_missing=True,#TODO this is for the interfaces
+                 max_cutoff_Ang=None
                  ):
         r"""
 
@@ -1883,6 +1884,12 @@ class ContactGroup(object):
             ATM it is only used for the title of the
             :obj:`ContactGroup.plot_distance_distributions`
             title when the object is not a neighborhood
+        max_cutoff_Ang : float, default is None
+            Operations involving cutoffs higher
+            than this will be forbidden and will
+            raise ValueError. Prevents the user
+            from asking for contact-frequencies
+            that aren't present in the ContactGroup
 
         """
         self._contacts = list_of_contact_objects
@@ -1892,6 +1899,7 @@ class ContactGroup(object):
         self._is_interface = False
         self._is_neighborhood = False
         self._name = name
+        self._max_cutoff_Ang = max_cutoff_Ang
         if top is None:
             self._top = self._unique_topology_from_ctcs()
         else:
@@ -2022,6 +2030,18 @@ class ContactGroup(object):
     @property
     def neighbors_excluded(self):
         return self._neighbors_excluded
+
+    @property
+    def max_cutoff_Ang(self):
+        return self._max_cutoff_Ang
+
+    def _check_cutoff_ok(self,ctc_cutoff_Ang):
+        if self.max_cutoff_Ang is None or ctc_cutoff_Ang<=self.max_cutoff_Ang:
+            pass
+        else:
+            raise ValueError("Using a cutoff of %3.2f Ang. is forbidden because\n"
+                             " because this ContactGroup was instantiated with \n"
+                             "'max_cutoff_Ang = %3.2f' Ang."%(ctc_cutoff_Ang,self.max_cutoff_Ang))
 
     @property
     def name(self):
@@ -2421,6 +2441,7 @@ class ContactGroup(object):
         fdict : dictionary
 
         """
+        self._check_cutoff_ok(ctc_cutoff_Ang)
         frequency_dicts = [cp.frequency_dict(ctc_cutoff_Ang=ctc_cutoff_Ang, **kwargs) for cp in self._contacts]
         if sort:
             frequency_dicts = sorted(frequency_dicts,
@@ -2442,6 +2463,7 @@ class ContactGroup(object):
         -------
         freqs : 1D np.ndarray of len(n_ctcs)
         """
+        self._check_cutoff_ok(ctc_cutoff_Ang)
         return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang) for ictc in self._contacts])
 
     def frequency_sum_per_residue_idx_dict(self, ctc_cutoff_Ang,
@@ -2659,6 +2681,7 @@ class ContactGroup(object):
         -------
         df : :obj:`pandas.DataFrame`
         """
+        self._check_cutoff_ok(ctc_cutoff_Ang)
         idicts = [ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, atom_types=atom_types, **ctc_fd_kwargs) for ictc in self._contacts]
         if atom_types is True:
             for jdict in idicts:
@@ -2922,6 +2945,7 @@ class ContactGroup(object):
         -------
         refreq_dicts : list of dicts
         """
+        self._check_cutoff_ok(ctc_cutoff_Ang)
         return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang,**kwargs) for ictc in self._contacts]
 
     def distributions_of_distances(self, bins=10):

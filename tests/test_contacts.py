@@ -12,7 +12,8 @@ from mdciao.contacts.contacts import \
     _ContactStrings, \
     _TimeTraces, \
     _Fragments, \
-    _linear_switchoff
+    _linear_switchoff, \
+    _delta_freq_pairs
 
 import mdtraj as md
 import unittest
@@ -1631,6 +1632,89 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(delta_ref, delta)
         _np.testing.assert_array_equal(pairs_ref, pairs)
 
+class TestContactGroupFrequencies_max_cutoff(TestBaseClassContactGroup):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroupFrequencies_max_cutoff,cls).setUp(cls)
+        cls.CG = contacts.ContactGroup(
+            [cls.cp1_w_anchor_and_frags_and_top,
+             cls.cp2_w_anchor_and_frags_and_top],
+            neighbors_excluded=0,
+            max_cutoff_Ang=3
+        )
+
+    def test_cutoff(self):
+        self.CG._check_cutoff_ok(3) # passes
+        with self.assertRaises(ValueError) as cm:
+            self.CG._check_cutoff_ok(6) #doesn't pass
+
+    def test_frequency_dicts(self):
+        with self.assertRaises(ValueError) as cm:
+            self.CG.frequency_dicts(6, split_label=False)
+
+    def test_frequency_per_contact(self):
+        with self.assertRaises(ValueError) as cm:
+            self.CG.frequency_per_contact(6)
+
+    def test_frequency_per_residue_idx(self):
+        with self.assertRaises(ValueError) as cm:
+            self.CG.frequency_sum_per_residue_idx_dict(6)
+
+    def test_frequency_per_residue_name(self):
+        with self.assertRaises(ValueError) as cm:
+            self.CG.frequency_sum_per_residue_names(6)
+
+    def test_frequency_dict_by_consensus_labels(self):
+        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    self.cp3_wtop_and_conslabs],
+                                   max_cutoff_Ang=3)
+        with self.assertRaises(ValueError) as cm:
+            CP.frequency_dict_by_consensus_labels(6)
+
+    def test_frequency_as_contact_matrix(self):
+        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    ],
+                                   max_cutoff_Ang=3)
+        with self.assertRaises(ValueError):
+            CP.frequency_as_contact_matrix(6)
+
+    def test_frequency_to_bfactor_just_runs(self):
+        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                    self.cp2_wtop_and_conslabs,
+                                    ],
+                                   interface_residxs=[[0],[1,2]],
+                                   max_cutoff_Ang=3)
+        with self.assertRaises(ValueError):
+            CP.frequency_to_bfactor(6,None, self.geom, interface_sign=True)
+
+    def test_interface_frequency_matrix(self):
+        I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+                                   self.cp2_wtop_and_conslabs,
+                                   self.cp3_wtop_and_conslabs,
+                                   self.cp4_wtop_and_conslabs,
+                                   self.cp5_wtop_and_wo_conslabs,
+                                   ],
+                                  interface_residxs=[[0, 3, 4], [1, 2, 20]],
+                                  max_cutoff_Ang=3)
+        with self.assertRaises(ValueError):
+            I.interface_frequency_matrix(6)
+
+    def test_frequencies_of_atom_pairs_formed(self):
+        CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types],
+        max_cutoff_Ang=3,
+                                   )
+        with self.assertRaises(ValueError):
+            CG.relative_frequency_formed_atom_pairs_overall_trajs(6)
+
+    def test_frequency_table(self):
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1], [[.4, .3, .25]], [[0, 1, 2]]),
+                                    contacts.ContactPair([0, 2], [[.1, .2, .3]], [[0, 1, 2]])],
+                                   max_cutoff_Ang=3)
+        with self.assertRaises(ValueError):
+            CG.frequency_dataframe(6, split_label=False)
 
 class TestContactGroupPlots(TestBaseClassContactGroup):
 
