@@ -283,8 +283,18 @@ def _parser_add_fragment_names(parser):
                              "'TM1, TM2, TM3,'",
                         default="")
 
+def _int_or_float_type(val):
+    r"""Do nothing or cast the str to int or float """
+    if isinstance(val, str):
+        if val.isdigit():
+            val = int(val)
+        else:
+            val = float(val)
+
+    return val
+
 def _parser_add_ctc_control(parser, default=5):
-    parser.add_argument("-cc", "--ctc_control", type=str,
+    parser.add_argument("-cc", "--ctc_control", type=_int_or_float_type,
                         help="Control the number of reported contacts. "
                              "Can be an integer (keep the first n contacts) or "
                              "a float representing a fraction [0,1] of the total"

@@ -37,9 +37,4 @@ b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
 for key in ["trajectories", "fragmentify"]:
     b.pop(key)
 
-if b["ctc_control"].isdigit():
-    b["ctc_control"] = int(b["ctc_control"])
-else:
-    b["ctc_control"] = float(b["ctc_control"])
-
 neighborhood = interface(a.trajectories,**b)
