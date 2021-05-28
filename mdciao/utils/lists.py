@@ -468,3 +468,73 @@ def hash_list(ilist):
                         raise e
         list_of_hashes.append(res)
     return hash(tuple(list_of_hashes))
+
+def idx_at_fraction(val_desc_order, frac):
+    r"""
+    Index of :obj:`val_desc_order` where np.cumsum(val)/np.sum(val)>= frac for the first time
+
+    Parameters
+    ----------
+    val_desc_order : array like of floats
+        The values that the determine the sum of which a fraction will be taken
+        The have to be in descending order
+    frac : float
+        The target fraction of sum(val) that is needed
+
+    Returns
+    -------
+    n : int
+        Index of val where the fraction is attained for the first time.
+        For the number of entries of :obj:`val`, just use n+1
+    """
+
+    assert all(_np.diff(val_desc_order)<=0), "Values must be in descending order!"
+    assert 0<=frac<=1, "Fraction has to be in [0,1] ,not %s"%frac
+    normalized_cumsum = (_np.cumsum(val_desc_order) / _np.sum(val_desc_order)).round(2) >= frac
+    return _np.flatnonzero(normalized_cumsum>=frac)[0]
+
+
+def _get_n_ctcs_from_freqs(ctc_control, ctc_freqs):
+    r"""
+    Helper method to understand what :obj:`ctc_control` is meant to do with :obj:`ctc_freqs`
+
+    Provided with a set of frequencies :obj:`ctc_freqs`, the user decides how
+    many them are kept by using the parameter `ctc_control`
+
+    Parameters
+    ----------
+    ctc_control : int or float
+        * If int:
+          Keep these many contacts, i.e.
+          return ctc_control directly
+        * If float:
+          Interpret ctcs_freq control as
+          a fraction [0,1] and return
+          cumsum(ctc_freqs)/sum(ctc_freqs)>= ctc_control
+          That gives the number of contacts needed
+          to "keep" the fraction of frequencies.
+          Check :obj:`idx_at_fraction` for more info
+    ctc_freqs : iterable
+        Floats in descending order
+    Returns
+    -------
+    n_ctcs : int
+    or_fraction_needed : bool
+        Whether an orienting-fraction value
+        will be needed downstream. Is
+        True if ctc_control was an integer
+        and False if it was a float (if
+        it was a float, we were interested in a fraction
+        anyways)
+    """
+    or_fraction_needed = True
+    total_n_ctcs = _np.array(ctc_freqs).sum()
+    if isinstance(ctc_control, int):
+        n_ctcs = int(ctc_control)
+    else:
+        if total_n_ctcs > 0:
+            n_ctcs = idx_at_fraction(ctc_freqs, ctc_control) + 1
+            or_fraction_needed = False
+        else:
+            n_ctcs = 0
+    return n_ctcs, or_fraction_needed

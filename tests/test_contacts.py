@@ -2496,16 +2496,6 @@ class Test_linear_switchoff(unittest.TestCase):
                                         [_np.mean(self.linearized), _np.mean(self.linearized)],
                                         )
 
-class Test_idx_at_fraction(unittest.TestCase):
-
-    def test_works(self):
-        ncf = contacts.contacts._idx_at_fraction([1, 1, 1], frac=2 / 3)
-        _np.testing.assert_equal(ncf,1)
-
-    def test_one_value(self):
-        ncf = contacts.contacts._idx_at_fraction([1], frac=2 / 3)
-        _np.testing.assert_equal(ncf,0)
-
 
 class TestContactPairHashingEqualitySaving(TestBaseClassContactGroup):
 

@@ -132,21 +132,12 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
 
     for residx in res_idxs:
         resSeq = top.residue(residx).resSeq
-        _fraction = fraction
         if resSeq in restrict_to_resSeq:
             order_mask = _np.array([ii for ii in order if residx in residxs_pairs[ii]],dtype=int)
             print_if_v("#idx   freq      contact       fragments     res_idxs      ctc_idx  Sum")
             isum = 0
             seen_ctcs = []
-            total_n_ctcs = _np.array(ctc_freqs)[order_mask].sum()
-            if float(ctcs_kept).is_integer():
-                n_ctcs = int(ctcs_kept)
-            else:
-                if total_n_ctcs>0:
-                    n_ctcs = _idx_at_fraction(ctc_freqs[order_mask], ctcs_kept)+1
-                    _fraction = None
-                else:
-                    n_ctcs = 0
+            n_ctcs, _fraction = _mdcu.lists._get_n_ctcs_from_freqs(ctcs_kept, ctc_freqs[order_mask])
             for ii, oo in enumerate(order_mask[:n_ctcs]):
                 ifreq = ctc_freqs[oo]
                 if ifreq.round(2)==0:
@@ -159,7 +150,8 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 print_if_v("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), ifreq, top.residue(idx1), top.residue(idx2), frg1, frg2, idx1, idx2, oo, isum))
             if n_ctcs>0 and verbose:
-                _contact_fraction_informer(_np.min([ii+1, len(order_mask)]), ctc_freqs[order_mask], or_frac=_fraction)
+                _contact_fraction_informer(_np.min([ii+1, len(order_mask)]), ctc_freqs[order_mask], or_frac={True:  fraction,
+                                                                                                             False:     None}[_fraction])
             else:
                 print_if_v("No contacts here!")
             if interactive:
@@ -4803,33 +4795,12 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
         print("These %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u input contacts)" %
               (n_kept, captured_freq, _np.round(captured_freq / total_freq * 100), total_freq, len(ctc_freqs)))
         if or_frac is not None:
-            idx = _idx_at_fraction(ctc_freqs, or_frac)
+            idx = _mdcu.lists.idx_at_fraction(ctc_freqs, or_frac)
             print("As orientation value, the first %u ctcs already capture %3.1f%% of %3.2f." % (idx+1, or_frac * 100, total_freq))
             print("The %u-th contact has a frequency of %4.2f"%(idx+1, ctc_freqs[idx]))
             print()
 
-def _idx_at_fraction(val_desc_order, frac):
-    r"""
-    Index of :obj:`val` where np.cumsum(val)/np.sum(val)>= frac for the first time
-    Parameters
-    ----------
-    val_desc_order : array like of floats
-        The values that the determine the sum of which a fraction will be taken
-        The have to be in descending order
-    frac : float
-        The target fraction of sum(val) that is needed
 
-    Returns
-    -------
-    n : int
-        Index of val where the fraction is attained for the first time.
-        For the number of entries of :obj:`val`, just use n+1
-    """
-
-    assert all(_np.diff(val_desc_order)<=0), "Values must be in descending order!"
-    assert 0<=frac<=1, "Fraction has to be in [0,1] ,not %s"%frac
-    normalized_cumsum = _np.cumsum(val_desc_order) / _np.sum(val_desc_order) >= frac
-    return _np.flatnonzero(normalized_cumsum>=frac)[0]
 
 def _mapatoms(top0, top1,resmapping, atom0idx2atom_name):
     r"""

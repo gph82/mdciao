@@ -37,5 +37,10 @@ b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
 for key in ["trajectories","residues", "fragmentify"]:
     b.pop(key)
 
+if b["ctc_control"].isdigit():
+    b["ctc_control"] = int(b["ctc_control"])
+else:
+    b["ctc_control"] = float(b["ctc_control"])
+
 # Call the method
 out_dict = residue_neighborhoods(a.residues, a.trajectories, **b)

@@ -224,6 +224,17 @@ class Test_contiguous_ranges(unittest.TestCase):
         _np.testing.assert_array_equal(out_dict["0"][1],[6,7])
         _np.testing.assert_equal(2,len(out_dict["0"]))
 
+
+class Test_idx_at_fraction(unittest.TestCase):
+
+    def test_works(self):
+        ncf = lists.idx_at_fraction([1, 1, 1], frac=2 / 3)
+        _np.testing.assert_equal(ncf,1)
+
+    def test_one_value(self):
+        ncf = lists.idx_at_fraction([1], frac=2 / 3)
+        _np.testing.assert_equal(ncf,0)
+
 if __name__ == '__main__':
     unittest.main()
 
