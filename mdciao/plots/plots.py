@@ -1419,6 +1419,7 @@ def _plot_freqbars_baseplot(freqs,
                             lower_cutoff_val=None,
                             bar_width_in_inches=.75,
                             color=["tab:blue"],
+                            ctc_control=None,
                             ):
     r"""
     Base method for plotting the contact frequencies
@@ -1443,6 +1444,10 @@ def _plot_freqbars_baseplot(freqs,
 
     if lower_cutoff_val is not None:
         freqs = _np.array(freqs)[_np.array(freqs) > lower_cutoff_val]
+    if ctc_control is not None:
+        assert lower_cutoff_val is None
+        freqs=freqs[:_mdcu.lists._get_n_ctcs_from_freqs(ctc_control,freqs, None)[0]]
+
     xvec = _np.arange(len(freqs))
     if jax is None:
         _plt.figure(figsize=(_np.max((7,bar_width_in_inches*len(freqs))),5))

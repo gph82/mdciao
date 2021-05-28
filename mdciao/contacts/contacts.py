@@ -3021,6 +3021,7 @@ class ContactGroup(object):
                            display_sort=False,
                            sum_freqs=True,
                            defrag=None,
+                           ctc_control=None,
                            ):
         r"""
         Plot a contact frequencies as a bar plot
@@ -3067,7 +3068,8 @@ class ContactGroup(object):
         ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
                                                      jax=ax,
                                                      color=color,
-                                                     lower_cutoff_val=truncate_at)
+                                                     lower_cutoff_val=truncate_at,
+                                                     ctc_control=ctc_control)
 
         label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
         if shorten_AAs:
@@ -3296,7 +3298,8 @@ class ContactGroup(object):
                                 label_fontsize_factor=1,
                                 sum_freqs=True,
                                 plot_atomtypes=False,
-                                display_sort=False):
+                                display_sort=False,
+                                ctc_control=None):
         r"""
         Wrapper around :obj:`ContactGroup.plot_freqs_as_bars`
         for plotting neighborhoods
@@ -3343,7 +3346,8 @@ class ContactGroup(object):
                                      switch_off_Ang=switch_off_Ang,
                                      label_fontsize_factor=label_fontsize_factor,
                                      color=color,
-                                     sum_freqs=sum_freqs
+                                     sum_freqs=sum_freqs,
+                                     ctc_control=ctc_control
                                      )
         return ax
 
