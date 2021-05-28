@@ -897,6 +897,9 @@ def residue_neighborhoods(residues,
     actcs = _np.vstack(ctcs_trajs)
     if switch_off_Ang is None:
         ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
+        buffer = 2
+        buffer_cutoff =  ctc_cutoff_Ang * buffer
+        ctcs_mean_buffer =_np.mean(actcs < buffer_cutoff / 10, 0)
     else:
         ctcs_mean = _np.mean(_mdcctcs._linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10),0)
 
@@ -906,12 +909,20 @@ def residue_neighborhoods(residues,
                                                                       interactive=False,
                                                                       ctcs_kept=ctc_control)
 
+    buffer = _mdcctcs.select_and_report_residue_neighborhood_idxs(ctcs_mean_buffer, res_idxs_list,
+                                                                  fragments_as_residue_idxs, ctc_idxs_small,
+                                                                  refgeom.top,
+                                                                  interactive=False,
+                                                                  ctcs_kept=.99,
+                                                                  verbose=False)
+
     # Create the neighborhoods as groups of contact_pair objects
     neighborhoods = {}
     empty_CGs = []
-    for res_idx, val in final_look.items():
+    for res_idx, val in buffer.items():
         CPs = []
-        for idx in val:
+        val_resorted = list(final_look[res_idx])+[idx for idx in val if idx not in final_look[res_idx]]
+        for idx in val_resorted:
             pair = ctc_idxs_small[idx]
             consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps.values()) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
@@ -928,7 +939,7 @@ def residue_neighborhoods(residues,
                                    atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in at_pair_trajs]
                                    ))
         try:
-            neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs, neighbors_excluded=n_nearest)
+            neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs, neighbors_excluded=n_nearest, max_cutoff_Ang=buffer_cutoff)
         except NotImplementedError as e:
             print(e)
             empty_CGs.append(res_idx)
@@ -943,10 +954,12 @@ def residue_neighborhoods(residues,
 
     if figures:
         overall_fig = _mdcplots.CG_panels(n_cols, neighborhoods, ctc_cutoff_Ang,
-                                  distro=distro,
-                                  short_AA_names=short_AA_names,
-                                  plot_atomtypes=plot_atomtypes,
-                                  switch_off_Ang=switch_off_Ang)
+                                          distro=distro,
+                                          short_AA_names=short_AA_names,
+                                          plot_atomtypes=plot_atomtypes,
+                                          switch_off_Ang=switch_off_Ang,
+                                          ctc_control=ctc_control
+                                          )
         if savefigs:
             overall_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
             print("The following files have been created:")
