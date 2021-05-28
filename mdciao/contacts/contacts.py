@@ -1776,6 +1776,14 @@ class ContactPair(object):
             pass
         else:
             raise ValueError("Cannot understand your ylim value %s of type %s" % (ylim_Ang, type(ylim_Ang)))
+
+        if ctc_cutoff_Ang > 0:
+            overall_freq = self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang) * 100
+            if overall_freq.round()==0:
+                return
+        else:
+            overall_freq = None
+
         for traj_idx, (ictc_traj, itime, trjlabel) in enumerate(zip(self.time_traces.feat_trajs,
                                                                     self.time_traces.time_trajs,
                                                                     self.labels.trajstrs)):
@@ -1798,8 +1806,8 @@ class ContactPair(object):
         if shorten_AAs:
             ctc_label = self.labels.w_fragments_short_AA
         ctc_label = _mdcu.str_and_dict.latex_superscript_fragments(ctc_label)
-        if ctc_cutoff_Ang > 0:
-            ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang) * 100)
+        if overall_freq is not None:
+            ctc_label += " (%u%%)" % overall_freq
 
         iax.text(_np.mean(iax.get_xlim()), 1 * 10 / _np.max((10, iax.get_ylim()[1])),  # fudge factor for labels
                  ctc_label,
