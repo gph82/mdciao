@@ -1225,7 +1225,7 @@ def interface(
     min_freq : float, default is 0.1
         Do not show frequencies smaller than this. If you
         notice the output beingtruncated a values too far
-        away from this, you need to increase the'n_ctcs'
+        away from this, you need to increase the :obj:`ctc_control`
         parameter
     contact_matrix : bool, default is True
         Produce a plot of the interface contact matrix
