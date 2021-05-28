@@ -1416,7 +1416,7 @@ def _color_by_values(all_ctc_keys, freqs_by_sys_by_ctc, colordict,
 
 def _plot_freqbars_baseplot(freqs,
                             jax=None,
-                            truncate_at=None,
+                            lower_cutoff_val=None,
                             bar_width_in_inches=.75,
                             color=["tab:blue"],
                             ):
@@ -1429,7 +1429,7 @@ def _plot_freqbars_baseplot(freqs,
         The values to plot
     jax : :obj:`~matplotlib.axes.Axes`, default is None
         If None is passed, one will be created
-    truncate_at : float, default is None
+    lower_cutoff_val : float, default is None
         Only plot frequencies above this value (between 0 and 1)
     bar_width_in_inches : float, default is .75
         The width of the axis will vary with the number of plotted
@@ -1441,8 +1441,8 @@ def _plot_freqbars_baseplot(freqs,
     jax : :obj:`~matplotlib.axes.Axes`
     """
 
-    if truncate_at is not None:
-        freqs = _np.array(freqs)[_np.array(freqs)>truncate_at]
+    if lower_cutoff_val is not None:
+        freqs = _np.array(freqs)[_np.array(freqs) > lower_cutoff_val]
     xvec = _np.arange(len(freqs))
     if jax is None:
         _plt.figure(figsize=(_np.max((7,bar_width_in_inches*len(freqs))),5))

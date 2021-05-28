@@ -381,7 +381,7 @@ class Test_freqs_baseplot(unittest.TestCase):
 
     def test_baseplot_truncate(self):
 
-        jax = _plot_freqbars_baseplot([1,2,3], truncate_at=.5)
+        jax = _plot_freqbars_baseplot([1,2,3], lower_cutoff_val=.5)
 
         _plt.close("all")
 if __name__ == '__main__':

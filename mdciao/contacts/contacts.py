@@ -3067,7 +3067,7 @@ class ContactGroup(object):
         ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
                                                      jax=ax,
                                                      color=color,
-                                                     truncate_at=truncate_at)
+                                                     lower_cutoff_val=truncate_at)
 
         label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
         if shorten_AAs:
