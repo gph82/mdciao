@@ -1214,7 +1214,8 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                switch_off_Ang=0,
                panelsize=4,
                panelsize2font=3.5,
-               verbose=False):
+               verbose=False,
+               **plotting_kwargs):
     r"""
     One figure with each obj:`~mdciao.contacts.ContactGroup` as individual panel
 
@@ -1281,7 +1282,8 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                                                   label_fontsize_factor=panelsize2font / panelsize,
                                                   shorten_AAs=short_AA_names,
                                                   color=ihood.partner_fragment_colors,
-                                                  plot_atomtypes=plot_atomtypes
+                                                  plot_atomtypes=plot_atomtypes,
+                                                  **plotting_kwargs
                                                   )
                 else:
                     ihood.plot_freqs_as_bars(ctc_cutoff_Ang, iname,
@@ -1290,6 +1292,7 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                                              label_fontsize_factor=panelsize2font / panelsize,
                                              shorten_AAs=short_AA_names,
                                              atom_types=plot_atomtypes,
+                                             **plotting_kwargs
                                              )
                     if verbose:
                         print()
