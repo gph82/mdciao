@@ -958,7 +958,7 @@ class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
             per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freqs, self.residxs,
                                                                             self.fragments, ctc_residxs_pairs,
                                                                             self.geom.top,
-                                                                            restrict_to_resSeq=31,
+                                                                            restrict_to_resSeq=[31],
                                                                             interactive=True)
         assert len(per_residx_ctc_idxs) == 1
         _np.testing.assert_array_equal(per_residx_ctc_idxs[1],[0,1])

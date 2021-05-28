@@ -60,7 +60,8 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                                                 ctcs_kept=5,
                                                 restrict_to_resSeq=None,
                                                 interactive=False,
-                                                fraction=.9
+                                                fraction=.9,
+                                                verbose=True,
                                                 ):
     """Group residue pairs into neighborhoods using pre-computed contact frequencies
 
@@ -93,11 +94,13 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
         Only cycle through the residues in :obj:`res_idxs` with these resSeq indices.
     interactive : boolean, default is False
         After reporting each neighborhood up to :obj:`ctcs_kept`,
-        ask the user how many should be kept
+        ask the user how many should be kept.
+        Forces :obj:`verbose`=True
     fraction : float, default is .9
         report how many contacts one needs to keep
         to arrive at this fraction of the overall contacts.
-
+    verbose : bool, default is True
+        Be verbose
     Returns
     -------
     selection : dictionary
@@ -123,14 +126,16 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
     if restrict_to_resSeq is None:
         restrict_to_resSeq = [top.residue(ii).resSeq for ii in res_idxs]
 
-    elif isinstance(restrict_to_resSeq, int):
-        restrict_to_resSeq = [restrict_to_resSeq]
+    if interactive:
+        verbose = True
+    print_if_v = lambda str : [print(str) if verbose else None]
+
     for residx in res_idxs:
         resSeq = top.residue(residx).resSeq
         _fraction = fraction
         if resSeq in restrict_to_resSeq:
             order_mask = _np.array([ii for ii in order if residx in residxs_pairs[ii]],dtype=int)
-            print("#idx   freq      contact       fragments     res_idxs      ctc_idx  Sum")
+            print_if_v("#idx   freq      contact       fragments     res_idxs      ctc_idx  Sum")
             isum = 0
             seen_ctcs = []
             total_n_ctcs = _np.array(ctc_freqs)[order_mask].sum()
@@ -151,12 +156,12 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 idx1, idx2 = _mdcu.lists.put_this_idx_first_in_pair(residx, pair)
                 frg1, frg2 = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in [idx1,idx2]]
                 seen_ctcs.append(ifreq)
-                print("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
+                print_if_v("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), ifreq, top.residue(idx1), top.residue(idx2), frg1, frg2, idx1, idx2, oo, isum))
-            if n_ctcs>0:
+            if n_ctcs>0 and verbose:
                 _contact_fraction_informer(_np.min([ii+1, len(order_mask)]), ctc_freqs[order_mask], or_frac=_fraction)
             else:
-                print("No contacts here!")
+                print_if_v("No contacts here!")
             if interactive:
                 try:
                     answer = input("How many do you want to keep (Hit enter for None)?\n")
