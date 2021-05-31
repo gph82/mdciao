@@ -45,7 +45,7 @@ TODOs
 =====
 This is an informal list of known issues and TODOs:
  * keeping vs reporting contacts: a design choice has to be made wrt to the effect of ctc_cutoff_Ang on a ContactGroup:
-   If a given cutoff makes a ContactPair have freq=0, should the CP be kept in the CG, simply not reported?
+   If a given cutoff makes a ContactPair have freq=0, should the CP be kept in the CG, simply not reported? There's now a branch for that: https://github.com/gph82/mdciao/tree/buffer_neighborhood
  * overhaul the "printing" system with proper logging and warnings (perhaps use `loguru <https://github.com/Delgan/loguru>`_)
  * progressbar not very informative for one chunked trajectory or parallel runs
  * the "consensus" fragmentation sometimes breaks automatic flareplot labelling #should no longer be the case after https://github.com/gph82/mdciao/pull/21 (check)
