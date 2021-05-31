@@ -627,7 +627,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
                                                         self.BW_local_w_pdb.top,
                                                         self.fragments,
                                                         "BW")
-            self.assertEqual(answer, "3")
+            self.assertEqual(answer, "4")
 
     def test_works_return_answer_as_list(self):
         import mock
@@ -639,7 +639,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
                                                               "BW",
                                            return_str=False,
                                            )
-            self.assertSequenceEqual(answer,[3])
+            self.assertSequenceEqual(answer,[4])
 
     def test_works_return_guess(self):
         answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
@@ -648,7 +648,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
                                                           "BW",
                                        accept_guess=True
                                        )
-        self.assertEqual(answer, "3")
+        self.assertEqual(answer, "4")
 
     def test_works_return_None(self):
         answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
@@ -679,7 +679,7 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
                                                                   fragments=self.fragments,
                                                                   verbose=True,
                                                                   )
-        _np.testing.assert_array_equal([3],guessed_frags)
+        _np.testing.assert_array_equal([4],guessed_frags)
 
     def test_finds_frags_res(self):
         guessed_res = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb,
@@ -687,20 +687,20 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
                                                                   fragments=self.fragments,
                                                                   return_residue_idxs=True
                                                                 )
-        _np.testing.assert_array_equal(self.fragments[3], guessed_res)
+        _np.testing.assert_array_equal(self.fragments[4], guessed_res)
 
     def test_finds_frags_no_frags(self):
         guessed_frags = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb,
                                                      self.BW_local_w_pdb.top,
                                                                   )
-        _np.testing.assert_array_equal([3],guessed_frags)
+        _np.testing.assert_array_equal([4],guessed_frags)
 
     def test_finds_frags_seq_as_str(self):
         guessed_frags = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb.seq,
                                                                   self.BW_local_w_pdb.top,
                                                                   fragments=self.fragments,
                                                                   )
-        _np.testing.assert_array_equal([3], guessed_frags)
+        _np.testing.assert_array_equal([4], guessed_frags)
 
     def test_finds_frags_nothing_None(self):
         seq = "THISSENTENCEWILLNEVERALIGN"

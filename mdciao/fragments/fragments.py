@@ -135,6 +135,7 @@ def get_fragments(top,
                   atoms=False,
                   verbose=True,
                   join_fragments=None,
+                  maxjump = 500,
                   salt=["Na+","Cl-"],
                   **kwargs_residues_from_descriptors):
     """
@@ -174,6 +175,7 @@ def get_fragments(top,
         - 'lig_resSeq+'
             Like resSeq+ but put's any non-AA residue into it's own fragment.
             […A27][Lig28],[K29,…,W40],[D45,…,W50,CYSP51],[GDP52]
+            Also check :obj:`maxjump`
         - 'chains'
             breaks into chains of the PDB file/entry
         - None or 'None'
@@ -198,6 +200,12 @@ def get_fragments(top,
         have only one atom will be put together
         in the last fragment. Use salt = []
         to deactivate
+    maxjump : int or None, default is 500
+        The maximum allowed positive sequence-jump
+        in the 'resSeq+' methods, i.e. don't
+        join ALA500 with GLU551 even though
+        the jump in sequence is positive
+        None means no limit for positive jumps
     kwargs_residues_from_descriptors : optional
         additional arguments, see :obj:`~mdciao.residue_and_atom.residues_from_descriptors`
 
@@ -231,9 +239,9 @@ def get_fragments(top,
     elif method == "chains":
         fragments = [[rr.index for rr in ichain.residues] for ichain in top.chains]
     elif method == "resSeq+":
-        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
+        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq,maxjump=maxjump)
     elif method == "lig_resSeq+":
-        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq)
+        fragments = _get_fragments_resSeq_plus(top, fragments_resSeq,maxjump=maxjump)
         for rr in top.residues:
             if rr.name[:3] not in _AMINO_ACID_CODES.keys():
                 frag_idx = _mdcu.lists.in_what_fragment(rr.index,fragments)
@@ -473,23 +481,25 @@ def _get_fragments_by_jumps_in_sequence(sequence,jump=1):
         old = rr
     return frag_idxs, frag_elements
 
-def _get_fragments_resSeq_plus(top, fragments_resSeq):
+def _get_fragments_resSeq_plus(top, fragments_resSeq,maxjump=None):
     r"""
     Get fragments using the 'resSeq+' method
     Parameters
     ----------
     top
     fragments_resSeq
+    maxjump
 
     Returns
     -------
 
     """
     to_join = [[0]]
+    jump_is_short    = lambda idx1,idx2 :  [True if maxjump is None else idx2-idx1 <= maxjump][0]
     for ii, ifrag in enumerate(fragments_resSeq[:-1]):
         r1 = top.residue(ifrag[-1])
         r2 = top.residue(fragments_resSeq[ii + 1][0])
-        if r1.resSeq < r2.resSeq:
+        if r1.resSeq < r2.resSeq and jump_is_short(r1.resSeq, r2.resSeq):
             to_join[-1].append(ii + 1)
         else:
             to_join.append([ii + 1])
