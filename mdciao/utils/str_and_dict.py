@@ -443,29 +443,6 @@ def freq_ascii2dict(ifile, comment=["#"]):
                     raise
     return outdict
 
-def _find_latex_chunks(istr, blockers=['$$','\$']):
-    r"""
-    Find if a string has latex chunks in it, chunks of
-     the string that are within two dollar signs.
-    "There is $\alpha$ in the middle of this sentence"
-    returns [[range(10,17)]]
-    Parameters
-    ----------
-    istr
-
-    Returns
-    -------
-    list of ranges
-
-    """
-    for bb in blockers:
-        assert bb not in istr, ("Cannot find latex chunks in string %s, it contains the blocker %s"%(istr,bb))
-    matches = [m.start() for m in _re.finditer('\$',istr)]
-    assert _np.mod(len(matches),2)==0, "The string %s has to contain an even number of dollar signs, " \
-                                       "but it contains %u"%(istr,len(matches))
-    ranges = [_np.arange(ii,jj+1) for ii,jj in _np.reshape(matches,(-1,2))]
-    return ranges
-
 _symbols =  ['alpha','beta','gamma', 'mu', "Sigma"]+["AA"]
 _scripts =  ["^","_"]
 
