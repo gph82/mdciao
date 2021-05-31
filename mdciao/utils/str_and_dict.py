@@ -508,7 +508,7 @@ def replace4latex(istr,
                   enclose_pure_text=False
                   ):
     r"""
-    Return a string where symbols and super/sub-indices have been prepared for latex
+    Return a string where symbols and super/sub-indices have been prepared for LaTeX
 
     One quirk: when sub- or superindexing, the following
     types get protected in curly brackets to
@@ -532,7 +532,7 @@ def replace4latex(istr,
         nothing will happen
         If a word in :obj:`istr` contains
         the same :obj:`sindex` character more than
-        once, it'll be skyped (ask [Knut](https://tex.stackexchange.com/questions/253080/why-am-i-getting-a-double-subscript-error))
+        once, it'll be skipped (ask [Knut](https://tex.stackexchange.com/questions/253080/why-am-i-getting-a-double-subscript-error))
     sindex : list
         The characters that indicate super- and sub-indices
     symbols : list
