@@ -466,38 +466,6 @@ def _find_latex_chunks(istr, blockers=['$$','\$']):
     ranges = [_np.arange(ii,jj+1) for ii,jj in _np.reshape(matches,(-1,2))]
     return ranges
 
-def _replace4latex(istr):
-    r"""
-    Prepares the input for latex rendering (in matplotlib, e.g.)
-
-    For strings with greek letters or underscores.
-     * "alpha = 7"-> "$\alpha$ = 7"
-     * "C_2"      -> "$C_2$"
-     * "C^2"      -> "$C^2$"
-
-    Parameters
-    ----------
-    istr: str
-        "There's an alpha and a beta here, also C_200"
-
-    Returns
-    -------
-    alpha: str
-        'There's an $\alpha$ and a $\beta$ here, also $C_{200}$'
-
-    """
-
-    for gl in _symbols:
-        if gl in istr:
-            istr = _latexify(gl,istr)
-
-    for c in ["_", "^"]:
-        for word in istr.split():
-            if c in word:
-                istr = _latexify(word, istr)
-
-    return istr
-
 _symbols =  ['alpha','beta','gamma', 'mu', "Sigma"]+["AA"]
 _scripts =  ["^","_"]
 
