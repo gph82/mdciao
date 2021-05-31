@@ -2120,4 +2120,4 @@ def fragment_overview(topology,
 
     """
 
-    _mdcfrg.overview(topology,methods=methods, AAs=AAs)
+    return _mdcfrg.overview(topology,methods=methods, AAs=AAs)

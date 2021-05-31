@@ -700,6 +700,13 @@ class Test_color_schemes(unittest.TestCase):
 
 class Test_fragment_overview(unittest.TestCase):
 
+    def test_runs(self):
+        res = cli.fragment_overview(test_filenames.top_pdb)
+        self.assertSequenceEqual(list(res.keys()),
+                                 mdcfragments.fragments._allowed_fragment_methods)
+
+class Test_fragment_overview_Nomenclature(unittest.TestCase):
+
     def test_CGN_paths(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             path_to_CGN_3SN6 = _path.join(tmpdir,_path.basename(test_filenames.CGN_3SN6))
