@@ -570,35 +570,6 @@ def _replace_regex_special_chars(word,
         word = word.replace(sp, repl_char)
     return word
 
-def _latexify(word, istr):
-    # Look for appearances of this word in the whole string
-    _word = _replace_regex_special_chars(word).replace("\\","\\\\")
-    spans = [m.span() for m in _re.finditer(_replace_regex_special_chars(_word), _replace_regex_special_chars(istr))]
-    for ii in range(len(spans)):
-        span = spans[ii]
-        latex_ranges = _find_latex_chunks(istr)
-        add_dollar_signs = lambda istr : "$"+istr+"$"
-        if any([set(lr).issuperset(span) for lr in latex_ranges]):
-            add_dollar_signs = lambda istr:  istr
-            # This substring is already within a latex chunk, can't do anything
-            # except check if it's been enclosed in dollars but no \symbol, e.g. $beta_2$
-        if word in _symbols:
-            if istr[span[0] - 1] != '\\':
-                new = add_dollar_signs('\%s' % word)
-                istr = istr[:span[0]] + new + istr[span[1]:]
-        for char in _scripts:
-            if char in word:
-                try:
-                    word1,word2 = word.split(char)
-                    if word2[0] not in ["{","\\"]:
-                        new = word1+add_dollar_signs("%s{\mathrm{%s}}"%(char,word2))
-                        istr = istr[:span[0]] + new + istr[span[1]:]
-                except (ValueError, IndexError) as e:
-                    print("Cannot latexify word with more than one instance of %s in the same word: %s"%(char,word))
-        spans = [m.span() for m in _re.finditer(word, istr)]
-    istr = istr.replace("$$","")
-    return istr
-
 def latex_mathmode(istr, enclose=True):
     r"""
     Prepend *symbol* words with "\\ " and protect *non-symbol* words with '\\mathrm{}'
