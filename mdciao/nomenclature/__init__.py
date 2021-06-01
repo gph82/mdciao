@@ -76,6 +76,6 @@ References
    Fiona H. Marshall, Stefan Mordalski, Jean-Philippe Pin, Raymond C. Stevens, Gerrit  Vriend, David E. Gloriam,
    *Generic GPCR residue numbers – aligning topology maps while minding the gaps*,
    Trends in Pharmacological Sciences, Volume 36, Issue 1, 2015, Pages 22-31,
-   `<https://doi.org/10.1016/j.tips.2014.11.001.>`_
+   `<https://doi.org/10.1016/j.tips.2014.11.001>`_
 """
 from .nomenclature import *
