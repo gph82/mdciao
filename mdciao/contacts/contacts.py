@@ -25,7 +25,7 @@ import mdtraj as _md
 from os import path as _path
 
 import mdciao.plots as _mdcplots
-from mdciao.plots.plots import _add_grey_banded_bg #TODO prolly make public?
+from mdciao.plots.plots import _add_grey_banded_bg, _color_dict_guesser #TODO prolly make public?
 import mdciao.utils as _mdcu
 import mdciao.nomenclature as _mdcn
 
@@ -3134,7 +3134,7 @@ class ContactGroup(object):
                      defrag=None,
                      ):
         r"""
-        Plot a residue residue distances as violin plots obj:~`matplotlib.pyplot.violinplot`
+        Plot a residue residue distances as violin plots :obj:`~matplotlib.pyplot.violinplot`
 
         Parameters
         ----------
@@ -3144,6 +3144,14 @@ class ContactGroup(object):
             If self.name is also None, the method will fail
         xlim : float, default is None
         ax : :obj:`~matplotlib.axes.Axes`
+        colors : iterable (list or dict), or str, default is None
+            * If list, the colors will be assigned in the same
+              order of :obj:`groups`.
+            * If dict, has to have the
+              same keys as :obj:`groups`.
+            * If str, it has to be a case-sensitve colormap-name of matplotlib:
+              https://matplotlib.org/stable/tutorials/colors/colormaps.html
+        * If None, the 'tab10' colormap (tableau) is chosen
         shorten_AAs : bool, default is None
         label_fontsize_factor : float
         truncate_at_mean : float, default is None
@@ -3216,9 +3224,10 @@ class ContactGroup(object):
         if shorten_AAs:
             label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
+        color =_color_dict_guesser(color, _np.arange(len(order)))
         ax, violins = _mdcplots.plots._plot_violin_baseplot([data4violin[oo] for oo in order],
                                                             jax=ax,
-                                                            colors=color,
+                                                            colors=[color[oo] for oo in order],
                                                             )
         
         if ctc_cutoff_Ang is not None:
