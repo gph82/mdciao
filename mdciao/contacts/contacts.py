@@ -3185,8 +3185,8 @@ class ContactGroup(object):
         if title_label is None and not self.is_neighborhood:
             assert self.name is not None, ("Cannot use a 'nameless' ContactGroup and 'title_label'=None.\n"
                                            "Either instantiate self.name or pass a 'title_label' ")
-            title_label = self.name
-        if title_label is None:
+            title = self.name
+        elif title_label is None:
             title=""
         data4violin = [_np.hstack(cp.time_traces.ctc_trajs) * 10 for cp in self._contacts]
         means = _np.array([_np.mean(dt) for dt in data4violin])
@@ -3247,7 +3247,7 @@ class ContactGroup(object):
                     label=_mdcu.str_and_dict.latex_superscript_fragments(label_dotref))
         else:
             if sum_freqs and sigma is not None:
-                title += " of '%s' (Sigma = %2.1f)\n" % (title_label, sigma)
+                title += " (Sigma = %2.1f)\n" % (sigma)
                 if total_freq is not None:
                     title += "these %u most frequent contacts capture %4.2f %% of all contacts\n" % (self.n_ctcs,
                                                                                                      sigma / total_freq * 100,
