@@ -688,7 +688,7 @@ def parser_for_pdb():
                         )
     parser.add_argument("--ext","-x", type=str, default=".pdb",
                         help="extension of file to be saved. Default is '.pdb'")
-    parser.add_argument("--filename","-n", type=str, default=None,
+    parser.add_argument("--output","-o", type=str, default=None,
                         help="Filename (with extension) to save to. If parsed, "
                              "'--ext' will be ignored. Default is to save '$code.pdb'")
     return parser

@@ -26,8 +26,8 @@ from mdciao.parsers import parser_for_pdb
 from mdciao.cli import pdb
 parser = parser_for_pdb()
 a = parser.parse_args()
-if a.filename is None:
-    a.filename="%s.%s"%(a.code,a.ext.strip("."))
+if a.output is None:
+    a.output="%s.%s"%(a.code,a.ext.strip("."))
 
-pdb(a.code,a.filename,verbose=True)
+pdb(a.code,a.output,verbose=True)
 
