@@ -123,17 +123,28 @@ Highlights
 
 * fragmentation heuristics to easily identify molecules and/or molecular fragments. These heuristics will work on .pdf-files lacking `TER and CONNECT records <http://www.wwpdb .org/documentation/file-format-content/format33/v3.3.html>`_ or other file formats, like `.gro files <http://manual.gromacs.org/documentation/2020/reference-manual/file-formats.html#gro>`_, that simply don't include these records::
 
-   Auto-detected fragments with method lig_resSeq+
-   fragment      0 with  349 AAs            THR9(   0)- LEU394        (348 ) (0) resSeq jumps
-   fragment      1 with  340 AAs            GLN1( 349)- ASN340        (688 ) (1)
-   fragment      2 with  217 AAs            ASN5( 689)-ALA1160        (905 ) (2) resSeq jumps
-   fragment      3 with  284 AAs           GLU30( 906)- CYS341        (1189) (3) resSeq jumps
-   fragment      4 with  128 AAs            GLN1(1190)- SER128        (1317) (4)
-   fragment      5 with    1 AAs         P0G1601(1318)-P0G1601        (1318) (5)
+   Auto-detected fragments with method 'lig_resSeq+'
+   fragment      0 with  349 AAs     THR9           (   0) -   LEU394           (348 ) (0)  resSeq jumps
+   fragment      1 with  340 AAs     GLN1           ( 349) -   ASN340           (688 ) (1)
+   fragment      2 with   58 AAs     ASN5           ( 689) -    ARG62           (746 ) (2)
+   fragment      3 with  159 AAs  ASN1002           ( 747) -  ALA1160           (905 ) (3)
+   fragment      4 with  284 AAs    GLU30           ( 906) -   CYS341           (1189) (4)  resSeq jumps
+   fragment      5 with  128 AAs     GLN1           (1190) -   SER128           (1317) (5)
+   fragment      6 with    1 AAs  P0G1601           (1318) -  P0G1601           (1318) (6)
 
-  In this example, we saved the crystal structure `3SN6 <https://www.rcsb.org/structure/3SN6>`_ as a .gro-file (``mdc_pdb.py 3SN6 -o 3SN6.gro``). Still, we are able to recover the chains: :math:`G\alpha`, :math:`G\beta`, :math:`G\gamma`, :math:`\beta 2AR`, antibody, and ligand.  For clarity, we omitted the fragmentation in our `initial example`_ with the option ``-nf``, but all CLI tools do this fragmentation by default. Alternatively, one can use::
+  In this example, we saved the crystal structure `3SN6 <https://www.rcsb.org/structure/3SN6>`_ as a .gro-file (``mdc_pdb.py 3SN6 -o 3SN6.gro``). We are able to recover sensible fragments:
 
-   mdc_fragments.py prot.pdb
+  * :math:`G\alpha`
+  * :math:`G\beta`
+  * :math:`G\gamma`
+  * bacteriophage T4 lysozyme as N-terminus of the receptor (next)
+  * :math:`\beta 2` adrenergic receptor
+  * VHH antibody
+  * ligand.
+
+  For clarity, we omitted the fragmentation in our `initial example`_ with the option ``-nf``, but all CLI tools do this fragmentation by default. Alternatively, one can use::
+
+   mdc_fragments.py 3SN6.gro
 
   to get an overview of all available fragmentation heuristics and their results without computing any contacts whatsoever.
 

@@ -70,8 +70,8 @@ and calculates the  time-traces of residue-residue distances, and from there, **
    :hidden:
 
    installation
-   overview
-   Tutorial.ipynb
+   CLI Tutorial <overview>
+   API Jupyter Notebook Tutorial <Tutorial.ipynb>
    Covid-19-Spike-Protein-Example.ipynb
    cli_cli/cli_cli
    api/api

@@ -1,5 +1,5 @@
-Examples
-========
+CLI Tutorial
+============
 
 .. include:: basic_usage.rst
 
