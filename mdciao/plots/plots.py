@@ -340,12 +340,13 @@ def _color_dict_guesser(colors, key_list):
     """
     if isinstance(colors,dict):
         assert all([key in colors.keys() for key in key_list])
-        return colors
-    if colors is None:
+    elif colors is None:
         return {key: val for key, val in zip(key_list, _colorstring.split(","))}
-
-    if isinstance(colors,str):
-       colors = _try_colormap_string(colors,len(key_list))
+    elif isinstance(colors,str):
+        if _is_colormapstring(colors):
+            return {key: color for key, color in zip(key_list,_try_colormap_string(colors,len(key_list)))}
+        else:
+            return {key:colors for key in key_list}
 
     if isinstance(colors, list):
         assert len(colors) >= len(key_list)
