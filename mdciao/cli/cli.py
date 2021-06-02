@@ -1358,10 +1358,7 @@ def interface(
     tot_freq = ctc_frequency.sum()
     order = _np.argsort(ctc_frequency)[::-1]
     ctc_objs = []
-    if float(ctc_control).is_integer(): # float is needed in case the API-call gets an int passed
-        n_ctcs = int(ctc_control)
-    else:
-        n_ctcs = _mdcctcs.contacts._idx_at_fraction(ctc_frequency[order], ctc_control)
+    n_ctcs =  _mdcu.lists._get_n_ctcs_from_freqs(ctc_control,ctc_frequency[order])[0]
     #TODO still unsure about where it's best to put this
     _mdcctcs.contacts._contact_fraction_informer(n_ctcs, ctc_frequency[order], or_frac=.9)
     for ii, idx in enumerate(order[:n_ctcs]):
