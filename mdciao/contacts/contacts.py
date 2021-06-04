@@ -3925,6 +3925,94 @@ class ContactGroup(object):
         ifig.tight_layout()
         return ifig, iax
 
+    def repframe(self, reference="mode",
+                 ctc_cutoff_Ang=None,
+                 return_traj=False,
+                 show_violins=False):
+        r"""
+        Return a representative frame (traj_idx, frame_idx) for this :obj:`ContactGroup`
+
+        A "representative frame" means, in this context, a frame
+        that minimizes **the average distance** to the means (or modes)
+        of the residue-residue distances contained in this object.
+
+        Please note that "representative" can have other meanings
+        in other contexts. Here, it's just a way to pick a frame/geometry
+        which will most likely resemble most of what
+        is also seen in the distributions, barplots and flareplots.
+
+        Please also note that Minimizing **averages** has its own
+        limitations and might not always yield the best result,
+        However, it is the easiest and quickest to implement.
+        Feel free to use any of Sklearn's great regression tools
+        under constraints to get a better "representative"
+
+        Parameters
+        ----------
+        reference : str, default is "mode"
+            Two options:
+            * "mode" : minimize average distance
+              to the most likely distance, i.e.
+              to the distance values at which
+              the distributions (:obj:`plot_distance_distributions')
+              peak
+            * "mean" : minimize average distance
+              to the mean values of the distances
+        ctc_cutoff_Ang : float, default is None
+            THIS IS EXPERIMENTAL
+            If given, the contact frequencies
+            will be used as weights when computing
+            the average. In cases with many contacts,
+            many of them broken, this might help
+        return_traj : bool, default is False
+            If True, instead of returning a pair
+            of traj_idx, frame_idx values, try
+            to return an :obj:`~mdtraj.Trajectory`
+            object. Will fail if no such thing
+            is possible
+        show_violins :bool, default is False
+            Superimpose the distance values
+            as red-dots on top of violin plot,
+            created by using the :obj:`plot_violins`
+
+        Returns
+        -------
+        traj : tuple (traj_idx, frame_idx) or :obj:`~mdtraj.Trajectory`
+
+        """
+
+        all_ctcs = _np.vstack([_np.hstack(CP.time_traces.ctc_trajs) for CP in self._contacts]).T
+        n_bins = _np.max([20, (_np.sqrt(self.n_frames_total) / 2).round().astype(int)])
+
+
+        ref = {"mode" : [pair[1][_np.argmax(pair[0])] for pair in self.distributions_of_distances(bins=n_bins)],
+               "mean" : _np.mean(all_ctcs,axis=0)}
+
+
+        if ctc_cutoff_Ang is None:
+            weights = _np.ones(self.n_ctcs)
+        else:
+            weights = self.frequency_per_contact(4)
+
+        D = _np.sqrt((((all_ctcs - ref[reference]) ** 2) * weights).sum(1))
+        closest_idx = D.argmin()
+        traj_idx, frame_idx = \
+        _np.vstack([_np.vstack(([ii] * nf, _np.arange(nf))).T for ii, nf in enumerate(self.n_frames)])[closest_idx]
+
+        if show_violins:
+            iax = self.plot_violins(
+                #title_label="representative frame",
+                                    ctc_cutoff_Ang=ctc_cutoff_Ang)
+            for ii, dd in enumerate(all_ctcs[closest_idx]):
+                iax.plot(ii,dd*10,".r")
+
+        if return_traj:
+            reptraj = self._contacts[0]._attribute_trajs.trajs[traj_idx]
+            print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
+            return _md.load(reptraj, frame=frame_idx)
+        else:
+            return traj_idx,frame_idx
+
     def retop(self,top, mapping, deepcopy=False):
         r"""Return a copy of this object with a different topology.
 
