@@ -1666,6 +1666,11 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(delta_ref, delta)
         _np.testing.assert_array_equal(pairs_ref, pairs)
 
+    def test_frequency_dataframe_just_runs(self):
+        CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types])
+        df = CG.frequency_dataframe(3.5, sort=True, atom_types=True)
+        assert isinstance(df, _DF)
+
 class TestContactGroupFrequencies_max_cutoff(TestBaseClassContactGroup):
 
     @classmethod
