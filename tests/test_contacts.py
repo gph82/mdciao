@@ -1774,6 +1774,40 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         iax = CG.plot_freqs_as_bars(3.5,title_label="test", atom_types=True)
         _plt.close("all")
 
+    def test_plot_violins_no_neighborhood(self):
+        CG = self.CG_cp1_cp2
+        iax = CG.plot_violins(3.5, title_label="CG_cp1_cp2",
+                              defrag="@",
+                              truncate_at_mean=5
+                              )
+        #iax.figure.savefig("test.png")
+        _plt.close("all")
+
+    def test_plot_violins_options1(self):
+        CG = examples.ContactGroupL394()
+        iax = CG.plot_violins(display_sort=True,
+                              shorten_AAs=True,
+                              ctc_cutoff_Ang=3.5,
+                              #xlim=2
+                              )
+        #iax.figure.savefig("test.png")
+        _plt.close("all")
+
+    def test_plot_violins_options2(self):
+        CG = examples.ContactGroupL394()
+        iax = CG.plot_violins(display_sort=True,
+                              shorten_AAs=True,
+                              truncate_at_mean=3.7
+                              )
+        iax.figure.savefig("test.png")
+        _plt.close("all")
+
+    def test_plot_violins_raises_on_title(self):
+        CG = self.CG_cp1_cp2
+        with self.assertRaises(AssertionError):
+            iax = CG.plot_violins(3.5)
+
+
     def test_plot_freqs_as_flareplot_just_runs(self):
         # This is just to test that it runs without error
         # the minimal examples here cannot test the full flareplot

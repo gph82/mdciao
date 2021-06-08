@@ -3127,8 +3127,7 @@ class ContactGroup(object):
                      color="tab:blue",
                      shorten_AAs=False,
                      label_fontsize_factor=1,
-                     truncate_at=None,
-                     total_freq=None,
+                     truncate_at_mean=None,
                      display_sort=False,
                      sum_freqs=True,
                      defrag=None,
@@ -3182,6 +3181,13 @@ class ContactGroup(object):
                displayed first (=sorted by freq high to low).
                infrequent ones (e.g. two contacts both
                with freq 0) sorted with shorted distances first.
+        sum_freqs : bool, default is True
+            Whether to sum per-contact frequencies
+            and place the in the label as :math:`Sigma` values
+        defrag : char, default is None
+            Whether to leave out the fragment affiliation, e.g.
+            "GLU30@3.50" w/ defrag="@" appears as "GLU30" only
+
         Returns
         -------
         ax : :obj:`~matplotlib.axes.Axes`
@@ -3190,12 +3196,16 @@ class ContactGroup(object):
 
         # Base plot
         sigma = None
-        if title_label is None and not self.is_neighborhood:
-            assert self.name is not None, ("Cannot use a 'nameless' ContactGroup and 'title_label'=None.\n"
-                                           "Either instantiate self.name or pass a 'title_label' ")
-            title = self.name
-        elif title_label is None:
-            title=""
+        if title_label is None:
+            title = ""
+            if not self.is_neighborhood:
+                assert self.name is not None, ("Cannot use a 'nameless' ContactGroup and 'title_label'=None.\n"
+                                               "Either instantiate self.name or pass a 'title_label' ")
+                title = self.name
+        else:
+            title = title_label
+
+
         data4violin = [_np.hstack(cp.time_traces.ctc_trajs) * 10 for cp in self._contacts]
         means = _np.array([_np.mean(dt) for dt in data4violin])
 
@@ -3214,9 +3224,9 @@ class ContactGroup(object):
         else:
             order = _np.arange(len(data4violin))
 
-        if truncate_at is not None:
+        if truncate_at_mean is not None:
             if freqs is None:
-                order = [oo for oo in order if means[oo]<=truncate_at]
+                order = [oo for oo in order if means[oo]<=truncate_at_mean]
             else:
                 order = [oo for oo in order if freqs[oo]>0]
 
@@ -3224,7 +3234,7 @@ class ContactGroup(object):
         if shorten_AAs:
             label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
-        color =_color_dict_guesser(color, _np.arange(len(order)))
+        color =_color_dict_guesser(color, _np.arange(self.n_ctcs))
         ax, violins = _mdcplots.plots._plot_violin_baseplot([data4violin[oo] for oo in order],
                                                             jax=ax,
                                                             colors=[color[oo] for oo in order],
@@ -3257,10 +3267,6 @@ class ContactGroup(object):
         else:
             if sum_freqs and sigma is not None:
                 title += " (Sigma = %2.1f)\n" % (sigma)
-                if total_freq is not None:
-                    title += "these %u most frequent contacts capture %4.2f %% of all contacts\n" % (self.n_ctcs,
-                                                                                                     sigma / total_freq * 100,
-                                                                                                     )
 
         if defrag is not None:
             label_bars = [_mdcu.str_and_dict.defrag_key(ilab, defrag=defrag) for ilab in label_bars]
@@ -3282,15 +3288,16 @@ class ContactGroup(object):
                     rotation=45,ha="right", va="top")
         # ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
 
-        if xlim is not None:
-            ax.set_xlim([-.5, xlim + 1 - .5])
+        if xlim is None:
+            xlim = len(order)
+        ax.set_xlim([-.5, xlim - .5])
 
         #_plt.ylim(0)
         _plt.ylabel("D / $\\AA$")
 
         if self.is_neighborhood:
             ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor,loc="best")
-        _add_grey_banded_bg(ax, len(label_bars))
+        _add_grey_banded_bg(ax, len(order))
 
         ax.figure.tight_layout()
 
