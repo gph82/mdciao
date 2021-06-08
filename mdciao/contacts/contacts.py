@@ -4022,7 +4022,7 @@ class ContactGroup(object):
         if ctc_cutoff_Ang is None:
             weights = _np.ones(self.n_ctcs)
         else:
-            weights = self.frequency_per_contact(4)
+            weights = self.frequency_per_contact(ctc_cutoff_Ang)
 
         D = _np.sqrt((((all_ctcs - ref[reference]) ** 2) * weights).sum(1))
         closest_idx = D.argmin()
@@ -4042,6 +4042,62 @@ class ContactGroup(object):
             return _md.load(reptraj, frame=frame_idx)
         else:
             return traj_idx,frame_idx
+
+    def to_new_ContactGroup(self, CSVexpression,
+                            allow_multiple_matches=False,
+                            merge=True):
+        r"""
+        Creates a new :obj:`ContactGroup` from this une using a CSV expression to filter for residues
+
+        Parameters
+        ----------
+        CSVexpression : str
+            CSV expression like "GLU30,K*" to select
+            the residue-pairs of :obj:`self` for the
+            new :obj:`ContactGroup`. See
+            :obj:`mdciao.utils.residue_and_atom.find_AA` for
+            the syntax of the expression.
+        allow_multiple_matches : bool, default is False
+            Fail if the substrings of the :obj:`CSVexpression`
+            return more than one residue. Protects from over-grabbing
+            residues
+        merge : bool, default is True
+            Merge the selected residue-pairs into
+            one single :obj:`ContactGroup`. If False
+            every sub-string of :obj:`CSVexpression`
+            returns its own :obj:`ContactGroup`
+
+        Returns
+        -------
+        newCG : :obj:`ContactGroup` or dict
+            If dict, it's keyed with substrings of
+            :obj:`CSVexpression` and valued with
+            :obj:`ContactGroups`
+        """
+        matching_CPs = []
+        keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
+        for exp in keys:
+            match = _mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top)
+            if not allow_multiple_matches and len(match)>1:
+                print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
+                _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
+                raise ValueError
+
+            idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,match))>0]
+            matching_CPs.append(idxs)
+
+        if merge:
+            Ns = ContactGroup(
+                [self._contacts[ii] for ii in _np.unique(_np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0]))],
+                neighbors_excluded=self.neighbors_excluded,
+                max_cutoff_Ang=self.max_cutoff_Ang
+                )
+        else:
+            Ns = {key: [ContactGroup([self._contacts[ii] for ii in mCPs],
+                                     neighbors_excluded=self.neighbors_excluded,
+                                     max_cutoff_Ang=self.max_cutoff_Ang) if len(mCPs) > 0 else None][0]
+                  for mCPs, key in zip(matching_CPs, keys)}
+        return Ns
 
     def retop(self,top, mapping, deepcopy=False):
         r"""Return a copy of this object with a different topology.
