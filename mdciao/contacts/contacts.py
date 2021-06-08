@@ -3971,11 +3971,17 @@ class ContactGroup(object):
         which will most likely resemble most of what
         is also seen in the distributions, barplots and flareplots.
 
-        Please also note that Minimizing **averages** has its own
+        Please also note that minimizing **averages** has its own
         limitations and might not always yield the best result,
         However, it is the easiest and quickest to implement.
         Feel free to use any of Sklearn's great regression tools
         under constraints to get a better "representative"
+
+        Note
+        ----
+        In order to quickly compute modes, residue-residue distances
+        are multiplied by 1000 and rounded to integers, to be
+        able to use :obj:`numpy.bincount` for speed
 
         Parameters
         ----------
@@ -4012,12 +4018,10 @@ class ContactGroup(object):
         """
 
         all_ctcs = _np.vstack([_np.hstack(CP.time_traces.ctc_trajs) for CP in self._contacts]).T
-        n_bins = _np.max([20, (_np.sqrt(self.n_frames_total) / 2).round().astype(int)])
+        all_ctcspm = (all_ctcs*1e3).round().astype(int)
 
-
-        ref = {"mode" : [pair[1][_np.argmax(pair[0])] for pair in self.distributions_of_distances(bins=n_bins)],
+        ref = {"mode" : [(_np.bincount(row).argmax())*1e-3 for row in all_ctcspm.T],
                "mean" : _np.mean(all_ctcs,axis=0)}
-
 
         if ctc_cutoff_Ang is None:
             weights = _np.ones(self.n_ctcs)
@@ -4030,16 +4034,19 @@ class ContactGroup(object):
         _np.vstack([_np.vstack(([ii] * nf, _np.arange(nf))).T for ii, nf in enumerate(self.n_frames)])[closest_idx]
 
         if show_violins:
-            iax = self.plot_violins(
-                #title_label="representative frame",
+            iax = self.plot_violins(title_label="representative frame that minimizes the average distance to\n"
+                                                "the %s value of the whole dataset"%{"mode":"most likely",
+                                                                                     "mean" :"mean"}[reference],
                                     ctc_cutoff_Ang=ctc_cutoff_Ang)
             for ii, dd in enumerate(all_ctcs[closest_idx]):
                 iax.plot(ii,dd*10,".r")
+            iax.plot(_np.nan,_np.nan,".r",label="frame value")
+            iax.legend()
 
         if return_traj:
             reptraj = self._contacts[0]._attribute_trajs.trajs[traj_idx]
             print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
-            return _md.load(reptraj, frame=frame_idx)
+            return _md.load(reptraj, top=self.top,frame=frame_idx)
         else:
             return traj_idx,frame_idx
 

@@ -1449,6 +1449,40 @@ class TestContactGroup(TestBaseClassContactGroup):
             CP.plot_interface_frequency_matrix(None)
         assert CP.interface_frequency_matrix(None) is None
 
+    def test_repframe(self):
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
+                                                         [[0],
+                                                          [10],
+                                                          [0, 15, 10, 15, 15]],
+                                                         [[0],
+                                                          [0],
+                                                          [0, 1, 2, 3, 4]])])
+        repframe = CG.repframe()
+        assert repframe[0] == [2]
+        assert repframe[1] == [1]
+
+    def test_repframe_mean(self):
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
+                                                         [[0],
+                                                          [10],
+                                                          [0, 15, 10, 15, 15]],
+                                                         [[0],
+                                                          [0],
+                                                          [0, 1, 2, 3, 4]])])
+        repframe = CG.repframe(reference="mean")
+        assert repframe[0]==[1]
+        assert repframe[1]==[0]
+
+    def test_repframe_w_traj_just_runs(self):
+        CG = examples.ContactGroupL394()
+        with _TDir(suffix="_mdciao_example_CG") as t:
+            examples._link(test_filenames.traj_xtc, examples._path.join(t, examples._path.basename(test_filenames.traj_xtc)))
+            with examples.remember_cwd():
+                examples._chdir(t)
+                repframe = CG.repframe(show_violins=True,return_traj=True)
+                assert isinstance(repframe, md.Trajectory)
+
+
 class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     @classmethod
