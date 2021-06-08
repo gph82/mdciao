@@ -1459,7 +1459,7 @@ def _plot_freqbars_baseplot(freqs,
     [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
     return jax
 
-def _plot_violin_baseplot(per_CP_timetraces,
+def _plot_violin_baseplot(vdata,
                           jax=None,
                           violin_width_in_inches=.75,
                           colors="tab:blue",
@@ -1471,7 +1471,7 @@ def _plot_violin_baseplot(per_CP_timetraces,
 
     Parameters
     ----------
-    per_CP_timetraces : list
+    vdata : list
         Each entry represents a contact-pair and
         is itself a list of time-traces (one time-trace
         per trajectory)
@@ -1492,7 +1492,7 @@ def _plot_violin_baseplot(per_CP_timetraces,
         * if is_color_like(colors)=True
          all violins get this color
         * if string is a matplotlib colormap
-         interpolate N (=len(per_CP_timetraces)
+         interpolate N (=len(vdata)
          colors on that colormap and assign
          one to each violin
 
@@ -1502,16 +1502,17 @@ def _plot_violin_baseplot(per_CP_timetraces,
     violins : dictionary
         See :obj:`~matplotlib.pyplot.violinplot` for more info
     """
-
-    xvec = _np.arange(len(per_CP_timetraces))+offset
+    xvec = _np.arange(len(vdata)) + offset
     if jax is None:
-        _plt.figure(figsize=(_np.max((7, violin_width_in_inches * len(per_CP_timetraces))), 5))
+        _plt.figure(figsize=(_np.max((7, violin_width_in_inches * len(vdata))), 5))
         jax = _plt.gca()
     else:
         _plt.sca(jax)
-    per_CP_timetraces = [_np.hstack(dt) for dt in per_CP_timetraces]
+    vdata = [_np.hstack(dt) for dt in vdata]
     #means = [_np.mean(dt) for dt in per_CP_timetraces]
-    violins = _plt.violinplot(per_CP_timetraces,
+    vdata = _np.array(vdata, ndmin=2).T
+    assert vdata.shape[0]==len(vdata)
+    violins = _plt.violinplot(vdata,
                               positions=xvec,
                               showmeans=True,
                               #showmedians=True,
@@ -1524,11 +1525,11 @@ def _plot_violin_baseplot(per_CP_timetraces,
     else:
         _plt.xticks(xvec, labels, rotation=45, ha="right", va="top")
     if isinstance(colors, list):
-        assert len(colors)>=len(violins),"Not enough colors (%u) for the number of violins (%u)"%(len(colors),len(per_CP_timetraces))
+        assert len(colors)>=len(violins["bodies"]),"Not enough colors (%u) for the number of violins (%u)"%(len(colors),len(vdata))
     elif _is_colormapstring(colors):
-        colors = _try_colormap_string(colors,len(per_CP_timetraces))
+        colors = _try_colormap_string(colors, len(vdata))
     elif isinstance(colors,str):
-        colors = [colors]*len(per_CP_timetraces)
+        colors = [colors]*len(vdata)
 
     violins["cmeans"].set_color(colors)
     for vio,col in zip(violins["bodies"],colors):
