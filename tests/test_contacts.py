@@ -1482,7 +1482,34 @@ class TestContactGroup(TestBaseClassContactGroup):
                 repframe = CG.repframe(show_violins=True,return_traj=True)
                 assert isinstance(repframe, md.Trajectory)
 
+    def test_to_new_ContactGroup(self):
+        from mdciao.cli import sites
+        CG = sites([{"name": "test_random",
+                     "pairs": {"residx": [[100, 200],
+                                          [100, 300],
+                                          [10, 40],
+                                          [200, 50],
+                                          [20, 40],
+                                          [10, 20]]
+                               }}],
+                   test_filenames.traj_xtc,
+                   test_filenames.top_pdb,
+                   no_disk=True,
+                   figures=False)["test_random"]
 
+        CSV = ','.join([str(CG.top.residue(ii)) for ii in [200,10]])
+
+        new_CG : contacts.ContactGroup = CG.to_new_ContactGroup(CSV)
+        assert new_CG._contacts[0] is CG._contacts[0]
+        assert new_CG._contacts[1] is CG._contacts[2]
+        assert new_CG._contacts[2] is CG._contacts[3]
+        assert new_CG._contacts[3] is CG._contacts[5]
+        assert isinstance(new_CG,contacts.ContactGroup)
+
+        new_CG_dict = CG.to_new_ContactGroup(CSV,merge=False)
+        assert isinstance(new_CG_dict, dict)
+        self.assertSequenceEqual(list(new_CG_dict),CSV.split(","))
+        assert all([isinstance(val, contacts.ContactGroup) for val in new_CG_dict.values()])
 class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     @classmethod
