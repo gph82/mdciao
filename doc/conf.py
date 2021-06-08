@@ -47,7 +47,9 @@ intersphinx_mapping = {'mdtraj': ('http://mdtraj.org/1.9.4/', None),
                        'pandas': ('https://pandas.pydata.org/docs/',None),
                        'requests': ('https://requests.readthedocs.io/en/master/',None)}
 
-autodoc_mock_imports = ["mdtraj", "matplotlib"]
+autodoc_mock_imports = ["mdtraj", 
+#                        "matplotlib"
+]
 
 autosummary_generate = True
 autodoc_default_flags = ['members', 'inherited-members']
