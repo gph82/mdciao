@@ -3,6 +3,6 @@ FAQ Notebooks
 
 .. toctree::
 
-   Missing_Contacts.ipynb
-   Comparing_CGs_Bars.ipynb
-   Comparing_CGs_Flares.ipynb
+   notebooks/Missing_Contacts.ipynb
+   notebooks/Comparing_CGs_Bars.ipynb
+   notebooks/Comparing_CGs_Flares.ipynb
