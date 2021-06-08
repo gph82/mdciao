@@ -1532,8 +1532,31 @@ class ContactPair(object):
     def gen_label(self,
                   AA_format="short",
                   fragments=False,
-                  include_anchor=True):
-        if include_anchor:
+                  delete_anchor=False):
+        r"""
+        Generate a labels with different parameters
+
+        Parameters
+        ----------
+        AA_format : str, default is "short"
+            Alternative is "long" ("E30" vs "GLU30")
+        fragments : bool, default is False
+            Include fragment information
+            Will get the "best" information
+            available, ie consensus>fragname>fragindex
+        delete_anchor : bool, default is False
+            the anchor
+
+        Returns
+        -------
+
+        """
+        if self.neighborhood is None and delete_anchor:
+            delete_anchor  = False
+            print("Can't ContactPair.gen_label() can't use 'delete anchor=True', this is not a neighborhood.\n"
+                  "Setting it to 'False'")
+
+        if not delete_anchor:
             if AA_format == "short":
                 if fragments:
                     label = self.labels.w_fragments_short_AA
@@ -1556,7 +1579,7 @@ class ContactPair(object):
                 if fragments:
                     label = self.neighborhood.partner_res_and_fragment_str
                 else:
-                    label = self.neighborhood.partner_residue
+                    label = self.neighborhood.partner_residue_name
 
         return label
 

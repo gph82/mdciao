@@ -988,7 +988,7 @@ def compare_violins(groups,
     for syskey, group in groups.items():
         labels = group.gen_ctc_labels(AA_format=AA_format,
                                       fragments=[True if defrag is None else False][0],
-                                      include_anchor=True)
+                                      )
         idict = {key : _np.hstack(cp.time_traces.ctc_trajs) * 10
                  for key, cp in zip(labels, group._contacts)}
         #TODO avoid repetition

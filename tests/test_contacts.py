@@ -896,7 +896,41 @@ class TestContactPair(unittest.TestCase):
         assert sCP["residues.anchor_residue_index"] is CP.residues.anchor_residue_index
         assert sCP["residues.consensus_labels"] is CP.residues.consensus_labels
 
+    def test_gen_labels(self):
+        CG = examples.ContactGroupL394()
+        CP: contacts.ContactPair = CG._contacts[0]
 
+        self.assertEqual(CP.gen_label("short"),"R389-L394")
+        self.assertEqual(CP.gen_label("long") ,"ARG389-LEU394")
+        self.assertEqual(CP.gen_label("short",fragments=True), "R389@G.H5.21-L394@G.H5.26")
+        self.assertEqual(CP.gen_label("long",fragments=True) ,"ARG389@G.H5.21-LEU394@G.H5.26")
+
+        self.assertEqual(CP.gen_label("short", delete_anchor=True), "R389")
+        self.assertEqual(CP.gen_label("long", delete_anchor=True), "ARG389")
+        self.assertEqual(CP.gen_label("short", fragments=True, delete_anchor=True), "R389@G.H5.21")
+        self.assertEqual(CP.gen_label("long", fragments=True, delete_anchor=True), "ARG389@G.H5.21")
+        with self.assertRaises(ValueError):
+            CP.gen_label("wrong")
+
+    def test_gen_labels_no_neighborhood(self):
+        CP: contacts.ContactPair = contacts.ContactPair([0, 1],
+                                                        [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                                                        [[0, 1, 2], [0, 1, 2, 3]],
+                                                        fragment_names=["A", "B"]
+                                                        )
+
+        self.assertEqual(CP.gen_label("short"),"0-1")
+        self.assertEqual(CP.gen_label("long") ,"0-1")
+        self.assertEqual(CP.gen_label("short",fragments=True), "0@A-1@B")
+        self.assertEqual(CP.gen_label("long",fragments=True) ,"0@A-1@B")
+
+        #No neighbor
+        self.assertEqual(CP.gen_label("short", delete_anchor=True), "0-1")
+        self.assertEqual(CP.gen_label("long", delete_anchor=True), "0-1")
+        self.assertEqual(CP.gen_label("short", fragments=True, delete_anchor=True), "0@A-1@B")
+        self.assertEqual(CP.gen_label("long", fragments=True, delete_anchor=True), "0@A-1@B")
+        with self.assertRaises(ValueError):
+            CP.gen_label("wrong")
 
 
 class Test_sum_ctc_freqs_by_atom_type(unittest.TestCase):
