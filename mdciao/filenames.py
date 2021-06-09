@@ -21,14 +21,25 @@
 ##############################################################################
 
 from os import path
+from sys import prefix as env_prefix
+#Check https://docs.python.org/3/library/sys.html#sys.prefix
 class filenames(object):
     def __init__(self):
         # Check
         # https://docs.python.org/3.7/tutorial/modules.html#packages-in-multiple-directories
         from mdciao import __path__ as sfpath
         assert len(sfpath) == 1
-        sfpath = path.split(sfpath[0])[0]
-        self.test_data_path = path.join(sfpath, "tests", "data")
+        sfpath = path.split(sfpath[0])[0].rstrip("/")
+
+        if sfpath.startswith(env_prefix):
+            if sfpath.endswith(".egg"):
+                self.test_data_path = path.join(sfpath,"data_for_mdciao") # we're a python setup.py develop
+            else:
+                # we're a "normal" pip/conda installation
+                self.test_data_path = path.join(env_prefix, "data_for_mdciao")
+        else:
+            self.test_data_path = path.join(sfpath, "tests", "data") # we're a python setup.py develop
+
         self.bogus_pdb_path = path.join(self.test_data_path, "bogus_pdb")
         self.RSCB_pdb_path =  path.join(self.test_data_path,"RSCB_pdb" )
         self.example_path =   path.join(self.test_data_path,"examples")
