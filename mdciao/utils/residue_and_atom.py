@@ -56,7 +56,7 @@ def residues_from_descriptors(residue_descriptors,
         with residue indices and valued with additional residue names.
         Higher-level keys can be whatever. Use case is e.g. if "R131"
         needs to be disambiguated bc. it pops up in many fragments.
-        You can pass {"BW":{895:"3.50", ...} here and that label
+        You can pass {"GPCR":{895:"3.50", ...} here and that label
         will be displayed next to the residue. :obj:`mdciao.cli`
         methods use this.
     just_inform : bool, default is False
@@ -589,7 +589,7 @@ def find_AA(AA_pattern, top,
     as :obj:`extra_columns` will be
     matched as explained below, e.g.
     "3.50" to get one residue in
-    the BW-nomenclature or "3.*"
+    the GPCR-nomenclature or "3.*"
     to get the whole TM-helix 3
 
     The examples use '*' as wildcard,
