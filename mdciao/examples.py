@@ -29,7 +29,7 @@ cwd = _getcwd()
 long2short = {"--residues" : "-r",
               "--n_smooth_hw" : "-ns",
               "--table_ext" : "-tx",
-              "--BW_uniprot" : "--BW",
+              "--GPCR_uniprot" : "--GPCR",
               "--CGN_PDB"   : "--CGN"
               }
 
@@ -83,7 +83,7 @@ class ExamplesCLTs(object):
                 self.opt_dict["--residues"] + " L394",
                 self.opt_dict["--n_smooth_hw"] + " 1",
                 self.opt_dict["--table_ext"] + " xlsx",
-                self.opt_dict["--BW_uniprot"] + " %s" % self.BW_file,
+                self.opt_dict["--GPCR_uniprot"] + " %s" % self.BW_file,
                 self.opt_dict["--CGN_PDB"] + " %s" % self.CGN_file,
                 ]
     @property
@@ -91,7 +91,7 @@ class ExamplesCLTs(object):
         return ["mdc_sites.py ",
                 "%s %s" % (self.pdb, self.xtc),
                 " --site_files %s" % self.sitefile,
-                " --BW_uniprot %s" % self.BW_file,
+                " --GPCR_uniprot %s" % self.BW_file,
                 " --CGN_PDB %s" % self.CGN_file
                 ]
 
@@ -102,7 +102,7 @@ class ExamplesCLTs(object):
                 " --frag_idxs_group_1 0-2",
                 " --frag_idxs_group_2 3",
                 " --ctc_control 20",
-                " --BW_uniprot %s" % self.BW_file,
+                " --GPCR_uniprot %s" % self.BW_file,
                 " --CGN_PDB %s" % self.CGN_file,
                 ]
     @property
@@ -157,7 +157,7 @@ class ExamplesCLTs(object):
         return ["mdc_residues.py ",
                 "P0G,380-394,3.5* "
                 "%s"% (self.pdb),
-                " --BW_uniprot %s" % self.BW_file,
+                " --GPCR_uniprot %s" % self.BW_file,
                 "-ni"]
 
     @property
@@ -170,7 +170,7 @@ class ExamplesCLTs(object):
     def _join_args(self,clt):
         oneline = self.__getattribute__(clt)
         if self.test:
-            oneline = [arg for arg in oneline if "-BW" not in arg and "-CGN" not in arg]
+            oneline = [arg for arg in oneline if "-GPCR" not in arg and "-CGN" not in arg]
         return " ".join(oneline)
 
     def show(self, clt):
