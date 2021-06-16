@@ -827,7 +827,7 @@ def residue_neighborhoods(residues,
                  "%s\nexcluding %u nearest neighbors" \
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
-                                                  midstring=mid_string, BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
+                                                  midstring=mid_string, GPCR_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
                                                   save_nomenclature_files=save_nomenclature_files,
                                                   accept_guess=accept_guess, interpret_as_res_idxs=res_idxs, sort=sort)
 
@@ -1967,13 +1967,13 @@ def pdb(code,
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
 
-def _res_resolver(res_range, top, fragments, midstring=None, BW_uniprot=None, CGN_PDB=None,
+def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
 
 
 
     consensus_maps = _parse_consensus_options_and_return_fragment_defs(
-        {"BW": BW_uniprot,
+        {"BW": GPCR_uniprot,
          "CGN": CGN_PDB},
         top,
         fragments,
@@ -2019,10 +2019,10 @@ def residue_selection(expression,
         descriptors if consensus labels are provided
     top : str, :obj:`~mdtraj.Trajectory`, or :obj:`~mdtraj.Topology`
         The topology to use.
-    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    GPCR_uniprot : str or :obj:`~mdciao.nomenclature.LabelerGPCR`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
-        If `mdciao.nomenclature.Labeler_BW`, use this object directly
+        If `~mdciao.nomenclature.LabelerGPCR`, use this object directly
         See :obj:`mdciao.nomenclature` for more info and references.
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
@@ -2081,7 +2081,7 @@ def residue_selection(expression,
                                                                    _top, verbose=True)
     res_idxs_list, consensus_maps = _res_resolver(expression, _top, _frags,
                                                   midstring="Your selection '%s' yields:" % expression,
-                                                  BW_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
+                                                  GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
                                                   save_nomenclature_files=save_nomenclature_files,
                                                   accept_guess=accept_guess,
                                                   just_inform=True)
