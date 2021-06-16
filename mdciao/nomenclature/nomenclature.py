@@ -40,10 +40,10 @@ import requests as _requests
 
 from natsort import natsorted as _natsorted
 
-def table2BW_by_AAcode(tablefile,
-                       keep_AA_code=True,
-                       return_fragments=False,
-                       ):
+def table2GPCR_by_AAcode(tablefile,
+                         keep_AA_code=True,
+                         return_fragments=False,
+                         ):
     r"""
     Reads an excel table and returns a dictionary AAcodes so that e.g. self.AA2BW[R131] -> '3.50'
 
@@ -1067,7 +1067,7 @@ class LabelerGPCR(LabelerConsensus):
                                                        )
         # The title of the column with this field varies between CGN and BW
         self._AAresSeq_key = "AAresSeq"
-        self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
+        self._AA2conlab, self._fragments = table2GPCR_by_AAcode(self.dataframe, return_fragments=True)
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
@@ -1516,7 +1516,7 @@ def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
 
     """
 
-    all_defs, names = table2BW_by_AAcode(tablefile,
+    all_defs, names = table2GPCR_by_AAcode(tablefile,
                                          #modifications=modifications,
                                          return_defs=True)
 
