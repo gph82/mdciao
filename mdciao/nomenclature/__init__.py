@@ -30,7 +30,7 @@ Functions
 
    guess_nomenclature_fragments
    PDB_finder
-   BW_finder
+   GPCR_finder
    md_load_rscb
 
 
