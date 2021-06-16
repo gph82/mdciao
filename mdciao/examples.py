@@ -106,8 +106,8 @@ class ExamplesCLTs(object):
                 " --CGN_PDB %s" % self.CGN_file,
                 ]
     @property
-    def mdc_BW_overview(self):
-        return ["mdc_BW_overview.py",
+    def mdc_GPCR_overview(self):
+        return ["mdc_GPCR_overview.py",
                 "%s" % self.BW_file,
                 "-t %s" % self.pdb]
 

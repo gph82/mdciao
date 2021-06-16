@@ -657,7 +657,7 @@ def parser_for_frag_overview():
     _parser_add_AAs(parser)
     return parser
 
-def parser_for_BW_overview():
+def parser_for_GPCR_overview():
     parser = argparse.ArgumentParser(description='Produce an overview of a Ballesteros-Weinstein (BW)-type '
                                                  'nomenclature, optionally mapping it on an input topology. '
                                                  'The BW nomenclature can be read locally or over the network')
