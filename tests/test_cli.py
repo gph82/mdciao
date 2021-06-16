@@ -725,17 +725,17 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("print_conlab",True)
         a.__setattr__("topology",test_filenames.top_pdb)
-        cli._fragment_overview(a, "BW")
+        cli._fragment_overview(a, "GPCR")
 
     def test_BW_url(self):
         a = parser_for_BW_overview()
         a = a.parse_args(["adrb2_human"])
         a.__setattr__("topology",test_filenames.pdb_3SN6)
-        cli._fragment_overview(a, "BW")
+        cli._fragment_overview(a, "GPCR")
 
     def test_raises(self):
         with pytest.raises(ValueError):
-            cli._fragment_overview(None, "BWx")
+            cli._fragment_overview(None, "GPCRx")
 
     def test_AAs(self):
         a = parser_for_CGN_overview()
@@ -750,13 +750,13 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("topology",test_filenames.top_pdb)
         a.__setattr__("labels","3.50")
-        cli._fragment_overview(a, "BW")
+        cli._fragment_overview(a, "GPCR")
 
     def test_no_top(self):
         a = parser_for_BW_overview()
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("labels","3.50")
-        cli._fragment_overview(a, "BW")
+        cli._fragment_overview(a, "GPCR")
 
 class Test_compare(unittest.TestCase):
 
