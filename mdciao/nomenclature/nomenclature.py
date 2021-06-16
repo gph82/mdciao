@@ -45,7 +45,7 @@ def table2GPCR_by_AAcode(tablefile,
                          return_fragments=False,
                          ):
     r"""
-    Reads an excel table and returns a dictionary AAcodes so that e.g. self.AA2BW[R131] -> '3.50'
+    Reads an excel table and returns a dictionary AAcodes so that e.g. AAcode2GPCR["R131"] -> '3.50'
 
     Parameters
     ----------
@@ -59,7 +59,7 @@ def table2GPCR_by_AAcode(tablefile,
     Returns
     -------
 
-    AA2BW : dictionary
+    AAcode2GPCR : dictionary
         Dictionary with residues as key and their corresponding BW notation.
 
     fragments : dict (optional)
