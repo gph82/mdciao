@@ -1770,7 +1770,7 @@ def sort_GPCR_consensus_labels(labels, **kwargs):
 def sort_CGN_consensus_labels(labels, **kwargs):
     return sort_consensus_labels(labels, _CGN_fragments, **kwargs)
 
-def conslabel2fraglabel(labelres,defrag="@",prefix_GCPR=True):
+def conslabel2fraglabel(labelres, defrag="@", prefix_GPCR=True):
     r"""
     Return a fragment label from a full consensus following some norms
     Parameters
@@ -1784,7 +1784,7 @@ def conslabel2fraglabel(labelres,defrag="@",prefix_GCPR=True):
 
     label = labelres.split(defrag)[-1]
     label = label.rsplit(".",maxsplit=1)[0]
-    if prefix_GCPR and str(label) in _GPCR_num2lett.keys():
+    if prefix_GPCR and str(label) in _GPCR_num2lett.keys():
         label = _GPCR_num2lett[label]
     return label
 
