@@ -1815,7 +1815,7 @@ def sort_consensus_labels(subset, sorted_superset,
 
     return labs_out
 
-def sort_BW_consensus_labels(labels, **kwargs):
+def sort_GPCR_consensus_labels(labels, **kwargs):
     return sort_consensus_labels(labels, _GPCR_fragments, **kwargs)
 def sort_CGN_consensus_labels(labels, **kwargs):
     return sort_consensus_labels(labels, _CGN_fragments, **kwargs)
