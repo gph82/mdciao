@@ -25,9 +25,10 @@ from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
 from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp as _re_warp
 from matplotlib.colors import to_rgb as _to_rgb
+from matplotlib.collections import LineCollection as _LCol
 
 from collections import Counter as _Counter
-from matplotlib.patches import CirclePolygon as _CP
+from matplotlib.patches import CirclePolygon as _CP, Polygon as _PG
 
 #https://stackoverflow.com/a/33375738
 def _make_color_transparent(color_fg, alpha, color_bg="white"):
@@ -853,3 +854,104 @@ def fontsize_apply(axA, axB):
     for txt in axB.texts:
         fs = _np.round(txt.get_fontsize(), 2)
         txt.set_fontsize(fs2type[fs])
+
+def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_baseline=True,
+             colors=None,
+             lines=False):
+    r"""
+    Create "auras", i.e. outer rings of the flareplot representing any scalar array
+
+    Parameters
+    ----------
+    xy : np.ndarray of shape (N,2)
+    aura : iterable of positive scalars
+        The value to be plotted, e.g.
+        conservation degree, RMSF,
+        SASA, whatever.
+        The indices are indices of
+        :obj:`xy`, s.t. the have to
+        be in the interval [0,len(xy)]
+        If :obj:`xy` has been "sparsed"
+        somehow, :obj:`aura` needs also
+        to be sparsed
+    r : float, default is 1
+        Radius of the aura's baseline
+    iax : :obj:`~matplotlib.axes.Axes`
+        The axes containing the flareplot
+    width : .10
+        The width of the aura, in units of :obj:`r`
+        The maximum aura value will always appear
+        at r+r*width
+    fragment_lenghts : iterable of ints, default is None
+        How the :obj:`xy` is divided into fragments.
+        if None, defaults to [len(xy)]
+    subtract_baseline : bool, default is True
+        Subtract the baseline of the :obj:`aura`.
+        This highlights differences between
+        high-values and low values,
+        but makes the minimum values appear as zero.
+        If False, then all values of the aura get compressed
+        to the range [r,r+r*width], which can
+        lead to poor resolution. For example, if
+        you are plotting conservation degree in percent and
+        all values are between 85 and 100%, not subtracting
+        the baseline will make it hard to distinguish anything,
+        all values will appear as "high".
+    colors : anything
+    lines : bool, default is False
+        Use lines instead of polyogons to represent the aura
+
+    Returns
+    -------
+    artists : list
+        Contains the  artilst objects, either
+        :obj:`~matplotlib.patches.Polygon` or
+        :obj:`~matplotlib.collections.LineCollection`
+    rmax : float
+        The new maximum radius, i.e. (1+width)*r
+    """
+
+    if fragment_lenghts is None:
+        fragment_lenghts = [len(xy)]
+    assert len(aura) == len(xy) == sum(fragment_lenghts)
+    aura = _np.array(aura,dtype=float)
+    if any([a<0 for a in aura]):
+        raise NotImplementedError("Negative aura-values not implemented yet")
+
+    aura /= aura.max()
+    if subtract_baseline:
+        aura -= aura.min()
+        aura /= aura.max()
+    assert  aura.max()==1
+
+    aura *= r * width
+
+    col_list = col_list_from_input_and_fragments(colors, [_np.arange(l) for l in fragment_lenghts],alpha=.80)
+
+    artists = []
+    aura_iter = iter(aura)
+    for jj, ixy in enumerate(_re_warp(xy, fragment_lenghts)):
+        base, top, segments = [], [], []
+        for ii, (x, y) in enumerate(ixy):
+            theta = _np.arctan2(y, x)
+            iaura = next(aura_iter)
+            #theta_deg = theta / _np.pi * 180
+            # print(theta)
+            # plt.text(x,y,"%s %u"%(ii,theta_deg),fontsize=20)
+            start = [_np.cos(theta) * r, _np.sin(theta) * r]
+            end = [_np.cos(theta) * (r + iaura), _np.sin(theta) * (r + iaura)]
+            base.append(start)
+            top.append(end)
+            segments.append([start, end])
+        base = _np.array(base)
+        top = _np.array(top)
+        poly = _np.vstack((base, top[::-1]))
+        # iax.scatter(base[:,0],base[:,1],color="r",zorder=100)
+        # iax.scatter(top[:,0],top[:,1],color="g",zorder=100)
+        if lines:
+            artists.append(_LCol(segments, color=col_list[jj]))
+        else:
+            artists.append(_PG(poly, alpha=.80, color=col_list[jj],lw=0))
+
+        iax.add_artist(artists[-1])
+    return artists, r+aura.max()
