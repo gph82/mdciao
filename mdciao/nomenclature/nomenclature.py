@@ -280,7 +280,7 @@ def _finder_writer(full_local_path,
 
 
 # TODO consider making private?
-def GPCR_finder(BW_descriptor,
+def GPCR_finder(GPCR_descriptor,
                 format = "%s.xlsx",
                 local_path=".",
                 try_web_lookup=True,
@@ -300,7 +300,7 @@ def GPCR_finder(BW_descriptor,
 
     Parameters
     ----------
-    BW_descriptor : str
+    GPCR_descriptor : str
         Anything that can be used to find the needed
         BW information, locally or online:
          * a uniprot descriptor, e.g. `adrb2_human`
@@ -349,14 +349,14 @@ def GPCR_finder(BW_descriptor,
 
     """
 
-    if _path.exists(BW_descriptor):
-        fullpath = BW_descriptor
+    if _path.exists(GPCR_descriptor):
+        fullpath = GPCR_descriptor
         try_web_lookup=False
     else:
-        xlsxname = format % BW_descriptor
+        xlsxname = format % GPCR_descriptor
         fullpath = _path.join(local_path, xlsxname)
     GPCRmd = "https://gpcrdb.org/services/residues/extended"
-    url = "%s/%s" % (GPCRmd, BW_descriptor)
+    url = "%s/%s" % (GPCRmd, GPCR_descriptor)
 
     local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
                                                         engine="openpyxl",
