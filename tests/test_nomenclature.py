@@ -15,7 +15,7 @@ from mdciao import nomenclature
 # When API design is more stable will TODO
 from mdciao.nomenclature.nomenclature import \
     _CGN_fragments, \
-    _BW_web_lookup, \
+    _GPCR_web_lookup, \
     _fill_consensus_gaps, \
     _map2defs
     #_top2consensus_map
@@ -165,12 +165,12 @@ class Test_CGN_finder(unittest.TestCase):
 class Test_GPCRmd_lookup_BW(unittest.TestCase):
 
     def test_works(self):
-        DF = _BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
+        DF = _GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
         assert isinstance(DF, DataFrame)
 
     def test_wrong_code(self):
         with pytest.raises(ValueError):
-            raise _BW_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
+            raise _GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
 
 class Test_BW_finder(unittest.TestCase):
 
