@@ -34,7 +34,7 @@ from mdciao.cli import *
 #    interface
 
 from mdciao.nomenclature import \
-    LabelerBW
+    LabelerGPCR
 
 from mdciao.parsers import \
     parser_for_CGN_overview, \
@@ -572,12 +572,12 @@ class Test_parse_consensus_option(unittest.TestCase):
                                                               fragments,
                                                               return_Labeler=True,
                                                               try_web_lookup=False)
-            self.assertIsInstance(lblr, LabelerBW)
+            self.assertIsInstance(lblr, LabelerGPCR)
             self.assertIsInstance(residx2conlab,list)
 
     def test_with_BW_already_instantiated(self):
         fragments = mdcfragments.get_fragments(self.geom.top)
-        BW = LabelerBW(test_filenames.adrb2_human_xlsx)
+        BW = LabelerGPCR(test_filenames.adrb2_human_xlsx)
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
 
@@ -585,12 +585,12 @@ class Test_parse_consensus_option(unittest.TestCase):
                                                               self.geom.top,
                                                               fragments,
                                                               return_Labeler=True)
-            self.assertIsInstance(lblr, LabelerBW)
+            self.assertIsInstance(lblr, LabelerGPCR)
             self.assertEqual(lblr,BW)
             self.assertIsInstance(residx2conlab,list)
 
     def test_no_answer(self):
-        BW = LabelerBW(test_filenames.adrb2_human_xlsx)
+        BW = LabelerGPCR(test_filenames.adrb2_human_xlsx)
         residx2conlab, lblr = cli._parse_consensus_option(BW, "BW",
                                                           self.geom.top,
                                                           [_np.arange(10)],
