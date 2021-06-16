@@ -28,6 +28,7 @@ from mdciao.utils.residue_and_atom import get_SS as _get_SS
 
 from matplotlib import pyplot as _plt
 from matplotlib.patches import CirclePolygon as _CP
+from inspect import signature as _signature
 
 def freqs2flare(freqs, res_idxs_pairs,
                 fragments=None,
@@ -58,6 +59,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 lw=5,
                 signed_colors=None,
                 subplot=False,
+                aura=None,
                 ):
     r"""
     Plot contact frequencies as `flare plots`.
@@ -244,6 +246,11 @@ def freqs2flare(freqs, res_idxs_pairs,
         It will help produce more homogeneous
         plots when heuristics about font-sizing
         fail
+    aura : iterable, default is None
+        Scalar array, indexed with residue indices,
+        e.g. RMSF, SASA, conv. degree...
+        It will be drawn as an *aura* around the
+        flareplot.
 
     Returns
     -------
@@ -313,7 +320,8 @@ def freqs2flare(freqs, res_idxs_pairs,
                                                      aa_offset=aa_offset,
                                                      top=top,
                                                      r=r,
-                                                     angle_offset=angle_offset)
+                                                     angle_offset=angle_offset,
+                                                     aura=aura)
 
         circle_radius_in_pts = iax.artists[0].radius * _points2dataunits(iax).mean()
         lw = circle_radius_in_pts # ??
@@ -369,7 +377,8 @@ def circle_plot_residues(fragments,
                          highlight_residxs=None,
                          aa_offset=0,
                          top=None,
-                         arc=False):
+                         arc=False,
+                         aura=None):
     r"""
     Circular background that serves as background for flare-plots. Is independent of
     the curves that will later be plotted onto it.
@@ -431,6 +440,11 @@ def circle_plot_residues(fragments,
         color list for :obj:`colors`, you can simply
         input a subset of :obj:`res_idxs` here and
         they will be shown in red.
+    aura : iterable, default is None
+        Scalar array, indexed with residue indices,
+        e.g. RMSF, SASA, conv. degree...
+        It will be drawn as an *aura* around the
+        flareplot.
 
     Returns
     -------
@@ -484,6 +498,7 @@ def circle_plot_residues(fragments,
                              "occur, either reduce the number of residues or increase "
                              "the panel size"%(n_positions, panelsize)))
         if not arc:
+            #TODO replace this with a call to RegularPolyCollection
             CPs = [_CP(ixy,
                        radius=dot_radius,
                        facecolor=col_list[ii],
@@ -603,6 +618,16 @@ def circle_plot_residues(fragments,
                                    fc=None,
                                    fill=False,
                                    zorder=10))
+
+    if aura is not None:
+        if debug:
+            iax.add_artist(_plt.Circle([0,0],r+running_r_pad, ec="k", alpha=.25, zorder=-100))
+        _futils.add_aura(xy, aura[_np.hstack(fragments)], iax, r + running_r_pad+dot_radius,
+                         [len(fr) for fr in fragments],
+                         subtract_baseline=False
+                         )
+        running_r_pad += r* _signature(_futils.add_aura).parameters["width"].default + dot_radius
+
 
     # Do we have names?
     frag_labels = None
