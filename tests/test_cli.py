@@ -567,7 +567,7 @@ class Test_parse_consensus_option(unittest.TestCase):
         input_values = (val for val in [""])
         option = test_filenames.adrb2_human_xlsx
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            residx2conlab, lblr = cli._parse_consensus_option(option, "BW",
+            residx2conlab, lblr = cli._parse_consensus_option(option, "GPCR",
                                                               self.geom.top,
                                                               fragments,
                                                               return_Labeler=True,
@@ -581,7 +581,7 @@ class Test_parse_consensus_option(unittest.TestCase):
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
 
-            residx2conlab, lblr = cli._parse_consensus_option(BW, "BW",
+            residx2conlab, lblr = cli._parse_consensus_option(BW, "GPCR",
                                                               self.geom.top,
                                                               fragments,
                                                               return_Labeler=True)
@@ -591,7 +591,7 @@ class Test_parse_consensus_option(unittest.TestCase):
 
     def test_no_answer(self):
         BW = LabelerGPCR(test_filenames.adrb2_human_xlsx)
-        residx2conlab, lblr = cli._parse_consensus_option(BW, "BW",
+        residx2conlab, lblr = cli._parse_consensus_option(BW, "GPCR",
                                                           self.geom.top,
                                                           [_np.arange(10)],
                                                           return_Labeler=True)
