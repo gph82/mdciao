@@ -290,7 +290,7 @@ def col_list_from_input_and_fragments(colors,
     Parameters
     ----------
     colors : can be of different types
-        * False
+        * False or None
             All returned colors will be the default color
         * True
             All returned colors will differ by fragment
@@ -313,7 +313,8 @@ def col_list_from_input_and_fragments(colors,
         list of len(_np.hstack(fragments))
 
     """
-
+    if colors is None:
+        colors=False
 
     if isinstance(residxs_as_fragments[0], int):
         residxs_as_fragments = [residxs_as_fragments]
