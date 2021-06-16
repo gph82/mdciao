@@ -45,7 +45,7 @@ def table2GPCR_by_AAcode(tablefile,
                          return_fragments=False,
                          ):
     r"""
-    Reads an excel table and returns a dictionary AAcodes so that e.g. self.AA2BW[R131] -> '3.50'
+    Reads an excel table and returns a dictionary AAcodes so that e.g. AAcode2GPCR["R131"] -> '3.50'
 
     Parameters
     ----------
@@ -54,13 +54,13 @@ def table2GPCR_by_AAcode(tablefile,
     keep_AA_code : boolean, default is True
         If True then output dictionary will have key of the form "Q26" else "26".
     return_fragments : boolean, default is True
-        return a dictionary of fragments keyed by BW-fragment, e.g. "TM1"
+        return a dictionary of fragments keyed by GPGCR-fragment, e.g. "TM1"
 
     Returns
     -------
 
-    AA2BW : dictionary
-        Dictionary with residues as key and their corresponding BW notation.
+    AAcode2GPCR : dictionary
+        Dictionary with residues as key and their corresponding GPCR notation.
 
     fragments : dict (optional)
         if return_fragments=True, a dictionary containing the fragments according to the excel file
@@ -302,21 +302,21 @@ def GPCR_finder(GPCR_descriptor,
     ----------
     GPCR_descriptor : str
         Anything that can be used to find the needed
-        BW information, locally or online:
+        GPCR information, locally or online:
          * a uniprot descriptor, e.g. `adrb2_human`
-         * a full local filename, e.g. `my_BW.txt` or
-          `path/to/my_BW.txt`
+         * a full local filename, e.g. `my_GPCR_consensus.txt` or
+          `path/to/my_GPCR_consensus.txt`
          * the "basename" filename, `adrb2_human` if
           `adrb2_human.xlsx` exists on :obj:`local_path`
           (see below :obj:`format`)
         All these ways of doing the same thing (descriptor, basename, fullname,
         localpath, fullpath) are for compatibility with other methods.
     format : str, default is "%s.xlsx".
-        If :obj:`BW_descriptor` is not readable directly,
-        try to find "BW_descriptor.xlsx" locally on :obj:`local_path`
+        If :obj:`GPCR_descriptor` is not readable directly,
+        try to find "GPCR_descriptor.xlsx" locally on :obj:`local_path`
     local_path : str, default is "."
-        If :obj:`BW_descriptor` doesn't find the file locally,
-        then try "local_path/BW_descriptor" before trying online
+        If :obj:`GPCR_descriptor` doesn't find the file locally,
+        then try "local_path/GPCR_descriptor" before trying online
     try_web_lookup : boolean, default is True.
         If local lookup variants fail, go online, else Fail
     verbose : bool, default is False
@@ -326,12 +326,12 @@ def GPCR_finder(GPCR_descriptor,
         be returned. By default the method raises
         an exception if it could not find the info.
     write_to_disk : boolean, default is False
-        Save the found BW info locally.
+        Save the found GPCR consensus nomenclature info locally.
 
     Returns
     -------
     df : DataFrame or None
-        The BW information as :obj:`~pandas.DataFrame`
+        The GPCR consenus nomenclature information as :obj:`~pandas.DataFrame`
 
     References
     ----------
@@ -376,7 +376,7 @@ def GPCR_finder(GPCR_descriptor,
 def _GPCR_web_lookup(url, verbose=True,
                      timeout=5):
     r"""
-    Lookup this url for a BW-notation
+    Lookup this url for a GPCR-notation
     return a ValueError if the lookup retuns an empty json
     Parameters
     ----------
@@ -544,8 +544,8 @@ class LabelerConsensus(object):
     @property
     def AA2conlab(self):
         r""" Dictionary with short AA-codes as keys, so that e.g.
-            * self.AA2BW["R131"] -> '3.50'
-            * self.conlab2AA["R201"] -> "G.hfs2.2" """
+            * self.AA2conlab["R131"] -> '3.50'
+            * self.AA2conlab["R201"] -> "G.hfs2.2" """
 
 
         return self._AA2conlab
@@ -1046,7 +1046,7 @@ class LabelerCGN(LabelerConsensus):
                                                       try_web_lookup=try_web_lookup,
                                                       verbose=verbose,
                                                       write_to_disk=write_to_disk)
-        # The title of the column with this field varies between CGN and BW
+        # The title of the column with this field varies between CGN and GPCR
         AAresSeq_key = [key for key in list(self.dataframe.keys()) if key.lower() not in [self._nomenclature_key.lower(), "Sort number".lower()]]
         assert len(AAresSeq_key)==1
         self._AAresSeq_key = AAresSeq_key
@@ -1087,7 +1087,14 @@ class LabelerCGN(LabelerConsensus):
 
 
 class LabelerGPCR(LabelerConsensus):
-    """Manipulate Ballesteros-Weinstein notation
+    """Manipulate GPCR notation. Different schemes are possible:
+
+     * structure based schemes (Gloriam et al)
+     * sequence based schemes
+      * Class-A: Ballesteros-Weinstein
+      * Class-B: Wootten
+      * Class-C: Pin
+      * Class-F: Wang
 
     """
     def __init__(self, uniprot_name,
@@ -1128,7 +1135,7 @@ class LabelerGPCR(LabelerConsensus):
                                                        verbose=verbose,
                                                        write_to_disk=write_to_disk
                                                        )
-        # The title of the column with this field varies between CGN and BW
+        # The title of the column with this field varies between CGN and GPCR
         self._AAresSeq_key = "AAresSeq"
         self._AA2conlab, self._fragments = table2GPCR_by_AAcode(self.dataframe, return_fragments=True)
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
@@ -1420,7 +1427,7 @@ def top2CGN_by_AAcode(top, ref_CGN_tf,
 def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     """
     Choose the best consensus label for a given :obj:`idx` in case
-    there are more than one consensus(es) at play (e.g. BW and CGN).
+    there are more than one consensus(es) at play (e.g. GPCR and CGN).
 
     Wil raise error if both dictionaries have a consensus label for
     the same index (unsual case)
@@ -1749,8 +1756,8 @@ def _map2defs(cons_list, splitchar="."):
 
     Note:
     -----
-     The method will guess automagically whether this is a CGN or BW label by
-     checking the type of the first character (numeric is BW, 3.50, alpha is CGN, G.H5.1)
+     The method will guess automagically whether this is a CGN or GPCR label by
+     checking the type of the first character (numeric is GPCR, 3.50, alpha is CGN, G.H5.1)
 
     Parameters
     ----------
@@ -1771,7 +1778,7 @@ def _map2defs(cons_list, splitchar="."):
         if str(key).lower()!= "none":
             assert splitchar in _mdcu.lists.force_iterable(key), "Consensus keys have to have a '%s'-character" \
                                      " in them, but '%s' hasn't"%(splitchar, str(key))
-            if key[0].isnumeric(): # it means it is BW
+            if key[0].isnumeric(): # it means it is GPCR
                 new_key =key.split(splitchar)[0]
             elif key[0].isalpha(): # it means it CGN
                 new_key = '.'.join(key.split(splitchar)[:-1])
@@ -1783,7 +1790,7 @@ def _map2defs(cons_list, splitchar="."):
 def sort_consensus_labels(subset, sorted_superset,
                           append_diffset=True):
     r"""
-    Sort consensus labels (BW or CGN)
+    Sort consensus labels (GPCR or CGN)
 
 
     Parameters
@@ -1950,7 +1957,7 @@ def compatible_consensus_fragments(top,
     ----------
     top : :obj:`~mdtraj.Topology`
     existing_consensus_maps : list
-        List of individual consensus maps, typically BW
+        List of individual consensus maps, typically GPCR
         or CGN maps. These list are maps in this sense:
         cons_map[res_idx] = "3.50"
     CLs : list
