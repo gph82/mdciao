@@ -476,7 +476,7 @@ def residue_line(item_desc, residue, frag_idx,
         with residue indices and valued with additional residue names.
         Higher-level keys can be whatever. Use case is e.g. if "R131"
         needs to be disambiguated bc. it pops up in many fragments.
-        You can pass {"BW":{895:"3.50", ...} here and that label
+        You can pass {"GPCR":{895:"3.50", ...} here and that label
         will be displayed next to the residue.
     table : bool, default is False
         Assume a header has been aready printed
@@ -489,7 +489,7 @@ def residue_line(item_desc, residue, frag_idx,
         An informative string about this residue, that
         can be used to dis-ambiguate via the unique
         item descriptor, e.g:
-        3.1)       GLU122 in fragment 3 with residue index 852 (BW: 3.41)
+        3.1)       GLU122 in fragment 3 with residue index 852 (GPCR: 3.41)
 
     """
     res_idx = residue.index
@@ -514,7 +514,7 @@ def residue_line(item_desc, residue, frag_idx,
     else:
         add_dicts = []
         if consensus_maps is not None:
-            for key in ["BW","CGN"]:
+            for key in ["GPCR","CGN"]:
                 add_dicts.append(_try_double_indexing(consensus_maps, key, res_idx))
 
         istr = '%10s  %10u  %10u %10u %10s %10s' % (residue, res_idx,
