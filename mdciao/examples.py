@@ -210,7 +210,7 @@ def ContactGroupL394(**kwargs):
                     example_kwargs = {"topology": _path.basename(filenames.top_pdb),
                                       "n_smooth_hw": 1,
                                       "figures": False,
-                                      "BW_uniprot": _path.basename(filenames.adrb2_human_xlsx),
+                                      "GPCR_uniprot": _path.basename(filenames.adrb2_human_xlsx),
                                       "CGN_PDB": _path.basename(filenames.CGN_3SN6),
                                       "accept_guess": True}
                     for key, val in kwargs.items():
