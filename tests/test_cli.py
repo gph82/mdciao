@@ -265,7 +265,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             cli.residue_neighborhoods("R131",
                                       [self.traj, self.traj_reverse],
                                       self.geom,
-                                      BW_uniprot=test_filenames.adrb2_human_xlsx,
+                                      GPCR_uniprot=test_filenames.adrb2_human_xlsx,
                                       output_dir=tmpdir,
                                       accept_guess=True,
                                       no_disk=self.no_disk
@@ -296,7 +296,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                           [self.traj, self.traj_reverse],
                                           self.geom,
                                           CGN_PDB="3SN6",
-                                          BW_uniprot=test_filenames.adrb2_human_xlsx,
+                                          GPCR_uniprot=test_filenames.adrb2_human_xlsx,
                                           output_dir=tmpdir,
                                           accept_guess=True,
                                           no_disk=self.no_disk

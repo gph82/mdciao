@@ -540,7 +540,7 @@ def residue_neighborhoods(residues,
                           fragment_colors=None,
                           graphic_ext=".pdf",
                           table_ext=".dat",
-                          BW_uniprot=None,
+                          GPCR_uniprot=None,
                           CGN_PDB=None,
                           output_dir='.',
                           output_desc='neighborhood',
@@ -710,7 +710,7 @@ def residue_neighborhoods(residues,
         The extension (=format) of the saved figures
     table_ext : str, default is ".dat"
         The extension (=format) of the saved tables
-    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If `mdciao.nomenclature.Labeler_BW`, use this object directly
@@ -827,7 +827,7 @@ def residue_neighborhoods(residues,
                  "%s\nexcluding %u nearest neighbors" \
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
-                                                  midstring=mid_string, GPCR_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
+                                                  midstring=mid_string, GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
                                                   save_nomenclature_files=save_nomenclature_files,
                                                   accept_guess=accept_guess, interpret_as_res_idxs=res_idxs, sort=sort)
 
