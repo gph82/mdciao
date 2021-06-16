@@ -169,6 +169,7 @@ class ExamplesCLTs(object):
 
     def _join_args(self,clt):
         oneline = self.__getattribute__(clt)
+        #TODO: we're skipping this part of the test, let's do sth like L394 with the tmpdir
         if self.test:
             oneline = [arg for arg in oneline if "-BW" not in arg and "-CGN" not in arg]
         return " ".join(oneline)
