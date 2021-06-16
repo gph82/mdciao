@@ -784,6 +784,6 @@ class Test_residue_selection(unittest.TestCase):
 
         _np.testing.assert_array_equal(residue_idxs,[0])
 
-        self.assertListEqual(list(maps.keys()),["BW","CGN"])
+        self.assertListEqual(list(maps.keys()),["GPCR","CGN"])
         {self.assertListEqual(val,[None]*len(maps["CGN"]))
          for key, val in maps.items()}

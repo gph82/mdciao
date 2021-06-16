@@ -2063,7 +2063,7 @@ def residue_selection(expression,
     frags : list of integers
         Whatever fragments the user chose
     consensus_maps : dict
-        Keys are currently just 'BW' and 'CGN'
+        Keys are currently just 'GPCR' and 'CGN'
         Values are lists of len :obj:`topology.n_residues`
         with the consensus labels. All labels
         will be None if no consensus info
