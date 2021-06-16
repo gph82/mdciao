@@ -162,7 +162,7 @@ class Test_CGN_finder(unittest.TestCase):
         assert isinstance(filename,str)
         assert "www" in filename
 
-class Test_GPCRmd_lookup_BW(unittest.TestCase):
+class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
 
     def test_works(self):
         DF = _GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
@@ -172,7 +172,7 @@ class Test_GPCRmd_lookup_BW(unittest.TestCase):
         with pytest.raises(ValueError):
             raise _GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
 
-class Test_BW_finder(unittest.TestCase):
+class Test_GPCR_finder(unittest.TestCase):
 
     def test_works_locally(self):
         df, filename = nomenclature.GPCR_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
@@ -221,13 +221,13 @@ class Test_BW_finder(unittest.TestCase):
         assert df is None
         assert isinstance(filename,str)
 
-class Test_table2BW_by_AAcode(unittest.TestCase):
+class Test_table2GPCR_by_AAcode(unittest.TestCase):
     def setUp(self):
         self.file = test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx
 
     def test_just_works(self):
-        table2BW = nomenclature.table2GPCR_by_AAcode(tablefile = self.file)
-        self.assertDictEqual(table2BW,
+        table2GPCR = nomenclature.table2GPCR_by_AAcode(tablefile = self.file)
+        self.assertDictEqual(table2GPCR,
                              {'Q26': '1.25',
                               'E27': '1.26',
                               'E62': '12.48',
@@ -237,8 +237,8 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                               })
 
     def test_keep_AA_code_test(self): #dictionary keys will only have AA id
-        table2BW = nomenclature.table2GPCR_by_AAcode(tablefile = self.file, keep_AA_code=False)
-        self.assertDictEqual(table2BW,
+        table2GPCR = nomenclature.table2GPCR_by_AAcode(tablefile = self.file, keep_AA_code=False)
+        self.assertDictEqual(table2GPCR,
                              {26: '1.25',
                               27: '1.26',
                               62: '12.48',
@@ -247,8 +247,8 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
                               67: '2.38',
                            })
 
-    def test_table2BW_by_AAcode_return_fragments(self):
-        table2BW, defs = nomenclature.table2GPCR_by_AAcode(tablefile=self.file,
+    def test_table2GPCR_by_AAcode_return_fragments(self):
+        table2GPCR, defs = nomenclature.table2GPCR_by_AAcode(tablefile=self.file,
                                                            return_fragments=True)
 
         self.assertDictEqual(defs,{'TM1':  ["Q26","E27"],
@@ -258,8 +258,8 @@ class Test_table2BW_by_AAcode(unittest.TestCase):
         from pandas import read_excel
         df = read_excel(self.file, header=0, engine="openpyxl")
 
-        table2BW = nomenclature.table2GPCR_by_AAcode(tablefile=df)
-        self.assertDictEqual(table2BW,
+        table2GPCR = nomenclature.table2GPCR_by_AAcode(tablefile=df)
+        self.assertDictEqual(table2GPCR,
                              {'Q26': '1.25',
                               'E27': '1.26',
                               'E62': '12.48',
@@ -433,7 +433,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         labels = self.cgn_local.top2labels(self.cgn_local.top)
         self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
 
-class TestLabelerBW_local_woPDB(unittest.TestCase):
+class TestLabelerGPCR_local_woPDB(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
@@ -443,14 +443,14 @@ class TestLabelerBW_local_woPDB(unittest.TestCase):
                                                              path.basename(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
         shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx, self._GPCRmd_B2AR_nomenclature_test_xlsx)
 
-        self.BW_local_no_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
-                                                        try_web_lookup=False)
+        self.Lgpcr_local_no_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
+                                                           try_web_lookup=False)
 
     def test_correct_files(self):
-        _np.testing.assert_equal(self.BW_local_no_pdb.ref_PDB,
+        _np.testing.assert_equal(self.Lgpcr_local_no_pdb.ref_PDB,
                                  None)
 
-class TestLabelerBW_local(unittest.TestCase):
+class TestLabelerGPCR_local(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
@@ -460,20 +460,20 @@ class TestLabelerBW_local(unittest.TestCase):
         self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
         shutil.copy(test_filenames.pdb_3SN6, self._PDB_3SN6_file)
         shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,self._GPCRmd_B2AR_nomenclature_test_xlsx)
-        self.BW_local_w_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
-                                                       ref_PDB="3SN6",
-                                                       try_web_lookup=False,
-                                                       local_path=self.tmpdir,
-                                                       )
+        self.Lgpcr_local_no_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
+                                                           ref_PDB="3SN6",
+                                                           try_web_lookup=False,
+                                                           local_path=self.tmpdir,
+                                                           )
 
     def tearDown(self):
         # Remove the directory after the test
         shutil.rmtree(self.tmpdir)
 
     def test_correct_files(self):
-        _np.testing.assert_equal(self.BW_local_w_pdb.tablefile,
+        _np.testing.assert_equal(self.Lgpcr_local_no_pdb.tablefile,
                                  self._GPCRmd_B2AR_nomenclature_test_xlsx)
-        _np.testing.assert_equal(self.BW_local_w_pdb.ref_PDB,
+        _np.testing.assert_equal(self.Lgpcr_local_no_pdb.ref_PDB,
                                  "3SN6")
 
     def test_mdtraj_attributes(self):
@@ -485,54 +485,54 @@ class TestLabelerBW_local(unittest.TestCase):
         #                         self._geom_3SN6.top)
 
     def test_dataframe(self):
-        self.assertIsInstance(self.BW_local_w_pdb.dataframe, DataFrame)
-        self.assertSequenceEqual(list(self.BW_local_w_pdb.dataframe.keys()),
+        self.assertIsInstance(self.Lgpcr_local_no_pdb.dataframe, DataFrame)
+        self.assertSequenceEqual(list(self.Lgpcr_local_no_pdb.dataframe.keys()),
                                  ['protein_segment', 'AAresSeq', 'BW', 'GPCRdb(A)', 'display_generic_number'])
 
     def test_correct_residue_dicts(self):
-        _np.testing.assert_equal(self.BW_local_w_pdb.conlab2AA["1.25"],"Q26")
-        _np.testing.assert_equal(self.BW_local_w_pdb.AA2conlab["Q26"],"1.25")
+        _np.testing.assert_equal(self.Lgpcr_local_no_pdb.conlab2AA["1.25"], "Q26")
+        _np.testing.assert_equal(self.Lgpcr_local_no_pdb.AA2conlab["Q26"], "1.25")
 
     def test_correct_fragments_dict(self):
         # Test "fragments" dictionary SMH
-        self.assertIsInstance(self.BW_local_w_pdb.fragments,dict)
-        assert all([len(ii)>0 for ii in self.BW_local_w_pdb.fragments.values()])
-        self.assertEqual(self.BW_local_w_pdb.fragments["ICL1"][0],"E62")
-        self.assertSequenceEqual(list(self.BW_local_w_pdb.fragments.keys()),
+        self.assertIsInstance(self.Lgpcr_local_no_pdb.fragments, dict)
+        assert all([len(ii) > 0 for ii in self.Lgpcr_local_no_pdb.fragments.values()])
+        self.assertEqual(self.Lgpcr_local_no_pdb.fragments["ICL1"][0], "E62")
+        self.assertSequenceEqual(list(self.Lgpcr_local_no_pdb.fragments.keys()),
                                  ["TM1","ICL1","TM2"])
 
     def test_correct_fragments_as_conlabs_dict(self):
         # Test "fragments_as_conslabs" dictionary SMH
-        self.assertIsInstance(self.BW_local_w_pdb.fragments_as_conlabs, dict)
-        assert all([len(ii) > 0 for ii in self.BW_local_w_pdb.fragments_as_conlabs.values()])
-        self.assertSequenceEqual(list(self.BW_local_w_pdb.fragments_as_conlabs.keys()),
+        self.assertIsInstance(self.Lgpcr_local_no_pdb.fragments_as_conlabs, dict)
+        assert all([len(ii) > 0 for ii in self.Lgpcr_local_no_pdb.fragments_as_conlabs.values()])
+        self.assertSequenceEqual(list(self.Lgpcr_local_no_pdb.fragments_as_conlabs.keys()),
                                  ["TM1", "ICL1", "TM2"])
-        self.assertEqual(self.BW_local_w_pdb.fragments_as_conlabs["TM1"][0], "1.25")
+        self.assertEqual(self.Lgpcr_local_no_pdb.fragments_as_conlabs["TM1"][0], "1.25")
 
     def test_correct_fragment_names(self):
-        self.assertSequenceEqual(self.BW_local_w_pdb.fragment_names,
-                                 list(self.BW_local_w_pdb.fragments.keys()))
+        self.assertSequenceEqual(self.Lgpcr_local_no_pdb.fragment_names,
+                                 list(self.Lgpcr_local_no_pdb.fragments.keys()))
 
     def test_fragments_as_idxs(self):
-        frags_as_idsx = self.BW_local_w_pdb.fragments_as_idxs
-        self.assertSequenceEqual([len(ifrag) for ifrag in frags_as_idsx], [len(ifrag) for ifrag in self.BW_local_w_pdb.fragments])
+        frags_as_idsx = self.Lgpcr_local_no_pdb.fragments_as_idxs
+        self.assertSequenceEqual([len(ifrag) for ifrag in frags_as_idsx], [len(ifrag) for ifrag in self.Lgpcr_local_no_pdb.fragments])
         self.assertSequenceEqual(list(frags_as_idsx.keys()),
-                                 self.BW_local_w_pdb.fragment_names)
+                                 self.Lgpcr_local_no_pdb.fragment_names)
 
     # These tests only test it runs, not that the alignment is correct
     #  those checks are done in sequence tests
     def test_aligntop_with_self(self):
-        top2self, self2top = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq)
+        top2self, self2top = self.Lgpcr_local_no_pdb.aligntop(self.Lgpcr_local_no_pdb.seq)
         self.assertDictEqual(top2self,self2top)
-        self.assertIsInstance(self.BW_local_w_pdb.most_recent_alignment,DataFrame)
+        self.assertIsInstance(self.Lgpcr_local_no_pdb.most_recent_alignment, DataFrame)
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top = self.BW_local_w_pdb.aligntop(self.BW_local_w_pdb.seq, restrict_to_residxs=[2, 3])
+        top2self, self2top = self.Lgpcr_local_no_pdb.aligntop(self.Lgpcr_local_no_pdb.seq, restrict_to_residxs=[2, 3])
         self.assertDictEqual(top2self,self2top)
         self.assertTrue(all([key in [2,3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
 
     def test_uniprot_name(self):
-        self.assertEqual(self.BW_local_w_pdb.uniprot_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
+        self.assertEqual(self.Lgpcr_local_no_pdb.uniprot_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
 
 class Test_choose_between_consensus_dicts(unittest.TestCase):
 
@@ -594,7 +594,7 @@ class Test_fill_CGN_gaps(unittest.TestCase):
         self.assertEqual(fill_cgn,self.cons_list_out)
 
 
-class Test_fill_BW_gaps(unittest.TestCase):
+class Test_fill_GPCR_gaps(unittest.TestCase):
     def setUp(self):
         self.geom = md.load(test_filenames.top_pdb)
         self.cons_list_in = ['3.46', '3.47', "3.48", None,
@@ -602,7 +602,7 @@ class Test_fill_BW_gaps(unittest.TestCase):
         self.cons_list_out = ['3.46', '3.47', "3.48", "3.49",
                              "3.50", '3.51', '3.52']
 
-    def test_fill_CGN_gaps_just_works_with_BW(self):
+    def test_fill_CGN_gaps_just_works_with_GPCR(self):
         fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.geom.top, verbose=True)
         self.assertEqual(fill_cgn, self.cons_list_out)
 
@@ -610,21 +610,21 @@ class Test_guess_by_nomenclature(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        BW_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
+        lGPCR_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
 
-        cls.BW_local_w_pdb = nomenclature.LabelerGPCR(BW_file,
-                                                      ref_PDB="3SN6",
-                                                      local_path=test_filenames.RSCB_pdb_path,
-                                                      format="%s",
-                                                      )
-        cls.fragments = get_fragments(cls.BW_local_w_pdb.top)
+        cls.lGPCR_local_w_pdb = nomenclature.LabelerGPCR(lGPCR_file,
+                                                         ref_PDB="3SN6",
+                                                         local_path=test_filenames.RSCB_pdb_path,
+                                                         format="%s",
+                                                         )
+        cls.fragments = get_fragments(cls.lGPCR_local_w_pdb.top)
 
     def test_works_on_enter(self):
         import mock
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
-                                                        self.BW_local_w_pdb.top,
+            answer = nomenclature.guess_by_nomenclature(self.lGPCR_local_w_pdb,
+                                                        self.lGPCR_local_w_pdb.top,
                                                         self.fragments,
                                                         "BW")
             self.assertEqual(answer, "4")
@@ -633,71 +633,71 @@ class Test_guess_by_nomenclature(unittest.TestCase):
         import mock
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
-                                           self.BW_local_w_pdb.top,
-                                           self.fragments,
+            answer = nomenclature.guess_by_nomenclature(self.lGPCR_local_w_pdb,
+                                                        self.lGPCR_local_w_pdb.top,
+                                                        self.fragments,
                                                               "BW",
-                                           return_str=False,
-                                           )
+                                                        return_str=False,
+                                                        )
             self.assertSequenceEqual(answer,[4])
 
     def test_works_return_guess(self):
-        answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
-                                       self.BW_local_w_pdb.top,
-                                       self.fragments,
+        answer = nomenclature.guess_by_nomenclature(self.lGPCR_local_w_pdb,
+                                                    self.lGPCR_local_w_pdb.top,
+                                                    self.fragments,
                                                           "BW",
-                                       accept_guess=True
-                                       )
+                                                    accept_guess=True
+                                                    )
         self.assertEqual(answer, "4")
 
     def test_works_return_None(self):
-        answer = nomenclature.guess_by_nomenclature(self.BW_local_w_pdb,
-                                       self.BW_local_w_pdb.top,
-                                       self.fragments,
+        answer = nomenclature.guess_by_nomenclature(self.lGPCR_local_w_pdb,
+                                                    self.lGPCR_local_w_pdb.top,
+                                                    self.fragments,
                                                            "BW",
-                                       accept_guess=True,
-                                       min_hit_rate=2,  #impossible rate
-                                       )
+                                                    accept_guess=True,
+                                                    min_hit_rate=2,  #impossible rate
+                                                    )
         self.assertEqual(answer, None)
 
 class Test_guess_nomenclature_fragments(unittest.TestCase):
     # The setup is in itself a test
     @classmethod
     def setUpClass(cls):
-        BW_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
+        lGPCR_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
 
-        cls.BW_local_w_pdb = nomenclature.LabelerGPCR(BW_file,
-                                                      ref_PDB="3SN6",
-                                                      local_path=test_filenames.RSCB_pdb_path,
-                                                      format="%s",
-                                                      )
-        cls.fragments = get_fragments(cls.BW_local_w_pdb.top,verbose=False)
+        cls.lGPCR_local_w_pdb = nomenclature.LabelerGPCR(lGPCR_file,
+                                                         ref_PDB="3SN6",
+                                                         local_path=test_filenames.RSCB_pdb_path,
+                                                         format="%s",
+                                                         )
+        cls.fragments = get_fragments(cls.lGPCR_local_w_pdb.top, verbose=False)
 
     def test_finds_frags(self):
-        guessed_frags = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb,
-                                                                  self.BW_local_w_pdb.top,
+        guessed_frags = nomenclature.guess_nomenclature_fragments(self.lGPCR_local_w_pdb,
+                                                                  self.lGPCR_local_w_pdb.top,
                                                                   fragments=self.fragments,
                                                                   verbose=True,
                                                                   )
         _np.testing.assert_array_equal([4],guessed_frags)
 
     def test_finds_frags_res(self):
-        guessed_res = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb,
-                                                                  self.BW_local_w_pdb.top,
-                                                                  fragments=self.fragments,
-                                                                  return_residue_idxs=True
+        guessed_res = nomenclature.guess_nomenclature_fragments(self.lGPCR_local_w_pdb,
+                                                                self.lGPCR_local_w_pdb.top,
+                                                                fragments=self.fragments,
+                                                                return_residue_idxs=True
                                                                 )
         _np.testing.assert_array_equal(self.fragments[4], guessed_res)
 
     def test_finds_frags_no_frags(self):
-        guessed_frags = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb,
-                                                     self.BW_local_w_pdb.top,
+        guessed_frags = nomenclature.guess_nomenclature_fragments(self.lGPCR_local_w_pdb,
+                                                                  self.lGPCR_local_w_pdb.top,
                                                                   )
         _np.testing.assert_array_equal([4],guessed_frags)
 
     def test_finds_frags_seq_as_str(self):
-        guessed_frags = nomenclature.guess_nomenclature_fragments(self.BW_local_w_pdb.seq,
-                                                                  self.BW_local_w_pdb.top,
+        guessed_frags = nomenclature.guess_nomenclature_fragments(self.lGPCR_local_w_pdb.seq,
+                                                                  self.lGPCR_local_w_pdb.top,
                                                                   fragments=self.fragments,
                                                                   )
         _np.testing.assert_array_equal([4], guessed_frags)
@@ -705,7 +705,7 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
     def test_finds_frags_nothing_None(self):
         seq = "THISSENTENCEWILLNEVERALIGN"
         guessed_frags = nomenclature.guess_nomenclature_fragments(seq,
-                                                                  self.BW_local_w_pdb.top,
+                                                                  self.lGPCR_local_w_pdb.top,
                                                                   fragments=self.fragments,
                                                                   empty=None
                                                                   )
@@ -721,12 +721,12 @@ class Test_sort_consensus_labels(unittest.TestCase):
         self.tosort = ["G.H1.10", "H.HA.20", "H8.10", "V34", "H8.1", "3.50", "2.50", "G.H1.1", "H.HA.10"]
 
 
-    def test_BW(self):
+    def test_GPCR(self):
         sorted = nomenclature.sort_GPCR_consensus_labels(self.tosort)
         _np.testing.assert_array_equal(["2.50", "3.50","H8.1", "H8.10", "G.H1.10", "H.HA.20", "V34", "G.H1.1", "H.HA.10"],
                                        sorted)
 
-    def test_BW_dont_append(self):
+    def test_GPCR_dont_append(self):
         sorted = nomenclature.sort_GPCR_consensus_labels(self.tosort, append_diffset=False)
         _np.testing.assert_array_equal(["2.50", "3.50","H8.1", "H8.10"],
                                        sorted)
