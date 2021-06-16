@@ -722,12 +722,12 @@ class Test_sort_consensus_labels(unittest.TestCase):
 
 
     def test_BW(self):
-        sorted = nomenclature.sort_BW_consensus_labels(self.tosort)
+        sorted = nomenclature.sort_GPCR_consensus_labels(self.tosort)
         _np.testing.assert_array_equal(["2.50", "3.50","H8.1", "H8.10", "G.H1.10", "H.HA.20", "V34", "G.H1.1", "H.HA.10"],
                                        sorted)
 
     def test_BW_dont_append(self):
-        sorted = nomenclature.sort_BW_consensus_labels(self.tosort, append_diffset=False)
+        sorted = nomenclature.sort_GPCR_consensus_labels(self.tosort, append_diffset=False)
         _np.testing.assert_array_equal(["2.50", "3.50","H8.1", "H8.10"],
                                        sorted)
 
