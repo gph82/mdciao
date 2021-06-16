@@ -175,9 +175,9 @@ class Test_GPCRmd_lookup_BW(unittest.TestCase):
 class Test_BW_finder(unittest.TestCase):
 
     def test_works_locally(self):
-        df, filename = nomenclature.BW_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
-                                              try_web_lookup=False,
-                                              )
+        df, filename = nomenclature.GPCR_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
+                                                try_web_lookup=False,
+                                                )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename,str)
@@ -185,8 +185,8 @@ class Test_BW_finder(unittest.TestCase):
 
 
     def test_works_online(self):
-        df, filename = nomenclature.BW_finder("adrb2_human",
-                                              )
+        df, filename = nomenclature.GPCR_finder("adrb2_human",
+                                                )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
@@ -196,28 +196,28 @@ class Test_BW_finder(unittest.TestCase):
 
     def test_raises_not_find_locally(self):
         with pytest.raises(FileNotFoundError):
-            nomenclature.BW_finder("B2AR",
-                                   try_web_lookup=False
-                                   )
+            nomenclature.GPCR_finder("B2AR",
+                                     try_web_lookup=False
+                                     )
 
     def test_not_find_locally_but_no_fail(self):
-        DF, filename = nomenclature.BW_finder("B2AR",
-                                              try_web_lookup=False,
-                                              dont_fail=True
-                                              )
+        DF, filename = nomenclature.GPCR_finder("B2AR",
+                                                try_web_lookup=False,
+                                                dont_fail=True
+                                                )
         assert DF is None
         assert isinstance(filename,str)
 
 
     def test_raises_not_find_online(self):
         with pytest.raises(ValueError):
-            nomenclature.BW_finder("B2AR",
-                                   )
+            nomenclature.GPCR_finder("B2AR",
+                                     )
 
     def test_not_find_online_but_no_raise(self):
-        df, filename =    nomenclature.BW_finder("3SNw",
-                                                 dont_fail=True
-                                                 )
+        df, filename =    nomenclature.GPCR_finder("3SNw",
+                                                   dont_fail=True
+                                                   )
         assert df is None
         assert isinstance(filename,str)
 

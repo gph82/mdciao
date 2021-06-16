@@ -71,7 +71,7 @@ def table2BW_by_AAcode(tablefile,
     else:
         df = tablefile
 
-    # TODO some overlap here with with _BW_web_lookup of BW_finder
+    # TODO some overlap here with with _BW_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
     AAcode2BW = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
@@ -280,13 +280,13 @@ def _finder_writer(full_local_path,
 
 
 # TODO consider making private?
-def BW_finder(BW_descriptor,
-              format = "%s.xlsx",
-              local_path=".",
-              try_web_lookup=True,
-              verbose=True,
-              dont_fail=False,
-              write_to_disk=False):
+def GPCR_finder(BW_descriptor,
+                format = "%s.xlsx",
+                local_path=".",
+                try_web_lookup=True,
+                verbose=True,
+                dont_fail=False,
+                write_to_disk=False):
     r"""
     Return a :obj:`~pandas.DataFrame` containing
     a `Ballesteros-Weinstein-Numbering (BW)
@@ -1041,7 +1041,7 @@ class LabelerGPCR(LabelerConsensus):
         ----------
         uniprot_name : str
             Descriptor by which to find the nomenclature,
-            it gets directly passed to :obj:`BW_finder`
+            it gets directly passed to :obj:`GPCR_finder`
             Can be several anything that can be used to try and find,
             the needed information, locally or online:
             * a uniprot descriptor, e.g. `adrb2_human`
@@ -1058,13 +1058,13 @@ class LabelerGPCR(LabelerConsensus):
         self._nomenclature_key = "BW"
         # TODO now that the finder call is the same we could
         # avoid cde repetition here
-        self._dataframe, self._tablefile = BW_finder(uniprot_name,
-                                            format=format,
-                                            local_path=local_path,
-                                            try_web_lookup=try_web_lookup,
-                                            verbose=verbose,
-                                            write_to_disk=write_to_disk
-                                       )
+        self._dataframe, self._tablefile = GPCR_finder(uniprot_name,
+                                                       format=format,
+                                                       local_path=local_path,
+                                                       try_web_lookup=try_web_lookup,
+                                                       verbose=verbose,
+                                                       write_to_disk=write_to_disk
+                                                       )
         # The title of the column with this field varies between CGN and BW
         self._AAresSeq_key = "AAresSeq"
         self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
