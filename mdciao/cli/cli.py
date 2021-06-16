@@ -1522,7 +1522,7 @@ def sites(site_inputs,
           chunksize_in_frames=10000,
           n_smooth_hw=0,
           pbc=True,
-          BW_uniprot="None",
+          GPCR_uniprot="None",
           CGN_PDB="None",
           fragments=['lig_resSeq+'],
           default_fragment_index=None,
@@ -1601,7 +1601,7 @@ def sites(site_inputs,
         window of 2*n_smooth_hw
     pbc : bool, default is True
         Use periodic boundary conditions
-    BW_uniprot : str, default is 'None'
+    GPCR_uniprot : str, default is 'None'
         Try to find Ballesteros-Weinstein definitions. If
         str, e.g. "adrb2_human", try to locate a local
         filename or do a web lookup in the GPCRdb. If
@@ -1740,7 +1740,7 @@ def sites(site_inputs,
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, consensus_maps, __ = \
-        _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
+        _parse_consensus_options_and_return_fragment_defs({"BW": GPCR_uniprot,
                                                            "CGN": CGN_PDB},
                                                           refgeom.top,
                                                           fragments_as_residue_idxs,
