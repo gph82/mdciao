@@ -71,7 +71,7 @@ def table2GPCR_by_AAcode(tablefile,
     else:
         df = tablefile
 
-    # TODO some overlap here with with _BW_web_lookup of GPCR_finder
+    # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
     AAcode2BW = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
@@ -362,7 +362,7 @@ def GPCR_finder(GPCR_descriptor,
                                                         engine="openpyxl",
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
                                                         converters={"BW": str}).replace({_np.nan: None},)
-    web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
+    web_looukup_lambda = lambda url : _GPCR_web_lookup(url, verbose=verbose)
     print("Using BW-nomenclature, please cite the following 3rd party publications:\n"
           " * https://doi.org/10.1016/S1043-9471(05)80049-7 (Weinstein et al 1995)\n"
           " * https://doi.org/10.1093/nar/gkx1109 (Gloriam et al 2018)")
@@ -373,8 +373,8 @@ def GPCR_finder(GPCR_descriptor,
                           dont_fail=dont_fail,
                           write_to_disk=write_to_disk)
 
-def _BW_web_lookup(url, verbose=True,
-                   timeout=5):
+def _GPCR_web_lookup(url, verbose=True,
+                     timeout=5):
     r"""
     Lookup this url for a BW-notation
     return a ValueError if the lookup retuns an empty json
