@@ -217,7 +217,7 @@ def _parser_add_output_dir(parser):
                         default='.')
 
 def _parser_add_nomenclature(parser):
-    parser.add_argument("--BW_uniprot", type=str,
+    parser.add_argument("--GPCR_uniprot", type=str,
                         help="Look for Ballesteros-Weinstein definitions in the GPCRdb using a uniprot code, "
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                              "Default is None.",
