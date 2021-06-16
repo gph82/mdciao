@@ -104,11 +104,11 @@ def _parse_consensus_option(option, consensus_type,
            full of Nones is returned
          * str
           The needed identifier to instantiate an
-          :obj:`LabelerBW` or an :obj:`LabelerCGN` object.
+          :obj:`LabelerGPCR` or an :obj:`LabelerCGN` object.
           Examples would be a :obj:`uniprot_name` or a :obj:`ref_PDB`,
           respectively
          * :obj:`LabelerConsensus`
-          An already instantiated :obj:`LabelerBW` or :obj:`LabelerCGN`
+          An already instantiated :obj:`LabelerGPCR` or :obj:`LabelerCGN`
           The method then does nothing. Usecase are repeated
           calls to any of the methods in :obj:`command_line_tools`
           without each call instantiating its own :obj:`LabelerConsensus`
@@ -138,7 +138,7 @@ def _parse_consensus_option(option, consensus_type,
             map_out = [None for __ in range(top.n_residues)]
             LC_out = None
         else:
-            LC_out = {"BW": _mdcnomenc.LabelerBW,
+            LC_out = {"BW": _mdcnomenc.LabelerGPCR,
                       "CGN":_mdcnomenc.LabelerCGN}[consensus_type](option, **LabelerConsensus_kwargs)
 
     #todo add a class check here instead of failing later on
@@ -478,10 +478,10 @@ def _fragment_overview(a,labtype):
         if _path.exists(val):
             format = "%s"
         else:
-            format = _signature(_mdcnomenc.LabelerBW).parameters["format"].default
-        obj = _mdcnomenc.LabelerBW(val,
-                  format=format,
-                  write_to_disk=a.write_to_disk)
+            format = _signature(_mdcnomenc.LabelerGPCR).parameters["format"].default
+        obj = _mdcnomenc.LabelerGPCR(val,
+                                     format=format,
+                                     write_to_disk=a.write_to_disk)
     else:
         raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
 
@@ -710,7 +710,7 @@ def residue_neighborhoods(residues,
         The extension (=format) of the saved figures
     table_ext : str, default is ".dat"
         The extension (=format) of the saved tables
-    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
+    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If `mdciao.nomenclature.Labeler_BW`, use this object directly
@@ -2020,7 +2020,7 @@ def residue_selection(expression,
         descriptors if consensus labels are provided
     top : str, :obj:`~mdtraj.Trajectory`, or :obj:`~mdtraj.Topology`
         The topology to use.
-    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
+    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If `mdciao.nomenclature.Labeler_BW`, use this object directly
