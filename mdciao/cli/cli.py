@@ -462,7 +462,7 @@ def _fragment_overview(a,labtype):
     ----------
     a : :obj:`argparse.Namespace` object
         Contains the arguments used by the user
-    labtype : srt, "BW" or "CGN"
+    labtype : srt, "GPCR" or "CGN"
         lets the code know which :obj:`LabelerConsensus` to use
 
     Returns
