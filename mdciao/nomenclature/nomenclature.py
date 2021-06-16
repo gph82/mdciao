@@ -74,7 +74,7 @@ def table2GPCR_by_AAcode(tablefile,
     # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
-    AAcode2BW = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
+    AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
     for key, AArS in df[["protein_segment", "AAresSeq"]].values:
@@ -84,12 +84,12 @@ def table2GPCR_by_AAcode(tablefile,
     if keep_AA_code:
         pass
     else:
-        AAcode2BW =  {int(key[1:]):val for key, val in AAcode2BW.items()}
+        AAcode2GPCR =  {int(key[1:]):val for key, val in AAcode2GPCR.items()}
 
     if return_fragments:
-        return AAcode2BW, fragments
+        return AAcode2GPCR, fragments
     else:
-        return AAcode2BW
+        return AAcode2GPCR
 
 def PDB_finder(PDB_code, local_path='.',
                try_web_lookup=True,
