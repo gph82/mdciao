@@ -456,7 +456,7 @@ def _trajsNtop2xtcsNrefgeom(trajectories,topology):
 
 def _fragment_overview(a,labtype):
     r"""
-    provide the CLTs BW_overview and CGN_overview
+    provide the CLTs GPCR_overview and CGN_overview
 
     Parameters
     ----------
@@ -473,7 +473,7 @@ def _fragment_overview(a,labtype):
         val = a.PDB_code_or_txtfile
         obj = _mdcnomenc.LabelerCGN(val, write_to_disk=a.write_to_disk)
 
-    elif labtype == "BW":
+    elif labtype == "GPCR":
         val = a.BW_uniprot_or_file
         if _path.exists(val):
             format = "%s"
@@ -483,7 +483,7 @@ def _fragment_overview(a,labtype):
                                      format=format,
                                      write_to_disk=a.write_to_disk)
     else:
-        raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
+        raise ValueError("Don't know the consensus type %s, only 'GPCR' and 'CGN'"%labtype)
 
     if a.topology is not None:
         top = _md.load(a.topology).top
