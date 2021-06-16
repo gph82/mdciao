@@ -4792,7 +4792,7 @@ class GroupOfInterfaces(object):
                         _interface_labels_consensus[ii].append(jlab)
         #print(_interface_labels_consensus)
         # TODO this re-ordering for proper matching
-        #_interface_labels_consensus[0] = _mdcn.sort_BW_consensus_labels(_interface_labels_consensus[0])
+        #_interface_labels_consensus[0] = _mdcn.sort_GPCR_consensus_labels(_interface_labels_consensus[0])
         #_interface_labels_consensus[1] = _mdcn.sort_CGN_consensus_labels(_interface_labels_consensus[1])
         return _interface_labels_consensus
 
