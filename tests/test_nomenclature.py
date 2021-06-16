@@ -443,8 +443,8 @@ class TestLabelerBW_local_woPDB(unittest.TestCase):
                                                              path.basename(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
         shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx, self._GPCRmd_B2AR_nomenclature_test_xlsx)
 
-        self.BW_local_no_pdb = nomenclature.LabelerBW(self._GPCRmd_B2AR_nomenclature_test_xlsx,
-                                         try_web_lookup=False)
+        self.BW_local_no_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
+                                                        try_web_lookup=False)
 
     def test_correct_files(self):
         _np.testing.assert_equal(self.BW_local_no_pdb.ref_PDB,
@@ -460,11 +460,11 @@ class TestLabelerBW_local(unittest.TestCase):
         self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
         shutil.copy(test_filenames.pdb_3SN6, self._PDB_3SN6_file)
         shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,self._GPCRmd_B2AR_nomenclature_test_xlsx)
-        self.BW_local_w_pdb = nomenclature.LabelerBW(self._GPCRmd_B2AR_nomenclature_test_xlsx,
-                                        ref_PDB="3SN6",
-                                        try_web_lookup=False,
-                                        local_path=self.tmpdir,
-                                        )
+        self.BW_local_w_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
+                                                       ref_PDB="3SN6",
+                                                       try_web_lookup=False,
+                                                       local_path=self.tmpdir,
+                                                       )
 
     def tearDown(self):
         # Remove the directory after the test
@@ -612,11 +612,11 @@ class Test_guess_by_nomenclature(unittest.TestCase):
     def setUpClass(cls):
         BW_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
 
-        cls.BW_local_w_pdb = nomenclature.LabelerBW(BW_file,
-                                                    ref_PDB="3SN6",
-                                                    local_path=test_filenames.RSCB_pdb_path,
-                                                    format="%s",
-                                                    )
+        cls.BW_local_w_pdb = nomenclature.LabelerGPCR(BW_file,
+                                                      ref_PDB="3SN6",
+                                                      local_path=test_filenames.RSCB_pdb_path,
+                                                      format="%s",
+                                                      )
         cls.fragments = get_fragments(cls.BW_local_w_pdb.top)
 
     def test_works_on_enter(self):
@@ -666,11 +666,11 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
     def setUpClass(cls):
         BW_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
 
-        cls.BW_local_w_pdb = nomenclature.LabelerBW(BW_file,
-                                                     ref_PDB="3SN6",
-                                                     local_path=test_filenames.RSCB_pdb_path,
-                                                     format="%s",
-                                                     )
+        cls.BW_local_w_pdb = nomenclature.LabelerGPCR(BW_file,
+                                                      ref_PDB="3SN6",
+                                                      local_path=test_filenames.RSCB_pdb_path,
+                                                      format="%s",
+                                                      )
         cls.fragments = get_fragments(cls.BW_local_w_pdb.top,verbose=False)
 
     def test_finds_frags(self):

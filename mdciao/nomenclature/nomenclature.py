@@ -471,7 +471,7 @@ class LabelerConsensus(object):
     """Parent class to manage consensus notations
 
     At the moment child classe are
-     * :obj:`LabelerBW` for Ballesteros-Weinstein (BW)
+     * :obj:`LabelerGPCR` for Ballesteros-Weinstein (BW)
      * :obj:`LabelerCGN` for Common-Gprotein-nomenclature (CGN)
 
     The consensus labels are abbreviated to 'conlab' throughout
@@ -1080,7 +1080,7 @@ class LabelerCGN(LabelerConsensus):
         return defs
 
 
-class LabelerBW(LabelerConsensus):
+class LabelerGPCR(LabelerConsensus):
     """Manipulate Ballesteros-Weinstein notation
 
     """

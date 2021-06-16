@@ -41,7 +41,7 @@ Classes
     :toctree: generated
 
     LabelerConsensus
-    LabelerBW
+    LabelerGPCR
     LabelerCGN
 
 .. _`references below`:
