@@ -471,7 +471,13 @@ class LabelerConsensus(object):
     """Parent class to manage consensus notations
 
     At the moment child classe are
-     * :obj:`LabelerGPCR` for Ballesteros-Weinstein (BW)
+     * :obj:`LabelerGPCR` for GPCR-notation, this can be:
+       * structure based schemes (Gloriam et al)
+       * sequence based schemes
+         * Class-A: Ballesteros-Weinstein
+         * Class-B: Wootten
+         * Class-C: Pin
+         * Class-F: Wang
      * :obj:`LabelerCGN` for Common-Gprotein-nomenclature (CGN)
 
     The consensus labels are abbreviated to 'conlab' throughout
