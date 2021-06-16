@@ -2003,7 +2003,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, BW_uniprot=None, CG
     return res_idxs_list, consensus_maps
 
 def residue_selection(expression,
-                      top, BW_uniprot=None,
+                      top, GPCR_uniprot=None,
                       CGN_PDB=None,
                       save_nomenclature_files=False,
                       accept_guess=False,
@@ -2020,7 +2020,7 @@ def residue_selection(expression,
         descriptors if consensus labels are provided
     top : str, :obj:`~mdtraj.Trajectory`, or :obj:`~mdtraj.Topology`
         The topology to use.
-    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If `mdciao.nomenclature.Labeler_BW`, use this object directly
@@ -2082,7 +2082,7 @@ def residue_selection(expression,
                                                                    _top, verbose=True)
     res_idxs_list, consensus_maps = _res_resolver(expression, _top, _frags,
                                                   midstring="Your selection '%s' yields:" % expression,
-                                                  BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
+                                                  BW_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
                                                   save_nomenclature_files=save_nomenclature_files,
                                                   accept_guess=accept_guess,
                                                   just_inform=True)
