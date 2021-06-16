@@ -1016,7 +1016,7 @@ def interface(
         topology=None,
         frag_idxs_group_1=None,
         frag_idxs_group_2=None,
-        BW_uniprot="None",
+        GPCR_uniprot="None",
         CGN_PDB="None",
         chunksize_in_frames=10000,
         ctc_cutoff_Ang=3.5,
@@ -1088,7 +1088,7 @@ def interface(
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
-    BW_uniprot : str, default is 'None'
+    GPCR_uniprot : str, default is 'None'
         Try to find Ballesteros-Weinstein definitions. If
         str, e.g. "adrb2_human", try to locate a local
         filename or do a web lookup in the GPCRdb. If
@@ -1286,7 +1286,7 @@ def interface(
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     consensus_frags, consensus_maps, consensus_labelers = \
-        _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
+        _parse_consensus_options_and_return_fragment_defs({"BW": GPCR_uniprot,
                                                            "CGN": CGN_PDB},
                                                           refgeom.top,
                                                           fragments_as_residue_idxs,

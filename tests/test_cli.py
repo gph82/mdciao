@@ -490,7 +490,7 @@ class Test_interface(TestCLTBaseClass):
                               fragments=["967-1001",  # TM6
                                          "328-353"],  # a5
                               CGN_PDB="3SN6",
-                              BW_uniprot="adrb2_human",
+                              GPCR_uniprot="adrb2_human",
                               accept_guess=True,
                               flareplot=False,
                               no_disk=self.no_disk
@@ -510,7 +510,7 @@ class Test_interface(TestCLTBaseClass):
                                   output_dir=tmpdir,
                                   fragments=["consensus"],
                                   CGN_PDB="3SN6",
-                                  BW_uniprot="adrb2_human",
+                                  GPCR_uniprot="adrb2_human",
                                   accept_guess=True,
                                   flareplot=False,
                                   no_disk=self.no_disk
@@ -530,7 +530,7 @@ class Test_interface(TestCLTBaseClass):
                                   output_dir=tmpdir,
                                   fragments=["consensus"],
                                   CGN_PDB="3SN6",
-                                  BW_uniprot="adrb2_human",
+                                  GPCR_uniprot="adrb2_human",
                                   accept_guess=True,
                                   #no_disk=self.no_disk
                                   )
