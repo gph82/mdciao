@@ -538,8 +538,8 @@ class LabelerConsensus(object):
     @property
     def AA2conlab(self):
         r""" Dictionary with short AA-codes as keys, so that e.g.
-            * self.AA2BW["R131"] -> '3.50'
-            * self.conlab2AA["R201"] -> "G.hfs2.2" """
+            * self.AA2conlab["R131"] -> '3.50'
+            * self.AA2conlab["R201"] -> "G.hfs2.2" """
 
 
         return self._AA2conlab
