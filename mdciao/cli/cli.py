@@ -713,7 +713,7 @@ def residue_neighborhoods(residues,
     GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
-        If `mdciao.nomenclature.Labeler_BW`, use this object directly
+        If :obj:`~mdciao.nomenclature.LabelerGPCR`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
