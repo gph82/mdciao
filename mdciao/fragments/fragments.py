@@ -302,7 +302,7 @@ def get_fragments(top,
     # Inform of the first result
     if verbose:
         print("Auto-detected fragments with method '%s'"%str(method))
-        print_fragments(fragments,top)
+        print_fragments(fragments,top,label_width=0)
     # Join if necessary
     if join_fragments is not None:
         fragments = _mdcu.lists.join_lists(fragments, join_fragments)
