@@ -538,3 +538,19 @@ def _get_n_ctcs_from_freqs(ctc_control, ctc_freqs):
         else:
             n_ctcs = 0
     return n_ctcs, or_fraction_needed
+
+def remove_from_lists(list_of_lists, remove_these):
+    r"""
+    Wraps safely around :obj:`numpy.setdiff1d` not returning empty lists
+
+    Parameters
+    ----------
+    list_of_lists : iterable of iterables
+    remove_these : iterable
+
+    Returns
+    -------
+    clean_list : list
+    """
+    _fragments = [_np.setdiff1d(fr, remove_these, assume_unique=True) for fr in list_of_lists]
+    return [fr.tolist() for fr in _fragments if len(fr)>0]
