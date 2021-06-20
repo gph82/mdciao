@@ -235,6 +235,22 @@ class Test_idx_at_fraction(unittest.TestCase):
         ncf = lists.idx_at_fraction([1], frac=2 / 3)
         _np.testing.assert_equal(ncf,0)
 
+class Test_remove_from_lists(unittest.TestCase):
+    def test_works(self):
+        l = [
+            [1, 2, 400, 6, 400, 6, 8],
+            [400, 600, 700],
+            [1, 2, 3, 4]
+        ]
+        nl = lists.remove_from_lists(l, [400,600,700])
+        _np.testing.assert_array_equal(nl[0],[1,2,6,6,8])
+        _np.testing.assert_array_equal(nl[1],[1,2,3,4])
+    def test_weird(self):
+        self.assertEqual([], lists.remove_from_lists([], [400, 600, 700]))
+        self.assertEqual([], lists.remove_from_lists([[]], []))
+        self.assertEqual([[400,500]], lists.remove_from_lists([[400,500]], []))
+
+
 if __name__ == '__main__':
     unittest.main()
 
