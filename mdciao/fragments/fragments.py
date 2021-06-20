@@ -22,7 +22,7 @@
 
 import numpy as _np
 import mdtraj as _md
-from mdtraj.core.residue_names import _AMINO_ACID_CODES
+from mdtraj.core.residue_names import _PROTEIN_RESIDUES
 import mdciao.utils as _mdcu
 from  pandas import unique as _pandas_unique
 from msmtools.estimation import connected_sets as _connected_sets
@@ -252,14 +252,17 @@ def get_fragments(top,
         fragments = _get_fragments_resSeq_plus(top, fragments_resSeq,maxjump=maxjump)
     elif method == "lig_resSeq+":
         fragments = _get_fragments_resSeq_plus(top, fragments_resSeq,maxjump=maxjump)
-        for rr in top.residues:
-            if rr.name[:3] not in _AMINO_ACID_CODES.keys():
-                frag_idx = _mdcu.lists.in_what_fragment(rr.index,fragments)
-                if len(fragments[frag_idx])>1:
-                    list_for_removing=list(fragments[frag_idx])
-                    list_for_removing.remove(rr.index)
-                    fragments[frag_idx]=_np.array(list_for_removing)
-                    fragments.append([rr.index])
+        lig_cands = _np.unique([top.atom(aa).residue.index for aa in top.select("not protein and not water")])
+        for ii in lig_cands:
+            rr = top.residue(ii)
+            if rr.name[:3] in _PROTEIN_RESIDUES:
+                continue
+            frag_idx = _mdcu.lists.in_what_fragment(rr.index,fragments)
+            if len(fragments[frag_idx])>1:
+                list_for_removing=list(fragments[frag_idx])
+                list_for_removing.remove(rr.index)
+                fragments[frag_idx]=_np.array(list_for_removing)
+                fragments.append([rr.index])
     # TODO check why this is not equivalent to "bonds" in the test_file
     elif method == 'molecules':
         raise NotImplementedError("method 'molecules' is not fully implemented yet")
