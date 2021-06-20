@@ -255,7 +255,7 @@ def get_fragments(top,
         lig_cands = _np.unique([top.atom(aa).residue.index for aa in top.select("not protein and not water")])
         for ii in lig_cands:
             rr = top.residue(ii)
-            if rr.name[:3] in _PROTEIN_RESIDUES:
+            if rr.name[:3] in _PROTEIN_RESIDUES or rr.name.lower() in salt:
                 continue
             frag_idx = _mdcu.lists.in_what_fragment(rr.index,fragments)
             if len(fragments[frag_idx])>1:
