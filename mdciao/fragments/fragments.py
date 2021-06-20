@@ -146,10 +146,14 @@ def get_fragments(top,
                   verbose=True,
                   join_fragments=None,
                   maxjump = 500,
-                  salt=["Na+","Cl-"],
+                  salt=["Na+","Cl-","Na","Cl"],
+                  water=True,
                   **kwargs_residues_from_descriptors):
     """
     Group residues of a molecular topology into fragments using different methods.
+
+    Water and ions get their own fragment by default except for the methods
+    None, chains, and any method involving bonds
 
     Parameters
     ----------
@@ -205,11 +209,16 @@ def get_fragments(top,
         otherwise an exception is thrown
     verbose : boolean, optional
         Be verbose
-    salt : list, default is ["Na+","Cl+"]
+    salt : list, default is ["Na+","Cl+", "NA","CL"]
         Residues that match these residue names and
         have only one atom will be put together
         in the last fragment. Use salt = []
-        to deactivate
+        to deactivate. Doesn't apply for methods
+        involving bonds or None and chains
+    water : bool, default is True
+        Put water on its own fragment.
+        Doesn't apply for methods
+        involving bonds or None and chains
     maxjump : int or None, default is 500
         The maximum allowed positive sequence-jump
         in the 'resSeq+' methods, i.e. don't
@@ -228,7 +237,7 @@ def get_fragments(top,
     """
 
     _assert_method_allowed(method)
-
+    salt = [ss.lower() for ss in salt]
     if isinstance(top, str):
         top = _md.load(top).top
 
@@ -294,14 +303,13 @@ def get_fragments(top,
     elif str(method).lower() == "none":
         fragments = [_np.arange(top.n_residues)]
 
+    if "resSeq" in str(method) and "bond" not in str(method):
+        if water:
+            fragments = _dry_fragments(fragments, top)
+        fragments = _bland_fragments(fragments, top, salt)
+
     fragments = [fragments[ii] for ii in _np.argsort([ifrag[0] for ifrag in fragments])]
 
-    # Remove salty ions
-    salt = [ss.lower() for ss in salt]
-    salty_ions = [(ff[0], fidx) for fidx, ff in enumerate(fragments) if len(ff)==1 and top.residue(ff[0]).n_atoms==1 and top.residue(ff[0]).name.lower() in salt]
-    if len(salty_ions)>0:
-        salty_ions = _np.vstack(salty_ions)
-        fragments = [ff for ii,ff in enumerate(fragments) if ii not in salty_ions[:,1]]+[sorted(salty_ions[:,0])]
     # Inform of the first result
     if verbose:
         print("Auto-detected fragments with method '%s'"%str(method))
@@ -343,6 +351,71 @@ def get_fragments(top,
         return fragments
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
+
+def _dry_fragments(fragments, top):
+    r"""
+    Remove water molecules from :obj:`fragments` and append them at the end as their own fragment(s)
+
+    Water is selected with top.select("water") (check https://www.mdtraj.org/1.9.5/atom_selection.html)
+
+    Parameters
+    ----------
+    fragments : list of ints
+    top : :obj:`~mdtraj.Topology`
+
+    Returns
+    -------
+    dry_fragments : list
+        The original :obj:`fragments` except
+        the water molecules have been put into
+        their own fragment(s) at the end of the list.
+        If the water molecules are not contiguous in
+        their serial residue-indices (not resSeq),
+        they get split into contiguous fragments
+    """
+    waters = _np.unique([top.atom(aa).residue.index for aa in top.select("water")])
+    if len(waters)>0:
+        return _diff_stuff(fragments, waters)+_get_fragments_by_jumps_in_sequence(waters)[1]
+    else:
+        return fragments
+
+def _bland_fragments(fragments, top, salt):
+    r"""
+    Remove ions from :obj:`fragments` and append them at the end as their own fragment(s)
+
+    Parameters
+    ----------
+    fragments : list of ints
+    top : :obj:`~mdtraj.Topology`
+    salt : list
+        Residue names to be considered ions
+
+    Returns
+    -------
+    bland_fragments : list
+        The original :obj:`fragments` except
+        the ions have been put into
+        their own fragment(s) at the end of the list.
+        If the ions are not contiguous in
+        their serial residue-indices (not resSeq),
+        they get split into contiguous fragments
+    """
+    salt = [ss.lower() for ss in salt]
+    ion_cands = _np.unique([top.atom(aa).residue.index for aa in top.select("not protein and not water")])
+    ion_cands = [ii for ii in ion_cands if top.residue(ii).name.lower() in salt and top.residue(ii).n_atoms==1]
+    if len(ion_cands)>0:
+        return _diff_stuff(fragments, ion_cands) + _get_fragments_by_jumps_in_sequence(ion_cands)[1]
+    else:
+        return fragments
+
+#todo move to list utils
+def _diff_stuff(fragments, other):
+    _fragments = []
+    for fr in fragments:
+        dry = _np.setdiff1d(fr, other, assume_unique=True)
+        if len(dry) > 0:
+            _fragments.append(dry)
+    return _fragments
 
 def match_fragments(seq0, seq1,
                     frags0=None,
@@ -494,6 +567,7 @@ def _get_fragments_by_jumps_in_sequence(sequence,jump=1):
         old = rr
     return frag_idxs, frag_elements
 
+#TODO combine with the above method, they are pretty redundant
 def _get_fragments_resSeq_plus(top, fragments_resSeq,maxjump=None):
     r"""
     Get fragments using the 'resSeq+' method
