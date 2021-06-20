@@ -375,20 +375,22 @@ def _dry_fragments(fragments, top):
     """
     waters = _np.unique([top.atom(aa).residue.index for aa in top.select("water")])
     if len(waters)>0:
-        return _diff_stuff(fragments, waters)+_get_fragments_by_jumps_in_sequence(waters)[1]
+        return _mdcu.lists.remove_from_lists(fragments, waters)+_get_fragments_by_jumps_in_sequence(waters)[1]
     else:
         return fragments
 
 def _bland_fragments(fragments, top, salt):
     r"""
-    Remove ions from :obj:`fragments` and append them at the end as their own fragment(s)
+    Remove salt from :obj:`fragments` and append them at the end as their own fragment(s)
 
     Parameters
     ----------
     fragments : list of ints
     top : :obj:`~mdtraj.Topology`
     salt : list
-        Residue names to be considered ions
+        Ions will be matched using
+        residue.name in :obj:`salt`
+        and ensuring residue.n_atoms == 1
 
     Returns
     -------
@@ -404,18 +406,10 @@ def _bland_fragments(fragments, top, salt):
     ion_cands = _np.unique([top.atom(aa).residue.index for aa in top.select("not protein and not water")])
     ion_cands = [ii for ii in ion_cands if top.residue(ii).name.lower() in salt and top.residue(ii).n_atoms==1]
     if len(ion_cands)>0:
-        return _diff_stuff(fragments, ion_cands) + _get_fragments_by_jumps_in_sequence(ion_cands)[1]
+        return _mdcu.lists.remove_from_lists(fragments, ion_cands) + _get_fragments_by_jumps_in_sequence(ion_cands)[1]
     else:
         return fragments
 
-#todo move to list utils
-def _diff_stuff(fragments, other):
-    _fragments = []
-    for fr in fragments:
-        dry = _np.setdiff1d(fr, other, assume_unique=True)
-        if len(dry) > 0:
-            _fragments.append(dry)
-    return _fragments
 
 def match_fragments(seq0, seq1,
                     frags0=None,

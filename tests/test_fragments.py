@@ -256,11 +256,12 @@ class Test_get_fragments_other_options(unittest.TestCase):
         assert _np.allclose(by_bonds[2], [6])
         assert _np.allclose(by_bonds[3], [7])
 
-    def test_ions(self):
-        geom = md.load(test_filenames.ions_pdb)
+    def test_ions_and_water(self):
+        geom = md.load(test_filenames.ions_and_water)
         frags = mdcfragments.get_fragments(geom.top,verbose=False)
-        assert len(frags)==1
-        assert len(frags[0])==geom.n_residues==geom.n_atoms
+        assert len(frags)==3
+        assert len(frags[1])==5
+        assert len(frags[2])==10
 
 class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
 
