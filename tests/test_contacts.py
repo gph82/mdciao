@@ -22,7 +22,7 @@ import numpy as _np
 import mock
 from os import path
 from scipy.spatial.distance import cdist
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 import pytest
 from mdciao import contacts
 from mdciao import examples
@@ -1476,9 +1476,10 @@ class TestContactGroup(TestBaseClassContactGroup):
     def test_repframe_w_traj_just_runs(self):
         CG = examples.ContactGroupL394()
         with _TDir(suffix="_mdciao_example_CG") as t:
-            examples._link(test_filenames.traj_xtc, examples._path.join(t, examples._path.basename(test_filenames.traj_xtc)))
-            with examples.remember_cwd():
-                examples._chdir(t)
+            examples.examples._link(test_filenames.traj_xtc,
+                                    examples.examples._path.join(t, examples.examples._path.basename(test_filenames.traj_xtc)))
+            with examples.examples.remember_cwd():
+                examples.examples._chdir(t)
                 repframe = CG.repframe(show_violins=True,return_traj=True)
                 assert isinstance(repframe, md.Trajectory)
 

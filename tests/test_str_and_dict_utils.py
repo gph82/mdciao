@@ -3,7 +3,7 @@ from os import path
 import numpy as np
 
 import unittest
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 
 from mdciao.utils import str_and_dict
 

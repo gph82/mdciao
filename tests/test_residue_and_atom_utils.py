@@ -1,7 +1,7 @@
 import mdtraj as md
 import numpy as np
 import unittest
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 from mdciao.utils import residue_and_atom 
 import mdciao.fragments as _mdcfrg
 import pytest

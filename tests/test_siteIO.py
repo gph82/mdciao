@@ -1,5 +1,5 @@
 import unittest
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 from mdciao.sites import siteIO
 import pytest
 

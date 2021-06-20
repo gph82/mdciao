@@ -1,9 +1,9 @@
 import unittest
 import numpy as _np
 import pytest
-from mdciao import filenames
+from mdciao.examples._filenames import filenames
 
-test_filenames = filenames.filenames()
+test_filenames = filenames()
 from mdciao.utils import lists
 import mdtraj as md
 

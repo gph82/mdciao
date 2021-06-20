@@ -1,6 +1,6 @@
 import mdtraj as md
 import unittest
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 from mdciao.utils import str_and_dict
 test_filenames : filenames = filenames()
 import pytest

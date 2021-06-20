@@ -33,7 +33,7 @@ class filenames(object):
 
         if sfpath.startswith(env_prefix):
             if sfpath.endswith(".egg"):
-                self.test_data_path = path.join(sfpath,"data_for_mdciao") # we're a python setup.py develop
+                self.test_data_path = path.join(sfpath,"data_for_mdciao") # we're a python setup.py install
             else:
                 # we're a "normal" pip/conda installation
                 self.test_data_path = path.join(env_prefix, "data_for_mdciao")

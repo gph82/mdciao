@@ -4,7 +4,7 @@ from unittest import TestCase
 from itertools import combinations
 from unittest import skip
 from mdciao.plots.plots import _colorstring
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 import mdtraj as md
 from matplotlib import pyplot as plt
 from mdciao.flare import circle_plot_residues

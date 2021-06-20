@@ -15,7 +15,7 @@ from tempfile import TemporaryDirectory as _TDir
 import os
 import mdtraj as _md
 
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 test_filenames = filenames()
 class TestPlotContactMatrix(unittest.TestCase):
 

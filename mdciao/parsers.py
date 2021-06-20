@@ -22,7 +22,7 @@
 
 import argparse
 from mdciao.plots.plots import _colorstring
-from mdciao.examples import ExamplesCLTs as _xCLT
+from mdciao.examples.examples import ExamplesCLTs as _xCLT
 
 # https://stackoverflow.com/questions/3853722/python-argparse-how-to-insert-newline-in-the-help-text
 class SmartFormatter(argparse.HelpFormatter):

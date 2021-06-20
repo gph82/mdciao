@@ -5,7 +5,7 @@ from mdciao import flare
 from itertools import combinations
 from unittest import skip
 from mdciao.plots.plots import _colorstring
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 import mdtraj as md
 from matplotlib import pyplot as plt
 

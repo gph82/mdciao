@@ -1,7 +1,7 @@
 import unittest
 import mdtraj as md
 import numpy as _np
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 from pandas import DataFrame as _DF
 from mdciao.fragments import get_fragments
 from mdciao.utils import sequence

@@ -20,7 +20,7 @@ from mdciao.nomenclature.nomenclature import \
     _map2defs
     #_top2consensus_map
 #TODO make these imports cleaner
-from mdciao.filenames import filenames
+from mdciao.examples._filenames import filenames
 
 from mdciao.fragments import get_fragments
 
