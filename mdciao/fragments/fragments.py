@@ -55,9 +55,13 @@ def print_fragments(fragments, top, **print_frag_kwargs):
         _fragments = {ii:val for ii, val in enumerate(fragments)}
     else:
         _fragments = {key:val for key, val in fragments.items()}
-
+    frag_list = []
     for ii, iseg in _fragments.items():
-        print_frag(ii, top, iseg, **print_frag_kwargs)
+        frag_list.append(print_frag(ii, top, iseg, return_string=True, **print_frag_kwargs))
+    n = 20
+    if n * 2 < len(frag_list):
+        frag_list = frag_list[:n] + ["...[long list: omitted %u items]..." % (len(frag_list) - 2 * n)] + frag_list[-n:]
+    print("\n".join(frag_list))
 
 def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                idx2label=None,
