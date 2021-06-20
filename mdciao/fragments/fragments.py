@@ -67,6 +67,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                idx2label=None,
                return_string=False,
                resSeq_jumps=True,
+               label_width=10,
                **print_kwargs):
     """Pretty-printing of fragments of an :obj:`mtraj.topology`
 
@@ -85,7 +86,11 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
         Pass along any consensus labels here
     resSeq_jumps : bool, default is True
         Inform whether the fragment contains jumps in the resSeq
-
+    label_width : int, default is 10
+        The width in characters given
+        to the label descriptor. You can set this to zero
+        if you know :obj:`idx2label` is None for all
+        printed lines
     return_string: bool, default is False
         Instead of printing, return the string
     print_kwargs:
@@ -97,6 +102,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
     """
     maplabel_first, maplabel_last = "", ""
+    labfmt = "%-"+"%us"%label_width
     try:
         if idx2label is not None:
             maplabel_first = _mdcu.str_and_dict.choose_options_descencing([idx2label[fragment[0]]],
@@ -112,13 +118,13 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
         labfirst = "%8s%-10s" % (rfirst, maplabel_first)
         lablast = "%8s%-10s" % (rlast, maplabel_last)
-        istr = "%s %6s with %4u AAs %8s%-10s (%4u) - %8s%-10s (%-4u) (%s) " % \
+        istr = "%s %6s with %6u AAs %8s%s (%6u) - %8s%s (%-6u) (%s) " % \
                (fragment_desc, str(frag_idx), len(fragment),
                 #labfirst,
-                rfirst, maplabel_first,
+                rfirst, labfmt%maplabel_first,
                 rfirst_index,
                 #lablast,
-                rlast, maplabel_last,
+                rlast, labfmt%maplabel_last,
                 rlast_index,
                 str(frag_idx))
 
