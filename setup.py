@@ -72,6 +72,7 @@ setup(
                                           'tests/data/nomenclature/CGN_3SN6.txt']),
         ('data_for_mdciao/json', ['tests/data/json/tip.json']),
         ('data_for_mdciao/RSCB_pdb', ['tests/data/RSCB_pdb/3SN6.pdb.gz']),
+        ('data_for_mdciao/notebooks/',['mdciao/examples/Tutorial.ipynb'])
     ],
     scripts=['scripts/mdc_neighborhoods.py',
              'scripts/mdc_sites.py',
