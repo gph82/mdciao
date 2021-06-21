@@ -36,7 +36,7 @@ long2short = {"--residues" : "-r",
 long2long = {key:key for key in long2short.keys()}
 
 from . import _filenames as _fn
-_filenames = _fn.filenames()
+filenames = _fn.filenames()
 
 
 import contextlib as _contextlib
@@ -54,13 +54,13 @@ def remember_cwd():
 class ExamplesCLTs(object):
     def __init__(self, test=False, short=False):
         #_filenames = _filenames()
-        self.xtc = _filenames.traj_xtc
-        self.pdb = _filenames.top_pdb
+        self.xtc = filenames.traj_xtc
+        self.pdb = filenames.top_pdb
 
-        self.BW_file = _filenames.adrb2_human_xlsx
-        self.CGN_file = _filenames.CGN_3SN6
-        self.sitefile = _filenames.tip_json
-        self.pdb_3SN6 = _filenames.pdb_3SN6
+        self.BW_file = filenames.adrb2_human_xlsx
+        self.CGN_file = filenames.CGN_3SN6
+        self.sitefile = filenames.tip_json
+        self.pdb_3SN6 = filenames.pdb_3SN6
 
         if not test:
             self.xtc = _path.relpath(self.xtc, cwd)
@@ -68,7 +68,7 @@ class ExamplesCLTs(object):
             self.BW_file = _path.relpath(self.BW_file, cwd)
             self.CGN_file = _path.relpath(self.CGN_file, cwd)
             self.sitefile = _path.relpath(self.sitefile, cwd)
-            self.pdb_3SN6 = _path.relpath(_filenames.pdb_3SN6, cwd)
+            self.pdb_3SN6 = _path.relpath(filenames.pdb_3SN6, cwd)
 
         self.test = test
 
@@ -197,9 +197,9 @@ class ExamplesCLTs(object):
 
 def ContactGroupL394(**kwargs):
     with _TDir(suffix="_mdciao_example_CG") as t:
-        for fn in [_filenames.pdb_3SN6, _filenames.traj_xtc,
-                   _filenames.top_pdb,
-                   _filenames.adrb2_human_xlsx, _filenames.CGN_3SN6]:
+        for fn in [filenames.pdb_3SN6, filenames.traj_xtc,
+                   filenames.top_pdb,
+                   filenames.adrb2_human_xlsx, filenames.CGN_3SN6]:
             _link(fn, _path.join(t, _path.basename(fn)))
 
         with remember_cwd():
@@ -207,16 +207,16 @@ def ContactGroupL394(**kwargs):
             b = _io.StringIO()
             try:
                 with _contextlib.redirect_stdout(b):
-                    example_kwargs = {"topology": _path.basename(_filenames.top_pdb),
+                    example_kwargs = {"topology": _path.basename(filenames.top_pdb),
                                       "n_smooth_hw": 1,
                                       "figures": False,
-                                      "BW_uniprot": _path.basename(_filenames.adrb2_human_xlsx),
-                                      "CGN_PDB": _path.basename(_filenames.CGN_3SN6),
+                                      "BW_uniprot": _path.basename(filenames.adrb2_human_xlsx),
+                                      "CGN_PDB": _path.basename(filenames.CGN_3SN6),
                                       "accept_guess": True}
                     for key, val in kwargs.items():
                         example_kwargs[key]=val
                     return _residue_neighborhoods("L394",
-                                                  _path.basename(_filenames.traj_xtc),
+                                                  _path.basename(filenames.traj_xtc),
                                                   **example_kwargs,
                                                   )["neighborhoods"][353]
 
@@ -224,3 +224,13 @@ def ContactGroupL394(**kwargs):
                 print(b.getvalue())
                 b.close()
                 raise e
+
+def notebooks():
+    r"""
+    Copy the example JuPyter notebooks to this folder
+
+    Returns
+    -------
+
+    """
+    print("ls %s"%filenames.notebook_path)
