@@ -647,7 +647,7 @@ def parser_for_contact_map():
 
 def parser_for_frag_overview():
     parser = argparse.ArgumentParser(description='Break a molecular topology into fragments using different heuristics.')
-    parser.add_argument('--methods', help='What methods to test. '
+    parser.add_argument('-m','--methods', help='What methods to test. '
                                           'Default is all.',
                         nargs='+',
                         type=str,

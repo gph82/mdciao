@@ -22,7 +22,7 @@
 
 import numpy as _np
 import mdtraj as _md
-from mdtraj.core.residue_names import _AMINO_ACID_CODES
+from mdtraj.core.residue_names import _PROTEIN_RESIDUES
 import mdciao.utils as _mdcu
 from  pandas import unique as _pandas_unique
 from msmtools.estimation import connected_sets as _connected_sets
@@ -55,14 +55,19 @@ def print_fragments(fragments, top, **print_frag_kwargs):
         _fragments = {ii:val for ii, val in enumerate(fragments)}
     else:
         _fragments = {key:val for key, val in fragments.items()}
-
+    frag_list = []
     for ii, iseg in _fragments.items():
-        print_frag(ii, top, iseg, **print_frag_kwargs)
+        frag_list.append(print_frag(ii, top, iseg, return_string=True, **print_frag_kwargs))
+    n = 20
+    if n * 2 < len(frag_list):
+        frag_list = frag_list[:n] + ["...[long list: omitted %u items]..." % (len(frag_list) - 2 * n)] + frag_list[-n:]
+    print("\n".join(frag_list))
 
 def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                idx2label=None,
                return_string=False,
                resSeq_jumps=True,
+               label_width=10,
                **print_kwargs):
     """Pretty-printing of fragments of an :obj:`mtraj.topology`
 
@@ -81,7 +86,11 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
         Pass along any consensus labels here
     resSeq_jumps : bool, default is True
         Inform whether the fragment contains jumps in the resSeq
-
+    label_width : int, default is 10
+        The width in characters given
+        to the label descriptor. You can set this to zero
+        if you know :obj:`idx2label` is None for all
+        printed lines
     return_string: bool, default is False
         Instead of printing, return the string
     print_kwargs:
@@ -93,6 +102,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
     """
     maplabel_first, maplabel_last = "", ""
+    labfmt = "%-"+"%us"%label_width
     try:
         if idx2label is not None:
             maplabel_first = _mdcu.str_and_dict.choose_options_descencing([idx2label[fragment[0]]],
@@ -108,13 +118,13 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
         labfirst = "%8s%-10s" % (rfirst, maplabel_first)
         lablast = "%8s%-10s" % (rlast, maplabel_last)
-        istr = "%s %6s with %4u AAs %8s%-10s (%4u) - %8s%-10s (%-4u) (%s) " % \
+        istr = "%s %6s with %6u AAs %8s%s (%6u) - %8s%s (%-6u) (%s) " % \
                (fragment_desc, str(frag_idx), len(fragment),
                 #labfirst,
-                rfirst, maplabel_first,
+                rfirst, labfmt%maplabel_first,
                 rfirst_index,
                 #lablast,
-                rlast, maplabel_last,
+                rlast, labfmt%maplabel_last,
                 rlast_index,
                 str(frag_idx))
 
@@ -136,10 +146,14 @@ def get_fragments(top,
                   verbose=True,
                   join_fragments=None,
                   maxjump = 500,
-                  salt=["Na+","Cl-"],
+                  salt=["Na+","Cl-","Na","Cl"],
+                  water=True,
                   **kwargs_residues_from_descriptors):
     """
     Group residues of a molecular topology into fragments using different methods.
+
+    Water and ions get their own fragment by default except for the methods
+    None, chains, and any method involving bonds
 
     Parameters
     ----------
@@ -195,11 +209,16 @@ def get_fragments(top,
         otherwise an exception is thrown
     verbose : boolean, optional
         Be verbose
-    salt : list, default is ["Na+","Cl+"]
+    salt : list, default is ["Na+","Cl+", "NA","CL"]
         Residues that match these residue names and
         have only one atom will be put together
         in the last fragment. Use salt = []
-        to deactivate
+        to deactivate. Doesn't apply for methods
+        involving bonds or None and chains
+    water : bool, default is True
+        Put water on its own fragment.
+        Doesn't apply for methods
+        involving bonds or None and chains
     maxjump : int or None, default is 500
         The maximum allowed positive sequence-jump
         in the 'resSeq+' methods, i.e. don't
@@ -218,7 +237,7 @@ def get_fragments(top,
     """
 
     _assert_method_allowed(method)
-
+    salt = [ss.lower() for ss in salt]
     if isinstance(top, str):
         top = _md.load(top).top
 
@@ -242,14 +261,17 @@ def get_fragments(top,
         fragments = _get_fragments_resSeq_plus(top, fragments_resSeq,maxjump=maxjump)
     elif method == "lig_resSeq+":
         fragments = _get_fragments_resSeq_plus(top, fragments_resSeq,maxjump=maxjump)
-        for rr in top.residues:
-            if rr.name[:3] not in _AMINO_ACID_CODES.keys():
-                frag_idx = _mdcu.lists.in_what_fragment(rr.index,fragments)
-                if len(fragments[frag_idx])>1:
-                    list_for_removing=list(fragments[frag_idx])
-                    list_for_removing.remove(rr.index)
-                    fragments[frag_idx]=_np.array(list_for_removing)
-                    fragments.append([rr.index])
+        lig_cands = _np.unique([top.atom(aa).residue.index for aa in top.select("not protein and not water")])
+        for ii in lig_cands:
+            rr = top.residue(ii)
+            if rr.name[:3] in _PROTEIN_RESIDUES or rr.name.lower() in salt:
+                continue
+            frag_idx = _mdcu.lists.in_what_fragment(rr.index,fragments)
+            if len(fragments[frag_idx])>1:
+                list_for_removing=list(fragments[frag_idx])
+                list_for_removing.remove(rr.index)
+                fragments[frag_idx]=_np.array(list_for_removing)
+                fragments.append([rr.index])
     # TODO check why this is not equivalent to "bonds" in the test_file
     elif method == 'molecules':
         raise NotImplementedError("method 'molecules' is not fully implemented yet")
@@ -281,18 +303,17 @@ def get_fragments(top,
     elif str(method).lower() == "none":
         fragments = [_np.arange(top.n_residues)]
 
+    if "resSeq" in str(method) and "bond" not in str(method):
+        if water:
+            fragments = _dry_fragments(fragments, top)
+        fragments = _bland_fragments(fragments, top, salt)
+
     fragments = [fragments[ii] for ii in _np.argsort([ifrag[0] for ifrag in fragments])]
 
-    # Remove salty ions
-    salt = [ss.lower() for ss in salt]
-    salty_ions = [(ff[0], fidx) for fidx, ff in enumerate(fragments) if len(ff)==1 and top.residue(ff[0]).n_atoms==1 and top.residue(ff[0]).name.lower() in salt]
-    if len(salty_ions)>0:
-        salty_ions = _np.vstack(salty_ions)
-        fragments = [ff for ii,ff in enumerate(fragments) if ii not in salty_ions[:,1]]+[sorted(salty_ions[:,0])]
     # Inform of the first result
     if verbose:
         print("Auto-detected fragments with method '%s'"%str(method))
-        print_fragments(fragments,top)
+        print_fragments(fragments,top,label_width=0)
     # Join if necessary
     if join_fragments is not None:
         fragments = _mdcu.lists.join_lists(fragments, join_fragments)
@@ -330,6 +351,65 @@ def get_fragments(top,
         return fragments
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
+
+def _dry_fragments(fragments, top):
+    r"""
+    Remove water molecules from :obj:`fragments` and append them at the end as their own fragment(s)
+
+    Water is selected with top.select("water") (check https://www.mdtraj.org/1.9.5/atom_selection.html)
+
+    Parameters
+    ----------
+    fragments : list of ints
+    top : :obj:`~mdtraj.Topology`
+
+    Returns
+    -------
+    dry_fragments : list
+        The original :obj:`fragments` except
+        the water molecules have been put into
+        their own fragment(s) at the end of the list.
+        If the water molecules are not contiguous in
+        their serial residue-indices (not resSeq),
+        they get split into contiguous fragments
+    """
+    waters = _np.unique([top.atom(aa).residue.index for aa in top.select("water")])
+    if len(waters)>0:
+        return _mdcu.lists.remove_from_lists(fragments, waters)+_get_fragments_by_jumps_in_sequence(waters)[1]
+    else:
+        return fragments
+
+def _bland_fragments(fragments, top, salt):
+    r"""
+    Remove salt from :obj:`fragments` and append them at the end as their own fragment(s)
+
+    Parameters
+    ----------
+    fragments : list of ints
+    top : :obj:`~mdtraj.Topology`
+    salt : list
+        Ions will be matched using
+        residue.name in :obj:`salt`
+        and ensuring residue.n_atoms == 1
+
+    Returns
+    -------
+    bland_fragments : list
+        The original :obj:`fragments` except
+        the ions have been put into
+        their own fragment(s) at the end of the list.
+        If the ions are not contiguous in
+        their serial residue-indices (not resSeq),
+        they get split into contiguous fragments
+    """
+    salt = [ss.lower() for ss in salt]
+    ion_cands = _np.unique([top.atom(aa).residue.index for aa in top.select("not protein and not water")])
+    ion_cands = [ii for ii in ion_cands if top.residue(ii).name.lower() in salt and top.residue(ii).n_atoms==1]
+    if len(ion_cands)>0:
+        return _mdcu.lists.remove_from_lists(fragments, ion_cands) + _get_fragments_by_jumps_in_sequence(ion_cands)[1]
+    else:
+        return fragments
+
 
 def match_fragments(seq0, seq1,
                     frags0=None,
@@ -481,6 +561,7 @@ def _get_fragments_by_jumps_in_sequence(sequence,jump=1):
         old = rr
     return frag_idxs, frag_elements
 
+#TODO combine with the above method, they are pretty redundant
 def _get_fragments_resSeq_plus(top, fragments_resSeq,maxjump=None):
     r"""
     Get fragments using the 'resSeq+' method
