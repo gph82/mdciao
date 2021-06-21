@@ -33,12 +33,14 @@ class filenames(object):
 
         if sfpath.startswith(env_prefix):
             if sfpath.endswith(".egg"):
-                self.test_data_path = path.join(sfpath,"data_for_mdciao") # we're a python setup.py install
+                rootdir = sfpath # we're a python setup.py install
             else:
-                # we're a "normal" pip/conda installation
-                self.test_data_path = path.join(env_prefix, "data_for_mdciao")
+                rootdir = env_prefix # we're a "normal" pip/conda installation
+            self.test_data_path = path.join(rootdir, "data_for_mdciao")
+            self.notebooks_path = path.join(self.test_data_path, "notebooks")
         else:
             self.test_data_path = path.join(sfpath, "tests", "data") # we're a python setup.py develop
+            self.notebooks_path = path.join(sfpath,"mdciao","examples")
 
         self.bogus_pdb_path = path.join(self.test_data_path, "bogus_pdb")
         self.RSCB_pdb_path =  path.join(self.test_data_path,"RSCB_pdb" )
