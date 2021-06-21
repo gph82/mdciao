@@ -42,6 +42,8 @@ class filenames(object):
             self.test_data_path = path.join(sfpath, "tests", "data") # we're a python setup.py develop
             self.notebooks_path = path.join(sfpath,"mdciao","examples")
 
+        self.notebook_Tutorial = path.join(self.test_data_path,"notebooks","Tutorial.ipynb")
+
         self.bogus_pdb_path = path.join(self.test_data_path, "bogus_pdb")
         self.RSCB_pdb_path =  path.join(self.test_data_path,"RSCB_pdb" )
         self.example_path =   path.join(self.test_data_path,"examples")
