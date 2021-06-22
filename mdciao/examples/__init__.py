@@ -11,4 +11,4 @@ Helper functions for demos and similar stuff
    ContactGroupL394
 
 """
-from .examples import ContactGroupL394, filenames
+from .examples import ContactGroupL394, filenames, notebooks, download_example

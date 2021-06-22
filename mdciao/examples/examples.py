@@ -20,7 +20,9 @@
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
 
-from os import path as _path, getcwd as _getcwd, chdir as _chdir, link as _link
+from os import path as _path, getcwd as _getcwd, chdir as _chdir, link as _link, mkdir as _mkdir
+from shutil import copy as _shcopy
+from glob import glob as _glob
 from mdciao import __path__ as mdc_path
 from subprocess import run as _run
 mdc_path = _path.split(mdc_path[0])[0]
@@ -225,7 +227,7 @@ def ContactGroupL394(**kwargs):
                 b.close()
                 raise e
 
-def notebooks():
+def notebooks(desc = "mdciao_notebooks"):
     r"""
     Copy the example JuPyter notebooks to this folder
 
@@ -233,4 +235,46 @@ def notebooks():
     -------
 
     """
-    print("ls %s"%filenames.notebook_path)
+
+    pwd = _getcwd()
+
+    nbs = sorted(_glob(_path.join(filenames.notebooks_path,"*.ipynb")))
+    print("About to copy these files:\n"
+          "%s"%"\n".join(nbs))
+    print("here:")
+    dest = recursive_prompt(_path.join(pwd,desc),desc)
+    _mkdir(dest)
+    for ff in nbs:
+        _shcopy(ff,dest)
+
+def recursive_prompt(nbdir,desc,count=0):
+    while _path.exists(nbdir):
+        nbdir = _path.join(_getcwd(), desc) + "_%02u" % count
+        count += 1
+    print(nbdir)
+    print("Hit Enter to continue or provide another path from %s%s:\r"%(cwd,_path.sep))
+    answer = input()
+    if len(answer)==0:
+        return nbdir
+    else:
+        nbdir = _path.join(cwd,answer)
+    if _path.exists(nbdir):
+        print("Directory %s already exists. Next suggestion:"%nbdir)
+        return recursive_prompt(nbdir,desc,count=count)
+    else:
+        return _path.join(_getcwd(),answer)
+
+def download_example(url = "http://proteinformatics.org/mdciao/mdciao_example.zip", unzip=True):
+    from tqdm import tqdm_notebook, tqdm
+    from zipfile import ZipFile as _ZF
+    from requests import get as _rget
+    # url = "r = requests.get(url, stream=True)"
+    r = _rget(url, stream=True)
+    filename=_path.basename(url)
+    with open(filename, 'wb') as fd:
+        for chunk in tqdm(r.iter_content(chunk_size=128)):
+            fd.write(chunk)
+    if unzip:
+        myzip=_ZF(filename).extractall()
+        print("Done!")
+    return
