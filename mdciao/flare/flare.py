@@ -424,7 +424,7 @@ def circle_plot_residues(fragments,
            These labels act as replacement and can cover all or just
            some residue, e.g. a mutated residue that you want
            to show as R38A instead of just A38, or use
-           e.g. BW or CGN consensus labels.
+           e.g. GPCR or CGN consensus labels.
     fontsize
     colors
     markersize
