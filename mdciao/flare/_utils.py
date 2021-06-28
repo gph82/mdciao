@@ -899,7 +899,7 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
         all values will appear as "high".
     colors : anything
     lines : bool, default is False
-        Use lines instead of polyogons to represent the aura
+        Use lines instead of polygons to represent the aura
 
     Returns
     -------
