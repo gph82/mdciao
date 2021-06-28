@@ -904,7 +904,7 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
     Returns
     -------
     artists : list
-        Contains the  artilst objects, either
+        Contains the  artist objects, either
         :obj:`~matplotlib.patches.Polygon` or
         :obj:`~matplotlib.collections.LineCollection`
     rmax : float

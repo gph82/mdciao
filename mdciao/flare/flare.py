@@ -618,15 +618,20 @@ def circle_plot_residues(fragments,
                                    fc=None,
                                    fill=False,
                                    zorder=10))
-
+    auras = []
     if aura is not None:
         if debug:
             iax.add_artist(_plt.Circle([0,0],r+running_r_pad, ec="k", alpha=.25, zorder=-100))
-        _futils.add_aura(xy, aura[_np.hstack(fragments)], iax, r + running_r_pad+dot_radius,
+        #TODO running pad is somehow mis-calculated here
+        auras, nr = _futils.add_aura(xy, aura[_np.hstack(fragments)], iax, r + running_r_pad+dot_radius,
                          [len(fr) for fr in fragments],
                          subtract_baseline=False
                          )
         running_r_pad += r* _signature(_futils.add_aura).parameters["width"].default + dot_radius
+        if aura is not None:
+            if debug:
+                iax.add_artist(_plt.Circle([0, 0], r + running_r_pad, ec="k", alpha=.25, zorder=-100))
+                iax.add_artist(_plt.Circle([0, 0], nr, ec="g", alpha=.25, zorder=-100))
 
 
     # Do we have names?
@@ -651,7 +656,7 @@ def circle_plot_residues(fragments,
         frag_fontsize_in_pts = frag_labels[0].get_size()
 
         # Then find the overlappers among existing labels (to avoid using all labels unnecessarily)
-        foverlappers = _futils.overlappers(frag_labels, CPs + labels + ss_labels)
+        foverlappers = _futils.overlappers(frag_labels, CPs + labels + ss_labels+auras)
         counter = 0
         while any(_futils.overlappers(frag_labels, foverlappers)) and counter < n_max:
             [fl.remove() for fl in frag_labels]

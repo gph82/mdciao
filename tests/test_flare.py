@@ -65,7 +65,9 @@ class TestCirclePlotResidues(TestCase):
                                                         np.arange(50, 100)],
                                                        ss_array=["H"] * 100,
                                                        fragment_names=["A", "B"],
-                                                       textlabels={0:"first",99:"last"})
+                                                       textlabels={0:"first",99:"last"},
+                                                       aura=np.arange(100),
+                                                       )
         for key in ["fragment_labels",
                     "dot_labels",
                     "dots",
