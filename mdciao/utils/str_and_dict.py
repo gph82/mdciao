@@ -850,7 +850,7 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
                   "%6u frames. This number should always be 0 : %4u. Total frames loaded %6u" %
                   (ixtc, traj_idx, stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
     else:
-        iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=_np.round(chunksize / stride))
+        iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=int(_np.round(chunksize / stride)))
         inform = lambda ixtc, traj_idx, chunk_idx, running_f: \
             print("Streaming %20s (nr. %3u) with stride %2u in chunks of "
                   "%6u frames. Now at chunk nr %4u, frames so far %6u" %
