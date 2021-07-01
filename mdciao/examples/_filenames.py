@@ -91,6 +91,8 @@ class filenames(object):
         self.tip_dat= path.join(self.json_path,"tip.dat")
         self.tip_residx_dat= path.join(self.json_path,"tip_residx.dat")
 
+        #zip
+        self.zipfile_two_empties = path.join(self.example_path,"two_empty_files.zip")
 
 
 
