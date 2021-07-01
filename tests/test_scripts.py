@@ -87,17 +87,5 @@ class Test_ExamplesCLTs(unittest.TestCase):
             os.chdir(self.tmpdir)
             self.xCLTs.run("mdc_compare")
 
-
-class Test_ContactGroupL394(unittest.TestCase):
-
-    def test_works(self):
-        CG = examples.ContactGroupL394()
-        assert isinstance(CG,contacts.ContactGroup)
-
-    def test_except(self):
-        with self.assertRaises(Exception):
-            CG = examples.ContactGroupL394(bogus_arg="bogus")
-
-
 if __name__ == '__main__':
     unittest.main()

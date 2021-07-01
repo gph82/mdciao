@@ -25,6 +25,8 @@ from shutil import copy as _shcopy
 from glob import glob as _glob
 from mdciao import __path__ as mdc_path
 from subprocess import run as _run
+from zipfile import ZipFile as _ZF
+
 mdc_path = _path.split(mdc_path[0])[0]
 cwd = _getcwd()
 
@@ -40,10 +42,11 @@ long2long = {key:key for key in long2short.keys()}
 from . import _filenames as _fn
 filenames = _fn.filenames()
 
-
+from requests import get as _rget
+from tqdm.auto import tqdm as _tqdma
 import contextlib as _contextlib
 from mdciao.cli import residue_neighborhoods as _residue_neighborhoods
-from tempfile import TemporaryDirectory as _TDir
+from tempfile import TemporaryDirectory as _TDir, TemporaryFile as _TF
 import io as _io
 @_contextlib.contextmanager
 def remember_cwd():
@@ -231,50 +234,161 @@ def notebooks(desc = "mdciao_notebooks"):
     r"""
     Copy the example JuPyter notebooks to this folder
 
-    Returns
-    -------
+    The method never overwrites an existing folder, but
+    keeps either asking or producing new folder names
 
     """
 
     pwd = _getcwd()
 
     nbs = sorted(_glob(_path.join(filenames.notebooks_path,"*.ipynb")))
-    print("About to copy these files:\n"
-          "%s"%"\n".join(nbs))
-    print("here:")
-    dest = recursive_prompt(_path.join(pwd,desc),desc)
+
+    dest = _recursive_prompt(_path.join(pwd, desc), desc)
+    print("Copying file(s):"
+          "\n %s"%"\n -".join(nbs))
+    dest = _recursive_prompt(_path.join(pwd, desc), desc)
     _mkdir(dest)
+    print("Here::")
     for ff in nbs:
         _shcopy(ff,dest)
+        print(" %s"%_path.join(dest,_path.basename(ff)))
 
-def recursive_prompt(nbdir,desc,count=0):
-    while _path.exists(nbdir):
-        nbdir = _path.join(_getcwd(), desc) + "_%02u" % count
+def _recursive_prompt(input_path, pattern, count=0, verbose=False, is_file=False):
+    ext = _path.splitext(input_path)[1]
+    while _path.exists(input_path):
+        if verbose:
+            print("%s exists" % input_path)
+        input_path = _path.join(_getcwd(), pattern) + "_%02u" % count
+        if is_file:
+            input_path += ext
         count += 1
-    print(nbdir)
-    print("Hit Enter to continue or provide another path from %s%s:\r"%(cwd,_path.sep))
-    answer = input()
-    if len(answer)==0:
-        return nbdir
+    if count>0:
+        print(input_path, "will be created")
+        print("Hit Enter to accept or provide another path from %s%s:\r"%(cwd,_path.sep))
+        answer = input()
     else:
-        nbdir = _path.join(cwd,answer)
-    if _path.exists(nbdir):
-        print("Directory %s already exists. Next suggestion:"%nbdir)
-        return recursive_prompt(nbdir,desc,count=count)
+        answer = ""
+    if len(answer)==0:
+        return input_path
+    else:
+        input_path = _path.join(cwd, answer)
+    if _path.exists(input_path):
+        print("%s already exists. Next suggestion:" % input_path)
+        return _recursive_prompt(input_path, pattern, count=count, verbose=verbose, is_file=is_file)
     else:
         return _path.join(_getcwd(),answer)
 
-def download_example(url = "http://proteinformatics.org/mdciao/mdciao_example.zip", unzip=True):
-    from tqdm import tqdm_notebook, tqdm
-    from zipfile import ZipFile as _ZF
-    from requests import get as _rget
-    # url = "r = requests.get(url, stream=True)"
-    r = _rget(url, stream=True)
-    filename=_path.basename(url)
-    with open(filename, 'wb') as fd:
-        for chunk in tqdm(r.iter_content(chunk_size=128)):
-            fd.write(chunk)
+
+def fetch_example_data(url="http://proteinformatics.org/mdciao/mdciao_example.zip",
+                       unzip=True):
+    r"""
+    Download the example data from the url and unzip it
+
+    New filenames for the downloaded file, and the resulting folder
+    will be generated to avoid overwriting.
+
+    No files will be overwritten when extracting
+
+    Parameters
+    ----------
+    url : str
+        The url to download from
+    unzip : bool, default is True
+        Try unzipping the file
+        after downloading
+
+    Returns
+    -------
+    downed_fold_full : str
+        The full path to the downloaded data
+
+    """
+    downed_file_full = _down_url_safely(url)
     if unzip:
-        myzip=_ZF(filename).extractall()
-        print("Done!")
-    return
+        return _unzip2dir(downed_file_full)
+    else:
+        return  downed_file_full
+
+def _unzip2dir(full_path_zipfile):
+    r"""
+    Unzip to a folder with the same name as the file, regardless of the structure of the zipfile
+
+    The folder's full path is kept, including zipfile's name minus the .zip extension
+
+    Background: "mdciao_example.zip" was zipped in origin with this structure:
+     * mdciao_example/prot.pdb
+     * mdciao_example/traj.xtc
+
+    However, it might have been renamed to "mdciao_example_05.zip" when auto-downloading.
+    If you unzip it directly, it will be extracted to mdciao_example, which ideally
+    should be avoided.
+
+    If for whatever reason, mdciao_example_05 *does* exist as a folder, existing files
+    will not be overwritten
+
+    Parameters
+    ----------
+    full_path_zipfile : str
+        The zipfile. E.g. "Downloads/mdciao_example_00.zip" will be
+        extracted to "Downloads/mdciao_example_00/"
+
+    Returns
+    -------
+    full_dir : str
+        The directory into which the zipfile was extracted
+
+    """
+    full_dir = _path.splitext(full_path_zipfile)[0]
+    # https://stackoverflow.com/a/56362289
+    #local_dir = _path.basename(full_dir)
+    print("Unzipping to %s" % full_dir)
+    with _ZF(full_path_zipfile) as zipdata:
+        for zipinfo in zipdata.infolist():
+            new = _path.basename(zipinfo.filename)
+            zipinfo.filename = new
+            if _path.exists(_path.join(full_dir,new)):
+                print("No unzipping of %s: file already exists." % new)
+            else:
+                zipdata.extract(zipinfo,
+                                path=full_dir
+                                )
+            #assert _path.exists(_path.join(full_dir,new))
+
+    return full_dir
+
+def _down_url_safely(url, chunk_size = 128, verbose=False):
+    r"""
+    Downloads a file from a URL to a tmpfile and copies it to the current directory
+
+    If the file exists already, nothing happens
+
+    Parameters
+    ----------
+    url
+    chunk_size
+
+    Returns
+    -------
+
+    """
+    filename_orig = _path.basename(url)
+    filename_nonx = _recursive_prompt(filename_orig,
+                                      _path.splitext(filename_orig)[0],
+                                      is_file=True, verbose=True)
+    r = _rget(url, stream=True)
+    total_size_in_bytes = int(r.headers.get('content-length', 0))
+    pb = _tqdma(total=total_size_in_bytes,
+                desc="Downloading %s to %s" % (filename_orig, _path.basename(filename_nonx)))
+    with _TDir(suffix="_mdciao_download") as t:
+        _filename = _path.join(t,_path.basename(filename_nonx))
+        with open(_filename, 'wb') as fd:
+            r.iter_content()
+            for chunk in r.iter_content(chunk_size=chunk_size):
+                fd.write(chunk)
+                pb.update(128)
+        pb.close()
+        if verbose:
+            print("Dowloaded file %s"%filename_nonx)
+        _shcopy(_filename,filename_nonx)
+
+    return filename_nonx
