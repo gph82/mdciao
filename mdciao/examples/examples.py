@@ -199,6 +199,26 @@ class ExamplesCLTs(object):
 
 
 def ContactGroupL394(**kwargs):
+    r"""
+    Create an example :obj:`mdciao.contacts.ContactGroup` quickly.
+
+    Wraps around :obj:`mdciao.cli.residue_neighborhoods` and asks
+    for the LEU394 neighborhood.
+
+    The input data is one very short (80 frames) version
+    of the MD trajectory shipped with mdciao, kindly provided by
+    Dr. H. Batebi. See the online examples for more info.
+
+    Parameters
+    ----------
+    kwargs : optional keyword arguments
+        For :obj:`mdciao.cli.residue_neighborhoods`
+
+    Returns
+    -------
+    CG : a :obj:`~mdciao.contacts.ContactGroup`
+
+    """
     with _TDir(suffix="_mdciao_example_CG") as t:
         for fn in [filenames.pdb_3SN6, filenames.traj_xtc,
                    filenames.top_pdb,
@@ -230,10 +250,10 @@ def ContactGroupL394(**kwargs):
 
 def notebooks(folder ="mdciao_notebooks"):
     r"""
-    Copy the example Jupyter notebooks distributed with mdciao to this folder
+    Copy the example Jupyter notebooks distributed with mdciao to this folder.
 
     The method never overwrites an existing folder, but
-    keeps either asking or producing new folder names
+    keeps either asking or producing new folder names.
 
     Parameters
     ----------
@@ -244,7 +264,7 @@ def notebooks(folder ="mdciao_notebooks"):
     folder : str
         The folder to which the notebooks were copied
         Can be identical to the input or one generated
-        by :obj:`_recursive_prompt`
+        by :obj:`_recursive_prompt`.
 
     """
 
@@ -329,12 +349,14 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
 def fetch_example_data(url="http://proteinformatics.org/mdciao/mdciao_example.zip",
                        unzip=True):
     r"""
-    Download the example data from the url and unzip it
+    Download the example data from the url and unzip it to the working directory.
 
-    New test_filenames for the downloaded file, and the resulting folder
+    This example data is kindly provided by Dr. H. Batebi.
+
+    New filenames for the downloaded file, and the resulting folder
     will be generated to avoid overwriting.
 
-    No files will be overwritten when extracting
+    No files will be overwritten when extracting.
 
     Parameters
     ----------
@@ -444,11 +466,13 @@ def _down_url_safely(url, chunk_size = 128, verbose=False):
 #Check https://docs.python.org/3/library/sys.html#sys.prefix
 class Filenames(object):
     r"""
-    A class that contains the test_filenames used by mdciao for testing
+    A class that contains the path to the files used by mdciao as attributes.
 
     Note
     ----
-    Not all files are shipped with mdciao
+    Many of these files don't ship with mdciao, so don't expect to find them
+    in your filesystem if you downloaded mdciao's source
+        
     """
     def __init__(self):
         # Check

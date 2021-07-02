@@ -1,6 +1,6 @@
 r"""
 
-Helper functions for demos and similar stuff
+Helper functions for demos and data download
 
 .. currentmodule:: mdciao.examples
 
@@ -9,6 +9,8 @@ Helper functions for demos and similar stuff
    :nosignatures:
 
    ContactGroupL394
-
+   notebooks
+   fetch_example_data
+   filenames
 """
 from .examples import ContactGroupL394, filenames, notebooks, download_example
