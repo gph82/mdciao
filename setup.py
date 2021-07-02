@@ -72,7 +72,9 @@ setup(
                                           'tests/data/nomenclature/CGN_3SN6.txt']),
         ('data_for_mdciao/json', ['tests/data/json/tip.json']),
         ('data_for_mdciao/RSCB_pdb', ['tests/data/RSCB_pdb/3SN6.pdb.gz']),
-        ('data_for_mdciao/notebooks/',['mdciao/examples/Tutorial.ipynb'])
+        ("data_for_mdciao/notebooks", ["mdciao/examples/Tutorial.ipynb"]),
+        ("data_for_mdciao/notebooks", ["mdciao/examples/Missing_Contacts.ipynb"])
+
     ],
     scripts=['scripts/mdc_neighborhoods.py',
              'scripts/mdc_sites.py',
@@ -84,6 +86,7 @@ setup(
              'scripts/mdc_examples.py',
              'scripts/mdc_pdb.py',
              'scripts/mdc_residues.py',
+             'scripts/mdc_notebooks.py'
              #'scripts/density_by_sites.py',
              #'scripts/site_figures.py',
              #'scripts/residue_dihedrals.py',
