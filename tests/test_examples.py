@@ -149,5 +149,13 @@ class Test_notebooks(unittest.TestCase):
             old_nbs = sorted([os.path.basename(ff) for ff in glob(os.path.join(test_filenames.notebooks_path,"*ipynb"))])
             self.assertListEqual(new_nbs, old_nbs)
 
+
+class Test_Filenames(unittest.TestCase):
+
+    def test_works(self):
+        for attr in dir(examples.filenames):
+            if not attr.startswith("_"):
+                assert os.path.exists(getattr(examples.filenames,attr))
+
 if __name__ == '__main__':
     unittest.main()
