@@ -28,7 +28,6 @@ from subprocess import run as _run
 from zipfile import ZipFile as _ZF
 
 mdc_path = _path.split(mdc_path[0])[0]
-cwd = _getcwd()
 
 long2short = {"--residues" : "-r",
               "--n_smooth_hw" : "-ns",
@@ -68,6 +67,7 @@ class ExamplesCLTs(object):
         self.pdb_3SN6 = filenames.pdb_3SN6
 
         if not test:
+            cwd = _getcwd()
             self.xtc = _path.relpath(self.xtc, cwd)
             self.pdb = _path.relpath(self.pdb, cwd)
             self.BW_file = _path.relpath(self.BW_file, cwd)
@@ -230,12 +230,23 @@ def ContactGroupL394(**kwargs):
                 b.close()
                 raise e
 
-def notebooks(desc = "mdciao_notebooks"):
+def notebooks(folder ="mdciao_notebooks"):
     r"""
-    Copy the example JuPyter notebooks to this folder
+    Copy the example Jupyter notebooks distributed with mdciao to this folder
 
     The method never overwrites an existing folder, but
     keeps either asking or producing new folder names
+
+    Parameters
+    ----------
+    folder : str
+
+    Returns
+    -------
+    folder : str
+        The folder to which the notebooks were copied
+        Can be identical to the input or one generated
+        by :obj:`_recursive_prompt`
 
     """
 
@@ -243,7 +254,7 @@ def notebooks(desc = "mdciao_notebooks"):
 
     nbs = sorted(_glob(_path.join(filenames.notebooks_path,"*.ipynb")))
 
-    dest = _recursive_prompt(_path.join(pwd, desc), desc)
+    dest = _recursive_prompt(_path.join(pwd, folder), folder, verbose=True)
     print("Copying file(s):"
           "\n %s"%"\n -".join(nbs))
     dest = _recursive_prompt(_path.join(pwd, desc), desc)
@@ -253,16 +264,53 @@ def notebooks(desc = "mdciao_notebooks"):
         _shcopy(ff,dest)
         print(" %s"%_path.join(dest,_path.basename(ff)))
 
-def _recursive_prompt(input_path, pattern, count=0, verbose=False, is_file=False):
+    return dest
+
+def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False):
+    r"""
+    Ensure input_path doesn't exist and keep generating/prompting for alternative filenames/dirnames
+
+
+    Poorman's attempt at actually a good recursive function, but does its job.
+    A maximum recursion depth of 50 is hard-coded
+
+    Parameters
+    ----------
+    input_path : str
+        Example, "path/to/mdicao_example.zip"
+    pattern : str
+        The part of input_path used to generate new filenames,
+        example "mdciao_example"
+    count : int, default is 0
+        Where in the recursion we are
+    verbose : bool, default is False
+    is_file : book, default is False
+        Name-generating is different for folders than
+        from files:
+        * mdciao_notebook -> mdciao_notebook_00
+        * mdciao_example.zip -> mdciao_example_00.zip
+
+    Returns
+    -------
+    nox_path : str
+        A newly created, previosuly non-existent path
+
+    """
+
+    max_recurr = 50
+    cwd = _getcwd()
     ext = _path.splitext(input_path)[1]
     while _path.exists(input_path):
         if verbose:
             print("%s exists" % input_path)
-        input_path = _path.join(_getcwd(), pattern) + "_%02u" % count
+        input_path = _path.join(cwd, pattern) + "_%02u" % count
         if is_file:
             input_path += ext
         count += 1
-    if count>0:
+        if count > max_recurr:
+            raise RecursionError("Over %u files/folders exist with the '%s' pattern, aborting" % (max_recurr, pattern))
+
+    if count>1:
         print(input_path, "will be created")
         print("Hit Enter to accept or provide another path from %s%s:\r"%(cwd,_path.sep))
         answer = input()
@@ -272,11 +320,12 @@ def _recursive_prompt(input_path, pattern, count=0, verbose=False, is_file=False
         return input_path
     else:
         input_path = _path.join(cwd, answer)
+        print("OK, your suggestion is",input_path)
     if _path.exists(input_path):
         print("%s already exists. Next suggestion:" % input_path)
         return _recursive_prompt(input_path, pattern, count=count, verbose=verbose, is_file=is_file)
     else:
-        return _path.join(_getcwd(),answer)
+        return _path.join(cwd,answer)
 
 
 def fetch_example_data(url="http://proteinformatics.org/mdciao/mdciao_example.zip",
@@ -360,7 +409,7 @@ def _down_url_safely(url, chunk_size = 128, verbose=False):
     r"""
     Downloads a file from a URL to a tmpfile and copies it to the current directory
 
-    If the file exists already, nothing happens
+    If the file/folder exists already, a new filename is generated using _recursive_prompt
 
     Parameters
     ----------

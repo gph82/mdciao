@@ -5,6 +5,9 @@ import unittest
 from mdciao.examples import examples
 from mdciao import contacts
 from tempfile import mkdtemp, TemporaryDirectory
+from unittest import mock
+from glob import glob
+
 import contextlib
 @contextlib.contextmanager
 def remember_cwd():
@@ -51,6 +54,100 @@ class Test_Zip(unittest.TestCase):
             assert output[1]=="No unzipping of A.txt: file already exists."
             assert output[2]=="No unzipping of B.dat: file already exists."
 
+class Test_recursive_funct(unittest.TestCase):
+    def test_works_as_first(self):
+        res = examples._recursive_prompt("this_file_doesnt_exist.txt","this_file_doesnt_exist")
+        assert res =="this_file_doesnt_exist.txt"
+
+    def test_has_to_iterate_once(self):
+        with TemporaryDirectory(suffix="_mdciao_test_recursive") as td:
+            with remember_cwd():
+                os.chdir(td)
+                open("this_file_exists.txt","w").close()
+                input_values = (val for val in [""])
+                with mock.patch('builtins.input', lambda *x: next(input_values)):
+                    res = examples._recursive_prompt("this_file_exists.txt", "this_file_exists",is_file=True,verbose=True)
+                    assert res==os.path.join(td,"this_file_exists_01.txt")
+
+    def test_has_to_enter_recursion(self):
+        with TemporaryDirectory(suffix="_mdciao_test_recursive") as td:
+            with remember_cwd():
+                os.chdir(td)
+                open("this_file_exists.txt","w").close()
+                open("this_file_exists_01.txt","w").close()
+                input_values = (val for val in ["this_file_exists_01.txt",""])
+                with mock.patch('builtins.input', lambda *x: next(input_values)):
+                    res = examples._recursive_prompt("this_file_exists.txt", "this_file_exists",is_file=True,verbose=True)
+                    assert res==os.path.join(td,"this_file_exists_03.txt")
+
+    def test_new_file_is_good(self):
+        with TemporaryDirectory(suffix="_mdciao_test_recursive") as td:
+            with remember_cwd():
+                os.chdir(td)
+                open("this_file_exists.txt","w").close()
+                open("this_file_exists_01.txt","w").close()
+                input_values = (val for val in ["new_file_totally_different.txt",""])
+                with mock.patch('builtins.input', lambda *x: next(input_values)):
+                    res = examples._recursive_prompt("this_file_exists.txt", "this_file_exists",is_file=True,verbose=True)
+                    assert res==os.path.join(td,"new_file_totally_different.txt")
+
+    def test_escapes_recursion(self):
+        with TemporaryDirectory(suffix="_mdciao_test_recursive") as td:
+            with remember_cwd():
+                os.chdir(td)
+                for ii in range(50):
+                    open("test_%02u.dat" % ii, "w").close()
+                with self.assertRaises(RecursionError):
+                    examples._recursive_prompt("test_00.dat", "test", is_file=True)
+
+class Test_down_safely(unittest.TestCase):
+
+    def test_just_works(self):
+        with TemporaryDirectory(suffix="_mdciao_test_down_safely") as td:
+            with remember_cwd():
+                os.chdir(td)
+                local_path = examples._down_url_safely("http://proteinformatics.org/mdciao/mdciao_test_small.zip",verbose=True)
+                assert os.path.exists(local_path)
+
+class Test_fetch_example_data(unittest.TestCase):
+
+    def test_just_works(self):
+        with TemporaryDirectory(suffix="_mdciao_test_fetch") as td:
+            with remember_cwd():
+                os.chdir(td)
+                local_path = examples.fetch_example_data("http://proteinformatics.org/mdciao/mdciao_test_small.zip",unzip=False)
+                assert os.path.exists(local_path)
+                #assert os.path.exists((os.path.splitext(local_path))[0])
+                files =  os.listdir(td)
+                assert len(files)==1
+                assert files[0]=="mdciao_test_small.zip"
+
+    def test_just_unzip(self):
+        with TemporaryDirectory(suffix="_mdciao_test_fetch") as td:
+            with remember_cwd():
+                os.chdir(td)
+                local_path = examples.fetch_example_data("http://proteinformatics.org/mdciao/mdciao_test_small.zip",unzip=True)
+                assert os.path.exists(local_path)
+                assert os.path.exists((os.path.splitext(local_path))[0])
+                files =  sorted(os.listdir(td))
+                assert len(files)==2
+                assert files[0]=="mdciao_test_small"
+                assert files[1]=="mdciao_test_small.zip"
+                unzipped_files =sorted(os.listdir(files[0]))
+                assert len(unzipped_files)==2
+                assert unzipped_files[0]=="A.dat"
+                assert unzipped_files[1]=="B.dat"
+
+
+class Test_notebooks(unittest.TestCase):
+
+    def test_just_works(self):
+        with TemporaryDirectory(suffix="_mdciao_test_notebooks") as td:
+            new_notebook_path = examples.notebooks(os.path.join(td,"mdciao_notebooks"))
+            assert os.path.realpath(new_notebook_path) != os.path.realpath(filenames.notebooks_path)
+            new_nbs = sorted([os.path.basename(ff) for ff in os.listdir(new_notebook_path)])
+            old_nbs = sorted([os.path.basename(ff) for ff in glob(os.path.join(filenames.notebooks_path,"*ipynb"))])
+            self.assertListEqual(new_nbs, old_nbs)
 
 if __name__ == '__main__':
     unittest.main()
