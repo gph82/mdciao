@@ -801,7 +801,7 @@ class _ContactStrings(object):
         list, list of labels for each trajectory
         If labels were not passed, then labels like 'traj 0','traj 1' and so on are assigned
         If :obj:`mdtraj.Trajectory` objects were passed, then the "mdtraj" descriptor will be used
-        If filenames were passed, then the extension will be cut-off
+        If test_filenames were passed, then the extension will be cut-off
         """
 
         if self._trajs is None:
@@ -4472,7 +4472,7 @@ class ContactGroup(object):
             Other units are "ns", "mus", and "ms". The transformation
             happens internally
         verbose: boolean, default is False
-            Prints filenames
+            Prints test_filenames
         ctc_cutoff_Ang: float, default is None
             Use this cutoff and save bintrajs instead
         self_descriptor : str, default is "mdciaoCG"

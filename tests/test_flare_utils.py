@@ -4,12 +4,10 @@ from unittest import TestCase
 from itertools import combinations
 from unittest import skip
 from mdciao.plots.plots import _colorstring
-from mdciao.examples._filenames import filenames
+from mdciao.examples import filenames as test_filenames
 import mdtraj as md
 from matplotlib import pyplot as plt
 from mdciao.flare import circle_plot_residues
-
-filenames = filenames()
 
 
 class TestAngulateSegments(TestCase):
@@ -214,7 +212,7 @@ class TestLambaCurve(TestCase):
                                       )
 
     def test_neighbor_selection_w_top(self):
-        top = md.load(filenames.actor_pdb).top  # All is one chain here
+        top = md.load(test_filenames.actor_pdb).top # All is one chain here
         ilambda = _utils.should_this_residue_pair_get_a_curve(self.fragments,
                                                               top=top,
                                                               exclude_neighbors=3)
@@ -253,7 +251,7 @@ class TestResidueLabels(TestCase):
         # plt.savefig('test.png',bbox_inches="tight")
 
     def test_works_options(self):
-        top = md.load(filenames.actor_pdb).top
+        top = md.load(test_filenames.actor_pdb).top
         ifig, myax = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(10, 5))
         iax = plt.gca()
         iax.set_aspect("equal")
@@ -307,7 +305,7 @@ class TestFragmentLabels(TestCase):
         plt.close("all")
 
     def _test_works_options(self):
-        top = md.load(filenames.actor_pdb).top
+        top = md.load(test_filenames.actor_pdb).top
         ifig, myax = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(10, 5))
         iax = plt.gca()
         iax.set_aspect("equal")

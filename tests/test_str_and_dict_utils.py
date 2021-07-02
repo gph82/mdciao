@@ -3,7 +3,7 @@ from os import path
 import numpy as np
 
 import unittest
-from mdciao.examples._filenames import filenames
+from mdciao.examples import filenames as test_filenames
 
 from mdciao.utils import str_and_dict
 
@@ -14,8 +14,6 @@ import pytest
 from pandas import \
     DataFrame as _DF,\
     ExcelWriter as _XW
-
-test_filenames = filenames()
 
 class Test_get_sorted_trajectories(unittest.TestCase):
     def setUp(self):

@@ -263,7 +263,7 @@ def _parser_add_output_desc(parser, default='output_sites'):
 
 def _parser_add_title(parser):
     parser.add_argument("-t", "--title", default=None, type=str,
-                        help="Name of the system. Used for figure titles (not filenames)"
+                        help="Name of the system. Used for figure titles (not test_filenames)"
                              "Defaults to --output_desc if None is given")
 
 def _parser_add_n_jobs(parser):

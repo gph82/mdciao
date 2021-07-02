@@ -1,8 +1,9 @@
 import mdtraj as md
 import unittest
-from mdciao.examples._filenames import filenames
+from mdciao.examples import filenames as test_filenames
 from mdciao.utils import str_and_dict
-test_filenames : filenames = filenames()
+
+
 import pytest
 
 #see https://stackoverflow.com/questions/169070/how-do-i-write-a-decorator-that-restores-the-cwd

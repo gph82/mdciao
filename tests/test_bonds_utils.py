@@ -1,11 +1,11 @@
 import mdtraj as md
 import unittest
 import numpy as _np
-from mdciao.examples._filenames import filenames
+from mdciao.examples import filenames as test_filenames
 from mdciao.utils import bonds
 import pytest
 
-test_filenames = filenames()
+
 
 class Test_top2residue_bond_matrix(unittest.TestCase):
 

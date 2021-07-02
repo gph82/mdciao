@@ -22,7 +22,7 @@ import numpy as _np
 import mock
 from os import path
 from scipy.spatial.distance import cdist
-from mdciao.examples._filenames import filenames
+from mdciao.examples import filenames as test_filenames
 import pytest
 from mdciao import contacts
 from mdciao import examples
@@ -41,10 +41,9 @@ import mdciao.utils.COM as mdcCOM
 from mdciao import cli as _mdcli
 from mdciao import utils as _mdcu
 
+
+
 #TODO break this up by object type? Testfile is huge
-test_filenames = filenames()
-
-
 class TestBaseClassContacts(unittest.TestCase):
     def setUp(self):
         self.pdb_file = test_filenames.top_pdb

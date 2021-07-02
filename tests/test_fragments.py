@@ -9,11 +9,11 @@ from mdciao import fragments as mdcfragments
 # I'm importing the private variable for testing other stuff, not to test the variable itself
 from mdciao.fragments.fragments import _allowed_fragment_methods, _fragments_strings_to_fragments
 
-from mdciao.examples._filenames import filenames
+from mdciao.examples import filenames as test_filenames
 from mdciao.utils.sequence import top2seq
 import pytest
 
-test_filenames = filenames()
+
 
 class Test_overview(unittest.TestCase):
 

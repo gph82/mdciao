@@ -17,7 +17,7 @@ def remember_cwd():
     finally:
         os.chdir(curdir)
 
-from mdciao.examples import filenames
+from mdciao.examples import filenames as test_filenames
 class Test_ContactGroupL394(unittest.TestCase):
 
     def test_works(self):
@@ -32,8 +32,8 @@ class Test_Zip(unittest.TestCase):
 
     def test_works(self):
         with TemporaryDirectory(suffix="_mdciao_test_zip") as td:
-            zipfile = os.path.join(td,os.path.basename(filenames.zipfile_two_empties))
-            os.symlink(filenames.zipfile_two_empties, zipfile)
+            zipfile = os.path.join(td,os.path.basename(test_filenames.zipfile_two_empties))
+            os.symlink(test_filenames.zipfile_two_empties, zipfile)
             unzipped = examples._unzip2dir(zipfile)
             assert unzipped == os.path.splitext(zipfile)[0]
             os.path.exists(os.path.join("A.txt"))
@@ -41,8 +41,8 @@ class Test_Zip(unittest.TestCase):
 
     def test_doesn_overwrite(self):
         with TemporaryDirectory(suffix="_mdciao_test_zip") as td:
-            zipfile = os.path.join(td,os.path.basename(filenames.zipfile_two_empties))
-            os.symlink(filenames.zipfile_two_empties, zipfile)
+            zipfile = os.path.join(td,os.path.basename(test_filenames.zipfile_two_empties))
+            os.symlink(test_filenames.zipfile_two_empties, zipfile)
             unzipped = examples._unzip2dir(zipfile)
             b = _io.StringIO()
             with redirect_stdout(b) as stdout:
@@ -144,9 +144,9 @@ class Test_notebooks(unittest.TestCase):
     def test_just_works(self):
         with TemporaryDirectory(suffix="_mdciao_test_notebooks") as td:
             new_notebook_path = examples.notebooks(os.path.join(td,"mdciao_notebooks"))
-            assert os.path.realpath(new_notebook_path) != os.path.realpath(filenames.notebooks_path)
+            assert os.path.realpath(new_notebook_path) != os.path.realpath(test_filenames.notebooks_path)
             new_nbs = sorted([os.path.basename(ff) for ff in os.listdir(new_notebook_path)])
-            old_nbs = sorted([os.path.basename(ff) for ff in glob(os.path.join(filenames.notebooks_path,"*ipynb"))])
+            old_nbs = sorted([os.path.basename(ff) for ff in glob(os.path.join(test_filenames.notebooks_path,"*ipynb"))])
             self.assertListEqual(new_nbs, old_nbs)
 
 if __name__ == '__main__':
