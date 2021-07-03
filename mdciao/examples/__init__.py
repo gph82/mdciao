@@ -13,4 +13,4 @@ Helper functions for demos and data download
    fetch_example_data
    filenames
 """
-from .examples import ContactGroupL394, filenames, notebooks, download_example
+from .examples import ContactGroupL394, filenames, notebooks, fetch_example_data
