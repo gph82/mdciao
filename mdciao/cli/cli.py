@@ -1546,7 +1546,7 @@ def sites(site_inputs,
           savetabs=True,
           savetrajs=False,
           figures=True,
-          plot_timedep=False,
+          plot_timedep=True,
           ):
     r"""
 
