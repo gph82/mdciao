@@ -279,7 +279,6 @@ def notebooks(folder ="mdciao_notebooks"):
     dest = _recursive_prompt(_path.join(pwd, folder), folder, verbose=True)
     print("Copying file(s):"
           "\n %s"%"\n -".join(nbs))
-    dest = _recursive_prompt(_path.join(pwd, desc), desc)
     _mkdir(dest)
     print("Here::")
     for ff in nbs:
