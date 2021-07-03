@@ -413,7 +413,7 @@ def _color_schemes(istr):
 def _load_any_geom(geom):
     r"""
     Helper method for command-line-tools to create a :obj:`~mdtraj.Trajectory`
-    from either test_filenames or :obj:`mdtraj.Trajectory` (i.e. do nothing)
+    from either filenames or :obj:`mdtraj.Trajectory` (i.e. do nothing)
     Parameters
     ----------
     geom : str or :obj:`~mdtraj.Trajectory`
@@ -620,7 +620,7 @@ def residue_neighborhoods(residues,
         Accepted values are:
          * pattern, e.g. "*.ext"
          * one string containing a filename
-         * list of test_filenames
+         * list of filenames
          * one :obj:`mdtraj.Trajectory` object
          * list of :obj:`mdtraj.Trajectory` objects
     topology : str or :obj:`~mdtraj.Trajectory`, default is None
@@ -718,7 +718,7 @@ def residue_neighborhoods(residues,
         See :obj:`mdciao.nomenclature` for more info and references.
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
-        try to locate local test_filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
+        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
@@ -1067,7 +1067,7 @@ def interface(
         Accepted values are:
          * pattern, e.g. "*.ext"
          * one string containing a filename
-         * list of test_filenames
+         * list of filenames
          * one :obj:`~mdtraj.Trajectory` object
          * list of :obj:`~mdtraj.Trajectory` objects
     topology : str or :obj:`~mdtraj.Trajectory`, default is None
@@ -1098,7 +1098,7 @@ def interface(
         references.
     CGN_PDB : str, default is 'None'
         Try to find Common G-alpha Numbering definitions. If
-        str, e.g. "3SN6", try to locate local test_filenames
+        str, e.g. "3SN6", try to locate local filenames
         ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups in
         https://www.mrc-lmb.cam.ac.uk/CGN/ and
         http://www.rcsb.org/. If
@@ -1221,7 +1221,7 @@ def interface(
         The extension (=format) of the saved tables
     title : NoneType, default is None
         Name of the system. Used for figure titles (not
-        test_filenames) Defaults to :obj:`output_desc` if None is given
+        filenames) Defaults to :obj:`output_desc` if None is given
     min_freq : float, default is 0.1
         Do not show frequencies smaller than this. If you
         notice the output beingtruncated a values too far
@@ -1570,7 +1570,7 @@ def sites(site_inputs,
         Accepted values are:
          * pattern, e.g. "*.ext"
          * one string containing a filename
-         * list of test_filenames
+         * list of filenames
          * one :obj:`~mdtraj.Trajectory` object
          * list of :obj:`~mdtraj.Trajectory` objects
     topology : str or :obj:`~mdtraj.Trajectory`, default is None
@@ -1610,7 +1610,7 @@ def sites(site_inputs,
         references.
     CGN_PDB : str, default is 'None'
         Try to find Common G-alpha Numbering definitions. If
-        str, e.g. "3SN6", try to locate local test_filenames
+        str, e.g. "3SN6", try to locate local filenames
         ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups in
         https://www.mrc-lmb.cam.ac.uk/CGN/ and
         http://www.rcsb.org/. If
@@ -2026,7 +2026,7 @@ def residue_selection(expression,
         See :obj:`mdciao.nomenclature` for more info and references.
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
-        try to locate local test_filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
+        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
     save_nomenclature_files : bool, default is False

@@ -130,7 +130,7 @@ def xtcs2ctc_mat_dict(xtcs, top, list_ctc_cutoff_Ang,
     Parameters
     ----------
     xtcs : list of strings
-        list of test_filenames with trajectory data. Typically xtcs,
+        list of filenames with trajectory data. Typically xtcs,
         but can be any type of file readable by :obj:mdtraj
     top : str or :py:class:`mdtraj.Topology`
         Topology that matches :obj:xtcs

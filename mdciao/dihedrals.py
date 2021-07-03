@@ -35,7 +35,7 @@ def xtcs2dihs(xtcs, top, dih_idxs, stride=1, consolidate=True,
     Parameters
     ----------
     xtcs : list of strings
-        list of test_filenames with trajectory data. Typically xtcs,
+        list of filenames with trajectory data. Typically xtcs,
         but can be any type of file readable by :obj:mdtraj
     top : str or :py:class:`mdtraj.Topology`
         Topology that matches :obj:xtcs

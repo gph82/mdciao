@@ -99,7 +99,7 @@ def PDB_finder(PDB_code, local_path='.',
 
     Note
     ----
-    Since test_filenames are case-sensitive, e.g. 3CAP will not
+    Since filenames are case-sensitive, e.g. 3CAP will not
     find `3cap.pdb` locally, but will be successfully found
     online (urls are not case-sensitive), returning the
     online file instead of the local one, which can lead
@@ -169,7 +169,7 @@ def CGN_finder(identifier,
     format : str
         A format string that turns the :obj:`identifier`
         into a filename for local lookup, in case the
-        user has custom test_filenames, e.g. 3SN6_consensus.txt
+        user has custom filenames, e.g. 3SN6_consensus.txt
     local_path : str
         The local path to the local consensus file
     try_web_lookup : bool, default is True

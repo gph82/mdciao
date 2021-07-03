@@ -289,7 +289,7 @@ def notebooks(folder ="mdciao_notebooks"):
 
 def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False):
     r"""
-    Ensure input_path doesn't exist and keep generating/prompting for alternative test_filenames/dirnames
+    Ensure input_path doesn't exist and keep generating/prompting for alternative filenames/dirnames
 
 
     Poorman's attempt at actually a good recursive function, but does its job.
@@ -300,7 +300,7 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
     input_path : str
         Example, "path/to/mdicao_example.zip"
     pattern : str
-        The part of input_path used to generate new test_filenames,
+        The part of input_path used to generate new filenames,
         example "mdciao_example"
     count : int, default is 0
         Where in the recursion we are

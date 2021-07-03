@@ -38,15 +38,15 @@ def get_sorted_trajectories(trajectories):
     trajectories: can be one of these things:
         - pattern, e.g. "*.ext"
         - one string containing a filename
-        - list of test_filenames
+        - list of filenames
         - one :obj:`mdtraj.Trajectory` object
         - list of :obj:`mdtraj.Trajectory` objects
 
     Returns
     -------
-        - for an input pattern, sorted trajectory test_filenames that match that pattern
+        - for an input pattern, sorted trajectory filenames that match that pattern
         - for filename, one list containing that filename
-        - for a list of test_filenames, a sorted list of test_filenames
+        - for a list of filenames, a sorted list of filenames
         - for one :obj:`mdtraj.Trajectory` object, a list containing that object
         - list of :obj:`mdtraj.Trajectory` objects (i.e. does nothing)
 
@@ -1014,7 +1014,7 @@ def df_str_formatters(df):
 
 class FilenameGenerator(object):
     r"""
-    Generate per project test_filenames when you need them
+    Generate per project filenames when you need them
 
     This is a WIP to consolidate all filenaming in one place,
     s.t. all sanitizing and project-specific naming operations happen
