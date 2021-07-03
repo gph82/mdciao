@@ -422,12 +422,17 @@ class Test_match_fragments(unittest.TestCase):
         self.frags =mdcfragments.get_fragments(self.geom.top,verbose=False)
 
     def test_works(self):
-        score, frg1, frg2 = mdcfragments.match_fragments(self.geom.top, self.geom.top)
+        score, frg1, frg2 = mdcfragments.match_fragments(self.geom.top, self.geom.top, verbose=True)
         diag = _np.diag(score)
         _np.testing.assert_array_equal(diag, [len(ifrag) for ifrag in self.frags])
         [_np.testing.assert_array_equal(ifrag,jfrag) for ifrag, jfrag in zip(self.frags,frg1)]
         [_np.testing.assert_array_equal(ifrag,jfrag) for ifrag, jfrag in zip(self.frags,frg2)]
 
+    def test_works_seq(self):
+        score, frg1, frg2 = mdcfragments.match_fragments(self.geom.top,
+                                                         top2seq(self.geom.top), verbose=True)
+        score = score[:,0]
+        _np.testing.assert_array_equal(score, [len(ifrag) for ifrag in frg1])
     def test_works_probe_and_short(self):
         score, _,_ = mdcfragments.match_fragments(self.geom.top, self.geom.top,probe=1)
         diag = _np.diag(score)
