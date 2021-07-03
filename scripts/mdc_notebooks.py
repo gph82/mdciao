@@ -7,7 +7,7 @@
 #
 #    Authors: Guillermo Pérez-Hernandez
 #    Contributors:
-#    
+#
 #    mdciao is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Lesser General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -22,32 +22,10 @@
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
 
-from mdciao.examples.examples import ExamplesCLTs
-from mdciao.parsers import parser_for_examples, _inform_of_parser
-from os import path
-from fnmatch import filter as _fnfilter
-execute = True
-list = False
-import sys
-parser = parser_for_examples()
-if len(sys.argv)==1:
-    args = parser.parse_args(args=["-h"])
-else:
-    args = parser.parse_args(args=None)
 
-#print(_inform_of_parser(parser))
-#args = parser.parse_args()
-
-clt = args.clt
-ex = ExamplesCLTs(short=args.short)
-
-if args.clt.endswith(".py"):
-    clt = path.splitext(args.clt)[0]
-clts = _fnfilter(ex.clts,"*%s*"%clt)
-if len(clts)==0:
-    print("'%s' did not return any command-line-tool."%clt)
-    print(parser.epilog)
-for clt in clts:
-    ex.show(clt)
-    if args.execute:
-        ex.run(clt, show=False)
+#TODO i'm not putting notebooks in cli to avoid cicular dependencies (ContactGroupL394 imports from cli and is in examples)
+from mdciao.examples import notebooks as notebooks
+from mdciao.parsers import parser_for_notebooks
+parser = parser_for_notebooks()
+a = parser.parse_args()
+notebooks()

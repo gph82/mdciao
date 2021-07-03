@@ -787,3 +787,10 @@ def parser_for_residues():
     _parser_add_guess(parser)
     _parser_add_fragments(parser)
     return parser
+
+
+def parser_for_notebooks():
+    parser = argparse.ArgumentParser(
+        description='Copy the example Jupyter notebooks distributed with mdciao into a directory "mdciao_notebooks" placed the current working directory.'
+                    'The method never overwrites an existing folder, but keeps either asking or producing new folder names.')
+    return parser

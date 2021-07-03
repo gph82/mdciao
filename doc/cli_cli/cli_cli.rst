@@ -17,6 +17,7 @@ We refer to the command-line-tools collectively as the command-line-interface, o
   * mdc_fragments.py
   * mdc_interface.py
   * mdc_neighborhoods.py
+  * mdc_notebooks.py
   * mdc_pdb.py
   * mdc_residues.py
   * mdc_sites.py
@@ -41,4 +42,4 @@ We refer to the command-line-tools collectively as the command-line-interface, o
    mdc_CGN_overview
    mdc_residues
    mdc_pdb
-
+   mdc_notebooks

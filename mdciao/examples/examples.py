@@ -164,6 +164,10 @@ class ExamplesCLTs(object):
                 "-ni"]
 
     @property
+    def mdc_notebooks(self):
+        return ["mdc_notebooks.py "]
+
+    @property
     def clts(self):
         return [attr for attr in dir(self) if attr.startswith("mdc")]
 
@@ -472,7 +476,7 @@ class Filenames(object):
     ----
     Many of these files don't ship with mdciao, so don't expect to find them
     in your filesystem if you downloaded mdciao's source
-        
+
     """
     def __init__(self):
         # Check
