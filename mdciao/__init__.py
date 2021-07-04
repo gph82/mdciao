@@ -13,6 +13,7 @@ Welcome to mdciao! Below you will find the submodules exposed by the API
     utils
     flare
     pdb
+    examples
 """
 
 from . import contacts
@@ -23,3 +24,4 @@ from . import sites
 from . import cli
 from . import flare
 from . import pdb
+from . import examples

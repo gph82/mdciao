@@ -1,12 +1,12 @@
 import unittest
-from mdciao.filenames import filenames
+from mdciao.examples import filenames as test_filenames
 from mdciao.sites import siteIO
 import pytest
 
 import numpy as _np
 import mdtraj as _md
 
-test_filenames = filenames()
+
 import mdciao
 
 class Test_x2site(unittest.TestCase):

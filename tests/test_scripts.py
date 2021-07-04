@@ -1,7 +1,8 @@
 import os
 from shutil import rmtree
 import unittest
-import mdciao.examples
+from mdciao.examples import examples
+from mdciao import contacts
 from tempfile import mkdtemp
 import contextlib
 @contextlib.contextmanager
@@ -16,7 +17,7 @@ class Test_ExamplesCLTs(unittest.TestCase):
 
     # It's already a test!
     def setUp(self):
-        self.xCLTs = mdciao.examples.ExamplesCLTs(
+        self.xCLTs = examples.ExamplesCLTs(
             test=True
         )
         self.tmpdir = mkdtemp(suffix="mdciao_tests")
@@ -85,18 +86,6 @@ class Test_ExamplesCLTs(unittest.TestCase):
         with remember_cwd():
             os.chdir(self.tmpdir)
             self.xCLTs.run("mdc_compare")
-
-
-class Test_ContactGroupL394(unittest.TestCase):
-
-    def test_works(self):
-        CG = mdciao.examples.ContactGroupL394()
-        assert isinstance(CG,mdciao.contacts.ContactGroup)
-
-    def test_except(self):
-        with self.assertRaises(Exception):
-            CG = mdciao.examples.ContactGroupL394(bogus_arg="bogus")
-
 
 if __name__ == '__main__':
     unittest.main()

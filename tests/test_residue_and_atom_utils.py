@@ -1,7 +1,7 @@
 import mdtraj as md
 import numpy as np
 import unittest
-from mdciao.filenames import filenames
+from mdciao.examples import filenames as test_filenames
 from mdciao.utils import residue_and_atom 
 import mdciao.fragments as _mdcfrg
 import pytest
@@ -12,7 +12,7 @@ import mock
 import mdtraj as _md
 import numpy as _np
 
-test_filenames = filenames()
+
 
 class Test_find_by_AA(unittest.TestCase):
     def setUp(self):

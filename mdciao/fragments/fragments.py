@@ -503,7 +503,7 @@ def match_fragments(seq0, seq1,
                 ifrg = get_fragments(iseq,verbose=verbose)
             else:
                 assert isinstance(iseq,str)
-                ifrg = _np.arange(len(iseq))
+                ifrg = [_np.arange(len(iseq))]
         frags.append(ifrg)
 
     score = _np.zeros((len(frags[0]),len(frags[1])),dtype=float)

@@ -22,7 +22,7 @@
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
 
-from mdciao.examples import ExamplesCLTs
+from mdciao.examples.examples import ExamplesCLTs
 from mdciao.parsers import parser_for_examples, _inform_of_parser
 from os import path
 from fnmatch import filter as _fnfilter

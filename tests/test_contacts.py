@@ -22,7 +22,7 @@ import numpy as _np
 import mock
 from os import path
 from scipy.spatial.distance import cdist
-from mdciao.filenames import filenames
+from mdciao.examples import filenames as test_filenames
 import pytest
 from mdciao import contacts
 from mdciao import examples
@@ -41,10 +41,9 @@ import mdciao.utils.COM as mdcCOM
 from mdciao import cli as _mdcli
 from mdciao import utils as _mdcu
 
+
+
 #TODO break this up by object type? Testfile is huge
-test_filenames = filenames()
-
-
 class TestBaseClassContacts(unittest.TestCase):
     def setUp(self):
         self.pdb_file = test_filenames.top_pdb
@@ -1476,9 +1475,10 @@ class TestContactGroup(TestBaseClassContactGroup):
     def test_repframe_w_traj_just_runs(self):
         CG = examples.ContactGroupL394()
         with _TDir(suffix="_mdciao_example_CG") as t:
-            examples._link(test_filenames.traj_xtc, examples._path.join(t, examples._path.basename(test_filenames.traj_xtc)))
-            with examples.remember_cwd():
-                examples._chdir(t)
+            examples.examples._link(test_filenames.traj_xtc,
+                                    examples.examples._path.join(t, examples.examples._path.basename(test_filenames.traj_xtc)))
+            with examples.examples.remember_cwd():
+                examples.examples._chdir(t)
                 repframe = CG.repframe(show_violins=True,return_traj=True)
                 assert isinstance(repframe, md.Trajectory)
 

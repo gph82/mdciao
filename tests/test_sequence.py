@@ -1,13 +1,13 @@
 import unittest
 import mdtraj as md
 import numpy as _np
-from mdciao.filenames import filenames
+from mdciao.examples import filenames as test_filenames
 from pandas import DataFrame as _DF
 from mdciao.fragments import get_fragments
 from mdciao.utils import sequence
 import pytest
 
-test_filenames = filenames()
+
 
 class Test_print_verbose_dataframe(unittest.TestCase):
 

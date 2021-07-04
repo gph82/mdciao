@@ -22,7 +22,7 @@
 
 import argparse
 from mdciao.plots.plots import _colorstring
-from mdciao.examples import ExamplesCLTs as _xCLT
+from mdciao.examples.examples import ExamplesCLTs as _xCLT
 
 # https://stackoverflow.com/questions/3853722/python-argparse-how-to-insert-newline-in-the-help-text
 class SmartFormatter(argparse.HelpFormatter):
@@ -786,4 +786,11 @@ def parser_for_residues():
     _parser_add_topology(parser)
     _parser_add_guess(parser)
     _parser_add_fragments(parser)
+    return parser
+
+
+def parser_for_notebooks():
+    parser = argparse.ArgumentParser(
+        description='Copy the example Jupyter notebooks distributed with mdciao into a directory "mdciao_notebooks" placed the current working directory.'
+                    'The method never overwrites an existing folder, but keeps either asking or producing new folder names.')
     return parser

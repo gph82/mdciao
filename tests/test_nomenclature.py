@@ -20,7 +20,7 @@ from mdciao.nomenclature.nomenclature import \
     _map2defs
     #_top2consensus_map
 #TODO make these imports cleaner
-from mdciao.filenames import filenames
+from mdciao.examples import filenames as test_filenames
 
 from mdciao.fragments import get_fragments
 
@@ -28,7 +28,7 @@ import mock
 
 from pandas import DataFrame
 
-test_filenames = filenames()
+
 
 class Test_md_load_rscb(unittest.TestCase):
 
