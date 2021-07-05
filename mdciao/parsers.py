@@ -154,9 +154,8 @@ def _parser_add_curve_color(parser):
 
 def _parser_add_gray_backgroud(parser):
     parser.add_argument('--gray-background', dest='gray_background', action='store_true',
-                        help="Use gray background when using smoothing windows"
+                        help="Use gray background when using smoothing windows."
                              " Default is False")
-    parser.add_argument('--no-gray-background', dest='gray_background', action='store_false')
     parser.set_defaults(gray_background=False)
 
 def _parser_add_fragments(parser):
@@ -209,7 +208,7 @@ def _parser_add_matrix(parser):
 
 def _parser_add_flare(parser):
     parser.add_argument('--no-flare', dest='flareplot', action='store_false',
-                        help="Do not produce a flare plot of interface the contact matrix. The format will .pdf no matter "
+                        help="Do not produce a flare plot of interface the contact matrix. The format will be .pdf no matter "
                              "the value of --graphic_ext")
     parser.set_defaults(flareplot=True)
 
@@ -306,7 +305,6 @@ def _parser_add_pop(parser):
     parser.add_argument("--pop_N_ctcs", dest="separate_N_ctcs", action="store_true",
                         help="Separate the plot with the total number contacts from the time-trace plot. "
                              "Default is False")
-    parser.add_argument("--no-pop_N_ctcs", dest="separate_N_ctcs", action="store_false")
     parser.set_defaults(separate_N_ctcs=False)
 
 def _parser_add_n_cols(parser):
@@ -614,11 +612,12 @@ def parser_for_interface():
     _parser_add_t_unit(parser)
     _parser_add_gray_backgroud(parser)
     _parser_add_short_AA_names(parser)
-    parser.add_argument('--sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_true',
+    parser.add_argument('--no-sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_false',
                         help="When presenting the results summarized by residue, "
-                             " sort by sum of frequencies (~average number of contacts)."
-                             " Default is True.")
-    parser.add_argument('--no-sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_false')
+                             " don't sort by sum of frequencies (~average number of contacts), "
+                             "but by ascending order whithin each interface member."
+                             " Default is to sort them by frequencies."
+                        )
     parser.set_defaults(sort_by_av_ctcs=True)
     _parser_add_scheme(parser)
     _parser_add_flare(parser)
