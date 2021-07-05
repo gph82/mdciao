@@ -469,12 +469,12 @@ def _down_url_safely(url, chunk_size = 128, verbose=False):
 #Check https://docs.python.org/3/library/sys.html#sys.prefix
 class Filenames(object):
     r"""
-    A class that contains the path to the files used by mdciao as attributes.
+    A class that contains the paths to the files used by mdciao.
 
     Note
     ----
-    Many of these files don't ship with mdciao, so don't expect to find them
-    in your filesystem if you downloaded mdciao's source
+    Many of these files don't necessarily ship with mdciao unless
+    you downloaded mdciao's source, e.g. by cloning the github repo.
 
     """
     def __init__(self):
