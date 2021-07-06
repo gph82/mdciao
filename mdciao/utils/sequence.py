@@ -274,22 +274,25 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
                        seq_1_res_idxs=None,
                        return_DF=True,
                        verbose=False,
-                       n_best=1,
                        ):
     r""" Align two sequence-containing objects, i.e. strings and/or
-    :obj:`mdtraj.Topology` objects
+    :obj:`~mdtraj.Topology` objects
 
     Returns a list of :obj:`n_best` :obj:`AlignmentDataFrame` s,
     an mdciao sub-class of a :obj:`~pandas.DataFrame`
 
+    A list is returned because sometimes there's more than
+    one alignment with the best possible score (currently it's
+    limited to 10 alignments)
+
     Relevant methods used under the hood are :obj:`my_bioalign` and
     :obj:`alignment_result_to_list_of_dicts`, see their docs
-    for more info
+    for more info.
 
     Parameters
     ----------
-    top0 : :str or obj:`mdtraj.Topology`
-    top1 : :str or obj:`mdtraj.Topology`
+    top0 : :str or obj:`~mdtraj.Topology`
+    top1 : :str or obj:`~mdtraj.Topology`
     substitutions : dictionary
         dictionary of patterns and replacements,
         in case some AAs of the topologies
@@ -301,8 +304,7 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
         If False, a list of alignment dictionaries instead
         of :obj:`AlignmentDataFrame` s will be returned
     verbose : bool, default is False
-    n_best : int, default is 1
-        Number of alignments to return
+
     Returns
     -------
     alignments : list of :obj:`n_best` :obj:`AlignmentDataFrame` s
@@ -345,7 +347,8 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
     top0_seq = "".join([top0_seq[ii] for ii in seq_0_res_idxs])
     top1_seq = "".join([top1_seq[ii] for ii in seq_1_res_idxs])
 
-    alignments = my_bioalign(top0_seq, top1_seq)[:n_best]
+    alignments = my_bioalign(top0_seq, top1_seq)[:10]
+    alignments = [aa for aa in alignments if aa.score == alignments[0].score]
     scores = [aa.score for aa in alignments]
     lists_of_lists_of_align_dicts = [alignment_result_to_list_of_dicts(aa,
                                                    topology_0=top04a,
