@@ -22,6 +22,45 @@ from pandas import DataFrame as _DF
 from Bio.pairwise2 import align as _Bioalign
 from .lists import contiguous_ranges as _cranges
 
+
+# See "Define original properties" https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
+class _ADF(_DF):
+    r"""
+    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score as metadata.
+
+    It can be then accessed via self.alignment_score and is preserved downstream
+
+    Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
+    for more info
+    """
+
+    # normal properties
+    _metadata = ["alignment_score"]
+
+    @property
+    def _constructor(self):
+        return _ADF
+
+
+class AlignmentDataFrame(_ADF):
+    r"""
+    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score as metadata.
+
+    Simply pass it as argument ' alignment_score=1' and it:
+     * can be then accessed via self.alignment_score and
+     * it is preserved downstream after operating on the df
+
+    Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
+    for more info
+    """
+
+    def __init__(self,*args,**kwargs):
+        alignment_score = kwargs.get("alignment_score")
+        if alignment_score is not None:
+            kwargs.pop("alignment_score")
+        super().__init__(*args,**kwargs)
+        self.alignment_score = alignment_score
+
 def print_verbose_dataframe(df):
     r"""
     Print the full dataframe no matter how big

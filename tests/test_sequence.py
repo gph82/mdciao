@@ -225,5 +225,15 @@ class Test_superpose_w_CA_align(unittest.TestCase):
         geom_1U19 = md.load(test_filenames.pdb_1U19)
         sequence.superpose_w_CA_align(geom_3CAP,geom_1U19,verbose=True)
 
+
+class Test_AlignmentDataframe(unittest.TestCase):
+
+    def test_just_works(self):
+        #     Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
+        # for more info
+        df = sequence.AlignmentDataFrame({"A": [1, 2, 3], "B": [4, 5, 6], "C": [7, 8, 9]},alignment_score=1)
+        assert df.alignment_score == 1
+        assert df[["A", "B"]].alignment_score == 1
+
 if __name__ == '__main__':
     unittest.main()
