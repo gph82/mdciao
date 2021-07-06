@@ -647,12 +647,13 @@ def _assert_method_allowed(method):
 
 def check_if_subfragment(sub_frag, fragname, fragments, top,
                          map_conlab=None,
-                         keep_all=False):
+                         keep_all=False,
+                         prompt=True):
     r"""
     Input an iterable of integers representing a fragment and check if
     it clashes with other fragment definitions.
 
-    Prompt for a choice in case it is necessary
+    Return False/True or prompt for a choice in case it is necessary
 
     Example
     -------
@@ -681,7 +682,11 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     top : :obj:`mdtraj.Trajectory`object
     map_conlab : list or dict, default is None
         maps residue idxs to consensus labels
-
+    prompt : bool, default is True
+        When False, no prompt is issues,
+        and the returned value is a boolean
+        whether sub_frag is actually a sub-fragment
+        of fragments or not
     Returns
     -------
     tokeep = 1D numpy array
@@ -694,6 +699,9 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     ifrags = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in sub_frag]
 
     frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
+    if not prompt:
+        return not len(frag_cands) > 1
+
     if len(frag_cands) > 1 and not keep_all:
         # This only happens if more than one fragment is present
         print_frag(fragname, top, sub_frag, fragment_desc='',
