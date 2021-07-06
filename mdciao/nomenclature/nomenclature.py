@@ -792,9 +792,7 @@ class LabelerConsensus(object):
         # TODO "topmaps" are more straighfdw than dataframes
         # but in pple we could make a lot of the next bookeeping as df2xxx functions
 
-        frags =  self.fragments_as_idxs
-        defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in frags.items()}
-        defs = {key:val for key, val in defs.items() if len(val)>0}
+        defs = self._selfmap2frags(self2top)
 
         new_defs = {}
         map_conlab = [self.idx2conlab[top2self[topidx]] if topidx in top2self.keys() else None for topidx in range(top.n_residues)]
@@ -814,6 +812,12 @@ class LabelerConsensus(object):
                 print(istr)
 
         return dict(defs)
+
+    def _selfmap2frags(self, self2top):
+        r""" Take a self2top-mapping (coming from self.aligntop) and turn it into consensus fragment definitions """
+        defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in self.fragments_as_idxs.items()}
+        defs = {key:val for key, val in defs.items() if len(val)>0}
+        return defs
 
     def aligntop(self, top,
                  restrict_to_residxs=None,
