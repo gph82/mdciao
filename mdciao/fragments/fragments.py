@@ -511,7 +511,7 @@ def match_fragments(seq0, seq1,
         for jj,jfrag in enumerate(frags[1]):
             df = _mdcu.sequence.align_tops_or_seqs(seq0, seq1,
                                                    seq_0_res_idxs=frags[0][ii],
-                                                   seq_1_res_idxs=frags[1][jj],verbose=verbose)
+                                                   seq_1_res_idxs=frags[1][jj],verbose=verbose)[0]
             score[ii,jj] = df["match"].sum()
             if probe is not None:
                 if len([ifrag,jfrag][probe])<=shortest:

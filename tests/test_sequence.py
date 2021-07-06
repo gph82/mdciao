@@ -35,26 +35,28 @@ class Test_align_tops(unittest.TestCase):
 
     def test_works_w_itself(self):
         top = md.load(test_filenames.small_monomer).top
-        df = sequence.align_tops_or_seqs(top, top)
+        df = sequence.align_tops_or_seqs(top, top)[0]
         assert isinstance(df, _DF)
+        assert isinstance(df, sequence.AlignmentDataFrame)
+        assert df.alignment_score == top.n_residues
         #sequence.print_verbose_dataframe(df)
 
     def test_works_w_itself_list(self):
         top = md.load(test_filenames.small_monomer).top
-        df = sequence.align_tops_or_seqs(top, top, return_DF=False)
+        df = sequence.align_tops_or_seqs(top, top, return_DF=False)[0]
         assert isinstance(df, list)
         #print(df)
 
     def test_works_w_itself_strs(self):
         top = md.load(test_filenames.small_monomer).top
         str1 = sequence.top2seq(top)
-        df = sequence.align_tops_or_seqs(str1, str1, return_DF=False)
+        df = sequence.align_tops_or_seqs(str1, str1, return_DF=False)[0]
         assert isinstance(df, list)
 
     def test_works_w_dimer(self):
         top2 = md.load(test_filenames.small_dimer).top
         seq_1_res_idxs = [6,7,8,9,10,11]
-        df = sequence.align_tops_or_seqs(top2, top2, seq_1_res_idxs=seq_1_res_idxs)
+        df = sequence.align_tops_or_seqs(top2, top2, seq_1_res_idxs=seq_1_res_idxs)[0]
         _np.testing.assert_array_equal(df[df["match"]==True]["idx_0"].to_list(),
                                        seq_1_res_idxs)
         _np.testing.assert_array_equal(df[df["match"]==True]["idx_1"].to_list(),
@@ -62,7 +64,7 @@ class Test_align_tops(unittest.TestCase):
 
     def test_substitions(self):
         top2 = md.load(test_filenames.small_monomer).top
-        df = sequence.align_tops_or_seqs(top2, top2, substitutions={"E": "G", "X": "Y"})
+        df = sequence.align_tops_or_seqs(top2, top2, substitutions={"E": "G", "X": "Y"})[0]
         _np.testing.assert_array_equal("GVWIGKYY", ''.join(df["AA_0"]))
 
 
@@ -93,13 +95,13 @@ class Test_maptops(unittest.TestCase):
 class Test_re_match_df(unittest.TestCase):
 
     def test_works(self):
-        df = sequence.align_tops_or_seqs("AABBCC", "AADDCC")
+        df = sequence.align_tops_or_seqs("AABBCC", "AADDCC")[0]
         df_re_matched = sequence.re_match_df(df)
 
         assert all(df_re_matched["match"].values)
 
     def test_detects_insertion(self):
-        df = sequence.align_tops_or_seqs("AABBFFFFFCC", "AADDCC")
+        df = sequence.align_tops_or_seqs("AABBFFFFFCC", "AADDCC")[0]
         df_re_matched = sequence.re_match_df(df)
         print(df_re_matched)
         self.assertListEqual(df_re_matched["match"].values.tolist(),[True,True,False,False,False,False,False,False,False,True,True])
@@ -107,19 +109,19 @@ class Test_re_match_df(unittest.TestCase):
 class Test_df2maps(unittest.TestCase):
 
     def test_works(self):
-        df_good = sequence.align_tops_or_seqs("AABBCC", "AADDCC")
+        df_good = sequence.align_tops_or_seqs("AABBCC", "AADDCC")[0]
         map1, map2 = sequence.df2maps(df_good)
         self.assertDictEqual(map1,map2)
         self.assertDictEqual(map1,{ii:ii for ii in range(len(map1))})
 
     def test_works_only_matches(self):
-        df_good = sequence.align_tops_or_seqs("AABBCC", "AADDCC")
+        df_good = sequence.align_tops_or_seqs("AABBCC", "AADDCC")[0]
         map1, map2 = sequence.df2maps(df_good, allow_nonmatch=False)
         self.assertDictEqual(map1,map2)
         self.assertDictEqual(map1,{0:0, 1:1, 4:4, 5:5})
 
     def test_detects_insertion(self):
-        df_bad = sequence.align_tops_or_seqs("AABBFFFFFCC", "AADDCC")
+        df_bad = sequence.align_tops_or_seqs("AABBFFFFFCC", "AADDCC")[0]
         map1, map2 = sequence.df2maps(df_bad)
         self.assertDictEqual(map1, {0: 0, 1: 1, 9: 4, 10: 5})
         self.assertDictEqual(map2, {0: 0, 1: 1, 4: 9, 5: 10})

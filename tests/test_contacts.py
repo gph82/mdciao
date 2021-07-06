@@ -2547,7 +2547,7 @@ class Test_retop_CG(unittest.TestCase):
         top3SN6 = md.load(test_filenames.pdb_3SN6)
         df = _mdcu.sequence.align_tops_or_seqs(intf.top, top3SN6.top,
                                                       #verbose=True,
-                                                      return_DF=True)
+                                                      return_DF=True)[0]
         mapping, __ = _mdcu.sequence.df2maps(df,allow_nonmatch=False)
 
         intf_retop = intf.retop(top3SN6.top, mapping)

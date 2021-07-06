@@ -274,11 +274,13 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
                        seq_1_res_idxs=None,
                        return_DF=True,
                        verbose=False,
+                       n_best=1,
                        ):
     r""" Align two sequence-containing objects, i.e. strings and/or
     :obj:`mdtraj.Topology` objects
 
-    Returns a :obj:`pandas.DataFrame`
+    Returns a list of :obj:`n_best` :obj:`AlignmentDataFrame` s,
+    an mdciao sub-class of a :obj:`~pandas.DataFrame`
 
     Relevant methods used under the hood are :obj:`my_bioalign` and
     :obj:`alignment_result_to_list_of_dicts`, see their docs
@@ -296,14 +298,18 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
     seq_1_res_idxs : iterable of integers, default is None
         only use these idxs for alignment in :obj:`top1`
     return_DF : bool, default is True
-        If false, a list of alignment dictionaries instead
-        of a dataframe will be returned
+        If False, a list of alignment dictionaries instead
+        of :obj:`AlignmentDataFrame` s will be returned
     verbose : bool, default is False
-
+    n_best : int, default is 1
+        Number of alignments to return
     Returns
     -------
-    align : :obj:`pandas.DataFrame`
-        See :obj:`alignment_result_to_list_of_dicts` for more info
+    alignments : list of :obj:`n_best` :obj:`AlignmentDataFrame` s
+        These are just normal :obj:`~pandas.DataFrames` with an extra
+        attribute .alignment_score to be used downstream.
+        If :obj:`return_DF` is False, it's a list of lists of dicts,
+        see :obj:`alignment_result_to_list_of_dicts` for more info
 
 
     """
@@ -339,18 +345,21 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
     top0_seq = "".join([top0_seq[ii] for ii in seq_0_res_idxs])
     top1_seq = "".join([top1_seq[ii] for ii in seq_1_res_idxs])
 
-    align_list = alignment_result_to_list_of_dicts(my_bioalign(top0_seq, top1_seq)[0],
+    alignments = my_bioalign(top0_seq, top1_seq)[:n_best]
+    scores = [aa.score for aa in alignments]
+    lists_of_lists_of_align_dicts = [alignment_result_to_list_of_dicts(aa,
                                                    topology_0=top04a,
                                                    seq_0_res_idxs=seq_0_res_idxs,
                                                    seq_1_res_idxs=seq_1_res_idxs,
                                                    topology_1=top14a,
                                                    verbose=verbose,
-                                                   )
+                                                   ) for aa in alignments]
 
     if return_DF:
-        return _DF(align_list)
+        return [AlignmentDataFrame(aa, alignment_score=score) for aa, score in zip(lists_of_lists_of_align_dicts,
+                                                                                  scores)]
     else:
-        return align_list
+        return lists_of_lists_of_align_dicts
 
 
 
@@ -379,7 +388,7 @@ def maptops(top0,
 
     """
     df = align_tops_or_seqs(top0, top1,
-                            return_DF=True)
+                            return_DF=True)[0]
 
     return df2maps(df,allow_nonmatch=allow_nonmatch)
 
@@ -515,7 +524,7 @@ def superpose_w_CA_align(geom, ref,
     """
     df = align_tops_or_seqs(geom.top, ref.top,
                             seq_0_res_idxs=res_indices,
-                            seq_1_res_idxs=ref_res_indices)
+                            seq_1_res_idxs=ref_res_indices)[0]
 
     g2rmap, _  = df2maps(df, allow_nonmatch=allow_nonmatch)
     if verbose:

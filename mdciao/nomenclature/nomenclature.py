@@ -870,7 +870,7 @@ class LabelerConsensus(object):
                                                self.seq,
                                                seq_0_res_idxs=restrict_to_residxs,
                                                return_DF=True,
-                                               verbose=verbose)
+                                               verbose=verbose)[0]
         top2self, self2top = _mdcu.sequence.df2maps(df)
 
         conlab = _np.full(len(df),None)
@@ -1606,7 +1606,7 @@ def guess_nomenclature_fragments(refseq, top,
         seq_consensus = refseq
 
     # TODO create a method out of this
-    df = _mdcu.sequence.align_tops_or_seqs(top, seq_consensus)
+    df = _mdcu.sequence.align_tops_or_seqs(top, seq_consensus)[0]
     hit_idxs = df[df["match"]]["idx_0"].values
     hits, guess = [], []
     for ii, ifrag in enumerate(fragments):
