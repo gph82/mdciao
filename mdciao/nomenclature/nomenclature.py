@@ -904,14 +904,14 @@ class LabelerConsensus(object):
             conlab = _np.full(len(idf), None)
             conlab[_np.flatnonzero(idf["idx_0"].isin(top2self.keys()))] = self.dataframe.iloc[list(top2self.values())][
                 self._nomenclature_key]
-            if isinstance(top, str) or fragments is None or len(df)==1:
+            if isinstance(top, str) or str(_frag_str).lower()=="none" or len(df)==1:
                 if debug:
-                    print("I'm not checking fragment compatibility because ",fragments, _frag_str,len(df))
+                    print("I'm not checking fragment compatibility because ",isinstance(top, str), _frag_str is None, _frag_str,len(df))
                 break
             else:
                 if fragments is None:
                     #Only do it the first time around
-                    fragments = _mdcfrg.fragments.get_fragments(top, fragments, verbose=False)
+                    fragments = _mdcfrg.fragments.get_fragments(top, _frag_str, verbose=False)
                 unbroken = True
                 consfrags = self._selfmap2frags(self2top)
                 if debug:
