@@ -2540,6 +2540,9 @@ class ContactGroup(object):
         ctc_cutoff_Ang
         sort : bool, default is True
             Sort by dictionary by descending order of frequencies
+            If False, residues are in ascending order
+            within each member of the interface, as returned
+            by self.interface_residxs
             TODO dicts have order since py 3.6 and it is useful for creating
             TODO a dataframe, then excel_table that's already sorted by descending frequencies
         shorten_AAs : bool, default is True
@@ -3903,7 +3906,7 @@ class ContactGroup(object):
               the first frame will be read. The
               SS will be computed from there.
               The file will be tried to read
-              first witouth topology information
+              first without topology information
               (e.g. .pdb, .gro, .h5) will work,
               and when this fails, self.top
               will be passed (e.g. .xtc, .dcd)
