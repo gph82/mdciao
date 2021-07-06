@@ -702,7 +702,8 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
         for jj in frag_cands:
             istr = print_frag(jj, top, fragments[jj],
                               fragment_desc="   input fragment",
-                              return_string=True)
+                              return_string=True,
+                              label_width=0)
             n_in_fragment = len(_np.intersect1d(sub_frag, fragments[jj]))
             if n_in_fragment < len(fragments[jj]):
                 istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
