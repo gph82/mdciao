@@ -658,6 +658,7 @@ class LabelerConsensus(object):
 
     def top2labels(self, top,
                    autofill_consensus=True,
+                   min_hit_rate=.5,
                    **aligntop_kwargs):
 
         r""" Align the sequence of :obj:`top` to the sequence used
@@ -705,19 +706,11 @@ class LabelerConsensus(object):
             with indices of those the fragments
             (:obj:`mdciao.fragments.get_fragments` defaults)
             with more than 50% alignment in the pre-alignment.
-            If :obj:`min_hit_rate`>0, :obj`restrict_to_residx`
-            has to be None.
-        restrict_to_residxs: iterable of integers, default is None
-            Instead of guessing using :obj:`min_hit_rate`,
-            use only these residues for alignment and labelling options.
-            The return list will still be of length=top.n_residues
-
         Returns
         -------
         map : list of len = top.n_residues with the consensus labels
         """
-
-        self.aligntop(top, **aligntop_kwargs)
+        self.aligntop(top, min_hit_rate=min_hit_rate, **aligntop_kwargs)
         out_list = alignment_df2_conslist(self.most_recent_alignment)
         out_list = out_list + [None for __ in range(top.n_residues - len(out_list))]
         # TODO we could do this padding in the alignment_df2_conslist method itself
