@@ -822,7 +822,8 @@ class LabelerConsensus(object):
     def aligntop(self, top,
                  restrict_to_residxs=None,
                  min_hit_rate=0,
-                 verbose=False):
+                 verbose=False,
+                 fragments='resSeq'):
         r""" Align a topology with the object's sequence.
         Returns two maps (top2self, self2top) and
         populates the attribute self.most_recent_alignment
@@ -833,7 +834,7 @@ class LabelerConsensus(object):
         of the original :obj:`LabelerConsensus.dataframe`,
         which are the the ones in :obj:`ConsensusLabelers.seq`
 
-        top : :obj:`~mdtraj.Topology` object
+        top : :obj:`~mdtraj.Topology` object or string
         restrict_to_residxs: iterable of integers, default is None
             Use only these residues for alignment and labelling purposes
             Helps "guide" the alignment method. E.g., one might be
@@ -851,6 +852,31 @@ class LabelerConsensus(object):
             with more than 50% alignment in the pre-alignment.
             If :obj:`min_hit_rate`>0, :obj`restrict_to_residx`
             has to be None.
+        fragments : str or None, default is 'resSeq'
+            The fragmentation heuristic passed to
+            :obj:`maciao.fragments.get_fragments` to resolve
+            situations where two alignments share the optimal score.
+            Eg., aligning XXLXX to XXLLXX yields
+            ```
+            XXLLXX      XXLLXX
+            ||| ||  vs  ||  ||
+            XXL XX      XX LXX
+            ```
+            In order to choose between these alignments, it's
+            checked which alignment observes the
+            fragments obtained from the the :obj:`top` using this
+            fragmentation heuristics. So, if XXLXX is split
+            fragmented into [XX],[LXX], then
+            the second alignment will be chosen, given
+            that it respects that fragmentation
+            Only has an effect if more than one alignment is possible
+            Set it None to simply take the first alignment that
+            comes out of (:obj:`mdciao.sequence.my_bioalign`)
+            Note, this only has meaning when the input
+            :obj:`top` objects are actual
+            :obj:`~mdtraj.Trajectory` objects that carry the sequence
+            index information. If :obj:`top` is a string, then there's
+            no fragmentation heuristic possible
         verbose: boolean, default is False
             be verbose
         """
@@ -867,11 +893,45 @@ class LabelerConsensus(object):
                                                self.seq,
                                                seq_0_res_idxs=restrict_to_residxs,
                                                return_DF=True,
-                                               verbose=verbose)[0]
-        top2self, self2top = _mdcu.sequence.df2maps(df)
+                                               verbose=verbose,
+                                               )
+        debug = False
+        _frag_str = fragments
+        fragments = None
+        unbroken = True
+        for ii, idf in enumerate(df):
+            top2self, self2top = _mdcu.sequence.df2maps(idf)
+            conlab = _np.full(len(idf), None)
+            conlab[_np.flatnonzero(idf["idx_0"].isin(top2self.keys()))] = self.dataframe.iloc[list(top2self.values())][
+                self._nomenclature_key]
+            if isinstance(top, str) or fragments is None or len(df)==1:
+                if debug:
+                    print("I'm not checking fragment compatibility because ",fragments, _frag_str,len(df))
+                break
+            else:
+                if fragments is None:
+                    #Only do it the first time around
+                    fragments = _mdcfrg.fragments.get_fragments(top, fragments, verbose=False)
+                unbroken = True
+                consfrags = self._selfmap2frags(self2top)
+                if debug:
+                    print("Iteration ",ii)
+                    _mdcfrg.print_fragments(consfrags,top)
+                for fraglab, fragidxs in consfrags.items():
+                    spread_frg = _mdcfrg.check_if_subfragment(fragidxs,fraglab,fragments, top, map_conlab=conlab, prompt=False)
+                    if debug:
+                        print(ii,fraglab, spread_frg)
+                    if not spread_frg:
+                        unbroken = False
+                        break
+                if unbroken:
+                    break
+        assert unbroken,("None of the %u optimal alignments produce consensus fragments "
+                         "compatible with the fragmentation %s"%(len(df),str(_frag_str)))
 
-        conlab = _np.full(len(df),None)
-        conlab[_np.flatnonzero(df["idx_0"].isin(top2self.keys()))]=self.dataframe.iloc[list(top2self.values())][self._nomenclature_key]
+        df = idf
+
+
         df = df.join(_DataFrame({"conlab": conlab}))
 
         self._last_alignment_df = df
