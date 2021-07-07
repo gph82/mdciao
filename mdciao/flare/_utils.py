@@ -40,7 +40,7 @@ _mycolors = _colorstring.split(",")
 from bezier import Curve as _BZCurve
 class my_BZCURVE(_BZCurve):
     """
-    Modified Bezier curve to plot with line-width
+    Modified Bezier curve to plot with line-width and to have self.Line2D
     """
 
     def plot(self, num_pts, color=None, alpha=None, ax=None,lw=1, zorder=None):
@@ -72,8 +72,12 @@ class my_BZCURVE(_BZCurve):
         points = self.evaluate_multi(s_vals)
         if ax is None:
             ax = _plot_helpers.new_axis()
-        ax.plot(points[0, :], points[1, :], color=color, alpha=alpha, lw=lw, zorder=zorder)
+        self._Line2D = ax.plot(points[0, :], points[1, :], color=color, alpha=alpha, lw=lw, zorder=zorder)[0]
         return ax
+
+    @property
+    def Line2D(self):
+        return self._Line2D
 
 def create_flare_bezier(nodes, center=None):
     middle = _np.floor(len(nodes) / 2).astype("int")
