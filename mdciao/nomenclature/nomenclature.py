@@ -1763,8 +1763,8 @@ def _map2defs(cons_list, splitchar="."):
     defs = _defdict(list)
     for ii, key in enumerate(cons_list):
         if str(key).lower()!= "none":
-            assert splitchar in key, "Consensus keys have to have a '%s'-character" \
-                                     " in them, but '%s' hasn't"%(splitchar, key)
+            assert splitchar in _mdcu.lists.force_iterable(key), "Consensus keys have to have a '%s'-character" \
+                                     " in them, but '%s' hasn't"%(splitchar, str(key))
             if key[0].isnumeric(): # it means it is BW
                 new_key =key.split(splitchar)[0]
             elif key[0].isalpha(): # it means it CGN
