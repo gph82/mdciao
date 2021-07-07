@@ -911,7 +911,7 @@ class LabelerConsensus(object):
             else:
                 if fragments is None:
                     #Only do it the first time around
-                    fragments = _mdcfrg.fragments.get_fragments(top, fragments, verbose=False)
+                    fragments = _mdcfrg.fragments.get_fragments(top, _frag_str, verbose=False)
                 unbroken = True
                 consfrags = self._selfmap2frags(self2top)
                 if debug:
