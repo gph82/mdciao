@@ -3966,7 +3966,7 @@ class ContactGroup(object):
         Return a representative frame (traj_idx, frame_idx) for this :obj:`ContactGroup`
 
         A "representative frame" means, in this context, a frame
-        that minimizes **the average distance** to the means (or modes)
+        that minimizes **the average distance** to the modes (or means)
         of the residue-residue distances contained in this object.
 
         Please note that "representative" can have other meanings
