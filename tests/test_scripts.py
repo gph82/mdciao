@@ -71,7 +71,7 @@ class Test_ExamplesCLTs(unittest.TestCase):
     def test_mdc_BW(self):
         with remember_cwd():
             os.chdir(self.tmpdir)
-            CP = self.xCLTs.run("mdc_BW_overview",
+            CP = self.xCLTs.run("mdc_GPCR_overview",
                                 #show=True
                                 )
         assert CP.returncode==0
