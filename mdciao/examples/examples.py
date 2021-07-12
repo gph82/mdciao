@@ -33,7 +33,7 @@ mdc_path = _path.split(mdc_path[0])[0]
 long2short = {"--residues" : "-r",
               "--n_smooth_hw" : "-ns",
               "--table_ext" : "-tx",
-              "--GPCR_uniprot" : "--BW",
+              "--GPCR_uniprot" : "--GPCR",
               "--CGN_PDB"   : "--CGN"
               }
 
@@ -177,7 +177,7 @@ class ExamplesCLTs(object):
     def _join_args(self,clt):
         oneline = self.__getattribute__(clt)
         if self.test:
-            oneline = [arg for arg in oneline if "-BW" not in arg and "-CGN" not in arg]
+            oneline = [arg for arg in oneline if "--GPCR_uniprot" not in arg and "-CGN" not in arg]
         return " ".join(oneline)
 
     def show(self, clt):
