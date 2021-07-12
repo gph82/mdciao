@@ -217,7 +217,7 @@ def _parser_add_output_dir(parser):
                         default='.')
 
 def _parser_add_nomenclature(parser):
-    parser.add_argument("--GPCR_uniprot", type=str,
+    parser.add_argument("-GPCR", "--GPCR_uniprot", type=str,
                         help="Look for Ballesteros-Weinstein definitions in the GPCRdb using a uniprot code, "
                              "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
                              "Default is None.",
@@ -228,7 +228,7 @@ def _parser_add_nomenclature(parser):
                              'Default is False',
                         default=False)
     parser.set_defaults(save_nomenclature_files=False)
-    parser.add_argument("--CGN_PDB", type=str, help="PDB code for a consensus G-protein nomenclature", default='None')
+    parser.add_argument("-GGN","--CGN_PDB", type=str, help="PDB code for a consensus G-protein nomenclature", default='None')
 
 def _parser_add_graphic_ext(parser):
     parser.add_argument('-gx','--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
