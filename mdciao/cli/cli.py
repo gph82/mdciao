@@ -113,7 +113,7 @@ def _parse_consensus_option(option, consensus_type,
           calls to any of the methods in :obj:`command_line_tools`
           without each call instantiating its own :obj:`LabelerConsensus`
     consensus_type : str
-        Either "CGN" or "BW"
+        Either "CGN" or "GPCR"
     top : :obj:`mdtraj.Topology`
     fragments : iterable of iterables of ints
         How the :obj:`top` is fragmented. Helps
@@ -138,7 +138,7 @@ def _parse_consensus_option(option, consensus_type,
             map_out = [None for __ in range(top.n_residues)]
             LC_out = None
         else:
-            LC_out = {"BW": _mdcnomenc.LabelerGPCR,
+            LC_out = {"GPCR": _mdcnomenc.LabelerGPCR,
                       "CGN":_mdcnomenc.LabelerCGN}[consensus_type](option, **LabelerConsensus_kwargs)
 
     #todo add a class check here instead of failing later on
@@ -462,7 +462,7 @@ def _fragment_overview(a,labtype):
     ----------
     a : :obj:`argparse.Namespace` object
         Contains the arguments used by the user
-    labtype : srt, "BW" or "CGN"
+    labtype : srt, "GPCR" or "CGN"
         lets the code know which :obj:`LabelerConsensus` to use
 
     Returns
@@ -473,7 +473,7 @@ def _fragment_overview(a,labtype):
         val = a.PDB_code_or_txtfile
         obj = _mdcnomenc.LabelerCGN(val, write_to_disk=a.write_to_disk)
 
-    elif labtype == "BW":
+    elif labtype == "GPCR":
         val = a.BW_uniprot_or_file
         if _path.exists(val):
             format = "%s"
@@ -483,7 +483,7 @@ def _fragment_overview(a,labtype):
                                      format=format,
                                      write_to_disk=a.write_to_disk)
     else:
-        raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
+        raise ValueError("Don't know the consensus type %s, only 'GPCR' and 'CGN'"%labtype)
 
     if a.topology is not None:
         top = _md.load(a.topology).top
@@ -1286,7 +1286,7 @@ def interface(
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     consensus_frags, consensus_maps, consensus_labelers = \
-        _parse_consensus_options_and_return_fragment_defs({"BW": GPCR_uniprot,
+        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
                                                            "CGN": CGN_PDB},
                                                           refgeom.top,
                                                           fragments_as_residue_idxs,
@@ -1740,7 +1740,7 @@ def sites(site_inputs,
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, consensus_maps, __ = \
-        _parse_consensus_options_and_return_fragment_defs({"BW": GPCR_uniprot,
+        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
                                                            "CGN": CGN_PDB},
                                                           refgeom.top,
                                                           fragments_as_residue_idxs,
@@ -1974,14 +1974,14 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
 
 
     consensus_maps = _parse_consensus_options_and_return_fragment_defs(
-        {"BW": GPCR_uniprot,
+        {"GPCR": GPCR_uniprot,
          "CGN": CGN_PDB},
         top,
         fragments,
         verbose=True,
         save_nomenclature_files=save_nomenclature_files,
         accept_guess=accept_guess)[1]
-    consensus_maps={"BW":consensus_maps[0],
+    consensus_maps={"GPCR":consensus_maps[0],
                     "CGN":consensus_maps[1]}
 
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
@@ -2064,7 +2064,7 @@ def residue_selection(expression,
     frags : list of integers
         Whatever fragments the user chose
     consensus_maps : dict
-        Keys are currently just 'BW' and 'CGN'
+        Keys are currently just 'GPCR' and 'CGN'
         Values are lists of len :obj:`topology.n_residues`
         with the consensus labels. All labels
         will be None if no consensus info
