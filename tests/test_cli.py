@@ -568,7 +568,7 @@ class Test_parse_consensus_option(unittest.TestCase):
         input_values = (val for val in [""])
         option = test_filenames.adrb2_human_xlsx
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            residx2conlab, lblr = cli._parse_consensus_option(option, "BW",
+            residx2conlab, lblr = cli._parse_consensus_option(option, "GPCR",
                                                               self.geom.top,
                                                               fragments,
                                                               return_Labeler=True,
@@ -582,7 +582,7 @@ class Test_parse_consensus_option(unittest.TestCase):
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
 
-            residx2conlab, lblr = cli._parse_consensus_option(BW, "BW",
+            residx2conlab, lblr = cli._parse_consensus_option(BW, "GPCR",
                                                               self.geom.top,
                                                               fragments,
                                                               return_Labeler=True)
@@ -592,7 +592,7 @@ class Test_parse_consensus_option(unittest.TestCase):
 
     def test_no_answer(self):
         BW = LabelerGPCR(test_filenames.adrb2_human_xlsx)
-        residx2conlab, lblr = cli._parse_consensus_option(BW, "BW",
+        residx2conlab, lblr = cli._parse_consensus_option(BW, "GPCR",
                                                           self.geom.top,
                                                           [_np.arange(10)],
                                                           return_Labeler=True)
@@ -726,13 +726,13 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("print_conlab",True)
         a.__setattr__("topology",test_filenames.top_pdb)
-        cli._fragment_overview(a, "BW")
+        cli._fragment_overview(a, "GPCR")
 
     def test_BW_url(self):
         a = parser_for_BW_overview()
         a = a.parse_args(["adrb2_human"])
         a.__setattr__("topology",test_filenames.pdb_3SN6)
-        cli._fragment_overview(a, "BW")
+        cli._fragment_overview(a, "GPCR")
 
     def test_raises(self):
         with pytest.raises(ValueError):
@@ -751,13 +751,13 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("topology",test_filenames.top_pdb)
         a.__setattr__("labels","3.50")
-        cli._fragment_overview(a, "BW")
+        cli._fragment_overview(a, "GPCR")
 
     def test_no_top(self):
         a = parser_for_BW_overview()
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("labels","3.50")
-        cli._fragment_overview(a, "BW")
+        cli._fragment_overview(a, "GPCR")
 
 class Test_compare(unittest.TestCase):
 
@@ -785,6 +785,6 @@ class Test_residue_selection(unittest.TestCase):
 
         _np.testing.assert_array_equal(residue_idxs,[0])
 
-        self.assertListEqual(list(maps.keys()),["BW","CGN"])
+        self.assertListEqual(list(maps.keys()),["GPCR","CGN"])
         {self.assertListEqual(val,[None]*len(maps["CGN"]))
          for key, val in maps.items()}
