@@ -11,7 +11,7 @@ We refer to the command-line-tools collectively as the command-line-interface, o
  command-line-tools that ship with mdciao.
 
  Available command line tools are:
-  * mdc_BW_overview.py
+  * mdc_GPCR_overview.py
   * mdc_CGN_overview.py
   * mdc_compare.py
   * mdc_fragments.py
@@ -38,7 +38,7 @@ We refer to the command-line-tools collectively as the command-line-interface, o
    mdc_sites
    mdc_fragments
    mdc_compare
-   mdc_BW_overview
+   mdc_GPCR_overview
    mdc_CGN_overview
    mdc_residues
    mdc_pdb
