@@ -55,25 +55,41 @@ def remember_cwd():
 
 class ExamplesCLTs(object):
     def __init__(self, test=False, short=False):
-        #_filenames = _filenames()
+        r"""
+        API interface to show or call the mdc_* scripts from the command line directly
+
+        For instance, self.run("mdc_interface") will run an mdc_interface.py example
+
+        Parameters
+        ----------
+        test : bool, default is False
+            If True, internally all references to input filenames
+            are converted from full paths to basenames, because
+            it is assumed that the test method is calling the
+            self.run() method form a temporary directory
+            where links to these filenames have been
+            created already. Additionally, the flag
+            "-ni" for non-interactive runs is added to the methods
+            that would otherwise prompt the user for some confirmations
+        short : bool, default is False
+            Whether to use the short or the long versions
+            of the flags
+        """
         self.xtc = filenames.traj_xtc
         self.pdb = filenames.top_pdb
-
         self.BW_file = filenames.adrb2_human_xlsx
         self.CGN_file = filenames.CGN_3SN6
         self.sitefile = filenames.tip_json
         self.pdb_3SN6 = filenames.pdb_3SN6
 
-        if not test:
-            cwd = _getcwd()
-            self.xtc = _path.relpath(self.xtc, cwd)
-            self.pdb = _path.relpath(self.pdb, cwd)
-            self.BW_file = _path.relpath(self.BW_file, cwd)
-            self.CGN_file = _path.relpath(self.CGN_file, cwd)
-            self.sitefile = _path.relpath(self.sitefile, cwd)
-            self.pdb_3SN6 = _path.relpath(filenames.pdb_3SN6, cwd)
-
         self.test = test
+        cwd = _getcwd()
+        for fn in ["xtc", "pdb", "BW_file", "CGN_file", "sitefile", "pdb_3SN6"]:
+            attr_val = getattr(self, fn)
+            if self.test:
+                setattr(self, fn, _path.basename(attr_val))
+            else:
+                setattr(self, fn, _path.relpath(attr_val,cwd))
 
         if short:
             self.opt_dict=long2short
@@ -176,8 +192,8 @@ class ExamplesCLTs(object):
 
     def _join_args(self,clt):
         oneline = self.__getattribute__(clt)
-        if self.test:
-            oneline = [arg for arg in oneline if "--GPCR_uniprot" not in arg and "-CGN" not in arg]
+        if self.test and all([istr not in clt for istr in ["_overview", "mdc_fragments", "mdc_pdb"]]):
+            oneline += ["-ni"]
         return " ".join(oneline)
 
     def show(self, clt):
