@@ -1,7 +1,7 @@
 import os
 from shutil import rmtree
 import unittest
-from mdciao.examples import examples
+from mdciao.examples import examples, filenames
 from mdciao import contacts
 from tempfile import mkdtemp
 import contextlib
@@ -22,6 +22,16 @@ class Test_ExamplesCLTs(unittest.TestCase):
         )
         self.tmpdir = mkdtemp(suffix="mdciao_tests")
         print(self.tmpdir)
+
+
+        for fn in [ filenames.traj_xtc,
+                    filenames.top_pdb,
+                    filenames.adrb2_human_xlsx,
+                    filenames.CGN_3SN6,
+                    filenames.tip_json,
+                    filenames.pdb_3SN6]:
+            os.symlink(fn, os.path.join(self.tmpdir,os.path.basename(fn)))
+
     def tearDown(self):
         rmtree(self.tmpdir)
 
