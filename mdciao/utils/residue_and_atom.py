@@ -703,7 +703,7 @@ def get_SS(SS,top=None):
     elif isinstance(SS, str):
         try:
             ss_array = _md.compute_dssp(_md.load(SS, frame=0), simplified=True)[0]
-        except ValueError as e:
+        except (OSError, ValueError) as e:
             ss_array = _md.compute_dssp(_md.load(SS, top=top, frame=0), simplified=True)[0]
     elif SS is True:
         from_tuple = (0, 0, 0)
