@@ -456,7 +456,7 @@ def _trajsNtop2xtcsNrefgeom(trajectories,topology):
 
 def _fragment_overview(a,labtype):
     r"""
-    provide the CLTs BW_overview and CGN_overview
+    provide the CLTs GPCR_overview and CGN_overview
 
     Parameters
     ----------
