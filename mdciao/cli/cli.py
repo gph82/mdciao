@@ -1457,6 +1457,7 @@ def interface(
 
         if savefigs:
             histofig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi, bbox_inches="tight")
+            print(fn.fullpath_overall_fig)
             cmat_fig.savefig(fn.fullpath_matrix)
             print(fn.fullpath_matrix)
 
