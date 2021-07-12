@@ -50,11 +50,11 @@ def table2GPCR_by_AAcode(tablefile,
     Parameters
     ----------
     tablefile : xlsx file or pandas dataframe
-        Ballesteros-Weinstein nomenclature file in excel format, optional
+        GPCR generic residue numbering in excel format
     keep_AA_code : boolean, default is True
         If True then output dictionary will have key of the form "Q26" else "26".
     return_fragments : boolean, default is True
-        return a dictionary of fragments keyed by GPGCR-fragment, e.g. "TM1"
+        return a dictionary of fragments keyed by GPCR-fragment, e.g. "TM1"
 
     Returns
     -------
