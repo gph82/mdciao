@@ -261,7 +261,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                           output_dir=tmpdir,
                                           no_disk=self.no_disk)
 
-    def test_nomenclature_BW(self):
+    def test_nomenclature_GPCR(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             cli.residue_neighborhoods("R131",
                                       [self.traj, self.traj_reverse],
@@ -287,7 +287,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                           no_disk=self.no_disk
                                           )
 
-    def test_nomenclature_CGN_and_BW(self):
+    def test_nomenclature_CGN_and_GPCR(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             shutil.copy(test_filenames.CGN_3SN6, tmpdir)
             shutil.copy(test_filenames.pdb_3SN6, tmpdir)
@@ -478,7 +478,7 @@ class Test_interface(TestCLTBaseClass):
                           no_disk=self.no_disk
                           )
 
-    def test_w_nomenclature_CGN_BW(self):
+    def test_w_nomenclature_CGN_GPCR(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             shutil.copy(test_filenames.CGN_3SN6, tmpdir)
             shutil.copy(test_filenames.pdb_3SN6, tmpdir)
@@ -497,7 +497,7 @@ class Test_interface(TestCLTBaseClass):
                               no_disk=self.no_disk
                               )
 
-    def test_w_nomenclature_CGN_BW_fragments_are_consensus(self):
+    def test_w_nomenclature_CGN_GPCR_fragments_are_consensus(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["TM6", "*H5"])
             shutil.copy(test_filenames.CGN_3SN6, tmpdir)
@@ -517,7 +517,7 @@ class Test_interface(TestCLTBaseClass):
                                   no_disk=self.no_disk
                                   )
 
-    def test_w_nomenclature_CGN_BW_fragments_are_consensus_and_flareplot(self):
+    def test_w_nomenclature_CGN_GPCR_fragments_are_consensus_and_flareplot(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["TM6", "*H5"])
             shutil.copy(test_filenames.CGN_3SN6, tmpdir)
@@ -563,7 +563,7 @@ class Test_parse_consensus_option(unittest.TestCase):
         assert lblr is None
         assert _pandasunique(residx2conlab)[0] is None
 
-    def test_with_BW(self):
+    def test_with_GPCR(self):
         fragments = mdcfragments.get_fragments(self.geom.top)
         input_values = (val for val in [""])
         option = test_filenames.adrb2_human_xlsx
@@ -576,23 +576,23 @@ class Test_parse_consensus_option(unittest.TestCase):
             self.assertIsInstance(lblr, LabelerGPCR)
             self.assertIsInstance(residx2conlab,list)
 
-    def test_with_BW_already_instantiated(self):
+    def test_with_GPCR_already_instantiated(self):
         fragments = mdcfragments.get_fragments(self.geom.top)
-        BW = LabelerGPCR(test_filenames.adrb2_human_xlsx)
+        GPCR = LabelerGPCR(test_filenames.adrb2_human_xlsx)
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
 
-            residx2conlab, lblr = cli._parse_consensus_option(BW, "GPCR",
+            residx2conlab, lblr = cli._parse_consensus_option(GPCR, "GPCR",
                                                               self.geom.top,
                                                               fragments,
                                                               return_Labeler=True)
             self.assertIsInstance(lblr, LabelerGPCR)
-            self.assertEqual(lblr,BW)
+            self.assertEqual(lblr,GPCR)
             self.assertIsInstance(residx2conlab,list)
 
     def test_no_answer(self):
-        BW = LabelerGPCR(test_filenames.adrb2_human_xlsx)
-        residx2conlab, lblr = cli._parse_consensus_option(BW, "GPCR",
+        GPCR = LabelerGPCR(test_filenames.adrb2_human_xlsx)
+        residx2conlab, lblr = cli._parse_consensus_option(GPCR, "GPCR",
                                                           self.geom.top,
                                                           [_np.arange(10)],
                                                           return_Labeler=True)
@@ -721,14 +721,14 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
                 a.__setattr__("topology",test_filenames.top_pdb)
                 cli._fragment_overview(a, "CGN")
 
-    def test_BW_paths_and_verbose(self):
+    def test_GPCR_paths_and_verbose(self):
         a = parser_for_GPCR_overview()
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("print_conlab",True)
         a.__setattr__("topology",test_filenames.top_pdb)
         cli._fragment_overview(a, "GPCR")
 
-    def test_BW_url(self):
+    def test_GPCR_url(self):
         a = parser_for_GPCR_overview()
         a = a.parse_args(["adrb2_human"])
         a.__setattr__("topology",test_filenames.pdb_3SN6)
