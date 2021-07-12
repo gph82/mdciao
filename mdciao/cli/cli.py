@@ -540,7 +540,7 @@ def residue_neighborhoods(residues,
                           fragment_colors=None,
                           graphic_ext=".pdf",
                           table_ext=".dat",
-                          BW_uniprot=None,
+                          GPCR_uniprot=None,
                           CGN_PDB=None,
                           output_dir='.',
                           output_desc='neighborhood',
@@ -710,7 +710,7 @@ def residue_neighborhoods(residues,
         The extension (=format) of the saved figures
     table_ext : str, default is ".dat"
         The extension (=format) of the saved tables
-    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If `mdciao.nomenclature.Labeler_BW`, use this object directly
@@ -827,7 +827,7 @@ def residue_neighborhoods(residues,
                  "%s\nexcluding %u nearest neighbors" \
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
-                                                  midstring=mid_string, BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
+                                                  midstring=mid_string, GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
                                                   save_nomenclature_files=save_nomenclature_files,
                                                   accept_guess=accept_guess, interpret_as_res_idxs=res_idxs, sort=sort)
 
@@ -1016,7 +1016,7 @@ def interface(
         topology=None,
         frag_idxs_group_1=None,
         frag_idxs_group_2=None,
-        BW_uniprot="None",
+        GPCR_uniprot="None",
         CGN_PDB="None",
         chunksize_in_frames=10000,
         ctc_cutoff_Ang=3.5,
@@ -1088,7 +1088,7 @@ def interface(
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
-    BW_uniprot : str, default is 'None'
+    GPCR_uniprot : str, default is 'None'
         Try to find Ballesteros-Weinstein definitions. If
         str, e.g. "adrb2_human", try to locate a local
         filename or do a web lookup in the GPCRdb. If
@@ -1286,7 +1286,7 @@ def interface(
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     consensus_frags, consensus_maps, consensus_labelers = \
-        _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
+        _parse_consensus_options_and_return_fragment_defs({"BW": GPCR_uniprot,
                                                            "CGN": CGN_PDB},
                                                           refgeom.top,
                                                           fragments_as_residue_idxs,
@@ -1968,13 +1968,13 @@ def pdb(code,
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
 
-def _res_resolver(res_range, top, fragments, midstring=None, BW_uniprot=None, CGN_PDB=None,
+def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
 
 
 
     consensus_maps = _parse_consensus_options_and_return_fragment_defs(
-        {"BW": BW_uniprot,
+        {"BW": GPCR_uniprot,
          "CGN": CGN_PDB},
         top,
         fragments,
@@ -2082,7 +2082,7 @@ def residue_selection(expression,
                                                                    _top, verbose=True)
     res_idxs_list, consensus_maps = _res_resolver(expression, _top, _frags,
                                                   midstring="Your selection '%s' yields:" % expression,
-                                                  BW_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
+                                                  GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
                                                   save_nomenclature_files=save_nomenclature_files,
                                                   accept_guess=accept_guess,
                                                   just_inform=True)
