@@ -33,7 +33,7 @@ mdc_path = _path.split(mdc_path[0])[0]
 long2short = {"--residues" : "-r",
               "--n_smooth_hw" : "-ns",
               "--table_ext" : "-tx",
-              "--BW_uniprot" : "--BW",
+              "--GPCR_uniprot" : "--BW",
               "--CGN_PDB"   : "--CGN"
               }
 
@@ -86,7 +86,7 @@ class ExamplesCLTs(object):
                 self.opt_dict["--residues"] + " L394",
                 self.opt_dict["--n_smooth_hw"] + " 1",
                 self.opt_dict["--table_ext"] + " xlsx",
-                self.opt_dict["--BW_uniprot"] + " %s" % self.BW_file,
+                self.opt_dict["--GPCR_uniprot"] + " %s" % self.BW_file,
                 self.opt_dict["--CGN_PDB"] + " %s" % self.CGN_file,
                 ]
     @property
@@ -94,7 +94,7 @@ class ExamplesCLTs(object):
         return ["mdc_sites.py ",
                 "%s %s" % (self.pdb, self.xtc),
                 " --site_files %s" % self.sitefile,
-                " --BW_uniprot %s" % self.BW_file,
+                " --GPCR_uniprot %s" % self.BW_file,
                 " --CGN_PDB %s" % self.CGN_file
                 ]
 
@@ -105,7 +105,7 @@ class ExamplesCLTs(object):
                 " --frag_idxs_group_1 0-2",
                 " --frag_idxs_group_2 3",
                 " --ctc_control 20",
-                " --BW_uniprot %s" % self.BW_file,
+                " --GPCR_uniprot %s" % self.BW_file,
                 " --CGN_PDB %s" % self.CGN_file,
                 ]
     @property
@@ -160,7 +160,7 @@ class ExamplesCLTs(object):
         return ["mdc_residues.py ",
                 "P0G,380-394,3.5* "
                 "%s"% (self.pdb),
-                " --BW_uniprot %s" % self.BW_file,
+                " --GPCR_uniprot %s" % self.BW_file,
                 "-ni"]
 
     @property
@@ -237,7 +237,7 @@ def ContactGroupL394(**kwargs):
                     example_kwargs = {"topology": _path.basename(filenames.top_pdb),
                                       "n_smooth_hw": 1,
                                       "figures": False,
-                                      "BW_uniprot": _path.basename(filenames.adrb2_human_xlsx),
+                                      "GPCR_uniprot": _path.basename(filenames.adrb2_human_xlsx),
                                       "CGN_PDB": _path.basename(filenames.CGN_3SN6),
                                       "accept_guess": True}
                     for key, val in kwargs.items():
