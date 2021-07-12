@@ -6,7 +6,7 @@ from unittest import skip
 from mdciao.plots.plots import _colorstring
 from mdciao.examples import filenames as test_filenames
 import mdtraj as md
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, lines as mpllines
 from mdciao.flare import circle_plot_residues
 
 
@@ -366,6 +366,7 @@ class TestMyBezier(TestCase):
     def test_plot(self):
         mybz = _utils.create_flare_bezier_2(np.array([[0, -1], [1, 0]]), [0, 0])
         mybz.plot(50)
+        assert isinstance(mybz.Line2D, mpllines.Line2D)
 
 
 class Test_parse_residue_and_fragments(TestCase):
