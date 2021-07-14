@@ -566,7 +566,7 @@ def add_residue_labels(iax,
         keyed with residue idxs
         Typical cases could be a mutated residue that you want
         to show as R38A instead of just A38, or use
-        e.g. GPCR or CGN consensus labels.
+        e.g. BW or CGN consensus labels.
     highlight_residxs : iterable of ints, default is None
         In case you don't want to construct a whole
         color list for :obj:`colors`, you can simply

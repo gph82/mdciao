@@ -30,7 +30,7 @@ Functions
 
    guess_nomenclature_fragments
    PDB_finder
-   GPCR_finder
+   BW_finder
    md_load_rscb
 
 
@@ -41,7 +41,7 @@ Classes
     :toctree: generated
 
     LabelerConsensus
-    LabelerGPCR
+    LabelerBW
     LabelerCGN
 
 .. _`references below`:

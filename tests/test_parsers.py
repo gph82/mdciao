@@ -8,7 +8,7 @@ class TestParsersRun(unittest.TestCase):
     def test_all(self):
         parsers.parser_for_contact_map()
         parsers.parser_for_frag_overview()
-        parsers.parser_for_GPCR_overview()
+        parsers.parser_for_BW_overview()
         parsers.parser_for_densities()
         parsers.parser_for_CGN_overview()
         parsers.parser_for_rn()
