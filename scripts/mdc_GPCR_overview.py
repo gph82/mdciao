@@ -22,8 +22,8 @@
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
 
-from mdciao.parsers import parser_for_BW_overview
+from mdciao.parsers import parser_for_GPCR_overview
 from mdciao.cli.cli import _fragment_overview
-parser = parser_for_BW_overview()
+parser = parser_for_GPCR_overview()
 a  = parser.parse_args()
-_fragment_overview(a,"BW")
+_fragment_overview(a,"GPCR")

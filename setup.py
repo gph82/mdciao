@@ -80,7 +80,7 @@ setup(
              'scripts/mdc_sites.py',
              'scripts/mdc_interface.py',
              'scripts/mdc_fragments.py',
-             'scripts/mdc_BW_overview.py',
+             'scripts/mdc_GPCR_overview.py',
              'scripts/mdc_CGN_overview.py',
              'scripts/mdc_compare.py',
              'scripts/mdc_examples.py',

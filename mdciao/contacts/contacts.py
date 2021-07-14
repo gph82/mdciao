@@ -600,7 +600,7 @@ class Residues(object):
 
     @property
     def consensus_labels(self):
-        """Labels derived from BW, CGN or other type
+        """Labels derived from GPCR, CGN or other type
         of consensus nomenclature. They were parsed
         at initialization
 
@@ -1497,7 +1497,7 @@ class ContactPair(object):
         ----------
         AA_format : str, default is "short"
             Amino-acid format for the label, can
-            be "short" (A35@BW4.50), "long" (ALA35@4.50),
+            be "short" (A35@4.50), "long" (ALA35@4.50),
             or "just_consensus" (4.50)
         split_label : bool, default is True
             Split the labels so that stacked contact labels
@@ -4792,7 +4792,7 @@ class GroupOfInterfaces(object):
                         _interface_labels_consensus[ii].append(jlab)
         #print(_interface_labels_consensus)
         # TODO this re-ordering for proper matching
-        #_interface_labels_consensus[0] = _mdcn.sort_BW_consensus_labels(_interface_labels_consensus[0])
+        #_interface_labels_consensus[0] = _mdcn.sort_GPCR_consensus_labels(_interface_labels_consensus[0])
         #_interface_labels_consensus[1] = _mdcn.sort_CGN_consensus_labels(_interface_labels_consensus[1])
         return _interface_labels_consensus
 

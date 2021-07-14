@@ -10,7 +10,7 @@ The best way to find out about all of ``mdciao``'s command-line tools is to use 
  command-line-tools that ship with mdciao.
 
  Available command line tools are:
-  * mdc_BW_overview.py
+  * mdc_GPCR_overview.py
   * mdc_CGN_overview.py
   * mdc_compare.py
   * mdc_fragments.py
@@ -37,7 +37,7 @@ What these tools do is:
    Analyse a specific set of residue-residue contacts using a distance cutoff. Example in :numref:`sites_freq`.
 * mdc_fragments
    Break a molecular topology into fragments using different heuristics. Example :ref:`here <fragmentation_HL>`.
-* mdc_BW_overview
+* mdc_GPCR_overview
    Map a Ballesteros-Weinstein (BW)-type nomenclature on an input topology. Example :ref:`here <consensus_HL>`.
 * mdc_CGN_overview
    Map a Common G-alpha Numbering (CGN)-type nomenclature on an input topology Example :ref:`here <consensus_HL>`.
