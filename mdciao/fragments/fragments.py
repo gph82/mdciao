@@ -657,12 +657,12 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
 
     Example
     -------
-    Let's assume the BW-nomenclature tells us that TM6 is [0,1,2,3]
+    Let's assume the GCPR-nomenclature tells us that TM6 is [0,1,2,3]
     and we have already divided the topology into fragments
     using :obj:`get_fragments`, with method "resSeq+", meaning
     we have fragments for the receptor, Ga,Gb,Gg
 
-    The purpose is to check whether the BW-fragmentation is
+    The purpose is to check whether the GPCR-fragmentation is
     contained in the previous fragmentation:
     * [0,1,2,3] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
     is not a clash, bc TM6 is contained in fragments[0]

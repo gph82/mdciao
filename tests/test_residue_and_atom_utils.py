@@ -301,7 +301,7 @@ class Test_residues_from_descriptors(unittest.TestCase):
 
     def test_extra_dicts(self):
         residues = ["GLU30", "TRP32"]
-        consensus_dicts = {"BW": {0: "3.50"},
+        consensus_dicts = {"GPCR": {0: "3.50"},
                            "CGN": {2: "CGNt"}}
         residue_and_atom.residues_from_descriptors(residues, self.by_bonds_geom2frags,
                                                    self.geom2frags.top,
@@ -454,15 +454,15 @@ class Test_residue_line(unittest.TestCase):
         top = md.load(test_filenames.top_pdb).top
         res = top.residue(861)
         istr = residue_and_atom.residue_line("0.0", res, 3,
-                                             consensus_maps={"BW": {861: "3.50"}},
+                                             consensus_maps={"GPCR": {861: "3.50"}},
                                              fragment_names=["frag0","frag1","frag2","frag3"])
-        assert istr=="0.0)       ARG131 in fragment 3 (frag3) with residue index 861 (BW: 3.50)"
+        assert istr=="0.0)       ARG131 in fragment 3 (frag3) with residue index 861 (GPCR: 3.50)"
 
     def test_table(self):
         top = md.load(test_filenames.top_pdb).top
         res = top.residue(861)
         istr = residue_and_atom.residue_line("0.0", res, 3,
-                                             consensus_maps={"BW": {861: "3.50"}},
+                                             consensus_maps={"GPCR": {861: "3.50"}},
                                              fragment_names=["frag0", "frag1", "frag2", "frag3"],
                                              table=True)
         assert istr == "    ARG131         861           3        131       3.50       None"
