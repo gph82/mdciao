@@ -1993,7 +1993,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
     if midstring is not None:
         print(midstring)
 
-    header = '%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split()))
+    header = '%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq GPCR  CGN".split()))
     print(header)
     for idx in res_idxs_list:
         print(_mdcu.residue_and_atom.residue_line("", top.residue(idx),
@@ -2023,7 +2023,7 @@ def residue_selection(expression,
     GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
-        If `mdciao.nomenclature.Labeler_BW`, use this object directly
+        If :obj:`~mdciao.nomenclature.LabelerGPCR`, use this object directly
         See :obj:`mdciao.nomenclature` for more info and references.
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",

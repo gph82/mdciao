@@ -489,7 +489,7 @@ def residue_line(item_desc, residue, frag_idx,
         An informative string about this residue, that
         can be used to dis-ambiguate via the unique
         item descriptor, e.g:
-        3.1)       GLU122 in fragment 3 with residue index 852 (BW: 3.41)
+        3.1)       GLU122 in fragment 3 with residue index 852 (: 3.41)
 
     """
     res_idx = residue.index
@@ -589,7 +589,7 @@ def find_AA(AA_pattern, top,
     as :obj:`extra_columns` will be
     matched as explained below, e.g.
     "3.50" to get one residue in
-    the BW-nomenclature or "3.*"
+    the GPCR-nomenclature or "3.*"
     to get the whole TM-helix 3
 
     The examples use '*' as wildcard,
