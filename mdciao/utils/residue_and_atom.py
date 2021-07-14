@@ -56,7 +56,7 @@ def residues_from_descriptors(residue_descriptors,
         with residue indices and valued with additional residue names.
         Higher-level keys can be whatever. Use case is e.g. if "R131"
         needs to be disambiguated bc. it pops up in many fragments.
-        You can pass {"BW":{895:"3.50", ...} here and that label
+        You can pass {"GPCR":{895:"3.50", ...} here and that label
         will be displayed next to the residue. :obj:`mdciao.cli`
         methods use this.
     just_inform : bool, default is False
@@ -476,7 +476,7 @@ def residue_line(item_desc, residue, frag_idx,
         with residue indices and valued with additional residue names.
         Higher-level keys can be whatever. Use case is e.g. if "R131"
         needs to be disambiguated bc. it pops up in many fragments.
-        You can pass {"BW":{895:"3.50", ...} here and that label
+        You can pass {"GPCR":{895:"3.50", ...} here and that label
         will be displayed next to the residue.
     table : bool, default is False
         Assume a header has been aready printed
@@ -489,7 +489,7 @@ def residue_line(item_desc, residue, frag_idx,
         An informative string about this residue, that
         can be used to dis-ambiguate via the unique
         item descriptor, e.g:
-        3.1)       GLU122 in fragment 3 with residue index 852 (BW: 3.41)
+        3.1)       GLU122 in fragment 3 with residue index 852 (: 3.41)
 
     """
     res_idx = residue.index
@@ -514,7 +514,7 @@ def residue_line(item_desc, residue, frag_idx,
     else:
         add_dicts = []
         if consensus_maps is not None:
-            for key in ["BW","CGN"]:
+            for key in ["GPCR","CGN"]:
                 add_dicts.append(_try_double_indexing(consensus_maps, key, res_idx))
 
         istr = '%10s  %10u  %10u %10u %10s %10s' % (residue, res_idx,
@@ -589,7 +589,7 @@ def find_AA(AA_pattern, top,
     as :obj:`extra_columns` will be
     matched as explained below, e.g.
     "3.50" to get one residue in
-    the BW-nomenclature or "3.*"
+    the GPCR-nomenclature or "3.*"
     to get the whole TM-helix 3
 
     The examples use '*' as wildcard,
@@ -703,7 +703,7 @@ def get_SS(SS,top=None):
     elif isinstance(SS, str):
         try:
             ss_array = _md.compute_dssp(_md.load(SS, frame=0), simplified=True)[0]
-        except ValueError as e:
+        except (OSError, ValueError) as e:
             ss_array = _md.compute_dssp(_md.load(SS, top=top, frame=0), simplified=True)[0]
     elif SS is True:
         from_tuple = (0, 0, 0)

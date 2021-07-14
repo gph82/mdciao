@@ -40,27 +40,27 @@ import requests as _requests
 
 from natsort import natsorted as _natsorted
 
-def table2BW_by_AAcode(tablefile,
-                       keep_AA_code=True,
-                       return_fragments=False,
-                       ):
+def table2GPCR_by_AAcode(tablefile,
+                         keep_AA_code=True,
+                         return_fragments=False,
+                         ):
     r"""
-    Reads an excel table and returns a dictionary AAcodes so that e.g. self.AA2BW[R131] -> '3.50'
+    Reads an excel table and returns a dictionary AAcodes so that e.g. AAcode2GPCR["R131"] -> '3.50'
 
     Parameters
     ----------
     tablefile : xlsx file or pandas dataframe
-        Ballesteros-Weinstein nomenclature file in excel format, optional
+        GPCR generic residue numbering in excel format
     keep_AA_code : boolean, default is True
         If True then output dictionary will have key of the form "Q26" else "26".
     return_fragments : boolean, default is True
-        return a dictionary of fragments keyed by BW-fragment, e.g. "TM1"
+        return a dictionary of fragments keyed by GPCR-fragment, e.g. "TM1"
 
     Returns
     -------
 
-    AA2BW : dictionary
-        Dictionary with residues as key and their corresponding BW notation.
+    AAcode2GPCR : dictionary
+        Dictionary with residues as key and their corresponding GPCR notation.
 
     fragments : dict (optional)
         if return_fragments=True, a dictionary containing the fragments according to the excel file
@@ -71,10 +71,10 @@ def table2BW_by_AAcode(tablefile,
     else:
         df = tablefile
 
-    # TODO some overlap here with with _BW_web_lookup of BW_finder
+    # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
-    AAcode2BW = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
+    AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
     for key, AArS in df[["protein_segment", "AAresSeq"]].values:
@@ -84,12 +84,12 @@ def table2BW_by_AAcode(tablefile,
     if keep_AA_code:
         pass
     else:
-        AAcode2BW =  {int(key[1:]):val for key, val in AAcode2BW.items()}
+        AAcode2GPCR =  {int(key[1:]):val for key, val in AAcode2GPCR.items()}
 
     if return_fragments:
-        return AAcode2BW, fragments
+        return AAcode2GPCR, fragments
     else:
-        return AAcode2BW
+        return AAcode2GPCR
 
 def PDB_finder(PDB_code, local_path='.',
                try_web_lookup=True,
@@ -280,13 +280,13 @@ def _finder_writer(full_local_path,
 
 
 # TODO consider making private?
-def BW_finder(BW_descriptor,
-              format = "%s.xlsx",
-              local_path=".",
-              try_web_lookup=True,
-              verbose=True,
-              dont_fail=False,
-              write_to_disk=False):
+def GPCR_finder(GPCR_descriptor,
+                format = "%s.xlsx",
+                local_path=".",
+                try_web_lookup=True,
+                verbose=True,
+                dont_fail=False,
+                write_to_disk=False):
     r"""
     Return a :obj:`~pandas.DataFrame` containing
     a `Ballesteros-Weinstein-Numbering (BW)
@@ -300,23 +300,23 @@ def BW_finder(BW_descriptor,
 
     Parameters
     ----------
-    BW_descriptor : str
+    GPCR_descriptor : str
         Anything that can be used to find the needed
-        BW information, locally or online:
+        GPCR information, locally or online:
          * a uniprot descriptor, e.g. `adrb2_human`
-         * a full local filename, e.g. `my_BW.txt` or
-          `path/to/my_BW.txt`
+         * a full local filename, e.g. `my_GPCR_consensus.txt` or
+          `path/to/my_GPCR_consensus.txt`
          * the "basename" filename, `adrb2_human` if
           `adrb2_human.xlsx` exists on :obj:`local_path`
           (see below :obj:`format`)
         All these ways of doing the same thing (descriptor, basename, fullname,
         localpath, fullpath) are for compatibility with other methods.
     format : str, default is "%s.xlsx".
-        If :obj:`BW_descriptor` is not readable directly,
-        try to find "BW_descriptor.xlsx" locally on :obj:`local_path`
+        If :obj:`GPCR_descriptor` is not readable directly,
+        try to find "GPCR_descriptor.xlsx" locally on :obj:`local_path`
     local_path : str, default is "."
-        If :obj:`BW_descriptor` doesn't find the file locally,
-        then try "local_path/BW_descriptor" before trying online
+        If :obj:`GPCR_descriptor` doesn't find the file locally,
+        then try "local_path/GPCR_descriptor" before trying online
     try_web_lookup : boolean, default is True.
         If local lookup variants fail, go online, else Fail
     verbose : bool, default is False
@@ -326,12 +326,12 @@ def BW_finder(BW_descriptor,
         be returned. By default the method raises
         an exception if it could not find the info.
     write_to_disk : boolean, default is False
-        Save the found BW info locally.
+        Save the found GPCR consensus nomenclature info locally.
 
     Returns
     -------
     df : DataFrame or None
-        The BW information as :obj:`~pandas.DataFrame`
+        The GPCR consenus nomenclature information as :obj:`~pandas.DataFrame`
 
     References
     ----------
@@ -349,20 +349,20 @@ def BW_finder(BW_descriptor,
 
     """
 
-    if _path.exists(BW_descriptor):
-        fullpath = BW_descriptor
+    if _path.exists(GPCR_descriptor):
+        fullpath = GPCR_descriptor
         try_web_lookup=False
     else:
-        xlsxname = format % BW_descriptor
+        xlsxname = format % GPCR_descriptor
         fullpath = _path.join(local_path, xlsxname)
     GPCRmd = "https://gpcrdb.org/services/residues/extended"
-    url = "%s/%s" % (GPCRmd, BW_descriptor)
+    url = "%s/%s" % (GPCRmd, GPCR_descriptor)
 
     local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
                                                         engine="openpyxl",
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
                                                         converters={"BW": str}).replace({_np.nan: None},)
-    web_looukup_lambda = lambda url : _BW_web_lookup(url, verbose=verbose)
+    web_looukup_lambda = lambda url : _GPCR_web_lookup(url, verbose=verbose)
     print("Using BW-nomenclature, please cite the following 3rd party publications:\n"
           " * https://doi.org/10.1016/S1043-9471(05)80049-7 (Weinstein et al 1995)\n"
           " * https://doi.org/10.1093/nar/gkx1109 (Gloriam et al 2018)")
@@ -373,10 +373,10 @@ def BW_finder(BW_descriptor,
                           dont_fail=dont_fail,
                           write_to_disk=write_to_disk)
 
-def _BW_web_lookup(url, verbose=True,
-                   timeout=5):
+def _GPCR_web_lookup(url, verbose=True,
+                     timeout=5):
     r"""
-    Lookup this url for a BW-notation
+    Lookup this url for a GPCR-notation
     return a ValueError if the lookup retuns an empty json
     Parameters
     ----------
@@ -471,7 +471,13 @@ class LabelerConsensus(object):
     """Parent class to manage consensus notations
 
     At the moment child classe are
-     * :obj:`LabelerBW` for Ballesteros-Weinstein (BW)
+     * :obj:`LabelerGPCR` for GPCR-notation, this can be:
+       * structure based schemes (Gloriam et al)
+       * sequence based schemes
+         * Class-A: Ballesteros-Weinstein
+         * Class-B: Wootten
+         * Class-C: Pin
+         * Class-F: Wang
      * :obj:`LabelerCGN` for Common-Gprotein-nomenclature (CGN)
 
     The consensus labels are abbreviated to 'conlab' throughout
@@ -538,8 +544,8 @@ class LabelerConsensus(object):
     @property
     def AA2conlab(self):
         r""" Dictionary with short AA-codes as keys, so that e.g.
-            * self.AA2BW["R131"] -> '3.50'
-            * self.conlab2AA["R201"] -> "G.hfs2.2" """
+            * self.AA2conlab["R131"] -> '3.50'
+            * self.AA2conlab["R201"] -> "G.hfs2.2" """
 
 
         return self._AA2conlab
@@ -1040,7 +1046,7 @@ class LabelerCGN(LabelerConsensus):
                                                       try_web_lookup=try_web_lookup,
                                                       verbose=verbose,
                                                       write_to_disk=write_to_disk)
-        # The title of the column with this field varies between CGN and BW
+        # The title of the column with this field varies between CGN and GPCR
         AAresSeq_key = [key for key in list(self.dataframe.keys()) if key.lower() not in [self._nomenclature_key.lower(), "Sort number".lower()]]
         assert len(AAresSeq_key)==1
         self._AAresSeq_key = AAresSeq_key
@@ -1080,8 +1086,15 @@ class LabelerCGN(LabelerConsensus):
         return defs
 
 
-class LabelerBW(LabelerConsensus):
-    """Manipulate Ballesteros-Weinstein notation
+class LabelerGPCR(LabelerConsensus):
+    """Manipulate GPCR notation. Different schemes are possible:
+
+     * structure based schemes (Gloriam et al)
+     * sequence based schemes
+      * Class-A: Ballesteros-Weinstein
+      * Class-B: Wootten
+      * Class-C: Pin
+      * Class-F: Wang
 
     """
     def __init__(self, uniprot_name,
@@ -1098,7 +1111,7 @@ class LabelerBW(LabelerConsensus):
         ----------
         uniprot_name : str
             Descriptor by which to find the nomenclature,
-            it gets directly passed to :obj:`BW_finder`
+            it gets directly passed to :obj:`GPCR_finder`
             Can be several anything that can be used to try and find,
             the needed information, locally or online:
             * a uniprot descriptor, e.g. `adrb2_human`
@@ -1115,16 +1128,16 @@ class LabelerBW(LabelerConsensus):
         self._nomenclature_key = "BW"
         # TODO now that the finder call is the same we could
         # avoid cde repetition here
-        self._dataframe, self._tablefile = BW_finder(uniprot_name,
-                                            format=format,
-                                            local_path=local_path,
-                                            try_web_lookup=try_web_lookup,
-                                            verbose=verbose,
-                                            write_to_disk=write_to_disk
-                                       )
-        # The title of the column with this field varies between CGN and BW
+        self._dataframe, self._tablefile = GPCR_finder(uniprot_name,
+                                                       format=format,
+                                                       local_path=local_path,
+                                                       try_web_lookup=try_web_lookup,
+                                                       verbose=verbose,
+                                                       write_to_disk=write_to_disk
+                                                       )
+        # The title of the column with this field varies between CGN and GPCR
         self._AAresSeq_key = "AAresSeq"
-        self._AA2conlab, self._fragments = table2BW_by_AAcode(self.dataframe, return_fragments=True)
+        self._AA2conlab, self._fragments = table2GPCR_by_AAcode(self.dataframe, return_fragments=True)
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
@@ -1264,157 +1277,10 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
                 print()
     return consensus_list
 
-'''
-def _fill_BW_gaps(consensus_list, top, verbose=False):
-    r""" Try to fill BW consensus nomenclature gaps based on adjacent labels
-
-    The idea is to fill gaps of the sort:
-     * ['1.25', '1.26', None, '1.28']
-      to
-     * ['1.25', '1.26', '1.27, '1.28']
-
-    The size of the gap is variable, it just has to match the length of
-    the consensus labels, i.e. 28-26=1 which is the number of "None" the
-    input list had
-
-    Parameters
-    ----------
-    consensus_list: list
-        List of length top.n_residues with the original consensus labels
-        Supossedly, it contains some "None" entries inside sub-domains
-    top :
-        :py:class:`~mdtraj.Topology` object
-    verbose : boolean, default is False
-
-    Returns
-    -------
-    consensus_list: list
-        The same as the input :obj:`consensus_list` with guessed missing entries
-    """
-
-    defs = _map2defs(consensus_list)
-    for key, val in defs.items():
-
-        # Identify problem cases
-        if len(val)!=val[-1]-val[0]+1:
-            if verbose:
-                print(key)
-
-            # Initialize residue_idxs_wo_consensus_labels control variables
-            offset = int(consensus_list[val[0]].split(".")[-1])
-            consensus_kept=True
-            suggestions = []
-            residue_idxs_wo_consensus_labels=[]
-
-            # Check whether we can predict the consensus labels correctly
-            for ii in _np.arange(val[0],val[-1]+1):
-                suggestions.append('%s.%u'%(key,offset))
-                if consensus_list[ii] is None:
-                    residue_idxs_wo_consensus_labels.append(ii)
-                else: # meaning, we have a consensus label, check it against suggestion
-                    consensus_kept *= suggestions[-1]==consensus_list[ii]
-                if verbose:
-                    print(ii, top.residue(ii),consensus_list[ii], suggestions[-1], consensus_kept)
-                offset += 1
-            if verbose:
-                print()
-            if consensus_kept:
-                if verbose:
-                    print("The consensus was kept, I am relabelling these:")
-                for idx, res_idx in enumerate(_np.arange(val[0],val[-1]+1)):
-                    if res_idx in residue_idxs_wo_consensus_labels:
-                        consensus_list[res_idx] = suggestions[idx]
-                        if verbose:
-                            print(suggestions[idx])
-            if verbose:
-                print()
-    return consensus_list
-'''
-
-'''
-def top2CGN_by_AAcode(top, ref_CGN_tf,
-                      restrict_to_residxs=None,
-                      verbose=False):
-    """
-    Returns a dictionary of CGN (Common G-protein Nomenclature) labelling for each residue.
-    The keys are zero-indexed residue indices
-
-    TODO if the length of the dictionary is always top.n_residues, consider simply returning a list
-
-    Parameters
-    ----------
-    top :
-        :py:class:`~mdtraj.Topology` object
-    ref_CGN_tf :
-        :class:`LabelerCGN` object
-    restrict_to_residxs: list, optional, default is None
-        residue indexes for which the CGN needs to be found out. Default behaviour is for all
-        residues in the :obj:`top`.
-
-    Returns
-    -------
-    CGN_list : list
-        list of length obj:`top.n_residues` containing the CGN numbering (if found), None otherwise
-
-    """
-
-    if restrict_to_residxs is None:
-        restrict_to_residxs = [residue.index for residue in top.residues]
-
-
-    seq = ''.join([str(top.residue(ii).code).replace("None", "X") for ii in restrict_to_residxs])
-
-
-    # As complicated as this seems, it's just cosmetics for the alignment dictionaries
-    AA_code_seq_0_key = "AA_input"
-    full_resname_seq_0_key = 'resname_input'
-    resSeq_seq_0_key = "resSeq_input"
-    AA_code_seq_1_key = 'AA_ref(%s)' % ref_CGN_tf.ref_PDB
-    idx_seq_1_key = 'resSeq_ref(%s)' % ref_CGN_tf.ref_PDB
-    idx_seq_0_key = 'idx_input'
-    for alignmt in my_bioalign(seq, ref_CGN_tf.seq)[:1]:
-        #TODO this fucntion has been changed and this transformer will not work anymore
-        # major bug (still?)
-
-        list_of_alignment_dicts = _alignment_result_to_list_of_dicts(alignmt, top,
-                                                                     restrict_to_residxs,
-                                                                     ref_CGN_tf.seq_idxs,
-                                                                     AA_code_seq_0_key=AA_code_seq_0_key,
-                                                                     full_resname_seq_0_key=full_resname_seq_0_key,
-                                                                     resSeq_seq_0_key=resSeq_seq_0_key,
-                                                                     AA_code_seq_1_key=AA_code_seq_1_key,
-                                                                     idx_seq_1_key=idx_seq_1_key,
-                                                                     idx_seq_0_key=idx_seq_0_key,
-                                                                     )
-
-        if verbose:
-            import pandas as pd
-            from .sequence_utils import print_verbose_dataframe
-            print_verbose_dataframe(pd.DataFrame.from_dict(list_of_alignment_dicts))
-            input("This is the alignment. Hit enter to continue")
-
-        # TODO learn to tho dis with pandas
-        list_out = [None for __ in top.residues]
-        for idict in list_of_alignment_dicts:
-            if idict["match"]==True:
-                res_idx_input = restrict_to_residxs[idict[idx_seq_0_key]]
-                match_name = '%s%s'%(idict[AA_code_seq_1_key],idict[idx_seq_1_key])
-                iCGN = ref_CGN_tf.AA2CGN[match_name]
-                if verbose:
-                    print(res_idx_input,"res_idx_input",match_name, iCGN)
-                list_out[res_idx_input]=iCGN
-
-        if verbose:
-            for idx, iCGN in enumerate(list_out):
-                print(idx, iCGN, top.residue(idx))
-            input("This is the actual return value. Hit enter to continue")
-    return list_out
-'''
-
 def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     """
     Choose the best consensus label for a given :obj:`idx` in case
-    there are more than one consensus(es) at play (e.g. BW and CGN).
+    there are more than one consensus(es) at play (e.g. GPCR and CGN).
 
     Wil raise error if both dictionaries have a consensus label for
     the same index (unsual case)
@@ -1442,169 +1308,6 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
         return good_label[0]
     except IndexError:
         return no_key
-
-'''
-def csv_table2TMdefs_res_idxs(itop, keep_first_resSeq=True, complete_loops=True,
-                              tablefile=None,
-                              reorder_by_AA_names=False):
-    """
-
-    Parameters
-    ----------
-    itop
-    keep_first_resSeq
-    complete_loops
-    tablefile
-    reorder_by_AA_names
-
-    Returns
-    -------
-
-    """
-    # TODO pass this directly as kwargs?
-    kwargs = {}
-    if tablefile is not None:
-        kwargs = {"tablefile": tablefile}
-    segment_resSeq_dict = table2TMdefs_resSeq(**kwargs)
-    resseq_list = [rr.resSeq for rr in itop.residues]
-    if not keep_first_resSeq:
-        raise NotImplementedError
-
-    segment_dict = {}
-    first_one=True
-    for key,val in segment_resSeq_dict.items():
-        print(key,val)
-        res_idxs = [[ii for ii, iresSeq in enumerate(resseq_list) if iresSeq==ival][0] for ival in val]
-        if not res_idxs[0]<res_idxs[1] and first_one:
-            res_idxs[0]=0
-            first_one = False
-        segment_dict[key]=res_idxs
-
-    if complete_loops:
-        segment_dict = add_loop_definitions_to_TM_residx_dict(segment_dict)
-        #for key, val in segment_dict.items():
-            #print('%4s %s'%(key, val))
-
-    if reorder_by_AA_names:
-        _segment_dict = {}
-        for iseg_key, (ilim, jlim) in segment_dict.items():
-            for ii in _np.arange(ilim, jlim+1):
-                _segment_dict[_shorten_AA(itop.residue(ii))]=iseg_key
-        segment_dict = _segment_dict
-    return segment_dict
-'''
-
-'''
-def add_loop_definitions_to_TM_residx_dict(segment_dict, not_present=["ICL3"], start_with='ICL'):
-    """
-    Adds the intra- and extracellular loop definitions on the existing TM residue index dictionary.
-    Example - If there are TM1-TM7 definitions with there corresponding indexes then the output will be-
-        *ICL1 is added between TM1 and TM2
-        *ECL1 is added between TM2 and TM3
-        *ICL2 is added between TM3 and TM4
-        *ECL2 is added between TM4 and TM5
-        *ECL3 is added between TM6 and TM7
-
-    Note- "ICL3" is not being explicitly added
-
-    Parameters
-    ----------
-    segment_dict : dict
-        TM definition as the keys and the residue idx list as values of the dictionary
-    not_present : list
-        definitions which should not be added to the existing TM definitions
-    start_with : str
-        only the string part the first definition that should be added to the existing TM definitions
-
-    Returns
-    -------
-    dict
-    updated dictionary with the newly added loop definitions as keys and the corresponding residue index list,
-    as values. The original key-value pairs of the TM definition remains intact.
-
-    """
-    loop_idxs={"ICL":1,"ECL":1}
-    loop_type=start_with
-    keys_out = []
-    for ii in range(1,7):
-        key1, key2 = 'TM%u'%  (ii + 0), 'TM%u'%  (ii + 1)
-        loop_key = '%s%s'%(loop_type, loop_idxs[loop_type])
-        if loop_key in not_present:
-            keys_to_append = [key1, key2]
-        else:
-            segment_dict[loop_key] = [segment_dict[key1][-1] + 1,
-                                       segment_dict[key2][0] - 1]
-            #print(loop_key, segment_dict[loop_key])
-            keys_to_append = [key1, loop_key, key2]
-        keys_out = keys_out+[key for key in keys_to_append if key not in keys_out]
-
-        loop_idxs[loop_type] +=1
-        if loop_type=='ICL':
-            loop_type='ECL'
-        elif loop_type=='ECL':
-            loop_type='ICL'
-        else:
-            raise Exception
-    out_dict = {key : segment_dict[key] for key in keys_out}
-    if 'H8' in segment_dict:
-        out_dict.update({'H8':segment_dict["H8"]})
-    return out_dict
-'''
-
-'''
-def table2TMdefs_resSeq(tablefile="GPCRmd_B2AR_nomenclature.xlsx",
-                        #modifications={"S262":"F264"},
-                        reduce_to_resSeq=True):
-    """
-    Returns a dictionary with the TM number as key and their corresponding amino acid resSeq range as values,
-    based on the BW nomenclature excel file
-
-    Parameters
-    ----------
-    tablefile : xlsx file
-        GPCRmd_B2AR nomenclature file in excel format, optional
-    reduce_to_resSeq
-
-    Returns
-    -------
-    dictionary
-    with the TM definitions as the keys and the first and the last amino acid resSeq number as values.
-    example- if amino acid Q26 corresponds to TM1, the output will be {'TM1' : [26, 26]}
-
-    """
-
-    all_defs, names = table2BW_by_AAcode(tablefile,
-                                         #modifications=modifications,
-                                         return_defs=True)
-
-    # First pass
-    curr_key = 'None'
-    keyvals = list(all_defs.items())
-    breaks = []
-    for ii, (key, val) in enumerate(keyvals):
-        if int(val[0]) != curr_key:
-            #print(key, val)
-            curr_key = int(val[0])
-            breaks.append(ii)
-            # print(curr_key)
-            # input()
-
-    AA_dict = {}
-    for idef, ii, ff in zip(names, breaks[:-1], breaks[1:]):
-        #print(idef, keyvals[ii], keyvals[pattern - 1])
-        AA_dict[idef]=[keyvals[ii][0], keyvals[ff-1][0]]
-    #print(names[-1], keyvals[pattern], keyvals[-1])
-    AA_dict[names[-1]] = [keyvals[ff][0], keyvals[-1][0]]
-    #print(AA_dict)
-
-    # On dictionary: just-keep the resSeq
-    if reduce_to_resSeq:
-        AA_dict = {key: [''.join([ii for ii in ival if ii.isnumeric()]) for ival in val] for key, val in
-                   AA_dict.items()}
-        AA_dict = {key: [int(ival) for ival in val] for key, val in
-                   AA_dict.items()}
-    return AA_dict
-'''
 
 def guess_nomenclature_fragments(refseq, top,
                                  fragments=None,
@@ -1743,8 +1446,8 @@ def _map2defs(cons_list, splitchar="."):
 
     Note:
     -----
-     The method will guess automagically whether this is a CGN or BW label by
-     checking the type of the first character (numeric is BW, 3.50, alpha is CGN, G.H5.1)
+     The method will guess automagically whether this is a CGN or GPCR label by
+     checking the type of the first character (numeric is GPCR, 3.50, alpha is CGN, G.H5.1)
 
     Parameters
     ----------
@@ -1765,7 +1468,7 @@ def _map2defs(cons_list, splitchar="."):
         if str(key).lower()!= "none":
             assert splitchar in _mdcu.lists.force_iterable(key), "Consensus keys have to have a '%s'-character" \
                                      " in them, but '%s' hasn't"%(splitchar, str(key))
-            if key[0].isnumeric(): # it means it is BW
+            if key[0].isnumeric(): # it means it is GPCR
                 new_key =key.split(splitchar)[0]
             elif key[0].isalpha(): # it means it CGN
                 new_key = '.'.join(key.split(splitchar)[:-1])
@@ -1777,7 +1480,7 @@ def _map2defs(cons_list, splitchar="."):
 def sort_consensus_labels(subset, sorted_superset,
                           append_diffset=True):
     r"""
-    Sort consensus labels (BW or CGN)
+    Sort consensus labels (GPCR or CGN)
 
 
     Parameters
@@ -1815,7 +1518,7 @@ def sort_consensus_labels(subset, sorted_superset,
 
     return labs_out
 
-def sort_BW_consensus_labels(labels, **kwargs):
+def sort_GPCR_consensus_labels(labels, **kwargs):
     return sort_consensus_labels(labels, _GPCR_fragments, **kwargs)
 def sort_CGN_consensus_labels(labels, **kwargs):
     return sort_consensus_labels(labels, _CGN_fragments, **kwargs)
@@ -1944,7 +1647,7 @@ def compatible_consensus_fragments(top,
     ----------
     top : :obj:`~mdtraj.Topology`
     existing_consensus_maps : list
-        List of individual consensus maps, typically BW
+        List of individual consensus maps, typically GPCR
         or CGN maps. These list are maps in this sense:
         cons_map[res_idx] = "3.50"
     CLs : list
