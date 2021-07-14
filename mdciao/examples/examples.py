@@ -77,14 +77,14 @@ class ExamplesCLTs(object):
         """
         self.xtc = filenames.traj_xtc
         self.pdb = filenames.top_pdb
-        self.BW_file = filenames.adrb2_human_xlsx
+        self.GPCRlabs_file = filenames.adrb2_human_xlsx
         self.CGN_file = filenames.CGN_3SN6
         self.sitefile = filenames.tip_json
         self.pdb_3SN6 = filenames.pdb_3SN6
 
         self.test = test
         cwd = _getcwd()
-        for fn in ["xtc", "pdb", "BW_file", "CGN_file", "sitefile", "pdb_3SN6"]:
+        for fn in ["xtc", "pdb", "GPCRlabs_file", "CGN_file", "sitefile", "pdb_3SN6"]:
             attr_val = getattr(self, fn)
             if self.test:
                 setattr(self, fn, _path.basename(attr_val))
@@ -102,7 +102,7 @@ class ExamplesCLTs(object):
                 self.opt_dict["--residues"] + " L394",
                 self.opt_dict["--n_smooth_hw"] + " 1",
                 self.opt_dict["--table_ext"] + " xlsx",
-                self.opt_dict["--GPCR_uniprot"] + " %s" % self.BW_file,
+                self.opt_dict["--GPCR_uniprot"] + " %s" % self.GPCRlabs_file,
                 self.opt_dict["--CGN_PDB"] + " %s" % self.CGN_file,
                 ]
     @property
@@ -110,7 +110,7 @@ class ExamplesCLTs(object):
         return ["mdc_sites.py ",
                 "%s %s" % (self.pdb, self.xtc),
                 " --site_files %s" % self.sitefile,
-                " --GPCR_uniprot %s" % self.BW_file,
+                " --GPCR_uniprot %s" % self.GPCRlabs_file,
                 " --CGN_PDB %s" % self.CGN_file
                 ]
 
@@ -121,13 +121,13 @@ class ExamplesCLTs(object):
                 " --frag_idxs_group_1 0-2",
                 " --frag_idxs_group_2 3",
                 " --ctc_control 20",
-                " --GPCR_uniprot %s" % self.BW_file,
+                " --GPCR_uniprot %s" % self.GPCRlabs_file,
                 " --CGN_PDB %s" % self.CGN_file,
                 ]
     @property
     def mdc_GPCR_overview(self):
         return ["mdc_GPCR_overview.py",
-                "%s" % self.BW_file,
+                "%s" % self.GPCRlabs_file,
                 "-t %s" % self.pdb]
 
     @property
@@ -176,7 +176,7 @@ class ExamplesCLTs(object):
         return ["mdc_residues.py ",
                 "P0G,380-394,3.5* "
                 "%s"% (self.pdb),
-                " --GPCR_uniprot %s" % self.BW_file,
+                " --GPCR_uniprot %s" % self.GPCRlabs_file,
                 "-ni"]
 
     @property
