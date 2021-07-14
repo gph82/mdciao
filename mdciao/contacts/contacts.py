@@ -1870,7 +1870,8 @@ class ContactGroup(object):
     #TODO create an extra interface-class? Unsure
     def __init__(self,
                  list_of_contact_objects,
-                 interface_residxs=None,
+                 interface_fragments=None,
+                 #interface_residxs=None,
                  top=None,
                  name=None,
                  neighbors_excluded=None,
@@ -1883,19 +1884,23 @@ class ContactGroup(object):
         ----------
         list_of_contact_objects : list
             list of :obj:`ContactPair` objects
-        interface_residxs : list of two iterables of indexes, default is None
+        interface_fragments : list of two iterables of indexes, default is None
             An interface is defined by two, non-overlapping
             groups of residue indices.
 
-            That's the only requirement. The input `interface_residxs`
-            need not have all or any of the residue indices in
-            :obj:`res_idxs_pairs`
+            This input doesn't need to have all
+            or any of the residue indices in
+            :obj:`res_idxs_pairs`.
 
-            The property :obj:`interface_residxs` groups
+            This input will be will be used to group
             the object's own residue idxs present in
-            :obj:`residxs_pairs` into the two groups of the interface.
+            :obj:`residxs_pairs` into the two groups
+            of the interface. These two groups
+            will be accessible through the
+            attribute self.interface_residxs
 
-            #TODO document what happens if there is no overlap
+            It will remain accessible through the object's
+            equally named the attribute self.interface_fragments
 
         top : :obj:`~mdtraj.Topology`, default is None
 
@@ -1914,7 +1919,7 @@ class ContactGroup(object):
         """
         self._contacts = list_of_contact_objects
         self._n_ctcs  = len(list_of_contact_objects)
-        self._interface_residxs = interface_residxs
+        self._interface_fragments = interface_fragments
         self._neighbors_excluded = neighbors_excluded
         self._is_interface = False
         self._is_neighborhood = False
@@ -2006,24 +2011,21 @@ class ContactGroup(object):
                 self._resname2cons[self._residx2resnameshort[ii]]=None
             """
 
-            if self._interface_residxs is not None:
+            if self._interface_fragments is not None:
                 # TODO prolly this is anti-pattern but I prefer these many sanity checks
-                assert len(self._interface_residxs)==2
-                intersect = list(set(self._interface_residxs[0]).intersection(self._interface_residxs[1]))
+                assert len(self._interface_fragments)==2
+                intersect = list(set(self._interface_fragments[0]).intersection(self._interface_fragments[1]))
                 assert len(intersect)==0, ("Some_residxs appear in both members of the interface %s, "
                                            "this is not possible"%intersect)
-                _np.testing.assert_equal(len(self._interface_residxs[0]),len(_np.unique(self._interface_residxs[0])))
-                _np.testing.assert_equal(len(self._interface_residxs[1]),len(_np.unique(self._interface_residxs[1])))
+                _np.testing.assert_equal(len(self._interface_fragments[0]),len(_np.unique(self._interface_fragments[0])))
+                _np.testing.assert_equal(len(self._interface_fragments[1]),len(_np.unique(self._interface_fragments[1])))
 
                 res = []
-                for ig in self._interface_residxs:
+                for ig in self._interface_fragments:
                     res.append(sorted(set(ig).intersection(_np.unique(self.res_idxs_pairs,
                                                                       ))))
                 # TODO can I benefit from not sorting these idxs
                 # later when using Group of Interfaces?
-
-                # TODO would it be wise to keep all idxs of the initialisaton
-                # to compare different interfaces?
 
                 # TODO Is the comparison throuh residxs robust enough, would it be
                 # better to compare consensus labels directly?
@@ -2033,6 +2035,7 @@ class ContactGroup(object):
                     self._is_interface = True
             else:
                 self._interface_residxs = [[],[]]
+                self._interface_fragments = [[],[]]
 
             if self.shared_anchor_residue_index is not None:
                 self._is_neighborhood=True
@@ -4118,13 +4121,25 @@ class ContactGroup(object):
 
         Wraps thinly around :obj:`mdciao.contacts.ContactPair.retop`
 
+        Note
+        ----
+        When re-topping interfaces, those residues of
+        the 'old' interface_fragments which are not
+        covered by the :obj:`mapping` will be missing
+        in the 'new' interface_fragments. However, the
+        new interface is guaranteed to have at least
+        all the 'new' interface_residxs mapped. So, as long
+        as the 'old' interface_residxs are covered by the mapping,
+        this isn't a problem (TODO except, perhaps, when plotting
+        flareplots using the spare="interface" option after re-topping)
+
         top : :obj:`~mdtraj.Topology`
             The new topology
         mapping : indexable (array, dict, list)
             A mapping of old residue indices
             to new residue indices. Usually,
             comes from aligning the old and the
-            new topology using :obj:`mdciao.utils.sequence.maptops`
+            new topology using :obj:`mdciao.utils.sequence.maptops`.
         deepcopy : bool, default is False
             Use :obj:`copy.deepcopy` on the attributes
             when creating the new :obj:`ContactPair`.
@@ -4134,12 +4149,12 @@ class ContactGroup(object):
         CG : :obj:`ContactGroup`
         """
         CPs = [CP.retop(top, mapping, deepcopy=deepcopy) for CP in self._contacts]
-        interface_residxs = None
-        if self.interface_residxs is not None:
-            interface_residxs = [[mapping[ii] for ii in iintf] for iintf in self.interface_residxs]
+        interface_fragments = None
+        if self.interface_fragments is not None:
+            interface_fragments = [[mapping[ii] for ii in iintf if ii in mapping.keys()] for iintf in self.interface_fragments]
 
         return ContactGroup(CPs,
-                            interface_residxs=interface_residxs,
+                            interface_fragments=interface_fragments,
                             top=top, name=self.name,
                             neighbors_excluded=self.neighbors_excluded,
                             max_cutoff_Ang=self.max_cutoff_Ang
@@ -4165,7 +4180,7 @@ class ContactGroup(object):
         r"""
         The residues split into the interface,
         in ascending order within each member
-        of the interface. Empty lists mean non residues were
+        of the interface. Empty lists mean no residues were
         found in the interface defined at initialization
 
         Returns
@@ -4173,6 +4188,10 @@ class ContactGroup(object):
 
         """
         return self._interface_residxs
+
+    @property
+    def interface_fragments(self):
+        return self._interface_fragments
 
 
     @property
@@ -4578,13 +4597,15 @@ class ContactGroup(object):
 
         """
         return ContactGroup([CP.copy() for CP in self._contacts],
-                            interface_residxs=self.interface_residxs,
+                            interface_fragments=self.interface_fragments,
                             top=self.top,
                             neighbors_excluded=self.neighbors_excluded,
                             max_cutoff_Ang=self.max_cutoff_Ang)
 
     def __hash__(self):
         return hash(tuple([hash(tuple([CP.__hash__() for CP in self._contacts])),
+                           hash(tuple(self.interface_fragments[0])),
+                           hash(tuple(self.interface_fragments[1])),
                            hash(tuple(self.interface_residxs[0])),
                            hash(tuple(self.interface_residxs[1])),
                            hash(self.top)]))

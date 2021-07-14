@@ -1384,7 +1384,7 @@ def interface(
             #print(ii, ifreq.round(2), cum_freq.round(2), (cum_freq.sum()/tot_freq*100).round(2))
 
     ctc_grp_intf = _mdcctcs.ContactGroup(ctc_objs,
-                                interface_residxs=interface_residx_short,
+                                         interface_fragments=intf_frags_as_residxs,  # interface_residx_short,
                                          name=title)
     print()
     print(ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))

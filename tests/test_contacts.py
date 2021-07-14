@@ -1653,7 +1653,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     ],
-                                   interface_residxs=[[0],[1,2]])
+                                   interface_fragments = [[0],[1,2]])
         with _TDir() as tmpdir:
             pdb=path.join(tmpdir,"as_betas.pdb")
             betas = CP.frequency_to_bfactor(3.5,pdb, self.geom, interface_sign=True)
@@ -1666,7 +1666,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs,
                                    ],
-                                  interface_residxs=[[0, 3, 4], [1, 2, 20]])
+                                  interface_fragments = [[0, 3, 4], [1, 2, 20]])
         refmat = _np.zeros((3, 2))
         refmat[:, :] = _np.nan
         refmat[0, 0] = 2 / 3  # [0,1]
@@ -1785,7 +1785,7 @@ class TestContactGroupFrequencies_max_cutoff(TestBaseClassContactGroup):
         CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     ],
-                                   interface_residxs=[[0],[1,2]],
+                                   interface_fragments = [[0],[1,2]],
                                    max_cutoff_Ang=3)
         with self.assertRaises(ValueError):
             CP.frequency_to_bfactor(6,None, self.geom, interface_sign=True)
@@ -1797,7 +1797,7 @@ class TestContactGroupFrequencies_max_cutoff(TestBaseClassContactGroup):
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs,
                                    ],
-                                  interface_residxs=[[0, 3, 4], [1, 2, 20]],
+                                  interface_fragments = [[0, 3, 4], [1, 2, 20]],
                                   max_cutoff_Ang=3)
         with self.assertRaises(ValueError):
             I.interface_frequency_matrix(6)
@@ -2057,7 +2057,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                    # self.cp3_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs],
-                                  interface_residxs=[[0, 3, 5], [1, 2, 4]])
+                                  interface_fragments = [[0, 3, 5], [1, 2, 4]])
         print(I.frequency_dataframe(2))
         print(I.frequency_sum_per_residue_names(2))
         print(I.interface_labels_consensus)
@@ -2073,7 +2073,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                    # self.cp3_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs],
-                                  interface_residxs=[[0, 3, 5], [1, 2, 4]])
+                                  interface_fragments = [[0, 3, 5], [1, 2, 4]])
         print(I.frequency_dataframe(2))
         print(I.frequency_sum_per_residue_names(2))
         print(I.interface_labels_consensus)
@@ -2108,7 +2108,7 @@ class TestContactGroupSpreadsheet(TestBaseClassContactGroup):
     def test_frequency_spreadsheet_just_works(self):
         CG = contacts.ContactGroup([self.cp1_w_atom_types,
                                     self.cp2_w_atom_types],
-                                   interface_residxs=[[0], [1, 2]]
+                                   interface_fragments = [[0], [1, 2]]
                                    )
         with _TDir(suffix='_test_mdciao') as tmpdir:
             CG.frequency_table(2.5, path.join(tmpdir, "test.xlsx"),
@@ -2355,7 +2355,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
             I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                        self.cp2_wtop_and_conslabs,
                                        self.cp4_wtop_and_conslabs],
-                                      interface_residxs=[[1, 3],
+                                      interface_fragments = [[1, 3],
                                                          [1, 2]])
 
     def test_instantiates_raises_duplicates(self):
@@ -2363,21 +2363,21 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
             I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                        self.cp2_wtop_and_conslabs,
                                        self.cp4_wtop_and_conslabs],
-                                      interface_residxs=[[0, 0],
+                                      interface_fragments = [[0, 0],
                                                          [1, 2]])
 
         with pytest.raises(AssertionError) as e:
             I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                        self.cp2_wtop_and_conslabs,
                                        self.cp4_wtop_and_conslabs],
-                                      interface_residxs=[[0, 3],
+                                      interface_fragments = [[0, 3],
                                                          [1, 1, 2]])
 
     def test_instantiates_to_no_interface(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs],
-                                  interface_residxs=[[10, 30],
+                                  interface_fragments = [[10, 30],
                                                      [11, 20]])
         assert I.is_interface is False
 
@@ -2385,7 +2385,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs],
-                                  interface_residxs=[[0, 30],
+                                  interface_fragments = [[0, 30],
                                                      [11, 20]])
         assert I.is_interface is False
         _np.testing.assert_array_equal(I.interface_residxs[0], [0])
@@ -2395,7 +2395,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs],
-                                  interface_residxs=[[3, 0],
+                                  interface_fragments = [[3, 0],
                                                      [2, 1]])
         assert I.is_interface
         _np.testing.assert_array_equal(I.interface_residxs[0], [0, 3])
@@ -2405,7 +2405,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs],
-                                  interface_residxs=[[3, 0],
+                                  interface_fragments = [[3, 0],
                                                      [2, 1]])
         assert I.is_interface
         _np.testing.assert_equal(I.interface_reslabels_short[0][0], "E30")
@@ -2418,7 +2418,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs],
-                                  interface_residxs=[[3, 0],
+                                  interface_fragments = [[3, 0],
                                                      [2, 1]])
 
         _np.testing.assert_equal(I.interface_labels_consensus[0][0], "3.50")
@@ -2432,7 +2432,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs],
-                                  interface_residxs=[[3, 0, 4],
+                                  interface_fragments = [[3, 0, 4],
                                                      [2, 1, 5]])
         _np.testing.assert_equal(I.interface_labels_consensus[0][0], "3.50")
         _np.testing.assert_equal(I.interface_labels_consensus[0][1], "3.51")
@@ -2448,7 +2448,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs],
-                                  interface_residxs=[[3, 0, 4],
+                                  interface_fragments = [[3, 0, 4],
                                                      [2, 1, 5]])
         _np.testing.assert_equal(I.interface_shortAAs_missing_conslabels[0][0], "V34")
         _np.testing.assert_equal(I.interface_shortAAs_missing_conslabels[1][0], "G35")
@@ -2457,7 +2457,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs],
-                                  interface_residxs=[[3, 0],
+                                  interface_fragments = [[3, 0],
                                                      [2, 1]])
 
         _np.testing.assert_equal(I.interface_residue_names_w_best_fragments_short[0][0], "E30@3.50")
@@ -2471,7 +2471,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs],
-                                  interface_residxs=[[3, 0, 4],
+                                  interface_fragments = [[3, 0, 4],
                                                      [2, 1, 5]])
         print(I.frequency_dataframe(2))
         print(I.interface_residxs)
@@ -2494,7 +2494,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs],
-                                  interface_residxs=[[3, 0, 4],
+                                  interface_fragments = [[3, 0, 4],
                                                      [2, 1, 5]])
 
         idicts = I.frequency_sum_per_residue_names(2,
@@ -2517,7 +2517,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs],
-                                  interface_residxs=[[3, 0, 4],
+                                  interface_fragments = [[3, 0, 4],
                                                      [2, 1, 5]])
         with _TDir(suffix='_test_mdciao') as tmpdir:
             I.frequency_table(2.5, path.join(tmpdir, "test.xlsx"))
@@ -2527,7 +2527,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                    self.cp2_wtop_and_conslabs,
                                    self.cp4_wtop_and_conslabs,
                                    self.cp5_wtop_and_wo_conslabs],
-                                  interface_residxs=[[3, 0, 4],
+                                  interface_fragments = [[3, 0, 4],
                                                      [2, 1, 5]])
 
         iax = I.plot_frequency_sums_as_bars(2, "interface",
@@ -2538,8 +2538,8 @@ class Test_retop_CG(unittest.TestCase):
 
     def test_just_works(self):
         intf = _mdcli.interface(md.load(test_filenames.actor_pdb),
-                                fragments=[_np.arange(868, 875 + 1),  # ICL2
-                                            _np.arange(328, 353 + 1)],  # Ga5,
+                                fragments=[_np.arange(868, 875 + 1),
+                                            _np.arange(328, 353 + 1)],
                                 ctc_cutoff_Ang=30,
                                 no_disk=True,
                                 figures=False
@@ -2674,7 +2674,7 @@ class TestBaseClassGroupOfGroupsOfContacts(unittest.TestCase):
     def setUp(self):
         self.top = md.load(test_filenames.actor_pdb).top
 
-        self.interface_residxs = [[0,3,4],[1,2]]
+        self.interface_fragments = [[0,3,4],[1,2]]
         self.cp1_wtop_and_conslabs = contacts.ContactPair([0, 1], [[.1, .2, .3]], [[1, 2, 3]],
                                                           consensus_labels=["3.50", "4.50"],
                                                           top=self.top)
@@ -2694,10 +2694,10 @@ class TestBaseClassGroupOfGroupsOfContacts(unittest.TestCase):
 
 
         self.CG1 = contacts.ContactGroup([self.cp1_wtop_and_conslabs, self.cp2_wtop_and_conslabs],
-                                         interface_residxs=[[0],[2,1]],
+                                         interface_fragments = [[0],[2,1]],
                                          top=self.top)
         self.CG2 = contacts.ContactGroup([self.cp3_wtop_and_conslabs, self.cp4_wtop_and_1_conslabs],
-                                         interface_residxs=[[4,3],[1,2]],
+                                         interface_fragments = [[4,3],[1,2]],
                                          top=self.top)
 
 class TestGroupOfGroupsOfContactsBasic(TestBaseClassGroupOfGroupsOfContacts):
