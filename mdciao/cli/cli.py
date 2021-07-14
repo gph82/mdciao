@@ -104,16 +104,16 @@ def _parse_consensus_option(option, consensus_type,
            full of Nones is returned
          * str
           The needed identifier to instantiate an
-          :obj:`LabelerGPCR` or an :obj:`LabelerCGN` object.
+          :obj:`LabelerBW` or an :obj:`LabelerCGN` object.
           Examples would be a :obj:`uniprot_name` or a :obj:`ref_PDB`,
           respectively
          * :obj:`LabelerConsensus`
-          An already instantiated :obj:`LabelerGPCR` or :obj:`LabelerCGN`
+          An already instantiated :obj:`LabelerBW` or :obj:`LabelerCGN`
           The method then does nothing. Usecase are repeated
           calls to any of the methods in :obj:`command_line_tools`
           without each call instantiating its own :obj:`LabelerConsensus`
     consensus_type : str
-        Either "CGN" or "GPCR"
+        Either "CGN" or "BW"
     top : :obj:`mdtraj.Topology`
     fragments : iterable of iterables of ints
         How the :obj:`top` is fragmented. Helps
@@ -138,7 +138,7 @@ def _parse_consensus_option(option, consensus_type,
             map_out = [None for __ in range(top.n_residues)]
             LC_out = None
         else:
-            LC_out = {"GPCR": _mdcnomenc.LabelerGPCR,
+            LC_out = {"BW": _mdcnomenc.LabelerBW,
                       "CGN":_mdcnomenc.LabelerCGN}[consensus_type](option, **LabelerConsensus_kwargs)
 
     #todo add a class check here instead of failing later on
@@ -456,13 +456,13 @@ def _trajsNtop2xtcsNrefgeom(trajectories,topology):
 
 def _fragment_overview(a,labtype):
     r"""
-    provide the CLTs GPCR_overview and CGN_overview
+    provide the CLTs BW_overview and CGN_overview
 
     Parameters
     ----------
     a : :obj:`argparse.Namespace` object
         Contains the arguments used by the user
-    labtype : srt, "GPCR" or "CGN"
+    labtype : srt, "BW" or "CGN"
         lets the code know which :obj:`LabelerConsensus` to use
 
     Returns
@@ -473,17 +473,17 @@ def _fragment_overview(a,labtype):
         val = a.PDB_code_or_txtfile
         obj = _mdcnomenc.LabelerCGN(val, write_to_disk=a.write_to_disk)
 
-    elif labtype == "GPCR":
+    elif labtype == "BW":
         val = a.BW_uniprot_or_file
         if _path.exists(val):
             format = "%s"
         else:
-            format = _signature(_mdcnomenc.LabelerGPCR).parameters["format"].default
-        obj = _mdcnomenc.LabelerGPCR(val,
-                                     format=format,
-                                     write_to_disk=a.write_to_disk)
+            format = _signature(_mdcnomenc.LabelerBW).parameters["format"].default
+        obj = _mdcnomenc.LabelerBW(val,
+                  format=format,
+                  write_to_disk=a.write_to_disk)
     else:
-        raise ValueError("Don't know the consensus type %s, only 'GPCR' and 'CGN'"%labtype)
+        raise ValueError("Don't know the consensus type %s, only 'BW' and 'CGN'"%labtype)
 
     if a.topology is not None:
         top = _md.load(a.topology).top
@@ -540,7 +540,7 @@ def residue_neighborhoods(residues,
                           fragment_colors=None,
                           graphic_ext=".pdf",
                           table_ext=".dat",
-                          GPCR_uniprot=None,
+                          BW_uniprot=None,
                           CGN_PDB=None,
                           output_dir='.',
                           output_desc='neighborhood',
@@ -710,7 +710,7 @@ def residue_neighborhoods(residues,
         The extension (=format) of the saved figures
     table_ext : str, default is ".dat"
         The extension (=format) of the saved tables
-    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If `mdciao.nomenclature.Labeler_BW`, use this object directly
@@ -827,7 +827,7 @@ def residue_neighborhoods(residues,
                  "%s\nexcluding %u nearest neighbors" \
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
-                                                  midstring=mid_string, GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
+                                                  midstring=mid_string, BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
                                                   save_nomenclature_files=save_nomenclature_files,
                                                   accept_guess=accept_guess, interpret_as_res_idxs=res_idxs, sort=sort)
 
@@ -1016,7 +1016,7 @@ def interface(
         topology=None,
         frag_idxs_group_1=None,
         frag_idxs_group_2=None,
-        GPCR_uniprot="None",
+        BW_uniprot="None",
         CGN_PDB="None",
         chunksize_in_frames=10000,
         ctc_cutoff_Ang=3.5,
@@ -1088,7 +1088,7 @@ def interface(
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
-    GPCR_uniprot : str, default is 'None'
+    BW_uniprot : str, default is 'None'
         Try to find Ballesteros-Weinstein definitions. If
         str, e.g. "adrb2_human", try to locate a local
         filename or do a web lookup in the GPCRdb. If
@@ -1286,7 +1286,7 @@ def interface(
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     consensus_frags, consensus_maps, consensus_labelers = \
-        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
+        _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
                                                            "CGN": CGN_PDB},
                                                           refgeom.top,
                                                           fragments_as_residue_idxs,
@@ -1522,7 +1522,7 @@ def sites(site_inputs,
           chunksize_in_frames=10000,
           n_smooth_hw=0,
           pbc=True,
-          GPCR_uniprot="None",
+          BW_uniprot="None",
           CGN_PDB="None",
           fragments=['lig_resSeq+'],
           default_fragment_index=None,
@@ -1601,7 +1601,7 @@ def sites(site_inputs,
         window of 2*n_smooth_hw
     pbc : bool, default is True
         Use periodic boundary conditions
-    GPCR_uniprot : str, default is 'None'
+    BW_uniprot : str, default is 'None'
         Try to find Ballesteros-Weinstein definitions. If
         str, e.g. "adrb2_human", try to locate a local
         filename or do a web lookup in the GPCRdb. If
@@ -1740,7 +1740,7 @@ def sites(site_inputs,
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, consensus_maps, __ = \
-        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
+        _parse_consensus_options_and_return_fragment_defs({"BW": BW_uniprot,
                                                            "CGN": CGN_PDB},
                                                           refgeom.top,
                                                           fragments_as_residue_idxs,
@@ -1968,20 +1968,20 @@ def pdb(code,
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
 
-def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None,
+def _res_resolver(res_range, top, fragments, midstring=None, BW_uniprot=None, CGN_PDB=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
 
 
 
     consensus_maps = _parse_consensus_options_and_return_fragment_defs(
-        {"GPCR": GPCR_uniprot,
+        {"BW": BW_uniprot,
          "CGN": CGN_PDB},
         top,
         fragments,
         verbose=True,
         save_nomenclature_files=save_nomenclature_files,
         accept_guess=accept_guess)[1]
-    consensus_maps={"GPCR":consensus_maps[0],
+    consensus_maps={"BW":consensus_maps[0],
                     "CGN":consensus_maps[1]}
 
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
@@ -2003,7 +2003,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
     return res_idxs_list, consensus_maps
 
 def residue_selection(expression,
-                      top, GPCR_uniprot=None,
+                      top, BW_uniprot=None,
                       CGN_PDB=None,
                       save_nomenclature_files=False,
                       accept_guess=False,
@@ -2020,7 +2020,7 @@ def residue_selection(expression,
         descriptors if consensus labels are provided
     top : str, :obj:`~mdtraj.Trajectory`, or :obj:`~mdtraj.Topology`
         The topology to use.
-    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    BW_uniprot : str or :obj:`mdciao.nomenclature.LabelerBW`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If `mdciao.nomenclature.Labeler_BW`, use this object directly
@@ -2064,7 +2064,7 @@ def residue_selection(expression,
     frags : list of integers
         Whatever fragments the user chose
     consensus_maps : dict
-        Keys are currently just 'GPCR' and 'CGN'
+        Keys are currently just 'BW' and 'CGN'
         Values are lists of len :obj:`topology.n_residues`
         with the consensus labels. All labels
         will be None if no consensus info
@@ -2082,7 +2082,7 @@ def residue_selection(expression,
                                                                    _top, verbose=True)
     res_idxs_list, consensus_maps = _res_resolver(expression, _top, _frags,
                                                   midstring="Your selection '%s' yields:" % expression,
-                                                  GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
+                                                  BW_uniprot=BW_uniprot, CGN_PDB=CGN_PDB,
                                                   save_nomenclature_files=save_nomenclature_files,
                                                   accept_guess=accept_guess,
                                                   just_inform=True)

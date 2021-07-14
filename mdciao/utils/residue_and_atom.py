@@ -56,7 +56,7 @@ def residues_from_descriptors(residue_descriptors,
         with residue indices and valued with additional residue names.
         Higher-level keys can be whatever. Use case is e.g. if "R131"
         needs to be disambiguated bc. it pops up in many fragments.
-        You can pass {"GPCR":{895:"3.50", ...} here and that label
+        You can pass {"BW":{895:"3.50", ...} here and that label
         will be displayed next to the residue. :obj:`mdciao.cli`
         methods use this.
     just_inform : bool, default is False
@@ -476,7 +476,7 @@ def residue_line(item_desc, residue, frag_idx,
         with residue indices and valued with additional residue names.
         Higher-level keys can be whatever. Use case is e.g. if "R131"
         needs to be disambiguated bc. it pops up in many fragments.
-        You can pass {"GPCR":{895:"3.50", ...} here and that label
+        You can pass {"BW":{895:"3.50", ...} here and that label
         will be displayed next to the residue.
     table : bool, default is False
         Assume a header has been aready printed
@@ -514,7 +514,7 @@ def residue_line(item_desc, residue, frag_idx,
     else:
         add_dicts = []
         if consensus_maps is not None:
-            for key in ["GPCR","CGN"]:
+            for key in ["BW","CGN"]:
                 add_dicts.append(_try_double_indexing(consensus_maps, key, res_idx))
 
         istr = '%10s  %10u  %10u %10u %10s %10s' % (residue, res_idx,
@@ -703,7 +703,7 @@ def get_SS(SS,top=None):
     elif isinstance(SS, str):
         try:
             ss_array = _md.compute_dssp(_md.load(SS, frame=0), simplified=True)[0]
-        except (OSError, ValueError) as e:
+        except ValueError as e:
             ss_array = _md.compute_dssp(_md.load(SS, top=top, frame=0), simplified=True)[0]
     elif SS is True:
         from_tuple = (0, 0, 0)

@@ -96,7 +96,7 @@ From the API, you can use:
    0.0)       ALA150 in fragment 0 with residue index 113
    0.1)       ALA150 in fragment 0 with residue index 1026
    Your selection 'ALA150' yields:
-      residue      residx    fragment      resSeq      GPCR        CGN
+      residue      residx    fragment      resSeq         BW        CGN
        ALA150         113           0        150       None       None
        ALA150        1026           0        150       None       None
 
