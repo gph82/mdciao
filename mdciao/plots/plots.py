@@ -356,7 +356,9 @@ def _color_dict_guesser(colors, key_list):
 
 def _try_colormap_string(colors, N):
     r"""
-    Wrap the Exception thrown by matplotlib in a more informative error
+    This method does two things:
+    * wrap the Exception thrown by matplotlib in a more informative error
+    * cycle through color values in cases where the input :obj:`N` is larger than the colormaps's .N colors
 
     Parameters
     ----------
@@ -373,11 +375,17 @@ def _try_colormap_string(colors, N):
         Len is :obj:`N`, each item is a np.ndarray of len(3)
     """
     try:
-        return getattr(_cm, colors)(_np.arange(N))[:, :-1].tolist()
+        cmap = getattr(_cm, colors)
     except AttributeError as e:
         print(
             "Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html"%colors)
         raise e
+    if cmap.N >= N:
+        return cmap(_np.arange(N))[:, :-1].tolist()
+    else:
+        return _np.vstack([cmap(_np.arange(cmap.N)) for ii in range(_np.ceil(N/cmap.N).astype(int))])[:N,:-1].tolist()
+
+
 def _is_colormapstring(istr):
     try:
         getattr(_cm, istr)

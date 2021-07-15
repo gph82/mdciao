@@ -421,10 +421,16 @@ class Test_offset_dict(unittest.TestCase):
 
 class Test_colormaps(unittest.TestCase):
 
-    def test_exception_works(self):
+    def test_works(self):
         colors = _try_colormap_string("jet", 10)
         self.assertEqual(len(colors),10)
         assert all([is_color_like(col) for col in colors])
+
+    def test_works_large_N(self):
+        colors = _try_colormap_string("tab10", 20)
+        self.assertEqual(len(colors),20)
+        assert all([is_color_like(col) for col in colors])
+        _np.testing.assert_array_equal(colors[0:10], colors[10:20])
 
     def test_exception_raises(self):
         with self.assertRaises(AttributeError):
