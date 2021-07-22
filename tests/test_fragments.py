@@ -600,6 +600,20 @@ class Test_splice_fragments(unittest.TestCase):
                                                  ])
         _np.testing.assert_array_equal(newnames, ["A", "ex1", "?", "C"])
 
+class Test_find_parent_fragments(unittest.TestCase):
+
+    def test_works(self):
+        fragments = [_np.arange(10),
+                      _np.arange(50,100),
+                       _np.arange(1000,2000)]
+        subfragments = [[0,1,3], [4, 5, 6],
+                        [10, 11, 12],
+                        [60],
+                        [1500,1600,1700],
+                        [0]]
+        parents = mdcfragments.fragments.find_parent_fragments(subfragments, fragments)
+        self.assertListEqual(parents,[0,0, None,1,2,0])
+
 
 if __name__ == '__main__':
     unittest.main()

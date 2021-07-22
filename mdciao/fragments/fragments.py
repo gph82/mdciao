@@ -1002,3 +1002,82 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
         return new_frags, new_names
     else:
         return fragments, fragnames
+
+def find_parent_fragments(subfragments, fragments):
+    r"""
+    For each subfragment, return the index of the parent fragment
+
+    Parameters
+    ----------
+    subfragments : list of iterables
+    fragments : list of iterables
+
+    Returns
+    -------
+    parents : list
+        A list of len(subfragments) with indices
+        indicating which element of :obj:`fragments`
+        each subfragment is a subset of. If a subfragment
+        doesn't have a parent, its parent is None
+    """
+    _mdcu.lists.assert_no_intersection(fragments)
+    parents=[]
+    for sf in subfragments:
+        parent = None
+        iset = set(list(sf))
+        for pp, par in enumerate(fragments):
+            if set(list(par)).issuperset(iset):
+                parent = pp
+                break
+        parents.append(parent)
+
+    return parents
+
+
+def flarekwargs_preparer(fragments, fragment_names, kwargs_freqs2flare, fixed_color_list, to_intersect_with):
+    r"""
+    Prepare the kwargs dictionary to call :obj:`mdciao.flare.freqs2flare` from a :obj:`mdciao.contacts.ContactGroup`
+
+
+    Note
+    ----
+    This is a helper method that might disappear or get refactored somewhere.
+    The motivation for this method is to keep freqs2flare as agnostic
+    as possible with respect to things like contact-groups, interfaces,
+    consensus labelers, sub-domains etc, so that the method's signature
+    (already pretty long) is clear in cases where none of the above is
+    needed and can be generally used to plot any set of values that have
+    pair-relations associated with them.
+
+    However, this decision somehow blurries the logic behind "fragment and residue selection"
+    spreading it across two methods, because there's a partial selection
+    before calling freqs2flare and a further selection inside freqs2flare.
+    The upside (apart from the above mentioned conservation of generality) is
+    that it allows for consistency in fragment colors and names when
+    repeatedly calling the plot_freqs_as_flareplot when changing the 'scheme'
+    parameter.
+
+    Parameters
+    ----------
+    fragments : None or list of lists
+    fragment_names : None or list of strings
+    kwargs_freqs2flare : dict
+    fixed_color_list : list of matplotlib colors
+    to_intersect_with : the group of residues that need to be present
+
+    Returns
+    -------
+    kwargs_freqs2flare : dict
+    good_frags : list
+    """
+    good_frags = []
+    if fragments is not None:
+        good_frags = [ii for ii, fr in enumerate(fragments) if
+                      len(_np.intersect1d(fr, to_intersect_with)) > 0]
+        kwargs_freqs2flare["fragments"] = [fragments[ii] for ii in good_frags]
+        kwargs_freqs2flare["colors"] = fixed_color_list[good_frags]
+        if fragment_names is not None:
+            assert len(fragment_names) <= len(fragment_names), \
+                ValueError("Less fragment names (%u) than fragments (%u)?" % (len(fragment_names), len(fragment_names)))
+            kwargs_freqs2flare["fragment_names"] = [fragment_names[ii] for ii in good_frags]
+    return kwargs_freqs2flare, good_frags
