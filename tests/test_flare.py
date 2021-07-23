@@ -50,7 +50,7 @@ class TestFlare(TestCase):
                                       fragments=[[0, 1], [2, 3], np.arange(4, 15)],
                                       exclude_neighbors=0,
                                       iax=myax[1],
-                                      sparse=True,
+                                      sparse_residues=True,
                                       subplot=True,
 
                                       )

@@ -32,7 +32,8 @@ from inspect import signature as _signature
 
 def freqs2flare(freqs, res_idxs_pairs,
                 fragments=None,
-                sparse=False,
+                sparse_residues=False,
+                sparse_fragments=False,
                 exclude_neighbors=1,
                 freq_cutoff=0,
                 iax=None,
@@ -207,7 +208,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     shortenAAs: boolean, default is True
         Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
         is parsed
-    sparse : boolean, default is False
+    sparse_residues : boolean, default is False
         Show only those residues that appear in the initial :obj:`res_idxs_pairs`
 
         Note
@@ -215,6 +216,10 @@ def freqs2flare(freqs, res_idxs_pairs,
         There is a development option for this argument where a residue
         list is passed, meaning, show these residues regardless of any other
         option that has been passed. Perhaps sparse changes in the future.
+    sparse_fragments : boolean, default is False
+        Same as :obj:`sparse_residues`, but with fragments. When
+        :obj:`sparse_residues` isn't False, this option
+        has no effect.
     bezier_linecolor : color-like, default is 'k'
         The color of the bezier curves connecting the residues.
         Can be a character, string or RGB value (not RGBA)
@@ -282,10 +287,12 @@ def freqs2flare(freqs, res_idxs_pairs,
         "The size of the contact array and the " \
         "res_idxs_pairs array do not match %u vs %u"%(freqs.shape[1], len(res_idxs_pairs))
 
-    # Figure out the combination of sparse/fragments options
+    # Figure out the combination of sparse_residues/fragments options
     residues_as_fragments = _futils._parse_residue_and_fragments(res_idxs_pairs,
-                                                                 sparse=sparse,
-                                                                 fragments=fragments)
+                                                                 sparse_residues=sparse_residues,
+                                                                 sparse_fragments=sparse_fragments,
+                                                                 fragments=fragments,
+                                                                 top=top)
     # Delete fragment names that won't be used
     if fragment_names is not None and fragments is not None:
         fragment_names = [fn for fr, fn in zip(fragments,fragment_names) if len(_np.intersect1d(fr,_np.hstack(residues_as_fragments)))>0]
