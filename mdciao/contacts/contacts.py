@@ -28,6 +28,7 @@ import mdciao.plots as _mdcplots
 from mdciao.plots.plots import _add_grey_banded_bg, _color_dict_guesser #TODO prolly make public?
 import mdciao.utils as _mdcu
 import mdciao.nomenclature as _mdcn
+import mdciao.fragments as _mdcfr
 
 import mdciao.flare as _mdcflare
 
@@ -49,7 +50,9 @@ from matplotlib import \
 
 from pandas import \
     DataFrame as _DF, \
-    ExcelWriter as _ExcelWriter
+    ExcelWriter as _ExcelWriter, \
+    unique as _pdunique
+
 
 from joblib import \
     Parallel as _Parallel, \
@@ -3870,9 +3873,12 @@ class ContactGroup(object):
             jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
         return jax
 
-    def plot_freqs_as_flareplot(self,ctc_cutoff_Ang,
+    def plot_freqs_as_flareplot(self, ctc_cutoff_Ang,
+                                fragments=None,
+                                fragment_names=None,
                                 consensus_maps=None,
                                 SS=None,
+                                scheme='auto',
                                 **kwargs_freqs2flare,
                                 ):
         r"""
@@ -3883,60 +3889,115 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang : float
         consensus_maps : list, default is None
-            List containing dictionaries of consensus labels.
-            The items in the list should be "gettable" by residue index
-            either by being lists, arrays, or dicts, s.t.,
-            the corresponding value should be the label.
+            The items of this list are either:
+             * indexables containing the consensus
+                labels (strings) themselves. They
+                need to be "gettable" by residue index, i.e.
+                dict, list or array. Typically, one
+                generates these maps by using the top2labels
+                method of the LabelerConsensus object
+             * :obj:`LabelerConsensus`-objects
+                When these objects are passed, their
+                top2labels and top2fragments methods are
+                called on-the-fly, generating not only
+                the consensus labels but also the consensus
+                fragments (i.e. subdomains) to further fragment
+                the topology into sub-domains, like TM6 or G.H5.
+                If :obj:`fragments` are parsed, they will be
+                made compatible with the consensus fragments.
+            If you want the consensus labels but not
+            the sub-fragmentation, simply use the first option.
         SS : secondary structure information, default is None
             Whether and how to include information about
-            secondary structure. Can be many things
-            * triple of ints (CP_idx, traj_idx, frame_idx)
-              Go to contact group CP_idx, trajectory traj_idx
-              and grab this frame to compute the SS.
-              Will read xtcs when necessary or otherwise
-              directly grab it from a :obj:`mdtraj.Trajectory`
-              in case it was passed. Ignores potential stride
-              values.
-              See :obj:`ContactPair.time_traces` for more info
-            * True
-              same as [0,0,0]
-            * None or False
-              Do nothing
-            * :obj:`mdtraj.Trajectory`
-              Use this geometry to compute the SS
-            * string
-              Path to a filename, of which only
-              the first frame will be read. The
-              SS will be computed from there.
-              The file will be tried to read
-              first without topology information
-              (e.g. .pdb, .gro, .h5) will work,
-              and when this fails, self.top
-              will be passed (e.g. .xtc, .dcd)
-            * array_like
-              Use the SS from here, s.t.ss_inf[idx]
-              gives the SS-info for the residue
-              with that idx
+            secondary structure. Can be many things:
+             * triple of ints (CP_idx, traj_idx, frame_idx)
+                Go to contact group CP_idx, trajectory traj_idx
+                and grab this frame to compute the SS.
+                Will read xtcs when necessary or otherwise
+                directly grab it from a :obj:`mdtraj.Trajectory`
+                in case it was passed. Ignores potential stride
+                values.
+                See :obj:`ContactPair.time_traces` for more info
+             * True
+                same as [0,0,0]
+             * None or False
+                Do nothing
+             * :obj:`mdtraj.Trajectory`
+                Use this geometry to compute the SS
+             * string
+                Path to a filename, of which only
+                the first frame will be read. The
+                SS will be computed from there.
+                The file will be tried to read
+                first without topology information
+                (e.g. .pdb, .gro, .h5) will work,
+                and when this fails, self.top
+                will be passed (e.g. .xtc, .dcd)
+             * array_like
+                Use the SS from here, s.t.ss_inf[idx]
+                gives the SS-info for the residue
+                with that idx
+        fragments : list of iterables, default is None
+            The way the topology is fragmented. Default
+            is to put all residues in one fragment. This
+            optarg can modify the behaviour of scheme='all',
+            since residues absent from :obj:`fragments`
+            will not be plotted, see below.
+        fragment_names : list of strings, default is None
+            The fragment names, at least len(fragments)
+        scheme : str, default is 'auto'
+            How to decide which residues to plot
+             * 'all'
+                plot as many residues as possible. E.g.,
+                if a :obj:`self.topology` is present,
+                plot all its residues. This can be modified
+                with :obj:`fragments`, see above.
+             * 'interface':
+                use only the fragments in
+                :obj:`self.interface_fragments`. Will
+                only work if self.is_interface is True
+             * 'auto'
+                Uses :obj:`self.is_interface` to decide. If True,
+                :obj:`scheme` is set to 'interface'.
+                If False, e.g. a residue neighborhood or
+                a site, then :obj:`scheme` is set to 'all'
+             * 'interface_sparse':
+                like 'interface', but only for fragments where at
+                least one residue participates in the interface.
+                It might be that :obj:`fragments` further sub-fragments
+                the self.interface_fragments (which are only two),
+                but you don't want all of them shown
+             * 'residues':
+                plot only the residues present in self.res_idxs_pairs
+             * 'residues_sparse' :
+                plot only the residues that have a non-zero
+                frequency
+             * 'consensus':
+                like 'interface_sparse', but more
+                fine-grained because the sub-domains
+                resulting from the consensus labels will be
+                used as fragment definitions. For this,
+                the :obj:`consensus_maps` need to
+                be actual :obj:`LabelerConsensus`-objects
+             * 'consensus_sparse':
+                like 'consensus', but
+                leaving out sub-domains not participating
+                in the interface with any contacts.For this,
+                the :obj:`consensus_maps` need to
+                be actual :obj:`LabelerConsensus`-objects
         kwargs_freqs2flare: optargs
             Keyword arguments for :obj:`mdciao.flare.freqs2flare`
-            except for :obj:`top` and :obj:`ss_array`
+            except for :obj:`top`. :obj:`ss_array`, :obj:`fragments`
+            and :obj:`fragment_names`
 
         Returns
         -------
         ifig, iax
         """
 
-        if consensus_maps is None:
-            pass
-        else:
-            textlabels = []
-            for rr in self.top.residues:
-                clab = _mdcn.choose_between_consensus_dicts(rr.index, consensus_maps,
-                                                            no_key=None)
-                rlab = '%s%s' % (_mdcu.residue_and_atom.shorten_AA(rr, keep_index=True, substitute_fail="long"),
-                                 _mdcu.str_and_dict.choose_options_descencing([clab], fmt='@%s'))
-                textlabels.append(rlab)
-            kwargs_freqs2flare["textlabels"] = textlabels
+        df = self.flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare)
+
+        kwargs_freqs2flare.update(_dataframe2flarekwargs(df, scheme))
 
         from_tuple, kwargs_freqs2flare["SS"] = _mdcu.residue_and_atom.get_SS(SS)
 
@@ -3960,6 +4021,92 @@ class ContactGroup(object):
         ifig = iax.figure
         ifig.tight_layout()
         return ifig, iax
+
+    def flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare):
+        r"""
+        Construct a :obj:`~pandas.DataFrame` with the per-residue information for flareplot
+
+        This DF will be passed to _dataframe2flarekwargs before
+        reaching freqs2flare.
+
+        It's convenient to take a look here (inline or saving as spreadsheet)
+        to identify potential sources of mislabeling.
+
+        All parameters behave as explained in :obj:`~mdciao.contacts.ContactGroup.plot_freqs_as_flareplot`,
+        not documenting here to avoid double doc maintenance
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang
+        kwargs_freqs2flare
+        fragments
+        fragment_names
+        consensus_maps
+
+        Returns
+        -------
+        :obj:`~pandas.DataFrame`
+
+        """
+        kwargs_freqs2flare["fragments"] = fragments
+        kwargs_freqs2flare["fragment_names"] =  fragment_names
+
+        list_of_dicts= [{"name":str(res)} for res in self.top.residues]
+        if fragments is not None:
+            if self.is_interface:
+                is_subfrag = [_mdcfr.fragments.check_if_subfragment(fr,
+                                                                    'input fragment',
+                                                                    self.interface_fragments, self.top, prompt=False)
+                              for fr in fragments]
+
+                assert all(is_subfrag), ValueError("Some input fragments have residues in both 'self.interface fragments'")
+
+            for ii, ifrag in enumerate(fragments):
+                for idx in ifrag:
+                    list_of_dicts[idx]["frag"]=ii
+                    if fragment_names is not None:
+                        list_of_dicts[idx]["fragname"]=fragment_names[ii]
+
+        for ii in [0, 1]:
+            [list_of_dicts[res].update({"interface fragment":ii}) for res in self.interface_fragments[ii]]
+            [list_of_dicts[res].update({"interface residx": ii}) for res in self.interface_residxs[ii]]
+
+        if consensus_maps is not None:
+            consensus_frags = [cmap.top2frags(self.top) for cmap in consensus_maps if
+                               isinstance(cmap, _mdcn.LabelerConsensus)]
+            _mdcu.lists.assert_no_intersection([list(d.values()) for d in consensus_frags], "consensus fragment")
+            consensus_frags = {key: val for d in consensus_frags for key, val in d.items()}
+            consensus_maps = [cmap if not isinstance(cmap, _mdcn.LabelerConsensus) else cmap.top2labels(self.top) for cmap
+                              in consensus_maps]
+            if len(consensus_frags)>0:
+                highest_res_idx = self.top.n_residues - 1
+                other_frags = None
+                if fragments is not None:
+                    if fragment_names is not None:
+                        other_frags = {fn: fr for fn, fr in zip(fragment_names, fragments)}
+                    else:
+                        other_frags = {"frag %u" % ii: fn for ii, fn in enumerate(fragments)}
+                kwargs_freqs2flare["fragments"], kwargs_freqs2flare["fragment_names"] = \
+                    _mdcfr.splice_orphan_fragments(list(consensus_frags.values()),
+                                                   list(consensus_frags.keys()),
+                                                   highest_res_idx=highest_res_idx,
+                                                   #orphan_name="",
+                                                   other_fragments=other_frags)
+                for frag, key in zip( kwargs_freqs2flare["fragments"], kwargs_freqs2flare["fragment_names"]):
+                    for idx in frag:
+                        list_of_dicts[idx].update({"consensus frag":key})
+            for rr in self.top.residues:
+                clab = _mdcn.choose_between_consensus_dicts(rr.index, consensus_maps, no_key=None)
+                rlab = '%s%s' % (_mdcu.residue_and_atom.shorten_AA(rr, keep_index=True, substitute_fail="long"),
+                                 _mdcu.str_and_dict.choose_options_descencing([clab], fmt='@%s'))
+                list_of_dicts[rr.index].update({"textlabels": rlab})
+
+        for ii, ifreq in self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang).items():
+            list_of_dicts[ii].update({"freq":ifreq})
+
+        df = _DF(list_of_dicts)
+
+        return df
 
     def repframe(self, reference="mode",
                  ctc_cutoff_Ang=None,
@@ -5090,3 +5237,120 @@ def _delta_freq_pairs(freqsA, pairsA, freqsB, pairsB):
     pairs = _np.array(list(delta.keys()))
     delta = _np.array(list(delta.values()))
     return delta, pairs
+
+def _dataframe2flarekwargs(df, scheme):
+    r"""
+    Infer the kwargs needed for freqs2flare from a dataframe
+
+    Note
+    ----
+    It's easier to infer the freqs2flare kwargs
+    from the "pre-filled" DF than to map out all
+    possible combinations of input parameters,
+    which leads to a lot of code that's
+    almost identical.
+
+    Parameters
+    ----------
+    df : :obj:`~pandas.DataFrame`
+        It has already been pre-filled
+        with per-residue information
+        by :obj:`mdciao.contacts.ContactGroup.flareargs2df`
+    scheme : str
+        The scheme used for the fragmentation
+        of the flareplot
+    Returns
+    -------
+    kwargs : dict
+        The optional arguments for :obj:`mdciao.flare.freqs2flare`
+
+    """
+    # Avoiding the np.unique or pandas.unique to get rid of NaNs
+    is_interface = len(_np.hstack([df.index[df["interface fragment"] == ii].values.tolist() for ii in [0,1]]))>0
+    if scheme == 'auto':
+        scheme = {True: 'interface',
+                  False: 'all'}[is_interface]
+
+    kwargs = {}
+    fixed_color_list = _np.array(list(_mdcplots.plots._color_dict_guesser("tab10", _np.arange(100)).values()))
+
+    def best_fragments(df,kwargs):
+        for frag_key in ['consensus frag', 'fragname', "frag"]:
+            if frag_key in df.keys():
+                kwargs["fragment_names"] = _pdunique(df[frag_key]).tolist()
+                kwargs["fragments"] = [df.index[df[frag_key] == key].values.tolist() for key in
+                                       kwargs["fragment_names"]]
+                return frag_key
+
+    if scheme == 'all':
+        frag_key = best_fragments(df, kwargs)
+        if frag_key is not None:
+            kwargs["colors"] = [fixed_color_list[idx] for ii, idx in enumerate(df["frag"])]
+
+    elif scheme == 'interface':
+        best_fragments(df, kwargs)
+        kwargs["sparse_residues"] = _np.hstack([df.index[df["interface fragment"] == ii].values.tolist() for ii in [0,1]])
+        kwargs["colors"] = [fixed_color_list[df["frag"][ii]] for ii in kwargs["sparse_residues"]]
+
+    elif scheme == 'interface_sparse':
+        frag_key = None
+        if 'frag' in df.keys():
+            frag_key = "frag"
+        if 'fragname' in df.keys():
+            frag_key = "fragname"
+
+        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]])
+        if frag_key is not None:
+            frags = _pdunique(df[frag_key]).tolist()
+            frags = [df.index[df[frag_key] == key].values.tolist() for key in frags]
+            kwargs["sparse_residues"] = _np.hstack([ifrag for ifrag in frags if len(_np.intersect1d(to_intersect_with,ifrag))>0])
+
+            if 'consensus frag' in df.keys():
+                frag_key = "consensus frag"
+
+            kwargs["fragment_names"] = _pdunique(df[frag_key]).tolist()
+            kwargs["fragments"] = [df.index[df[frag_key] == key].values.tolist() for key in
+                                   kwargs["fragment_names"]]
+
+        kwargs["colors"] = [fixed_color_list[df["frag"][ii]] for ii in kwargs["sparse_residues"]]
+
+    elif scheme == 'residues':
+        best_fragments(df, kwargs)
+        kwargs["sparse_residues"] = _np.hstack(
+            [df.index[df["interface residx"] == ii].values.tolist() for ii in [0, 1]])
+        if "frag" in df.keys():
+            kwargs["colors"] = [fixed_color_list[df["frag"][ii]] for ii in kwargs["sparse_residues"]]
+
+    elif scheme == 'residues_sparse':
+        best_fragments(df, kwargs)
+        kwargs["sparse_residues"] = df.index[df["freq"] > 0].values.tolist()
+        kwargs["colors"] = [fixed_color_list[df["frag"][ii]] for ii in kwargs["sparse_residues"]]
+
+    elif scheme == 'consensus':
+        best_fragments(df, kwargs)
+        kwargs["sparse_fragments"] = True
+        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]])
+        colors = {}
+        for idx in to_intersect_with:
+            confrag = df["consensus frag"][idx]
+            if confrag not in colors.keys():
+                colors[confrag]=fixed_color_list[df["frag"][idx]]
+        kwargs["colors"]=list(colors.values())
+
+    elif scheme == 'consensus_sparse':
+        best_fragments(df, kwargs)
+        to_intersect_with = df.index[df["freq"] > 0].values.tolist()
+        kwargs["sparse_residues"] = _np.hstack([ifrag for ifrag in kwargs["fragments"] if len(_np.intersect1d(to_intersect_with, ifrag)) > 0])
+        colors = {}
+        for idx in to_intersect_with:
+            confrag = df["consensus frag"][idx]
+            if confrag not in colors.keys():
+                colors[confrag] = fixed_color_list[df["frag"][idx]]
+        kwargs["colors"] = list(colors.values())
+    else:
+        raise NotImplementedError(scheme)
+
+    if "textlabels" in df.keys():
+        kwargs["textlabels"]=df["textlabels"].values.tolist()
+
+    return kwargs
