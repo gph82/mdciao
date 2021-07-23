@@ -301,9 +301,11 @@ def col_list_from_input_and_fragments(colors,
             All returned colors will differ by fragment
         * string (anything matplotlib can understand as color)
             Use this color for all residues
-        * iterable (not dict)
-            Has to be of len(list_of_non_zero_residue_idxs)
-            Nothing happens, the list is done already
+        * iterable (array or list, not dict)
+            len(colors) has to be either n_residues or n_fragments
+            If it's n_residues, nothing happens
+            If its n_fragments, it's expanded to assign
+            each residue in fragment the same color
         * iterable (dict)
             Has to be of len(residxs_as_fragments)
 
@@ -337,12 +339,16 @@ def col_list_from_input_and_fragments(colors,
         col_list = _np.hstack([[jcolors[ii]] * len(iseg) for ii, iseg in enumerate(residxs_as_fragments)])
 
     elif isinstance(colors, (list, _np.ndarray)):
-        assert len(colors) in [len(residxs_as_fragments),
-                               len(_np.hstack(residxs_as_fragments))], (len(colors),
-                                                                        len(residxs_as_fragments),
-                                                                        len(_np.hstack(residxs_as_fragments)))
-        col_list = colors
-
+        if len(colors) == len(residxs_as_fragments):
+            col_list = _np.vstack([_np.vstack([colors[ii]]*len(fr)) for ii, fr in enumerate(residxs_as_fragments)]).squeeze().tolist()
+        elif len(colors) == len(_np.hstack(residxs_as_fragments)):
+            col_list = colors
+        else:
+            raise ValueError("The number of input colors (%u) "
+                             "doesn't match the number of fragments (%u) "
+                             "or the number of residues (%u) "%(len(colors),
+                                                                len(residxs_as_fragments),
+                                                                len(_np.hstack(residxs_as_fragments))))
     elif isinstance(colors, dict):
         assert len(colors) == len(residxs_as_fragments), (len(colors), len(residxs_as_fragments))
         col_list = _np.hstack([[val] * len(iseg) for val, iseg in zip(colors.values(), residxs_as_fragments)])

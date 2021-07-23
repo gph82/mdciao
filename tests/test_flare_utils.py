@@ -128,10 +128,26 @@ class TestColors(TestCase):
         np.testing.assert_array_equal(['salmon'] * 6,
                                       colorlist)
 
-    def test_works_iterable(self):
+    def test_works_iterable_len_fragments(self):
         colorlist = _utils.col_list_from_input_and_fragments(["r", "g", "b"], self.fragments)
-        np.testing.assert_array_equal(["r", "g", "b"],
+        np.testing.assert_array_equal(["r", "r",
+                                       "g", "g",
+                                       "b", "b"],
                                       colorlist)
+
+    def test_works_iterable_len_residues(self):
+        colorlist = _utils.col_list_from_input_and_fragments(["r", "r", "g", "g", "b", "b"], self.fragments)
+        np.testing.assert_array_equal(["r", "r", "g", "g", "b", "b"],
+                                      colorlist)
+
+    def test_raises_wrong_length(self):
+        with self.assertRaises(ValueError):
+            _utils.col_list_from_input_and_fragments(["r", "r", "g", "g", "b"], self.fragments)
+
+    def test_raises_wrong_type(self):
+        with self.assertRaises(Exception):
+            _utils.col_list_from_input_and_fragments(1, self.fragments)
+
 
     def test_works_dict(self):
         colorlist = _utils.col_list_from_input_and_fragments({"frag1": "r",
