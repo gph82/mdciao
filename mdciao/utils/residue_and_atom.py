@@ -655,7 +655,8 @@ def _ls_AA_in_df(AA_patt, df):
 
 def get_SS(SS,top=None):
     r"""
-    Try to guess what type of input for secondary-structre computation the user wants, and compute it
+    Try to guess what type of input for secondary-structure computation the user wants, and compute it
+
     Parameters
     ----------
     SS : secondary structure information
@@ -677,9 +678,9 @@ def get_SS(SS,top=None):
           the first frame will be read. The
           SS will be computed from there.
           The file will be tried to read
-          first witouth topology information
-          (e.g. .pdb, .gro, .h5) will work,
-          and when this fails, self.top
+          first without topology information
+          (e.g. .pdb, .gro, .h5 will work),
+          and when this fails, the :obj:`top`
           will be passed (e.g. .xtc, .dcd)
         * array_like
           Use the SS from here, s.t.ss_inf[idx]
