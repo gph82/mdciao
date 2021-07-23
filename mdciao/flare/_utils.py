@@ -757,7 +757,7 @@ def un_overlap_via_fontsize(text_objects, fac=.95, maxiter=50):
         counter += 1
 
 #TODO RENAME
-def _parse_residue_and_fragments(res_idxs_pairs, sparse=False, fragments=None):
+def _parse_residue_and_fragments(res_idxs_pairs, sparse_residues=False, sparse_fragments=False, fragments=None, top=None):
     r""" Decide what residues the user wants to get a dot.
 
     Typically, the output of this function will get parsed to :obj:`circle_plot_residues`
@@ -765,49 +765,67 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse=False, fragments=None):
     Note
     ----
     I've outsourced this decision-making here because it's not clear to me yet
-    what the best interplay in sparse vs fragment could be
+    what the best interplay in sparse_residues vs fragment could be
 
     Parameters
     ----------
     res_idxs_pairs : np.ndarray
         (N,2)-array with N residue pairs
-    sparse : boolean or iterable of ints, default is False
+    sparse_residues : boolean or iterable of ints, default is False
         * If False, return an array (0,np.max(res_idxs_pairs)+1)
         * If True,  return only np.unique(res_idxs_pairs)
-        * If iterable of ints, override everything and return this indices
-
-    fragments : None or list
+        * If iterable of ints, override everything and return these indices
+    sparse_fragments : bool, default is False
+        If True, return all residues of the fragments where
+        at least one residue is present in res_idxs_pairs
+        An error will be raised if sparse_fragment is True
+        and sparse_residues isn't False
+    fragments : list, default is None
         List of integer lists representing how the residues
         are grouped together in fragments. Their union
         must always be a superset of whatever set resulted
-        of the chosen :obj:`sparse`: option. If sparse is False,
+        of the chosen :obj:`sparse_residues` option. If sparse_residues is False,
         residues present here will be added to the output even
         if they don't contain any relevant residue
+    top : :obj:`~mdtraj.Topology`, default is None
+        Only used if :obj:`fragments` is None
+        and :obj:`sparse_residues` is False. Then, if
+        top is None, dots will be assigned only up
+        to max(res_idxs), and if top is passed, up to
+         :obj:`top.n_residues`
 
     """
-
     res_idxs = _np.unique(res_idxs_pairs)
+    if sparse_fragments:
+        assert sparse_residues is False
     if fragments is None:
-        if isinstance(sparse,bool):
-            if sparse:
+        if isinstance(sparse_residues, bool):
+            if sparse_residues:
                 residues_as_fragments=[res_idxs]
             else:
-                residues_as_fragments=[_np.arange(res_idxs[-1] + 1)]
+                if top is None:
+                    residues_as_fragments=[_np.arange(res_idxs[-1] + 1)]
+                else:
+                    residues_as_fragments=[_np.arange(top.n_residues)]
         else:
-            residues_as_fragments=[sparse]
+            residues_as_fragments=[sparse_residues]
     else:
         # Checks
         _no_intersect(fragments, word="fragments")
         assert set(res_idxs).issubset(_np.hstack(fragments)), \
             "The input fragments do not contain all residues residx_array, " \
             "their set difference is %s" % sorted(set(res_idxs).difference(_np.hstack(fragments)))
-        if isinstance(sparse,bool):
-            if sparse:
+
+        if isinstance(sparse_residues, bool):
+            if sparse_residues:
                 residues_as_fragments = [_np.intersect1d(ifrag,res_idxs) for ifrag in fragments]
             else:
-                residues_as_fragments = fragments
+                if sparse_fragments:
+                    residues_as_fragments = [ifrag for ifrag in fragments if len(_np.intersect1d(ifrag,res_idxs))>0]
+                else:
+                    residues_as_fragments = fragments
         else:
-            residues_as_fragments = [_np.intersect1d(ifrag, sparse) for ifrag in fragments]
+            residues_as_fragments = [_np.intersect1d(ifrag, sparse_residues) for ifrag in fragments]
 
         residues_as_fragments = [ifrag for ifrag in residues_as_fragments if len(ifrag) > 0]
 

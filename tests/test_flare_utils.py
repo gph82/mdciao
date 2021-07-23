@@ -395,21 +395,27 @@ class Test_parse_residue_and_fragments(TestCase):
                                        [10, 11],
                                        [10, 12],
                                        [10, 15]])
+        self.top = md.load(test_filenames.actor_pdb).top
 
     def test_works(self):
         res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs)
         np.testing.assert_equal(len(res_idxs_as_fragments), 1)
         np.testing.assert_array_equal(res_idxs_as_fragments, [np.arange(0, 16)])
 
-    def test_sparse_True(self):
-        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse=True)
+    def test_sparse_residues_True(self):
+        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse_residues=True)
         np.testing.assert_equal(len(res_idxs_as_fragments), 1)
         np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4, 10, 11, 12, 15]])
 
-    def test_sparse_value(self):
-        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse=[1, 10, 20])
+    def test_sparse_residues_value(self):
+        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse_residues=[1, 10, 20])
         np.testing.assert_equal(len(res_idxs_as_fragments), 1)
         np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 10, 20]])
+
+    def test_sparse_residues_top(self):
+        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, top=self.top)
+        np.testing.assert_equal(len(res_idxs_as_fragments), 1)
+        np.testing.assert_array_equal(res_idxs_as_fragments, [np.arange(self.top.n_residues)])
 
     def test_fragments(self):
         fragments = [[0],
@@ -421,28 +427,71 @@ class Test_parse_residue_and_fragments(TestCase):
         np.testing.assert_equal(len(res_idxs_as_fragments), len(fragments))
         np.testing.assert_array_equal(res_idxs_as_fragments, fragments)
 
-    def test_fragments_sparse(self):
+    def test_fragments_sparse_residues(self):
         fragments = [[0],
                      [1, 2, 3, 4, 5],
                      [6, 7, 8, 9],
                      [10, 11, 12, 13, 14, 15],
                      [20, 21, 50]]
-        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse=True,
+        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse_residues=True,
                                                                     fragments=fragments)
         np.testing.assert_equal(len(res_idxs_as_fragments), 2)
         np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4], [10, 11, 12, 15]])
 
-    def test_fragments_sparse_value(self):
+    def test_fragments_sparse_residues_value(self):
         fragments = [[0],
                      [1, 2, 3, 4, 5],
                      [6, 7, 8, 9],
                      [10, 11, 12, 13, 14, 15],
                      [20, 21, 50]]
         res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs,
-                                                                    sparse=[1, 10, 20],
+                                                                    sparse_residues=[1, 10, 20],
                                                                     fragments=fragments)
         np.testing.assert_equal(len(res_idxs_as_fragments), 3)
         np.testing.assert_array_equal(res_idxs_as_fragments, [[1], [10], [20]])
+
+    def test_fragments_sparse_fragments(self):
+        fragments = [[0],
+                     [1, 2, 3, 4, 5],
+                     [6, 7, 8, 9],
+                     [10, 11, 12, 13, 14, 15],
+                     [20, 21, 50]]
+        self.res_idx_pairs = np.array([[1, 2],
+                                       [1, 3],
+                                       [1, 4],
+                                       [2, 4],
+                                       [10, 11],
+                                       [10, 12],
+                                       [10, 15]])
+        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs,
+                                                                    fragments=fragments,
+                                                                    sparse_fragments=True)
+        np.testing.assert_equal(len(res_idxs_as_fragments), 2)
+        np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4, 5],
+                                                              [10, 11, 12, 13, 14, 15]]
+                                      )
+
+    def test_fragments_sparse_fragments(self):
+        fragments = [[0],
+                     [1, 2, 3, 4, 5],
+                     [6, 7, 8, 9],
+                     [10, 11, 12, 13, 14, 15],
+                     [20, 21, 50]]
+        self.res_idx_pairs = np.array([[1, 2],
+                                       [1, 3],
+                                       [1, 4],
+                                       [2, 4],
+                                       [10, 11],
+                                       [10, 12],
+                                       [10, 15]])
+        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs,
+                                                                    fragments=fragments,
+                                                                    sparse_fragments=True)
+        np.testing.assert_equal(len(res_idxs_as_fragments), 2)
+        np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4, 5],
+                                                              [10, 11, 12, 13, 14, 15]]
+                                      )
+
 
 
 class Test_Aura(TestCase):
