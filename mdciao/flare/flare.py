@@ -532,7 +532,8 @@ def circle_plot_residues(fragments,
         else:
             # Interpret the textlabels as replacements
             replacement_labels = textlabels
-        outer_r_in_data_units += dot_radius
+        outer_r_in_data_units += {True: 2,
+                                  False:1}[dot_radius<1.5]*dot_radius
         labels = add_fragmented_residue_labels(fragments,
                                                iax,
                                                fontsize,
