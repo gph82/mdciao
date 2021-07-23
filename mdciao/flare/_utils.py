@@ -511,12 +511,22 @@ def add_fragment_labels(fragments,
         rho, phi = cart2pol(xseg, yseg)
         xseg, yseg = pol2cart(r , phi) + _np.array(center)
 
+        ha="center"
+        if yseg<0:
+            va="top"
+        else:
+            va="bottom"
         iang = phi + _np.pi / 2
         if _np.cos(iang) < 0:
             iang = iang + _np.pi
 
-        fragment_labels.append(iax.text(xseg, yseg, iname, ha="center", va="center",
+        fragment_labels.append(iax.text(xseg, yseg, iname,
+                                        ha=ha,
+                                        va=va,
+                                        bbox={"boxstyle": "square,pad=0.0", "fc": "none", "ec": "none", "alpha": .05},
+                                        # we need this transparent Fancybox to check for overlaps
                                         fontsize=fontsize,
+                                        rotation_mode="anchor",
                                         rotation=_np.rad2deg(iang)))
 
     return fragment_labels
@@ -615,19 +625,22 @@ def add_residue_labels(iax,
             pass # the residue does not have a replacement
 
         rotation = 0
+        ha="left"
         if center is not None:
             rho, phi = cart2pol(ixy[0] - center[0], ixy[1] - center[1])
             if _np.cos(phi) < 0:
                 phi = phi + _np.pi
+                ha = "right"
             rotation = phi
-
         itxt = iax.text(ixy[0], ixy[1], '%s' % ilabel,
                         color=txtclr,
                         va="center",
-                        ha="center",
+                        ha=ha,
                         rotation=_np.rad2deg(rotation),
+                        rotation_mode="anchor",
                         fontsize=fontsize,
                         zorder=20,
+                        bbox={"boxstyle":"square,pad=0.0","fc":"none", "ec":"none", "alpha": .05}, # we need this transparent Fancybox to check for overlaps
                         **text_kwargs)
         labels.append(itxt)
 
