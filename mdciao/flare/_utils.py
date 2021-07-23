@@ -21,6 +21,11 @@
 ##############################################################################
 
 import numpy as _np
+
+from ._textutils import \
+    outermost_text_corner as _outermost_corner_of_fancypatches, \
+    any_overlap_via_FancyBoxPach
+
 from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
 from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp as _re_warp
@@ -752,7 +757,7 @@ def un_overlap_via_fontsize(text_objects, fac=.95, maxiter=50):
 
     """
     counter = 0
-    while any(overlappers(text_objects, text_objects)) and counter < maxiter:
+    while len(text_objects)>0 and any_overlap_via_FancyBoxPach(text_objects, text_objects) and counter < maxiter:
         [t1.set_size(t1.get_size() * fac) for t1 in text_objects]
         counter += 1
 
