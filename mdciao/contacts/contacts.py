@@ -3995,7 +3995,7 @@ class ContactGroup(object):
         ifig, iax
         """
 
-        df = self.flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare)
+        df = self.flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose=False)
 
         kwargs_freqs2flare.update(_dataframe2flarekwargs(df, scheme))
 
@@ -4022,7 +4022,7 @@ class ContactGroup(object):
         ifig.tight_layout()
         return ifig, iax
 
-    def flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare):
+    def flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose):
         r"""
         Construct a :obj:`~pandas.DataFrame` with the per-residue information for flareplot
 
@@ -4072,7 +4072,7 @@ class ContactGroup(object):
             [list_of_dicts[res].update({"interface residx": ii}) for res in self.interface_residxs[ii]]
 
         if consensus_maps is not None:
-            consensus_frags = [cmap.top2frags(self.top) for cmap in consensus_maps if
+            consensus_frags = [cmap.top2frags(self.top, verbose=verbose) for cmap in consensus_maps if
                                isinstance(cmap, _mdcn.LabelerConsensus)]
             _mdcu.lists.assert_no_intersection([list(d.values()) for d in consensus_frags], "consensus fragment")
             consensus_frags = {key: val for d in consensus_frags for key, val in d.items()}
