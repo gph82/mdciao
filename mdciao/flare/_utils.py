@@ -617,6 +617,9 @@ def add_parent_labels(kwargs_freqs2flare, flareplot_attrs, kwargs_pffp):
                     parent_xy.append(_np.average([tt.get_position() for tt in present_TextObjects],
                                                  axis=0, weights=present_weights))
                     parent_labels.append(kwargs_pffp["fragment_names"][parent_idx])
+                    if len(present_TextObjects)==1 and present_TextObjects[0].get_text()==_replace4latex(parent_labels[-1]):
+                        present_TextObjects[0].remove()
+
             if parent_labels:
                 parent_labels = add_fragment_labels([[None]]*len(parent_labels),
                                                     [_replace4latex(str(ifrag)) for ifrag in
