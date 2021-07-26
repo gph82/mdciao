@@ -28,11 +28,12 @@ from ._textutils import \
 
 from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
-from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp as _re_warp
+from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp as _re_warp, find_parent_list as _find_parent_list
+from mdciao.utils.str_and_dict import replace4latex as _replace4latex
 from matplotlib.colors import to_rgb as _to_rgb
 from matplotlib.collections import LineCollection as _LCol
 
-from collections import Counter as _Counter
+from collections import Counter as _Counter, defaultdict as _defdict
 from matplotlib.patches import CirclePolygon as _CP, Polygon as _PG
 
 #https://stackoverflow.com/a/33375738
@@ -546,6 +547,121 @@ def add_fragment_labels(fragments,
                                         rotation=_np.rad2deg(iang)))
 
     return fragment_labels
+
+def add_parent_labels(kwargs_freqs2flare, flareplot_attrs, kwargs_pffp):
+    r"""
+    Add the outer ring of "parent" fragment names to a flareplot that's using subdomains
+
+    Note
+    ----
+    This is an ad-hoc **after** ContactGroup.plot_freqs_as_flareplot
+    has called freqs2flare. Currently, I don't want to change
+    that freqs2flare's signature. Hence, there's three different
+    dictionaries organizing the input. This can/will change
+    in the future
+
+    Parameters
+    ----------
+    kwargs_pffp : dict
+        The optional arguments passed
+        initially to plot_freqs_as_flareplot.
+        It has to contain the keys "fragments"
+        and "fragment_names"
+    kwargs_freqs2flare : dict
+        The dictionary of kwargs computed inside
+        plot_freqs_as_flareplot  by using
+        _dataframe2flarekwargs and
+        then sent to freqs2flare
+    flareplot_attrs : dict
+        The dictionary of flareplot attributes
+        produced by freqs2flare.
+
+    Returns
+    -------
+    flareplot_attrs : dict
+        The same input dictionary with
+        one new key "parent_labels"
+    """
+    if None in [kwargs_pffp.get("fragments"), kwargs_pffp["fragment_names"]]:
+        pass
+    else:
+        not_passed_frags = list(set(kwargs_pffp["fragment_names"]).difference(kwargs_freqs2flare["fragment_names"]))
+        # some original parents weren't passed to freqs2flare. This might be
+        # 1) because the were excluded completely
+        # 2) they were broken down into subfragments
+        if not_passed_frags:
+            # Let's find out if if we're in number 2)
+            # First, we need to associate actual Text-objects
+            # with actually passed kwargs_freqs2flare["fragments"]
+            # since even some kwargs_freqs2flare["fragments"] might've
+            # been excluded by freqs2flare because of sparse-type arguments
+            plotted_fragTexts_by_input_idx = _defdict(list)
+            for ff, fn in enumerate(kwargs_freqs2flare["fragment_names"]):
+                for tt, txt in enumerate(flareplot_attrs["fragment_labels"]):
+                    if txt.get_text() == _replace4latex(fn):  # The text object has been latexified already
+                        plotted_fragTexts_by_input_idx[ff].append(tt)
+
+            # Assert uniqueness
+            assert all([len(val) == 1 for val in plotted_fragTexts_by_input_idx.values()])
+            plotted_fragTexts_by_input_idx = dict(plotted_fragTexts_by_input_idx)
+            plotted_fragTexts_by_input_idx = {key: val[0] for key, val in plotted_fragTexts_by_input_idx.items()}
+            parent_labels, parent_xy = [], []
+
+            _, kid_by_parents = _find_parent_list(kwargs_freqs2flare["fragments"], kwargs_pffp["fragments"])
+            for parent_idx, kids in kid_by_parents.items():
+                present_kids_by_TextObject_idx = [plotted_fragTexts_by_input_idx[kk] for kk in kids if kk in plotted_fragTexts_by_input_idx.keys()]
+                if present_kids_by_TextObject_idx:
+                    present_TextObjects = [flareplot_attrs["fragment_labels"][idx] for idx in present_kids_by_TextObject_idx]
+                    present_weights =     [len(kwargs_freqs2flare["fragments"][kk]) for kk in kids if kk in plotted_fragTexts_by_input_idx.keys()]
+                    assert len(present_weights)==len(present_TextObjects)
+                    parent_xy.append(_np.average([tt.get_position() for tt in present_TextObjects],
+                                                 axis=0, weights=present_weights))
+                    parent_labels.append(kwargs_pffp["fragment_names"][parent_idx])
+            for atrtr in dir(flareplot_attrs["dots"][0]):
+                #print(atrtr)
+                pass
+            if parent_labels:
+                parent_labels = add_fragment_labels([[None]]*len(parent_labels),
+                                                    [_replace4latex(str(ifrag)) for ifrag in
+                                                     parent_labels],
+                                                    flareplot_attrs["fragment_labels"][0].axes,
+                                                    fontsize=flareplot_attrs["fragment_labels"][0].get_fontsize() * 2,
+                                                    r=flareplot_attrs["r"]+flareplot_attrs["dots"][0].radius*4,
+                                                    xy=_np.array(parent_xy))
+                flareplot_attrs["parent_labels"] = parent_labels
+
+    return flareplot_attrs
+
+def change_axlims_and_resize_Texts(iax, new_r, center=[0, 0]):
+    r"""
+    Change the x- and y-lims of a square plot and scale the Text objects to the new limits
+
+    In matplotlib, fontsizes of Text-objects are constant in pts.
+    Changing the axis limits doesn't affect the text size, but it
+    affects their position. This means that on "zooming out", the
+    text objects get closer to one another, potentially causing
+    overlaps. This method scales the fontsize down by the amount
+    of lost distance between text-object, effectively making them
+    keep their size in axis data units
+
+    Parameters
+    ----------
+    iax
+    new_r
+    center
+
+    Returns
+    -------
+
+    """
+    old_d_x = _np.abs(_np.diff(iax.get_xlim()))
+    old_d_y = _np.abs(_np.diff(iax.get_ylim()))
+    assert iax.get_aspect()==1
+    assert old_d_x==old_d_y
+    iax.set_xlim([center[0] - new_r, center[0] + new_r])
+    iax.set_ylim([center[1] - new_r, center[1] + new_r])
+    new_d = _np.abs(_np.diff(iax.get_xlim()))
+    [lab.set_fontsize(lab.get_fontsize() * (old_d_x / new_d)) for lab in iax.texts]
 
 def cart2pol(x, y):
     rho = _np.sqrt(x**2 + y**2)
