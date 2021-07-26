@@ -43,9 +43,11 @@ def outermost_text_corner(texts,  center=(0,0), verbose=False,):
     r"""
     Return the distance of the farthest corner of any Text's FancyBoxPatch
 
-    Will fail if the text wasn't instantiated with the bbox argument
-    Check https://matplotlib.org/stable/api/text_api.html#matplotlib.text.Text.get_bbox_patch
-    for more info on FancyBoxPatch
+    Will fail if:
+     * axes.draw() hasn't been called on this axis before
+     * text wasn't instantiated with the bbox argument
+       Check https://matplotlib.org/stable/api/text_api.html#matplotlib.text.Text.get_bbox_patch
+       for more info on FancyBoxPatch
 
     Parameters
     ----------
@@ -59,8 +61,6 @@ def outermost_text_corner(texts,  center=(0,0), verbose=False,):
     d : float
 
     """
-    iax = texts[0].axes
-    iax.draw(iax.figure.canvas.get_renderer())
     rmax = 0
     for ii, t in enumerate(texts):
         verts = text2FBPverts(t)
