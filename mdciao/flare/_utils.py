@@ -474,7 +474,8 @@ def add_fragment_labels(fragments,
                         padding=[0,0,0],
                         fontsize=5,
                         center=[0,0],
-                        r=1.0):
+                        r=1.0,
+                        xy=None):
     r"""
     Add fragment labels to a flareplot
 
@@ -497,18 +498,28 @@ def add_fragment_labels(fragments,
     center : pair for floats, default is (0,0)
         The center of the flareplot
     r : scalar, default is 1
-        The radius at which the labes will be put
+        The radius at which the labels will be put
+    xy : list or 2D np.ndarray, None
+        The positions of the members of each fragment,
+        has to be of len==_np.hstack(fragments).
+        If None, then positions will be computed by
+        :obj:`cartify_fragments` using :obj:`r`,
+        :obj:`angle_offset`, and :obj:`padding`.
 
     Returns
     -------
     fragment_labels : list of the :obj:`~matplotlib.text.Text` objects
 
     """
-    _xy = cartify_fragments(fragments,
-                            r=r,
-                            angle_offset=angle_offset,
-                            padding=padding)
-    _xy += center
+    if xy is None:
+        _xy = cartify_fragments(fragments,
+                                r=r,
+                                angle_offset=angle_offset,
+                                padding=padding)
+        _xy += center
+    else:
+        assert len(xy)==len(_np.hstack(fragments))
+        _xy = xy
     fragment_labels = []
     residx2xyidx = _re_warp(_np.arange(len(_np.hstack(fragments))), [len(ifrag) for ifrag in fragments])
     for seg_idxs, iname in zip(residx2xyidx, fragment_names):
