@@ -4014,10 +4014,15 @@ class ContactGroup(object):
             _md.compute_dssp(traj)[0]
 
         kwargs_freqs2flare["top"]=self.top
-        iax, _, _ = _mdcflare.freqs2flare(self.frequency_per_contact(ctc_cutoff_Ang),
+        iax, __, flareplot_attrs = _mdcflare.freqs2flare(self.frequency_per_contact(ctc_cutoff_Ang),
                                        self.res_idxs_pairs,
                                        **kwargs_freqs2flare,
                                        )
+        _mdcflare._utils.add_parent_labels(kwargs_freqs2flare, flareplot_attrs, {"fragments":fragments,
+                                                                                 "fragment_names":fragment_names})
+        if flareplot_attrs.get("parent_labels") is not None:
+            outer_r_in_data_units = _mdcflare._utils._outermost_corner_of_fancypatches(flareplot_attrs["parent_labels"])
+            _mdcflare._utils.change_axlims_and_resize_Texts(iax, outer_r_in_data_units)
         ifig = iax.figure
         ifig.tight_layout()
         return ifig, iax
