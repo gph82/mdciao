@@ -486,6 +486,7 @@ def circle_plot_residues(fragments,
     iax.set_xlim([center[0] - 3*r, center[0] + 3*r])
     iax.set_ylim([center[1] - 3*r, center[1] + 3*r])
     iax.set_aspect('equal')
+    iax.draw(iax.figure.canvas.get_renderer())
 
     # Plot!
     if markersize is None:
