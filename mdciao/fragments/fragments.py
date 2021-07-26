@@ -1003,36 +1003,6 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
     else:
         return fragments, fragnames
 
-def find_parent_fragments(subfragments, fragments):
-    r"""
-    For each subfragment, return the index of the parent fragment
-
-    Parameters
-    ----------
-    subfragments : list of iterables
-    fragments : list of iterables
-
-    Returns
-    -------
-    parents : list
-        A list of len(subfragments) with indices
-        indicating which element of :obj:`fragments`
-        each subfragment is a subset of. If a subfragment
-        doesn't have a parent, its parent is None
-    """
-    _mdcu.lists.assert_no_intersection(fragments)
-    parents=[]
-    for sf in subfragments:
-        parent = None
-        iset = set(list(sf))
-        for pp, par in enumerate(fragments):
-            if set(list(par)).issuperset(iset):
-                parent = pp
-                break
-        parents.append(parent)
-
-    return parents
-
 
 def flarekwargs_preparer(fragments, fragment_names, kwargs_freqs2flare, fixed_color_list, to_intersect_with):
     r"""
