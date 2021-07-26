@@ -1047,7 +1047,6 @@ def interface(
         contact_matrix=True,
         cmap='binary',
         flareplot=True,
-        sparse_flare_frags = True,
         save_nomenclature_files=False,
         no_disk=False,
         savefigs=True,
@@ -1238,13 +1237,6 @@ def interface(
         Produce a flare plot of interface the contact
         matrix. The format will .pdf no matter the value of
         :obj:`graphic_ext`
-    sparse_flare_frags: bool, default is True
-        When deciding what fragments to put on
-        the flareplot, use only those fragments
-        where at least one residue is involved
-        in the interface. If consensus labels
-        are being used, this applies to the
-        fragments derived from the nomenclature
     save_nomenclature_files : bool, default is False
         Save available nomenclature definitions to disk so
         that they can be accessed locally in later uses.
@@ -1462,29 +1454,11 @@ def interface(
             print(fn.fullpath_matrix)
 
         if flareplot:
-            flare_frags, flare_labs = fragments_as_residue_idxs, fragment_names # Not sure about what's best here
-            if len(consensus_labelers) > 0:
-                flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(consensus_frags.values()),
-                                                                          list(consensus_frags.keys()),
-                                                                          highest_res_idx=refgeom.top.n_residues - 1,
-                                                                          orphan_name="",
-                                                                          other_fragments={fn:ifrag for fn, ifrag in zip(fragment_names, fragments_as_residue_idxs)}
-                                                                          )
-            if sparse_flare_frags:
-                idxs = [ii for ii, ff in enumerate(flare_frags) if len(_np.intersect1d(_np.hstack(intf_frags_as_residxs), ff))>0]
-                flare_frags = [flare_frags[ii] for ii in idxs]
-                if flare_labs is not None:
-                    flare_labs = [flare_labs[ii] for ii in idxs]
-
             ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
-                                                             consensus_maps=consensus_maps,
+                                                             consensus_maps=consensus_labelers.values(),
                                                              SS=refgeom,
-                                                             fragment_names=flare_labs,
-                                                             fragments=flare_frags,
-                                                             sparse=_np.hstack(flare_frags),
-                                                             #panelsize=_np.max(ifig.get_size_inches()),
-                                                             # TODO deal with the color madness
-                                                             colors=_mdcfu.col_list_from_input_and_fragments(True, intf_frags_as_residxs, alpha=.75),
+                                                             fragment_names=fragment_names,
+                                                             fragments=fragments_as_residue_idxs,
                                                              )
             ifig.tight_layout()
             if savefigs:
