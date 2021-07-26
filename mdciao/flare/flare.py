@@ -492,7 +492,7 @@ def circle_plot_residues(fragments,
         dot_radius = r * _np.sin(_np.pi/n_positions)
         dot_radius_in_pts = dot_radius*_points2dataunits(iax).mean()
         if dot_radius_in_pts < 1.5:
-            print(ValueError("Drawing this many of residues (%u) in "
+            print(ValueError("Drawing this many residues (%u) in "
                              "a panel %3.1f inches wide/high "
                              "forces too small dotsizes and fontsizes.\n"
                              "If crowding effects "
