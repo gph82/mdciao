@@ -659,11 +659,7 @@ def circle_plot_residues(fragments,
 
     iax.set_yticks([])
     iax.set_xticks([])
-    old_d = _np.abs(_np.diff(iax.get_xlim()))
-    iax.set_xlim([center[0] - outer_r_in_data_units, center[0] + outer_r_in_data_units])
-    iax.set_ylim([center[1] - outer_r_in_data_units, center[1] + outer_r_in_data_units])
-    new_d = _np.abs(_np.diff(iax.get_xlim()))
-    [lab.set_fontsize(lab.get_fontsize()*(old_d/new_d)) for lab in labels+ss_labels+frag_labels]
+    _futils.change_axlims_and_resize_Texts(iax, outer_r_in_data_units)
     _futils.un_overlap_via_fontsize(frag_labels, fac=.90)
 
     return iax, xy, {"fragment_labels":frag_labels,
