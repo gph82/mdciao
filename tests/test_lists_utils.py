@@ -261,8 +261,12 @@ class Test_find_parent_list(unittest.TestCase):
                         [60],
                         [1500,1600,1700],
                         [0]]
-        parents = lists.find_parent_list(subfragments, fragments)
-        self.assertListEqual(parents,[0,0, None,1,2,0])
+        parents_by_kid, kid_by_parents = lists.find_parent_list(subfragments, fragments)
+        self.assertListEqual(parents_by_kid,[0,0, None,1,2,0])
+        self.assertListEqual(list(kid_by_parents.keys()),[0,1,2])
+        _np.testing.assert_array_equal(kid_by_parents[0],[0, 1, 5])
+        _np.testing.assert_array_equal(kid_by_parents[1],[3])
+        _np.testing.assert_array_equal(kid_by_parents[2],[4])
 
 if __name__ == '__main__':
     unittest.main()

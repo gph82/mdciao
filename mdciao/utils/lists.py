@@ -566,14 +566,18 @@ def find_parent_list(sublists, parent_lists):
 
     Returns
     -------
-    parents : list
+    parents_by_child : list
         A list of len(sublists) with indices
         indicating which element of :obj:`parent_lists`
         each sublist is a subset of. If a sublist
         doesn't have a parent, its parent is None
+    child_by_parent : dict
+        A dictionary keyed by parent idx
+        and valued with idxs of their children
     """
     assert_no_intersection(parent_lists)
-    parents=[]
+    parents_by_child=[]
+    child_by_parent={}
     for sf in sublists:
         parent = None
         iset = set(list(sf))
@@ -581,6 +585,9 @@ def find_parent_list(sublists, parent_lists):
             if set(list(par)).issuperset(iset):
                 parent = pp
                 break
-        parents.append(parent)
-
-    return parents
+        parents_by_child.append(parent),
+    for ii, __ in enumerate(parent_lists):
+        kids = _np.flatnonzero(_np.array(parents_by_child)==ii)
+        if len(kids):
+            child_by_parent[ii]=kids
+    return parents_by_child, child_by_parent
