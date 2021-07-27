@@ -5271,7 +5271,7 @@ def _dataframe2flarekwargs(df, scheme):
 
     """
     # Avoiding the np.unique or pandas.unique to get rid of NaNs
-    is_interface = len(_np.hstack([df.index[df["interface fragment"] == ii].values.tolist() for ii in [0,1]]))>0
+    is_interface = [len(_np.hstack([df.index[df["interface fragment"] == ii].values.tolist() for ii in [0,1]]))>0 if "interface fragment" in df.keys() else False][0]
     if scheme == 'auto':
         scheme = {True: 'interface',
                   False: 'all'}[is_interface]
