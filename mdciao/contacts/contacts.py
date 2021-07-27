@@ -51,7 +51,8 @@ from matplotlib import \
 from pandas import \
     DataFrame as _DF, \
     ExcelWriter as _ExcelWriter, \
-    unique as _pdunique
+    unique as _pdunique, \
+    isna as _isna
 
 
 from joblib import \
@@ -5285,6 +5286,11 @@ def _dataframe2flarekwargs(df, scheme):
                 kwargs["fragment_names"] = _pdunique(df[frag_key]).tolist()
                 kwargs["fragments"] = [df.index[df[frag_key] == key].values.tolist() for key in
                                        kwargs["fragment_names"]]
+                if frag_key=="frag":
+                    na_idxs = _np.flatnonzero(_isna(kwargs["fragment_names"]))[0]
+                    del kwargs["fragment_names"][na_idxs]
+                    del kwargs["fragments"][na_idxs]
+                    kwargs["fragment_names"] = [int(ii) for ii in kwargs["fragment_names"]]
                 return frag_key
 
     if scheme == 'all':
