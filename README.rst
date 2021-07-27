@@ -48,15 +48,12 @@ This is an informal list of known issues and TODOs:
    If a given cutoff makes a ContactPair have freq=0, should the CP be kept in the CG, simply not reported? There's now a branch for that: https://github.com/gph82/mdciao/tree/buffer_neighborhood
  * overhaul the "printing" system with proper logging and warnings (perhaps use `loguru <https://github.com/Delgan/loguru>`_)
  * progressbar not very informative for one chunked trajectory or parallel runs
- * the "consensus" fragmentation sometimes breaks automatic flareplot labelling #should no longer be the case after https://github.com/gph82/mdciao/pull/21 (check)
  * Building the docs with sphinx v>2.4.4 doesn't autogen a class' method's linked doc
  * the affiliation of a residue to a fragment is done as "res@frag" on the string output and res^frag in figures, this implementation is simply using replace("@","^"), could be better
- * heuristics for proper font-sizing of flareplots could be optimized
  * parallel execution with memory mdtraj.Trajectory objects should be better
  * harmonize documentation API cli methods (mdciao.cli) and the CLI scripts (mdc_*)
  * The interface between API methods and cli scripts could be better, using sth like `click <https://click.palletsprojects.com/en/7.x/>`_
  * The API-cli methods (interface, neighborhoods, sites, etc) have very similar flows but a lot of code repetition, I am sure `some patterns/boilerplate could be outsourced/refactored even more <https://en.wikipedia.org/wiki/Technical_debt>`_.
- * color handling of the flare-plots is buggy because it tries to guess too many things. Undecided about best decision.
  * Most of the tests were written against a very rigid API that mimicked the CLI closely. Now the API is more flexible
    and many `tests could be re-written or deleted <https://en.wikipedia.org/wiki/Technical_debt>`_ , like those needing
    mock-input or writing to tempdirs because writing figures or files could not be avoided.
