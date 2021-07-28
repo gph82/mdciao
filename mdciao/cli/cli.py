@@ -474,7 +474,7 @@ def _fragment_overview(a,labtype):
         obj = _mdcnomenc.LabelerCGN(val, write_to_disk=a.write_to_disk)
 
     elif labtype == "GPCR":
-        val = a.BW_uniprot_or_file
+        val = a.GPCR_uniprot_or_file
         if _path.exists(val):
             format = "%s"
         else:
