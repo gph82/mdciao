@@ -4110,6 +4110,10 @@ class ContactGroup(object):
         for ii, ifreq in self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang).items():
             list_of_dicts[ii].update({"freq":ifreq})
 
+        if kwargs_freqs2flare.get("sparse_residues") is not None and _mdcu.lists.is_iterable(kwargs_freqs2flare["sparse_residues"]):
+            for ii in kwargs_freqs2flare.get("sparse_residues"):
+                list_of_dicts[ii].update({"sparse_residues":1})
+
         df = _DF(list_of_dicts)
 
         return df
