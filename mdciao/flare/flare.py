@@ -366,7 +366,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     if subplot:
         if iax is iax.figure.axes[-1]:
             [_futils.fontsize_apply(iax, jax) for jax in iax.figure.axes]
-            minwidth = min([_np.unique([line.get_linewidth() for line in jax.lines]) for jax in iax.figure.axes])
+            minwidth = min([_np.unique([line.get_linewidth() for line in jax.lines if line.get_label().startswith("_line")]) for jax in iax.figure.axes])
             [[line.set_linewidth(minwidth) for line in jax.lines] for jax in iax.figure.axes]
     return iax, idxs_of_pairs2plot, plot_attribs
 
