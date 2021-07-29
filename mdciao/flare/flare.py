@@ -83,13 +83,16 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     * which/how residues get plotted:
         * :obj:`res_idxs_pairs` is the primary source of which
-          residues will be plotted. All residues appearing
-          in these pairs will always be plotted, no matter what.
+          residues will be plotted, its length matches the
+          length the :obj:`freqs` object.
         * :obj:`fragments` is used to
-          a) expand the initial residue list and
+          a) expand the initial residue list (if needed) and
           b) split the residues into fragments when placing the dots on the flareplot.
-        * :obj:`sparse` is needed to accomplish b) without
-          expanding the list
+        * :obj:`sparse_residues` can modify :obj:`res_idxs_pairs`,
+          either by looking at non-zero :obj:`freqs` or
+          by direct input (see below)
+        * :obj:`sparse_fragments` is analogous, but with
+          fragments
         * :obj:`highlight_residxs` show the labels of these residues
           in red
 
@@ -215,7 +218,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         ----
         There is a development option for this argument where a residue
         list is passed, meaning, show these residues regardless of any other
-        option that has been passed. Perhaps sparse changes in the future.
+        option that has been passed. Perhaps this changes in the future.
     sparse_fragments : boolean, default is False
         Same as :obj:`sparse_residues`, but with fragments. When
         :obj:`sparse_residues` isn't False, this option
