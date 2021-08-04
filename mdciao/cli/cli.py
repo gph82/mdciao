@@ -1276,6 +1276,9 @@ def interface(
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
     fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    if user_wants_consenus and all([str(cons).lower() == 'none' for cons in [GPCR_uniprot, CGN_PDB]]):
+        raise ValueError(
+            "User wants to definition interface fragments using consenus labels, but no consensus labels were provided via the 'CGN_PDB' or the 'GPCR_uniprot' arguments.")
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     consensus_frags, consensus_maps, consensus_labelers = \
         _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
