@@ -815,7 +815,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     if verbose:
         print("Using method '%s' these fragments were found" % method)
         for ii, ifrag in enumerate(fragments_as_residue_idxs):
-            print_frag(ii, top, ifrag)
+            print_frag(ii, top, ifrag, label_width=0)
 
     return fragments_as_residue_idxs, user_wants_consensus
 
