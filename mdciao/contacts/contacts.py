@@ -4080,7 +4080,7 @@ class ContactGroup(object):
         if consensus_maps is not None:
             consensus_frags = [cmap.top2frags(self.top, verbose=verbose) for cmap in consensus_maps if
                                isinstance(cmap, _mdcn.LabelerConsensus)]
-            _mdcu.lists.assert_no_intersection([list(d.values()) for d in consensus_frags], "consensus fragment")
+            _mdcu.lists.assert_no_intersection([item for d in consensus_frags for item in d.values()], "consensus fragment")
             consensus_frags = {key: val for d in consensus_frags for key, val in d.items()}
             consensus_maps = [cmap if not isinstance(cmap, _mdcn.LabelerConsensus) else cmap.top2labels(self.top) for cmap
                               in consensus_maps]
