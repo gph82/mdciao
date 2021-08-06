@@ -4209,7 +4209,10 @@ class ContactGroup(object):
         if return_traj:
             reptraj = self._contacts[0]._attribute_trajs.trajs[traj_idx]
             print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
-            return _md.load(reptraj, top=self.top,frame=frame_idx)
+            if isinstance(reptraj, str):
+                return _md.load(reptraj, top=self.top,frame=frame_idx)
+            else:
+                return reptraj[frame_idx]
         else:
             return traj_idx,frame_idx
 
