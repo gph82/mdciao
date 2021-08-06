@@ -1103,7 +1103,7 @@ def add_tilted_labels_to_patches(jax, labels,
     for ii, (ipatch, ilab) in enumerate(zip(jax.patches, labels)):
         ix = ii
         iy = ipatch.get_height()
-        iy += .01
+        iy += .05
         if iy > trunc_y_labels_at:
             iy = trunc_y_labels_at
         if single_label:
@@ -1114,8 +1114,12 @@ def add_tilted_labels_to_patches(jax, labels,
                  va='bottom',
                  ha='left',
                  rotation=45,
+                 rotation_mode="anchor",
                  fontsize=_rcParams["font.size"]*label_fontsize_factor,
-                 backgroundcolor="white"
+                 backgroundcolor="white",
+                 bbox={"boxstyle": "square,pad=0.2",
+                       "fc": "white", "ec": "none", "alpha": .9},
+
                  )
 
 def _get_highest_y_of_bbox_in_axes_units(txt_obj):
