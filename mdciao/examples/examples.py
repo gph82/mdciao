@@ -435,7 +435,7 @@ def _unzip2dir(full_path_zipfile):
             new = _path.basename(zipinfo.filename)
             zipinfo.filename = new
             if _path.exists(_path.join(full_dir,new)):
-                print("No unzipping of %s: file already exists." % new)
+                print("No unzipping of '%s': file already exists." % new)
             else:
                 zipdata.extract(zipinfo,
                                 path=full_dir
