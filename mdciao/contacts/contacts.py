@@ -4532,11 +4532,14 @@ class ContactGroup(object):
         bfactors = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, return_array=True)
         bfactors = _np.array([bfactors[aa.residue.index] for aa in self.top.atoms])
         assert geom.top == self.top, "The parsed geometry has to have the same top as self.top"
+        sign_desc = ""
         if interface_sign:
             assert self.is_interface
             interface_0_atoms = _np.hstack([[aa.index for aa in geom.top.residue(ii).atoms] for ii in self.interface_residxs[0]])
             bfactors[interface_0_atoms] *= -1
+            sign_desc = " signed"
         geom.save(pdbfile,bfactors=bfactors)
+        print("Contact frequencies stored as%s bfactor in '%s'"%(sign_desc, pdbfile))
         return bfactors
 
     def _to_per_traj_dicts_for_saving(self, t_unit="ps"):
