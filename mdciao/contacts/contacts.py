@@ -4025,7 +4025,7 @@ class ContactGroup(object):
             outer_r_in_data_units = _mdcflare._utils._outermost_corner_of_fancypatches(flareplot_attrs["parent_labels"])
             _mdcflare._utils.change_axlims_and_resize_Texts(iax, outer_r_in_data_units)
         ifig = iax.figure
-        ifig.tight_layout()
+        #ifig.tight_layout()
         return ifig, iax
 
     def flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose):
