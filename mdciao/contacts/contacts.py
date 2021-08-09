@@ -4059,19 +4059,29 @@ class ContactGroup(object):
 
         list_of_dicts= [{"name":str(res)} for res in self.top.residues]
         if fragments is not None:
-            if self.is_interface:
-                is_subfrag = [_mdcfr.fragments.check_if_subfragment(fr,
-                                                                    'input fragment',
-                                                                    self.interface_fragments, self.top, prompt=False)
-                              for fr in fragments]
-
-                assert all(is_subfrag), ValueError("Some input fragments have residues in both 'self.interface fragments'")
+            # TODO this check is not really generalizable to all situations
+            # leaving it out for the moment until debugging gives a better pic
+            # of the most effective solution
+            #if self.is_interface:
+            #    is_subfrag = [_mdcfr.fragments.check_if_subfragment(fr,
+            #                                                        'input fragment',
+            #                                                        self.interface_fragments, self.top, prompt=False)
+            #                  for fr in fragments]
+            #
+            #    assert all(is_subfrag), ValueError("Some input fragments have residues in both 'self.interface fragments'")
 
             for ii, ifrag in enumerate(fragments):
                 for idx in ifrag:
-                    list_of_dicts[idx]["frag"]=ii
-                    if fragment_names is not None:
-                        list_of_dicts[idx]["fragname"]=fragment_names[ii]
+                    try:
+                        list_of_dicts[idx]["frag"]=ii
+
+                        if fragment_names is not None:
+                            list_of_dicts[idx]["fragname"]=fragment_names[ii]
+                    except IndexError:
+                        pass
+                        # We don't have to have fragment definitions for all residues
+                        # If using same fragment definitions for diferent topologies
+                        # the user is responsible for any mismatches
 
         for ii in [0, 1]:
             [list_of_dicts[res].update({"interface fragment":ii}) for res in self.interface_fragments[ii]]
