@@ -429,7 +429,7 @@ def _unzip2dir(full_path_zipfile):
     full_dir = _path.splitext(full_path_zipfile)[0]
     # https://stackoverflow.com/a/56362289
     #local_dir = _path.basename(full_dir)
-    print("Unzipping to %s" % full_dir)
+    print("Unzipping to '%s'" % full_dir)
     with _ZF(full_path_zipfile) as zipdata:
         for zipinfo in zipdata.infolist():
             new = _path.basename(zipinfo.filename)
