@@ -5375,6 +5375,11 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
     if "textlabels" in df.keys():
         kwargs["textlabels"]=df["textlabels"].values.tolist()
 
+    #Finally, overwrite everything in case sparse_residues is there
+    if "sparse_residues" in df.keys():
+        kwargs["sparse_residues"] = df.index[df["sparse_residues"] == 1].values.tolist()
+        if "colors" in kwargs.keys():
+            kwargs["colors"]=[kwargs["colors"][ii] for ii in kwargs["sparse_residues"]]
     return kwargs
 
 def _populate_colors_if_needed(kwargs, df, fixed_color_list):
