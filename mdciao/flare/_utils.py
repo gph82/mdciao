@@ -28,7 +28,12 @@ from ._textutils import \
 
 from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
-from mdciao.utils.lists import assert_no_intersection as _no_intersect, re_warp as _re_warp, find_parent_list as _find_parent_list
+from mdciao.utils.lists import \
+    assert_no_intersection as _no_intersect, \
+    re_warp as _re_warp, \
+    find_parent_list as _find_parent_list, \
+    in_what_N_fragments as _in_what_N_fragments
+
 from mdciao.utils.str_and_dict import replace4latex as _replace4latex
 from matplotlib.colors import to_rgb as _to_rgb
 from matplotlib.collections import LineCollection as _LCol
@@ -1128,3 +1133,36 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
 
         iax.add_artist(artists[-1])
     return artists, r+aura.max()
+
+def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments):
+    r"""
+    Coarse-grain per-residue frequencies into a per-fragment contact-matrix
+
+    The contact matrix gets symmetrized regardless of the input residue indeces
+
+    Parameters
+    ----------
+    freqs : iterable of floats
+        The frequencies
+    res_idxs_pairs : iterable of pairs
+        The pairs
+    fragments: iterable of iterabels
+        The fragments. Each individual
+        residue of :obj:`res_index_pairs` needs
+        to appear in one (and only one) fragment
+
+    Returns
+    -------
+    mat : np.ndarray
+        Square, symmetric matrix of shape (len(fragments),len(fragments))
+    """
+    res_max = _np.max([_np.hstack(fragments).max(), _np.unique(res_idxs_pairs).max()])
+    idx2frag = _np.zeros(res_max + 1)
+    idx2frag[:] = _np.nan
+    idx2frag[_np.unique(res_idxs_pairs)] = _np.squeeze(_in_what_N_fragments(_np.unique(res_idxs_pairs), fragments))
+    frag_pairs = idx2frag[_np.array(res_idxs_pairs)].astype(int)
+    mat_CG = _np.zeros((len(fragments), len(fragments)))
+    for rp, fp, freq in zip(res_idxs_pairs, frag_pairs, freqs):
+        mat_CG[fp[0], fp[1]] += freq
+        mat_CG[fp[1], fp[0]] += freq
+    return mat_CG

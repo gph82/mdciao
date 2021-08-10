@@ -542,3 +542,26 @@ class TestGetSetFonts(TestCase):
         _utils.fontsize_apply(iax1, iax2)
         new_fs2 = _utils.fontsize_get(iax2)["n_polygons"][0]
         assert fs1 == new_fs2
+
+class Test_coarse_grain_freqs_by_frag(TestCase):
+
+    def test_works(self):
+        freqs = [1, 2,
+                 4, 5,
+                 6]
+
+        frags = [[0, 1], [2, 3], [4, 5]]
+
+        pairs = [[0, 2], [1, 3],  # frags 0-1
+                 [0, 4], [1, 5],  # frags 0-2
+                 [2, 4]]  # frags 1-2
+
+        ref_mat = np.zeros((3,3))
+        ref_mat[0,1]=ref_mat[1,0]=3
+        ref_mat[0,2]=ref_mat[2,0]=9
+        ref_mat[1,2]=ref_mat[2,1]=6
+
+        mat = _utils.coarse_grain_freqs_by_frag(freqs, pairs, frags)
+        np.testing.assert_array_equal(mat, ref_mat)
+
+        np.testing.assert_array_equal(mat, ref_mat)
