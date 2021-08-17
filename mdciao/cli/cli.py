@@ -819,7 +819,7 @@ def residue_neighborhoods(residues,
     print("Will compute contact frequencies for (%u items):\n%s"
           "\n with a stride of %u frames" % (len(xtcs),_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs, __ = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
@@ -834,7 +834,9 @@ def residue_neighborhoods(residues,
                                                                    accept_guess=accept_guess,
                                                                    interpret_as_res_idxs=res_idxs, sort=sort)
 
-
+    top2confrag = _np.full(refgeom.top.n_residues, None)
+    for key, val in consensus_frags.items():
+        top2confrag[val] = key
     # Create a neighborlist
     naive_bonds=False #WIP, perhaps expose
     try:
@@ -926,6 +928,7 @@ def residue_neighborhoods(residues,
                                    consensus_labels=consensus_labels,
                                    trajs=xtcs,
                                    fragment_idxs=fragment_idxs,
+                                   consensus_fragnames=[top2confrag[idx] for idx in pair],
                                    fragment_names=[fragment_names[idx] for idx in fragment_idxs],
                                    fragment_colors=[fragment_colors[idx] for idx in fragment_idxs],
                                    atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in at_pair_trajs]
