@@ -1493,7 +1493,7 @@ class ContactPair(object):
                                                                                          switch_off_Ang=switch_off_Ang)})
         return fdict
 
-    def label_flex(self, AA_format="short",split_label=True):
+    def label_flex(self, AA_format="short", split_label=True, defrag=None):
         r"""
         A more flexible method to produce the label of this :obj:`ContactPair`
 
@@ -1508,7 +1508,10 @@ class ContactPair(object):
             become easier-to-read in plain ascii formats
              - "E25@3.50____-    A35@4.50"
              - "A30@longfrag-    A35@4.50
-
+        defrag : char, default is None
+            Character to use when defragging the
+            contact label. Default is to leave
+            them as is, e.g. would be "@"
         Returns
         -------
         label : str
@@ -1527,6 +1530,8 @@ class ContactPair(object):
             label = self.labels.just_consensus
         else:
             raise ValueError(AA_format)
+        if defrag is not None:
+            label = _mdcu.str_and_dict.defrag_key(label,defrag=defrag, sep="-")
         if split_label:
             label= '%-15s - %-15s'%tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
 
