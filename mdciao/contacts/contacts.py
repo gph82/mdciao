@@ -1454,6 +1454,7 @@ class ContactPair(object):
                        AA_format='short',
                        split_label=True,
                        atom_types=False,
+                       defrag=None,
                        ):
         """
         Returns the :obj:`frequency_overall_trajs` as a more informative
@@ -1474,13 +1475,18 @@ class ContactPair(object):
         atom_types : bool, default is false
             Include the relative frequency of atom-type-pairs
             involved in the contact
+        defrag : string, default is None
+            The character to use for deleting
+            (defragmenting) the fragment info,
+            e.g. "@" for turning "R30@3.51"
+            into "R30"
         Returns
         -------
-        fdcit : dictionary
+        fdict : dictionary
 
         """
 
-        label = self.label_flex(AA_format, split_label)
+        label = self.label_flex(AA_format, split_label=split_label, defrag=defrag)
 
         fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
                 "label":label.rstrip(" "),
