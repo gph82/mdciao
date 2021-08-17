@@ -189,6 +189,7 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
             consensus_labelers[key] = CL
             if verbose:
                 print("These are the %s fragments mapped onto your topology:"%key)
+                #TODO check whether this shouldn't be outside the if verbose???
                 consensus_frags.update(CL.top2frags(top,
                                                   input_dataframe=CL.most_recent_alignment,
                                                   fragments=fragments_as_residue_idxs,
