@@ -1276,10 +1276,10 @@ def interface(
     print("Will compute contact frequencies for trajectories:\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
-    if user_wants_consenus and all([str(cons).lower() == 'none' for cons in [GPCR_uniprot, CGN_PDB]]):
+    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    if user_wants_consensus and all([str(cons).lower() == 'none' for cons in [GPCR_uniprot, CGN_PDB]]):
         raise ValueError(
-            "User wants to definition interface fragments using consenus labels, but no consensus labels were provided via the 'CGN_PDB' or the 'GPCR_uniprot' arguments.")
+            "User wants to define interface fragments using consensus labels, but no consensus labels were provided via the 'CGN_PDB' or the 'GPCR_uniprot' arguments.")
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     consensus_frags, consensus_maps, consensus_labelers = \
         _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
@@ -1291,7 +1291,7 @@ def interface(
     top2confrag = _np.full(refgeom.top.n_residues, None)
     for key, val in consensus_frags.items():
         top2confrag[val] = key
-    if user_wants_consenus:
+    if user_wants_consensus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2)
 
@@ -1715,7 +1715,7 @@ def sites(site_inputs,
         _mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15),stride))
 
     # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elsewhere
-    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, consensus_maps, __ = \
         _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
