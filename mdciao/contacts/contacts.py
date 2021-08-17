@@ -3164,6 +3164,7 @@ class ContactGroup(object):
                      display_sort=False,
                      sum_freqs=True,
                      defrag=None,
+                     zero_freq=1e-2
                      ):
         r"""
         Plot a residue residue distances as violin plots :obj:`~matplotlib.pyplot.violinplot`
@@ -3191,7 +3192,7 @@ class ContactGroup(object):
             higher than this (in Angstrom). This
             remains effectless for contacts in
             which the mean is above the cutoff
-            BUT the frequency is != 0. This case
+            BUT the frequency is > zero_freq. This case
             is very common, since a contact can be
             formed at small distances but broken
             at very large ones, s.t. the mean
@@ -3220,6 +3221,7 @@ class ContactGroup(object):
         defrag : char, default is None
             Whether to leave out the fragment affiliation, e.g.
             "GLU30@3.50" w/ defrag="@" appears as "GLU30" only
+        zero_freq : float, default is 1e-2
 
         Returns
         -------
@@ -3261,7 +3263,7 @@ class ContactGroup(object):
             if freqs is None:
                 order = [oo for oo in order if means[oo]<=truncate_at_mean]
             else:
-                order = [oo for oo in order if freqs[oo]>0]
+                order = [oo for oo in order if freqs[oo]>zero_freq]
 
         label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
         if shorten_AAs:
@@ -3318,7 +3320,8 @@ class ContactGroup(object):
                           ll, ff in zip(label_bars, freqs)]
 
         _plt.xticks(_np.arange(len(order)), [label_bars[oo] for oo in order],
-                    rotation=45,ha="right", va="top")
+                    rotation=45,ha="right", va="top",
+                    rotation_mode="anchor")
         # ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
 
         if xlim is None:
