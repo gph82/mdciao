@@ -827,10 +827,12 @@ def residue_neighborhoods(residues,
     mid_string = "\nWill compute neighborhoods for the residues\n" \
                  "%s\nexcluding %u nearest neighbors" \
                  "\n" % (residues,n_nearest)
-    res_idxs_list, consensus_maps = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
-                                                  midstring=mid_string, GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
-                                                  save_nomenclature_files=save_nomenclature_files,
-                                                  accept_guess=accept_guess, interpret_as_res_idxs=res_idxs, sort=sort)
+    res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
+                                                                   midstring=mid_string, GPCR_uniprot=GPCR_uniprot,
+                                                                   CGN_PDB=CGN_PDB,
+                                                                   save_nomenclature_files=save_nomenclature_files,
+                                                                   accept_guess=accept_guess,
+                                                                   interpret_as_res_idxs=res_idxs, sort=sort)
 
 
     # Create a neighborlist
@@ -2055,12 +2057,12 @@ def residue_selection(expression,
         fragments = [_signature(_mdcfrg.get_fragments).parameters["method"].default]
     _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
                                                                    _top, verbose=True)
-    res_idxs_list, consensus_maps = _res_resolver(expression, _top, _frags,
-                                                  midstring="Your selection '%s' yields:" % expression,
-                                                  GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
-                                                  save_nomenclature_files=save_nomenclature_files,
-                                                  accept_guess=accept_guess,
-                                                  just_inform=True)
+    res_idxs_list, consensus_maps, __ = _res_resolver(expression, _top, _frags,
+                                                      midstring="Your selection '%s' yields:" % expression,
+                                                      GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
+                                                      save_nomenclature_files=save_nomenclature_files,
+                                                      accept_guess=accept_guess,
+                                                      just_inform=True)
 
     return res_idxs_list, _frags, consensus_maps
 
