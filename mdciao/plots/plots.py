@@ -1535,7 +1535,8 @@ def _plot_violin_baseplot(vdata,
     if labels is None:
         jax.set_xticks([])
     else:
-        _plt.xticks(xvec, labels, rotation=45, ha="right", va="top")
+        _plt.xticks(xvec, labels, rotation=45, ha="right", va="top",
+                    rotation_mode="anchor")
     if isinstance(colors, list):
         assert len(colors)>=len(violins["bodies"]),"Not enough colors (%u) for the number of violins (%u)"%(len(colors),len(vdata))
     elif _is_colormapstring(colors):
