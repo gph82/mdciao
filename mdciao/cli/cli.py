@@ -1948,19 +1948,16 @@ def pdb(code,
 
 def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
-
-
-
-    consensus_maps = _parse_consensus_options_and_return_fragment_defs(
-        {"GPCR": GPCR_uniprot,
-         "CGN": CGN_PDB},
-        top,
-        fragments,
-        verbose=True,
-        save_nomenclature_files=save_nomenclature_files,
-        accept_guess=accept_guess)[1]
-    consensus_maps={"GPCR":consensus_maps[0],
-                    "CGN":consensus_maps[1]}
+    consensus_frags, consensus_maps, consensus_labelers = \
+        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
+                                                           "CGN": CGN_PDB},
+                                                          top,
+                                                          fragments,
+                                                          verbose=True,
+                                                          save_nomenclature_files=save_nomenclature_files,
+                                                          accept_guess=accept_guess)
+    consensus_maps = {"GPCR": consensus_maps[0],
+                      "CGN": consensus_maps[1]}
 
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
                                                                         pick_this_fragment_by_default=None,
@@ -1978,7 +1975,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
                                                   _mdcu.lists.in_what_fragment(idx, fragments),
                                                   consensus_maps=consensus_maps,
                                                   table=True))
-    return res_idxs_list, consensus_maps
+    return res_idxs_list, consensus_maps, consensus_frags
 
 def residue_selection(expression,
                       top, GPCR_uniprot=None,
