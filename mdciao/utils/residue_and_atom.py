@@ -449,6 +449,61 @@ def find_CA(res, CA_name="CA", CA_dict=None):
 
 _CA_rules = {"GDP": "C1", "P0G":"C12"}
 
+_AA_types = {"positive": "ARG HIS LYS",
+             "negative": "ASP GLU",
+             "polar": "SER THR ASN GLN",
+             "special": "CYS GLY PRO",
+             "hydrophobic": "ALA ILE LEU MET PHE TRP TYR VAL"}
+for _key in _AA_types.keys():
+    _AA_types[_key] += ' '+" ".join([_AMINO_ACID_CODES[_AA] for _AA in _AA_types[_key].split()])
+_res2restype = {aa:key for key, val in _AA_types.items() for aa in val.split()}
+_res2restype
+
+def AAtype(res,
+           return_color=False,
+           typecolors={"positive": "blue",
+                       "negative": "red",
+                       "polar": "green",
+                       "special": "gray",
+                       "hydrophobic": "gray",
+                       "NA": "purple"}):
+    r"""
+    Residue types, optionally color coded
+
+    The types are:
+    * "positive": "ARG HIS LYS",
+    * "negative": "ASP GLU",
+    * "polar": "SER THR ASN GLN",
+    * "special": "CYS GLY PRO",
+    * "hydrophobic": "ALA ILE LEU MET PHE TRP TYR VAL"
+
+    Parameters
+    ----------
+    res : str or :obj:`~mdtraj.core.topology.Residue`
+    return_color : bool, default is False
+        Return the color associated
+        with the type (positive:blue, negative:red, etc)
+        rather than type itself
+    typecolors : dict
+        The map of types to colors
+
+    Returns
+    -------
+
+    rtype : str
+        Either the type or the color
+    """
+    if isinstance(res,str):
+        key = res
+    else:
+        key = res.name
+
+    rtype = _res2restype.get(key,"NA")
+    if return_color:
+        return typecolors[rtype]
+    else:
+        return rtype
+
 def residue_line(item_desc, residue, frag_idx,
                  consensus_maps=None,
                  fragment_names=None,
