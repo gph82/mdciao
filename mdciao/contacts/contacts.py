@@ -2439,6 +2439,7 @@ class ContactGroup(object):
     def residx2ctcidx(self,idx):
         r"""
         Indices of the contacts and the position (0 or 1) in which the residue with residue :obj:`idx` appears
+
         Parameters
         ----------
         idx: int
@@ -4719,7 +4720,6 @@ class ContactGroup(object):
                                                       float_format='%6.3f',
                                                       index=False)
             elif ext.endswith("npy"):
-                print("am I here?",savename)
                 _np.save(savename,idict)
             else:
                 _np.savetxt(savename, idict["data"],
