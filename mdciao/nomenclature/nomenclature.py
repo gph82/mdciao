@@ -747,7 +747,7 @@ class LabelerConsensus(object):
         Parameters
         ----------
         top:
-            :py:class:`~mdtraj.Topology` object
+            :py:class:`~mdtraj.Topology` or path to topology file (e.g. a pdb)
         fragments: iterable of integers, default is None
             The user can parse an existing list of fragment-definitions
             (via residue idxs) to check if the newly found, consensus
@@ -789,6 +789,9 @@ class LabelerConsensus(object):
             Dictionary with subdomain names as keys
             and lists of indices as values
         """
+
+        if isinstance(top, str):
+            top = _md.load(top).top
 
         if input_dataframe is None:
             top2self, self2top = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment)
