@@ -291,11 +291,14 @@ def freqs2flare(freqs, res_idxs_pairs,
         "res_idxs_pairs array do not match %u vs %u"%(freqs.shape[1], len(res_idxs_pairs))
 
     # Figure out the combination of sparse_residues/fragments options
-    residues_as_fragments = _futils._parse_residue_and_fragments(res_idxs_pairs,
-                                                                 sparse_residues=sparse_residues,
-                                                                 sparse_fragments=sparse_fragments,
-                                                                 fragments=fragments,
-                                                                 top=top)
+    residues_as_fragments, anchor_fragments, mute_fragments = \
+        _futils._parse_residue_and_fragments(res_idxs_pairs,
+                                             sparse_residues=sparse_residues,
+                                             sparse_fragments=sparse_fragments,
+                                             fragments=fragments,
+                                             top=top,
+                                             anchor_fragments=anchor_fragments,
+                                             mute_fragments=mute_fragments)
     # Delete fragment names that won't be used
     if fragment_names is not None and fragments is not None:
         fragment_names = [fn for fr, fn in zip(fragments,fragment_names) if len(_np.intersect1d(fr,_np.hstack(residues_as_fragments)))>0]

@@ -894,7 +894,9 @@ def un_overlap_via_fontsize(text_objects, fac=.95, maxiter=50):
         counter += 1
 
 #TODO RENAME
-def _parse_residue_and_fragments(res_idxs_pairs, sparse_residues=False, sparse_fragments=False, fragments=None, top=None):
+def _parse_residue_and_fragments(res_idxs_pairs, sparse_residues=False,
+                                 sparse_fragments=False, fragments=None, top=None,
+                                 anchor_fragments=None, mute_fragments=None):
     r""" Decide what residues the user wants to get a dot.
 
     Typically, the output of this function will get parsed to :obj:`circle_plot_residues`
@@ -930,7 +932,16 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse_residues=False, sparse_f
         top is None, dots will be assigned only up
         to max(res_idxs), and if top is passed, up to
          :obj:`top.n_residues`
+    anchor_fragments : list, default is None
+        In case this was passed as not None initially
+        a re-indexing needs to happen here
+    mute_fragments : list, default is None
+        In case this was passed as not None initially
+        a re-indexing needs to happen here
 
+    Returns
+    -------
+    residues_as_fragments, anchor_fragments, mute_fragments
     """
     res_idxs = _np.unique(res_idxs_pairs)
     if sparse_fragments:
@@ -966,7 +977,22 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse_residues=False, sparse_f
 
         residues_as_fragments = [ifrag for ifrag in residues_as_fragments if len(ifrag) > 0]
 
-    return residues_as_fragments
+    re_indexed = []
+    #TODO a lot of re-indexing or selections elswhere using some variation of "intersect_with"
+    #try to refactor in one general method or many methods grouped together
+    for am_frags in [anchor_fragments, mute_fragments]:
+        if am_frags is not None:
+            assert fragments is not None
+            intersect_with = _np.hstack([fragments[ii] for ii in am_frags])
+            am_frags = [ii for ii, ifrag in enumerate(residues_as_fragments) if len(_np.intersect1d(ifrag,intersect_with))>0]
+            if len(am_frags)==0:
+                am_frags = None
+        else:
+            pass
+        re_indexed.append(am_frags)
+    anchor_fragments, mute_fragments = re_indexed
+
+    return residues_as_fragments, anchor_fragments, mute_fragments
 
 
 def fontsize_get(iax):
