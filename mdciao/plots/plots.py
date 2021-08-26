@@ -36,9 +36,10 @@ from os import path as _path
 
 from collections import defaultdict as _defdict
 
-def plot_w_smoothing_auto(ax, x, y,
+def plot_w_smoothing_auto(ax, y,
                           label,
                           color,
+                          x = None,
                           gray_background=False,
                           n_smooth_hw=0):
     r"""
@@ -49,12 +50,14 @@ def plot_w_smoothing_auto(ax, x, y,
     Parameters
     ----------
     ax : :obj:`~matplotlib.axes.Axes`
-    x : iterable of floats
     y : iterable of floats
     label : str
         Label for the legend
     color : str
         anything `matplotlib.pyplot.colors` understands
+    x : iterable of floats, default is None
+        If not provided, will default to
+        x = _np.arange(len(y))
     gray_background : bool, default is False
         If True, instead of using a fainted version
         of :obj:`color`, the original :obj:`y`
@@ -71,6 +74,8 @@ def plot_w_smoothing_auto(ax, x, y,
 
     """
     alpha = 1
+    if x is None:
+        x = _np.arange(len(y))
     if n_smooth_hw > 0:
         alpha = .2
         x_smooth = _mdcu.lists.window_average_fast(_np.array(x), half_window_size=n_smooth_hw)
