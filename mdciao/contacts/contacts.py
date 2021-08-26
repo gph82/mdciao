@@ -377,7 +377,7 @@ class _TimeTraces(object):
                                        [len(itime) for itime in time_trajs])
         if atom_pair_trajs is not None:
             assert len(atom_pair_trajs)==len(ctc_trajs)
-            assert all([len(itraj) == len(iatt) for itraj, iatt in zip(ctc_trajs, atom_pair_trajs)]), "atom_pair_trajs does not have the appropiate length"
+            assert all([len(itraj) == len(iatt) for itraj, iatt in zip(ctc_trajs, atom_pair_trajs)]), ("atom_pair_trajs does not have the appropiate length", [(len(itraj), len(iatt)) for itraj, iatt in zip(ctc_trajs, atom_pair_trajs)])
             self._atom_pair_trajs = [_np.array(itraj) for itraj in self._atom_pair_trajs]
             assert all([itraj.shape[1]==2 for itraj in self._atom_pair_trajs])
     # Trajectories
