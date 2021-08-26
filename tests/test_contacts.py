@@ -2779,6 +2779,13 @@ class Test_modified_mdtraj_contacts(unittest.TestCase):
             _np.testing.assert_array_equal(ctcs_ref, ctcs_tst)
             _np.testing.assert_array_equal(residxs_ref, residxs_tst)
 
+    def test_ca_atom_pairs(self):
+        ctcs_tst, residxs_tst, aa_pairs = contacts._md_compute_contacts.compute_contacts(self.traj, [[10, 20], [100, 200]],
+                                                                                   scheme="ca")
+        assert len(aa_pairs)==len(ctcs_tst)
+        assert _np.shape(aa_pairs)==(self.traj.n_frames,4)
+        assert tuple(_np.unique(aa_pairs,axis=0).squeeze())==tuple([self.traj.top.residue(rr).atom("CA").index for rr in [10,20,100,200]])
+
     def test_softmin(self):
         ctcs_ref, residxs_ref = md.compute_contacts(self.traj, [[10, 20], [100, 200]], soft_min=True)
         ctcs_tst, residxs_tst, __ = contacts._md_compute_contacts.compute_contacts(self.traj, [[10, 20], [100, 200]], soft_min=True)

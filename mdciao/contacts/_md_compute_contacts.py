@@ -28,7 +28,7 @@
 
 #    The modifications consist in including the indices
 #    of the closest atom-pairs in the returned values. The
-#    modified lines are 243, 244, and 255
+#    modified lines are 212, 243, 244, and 255
 ##############################################################################
 
 
@@ -102,7 +102,7 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
         If periodic is True and the trajectory contains unitcell information,
         we will compute distances under the minimum image convention.
     soft_min : bool, default=False
-        If soft_min is true, we will use a diffrentiable version of
+        If soft_min is true, we will use a differentiable version of
         the scheme. The exact expression used
          is d = \frac{\beta}{log\sum_i{exp(\frac{\beta}{d_i}})} where
          beta is user parameter which defaults to 20nm. The expression
@@ -209,7 +209,7 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
 
         residue_pairs = _np.array(filtered_residue_pairs)
         distances = _md.compute_distances(traj, atom_pairs, periodic=periodic)
-        aa_pairs = atom_pairs
+        aa_pairs = [[pair]*traj.n_frames for pair in atom_pairs]
 
     elif scheme in ['closest', 'closest-heavy', 'sidechain', 'sidechain-heavy']:
         if scheme == 'closest':
