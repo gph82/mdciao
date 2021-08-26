@@ -1160,11 +1160,12 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
         iax.add_artist(artists[-1])
     return artists, r+aura.max()
 
-def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments):
+def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments,
+                               check_if_subset=True):
     r"""
     Coarse-grain per-residue frequencies into a per-fragment contact-matrix
 
-    The contact matrix gets symmetrized regardless of the input residue indeces
+    The contact matrix gets symmetrized regardless of the input residue indices
 
     Parameters
     ----------
@@ -1172,23 +1173,48 @@ def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments):
         The frequencies
     res_idxs_pairs : iterable of pairs
         The pairs
-    fragments: iterable of iterabels
+    fragments: iterable of iterables
         The fragments. Each individual
-        residue of :obj:`res_index_pairs` needs
-        to appear in one (and only one) fragment
+        residue of :obj:`res_index_pairs` can
+        appear at most in one (and only one) fragment
+    check_if_subset : bool, default is True
+        Check whether all idxs in
+        :obj:`res_idxs_pairs` belong
+        to some fragment of :obj:`fragments`
+        and raise an error if they dont.
+        Bypassing this check  may lead
+        to the residues missing from
+        :obj:`fragments` not contributing
+        to the freqs of the coarse-grained matrix
 
     Returns
     -------
     mat : np.ndarray
         Square, symmetric matrix of shape (len(fragments),len(fragments))
     """
+    _no_intersect(fragments,word="fragments")
+
     res_max = _np.max([_np.hstack(fragments).max(), _np.unique(res_idxs_pairs).max()])
     idx2frag = _np.zeros(res_max + 1)
     idx2frag[:] = _np.nan
-    idx2frag[_np.unique(res_idxs_pairs)] = _np.squeeze(_in_what_N_fragments(_np.unique(res_idxs_pairs), fragments))
+
+    children = _np.unique(res_idxs_pairs)
+    parents = _in_what_N_fragments(children, fragments)
+    orphans = _np.flatnonzero([len(par) == 0 for par in parents])
+    parents = _np.squeeze(parents)
+    if len(orphans)>0:
+        if check_if_subset:
+            raise ValueError("residues %s don't appear in any 'fragments'. "
+                             "If you're OK with this, set 'check_if_subset=False'"%(children[orphans]))
+        else:
+            children = _np.delete(children,orphans)
+            parents = _np.delete(parents,orphans)
+
+    idx2frag[children] = parents
     frag_pairs = idx2frag[_np.array(res_idxs_pairs)].astype(int)
     mat_CG = _np.zeros((len(fragments), len(fragments)))
     for rp, fp, freq in zip(res_idxs_pairs, frag_pairs, freqs):
-        mat_CG[fp[0], fp[1]] += freq
-        mat_CG[fp[1], fp[0]] += freq
+        if len(_np.intersect1d(rp, children)) == 2:
+            mat_CG[fp[0], fp[1]] += freq
+            mat_CG[fp[1], fp[0]] += freq
     return mat_CG
