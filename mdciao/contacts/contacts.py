@@ -5412,3 +5412,57 @@ def _populate_colors_if_needed(kwargs, df, fixed_color_list):
     if "colors" not in kwargs.keys() and "frag" in df.keys():
             kwargs["colors"] = _np.vstack([fixed_color_list[int(df["frag"][ii])] for ii in kwargs["sparse_residues"]])
             kwargs["colors"] = kwargs["colors"][_np.argsort(kwargs["sparse_residues"])]
+
+def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
+    r"""
+    Consensus fragments (like TM6 or G.H5.) and maps from different input types
+
+    Note
+    ----
+    This is a low-level, ad-hoc method not intented
+    for API use It's very similar to
+    cli._parse_consensus_options_and_return_fragment_defs,
+    with which it might be merged in the future
+
+    Parameters
+    ----------
+    top
+    consensus_info : list
+        The items of this list can be a mix of:
+         * indexables containing the consensus
+            labels (strings) themselves. They
+            need to be "gettable" by residue index, i.e.
+            dict, list or array. Typically, one
+            generates these maps by using the top2labels
+            method of the LabelerConsensus object.
+            These will be returned "untouched" in
+            :obj:`consensus_maps`
+         * :obj:`LabelerConsensus`-objects
+            Where the fragments are obtained from.
+            Additionally, their
+            top2labels and top2fragments methods are
+            called on-the-fly, generating lists
+            like the ones described above.
+    verbose : bool, default is True
+
+    Returns
+    -------
+    consensus_maps : list
+        Per-residue maps, one per each object in
+        the input :obj:`consensus_maps`. If it
+        already was a map, it is returned untouched,
+        if it was an :obj:`LabelerConsensus`, a map
+        was created out of it
+    consensus_frags : dict
+        One flat dict with all the consensus fragments from
+        all (if any) the LabelerConsensus
+        (not the maps) in the :obj:`consensus info`
+    """
+
+    consensus_frags = [cmap.top2frags(top, verbose=verbose) for cmap in consensus_info if
+                       isinstance(cmap, _mdcn.LabelerConsensus)]
+    _mdcu.lists.assert_no_intersection([item for d in consensus_frags for item in d.values()], "consensus fragment")
+    consensus_frags = {key: val for d in consensus_frags for key, val in d.items()}
+    consensus_maps = [cmap if not isinstance(cmap, _mdcn.LabelerConsensus) else cmap.top2labels(top) for cmap
+                      in consensus_info]
+    return consensus_maps, consensus_frags

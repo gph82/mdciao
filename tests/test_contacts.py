@@ -13,7 +13,8 @@ from mdciao.contacts.contacts import \
     _TimeTraces, \
     _Fragments, \
     _linear_switchoff, \
-    _delta_freq_pairs
+    _delta_freq_pairs, \
+    _consensus_maps2consensus_frags
 
 import mdtraj as md
 import unittest
@@ -26,6 +27,7 @@ from mdciao.examples import filenames as test_filenames
 import pytest
 from mdciao import contacts
 from mdciao import examples
+from mdciao import nomenclature
 from pandas import DataFrame as _DF
 import pickle
 
@@ -2816,3 +2818,35 @@ class Test_modified_mdtraj_contacts(unittest.TestCase):
 
     def test_passes(self):
         contacts._md_compute_contacts.compute_contacts(self.traj, [[0, 1]], scheme='ca', soft_min=True)
+
+class Test_consensus_maps2consensus_frag(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.GPCR = nomenclature.LabelerGPCR(examples.filenames.adrb2_human_xlsx)
+        cls.CGN = nomenclature.LabelerCGN(examples.filenames.CGN_3SN6)
+        cls.geom = md.load(examples.filenames.actor_pdb)
+        cls.maps = [lab.top2labels(cls.geom.top) for lab in [cls.CGN, cls.GPCR]]
+        cls.frags = [lab.top2frags(cls.geom.top) for lab in [cls.CGN, cls.GPCR]]
+
+    def test_works_on_empty(self):
+        maps, frags = _consensus_maps2consensus_frags(self.geom.top, [], verbose=True)
+        assert maps == []
+        assert frags == {}
+
+    def test_works_on_maps(self):
+        maps, frags = _consensus_maps2consensus_frags(self.geom.top, self.maps, verbose=True)
+        self.assertListEqual(maps, self.maps)
+        assert frags == {}
+
+    def test_works_on_Labelers(self):
+        maps, frags = _consensus_maps2consensus_frags(self.geom.top, [self.CGN, self.GPCR], verbose=True)
+        self.assertListEqual(maps, self.maps)
+        for ifrags in self.frags:
+            for key, val in ifrags.items():
+                self.assertListEqual(frags[key],val)
+
+    def test_works_on_mix(self):
+        maps, frags = _consensus_maps2consensus_frags(self.geom.top, [self.maps[0], self.GPCR], verbose=True)
+        self.assertListEqual(maps, self.maps)
+        self.assertDictEqual(frags, self.frags[1])
