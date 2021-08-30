@@ -5466,3 +5466,39 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
     consensus_maps = [cmap if not isinstance(cmap, _mdcn.LabelerConsensus) else cmap.top2labels(top) for cmap
                       in consensus_info]
     return consensus_maps, consensus_frags
+
+
+def _mix_fragment_info(highest_res_idx, consensus_frags, fragments, fragment_names):
+    r"""Splice consensus frags with user-provided fragment definitions
+
+    This is just a thin wrapper around
+    :obj:`mdciao.fragments.splice_orphan_fragments`
+    that makes the :obj: `consensus_frags`
+    be the main frags and the :obj:`fragments` be the
+    :obj:`other_fragments`. It allows
+    for :obj:`fragments` and/or :obj:`fragment_names`
+    to be None and creates names on the fly if needed
+
+    Note
+    ----
+    This is an internal ad-hoc method for
+    developing the best integration of
+    the logic behind the fragmentation
+    for flareplots, and might disappear in
+    in the future. Not intented of API
+    use
+    """
+
+    if fragments is not None:
+        if fragment_names is not None:
+            other_frags = {fn: fr for fn, fr in zip(fragment_names, fragments)}
+        else:
+            other_frags = {"frag %u" % ii: fn for ii, fn in enumerate(fragments)}
+
+    else:
+        other_frags = None
+
+    return _mdcfr.splice_orphan_fragments(list(consensus_frags.values()),
+                                          list(consensus_frags.keys()),
+                                          highest_res_idx=highest_res_idx,
+                                          other_fragments=other_frags)
