@@ -1434,21 +1434,21 @@ class TestContactGroup(TestBaseClassContactGroup):
 
 
     def test_time_traces_n_ctcs(self):
-        CP = contacts.ContactGroup([self.cp1, self.cp2, self.cp3])
-        ncts_tt = CP.n_ctcs_timetraces(2.5)
+        CG = contacts.ContactGroup([self.cp1, self.cp2, self.cp3])
+        ncts_tt = CG.n_ctcs_timetraces(2.5)
         _np.testing.assert_array_equal([3, 1, 1], ncts_tt[0])
         _np.testing.assert_array_equal([1], ncts_tt[1])
 
     def test_no_interface(self):
-        CP = contacts.ContactGroup([self.cp1, self.cp2, self.cp3])
-        assert CP.is_interface is False
-        _np.testing.assert_array_equal(CP.interface_residxs, [[], []])
-        _np.testing.assert_array_equal(CP.interface_residue_names_w_best_fragments_short, [[], []])
-        _np.testing.assert_array_equal(CP.interface_reslabels_short, [[], []])
-        _np.testing.assert_array_equal(CP.interface_labels_consensus, [[], []])
+        CG = contacts.ContactGroup([self.cp1, self.cp2, self.cp3])
+        assert CG.is_interface is False
+        _np.testing.assert_array_equal(CG.interface_residxs, [[], []])
+        _np.testing.assert_array_equal(CG.interface_residue_names_w_best_fragments_short, [[], []])
+        _np.testing.assert_array_equal(CG.interface_reslabels_short, [[], []])
+        _np.testing.assert_array_equal(CG.interface_labels_consensus, [[], []])
         with pytest.raises(AssertionError):
-            CP.plot_interface_frequency_matrix(None)
-        assert CP.interface_frequency_matrix(None) is None
+            CG.plot_interface_frequency_matrix(None)
+        assert CG.interface_frequency_matrix(None) is None
 
     def test_repframe(self):
         CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
@@ -1524,8 +1524,8 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         )
 
     def test_frequency_dicts(self):
-        CP = self.CG
-        freqdcit = CP.frequency_dicts(2, split_label=False)
+        CG = self.CG
+        freqdcit = CG.frequency_dicts(2, split_label=False)
         self.assertDictEqual(freqdcit, {"E30@fragA-V31@fragB" : 2 / 5,
                                         "E30@fragA-W32@fragC" : 1 / 5})
 
@@ -1540,44 +1540,44 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
                               "E30@fragA-V31@fragB": 2 / 5})
 
     def test_frequency_per_contact(self):
-        CP = self.CG
-        freqs = CP.frequency_per_contact(2)
+        CG = self.CG
+        freqs = CG.frequency_per_contact(2)
         _np.testing.assert_array_equal([2 / 5, 1 / 5], freqs)
 
     def test_frequency_per_residue_idx(self):
-        CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_idx_dict(2)
+        CG = self.CG
+        freq_dict = CG.frequency_sum_per_residue_idx_dict(2)
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict[0], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict[1], 2 / 5)
         _np.testing.assert_equal(freq_dict[2], 1 / 5)
 
     def test_frequency_per_residue_idx_return_array(self):
-        CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_idx_dict(2)
-        freq_array = CP.frequency_sum_per_residue_idx_dict(2, return_array=True)
+        CG = self.CG
+        freq_dict = CG.frequency_sum_per_residue_idx_dict(2)
+        freq_array = CG.frequency_sum_per_residue_idx_dict(2, return_array=True)
         _np.testing.assert_array_equal(list(freq_dict.values()),freq_array[freq_array>0])
 
 
     def test_frequency_per_residue_name(self):
-        CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names(2)[0]
+        CG = self.CG
+        freq_dict = CG.frequency_sum_per_residue_names(2)[0]
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
         _np.testing.assert_equal(freq_dict["W32@fragC"], 1 / 5)
 
     def test_frequency_per_residue_name_no_sort(self):
-        CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names(2, sort=False)[0]
+        CG = self.CG
+        freq_dict = CG.frequency_sum_per_residue_names(2, sort=False)[0]
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
         _np.testing.assert_equal(freq_dict["W32@fragC"], 1 / 5)
 
     def test_frequency_per_residue_name_dataframe(self):
-        CP = self.CG
-        freq_dict = CP.frequency_sum_per_residue_names(2,
+        CG = self.CG
+        freq_dict = CG.frequency_sum_per_residue_names(2,
                                                        return_as_dataframe=True)[0]
         assert len(freq_dict) == 3
         assert isinstance(freq_dict,_DF)
@@ -1588,28 +1588,28 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
 
     def test_frequency_dict_by_consensus_labels_fails(self):
-        CP = self.CG
+        CG = self.CG
 
         with pytest.raises(AssertionError):
-            CP.frequency_dict_by_consensus_labels(2)
+            CG.frequency_dict_by_consensus_labels(2)
 
     def test_frequency_dict_by_consensus_labels(self):
-        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     self.cp3_wtop_and_conslabs])
 
-        freq_dict = CP.frequency_dict_by_consensus_labels(2)
+        freq_dict = CG.frequency_dict_by_consensus_labels(2)
         _np.testing.assert_equal(freq_dict["3.50"]["4.50"], 2 / 3)
         _np.testing.assert_equal(freq_dict["3.50"]["5.50"], 1 / 3)
         _np.testing.assert_equal(freq_dict["4.50"]["5.50"], 1 / 3)
         assert len(freq_dict) == 2
 
     def test_frequency_dict_by_consensus_labels_include_trilow(self):
-        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     self.cp3_wtop_and_conslabs])
 
-        freq_dict = CP.frequency_dict_by_consensus_labels(2, include_trilower=True)
+        freq_dict = CG.frequency_dict_by_consensus_labels(2, include_trilower=True)
         _np.testing.assert_equal(freq_dict["3.50"]["4.50"], 2 / 3)
         _np.testing.assert_equal(freq_dict["3.50"]["5.50"], 1 / 3)
         _np.testing.assert_equal(freq_dict["4.50"]["5.50"], 1 / 3)
@@ -1620,11 +1620,11 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         assert len(freq_dict) == 3
 
     def test_frequency_dict_by_consensus_labels_return_triplets(self):
-        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     self.cp3_wtop_and_conslabs])
 
-        freq_dict = CP.frequency_dict_by_consensus_labels(2, return_as_triplets=True)
+        freq_dict = CG.frequency_dict_by_consensus_labels(2, return_as_triplets=True)
         _np.testing.assert_array_equal(freq_dict[0], _np.array([["3.50", "4.50", 2 / 3]]).squeeze())
         _np.testing.assert_array_equal(freq_dict[1], _np.array([["3.50", "5.50", 1 / 3]]).squeeze())
         _np.testing.assert_array_equal(freq_dict[2], _np.array([["4.50", "5.50", 1 / 3]]).squeeze())
@@ -1632,19 +1632,19 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         assert len(freq_dict) == 3
 
     def test_frequency_dict_by_consensus_labels_interface_raises(self):
-        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     self.cp3_wtop_and_conslabs])
         with pytest.raises(NotImplementedError):
-            CP.frequency_dict_by_consensus_labels(2, sort_by_interface=True)
+            CG.frequency_dict_by_consensus_labels(2, sort_by_interface=True)
 
     def test_frequency_as_contact_matrix(self):
-        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     ])
 
-        mat = CP.frequency_as_contact_matrix(2)
-        mat_ref = _np.zeros((CP.top.n_residues, CP.top.n_residues))
+        mat = CG.frequency_as_contact_matrix(2)
+        mat_ref = _np.zeros((CG.top.n_residues, CG.top.n_residues))
         mat_ref[:, :] = _np.nan
         mat_ref[0, 1] = mat_ref[1, 0] = 2 / 3
         mat_ref[0, 2] = mat_ref[2, 0] = 1 / 3
@@ -1652,13 +1652,13 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(mat, mat_ref)
 
     def test_frequency_to_bfactor_just_runs(self):
-        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     ],
                                    interface_fragments = [[0],[1,2]])
         with _TDir() as tmpdir:
             pdb=path.join(tmpdir,"as_betas.pdb")
-            betas = CP.frequency_to_bfactor(3.5,pdb, self.geom, interface_sign=True)
+            betas = CG.frequency_to_bfactor(3.5,pdb, self.geom, interface_sign=True)
         assert len(betas) == self.geom.n_atoms
 
     def test_interface_frequency_matrix(self):
@@ -1768,29 +1768,29 @@ class TestContactGroupFrequencies_max_cutoff(TestBaseClassContactGroup):
             self.CG.frequency_sum_per_residue_names(6)
 
     def test_frequency_dict_by_consensus_labels(self):
-        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     self.cp3_wtop_and_conslabs],
                                    max_cutoff_Ang=3)
         with self.assertRaises(ValueError) as cm:
-            CP.frequency_dict_by_consensus_labels(6)
+            CG.frequency_dict_by_consensus_labels(6)
 
     def test_frequency_as_contact_matrix(self):
-        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     ],
                                    max_cutoff_Ang=3)
         with self.assertRaises(ValueError):
-            CP.frequency_as_contact_matrix(6)
+            CG.frequency_as_contact_matrix(6)
 
     def test_frequency_to_bfactor_just_runs(self):
-        CP = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
+        CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     ],
                                    interface_fragments = [[0],[1,2]],
                                    max_cutoff_Ang=3)
         with self.assertRaises(ValueError):
-            CP.frequency_to_bfactor(6,None, self.geom, interface_sign=True)
+            CG.frequency_to_bfactor(6,None, self.geom, interface_sign=True)
 
     def test_interface_frequency_matrix(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
