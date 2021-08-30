@@ -1218,3 +1218,24 @@ def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments,
             mat_CG[fp[0], fp[1]] += freq
             mat_CG[fp[1], fp[0]] += freq
     return mat_CG
+
+def sparsify_sym_matrix(mat, eps=1e-2):
+    r"""
+    Return a matrix where the row/col sum is > zero_freq
+
+    Parameters
+    ----------
+    mat : 2D np.ndarray of shape(N,N)
+        The matrix
+    eps : float, default is 1e-2
+        Cutoff for the row/col sum
+        to be discarded
+
+    Returns
+    -------
+    mat, non_zeros
+    """
+    assert (mat==mat.T).all() #checks for squareness and symmetry
+    non_zeros = _np.flatnonzero(mat.sum(0) > eps)
+    mat = mat[non_zeros, :][:, non_zeros]
+    return mat, non_zeros

@@ -610,3 +610,14 @@ class Test_coarse_grain_freqs_by_frag(TestCase):
 
         mat = _utils.coarse_grain_freqs_by_frag(freqs, pairs, frags, check_if_subset=False)
         np.testing.assert_array_equal(mat, ref_mat)
+
+class Test_sparsify_sym_matrix(TestCase):
+
+    def test_just_works(self):
+        mat = np.array([[1, 0, 2],
+                        [0, 0, 0],
+                        [2, 0, 3]])
+        nm, nz = _utils.sparsify_sym_matrix(mat)
+        np.testing.assert_array_equal(nz, [0,2])
+        np.testing.assert_array_equal(nm, [[1,2],
+                                           [2,3]])
