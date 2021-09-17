@@ -31,9 +31,8 @@ from mdciao.utils.bonds import bonded_neighborlist_from_top
 from mdciao.utils.lists import \
     assert_no_intersection as _no_intersect, \
     re_warp as _re_warp, \
-    find_parent_list as _find_parent_list, \
-    in_what_N_fragments as _in_what_N_fragments
-
+    find_parent_list as _find_parent_list
+from mdciao.fragments import assign_fragments
 from mdciao.utils.str_and_dict import replace4latex as _replace4latex
 from matplotlib.colors import to_rgb as _to_rgb
 from matplotlib.collections import LineCollection as _LCol
@@ -777,7 +776,7 @@ def add_residue_labels(iax,
                         rotation_mode="anchor",
                         fontsize=fontsize,
                         zorder=20,
-                        bbox={"boxstyle":"square,pad=0.0","fc":"none", "ec":"none", "alpha": .05}, # we need this transparent Fancybox to check for overlaps
+                        bbox={"boxstyle":"square,pad=0.0","fc":"none", "ec":"none", "alpha": .05},  # we need this transparent Fancybox to check for overlaps
                         **text_kwargs)
         labels.append(itxt)
 
@@ -1191,25 +1190,15 @@ def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments,
     -------
     mat : np.ndarray
         Square, symmetric matrix of shape (len(fragments),len(fragments))
+        TODO think about returning NaNs instead of zeros
+        for the elements not present in :obj:`res_idxs_pairs`
     """
-    _no_intersect(fragments,word="fragments")
+
+    parents, children = assign_fragments(_np.unique(res_idxs_pairs), fragments, raise_on_missing=check_if_subset)
 
     res_max = _np.max([_np.hstack(fragments).max(), _np.unique(res_idxs_pairs).max()])
     idx2frag = _np.zeros(res_max + 1)
     idx2frag[:] = _np.nan
-
-    children = _np.unique(res_idxs_pairs)
-    parents = _in_what_N_fragments(children, fragments)
-    orphans = _np.flatnonzero([len(par) == 0 for par in parents])
-    parents = _np.squeeze(parents)
-    if len(orphans)>0:
-        if check_if_subset:
-            raise ValueError("residues %s don't appear in any 'fragments'. "
-                             "If you're OK with this, set 'check_if_subset=False'"%(children[orphans]))
-        else:
-            children = _np.delete(children,orphans)
-            parents = _np.delete(parents,orphans)
-
     idx2frag[children] = parents
     frag_pairs = idx2frag[_np.array(res_idxs_pairs)].astype(int)
     mat_CG = _np.zeros((len(fragments), len(fragments)))
@@ -1221,21 +1210,21 @@ def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments,
 
 def sparsify_sym_matrix(mat, eps=1e-2):
     r"""
-    Return a matrix where the row/col sum is > zero_freq
+    Return a sparse matrix
 
     Parameters
     ----------
     mat : 2D np.ndarray of shape(N,N)
         The matrix
     eps : float, default is 1e-2
-        Cutoff for the row/col sum
-        to be discarded
+        Elements of :obj:`mat` are
+        considered zero if <= eps
 
     Returns
     -------
     mat, non_zeros
     """
     assert (mat==mat.T).all() #checks for squareness and symmetry
-    non_zeros = _np.flatnonzero(mat.sum(0) > eps)
+    non_zeros = _np.flatnonzero(_np.any(mat > eps, axis=1))
     mat = mat[non_zeros, :][:, non_zeros]
     return mat, non_zeros
