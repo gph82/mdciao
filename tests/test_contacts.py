@@ -1901,7 +1901,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                               shorten_AAs=True,
                               truncate_at_mean=3.7
                               )
-        iax.figure.savefig("test.png")
+        #iax.figure.savefig("test.png")
         _plt.close("all")
 
     def test_plot_violins_raises_on_title(self):
