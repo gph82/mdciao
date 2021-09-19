@@ -42,7 +42,8 @@ long2long = {key:key for key in long2short.keys()}
 from requests import get as _rget
 from tqdm.auto import tqdm as _tqdma
 import contextlib as _contextlib
-from mdciao.cli import residue_neighborhoods as _residue_neighborhoods
+from mdciao.cli import residue_neighborhoods as _residue_neighborhoods, interface as _interface
+from mdciao.nomenclature import LabelerGPCR as _LabelerGPCR, LabelerCGN as _LabelerCGN
 from tempfile import TemporaryDirectory as _TDir, TemporaryFile as _TF
 import io as _io
 @_contextlib.contextmanager
@@ -561,5 +562,55 @@ class Filenames(object):
 
         #zip
         self.zipfile_two_empties = _path.join(self.example_path,"two_empty_files.zip")
+
+def GPCRLabeler_ardb2_human():
+    r"""Build an :obj:`~mdciao.nomenclature.LabelerGPCR` with the adrb2_human.xlsx file shipped with mdciao"""
+    return _LabelerGPCR(filenames.adrb2_human_xlsx)
+
+def CGNLabeler_3SN6():
+    r"""Build an :obj:`~mdciao.nomenclature.LabelerCGN` with the CGN_3SN6.txt and 3SN6.pdb files shipped with mdciao"""
+    return _LabelerCGN(filenames.CGN_3SN6)
+
+
+def Interface_B2AR_Gas(**kwargs):
+    r"""
+    Return an :obj:`~mdciao.contacts.ContactGroup` object representing a B2AR-Galpha s interface
+
+    Wraps around :obj:`mdciao.cli.interface`
+
+    The input data is one very short (80 frames) version
+    of the MD trajectory shipped with mdciao, kindly provided by
+    Dr. H. Batebi. See the online examples for more info.
+
+    Parameters
+    ----------
+    kwargs : keyword args for :obj:`mdciao.cli.interface`
+
+    Returns
+    -------
+    intf :obj:`~mdciao.contacts.ContactGroup`
+    """
+    b = _io.StringIO()
+    try:
+        with _contextlib.redirect_stdout(b):
+            example_kwargs = {"topology": filenames.top_pdb,
+                              "figures": False,
+                              "GPCR_uniprot": GPCRLabeler_ardb2_human(),
+                              "CGN_PDB": CGNLabeler_3SN6(),
+                              "no_disk": True,
+                              "frag_idxs_group_1":[0],
+                              "frag_idxs_group_2":[3],
+                              "ctc_control":1.0,
+                              "accept_guess": True}
+            for key, val in kwargs.items():
+                example_kwargs[key] = val
+            return _interface(filenames.traj_xtc,
+                              **example_kwargs,
+                              )
+
+    except Exception as e:
+        print(b.getvalue())
+        b.close()
+        raise e
 
 filenames = Filenames()

@@ -28,6 +28,15 @@ class Test_ContactGroupL394(unittest.TestCase):
         with self.assertRaises(Exception):
             CG = examples.ContactGroupL394(bogus_arg="bogus")
 
+class Test_Interface_B2AR_Gas(unittest.TestCase):
+    def test_works(self):
+        intf = examples.Interface_B2AR_Gas()
+        assert intf.is_interface
+
+    def test_except(self):
+        with self.assertRaises(Exception):
+            CG = examples.Interface_B2AR_Gas(bogus_arg="bogus")
+
 class Test_Zip(unittest.TestCase):
 
     def test_works(self):
