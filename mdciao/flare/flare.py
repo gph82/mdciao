@@ -25,6 +25,8 @@ from . import _utils as _futils
 from mdciao.plots.plots import _points2dataunits
 from mdciao.utils.str_and_dict import replace4latex
 from mdciao.utils.residue_and_atom import get_SS as _get_SS
+from mpl_chord_diagram import chord_diagram as _chord_diagram
+from collections import namedtuple as _namedtuple
 
 from matplotlib import pyplot as _plt
 from matplotlib.patches import CirclePolygon as _CP
@@ -61,6 +63,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 signed_colors=None,
                 subplot=False,
                 aura=None,
+                coarse_grain=False
                 ):
     r"""
     Plot contact frequencies as `flare plots`.
@@ -178,7 +181,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         Curves **not** involving these fragments will be
         **not** be shown, i.e. it is the complementary
          of :obj:`mute_fragments`. Both cannot be passed
-         simulataneously.
+         simultaneously.
     top: :obj:`~mdtraj.Topology` object, default is None
         If provided a top, residue names (e.g. GLU30) will be used
         instead of residue indices. Will fail if the residue indices
@@ -259,6 +262,13 @@ def freqs2flare(freqs, res_idxs_pairs,
         e.g. RMSF, SASA, conv. degree...
         It will be drawn as an *aura* around the
         flareplot.
+    coarse_grain : bool, default is False
+        If True, will use the fragment definitions
+        of :obj:`fragments` and/or `sparse_fragments`
+        to coarse grain the frequencies into per-fragment
+        frequencies and show them as a chord-diagram
+        wrapping around :obj:`~mdciao.flare.freqs2chord`
+        Check there for more info
 
     Returns
     -------
@@ -305,6 +315,16 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     # Create a map
     residx2markeridx = _futils.value2position_map(_np.hstack(residues_as_fragments))
+
+    if coarse_grain:
+        assert len(residues_as_fragments)>1, "The fragment definitions of 'fragments' and/or 'sparse_fragments' can't be " \
+                                             "used to coarse-grain the 'freqs'. Please check your input"
+        fragment_colors = _futils.col_list_from_input_and_fragments(colors, residues_as_fragments, alpha=.80)
+        fragment_colors = [fragment_colors[residx2markeridx[ff[0]]] for ff in residues_as_fragments]
+        return freqs2chord(_np.average(freqs, axis=0), res_idxs_pairs, residues_as_fragments,
+                           fragment_names=fragment_names,fragment_colors=fragment_colors,
+                           panelsize=panelsize
+                           )
 
     if plot_curves_only:
         plot_attribs = {}
@@ -809,3 +829,122 @@ def add_fragmented_residue_labels(fragments,
                                         )
 
     return labels
+
+def freqs2chord(freqs, res_idxs_pairs, fragments,
+                fragment_names=None, iax=None, panelsize=10,
+                fragment_colors=None,
+                add_sigma=True,
+                ):
+    r"""
+    Coarse-grain the per-residue frequencies into a per-fragment `chord-diagram <https://en.wikipedia.org/wiki/Chord_diagram>`_.
+
+    Residues belonging to the same fragments get turned into
+    arcs instead of being plotted as individual dots.
+    Each arch-length is proportional to fragments' overall number of
+    contacts, NOT to the number of residues that the arc represents.
+
+    If fragments don't participate in any contacts, they
+    are hidden, i.e. the plot is always 'sparse'
+
+    Curves connecting residue-pairs are squashed into chords
+    connecting the arch. The opacity of each chord does
+    NOT represent the underlying frequencies.
+
+    The main difference with :obj:`mdciao.flare.freqs2flare`
+    is that the per-fragment number of contacts gets represented
+    visually through the length the arc and that the chords
+    don't encode the number of underlying contacts
+
+    This method uses the `mpl_chord_diagram `<https://codeberg.org/tfardet/mpl_chord_diagram>`_
+    package by `@tfardet<https://codeberg.org/tfardet>`_
+    with contributions from `Guillermo Perez-Hernandez <https://codeberg.org/gph82>_`
+
+    Parameters
+    ----------
+    freqs : iterable of floats
+        A list of floats representing frequencies
+    res_idxs_pairs : list of pairs of integers, default is None
+        The pairs of residue indices behind each freq entry
+        in :obj:`freqs`. They can be any integers that could represent
+        a residue. The only hard condition is that the set
+        of np.unique(res_idxs_pairs) must be contained
+        within :obj:`residues_as_fragments`
+    fragments : a list of lists of integers
+        These are the fragments used to coarse-grain
+        the :obj:`freqs`. They can have to be a superset
+        of the idxs in :obj:`res_idxs_pairs`
+    fragment_names : list, default is None
+        The fragment names
+    iax: :obj:`~matplotlib.axes.Axes`, default is None
+        Parse an axis to draw on, otherwise one will be created
+        using :obj:`panelsize`.
+    panelsize : int, default is 10
+        The panelsize for the plot, in inches
+    add_sigma : bool, default is True
+        Add the sum of freqs per fragment
+        to the arch
+
+    Returns
+    -------
+    iax : :obj:`~matplotlib.axes.Axes`
+    non_zeros : list
+        The idxs of :obj:`fragments`
+        that have been plotted
+    plot_attribs : dict
+        Objects of the plot if the user wants
+        to manipulate them further or re-use.
+        some attributes:
+        "fragment_names", "fragment_labels",
+        "dots", "r"
+        The attribute "dots" is a shim namedtuple
+        with one single attribute, "radius"
+        for compatibility with downstream
+        manipulations
+    """
+    # Coarse grain the matrix
+    mat_CG = _futils.coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments)
+
+    # Get the sparse matrix
+    sparse_mat, non_zeros = _futils.sparsify_sym_matrix(mat_CG)
+
+    non_zero_fragment_names = [[fragment_names[ii] for ii in non_zeros] if fragment_names is not None else None][0]
+    non_zero_fragment_colors = [[fragment_colors[ii] for ii in non_zeros[::-1]] if fragment_colors is not None else None][0]
+    # TODO when https://codeberg.org/tfardet/mpl_chord_diagram/pulls/32 gets released to pypi, [::-1] will not be needed
+    order = _np.arange(len(non_zeros))[::-1]
+
+    # Grab text objects already in the input axis
+    old_texts = []
+    if iax is None:
+        _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
+        iax = _plt.gca()
+        old_texts = list(iax.texts)
+
+    res = _chord_diagram(sparse_mat,
+                   chord_colors="gray",
+                   order=order,
+                   names=non_zero_fragment_names,
+                   colors=non_zero_fragment_colors,
+                   ax=iax)
+
+    # Grab the new text-labels and un-overlap them
+    frag_labels = [txt for txt in iax.texts if txt not in old_texts]  # only grab new text-objects
+    [t.set_bbox({"boxstyle": "square,pad=0.5", "fc": "blue", "ec": "none", "alpha": .0}) for t in frag_labels]
+    _futils.un_overlap_via_fontsize(frag_labels, fac=.85)
+
+    if add_sigma:
+        sigma_values = ["$\Sigma$ = %3.1f" % (ifreq) for ifreq in sparse_mat.sum(0)]
+        sigma_labels = []
+        for ii, rr in enumerate(res):
+            __, psi = _futils.cart2pol(rr[0],rr[1])
+            x, y = _futils.pol2cart(1 - .1 / 2, psi)
+            sigma_labels.append(iax.text(x, y, sigma_values[order[ii]],
+                     rotation_mode="anchor", ha="center", va="center", rotation=rr[-1],
+                                         bbox={"boxstyle": "square,pad=0.0", "fc": "white", "ec": "none", "alpha": .5}))
+        _futils.un_overlap_via_fontsize(sigma_labels, fac=.90)
+
+    # Create fake "dot" object with a  .radius attribute for compatibility with the downstream _utils.add_parent_labels
+    dot = _namedtuple("fake_dot", ["radius"])
+    return iax, non_zeros, {"fragment_names": non_zero_fragment_names,
+                            "fragment_labels": frag_labels,
+                            "r": _futils._outermost_corner_of_fancypatches(frag_labels),
+                            "dots": [dot(_signature(_chord_diagram).parameters["width"].default / 4)]}
