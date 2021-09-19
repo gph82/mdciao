@@ -600,6 +600,22 @@ class Test_splice_fragments(unittest.TestCase):
                                                  ])
         _np.testing.assert_array_equal(newnames, ["A", "ex1", "?", "C"])
 
+class Test_assign_fragments(unittest.TestCase):
+
+    def test_just_works(self):
+        frag_idxs, res_idxs = mdcfragments.fragments.assign_fragments([0,4,5,1],[[0,1],[2,3],[4,5]])
+
+        _np.testing.assert_array_equal(frag_idxs,[0,2,2,0])
+        _np.testing.assert_array_equal(res_idxs, [0,4,5,1])
+
+    def test_raises_missing(self):
+        with _np.testing.assert_raises(ValueError):
+           mdcfragments.fragments.assign_fragments([0, 4, 6, 1], [[0, 1], [2, 3], [4, 5]])
+
+    def test_passes_missing(self):
+        frag_idxs, res_idxs = mdcfragments.fragments.assign_fragments([0, 4, 6, 1], [[0, 1], [2, 3], [4, 5]], raise_on_missing=False)
+        _np.testing.assert_array_equal(frag_idxs, [0, 2, 0])
+        _np.testing.assert_array_equal(res_idxs, [0, 4, 1])
 
 if __name__ == '__main__':
     unittest.main()

@@ -1051,3 +1051,57 @@ def flarekwargs_preparer(fragments, fragment_names, kwargs_freqs2flare, fixed_co
                 ValueError("Less fragment names (%u) than fragments (%u)?" % (len(fragment_names), len(fragment_names)))
             kwargs_freqs2flare["fragment_names"] = [fragment_names[ii] for ii in good_frags]
     return kwargs_freqs2flare, good_frags
+
+def assign_fragments(res_idxs, fragments, raise_on_missing=True):
+    r"""Assign a parent fragment to each residue in a list of res_idxs
+
+    Note
+    ----
+    Simply wraps around :obj:`~mdciao.utils.lists.in_what_N_fragments`,
+    first asserting that there's no intersection between the fragments
+    and then checking whether some residxs are missing
+
+    Parameters
+    ----------
+    res_idxs : iterable of ints
+        The residue indices
+    fragments : iterable of iterable if ints
+        The fragment definitions.
+        It will be checked that these definitions
+        don't have common residues
+    raise_on_missing : bool, default is True
+        Whether to raise an Exception if
+        any residue can't be found
+        in the :obj:`fragments`
+
+    Returns
+    -------
+    frag_idxs : np.array
+        Array with the indices of
+        :obj:`fragments` where each
+        residue of :obj:`res_isxs`
+        appears
+    res_idxs : np.array
+        If all residues were
+        found in :obj:`fragments`,
+        then this is a copy of the
+        input array. If some didn't
+        appear anywhere, but
+        :obj:`raise_on_missing` was
+        False, the missing residues
+        have been deleted
+    """
+    #TODO very related to utils.lists.find_parent_list, perhaps merge?
+    _mdcu.lists.assert_no_intersection(fragments, word="fragments")
+    frag_idxs = _mdcu.lists.in_what_N_fragments(res_idxs, fragments)
+    orphans = _np.flatnonzero([len(par) == 0 for par in frag_idxs])
+    frag_idxs = _np.squeeze(frag_idxs)
+    if len(orphans)>0:
+        if raise_on_missing:
+            raise ValueError("residues %s don't appear in any 'fragments'. "
+                             "If you're OK with this, set 'check_if_subset=False'" % (_np.array(res_idxs)[orphans]))
+        else:
+            res_idxs = _np.delete(res_idxs, orphans)
+            frag_idxs = _np.delete(frag_idxs, orphans)
+
+    return frag_idxs, res_idxs
