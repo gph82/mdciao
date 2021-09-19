@@ -255,6 +255,7 @@ def ContactGroupL394(**kwargs):
                                       "figures": False,
                                       "GPCR_uniprot": _path.basename(filenames.adrb2_human_xlsx),
                                       "CGN_PDB": _path.basename(filenames.CGN_3SN6),
+                                      "no_disk":True,
                                       "accept_guess": True}
                     for key, val in kwargs.items():
                         example_kwargs[key]=val
