@@ -1323,20 +1323,21 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
 
     return bar_fig
 
-def plot_contact_matrix(mat, labels, pixelsize=1,
-                        transpose=False, grid=False,
-                        cmap="binary",
-                        colorbar=False):
+def plot_matrix(mat, labels, pixelsize=1,
+                transpose=False, grid=False,
+                cmap="binary",
+                colorbar=False):
     r"""
-    Plot a contact matrix. It is written to be able to
-    plot rectangular matrices where rows and columns
-    do not represent the same residues
+    Plot a matrix using :obj:`~matplotlib.pyplot.imshow`.
+
+    Matrx can be non-symetric and rectangular, rows
+    and columns need not represent the same residues
+    or groups of residues
 
     Parameters
     ----------
     mat : 2D numpy.ndarray of shape (N,M)
-        The allowed values are in [0,1], else
-        the method fails (NaNs are allowed)
+        The matrix to be plotted, NaNs are allowed
     labels : list of len(2) with x and y labels
         The length of each list has to be N, M for
         x, y respectively, else this method fails
@@ -1348,7 +1349,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
     transpose : boolean, default is False
     grid : boolean, default is False
         overlap a grid of dashed lines
-    cmap : str, default is binary
+    cmap : str, default is 'binary'
         What :obj:`matplotlib.cmap` to use
     colorbar : boolean, default is False
         whether to use a colorbar
@@ -1361,8 +1362,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         with the default value, in case the value
         changes in the future
     """
-    _np.testing.assert_array_equal(mat.shape,[len(ll) for ll in labels])
-    assert _np.nanmax(mat)<=1 and _np.nanmin(mat)>=0, (_np.nanmax(mat), _np.nanmin(mat))
+    _np.testing.assert_array_equal(mat.shape,[len(ll) for ll in labels]), "Number of labels don't match number of rows/cols "
     if transpose:
         mat = mat.T
         labels = labels[::-1]
@@ -1384,7 +1384,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         divider = _make_axes_locatable(iax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         _plt.gcf().colorbar(im, cax=cax)
-        im.set_clim(0.0, 1.0)
+        im.set_clim(_np.nanmin([_np.nanmin(mat), 0]), _np.nanmax([_np.nanmax(mat), 1.0]))
     fig.tight_layout()
     return iax, pixelsize
 

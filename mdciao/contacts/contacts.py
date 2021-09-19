@@ -4497,10 +4497,10 @@ class ContactGroup(object):
         else:
             raise ValueError(label_type)
 
-        iax, __ = _mdcplots.plot_contact_matrix(mat,labels,
-                                       transpose=transpose,
-                                       **plot_mat_kwargs,
-                                       )
+        iax, __ = _mdcplots.plot_matrix(mat, labels,
+                                        transpose=transpose,
+                                        **plot_mat_kwargs,
+                                        )
         return iax.figure, iax
 
     # TODO would it be better to make use of self.interface_frequency_dict_by_consensus_labels
