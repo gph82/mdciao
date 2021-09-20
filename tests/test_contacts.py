@@ -13,8 +13,7 @@ from mdciao.contacts.contacts import \
     _TimeTraces, \
     _Fragments, \
     _linear_switchoff, \
-    _delta_freq_pairs, \
-    _consensus_maps2consensus_frags
+    _delta_freq_pairs
 
 import mdtraj as md
 import unittest
