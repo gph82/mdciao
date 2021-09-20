@@ -325,6 +325,7 @@ def get_fragments(top,
         if isinstance(fragment_breaker_fullresname,str):
             fragment_breaker_fullresname=[fragment_breaker_fullresname]
         for breaker in fragment_breaker_fullresname:
+            #todo use _break_fragments
             residxs, fragidx = _mdcu.residue_and_atom.residues_from_descriptors(breaker, fragments, top,
                                                            **kwargs_residues_from_descriptors)
             idx = residxs[0]
@@ -1009,6 +1010,9 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
     orphans = _np.delete(_np.arange(highest_res_idx + 1), _np.hstack(full_frags))
     if len(orphans)>0:
         orphans = _get_fragments_by_jumps_in_sequence(orphans)[1]
+        if other_fragments is not None:
+            # The orphans have to be split using the limits of the other_fragments
+            orphans = _break_fragments([frag[0] for frag in other_fragments.values()], orphans)
         if '%' in orphan_name:
             orphans_labels = [orphan_name%ii for ii, __ in enumerate(orphans)]
         else:
