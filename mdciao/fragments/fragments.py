@@ -352,6 +352,37 @@ def get_fragments(top,
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
 
+def _break_fragments(breakers, fragments):
+    r"""
+    Given a list of fragment breakers, break existing fragments further into sub-fragments
+
+    The break is so that j appearing in fragment [a, b, ...,i,j,...z] will
+    generate [a, b, ...,i],[j,...z]
+
+    Parameters
+    ----------
+    breakers : iterable of idxs
+        These indices will force
+        a break in the :obj:`fragments`,
+        generating sub-fragments.
+    fragments : iterable of iterables
+        The fragment definitions
+
+    Returns
+    -------
+    fragments : list
+    """
+    _mdcu.lists.assert_no_intersection(fragments)
+    for idx in _np.unique(breakers):
+        ifrag = _mdcu.lists.in_what_fragment(idx, fragments)
+        if ifrag is not None:
+            idx_split = _np.flatnonzero(idx == _np.array(fragments[ifrag]))[0]
+            subfrags = [fragments[ifrag][:idx_split], fragments[ifrag][idx_split:]]
+            if idx_split > 0:
+                # print("now breaking up into", subfrags)
+                fragments = fragments[:ifrag] + subfrags + fragments[ifrag + 1:]
+    return fragments
+
 def _dry_fragments(fragments, top):
     r"""
     Remove water molecules from :obj:`fragments` and append them at the end as their own fragment(s)
