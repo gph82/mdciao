@@ -1038,6 +1038,69 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
     else:
         return fragments, fragnames
 
+def mix_fragments(highest_res_idx, consensus_frags, fragments, fragment_names):
+    r"""Mix consensus frags with user-provided fragment definitions
+
+    Wrapper around :obj:`mdciao.fragments.splice_orphan_fragments`,
+    will possible be merged with it in the future.
+    The wrapper does several pre and post processing things
+    pre-processing:
+     * that makes the :obj: `consensus_frags` the main frags
+     and the :obj:`fragments` the :obj:`other_fragments`.
+     * It allows for :obj:`fragments` and/or :obj:`fragment_names`
+     to be None and creates names on the fly if needed
+    post-processing:
+     * renames orphan fragments as sub-fragments of original
+      fragments if possible
+    In theory, if "fragments" covers all residues, no
+    orphan's should be left
+
+    Note
+    ----
+    This is an internal ad-hoc method for
+    developing the best integration of
+    the logic behind the fragmentation
+    for flareplots, and might disappear in
+    in the future. Not intended for API
+    use
+
+    Parameters:
+    highest_res_idx : int
+        Typically top.n_residues - 1
+    consensus_frags : dict
+    fragments : list or None
+        User provided fragments
+    fragment_names : list or None
+        User provided fragment names
+    """
+
+    if fragments is not None:
+        if fragment_names is not None:
+            assert len(fragments)==len(fragment_names)
+            other_frags = {fn: fr for fn, fr in zip(fragment_names, fragments)}
+        else:
+            other_frags = {"frag %u" % ii: fn for ii, fn in enumerate(fragments)}
+    else:
+        other_frags = None
+
+    new_frags, new_names = splice_orphan_fragments(list(consensus_frags.values()),
+                                          list(consensus_frags.keys()),
+                                          highest_res_idx=highest_res_idx,
+                                          other_fragments=other_frags,
+                                          orphan_name="orphan %u")
+    # todo put this into splice_orphan_fragments if it makes sense
+    # reassign the orphans as sub-fragments of the parents, in case there's parents
+    orphan_idxs = [ii for ii, nn in enumerate(new_names) if nn.startswith("orphan ")]
+    if len(orphan_idxs) > 0 and other_frags is not None:
+        parent_names = list(other_frags.keys())
+        __, child = _mdcu.lists.find_parent_list([new_frags[oo] for oo in orphan_idxs],
+                                                 list(other_frags.values()))
+        for parent_idx, list_of_children in child.items():
+            for idx, oo in enumerate(list_of_children):
+                new_names[orphan_idxs[oo]] = "subfrag %u of %s"%(idx, parent_names[parent_idx])
+
+    return new_frags, new_names
+
 
 def flarekwargs_preparer(fragments, fragment_names, kwargs_freqs2flare, fixed_color_list, to_intersect_with):
     r"""
