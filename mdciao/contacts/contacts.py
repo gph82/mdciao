@@ -4106,29 +4106,14 @@ class ContactGroup(object):
             [list_of_dicts[res].update({"interface residx": ii}) for res in self.interface_residxs[ii]]
 
         if consensus_maps is not None:
-            consensus_frags = [cmap.top2frags(self.top, verbose=verbose) for cmap in consensus_maps if
-                               isinstance(cmap, _mdcn.LabelerConsensus)]
-            _mdcu.lists.assert_no_intersection([item for d in consensus_frags for item in d.values()], "consensus fragment")
-            consensus_frags = {key: val for d in consensus_frags for key, val in d.items()}
-            consensus_maps = [cmap if not isinstance(cmap, _mdcn.LabelerConsensus) else cmap.top2labels(self.top) for cmap
-                              in consensus_maps]
-            if len(consensus_frags)>0:
-                highest_res_idx = self.top.n_residues - 1
-                other_frags = None
-                if fragments is not None:
-                    if fragment_names is not None:
-                        other_frags = {fn: fr for fn, fr in zip(fragment_names, fragments)}
-                    else:
-                        other_frags = {"frag %u" % ii: fn for ii, fn in enumerate(fragments)}
+            consensus_maps, consensus_frags = _consensus_maps2consensus_frags(self.top, consensus_maps, verbose=verbose)
+            if len(consensus_frags) > 0:
                 kwargs_freqs2flare["fragments"], kwargs_freqs2flare["fragment_names"] = \
-                    _mdcfr.splice_orphan_fragments(list(consensus_frags.values()),
-                                                   list(consensus_frags.keys()),
-                                                   highest_res_idx=highest_res_idx,
-                                                   #orphan_name="",
-                                                   other_fragments=other_frags)
-                for frag, key in zip( kwargs_freqs2flare["fragments"], kwargs_freqs2flare["fragment_names"]):
+                    _mdcfr.mix_fragments(self.top.n_residues - 1, consensus_frags, fragments, fragment_names)
+                for frag, key in zip(kwargs_freqs2flare["fragments"], kwargs_freqs2flare["fragment_names"]):
                     for idx in frag:
-                        list_of_dicts[idx].update({"consensus frag":key})
+                        list_of_dicts[idx].update({"consensus frag": key})
+
             for rr in self.top.residues:
                 clab = _mdcn.choose_between_consensus_dicts(rr.index, consensus_maps, no_key=None)
                 rlab = '%s%s' % (_mdcu.residue_and_atom.shorten_AA(rr, keep_index=True, substitute_fail="long"),

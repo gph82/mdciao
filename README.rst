@@ -61,6 +61,7 @@ This is an informal list of known issues and TODOs:
  * neighborlists could be computed much more efficiently
  * The labelling names should be harmonized (ctc_label, anchor_res...) and the logic of how/where it get's constructed (short_AA vs AA_format) is not obvious sometimes
  * There's many other TODOs spread throughout the code
+ * Some closely related methods could/should be integrated into each other by generalising a bit, but sometimes the generalisation is unnecessarily complicated to code (or I simply forget that the closely related method already exists) and re-code (and test!) for a slightly different scenario (though I try to hard to avoid it). E.g. there's several methods for computing, reporting, and saving contact frequencies and contact-matrices, or different methods to assign residue idxs to fragments, depending on particual the goal of the assignment, like find_parent_list, in_what_(N)_fragments, or assign_fragments. Still, I opted for more smaller methods, which are individually easier to maintain, but that could simply be a `questionable choice <https://en.wikipedia.org/wiki/Technical_debt>`_.
 
 System Requirements
 ===================
