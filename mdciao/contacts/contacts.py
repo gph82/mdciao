@@ -5521,11 +5521,12 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
         kwargs["sparse_fragments"] = True
         to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]])
         colors = {}
+        color_key = ["frag" if "frag" in df.keys() else "interface fragment"][0]
         for idx in to_intersect_with:
             confrag = df["consensus frag"][idx]
             if confrag not in colors.keys():
-                colors[confrag]=fixed_color_list[df["frag"][idx]]
-        kwargs["colors"]=list(colors.values())
+                colors[confrag]=fixed_color_list[int(df[color_key][idx])]
+        kwargs["colors"]=[colors[confrag] for confrag in _pdunique(df["consensus frag"]) if confrag in colors.keys()]
 
     elif scheme == 'consensus_sparse':
         reconfigure_fragments(df, kwargs)
