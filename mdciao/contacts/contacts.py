@@ -2946,6 +2946,152 @@ class ContactGroup(object):
 
         return mat
 
+    def frequency_as_contact_matrix_CG(self,
+                                       ctc_cutoff_Ang,
+                                       switch_off_Ang=None,
+                                       fragments=None,
+                                       fragment_names=None,
+                                       consensus_labelers=None,
+                                       verbose=False,
+                                       sparse=False,
+                                       interface=False,
+                                       zero_freq=1e-2,
+                                       dec_round=3,
+                                       return_fragments=False):
+        r"""
+        Coarse-grained contact-matrix
+
+        Frequencies of :obj:`self.frequency_per_contact`
+        get coarse-grained into fragments. Fragment
+        definitions come from :obj:`fragments` and/or
+        from the :obj:`consensus_labelers`. These
+        definitions need to contain all residues
+        in self.res_idxs_pairs
+
+        User-defined and consensus-derived fragment
+        definitions get spliced together using
+        :obj:`~mdciao.fragments.splice_orphan_fragments`.
+        This might lead to sub-sets of the input
+        :obj:`fragments` getting re-labeled as "subfrags"
+        and residues not defined anywhere being labelled
+        "orphans". This leads to cumbersome
+        fragment names (and can change in the future),
+        but at least its "traceable" for the moment
+
+        If you want to have the fragment definitions,
+        use :obj:`return_fragments` = True
+
+        Anytime some argument leads to a row/column being
+        deleted from the output, the matrix is returned
+        as an annotated :obj:`~pandas.DataFrame`, to be able
+        to provide row/columns with names and keep track
+        of their meaning
+
+        If :obj:`interface` is True and this :obj:`ContactGroup`
+        is indeed an interface, the matrix will be asymmetric.
+
+        If :self:`top` is None the method will fail.
+
+        Note
+        ----
+        This is NOT the full contact matrix unless
+        all necessary residue pairs were used to
+        construct this ContactGroup
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+        fragments : iterable of iterable of ints
+            The fragment definitions
+        sparse : bool, default is False
+            Delete rows and columns
+            where all elements are < zero_freq.
+            Since the row/column indices lose
+            their meaning this way, a DataFrame
+            with named row/columns is
+            returned instead of an array
+            If no :obj:`fragment_names` are
+            passed, some will be created.
+        interface : bool, default is False
+            If True, an asymmetric matrix
+            is reported, with rows and columns
+            representing fragments on each
+            side of the interface, respectively.
+            Since this is done using :obj:`self.interface_residxs`,
+            and not all input fragments are necessarily
+            contained therein, interface=True
+            introduces a sparsity, which makes the
+            return type be a DataFrame (see above)
+        zero_freq : float, default is 0.2
+            Only has effect when :obj:`sparse` is True.
+            The cutoff for a frequency to be considered
+            zero
+        round : int, default is 3
+            The number of decimals to round to when
+            reporting results. It's assumed the CG
+            matrix doesn't need much precision beyond
+            this
+        return_fragments : bool, default is False
+            Wether to return the fragments that the
+            input produced.
+
+        Returns
+        -------
+        mat : numpy.ndarray or :obj:`~pandas.DataFrame`
+        fragments : dict
+            The fragment definitions
+        """
+
+        assert not all([item is None for item in [fragments, consensus_labelers]]), \
+            ValueError("Both 'fragments' and 'consensus_labelers' can't be None "
+                       "simultaneously if you want to coarse-grain frequencies.")
+
+        freqs = self.frequency_per_contact(ctc_cutoff_Ang=ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)
+
+        if consensus_labelers is not None:
+            consensus_maps, consensus_frags = _consensus_maps2consensus_frags(self.top, consensus_labelers,
+                                                                              verbose=verbose)
+            if len(consensus_frags) > 0:
+                fragments, fragment_names = _mdcfr.mix_fragments(self.top.n_residues - 1,
+                                                                 consensus_frags,
+                                                                 fragments,
+                                                                 fragment_names)
+
+        _fragment_names = ["frag %u" % (uu) for uu, ifr in
+                           enumerate(fragments)]  # perhaps a better label with 500-600 here?
+
+        mat_CG = _mdcflare._utils.coarse_grain_freqs_by_frag(freqs, self.res_idxs_pairs, fragments)
+        if sparse:
+            mat_CG, non_zeros = _mdcflare._utils.sparsify_sym_matrix(mat_CG, eps=zero_freq)
+            # you can't sparsify without fragment names because you lose track of who's who
+            if fragment_names is None:
+                fragment_names = _fragment_names
+            fragments = [fragments[nz] for nz in non_zeros]
+            fragment_names = [fragment_names[nz] for nz in non_zeros]
+
+        if interface:
+            assert self.is_interface
+            row, col = [_np.unique(_mdcfr.assign_fragments(interface_residxs, fragments)[0])
+                        for interface_residxs in self.interface_residxs]
+
+            if fragment_names is None:
+                fragment_names = _fragment_names
+            row_fragments, col_fragments = [[fragment_names[ii] for ii in idxs] for idxs in [row, col]]
+            mat_CG = mat_CG[row, :][:, col]
+
+        else:
+            row_fragments, col_fragments = [fragment_names, fragment_names]
+
+        if sparse or fragment_names is not None:
+            mat_CG = _DF(mat_CG, index=row_fragments, columns=col_fragments)
+
+        if not return_fragments:
+            return mat_CG.round(dec_round)
+        else:
+            return mat_CG.round(dec_round), {key: val for key, val in
+                                             zip([_fragment_names if fragment_names is None else fragment_names][0],
+                                                 fragments)}
+
     def frequency_delta(self, otherCG,ctc_cutoff_Ang):
         r"""
         Compute per-contact frequency differences between :obj:`self` and some other :obj:`ContactGroup`
@@ -5402,148 +5548,3 @@ def _populate_colors_if_needed(kwargs, df, fixed_color_list):
             kwargs["colors"] = _np.vstack([fixed_color_list[int(df["frag"][ii])] for ii in kwargs["sparse_residues"]])
             kwargs["colors"] = kwargs["colors"][_np.argsort(kwargs["sparse_residues"])]
 
-
-def frequency_as_contact_matrix_CG(self,
-                                   ctc_cutoff_Ang,
-                                   switch_off_Ang=None,
-                                   fragments=None,
-                                   fragment_names=None,
-                                   consensus_labelers=None,
-                                   verbose=False,
-                                   sparse=False,
-                                   interface=False,
-                                   zero_freq=1e-2,
-                                   dec_round=3,
-                                   return_fragments=False):
-    r"""
-    Coarse-grained contact-matrix
-
-    Frequencies of :obj:`self.frequency_per_contact`
-    get coarse-grained into fragments. Fragment
-    definitions come from :obj:`fragments` and/or
-    from the :obj:`consensus_labelers`. These
-    definitions need to contain all residues
-    in self.res_idxs_pairs
-
-    User-defined and consensus-derived fragment
-    definitions get spliced together using
-    :obj:`~mdciao.fragments.splice_orphan_fragments`.
-    This might lead to sub-sets of the input
-    :obj:`fragments` getting re-labeled as "subfrags"
-    and residues not defined anywhere being labelled
-    "orphans". This leads to cumbersome
-    fragment names (and can change in the future),
-    but at least its "traceable" for the moment
-
-    If you want to have the fragment definitions,
-    use :obj:`return_fragments` = True
-
-    Anytime some argument leads to a row/column being
-    deleted from the output, the matrix is returned
-    as an annotated :obj:`~pandas.DataFrame`, to be able
-    to provide row/columns with names and keep track
-    of their meaning
-
-    If :obj:`interface` is True and this :obj:`ContactGroup`
-    is indeed an interface, the matrix will be asymmetric.
-
-    If :self:`top` is None the method will fail.
-
-    Note
-    ----
-    This is NOT the full contact matrix unless
-    all necessary residue pairs were used to
-    construct this ContactGroup
-
-    Parameters
-    ----------
-    ctc_cutoff_Ang : float
-    fragments : iterable of iterable of ints
-        The fragment definitions
-    sparse : bool, default is False
-        Delete rows and columns
-        where all elements are < zero_freq.
-        Since the row/column indices lose
-        their meaning this way, a DataFrame
-        with named row/columns is
-        returned instead of an array
-        If no :obj:`fragment_names` are
-        passed, some will be created.
-    interface : bool, default is False
-        If True, an asymmetric matrix
-        is reported, with rows and columns
-        representing fragments on each
-        side of the interface, respectively.
-        Since this is done using :obj:`self.interface_residxs`,
-        and not all input fragments are necessarily
-        contained therein, interface=True
-        introduces a sparsity, which makes the
-        return type be a DataFrame (see above)
-    zero_freq : float, default is 0.2
-        Only has effect when :obj:`sparse` is True.
-        The cutoff for a frequency to be considered
-        zero
-    round : int, default is 3
-        The number of decimals to round to when
-        reporting results. It's assumed the CG
-        matrix doesn't need much precision beyond
-        this
-    return_fragments : bool, default is False
-        Wether to return the fragments that the
-        input produced.
-
-    Returns
-    -------
-    mat : numpy.ndarray or :obj:`~pandas.DataFrame`
-    fragments : dict
-        The fragment definitions
-    """
-
-    assert not all([item is None for item in [fragments, consensus_labelers]]), \
-        ValueError("Both 'fragments' and 'consensus_labelers' can't be None "
-                   "simultaneously if you want to coarse-grain frequencies.")
-
-
-    freqs = self.frequency_per_contact(ctc_cutoff_Ang=ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)
-
-    if consensus_labelers is not None:
-        consensus_maps, consensus_frags = _consensus_maps2consensus_frags(self.top, consensus_labelers,
-                                                                          verbose=verbose)
-        if len(consensus_frags) > 0:
-            fragments, fragment_names = _mdcfr.mix_fragments(self.top.n_residues - 1,
-                                                             consensus_frags,
-                                                             fragments,
-                                                             fragment_names)
-
-    _fragment_names = ["frag %u" % (uu) for uu, ifr in enumerate(fragments)] #perhaps a better label with 500-600 here?
-
-    mat_CG = _mdcflare._utils.coarse_grain_freqs_by_frag(freqs, self.res_idxs_pairs, fragments)
-    if sparse:
-        mat_CG, non_zeros = _mdcflare._utils.sparsify_sym_matrix(mat_CG, eps=zero_freq)
-        # you can't sparsify without fragment names because you lose track of who's who
-        if fragment_names is None:
-            fragment_names = _fragment_names
-        fragments = [fragments[nz] for nz in non_zeros]
-        fragment_names = [fragment_names[nz] for nz in non_zeros]
-
-    if interface:
-        assert self.is_interface
-        row, col = [_np.unique(_mdcfr.assign_fragments(interface_residxs, fragments)[0])
-                    for interface_residxs in self.interface_residxs]
-
-        if fragment_names is None:
-            fragment_names = _fragment_names
-        row_fragments, col_fragments = [[fragment_names[ii] for ii in idxs] for idxs in [row, col]]
-        mat_CG = mat_CG[row, :][:, col]
-
-    else:
-        row_fragments, col_fragments = [fragment_names, fragment_names]
-
-    if sparse or fragment_names is not None:
-        mat_CG = _DF(mat_CG, index=row_fragments, columns=col_fragments)
-
-    if not return_fragments:
-        return mat_CG.round(dec_round)
-    else:
-        return mat_CG.round(dec_round), {key:val for key, val in zip([_fragment_names if fragment_names is None else fragment_names][0],
-                                                                     fragments)}

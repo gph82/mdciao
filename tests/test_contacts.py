@@ -1657,7 +1657,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_as_contact_matrix_CG(self):
         fragments = get_fragments(self.intf.top, method="resSeq+")
-        mat, frags = contacts.contacts.frequency_as_contact_matrix_CG(self.intf, 3.0, fragments=fragments, return_fragments=True)
+        mat, frags = self.intf.frequency_as_contact_matrix_CG(3.0, fragments=fragments, return_fragments=True)
         mat_ref = _np.zeros((4, 4))
         mat_ref[0,3] = mat_ref[3,0] = self.total_intf_freq_at_3
         _np.testing.assert_array_equal(mat_ref.round(3), mat)
@@ -1667,9 +1667,9 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_as_contact_matrix_CG_consensus_labelers(self):
         fragments = get_fragments(self.intf.top, method="resSeq+")
-        mat = contacts.contacts.frequency_as_contact_matrix_CG(self.intf, 3.0, fragments=fragments,
-                                                               consensus_labelers=[self.GPCR,
-                                                                                   self.CGN])
+        mat = self.intf.frequency_as_contact_matrix_CG(3.0, fragments=fragments,
+                                                       consensus_labelers=[self.GPCR,
+                                                                           self.CGN])
         assert isinstance(mat, _DF)
         _np.testing.assert_almost_equal(mat.values.sum(),
                                         self.total_intf_freq_at_3*2,
@@ -1678,16 +1678,16 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_as_contact_matrix_CG_sparse(self):
         fragments = get_fragments(self.intf.top, method="resSeq+")
-        mat = contacts.contacts.frequency_as_contact_matrix_CG(self.intf, 3.0, fragments=fragments, sparse=True)
+        mat = self.intf.frequency_as_contact_matrix_CG(3.0, fragments=fragments, sparse=True)
         mat_ref = _np.zeros((2,2))
         mat_ref[0,1] = mat_ref[1,0] = self.total_intf_freq_at_3
         _np.testing.assert_equal(mat_ref.round(3), mat)
 
     def test_frequency_as_contact_matrix_CG_interface(self):
         fragments = get_fragments(self.intf.top, method="resSeq+")
-        mat = contacts.contacts.frequency_as_contact_matrix_CG(self.intf, 3.0,
-                                                               interface=True,
-                                                               fragments=fragments)
+        mat = self.intf.frequency_as_contact_matrix_CG(3.0,
+                                                       interface=True,
+                                                       fragments=fragments)
         assert isinstance(mat, _DF)
         self.assertListEqual(list(mat.index), ["frag 0"])
         self.assertListEqual(list(mat.keys()),["frag 3"])
@@ -1697,9 +1697,9 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
         # Test with a different set of fragments
         fragments = get_fragments(self.intf.top, method="resSeq")
-        mat = contacts.contacts.frequency_as_contact_matrix_CG(self.intf, 3.0,
-                                                               interface=True,
-                                                               fragments=fragments)
+        mat = self.intf.frequency_as_contact_matrix_CG(3.0,
+                                                       interface=True,
+                                                       fragments=fragments)
         assert isinstance(mat, _DF)
         self.assertListEqual(list(mat.index), ["frag 0", "frag 1", "frag 2", "frag 3"]) #these are frag 0
         self.assertListEqual(list(mat.keys()), ["frag 6", "frag 7", "frag 8"]) # these are frag 1
