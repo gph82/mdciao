@@ -3981,11 +3981,13 @@ class ContactGroup(object):
                 If False, e.g. a residue neighborhood or
                 a site, then :obj:`scheme` is set to 'all'
              * 'interface_sparse':
-                like 'interface', but only for fragments where at
-                least one residue participates in the interface.
-                It might be that :obj:`fragments` further sub-fragments
-                the self.interface_fragments (which are only two),
-                but you don't want all of them shown
+                like 'interface', but using the input :obj:`fragments`
+                to break self.interface_fragments (which are only two, 
+                by definition) further down into other fragments.
+                Of these, show only the ones where at least one residue
+                participates in the interface. If :obj:`fragments` is
+                None, `scheme='interface'` and `scheme='interface_sparse'`
+                are the same thing.
              * 'residues':
                 plot only the residues present in self.res_idxs_pairs
              * 'residues_sparse' :
@@ -4011,7 +4013,8 @@ class ContactGroup(object):
 
         Returns
         -------
-        ifig, iax
+        ifig : :obj:``~matplotlib.figure.Figure`
+        iax : :obj:`matplotlib.axes.Axes`
         """
 
         df = self.flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose=False)
