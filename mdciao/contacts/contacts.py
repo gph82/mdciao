@@ -5466,9 +5466,11 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
                 kwargs["fragments"] = [df.index[df[frag_key] == key].values.tolist() for key in
                                        kwargs["fragment_names"]]
                 if frag_key=="frag":
-                    na_idxs = _np.flatnonzero(_isna(kwargs["fragment_names"]))[0]
-                    del kwargs["fragment_names"][na_idxs]
-                    del kwargs["fragments"][na_idxs]
+                    na_idxs = _np.flatnonzero(_isna(kwargs["fragment_names"]))
+                    if len(na_idxs)>0:
+                        na_idxs=na_idxs[0]
+                        del kwargs["fragment_names"][na_idxs]
+                        del kwargs["fragments"][na_idxs]
                     kwargs["fragment_names"] = [int(ii) for ii in kwargs["fragment_names"]]
                 return frag_key
 
