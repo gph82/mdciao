@@ -4163,7 +4163,7 @@ class ContactGroup(object):
         iax : :obj:`matplotlib.axes.Axes`
         """
 
-        df = self.flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose=False)
+        df = self._flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose=False)
 
         kwargs_freqs2flare.update(_dataframe2flarekwargs(df, scheme))
 
@@ -4195,7 +4195,7 @@ class ContactGroup(object):
         #ifig.tight_layout()
         return ifig, iax
 
-    def flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose):
+    def _flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose):
         r"""
         Construct a :obj:`~pandas.DataFrame` with the per-residue information for flareplot
 
@@ -4272,9 +4272,14 @@ class ContactGroup(object):
         for ii, ifreq in self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang).items():
             list_of_dicts[ii].update({"freq":ifreq})
 
-        if kwargs_freqs2flare.get("sparse_residues") is not None and _mdcu.lists.is_iterable(kwargs_freqs2flare["sparse_residues"]):
-            for ii in kwargs_freqs2flare.get("sparse_residues"):
-                list_of_dicts[ii].update({"sparse_residues":1})
+        if kwargs_freqs2flare.get("sparse_residues") is not None:
+            if _mdcu.lists.is_iterable(kwargs_freqs2flare["sparse_residues"]):
+                for ii in kwargs_freqs2flare.get("sparse_residues"):
+                    list_of_dicts[ii].update({"sparse_residues":1})
+            elif isinstance(kwargs_freqs2flare["sparse_residues"],bool) and kwargs_freqs2flare["sparse_residues"]:
+                for ii, ifreq in self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang).items():
+                    if ifreq>0:
+                        list_of_dicts[ii].update({"sparse_residues":1})
 
         df = _DF(list_of_dicts)
 
@@ -5432,7 +5437,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
     df : :obj:`~pandas.DataFrame`
         It has already been pre-filled
         with per-residue information
-        by :obj:`mdciao.contacts.ContactGroup.flareargs2df`
+        by :obj:`mdciao.contacts.ContactGroup._flareargs2df`
     scheme : str
         The scheme used for the fragmentation
         of the flareplot
