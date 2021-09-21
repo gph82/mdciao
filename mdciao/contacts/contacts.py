@@ -5462,13 +5462,13 @@ def frequency_as_contact_matrix_CG(self,
         The fragment definitions
     sparse : bool, default is False
         Delete rows and columns
-        where the row/column sum is < zero_freq.
+        where all elements are < zero_freq.
         Since the row/column indices lose
         their meaning this way, a DataFrame
         with named row/columns is
         returned instead of an array
         If no :obj:`fragment_names` are
-        passed, some will be created
+        passed, some will be created.
     interface : bool, default is False
         If True, an asymmetric matrix
         is reported, with rows and columns
