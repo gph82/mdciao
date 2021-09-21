@@ -10,7 +10,7 @@ Helper functions for demos and data download
 
    ContactGroupL394
    Interface_B2AR_Gas
-   GPCRLabeler
+   GPCRLabeler_ardb2_human
    CGNLabeler_3SN6
    notebooks
    fetch_example_data
