@@ -840,24 +840,24 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
 
     Residues belonging to the same fragments get turned into
     arcs instead of being plotted as individual dots.
-    Each arch-length is proportional to fragments' overall number of
+    Each arc-length is proportional to the fragments' overall number of
     contacts, NOT to the number of residues that the arc represents.
 
     If fragments don't participate in any contacts, they
     are hidden, i.e. the plot is always 'sparse'
 
     Curves connecting residue-pairs are squashed into chords
-    connecting the arch. The opacity of each chord does
+    connecting the arc. The opacity of each chord does
     NOT represent the underlying frequencies.
 
     The main difference with :obj:`mdciao.flare.freqs2flare`
     is that the per-fragment number of contacts gets represented
     visually through the length the arc and that the chords
-    don't encode the number of underlying contacts
+    don't encode the number of underlying contacts.
 
-    This method uses the `mpl_chord_diagram `<https://codeberg.org/tfardet/mpl_chord_diagram>`_
-    package by `@tfardet<https://codeberg.org/tfardet>`_
-    with contributions from `Guillermo Perez-Hernandez <https://codeberg.org/gph82>_`
+    This method uses the `mpl_chord_diagram <https://codeberg.org/tfardet/mpl_chord_diagram>`_
+    package by `@tfardet <https://codeberg.org/tfardet>`_
+    with contributions from `Guillermo Perez-Hernandez <https://codeberg.org/gph82>`_.
 
     Parameters
     ----------
@@ -868,7 +868,7 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         in :obj:`freqs`. They can be any integers that could represent
         a residue. The only hard condition is that the set
         of np.unique(res_idxs_pairs) must be contained
-        within :obj:`residues_as_fragments`
+        within :obj:`fragments`
     fragments : a list of lists of integers
         These are the fragments used to coarse-grain
         the :obj:`freqs`. They can have to be a superset
@@ -882,7 +882,7 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         The panelsize for the plot, in inches
     add_sigma : bool, default is True
         Add the sum of freqs per fragment
-        to the arch
+        to the arc
 
     Returns
     -------
@@ -891,13 +891,12 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         The idxs of :obj:`fragments`
         that have been plotted
     plot_attribs : dict
-        Objects of the plot if the user wants
-        to manipulate them further or re-use.
-        some attributes:
+        Objects of the plot, for the user to
+        to manipulate further. Some attributes:
         "fragment_names", "fragment_labels",
         "dots", "r"
         The attribute "dots" is a shim namedtuple
-        with one single attribute, "radius"
+        with one single attribute, "radius",
         for compatibility with downstream
         manipulations
     """
