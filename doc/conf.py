@@ -92,4 +92,10 @@ latex_elements = {
 }
 
 html_last_updated_fmt=""
+try:
+    from importlib import metadata
+    version = metadata.version("mdciao")
+except ImportError:
+    import pkg_resources
+    version = pkg_resources.get_distribution("mdciao").version
 copybutton_prompt_text = ">>> "
