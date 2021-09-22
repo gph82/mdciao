@@ -455,7 +455,8 @@ _AA_types = {"positive": "ARG HIS LYS",
              "special": "CYS GLY PRO",
              "hydrophobic": "ALA ILE LEU MET PHE TRP TYR VAL"}
 for _key in _AA_types.keys():
-    _AA_types[_key] += ' '+" ".join([_AMINO_ACID_CODES[_AA] for _AA in _AA_types[_key].split()])
+    # the str().split(.) is an ugly hack for building the docs, smh the dict gets turned into a named tuple
+    _AA_types[_key] += ' '+" ".join([str(_AMINO_ACID_CODES[_AA]).split(".")[-1] for _AA in _AA_types[_key].split()])
 _res2restype = {aa:key for key, val in _AA_types.items() for aa in val.split()}
 _res2restype
 
