@@ -1,3 +1,4 @@
+__version__ = "0.0.2.beta4"
 from setuptools import setup, find_packages
 
 with open("README.rst", "r", encoding="utf-8") as fh:
@@ -20,7 +21,7 @@ doc_deps = [
 
 setup(
     name="mdciao",
-    version="0.0.2.beta4",
+    version=__version__,
     author_email="guillermo.perez@charite.de",
     description="mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods",
     url="https://github.com/gph82/mdciao",
