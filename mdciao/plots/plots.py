@@ -36,9 +36,10 @@ from os import path as _path
 
 from collections import defaultdict as _defdict
 
-def plot_w_smoothing_auto(ax, x, y,
+def plot_w_smoothing_auto(ax, y,
                           label,
                           color,
+                          x = None,
                           gray_background=False,
                           n_smooth_hw=0):
     r"""
@@ -49,12 +50,14 @@ def plot_w_smoothing_auto(ax, x, y,
     Parameters
     ----------
     ax : :obj:`~matplotlib.axes.Axes`
-    x : iterable of floats
     y : iterable of floats
     label : str
         Label for the legend
     color : str
         anything `matplotlib.pyplot.colors` understands
+    x : iterable of floats, default is None
+        If not provided, will default to
+        x = _np.arange(len(y))
     gray_background : bool, default is False
         If True, instead of using a fainted version
         of :obj:`color`, the original :obj:`y`
@@ -71,6 +74,8 @@ def plot_w_smoothing_auto(ax, x, y,
 
     """
     alpha = 1
+    if x is None:
+        x = _np.arange(len(y))
     if n_smooth_hw > 0:
         alpha = .2
         x_smooth = _mdcu.lists.window_average_fast(_np.array(x), half_window_size=n_smooth_hw)
@@ -1103,7 +1108,7 @@ def add_tilted_labels_to_patches(jax, labels,
     for ii, (ipatch, ilab) in enumerate(zip(jax.patches, labels)):
         ix = ii
         iy = ipatch.get_height()
-        iy += .01
+        iy += .05
         if iy > trunc_y_labels_at:
             iy = trunc_y_labels_at
         if single_label:
@@ -1114,8 +1119,12 @@ def add_tilted_labels_to_patches(jax, labels,
                  va='bottom',
                  ha='left',
                  rotation=45,
+                 rotation_mode="anchor",
                  fontsize=_rcParams["font.size"]*label_fontsize_factor,
-                 backgroundcolor="white"
+                 backgroundcolor="white",
+                 bbox={"boxstyle": "square,pad=0.2",
+                       "fc": "white", "ec": "none", "alpha": .9},
+
                  )
 
 def _get_highest_y_of_bbox_in_axes_units(txt_obj):
@@ -1314,20 +1323,21 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
 
     return bar_fig
 
-def plot_contact_matrix(mat, labels, pixelsize=1,
-                        transpose=False, grid=False,
-                        cmap="binary",
-                        colorbar=False):
+def plot_matrix(mat, labels, pixelsize=1,
+                transpose=False, grid=False,
+                cmap="binary",
+                colorbar=False):
     r"""
-    Plot a contact matrix. It is written to be able to
-    plot rectangular matrices where rows and columns
-    do not represent the same residues
+    Plot a matrix using :obj:`~matplotlib.pyplot.imshow`.
+
+    Matrx can be non-symetric and rectangular, rows
+    and columns need not represent the same residues
+    or groups of residues
 
     Parameters
     ----------
     mat : 2D numpy.ndarray of shape (N,M)
-        The allowed values are in [0,1], else
-        the method fails (NaNs are allowed)
+        The matrix to be plotted, NaNs are allowed
     labels : list of len(2) with x and y labels
         The length of each list has to be N, M for
         x, y respectively, else this method fails
@@ -1339,7 +1349,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
     transpose : boolean, default is False
     grid : boolean, default is False
         overlap a grid of dashed lines
-    cmap : str, default is binary
+    cmap : str, default is 'binary'
         What :obj:`matplotlib.cmap` to use
     colorbar : boolean, default is False
         whether to use a colorbar
@@ -1352,8 +1362,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         with the default value, in case the value
         changes in the future
     """
-    _np.testing.assert_array_equal(mat.shape,[len(ll) for ll in labels])
-    assert _np.nanmax(mat)<=1 and _np.nanmin(mat)>=0, (_np.nanmax(mat), _np.nanmin(mat))
+    _np.testing.assert_array_equal(mat.shape,[len(ll) for ll in labels]), "Number of labels don't match number of rows/cols "
     if transpose:
         mat = mat.T
         labels = labels[::-1]
@@ -1375,7 +1384,7 @@ def plot_contact_matrix(mat, labels, pixelsize=1,
         divider = _make_axes_locatable(iax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         _plt.gcf().colorbar(im, cax=cax)
-        im.set_clim(0.0, 1.0)
+        im.set_clim(_np.nanmin([_np.nanmin(mat), 0]), _np.nanmax([_np.nanmax(mat), 1.0]))
     fig.tight_layout()
     return iax, pixelsize
 
@@ -1531,7 +1540,8 @@ def _plot_violin_baseplot(vdata,
     if labels is None:
         jax.set_xticks([])
     else:
-        _plt.xticks(xvec, labels, rotation=45, ha="right", va="top")
+        _plt.xticks(xvec, labels, rotation=45, ha="right", va="top",
+                    rotation_mode="anchor")
     if isinstance(colors, list):
         assert len(colors)>=len(violins["bodies"]),"Not enough colors (%u) for the number of violins (%u)"%(len(colors),len(vdata))
     elif _is_colormapstring(colors):

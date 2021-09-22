@@ -661,7 +661,7 @@ def parser_for_GPCR_overview():
                                                  'nomenclature, optionally mapping it on an input topology. '
                                                  'The BW nomenclature can be read locally or over the network')
 
-    parser.add_argument("BW_uniprot_or_file", type=str,
+    parser.add_argument("GPCR_uniprot_or_file", type=str,
                         help="Get Ballesteros-Weinstein definitions from here.\n"
                              "If a file is not found locally, look for\n"
                              " Ballesteros-Weinstein definitions in the GPCRdb\n"

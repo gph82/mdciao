@@ -16,6 +16,7 @@ please note the API is not yet stable.
     print_frag
     overview
     match_fragments
+    assign_fragments
 
 
 """

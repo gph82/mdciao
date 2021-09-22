@@ -25,6 +25,8 @@ from . import _utils as _futils
 from mdciao.plots.plots import _points2dataunits
 from mdciao.utils.str_and_dict import replace4latex
 from mdciao.utils.residue_and_atom import get_SS as _get_SS
+from mpl_chord_diagram import chord_diagram as _chord_diagram
+from collections import namedtuple as _namedtuple
 
 from matplotlib import pyplot as _plt
 from matplotlib.patches import CirclePolygon as _CP
@@ -32,7 +34,8 @@ from inspect import signature as _signature
 
 def freqs2flare(freqs, res_idxs_pairs,
                 fragments=None,
-                sparse=False,
+                sparse_residues=False,
+                sparse_fragments=False,
                 exclude_neighbors=1,
                 freq_cutoff=0,
                 iax=None,
@@ -60,6 +63,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 signed_colors=None,
                 subplot=False,
                 aura=None,
+                coarse_grain=False
                 ):
     r"""
     Plot contact frequencies as `flare plots`.
@@ -82,13 +86,16 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     * which/how residues get plotted:
         * :obj:`res_idxs_pairs` is the primary source of which
-          residues will be plotted. All residues appearing
-          in these pairs will always be plotted, no matter what.
+          residues will be plotted, its length matches the
+          length the :obj:`freqs` object.
         * :obj:`fragments` is used to
-          a) expand the initial residue list and
+          a) expand the initial residue list (if needed) and
           b) split the residues into fragments when placing the dots on the flareplot.
-        * :obj:`sparse` is needed to accomplish b) without
-          expanding the list
+        * :obj:`sparse_residues` can modify :obj:`res_idxs_pairs`,
+          either by looking at non-zero :obj:`freqs` or
+          by direct input (see below)
+        * :obj:`sparse_fragments` is analogous, but with
+          fragments
         * :obj:`highlight_residxs` show the labels of these residues
           in red
 
@@ -174,7 +181,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         Curves **not** involving these fragments will be
         **not** be shown, i.e. it is the complementary
          of :obj:`mute_fragments`. Both cannot be passed
-         simulataneously.
+         simultaneously.
     top: :obj:`~mdtraj.Topology` object, default is None
         If provided a top, residue names (e.g. GLU30) will be used
         instead of residue indices. Will fail if the residue indices
@@ -207,14 +214,18 @@ def freqs2flare(freqs, res_idxs_pairs,
     shortenAAs: boolean, default is True
         Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
         is parsed
-    sparse : boolean, default is False
+    sparse_residues : boolean, default is False
         Show only those residues that appear in the initial :obj:`res_idxs_pairs`
 
         Note
         ----
         There is a development option for this argument where a residue
         list is passed, meaning, show these residues regardless of any other
-        option that has been passed. Perhaps sparse changes in the future.
+        option that has been passed. Perhaps this changes in the future.
+    sparse_fragments : boolean, default is False
+        Same as :obj:`sparse_residues`, but with fragments. When
+        :obj:`sparse_residues` isn't False, this option
+        has no effect.
     bezier_linecolor : color-like, default is 'k'
         The color of the bezier curves connecting the residues.
         Can be a character, string or RGB value (not RGBA)
@@ -251,6 +262,13 @@ def freqs2flare(freqs, res_idxs_pairs,
         e.g. RMSF, SASA, conv. degree...
         It will be drawn as an *aura* around the
         flareplot.
+    coarse_grain : bool, default is False
+        If True, will use the fragment definitions
+        of :obj:`fragments` and/or `sparse_fragments`
+        to coarse grain the frequencies into per-fragment
+        frequencies and show them as a chord-diagram
+        wrapping around :obj:`~mdciao.flare.freqs2chord`
+        Check there for more info
 
     Returns
     -------
@@ -282,16 +300,31 @@ def freqs2flare(freqs, res_idxs_pairs,
         "The size of the contact array and the " \
         "res_idxs_pairs array do not match %u vs %u"%(freqs.shape[1], len(res_idxs_pairs))
 
-    # Figure out the combination of sparse/fragments options
-    residues_as_fragments = _futils._parse_residue_and_fragments(res_idxs_pairs,
-                                                                 sparse=sparse,
-                                                                 fragments=fragments)
+    # Figure out the combination of sparse_residues/fragments options
+    residues_as_fragments, anchor_fragments, mute_fragments = \
+        _futils._parse_residue_and_fragments(res_idxs_pairs,
+                                             sparse_residues=sparse_residues,
+                                             sparse_fragments=sparse_fragments,
+                                             fragments=fragments,
+                                             top=top,
+                                             anchor_fragments=anchor_fragments,
+                                             mute_fragments=mute_fragments)
     # Delete fragment names that won't be used
     if fragment_names is not None and fragments is not None:
         fragment_names = [fn for fr, fn in zip(fragments,fragment_names) if len(_np.intersect1d(fr,_np.hstack(residues_as_fragments)))>0]
 
     # Create a map
     residx2markeridx = _futils.value2position_map(_np.hstack(residues_as_fragments))
+
+    if coarse_grain:
+        assert len(residues_as_fragments)>1, "The fragment definitions of 'fragments' and/or 'sparse_fragments' can't be " \
+                                             "used to coarse-grain the 'freqs'. Please check your input"
+        fragment_colors = _futils.col_list_from_input_and_fragments(colors, residues_as_fragments, alpha=.80)
+        fragment_colors = [fragment_colors[residx2markeridx[ff[0]]] for ff in residues_as_fragments]
+        return freqs2chord(_np.average(freqs, axis=0), res_idxs_pairs, residues_as_fragments,
+                           fragment_names=fragment_names,fragment_colors=fragment_colors,
+                           panelsize=panelsize
+                           )
 
     if plot_curves_only:
         plot_attribs = {}
@@ -356,7 +389,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     if subplot:
         if iax is iax.figure.axes[-1]:
             [_futils.fontsize_apply(iax, jax) for jax in iax.figure.axes]
-            minwidth = min([_np.unique([line.get_linewidth() for line in jax.lines]) for jax in iax.figure.axes])
+            minwidth = min([_np.unique([line.get_linewidth() for line in jax.lines if line.get_label().startswith("_line")]) for jax in iax.figure.axes])
             [[line.set_linewidth(minwidth) for line in jax.lines] for jax in iax.figure.axes]
     return iax, idxs_of_pairs2plot, plot_attribs
 
@@ -466,10 +499,8 @@ def circle_plot_residues(fragments,
 
     n_positions = len(xy) + padding[0] + len(fragments)*padding[1] + padding[2]
 
-    # TODO review variable names
-    # TODO this color mess needs to be cleaned up
     residues_to_plot_as_dots = _np.hstack(fragments)
-    col_list = _futils.col_list_from_input_and_fragments(colors, fragments,alpha=.80)
+    col_list = _futils.col_list_from_input_and_fragments(colors, fragments, alpha=.80)
     if iax is None:
         _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
         iax = _plt.gca()
@@ -478,60 +509,49 @@ def circle_plot_residues(fragments,
             print("The passed figure was not instantiated with tight_layout=True\n"
                   "This may lead to some errors in the flareplot fontsizes.")
     # Do this first to have an idea of the points per axis unit necessary for the plot
-    iax.set_xlim([center[0] - r, center[0] + r])
-    iax.set_ylim([center[1] - r, center[1] + r])
+    iax.set_xlim([center[0] - 3*r, center[0] + 3*r])
+    iax.set_ylim([center[1] - 3*r, center[1] + 3*r])
     iax.set_aspect('equal')
-
-    # Create a map
-    residx2markeridx = _futils.value2position_map(residues_to_plot_as_dots)
+    iax.draw(iax.figure.canvas.get_renderer())
 
     # Plot!
-    running_r_pad = 0
     if markersize is None:
         dot_radius = r * _np.sin(_np.pi/n_positions)
         dot_radius_in_pts = dot_radius*_points2dataunits(iax).mean()
         if dot_radius_in_pts < 1.5:
-            print(ValueError("Drawing this many of residues (%u) in "
+            print(ValueError("Drawing this many residues (%u) in "
                              "a panel %3.1f inches wide/high "
                              "forces too small dotsizes and fontsizes.\n"
                              "If crowding effects "
                              "occur, either reduce the number of residues or increase "
                              "the panel size"%(n_positions, panelsize)))
-        if not arc:
-            #TODO replace this with a call to RegularPolyCollection
-            CPs = [_CP(ixy,
-                       radius=dot_radius,
-                       facecolor=col_list[ii],
-                       edgecolor=None,
-                       zorder=10) for ii, ixy in enumerate(xy)]
-            [iax.add_artist(iCP) for iCP in CPs]
-            running_r_pad += dot_radius
-        else:
-            lw = r*.05*_points2dataunits(iax).mean() #5% of the arc linewidth)
-            _futils.draw_arcs(fragments, iax,
-                              colors=[col_list[ifrag[0]] for ifrag in fragments],
-                              center=center,
-                              r=2*r,  # don't understand this 2 here
-                              angle_offset=angle_offset,
-                              padding=padding,
-                              lw=2 * lw
-                              )
-            running_r_pad += 4 * lw
+        #TODO replace this with a call to RegularPolyCollection
+        CPs = [_CP(ixy,
+                   radius=dot_radius,
+                   facecolor=col_list[ii],
+                   edgecolor=None,
+                   zorder=10) for ii, ixy in enumerate(xy)]
+        [iax.add_artist(iCP) for iCP in CPs]
+        outer_r_in_data_units = r + dot_radius
     else:
         raise NotImplementedError
-        #iax.scatter(xy[:, 0], xy[:, 1], c=col_list, s=10, zorder=10)
 
+    if debug:
+        iax.add_artist(_plt.Circle(center,
+                                   radius=outer_r_in_data_units,
+                                   ec='r',
+                                   fc=None,
+                                   fill=False,
+                                   zorder=10,
+                                   lw=dot_radius_in_pts/10))
     # After the dots have been plotted,
-    # we use their radius as in points
+    # we use their radius in points
     # as approximate fontsize
     if fontsize is None:
-        opt_h_in_pts = dot_radius_in_pts
-        fontsize = opt_h_in_pts
+        fontsize = dot_radius_in_pts *1.75 # slightly smaller than the diameter
     else:
         raise NotImplementedError
 
-    n_max = 100
-    maxlen = 1
     labels = []
     if textlabels:
         if isinstance(textlabels,bool):
@@ -539,163 +559,142 @@ def circle_plot_residues(fragments,
         else:
             # Interpret the textlabels as replacements
             replacement_labels = textlabels
-        overlap = True
-        counter = 0
-        while overlap and counter < n_max:
-            running_r_pad += dot_radius * maxlen  / 2 # This is a fudge.
-            # The problem is that re-scaling at a later point might induce overlap
-            # in this labels again, so I am anticipating that by adding some extra padding here
-            [ilab.remove() for ilab in labels]
-            labels = add_fragmented_residue_labels(fragments,
-                                                   iax,
-                                                   fontsize,
-                                                   center=center,
-                                                   r=r + running_r_pad,
-                                                   angle_offset=angle_offset,
-                                                   padding=padding,
-                                                   highlight_residxs=highlight_residxs,
-                                                   top=top,
-                                                   aa_offset=aa_offset,
-                                                   replacement_labels=replacement_labels)
-            lab_lenths = [len(itext.get_text()) for itext in labels]
-            idx_longest_label = _np.argmax(lab_lenths)
-            maxlen=_np.max(lab_lenths)
-            bad_txt_bb = labels[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
-            bad_dot_bb =    CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
-            overlap = bad_txt_bb.overlaps(bad_dot_bb)
-            counter+=1
+        outer_r_in_data_units += {True: 2,
+                                  False:1}[dot_radius<1.5]*dot_radius
+        labels = add_fragmented_residue_labels(fragments,
+                                               iax,
+                                               fontsize,
+                                               center=center,
+                                               r=outer_r_in_data_units,
+                                               angle_offset=angle_offset,
+                                               padding=padding,
+                                               highlight_residxs=highlight_residxs,
+                                               top=top,
+                                               aa_offset=aa_offset,
+                                               replacement_labels=replacement_labels)
+        if debug:
+            _futils._plot_fancypatches(labels, lw=dot_radius_in_pts / 10)
+            iax.add_artist(_plt.Circle(center,
+                                       radius=outer_r_in_data_units,
+                                       ec='green',
+                                       fc=None,
+                                       fill=False,
+                                       zorder=10,
+                                       lw=dot_radius_in_pts / 10))
 
-        assert not overlap, ValueError("Tried to 'un'-overlap textlabels and residue markers %u times without success"%n_max)
-
-        running_r_pad += dot_radius*maxlen/2
-    if debug:
-        iax.add_artist(_plt.Circle(center,
-                                   radius=r + running_r_pad,
-                                   ec='r',
-                                   fc=None,
-                                   fill=False,
-                                   zorder=10))
-
-
+        delta_r = _futils._outermost_corner_of_fancypatches(labels)-outer_r_in_data_units
+        outer_r_in_data_units += delta_r*.90 # fudge
+        if debug:
+            iax.add_artist(_plt.Circle(center,
+                                       radius=outer_r_in_data_units,
+                                       ec='b',
+                                       fc=None,
+                                       fill=False,
+                                       zorder=10,
+                                       lw=dot_radius_in_pts / 10))
     # Do we have SS dictionaries
     ss_labels = []
     if ss_array is not None:
-        overlap = True
-        counter = 0
         ss_colors = [_futils._SS2vmdcol[ss_array[res_idx]] for res_idx in residues_to_plot_as_dots]
-        while overlap and counter < n_max:
-            running_r_pad += dot_radius * 2
-            [ilab.remove() for ilab in ss_labels]
-            ss_labels = add_fragmented_residue_labels(fragments,
-                                                      iax,
-                                                      fontsize * 2,
-                                                      center=center,
-                                                      r=r + running_r_pad,
-                                                      angle_offset=angle_offset,
-                                                      padding=padding,
-                                                      shortenAAs=shortenAAs,
-                                                      highlight_residxs=highlight_residxs, top=top,
-                                                      aa_offset=aa_offset,
-                                                      replacement_labels={ii: ss_array[ii].replace("NA","").replace("E","B") for ii in
-                                                                          residues_to_plot_as_dots},
-                                                      colors=[_futils._make_color_transparent(col, .8, "w") for col in ss_colors],
-                                                      weight="bold")
-            idx_longest_label = _np.argmax([len(itext.get_text()) for itext in ss_labels])
-            # We're doing this "by hand" here because it's just two or at most 3 offenders
-            bad_ss_bb = ss_labels[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
-            bad_dot_bb = CPs[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer())
-            overlap = bad_ss_bb.overlaps(bad_dot_bb)
-            if len(labels) >0 :
-                overlap_w_text = bad_ss_bb.overlaps(labels[idx_longest_label].get_window_extent(renderer=iax.figure.canvas.get_renderer()))
-                overlap = _np.any([overlap, overlap_w_text])
-            counter += 1
+        replacement_labels = {ii: ss_array[ii].replace("NA", " ").replace("E", "B") for ii in
+                                 residues_to_plot_as_dots}
+        ss_labels = add_fragmented_residue_labels(fragments,
+                                                  iax,
+                                                  fontsize * 2,
+                                                  center=center,
+                                                  r=outer_r_in_data_units,
+                                                  angle_offset=angle_offset,
+                                                  padding=padding,
+                                                  shortenAAs=shortenAAs,
+                                                  highlight_residxs=highlight_residxs, top=top,
+                                                  aa_offset=aa_offset,
+                                                  replacement_labels=replacement_labels,
+                                                  colors=[_futils._make_color_transparent(col, .8, "w") for col in
+                                                          ss_colors],
+                                                  weight="bold")
 
-        running_r_pad += dot_radius
-    if debug:
-        iax.add_artist(_plt.Circle(center,
-                                   radius=r + running_r_pad,
-                                   ec='b',
-                                   fc=None,
-                                   fill=False,
-                                   zorder=10))
-    auras = []
+        outer_r_in_data_units = _futils._outermost_corner_of_fancypatches(ss_labels)
+        if debug:
+            _futils._plot_fancypatches(ss_labels, lw=dot_radius_in_pts / 10)
+            iax.add_artist(_plt.Circle(center,
+                                       radius=outer_r_in_data_units,
+                                       ec='purple',
+                                       fc=None,
+                                       fill=False,
+                                       zorder=10,
+                                       lw=dot_radius_in_pts / 10))
+
     if aura is not None:
         if debug:
-            iax.add_artist(_plt.Circle([0,0],r+running_r_pad, ec="k", alpha=.25, zorder=-100))
-        #TODO running pad is somehow mis-calculated here
-        auras, nr = _futils.add_aura(xy, aura[_np.hstack(fragments)], iax, r + running_r_pad+dot_radius,
+            iax.add_artist(_plt.Circle([0, 0], outer_r_in_data_units,
+                                       color=None,
+                                       fill=False,
+                                       ec="cyan",
+                                       zorder=10,
+                                       lw=dot_radius_in_pts / 10))
+            iax.add_artist(_plt.Circle([0,0],outer_r_in_data_units, ec="k", alpha=.25, zorder=-100))
+
+        auras, outer_r_in_data_units = _futils.add_aura(xy, aura[_np.hstack(fragments)], iax, outer_r_in_data_units+dot_radius,
                          [len(fr) for fr in fragments],
                          subtract_baseline=False
                          )
-        running_r_pad = nr - r  + dot_radius
+
         if aura is not None:
             if debug:
-                iax.add_artist(_plt.Circle([0, 0], r + running_r_pad,
-                                           color=None,
-                                           fill=False,
-                                           ec="k",
-                                           #alpha=.25,
-                                           zorder=-100))
-                iax.add_artist(_plt.Circle([0, 0], nr, ec="g",
+                iax.add_artist(_plt.Circle([0, 0], outer_r_in_data_units,
+                                           ec="g",
                                            facecolor=None,
                                            fill=False,
-                                           #alpha=.25,
-                                           zorder=-100))
-
+                                           zorder=10,
+                                           lw=dot_radius_in_pts / 10))
 
     # Do we have names?
-    frag_labels = None
+    frag_labels = []
     if fragment_names is not None:
-        span = (2*(r + running_r_pad))
+        span = 2 * outer_r_in_data_units
         frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of panel space)
-        frag_fontsize_in_pts = frag_fontsize_in_aus * _points2dataunits(iax).mean()
+        frag_fontsize_in_pts = _np.max((3*fontsize, frag_fontsize_in_aus * _points2dataunits(iax).mean()))
+        outer_r_in_data_units += frag_fontsize_in_aus
+        if debug:
+            iax.add_artist(_plt.Circle(center,
+                                       radius=outer_r_in_data_units,
+                                       ec='pink',
+                                       fc=None,
+                                       fill=False,
+                                       zorder=10,
+                                       lw=dot_radius_in_pts / 10))
         frag_labels = _futils.add_fragment_labels(fragments,
-                                                  [replace4latex(ifrag) for ifrag in fragment_names],
+                                                  [replace4latex(str(ifrag)) for ifrag in fragment_names],
                                                   iax,
                                                   angle_offset=angle_offset,
                                                   padding=padding,
-                                                  #xy,
-                                                  #residx2markeridx,
                                                   fontsize=frag_fontsize_in_pts,
                                                   center=center,
-                                                  r=r + running_r_pad
+                                                  r=outer_r_in_data_units
                                                   )
-        # First un-overlapp the labels themselves
-        _futils.un_overlap_via_fontsize(frag_labels)
-        frag_fontsize_in_pts = frag_labels[0].get_size()
 
-        # Then find the overlappers among existing labels (to avoid using all labels unnecessarily)
-        foverlappers = _futils.overlappers(frag_labels, CPs + labels + ss_labels
-                                           #+auras
-                                           )
-        counter = 0
-        while any(_futils.overlappers(frag_labels, foverlappers)) and counter < n_max:
-            [fl.remove() for fl in frag_labels]
-            running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
-            frag_labels = _futils.add_fragment_labels(fragments,
-                                                      [replace4latex(ifrag) for ifrag in fragment_names],
-                                                      iax, #xy,
-                                                      #residx2markeridx,
-                                                      angle_offset=angle_offset,
-                                                      padding=padding,
-                                                      fontsize=frag_fontsize_in_pts,
-                                                      center=center,
-                                                      r=r + running_r_pad
-                                                      )
-            # print(counter, overlappers(frag_labels, foverlappers))
-            counter += 1
-            frag_fontsize_in_pts = frag_labels[0].get_size()
+        outer_r_in_data_units = _futils._outermost_corner_of_fancypatches(frag_labels)
 
-        running_r_pad += frag_fontsize_in_pts / _points2dataunits(iax).mean()
+        if debug:
+            iax.add_artist(_plt.Circle(center,
+                                       radius=outer_r_in_data_units,
+                                       ec='orange',
+                                       fc=None,
+                                       fill=False,
+                                       zorder=10,
+                                       lw=dot_radius_in_pts / 10))
+
     iax.set_yticks([])
     iax.set_xticks([])
-    iax.set_xlim([center[0] - r - running_r_pad, center[0] + r + running_r_pad])
-    iax.set_ylim([center[1] - r - running_r_pad, center[1] + r + running_r_pad])
+    _futils.change_axlims_and_resize_Texts(iax, outer_r_in_data_units)
+    _futils.un_overlap_via_fontsize(frag_labels, fac=.90)
+
     return iax, xy, {"fragment_labels":frag_labels,
                      "dot_labels":labels,
                      "dots":CPs,
                      "SS_labels":ss_labels,
-                     "r": r+running_r_pad}
+                     "r": outer_r_in_data_units
+                     }
 
 
 def add_bezier_curves(iax,
@@ -830,3 +829,121 @@ def add_fragmented_residue_labels(fragments,
                                         )
 
     return labels
+
+def freqs2chord(freqs, res_idxs_pairs, fragments,
+                fragment_names=None, iax=None, panelsize=10,
+                fragment_colors=None,
+                add_sigma=True,
+                ):
+    r"""
+    Coarse-grain the per-residue frequencies into a per-fragment `chord-diagram <https://en.wikipedia.org/wiki/Chord_diagram>`_.
+
+    Residues belonging to the same fragments get turned into
+    arcs instead of being plotted as individual dots.
+    Each arc-length is proportional to the fragments' overall number of
+    contacts, NOT to the number of residues that the arc represents.
+
+    If fragments don't participate in any contacts, they
+    are hidden, i.e. the plot is always 'sparse'
+
+    Curves connecting residue-pairs are squashed into chords
+    connecting the arc. The opacity of each chord does
+    NOT represent the underlying frequencies.
+
+    The main difference with :obj:`mdciao.flare.freqs2flare`
+    is that the per-fragment number of contacts gets represented
+    visually through the length the arc and that the chords
+    don't encode the number of underlying contacts.
+
+    This method uses the `mpl_chord_diagram <https://codeberg.org/tfardet/mpl_chord_diagram>`_
+    package by `@tfardet <https://codeberg.org/tfardet>`_
+    with contributions from `Guillermo Perez-Hernandez <https://codeberg.org/gph82>`_.
+
+    Parameters
+    ----------
+    freqs : iterable of floats
+        A list of floats representing frequencies
+    res_idxs_pairs : list of pairs of integers, default is None
+        The pairs of residue indices behind each freq entry
+        in :obj:`freqs`. They can be any integers that could represent
+        a residue. The only hard condition is that the set
+        of np.unique(res_idxs_pairs) must be contained
+        within :obj:`fragments`
+    fragments : a list of lists of integers
+        These are the fragments used to coarse-grain
+        the :obj:`freqs`. They can have to be a superset
+        of the idxs in :obj:`res_idxs_pairs`
+    fragment_names : list, default is None
+        The fragment names
+    iax: :obj:`~matplotlib.axes.Axes`, default is None
+        Parse an axis to draw on, otherwise one will be created
+        using :obj:`panelsize`.
+    panelsize : int, default is 10
+        The panelsize for the plot, in inches
+    add_sigma : bool, default is True
+        Add the sum of freqs per fragment
+        to the arc
+
+    Returns
+    -------
+    iax : :obj:`~matplotlib.axes.Axes`
+    non_zeros : list
+        The idxs of :obj:`fragments`
+        that have been plotted
+    plot_attribs : dict
+        Objects of the plot, for the user to
+        to manipulate further. Some attributes:
+        "fragment_names", "fragment_labels",
+        "dots", "r"
+        The attribute "dots" is a shim namedtuple
+        with one single attribute, "radius",
+        for compatibility with downstream
+        manipulations
+    """
+    # Coarse grain the matrix
+    mat_CG = _futils.coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments)
+
+    # Get the sparse matrix
+    sparse_mat, non_zeros = _futils.sparsify_sym_matrix(mat_CG)
+
+    non_zero_fragment_names = [[fragment_names[ii] for ii in non_zeros] if fragment_names is not None else None][0]
+    non_zero_fragment_colors = [[fragment_colors[ii] for ii in non_zeros[::-1]] if fragment_colors is not None else None][0]
+    # TODO when https://codeberg.org/tfardet/mpl_chord_diagram/pulls/32 gets released to pypi, [::-1] will not be needed
+    order = _np.arange(len(non_zeros))[::-1]
+
+    # Grab text objects already in the input axis
+    old_texts = []
+    if iax is None:
+        _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
+        iax = _plt.gca()
+        old_texts = list(iax.texts)
+
+    res = _chord_diagram(sparse_mat,
+                   chord_colors="gray",
+                   order=order,
+                   names=non_zero_fragment_names,
+                   colors=non_zero_fragment_colors,
+                   ax=iax)
+
+    # Grab the new text-labels and un-overlap them
+    frag_labels = [txt for txt in iax.texts if txt not in old_texts]  # only grab new text-objects
+    [t.set_bbox({"boxstyle": "square,pad=0.5", "fc": "blue", "ec": "none", "alpha": .0}) for t in frag_labels]
+    _futils.un_overlap_via_fontsize(frag_labels, fac=.85)
+
+    if add_sigma:
+        sigma_values = ["$\Sigma$ = %3.1f" % (ifreq) for ifreq in sparse_mat.sum(0)]
+        sigma_labels = []
+        for ii, rr in enumerate(res):
+            __, psi = _futils.cart2pol(rr[0],rr[1])
+            x, y = _futils.pol2cart(1 - .1 / 2, psi)
+            sigma_labels.append(iax.text(x, y, sigma_values[order[ii]],
+                     rotation_mode="anchor", ha="center", va="center", rotation=rr[-1],
+                                         bbox={"boxstyle": "square,pad=0.0", "fc": "white", "ec": "none", "alpha": .5}))
+        _futils.un_overlap_via_fontsize(sigma_labels, fac=.90)
+
+    # Create fake "dot" object with a  .radius attribute for compatibility with the downstream _utils.add_parent_labels
+    dot = _namedtuple("fake_dot", ["radius"])
+    return iax, non_zeros, {"fragment_names": non_zero_fragment_names,
+                            "fragment_labels": frag_labels,
+                            "r": _futils._outermost_corner_of_fancypatches(frag_labels),
+                            "dots": [dot(_signature(_chord_diagram).parameters["width"].default / 4)]}

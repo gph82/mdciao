@@ -128,10 +128,26 @@ class TestColors(TestCase):
         np.testing.assert_array_equal(['salmon'] * 6,
                                       colorlist)
 
-    def test_works_iterable(self):
+    def test_works_iterable_len_fragments(self):
         colorlist = _utils.col_list_from_input_and_fragments(["r", "g", "b"], self.fragments)
-        np.testing.assert_array_equal(["r", "g", "b"],
+        np.testing.assert_array_equal(["r", "r",
+                                       "g", "g",
+                                       "b", "b"],
                                       colorlist)
+
+    def test_works_iterable_len_residues(self):
+        colorlist = _utils.col_list_from_input_and_fragments(["r", "r", "g", "g", "b", "b"], self.fragments)
+        np.testing.assert_array_equal(["r", "r", "g", "g", "b", "b"],
+                                      colorlist)
+
+    def test_raises_wrong_length(self):
+        with self.assertRaises(ValueError):
+            _utils.col_list_from_input_and_fragments(["r", "r", "g", "g", "b"], self.fragments)
+
+    def test_raises_wrong_type(self):
+        with self.assertRaises(Exception):
+            _utils.col_list_from_input_and_fragments(1, self.fragments)
+
 
     def test_works_dict(self):
         colorlist = _utils.col_list_from_input_and_fragments({"frag1": "r",
@@ -379,21 +395,29 @@ class Test_parse_residue_and_fragments(TestCase):
                                        [10, 11],
                                        [10, 12],
                                        [10, 15]])
+        self.top = md.load(test_filenames.actor_pdb).top
 
     def test_works(self):
-        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs)
+        res_idxs_as_fragments, anchors, muted = _utils._parse_residue_and_fragments(self.res_idx_pairs)
         np.testing.assert_equal(len(res_idxs_as_fragments), 1)
         np.testing.assert_array_equal(res_idxs_as_fragments, [np.arange(0, 16)])
+        assert anchors is None
+        assert muted is None
 
-    def test_sparse_True(self):
-        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse=True)
+    def test_sparse_residues_True(self):
+        res_idxs_as_fragments, _, _  = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse_residues=True)
         np.testing.assert_equal(len(res_idxs_as_fragments), 1)
         np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4, 10, 11, 12, 15]])
 
-    def test_sparse_value(self):
-        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse=[1, 10, 20])
+    def test_sparse_residues_value(self):
+        res_idxs_as_fragments, _, _  = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse_residues=[1, 10, 20])
         np.testing.assert_equal(len(res_idxs_as_fragments), 1)
         np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 10, 20]])
+
+    def test_sparse_residues_top(self):
+        res_idxs_as_fragments, _, _ = _utils._parse_residue_and_fragments(self.res_idx_pairs, top=self.top)
+        np.testing.assert_equal(len(res_idxs_as_fragments), 1)
+        np.testing.assert_array_equal(res_idxs_as_fragments, [np.arange(self.top.n_residues)])
 
     def test_fragments(self):
         fragments = [[0],
@@ -401,33 +425,85 @@ class Test_parse_residue_and_fragments(TestCase):
                      [6, 7, 8, 9],
                      [10, 11, 12, 13, 14, 15],
                      [20, 21, 50]]
-        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, fragments=fragments)
+        res_idxs_as_fragments, _, _  = _utils._parse_residue_and_fragments(self.res_idx_pairs, fragments=fragments)
         np.testing.assert_equal(len(res_idxs_as_fragments), len(fragments))
         np.testing.assert_array_equal(res_idxs_as_fragments, fragments)
 
-    def test_fragments_sparse(self):
+    def test_fragments_sparse_residues(self):
         fragments = [[0],
                      [1, 2, 3, 4, 5],
                      [6, 7, 8, 9],
                      [10, 11, 12, 13, 14, 15],
                      [20, 21, 50]]
-        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse=True,
+        res_idxs_as_fragments, _, _  = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse_residues=True,
                                                                     fragments=fragments)
         np.testing.assert_equal(len(res_idxs_as_fragments), 2)
         np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4], [10, 11, 12, 15]])
 
-    def test_fragments_sparse_value(self):
+    def test_fragments_sparse_residues_w_anchor_and_mute(self):
+        fragments = [[0],
+                     [1, 2, 3, 4, 5],
+                     [6, 7, 8, 9],
+                     [10, 11, 12, 13, 14, 15],
+                     [20, 21, 50]]
+        res_idxs_as_fragments, new_anchors, new_mutes  = _utils._parse_residue_and_fragments(self.res_idx_pairs,
+                                                                           sparse_residues=True,
+                                                                           fragments=fragments,
+                                                                           anchor_fragments=[1],
+                                                                           mute_fragments=[3])
+        np.testing.assert_equal(len(res_idxs_as_fragments), 2)
+        np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4], [10, 11, 12, 15]])
+        np.testing.assert_equal(new_anchors,[0]) #old was 1
+        np.testing.assert_equal(new_mutes,[1])# old was 3
+
+    def test_fragments_sparse_residues_w_anchor_and_mute_None(self):
+        fragments = [[0],
+                     [1, 2, 3, 4, 5],
+                     [6, 7, 8, 9],
+                     [10, 11, 12, 13, 14, 15],
+                     [20, 21, 50]]
+        res_idxs_as_fragments, new_anchors, new_mutes  = _utils._parse_residue_and_fragments(self.res_idx_pairs,
+                                                                           sparse_residues=True,
+                                                                           fragments=fragments,
+                                                                           anchor_fragments=[0],
+                                                                           mute_fragments=[3])
+        np.testing.assert_equal(len(res_idxs_as_fragments), 2)
+        np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4], [10, 11, 12, 15]])
+        np.testing.assert_equal(new_anchors,None) #old was 0, frag 0 got deleted
+        np.testing.assert_equal(new_mutes,[1])# old was 3
+
+    def test_fragments_sparse_residues_value(self):
         fragments = [[0],
                      [1, 2, 3, 4, 5],
                      [6, 7, 8, 9],
                      [10, 11, 12, 13, 14, 15],
                      [20, 21, 50]]
         res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs,
-                                                                    sparse=[1, 10, 20],
-                                                                    fragments=fragments)
+                                                                    sparse_residues=[1, 10, 20],
+                                                                    fragments=fragments)[0]
         np.testing.assert_equal(len(res_idxs_as_fragments), 3)
         np.testing.assert_array_equal(res_idxs_as_fragments, [[1], [10], [20]])
 
+    def test_fragments_sparse_fragments(self):
+        fragments = [[0],
+                     [1, 2, 3, 4, 5],
+                     [6, 7, 8, 9],
+                     [10, 11, 12, 13, 14, 15],
+                     [20, 21, 50]]
+        self.res_idx_pairs = np.array([[1, 2],
+                                       [1, 3],
+                                       [1, 4],
+                                       [2, 4],
+                                       [10, 11],
+                                       [10, 12],
+                                       [10, 15]])
+        res_idxs_as_fragments = _utils._parse_residue_and_fragments(self.res_idx_pairs,
+                                                                    fragments=fragments,
+                                                                    sparse_fragments=True)[0]
+        np.testing.assert_equal(len(res_idxs_as_fragments), 2)
+        np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4, 5],
+                                                              [10, 11, 12, 13, 14, 15]]
+                                      )
 
 class Test_Aura(TestCase):
 
@@ -477,3 +553,71 @@ class TestGetSetFonts(TestCase):
         _utils.fontsize_apply(iax1, iax2)
         new_fs2 = _utils.fontsize_get(iax2)["n_polygons"][0]
         assert fs1 == new_fs2
+
+class Test_coarse_grain_freqs_by_frag(TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_works(self):
+        freqs = [1, 2,
+                 4, 5,
+                 6]
+
+        frags = [[0, 1], [2, 3], [4, 5]]
+
+        pairs = [[0, 2], [1, 3],  # frags 0-1
+                 [0, 4], [1, 5],  # frags 0-2
+                 [2, 4]]  # frags 1-2
+
+        ref_mat = np.zeros((3,3))
+        ref_mat[0,1]=ref_mat[1,0]=3
+        ref_mat[0,2]=ref_mat[2,0]=9
+        ref_mat[1,2]=ref_mat[2,1]=6
+
+        mat = _utils.coarse_grain_freqs_by_frag(freqs, pairs, frags)
+        np.testing.assert_array_equal(mat, ref_mat)
+
+    def test_raises_orphan(self):
+        freqs = [1, 2,
+                 4, 5,
+                 6]
+
+        frags = [[0, 1], [2, 3], [4, 5]]
+
+        pairs = [[0, 2], [1, 3],  # frags 0-1
+                 [0, 4], [1, 6],  # frags 0-2 and 0-None
+                 [2, 4]]  # frags 1-2
+
+        with np.testing.assert_raises(ValueError):
+            _utils.coarse_grain_freqs_by_frag(freqs, pairs, frags)
+
+    def test_ignores_orphan(self):
+        freqs = [1, 2,
+                 4, 5,
+                 6]
+
+        frags = [[0, 1], [2, 3], [4, 5]]
+
+        pairs = [[0, 2], [1, 3],  # frags 0-1
+                 [0, 4], [1, 6],  # frags 0-2 and 0-None
+                 [2, 4]]  # frags 1-2
+
+        ref_mat = np.zeros((3,3))
+        ref_mat[0,1]=ref_mat[1,0]=3
+        ref_mat[0,2]=ref_mat[2,0]=4 #since the second pair didn't get summed
+        ref_mat[1,2]=ref_mat[2,1]=6
+
+        mat = _utils.coarse_grain_freqs_by_frag(freqs, pairs, frags, check_if_subset=False)
+        np.testing.assert_array_equal(mat, ref_mat)
+
+class Test_sparsify_sym_matrix(TestCase):
+
+    def test_just_works(self):
+        mat = np.array([[1, 0, 2],
+                        [0, 0, 0],
+                        [2, 0, 3]])
+        nm, nz = _utils.sparsify_sym_matrix(mat)
+        np.testing.assert_array_equal(nz, [0,2])
+        np.testing.assert_array_equal(nm, [[1,2],
+                                           [2,3]])

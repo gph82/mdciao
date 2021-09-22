@@ -96,16 +96,3 @@ If neither ``pip`` nor ``conda`` is installed in your system, we recommend you i
    sh Miniconda3-latest-Linux-x86_64.sh
 
 and follow the prompt instructions. If you don't want the anaconda Python interpreter to be your default, just answer *no* to the last question.
-
-.. _hk:
-
-Hildiknecht
------------
-
-.. note::
- If you are on Hildiknecht, `conda` is already installed as module, just issue::
-
-  module load anaconda
-  eval "$(conda shell.bash hook)" # if its the first time
-
- Then you should be able to install mdciao no problem!

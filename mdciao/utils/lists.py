@@ -554,3 +554,40 @@ def remove_from_lists(list_of_lists, remove_these):
     """
     _fragments = [_np.setdiff1d(fr, remove_these, assume_unique=True) for fr in list_of_lists]
     return [fr.tolist() for fr in _fragments if len(fr)>0]
+
+def find_parent_list(sublists, parent_lists):
+    r"""
+    For each sublist, return the index of the parent list
+
+    Parameters
+    ----------
+    sublists : list of iterables
+    parent_lists : list of iterables
+
+    Returns
+    -------
+    parents_by_child : list
+        A list of len(sublists) with indices
+        indicating which element of :obj:`parent_lists`
+        each sublist is a subset of. If a sublist
+        doesn't have a parent, its parent is None
+    child_by_parent : dict
+        A dictionary keyed by parent idx
+        and valued with idxs of their children
+    """
+    assert_no_intersection(parent_lists)
+    parents_by_child=[]
+    child_by_parent={}
+    for sf in sublists:
+        parent = None
+        iset = set(list(sf))
+        for pp, par in enumerate(parent_lists):
+            if set(list(par)).issuperset(iset):
+                parent = pp
+                break
+        parents_by_child.append(parent),
+    for ii, __ in enumerate(parent_lists):
+        kids = _np.flatnonzero(_np.array(parents_by_child)==ii)
+        if len(kids):
+            child_by_parent[ii]=kids
+    return parents_by_child, child_by_parent

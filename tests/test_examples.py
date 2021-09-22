@@ -28,6 +28,15 @@ class Test_ContactGroupL394(unittest.TestCase):
         with self.assertRaises(Exception):
             CG = examples.ContactGroupL394(bogus_arg="bogus")
 
+class Test_Interface_B2AR_Gas(unittest.TestCase):
+    def test_works(self):
+        intf = examples.Interface_B2AR_Gas()
+        assert intf.is_interface
+
+    def test_except(self):
+        with self.assertRaises(Exception):
+            CG = examples.Interface_B2AR_Gas(bogus_arg="bogus")
+
 class Test_Zip(unittest.TestCase):
 
     def test_works(self):
@@ -50,9 +59,9 @@ class Test_Zip(unittest.TestCase):
             stdout : _io.StringIO
             output = stdout.getvalue().splitlines()
             assert len(output)==3
-            assert output[0]=="Unzipping to %s/two_empty_files"%td
-            assert output[1]=="No unzipping of A.txt: file already exists."
-            assert output[2]=="No unzipping of B.dat: file already exists."
+            assert output[0]=="Unzipping to '%s/two_empty_files'"%td
+            assert output[1]=="No unzipping of 'A.txt': file already exists."
+            assert output[2]=="No unzipping of 'B.dat': file already exists."
 
 class Test_recursive_funct(unittest.TestCase):
     def test_works_as_first(self):

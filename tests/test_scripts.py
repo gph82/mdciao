@@ -97,5 +97,15 @@ class Test_ExamplesCLTs(unittest.TestCase):
             os.chdir(self.tmpdir)
             self.xCLTs.run("mdc_compare")
 
+    def test_mdc_residues(self):
+        with remember_cwd():
+            os.chdir(self.tmpdir)
+            self.xCLTs.run("mdc_residues")
+
+    def test_mdc_notebooks(self):
+        with remember_cwd():
+            os.chdir(self.tmpdir)
+            self.xCLTs.run("mdc_notebooks")
+
 if __name__ == '__main__':
     unittest.main()

@@ -24,12 +24,12 @@ class TestPlotContactMatrix(unittest.TestCase):
         mat = _np.linspace(0,1,6).reshape(2,3)
         labels = [[1,2],["A","B","C"]]
 
-        iax, ipix = plots.plot_contact_matrix(mat,
-                                        labels,
-                                        grid=True,
-                                        colorbar=True,
-                                        transpose=True
-                                        )
+        iax, ipix = plots.plot_matrix(mat,
+                                      labels,
+                                      grid=True,
+                                      colorbar=True,
+                                      transpose=True
+                                      )
         #iax.figure.savefig("test.png",bbox_inches="tight")
         _plt.close("all")
 
@@ -38,14 +38,8 @@ class TestPlotContactMatrix(unittest.TestCase):
         mat = _np.linspace(0,1,6).reshape(2,3)
         labels = [[1,2],["A","B"]]
         with pytest.raises(AssertionError):
-            plots.plot_contact_matrix(mat,labels)
+            plots.plot_matrix(mat, labels)
 
-    def test_plot_contact_matrix_raises_range(self):
-
-        mat = _np.linspace(0,2,6).reshape(2,3)
-        labels = [[1,2],["A","B","C"]]
-        with pytest.raises(AssertionError):
-            plots.plot_contact_matrix(mat,labels)
 
 class Test_plot_unified_freq_dicts(unittest.TestCase):
 
@@ -329,10 +323,19 @@ class Test_plot_w_smoothing_auto(unittest.TestCase):
         x = [0,1,2,3,4,5]
         y = [0,1,2,3,4,5]
         _plt.figure()
-        plots.plot_w_smoothing_auto(_plt.gca(), x,y,
-                              "test","r",
-                              n_smooth_hw=1,
-                              gray_background=True)
+        plots.plot_w_smoothing_auto(_plt.gca(), y,
+                                    "test", "r",
+                                    x=x,
+                                    n_smooth_hw=1,
+                                    gray_background=True)
+
+    def test_creates_x(self):
+        y = [0,1,2,3,4,5]
+        _plt.figure()
+        plots.plot_w_smoothing_auto(_plt.gca(), y,
+                                    "test", "r",
+                                    n_smooth_hw=1,
+                                    gray_background=True)
 
 class Test_color_by_values(unittest.TestCase):
     def setUp(self):

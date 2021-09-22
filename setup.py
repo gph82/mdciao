@@ -59,7 +59,8 @@ setup(
                     "tqdm",
                     "natsort",
                     "bezier; python_version!='3.6'",
-                    "bezier<2020.2.3; python_version=='3.6'"
+                    "bezier<2020.2.3; python_version=='3.6'",
+                    "mpl_chord_diagram>=0.3.2"
                      ]
                      +test_deps
                      #+doc_deps

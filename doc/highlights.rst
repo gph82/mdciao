@@ -8,14 +8,14 @@ Highlights
 .. _`initial example`:
 * paper-ready tables and figures from the command line::
 
-   mdc_neighborhoods.py prot.pdb traj.xtc -r L394 --BW adrb2_human --CGN 3SN6 -ni -at #ni: not interactive, at: show atom-types
+   mdc_neighborhoods.py prot.pdb traj.xtc -r L394 --GPCR adrb2_human --CGN 3SN6 -ni -at #ni: not interactive, at: show atom-types
 
   .. figure:: imgs/bars_and_PDF.png
       :scale: 40%
       :align: left
       :name: highlights_1
 
-      (click to enlarge) **a)** contact frequencies for LEU394, as in :numref:`freqs`, but annotated with consensus nomenclature and atom types (``--BW,--CGN,-at`` options, see below). **b)** associated distance distributions, obtained by adding the ``-d`` flag to the CLI call. **c)** Automatically generated table using the ``-tx xlsx`` option.
+      (click to enlarge) **a)** contact frequencies for LEU394, as in :numref:`freqs`, but annotated with consensus nomenclature and atom types (``--GPCR,--CGN,-at`` options, see below). **b)** associated distance distributions, obtained by adding the ``-d`` flag to the CLI call. **c)** Automatically generated table using the ``-tx xlsx`` option.
 
   |nbspc|
 .. _consensus_HL:
@@ -81,7 +81,7 @@ Highlights
   - *G.HN.** : CGN-nomenclature for the :math:`G\alpha_N`-subunit
  You can check your selection **before** running a computation by using ``mdc_residues.py``::
 
-  >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --BW adrb2_human --CGN 3SN6 -ni
+  >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --GPCR adrb2_human --CGN 3SN6 -ni
   Your selection 'GLU*,P0G,380-394,G.HN.*' yields:
     residue      residx    fragment      resSeq         BW        CGN
       GLU10           6           0         10       None    G.HN.27
@@ -152,7 +152,7 @@ Highlights
 
 * use fragment definitions --like the ones above, ``0`` for the :math:`G\alpha`-unit and ``3`` for the receptor-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
 
-   >>> mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --BW adrb2_human --CGN 3SN6 -t "3SN6 beta2AR-Galpha interface" -ni
+   >>> mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --GPCR adrb2_human --CGN 3SN6 -t "3SN6 beta2AR-Galpha interface" -ni
    ...
    These 50 contacts capture 15.40 (~99%) of the total frequency 15.52 (over 21177 contacts)
    As orientation value, 31 ctcs already capture 90.0% of 15.52.

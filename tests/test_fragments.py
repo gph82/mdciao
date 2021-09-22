@@ -10,7 +10,9 @@ from mdciao import fragments as mdcfragments
 from mdciao.fragments.fragments import _allowed_fragment_methods, _fragments_strings_to_fragments
 
 from mdciao.examples import filenames as test_filenames
+from mdciao.examples import CGNLabeler_3SN6, GPCRLabeler_ardb2_human
 from mdciao.utils.sequence import top2seq
+from mdciao.nomenclature.nomenclature import _consensus_maps2consensus_frags
 import pytest
 
 
@@ -600,6 +602,91 @@ class Test_splice_fragments(unittest.TestCase):
                                                  ])
         _np.testing.assert_array_equal(newnames, ["A", "ex1", "?", "C"])
 
+class Test_assign_fragments(unittest.TestCase):
+
+    def test_just_works(self):
+        frag_idxs, res_idxs = mdcfragments.fragments.assign_fragments([0,4,5,1],[[0,1],[2,3],[4,5]])
+
+        _np.testing.assert_array_equal(frag_idxs,[0,2,2,0])
+        _np.testing.assert_array_equal(res_idxs, [0,4,5,1])
+
+    def test_raises_missing(self):
+        with _np.testing.assert_raises(ValueError):
+           mdcfragments.fragments.assign_fragments([0, 4, 6, 1], [[0, 1], [2, 3], [4, 5]])
+
+    def test_passes_missing(self):
+        frag_idxs, res_idxs = mdcfragments.fragments.assign_fragments([0, 4, 6, 1], [[0, 1], [2, 3], [4, 5]], raise_on_missing=False)
+        _np.testing.assert_array_equal(frag_idxs, [0, 2, 0])
+        _np.testing.assert_array_equal(res_idxs, [0, 4, 1])
+
+class Test_consensus_mix_fragment_info(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.GPCR = GPCRLabeler_ardb2_human()
+        cls.CGN = CGNLabeler_3SN6()
+        cls.geom = md.load(test_filenames.actor_pdb)
+        cls.consensus_frags = _consensus_maps2consensus_frags(cls.geom.top, [cls.GPCR, cls.CGN])[1]
+        cls.fragments = mdcfragments.get_fragments(cls.geom.top)
+
+    def test_works(self):
+        fragments, fragnames = mdcfragments.mix_fragments(self.geom.top.n_residues - 1, self.consensus_frags, None, None)
+        mixed_frags = {key:val for key, val in zip(fragnames, fragments)}
+        for key, val in self.consensus_frags.items():
+            # _mix_fragment_info calls -splice_fragments
+            # which makes fragments full ranges [0,1,3,4]->[0,1,2,3,4]
+            _np.testing.assert_array_equal(_np.arange(val[0],val[-1]+1),
+                                           mixed_frags[key], key)
+            mixed_frags.pop(key)
+        self.assertDictEqual(mixed_frags, {"orphan 0": [280, 281, 282, 283, 284, 285, 286, 287], # last CYS of B2AR and initial GaN residues missing in def if H.N
+                                           "orphan 1": [339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352], # Q59-K88 gap of Ga
+                                           "orphan 2": _np.hstack([frag for frag in self.fragments[2:]]).tolist()  # Gb, Gg, Mg, GDP, the rest
+                                           })
+
+    def test_works_w_other_frags(self):
+        fragments, fragnames = mdcfragments.mix_fragments(self.geom.top.n_residues - 1, self.consensus_frags, self.fragments, None)
+        mixed_frags = {key: val for key, val in zip(fragnames, fragments)}
+        for key, val in self.consensus_frags.items():
+            # _mix_fragment_info calls -splice_fragments
+            # which makes fragments full ranges [0,1,3,4]->[0,1,2,3,4]
+            _np.testing.assert_array_equal(_np.arange(val[0], val[-1] + 1),
+                                           mixed_frags[key], key)
+            mixed_frags.pop(key)
+        for key, val in {"subfrag 0 of frag 0": [280], #last CYS of B2AR
+                         "subfrag 0 of frag 1": [281, 282, 283, 284, 285, 286, 287],  # Initial GaN residues missing in def
+                         "subfrag 1 of frag 1": [339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352], # Q59-K88 gap
+                         "frag 2": self.fragments[2],
+                         "frag 3": self.fragments[3],
+                         "frag 4": self.fragments[4],
+                         "frag 5": self.fragments[5],
+                         "frag 6": self.fragments[6]
+                         }.items():
+            _np.testing.assert_array_equal(mixed_frags[key], val, key)
+            mixed_frags.pop(key)
+        assert mixed_frags == {}
+
+    def test_works_w_other_frags_other_names(self):
+        fragments, fragnames = mdcfragments.mix_fragments(self.geom.top.n_residues - 1, self.consensus_frags, self.fragments,
+                                                          ["B2AR", "Ga", "Gb","Gg", "P0G", "GDP", "MG"])
+        mixed_frags = {key: val for key, val in zip(fragnames, fragments)}
+        for key, val in self.consensus_frags.items():
+            # _mix_fragment_info calls -splice_fragments
+            # which makes fragments full ranges [0,1,3,4]->[0,1,2,3,4]
+            _np.testing.assert_array_equal(_np.arange(val[0], val[-1] + 1),
+                                           mixed_frags[key], key)
+            mixed_frags.pop(key)
+        for key, val in {"subfrag 0 of B2AR": [280], #last CYS of B2AR
+                         "subfrag 0 of Ga": [281, 282, 283, 284, 285, 286, 287],  # Initial GaN residues missing in def
+                         "subfrag 1 of Ga": [339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352], # Q59-K88 gap
+                         "Gb": self.fragments[2],
+                         "Gg": self.fragments[3],
+                         "P0G": self.fragments[4],
+                         "GDP": self.fragments[5],
+                         "MG": self.fragments[6]
+                         }.items():
+            _np.testing.assert_array_equal(mixed_frags[key], val, key)
+            mixed_frags.pop(key)
+        assert mixed_frags == {}
 
 if __name__ == '__main__':
     unittest.main()

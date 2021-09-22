@@ -189,6 +189,7 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
             consensus_labelers[key] = CL
             if verbose:
                 print("These are the %s fragments mapped onto your topology:"%key)
+                #TODO check whether this shouldn't be outside the if verbose???
                 consensus_frags.update(CL.top2frags(top,
                                                   input_dataframe=CL.most_recent_alignment,
                                                   fragments=fragments_as_residue_idxs,
@@ -474,7 +475,7 @@ def _fragment_overview(a,labtype):
         obj = _mdcnomenc.LabelerCGN(val, write_to_disk=a.write_to_disk)
 
     elif labtype == "GPCR":
-        val = a.BW_uniprot_or_file
+        val = a.GPCR_uniprot_or_file
         if _path.exists(val):
             format = "%s"
         else:
@@ -818,7 +819,7 @@ def residue_neighborhoods(residues,
     print("Will compute contact frequencies for (%u items):\n%s"
           "\n with a stride of %u frames" % (len(xtcs),_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs, __ = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
@@ -826,12 +827,16 @@ def residue_neighborhoods(residues,
     mid_string = "\nWill compute neighborhoods for the residues\n" \
                  "%s\nexcluding %u nearest neighbors" \
                  "\n" % (residues,n_nearest)
-    res_idxs_list, consensus_maps = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
-                                                  midstring=mid_string, GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
-                                                  save_nomenclature_files=save_nomenclature_files,
-                                                  accept_guess=accept_guess, interpret_as_res_idxs=res_idxs, sort=sort)
+    res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
+                                                                   midstring=mid_string, GPCR_uniprot=GPCR_uniprot,
+                                                                   CGN_PDB=CGN_PDB,
+                                                                   save_nomenclature_files=save_nomenclature_files,
+                                                                   accept_guess=accept_guess,
+                                                                   interpret_as_res_idxs=res_idxs, sort=sort)
 
-
+    top2confrag = _np.full(refgeom.top.n_residues, None)
+    for key, val in consensus_frags.items():
+        top2confrag[val] = key
     # Create a neighborlist
     naive_bonds=False #WIP, perhaps expose
     try:
@@ -872,7 +877,7 @@ def residue_neighborhoods(residues,
         print("using the pre_computed_contact_matrix...", end="",flush=True)
         ctc_idxs=_np.array(ctc_idxs)
     else:
-        print("in the first frame of reference geom\n'%s':..." % refgeom,
+        print("in the first frame of reference geom\n'%s':..." % [topology or refgeom][0],
               end="",
               flush=True)
         ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs), periodic=pbc)
@@ -923,6 +928,7 @@ def residue_neighborhoods(residues,
                                    consensus_labels=consensus_labels,
                                    trajs=xtcs,
                                    fragment_idxs=fragment_idxs,
+                                   consensus_fragnames=[top2confrag[idx] for idx in pair],
                                    fragment_names=[fragment_names[idx] for idx in fragment_idxs],
                                    fragment_colors=[fragment_colors[idx] for idx in fragment_idxs],
                                    atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in at_pair_trajs]
@@ -1047,7 +1053,6 @@ def interface(
         contact_matrix=True,
         cmap='binary',
         flareplot=True,
-        sparse_flare_frags = True,
         save_nomenclature_files=False,
         no_disk=False,
         savefigs=True,
@@ -1238,13 +1243,6 @@ def interface(
         Produce a flare plot of interface the contact
         matrix. The format will .pdf no matter the value of
         :obj:`graphic_ext`
-    sparse_flare_frags: bool, default is True
-        When deciding what fragments to put on
-        the flareplot, use only those fragments
-        where at least one residue is involved
-        in the interface. If consensus labels
-        are being used, this applies to the
-        fragments derived from the nomenclature
     save_nomenclature_files : bool, default is False
         Save available nomenclature definitions to disk so
         that they can be accessed locally in later uses.
@@ -1283,7 +1281,10 @@ def interface(
     print("Will compute contact frequencies for trajectories:\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    if user_wants_consensus and all([str(cons).lower() == 'none' for cons in [GPCR_uniprot, CGN_PDB]]):
+        raise ValueError(
+            "User wants to define interface fragments using consensus labels, but no consensus labels were provided via the 'CGN_PDB' or the 'GPCR_uniprot' arguments.")
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     consensus_frags, consensus_maps, consensus_labelers = \
         _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
@@ -1295,7 +1296,7 @@ def interface(
     top2confrag = _np.full(refgeom.top.n_residues, None)
     for key, val in consensus_frags.items():
         top2confrag[val] = key
-    if user_wants_consenus:
+    if user_wants_consensus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2)
 
@@ -1462,29 +1463,11 @@ def interface(
             print(fn.fullpath_matrix)
 
         if flareplot:
-            flare_frags, flare_labs = fragments_as_residue_idxs, fragment_names # Not sure about what's best here
-            if len(consensus_labelers) > 0:
-                flare_frags, flare_labs = _mdcfrg.splice_orphan_fragments(list(consensus_frags.values()),
-                                                                          list(consensus_frags.keys()),
-                                                                          highest_res_idx=refgeom.top.n_residues - 1,
-                                                                          orphan_name="",
-                                                                          other_fragments={fn:ifrag for fn, ifrag in zip(fragment_names, fragments_as_residue_idxs)}
-                                                                          )
-            if sparse_flare_frags:
-                idxs = [ii for ii, ff in enumerate(flare_frags) if len(_np.intersect1d(_np.hstack(intf_frags_as_residxs), ff))>0]
-                flare_frags = [flare_frags[ii] for ii in idxs]
-                if flare_labs is not None:
-                    flare_labs = [flare_labs[ii] for ii in idxs]
-
             ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
-                                                             consensus_maps=consensus_maps,
+                                                             consensus_maps=consensus_labelers.values(),
                                                              SS=refgeom,
-                                                             fragment_names=flare_labs,
-                                                             fragments=flare_frags,
-                                                             sparse=_np.hstack(flare_frags),
-                                                             #panelsize=_np.max(ifig.get_size_inches()),
-                                                             # TODO deal with the color madness
-                                                             colors=_mdcfu.col_list_from_input_and_fragments(True, intf_frags_as_residxs, alpha=.75),
+                                                             fragment_names=fragment_names,
+                                                             fragments=fragments_as_residue_idxs,
                                                              )
             ifig.tight_layout()
             if savefigs:
@@ -1737,7 +1720,7 @@ def sites(site_inputs,
         _mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15),stride))
 
     # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elsewhere
-    fragments_as_residue_idxs, user_wants_consenus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_defs, consensus_maps, __ = \
         _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
@@ -1970,19 +1953,16 @@ def pdb(code,
 
 def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
-
-
-
-    consensus_maps = _parse_consensus_options_and_return_fragment_defs(
-        {"GPCR": GPCR_uniprot,
-         "CGN": CGN_PDB},
-        top,
-        fragments,
-        verbose=True,
-        save_nomenclature_files=save_nomenclature_files,
-        accept_guess=accept_guess)[1]
-    consensus_maps={"GPCR":consensus_maps[0],
-                    "CGN":consensus_maps[1]}
+    consensus_frags, consensus_maps, consensus_labelers = \
+        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
+                                                           "CGN": CGN_PDB},
+                                                          top,
+                                                          fragments,
+                                                          verbose=True,
+                                                          save_nomenclature_files=save_nomenclature_files,
+                                                          accept_guess=accept_guess)
+    consensus_maps = {"GPCR": consensus_maps[0],
+                      "CGN": consensus_maps[1]}
 
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
                                                                         pick_this_fragment_by_default=None,
@@ -2000,7 +1980,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
                                                   _mdcu.lists.in_what_fragment(idx, fragments),
                                                   consensus_maps=consensus_maps,
                                                   table=True))
-    return res_idxs_list, consensus_maps
+    return res_idxs_list, consensus_maps, consensus_frags
 
 def residue_selection(expression,
                       top, GPCR_uniprot=None,
@@ -2080,12 +2060,12 @@ def residue_selection(expression,
         fragments = [_signature(_mdcfrg.get_fragments).parameters["method"].default]
     _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
                                                                    _top, verbose=True)
-    res_idxs_list, consensus_maps = _res_resolver(expression, _top, _frags,
-                                                  midstring="Your selection '%s' yields:" % expression,
-                                                  GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
-                                                  save_nomenclature_files=save_nomenclature_files,
-                                                  accept_guess=accept_guess,
-                                                  just_inform=True)
+    res_idxs_list, consensus_maps, __ = _res_resolver(expression, _top, _frags,
+                                                      midstring="Your selection '%s' yields:" % expression,
+                                                      GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
+                                                      save_nomenclature_files=save_nomenclature_files,
+                                                      accept_guess=accept_guess,
+                                                      just_inform=True)
 
     return res_idxs_list, _frags, consensus_maps
 

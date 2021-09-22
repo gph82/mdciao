@@ -325,6 +325,7 @@ def get_fragments(top,
         if isinstance(fragment_breaker_fullresname,str):
             fragment_breaker_fullresname=[fragment_breaker_fullresname]
         for breaker in fragment_breaker_fullresname:
+            #todo use _break_fragments
             residxs, fragidx = _mdcu.residue_and_atom.residues_from_descriptors(breaker, fragments, top,
                                                            **kwargs_residues_from_descriptors)
             idx = residxs[0]
@@ -351,6 +352,37 @@ def get_fragments(top,
         return fragments
     else:
         return [_np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for frag in fragments]
+
+def _break_fragments(breakers, fragments):
+    r"""
+    Given a list of fragment breakers, break existing fragments further into sub-fragments
+
+    The break is so that j appearing in fragment [a, b, ...,i,j,...z] will
+    generate [a, b, ...,i],[j,...z]
+
+    Parameters
+    ----------
+    breakers : iterable of idxs
+        These indices will force
+        a break in the :obj:`fragments`,
+        generating sub-fragments.
+    fragments : iterable of iterables
+        The fragment definitions
+
+    Returns
+    -------
+    fragments : list
+    """
+    _mdcu.lists.assert_no_intersection(fragments)
+    for idx in _np.unique(breakers):
+        ifrag = _mdcu.lists.in_what_fragment(idx, fragments)
+        if ifrag is not None:
+            idx_split = _np.flatnonzero(idx == _np.array(fragments[ifrag]))[0]
+            subfrags = [fragments[ifrag][:idx_split], fragments[ifrag][idx_split:]]
+            if idx_split > 0:
+                # print("now breaking up into", subfrags)
+                fragments = fragments[:ifrag] + subfrags + fragments[ifrag + 1:]
+    return fragments
 
 def _dry_fragments(fragments, top):
     r"""
@@ -815,7 +847,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     if verbose:
         print("Using method '%s' these fragments were found" % method)
         for ii, ifrag in enumerate(fragments_as_residue_idxs):
-            print_frag(ii, top, ifrag)
+            print_frag(ii, top, ifrag, label_width=0)
 
     return fragments_as_residue_idxs, user_wants_consensus
 
@@ -978,6 +1010,9 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
     orphans = _np.delete(_np.arange(highest_res_idx + 1), _np.hstack(full_frags))
     if len(orphans)>0:
         orphans = _get_fragments_by_jumps_in_sequence(orphans)[1]
+        if other_fragments is not None:
+            # The orphans have to be split using the limits of the other_fragments
+            orphans = _break_fragments([frag[0] for frag in other_fragments.values()], orphans)
         if '%' in orphan_name:
             orphans_labels = [orphan_name%ii for ii, __ in enumerate(orphans)]
         else:
@@ -1002,3 +1037,169 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
         return new_frags, new_names
     else:
         return fragments, fragnames
+
+def mix_fragments(highest_res_idx, consensus_frags, fragments, fragment_names):
+    r"""Mix consensus frags with user-provided fragment definitions
+
+    Wrapper around :obj:`mdciao.fragments.splice_orphan_fragments`,
+    will possible be merged with it in the future.
+    The wrapper does several pre and post processing things
+    pre-processing:
+     * that makes the :obj: `consensus_frags` the main frags
+     and the :obj:`fragments` the :obj:`other_fragments`.
+     * It allows for :obj:`fragments` and/or :obj:`fragment_names`
+     to be None and creates names on the fly if needed
+    post-processing:
+     * renames orphan fragments as sub-fragments of original
+      fragments if possible
+    In theory, if "fragments" covers all residues, no
+    orphan's should be left
+
+    Note
+    ----
+    This is an internal ad-hoc method for
+    developing the best integration of
+    the logic behind the fragmentation
+    for flareplots, and might disappear in
+    in the future. Not intended for API
+    use
+
+    Parameters:
+    highest_res_idx : int
+        Typically top.n_residues - 1
+    consensus_frags : dict
+    fragments : list or None
+        User provided fragments
+    fragment_names : list or None
+        User provided fragment names
+    """
+
+    if fragments is not None:
+        if fragment_names is not None:
+            assert len(fragments)==len(fragment_names)
+            other_frags = {fn: fr for fn, fr in zip(fragment_names, fragments)}
+        else:
+            other_frags = {"frag %u" % ii: fn for ii, fn in enumerate(fragments)}
+    else:
+        other_frags = None
+
+    new_frags, new_names = splice_orphan_fragments(list(consensus_frags.values()),
+                                          list(consensus_frags.keys()),
+                                          highest_res_idx=highest_res_idx,
+                                          other_fragments=other_frags,
+                                          orphan_name="orphan %u")
+    # todo put this into splice_orphan_fragments if it makes sense
+    # reassign the orphans as sub-fragments of the parents, in case there's parents
+    orphan_idxs = [ii for ii, nn in enumerate(new_names) if nn.startswith("orphan ")]
+    if len(orphan_idxs) > 0 and other_frags is not None:
+        parent_names = list(other_frags.keys())
+        __, child = _mdcu.lists.find_parent_list([new_frags[oo] for oo in orphan_idxs],
+                                                 list(other_frags.values()))
+        for parent_idx, list_of_children in child.items():
+            for idx, oo in enumerate(list_of_children):
+                new_names[orphan_idxs[oo]] = "subfrag %u of %s"%(idx, parent_names[parent_idx])
+
+    return new_frags, new_names
+
+
+def flarekwargs_preparer(fragments, fragment_names, kwargs_freqs2flare, fixed_color_list, to_intersect_with):
+    r"""
+    Prepare the kwargs dictionary to call :obj:`mdciao.flare.freqs2flare` from a :obj:`mdciao.contacts.ContactGroup`
+
+
+    Note
+    ----
+    This is a helper method that might disappear or get refactored somewhere.
+    The motivation for this method is to keep freqs2flare as agnostic
+    as possible with respect to things like contact-groups, interfaces,
+    consensus labelers, sub-domains etc, so that the method's signature
+    (already pretty long) is clear in cases where none of the above is
+    needed and can be generally used to plot any set of values that have
+    pair-relations associated with them.
+
+    However, this decision somehow blurries the logic behind "fragment and residue selection"
+    spreading it across two methods, because there's a partial selection
+    before calling freqs2flare and a further selection inside freqs2flare.
+    The upside (apart from the above mentioned conservation of generality) is
+    that it allows for consistency in fragment colors and names when
+    repeatedly calling the plot_freqs_as_flareplot when changing the 'scheme'
+    parameter.
+
+    Parameters
+    ----------
+    fragments : None or list of lists
+    fragment_names : None or list of strings
+    kwargs_freqs2flare : dict
+    fixed_color_list : list of matplotlib colors
+    to_intersect_with : the group of residues that need to be present
+
+    Returns
+    -------
+    kwargs_freqs2flare : dict
+    good_frags : list
+    """
+    good_frags = []
+    if fragments is not None:
+        good_frags = [ii for ii, fr in enumerate(fragments) if
+                      len(_np.intersect1d(fr, to_intersect_with)) > 0]
+        kwargs_freqs2flare["fragments"] = [fragments[ii] for ii in good_frags]
+        kwargs_freqs2flare["colors"] = fixed_color_list[good_frags]
+        if fragment_names is not None:
+            assert len(fragment_names) <= len(fragment_names), \
+                ValueError("Less fragment names (%u) than fragments (%u)?" % (len(fragment_names), len(fragment_names)))
+            kwargs_freqs2flare["fragment_names"] = [fragment_names[ii] for ii in good_frags]
+    return kwargs_freqs2flare, good_frags
+
+def assign_fragments(res_idxs, fragments, raise_on_missing=True):
+    r"""Assign a parent fragment to each residue in a list of res_idxs
+
+    Note
+    ----
+    Simply wraps around :obj:`~mdciao.utils.lists.in_what_N_fragments`,
+    first asserting that there's no intersection between the fragments
+    and then checking whether some residxs are missing
+
+    Parameters
+    ----------
+    res_idxs : iterable of ints
+        The residue indices
+    fragments : iterable of iterable if ints
+        The fragment definitions.
+        It will be checked that these definitions
+        don't have common residues
+    raise_on_missing : bool, default is True
+        Whether to raise an Exception if
+        any residue can't be found
+        in the :obj:`fragments`
+
+    Returns
+    -------
+    frag_idxs : np.array
+        Array with the indices of
+        :obj:`fragments` where each
+        residue of :obj:`res_isxs`
+        appears
+    res_idxs : np.array
+        If all residues were
+        found in :obj:`fragments`,
+        then this is a copy of the
+        input array. If some didn't
+        appear anywhere, but
+        :obj:`raise_on_missing` was
+        False, the missing residues
+        have been deleted
+    """
+    #TODO very related to utils.lists.find_parent_list, perhaps merge?
+    _mdcu.lists.assert_no_intersection(fragments, word="fragments")
+    frag_idxs = _mdcu.lists.in_what_N_fragments(res_idxs, fragments)
+    orphans = _np.flatnonzero([len(par) == 0 for par in frag_idxs])
+    frag_idxs = _np.squeeze(frag_idxs)
+    if len(orphans)>0:
+        if raise_on_missing:
+            raise ValueError("residues %s don't appear in any 'fragments'. "
+                             "If you're OK with this, set 'check_if_subset=False'" % (_np.array(res_idxs)[orphans]))
+        else:
+            res_idxs = _np.delete(res_idxs, orphans)
+            frag_idxs = _np.delete(frag_idxs, orphans)
+
+    return frag_idxs, res_idxs
