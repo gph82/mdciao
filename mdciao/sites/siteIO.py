@@ -56,7 +56,7 @@ def x2site(site, fmt="AAresSeq"):
         site["pairs"] is itself a dictionary
         valued with a list of pairs,
         e.g ["L394","K270"] or [[10,20],[300-4]]],
-        depending on the type of bond specified
+        depending on the type input
 
     """
     if isinstance(site, dict):
