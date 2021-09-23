@@ -273,7 +273,7 @@ def _parser_add_n_jobs(parser):
 
 def _parser_add_sites(parser):
     parser.add_argument('--site_files', type=str, nargs='+',
-                        help='site file(s) in json format containing site information, i.e., which bonds correspond to each site')
+                        help='site file(s) in json format containing site information. Check here for more info: http://proteinformatics.uni-leipzig.de/mdciao/api/generated/mdciao.sites.html')
 
 def _parser_add_fragment_names(parser):
     parser.add_argument('--fragment_names', type=str,
