@@ -4288,12 +4288,69 @@ class ContactGroup(object):
     @property
     def _stacked_time_traces(self):
         r"""
-        All ContactPair time_traces stacked into an 2D np.array of shape(self.n_frames_total, self.n_ctcs)
+        All ContactPair time_traces stacked into an 2D np.array
+
+        The array is of shape(self.n_frames_total, self.n_ctcs)
+
+        This is private for now, it gets used in self.means
         """
         if not hasattr(self,"__stacked_contacts"):
             self.__stacked_contacts = _np.vstack([_np.hstack(CP.time_traces.ctc_trajs) for CP in self._contacts]).T
         return self.__stacked_contacts
 
+    @property
+    def means(self):
+        r"""
+        The mean value over all distance time-traces
+
+        Returns
+        -------
+        mean : 1D np.array of len(self.n_ctcs)
+            No unit transformation is done,
+            whatever was given at instantiation
+            (most likely nanometers), is
+            returned here
+
+        """
+
+        return self._means()
+
+    def _means(self):
+        if not hasattr(self,"__means"):
+            self.__means = _np.mean(self._stacked_time_traces,axis=0)
+        return self.__means
+
+    @property
+    def modes(self):
+        r"""
+        The `modes <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ over all distance time-traces
+
+        Note
+        ----
+        In order to quickly compute modes, residue-residue distances
+        are multiplied by 1000 and rounded to integers, to be
+        able to use :obj:`numpy.bincount` for speed.
+        Then, the argmax(bincount) is returned
+
+        Returns
+        -------
+        modes : 1D np.array of len(self.n_ctcs)
+            No unit transformation is done,
+            whatever was given at instantiation
+            (most likely nanometers), is
+            returned here
+        """
+
+        return self._modes()
+
+    def _modes(self):
+        if not hasattr(self, "__modes"):
+            all_ctcs = self._stacked_time_traces
+            assert all_ctcs.min() * 1e3 >= 1
+            all_ctcspm = (all_ctcs * 1e3).round().astype(int)
+            self.__modes = _np.array([(_np.bincount(row).argmax()) * 1e-3 for row in all_ctcspm.T])
+
+        return self.__modes
 
     def repframe(self, reference="mode",
                  ctc_cutoff_Ang=None,
@@ -4316,12 +4373,6 @@ class ContactGroup(object):
         However, it is the easiest and quickest to implement.
         Feel free to use any of Sklearn's great regression tools
         under constraints to get a better "representative"
-
-        Note
-        ----
-        In order to quickly compute modes, residue-residue distances
-        are multiplied by 1000 and rounded to integers, to be
-        able to use :obj:`numpy.bincount` for speed
 
         Parameters
         ----------

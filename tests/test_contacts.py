@@ -2399,6 +2399,24 @@ class TestContactGroupSavetrajs(TestBaseClassContactGroup):
                           ctc_cutoff_Ang=2.5,
                           output_dir=tempdir)
 
+class TestContactGroupMeansNModes(unittest.TestCase):
+
+    def setUp(self):
+        time = [_np.arange(7), _np.arange(1)]
+        traj00, traj01 = [1, 1, 1, 2, 3, 4, 5], [500]
+        traj10, traj11 = [5, 5, 5, 5, 3, 4, 1], [1500]
+        self.CG = contacts.ContactGroup([
+            contacts.ContactPair([0, 1], [traj00, traj01], time),
+            contacts.ContactPair([0, 2], [traj10, traj11], time)])
+
+    def test_means(self):
+        _np.testing.assert_array_equal([_np.mean([1, 1, 1, 2, 3, 4, 5] + [500]),
+                                        _np.mean([5, 5, 5, 5, 3, 4, 1] + [1500])],
+                                       self.CG.means)
+
+    def test_modes(self):
+        _np.testing.assert_array_equal([1, 5], self.CG.modes
+                                       )
 class TestContactGroupInterface(TestBaseClassContactGroup):
 
     def setUp(self):
