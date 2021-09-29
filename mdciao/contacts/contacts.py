@@ -4285,6 +4285,16 @@ class ContactGroup(object):
 
         return df
 
+    @property
+    def _stacked_time_traces(self):
+        r"""
+        All ContactPair time_traces stacked into an 2D np.array of shape(self.n_frames_total, self.n_ctcs)
+        """
+        if not hasattr(self,"__stacked_contacts"):
+            self.__stacked_contacts = _np.vstack([_np.hstack(CP.time_traces.ctc_trajs) for CP in self._contacts]).T
+        return self.__stacked_contacts
+
+
     def repframe(self, reference="mode",
                  ctc_cutoff_Ang=None,
                  return_traj=False,
