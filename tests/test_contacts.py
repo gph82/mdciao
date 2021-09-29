@@ -1451,37 +1451,45 @@ class TestContactGroup(TestBaseClassContactGroup):
 
     def test_repframe(self):
         CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
-                                                         [[0],
+                                                         [[1],
                                                           [10],
-                                                          [0, 15, 10, 15, 15]],
+                                                          [1, 15, 10, 15, 15]],
                                                          [[0],
                                                           [0],
                                                           [0, 1, 2, 3, 4]])])
-        repframe = CG.repframe()
-        assert repframe[0] == [2]
-        assert repframe[1] == [1]
+        repframes, RMSDd, values = CG.repframes()
+        traj_idx, frame_idx = repframes[0]
+        assert traj_idx  == 2
+        assert frame_idx == 1
+        _np.testing.assert_array_equal(values[0], [15]) #traj 2, frame 1
+        assert RMSDd[0] == 0 # since we're in 1D, the mode is one frame for all dimensions, and that frame has zero distance to the mode
 
     def test_repframe_mean(self):
         CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
-                                                         [[0],
+                                                         [[1],
                                                           [10],
-                                                          [0, 15, 10, 15, 15]],
+                                                          [1, 15, 10, 15, 15]],
                                                          [[0],
                                                           [0],
                                                           [0, 1, 2, 3, 4]])])
-        repframe = CG.repframe(reference="mean")
-        assert repframe[0]==[1]
-        assert repframe[1]==[0]
+        repframes, RMSDd, values = CG.repframes(scheme="mean")
+        traj_idx, frame_idx = repframes[0]
+        assert traj_idx  == 1
+        assert frame_idx == 0
+        ref_mean = _np.mean([[1]+[10]+[1, 15, 10, 15, 15]])
+        _np.testing.assert_array_equal(values[0], [10])  # traj 1, frame 0
+        assert RMSDd[0] == _np.abs(ref_mean-10)
 
-    def test_repframe_w_traj_just_runs(self):
+    def test_repframe_w_traj_violines_many_frames_just_runs(self):
         CG = examples.ContactGroupL394()
         with _TDir(suffix="_mdciao_example_CG") as t:
             examples.examples._link(test_filenames.traj_xtc,
                                     examples.examples._path.join(t, examples.examples._path.basename(test_filenames.traj_xtc)))
             with examples.examples.remember_cwd():
                 examples.examples._chdir(t)
-                repframe = CG.repframe(show_violins=True,return_traj=True)
-                assert isinstance(repframe, md.Trajectory)
+                repframes, RMSDd, values, trajs = CG.repframes(show_violins=True, return_traj=True, n_frames=10)
+                assert len(repframes)==len(RMSDd)==len(values)==len(trajs)==10
+                assert isinstance(trajs[0], md.Trajectory)
 
     def test_to_new_ContactGroup(self):
         from mdciao.cli import sites

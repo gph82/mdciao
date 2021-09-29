@@ -4352,20 +4352,21 @@ class ContactGroup(object):
 
         return self.__modes
 
-    def repframe(self, reference="mode",
-                 ctc_cutoff_Ang=None,
-                 return_traj=False,
-                 show_violins=False):
+    def repframes(self, scheme="mode",
+                  ctc_cutoff_Ang=None,
+                  return_traj=False,
+                  show_violins=False,
+                  n_frames=1):
         r"""
-        Return a representative frame (traj_idx, frame_idx) for this :obj:`ContactGroup`
+        Find representative frames for this :obj:`ContactGroup`
 
         A "representative frame" means, in this context, a frame
         that minimizes **the average distance** to the modes (or means)
         of the residue-residue distances contained in this object.
 
         Please note that "representative" can have other meanings
-        in other contexts. Here, it's just a way to pick a frame/geometry
-        which will most likely resemble most of what
+        in other contexts. Here, it's just a way to pick a frames/geometries
+        that will most likely resemble most of what
         is also seen in the distributions, barplots and flareplots.
 
         Please also note that minimizing **averages** has its own
@@ -4376,15 +4377,19 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        reference : str, default is "mode"
+        scheme : str, default is "mode"
             Two options:
             * "mode" : minimize average distance
               to the most likely distance, i.e.
-              to the distance values at which
+              to the mode, i.e. to the
+              distance values at which
               the distributions (:obj:`plot_distance_distributions')
-              peak
+              peak. You can check the modes in
+              :obj:`~mdciao.contacts.ContactGroup.modes`
             * "mean" : minimize average distance
               to the mean values of the distances
+              You can check the means in
+              :obj:`~mdciao.contacts.ContactGroup.means`
         ctc_cutoff_Ang : float, default is None
             THIS IS EXPERIMENTAL
             If given, the contact frequencies
@@ -4392,57 +4397,88 @@ class ContactGroup(object):
             the average. In cases with many contacts,
             many of them broken, this might help
         return_traj : bool, default is False
-            If True, instead of returning a pair
-            of traj_idx, frame_idx values, try
-            to return an :obj:`~mdtraj.Trajectory`
-            object. Will fail if no such thing
-            is possible
-        show_violins :bool, default is False
+            If True, try to return also the
+            :obj:`~mdtraj.Trajectory` objects
+            Will fail that is not possible because
+            the original files aren't accessible
+            (or there weren't any)
+        show_violins : bool, default is False
             Superimpose the distance values
-            as red-dots on top of violin plot,
+            as dots on top of a violin plot,
             created by using the :obj:`plot_violins`
+        n_frames : int, default is 1
+            The number of representative
+            frames to return
 
         Returns
         -------
-        traj : tuple (traj_idx, frame_idx) or :obj:`~mdtraj.Trajectory`
-
+        frames : list
+            A list of :obj:`n_frames` tuples,
+            each tuple containing the traj_idx
+            and the frame_idx that minimize
+            RMSDd
+        RMSDd : np.ndarray
+            A 1D array containing the root-mean-square-deviation
+            (in Angstrom) over distances (not positions)
+            of the returned :obj:`frames` to the
+            computed :obj:`reference`. This mean
+            is weighted by the contact frequencies
+            in case a :obj:`ctc_cutoff_Ang` was given.
+            Should always be in ascending order
+        values : np.ndarray
+            A 2D array of shape(n_frames, n_ctcs) containing
+            the distance values of the :obj:`frames` in
+            Angstrom
+        trajs : list
+            A list of :obj:`~mdtraj.Trajectory` objects
+            Only if return_traj=True
         """
 
-        all_ctcs = _np.vstack([_np.hstack(CP.time_traces.ctc_trajs) for CP in self._contacts]).T
-        all_ctcspm = (all_ctcs*1e3).round().astype(int)
-
-        ref = {"mode" : [(_np.bincount(row).argmax())*1e-3 for row in all_ctcspm.T],
-               "mean" : _np.mean(all_ctcs,axis=0)}
+        all_ds = self._stacked_time_traces
+        ref = {"mode" : self.modes,
+               "mean" : self.means}
 
         if ctc_cutoff_Ang is None:
             weights = _np.ones(self.n_ctcs)
         else:
             weights = self.frequency_per_contact(ctc_cutoff_Ang)
 
-        D = _np.sqrt((((all_ctcs - ref[reference]) ** 2) * weights).sum(1))
-        closest_idx = D.argmin()
-        traj_idx, frame_idx = \
-        _np.vstack([_np.vstack(([ii] * nf, _np.arange(nf))).T for ii, nf in enumerate(self.n_frames)])[closest_idx]
+        RMSDd = _np.sqrt(_np.average((all_ds - ref[scheme]) ** 2, axis=1, weights=weights))
+        closest_idxs = RMSDd.argsort()[:n_frames]
+        closest_values = all_ds[closest_idxs]
+        traj_frames = _np.vstack([_np.vstack(([ii] * nf, _np.arange(nf))).T for ii, nf in enumerate(self.n_frames)])[closest_idxs]
 
         if show_violins:
-            iax = self.plot_violins(title_label="representative frame that minimizes the average distance to\n"
+            rows = 4
+            iax = self.plot_violins(title_label="representative frame(s) that minimize(s) the average distance to\n"
                                                 "the %s value of the whole dataset"%{"mode":"most likely",
-                                                                                     "mean" :"mean"}[reference],
+                                                                                     "mean" :"mean"}[scheme],
+                                    shorten_AAs=True,
                                     ctc_cutoff_Ang=ctc_cutoff_Ang)
-            for ii, dd in enumerate(all_ctcs[closest_idx]):
-                iax.plot(ii,dd*10,".r")
-            iax.plot(_np.nan,_np.nan,".r",label="frame value")
-            iax.legend()
+            colors = _mdcplots.plots._color_dict_guesser("Set1",_np.arange(n_frames))
+            for pp, (pair, frame_vals) in enumerate(zip(traj_frames, closest_values)):
+                for ii, dd in enumerate(frame_vals):
+                    iax.plot(ii,dd*10,".",color=colors[pp])
+
+                iax.plot(_np.nan,_np.nan,".",color=colors[pp],
+                         label="%u: traj %u frame %u"%(pp, pair[0],pair[1]))
+            iax.legend(ncol=_np.ceil(n_frames/rows).astype(int), fontsize=_rcParams["font.size"]*.75)
+
+        return_tuple = [tuple(pair) for pair in traj_frames], \
+                       RMSDd[closest_idxs], \
+                       closest_values
 
         if return_traj:
-            reptraj = self._contacts[0]._attribute_trajs.trajs[traj_idx]
-            print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
-            if isinstance(reptraj, str):
-                return _md.load(reptraj, top=self.top,frame=frame_idx)
-            else:
-                return reptraj[frame_idx]
-        else:
-            return traj_idx,frame_idx
+            geoms = []
+            for ii, (traj_idx, frame_idx) in enumerate(traj_frames):
+                reptraj = self._contacts[0]._attribute_trajs.trajs[traj_idx]
+                print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
+                if isinstance(reptraj, str):
+                    geoms.append(_md.load(reptraj, top=self.top,frame=frame_idx))
+                else:
+                    geoms.append(reptraj[frame_idx])
+            return_tuple += tuple([geoms])
+        return return_tuple
 
     def to_new_ContactGroup(self, CSVexpression,
                             allow_multiple_matches=False,
