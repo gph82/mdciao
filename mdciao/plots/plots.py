@@ -386,8 +386,9 @@ def _try_colormap_string(colors, N):
             "Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html"%colors)
         raise e
     if cmap.N >= N:
-        return cmap(_np.arange(N))[:, :-1].tolist()
+        return cmap(_np.linspace(0,1,N))[:, :-1].tolist()
     else:
+        #TODO: this cycles back once cmap.N has been reached, we could linspace like above
         return _np.vstack([cmap(_np.arange(cmap.N)) for ii in range(_np.ceil(N/cmap.N).astype(int))])[:N,:-1].tolist()
 
 
