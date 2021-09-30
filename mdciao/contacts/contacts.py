@@ -1942,6 +1942,9 @@ class ContactGroup(object):
         self._is_neighborhood = False
         self._name = name
         self._max_cutoff_Ang = max_cutoff_Ang
+        self._modes = None
+        self._means = None
+        self._stacked_time_traces = None
         if top is None:
             self._top = self._unique_topology_from_ctcs()
         else:
@@ -4286,17 +4289,19 @@ class ContactGroup(object):
         return df
 
     @property
-    def _stacked_time_traces(self):
+    def stacked_time_traces(self):
         r"""
         All ContactPair time_traces stacked into an 2D np.array
 
-        The array is of shape(self.n_frames_total, self.n_ctcs)
+        Returns
+        -------
+        data : np.ndarray
+            The array is of shape(self.n_frames_total, self.n_ctcs)
 
-        This is private for now, it gets used in self.means
         """
-        if not hasattr(self,"__stacked_contacts"):
-            self.__stacked_contacts = _np.vstack([_np.hstack(CP.time_traces.ctc_trajs) for CP in self._contacts]).T
-        return self.__stacked_contacts
+        if self._stacked_time_traces is None:
+            self._stacked_time_traces = _np.vstack([_np.hstack(CP.time_traces.ctc_trajs) for CP in self._contacts]).T
+        return self._stacked_time_traces
 
     @property
     def means(self):
@@ -4312,13 +4317,10 @@ class ContactGroup(object):
             returned here
 
         """
+        if self._means is None:
+            self._means = _np.mean(self.stacked_time_traces,axis=0)
+        return self._means
 
-        return self._means()
-
-    def _means(self):
-        if not hasattr(self,"__means"):
-            self.__means = _np.mean(self._stacked_time_traces,axis=0)
-        return self.__means
 
     @property
     def modes(self):
@@ -4340,17 +4342,15 @@ class ContactGroup(object):
             (most likely nanometers), is
             returned here
         """
-
-        return self._modes()
-
-    def _modes(self):
-        if not hasattr(self, "__modes"):
-            all_ctcs = self._stacked_time_traces
-            assert all_ctcs.min() * 1e3 >= 1
+        if self._modes is None:
+            all_ctcs = self.stacked_time_traces
+            assert all_ctcs.min() * 1e3 >= 1, "Distances are too small to represented as picometers. " \
+                                              "Are some distances close to zero?"
             all_ctcspm = (all_ctcs * 1e3).round().astype(int)
-            self.__modes = _np.array([(_np.bincount(row).argmax()) * 1e-3 for row in all_ctcspm.T])
+            self._modes = _np.array([(_np.bincount(row).argmax()) * 1e-3 for row in all_ctcspm.T])
 
-        return self.__modes
+        return self._modes
+
 
     def repframes(self, scheme="mode",
                   ctc_cutoff_Ang=None,
@@ -4434,7 +4434,7 @@ class ContactGroup(object):
             Only if return_traj=True
         """
 
-        all_ds = self._stacked_time_traces
+        all_ds = self.stacked_time_traces
         ref = {"mode" : self.modes,
                "mean" : self.means}
 
