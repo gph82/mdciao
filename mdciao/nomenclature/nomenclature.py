@@ -381,20 +381,25 @@ def _GPCR_web_lookup(url, verbose=True,
                      timeout=5):
     r"""
     Lookup this url for a GPCR-notation
-    return a ValueError if the lookup retuns an empty json
+    return a ValueError if the lookup returns an empty json
     Parameters
     ----------
-    url
-    verbose
+    url : str
+    verbose : bool
     timeout : float, default is 1
-        Timout in seconds for :obj:`_requests.get`
+        Timeout in seconds for :obj:`_requests.get`
         https://requests.readthedocs.io/en/master/user/quickstart/#timeouts
     Returns
     -------
-
+    DF : :obj:`~pandas.DataFrame`
     """
     uniprot_name = url.split("/")[-1]
     a = _requests.get(url, timeout=timeout)
+
+    return_fields = ["protein_segment",
+                     "AAresSeq",
+                     "display_generic_number"]
+    pop_fields = ["sequence_number","amino_acid", "alternative_generic_numbers"]
     #TODO use _url2json here
     if verbose:
         print("done!")
@@ -404,7 +409,6 @@ def _GPCR_web_lookup(url, verbose=True,
     else:
         df = _read_json(a.text)
         mydict = df.T.to_dict()
-        fmt = 'old'
         for key, val in mydict.items():
             try:
                 val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
@@ -412,27 +416,13 @@ def _GPCR_web_lookup(url, verbose=True,
                     for idict in val["alternative_generic_numbers"]:
                         # print(key, idict["scheme"], idict["label"])
                         val[idict["scheme"]] = idict["label"]
-                    val.pop("alternative_generic_numbers")
-                else:
-                    fmt = 'new'
-                    pass
-
             except IndexError:
                 pass
 
-        return_fields = \
-            {"old": [
-                "protein_segment",
-                "AAresSeq",
-                "BW",
-                "GPCRdb(A)",
-                "display_generic_number"],
-            "new": [
-                    "protein_segment",
-                    "AAresSeq",
-                    "display_generic_number"]}
         DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
-        DFout = DFout[return_fields[fmt]]
+        return_fields += [key for key in DFout.keys() if key not in return_fields+pop_fields]
+        DFout.to_excel("test.xlsx")
+        DFout = DFout[return_fields]
 
     return DFout
 
@@ -1677,6 +1667,17 @@ _CGN_fragments = ['G.HN',
                  'G.S6',
                  'G.s6h5',
                  'G.H5']
+
+_GPCR_mandatory_fields = ["protein_segment",
+                          "AAresSeq",
+                          "display_generic_number",
+                          ]
+
+_GPCR_available_schemes = ["BW",
+                           "Wootten", "Pin", "Wang", "Fungal",
+                           "GPCRdb(A)", "GPCRdb(B)", "GPCRdb(C)", "GPCRdb(F)", "GPCRdb(D)",
+                           "Oliveira", "BS",
+                           ]
 
 # TODO this method is not used anywhere anymore, consider deleting
 def compatible_consensus_fragments(top,

@@ -183,7 +183,8 @@ class Test_GPCR_finder(unittest.TestCase):
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename,str)
-        _np.testing.assert_array_equal(list(df.keys()),["protein_segment","AAresSeq","BW","GPCRdb(A)","display_generic_number"])
+        _np.testing.assert_array_equal(list(df.keys())[:3], nomenclature.nomenclature._GPCR_mandatory_fields)
+        assert any([key in df.keys() for key in nomenclature.nomenclature._GPCR_mandatory_fields]) #at least one scheme
 
 
     def test_works_online(self):
@@ -193,8 +194,8 @@ class Test_GPCR_finder(unittest.TestCase):
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
         assert "http" in filename
-        _np.testing.assert_array_equal(list(df.keys()),["protein_segment","AAresSeq","BW","GPCRdb(A)","display_generic_number"])
-
+        _np.testing.assert_array_equal(list(df.keys())[:3],nomenclature.nomenclature._GPCR_mandatory_fields)
+        assert any([key in df.keys() for key in nomenclature.nomenclature._GPCR_mandatory_fields])
 
     def test_raises_not_find_locally(self):
         with pytest.raises(FileNotFoundError):
@@ -489,7 +490,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
     def test_dataframe(self):
         self.assertIsInstance(self.GPCR_local_w_pdb.dataframe, DataFrame)
         self.assertSequenceEqual(list(self.GPCR_local_w_pdb.dataframe.keys()),
-                                 ['protein_segment', 'AAresSeq', 'BW', 'GPCRdb(A)', 'display_generic_number'])
+                                 nomenclature.nomenclature._GPCR_mandatory_fields+nomenclature.nomenclature._GPCR_available_schemes)
 
     def test_correct_residue_dicts(self):
         _np.testing.assert_equal(self.GPCR_local_w_pdb.conlab2AA["1.25"],"Q26")
