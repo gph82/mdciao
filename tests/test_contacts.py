@@ -1939,30 +1939,61 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_violins_no_neighborhood(self):
         CG = self.CG_cp1_cp2
-        iax = CG.plot_violins(3.5, title_label="CG_cp1_cp2",
-                              defrag="@",
-                              truncate_at_mean=5
-                              )
-        #iax.figure.savefig("test.png")
+        iax, order = CG.plot_violins(ctc_cutoff_Ang=3.5, title_label="CG_cp1_cp2",
+                                     defrag="@",
+                                     truncate_at_mean=5
+                                     )
+        assert isinstance(iax, _plt.Axes)
+        assert isinstance(order, _np.ndarray)
+        # iax.figure.savefig("test.png")
         _plt.close("all")
 
     def test_plot_violins_options1(self):
         CG = examples.ContactGroupL394()
-        iax = CG.plot_violins(display_sort=True,
-                              shorten_AAs=True,
-                              ctc_cutoff_Ang=3.5,
-                              #xlim=2
-                              )
-        #iax.figure.savefig("test.png")
+        iax, order = CG.plot_violins(display_sort=True,
+                                     shorten_AAs=True,
+                                     ctc_cutoff_Ang=3.5,
+                                     # xlim=2
+                                     )
+        assert isinstance(iax, _plt.Axes)
+        assert isinstance(order, _np.ndarray)
+        # iax.figure.savefig("test.png")
         _plt.close("all")
 
     def test_plot_violins_options2(self):
         CG = examples.ContactGroupL394()
-        iax = CG.plot_violins(display_sort=True,
-                              shorten_AAs=True,
-                              truncate_at_mean=3.7
-                              )
+        iax, order = CG.plot_violins(display_sort=True,
+                                     shorten_AAs=True,
+                                     truncate_at_mean=3.7
+                                     )
+        # iax.figure.savefig("test.png")
+        assert isinstance(iax, _plt.Axes)
+        assert isinstance(order, _np.ndarray)
+        _plt.close("all")
+
+    def test_plot_violins_options3(self):
+        CG = examples.ContactGroupL394()
+        iax, order = CG.plot_violins(display_sort=[0, 4],
+                                     shorten_AAs=True,
+                                     truncate_at_mean=3.7
+                                     )
+        # iax.figure.savefig("test.png")
+        assert isinstance(iax, _plt.Axes)
+        assert isinstance(order, _np.ndarray)
+        _np.testing.assert_array_equal(order, [0, 4])
+        _plt.close("all")
+
+    def test_plot_violins_options4(self):
+        CG = examples.ContactGroupL394()
+        iax, order = CG.plot_violins(display_sort=2,
+                                     shorten_AAs=True,
+                                     stride=2,
+                                     )
         #iax.figure.savefig("test.png")
+        assert isinstance(iax, _plt.Axes)
+        assert isinstance(order, _np.ndarray)
+        _np.testing.assert_array_equal(order, [0,2])
+        _np.testing.assert_array_equal([0,2],CG.means.argsort()[:2])
         _plt.close("all")
 
     def test_plot_violins_raises_on_title(self):

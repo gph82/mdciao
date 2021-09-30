@@ -3315,41 +3315,82 @@ class ContactGroup(object):
         return ax
 
     def plot_violins(self,
+                     display_sort=False,
                      ctc_cutoff_Ang=None,
-                     title_label=None,
+                     truncate_at_mean=None,
+                     zero_freq=1e-2,
                      switch_off_Ang=None,
-                     xlim=None,
                      ax=None,
+                     title_label=None,
+                     xlim=None,
                      color="tab:blue",
                      shorten_AAs=False,
                      label_fontsize_factor=1,
-                     truncate_at_mean=None,
-                     display_sort=False,
                      sum_freqs=True,
                      defrag=None,
-                     zero_freq=1e-2
+                     stride=1,
                      ):
         r"""
-        Plot a residue residue distances as violin plots :obj:`~matplotlib.pyplot.violinplot`
+        Plot residue-residue distances as violin plots :obj:`~matplotlib.pyplot.violinplot`
+
+        The default behaviour is to plot all residue pairs in
+        the order in which the :obj:`ContactPair`-objects are stored
+        in the :obj:`ContactGroup`. You can check this order in
+        self.res_idxs_pairs. This order typically depends on
+        the original ctc_cutoff_Ang  used to instantiate
+        this :obj:`ContactGroup`, which might not carry the same
+        meaning here.
+
+        For more than 50 contacts or so, violin plots take some
+        time to compute, because a `Gaussian-kernel-density estimation <https://matplotlib.org/stable/api/mlab_api.html#matplotlib.mlab.GaussianKDE>`_
+        is done for each residue pair.
+
+        Also, plots with many residue pairs simply might be
+        difficult to read.
+
+        Hence, to control the number of shown contacts, you can control the
+        you can use these parameters, sorted somewhat hierarchically
+         * display_sort
+         * ctc_cutoff_ang
+         * truncate_at_mean
+         * zero_freq
+
+        Please check their documentation below.
+
+        Finally, if the plots still take too long to compute/show
+        for the desired number of violins, try reducing
+        the amount of data by using stride > 1
 
         Parameters
         ----------
-        ctc_cutoff_Ang : float
-        title_label : str, default is None
-            If None, the method will default to self.name
-            If self.name is also None, the method will fail
-        xlim : float, default is None
-        ax : :obj:`~matplotlib.axes.Axes`
-        colors : iterable (list or dict), or str, default is None
-            * If list, the colors will be assigned in the same
-              order of :obj:`groups`.
-            * If dict, has to have the
-              same keys as :obj:`groups`.
-            * If str, it has to be a case-sensitve colormap-name of matplotlib:
-              https://matplotlib.org/stable/tutorials/colors/colormaps.html
-        * If None, the 'tab10' colormap (tableau) is chosen
-        shorten_AAs : bool, default is None
-        label_fontsize_factor : float
+        display_sort : iterable of ints, boolean, int, default is False
+            Can be different things:
+             * iterable of ints
+                Strongest selection. Show only these residue pairs,
+                in this order. Indices are intended as
+                self.res_idxs_pairs indices.
+                All other parameters are ignored.
+             * boolean False
+                Don't sort, i.e. use the original order
+             * boolean True
+                Sort. There's two options for sorting, depending
+                on the value of ctc_cutoff_Ang (more below)
+                 * sort by distance means, ascending: ctc_cutoff_Ang is None
+                 * sort by contact-frequencies, descending: ctc_cutoff_Ang is needed is a float
+                    For contacts with zero frequency, fallback
+                    on ascending distance means
+                    This it means that you frequent contacts will
+                    be displayed first (=sorted by freq high to low).
+                    followed by infrequent ones sorted form (short to long)
+             * int n
+                Like True but up to n contacts at most. Other parameters
+                like truncate_at_mean can reduce this number automatically
+        ctc_cutoff_Ang : opt, default is None
+            If provided, contact-frequencies will
+            be computed and shown in the contact-labels.
+            Additionally, if :obj:`display_sort`
+            is True or int, then the violins are sorted
+            by contact-frequency in the plot
         truncate_at_mean : float, default is None
             Don't show violins with mean values
             higher than this (in Angstrom). This
@@ -3360,36 +3401,48 @@ class ContactGroup(object):
             formed at small distances but broken
             at very large ones, s.t. the mean
             (or median) values are meaningless.
-        display_sort : boolean, default is False
-            The contacts are by default plotted in the order
-            in which the :obj:`ContactPair`-objects are stored
-            in the :obj:`ContactGroup`.
-            This order depends on the ctc_cutoff_Ang originally
-            used to instantiate this :obj:`ContactGroup`, which
-            might be meaniningless here. Hence, a re-sorting is
-            offered here. This can happen in two ways:
-             * ctc_cutoff_Ang is None:
-               sort by ascending distance-mean-value
-             * ctc_cutoff_Ang has a value (e.g. 3.5):
-               sort by descending frequency value first
-               and ascending mean value second. This sounds
-               complicated but it's actually very natural: if a cutoff
-               is given, it means that you want frequent contacts
-               displayed first (=sorted by freq high to low).
-               infrequent ones (e.g. two contacts both
-               with freq 0) sorted with shorted distances first.
+        zero_freq : float, default is 1e-2
+            Frequencies below this number will
+            be considered zero and not shown. For this parameter
+            to have effect, you need a ctc_cutoff_Ang
+        ax : None or :obj:`~matplotlib.axes.Axes`, default is None
+        title_label : str, default is None
+            If None, the method will default to self.name
+            If self.name is also None, the method will fail
+        xlim : float, default is None
+        color : iterable (list or dict), or str, default is None
+            * list, the colors will be reordered so that
+              the same residue pair always gets the same
+              color, regardless of order in which they appear.
+              This way you can track a violin across different
+              orders
+            * str, it has to be a matplotlib color or a case-sensitive matplotlib colorname
+              https://matplotlib.org/stable/tutorials/colors/colormaps.html
+            * dict, keys are integers and values are colors
+              This is the best way to work with display_sort = [ii,jj],
+              because you can pass only those colors here as {ii:"red",jj:"blue"}
+            * If None, the 'tab10' colormap (tableau) is chosen
+        shorten_AAs : bool, default is None
+        label_fontsize_factor : float
         sum_freqs : bool, default is True
             Whether to sum per-contact frequencies
             and place the in the label as :math:`Sigma` values
         defrag : char, default is None
             Whether to leave out the fragment affiliation, e.g.
             "GLU30@3.50" w/ defrag="@" appears as "GLU30" only
-        zero_freq : float, default is 1e-2
+        stride : int,default is 1
+            Stride the data down by this much,
+            in case the computation of the violins
+            takes too long
 
         Returns
         -------
         ax : :obj:`~matplotlib.axes.Axes`
-
+        order : np.ndarray
+            Indices of the plotted residue pairs,
+             in the order in which they were plotted.
+            Is the result from the combination
+            of the above selection parameters
         """
 
         # Base plot
@@ -3403,8 +3456,10 @@ class ContactGroup(object):
         else:
             title = title_label
 
-
-        data4violin = [_np.hstack(cp.time_traces.ctc_trajs) * 10 for cp in self._contacts]
+        if stride!=1:
+            data4violin = [_np.hstack(cp.time_traces.ctc_trajs)[::stride] * 10 for cp in self._contacts]
+        else:
+            data4violin = [_np.hstack(cp.time_traces.ctc_trajs) * 10 for cp in self._contacts]
         means = _np.array([_np.mean(dt) for dt in data4violin])
 
         freqs = None
@@ -3413,31 +3468,40 @@ class ContactGroup(object):
             freqs = self.frequency_per_contact(ctc_cutoff_Ang,
                                                switch_off_Ang=switch_off_Ang,
                                                )
-
-        if display_sort:
-            if ctc_cutoff_Ang is None:
-                order = _np.argsort(means)
+        if isinstance(display_sort, (bool, int)):
+            if not isinstance(display_sort, bool): #https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
+                max_n = display_sort
             else:
-                order = _np.lexsort((-means,freqs))[::-1]
-        else:
-            order = _np.arange(len(data4violin))
+                max_n = len(data4violin)
 
-        if truncate_at_mean is not None:
-            if freqs is None:
-                order = [oo for oo in order if means[oo]<=truncate_at_mean]
+            if display_sort:
+                if ctc_cutoff_Ang is None:
+                    order = _np.argsort(means)[:max_n]
+                else:
+                    order = _np.lexsort((-means,freqs))[::-1][:max_n]
             else:
-                order = [oo for oo in order if freqs[oo]>zero_freq]
+                order = _np.arange(max_n)
 
-        label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
-        if shorten_AAs:
-            label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
+            if truncate_at_mean is not None:
+                if freqs is None:
+                    order = [oo for oo in order if means[oo]<=truncate_at_mean]
+                else:
+                    order = [oo for oo in order if freqs[oo]>zero_freq]
+            else:
+                if freqs is not None:
+                    order = [oo for oo in order if freqs[oo] > zero_freq]
 
-        color =_color_dict_guesser(color, _np.arange(self.n_ctcs))
+            order = order[:max_n+1]
+            color = _color_dict_guesser(color, _np.arange(self.n_ctcs))
+
+        elif _mdcu.lists.is_iterable(display_sort):
+            order = _np.array([int(dd) for dd in display_sort])
+            color = _color_dict_guesser(color, order)
+
         ax, violins = _mdcplots.plots._plot_violin_baseplot([data4violin[oo] for oo in order],
                                                             jax=ax,
                                                             colors=[color[oo] for oo in order],
                                                             )
-        
         if ctc_cutoff_Ang is not None:
             # Cosmetics
             sigma = _np.sum(freqs)
@@ -3446,6 +3510,9 @@ class ContactGroup(object):
 
 
         #TODO avoid code repetition
+        label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
+        if shorten_AAs:
+            label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
         if self.is_neighborhood:
             title += "\n%s nearest bonded neighbors excluded\n" % (str(self.neighbors_excluded).replace("None", "no"))
             label_dotref = self.anchor_res_and_fragment_str
@@ -3500,7 +3567,7 @@ class ContactGroup(object):
 
         ax.figure.tight_layout()
 
-        return ax
+        return ax, _np.array(order).astype(int)
 
     def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
                                 switch_off_Ang=None,
@@ -4454,7 +4521,7 @@ class ContactGroup(object):
                                                 "the %s value of the whole dataset"%{"mode":"most likely",
                                                                                      "mean" :"mean"}[scheme],
                                     shorten_AAs=True,
-                                    ctc_cutoff_Ang=ctc_cutoff_Ang)
+                                    ctc_cutoff_Ang=ctc_cutoff_Ang)[0]
             colors = _mdcplots.plots._color_dict_guesser("Set1",_np.arange(n_frames))
             for pp, (pair, frame_vals) in enumerate(zip(traj_frames, closest_values)):
                 for ii, dd in enumerate(frame_vals):
