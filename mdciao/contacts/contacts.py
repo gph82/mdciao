@@ -4962,7 +4962,7 @@ class ContactGroup(object):
         r"""
         Save time-traces to disk.
 
-        Filenames will be created based on the property
+        FileNames will be created based on the property
         :obj:`self.trajlabels`, but using only the basenames and
         prepending with the string :obj:`prepend_filename`
 
