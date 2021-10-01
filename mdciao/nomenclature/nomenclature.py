@@ -305,14 +305,15 @@ def GPCR_finder(GPCR_descriptor,
                 write_to_disk=False):
     r"""
     Return a :obj:`~pandas.DataFrame` containing
-    a `Ballesteros-Weinstein-Numbering (BW)
-    <https://doi.org/10.1016/S1043-9471(05)80049-7>`_ [1].
+    generic GPCR-numbering.
 
     The lookup is first local and then online
-    on the `GPCRdb <https://gpcrdb.org/>`_ [3].
+    on the `GPCRdb <https://gpcrdb.org/>`
 
     This method wraps (with some python lambdas) around
     :obj:`_finder_writer`.
+
+    Please see the relevant references in :obj:`LabelerGPCR`.
 
     Parameters
     ----------
@@ -347,22 +348,7 @@ def GPCR_finder(GPCR_descriptor,
     Returns
     -------
     df : DataFrame or None
-        The GPCR consenus nomenclature information as :obj:`~pandas.DataFrame`
-
-    References
-    ----------
-    * [1] Juan A. Ballesteros, Harel Weinstein,
-     *[19] Integrated methods for the construction of three-dimensional models and computational probing
-     of structure-function relations in G protein-coupled receptors*,
-     Editor(s): Stuart C. Sealfon, Methods in Neurosciences, Academic Press, Volume 25, 1995
-     `<https://doi.org/10.1016/S1043-9471(05)80049-7>`_
-
-    * [3] Gáspár Pándy-Szekeres, Christian Munk, Tsonko M Tsonkov, Stefan Mordalski,
-     Kasper Harpsøe, Alexander S Hauser, Andrzej J Bojarski, David E Gloriam,
-     *GPCRdb in 2018: adding GPCR structure models and ligands*,
-     Nucleic Acids Research, Volume 46, Issue D1, 4 January 2018, Pages D440–D446,
-     `<https://doi.org/10.1093/nar/gkx1109>`_
-
+        The GPCR consensus nomenclature information as :obj:`~pandas.DataFrame`
     """
 
     if _path.exists(GPCR_descriptor):
@@ -377,11 +363,9 @@ def GPCR_finder(GPCR_descriptor,
     local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
                                                         engine="openpyxl",
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
-                                                        converters={"BW": str}).replace({_np.nan: None},)
+                                                        #converters={"BW": str}
+                                                        ).replace({_np.nan: None})
     web_looukup_lambda = lambda url : _GPCR_web_lookup(url, verbose=verbose)
-    print("Using BW-nomenclature, please cite the following 3rd party publications:\n"
-          " * https://doi.org/10.1016/S1043-9471(05)80049-7 (Weinstein et al 1995)\n"
-          " * https://doi.org/10.1093/nar/gkx1109 (Gloriam et al 2018)")
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
                           try_web_lookup=try_web_lookup,
@@ -1099,14 +1083,54 @@ class LabelerCGN(LabelerConsensus):
 
 
 class LabelerGPCR(LabelerConsensus):
-    """Manipulate GPCR notation. Different schemes are possible:
+    """Obtain and manipulate GPCR notation.
 
-     * structure based schemes (Gloriam et al)
-     * sequence based schemes
-      * Class-A: Ballesteros-Weinstein
-      * Class-B: Wootten
-      * Class-C: Pin
-      * Class-F: Wang
+    This is based on the awesome GPCRdb REST-API,
+    and follows the different schemes provided
+    there. These schemes can be:
+
+    * structure based schemes, available for all GPCR classes.
+      You can use them by instantiating with "GPCRdb(A)", "GPCRdb(B)" etc.
+      The relevant references are:
+     * Isberg et al, (2015) Generic GPCR residue numbers - Aligning topology maps while minding the gaps,
+       Trends in Pharmacological Sciences 36, 22--31,
+       https://doi.org/10.1016/j.tips.2014.11.001
+     * Isberg et al, (2016) GPCRdb: An information system for G protein-coupled receptors,
+       Nucleic Acids Research 44, D356--D364,
+       https://doi.org/10.1093/nar/gkv1178
+
+    * sequence based schemes, with different names depending on the GPCR class
+     * Class-A:
+       Ballesteros et al, (1995) Integrated methods for the construction of three-dimensional models
+       and computational probing of structure-function relations in G protein-coupled receptors,
+       Methods in Neurosciences 25, 366--428,
+       https://doi.org/10.1016/S1043-9471(05)80049-7
+     * Class-B:
+       Wootten et al, (2013) Polar transmembrane interactions drive formation of ligand-specific
+       and signal pathway-biased family B G protein-coupled receptor conformations,
+       Proceedings of the National Academy of Sciences of the United States of America 110, 5211--5216,
+       https://doi.org/10.1073/pnas.1221585110
+     * Class-C:
+       Pin et al, (2003) Evolution, structure, and activation mechanism of family 3/C G-protein-coupled receptors
+       Pharmacology and Therapeutics 98, 325--354
+       https://doi.org/10.1016/S0163-7258(03)00038-X
+     * Class-F:
+       Wu et al, (2014) Structure of a class C GPCR metabotropic glutamate receptor 1 bound to an allosteric modulator
+       Science 344, 58--64
+       https://doi.org/10.1126/science.1249489
+
+    Note
+    ----
+    Not all schemes might work work for all methods
+    of this class. In particular, fragmentation
+    heuristics are derived from 3.50(x50)-type
+    formats. Other class A schemes
+    like Oliveira and Baldwin-Schwarz
+    can be used for residue mapping, labeling,
+    but not for fragmentation. They are still
+    partially usable but we have decideda
+    to ommit them from the docs. Please
+    see the full reference page for their citation.
 
     """
     def __init__(self, uniprot_name,
@@ -1124,7 +1148,7 @@ class LabelerGPCR(LabelerConsensus):
         uniprot_name : str
             Descriptor by which to find the nomenclature,
             it gets directly passed to :obj:`GPCR_finder`
-            Can be several anything that can be used to try and find,
+            Can be anything that can be used to try and find
             the needed information, locally or online:
             * a uniprot descriptor, e.g. `adrb2_human`
             * a full local filename
