@@ -32,7 +32,12 @@ from pandas import \
     read_csv as _read_csv, \
     DataFrame as _DataFrame
 
-from collections import defaultdict as _defdict
+from collections import defaultdict as _defdict, namedtuple as _namedtuple
+
+from textwrap import wrap as _twrap
+
+from mdciao.filenames import FileNames as _FN
+_filenames = _FN()
 
 from os import path as _path
 
@@ -1763,3 +1768,96 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
     consensus_maps = [cmap if not isinstance(cmap, LabelerConsensus) else cmap.top2labels(top) for cmap
                       in consensus_info]
     return consensus_maps, consensus_frags
+
+class literature():
+    r"""Quick access to the some of the references used by :obj:`nomenclature`"""
+
+    #TODO this could be fine tuned but ATM its better to have all top-level attrs
+    def __init__(self):
+        self._keymap = {
+            "site_GPCRdb": "Kooistra2021",
+            "scheme_GPCR_struct1": "Isberg2015",
+            "scheme_GPCR_struct2": "Isberg2016",
+            "scheme_GPCR_A": "Ballesteros1995",
+            "scheme_GPCR_B": "Wootten2013",
+            "scheme_GPCR_C": "Pin2003",
+            "scheme_GPCR_F": "Wu2014",
+            "scheme_GPCR_A_O": "Oliveira1993",
+            "scheme_GPCR_A_BS_1": "Baldwin1993",
+            "scheme_GPCR_A_BS_2": "Baldwin1997",
+            "scheme_GPCR_A_BS_3": "Schwartz1994",
+            "scheme_GPCR_A_BS_4": "Schwartz1995",
+        }
+
+        arts = _parse_bib()
+
+        assert all([key in self._keymap.values() for key in arts.keys()]), (self._keymap.values(), arts.keys())
+        for key, val in self._keymap.items():
+            setattr(self, key, _art2cite(arts[val]))
+            setattr(self, key+'_json', arts[val])
+
+    def _format(self,cite):
+        lines = cite.splitlines()
+        lines = _twrap(lines[0],100)+lines[1:]
+        lines = "\n".join([' * '+lines[0]]+['   '+line for line in lines[1:]])
+        return lines
+
+def _art2cite(art):
+    first = True
+    #first = False
+    authors = art.author.split(" and ")
+    if first:
+        lname = authors[0].split(",")[0].strip()
+    else:
+        lname = authors[-1].split(",")[0].strip()
+    lines = []
+    lines.append("%s et al, (%s) %s"%(lname, art.year, art.title))
+    lines.append("%s %s, %s"%(art.journal, art.volume, art.pages))
+    try:
+        lines.append("https://doi.org/%s"%art.doi)
+    except AttributeError:
+        pass
+    lines = "\n".join(lines)
+    return lines
+
+def _parse_bib(bibfile=None):
+    r"""
+    Parse a latex .bib bibliography file and return entries as dictionaries
+
+    The only recognized key is "@article", other entries will break this method
+
+    Parameters
+    ----------
+    bib : str or None
+        Path to a bibfile
+        The default is to use
+        :obj:`mdciao.filenames.FileNames.nomenclature_bib`
+
+    Returns
+    -------
+    articles : dict
+        Dictionary of dictionaries
+        containing whatever was
+        available in :obj:`bib`
+    """
+    if bibfile is None:
+        bibfile =  _filenames.nomenclature_bib
+    with open(bibfile) as f:
+        bibstr = f.read()
+
+    articles = [[line.rstrip(",") for line in art.rstrip("\n").strip("{}").splitlines()] for art in bibstr.split("@article")]
+    articles = {art[0]:art[1:] for art in articles if len(art)>0}
+    articles = {key:_art2dict(art) for key, art in articles.items()}
+    articles = {key:_dict2namedtupple(val,key) for key, val in articles.items()}
+    return articles
+
+def _art2dict(lines):
+    art = {}
+    for line in lines:
+        key, val = line.split("=",1)
+        art[key.strip()] = val.strip().strip("{}")
+    return art
+
+def _dict2namedtupple(idict,key):
+    nt = _namedtuple("article",list(idict.keys())+["key"])
+    return nt(*idict.values(),key)
