@@ -433,7 +433,6 @@ def _GPCR_web_lookup(url, verbose=True,
 
         DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
         return_fields += [key for key in DFout.keys() if key not in return_fields+pop_fields]
-        DFout.to_excel("test.xlsx")
         DFout = DFout[return_fields]
 
     return DFout
