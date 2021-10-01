@@ -438,6 +438,10 @@ def _GPCR_web_lookup(url, verbose=True,
         DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
         return_fields += [key for key in DFout.keys() if key not in return_fields+pop_fields]
         DFout = DFout[return_fields]
+        print("Please cite the following reference to the GPCRdb:")
+        lit = literature()
+        print(lit._format(lit.site_GPCRdb))
+        print("For more information, use the mdciao.nomenclature.literature module")
 
     return DFout
 
