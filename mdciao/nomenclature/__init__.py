@@ -1,21 +1,14 @@
 r"""
-Get and manipulate consensus nomenclature:
+Get and manipulate consensus nomenclature for GPCRs and G-proteins.
 
- * `Ballesteros-Weinstein-Numbering (BW) <https://doi.org/10.1016/S1043-9471(05)80049-7>`_ [1]
+Uses local files and/or accesses the following databases:
 
+ * `GPCRdb <https://gpcrdb.org/>`_
+ * `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_
+ * `http://www.rcsb.org/ <https://files.rcsb.org/download>`_
 
- * `Common G-alpha Numbering (CGN) <https://doi.org/10.1038/nature14663>`_ [2]
-
-
-It uses either local files or accesses the following databases:
-
- * `GPCRdb <https://gpcrdb.org/>`_ [3]
-
- * `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_ [2]
-
- * `http://www.rcsb.org/ <https://files.rcsb.org/download>`_ [4]
-
-Please see the `references below`_.
+Please see the individual documentation for further references and cite them
+whenever you use these nomenclature schemes in your final publication.
 
 
 .. currentmodule:: mdciao.nomenclature
@@ -27,12 +20,10 @@ Functions
     :nosignatures:
     :toctree: generated/
 
-
-   guess_nomenclature_fragments
-   PDB_finder
-   GPCR_finder
-   md_load_rscb
-
+    guess_nomenclature_fragments
+    PDB_finder
+    GPCR_finder
+    md_load_rscb
 
 Classes
 =======
@@ -40,42 +31,51 @@ Classes
 .. autosummary::
     :toctree: generated
 
-    LabelerConsensus
     LabelerGPCR
     LabelerCGN
+    Literature
 
-.. _`references below`:
 
 References
 ==========
+These are some of the references most relevant to this module:
 
- * [1] Juan A. Ballesteros, Harel Weinstein,
-   *[19] Integrated methods for the construction of three-dimensional models and computational probing
-   of structure-function relations in G protein-coupled receptors*,
-   Editor(s): Stuart C. Sealfon, Methods in Neurosciences, Academic Press, Volume 25, 1995
-   `<https://doi.org/10.1016/S1043-9471(05)80049-7>`_
+* GPCRdb and naming schemes therein
 
- * [2] Flock, T., Ravarani, C., Sun, D. et al.,
-   *Universal allosteric mechanism for Gα activation by GPCRs.*
-   Nature 524, 173–179 (2015)
-   `<https://doi.org/10.1038/nature14663>`_
+ * Kooistra, A. J., Mordalski, S., Pándy-Szekeres, G., Esguerra, M., Mamyrbekov, A., Munk, C., … Gloriam, D. E. (2021). GPCRdb in 2021: Integrating GPCR sequence, structure and function. Nucleic Acids Research, 49(D1), D335–D343. https://doi.org/10.1093/nar/gkaa1080
 
- * [3] Gáspár Pándy-Szekeres, Christian Munk, Tsonko M Tsonkov, Stefan Mordalski,
-   Kasper Harpsøe, Alexander S Hauser, Andrzej J Bojarski, David E Gloriam,
-   *GPCRdb in 2018: adding GPCR structure models and ligands*,
-   Nucleic Acids Research, Volume 46, Issue D1, 4 January 2018, Pages D440–D446,
-   `<https://doi.org/10.1093/nar/gkx1109>`_
+ * Isberg, V., De Graaf, C., Bortolato, A., Cherezov, V., Katritch, V., Marshall, F. H., … Gloriam, D. E. (2015). Generic GPCR residue numbers - Aligning topology maps while minding the gaps. Trends in Pharmacological Sciences, 36(1), 22–31. https://doi.org/10.1016/j.tips.2014.11.001
 
- * [4] Helen M. Berman, John Westbrook, Zukang Feng, Gary Gilliland, T. N. Bhat,
-   Helge Weissig, Ilya N. Shindyalov, Philip E. Bourne,
-   *The Protein Data Bank*,
-   Nucleic Acids Research, Volume 28, Issue 1, 1 January 2000, Pages 235–242,
-   `<https://doi.org/10.1093/nar/28.1.235>`_
+ * Isberg, V., Mordalski, S., Munk, C., Rataj, K., Harpsøe, K., Hauser, A. S., … Gloriam, D. E. (2016). GPCRdb: An information system for G protein-coupled receptors. Nucleic Acids Research, 44(D1), D356–D364. https://doi.org/10.1093/nar/gkv1178
 
- * [5] Vignir Isberg, Chris de Graaf, Andrea Bortolato, Vadim Cherezov, Vsevolod Katritch,
-   Fiona H. Marshall, Stefan Mordalski, Jean-Philippe Pin, Raymond C. Stevens, Gerrit  Vriend, David E. Gloriam,
-   *Generic GPCR residue numbers – aligning topology maps while minding the gaps*,
-   Trends in Pharmacological Sciences, Volume 36, Issue 1, 2015, Pages 22-31,
-   `<https://doi.org/10.1016/j.tips.2014.11.001>`_
+* Further GPCR naming schemes
+
+ * Ballesteros, J. A., & Weinstein, H. (1995). Integrated methods for the construction of three-dimensional models and computational probing of structure-function relations in G protein-coupled receptors. Methods in Neurosciences, 25(C), 366–428. https://doi.org/10.1016/S1043-9471(05)80049-7
+
+ * Wu, H., Wang, C., Gregory, K. J., Han, G. W., Cho, H. P., Xia, Y., … Stevens, R. C. (2014). Structure of a class C GPCR metabotropic glutamate receptor 1 bound to an allosteric modulator. Science, 344(6179), 58–64. https://doi.org/10.1126/science.1249489
+
+ * Pin, J. P., Galvez, T., & Prézeau, L. (2003). Evolution, structure, and activation mechanism of family 3/C G-protein-coupled receptors. Pharmacology and Therapeutics, 98(3), 325–354. https://doi.org/10.1016/S0163-7258(03)00038-X
+
+ * Wootten, D., Simms, J., Miller, L. J., Christopoulos, A., & Sexton, P. M. (2013). Polar transmembrane interactions drive formation of ligand-specific and signal pathway-biased family B G protein-coupled receptor conformations. Proceedings of the National Academy of Sciences of the United States of America, 110(13), 5211–5216. https://doi.org/10.1073/pnas.1221585110
+
+ * Oliveira, L., Paiva, A. C. M., & Vriend, G. (1993). A common motif in G-protein-coupled seven transmembrane helix receptors. Journal of Computer-Aided Molecular Design, 7(6), 649–658. https://doi.org/10.1007/BF00125323
+
+ * Schwartz, T. W., Gether, U., Schambye, H. T., & Hjorth, S. A. (1995). Molecular mechanism of action of non-peptide ligands for peptide receptors. Current Pharmaceutical Design, 1, 325–342.
+
+ * Schwartz, T. W. (1994). Locating ligand-binding sites in 7tm receptors by protein engineering. Current Opinion in Biotechnology, 5(4), 434–444. https://doi.org/10.1016/0958-1669(94)90054-X
+
+ * Baldwin, J. M. (1993). The probable arrangement of the helices in G protein-coupled receptors. The EMBO Journal, 12(4), 1693–1703. https://doi.org/10.1002/J.1460-2075.1993.TB05814.X
+
+ * Baldwin, J. M., Schertler, G. F. X., & Unger, V. M. (1997). An alpha-carbon template for the transmembrane helices in the rhodopsin family of G-protein-coupled receptors. Journal of Molecular Biology, 272(1), 144–164. https://doi.org/10.1006/jmbi.1997.1240
+
+* CGN naming scheme
+
+ * Flock, T., Ravarani, C. N. J., Sun, D., Venkatakrishnan, A. J., Kayikci, M., Tate, C. G., … Babu, M. M. (2015). Universal allosteric mechanism for Gα activation by GPCRs. Nature 2015 524:7564, 524(7564), 173–179. https://doi.org/10.1038/nature14663
+
+* PDB
+
+ * Berman, H. M., Westbrook, J., Feng, Z., Gilliland, G., Bhat, T. N., Weissig, H., … Bourne, P. E. (2000, January 1). The Protein Data Bank. Nucleic Acids Research. Oxford Academic. https://doi.org/10.1093/nar/28.1.235
+
+
 """
 from .nomenclature import *
