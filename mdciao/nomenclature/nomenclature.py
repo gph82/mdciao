@@ -41,6 +41,7 @@ import requests as _requests
 from natsort import natsorted as _natsorted
 
 def table2GPCR_by_AAcode(tablefile,
+                         scheme="BW",
                          keep_AA_code=True,
                          return_fragments=False,
                          ):
@@ -51,6 +52,16 @@ def table2GPCR_by_AAcode(tablefile,
     ----------
     tablefile : xlsx file or pandas dataframe
         GPCR generic residue numbering in excel format
+    scheme : str, default is "BW"
+        The numbering scheme to choose. The available
+        schemes depend on what was in the orginial
+        :obj:`tablefile`. The options may include
+        * "generic_display_number" (the one chosen by the GPCRdb)
+        * "GPCRdb(A)", "GPCRdb(B)", ...
+        * "BW"
+        * "Wootten"
+        * "Pin"
+        * "Wang"
     keep_AA_code : boolean, default is True
         If True then output dictionary will have key of the form "Q26" else "26".
     return_fragments : boolean, default is True
@@ -58,7 +69,6 @@ def table2GPCR_by_AAcode(tablefile,
 
     Returns
     -------
-
     AAcode2GPCR : dictionary
         Dictionary with residues as key and their corresponding GPCR notation.
 
@@ -74,7 +84,8 @@ def table2GPCR_by_AAcode(tablefile,
     # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
-    AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
+    assert scheme in df.keys(), ValueError("'%s' isn't an availabe scheme.\nAvailable schemes are %s"%(scheme, [key for key in df.keys() if key in _GPCR_available_schemes]))
+    AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
     for key, AArS in df[["protein_segment", "AAresSeq"]].values:
