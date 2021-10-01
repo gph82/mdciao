@@ -419,9 +419,9 @@ def _GPCR_web_lookup(url, verbose=True,
         return_fields += [key for key in DFout.keys() if key not in return_fields+pop_fields]
         DFout = DFout[return_fields]
         print("Please cite the following reference to the GPCRdb:")
-        lit = literature()
+        lit = Literature()
         print(lit._format(lit.site_GPCRdb))
-        print("For more information, use the mdciao.nomenclature.literature module")
+        print("For more information, use the mdciao.nomenclature.Literature class")
 
     return DFout
 
@@ -1796,7 +1796,7 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
                       in consensus_info]
     return consensus_maps, consensus_frags
 
-class literature():
+class Literature():
     r"""Quick access to the some of the references used by :obj:`nomenclature`"""
 
     #TODO this could be fine tuned but ATM its better to have all top-level attrs
