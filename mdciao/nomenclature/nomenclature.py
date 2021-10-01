@@ -1865,6 +1865,7 @@ class Literature():
     def __init__(self):
         self._keymap = {
             "site_GPCRdb": "Kooistra2021",
+            "site_PDB" : "Berman2000",
             "scheme_GPCR_struct1": "Isberg2015",
             "scheme_GPCR_struct2": "Isberg2016",
             "scheme_GPCR_A": "Ballesteros1995",
@@ -1876,6 +1877,7 @@ class Literature():
             "scheme_GPCR_A_BS_2": "Baldwin1997",
             "scheme_GPCR_A_BS_3": "Schwartz1994",
             "scheme_GPCR_A_BS_4": "Schwartz1995",
+            "scheme_CGN" : "Flock2015"
         }
 
         arts = _parse_bib()
