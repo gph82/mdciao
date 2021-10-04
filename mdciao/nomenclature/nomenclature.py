@@ -367,7 +367,7 @@ def GPCR_finder(GPCR_descriptor,
     local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
                                                         engine="openpyxl",
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
-                                                        #converters={"BW": str}
+                                                        converters={key: str for key in _GPCR_available_schemes},
                                                         ).replace({_np.nan: None})
     web_looukup_lambda = lambda url : _GPCR_web_lookup(url, verbose=verbose)
     return _finder_writer(fullpath, local_lookup_lambda,
