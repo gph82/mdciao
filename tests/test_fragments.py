@@ -623,7 +623,7 @@ class Test_consensus_mix_fragment_info(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.GPCR = GPCRLabeler_ardb2_human()
+        cls.GPCR = GPCRLabeler_ardb2_human(GPCR_scheme="BW")
         cls.CGN = CGNLabeler_3SN6()
         cls.geom = md.load(test_filenames.actor_pdb)
         cls.consensus_frags = _consensus_maps2consensus_frags(cls.geom.top, [cls.GPCR, cls.CGN])[1]
