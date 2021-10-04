@@ -1503,7 +1503,7 @@ def _map2defs(cons_list, splitchar="."):
     for ii, key in enumerate(cons_list):
         if str(key).lower()!= "none":
             assert splitchar in _mdcu.lists.force_iterable(key), "Consensus keys have to have a '%s'-character" \
-                                     " in them, but '%s' hasn't"%(splitchar, str(key))
+                                     " in them, but '%s' (type %s) hasn't"%(splitchar, str(key), type(key))
             if key[0].isnumeric(): # it means it is GPCR
                 new_key =key.split(splitchar)[0]
             elif key[0].isalpha(): # it means it CGN
