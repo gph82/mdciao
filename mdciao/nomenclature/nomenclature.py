@@ -89,7 +89,7 @@ def table2GPCR_by_AAcode(tablefile,
     # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
-    assert scheme in df.keys(), ValueError("'%s' isn't an availabe scheme.\nAvailable schemes are %s"%(scheme, [key for key in df.keys() if key in _GPCR_available_schemes]))
+    assert scheme in df.keys(), ValueError("'%s' isn't an availabe scheme.\nAvailable schemes are %s"%(scheme, [key for key in df.keys() if key in _GPCR_available_scheme+["display_generic_number"]]))
     AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
@@ -1142,7 +1142,8 @@ class LabelerGPCR(LabelerConsensus):
     """
     def __init__(self, uniprot_name,
                  ref_PDB=None,
-                 GPCR_scheme="BW",
+#                 GPCR_scheme="BW",
+                 GPCR_scheme="display_generic_number",
                  local_path=".",
                  format="%s.xlsx",
                  verbose=True,
@@ -1282,7 +1283,7 @@ def alignment_df2_conslist(alignment_as_df,
     return out_list.tolist()
 
 def _fill_consensus_gaps(consensus_list, top, verbose=False):
-    r""" Try to fill CGN consensus nomenclature gaps based on adjacent labels
+    r""" Try to fill consensus-nomenclature gaps based on adjacent labels
 
     The idea is to fill gaps of the sort:
      * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
@@ -1298,13 +1299,18 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
     the consensus labels, i.e. 28-26=1 which is the number of "None" the
     input list had
 
+    Note
+    ----
+    Currently, only Ballesteros-Weinstein (Class A GPCR-nomenclature scheme)
+    is supported by this method.
+
     Parameters
     ----------
     consensus_list: list
         List of length top.n_residues with the original consensus labels
-        Supossedly, it contains some "None" entries inside sub-domains
+        In principle, it could contain some "None" entries inside sub-domains
     top :
-        :py:class:`~mdtraj.Topology` object
+        :obj:`~mdtraj.Topology` object
     verbose : boolean, default is False
 
     Returns
@@ -1315,10 +1321,13 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
 
     defs = _map2defs(consensus_list)
     #todo decrease verbosity
+    # Iterate over fragments
     for key, val in defs.items():
 
         # Identify problem cases
         if len(val)!=val[-1]-val[0]+1:
+            if "x" in consensus_list[val[0]]:
+                raise ValueError("Can't fill gaps in non 'BW' GPCR-nomenclature, like the provided '%s'"%consensus_list[val[0]])
             if verbose:
                 print(key)
 

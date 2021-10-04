@@ -467,7 +467,18 @@ class TestLabelerGPCR_local(unittest.TestCase):
                                                        ref_PDB="3SN6",
                                                        try_web_lookup=False,
                                                        local_path=self.tmpdir,
-                                                       )
+                                                         )
+        # Check the excel and construct this
+        self.conlab_frag_dicts = {"BW":
+                                      {'TM1': ['1.25', '1.26'],
+                                       'ICL1': ['12.48', '12.49'],
+                                       'TM2': ['2.37', '2.38']},
+                                  "display_generic_number":
+                                      {'TM1': ['1.25x25', '1.26x26'],
+                                       'ICL1': ['12.48x48', '12.49x49'],
+                                       'TM2': ['2.37x37', '2.38x38']}
+                                  }
+
 
     def tearDown(self):
         # Remove the directory after the test
@@ -493,9 +504,14 @@ class TestLabelerGPCR_local(unittest.TestCase):
                                  nomenclature.nomenclature._GPCR_mandatory_fields+nomenclature.nomenclature._GPCR_available_schemes)
 
     def test_correct_residue_dicts(self):
-        _np.testing.assert_equal(self.GPCR_local_w_pdb.conlab2AA["1.25"],"Q26")
-        _np.testing.assert_equal(self.GPCR_local_w_pdb.AA2conlab["Q26"],"1.25")
-
+        if self.GPCR_local_w_pdb._nomenclature_key=="BW":
+            _np.testing.assert_equal(self.GPCR_local_w_pdb.conlab2AA["1.25"],"Q26")
+            _np.testing.assert_equal(self.GPCR_local_w_pdb.AA2conlab["Q26"],"1.25")
+        elif self.GPCR_local_w_pdb._nomenclature_key=="display_generic_number":
+            _np.testing.assert_equal(self.GPCR_local_w_pdb.conlab2AA["1.25x25"],"Q26")
+            _np.testing.assert_equal(self.GPCR_local_w_pdb.AA2conlab["Q26"],"1.25x25")
+        else:
+            raise ValueError("no tests written for %s yet"%(self.GPCR_local_w_pdb._nomenclature_key))
     def test_correct_fragments_dict(self):
         # Test "fragments" dictionary SMH
         self.assertIsInstance(self.GPCR_local_w_pdb.fragments,dict)
@@ -510,7 +526,8 @@ class TestLabelerGPCR_local(unittest.TestCase):
         assert all([len(ii) > 0 for ii in self.GPCR_local_w_pdb.fragments_as_conlabs.values()])
         self.assertSequenceEqual(list(self.GPCR_local_w_pdb.fragments_as_conlabs.keys()),
                                  ["TM1", "ICL1", "TM2"])
-        self.assertEqual(self.GPCR_local_w_pdb.fragments_as_conlabs["TM1"][0], "1.25")
+        self.assertDictEqual(self.GPCR_local_w_pdb.fragments_as_conlabs,
+                             self.conlab_frag_dicts[self.GPCR_local_w_pdb._nomenclature_key])
 
     def test_correct_fragment_names(self):
         self.assertSequenceEqual(self.GPCR_local_w_pdb.fragment_names,
@@ -824,7 +841,7 @@ class Test_consensus_maps2consensus_frag(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.GPCR = nomenclature.LabelerGPCR(examples.filenames.adrb2_human_xlsx)
+        cls.GPCR = nomenclature.LabelerGPCR(examples.filenames.adrb2_human_xlsx,GPCR_scheme="BW")
         cls.CGN = nomenclature.LabelerCGN(examples.filenames.CGN_3SN6)
         cls.geom = md.load(examples.filenames.actor_pdb)
         cls.maps = [lab.top2labels(cls.geom.top) for lab in [cls.CGN, cls.GPCR]]
