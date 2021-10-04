@@ -51,7 +51,7 @@ def table2GPCR_by_AAcode(tablefile,
                          return_fragments=False,
                          ):
     r"""
-    Reads an excel table and returns a dictionary AAcodes so that e.g. AAcode2GPCR["R131"] -> '3.50'
+    Dictionary AAcodes so that e.g. AAcode2GPCR["R131"] -> '3.50' from a Excel file or an :obj:`pandas.DataFrame`
 
     Parameters
     ----------
