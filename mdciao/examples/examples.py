@@ -484,13 +484,13 @@ def _down_url_safely(url, chunk_size = 128, verbose=False):
 
     return filename_nonx
 
-def GPCRLabeler_ardb2_human():
+def GPCRLabeler_ardb2_human(**kwargs):
     r"""Build an :obj:`~mdciao.nomenclature.LabelerGPCR` with the adrb2_human.xlsx file shipped with mdciao"""
-    return _LabelerGPCR(filenames.adrb2_human_xlsx)
+    return _LabelerGPCR(filenames.adrb2_human_xlsx,**kwargs)
 
-def CGNLabeler_3SN6():
+def CGNLabeler_3SN6(**kwargs):
     r"""Build an :obj:`~mdciao.nomenclature.LabelerCGN` with the CGN_3SN6.txt and 3SN6.pdb files shipped with mdciao"""
-    return _LabelerCGN(filenames.CGN_3SN6)
+    return _LabelerCGN(filenames.CGN_3SN6,**kwargs)
 
 
 def Interface_B2AR_Gas(**kwargs):
