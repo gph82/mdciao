@@ -1135,6 +1135,7 @@ class LabelerGPCR(LabelerConsensus):
     """
     def __init__(self, uniprot_name,
                  ref_PDB=None,
+                 GPCR_scheme="BW",
                  local_path=".",
                  format="%s.xlsx",
                  verbose=True,
@@ -1153,15 +1154,49 @@ class LabelerGPCR(LabelerConsensus):
             * a uniprot descriptor, e.g. `adrb2_human`
             * a full local filename
             * a part of a local filename
-        ref_PDB
-        local_path
-        format
-        verbose
-        try_web_lookup
-        write_to_disk
+        GPCR_scheme : str, default is 'BW'
+            The GPCR nomenclature scheme to use. Not
+            all schemes will be available for all
+            choices of :obj:`uniprot_name`. You can
+            choose from: 'BW', 'Wootten', 'Pin',
+            'Wang', 'Fungal', 'GPCRdb(A)', 'GPCRdb(B)',
+            'GPCRdb(C)', 'GPCRdb(F)', 'GPCRdb(D)',
+            'Oliveira', 'BS', but not all are guaranteed
+            to work
+        ref_PDB : str, default is None
+            If passed, this structure will be downloaded
+            and attached as an :obj:`~mdtraj.Trajectory`
+            object to this to this :obj:`LabelerGPCR` object
+            as its :obj:`LabelerGPCR.geom` attribute
+        local_path : str, default is "."
+            Since the :obj:`uniprot_name` is turned into
+            a filename in case it's a descriptor,
+            this is the local path where to (potentially) look for files.
+            In case :obj:`uniprot_name` is just a filename,
+            we can turn it into a full path to
+            a local file using this parameter, which
+            is passed to :obj:`GPCR_finder`
+            and :obj:`LabelerConsensus`. Note that this
+            optional parameter is here for compatibility
+            reasons with other methods and might disappear
+            in the future.
+        format : str, default is "%s.xlsx"
+            How to construct a filename out of
+            :obj:`uniprot_name`
+        verbose : bool, default is True
+            Be verbose. Gets passed to :obj:`GPCR_finder`
+            :obj:`LabelerConsensus`
+        try_web_lookup : bool, default is True
+            Try a web lookup on the GPCRdb of the :obj:`uniprot_name`.
+            If :obj:`uniprot_name` is e.g. "adrb2_human.xlsx",
+            including the extension "xslx", then the lookup will
+            fail. This what the :obj:`format` parameter is for
+        write_to_disk : bool, default is False
+            Save an excel file with the nomenclature
+            information
         """
 
-        self._nomenclature_key = "BW"
+        self._nomenclature_key = GPCR_scheme
         # TODO now that the finder call is the same we could
         # avoid cde repetition here
         self._dataframe, self._tablefile = GPCR_finder(uniprot_name,
@@ -1173,7 +1208,7 @@ class LabelerGPCR(LabelerConsensus):
                                                        )
         # The title of the column with this field varies between CGN and GPCR
         self._AAresSeq_key = "AAresSeq"
-        self._AA2conlab, self._fragments = table2GPCR_by_AAcode(self.dataframe, return_fragments=True)
+        self._AA2conlab, self._fragments = table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key, return_fragments=True)
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
