@@ -1779,7 +1779,7 @@ def compatible_consensus_fragments(top,
 
 def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
     r"""
-    Consensus fragments (like TM6 or G.H5.) and maps from different input types
+    Consensus fragments (like TM6 or G.H5) and maps from different input types
 
     Note
     ----
