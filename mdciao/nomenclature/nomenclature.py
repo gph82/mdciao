@@ -420,7 +420,7 @@ def _GPCR_web_lookup(url, verbose=True,
         DFout = DFout[return_fields]
         print("Please cite the following reference to the GPCRdb:")
         lit = Literature()
-        print(lit._format(lit.site_GPCRdb))
+        print(_format_cite(lit.site_GPCRdb))
         print("For more information, use the mdciao.nomenclature.Literature class")
 
     return DFout
@@ -1871,11 +1871,13 @@ class Literature():
             setattr(self, key, _art2cite(arts[val]))
             setattr(self, key+'_json', arts[val])
 
-    def _format(self,cite):
-        lines = cite.splitlines()
-        lines = _twrap(lines[0],100)+lines[1:]
-        lines = "\n".join([' * '+lines[0]]+['   '+line for line in lines[1:]])
-        return lines
+def _format_cite(cite,bullet="*", indent=1):
+    star = " "*indent+bullet+" "
+    othr = " "*indent+" "+" "
+    lines = cite.splitlines()
+    lines = _twrap(lines[0],100)+lines[1:]
+    lines = "\n".join([star+lines[0]]+[othr+line for line in lines[1:]])
+    return lines
 
 def _art2cite(art):
     first = True
