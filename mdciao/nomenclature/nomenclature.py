@@ -1546,14 +1546,16 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
 
 def _map2defs(cons_list, splitchar="."):
     r"""
-    Regroup a list of consensus labels into their subdomains. The indices of the list
-    are interpreted as residue indices in the topology used to generate :obj:`cons_list`
+    Subdomain definitions form a list of consensus labels.
+
+    The indices of the list are interpreted as residue indices
+    in the topology used to generate :obj:`cons_list`
     in the first place, e.g. by using :obj:`nomenclature_utils._top2consensus_map`
 
     Note:
     -----
-     The method will guess automagically whether this is a CGN or GPCR label by
-     checking the type of the first character (numeric is GPCR, 3.50, alpha is CGN, G.H5.1)
+    The method will guess automagically whether this is a CGN or GPCR label by
+    checking the type of the first character (numeric is GPCR, 3.50, alpha is CGN, G.H5.1)
 
     Parameters
     ----------
@@ -1566,8 +1568,8 @@ def _map2defs(cons_list, splitchar="."):
         consensus labels, e.g. "3" from "3.50" or "G.H5" from "G.H5.1"
     Returns
     -------
-    map : dictionary
-        dictionary with subdomains as keys and lists of consensus labels as values
+    defs : dictionary
+        dictionary keyed with subdomain-names and valued with arrays of residue indices
     """
     defs = _defdict(list)
     for ii, key in enumerate(cons_list):
