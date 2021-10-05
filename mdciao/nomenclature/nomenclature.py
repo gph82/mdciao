@@ -663,6 +663,7 @@ class LabelerConsensus(object):
         return out_dict
 
     def top2labels(self, top,
+                   allow_nonmatch=True,
                    autofill_consensus=True,
                    min_hit_rate=.5,
                    **aligntop_kwargs):
@@ -683,10 +684,15 @@ class LabelerConsensus(object):
            but the sequence alignment is not matched (e.g.,
            bc of a point mutation)
 
-        A heuristic to "autofill" the second case can be
-        turned on using :obj:`autofill_consensus`,
-        see :obj:`_fill_consensus_gaps`
-        for more info
+        To remedy the second case a-posteriori two things
+        can be done:
+         * recover the original label even though residues
+           did not match, using :obj:`allow_nonmatch`.
+           See :obj:`alignment_df2_conslist` for more info
+         * reconstruct what the label could be using a heuristic
+           to "autofill" the consensus labels, using
+           :obj:`autofill_consensus`.
+           See :obj:`_fill_consensus_gaps` for more info
 
         Note
         ----
@@ -697,6 +703,9 @@ class LabelerConsensus(object):
         ----------
         top :
             :obj:`~mdtraj.Topology` object
+        allow_nonmatch : bool, default is True
+            Use consensus labels for non-matching positions
+            in case the non-matches have equal lenghts
         autofill_consensus : boolean default is False
             Even if there is a consensus mismatch with the sequence of the input
             :obj:`AA2conlab_dict`, try to relabel automagically, s.t.
@@ -717,7 +726,7 @@ class LabelerConsensus(object):
         map : list of len = top.n_residues with the consensus labels
         """
         self.aligntop(top, min_hit_rate=min_hit_rate, **aligntop_kwargs)
-        out_list = alignment_df2_conslist(self.most_recent_alignment)
+        out_list = alignment_df2_conslist(self.most_recent_alignment, allow_nonmatch=allow_nonmatch)
         out_list = out_list + [None for __ in range(top.n_residues - len(out_list))]
         # TODO we could do this padding in the alignment_df2_conslist method itself
         # with an n_residues optarg, IDK about best design choice
