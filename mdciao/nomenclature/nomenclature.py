@@ -1938,3 +1938,34 @@ def _art2dict(lines):
 def _dict2namedtupple(idict,key):
     nt = _namedtuple("article",list(idict.keys())+["key"])
     return nt(*idict.values(),key)
+
+
+def references():
+    r"""
+    Print out references relevant to this module
+    """
+
+    lit: Literature = Literature()
+    print("mdciao.nomenclature functions thanks to these online databases. "
+          "Please cite them if you use this module:")
+    for attr in ["site_GPCRdb", "site_PDB", "scheme_CGN"]:
+        print(_format_cite(getattr(lit, attr)))
+    print()
+
+    print("Additionally, depending on the chosen nomenclature type, you should cite:")
+    print(" * Structure based GPCR notation")
+    for attr in ["scheme_GPCR_struct1", "scheme_GPCR_struct1"]:
+        print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
+    print(" * Sequence based GCPR schemes schemes:")
+    for attr in ["scheme_GPCR_B",
+                 "scheme_GPCR_C",
+                 "scheme_GPCR_F",
+                 "scheme_GPCR_A_O",
+                 "scheme_GPCR_A_BS_1",
+                 "scheme_GPCR_A_BS_2",
+                 "scheme_GPCR_A_BS_3",
+                 "scheme_GPCR_A_BS_4"]:
+        print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
+    print()
+    print("You can find all these references distributed as BibTex file distributed with mdciao here")
+    print(" * %s"%_filenames.nomenclature_bib)
