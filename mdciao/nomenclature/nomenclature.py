@@ -1315,24 +1315,23 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
     defs = _map2defs(consensus_list)
     #todo decrease verbosity
     # Iterate over fragments
-    for key, val in defs.items():
-
+    for frag_key, conlabs in defs.items():
         # Identify problem cases
-        if len(val)!=val[-1]-val[0]+1:
-            if "x" in consensus_list[val[0]]:
-                raise ValueError("Can't fill gaps in non 'BW' GPCR-nomenclature, like the provided '%s'"%consensus_list[val[0]])
+        if len(conlabs)!=conlabs[-1]-conlabs[0]+1:
             if verbose:
-                print(key)
+                print(frag_key)
+            if "x" in consensus_list[conlabs[0]]:
+                raise ValueError("Can't fill gaps in non 'BW' GPCR-nomenclature, like the provided '%s'"%consensus_list[conlabs[0]])
 
             # Initialize residue_idxs_wo_consensus_labels control variables
-            offset = int(consensus_list[val[0]].split(".")[-1])
+            offset = int(consensus_list[conlabs[0]].split(".")[-1])
             consensus_kept=True
             suggestions = []
             residue_idxs_wo_consensus_labels=[]
 
             # Check whether we can predict the consensus labels correctly
-            for ii in _np.arange(val[0],val[-1]+1):
-                suggestions.append('%s.%u'%(key,offset))
+            for ii in _np.arange(conlabs[0],conlabs[-1]+1):
+                suggestions.append('%s.%u'%(frag_key,offset))
                 if consensus_list[ii] is None:
                     residue_idxs_wo_consensus_labels.append(ii)
                 else: # meaning, we have a consensus label, check it against suggestion
@@ -1345,7 +1344,7 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
             if consensus_kept:
                 if verbose:
                     print("The consensus was kept, I am relabelling these:")
-                for idx, res_idx in enumerate(_np.arange(val[0],val[-1]+1)):
+                for idx, res_idx in enumerate(_np.arange(conlabs[0],conlabs[-1]+1)):
                     if res_idx in residue_idxs_wo_consensus_labels:
                         consensus_list[res_idx] = suggestions[idx]
                         if verbose:
