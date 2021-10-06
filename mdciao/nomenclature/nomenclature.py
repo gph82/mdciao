@@ -2026,7 +2026,7 @@ def references():
     print(" * Structure based GPCR notation")
     for attr in ["scheme_GPCR_struct1", "scheme_GPCR_struct1"]:
         print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
-    print(" * Sequence based GCPR schemes schemes:")
+    print(" * Sequence based GPCR schemes schemes:")
     for attr in ["scheme_GPCR_B",
                  "scheme_GPCR_C",
                  "scheme_GPCR_F",
