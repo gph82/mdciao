@@ -558,23 +558,23 @@ class Test_choose_between_consensus_dicts(unittest.TestCase):
 
     def test_works(self):
         str = nomenclature.choose_between_consensus_dicts(1,
-                                             [{1:"BW1"},
-                                                                  {1:None}])
-        assert str=="BW1"
+                                                          [{1: "BW1"},
+                                                           {1: None}])
+        assert str == "BW1"
 
     def test_not_found(self):
         str = nomenclature.choose_between_consensus_dicts(1,
-                                             [{1: None},
-                                                                  {1: None}],
-                                             no_key="NAtest")
+                                                          [{1: None},
+                                                           {1: None}],
+                                                          no_key="NAtest")
         assert str == "NAtest"
 
     def test_raises(self):
         with pytest.raises(AssertionError):
             nomenclature.choose_between_consensus_dicts(1,
-                                           [{1: "BW1"},
-                                                                {1: "CGN1"}],
-                                           )
+                                                        [{1: "BW1"},
+                                                         {1: "CGN1"}],
+                                                        )
 
 
 class Test_map2defs(unittest.TestCase):
@@ -841,11 +841,16 @@ class Test_consensus_maps2consensus_frag(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.GPCR = nomenclature.LabelerGPCR(examples.filenames.adrb2_human_xlsx,GPCR_scheme="BW")
         cls.CGN = nomenclature.LabelerCGN(examples.filenames.CGN_3SN6)
         cls.geom = md.load(examples.filenames.actor_pdb)
-        cls.maps = [lab.top2labels(cls.geom.top) for lab in [cls.CGN, cls.GPCR]]
-        cls.frags = [lab.top2frags(cls.geom.top) for lab in [cls.CGN, cls.GPCR]]
+        cls.GPCR, cls.maps, cls.frags = {}, {}, {}
+        for GPCR_scheme in ["BW", "GPCRdb(A)", "GPCRdb(B)"]:
+            cls.GPCR[GPCR_scheme] = nomenclature.LabelerGPCR(examples.filenames.adrb2_human_xlsx,
+                                                GPCR_scheme=GPCR_scheme
+                                                            )
+
+            cls.maps[GPCR_scheme] = [lab.top2labels(cls.geom.top) for lab in [cls.CGN, cls.GPCR[GPCR_scheme]]]
+            cls.frags[GPCR_scheme] = [lab.top2frags(cls.geom.top) for lab in [cls.CGN, cls.GPCR[GPCR_scheme]]] # This method doesn't rely on  _consensus_maps2consensus_frags
 
     def test_works_on_empty(self):
         maps, frags = _consensus_maps2consensus_frags(self.geom.top, [], verbose=True)
@@ -853,18 +858,21 @@ class Test_consensus_maps2consensus_frag(unittest.TestCase):
         assert frags == {}
 
     def test_works_on_maps(self):
-        maps, frags = _consensus_maps2consensus_frags(self.geom.top, self.maps, verbose=True)
-        self.assertListEqual(maps, self.maps)
-        assert frags == {}
+        for imaps in self.maps.values():
+            maps, frags = _consensus_maps2consensus_frags(self.geom.top, imaps, verbose=True)
+            self.assertListEqual(maps, imaps)
+            assert frags == {}
 
     def test_works_on_Labelers(self):
-        maps, frags = _consensus_maps2consensus_frags(self.geom.top, [self.CGN, self.GPCR], verbose=True)
-        self.assertListEqual(maps, self.maps)
-        for ifrags in self.frags:
-            for key, val in ifrags.items():
-                self.assertListEqual(frags[key],val)
+        for GPCR_scheme, GPCR in self.GPCR.items():
+            maps, frags = _consensus_maps2consensus_frags(self.geom.top, [self.CGN, GPCR], verbose=True)
+            self.assertListEqual(maps, self.maps[GPCR_scheme])
+            for ifrags in self.frags[GPCR_scheme]:
+                for key, val in ifrags.items():
+                    self.assertListEqual(frags[key],val)
 
     def test_works_on_mix(self):
-        maps, frags = _consensus_maps2consensus_frags(self.geom.top, [self.maps[0], self.GPCR], verbose=True)
-        self.assertListEqual(maps, self.maps)
-        self.assertDictEqual(frags, self.frags[1])
+        for GPCR_scheme, GPCR in self.GPCR.items():
+            maps, frags = _consensus_maps2consensus_frags(self.geom.top, [self.maps[GPCR_scheme][0], GPCR], verbose=True)
+            self.assertListEqual(maps, self.maps[GPCR_scheme])
+            self.assertDictEqual(frags, self.frags[GPCR_scheme][1])
