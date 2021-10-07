@@ -216,8 +216,9 @@ def CGN_finder(identifier,
     url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
     web_lookup_lambda = local_lookup_lambda
 
-    print("Using CGN-nomenclature, please cite the following 3rd party publications:\n"
-          " * https://doi.org/10.1038/nature14663 (Babu et al 2015)")
+    print("Using CGN-nomenclature, please cite")
+    lit = Literature()
+    print(_format_cite(lit.scheme_CGN))
     return _finder_writer(file2read, local_lookup_lambda,
                           url, web_lookup_lambda,
                           try_web_lookup=try_web_lookup,
