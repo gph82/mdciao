@@ -3578,7 +3578,7 @@ class ContactGroup(object):
 
     def plot_neighborhood_freqs(self, ctc_cutoff_Ang,
                                 switch_off_Ang=None,
-                                color=["tab:blue"],
+                                color="tab:blue",
                                 xmax=None,
                                 ax=None,
                                 shorten_AAs=False,
@@ -3595,17 +3595,31 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang : float
+        switch_off_Ang : float, default is None
+        color : color-like (str or RGB triple) or list thereof, default is "tab:blue"
+            The color for the bars. If string or RGB array, all
+            bars will have this color. If list, it's assumed
+            in the order of the self.res_idx_pairs. It will
+            get re-sorted according to :obj:`display_sort`,
+            s.t. residues always have the same color not
+            matter the order
         xmax : int, default is None
             Default behaviour is to go to n_ctcs, use this
             parameter to homogenize different calls to this
             function over different contact groups, s.t.
             each subplot has equal xlimits
         ax : :obj:`~matplotlib.axes.Axes`
-        shorten_AAs
-        label_fontsize_factor
+        shorten_AAs : bool, default is False,
+        label_fontsize_factor : float, default is 1
+            Fontsize for the tilted labels and
+            the legend, as fraction [0,1] of the
+            default value in rcParams["font.size"]
         sum_freqs: bool, default is True
-            Add the sum of frequencies of the represented (and only those)
-            frequencies
+            Add the sum of frequencies of the represented
+            (and only those) frequencies
+        plot_atomtypes : bool, default is False
+            Add stripes to frequency bars to include
+            the atom-types (backbone, sidechain, etc)
         display_sort : boolean, default is False
             The frequencies are by default plotted in the order
             in which the :obj:`ContactPair`-objects are stored
