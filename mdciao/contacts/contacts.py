@@ -3208,7 +3208,7 @@ class ContactGroup(object):
                            switch_off_Ang=None,
                            xlim=None,
                            ax=None,
-                           color=["tab:blue"],
+                           color="tab:blue",
                            shorten_AAs=False,
                            label_fontsize_factor=1,
                            truncate_at=None,
@@ -3230,6 +3230,13 @@ class ContactGroup(object):
         xlim : float, default is None
         ax : :obj:`~matplotlib.axes.Axes`
         shorten_AAs : bool, default is None
+        color : color-like (str or RGB triple) or list thereof, default is "tab:blue"
+            The color for the bars. If string or RGB array, all
+            bars will have this color. If list, it's assumed
+            in the order of the self.res_idx_pairs. It will
+            get re-sorted according to :obj:`display_sort`,
+            s.t. residues always have the same color not
+            matter the order
         label_fontsize_factor : float
         truncate_at : float, default is None
         display_sort : boolean, default is False
@@ -3259,7 +3266,7 @@ class ContactGroup(object):
             order = _np.argsort(freqs)[::-1]
         else:
             order = _np.arange(len(freqs))
-
+        color = [list(_color_dict_guesser(color,order).values())[oo] for oo in order]
         ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
                                                      jax=ax,
                                                      color=color,
