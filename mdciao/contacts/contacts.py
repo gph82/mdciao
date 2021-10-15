@@ -2058,7 +2058,7 @@ class ContactGroup(object):
                 self._interface_residxs = [[],[]]
                 self._interface_fragments = [[],[]]
 
-            shared = _np.unique([ictc.residues.anchor_residue_index for ictc in self._contacts])
+            shared = _pdunique([ictc.residues.anchor_residue_index for ictc in self._contacts])
             if len(shared) == 1:
                 self._shared_anchor_residue_index = shared[0] or None
 
