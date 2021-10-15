@@ -874,9 +874,11 @@ class _ContactStrings(object):
         names are used as fallback (which themselves fallback to the fragment index)
         Only if no consensus label, no fragment name and no fragment indices are there,
         will this yeild "None" as a string.
+
         Returns
         -------
-        list of two strings
+        names : list
+            Two strings
         """
 
         return [_mdcu.str_and_dict.choose_options_descencing([self._residues.consensus_labels[ii],
@@ -1888,7 +1890,6 @@ class ContactGroup(object):
     def __init__(self,
                  list_of_contact_objects,
                  interface_fragments=None,
-                 #interface_residxs=None,
                  top=None,
                  name=None,
                  neighbors_excluded=None,
@@ -2057,6 +2058,10 @@ class ContactGroup(object):
                 self._interface_residxs = [[],[]]
                 self._interface_fragments = [[],[]]
 
+            shared = _np.unique([ictc.residues.anchor_residue_index for ictc in self._contacts])
+            if len(shared) == 1:
+                self._shared_anchor_residue_index = shared[0] or None
+
             if self.shared_anchor_residue_index is not None:
                 self._is_neighborhood=True
                 if self.neighbors_excluded is None:
@@ -2071,11 +2076,18 @@ class ContactGroup(object):
     # I am opting for properties because of easiness of documenting i
 
     @property
-    def neighbors_excluded(self):
+    def neighbors_excluded(self) -> int:
+        r""" The number of neighbors that were excluded when creating this ContactGroup
+
+        Returns
+        -------
+        neighbors_excluded : int
+        """
         return self._neighbors_excluded
 
     @property
-    def max_cutoff_Ang(self):
+    def max_cutoff_Ang(self) -> float:
+        r""" Operations involving cutoffs higher than this will be forbidden and wil raise ValueError."""
         return self._max_cutoff_Ang
 
     def _check_cutoff_ok(self,ctc_cutoff_Ang):
@@ -2087,28 +2099,42 @@ class ContactGroup(object):
                              "'max_cutoff_Ang = %3.2f' Ang."%(ctc_cutoff_Ang,self.max_cutoff_Ang))
 
     @property
-    def name(self):
+    def name(self) -> str:
+        r""" The name of this ContactGroup, given when creating it
+                
+        Returns
+        -------
+        name : str
+        """
         return self._name
 
     #TODO access to conctat labels with fragnames and/or consensus?
     @property
-    def n_trajs(self):
+    def n_trajs(self) -> int:
+        r""" The number of trajectories contained in this ContactGroup
+
+        Returns
+        -------
+        n_trajs : int
+        """
         return self._n_trajs
 
     @property
-    def n_ctcs(self):
+    def n_ctcs(self) -> int:
         r"""
         The number of contact pairs (:obj:`mdciao.contacts.ContactPair` -objects) stored in this object
+
         Returns
         -------
-
+        n_ctcs : int
         """
         return self._n_ctcs
 
     @property
-    def n_frames(self):
+    def n_frames(self) -> list:
         r"""
         List of per-trajectory n_frames
+
         Returns
         -------
         n_frames : list
@@ -2116,104 +2142,303 @@ class ContactGroup(object):
         return self._n_frames
 
     @property
-    def n_frames_total(self):
+    def n_frames_total(self) -> int:
         r"""
         Total number of frames
+
         Returns
         -------
-        n_frames : int
+        n_frames_total : int
         """
         return _np.sum(self._n_frames)
 
     @property
-    def time_max(self):
-        return self._time_max
-
-    @property
-    def time_min(self):
-        return self._time_min
-
-    @property
-    def time_arrays(self):
-        return self._time_arrays
-
-    @property
-    def res_idxs_pairs(self):
-        r"""
-        List of pairs of residue indices of the contacts in this object
+    def time_max(self) -> float:
+        r""" Maximum time-value of the ContactGroup
 
         Returns
         -------
+        time_max : float
+            Its units will be whatever was given
+            to the ContactPairs used to instantiate
+            this ContactGroup. The most frequent case
+            are "ps", since that's how time arrays
+            are stored in xtc files
+        """
+        return self._time_max
 
+    @property
+    def time_min(self) -> float:
+        r""" Minimum time-value of the ContactGroup
+
+        Returns
+        -------
+        time_min : float
+            Its units will be whatever was given
+            to the ContactPairs used to instantiated
+            this ContactGroup. The most frequent case
+            are "ps", since that's how time arrays
+            are stored in xtc files
+        """
+        return self._time_min
+
+    @property
+    def time_arrays(self) -> list:
+        r"""
+        The time-arrays of each trajectory contained in this ContactGroup
+
+        Returns
+        -------
+        time_arrays : list
+            The units of these arrays will be whatever
+            was given to the ContactPairs used to instantiate
+            this ContactGroup
+        """
+        return self._time_arrays
+
+    @property
+    def res_idxs_pairs(self) -> _np.ndarray:
+        r"""
+        Pairs of residue indices of the contacts in this object
+
+        Returns
+        -------
+        res_idxs_pairs : _np.ndarray
         """
         return _np.vstack([ictc.residues.idxs_pair for ictc in self._contacts])
 
     @property
-    def residue_names_short(self):
-        return [ictc.residues.names_short for ictc in self._contacts]
+    def residue_names_short(self) -> list:
+        r""" Pairs of short residue names of the ContactPairs
 
-    @property
-    def residue_names_long(self):
-        return [ictc.residues.names for ictc in self._contacts]
-
-    @property
-    def fragment_names_best(self):
-        return [ictc.labels.fragment_labels_best(fmt="%s") for ictc in self._contacts]
-
-    @property
-    def ctc_labels(self):
-        return [ictc.labels.no_fragments for ictc in self._contacts]
-
-    @property
-    def ctc_labels_short(self):
-        r"""
-        Short contact labels without fragment info, e.g. E30-R40
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.residue_names_short
+        [['R389', 'L394'],
+         ['L394', 'K270'],
+         ['L388', 'L394'],
+         ['L394', 'L230'],
+         ['R385', 'L394']]
 
         Returns
         -------
-        labels : list
+        residue_names_short : list
+        """
+        return [ictc.residues.names_short for ictc in self._contacts]
+
+    @property
+    def residue_names_long(self) -> list:
+        r""" Pairs of long residue names of the ContactPairs
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.residue_names_short
+        [['ARG389', 'LEU394'],
+         ['LEU394', 'LYS270'],
+         ['LEU388', 'LEU394'],
+         ['LEU394', 'LEU230'],
+         ['ARG385', 'LEU394']]
+
+        Returns
+        -------
+        residue_names_long : list
+                """
+        return [ictc.residues.names for ictc in self._contacts]
+
+    @property
+    def fragment_names_best(self) -> list:
+        r""" Best possible fragment names for the residue pairs in ContactPairs
+
+        The fragment name will try to pick the consensus nomenclature.
+        If no consensus label for the residue exists, the actual fragment
+        names are used as fallback (which themselves fallback to the fragment index)
+
+        Only if no consensus label, no fragment name and no fragment indices are there,
+        will this yeild "None" as a string.
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.fragment_names_best
+        [['G.H5.21', 'G.H5.26'],
+         ['G.H5.26', '6.32'],
+         ['G.H5.20', 'G.H5.26'],
+         ['G.H5.26', '5.69'],
+         ['G.H5.17', 'G.H5.26']]
+
+        Returns:
+        --------
+        fragment_names_best : list
+        """
+
+        return [ictc.labels.fragment_labels_best(fmt="%s") for ictc in self._contacts]
+
+    @property
+    def ctc_labels(self) -> list:
+        r""" List of simple labels (no fragment info) for the residue pairs in ContactPairs
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.ctc_labels
+        ['ARG389-LEU394',
+         'LEU394-LYS270',
+         'LEU388-LEU394',
+         'LEU394-LEU230',
+         'ARG385-LEU394']
+
+        Returns:
+        --------
+        ctc_labels : list
+        """
+
+        return [ictc.labels.no_fragments for ictc in self._contacts]
+
+    @property
+    def ctc_labels_short(self) -> list:
+        r""" List of simple labels (no fragment info, short AAs) for the residue pairs in ContactPairs
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.ctc_labels_short
+        ['R389-L394',
+         'L394-K270',
+         'L388-L394',
+         'L394-L230',
+         'R385-L394']
+
+        Returns:
+        --------
+        ctc_labels_short : list
         """
         return [ictc.labels.no_fragments_short_AA
                 for ictc in self._contacts]
 
     @property
-    def ctc_labels_w_fragments_short_AA(self):
+    def ctc_labels_w_fragments_short_AA(self) -> list:
+        r""" List of labels ) for the residue pairs in ContactPairs
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.ctc_labels_short
+        ['R389@G.H5.21-L394@G.H5.26',
+         'L394@G.H5.26-K270@6.32',
+         'L388@G.H5.20-L394@G.H5.26',
+         'L394@G.H5.26-L230@5.69',
+         'R385@G.H5.17-L394@G.H5.26']
+
+
+        Returns:
+        --------
+        ctc_labels_w_fragments_short_AA : list
+        """
+
         return [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
-    def gen_ctc_labels(self, **kwargs):
-        r"""
-        Thin Wrapper around the :obj:`ContactPair.gen_label()` method this object's ContactPairs
+    def gen_ctc_labels(self, **kwargs) -> list:
+        r"""Generate a labels with different parameters
 
-        Parameters
+        Wraps around :obj:`mdciao.contacts.ContactPair.gen_label`
+
+        Kwargs
         ----------
-        **kwargs : dict,
+        AA_format : str, default is "short"
+            Alternative is "long" ("E30" vs "GLU30")
+        fragments : bool, default is False
+            Include fragment information
+            Will get the "best" information
+            available, ie consensus>fragname>fragindex
+        delete_anchor : bool, default is False
+            the anchor
 
         Returns
         -------
         labels : list
-
         """
 
         return [cp.gen_label(**kwargs) for cp in self._contacts]
+
     @property
-    def trajlabels(self):
+    def trajlabels(self) -> list:
+        r""" List of trajectory labels
+
+        If labels were not passed, then labels
+        like 'traj 0','traj 1' and so on are assigned.
+        If :obj:`~mdtraj.Trajectory` objects were passed,
+        then the "mdtraj" descriptor will be used
+        If filenames were passed, then the labels are the
+        filenames (basename, no files) without the extension
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.trajlabels
+        ['gs-b2ar.noH.stride.5']
+
+
+        Returns
+        -------
+        trajlabels : list
+        """
         return self._trajlabels
 
     # The next objects can also be None
     @property
     def top(self):
+        r""" The topology used to instantiate the ContactPairs in this ContactGroup
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.top
+        <mdtraj.Topology with 1 chains, 1044 residues, 8384 atoms, 8502 bonds at 0x7efdae47e990>
+
+        Returns:
+        --------
+        top : `:obj:~mdtraj.Trajectory` or None
+        """
         return self._top
 
     @property
     def topology(self):
+        r""" The topology used to instantiate the ContactPairs in this ContactGroup
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.top
+        <mdtraj.Topology with 1 chains, 1044 residues, 8384 atoms, 8502 bonds at 0x7efdae47e990>
+
+        Returns:
+        --------
+        topology : `:obj:~mdtraj.Trajectory` or None
+        """
+
         return self._top
 
     @property
-    def consensus_labels(self):
+    def consensus_labels(self) -> list:
+        r""" List of pairs of labels derived from GPCR, CGN or other type of consensus nomenclature.
+
+        They were parsed at initialization
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.consensus_labels
+        [['G.H5.21', 'G.H5.26'],
+         ['G.H5.26', '6.32'],
+         ['G.H5.20', 'G.H5.26'],
+         ['G.H5.26', '5.69'],
+         ['G.H5.17', 'G.H5.26']]
+
+        Returns
+        -------
+        consensus_labels : list
+        """
         return [ictc.residues.consensus_labels for ictc in self._contacts]
 
     @property
-    def consensuslabel2resname(self):
+    def consensuslabel2resname(self) -> dict:
+        r""" Dictionary mapping consensus labels to residue names:
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.consensuslabel2resname
+        {'G.H5.21': 'R389',
+         'G.H5.26': 'L394',
+         '6.32': 'K270',
+         'G.H5.20': 'L388',
+         '5.69': 'L230',
+         'G.H5.17': 'R385'}
+
+        Returns
+        -------
+        consensuslabel2resname : dict
+        """
         _cons2resname = {}
         for conslab, resname, ridx, in zip(_np.hstack(self.consensus_labels),
                                            _np.hstack(self.residue_names_short),
@@ -2227,7 +2452,22 @@ class ContactGroup(object):
         return _cons2resname
 
     @property
-    def residx2consensuslabel(self):
+    def residx2consensuslabel(self) -> dict:
+        r""" Dictionary mapping residue indices to consensus labels:
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.residx2consensuslabel
+        {348: 'G.H5.21',
+         353: 'G.H5.26',
+         972: '6.32',
+         347: 'G.H5.20',
+         957: '5.69',
+         344: 'G.H5.17'}
+
+        Returns
+        -------
+        residx2consensuslabel : dict
+        """
         _residx2conslabels = {}
         for conslab, ridx in zip(_np.hstack(self.consensus_labels),
                                  _np.hstack(self.res_idxs_pairs),
@@ -2241,17 +2481,90 @@ class ContactGroup(object):
 
     @property
     def residx2resnameshort(self):
+        r""" Dictionary mapping residue indices to short residue names:
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.residx2resnameshort
+        {348: 'R389',
+         353: 'L394',
+         972: 'K270',
+         347: 'L388',
+         957: 'L230',
+         344: 'R385'}
+
+        Returns
+        -------
+        residx2resnameshort : dict
+        """
         return self._residx2resnameshort
 
     @property
-    def residx2resnamelong(self):
+    def residx2resnamelong(self) -> dict:
+        r""" Dictionary mapping residue indices to short residue names:
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.residx2resnamelong
+        {348: 'ARG389',
+         353: 'LEU394',
+         972: 'LYS270',
+         347: 'LEU388',
+         957: 'LEU230',
+         344: 'ARG385'}
+
+        Returns
+        -------
+        residx2resnamelong : dict
+        """
         return self._residx2resnamelong
 
     @property
-    def residx2fragnamebest(self):
+    def residx2fragnamebest(self) -> dict:
+        r""" Dictionary mapping residue indices to best possible fragment names
+
+        "best" means consensus label > fragment name > fragment index
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.residx2fragnamebest
+        {348: 'G.H5.21',
+         353: 'G.H5.26',
+         972: '6.32',
+         347: 'G.H5.20',
+         957: '5.69',
+         344: 'G.H5.17'}
+
+        Returns
+        -------
+        residx2fragnamebest : dict
+        """
         return self._residx2fragnamebest
 
-    def residx2resnamefragnamebest(self,fragsep="@",shorten_AAs=True):
+    def residx2resnamefragnamebest(self, fragsep="@",shorten_AAs=True) -> dict:
+        r""" Dictionary mapping residue indices to best possible residue+fragment label
+
+        "best" means consensus label > fragment name > fragment index
+
+        Parameters
+        ----------
+        fragsep : str, default is "@"
+            The str or char to separate
+            residue labels from fragment labels,
+            "A30@frag1"
+        shorten_AAs : bool, default is True
+            Whether to use short residue names
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.residx2resnamefragnamebest()
+        {344: 'R385@G.H5.17',
+         347: 'L388@G.H5.20',
+         348: 'R389@G.H5.21',
+         353: 'L394@G.H5.26',
+         957: 'L230@5.69',
+         972: 'K270@6.32'}
+
+        Returns:
+        residx2resnamefragnamebest : dict
+        """
+
         idict   = {}
         for key in _np.unique(self.res_idxs_pairs):
             if shorten_AAs:
@@ -2265,52 +2578,140 @@ class ContactGroup(object):
         return idict
 
     @property
-    def is_neighborhood(self):
+    def is_neighborhood(self) -> bool:
+        r""" Whether this ContactGroup is a neighborhood or not
+
+        When instantiating this ContactGroup, it is checked
+        whether all the used :obj:`~mdciao.contacts.ContactPair`
+        have a shared :obj:anchor_residue_idx attribute, whichand
+        whether if self.neighbors_excluded is None. This means
+        this ContactGroup is a neighborhood around the residue
+        stored in the attribute self.shared_anchor_residue_index
+
+        Other neighborhood-only attributes get populated, e.g.
+            * self.anchor_res_and_fragment_str
+            * self.anchor_res_and_fragment_str_short
+            * self.partner_res_and_fragment_labels
+            * self.partner_res_and_fragment_labels_short
+            * self.partner_fragment_colors
+            * self.anchor_fragment_color
+
+        Note that all these attributes will raise an Exception
+        when called if self.is_neighborhood is False
+
+        Returns
+        -------
+        is_neighborhood : bool
+        """
         return self._is_neighborhood
 
-    #TODO make this a property at instantiation and build neighborhoods a posteriori?
     @property
-    def shared_anchor_residue_index(self):
-        r"""
-        Returns none if no anchor residue is found or if the ContactGroup is empty
+    def shared_anchor_residue_index(self) -> int:
+        r""" The index of the anchor residue, i.e. the residue at the center of this neighborhood
+
+        Only populated if self.is_neighborhood is True, else returns None
+
+        Returns
+        -------
+        idx : int
         """
-        if any([ictc.residues.anchor_residue_index is None for ictc in self._contacts]):
-            #todo dont print so much
-            #todo let it fail?
-            #print("Not all contact objects have an anchor_residue_index. Returning None")
-            return None
-        else:
-            shared = _np.unique([ictc.residues.anchor_residue_index for ictc in self._contacts])
-            if len(shared) == 1:
-                return shared[0]
+        return self._shared_anchor_residue_index
 
     @property
-    def anchor_res_and_fragment_str(self):
+    def anchor_res_and_fragment_str(self) -> str:
+        r""" Label of the anchor residue of this neighborhood, including fragment
+
+        Will fail if self.is_neighborhood is False
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.anchor_res_and_fragment_str
+        'LEU394@G.H5.26'
+
+        Returns
+        -------
+        label : str
+        """
         assert self.is_neighborhood,"There is no anchor residue, This is not a neighborhood."
         return self._contacts[0].neighborhood.anchor_res_and_fragment_str.rstrip("@")
 
     @property
-    def anchor_res_and_fragment_str_short(self):
+    def anchor_res_and_fragment_str_short(self) -> str:
+        r""" Label of the anchor residue (short) of this neighborhood, including fragment
+
+        Will fail if self.is_neighborhood is False
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.anchor_res_and_fragment_str_short
+        'L394@G.H5.26'
+
+        Returns
+        -------
+        label : str
+        """
         assert self.is_neighborhood
         return self._contacts[0].neighborhood.anchor_res_and_fragment_str_short.rstrip("@")
 
     @property
-    def anchor_res_and_fragment_str_short(self):
-        assert self.is_neighborhood
-        return self._contacts[0].neighborhood.anchor_res_and_fragment_str_short.rstrip("@")
+    def partner_res_and_fragment_labels(self) -> list:
+        r""" List of labels the partner (not anchor) residues of this neighborhood, including fragment
 
-    @property
-    def partner_res_and_fragment_labels(self):
+        Will fail if self.is_neighborhood is False
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.partner_res_and_fragment_labels
+        ['ARG389@G.H5.21',
+         'LYS270@6.32',
+         'LEU388@G.H5.20',
+         'LEU230@5.69',
+         'ARG385@G.H5.17']
+
+        Returns
+        -------
+        labels : list
+        """
         assert self.is_neighborhood
         return [ictc.neighborhood.partner_res_and_fragment_str.rstrip("@") for ictc in self._contacts]
 
     @property
-    def partner_res_and_fragment_labels_short(self):
+    def partner_res_and_fragment_labels_short(self) -> list:
+        r""" List of labels (short) the partner (not anchor) residues of this neighborhood, including fragment
+
+        Will fail if self.is_neighborhood is False
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.partner_res_and_fragment_labels_short
+       ['R389@G.H5.21',
+        'K270@6.32',
+        'L388@G.H5.20',
+        'L230@5.69',
+        'R385@G.H5.17']
+
+        Returns
+        -------
+        labels : list
+        """
         assert self.is_neighborhood
         return [ictc.neighborhood.partner_res_and_fragment_str_short.rstrip("@") for ictc in self._contacts]
 
     @property
-    def anchor_fragment_color(self):
+    def anchor_fragment_color(self) -> str:
+        r""" The color associated with the fragment of the anchor residue
+
+        Two fragment colors were given to the individual ContactPairs that
+        were used to instantiate this ContactGroup. These colors might
+        have been passed by the user themselves or given by default
+        e.g. by mdciao.cli._parse_coloring_options. Check the defaults there
+
+        Will fail if self.is_neighborhood is False
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.anchor_fragment_color
+       'tab:blue'
+
+        Returns
+        -------
+        color : str
+        """
         assert self.is_neighborhood
         _col = self._contacts[0].fragments.colors[self._contacts[0].residues.anchor_index]
         cond1 = not any([ictc.fragments.colors[ictc.residues.anchor_index] is None for ictc in self._contacts])
@@ -2323,6 +2724,39 @@ class ContactGroup(object):
 
     @property
     def partner_fragment_colors(self):
+        r""" The colors associated with the fragments of the anchor partner residues
+
+        The fragment colors were given as pairs of values to
+        the individual ContactPairs that were used to
+        instantiate this ContactGroup. These colors might
+        have been passed by the user themselves or given by default
+        e.g. by mdciao.cli._parse_coloring_options. Check the defaults there.
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.partner_fragment_colors
+        ['tab:blue', 'tab:blue', 'tab:blue', 'tab:blue', 'tab:blue']
+
+        or
+
+        >>> CG = mdciao.examples.ContactGroupL394(fragment_colors=["red","blue","yellow","orange","black"])
+        >>> CG.partner_fragment_colors
+        ['red', 'orange', 'red', 'orange', 'red']
+
+        Note
+        ----
+        This colors are not automatically used by self.plot_neighborhood_freqs
+        or self.plot_freqs_as_bars unless passed as ``color=self.partner_fragment_colors``
+
+
+
+        Will fail if self.is_neighborhood is False
+
+
+
+        Returns
+        -------
+        color : str
+        """
         assert self.is_neighborhood
         _col = self._contacts[0].fragments.colors[self._contacts[0].residues.anchor_index]
         partner_fragment_colors = [ictc.fragments.colors[ictc.residues.partner_index] for ictc in self._contacts]
@@ -3127,16 +3561,46 @@ class ContactGroup(object):
         return _delta_freq_pairs(    self.frequency_per_contact(ctc_cutoff_Ang),   self.res_idxs_pairs,
                                  otherCG.frequency_per_contact(ctc_cutoff_Ang), otherCG.res_idxs_pairs)
 
-    def relative_frequency_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang, switch_off_Ang=None, **kwargs):
+    def relative_frequency_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang, switch_off_Ang=None, **kwargs) -> list:
         r"""
+        Relative frequencies interaction-type (by atom-type) for all contact-pairs in the ContactGroup
+
+        "Relative" means that they will sum up to 1
+        regardless of the contact's frequency
+
+        >>> CG = mdciao.examples.ContactGroupL394()
+        >>> CG.relative_frequency_formed_atom_pairs_overall_trajs(3.5)
+        [{'SC-BB': 0.33, 'SC-SC': 0.52, 'BB-BB': 0.12},
+         {'BB-SC': 0.73, 'SC-SC': 0.27},
+         {'BB-BB': 0.84, 'SC-SC': 0.16},
+         {'SC-SC': 1.0},
+         {'SC-SC': 0.5, 'BB-SC': 0.5}]
 
         Parameters
         ----------
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang: float
+            Cutoff in Angstrom. The comparison operator is "<="
+
+        Other Parameters
+        ----------------
+        keep_resname: bool, default is False
+            Keep the atom's residue name in its descriptor. Only make
+            sense if consolidate_by_atom_type is False
+        aggregate_by_atomtype: bool, default is True
+            Aggregate the frequencies of the contact by tye atom types involved.
+            Atom types are backbone, sidechain or other (BB,SC, X)
+        min_freq: float, default is .05
+            Do not report relative frequencies below this cutoff, e.g.
+            "BB-BB":.9, "BB-SC":0.03, "SC-SC":0.03, "SC-BB":0.03
+            gets reported as "BB-BB":.9
 
         Returns
         -------
-        refreq_dicts : list of dicts
+        refreq_dicts : list
+            Lists of dictionaries with the relative freqs,
+            keyed by atom-type (atoms) involved in the contact
+            The order is the same as in :obj:`self.ctc_labels`
+
         """
         self._check_cutoff_ok(ctc_cutoff_Ang)
         return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang,**kwargs) for ictc in self._contacts]
@@ -3310,7 +3774,6 @@ class ContactGroup(object):
                      y = _np.max([1, _mdcplots.highest_y_textobjects_in_Axes_units(ax)])
                      )
 
-        #ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if xlim is not None:
             ax.set_xlim([-.5, xlim + 1 - .5])
 
@@ -4688,21 +5151,34 @@ class ContactGroup(object):
         return self._is_interface
 
     @property
-    def interface_residxs(self):
+    def interface_residxs(self) -> list:
         r"""
-        The residues split into the interface,
-        in ascending order within each member
-        of the interface. Empty lists mean no residues were
-        found in the interface defined at initialization
+        The residues of self.res_idxs_pairs grouped  into two lists,
+        depending on what self.interface_fragments they belong to
+
+        Empty lists mean no residues were found
+        in the interface defined at initialization
 
         Returns
         -------
-
+        interface_residxs : list
         """
         return self._interface_residxs
 
     @property
-    def interface_fragments(self):
+    def interface_fragments(self) -> list:
+        r""" Two residue lists provided at initialization
+
+        They are supersets of the residues contained
+        in self.interface_residxs
+
+        Empty lists mean no residues were found
+        in the interface defined at initialization
+
+        Returns
+        -------
+        interface_fragments : list
+        """
         return self._interface_fragments
 
 
