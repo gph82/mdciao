@@ -290,7 +290,6 @@ def _parse_coloring_options(color_option, n,
     if str(color_option).lower()=="none":
         color_option = False
 
-
     if isinstance(color_option, bool):
         if not color_option:
             colors = [default_color for __ in range(n)]
