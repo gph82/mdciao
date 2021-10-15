@@ -22,18 +22,6 @@ users can instantiate them directly.
 .. currentmodule:: mdciao.contacts
 
 
-Functions
-=========
-
-.. autosummary::
-    :nosignatures:
-    :toctree: generated/
-
-    per_traj_ctc
-    trajs2ctcs
-    select_and_report_residue_neighborhood_idxs
-
-
 Classes
 =======
 
@@ -45,6 +33,17 @@ Classes
     ContactPair
     ContactGroup
     GroupOfInterfaces
+
+Functions
+=========
+
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+
+    per_traj_ctc
+    trajs2ctcs
+    select_and_report_residue_neighborhood_idxs
 
 """
 from .contacts import *
