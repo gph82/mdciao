@@ -1139,13 +1139,12 @@ class LabelerGPCR(LabelerConsensus):
     can be used for residue mapping, labeling,
     but not for fragmentation. They are still
     partially usable but we have decideda
-    to ommit them from the docs. Please
+    to omit them from the docs. Please
     see the full reference page for their citation.
 
     """
     def __init__(self, uniprot_name,
                  ref_PDB=None,
-#                 GPCR_scheme="BW",
                  GPCR_scheme="display_generic_number",
                  local_path=".",
                  format="%s.xlsx",
@@ -1165,10 +1164,13 @@ class LabelerGPCR(LabelerConsensus):
             * a uniprot descriptor, e.g. `adrb2_human`
             * a full local filename
             * a part of a local filename
-        GPCR_scheme : str, default is 'BW'
-            The GPCR nomenclature scheme to use. Not
-            all schemes will be available for all
-            choices of :obj:`uniprot_name`. You can
+        GPCR_scheme : str, default is 'display_generic_number'
+            The GPCR nomenclature scheme to use.
+            The default is to use what the GPCRdb
+            itself has chosen for this particular
+            uniprot code. Not all schemes will be
+            available for all choices of
+            :obj:`uniprot_name`. You can
             choose from: 'BW', 'Wootten', 'Pin',
             'Wang', 'Fungal', 'GPCRdb(A)', 'GPCRdb(B)',
             'GPCRdb(C)', 'GPCRdb(F)', 'GPCRdb(D)',
