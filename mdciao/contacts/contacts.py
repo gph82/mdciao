@@ -1946,6 +1946,7 @@ class ContactGroup(object):
         self._modes = None
         self._means = None
         self._stacked_time_traces = None
+        self._shared_anchor_residue_index = None
         if top is None:
             self._top = self._unique_topology_from_ctcs()
         else:
@@ -2060,7 +2061,7 @@ class ContactGroup(object):
 
             shared = _pdunique([ictc.residues.anchor_residue_index for ictc in self._contacts])
             if len(shared) == 1:
-                self._shared_anchor_residue_index = shared[0] or None
+                self._shared_anchor_residue_index = shared[0]
 
             if self.shared_anchor_residue_index is not None:
                 self._is_neighborhood=True
