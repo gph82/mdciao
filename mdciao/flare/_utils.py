@@ -505,6 +505,9 @@ def add_fragment_labels(fragments,
         * first integer : Put this many empty positions before the first dot
         * second integer: Put this many empty positions between fragments
         * third integer : Put this many empty positions after the last dot
+    fontsize : float, default is 5
+        The fontsize in which the fragment names are
+        written
     center : pair for floats, default is (0,0)
         The center of the flareplot
     r : scalar, default is 1
@@ -515,9 +518,6 @@ def add_fragment_labels(fragments,
         If None, then positions will be computed by
         :obj:`cartify_fragments` using :obj:`r`,
         :obj:`angle_offset`, and :obj:`padding`.
-    fontsize : float, default is 5
-        The fontsize in which the fragment names are
-        written
 
     Returns
     -------

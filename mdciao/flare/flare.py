@@ -138,95 +138,6 @@ def freqs2flare(freqs, res_idxs_pairs,
         a residue. The only hard condition is that the set
         of np.unique(res_idxs_pairs) must be contained
         within :obj:`fragments`
-    exclude_neighbors: int, default is 1
-        Do not show contacts where the partners are separated by
-        these many residues. If no :obj:`top` is passed, the
-        neighborhood-condition is checked using residue
-        serial-numbers, assuming the molecule only has one long peptidic-chain.
-    freq_cutoff : float, default is 0
-        Contact frequencies lower than this value will not be shown
-    iax : :obj:`~matplotlib.axes.Axes`, default is None
-        Parse an axis to draw on, otherwise one will be created
-        using :obj:`panelsize`. In case you want to
-        re-use the same cirlce of residues as a
-        background to plot different sets
-        of :obj:`freqs`, **YOU HAVE TO USE THE SAME**
-        :obj:`fragments` and :obj:`sparse` values
-         **on all calls**, else the
-        bezier lines will be placed erroneously.
-    fragment_names: iterable of strings, default is None
-        The names of the fragments used in :obj:`fragments`
-    panelsize: float, default is 10
-        Size in inches of the panel (=figsize in matplotlib).
-        Will be ignored if a pre-existing axis object is parsed
-    center: np.ndarray, default is [0,0]
-        In axis units, where the flareplot will be centered around
-    r: float, default is 1
-        In axis units, the radius of the flareplot
-    textlabels : bool or array_like, default is True
-        How to label the residue dots. Gets passed directly
-        to :obj:`mdciao.flare.circle_plot_residues`.
-        Options are:
-         * True: the dots representing the residues
-           will get a label automatically, either their
-           serial index or the residue name, e.g. GLU30, if
-           a :obj:`top` was passed.
-         * False: no labeling
-         * array_like : will be passed as :obj:`replacement_labels`
-           to :obj:`mdciao.flare.add_fragmented_residue_labels`
-    mute_fragments: iterable of integers, default is None
-        Curves involving these fragments will be hidden. Fragments
-        are expressed as indices of :obj:`fragments`
-    anchor_fragments: iterable of integers, default is None
-        Curves **not** involving these fragments will be
-        **not** be shown, i.e. it is the complementary
-         of :obj:`mute_fragments`. Both cannot be passed
-         simultaneously.
-    top: :obj:`~mdtraj.Topology` object, default is None
-        If provided a top, residue names (e.g. GLU30) will be used
-        instead of residue indices. Will fail if the residue indices
-        in :obj:`res_idxs_pairs` can not be used to call :obj:`top.residue(ii)`
-    SS : any, default is None
-       Can be several things:
-       * Array containing secondary structure (ss) information to
-         be included in the flareplot. Indexed by residue index,
-         i.e. it can also be a dictionary as long as
-         SS[idx] returns the SS for residue with that residue idx
-       * Path to filename, will be passed to
-       :obj:`mdciao.utils.residue_and_atom.get_SS`, check
-       the docs there
-    angle_offset : float, default is 0
-        In degrees, where the flareplot "begins". Zero is xy = [1,0]
-    highlight_residxs : iterable of ints, default is None
-        Show the labels for these residues in red
-    select_residxs : iterable of ints, default is None
-        Only the residues here can be connected with a Bezier curve
-    colors: boolean, default is True
-        Color control. Can take different inputs
-         * True: use one different color per segment
-         * False: defaults to gray.
-         * str or char: use that color for all residues (e.g. "r" or "red")
-         * A list of strings of len = number of drawn residues, which is
-           equal to len(np.hstack(fragments)). Any other length will produce an error
-    fontsize : float, default is None
-         Currently, the fontsize is internally
-         computed as a function of the dotsize,
-         since the space available for the labels
-         is determined by the dotsize. There's
-         plans for user control in the future,
-         but until then NotImplementedError will be thrown
-    markersize : float, default is None
-        The size of the dots. It is internally
-        optimized to have adjacent dots fill
-        the available space without overlapping
-        among them. There's plans for user
-        control in the future,  but until then
-        NotImplementedError will be thrown
-    lw: float, default is None
-        Line width of the contact lines
-    shortenAAs: boolean, default is True
-        Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
-        is parsed
     sparse_residues : boolean, default is False
         Show only those residues that appear in the initial :obj:`res_idxs_pairs`
 
@@ -239,26 +150,116 @@ def freqs2flare(freqs, res_idxs_pairs,
         Same as :obj:`sparse_residues`, but with fragments. When
         :obj:`sparse_residues` isn't False, this option
         has no effect.
+    exclude_neighbors: int, default is 1
+        Do not show contacts where the partners are separated by
+        these many residues. If no :obj:`top` is passed, the
+        neighborhood-condition is checked using residue
+        serial-numbers, assuming the molecule only has one long peptidic-chain.
+    freq_cutoff : float, default is 0
+        Contact frequencies lower than this value will not be shown
+    iax : :obj:`~matplotlib.axes.Axes`, default is None
+    iax : :obj:`~matplotlib.axes.Axes`
+        Parse an axis to draw on, otherwise one will be created
+        using :obj:`panelsize`. In case you want to
+        re-use the same cirlce of residues as a
+        background to plot different sets
+        of :obj:`freqs`, **YOU HAVE TO USE THE SAME**
+        :obj:`fragments` and :obj:`sparse` values
+         **on all calls**, else the
+        bezier lines will be placed erroneously.
+    fragment_names: iterable of strings, default is None
+        The names of the fragments used in :obj:`fragments`
+    center: np.ndarray, default is [0,0]
+        In axis units, where the flareplot will be centered around
+    r: float, default is 1
+        In axis units, the radius of the flareplot
+    mute_fragments: iterable of integers, default is None
+        Curves involving these fragments will be hidden. Fragments
+        are expressed as indices of :obj:`fragments`
+    anchor_fragments: iterable of integers, default is None
+        Curves **not** involving these fragments will be
+        **not** be shown, i.e. it is the complementary
+         of :obj:`mute_fragments`. Both cannot be passed
+         simultaneously.
+    SS : any, default is None
+        Can be several things:
+        * Array containing secondary structure (ss) information to
+          be included in the flareplot. Indexed by residue index,
+          i.e. it can also be a dictionary as long as
+          SS[idx] returns the SS for residue with that residue idx
+        * Path to filename, will be passed to
+        :obj:`mdciao.utils.residue_and_atom.get_SS`, check
+        the docs there
+    panelsize: float, default is 10
+        Size in inches of the panel (=figsize in matplotlib).
+        Will be ignored if a pre-existing axis object is parsed
+    angle_offset : float, default is 0
+        In degrees, where the flareplot "begins". Zero is xy = [1,0]
+    highlight_residxs : iterable of ints, default is None
+        Show the labels for these residues in red
+    select_residxs : iterable of ints, default is None
+        Only the residues here can be connected with a Bezier curve
+    top: :obj:`~mdtraj.Topology` object, default is None
+        If provided a top, residue names (e.g. GLU30) will be used
+        instead of residue indices. Will fail if the residue indices
+        in :obj:`res_idxs_pairs` can not be used to call :obj:`top.residue(ii)`
+    colors: boolean, default is True
+        Color control. Can take different inputs
+         * True: use one different color per segment
+         * False: defaults to gray.
+         * str or char: use that color for all residues (e.g. "r" or "red")
+         * A list of strings of len = number of drawn residues, which is
+           equal to len(np.hstack(fragments)). Any other length will produce an error
+    fontsize : float, default is None
+        Currently, the fontsize is internally
+        computed as a function of the dotsize,
+        since the space available for the labels
+        is determined by the dotsize. There's
+        plans for user control in the future,
+        but until then NotImplementedError will be thrown
+    shortenAAs: boolean, default is True
+        Use short AA-codes, e.g. E30 for GLU30. Only has effect if a topology
+        is parsed
+    aa_offset : int, default is 0
+        Add this number to the resSeq value
+    markersize : float, default is None
+        The size of the dots. It is internally
+        optimized to have adjacent dots fill
+        the available space without overlapping
+        among them. There's plans for user
+        control in the future,  but until then
+        NotImplementedError will be thrown
     bezier_linecolor : color-like, default is 'k'
         The color of the bezier curves connecting the residues.
         Can be a character, string or RGB value (not RGBA)
+    plot_curves_only : bool, default is False
+        Only plot the curves connecting the dots, but
+        not the dots themselves or any other annotation.
+        (labels, fragment names or SS information).
+        The same caution as :obj:`iax` applies.
+    textlabels : bool or array_like, default is True
+        How to label the residue dots. Gets passed directly
+        to :obj:`mdciao.flare.circle_plot_residues`.
+        Options are:
+         * True: the dots representing the residues
+           will get a label automatically, either their
+           serial index or the residue name, e.g. GLU30, if
+           a :obj:`top` was passed.
+         * False: no labeling
+         * array_like : will be passed as :obj:`replacement_labels`
+           to :obj:`mdciao.flare.add_fragmented_residue_labels`
     padding : iterable of len 3, default is [1,1,1]
         The padding, expressed as empty dot positions. Each number is
         used for:
          * the beginning of the flareplot, before the first residue
          * between fragments
          * at the end of the plot, after the last residue
+    lw: float, default is None
+        Line width of the contact lines
     signed_colors : dict, default is None
         Provide a color dictionary, e.g. {-1:"b", +1:"r"}
         to give different colors to positive and negative
         alpha values. If None, defaults to :obj:`bezier_linecolor`
-    aa_offset : int, default is 0
-        Add this number to the resSeq value
-    plot_curves_only : bool, default is False
-        Only plot the curves connecting the dots, but
-        not the dots themselves or any other annotation.
-        (labels, fragment names or SS information).
-        The same caution as :obj:`iax` applies.
     subplot : bool, default is False
         If True, the method checks if
         :obj:`iax` is the last axis in a
@@ -435,8 +436,43 @@ def circle_plot_residues(fragments,
         residues are split into fragments. If no
         :obj:`textlabels` are provided, the idxs
         themselves become the labels
+    fontsize : float, default is None
+        Currently, the fontsize is internally
+        computed as a function of the dotsize,
+        since the space available for the labels
+        is determined by the dotsize. There's
+        plans for user control in the future,
+        but until then NotImplementedError will be thrown
+    colors : can be of different types
+        * False or None
+            All returned colors will be the default color
+        * True
+            All returned colors will differ by fragment
+        * string (anything matplotlib can understand as color)
+            Use this color for all residues
+        * iterable (array or list, not dict)
+            len(colors) has to be either len(fragments) or
+            sum([len(frag) for frag in fragments)
+            In the first case, it's expanded to assign
+            each residue in fragment the same color
+            In the second case, since each residue in
+            the fragments (apparently) has already a color,
+            nothing happens
+        * iterable (dict)
+            Has to be of len(residxs_as_fragments)
+    markersize : float, default is None
+        The size of the dots. It is internally
+        optimized to have adjacent dots fill
+        the available space without overlapping
+        among them. There's plans for user
+        control in the future,  but until then
+        NotImplementedError will be thrown
     r : scalar
         The radius of the circle, in axis inuts
+    panelsize : float, default is 4
+        The panelsize, in inches. Only has effect
+        if :obj:`iax` is None and a new figure
+        is created
     angle_offset : scalar
         Where the circle starts, in degrees. 0 means 3 o'clock,
         90 12 o'clock etc. It's the phi of polar coordinates
@@ -470,58 +506,24 @@ def circle_plot_residues(fragments,
            some residue, e.g. a mutated residue that you want
            to show as R38A instead of just A38, or use
            e.g. GPCR or CGN consensus labels.
-    fontsize : float, default is None
-         Currently, the fontsize is internally
-         computed as a function of the dotsize,
-         since the space available for the labels
-         is determined by the dotsize. There's
-         plans for user control in the future,
-         but until then NotImplementedError will be thrown
-    colors : can be of different types
-        * False or None
-            All returned colors will be the default color
-        * True
-            All returned colors will differ by fragment
-        * string (anything matplotlib can understand as color)
-            Use this color for all residues
-        * iterable (array or list, not dict)
-            len(colors) has to be either len(fragments) or
-            sum([len(frag) for frag in fragments)
-            In the first case, it's expanded to assign
-            each residue in fragment the same color
-            In the second case, since each residue in
-            the fragments (apparently) has already a color,
-            nothing happens
-        * iterable (dict)
-            Has to be of len(residxs_as_fragments)
-    markersize : float, default is None
-        The size of the dots. It is internally
-        optimized to have adjacent dots fill
-        the available space without overlapping
-        among them. There's plans for user
-        control in the future,  but until then
-        NotImplementedError will be thrown
-    top : :obj:`mdtraj.Topology`, default is None
-        If provided, residue labels wil be auto-generated from
-        here
     shortenAAs : boolean, default is True
         If :obj:`top` is not None, use "E50" rather than "GLU50"
-    aa_offset : int, default is 0
-        Add this number to the resSeq value
     highlight_residxs : iterable of ints, default is None
         In case you don't want to construct a whole
         color list for :obj:`colors`, you can simply
         input a subset of :obj:`res_idxs` here and
         they will be shown in red.
+    aa_offset : int, default is 0
+        Add this number to the resSeq value
+    top : :obj:`mdtraj.Topology`, default is None
+        If provided, residue labels wil be auto-generated from
+        here
     aura : iterable, default is None
         Scalar array, indexed with residue indices,
         e.g. RMSF, SASA, conv. degree...
         It will be drawn as an *aura* around the
         flareplot.
-    panelsize : float, default is 4
-        The panelsize, in inches. Only has effect
-        if :obj:`iax` is None and a new figure
-        is created
+
     Returns
     -------
     iax, xy, outdict
@@ -923,14 +925,15 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         of the idxs in :obj:`res_idxs_pairs`
     fragment_names : list, default is None
         The fragment names
-    fragment_colors : iterable of color-likes
-        The colors given to the arcs representing
-        the fragments
     iax: :obj:`~matplotlib.axes.Axes`, default is None
+    iax : :obj:`~matplotlib.axes.Axes`
         Parse an axis to draw on, otherwise one will be created
         using :obj:`panelsize`.
     panelsize : int, default is 10
         The panelsize for the plot, in inches
+    fragment_colors : iterable of color-likes
+        The colors given to the arcs representing
+        the fragments
     add_sigma : bool, default is True
         Add the sum of freqs per fragment
         to the arc
