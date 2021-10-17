@@ -2839,7 +2839,8 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang : float
+            The cutoff to use
         order : str, default is "contact"
             Sort first by contact, then by traj index. Alternative is
             "traj", i.e. sort first by traj index, then by contact
@@ -2880,9 +2881,20 @@ class ContactGroup(object):
         r"""
         Indices of the contacts and the position (0 or 1) in which the residue with residue :obj:`idx` appears
 
+        >>> CG = examples.ContactGroupL394()
+        >>> CG.res_idxs_pairs
+        array([[348, 353],
+               [353, 972],
+               [347, 353],
+               [353, 957],
+               [344, 353]])
+        >>> CG.residx2ctcidx(347)
+        array([[2, 0]])
+
         Parameters
         ----------
         idx: int
+            A residue index
 
         Returns
         -------
@@ -2936,8 +2948,10 @@ class ContactGroup(object):
         Frequency per contact over all trajs
         Parameters
         ----------
-        ctc_cutoff_Ang
-
+        ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
         Returns
         -------
         freqs : 1D np.ndarray of len(n_ctcs)
@@ -2955,7 +2969,10 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
         return_array : bool, default is False
             If True, the return value is not a dict
             but an array of len(self.top.n_residues)
@@ -2965,8 +2982,6 @@ class ContactGroup(object):
         freqs_dict : dictionary or array
             If dict, keys are the residue indices present in :obj:`res_idxs_pairs`
             If array, idxs are the residue indices of self.top
-
-
         """
         dict_sum = _defdict(list)
         for (idx1, idx2), ifreq in zip(self.res_idxs_pairs,
@@ -3083,13 +3098,17 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
         return_as_triplets: bool, default is False
             Return as the dictionary as a list of triplets, s.t.
             freq_dict[3.50][4.50]=.25 is returned as
             [[3.50,4.50,.25]]
             Makes it easier to iterate through in other methods
-        sort_by_interface
+        sort_by_interface : bool, default is False
+            Not implemented AT, will raise NotImplementedError
         include_trilower : bool, default is False
             Include the transposed indexes in the returned dictionary. s.t.
             the contact pair [3.50][4.50]=.25 also generates [4.50][3.50]=.25
@@ -3143,7 +3162,10 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
         by_atomtypes: bool, default is False
             Add a column where the contact is dis-aggregated by the atom-types involved,
             sidechain or backbone (SC or BB)
@@ -3185,8 +3207,8 @@ class ContactGroup(object):
     def frequency_table(self, ctc_cutoff_Ang,
                         fname,
                         switch_off_Ang=None,
-                        sort=False,
                         write_interface=True,
+                        sort=False,
                         **freq_dataframe_kwargs):
         r"""
         Print and/or save frequencies as a formatted table
@@ -3201,21 +3223,35 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang : float
+            The cutoff to use
         fname : str or None
             Full path to the desired filename
             Spreadsheet extensions are currently
             only '.xlsx', all other extensions
             save to formatted ascii. `None`
             returns the formatted ascii string.
-        switch_off_Ang : float, default is None,
-        sort : check frequency_sum_per_residue_names
-        write_interface : check frequency_sum_per_residue_names
-        freq_dataframe_kwargs
+        switch_off_Ang : float, default is None
+            TODO
+        write_interface : bool, default is True
+            Only has effect if self.is_interface is True
+            A second sheet will be added to the
+            table where residues are sorted
+            by interface membership and per-residue
+            interface participation.
+        sort : bool, default is False
+            Only has effect if self.is_interface is True
+            and :obj:`write_interface` is True. Sort the
+            second sheet by descending order of frequencies
+            If False, residues are in ascending order
+            within each member of the interface, as returned
+            by self.interface_residxs
+        freq_dataframe_kwargs : dict
+            Optional parameters for :obj:`self.frequency_dataframe`
 
         Returns
         -------
         table : None or str
-            If :obj:`fname` is none, then return
+            If :obj:`fname` is None, then return
             the table as formatted string, using
         """
 
@@ -3246,23 +3282,21 @@ class ContactGroup(object):
                               ):
         r"""
         Write an Excel file with the :obj:`~pandas.Dataframe` that is
-        returned by :obj:`self.frequency_dataframe`. You can
-        control that call with obj:`freq_dataframe_kwargs`
+        returned by :obj:`self.frequency_dataframe`.
 
         Parameters
         ----------
-        ctc_cutoff_Ang
-        fname_excel
-        sort : bool, default is True
-            Sort by descing order of frequency
-        write_interface: bool, default is True
-            Treat contact group as interface
-        freq_dataframe_kwargs: dict, default is {}
-            Optional arguments to :obj:`self.frequency_dataframe`, like by_atomtypes (bool)
-
-        Returns
-        -------
-
+        sheet1_dataframe : :obj:`~pandas.DataFrame`
+            Normally, these are pairwise frequencies
+        sheet2_dataframes : list
+            Contains :obj:`~pandas.DataFrame` objects
+            with per-residue frequencies
+        ctc_cutoff_Ang : float
+            The cutoff used
+        fname_excel : str
+            The filename to save to
+        sheet1_name : str, default is "pairs by frequency",
+        sheet2_name : str, default is 'residues by frequency'
         """
         offset = 0
         columns = ["label",
@@ -3317,22 +3351,19 @@ class ContactGroup(object):
     def frequency_str_ASCII_file(self, idf,
                                  ascii_file=None):
         r"""
-        Return a string with the frequencies
+        Create a string with the frequencies from a :obj:`~pandas.DataFrame`
 
         Parameters
         ----------
-        ctc_cutoff_Ang : float
-            The cutoff
-        switch_off_Ang : bool, default is False
-            Whether to use a switch or not
-        by_atomtypes : bool, default is True
-            Include the type of atoms involved in the contact
+        idf : :obj:`~pandas.DataFrame`
         ascii_file : str, default is None
-            If provided a filename, write the frequencies directly to it
-
+            Instead of returning the formatted a table
+            as a string, provided a filename here
+            and write the frequencies will be directly
+            written to it
         Returns
         -------
-
+        freq_str : str or None
         """
 
         idf = idf.round({"freq": 2, "sum": 2})
@@ -3368,7 +3399,10 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
 
         Returns
         -------
@@ -3439,8 +3473,16 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
         fragments : iterable of iterable of ints
             The fragment definitions
+        fragment_names : iterable of strings, default is None
+            The names of the fragments
+        consensus_labelers : list, default is None
+            It has to contain :obj:`LabelerConsensus`-objects,
+            where the fragments are obtained from.
         sparse : bool, default is False
             Delete rows and columns
             where all elements are < zero_freq.
@@ -3472,7 +3514,10 @@ class ContactGroup(object):
         return_fragments : bool, default is False
             Wether to return the fragments that the
             input produced.
-
+        verbose : bool, default is False
+            Be verbose
+        dec_round : int, default is 3
+            Number of decimal places to round to
         Returns
         -------
         mat : numpy.ndarray or :obj:`~pandas.DataFrame`
@@ -3581,6 +3626,8 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang: float
             Cutoff in Angstrom. The comparison operator is "<="
+        switch_off_Ang : float, default is None
+            TODO
 
         Other Parameters
         ----------------
@@ -3614,7 +3661,11 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        bins : int, default is 10
+        bins : int or sequence of scalars or str, optional, default is 10
+            If `bins` is an int, it defines the number of equal-width
+            bins in the given range (10, by default). If `bins` is a
+            sequence, it defines a monotonically increasing array of bin edges,
+            including the rightmost edge, allowing for non-uniform bin widths.
 
         Returns
         -------
@@ -3633,6 +3684,11 @@ class ContactGroup(object):
 
         Parameters
         ----------
+        bins : int or sequence of scalars or str, optional, default is 10
+            If `bins` is an int, it defines the number of equal-width
+            bins in the given range (10, by default). If `bins` is a
+            sequence, it defines a monotonically increasing array of bin edges,
+            including the rightmost edge, allowing for non-uniform bin widths.
         kwargs : optional keyword arguments
             Check :obj:`ContactPair.frequency_dict`
 
@@ -3654,7 +3710,10 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
 
         Returns
         -------
@@ -3677,10 +3736,11 @@ class ContactGroup(object):
                            shorten_AAs=False,
                            label_fontsize_factor=1,
                            truncate_at=None,
-                           total_freq=None,
+
                            atom_types=False,
                            display_sort=False,
                            sum_freqs=True,
+                           total_freq=None,
                            defrag=None,
                            ):
         r"""
@@ -3689,12 +3749,23 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang : float
+            The cutoff to use
         title_label : str, default is None
             If None, the method will default to self.name
             If self.name is also None, the method will fail
+        switch_off_Ang : float, default is None
+            TODO
         xlim : float, default is None
-        ax : :obj:`~matplotlib.axes.Axes`
+            The right limit of the x-axis.
+            +.5 will be added to this number
+            to accomdate some padding around
+            the barse. If None, it's chosen
+            automatically
+        ax : :obj:`~matplotlib.axes.Axes`, default is None
+            Draw into this axis. If None is passed,
+            then one  will be created
         shorten_AAs : bool, default is None
+            Shorten residue labels from "GLU30" to "E30"
         color : color-like (str or RGB triple) or list thereof, default is "tab:blue"
             The color for the bars. If string or RGB array, all
             bars will have this color. If list, it's assumed
@@ -3702,8 +3773,28 @@ class ContactGroup(object):
             get re-sorted according to :obj:`display_sort`,
             s.t. residues always have the same color not
             matter the order
-        label_fontsize_factor : float
+        label_fontsize_factor : float, default is 1
+            Labels will be written in a fontsize
+            rcParams["font.size"] * label_fontsize_factor
         truncate_at : float, default is None
+            Only plot frequencies above this value. Default
+            is to plot all
+        total_freq : float, default is None
+            Add a line to the title informing about
+            the fraction of the total_freq that's
+            being plotted in the figure. Only has
+            an effect if :obj:`sum_freqs` is True
+        atom_types : bool, default is False
+            Use stripe-patterns to inform about the
+            types of interactions (sidechain, backbone, etc)
+        sum_freqs : bool, default is True
+            Inform, in the legend and in the title,
+            about the sum of frequencies/bar-heights
+            being plotted
+        defrag : str, default is None
+            Delete fragment labels from
+            the residue labels, "G30@frag1"->"G30".
+            If None, don't delete the fragment label
         display_sort : boolean, default is False
             The frequencies are by default plotted in the order
             in which the :obj:`ContactPair`-objects are stored
@@ -3876,7 +3967,10 @@ class ContactGroup(object):
             Frequencies below this number will
             be considered zero and not shown. For this parameter
             to have effect, you need a ctc_cutoff_Ang
+        switch_off_Ang : float, default is None
+            TODO
         ax : None or :obj:`~matplotlib.axes.Axes`, default is None
+            The axis to plot into. If None, one will be created
         title_label : str, default is None
             If None, the method will default to self.name
             If self.name is also None, the method will fail
@@ -3894,7 +3988,9 @@ class ContactGroup(object):
               because you can pass only those colors here as {ii:"red",jj:"blue"}
             * If None, the 'tab10' colormap (tableau) is chosen
         shorten_AAs : bool, default is None
-        label_fontsize_factor : float
+            Shorten residue labels from "GLU30"->"E30"
+        label_fontsize_factor : float, default is 1
+            Labels will use the fontsize rcParams["font.size"]*label_fontsize_factor
         sum_freqs : bool, default is True
             Whether to sum per-contact frequencies
             and place the in the label as :math:`Sigma` values
@@ -4059,7 +4155,9 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang : float
+            The cutoff to use
         switch_off_Ang : float, default is None
+            TODO
         color : color-like (str or RGB triple) or list thereof, default is "tab:blue"
             The color for the bars. If string or RGB array, all
             bars will have this color. If list, it's assumed
@@ -4072,8 +4170,10 @@ class ContactGroup(object):
             parameter to homogenize different calls to this
             function over different contact groups, s.t.
             each subplot has equal xlimits
-        ax : :obj:`~matplotlib.axes.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`, default is None
+            Axes to plot into, if None, one will be created
         shorten_AAs : bool, default is False,
+            Shorten residue names from "GLU30"->"E30"
         label_fontsize_factor : float, default is 1
             Fontsize for the tilted labels and
             the legend, as fraction [0,1] of the
@@ -4278,9 +4378,15 @@ class ContactGroup(object):
             Sort the legend in descending order of
             frequency. Has only an effect when
             :obj:`ctc_cutoff_Ang` is not None
-        label_fontsize_factor
+        label_fontsize_factor : int, default is 1
+            Labels will be written in a fontsize
+            rcParams["font.size"] * label_fontsize_factor
         max_handles_per_row: int, default is 4
             legend control
+        defrag : char, default is None
+            Delete fragment labels from
+            the residue labels, "G30@frag1"->"G30".
+            If None, don't delete the fragment label
 
         Returns
         -------
@@ -4355,11 +4461,12 @@ class ContactGroup(object):
                           ):
         r"""
         For each trajectory, plot the time-traces of the all the contacts
-        and/or/ the timetrace of the overall number of contacts
+        (one per panel) and/or the timetrace of the overall number of contacts
 
         Parameters
         ----------
         panelheight : int
+            The height of the per-contact panels
         plot_N_ctcs : bool, default is True
             Add an extra panel at the bottom of the figure containing
             the number of formed contacts for each frame for each trajecotry
@@ -4373,7 +4480,8 @@ class ContactGroup(object):
             Skip plotting the individual timetraces and plot only
             the time trace of overall formed contacts. This sets
             pop_N_ctcs to True internally
-        plot_timetrace_kwargs
+        plot_timetrace_kwargs: dict
+            Optional parameters for :obj:`_plot_timedep_Nctcs`
 
         Returns
         -------
@@ -4511,7 +4619,11 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang : float
+            The cutoff to use
         title_str : str
+            The title of the plot
+        switch_off_Ang : float, default is None
+            TODO
         xmax : float, default is None
             X-axis will extend from -.5 to xmax+.5
         jax : obj:`~matplotlib.axes.Axes``, default is None
@@ -4608,6 +4720,7 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang : float
+            The cutoff to use
         consensus_maps : list, default is None
             The items of this list are either:
              * indexables containing the consensus
@@ -5272,7 +5385,10 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
         transpose : bool, default is False
         label_type : str, default is "best"
             Best tries resname@consensus(>fragname>fragidx)
@@ -5320,7 +5436,10 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
 
         Returns
         -------
@@ -5344,7 +5463,10 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang : float
+            The cutoff to use
         pdbfile : str
+            The path to the pdbfile
+            to save the :obj:`geom`
         geom : :obj:`mdtraj.Trajectory`
             Has to have the same topology as :obj:`self.top`
         interface_sign : bool, default is False
@@ -5490,6 +5612,7 @@ class ContactGroup(object):
         ctc_cutoff_Ang: float, default is None
             Use this cutoff and save bintrajs instead
         self_descriptor : str, default is "mdciaoCG"
+            Saved filenames will be tagged with this descriptor
 
         Returns
         -------
@@ -5558,6 +5681,12 @@ class ContactGroup(object):
         filename : str, default is None
             Has to end in "npy". Default is
             to return the dictionary
+
+        Other Parameters
+        ----------------
+        kwargs : dict
+            Optional parameters for
+            :obj:`mdciao.contacts.ContactPair._serialized_as_dict`
 
         Returns
         -------
