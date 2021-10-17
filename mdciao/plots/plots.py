@@ -50,7 +50,9 @@ def plot_w_smoothing_auto(ax, y,
     Parameters
     ----------
     ax : :obj:`~matplotlib.axes.Axes`
+        The axis where to draw onto
     y : iterable of floats
+        The y array
     label : str
         Label for the legend
     color : str
@@ -163,6 +165,7 @@ def compare_groups_of_contacts(groups,
         The figure size in inches, in case it is
         instantiated automatically by not passing an :obj:`ax`
     fontsize : float, default is 16
+        The fontsize to use
     mutations_dict : dictionary, default is {}
         A mutation dictionary that contains allows to plot together
         residues that would otherwise be identified as different
@@ -176,7 +179,11 @@ def compare_groups_of_contacts(groups,
         plotted separately. The labels used will have been already
         "mutated" using :obj:`mutations_dict` and "anchored" using
         :obj:`anchor`. This plot is temporary and cannot be saved
-    exclude
+    exclude : list, default is None
+         keys containing these strings will be excluded.
+         NOTE: This is not implemented yet, will raise an error
+    title : str, default is "comparison"
+        The title for the plot
     ctc_cutoff_Ang : float, default is None
         Needed value to compute frequencies on-the-fly
         if the input was using :obj:`ContactGroup` objects
@@ -481,7 +488,15 @@ def plot_unified_freq_dicts(freqs,
         have to invert (y,x) this parameter here, it is
         done automatically.
     panelheight_inches : int, default is 5
+        The height of the panel, in inches.
+        Determines the figure size
+        if :obj:`figsize` is None,
+        else has no effect
     inch_per_contacts : int, default is 1
+        How many inches each contact-pair
+        is given in the panel. Determines
+        the figure size if :obj:`figsize` is None,
+        else has no effect
     fontsize : int, default is 16
         Will be used in :obj:`matplotlib._rcParams["font.size"]
         # TODO be less invasive
@@ -560,6 +575,9 @@ def plot_unified_freq_dicts(freqs,
         half-sigma allows to "keep" the
         number 10 in the legend,
         even though the shown Sigma is 20
+    title : str, default is None
+        The title of the plot,
+        if any
 
     Returns
     -------
@@ -848,6 +866,8 @@ def plot_unified_distro_dicts(distros,
         The first-level dict is keyed by system names,
         e.g distros.keys() = ["WT","D10A","D10R"].
         The second-level dict is keyed by contact names
+    ctc_cutoff_Ang : float
+        The cutoff to use
     colors : iterable (list or dict), or str, default is None
         * If list, the colors will be assigned in the same
           order of :obj:`groups`.
@@ -875,6 +895,8 @@ def plot_unified_distro_dicts(distros,
         x-axis. Can be True or "col", for sharing
         across columns. See :obj:`~matplotlib.pyplot.subplots`
         for more info.
+    n_cols : int, default is 1
+        Number of columns of the plot
     Returns
     -------
     fig, axes : :obj:`~matplotlib.figure.Figure` and the axes array
@@ -1103,16 +1125,29 @@ def add_tilted_labels_to_patches(jax, labels,
     Iterate through :obj:`jax.patches` and place the text strings
     in :obj:`labels` on top of it.
 
+    Fragment names are super-scripted and LaTex-words (alpha_2)
+    are taken care of automatically, so there's no need to include
+    dollar-signs.
+
     Parameters
     ----------
-    jax
-    labels
-    label_fontsize_factor
-    trunc_y_labels_at
-
-    Returns
-    -------
-
+    jax : :obj:`~matplotlib.axes.Axes`
+        The axes onto which the tilted labels
+        will be added
+    labels : list
+        The strings with the labels,
+    label_fontsize_factor, float, default is 1
+        The labels will be plotted using the
+        fontsize rcParams["font.size"]*label_fontsize_factor
+    trunc_y_labels_at : float, default is .65
+        The tilted labels are added at
+        bar-height up to this value, as to remain
+        more or less inside the panel
+    single_label : bool, default is False
+        Tells the method whether the label
+        is R30@frag1-K50@frag2 or "R30@frag2".
+        Helps the method put the fragments in
+        super-script
     """
     for ii, (ipatch, ilab) in enumerate(zip(jax.patches, labels)):
         ix = ii
@@ -1196,6 +1231,8 @@ def highest_y_textobjects_in_Axes_units(ax):
     Parameters
     ----------
     ax : :obj:`~matplotlib.axes.Axes`
+        The axes where the text objects
+        are drawn onto
 
     Returns
     -------
@@ -1249,6 +1286,8 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
 
     Parameters
     ----------
+    ctc_cutoff_Ang : float
+        The cutoff to use
     n_cols : int
         number of columns of the subplot
     CG_dict : dict
@@ -1262,10 +1301,24 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
         ensures same panel position regardless
         of the result).
     distro : bool, default is False
-
-    short_AA_names
-    plot_atomtypes
-    switch_off_Ang
+        Plot distance distributions instead
+        of contact frequencies
+    short_AA_names : bool, default is False
+        Shorten residue names from "GLU30"->"E30"
+    plot_atomtypes : bool, default is False
+        Inform about the types of atoms that are
+        interacting
+    switch_off_Ang : float, default is None
+        TODO
+    panelsize : float, default is 4
+        In inches, the size of the panels
+        where the ContactGroups will be plotted
+    panelsize2font : float, default is 3.5
+        The default fontsize for the figure
+        is panelsize*panelsize2font. 3.5
+        seems to produce good spacing among labels
+    verbose: bool, default is False
+        Be verbose
 
     Returns
     -------
@@ -1339,7 +1392,7 @@ def plot_matrix(mat, labels, pixelsize=1,
     r"""
     Plot a matrix using :obj:`~matplotlib.pyplot.imshow`.
 
-    Matrx can be non-symetric and rectangular, rows
+    Matrx can be non-symmetric and rectangular, rows
     and columns need not represent the same residues
     or groups of residues
 
@@ -1362,6 +1415,9 @@ def plot_matrix(mat, labels, pixelsize=1,
         What :obj:`matplotlib.cmap` to use
     colorbar : boolean, default is False
         whether to use a colorbar
+    transpose : bool, default is False
+        Transpose the matrix when
+        plotting
 
     Returns
     -------
