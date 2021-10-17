@@ -2562,7 +2562,8 @@ class ContactGroup(object):
          957: 'L230@5.69',
          972: 'K270@6.32'}
 
-        Returns:
+        Returns
+        -------
         residx2resnamefragnamebest : dict
         """
 
@@ -3169,9 +3170,6 @@ class ContactGroup(object):
             The cutoff to use
         switch_off_Ang : float, default is None
             TODO
-        by_atomtypes: bool, default is False
-            Add a column where the contact is dis-aggregated by the atom-types involved,
-            sidechain or backbone (SC or BB)
         atom_types : bool, default is false
             Include the relative frequency of atom-type-pairs
             involved in the contact
@@ -3511,7 +3509,7 @@ class ContactGroup(object):
             Only has effect when :obj:`sparse` is True.
             The cutoff for a frequency to be considered
             zero
-        round : int, default is 3
+        dec_round : int, default is 3
             The number of decimals to round to when
             reporting results. It's assumed the CG
             matrix doesn't need much precision beyond
@@ -3521,8 +3519,6 @@ class ContactGroup(object):
             input produced.
         verbose : bool, default is False
             Be verbose
-        dec_round : int, default is 3
-            Number of decimal places to round to
         Returns
         -------
         mat : numpy.ndarray or :obj:`~pandas.DataFrame`
