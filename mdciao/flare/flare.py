@@ -208,7 +208,20 @@ def freqs2flare(freqs, res_idxs_pairs,
          * str or char: use that color for all residues (e.g. "r" or "red")
          * A list of strings of len = number of drawn residues, which is
            equal to len(np.hstack(fragments)). Any other length will produce an error
-    fontsize: int, default is None
+    fontsize : float, default is None
+         Currently, the fontsize is internally
+         computed as a function of the dotsize,
+         since the space available for the labels
+         is determined by the dotsize. There's
+         plans for user control in the future,
+         but until then NotImplementedError will be thrown
+    markersize : float, default is None
+        The size of the dots. It is internally
+        optimized to have adjacent dots fill
+        the available space without overlapping
+        among them. There's plans for user
+        control in the future,  but until then
+        NotImplementedError will be thrown
     lw: float, default is None
         Line width of the contact lines
     shortenAAs: boolean, default is True
@@ -410,7 +423,6 @@ def circle_plot_residues(fragments,
                          highlight_residxs=None,
                          aa_offset=0,
                          top=None,
-                         arc=False,
                          aura=None):
     r"""
     Circular background that serves as background for flare-plots. Is independent of
@@ -458,9 +470,37 @@ def circle_plot_residues(fragments,
            some residue, e.g. a mutated residue that you want
            to show as R38A instead of just A38, or use
            e.g. GPCR or CGN consensus labels.
-    fontsize
-    colors
-    markersize
+    fontsize : float, default is None
+         Currently, the fontsize is internally
+         computed as a function of the dotsize,
+         since the space available for the labels
+         is determined by the dotsize. There's
+         plans for user control in the future,
+         but until then NotImplementedError will be thrown
+    colors : can be of different types
+        * False or None
+            All returned colors will be the default color
+        * True
+            All returned colors will differ by fragment
+        * string (anything matplotlib can understand as color)
+            Use this color for all residues
+        * iterable (array or list, not dict)
+            len(colors) has to be either len(fragments) or
+            sum([len(frag) for frag in fragments)
+            In the first case, it's expanded to assign
+            each residue in fragment the same color
+            In the second case, since each residue in
+            the fragments (apparently) has already a color,
+            nothing happens
+        * iterable (dict)
+            Has to be of len(residxs_as_fragments)
+    markersize : float, default is None
+        The size of the dots. It is internally
+        optimized to have adjacent dots fill
+        the available space without overlapping
+        among them. There's plans for user
+        control in the future,  but until then
+        NotImplementedError will be thrown
     top : :obj:`mdtraj.Topology`, default is None
         If provided, residue labels wil be auto-generated from
         here
@@ -478,7 +518,10 @@ def circle_plot_residues(fragments,
         e.g. RMSF, SASA, conv. degree...
         It will be drawn as an *aura* around the
         flareplot.
-
+    panelsize : float, default is 4
+        The panelsize, in inches. Only has effect
+        if :obj:`iax` is None and a new figure
+        is created
     Returns
     -------
     iax, xy, outdict
@@ -712,6 +755,7 @@ def add_bezier_curves(iax,
     Parameters
     ----------
     iax : :obj:`~matplotlib.axes.Axes`
+        The axes to draw on
     nodepairs_xy : iterable of pairs of pairs of floats
         Each item is a pair of pairs [(x1,y1),(x2,y2)]
         to be connected with bezier curves 1<--->2
@@ -722,8 +766,12 @@ def add_bezier_curves(iax,
         for all curves. If provided,
         must be of len(nodepairs_xy).
     center : array-like with two floats, default is [0,0]
+        The center of the flareplot, in
+        data units
     lw : int, default is 1
+        Linewidth of the curves, in pts
     bezier_linecolor: :obj:`matplotlib` color, default is "k"
+        The  color of the curves
     signed_alphas : dict, default is None
         Provide a color dictionary, e.g. {-1:"b", +1:"r}
         to give different colors to positive and negative
@@ -875,6 +923,9 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         of the idxs in :obj:`res_idxs_pairs`
     fragment_names : list, default is None
         The fragment names
+    fragment_colors : iterable of color-likes
+        The colors given to the arcs representing
+        the fragments
     iax: :obj:`~matplotlib.axes.Axes`, default is None
         Parse an axis to draw on, otherwise one will be created
         using :obj:`panelsize`.

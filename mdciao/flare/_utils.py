@@ -312,13 +312,15 @@ def col_list_from_input_and_fragments(colors,
         * string (anything matplotlib can understand as color)
             Use this color for all residues
         * iterable (array or list, not dict)
-            len(colors) has to be either n_residues or n_fragments
-            If it's n_residues, nothing happens
-            If its n_fragments, it's expanded to assign
+            len(colors) has to be either len(fragments) or
+            sum([len(frag) for frag in fragments)
+            In the first case, it's expanded to assign
             each residue in fragment the same color
+            In the second case, since each residue in
+            the fragments (apparently) has already a color,
+            nothing happens
         * iterable (dict)
             Has to be of len(residxs_as_fragments)
-
     res_idxs : iterable of ints or iterable thereof
         The residues for which to generate the
         colors. If an iterable of ints is passed,
@@ -491,8 +493,11 @@ def add_fragment_labels(fragments,
     Parameters
     ----------
     fragments : iterable if iterables of ints
+        The fragment definitions
     fragment_names  :iterable of strs, len(fragments)
+        The fragment names
     iax : :obj:`~matplotlib.axes.Axes`
+        The axis to write on
     angle_offset : scalar, scalar default is 0
         Where the circle starts, in degrees. 0 means 3 o'clock,
         90 12 o'clock etc. It's the phi of polar coordinates
@@ -510,6 +515,9 @@ def add_fragment_labels(fragments,
         If None, then positions will be computed by
         :obj:`cartify_fragments` using :obj:`r`,
         :obj:`angle_offset`, and :obj:`padding`.
+    fontsize : float, default is 5
+        The fontsize in which the fragment names are
+        written
 
     Returns
     -------
