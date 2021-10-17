@@ -3884,7 +3884,7 @@ class ContactGroup(object):
                      switch_off_Ang=None,
                      ax=None,
                      title_label=None,
-                     xmax=None,
+                     xlim=None,
                      color="tab:blue",
                      shorten_AAs=False,
                      label_fontsize_factor=1,
@@ -3974,8 +3974,7 @@ class ContactGroup(object):
         title_label : str, default is None
             If None, the method will default to self.name
             If self.name is also None, the method will fail
-        xmax : float, default is None
-            X-axis will extend from -.5 to xmax+.5
+        xlim : float, default is None
         color : iterable (list or dict), or str, default is None
             * list, the colors will be reordered so that
               the same residue pair always gets the same
@@ -4122,9 +4121,9 @@ class ContactGroup(object):
                     rotation_mode="anchor")
         # ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
 
-        if xmax is None:
-            xmax = len(order)
-        ax.set_xlim([-.5, xmax - .5])
+        if xlim is None:
+            xlim = len(order)
+        ax.set_xlim([-.5, xlim - .5])
 
         #_plt.ylim(0)
         _plt.ylabel("D / $\\AA$")

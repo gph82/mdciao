@@ -1441,7 +1441,7 @@ def _plot_freqbars_baseplot(freqs,
                             jax=None,
                             lower_cutoff_val=None,
                             bar_width_in_inches=.75,
-                            color="tab:blue",
+                            color=["tab:blue"],
                             ):
     r"""
     Base method for plotting the contact frequencies
@@ -1458,10 +1458,7 @@ def _plot_freqbars_baseplot(freqs,
         The width of the axis will vary with the number of plotted
         frequencies. This allows for plotting different :obj:`ContactGroup`
         objects each with different number of contacts and still appear
-        uniform and have consistent bar_width across all barplots
-    color : str or list, default is "tab:blue"
-        The color or colors for the bar
-
+        uniform and have consistant bar_width across all barplots
     Returns
     -------
     jax : :obj:`~matplotlib.axes.Axes`
