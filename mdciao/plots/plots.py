@@ -139,7 +139,6 @@ def compare_groups_of_contacts(groups,
         If a :obj:`ContactGroup` is passed, then a :obj:`ctc_cutoff_Ang`
         needs to be passed along, otherwise frequencies cannot be computed
         on-the-fly
-
     colors : iterable (list or dict), or str, default is None
         * If list, the colors will be assigned in the same
           order of :obj:`groups`.
@@ -148,15 +147,13 @@ def compare_groups_of_contacts(groups,
         * If str, it has to be a case-sensitve colormap-name of matplotlib:
           https://matplotlib.org/stable/tutorials/colors/colormaps.html
         * If None, the 'tab10' colormap (tableau) is chosen
-    anchor : str, default is None
-        This string will be deleted from the contact labels,
-        leaving only the partner-residue to identify the contact.
-        The deletion takes place after the :obj:`mutations_dict`
-        has been applied. The final anchor label will be that
-        of the deleted keys (allows for keeping e.g. pre-existing
-        consensus nomenclature).
-        No consistency-checks are carried out, i.e. use
-        at your own risk
+    mutations_dict : dictionary, default is {}
+        A mutation dictionary that contains allows to plot together
+        residues that would otherwise be identified as different
+        contacts. If there were two mutations, e.g A30K and D35A
+        the mutation dictionary will be {"A30":"K30", "D35":"A35"}.
+        You can also use this parameter for correcting indexing
+        offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}
     width : float, default is .2
         The witdth of the bars
     ax : :obj:`~matplotlib.axes.Axes`
@@ -166,13 +163,15 @@ def compare_groups_of_contacts(groups,
         instantiated automatically by not passing an :obj:`ax`
     fontsize : float, default is 16
         The fontsize to use
-    mutations_dict : dictionary, default is {}
-        A mutation dictionary that contains allows to plot together
-        residues that would otherwise be identified as different
-        contacts. If there were two mutations, e.g A30K and D35A
-        the mutation dictionary will be {"A30":"K30", "D35":"A35"}.
-        You can also use this parameter for correcting indexing
-        offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}
+    anchor : str, default is None
+        This string will be deleted from the contact labels,
+        leaving only the partner-residue to identify the contact.
+        The deletion takes place after the :obj:`mutations_dict`
+        has been applied. The final anchor label will be that
+        of the deleted keys (allows for keeping e.g. pre-existing
+        consensus nomenclature).
+        No consistency-checks are carried out, i.e. use
+        at your own risk
     plot_singles : bool, default is False
         Produce one extra figure with as many subplots as systems
         in :obj:`dictionary_of_groups`, where each system is
@@ -180,10 +179,8 @@ def compare_groups_of_contacts(groups,
         "mutated" using :obj:`mutations_dict` and "anchored" using
         :obj:`anchor`. This plot is temporary and cannot be saved
     exclude : list, default is None
-         keys containing these strings will be excluded.
-         NOTE: This is not implemented yet, will raise an error
-    title : str, default is "comparison"
-        The title for the plot
+        keys containing these strings will be excluded.
+        NOTE: This is not implemented yet, will raise an error
     ctc_cutoff_Ang : float, default is None
         Needed value to compute frequencies on-the-fly
         if the input was using :obj:`ContactGroup` objects
@@ -195,6 +192,8 @@ def compare_groups_of_contacts(groups,
         Unify dictionaries by residue and not by pairs.
         If True, :obj:`remove_identities` is set to False
         automatically when calling :obj:`plot_unified_freq_dicts`
+    title : str, default is "comparison"
+        The title for the plot
     distro : bool, default is False
         Instead of plotting contact frequencies,
         plot contact distributions
@@ -204,8 +203,6 @@ def compare_groups_of_contacts(groups,
         interface fragments. Will fail
         if the passed :obj:`groups`
         don't have self.is_interface==True
-    kwargs_plot_unified_freq_dicts : kwargs
-        remove_identities
 
     Returns
     -------
@@ -535,19 +532,22 @@ def plot_unified_freq_dicts(freqs,
         across all systems will not be plotted
         nor considered in the sum over contacts
         TODO : the word identity might be confusing
+    vertical_plot : bool, default is False
+        Plot the bars vertically in descending sort_by
+        instead of horizontally (better for large number of frequencies)
     identity_cutoff : float, default is 1
         If :obj:`remove_identities`, use this value to define what
         is considered an identity, s.t. contacts with values e.g. .95
         can also be removed
         TODO consider merging both identity parameters into one that is None or float
-    vertical_plot : bool, default is False
-        Plot the bars vertically in descending sort_by
-        instead of horizontally (better for large number of frequencies)
     ylim : float, default is 1
         The limit on the y-axis
     assign_w_color : boolean, default is False
         If there are contacts where only one system (as in keys, of :obj:`freqs`)
         appears, color the textlabel of that contact with the system's color
+    title : str, default is None
+        The title of the plot,
+        if any
     legend_rows : int, default is 4
         The maximum number of rows per column of the legend.
         If you have 10 systems, :obj:`legend_rows`=5 means
@@ -575,9 +575,6 @@ def plot_unified_freq_dicts(freqs,
         half-sigma allows to "keep" the
         number 10 in the legend,
         even though the shown Sigma is 20
-    title : str, default is None
-        The title of the plot,
-        if any
 
     Returns
     -------
@@ -863,40 +860,40 @@ def plot_unified_distro_dicts(distros,
     Parameters
     ----------
     distros : dictionary of dictionaries
-        The first-level dict is keyed by system names,
-        e.g distros.keys() = ["WT","D10A","D10R"].
-        The second-level dict is keyed by contact names
-    ctc_cutoff_Ang : float
-        The cutoff to use
+            The first-level dict is keyed by system names,
+            e.g distros.keys() = ["WT","D10A","D10R"].
+            The second-level dict is keyed by contact names
     colors : iterable (list or dict), or str, default is None
-        * If list, the colors will be assigned in the same
-          order of :obj:`groups`.
-        * If dict, has to have the
-          same keys as :obj:`groups`.
-        * If str, it has to be a case-sensitve colormap-name of matplotlib:
-          https://matplotlib.org/stable/tutorials/colors/colormaps.html
-        * If None, the 'tab10' colormap (tableau) is chosen
-        be hard coded in a lot places
+            * If list, the colors will be assigned in the same
+              order of :obj:`groups`.
+            * If dict, has to have the
+              same keys as :obj:`groups`.
+            * If str, it has to be a case-sensitve colormap-name of matplotlib:
+              https://matplotlib.org/stable/tutorials/colors/colormaps.html
+            * If None, the 'tab10' colormap (tableau) is chosen
+            be hard coded in a lot places
+    ctc_cutoff_Ang : float
+            The cutoff to use
     panelheight_inches : int, default is 5
-        The height of each panel. Currently
-        the only control on figure size, which
-        is instantiateded as
-
-        >>> figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches)
+            The height of each panel. Currently
+            the only control on figure size, which
+            is instantiated as
+            >>> figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches)
     fontsize : int, default is 16
-        Will be used in :obj:`matplotlib._rcParams["font.size"]
-        # TODO be less invasive
-    legend_rows : int, default is 4
-        The maximum number of rows per column of the legend.
-        If you have 10 systems, :obj:`legend_rows`=5 means
-        you'll get two columns, =2 means you'll get five.
-    sharex : bool, default is False
-        Whether the panels (subplots) will share their
-        x-axis. Can be True or "col", for sharing
-        across columns. See :obj:`~matplotlib.pyplot.subplots`
-        for more info.
+            Will be used in :obj:`matplotlib._rcParams["font.size"]
+            # TODO be less invasive
     n_cols : int, default is 1
-        Number of columns of the plot
+            Number of columns of the plot
+    legend_rows : int, default is 4
+            The maximum number of rows per column of the legend.
+            If you have 10 systems, :obj:`legend_rows`=5 means
+            you'll get two columns, =2 means you'll get five.
+    sharex : bool, default is False
+            Whether the panels (subplots) will share their
+            x-axis. Can be True or "col", for sharing
+            across columns. See :obj:`~matplotlib.pyplot.subplots`
+            for more info.
+
     Returns
     -------
     fig, axes : :obj:`~matplotlib.figure.Figure` and the axes array
@@ -1271,29 +1268,26 @@ def _titlepadding_in_points_no_clashes_w_texts(jax):
 
 
 def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
-               draw_empty=True,
-               distro=False,
-               short_AA_names=False,
-               plot_atomtypes=False,
-               switch_off_Ang=0,
-               panelsize=4,
-               panelsize2font=3.5,
-               verbose=False):
+              draw_empty=True,
+              distro=False,
+              short_AA_names=False,
+              plot_atomtypes=False,
+              switch_off_Ang=0,
+              panelsize=4,
+              panelsize2font=3.5,
+              verbose=False):
     r"""
     One figure with each obj:`~mdciao.contacts.ContactGroup` as individual panel
 
     Wraps around plot_distance_distributions, plot_neighborhood_freqs
 
-    Parameters
-    ----------
-    ctc_cutoff_Ang : float
-        The cutoff to use
     n_cols : int
         number of columns of the subplot
     CG_dict : dict
         dictionary of
         obj:`~mdciao.contacts.ContactGroup` objects
     ctc_cutoff_Ang : float
+        The cutoff to use
     draw_empty : bool, default is True
         To give a visual cue that some
         CGs are empty, the corresponding
