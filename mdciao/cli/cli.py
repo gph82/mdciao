@@ -1085,7 +1085,7 @@ def interface(
         present. Then it defaults to [0]
     frag_idxs_group_2 : NoneType, default is None
         Indices of the fragments that belong to the group_2.
-	    Strings can be CSVs and include ranges, e.g. '1,3-4'.
+        Strings can be CSVs and include ranges, e.g. '1,3-4'.
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
@@ -1242,15 +1242,15 @@ def interface(
     save_nomenclature_files : bool, default is False
         Save available nomenclature definitions to disk so
         that they can be accessed locally in later uses.
+    no_disk : bool, default is False
+        If True, don't save any files at all:
+        figs, tables, trajs, nomenclature
     savefigs : bool, default is True
         Save the figures
     savetabs : bool, default is True
         Save the frequency tables
     savetrajs : bool, default is False
         Save the timetraces
-    no_disk : bool, default is False
-        If True, don't save any files at all:
-        figs, tables, trajs, nomenclature
     figures : bool, default is True
         Draw figures
     Returns
