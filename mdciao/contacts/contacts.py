@@ -2842,9 +2842,6 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang : float
             The cutoff to use
-        order : str, default is "contact"
-            Sort first by contact, then by traj index. Alternative is
-            "traj", i.e. sort first by traj index, then by contact
         switch_off_Ang : float, default is None
             Implements a linear switchoff
             from :obj:`ctc_cutoff_Ang` to :obj:`ctc_cutoff_Ang`+`switch_off_Ang`.
@@ -2852,7 +2849,10 @@ class ContactGroup(object):
              * 3.0 -> 1.0
              * 3.5 -> .5
              * 4.0 -> 0.0
-            TODO: change the name "binarize"
+        order : str, default is "contact"
+            Sort first by contact, then by traj index. Alternative is
+            "traj", i.e. sort first by traj index, then by contact
+        TODO: change the name "binarize"
 
         Returns
         -------
@@ -3479,13 +3479,15 @@ class ContactGroup(object):
             The cutoff to use
         switch_off_Ang : float, default is None
             TODO
-        fragments : iterable of iterable of ints
+        fragments : dict
             The fragment definitions
         fragment_names : iterable of strings, default is None
             The names of the fragments
         consensus_labelers : list, default is None
             It has to contain :obj:`LabelerConsensus`-objects,
             where the fragments are obtained from.
+        verbose : bool, default is False
+            Be verbose
         sparse : bool, default is False
             Delete rows and columns
             where all elements are < zero_freq.
@@ -3517,8 +3519,6 @@ class ContactGroup(object):
         return_fragments : bool, default is False
             Wether to return the fragments that the
             input produced.
-        verbose : bool, default is False
-            Be verbose
         Returns
         -------
         mat : numpy.ndarray or :obj:`~pandas.DataFrame`
@@ -3765,8 +3765,6 @@ class ContactGroup(object):
         ax : :obj:`~matplotlib.axes.Axes`, default is None
             Draw into this axis. If None is passed,
             then one  will be created
-        shorten_AAs : bool, default is None
-            Shorten residue labels from "GLU30" to "E30"
         color : color-like (str or RGB triple) or list thereof, default is "tab:blue"
             The color for the bars. If string or RGB array, all
             bars will have this color. If list, it's assumed
@@ -3774,28 +3772,17 @@ class ContactGroup(object):
             get re-sorted according to :obj:`display_sort`,
             s.t. residues always have the same color not
             matter the order
+        shorten_AAs : bool, default is None
+            Shorten residue labels from "GLU30" to "E30"
         label_fontsize_factor : float, default is 1
             Labels will be written in a fontsize
             rcParams["font.size"] * label_fontsize_factor
         truncate_at : float, default is None
             Only plot frequencies above this value. Default
             is to plot all
-        total_freq : float, default is None
-            Add a line to the title informing about
-            the fraction of the total_freq that's
-            being plotted in the figure. Only has
-            an effect if :obj:`sum_freqs` is True
         atom_types : bool, default is False
             Use stripe-patterns to inform about the
             types of interactions (sidechain, backbone, etc)
-        sum_freqs : bool, default is True
-            Inform, in the legend and in the title,
-            about the sum of frequencies/bar-heights
-            being plotted
-        defrag : str, default is None
-            Delete fragment labels from
-            the residue labels, "G30@frag1"->"G30".
-            If None, don't delete the fragment label
         display_sort : boolean, default is False
             The frequencies are by default plotted in the order
             in which the :obj:`ContactPair`-objects are stored
@@ -3804,6 +3791,19 @@ class ContactGroup(object):
             used to instantiate this :obj:`ContactPair`
             If True, you can re-sort them with this cutoff for
             display purposes only (the original order is untouched)
+        sum_freqs : bool, default is True
+            Inform, in the legend and in the title,
+            about the sum of frequencies/bar-heights
+            being plotted
+        total_freq : float, default is None
+            Add a line to the title informing about
+            the fraction of the total_freq that's
+            being plotted in the figure. Only has
+            an effect if :obj:`sum_freqs` is True
+        defrag : str, default is None
+            Delete fragment labels from
+            the residue labels, "G30@frag1"->"G30".
+            If None, don't delete the fragment label
         Returns
         -------
         ax : :obj:`~matplotlib.axes.Axes`
@@ -4723,6 +4723,14 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang : float
             The cutoff to use
+        fragments : list of iterables, default is None
+            The way the topology is fragmented. Default
+            is to put all residues in one fragment. This
+            optarg can modify the behaviour of scheme='all',
+            since residues absent from :obj:`fragments`
+            will not be plotted, see below.
+        fragment_names : list of strings, default is None
+            The fragment names, at least len(fragments)
         consensus_maps : list, default is None
             The items of this list are either:
              * indexables containing the consensus
@@ -4772,14 +4780,6 @@ class ContactGroup(object):
                 Use the SS from here, s.t.ss_inf[idx]
                 gives the SS-info for the residue
                 with that idx
-        fragments : list of iterables, default is None
-            The way the topology is fragmented. Default
-            is to put all residues in one fragment. This
-            optarg can modify the behaviour of scheme='all',
-            since residues absent from :obj:`fragments`
-            will not be plotted, see below.
-        fragment_names : list of strings, default is None
-            The fragment names, at least len(fragments)
         scheme : str, default is 'auto'
             How to decide which residues to plot
              * 'all'
@@ -4798,7 +4798,7 @@ class ContactGroup(object):
                 a site, then :obj:`scheme` is set to 'all'
              * 'interface_sparse':
                 like 'interface', but using the input :obj:`fragments`
-                to break self.interface_fragments (which are only two, 
+                to break self.interface_fragments (which are only two,
                 by definition) further down into other fragments.
                 Of these, show only the ones where at least one residue
                 participates in the interface. If :obj:`fragments` is
