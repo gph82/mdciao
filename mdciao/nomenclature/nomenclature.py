@@ -117,6 +117,7 @@ def PDB_finder(PDB_code, local_path='.',
         as .pdb or .pdb.gz, a web lookup will be tried
         using :obj:`md_load_rscb`
     verbose : boolean, default is True
+        Be verbose
 
     Returns
     -------
@@ -175,9 +176,12 @@ def CGN_finder(identifier,
     try_web_lookup : bool, default is True
         If the local lookup fails, go online
     verbose : bool, default is True
+        Be verbose
     dont_fail : bool, default is False
         Do not raise any errors that would interrupt
         a workflow and simply return None
+    write_to_disk : bool, default is False
+        Save the CGN data to disk
 
     Returns
     -------
@@ -219,7 +223,7 @@ def _finder_writer(full_local_path,
                    write_to_disk=False):
     r"""
     Try local lookup with a local lambda, then web lookup with a
-    web labmda and try to return a :obj:`DataFrame`
+    web lamdda and try to return a :obj:`DataFrame`
     Parameters
     ----------
     full_local_path
@@ -448,6 +452,7 @@ def md_load_rscb(PDB,
     PDB : str
         4-letter PDB code
     web_address: str, default is "https://files.rcsb.org/download"
+        The web address of the RSCB PDB database
     verbose : bool, default is False
         Be versose
     return_url : bool, default is False
@@ -488,6 +493,8 @@ class LabelerConsensus(object):
 
         Parameters
         ----------
+        ref_PDB : str
+            4-letter PDB code
         tablefile: str, default is 'GPCRmd_B2AR_nomenclature'
             The PDB four letter code that will be used for CGN purposes
         ref_path: str,default is '.'
@@ -1288,6 +1295,7 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     Wil raise error if both dictionaries have a consensus label for
     the same index (unsual case)
 
+    Parameters
     ----------
     idx : int
         index for which the relabeling is needed
@@ -1396,21 +1404,39 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
                           return_str=True, accept_guess=False,
                           **guess_kwargs):
     r"""
-    Wrapper around :obj:`guess_nomenclature_fragments`to interpret
-    its answer
+
+    Guess wich fragments of a topology best align with a consensus nomenclature
+
+    Wraps around :obj:`guess_nomenclature_fragments` to interpret its answer
 
     Parameters
     ----------
     CLin : :obj:`LabelerConsensus`
-    top
-    fragments
-    nomenclature_name
-    return_str
-    accept_guess
-    guess_kwargs
+        The nomenclature object to use
+        for guessing
+    top : :obj:`~mdtraj.Topology`
+        The topology whose fragments
+        are being matched with those
+        in :obj:`CLin`
+    fragments : iterable
+        Fragment definitions
+    nomenclature_name : str
+        A string identifying the nomenclature
+        type, e.g. "CGN" or "GPCR". For logging
+        purposes
+    return_str : bool, default is True
+        Return the answer the user provided
+        in case an alternative guess
+    accept_guess : bool, default is False
+        Accept the guess of :obj:`guess_nomenclature_fragments`
+        without asking for confirmation
+    guess_kwargs : dict, optional
+        Keyword arguments for :obj:`guess_nomenclature_fragments`
 
     Returns
     -------
+    answer : str
+        Only if return_str is True
 
     """
     guess = guess_nomenclature_fragments(CLin, top, fragments, **guess_kwargs)
@@ -1485,7 +1511,6 @@ def sort_consensus_labels(subset, sorted_superset,
     r"""
     Sort consensus labels (GPCR or CGN)
 
-
     Parameters
     ----------
     subset : iterable
@@ -1522,16 +1547,53 @@ def sort_consensus_labels(subset, sorted_superset,
     return labs_out
 
 def sort_GPCR_consensus_labels(labels, **kwargs):
+    r"""
+    Sort consensus labels in order of appearance in the canonical GPCR scheme
+
+    Parameters
+    ----------
+    labels : iterable
+        The input consensus labels
+    kwargs : dict, optional
+        Optional arguments for :obj:`sort_consensus_labels`
+
+    Returns
+    -------
+
+    """
     return sort_consensus_labels(labels, _GPCR_fragments, **kwargs)
 def sort_CGN_consensus_labels(labels, **kwargs):
+    r"""
+    Sort consensus labels in order of appearance in the canonical GPCR scheme
+
+    Parameters
+    ----------
+    labels : iterable
+        The input consensus labels
+    kwargs : dict, optional
+        Optional arguments for :obj:`sort_consensus_labels`
+
+    Returns
+    -------
+
+    """
     return sort_consensus_labels(labels, _CGN_fragments, **kwargs)
 
 def conslabel2fraglabel(labelres,defrag="@",prefix_GCPR=True):
     r"""
     Return a fragment label from a full consensus following some norms
+
     Parameters
     ----------
-    labelres
+    labelres : str
+        The residue label, e.g.
+        "GLU30@3.50"
+    defrag : char, default is "@"
+        The character separating
+        residue and consensus label
+    prefix_GCPR : bool, default is True
+        If True, things like "3" (from "3.50")
+        will be turned into "TM3"
 
     Returns
     -------
