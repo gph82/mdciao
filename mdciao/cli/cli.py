@@ -564,7 +564,7 @@ def residue_neighborhoods(residues,
                           savetabs=True,
                           savetrajs=False,
                           figures=True,
-                          pre_computed_contact_matrix=None
+                          pre_computed_distance_matrix=None
                           ):
     r"""Per-residue neighborhoods based on contact frequencies between pairs
     of residues.
@@ -866,13 +866,13 @@ def residue_neighborhoods(residues,
         "to those within %u Angstrom"%nlist_cutoff_Ang,
         end=" ",flush=True)
 
-    if pre_computed_contact_matrix is not None:
-        if not pre_computed_contact_matrix.shape[0]==pre_computed_contact_matrix.shape[1]==refgeom.top.n_residues:
-            raise ValueError("Matrix doesn't have expected size (%u,%u), but shape (%u,%u)"%(refgeom.top.n_residues,
-                                                                                             refgeom.top.n_residues,
-                                                                                             pre_computed_contact_matrix.shape[0],
-                                                                                             pre_computed_contact_matrix.shape[1]))
-        ctcs = [_np.array([pre_computed_contact_matrix[ii][jj] for (ii,jj) in ctc_idxs],ndmin=2)]
+    if pre_computed_distance_matrix is not None:
+        if not pre_computed_distance_matrix.shape[0] == pre_computed_distance_matrix.shape[1] == refgeom.top.n_residues:
+            raise ValueError("Matrix doesn't have expected size (%u,%u), but shape (%u,%u)" % (refgeom.top.n_residues,
+                                                                                               refgeom.top.n_residues,
+                                                                                               pre_computed_distance_matrix.shape[0],
+                                                                                               pre_computed_distance_matrix.shape[1]))
+        ctcs = [_np.array([pre_computed_distance_matrix[ii][jj] for (ii, jj) in ctc_idxs], ndmin=2)]
         print("using the pre_computed_contact_matrix...", end="",flush=True)
         ctc_idxs=_np.array(ctc_idxs)
     else:

@@ -344,8 +344,8 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                              res_idxs=True,
                                              no_disk=True,
                                              figures=False,
-                                             pre_computed_contact_matrix=_np.zeros((self.geom.n_residues,
-                                                                                    self.geom.n_residues)))[
+                                             pre_computed_distance_matrix=_np.zeros((self.geom.n_residues,
+                                                                                     self.geom.n_residues)))[
                        "neighborhoods"].values())[0]
         _np.testing.assert_array_equal(CG1.frequency_per_contact(3.5), CG2.frequency_per_contact(3.5))
 
@@ -357,8 +357,8 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                       res_idxs=True,
                                       no_disk=False,
                                       figures=False,
-                                      pre_computed_contact_matrix=_np.zeros((self.geom.n_residues,
-                                                                             self.geom.n_residues + 1)))
+                                      pre_computed_distance_matrix=_np.zeros((self.geom.n_residues,
+                                                                              self.geom.n_residues + 1)))
 
 class Test_sites(TestCLTBaseClass):
 
