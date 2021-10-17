@@ -945,7 +945,7 @@ def compare_violins(groups,
                     AA_format='short',
                     defrag='@',
                     anchor=None,
-                    ylim=None,
+                    ymax=None,
                     ):
     r"""
     Plot all distance-distributions several :obj:`~mdciao.contacts.ContactGroup` s together using :obj:`~matplotlib.pyplot.violinplot` s
@@ -993,6 +993,10 @@ def compare_violins(groups,
         that all :obj:`~mdciao.contacts.ContactGroup`-objects
         are indeed neighborhoods sharing this anchor, i.e.,
         *some* sanity checks are carried out
+    ymax : float, default is None
+        Maximum value of the y-axis,
+        default is to set it automatically
+
     Returns
     -------
     fig : :obj:`~matplotlib.figure.Figure`
@@ -1079,8 +1083,8 @@ def compare_violins(groups,
                 )
     iax.set_xlim([0-.5,len(all_ctc_keys)-.5])
     iax.set_ylabel("D / $\AA$")
-    if ylim is not None:
-        iax.set_ylim([iax.get_ylim()[0],ylim])
+    if ymax is not None:
+        iax.set_ylim([iax.get_ylim()[0], ymax])
 
 
     iax.legend(ncol=_np.ceil(len(all_sys_keys) / legend_rows).astype(int),loc="upper left")

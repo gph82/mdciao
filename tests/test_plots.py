@@ -491,7 +491,7 @@ class Test_plot_compare_violins(unittest.TestCase):
     def test_works(self):
         fig, ax = plots.compare_violins({"small":self.CGL394, "big":self.CGL394_larger},
                                         anchor="L394",
-                                        ylim=10, ctc_cutoff_Ang=4)
+                                        ymax=10, ctc_cutoff_Ang=4)
 
         #fig.savefig("test.pdf")
         _plt.close("all")
@@ -499,7 +499,7 @@ class Test_plot_compare_violins(unittest.TestCase):
     def test_works_no_defrag(self):
         fig, ax = plots.compare_violins({"small": self.CGL394, "big": self.CGL394_larger},
                                         anchor="L394",
-                                        ylim=10, ctc_cutoff_Ang=4,
+                                        ymax=10, ctc_cutoff_Ang=4,
                                         defrag=None)
 
         fig.savefig("test.pdf")
