@@ -531,7 +531,6 @@ def residue_neighborhoods(residues,
                           chunksize_in_frames=10000,
                           nlist_cutoff_Ang=15,
                           n_smooth_hw=0,
-                          #TODO re-think whether ask makes sense anymore
                           sort=True,
                           pbc=True,
                           ylim_Ang=15,
@@ -661,8 +660,6 @@ def residue_neighborhoods(residues,
     n_smooth_hw: int, default is 0
         Plots of the time-traces will be smoothed using a window
         of 2*n_smooth_hw
-    ask : bool, default is True
-        Be interactive and prompt the user when it is needed
     sort : bool, default is True
         Sort the input :obj:`residues` according to their indices
     pbc : bool, default is True
@@ -1688,8 +1685,6 @@ def sites(site_inputs,
     no_disk : bool, default is False
         If True, don't save any files at all:
         figs, tables, trajs, nomenclature
-    savefiles : bool, default is True
-        Write the figures and tables to disk.
     figures : bool, default is True
         Draw figures
     plot_timedep : bool, default is True
@@ -1940,6 +1935,7 @@ def pdb(code,
         if str, save to this file,
         eventually overwriting
     verbose : bool, default is False
+        Be verbose
     url : str, default is 'https://files.rcsb.org/download'
         base URL for lookups
 
@@ -2084,6 +2080,7 @@ def fragment_overview(topology,
     Parameters
     ----------
     topology :  :obj:`mdtraj.Topology`
+        The moleculr topology to fragment
     methods : str or list of strings
         method(s) to be used for obtaining fragments
     AAs : list, default is None
