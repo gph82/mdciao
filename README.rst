@@ -14,12 +14,12 @@ mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 
 ``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an API to construct your own analysis workflow.
 
-Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org>`_ for visualizaton. It tries to automatically use the
+Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org>`_ for visualizaton. It tries to automatically use the consensus nomenclature for
 
-* `Ballesteros-Weinstein-Numbering (BW) <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_
-* `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_
+* GPCRs, e.g. `Ballesteros-Weinstein-Numbering <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_ or structure-based schemes by `Gloriam et al <https://doi.org/10.1016/j.tips.2014.11.001>`_, and
+* G-proteins, via `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_
 
-consensus-nomenclature schemes by either using local files or on-the-fly lookups of the `GPCRdb <https://gpcrdb.org/>`_
+by either using local files or on-the-fly lookups of the `GPCRdb <https://gpcrdb.org/>`_
 and/or `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_
 
 Licenses
