@@ -3519,6 +3519,7 @@ class ContactGroup(object):
         return_fragments : bool, default is False
             Wether to return the fragments that the
             input produced.
+
         Returns
         -------
         mat : numpy.ndarray or :obj:`~pandas.DataFrame`
@@ -3765,6 +3766,8 @@ class ContactGroup(object):
         ax : :obj:`~matplotlib.axes.Axes`, default is None
             Draw into this axis. If None is passed,
             then one  will be created
+        shorten_AAs : bool, default is None
+            Shorten residue labels from "GLU30" to "E30"
         color : color-like (str or RGB triple) or list thereof, default is "tab:blue"
             The color for the bars. If string or RGB array, all
             bars will have this color. If list, it's assumed
@@ -4798,7 +4801,7 @@ class ContactGroup(object):
                 a site, then :obj:`scheme` is set to 'all'
              * 'interface_sparse':
                 like 'interface', but using the input :obj:`fragments`
-                to break self.interface_fragments (which are only two,
+                to break self.interface_fragments (which are only two, 
                 by definition) further down into other fragments.
                 Of these, show only the ones where at least one residue
                 participates in the interface. If :obj:`fragments` is
