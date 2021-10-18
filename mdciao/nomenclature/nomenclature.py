@@ -426,7 +426,7 @@ def _GPCR_web_lookup(url, verbose=True,
         print("Please cite the following reference to the GPCRdb:")
         lit = Literature()
         print(_format_cite(lit.site_GPCRdb))
-        print("For more information, use the mdciao.nomenclature.Literature class")
+        print("For more information, call mdciao.nomenclature.references()")
 
     return DFout
 
