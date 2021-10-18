@@ -657,9 +657,9 @@ def parser_for_frag_overview():
     return parser
 
 def parser_for_GPCR_overview():
-    parser = argparse.ArgumentParser(description='Produce an overview of a Ballesteros-Weinstein (BW)-type '
+    parser = argparse.ArgumentParser(description='Produce an overview of a GPCR consensus '
                                                  'nomenclature, optionally mapping it on an input topology. '
-                                                 'The BW nomenclature can be read locally or over the network')
+                                                 'The nomenclature can be read locally or over the network')
 
     parser.add_argument("GPCR_uniprot_or_file", type=str,
                         help="Get Ballesteros-Weinstein definitions from here.\n"

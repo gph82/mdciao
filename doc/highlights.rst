@@ -20,37 +20,39 @@ Highlights
   |nbspc|
 .. _consensus_HL:
 
-* *automagically* map and incorporate consensus nomenclature like the `Ballesteros-Weinstein-Numbering <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_ (BW) or `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_  to the analysis, either from local files or over the network in the `GPRC.db <https://gpcrdb.org/>`_ and from `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_::
+* *automagically* map and incorporate consensus nomenclature to the analysis, either from local files or over the network in the `GPRC.db <https://gpcrdb.org/>`_ and from `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_::
 
    ...
-   Using BW-nomenclature, please cite the following 3rd party publications:
-    * https://doi.org/10.1016/S1043-9471(05)80049-7 (Weinstein et al 1995)
-    * https://doi.org/10.1093/nar/gkx1109 (Gloriam et al 2018)
    No local file ./adrb2_human.xlsx found, checking online in
    https://gpcrdb.org/services/residues/extended/adrb2_human ...done!
+   Please cite the following reference to the GPCRdb:
+    * Kooistra et al, (2021) GPCRdb in 2021: Integrating GPCR sequence, structure and function
+      Nucleic Acids Research 49, D335--D343
+      https://doi.org/10.1093/nar/gkaa1080
+   For more information, call mdciao.nomenclature.references()
    done without 404, continuing.
-   BW-labels align best with fragments: [3] (first-last: GLU30-LEU340).
-   These are the BW fragments mapped onto your topology:
-    N-term with   19 AAs     GLY5           (   1) -   THR321           (674 ) (N-term)  resSeq jumps
-       TM1 with   35 AAs    GLN11@1.25      ( 703) -    PHE61@1.60      (791 ) (TM1)  resSeq jumps
-      ICL1 with    4 AAs    GLU62@12.48     ( 792) -    GLN65@12.51     (795 ) (ICL1)
-       TM2 with   32 AAs    THR66@2.37      ( 796) -    LYS97@2.68      (827 ) (TM2)
-      ECL1 with    4 AAs    MET98@23.49     ( 828) -   PHE101@23.52     (831 ) (ECL1)
-       TM3 with   36 AAs   GLY102@3.21      ( 832) -   SER137@3.56      (867 ) (TM3)
-      ICL2 with    8 AAs   PRO138@34.50     ( 868) -   LEU145@34.57     (875 ) (ICL2)
-       TM4 with   27 AAs   THR146@4.38      ( 876) -   HIS172@4.64      (902 ) (TM4)
-      ECL2 with   20 AAs   TRP173           ( 903) -   THR195           (922 ) (ECL2)  resSeq jumps
-       TM5 with   42 AAs   ASN196@5.35      ( 923) -   GLU237@5.76      (964 ) (TM5)
-      ICL3 with    2 AAs   GLY238           ( 965) -   ARG239           (966 ) (ICL3)
-       TM6 with   35 AAs   CYS265@6.27      ( 967) -   GLN299@6.61      (1001) (TM6)
-      ECL3 with    4 AAs   ASP300           (1002) -   ILE303           (1005) (ECL3)
-       TM7 with   25 AAs   ARG304@7.31      (1006) -   ARG328@7.55      (1030) (TM7)
-        H8 with   11 AAs   SER329@8.47      (1031) -   LEU339@8.57      (1041) (H8)
-    C-term with    1 AAs   LEU340           (1042) -   LEU340           (1042) (C-term)
+   GPCR-labels align best with fragments: [3] (first-last: GLU30-LEU340).
+   These are the GPCR fragments mapped onto your topology:
+       TM1 with     32 AAs    GLU30@1.29x29   (   760) -    PHE61@1.60x60   (791   ) (TM1)
+      ICL1 with      4 AAs    GLU62@12.48x48  (   792) -    GLN65@12.51x51  (795   ) (ICL1)
+       TM2 with     32 AAs    THR66@2.37x37   (   796) -    LYS97@2.68x67   (827   ) (TM2)
+      ECL1 with      4 AAs    MET98@23.49x49  (   828) -   PHE101@23.52x52  (831   ) (ECL1)
+       TM3 with     36 AAs   GLY102@3.21x21   (   832) -   SER137@3.56x56   (867   ) (TM3)
+      ICL2 with      8 AAs   PRO138@34.50x50  (   868) -   LEU145@34.57x57  (875   ) (ICL2)
+       TM4 with     27 AAs   THR146@4.38x38   (   876) -   HIS172@4.64x64   (902   ) (TM4)
+      ECL2 with     20 AAs   TRP173           (   903) -   THR195           (922   ) (ECL2)  resSeq jumps
+       TM5 with     42 AAs   ASN196@5.35x36   (   923) -   GLU237@5.76x76   (964   ) (TM5)
+      ICL3 with      2 AAs   GLY238           (   965) -   ARG239           (966   ) (ICL3)
+       TM6 with     35 AAs   CYS265@6.27x27   (   967) -   GLN299@6.61x61   (1001  ) (TM6)
+      ECL3 with      4 AAs   ASP300           (  1002) -   ILE303           (1005  ) (ECL3)
+       TM7 with     25 AAs   ARG304@7.31x30   (  1006) -   ARG328@7.55x55   (1030  ) (TM7)
+        H8 with     12 AAs   SER329@8.47x47   (  1031) -   LEU340@8.58x58   (1042  ) (H8)
    ...
    ...
-   Using CGN-nomenclature, please cite the following 3rd party publications:
-    * https://doi.org/10.1038/nature14663 (Babu et al 2015)
+   Using CGN-nomenclature, please cite
+    * Flock et al, (2015) Universal allosteric mechanism for G$\alpha$ activation by GPCRs
+      Nature 2015 524:7564 524, 173--179
+      https://doi.org/10.1038/nature14663
    No local file ./CGN_3SN6.txt found, checking online in
    https://www.mrc-lmb.cam.ac.uk/CGN/lookup_results/3SN6.txt ...done without 404, continuing.
    No local PDB file for 3SN6 found in directory '.', checking online in
@@ -83,7 +85,7 @@ Highlights
 
   >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --GPCR adrb2_human --CGN 3SN6 -ni
   Your selection 'GLU*,P0G,380-394,G.HN.*' yields:
-    residue      residx    fragment      resSeq         BW        CGN
+    residue      residx    fragment      resSeq       GPCR        CGN
       GLU10           6           0         10       None    G.HN.27
       GLU15          11           0         15       None    G.HN.32
   ...
@@ -181,7 +183,7 @@ Highlights
       :align: left
       :name: interface_matrix
 
-      [``interface.matrix@3.5_Ang.pdf``](click to enlarge). Interface contact matrix between the :math:`\beta`2AR receptor and the :math:`G\alpha`-unit protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor (BW) and G-protein (CGN). Please note: this is **not a symmetric** contact-matrix. The y-axis shows residues in the :math:`G\alpha`-unit and the x-axis in the receptor.
+      [``interface.matrix@3.5_Ang.pdf``](click to enlarge). Interface contact matrix between the :math:`\beta`2AR receptor and the :math:`G\alpha`-unit protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor and G-protein. Please note: this is **not a symmetric** contact-matrix. The y-axis shows residues in the :math:`G\alpha`-unit and the x-axis in the receptor.
 
 * Since :numref:`interface_matrix` is bound to incorporate a lot of blank pixels, ``mdciao`` will also produce sparse plots and figures that highlight the formed contacts only:
 
@@ -200,7 +202,7 @@ Highlights
       :align: left
       :name: fig_flare
 
-      [``interface.flare@3.5_Ang.pdf``](click to enlarge) FlarePlot of the frequencies shown in the figures :numref:`interface_matrix` and :numref:`interface_bars`. Residues are shown as dots on a circumference, split into fragments following any available labelling (BW or CGN) information. The contact frequencies are represented as lines connecting these dots/residues, with the line-opacity proportional to the frequencie's value. The secondary stucture of each residue is also included as color-coded letters: H(elix), B(eta), C(oil). We can clearly see the :math:`G\alpha_5`-subunit in contact with the receptor's TM3, ICL2, and TM5-ICL3-TM6 regions. Note that this plot is always produced as .pdf to be able to zoom into it as much as needed.
+      [``interface.flare@3.5_Ang.pdf``](click to enlarge) FlarePlot of the frequencies shown in the figures :numref:`interface_matrix` and :numref:`interface_bars`. Residues are shown as dots on a circumference, split into fragments following any available labelling information. The contact frequencies are represented as lines connecting these dots/residues, with the line-opacity proportional to the frequencie's value. The secondary stucture of each residue is also included as color-coded letters: H(elix), B(eta), C(oil). We can clearly see the :math:`G\alpha_5`-subunit in contact with the receptor's TM3, ICL2, and TM5-ICL3-TM6 regions. Note that this plot is always produced as .pdf to be able to zoom into it as much as needed.
 
 * Similar to how the flareplot (:numref:`fig_flare`) is mapping contact-frequencies (:numref:`interface_bars`, upper panel) onto the molecular topology, the next figure maps the **lower** panel :numref:`interface_bars` on the molecular geometry. It simply puts the values shown there in the `temperature factor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_  of a pdb file, representing the calculated interface as a *heatmap*, which can be visualized in VMD using the `Beta coloring <https://www.ks.uiuc.edu/Research/vmd/vmd-1.7.1/ug/node74.html>`_.
 

@@ -38,7 +38,7 @@ What these tools do is:
 * mdc_fragments
    Break a molecular topology into fragments using different heuristics. Example :ref:`here <fragmentation_HL>`.
 * mdc_GPCR_overview
-   Map a Ballesteros-Weinstein (BW)-type nomenclature on an input topology. Example :ref:`here <consensus_HL>`.
+   Map a consensus GPCR nomenclature (e.g. Ballesteros-Weinstein and others) nomenclature on an input topology. Example :ref:`here <consensus_HL>`.
 * mdc_CGN_overview
    Map a Common G-alpha Numbering (CGN)-type nomenclature on an input topology Example :ref:`here <consensus_HL>`.
 * mdc_compare

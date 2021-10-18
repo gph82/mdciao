@@ -32,7 +32,12 @@ from pandas import \
     read_csv as _read_csv, \
     DataFrame as _DataFrame
 
-from collections import defaultdict as _defdict
+from collections import defaultdict as _defdict, namedtuple as _namedtuple
+
+from textwrap import wrap as _twrap
+
+from mdciao.filenames import FileNames as _FN
+_filenames = _FN()
 
 from os import path as _path
 
@@ -41,16 +46,27 @@ import requests as _requests
 from natsort import natsorted as _natsorted
 
 def table2GPCR_by_AAcode(tablefile,
+                         scheme="BW",
                          keep_AA_code=True,
                          return_fragments=False,
                          ):
     r"""
-    Reads an excel table and returns a dictionary AAcodes so that e.g. AAcode2GPCR["R131"] -> '3.50'
+    Dictionary AAcodes so that e.g. AAcode2GPCR["R131"] -> '3.50' from a Excel file or an :obj:`pandas.DataFrame`
 
     Parameters
     ----------
     tablefile : xlsx file or pandas dataframe
         GPCR generic residue numbering in excel format
+    scheme : str, default is "BW"
+        The numbering scheme to choose. The available
+        schemes depend on what was in the orginial
+        :obj:`tablefile`. The options may include
+        * "generic_display_number" (the one chosen by the GPCRdb)
+        * "GPCRdb(A)", "GPCRdb(B)", ...
+        * "BW"
+        * "Wootten"
+        * "Pin"
+        * "Wang"
     keep_AA_code : boolean, default is True
         If True then output dictionary will have key of the form "Q26" else "26".
     return_fragments : boolean, default is True
@@ -58,7 +74,6 @@ def table2GPCR_by_AAcode(tablefile,
 
     Returns
     -------
-
     AAcode2GPCR : dictionary
         Dictionary with residues as key and their corresponding GPCR notation.
 
@@ -74,7 +89,8 @@ def table2GPCR_by_AAcode(tablefile,
     # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
-    AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", "BW"]].values}
+    assert scheme in df.keys(), ValueError("'%s' isn't an availabe scheme.\nAvailable schemes are %s"%(scheme, [key for key in df.keys() if key in _GPCR_available_scheme+["display_generic_number"]]))
+    AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
     for key, AArS in df[["protein_segment", "AAresSeq"]].values:
@@ -204,8 +220,9 @@ def CGN_finder(identifier,
     url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
     web_lookup_lambda = local_lookup_lambda
 
-    print("Using CGN-nomenclature, please cite the following 3rd party publications:\n"
-          " * https://doi.org/10.1038/nature14663 (Babu et al 2015)")
+    print("Using CGN-nomenclature, please cite")
+    lit = Literature()
+    print(_format_cite(lit.scheme_CGN))
     return _finder_writer(file2read, local_lookup_lambda,
                           url, web_lookup_lambda,
                           try_web_lookup=try_web_lookup,
@@ -293,14 +310,15 @@ def GPCR_finder(GPCR_descriptor,
                 write_to_disk=False):
     r"""
     Return a :obj:`~pandas.DataFrame` containing
-    a `Ballesteros-Weinstein-Numbering (BW)
-    <https://doi.org/10.1016/S1043-9471(05)80049-7>`_ [1].
+    generic GPCR-numbering.
 
     The lookup is first local and then online
-    on the `GPCRdb <https://gpcrdb.org/>`_ [3].
+    on the `GPCRdb <https://gpcrdb.org/>`
 
     This method wraps (with some python lambdas) around
     :obj:`_finder_writer`.
+
+    Please see the relevant references in :obj:`LabelerGPCR`.
 
     Parameters
     ----------
@@ -335,22 +353,7 @@ def GPCR_finder(GPCR_descriptor,
     Returns
     -------
     df : DataFrame or None
-        The GPCR consenus nomenclature information as :obj:`~pandas.DataFrame`
-
-    References
-    ----------
-    * [1] Juan A. Ballesteros, Harel Weinstein,
-     *[19] Integrated methods for the construction of three-dimensional models and computational probing
-     of structure-function relations in G protein-coupled receptors*,
-     Editor(s): Stuart C. Sealfon, Methods in Neurosciences, Academic Press, Volume 25, 1995
-     `<https://doi.org/10.1016/S1043-9471(05)80049-7>`_
-
-    * [3] Gáspár Pándy-Szekeres, Christian Munk, Tsonko M Tsonkov, Stefan Mordalski,
-     Kasper Harpsøe, Alexander S Hauser, Andrzej J Bojarski, David E Gloriam,
-     *GPCRdb in 2018: adding GPCR structure models and ligands*,
-     Nucleic Acids Research, Volume 46, Issue D1, 4 January 2018, Pages D440–D446,
-     `<https://doi.org/10.1093/nar/gkx1109>`_
-
+        The GPCR consensus nomenclature information as :obj:`~pandas.DataFrame`
     """
 
     if _path.exists(GPCR_descriptor):
@@ -365,11 +368,9 @@ def GPCR_finder(GPCR_descriptor,
     local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
                                                         engine="openpyxl",
                                                         usecols=lambda x : x.lower()!="unnamed: 0",
-                                                        converters={"BW": str}).replace({_np.nan: None},)
+                                                        converters={key: str for key in _GPCR_available_schemes},
+                                                        ).replace({_np.nan: None})
     web_looukup_lambda = lambda url : _GPCR_web_lookup(url, verbose=verbose)
-    print("Using BW-nomenclature, please cite the following 3rd party publications:\n"
-          " * https://doi.org/10.1016/S1043-9471(05)80049-7 (Weinstein et al 1995)\n"
-          " * https://doi.org/10.1093/nar/gkx1109 (Gloriam et al 2018)")
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
                           try_web_lookup=try_web_lookup,
@@ -381,20 +382,25 @@ def _GPCR_web_lookup(url, verbose=True,
                      timeout=5):
     r"""
     Lookup this url for a GPCR-notation
-    return a ValueError if the lookup retuns an empty json
+    return a ValueError if the lookup returns an empty json
     Parameters
     ----------
-    url
-    verbose
+    url : str
+    verbose : bool
     timeout : float, default is 1
-        Timout in seconds for :obj:`_requests.get`
+        Timeout in seconds for :obj:`_requests.get`
         https://requests.readthedocs.io/en/master/user/quickstart/#timeouts
     Returns
     -------
-
+    DF : :obj:`~pandas.DataFrame`
     """
     uniprot_name = url.split("/")[-1]
     a = _requests.get(url, timeout=timeout)
+
+    return_fields = ["protein_segment",
+                     "AAresSeq",
+                     "display_generic_number"]
+    pop_fields = ["sequence_number","amino_acid", "alternative_generic_numbers"]
     #TODO use _url2json here
     if verbose:
         print("done!")
@@ -404,7 +410,6 @@ def _GPCR_web_lookup(url, verbose=True,
     else:
         df = _read_json(a.text)
         mydict = df.T.to_dict()
-        fmt = 'old'
         for key, val in mydict.items():
             try:
                 val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
@@ -412,27 +417,16 @@ def _GPCR_web_lookup(url, verbose=True,
                     for idict in val["alternative_generic_numbers"]:
                         # print(key, idict["scheme"], idict["label"])
                         val[idict["scheme"]] = idict["label"]
-                    val.pop("alternative_generic_numbers")
-                else:
-                    fmt = 'new'
-                    pass
-
             except IndexError:
                 pass
 
-        return_fields = \
-            {"old": [
-                "protein_segment",
-                "AAresSeq",
-                "BW",
-                "GPCRdb(A)",
-                "display_generic_number"],
-            "new": [
-                    "protein_segment",
-                    "AAresSeq",
-                    "display_generic_number"]}
         DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
-        DFout = DFout[return_fields[fmt]]
+        return_fields += [key for key in DFout.keys() if key not in return_fields+pop_fields]
+        DFout = DFout[return_fields]
+        print("Please cite the following reference to the GPCRdb:")
+        lit = Literature()
+        print(_format_cite(lit.site_GPCRdb))
+        print("For more information, call mdciao.nomenclature.references()")
 
     return DFout
 
@@ -670,6 +664,7 @@ class LabelerConsensus(object):
         return out_dict
 
     def top2labels(self, top,
+                   allow_nonmatch=True,
                    autofill_consensus=True,
                    min_hit_rate=.5,
                    **aligntop_kwargs):
@@ -690,10 +685,15 @@ class LabelerConsensus(object):
            but the sequence alignment is not matched (e.g.,
            bc of a point mutation)
 
-        A heuristic to "autofill" the second case can be
-        turned on using :obj:`autofill_consensus`,
-        see :obj:`_fill_consensus_gaps`
-        for more info
+        To remedy the second case a-posteriori two things
+        can be done:
+         * recover the original label even though residues
+           did not match, using :obj:`allow_nonmatch`.
+           See :obj:`alignment_df2_conslist` for more info
+         * reconstruct what the label could be using a heuristic
+           to "autofill" the consensus labels, using
+           :obj:`autofill_consensus`.
+           See :obj:`_fill_consensus_gaps` for more info
 
         Note
         ----
@@ -704,6 +704,9 @@ class LabelerConsensus(object):
         ----------
         top :
             :obj:`~mdtraj.Topology` object
+        allow_nonmatch : bool, default is True
+            Use consensus labels for non-matching positions
+            in case the non-matches have equal lenghts
         autofill_consensus : boolean default is False
             Even if there is a consensus mismatch with the sequence of the input
             :obj:`AA2conlab_dict`, try to relabel automagically, s.t.
@@ -724,7 +727,7 @@ class LabelerConsensus(object):
         map : list of len = top.n_residues with the consensus labels
         """
         self.aligntop(top, min_hit_rate=min_hit_rate, **aligntop_kwargs)
-        out_list = alignment_df2_conslist(self.most_recent_alignment)
+        out_list = alignment_df2_conslist(self.most_recent_alignment, allow_nonmatch=allow_nonmatch)
         out_list = out_list + [None for __ in range(top.n_residues - len(out_list))]
         # TODO we could do this padding in the alignment_df2_conslist method itself
         # with an n_residues optarg, IDK about best design choice
@@ -1097,18 +1100,59 @@ class LabelerCGN(LabelerConsensus):
 
 
 class LabelerGPCR(LabelerConsensus):
-    """Manipulate GPCR notation. Different schemes are possible:
+    """Obtain and manipulate GPCR notation.
 
-     * structure based schemes (Gloriam et al)
-     * sequence based schemes
-      * Class-A: Ballesteros-Weinstein
-      * Class-B: Wootten
-      * Class-C: Pin
-      * Class-F: Wang
+    This is based on the awesome GPCRdb REST-API,
+    and follows the different schemes provided
+    there. These schemes can be:
+
+    * structure based schemes, available for all GPCR classes.
+      You can use them by instantiating with "GPCRdb(A)", "GPCRdb(B)" etc.
+      The relevant references are:
+     * Isberg et al, (2015) Generic GPCR residue numbers - Aligning topology maps while minding the gaps,
+       Trends in Pharmacological Sciences 36, 22--31,
+       https://doi.org/10.1016/j.tips.2014.11.001
+     * Isberg et al, (2016) GPCRdb: An information system for G protein-coupled receptors,
+       Nucleic Acids Research 44, D356--D364,
+       https://doi.org/10.1093/nar/gkv1178
+
+    * sequence based schemes, with different names depending on the GPCR class
+     * Class-A:
+       Ballesteros et al, (1995) Integrated methods for the construction of three-dimensional models
+       and computational probing of structure-function relations in G protein-coupled receptors,
+       Methods in Neurosciences 25, 366--428,
+       https://doi.org/10.1016/S1043-9471(05)80049-7
+     * Class-B:
+       Wootten et al, (2013) Polar transmembrane interactions drive formation of ligand-specific
+       and signal pathway-biased family B G protein-coupled receptor conformations,
+       Proceedings of the National Academy of Sciences of the United States of America 110, 5211--5216,
+       https://doi.org/10.1073/pnas.1221585110
+     * Class-C:
+       Pin et al, (2003) Evolution, structure, and activation mechanism of family 3/C G-protein-coupled receptors
+       Pharmacology and Therapeutics 98, 325--354
+       https://doi.org/10.1016/S0163-7258(03)00038-X
+     * Class-F:
+       Wu et al, (2014) Structure of a class C GPCR metabotropic glutamate receptor 1 bound to an allosteric modulator
+       Science 344, 58--64
+       https://doi.org/10.1126/science.1249489
+
+    Note
+    ----
+    Not all schemes might work work for all methods
+    of this class. In particular, fragmentation
+    heuristics are derived from 3.50(x50)-type
+    formats. Other class A schemes
+    like Oliveira and Baldwin-Schwarz
+    can be used for residue mapping, labeling,
+    but not for fragmentation. They are still
+    partially usable but we have decideda
+    to omit them from the docs. Please
+    see the full reference page for their citation.
 
     """
     def __init__(self, uniprot_name,
                  ref_PDB=None,
+                 GPCR_scheme="display_generic_number",
                  local_path=".",
                  format="%s.xlsx",
                  verbose=True,
@@ -1122,20 +1166,57 @@ class LabelerGPCR(LabelerConsensus):
         uniprot_name : str
             Descriptor by which to find the nomenclature,
             it gets directly passed to :obj:`GPCR_finder`
-            Can be several anything that can be used to try and find,
+            Can be anything that can be used to try and find
             the needed information, locally or online:
             * a uniprot descriptor, e.g. `adrb2_human`
             * a full local filename
             * a part of a local filename
-        ref_PDB
-        local_path
-        format
-        verbose
-        try_web_lookup
-        write_to_disk
+        GPCR_scheme : str, default is 'display_generic_number'
+            The GPCR nomenclature scheme to use.
+            The default is to use what the GPCRdb
+            itself has chosen for this particular
+            uniprot code. Not all schemes will be
+            available for all choices of
+            :obj:`uniprot_name`. You can
+            choose from: 'BW', 'Wootten', 'Pin',
+            'Wang', 'Fungal', 'GPCRdb(A)', 'GPCRdb(B)',
+            'GPCRdb(C)', 'GPCRdb(F)', 'GPCRdb(D)',
+            'Oliveira', 'BS', but not all are guaranteed
+            to work
+        ref_PDB : str, default is None
+            If passed, this structure will be downloaded
+            and attached as an :obj:`~mdtraj.Trajectory`
+            object to this to this :obj:`LabelerGPCR` object
+            as its :obj:`LabelerGPCR.geom` attribute
+        local_path : str, default is "."
+            Since the :obj:`uniprot_name` is turned into
+            a filename in case it's a descriptor,
+            this is the local path where to (potentially) look for files.
+            In case :obj:`uniprot_name` is just a filename,
+            we can turn it into a full path to
+            a local file using this parameter, which
+            is passed to :obj:`GPCR_finder`
+            and :obj:`LabelerConsensus`. Note that this
+            optional parameter is here for compatibility
+            reasons with other methods and might disappear
+            in the future.
+        format : str, default is "%s.xlsx"
+            How to construct a filename out of
+            :obj:`uniprot_name`
+        verbose : bool, default is True
+            Be verbose. Gets passed to :obj:`GPCR_finder`
+            :obj:`LabelerConsensus`
+        try_web_lookup : bool, default is True
+            Try a web lookup on the GPCRdb of the :obj:`uniprot_name`.
+            If :obj:`uniprot_name` is e.g. "adrb2_human.xlsx",
+            including the extension "xslx", then the lookup will
+            fail. This what the :obj:`format` parameter is for
+        write_to_disk : bool, default is False
+            Save an excel file with the nomenclature
+            information
         """
 
-        self._nomenclature_key = "BW"
+        self._nomenclature_key = GPCR_scheme
         # TODO now that the finder call is the same we could
         # avoid cde repetition here
         self._dataframe, self._tablefile = GPCR_finder(uniprot_name,
@@ -1147,7 +1228,7 @@ class LabelerGPCR(LabelerConsensus):
                                                        )
         # The title of the column with this field varies between CGN and GPCR
         self._AAresSeq_key = "AAresSeq"
-        self._AA2conlab, self._fragments = table2GPCR_by_AAcode(self.dataframe, return_fragments=True)
+        self._AA2conlab, self._fragments = table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key, return_fragments=True)
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
@@ -1214,7 +1295,7 @@ def alignment_df2_conslist(alignment_as_df,
     return out_list.tolist()
 
 def _fill_consensus_gaps(consensus_list, top, verbose=False):
-    r""" Try to fill CGN consensus nomenclature gaps based on adjacent labels
+    r""" Try to fill consensus-nomenclature gaps based on adjacent labels
 
     The idea is to fill gaps of the sort:
      * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
@@ -1230,13 +1311,18 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
     the consensus labels, i.e. 28-26=1 which is the number of "None" the
     input list had
 
+    Note
+    ----
+    Currently, only Ballesteros-Weinstein (Class A GPCR-nomenclature scheme)
+    is supported by this method.
+
     Parameters
     ----------
     consensus_list: list
         List of length top.n_residues with the original consensus labels
-        Supossedly, it contains some "None" entries inside sub-domains
+        In principle, it could contain some "None" entries inside sub-domains
     top :
-        :py:class:`~mdtraj.Topology` object
+        :obj:`~mdtraj.Topology` object
     verbose : boolean, default is False
 
     Returns
@@ -1247,22 +1333,24 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
 
     defs = _map2defs(consensus_list)
     #todo decrease verbosity
-    for key, val in defs.items():
-
+    # Iterate over fragments
+    for frag_key, conlabs in defs.items():
         # Identify problem cases
-        if len(val)!=val[-1]-val[0]+1:
+        if len(conlabs)!=conlabs[-1]-conlabs[0]+1:
             if verbose:
-                print(key)
+                print(frag_key)
+            if "x" in consensus_list[conlabs[0]]:
+                raise ValueError("Can't fill gaps in non 'BW' GPCR-nomenclature, like the provided '%s'"%consensus_list[conlabs[0]])
 
             # Initialize residue_idxs_wo_consensus_labels control variables
-            offset = int(consensus_list[val[0]].split(".")[-1])
+            offset = int(consensus_list[conlabs[0]].split(".")[-1])
             consensus_kept=True
             suggestions = []
             residue_idxs_wo_consensus_labels=[]
 
             # Check whether we can predict the consensus labels correctly
-            for ii in _np.arange(val[0],val[-1]+1):
-                suggestions.append('%s.%u'%(key,offset))
+            for ii in _np.arange(conlabs[0],conlabs[-1]+1):
+                suggestions.append('%s.%u'%(frag_key,offset))
                 if consensus_list[ii] is None:
                     residue_idxs_wo_consensus_labels.append(ii)
                 else: # meaning, we have a consensus label, check it against suggestion
@@ -1275,7 +1363,7 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
             if consensus_kept:
                 if verbose:
                     print("The consensus was kept, I am relabelling these:")
-                for idx, res_idx in enumerate(_np.arange(val[0],val[-1]+1)):
+                for idx, res_idx in enumerate(_np.arange(conlabs[0],conlabs[-1]+1)):
                     if res_idx in residue_idxs_wo_consensus_labels:
                         consensus_list[res_idx] = suggestions[idx]
                         if verbose:
@@ -1469,14 +1557,16 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
 
 def _map2defs(cons_list, splitchar="."):
     r"""
-    Regroup a list of consensus labels into their subdomains. The indices of the list
-    are interpreted as residue indices in the topology used to generate :obj:`cons_list`
+    Subdomain definitions form a list of consensus labels.
+
+    The indices of the list are interpreted as residue indices
+    in the topology used to generate :obj:`cons_list`
     in the first place, e.g. by using :obj:`nomenclature_utils._top2consensus_map`
 
     Note:
     -----
-     The method will guess automagically whether this is a CGN or GPCR label by
-     checking the type of the first character (numeric is GPCR, 3.50, alpha is CGN, G.H5.1)
+    The method will guess automagically whether this is a CGN or GPCR label by
+    checking the type of the first character (numeric is GPCR, 3.50, alpha is CGN, G.H5.1)
 
     Parameters
     ----------
@@ -1489,14 +1579,14 @@ def _map2defs(cons_list, splitchar="."):
         consensus labels, e.g. "3" from "3.50" or "G.H5" from "G.H5.1"
     Returns
     -------
-    map : dictionary
-        dictionary with subdomains as keys and lists of consensus labels as values
+    defs : dictionary
+        dictionary keyed with subdomain-names and valued with arrays of residue indices
     """
     defs = _defdict(list)
     for ii, key in enumerate(cons_list):
         if str(key).lower()!= "none":
             assert splitchar in _mdcu.lists.force_iterable(key), "Consensus keys have to have a '%s'-character" \
-                                     " in them, but '%s' hasn't"%(splitchar, str(key))
+                                     " in them, but '%s' (type %s) hasn't"%(splitchar, str(key), type(key))
             if key[0].isnumeric(): # it means it is GPCR
                 new_key =key.split(splitchar)[0]
             elif key[0].isalpha(): # it means it CGN
@@ -1579,7 +1669,7 @@ def sort_CGN_consensus_labels(labels, **kwargs):
     """
     return sort_consensus_labels(labels, _CGN_fragments, **kwargs)
 
-def conslabel2fraglabel(labelres,defrag="@",prefix_GCPR=True):
+def conslabel2fraglabel(labelres, defrag="@", prefix_GPCR=True):
     r"""
     Return a fragment label from a full consensus following some norms
 
@@ -1591,7 +1681,7 @@ def conslabel2fraglabel(labelres,defrag="@",prefix_GCPR=True):
     defrag : char, default is "@"
         The character separating
         residue and consensus label
-    prefix_GCPR : bool, default is True
+    prefix_GPCR : bool, default is True
         If True, things like "3" (from "3.50")
         will be turned into "TM3"
 
@@ -1602,7 +1692,7 @@ def conslabel2fraglabel(labelres,defrag="@",prefix_GCPR=True):
 
     label = labelres.split(defrag)[-1]
     label = label.rsplit(".",maxsplit=1)[0]
-    if prefix_GCPR and str(label) in _GPCR_num2lett.keys():
+    if prefix_GPCR and str(label) in _GPCR_num2lett.keys():
         label = _GPCR_num2lett[label]
     return label
 
@@ -1677,6 +1767,17 @@ _CGN_fragments = ['G.HN',
                  'G.S6',
                  'G.s6h5',
                  'G.H5']
+
+_GPCR_mandatory_fields = ["protein_segment",
+                          "AAresSeq",
+                          "display_generic_number",
+                          ]
+
+_GPCR_available_schemes = ["BW",
+                           "Wootten", "Pin", "Wang", "Fungal",
+                           "GPCRdb(A)", "GPCRdb(B)", "GPCRdb(C)", "GPCRdb(F)", "GPCRdb(D)",
+                           "Oliveira", "BS",
+                           ]
 
 # TODO this method is not used anywhere anymore, consider deleting
 def compatible_consensus_fragments(top,
@@ -1762,7 +1863,7 @@ def compatible_consensus_fragments(top,
 
 def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
     r"""
-    Consensus fragments (like TM6 or G.H5.) and maps from different input types
+    Consensus fragments (like TM6 or G.H5) and maps from different input types
 
     Note
     ----
@@ -1813,3 +1914,131 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
     consensus_maps = [cmap if not isinstance(cmap, LabelerConsensus) else cmap.top2labels(top) for cmap
                       in consensus_info]
     return consensus_maps, consensus_frags
+
+class Literature():
+    r"""Quick access to the some of the references used by :obj:`nomenclature`"""
+
+    #TODO this could be fine tuned but ATM its better to have all top-level attrs
+    def __init__(self):
+        self._keymap = {
+            "site_GPCRdb": "Kooistra2021",
+            "site_PDB" : "Berman2000",
+            "scheme_GPCR_struct1": "Isberg2015",
+            "scheme_GPCR_struct2": "Isberg2016",
+            "scheme_GPCR_A": "Ballesteros1995",
+            "scheme_GPCR_B": "Wootten2013",
+            "scheme_GPCR_C": "Pin2003",
+            "scheme_GPCR_F": "Wu2014",
+            "scheme_GPCR_A_O": "Oliveira1993",
+            "scheme_GPCR_A_BS_1": "Baldwin1993",
+            "scheme_GPCR_A_BS_2": "Baldwin1997",
+            "scheme_GPCR_A_BS_3": "Schwartz1994",
+            "scheme_GPCR_A_BS_4": "Schwartz1995",
+            "scheme_CGN" : "Flock2015"
+        }
+
+        arts = _parse_bib()
+
+        assert all([key in self._keymap.values() for key in arts.keys()]), (self._keymap.values(), arts.keys())
+        for key, val in self._keymap.items():
+            setattr(self, key, _art2cite(arts[val]))
+            setattr(self, key+'_json', arts[val])
+
+def _format_cite(cite,bullet="*", indent=1):
+    star = " "*indent+bullet+" "
+    othr = " "*indent+" "+" "
+    lines = cite.splitlines()
+    lines = _twrap(lines[0],100)+lines[1:]
+    lines = "\n".join([star+lines[0]]+[othr+line for line in lines[1:]])
+    return lines
+
+def _art2cite(art):
+    first = True
+    #first = False
+    authors = art.author.split(" and ")
+    if first:
+        lname = authors[0].split(",")[0].strip()
+    else:
+        lname = authors[-1].split(",")[0].strip()
+    lines = []
+    lines.append("%s et al, (%s) %s"%(lname, art.year, art.title))
+    lines.append("%s %s, %s"%(art.journal, art.volume, art.pages))
+    try:
+        lines.append("https://doi.org/%s"%art.doi)
+    except AttributeError:
+        pass
+    lines = "\n".join(lines)
+    return lines
+
+def _parse_bib(bibfile=None):
+    r"""
+    Parse a latex .bib bibliography file and return entries as dictionaries
+
+    The only recognized key is "@article", other entries will break this method
+
+    Parameters
+    ----------
+    bib : str or None
+        Path to a bibfile
+        The default is to use
+        :obj:`mdciao.filenames.FileNames.nomenclature_bib`
+
+    Returns
+    -------
+    articles : dict
+        Dictionary of dictionaries
+        containing whatever was
+        available in :obj:`bib`
+    """
+    if bibfile is None:
+        bibfile =  _filenames.nomenclature_bib
+    with open(bibfile) as f:
+        bibstr = f.read()
+
+    articles = [[line.rstrip(",") for line in art.rstrip("\n").strip("{}").splitlines()] for art in bibstr.split("@article")]
+    articles = {art[0]:art[1:] for art in articles if len(art)>0}
+    articles = {key:_art2dict(art) for key, art in articles.items()}
+    articles = {key:_dict2namedtupple(val,key) for key, val in articles.items()}
+    return articles
+
+def _art2dict(lines):
+    art = {}
+    for line in lines:
+        key, val = line.split("=",1)
+        art[key.strip()] = val.strip().strip("{}")
+    return art
+
+def _dict2namedtupple(idict,key):
+    nt = _namedtuple("article",list(idict.keys())+["key"])
+    return nt(*idict.values(),key)
+
+
+def references():
+    r"""
+    Print out references relevant to this module
+    """
+
+    lit: Literature = Literature()
+    print("mdciao.nomenclature functions thanks to these online databases. "
+          "Please cite them if you use this module:")
+    for attr in ["site_GPCRdb", "site_PDB", "scheme_CGN"]:
+        print(_format_cite(getattr(lit, attr)))
+    print()
+
+    print("Additionally, depending on the chosen nomenclature type, you should cite:")
+    print(" * Structure based GPCR notation")
+    for attr in ["scheme_GPCR_struct1", "scheme_GPCR_struct2"]:
+        print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
+    print(" * Sequence based GPCR schemes schemes:")
+    for attr in ["scheme_GPCR_B",
+                 "scheme_GPCR_C",
+                 "scheme_GPCR_F",
+                 "scheme_GPCR_A_O",
+                 "scheme_GPCR_A_BS_1",
+                 "scheme_GPCR_A_BS_2",
+                 "scheme_GPCR_A_BS_3",
+                 "scheme_GPCR_A_BS_4"]:
+        print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
+    print()
+    print("You can find all these references distributed as BibTex file distributed with mdciao here")
+    print(" * %s"%_filenames.nomenclature_bib)
