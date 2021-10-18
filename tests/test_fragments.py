@@ -352,6 +352,23 @@ class Test_frag_dict_2_frag_groups(unittest.TestCase):
             self.assertSequenceEqual(groups_as_residue_idxs[0],[0,1,4,5])
             self.assertSequenceEqual(groups_as_residue_idxs[1],[6,7])
 
+    def test_works_with_answers(self):
+        input_vaules = ["TM*,-TM2", "H8"]
+        groups_as_residue_idxs, \
+        groups_as_keys, \
+         = mdcfragments.frag_dict_2_frag_groups({"TM1": [0, 1],
+                                                 "TM2": [2, 3],
+                                                 "TM3": [4, 5],
+                                                 "H8": [6, 7]},
+                                                verbose=True,
+                                                answers=input_vaules
+                                                )
+        self.assertSequenceEqual(groups_as_keys[0],["TM1","TM3"])
+        self.assertSequenceEqual(groups_as_keys[1],["H8"])
+
+        self.assertSequenceEqual(groups_as_residue_idxs[0],[0,1,4,5])
+        self.assertSequenceEqual(groups_as_residue_idxs[1],[6,7])
+
 
 class Test_frag_list_2_frag_groups(unittest.TestCase):
 

@@ -902,13 +902,14 @@ def frag_list_2_frag_groups(frag_list,
     return groups_as_residxs, groups_as_fragidxs
 
 def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
-                            verbose=False):
+                            verbose=False,
+                            answers=None):
     r"""
     Input a dictionary of fragment definitions, keyed by
     whatever and valued with residue idxs and prompt
     the user how to re-group them
 
-    It wraps around :obj:`_match_dict_by_patterns` to
+    It wraps around :obj:`_match_dict_by_patterns`
     under the hood
 
     TODO: refactor into str_and_dict_utils
@@ -920,6 +921,11 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
         Fragment definitions in residue idxs
     ng : int, default is 2
         wanted number of groups
+    answers : list, default is None
+        List of strings. If provided,
+        the items of this list will
+        be passed as answers to the prompt
+        asking for fragment choice. None and
 
     Returns
     -------
@@ -935,15 +941,25 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
 
     groups_as_keys = []
     groups_as_residue_idxs = []
+    _answers = [None]*ng
+    if answers is not None:
+        for ii, ians in enumerate(answers):
+            if isinstance(ians,str):
+                _answers[ii]=ians
+    answers = _answers
+
     if verbose:
         for key, val in frag_defs_dict.items():
             print("%s: %u-%u"%(key, val[0],val[-1]))
     for ii in range(1, ng + 1):
         print("group %u: " % ii, end='')
-        answer = input(
-            "Input a list of comma-separated posix-expressions.\n"
-            "Prepend with '-' to exclude, e.g. 'TM*,-TM2,H8' to grab all TMs and H8, but exclude TM2)\n").replace(
-            " ", "").strip("'").strip('"')
+        if answers[ii-1] is None:
+            answer = input(
+                "Input a list of comma-separated posix-expressions.\n"
+                "Prepend with '-' to exclude, e.g. 'TM*,-TM2,H8' to grab all TMs and H8, but exclude TM2)\n").replace(
+                " ", "").strip("'").strip('"')
+        else:
+            answer = answers[ii-1]
         igroup, res_idxs_in_group = _mdcu.str_and_dict.match_dict_by_patterns(answer, frag_defs_dict)
         groups_as_keys.append([ilab for ilab in frag_defs_dict.keys() if ilab in igroup])
         groups_as_residue_idxs.append(sorted(res_idxs_in_group))
