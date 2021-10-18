@@ -2027,7 +2027,7 @@ def references():
 
     print("Additionally, depending on the chosen nomenclature type, you should cite:")
     print(" * Structure based GPCR notation")
-    for attr in ["scheme_GPCR_struct1", "scheme_GPCR_struct1"]:
+    for attr in ["scheme_GPCR_struct1", "scheme_GPCR_struct2"]:
         print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
     print(" * Sequence based GPCR schemes schemes:")
     for attr in ["scheme_GPCR_B",
