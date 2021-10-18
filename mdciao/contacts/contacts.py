@@ -1919,14 +1919,29 @@ class ContactGroup(object):
 
             It will remain accessible through the object's
             equally named the attribute self.interface_fragments
-
         top : :obj:`~mdtraj.Topology`, default is None
-
+            The molecular topology associated
+            with this object. Normally, the
+            default behaviour is enough. It checks whether all
+            ContactPairs of :obj:`list_of_contact_objects`
+            share the same self.top and use that one.
+            If they have different topologies, the
+            method fails, since you can't instantiate
+            a ContactGroup with ContactPairs from different.
+            In case the ContactPairs don't have
+            any topology at all (self.top is None for all ContactPairs)
+            you can pass one here. Or, if the have one, and you
+            pass one here, it will be checked that :obj:`top` provided
+            here coincides with the ContactPairs' shared topology
         name : string, default is None
             Optional name you want to give this object,
             ATM it is only used for the title of the
             :obj:`ContactGroup.plot_distance_distributions`
             title when the object is not a neighborhood
+        neighbors_excluded : int, default is None
+            The neighbors excluded when creating
+            the underlying ContactPairs passed in
+            :obj:`list_of_contact_objects`
         max_cutoff_Ang : float, default is None
             Operations involving cutoffs higher
             than this will be forbidden and will
