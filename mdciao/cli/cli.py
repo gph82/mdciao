@@ -710,7 +710,7 @@ def residue_neighborhoods(residues,
     GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
         try to locate a local filename or do a web lookup in the GPCRdb.
-        If `mdciao.nomenclature.Labeler_BW`, use this object directly
+        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
@@ -1092,8 +1092,8 @@ def interface(
     GPCR_uniprot : str, default is 'None'
         Try to find Ballesteros-Weinstein definitions. If
         str, e.g. "adrb2_human", try to locate a local
-        filename or do a web lookup in the GPCRdb. If
-        `mdciao.nomenclature.Labeler_BW`, use this object
+        filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object
         directly (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and
         references.
@@ -1103,7 +1103,7 @@ def interface(
         ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups in
         https://www.mrc-lmb.cam.ac.uk/CGN/ and
         http://www.rcsb.org/. If
-        :obj:`mdciao.nomenclature.LabelerCGN`    , use this
+        :obj:`mdciao.nomenclature.LabelerCGN`, use this
         object directly (allows for object re-use when in API
         mode) See :obj:`mdciao.nomenclature` for more info
         and references.
@@ -1583,8 +1583,8 @@ def sites(site_inputs,
     GPCR_uniprot : str, default is 'None'
         Try to find Ballesteros-Weinstein definitions. If
         str, e.g. "adrb2_human", try to locate a local
-        filename or do a web lookup in the GPCRdb. If
-        `mdciao.nomenclature.Labeler_BW`, use this object
+        filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object
         directly (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and
         references.
@@ -1729,7 +1729,7 @@ def sites(site_inputs,
                                                                     default_fragment_idx=default_fragment_index,
                                                                     fragment_names=fragment_names)
 
-    print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq BW  CGN".split())))
+    print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq GPCR  CGN".split())))
     for idx in _np.unique(ctc_idxs_small):
         print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, _mdcu.lists.in_what_fragment(idx,
                                                                                                                fragments_as_residue_idxs),
