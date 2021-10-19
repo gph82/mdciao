@@ -6277,7 +6277,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
         for frag_key in ['consensus frag', 'fragname', "frag"]:
             if frag_key in df.keys():
                 kwargs["fragment_names"] = _pdunique(df[frag_key]).tolist()
-                kwargs["fragments"] = [df.index[df[frag_key] == key].values.tolist() for key in
+                kwargs["fragments"] = [df.index[df[frag_key] == key].values.astype(int).tolist() for key in
                                        kwargs["fragment_names"]]
                 if frag_key=="frag":
                     na_idxs = _np.flatnonzero(_isna(kwargs["fragment_names"]))
@@ -6295,7 +6295,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
 
     elif scheme == 'interface':
         reconfigure_fragments(df, kwargs)
-        kwargs["sparse_residues"] = _np.hstack([df.index[df["interface fragment"] == ii].values.tolist() for ii in [0,1]])
+        kwargs["sparse_residues"] = _np.hstack([df.index[df["interface fragment"] == ii].values.tolist() for ii in [0,1]]).astype(int)
         _populate_colors_if_needed(kwargs, df, fixed_color_list)
 
     elif scheme == 'interface_sparse':
@@ -6305,17 +6305,17 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
         if 'fragname' in df.keys():
             frag_key = "fragname"
 
-        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]])
+        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]]).astype(int)
         if frag_key is not None:
             frags = _pdunique(df[frag_key]).tolist()
-            frags = [df.index[df[frag_key] == key].values.tolist() for key in frags]
+            frags = [df.index[df[frag_key] == key].values.astype(int).tolist() for key in frags]
             kwargs["sparse_residues"] = _np.hstack([ifrag for ifrag in frags if len(_np.intersect1d(to_intersect_with,ifrag))> zero_freq])
 
             if 'consensus frag' in df.keys():
                 frag_key = "consensus frag"
 
             kwargs["fragment_names"] = _pdunique(df[frag_key]).tolist()
-            kwargs["fragments"] = [df.index[df[frag_key] == key].values.tolist() for key in
+            kwargs["fragments"] = [df.index[df[frag_key] == key].values.astype(int).tolist() for key in
                                    kwargs["fragment_names"]]
         _populate_colors_if_needed(kwargs, df, fixed_color_list)
 
@@ -6323,17 +6323,17 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
         reconfigure_fragments(df, kwargs)
         kwargs["sparse_residues"] = _np.hstack(
             [df.index[df["interface residx"] == ii].values.tolist() for ii in [0, 1]])
-        _populate_colors_if_needed(kwargs, df, fixed_color_list)
+        _populate_colors_if_needed(kwargs, df, fixed_color_list).astype(int)
 
     elif scheme == 'residues_sparse':
         reconfigure_fragments(df, kwargs)
-        kwargs["sparse_residues"] = df.index[df["freq"] > zero_freq].values.tolist()
+        kwargs["sparse_residues"] = df.index[df["freq"] > zero_freq].values.astype(int).tolist()
         _populate_colors_if_needed(kwargs, df, fixed_color_list)
 
     elif scheme == 'consensus':
         reconfigure_fragments(df, kwargs)
         kwargs["sparse_fragments"] = True
-        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]])
+        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]]).astype(int)
         colors = {}
         color_key = ["frag" if "frag" in df.keys() else "interface fragment"][0]
         for idx in to_intersect_with:
@@ -6344,7 +6344,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
 
     elif scheme == 'consensus_sparse':
         reconfigure_fragments(df, kwargs)
-        to_intersect_with = df.index[df["freq"] > zero_freq].values.tolist()
+        to_intersect_with = df.index[df["freq"] > zero_freq].values.astype(int).tolist()
         kwargs["sparse_residues"] = _np.hstack([ifrag for ifrag in kwargs["fragments"] if len(_np.intersect1d(to_intersect_with, ifrag)) > zero_freq])
         colors = {}
         for idx in to_intersect_with:
@@ -6360,7 +6360,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
 
     #Finally, overwrite everything in case sparse_residues is there
     if "sparse_residues" in df.keys():
-        kwargs["sparse_residues"] = df.index[df["sparse_residues"] == 1].values.tolist()
+        kwargs["sparse_residues"] = df.index[df["sparse_residues"] == 1].values.astype(int).tolist()
         if "colors" in kwargs.keys():
             kwargs["colors"]=[kwargs["colors"][ii] for ii in kwargs["sparse_residues"]]
     return kwargs
