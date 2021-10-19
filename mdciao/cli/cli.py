@@ -1079,13 +1079,15 @@ def interface(
         an :obj:`~mdtraj.Trajectory` object
     frag_idxs_group_1 : NoneType, default is None
         Indices of the fragments that belong to the group_1.
-        Strings can be CSVs and include ranges, e.g. '1,3-4'.
+        Strings can be CSVs and include ranges, e.g. '1,3-4',
+        or be consensus labels "TM*,-TM6".
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [0]
     frag_idxs_group_2 : NoneType, default is None
         Indices of the fragments that belong to the group_2.
-        Strings can be CSVs and include ranges, e.g. '1,3-4'.
+        Strings can be CSVs and include ranges, e.g. '1,3-4',
+        or be consensus labels "TM*,-TM6".
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
@@ -1253,9 +1255,9 @@ def interface(
         Save the timetraces
     figures : bool, default is True
         Draw figures
+
     Returns
     -------
-
     CG_interface : :obj:`mdciao.contacts.ContactGroup`
         The object containing the :obj:`mdciao.contacts.ContactPair`
         objects tha conform the interface.
@@ -1294,7 +1296,7 @@ def interface(
         top2confrag[val] = key
     if user_wants_consensus:
         intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2)
+        intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2, answers=[frag_idxs_group_1, frag_idxs_group_2])
 
     else:
         intf_frags_as_residxs, \
