@@ -1320,21 +1320,21 @@ def interface(
           ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
            '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]])))))
     if interface_cutoff_Ang is None:
-        ctc_idxs_receptor_Gprot = ctc_idxs
+        ctc_idxs_intf = ctc_idxs
     else:
         print("The interface is restricted to the residues within %3.1f "
               "Angstrom of each other in the reference topology.\n"
               "Computing interface..."%interface_cutoff_Ang, end="")
         ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs))
         print("done!")
-        ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
+        ctc_idxs_intf = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
         print()
         print(
             "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
             "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
-            len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
+            len(ctc_idxs), len(ctc_idxs_intf)))
     print()
-    ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
+    ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_intf,
                                  stride=stride, return_times_and_atoms=True,
                                  consolidate=False,
                                  chunksize=chunksize_in_frames,
@@ -1358,7 +1358,7 @@ def interface(
     for ii, idx in enumerate(order[:n_ctcs]):
         ifreq = ctc_frequency[idx]
         if ifreq > min_freq:
-            pair = ctc_idxs_receptor_Gprot[idx]
+            pair = ctc_idxs_intf[idx]
             consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps,
                                                                 no_key=None) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
