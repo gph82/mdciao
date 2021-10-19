@@ -1051,10 +1051,32 @@ def interface(
         savefigs=True,
         savetabs=True,
         savetrajs=False,
-        figures=True
+        figures=True,
+        self_interface=False,
 ):
-    r"""Contact-frequencies between residues belonging
-    to different fragments of the molecular topology
+    r"""Contact-frequencies between two groups of residues
+
+    The groups of residues can be defined directly
+    by using residue indices or by defining molecular fragments
+    and using these definitions as a shorthand to address
+    large sub-domains of the molecular topology. See in particular
+    the documentation for :obj:`fragments`, :obj:`frag_idxs_group_1`
+    obj:`frag_idxs_group_2`.
+
+    Typically, the two groups of residues conforming both
+    sides of the interface, also called interface members,
+    do not share common residues, because the members
+    belong to different molecular units. For example,
+    in a receptor--G-protein complex, one partner is
+    the receptor and the other partner is the G-protein.
+
+    By default, mdciao.interface doesn't allow interface
+    members to share residues. However, sometimes it's
+    useful to allow it because the contacts of one fragment
+    with itself (the self-contacts) are also important.
+    E.g. the C-terminus of a receptor interfacing with
+    the entire receptor, **including the C-terminus**.
+    To allow for this behaviour, use :obj:`self_interface` = True
 
     Parameters
     ----------
@@ -1303,12 +1325,19 @@ def interface(
                                                                frag_idxs_group_1, frag_idxs_group_2,
                                                                )
     intersect = list(set(intf_frags_as_residxs[0]).intersection(intf_frags_as_residxs[1]))
-    assert len(intersect) == 0, ("Some_residxs appear in both members of the interface %s, "
-                                 "this is not possible" % intersect)
+    if len(intersect) > 0:
+        if not self_interface:
+            raise AssertionError("Some residues appear in both members of the interface, but this"
+                                 " behavior is blocked by default.\nIf you are sure this"
+                                 " is correct, unblock this option with 'self_interface=True'.\n"
+                                 "The residues are %s" % intersect)
     ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
 
     # Remove self-contacts
     ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
+
+    # Remove duplicated pairs
+    ctc_idxs = _np.vstack(_mdcu.lists.unique_list_of_iterables_by_tuple_hashing(ctc_idxs, ignore_order=True))
 
     # Create a neighborlist
     if n_nearest>0:
