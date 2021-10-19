@@ -127,12 +127,18 @@ def does_not_contain_strings(iterable):
 
     return all([not isinstance(ii, str) for ii in iterable])
 
-def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
+def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False,
+                                              ignore_order=False):
     """
     Returns the unique entries(if there are duplicates) from a list of iterables.
-    Order matters, i.e. [[0,1],[1,0]] are considered different iterables (unlike np.unique does)
-    If ilist contains non-iterables, they will be considered as iterables for comparison purposes, s.t.
-    1==[1]==np.array(1) and 'A'==['A']
+
+    Default is to take order into account, i.e. [[0,1],[1,0]]
+    are considered different iterables
+
+    If :obj:`ilist` contains non-iterables,
+    they will be turned into iterables, s.t.
+    1==[1]==np.array(1) and 'A'==['A'].
+    They will also be returned as iterables
 
     Parameters
     ----------
@@ -140,10 +146,14 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
         list of iterables with redundant entries (redundant in the list, not in entries)
     return_idxs : boolean
         'True' if required to return indices instead of unique list. (Default is False).
+    ignore_order : bool, default is False
+        ignore order, s.t. [0,1] and [1,0]
+        are considered equal. Only the first
+        instance ([0,1]) is kept
 
     Returns
     -------
-    list
+    result : list
         list of unique iterables or indices of 'ilist' where the unique entries are
 
     """
@@ -157,6 +167,10 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
         else:
             return [0]
 
+    if ignore_order:
+        lambda_sort = lambda inlist : sorted(inlist)
+    else:
+        lambda_sort = lambda inlist : inlist
     # Now for the actual work
     idxs_out = []
     ilist_out = []
@@ -164,11 +178,11 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
     for ii, sublist in enumerate(ilist):
         if isinstance(sublist, _np.ndarray):
             sublist = sublist.flatten()
-        this_objects_id = hash(tuple(force_iterable(sublist)))
+        this_objects_id = hash(tuple(lambda_sort(force_iterable(sublist))))
 
         if this_objects_id not in seen:
             ilist_out.append(force_iterable(sublist))
-            idxs_out.append(force_iterable(ii))
+            idxs_out.append(ii)
             seen.append(this_objects_id)
     if not return_idxs:
         return ilist_out

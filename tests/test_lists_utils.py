@@ -21,23 +21,33 @@ class Test_exclude_same_fragments_from_residx_pairlist(unittest.TestCase):
 class Test_unique_list_of_iterables_by_tuple_hashing(unittest.TestCase):
 
     def test_works(self):
-        assert (lists.unique_list_of_iterables_by_tuple_hashing([1])) == [1]
-        assert (lists.unique_list_of_iterables_by_tuple_hashing([["A"], ["B"]]) ==
-                lists.unique_list_of_iterables_by_tuple_hashing([["A"], ["B"]]))
+        self.assertListEqual(lists.unique_list_of_iterables_by_tuple_hashing(
+            [[0, 1], [1, 0], "ABC", [3, 4], [0, 1], "ABC", "DEF", [0, 1, 2]]),
+            [[0, 1], [1, 0], "ABC", [3, 4],                "DEF", [0, 1, 2]])
+
+    def test_works_array(self):
+        [_np.testing.assert_array_equal(ii,jj) for ii, jj in zip(
+            lists.unique_list_of_iterables_by_tuple_hashing(
+            [[0, 1], [1, 0], "ABC", [3, 4], [0, 1], "ABC", "DEF", _np.array([0, 1, 2])]),
+            [[0, 1], [1, 0], "ABC", [3, 4],                "DEF", [0, 1, 2]])]
 
     def test_returns_index(self):
-        assert (lists.unique_list_of_iterables_by_tuple_hashing([1], return_idxs=True)) == [0]
-        assert (lists.unique_list_of_iterables_by_tuple_hashing([[1], [1], [2], [2]], return_idxs=True)) == [[0], [2]]
+        self.assertListEqual(lists.unique_list_of_iterables_by_tuple_hashing(
+            [[0, 1], [1, 0], "ABC", [3, 4], [0, 1], "ABC", "DEF", [0, 1, 2]], return_idxs=True),
+             [0, 1, 2, 3, 6,7])
 
     def test_works_for_non_iterables(self):
-        assert (lists.unique_list_of_iterables_by_tuple_hashing([[1, 2], [3, 4], 1]) ==
-                lists.unique_list_of_iterables_by_tuple_hashing([[1, 2], [3, 4], _np.array(1)]))
+        self.assertListEqual(lists.unique_list_of_iterables_by_tuple_hashing([[1, 2], [3, 4], 1]),
+                             [[1,2], [3,4],[1]])
 
-    def test_reverse_is_not_same(self):
-        assert not (lists.unique_list_of_iterables_by_tuple_hashing([[1, 2], [3, 4]]) ==
-                    lists.unique_list_of_iterables_by_tuple_hashing([[2, 1], [3, 4]]))
-        assert not (lists.unique_list_of_iterables_by_tuple_hashing([["ABC"], ["BCD"]]) ==
-                    lists.unique_list_of_iterables_by_tuple_hashing([["BCD"], ["ABC"]]))
+    def test_bad_input(self):
+        self.assertListEqual(["A"],lists.unique_list_of_iterables_by_tuple_hashing(["A"]))
+        self.assertListEqual([0], lists.unique_list_of_iterables_by_tuple_hashing(["A"], return_idxs=True))
+
+    def test_ignore_order_True(self):
+        self.assertListEqual(lists.unique_list_of_iterables_by_tuple_hashing(
+            [[0, 1], [1, 0], "ABC", [3, 4], [0, 1], "ABC", "DEF", [0, 1, 2]], ignore_order=True),
+            [[0, 1],         "ABC", [3, 4],                "DEF", [0, 1, 2]])
 
 class Test_in_what_fragment(unittest.TestCase):
 
