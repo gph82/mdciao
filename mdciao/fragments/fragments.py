@@ -1081,6 +1081,7 @@ def mix_fragments(highest_res_idx, consensus_frags, fragments, fragment_names):
     use
 
     Parameters:
+    ----------
     highest_res_idx : int
         Typically top.n_residues - 1
     consensus_frags : dict
@@ -1088,6 +1089,13 @@ def mix_fragments(highest_res_idx, consensus_frags, fragments, fragment_names):
         User provided fragments
     fragment_names : list or None
         User provided fragment names
+
+    Returns:
+    -------
+    new_frags : list
+        The new fragments
+    new_names : list
+        The new names
     """
 
     if fragments is not None:
