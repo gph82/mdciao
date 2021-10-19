@@ -3532,12 +3532,13 @@ class ContactGroup(object):
             matrix doesn't need much precision beyond
             this
         return_fragments : bool, default is False
-            Wether to return the fragments that the
+            Whether to return the fragments that the
             input produced.
 
         Returns
         -------
         mat : numpy.ndarray or :obj:`~pandas.DataFrame`
+            The coarse-grained contact matrix
         fragments : dict
             The fragment definitions
         """
