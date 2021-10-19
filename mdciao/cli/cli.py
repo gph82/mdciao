@@ -55,9 +55,6 @@ import mdciao.plots as _mdcplots
 
 import mdciao.utils as _mdcu
 
-from mdciao.flare import _utils as _mdcfu
-
-
 def _offer_to_create_dir(output_dir):
     r"""
     Offer to create a directory if it does not
