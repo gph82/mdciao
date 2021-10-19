@@ -1903,7 +1903,7 @@ class ContactGroup(object):
         list_of_contact_objects : list
             list of :obj:`ContactPair` objects
         interface_fragments : list of two iterables of indexes, default is None
-            An interface is defined by two, non-overlapping
+            An interface is defined by two
             groups of residue indices.
 
             This input doesn't need to have all
@@ -2052,8 +2052,8 @@ class ContactGroup(object):
                 # TODO prolly this is anti-pattern but I prefer these many sanity checks
                 assert len(self._interface_fragments)==2
                 intersect = list(set(self._interface_fragments[0]).intersection(self._interface_fragments[1]))
-                assert len(intersect)==0, ("Some_residxs appear in both members of the interface %s, "
-                                           "this is not possible"%intersect)
+                #assert len(intersect)==0, ("Some_residxs appear in both members of the interface %s, "
+                #                           "this is not possible"%intersect)
                 _np.testing.assert_equal(len(self._interface_fragments[0]),len(_np.unique(self._interface_fragments[0])))
                 _np.testing.assert_equal(len(self._interface_fragments[1]),len(_np.unique(self._interface_fragments[1])))
 
