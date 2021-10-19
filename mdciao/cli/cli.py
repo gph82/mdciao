@@ -1159,13 +1159,15 @@ def interface(
         The extension (=format) of the saved figures
     gray_background : bool, default is False
         Use gray background when using smoothing windows
-    interface_cutoff_Ang : int, default is 35
+    interface_cutoff_Ang : float, default is 35
         The interface between both groups is defined as the
         set of group_1-group_2-distances that are within
         this cutoff in the reference topology. Otherwise, a
         large number of non-necessary distances (e.g.
         between N-terminus and G-protein) are computed.
-        Default is 35.
+        Default is 35. Setting this cutoff to None is
+        equivalent to using no cutoff,
+        i.e. all possible contacts are regarded
     ctc_control : int, default is 20
         Control the number of reported contacts. Can be an
         integer (keep the first n contacts) or a float
@@ -1317,27 +1319,23 @@ def interface(
         nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
 
-    print("\nComputing distances in the interface between fragments\n%s\nand\n%s.\n"
-          "The interface is defined by the residues within %3.1f "
-          "Angstrom of each other in the reference topology.\n"
-          "Computing interface..."
-          % ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
-             '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]]))),
-             interface_cutoff_Ang), end="")
-
-    ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs))
-    print("done!")
-
-    ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
-
-    interface_residx_short = [list(set(ctc_idxs_receptor_Gprot[:,0]).intersection(intf_frags_as_residxs[0])),
-                              list(set(ctc_idxs_receptor_Gprot[:,1]).intersection(intf_frags_as_residxs[1]))]
-
-    print()
-    print(
-        "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
-        "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
-        len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
+    print("\nComputing distances in the interface between fragments\n%s\nand\n%s"%
+          ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
+           '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]])))))
+    if interface_cutoff_Ang is None:
+        ctc_idxs_receptor_Gprot = ctc_idxs
+    else:
+        print("The interface is restricted to the residues within %3.1f "
+              "Angstrom of each other in the reference topology.\n"
+              "Computing interface..."%interface_cutoff_Ang, end="")
+        ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs))
+        print("done!")
+        ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
+        print()
+        print(
+            "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
+            "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
+            len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
     print()
     ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
                                  stride=stride, return_times_and_atoms=True,

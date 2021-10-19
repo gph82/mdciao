@@ -536,6 +536,15 @@ class Test_interface(TestCLTBaseClass):
                                   #no_disk=self.no_disk
                                   )
 
+    def test_no_interface_cutoff_Ang(self):
+        cli.interface([self.traj, self.traj_reverse],
+                      self.geom,
+                      fragments=["967-1001",  # TM6
+                                 "328-353"],  # a5
+                      figures=False,
+                      no_disk=self.no_disk,
+                      interface_cutoff_Ang=None
+                      )
 
 class Test_pdb(TestCLTBaseClass):
 
