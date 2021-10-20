@@ -278,6 +278,30 @@ class Test_find_parent_list(unittest.TestCase):
         _np.testing.assert_array_equal(kid_by_parents[1],[3])
         _np.testing.assert_array_equal(kid_by_parents[2],[4])
 
+class Test_unique_product_w_intersection(unittest.TestCase):
+
+    def test_works(self):
+        a1 = [0,1,2,3]
+        a2 = [2,3,4,5]
+
+        res = lists.unique_product_w_intersection(a1,a2)
+
+        self.assertListEqual(res.tolist(),
+                                 [[0,2], #self a1-a1
+                                  [0,3], #self a1-a1
+                                  [0,4],
+                                  [0,5],
+                                  [1,2], #self a1-a1
+                                  [1,3], #self a1-a1
+                                  [1,4],
+                                  [1,5],
+                                  [2,3],
+                                  [2,4],
+                                  [2,5],
+                                  [3,4],
+                                  [3,5],
+                                  ])
+
 if __name__ == '__main__':
     unittest.main()
 
