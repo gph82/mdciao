@@ -1076,7 +1076,10 @@ def interface(
     with itself (the self-contacts) are also important.
     E.g. the C-terminus of a receptor interfacing with
     the entire receptor, **including the C-terminus**.
-    To allow for this behaviour, use :obj:`self_interface` = True
+    To allow for this behaviour, use :obj:`self_interface` = True,
+    and possibly increase :obj:`n_nearest`, since otherwise
+    neighboring residues of the shared set (e.g. C-terminus)
+    will always appear as formed.
 
     Parameters
     ----------
@@ -1276,6 +1279,9 @@ def interface(
         Save the timetraces
     figures : bool, default is True
         Draw figures
+    self_interface : bool, default is False
+        Allow the interface members to share
+        residues
 
     Returns
     -------
@@ -1337,9 +1343,6 @@ def interface(
         ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
          # Remove self-contacts
         ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
-
-    # Remove duplicated pairs
-    ctc_idxs = _np.vstack(_mdcu.lists.unique_list_of_iterables_by_tuple_hashing(ctc_idxs, ignore_order=True))
 
     # Create a neighborlist
     if n_nearest>0:
