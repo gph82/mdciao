@@ -605,3 +605,79 @@ def find_parent_list(sublists, parent_lists):
         if len(kids):
             child_by_parent[ii]=kids
     return parents_by_child, child_by_parent
+
+def unique_product_w_intersection(a1,a2):
+    r"""
+    Fast way to create the product of two intersecting sets without repeated/unwanted pairs
+
+    Consider that
+    >>> list(itertools.product([0,1,2,3],[2,3,4,5]))
+    [(0, 2),
+     (0, 3),
+     (0, 4),
+     (0, 5),
+     (1, 2),
+     (1, 3),
+     (1, 4),
+     (1, 5),
+     (2, 2),
+     (2, 3),
+     (2, 4),
+     (2, 5),
+     (3, 2),
+     (3, 3),
+     (3, 4),
+     (3, 5)]
+
+    Has the repeated/unwanted pairs (2,2),(3,3),(3,2) which
+    need to be taken out a posteriori by comparing pairs.
+
+    The :obj:`unique_list_of_iterables_by_tuple_hashing`
+    method accepts also arrays (since pairlists
+    may not necessarily have been generated
+    as tuples, but also as np.arrays), s.t.
+    the arrays need to be casted into tuples before hashing
+    and one comparison per pair (grows quadratically)
+
+    >>> a1 = np.arange(200)
+    >>> a2 = np.arange(195,300)
+    >>> pairs = np.array(list(itertools.product(a1,a2)))
+    >>> %timeit mdciao.utils.lists.unique_list_of_iterables_by_tuple_hashing(slow)
+    2.83 s ± 170 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+    Whereas
+    >>> %timeit mdciao.utils.lists.unique_product_w_intersection(a1,a2)
+    47 ms ± 394 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+    For reference
+    >>> %timeit list(itertools.product(a1,a2))
+    783 µs ± 5.37 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
+
+    I.e. clearly, for non-intersecting sets a1 and a2 without unwanted/repeated
+    pairs, it's always better to use itertools.product directly
+
+    Parameters
+    ----------
+    a1 : iterable
+        The integers of the set1
+    a2 : iterable
+        The integers of the set2
+
+    Returns
+    -------
+    pairlist : np.ndarray
+        The pairlist product of a1 and a2
+        without self-pairs (ii,ii) and the
+        only (ii,jj) (not (jj,ii))
+
+    """
+    from itertools import product, combinations
+    intersect = list(set(a1).intersection(a2))
+    a1_no_int = list(set(a1).difference(intersect))
+    a2_no_int = list(set(a2).difference(intersect))
+    pairlist = list(product(a1_no_int, a2_no_int))+list(product(a1_no_int,intersect))\
+                                                  +list(product(intersect,a2_no_int))\
+               +list(combinations(intersect,2))
+    pairlist = _np.vstack(sorted(pairlist, key=lambda item: (item[0], item[1]), reverse=False))
+    return pairlist
