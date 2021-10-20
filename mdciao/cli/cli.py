@@ -1070,7 +1070,7 @@ def interface(
     in a receptor--G-protein complex, one partner is
     the receptor and the other partner is the G-protein.
 
-    By default, mdciao.interface doesn't allow interface
+    By default, mdciao.cli.interface doesn't allow interface
     members to share residues. However, sometimes it's
     useful to allow it because the contacts of one fragment
     with itself (the self-contacts) are also important.
