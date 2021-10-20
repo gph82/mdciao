@@ -1326,15 +1326,17 @@ def interface(
                                                                )
     intersect = list(set(intf_frags_as_residxs[0]).intersection(intf_frags_as_residxs[1]))
     if len(intersect) > 0:
-        if not self_interface:
+        if self_interface:
+            ctc_idxs = _mdcu.lists.unique_product_w_intersection(intf_frags_as_residxs[0], intf_frags_as_residxs[1])
+        else:
             raise AssertionError("Some residues appear in both members of the interface, but this"
                                  " behavior is blocked by default.\nIf you are sure this"
                                  " is correct, unblock this option with 'self_interface=True'.\n"
                                  "The residues are %s" % intersect)
-    ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
-
-    # Remove self-contacts
-    ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
+    else:
+        ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
+         # Remove self-contacts
+        ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
 
     # Remove duplicated pairs
     ctc_idxs = _np.vstack(_mdcu.lists.unique_list_of_iterables_by_tuple_hashing(ctc_idxs, ignore_order=True))
