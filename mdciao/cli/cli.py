@@ -55,9 +55,6 @@ import mdciao.plots as _mdcplots
 
 import mdciao.utils as _mdcu
 
-from mdciao.flare import _utils as _mdcfu
-
-
 def _offer_to_create_dir(output_dir):
     r"""
     Offer to create a directory if it does not
@@ -1054,10 +1051,35 @@ def interface(
         savefigs=True,
         savetabs=True,
         savetrajs=False,
-        figures=True
+        figures=True,
+        self_interface=False,
 ):
-    r"""Contact-frequencies between residues belonging
-    to different fragments of the molecular topology
+    r"""Contact-frequencies between two groups of residues
+
+    The groups of residues can be defined directly
+    by using residue indices or by defining molecular fragments
+    and using these definitions as a shorthand to address
+    large sub-domains of the molecular topology. See in particular
+    the documentation for :obj:`fragments`, :obj:`frag_idxs_group_1`
+    obj:`frag_idxs_group_2`.
+
+    Typically, the two groups of residues conforming both
+    sides of the interface, also called interface members,
+    do not share common residues, because the members
+    belong to different molecular units. For example,
+    in a receptor--G-protein complex, one partner is
+    the receptor and the other partner is the G-protein.
+
+    By default, mdciao.interface doesn't allow interface
+    members to share residues. However, sometimes it's
+    useful to allow it because the contacts of one fragment
+    with itself (the self-contacts) are also important.
+    E.g. the C-terminus of a receptor interfacing with
+    the entire receptor, **including the C-terminus**.
+    To allow for this behaviour, use :obj:`self_interface` = True,
+    and possibly increase :obj:`n_nearest`, since otherwise
+    neighboring residues of the shared set (e.g. C-terminus)
+    will always appear as formed.
 
     Parameters
     ----------
@@ -1079,13 +1101,15 @@ def interface(
         an :obj:`~mdtraj.Trajectory` object
     frag_idxs_group_1 : NoneType, default is None
         Indices of the fragments that belong to the group_1.
-        Strings can be CSVs and include ranges, e.g. '1,3-4'.
+        Strings can be CSVs and include ranges, e.g. '1,3-4',
+        or be consensus labels "TM*,-TM6".
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [0]
     frag_idxs_group_2 : NoneType, default is None
         Indices of the fragments that belong to the group_2.
-        Strings can be CSVs and include ranges, e.g. '1,3-4'.
+        Strings can be CSVs and include ranges, e.g. '1,3-4',
+        or be consensus labels "TM*,-TM6".
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
@@ -1157,13 +1181,15 @@ def interface(
         The extension (=format) of the saved figures
     gray_background : bool, default is False
         Use gray background when using smoothing windows
-    interface_cutoff_Ang : int, default is 35
+    interface_cutoff_Ang : float, default is 35
         The interface between both groups is defined as the
         set of group_1-group_2-distances that are within
         this cutoff in the reference topology. Otherwise, a
         large number of non-necessary distances (e.g.
         between N-terminus and G-protein) are computed.
-        Default is 35.
+        Default is 35. Setting this cutoff to None is
+        equivalent to using no cutoff,
+        i.e. all possible contacts are regarded
     ctc_control : int, default is 20
         Control the number of reported contacts. Can be an
         integer (keep the first n contacts) or a float
@@ -1253,9 +1279,12 @@ def interface(
         Save the timetraces
     figures : bool, default is True
         Draw figures
+    self_interface : bool, default is False
+        Allow the interface members to share
+        residues
+
     Returns
     -------
-
     CG_interface : :obj:`mdciao.contacts.ContactGroup`
         The object containing the :obj:`mdciao.contacts.ContactPair`
         objects tha conform the interface.
@@ -1294,7 +1323,7 @@ def interface(
         top2confrag[val] = key
     if user_wants_consensus:
         intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2)
+        intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2, answers=[frag_idxs_group_1, frag_idxs_group_2])
 
     else:
         intf_frags_as_residxs, \
@@ -1302,12 +1331,18 @@ def interface(
                                                                frag_idxs_group_1, frag_idxs_group_2,
                                                                )
     intersect = list(set(intf_frags_as_residxs[0]).intersection(intf_frags_as_residxs[1]))
-    assert len(intersect) == 0, ("Some_residxs appear in both members of the interface %s, "
-                                 "this is not possible" % intersect)
-    ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
-
-    # Remove self-contacts
-    ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
+    if len(intersect) > 0:
+        if self_interface:
+            ctc_idxs = _mdcu.lists.unique_product_w_intersection(intf_frags_as_residxs[0], intf_frags_as_residxs[1])
+        else:
+            raise AssertionError("Some residues appear in both members of the interface, but this"
+                                 " behavior is blocked by default.\nIf you are sure this"
+                                 " is correct, unblock this option with 'self_interface=True'.\n"
+                                 "The residues are %s" % intersect)
+    else:
+        ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
+         # Remove self-contacts
+        ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
 
     # Create a neighborlist
     if n_nearest>0:
@@ -1315,29 +1350,25 @@ def interface(
         nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
 
-    print("\nComputing distances in the interface between fragments\n%s\nand\n%s.\n"
-          "The interface is defined by the residues within %3.1f "
-          "Angstrom of each other in the reference topology.\n"
-          "Computing interface..."
-          % ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
-             '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]]))),
-             interface_cutoff_Ang), end="")
-
-    ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs))
-    print("done!")
-
-    ctc_idxs_receptor_Gprot = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
-
-    interface_residx_short = [list(set(ctc_idxs_receptor_Gprot[:,0]).intersection(intf_frags_as_residxs[0])),
-                              list(set(ctc_idxs_receptor_Gprot[:,1]).intersection(intf_frags_as_residxs[1]))]
-
+    print("\nComputing distances in the interface between fragments\n%s\nand\n%s"%
+          ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
+           '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]])))))
+    if interface_cutoff_Ang is None:
+        ctc_idxs_intf = ctc_idxs
+    else:
+        print("The interface is restricted to the residues within %3.1f "
+              "Angstrom of each other in the reference topology.\n"
+              "Computing interface..."%interface_cutoff_Ang, end="")
+        ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs))
+        print("done!")
+        ctc_idxs_intf = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
+        print()
+        print(
+            "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
+            "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
+            len(ctc_idxs), len(ctc_idxs_intf)))
     print()
-    print(
-        "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
-        "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
-        len(ctc_idxs), len(ctc_idxs_receptor_Gprot)))
-    print()
-    ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_receptor_Gprot,
+    ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_intf,
                                  stride=stride, return_times_and_atoms=True,
                                  consolidate=False,
                                  chunksize=chunksize_in_frames,
@@ -1361,7 +1392,7 @@ def interface(
     for ii, idx in enumerate(order[:n_ctcs]):
         ifreq = ctc_frequency[idx]
         if ifreq > min_freq:
-            pair = ctc_idxs_receptor_Gprot[idx]
+            pair = ctc_idxs_intf[idx]
             consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps,
                                                                 no_key=None) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]

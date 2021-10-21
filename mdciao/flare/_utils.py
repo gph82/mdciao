@@ -1184,6 +1184,8 @@ def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments,
         The fragments. Each individual
         residue of :obj:`res_index_pairs` can
         appear at most in one (and only one) fragment
+        TODO this might not be true anymore,
+        since self_interface can be True
     check_if_subset : bool, default is True
         Check whether all idxs in
         :obj:`res_idxs_pairs` belong
@@ -1214,6 +1216,9 @@ def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments,
         if len(_np.intersect1d(rp, children)) == 2:
             mat_CG[fp[0], fp[1]] += freq
             mat_CG[fp[1], fp[0]] += freq
+
+    mat_CG[_np.arange(len(fragments)), _np.arange(len(fragments))] /= 2 # the self-contacts need to be div 2
+
     return mat_CG
 
 def sparsify_sym_matrix(mat, eps=1e-2):

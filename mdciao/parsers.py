@@ -587,7 +587,8 @@ def parser_for_interface():
                         help="The interface between both groups is defined as the set of group_1-group_2-"
                              "distances that are within this "
                              "cutoff in the reference topology. Otherwise, a large number of "
-                             "non-necessary distances (e.g. between N-terminus and G-protein) are computed. Default is 35.",
+                             "non-necessary distances (e.g. between N-terminus and G-protein) are computed. Default is 35. You "
+                             "can pass '0' to have no cutoff at all (include all possible interface contacts)",
                         default=35)
     parser.add_argument('--cmap',type=str,help="The colormap for the contact matrix. Default is 'binary' which is "
                                                  "black and white, but you can choose anthing from here: "

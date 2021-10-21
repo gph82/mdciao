@@ -127,12 +127,18 @@ def does_not_contain_strings(iterable):
 
     return all([not isinstance(ii, str) for ii in iterable])
 
-def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
+def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False,
+                                              ignore_order=False):
     """
     Returns the unique entries(if there are duplicates) from a list of iterables.
-    Order matters, i.e. [[0,1],[1,0]] are considered different iterables (unlike np.unique does)
-    If ilist contains non-iterables, they will be considered as iterables for comparison purposes, s.t.
-    1==[1]==np.array(1) and 'A'==['A']
+
+    Default is to take order into account, i.e. [[0,1],[1,0]]
+    are considered different iterables
+
+    If :obj:`ilist` contains non-iterables,
+    they will be turned into iterables, s.t.
+    1==[1]==np.array(1) and 'A'==['A'].
+    They will also be returned as iterables
 
     Parameters
     ----------
@@ -140,10 +146,14 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
         list of iterables with redundant entries (redundant in the list, not in entries)
     return_idxs : boolean
         'True' if required to return indices instead of unique list. (Default is False).
+    ignore_order : bool, default is False
+        ignore order, s.t. [0,1] and [1,0]
+        are considered equal. Only the first
+        instance ([0,1]) is kept
 
     Returns
     -------
-    list
+    result : list
         list of unique iterables or indices of 'ilist' where the unique entries are
 
     """
@@ -157,6 +167,10 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
         else:
             return [0]
 
+    if ignore_order:
+        lambda_sort = lambda inlist : sorted(inlist)
+    else:
+        lambda_sort = lambda inlist : inlist
     # Now for the actual work
     idxs_out = []
     ilist_out = []
@@ -164,11 +178,11 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False):
     for ii, sublist in enumerate(ilist):
         if isinstance(sublist, _np.ndarray):
             sublist = sublist.flatten()
-        this_objects_id = hash(tuple(force_iterable(sublist)))
+        this_objects_id = hash(tuple(lambda_sort(force_iterable(sublist))))
 
         if this_objects_id not in seen:
             ilist_out.append(force_iterable(sublist))
-            idxs_out.append(force_iterable(ii))
+            idxs_out.append(ii)
             seen.append(this_objects_id)
     if not return_idxs:
         return ilist_out
@@ -591,3 +605,79 @@ def find_parent_list(sublists, parent_lists):
         if len(kids):
             child_by_parent[ii]=kids
     return parents_by_child, child_by_parent
+
+def unique_product_w_intersection(a1,a2):
+    r"""
+    Fast way to create the product of two intersecting sets without repeated/unwanted pairs
+
+    Consider that
+    >>> list(itertools.product([0,1,2,3],[2,3,4,5]))
+    [(0, 2),
+     (0, 3),
+     (0, 4),
+     (0, 5),
+     (1, 2),
+     (1, 3),
+     (1, 4),
+     (1, 5),
+     (2, 2),
+     (2, 3),
+     (2, 4),
+     (2, 5),
+     (3, 2),
+     (3, 3),
+     (3, 4),
+     (3, 5)]
+
+    Has the repeated/unwanted pairs (2,2),(3,3),(3,2) which
+    need to be taken out a posteriori by comparing pairs.
+
+    The :obj:`unique_list_of_iterables_by_tuple_hashing`
+    method accepts also arrays (since pairlists
+    may not necessarily have been generated
+    as tuples, but also as np.arrays), s.t.
+    the arrays need to be casted into tuples before hashing
+    and one comparison per pair (grows quadratically)
+
+    >>> a1 = np.arange(200)
+    >>> a2 = np.arange(195,300)
+    >>> pairs = np.array(list(itertools.product(a1,a2)))
+    >>> %timeit mdciao.utils.lists.unique_list_of_iterables_by_tuple_hashing(slow)
+    2.83 s ± 170 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+    Whereas
+    >>> %timeit mdciao.utils.lists.unique_product_w_intersection(a1,a2)
+    47 ms ± 394 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+    For reference
+    >>> %timeit list(itertools.product(a1,a2))
+    783 µs ± 5.37 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
+
+    I.e. clearly, for non-intersecting sets a1 and a2 without unwanted/repeated
+    pairs, it's always better to use itertools.product directly
+
+    Parameters
+    ----------
+    a1 : iterable
+        The integers of the set1
+    a2 : iterable
+        The integers of the set2
+
+    Returns
+    -------
+    pairlist : np.ndarray
+        The pairlist product of a1 and a2
+        without self-pairs (ii,ii) and the
+        only (ii,jj) (not (jj,ii))
+
+    """
+    from itertools import product, combinations
+    intersect = list(set(a1).intersection(a2))
+    a1_no_int = list(set(a1).difference(intersect))
+    a2_no_int = list(set(a2).difference(intersect))
+    pairlist = list(product(a1_no_int, a2_no_int))+list(product(a1_no_int,intersect))\
+                                                  +list(product(intersect,a2_no_int))\
+               +list(combinations(intersect,2))
+    pairlist = _np.vstack(sorted(pairlist, key=lambda item: (item[0], item[1]), reverse=False))
+    return pairlist

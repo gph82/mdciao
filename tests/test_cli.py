@@ -536,6 +536,36 @@ class Test_interface(TestCLTBaseClass):
                                   #no_disk=self.no_disk
                                   )
 
+    def test_no_interface_cutoff_Ang(self):
+        cli.interface([self.traj, self.traj_reverse],
+                      self.geom,
+                      fragments=["967-1001",  # TM6
+                                 "328-353"],  # a5
+                      figures=False,
+                      no_disk=self.no_disk,
+                      interface_cutoff_Ang=None
+                      )
+
+    def test_w_nomenclature_CGN_GPCR_fragments_are_consensus_and_flareplot_and_self_interface(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
+            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
+            with remember_cwd():
+                os.chdir(tmpdir)
+                cli.interface([self.traj, self.traj_reverse],
+                              self.geom,
+                              ctc_cutoff_Ang=5,
+                              n_nearest=4,
+                              output_dir=tmpdir,
+                              fragments=["consensus"],
+                              CGN_PDB="3SN6",
+                              GPCR_uniprot="adrb2_human",
+                              accept_guess=True,
+                              frag_idxs_group_1='TM6',
+                              frag_idxs_group_2='TM5,TM6',
+                              self_interface=True,
+                              )
 
 class Test_pdb(TestCLTBaseClass):
 

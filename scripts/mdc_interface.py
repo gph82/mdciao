@@ -36,5 +36,6 @@ if not a.fragmentify:
 b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
 for key in ["trajectories", "fragmentify"]:
     b.pop(key)
+b["interface_cutoff_Ang"] = [None if b["interface_cutoff_Ang"]==0 else b["interface_cutoff_Ang"]][0]
 
 neighborhood = interface(a.trajectories,**b)

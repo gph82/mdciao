@@ -1903,7 +1903,7 @@ class ContactGroup(object):
         list_of_contact_objects : list
             list of :obj:`ContactPair` objects
         interface_fragments : list of two iterables of indexes, default is None
-            An interface is defined by two, non-overlapping
+            An interface is defined by two
             groups of residue indices.
 
             This input doesn't need to have all
@@ -1919,14 +1919,29 @@ class ContactGroup(object):
 
             It will remain accessible through the object's
             equally named the attribute self.interface_fragments
-
         top : :obj:`~mdtraj.Topology`, default is None
-
+            The molecular topology associated
+            with this object. Normally, the
+            default behaviour is enough. It checks whether all
+            ContactPairs of :obj:`list_of_contact_objects`
+            share the same self.top and use that one.
+            If they have different topologies, the
+            method fails, since you can't instantiate
+            a ContactGroup with ContactPairs from different.
+            In case the ContactPairs don't have
+            any topology at all (self.top is None for all ContactPairs)
+            you can pass one here. Or, if the have one, and you
+            pass one here, it will be checked that :obj:`top` provided
+            here coincides with the ContactPairs' shared topology
         name : string, default is None
             Optional name you want to give this object,
             ATM it is only used for the title of the
             :obj:`ContactGroup.plot_distance_distributions`
             title when the object is not a neighborhood
+        neighbors_excluded : int, default is None
+            The neighbors excluded when creating
+            the underlying ContactPairs passed in
+            :obj:`list_of_contact_objects`
         max_cutoff_Ang : float, default is None
             Operations involving cutoffs higher
             than this will be forbidden and will
@@ -2037,8 +2052,8 @@ class ContactGroup(object):
                 # TODO prolly this is anti-pattern but I prefer these many sanity checks
                 assert len(self._interface_fragments)==2
                 intersect = list(set(self._interface_fragments[0]).intersection(self._interface_fragments[1]))
-                assert len(intersect)==0, ("Some_residxs appear in both members of the interface %s, "
-                                           "this is not possible"%intersect)
+                #assert len(intersect)==0, ("Some_residxs appear in both members of the interface %s, "
+                #                           "this is not possible"%intersect)
                 _np.testing.assert_equal(len(self._interface_fragments[0]),len(_np.unique(self._interface_fragments[0])))
                 _np.testing.assert_equal(len(self._interface_fragments[1]),len(_np.unique(self._interface_fragments[1])))
 
@@ -3517,12 +3532,13 @@ class ContactGroup(object):
             matrix doesn't need much precision beyond
             this
         return_fragments : bool, default is False
-            Wether to return the fragments that the
+            Whether to return the fragments that the
             input produced.
 
         Returns
         -------
         mat : numpy.ndarray or :obj:`~pandas.DataFrame`
+            The coarse-grained contact matrix
         fragments : dict
             The fragment definitions
         """
@@ -6262,7 +6278,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
         for frag_key in ['consensus frag', 'fragname', "frag"]:
             if frag_key in df.keys():
                 kwargs["fragment_names"] = _pdunique(df[frag_key]).tolist()
-                kwargs["fragments"] = [df.index[df[frag_key] == key].values.tolist() for key in
+                kwargs["fragments"] = [df.index[df[frag_key] == key].values.astype(int).tolist() for key in
                                        kwargs["fragment_names"]]
                 if frag_key=="frag":
                     na_idxs = _np.flatnonzero(_isna(kwargs["fragment_names"]))
@@ -6280,7 +6296,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
 
     elif scheme == 'interface':
         reconfigure_fragments(df, kwargs)
-        kwargs["sparse_residues"] = _np.hstack([df.index[df["interface fragment"] == ii].values.tolist() for ii in [0,1]])
+        kwargs["sparse_residues"] = _np.hstack([df.index[df["interface fragment"] == ii].values.tolist() for ii in [0,1]]).astype(int)
         _populate_colors_if_needed(kwargs, df, fixed_color_list)
 
     elif scheme == 'interface_sparse':
@@ -6290,17 +6306,17 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
         if 'fragname' in df.keys():
             frag_key = "fragname"
 
-        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]])
+        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]]).astype(int)
         if frag_key is not None:
             frags = _pdunique(df[frag_key]).tolist()
-            frags = [df.index[df[frag_key] == key].values.tolist() for key in frags]
+            frags = [df.index[df[frag_key] == key].values.astype(int).tolist() for key in frags]
             kwargs["sparse_residues"] = _np.hstack([ifrag for ifrag in frags if len(_np.intersect1d(to_intersect_with,ifrag))> zero_freq])
 
             if 'consensus frag' in df.keys():
                 frag_key = "consensus frag"
 
             kwargs["fragment_names"] = _pdunique(df[frag_key]).tolist()
-            kwargs["fragments"] = [df.index[df[frag_key] == key].values.tolist() for key in
+            kwargs["fragments"] = [df.index[df[frag_key] == key].values.astype(int).tolist() for key in
                                    kwargs["fragment_names"]]
         _populate_colors_if_needed(kwargs, df, fixed_color_list)
 
@@ -6308,17 +6324,17 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
         reconfigure_fragments(df, kwargs)
         kwargs["sparse_residues"] = _np.hstack(
             [df.index[df["interface residx"] == ii].values.tolist() for ii in [0, 1]])
-        _populate_colors_if_needed(kwargs, df, fixed_color_list)
+        _populate_colors_if_needed(kwargs, df, fixed_color_list).astype(int)
 
     elif scheme == 'residues_sparse':
         reconfigure_fragments(df, kwargs)
-        kwargs["sparse_residues"] = df.index[df["freq"] > zero_freq].values.tolist()
+        kwargs["sparse_residues"] = df.index[df["freq"] > zero_freq].values.astype(int).tolist()
         _populate_colors_if_needed(kwargs, df, fixed_color_list)
 
     elif scheme == 'consensus':
         reconfigure_fragments(df, kwargs)
         kwargs["sparse_fragments"] = True
-        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]])
+        to_intersect_with = _np.hstack([df.index[df["interface residx"] == ii].values.tolist() for ii in [0,1]]).astype(int)
         colors = {}
         color_key = ["frag" if "frag" in df.keys() else "interface fragment"][0]
         for idx in to_intersect_with:
@@ -6329,7 +6345,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
 
     elif scheme == 'consensus_sparse':
         reconfigure_fragments(df, kwargs)
-        to_intersect_with = df.index[df["freq"] > zero_freq].values.tolist()
+        to_intersect_with = df.index[df["freq"] > zero_freq].values.astype(int).tolist()
         kwargs["sparse_residues"] = _np.hstack([ifrag for ifrag in kwargs["fragments"] if len(_np.intersect1d(to_intersect_with, ifrag)) > zero_freq])
         colors = {}
         for idx in to_intersect_with:
@@ -6345,7 +6361,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
 
     #Finally, overwrite everything in case sparse_residues is there
     if "sparse_residues" in df.keys():
-        kwargs["sparse_residues"] = df.index[df["sparse_residues"] == 1].values.tolist()
+        kwargs["sparse_residues"] = df.index[df["sparse_residues"] == 1].values.astype(int).tolist()
         if "colors" in kwargs.keys():
             kwargs["colors"]=[kwargs["colors"][ii] for ii in kwargs["sparse_residues"]]
     return kwargs

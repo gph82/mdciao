@@ -2462,14 +2462,6 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         super(TestContactGroupInterface, self).setUp()
         # TODO here in case i need extra stuff, otherwise
 
-    def test_instantiates_raises_intersect(self):
-        with pytest.raises(AssertionError):
-            I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
-                                       self.cp2_wtop_and_conslabs,
-                                       self.cp4_wtop_and_conslabs],
-                                      interface_fragments = [[1, 3],
-                                                         [1, 2]])
-
     def test_instantiates_raises_duplicates(self):
         with pytest.raises(AssertionError) as e:
             I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
