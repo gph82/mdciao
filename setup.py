@@ -1,4 +1,4 @@
-__version__ = "0.0.2.beta4"
+__version__ = "0.0.3"
 from setuptools import setup, find_packages
 
 with open("README.rst", "r", encoding="utf-8") as fh:
