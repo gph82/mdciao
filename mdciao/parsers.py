@@ -235,10 +235,9 @@ def _parser_add_graphic_ext(parser):
                         default='.pdf')
 
 def _parser_add_no_fragfrag(parser):
-    parser.add_argument('--same_fragment', dest='same_fragment', action='store_true',
-                        help="Allow contact partners in the same fragment, default is True"
-                             " Default is True")
-    parser.add_argument('--no-same_fragment', dest='same_fragment', action='store_false')
+    parser.add_argument('-nsf', '--no-same_fragment',
+                        help="Don't allow contact partners in the same fragment. Default is to allow it.",
+                        dest='allow_same_fragment_ctcs', action='store_false')
     parser.set_defaults(allow_same_fragment_ctcs=True)
 
 def _parser_add_pbc(parser):
@@ -436,7 +435,7 @@ def parser_for_rn():
     _parser_add_gray_backgroud(parser)
     _parser_add_graphic_dpi(parser)
     _parser_add_short_AA_names(parser)
-    #_parser_add_no_fragfrag(parser)
+    _parser_add_no_fragfrag(parser)
     _parser_add_time_traces(parser)
     _parser_add_savetrajs(parser)
     _parser_add_distro(parser)
