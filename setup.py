@@ -1,4 +1,4 @@
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 from setuptools import setup, find_packages
 
 with open("README.rst", "r", encoding="utf-8") as fh:
@@ -76,7 +76,9 @@ setup(
         ('data_for_mdciao/json', ['tests/data/json/tip.json']),
         ('data_for_mdciao/RSCB_pdb', ['tests/data/RSCB_pdb/3SN6.pdb.gz']),
         ("data_for_mdciao/notebooks", ["mdciao/examples/Tutorial.ipynb"]),
-        ("data_for_mdciao/notebooks", ["mdciao/examples/Missing_Contacts.ipynb"])
+        ("data_for_mdciao/notebooks", ["mdciao/examples/Missing_Contacts.ipynb"]),
+        ("data_for_mdciao/notebooks", ["mdciao/examples/Manuscript.ipynb"]),
+        ("data_for_mdciao/notebooks", ["mdciao/examples/Flareplot_Schemes.ipynb"])
 
     ],
     scripts=['scripts/mdc_neighborhoods.py',
