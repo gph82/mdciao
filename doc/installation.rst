@@ -25,7 +25,7 @@ Installation via the `conda <https://conda.io/en/latest/>`_ Python package manag
  As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. More info on how to do this in the note about the `Python interpreter and environment`_.
 
 .. warning::
- The pip releases are actually still beta releases for easy installation. But development (and bugfixing) is still ongoing. For the latest ``mdciao`` version, please use the `Installation from source`_.
+ If you are interested in latest ``mdciao`` features, please use the `Installation from source`_.
 
 
 Installation from source

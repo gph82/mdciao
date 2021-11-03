@@ -89,7 +89,7 @@ Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2021 (in preparat
     https://img.shields.io/github/license/gph82/mdciao
 
 .. |DOI| image::
-   https://zenodo.org/badge/DOI/10.5281/zenodo.4722809.svg
-   :target: https://doi.org/10.5281/zenodo.4722809
+   https://zenodo.org/badge/DOI/10.5281/zenodo.5643177.svg
+   :target: https://doi.org/10.5281/zenodo.5643177
 
 
