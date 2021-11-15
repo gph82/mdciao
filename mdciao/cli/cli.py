@@ -1388,7 +1388,7 @@ def interface(
     ctc_objs = []
     n_ctcs =  _mdcu.lists._get_n_ctcs_from_freqs(ctc_control,ctc_frequency[order])[0]
     #TODO still unsure about where it's best to put this
-    _mdcctcs.contacts._contact_fraction_informer(n_ctcs, ctc_frequency[order], or_frac=.9)
+    _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(ctc_frequency[order[:n_ctcs]]>min_freq)]), ctc_frequency[order], or_frac=.9)
     for ii, idx in enumerate(order[:n_ctcs]):
         ifreq = ctc_frequency[idx]
         if ifreq > min_freq:
