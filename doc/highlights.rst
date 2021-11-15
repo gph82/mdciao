@@ -257,7 +257,7 @@ Highlights
       :align: left
       :name: sites_freq
 
-      [``sites.overall@3.5_Ang.pdf``](click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.charite.de/html/mdsrvdev.html?load=file://_Guille/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
+      [``sites.overall@3.5_Ang.pdf``](click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.uni-leipzig.de/mdsrv.html?load=file://base/mdciao/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
 
  |nbspc|
 .. _comparison_HL:
