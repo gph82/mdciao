@@ -773,7 +773,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     fragment_input : list of strings
         Many cases are possible
         * ["consensus"] : user wants to use
-        consenus labels such as "TM6" etc.
+        consensus labels such as "TM6" etc.
         Using "resSeq+" heuristic to fragment, and
         returns :obj:`user_wants_consensus` as True,
         this will trigger further prompts
