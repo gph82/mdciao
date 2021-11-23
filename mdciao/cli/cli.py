@@ -560,7 +560,8 @@ def residue_neighborhoods(residues,
                           savetabs=True,
                           savetrajs=False,
                           figures=True,
-                          pre_computed_distance_matrix=None
+                          pre_computed_distance_matrix=None,
+                          naive_bonds=False
                           ):
     r"""Per-residue neighborhoods based on contact frequencies between pairs
     of residues.
@@ -778,7 +779,12 @@ def residue_neighborhoods(residues,
         The distance matrix here will speed up the
         pre-computing of likely neighbors. Usecase
         are several API-calls following each other
-
+    naive_bonds : bool, default is False
+        If :obj:`top` doesn't automatically yield
+        a list bonds between residues, build naive
+        (=linear) bonds using :obj:`mdciao.utils.bonds.top2residue_bond_matrix_naive`)
+        These bonds are neede to exclude bonded neighbors
+        using :obj:`n_nearest`
     Returns
     -------
     out_dict : dict
@@ -830,19 +836,24 @@ def residue_neighborhoods(residues,
     top2confrag = _np.full(refgeom.top.n_residues, None)
     for key, val in consensus_frags.items():
         top2confrag[val] = key
+
     # Create a neighborlist
-    naive_bonds=False #WIP, perhaps expose
-    try:
-        nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
-    except ValueError as e:
-        print(e)
-        #print("You can use naive bond-listing by using serial indices with the\n"
-        #      "option --naive_bonds. Use this option at your own risk")
-        if naive_bonds:
-            print("Creating naive bond list with residue serial index.")
-            nl =[_np.arange(_np.max((0,ii-n_nearest)),_np.min((ii+n_nearest+1,refgeom.top.n_residues))).tolist() for ii in range(refgeom.top.n_residues)]
-        else:
-            raise(e)
+    if n_nearest == 0:
+        nl = [[]]*refgeom.top.n_residues
+    else:
+        try:
+            nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
+        except ValueError as e:
+            print(e)
+            if naive_bonds:
+                print("Creating a naive linear bond-list: n is neighbor with n+1 and n-1 within with breaks enforced: ")
+                print(" * between non-protein residues")
+                print(" * between the above '%s' fragment definitions"%fragments)
+                mat = _mdcu.bonds.top2residue_bond_matrix_naive(refgeom.top, fragments=fragments_as_residue_idxs)
+                nl = _mdcu.bonds.neighborlists_from_adjacency_matrix(mat, n_nearest)
+            else:
+                raise ValueError("You can use naive bond-listing by using serial indices with the\n"
+                                 "option naive_bonds. Use this option at your own risk")
 
 
     # Use it to prune the contact indices
