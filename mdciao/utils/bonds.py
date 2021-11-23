@@ -9,8 +9,33 @@ residues of an :obj:`mdtraj.Topology`
 
 """
 import numpy as _np
+from scipy.sparse.csgraph import connected_components as _concom
 
-# This is lifted from mdas, the original source shall remain there
+def connected_sets(mat):
+    r"""
+    Return the connected components/sets of a an adjacency matrix
+
+    Uses :obj:`~scipy.sparse.csgraph.connected_components`
+    under the hood with directed=False
+
+    Parameters
+    ----------
+    mat : 2D _np.array, square matrix (M,M)
+        Adjacency matrix, can be symmetric or not.
+        Nodes are always self-adjacent, i.e.
+        the diagonal of :obj:`mat` is ignored
+
+    Returns
+    -------
+    sets: list
+        The connected components as 1D _np.ndarrays
+    """
+    sets = []
+    nsets, labels = _concom(mat, directed=False)
+    for ii in range(nsets):
+        sets.append(_np.flatnonzero(labels==ii))
+    return sets
+
 def top2residue_bond_matrix(top,
                             force_resSeq_breaks=False,
                             verbose=True,

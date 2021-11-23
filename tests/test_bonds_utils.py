@@ -123,7 +123,42 @@ class Test_neighborlists_from_adjacency_matrix(unittest.TestCase):
         self.assertListEqual(nl_1, bonds.neighborlists_from_adjacency_matrix(mat,1))
         self.assertListEqual(nl_2, bonds.neighborlists_from_adjacency_matrix(mat,2))
 
+class Test_connected_sets(unittest.TestCase):
 
+    def test_just_works(self):
+        mat = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
+                         [1, 1, 1, 0, 0, 0, 0, 0],
+                         [0, 1, 1, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 1, 1, 0, 0, 0],
+                         [0, 0, 0, 1, 1, 1, 0, 0],
+                         [0, 0, 0, 0, 1, 1, 1, 0],
+                         [0, 0, 0, 0, 0, 1, 1, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 1]])
+        sets = bonds.connected_sets(mat)
+        self.assertListEqual([ss.tolist() for ss in sets], [[0,1,2],[3,4,5,6],[7]])
 
+    def test_asymmetric(self):
+        mat = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
+                         [0, 1, 1, 0, 0, 0, 0, 0],
+                         [0, 0, 1, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 1, 1, 0, 0, 0],
+                         [0, 0, 0, 0, 1, 1, 0, 0],
+                         [0, 0, 0, 0, 0, 1, 1, 0],
+                         [0, 0, 0, 0, 0, 0, 1, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 1]])
+        sets = bonds.connected_sets(mat)
+        self.assertListEqual([ss.tolist() for ss in sets], [[0,1,2],[3,4,5,6],[7]])
+
+    def test_asymmetric_no_diagonal(self):
+        mat = _np.array([[0, 1, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 1, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 1, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 1, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 1, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0]])
+        sets = bonds.connected_sets(mat)
+        self.assertListEqual([ss.tolist() for ss in sets], [[0,1,2],[3,4,5,6],[7]])
 if __name__ == '__main__':
    unittest.main()
