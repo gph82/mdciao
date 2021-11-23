@@ -172,3 +172,65 @@ def neighborlists_from_adjacency_matrix(mat, n):
             assert ii in neighbor_list[nn]
 
     return neighbor_list
+
+def top2residue_bond_matrix_naive(top, only_protein=True, fragments=None):
+    r""" Creates a naive (=linear) residue-residue bond-matrix,
+    where a bond is assumed between the n-th and the n+1-th residue
+
+    Usually, one would resort to this method if the topology's
+    own create_standard_bonds() method does not work, e.g.
+    because there's only alpha Carbons
+
+    Parameters
+    ----------
+    top : :obj:`~mdtraj.Topology`
+    only_protein : bool, default is True
+        Only create bonds when both residues
+        satisfy are protein residues. The
+        check is done using the attribute
+        :obj:`mdtraj.core.topology.Residue.is_protein`
+    fragments : iterable of ints, default is None
+        Use fragment/chain definition to avoid
+        bonds between fragments/chains. These
+        definitions need to cover the entire :obj:`~mdtraj.Topology`,
+        i.e. each residue index must appear once (an and only once)
+        in the :obj`fragments`. Note that breaks
+        introduced via the :obj:`only_protein argument`
+        will always be present, whether these residues
+        are in the same fragment or not
+
+    Returns
+    -------
+    mat : 2D np.ndarray
+        Symmetric residue-residue bond-matrix.
+        The diagonal is filled with ones as well.
+    """
+    bonds = _np.zeros((top.n_residues, top.n_residues), dtype=int)
+
+    if fragments is None:
+        fragments = [_np.arange(top.n_residues)]
+
+    #TODO this fragment checking might defined elsewhere as a function
+    # but I don't want to introduce any other dep here
+    stacked = _np.concatenate(fragments)
+    unique = _np.unique(stacked)
+    missing = [ii for ii in range(top.n_residues) if ii not in stacked]
+    if len(missing)>0:
+        raise ValueError("Bad fragment definition. Residue idxs missing: %s"%missing)
+    if len(unique)<len(stacked):
+        raise ValueError("Bad fragment definition. Residue idxs repeated: %s"%_np.flatnonzero(_np.bincount(stacked)!=1))
+
+    if only_protein is True:
+        protein = [rr.index for rr in top.residues if rr.is_protein]
+    else:
+        protein = [rr.index for rr in top.residues]
+
+    for ifrag in fragments:
+        prot_frag = _np.intersect1d(ifrag, protein)
+        for ii in prot_frag:
+            if ii+1 in prot_frag:
+                bonds[ii,ii+1] = 1
+                bonds[ii+1,ii] = 1
+
+    _np.fill_diagonal(bonds,1)
+    return bonds
