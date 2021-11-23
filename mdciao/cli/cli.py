@@ -783,7 +783,7 @@ def residue_neighborhoods(residues,
         If :obj:`top` doesn't automatically yield
         a list bonds between residues, build naive
         (=linear) bonds using :obj:`mdciao.utils.bonds.top2residue_bond_matrix_naive`)
-        These bonds are neede to exclude bonded neighbors
+        These bonds are needed to exclude bonded neighbors
         using :obj:`n_nearest`
     Returns
     -------
