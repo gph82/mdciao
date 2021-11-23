@@ -4,7 +4,6 @@ mock==3.0.5
 XlsxWriter==1.1.8
 mdtraj==1.9.3
 numpy==1.16.4
-msmtools==1.2.4
 scipy==1.2.1
 Bio
 ipython==7.8.0
