@@ -86,5 +86,44 @@ class Test_bonded_neighborlist_from_top(unittest.TestCase):
        actual_neighbors = [[1], [0, 2], [1], [4], [3, 5], [4], [], []]
        assert neighbors_from_function == actual_neighbors
 
+class Test_neighborlists_from_adjacency_matrix(unittest.TestCase):
+
+    def test_works(self):
+        mat = _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
+                         [1, 1, 1, 0, 0, 0, 0, 0],
+                         [0, 1, 1, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 1, 1, 0, 0, 0],
+                         [0, 0, 0, 1, 1, 1, 0, 0],
+                         [0, 0, 0, 0, 1, 1, 1, 0],
+                         [0, 0, 0, 0, 0, 1, 1, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 1]])
+
+        nl_1 = [
+            [1],        # 0
+            [0, 2],     # 1
+            [1],        # 2
+            [4],        # 3
+            [3, 5],     # 4
+            [4, 6],     # 5
+            [5],        # 6
+            []          # 7
+        ]
+
+        nl_2 = [
+            [1, 2],     # 0
+            [0, 2],     # 1
+            [0, 1],     # 2
+            [4, 5],     # 3
+            [3, 5, 6],  # 4
+            [3, 4, 6,], # 5
+            [4, 5],     # 6
+            []          # 7
+        ]
+
+        self.assertListEqual(nl_1, bonds.neighborlists_from_adjacency_matrix(mat,1))
+        self.assertListEqual(nl_2, bonds.neighborlists_from_adjacency_matrix(mat,2))
+
+
+
 if __name__ == '__main__':
    unittest.main()
