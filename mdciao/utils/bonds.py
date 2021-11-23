@@ -68,10 +68,10 @@ def top2residue_bond_matrix(top,
         if create_standard_bonds:
             top.create_standard_bonds()
         else:
-            raise ValueError("\nThe parsed topology does not contain bonds!\n"
-                             "If your input is a .gro file, you are advised\n"
-                             "to generate a .pdb with chain information \n"
-                             "file before continuing.")
+            raise ValueError("\nThe parsed topology does not contain bonds. "
+                             "If your input is a .gro file, you are advised to\n"
+                             " * to generate a .pdb with chain information\n"
+                             " * try to use naive bond generation with mdciao.utils.bonds.top2residue_bond_matrix_naive")
 
     residue_bond_matrix = _np.zeros((top.n_residues, top.n_residues), dtype=int)
     for ibond in top._bonds:
