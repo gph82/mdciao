@@ -24,8 +24,7 @@ import numpy as _np
 import mdtraj as _md
 from mdtraj.core.residue_names import _PROTEIN_RESIDUES
 import mdciao.utils as _mdcu
-from  pandas import unique as _pandas_unique
-from msmtools.estimation import connected_sets as _connected_sets
+from pandas import unique as _pandas_unique
 
 _allowed_fragment_methods = ['chains',
                              'resSeq',
@@ -249,11 +248,11 @@ def get_fragments(top,
     elif method=='resSeq_bonds':
         residue_bond_matrix = _mdcu.bonds.top2residue_bond_matrix(top, verbose=False,
                                                       force_resSeq_breaks=True)
-        fragments = _connected_sets(residue_bond_matrix)
+        fragments = _mdcu.bonds.connected_sets(residue_bond_matrix)
     elif method=='bonds':
         residue_bond_matrix = _mdcu.bonds.top2residue_bond_matrix(top, verbose=False,
                                                       force_resSeq_breaks=False)
-        fragments = _connected_sets(residue_bond_matrix)
+        fragments = _mdcu.bonds.connected_sets(residue_bond_matrix)
         fragments = [fragments[ii] for ii in _np.argsort([fr[0] for fr in fragments])]
     elif method == "chains":
         fragments = [[rr.index for rr in ichain.residues] for ichain in top.chains]
