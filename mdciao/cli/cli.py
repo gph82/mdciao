@@ -640,7 +640,7 @@ def residue_neighborhoods(residues,
         Control the number of reported contacts. Can be an
         integer (keep the first n contacts) or a float
         representing a fraction [0,1] of the total number of
-        contacts.Default is 5.
+        contacts. Default is 5.
     n_nearest : int, default is 4
         Exclude these many bonded neighbors for each residue, i.e
     chunksize_in_frames : int, default is 10000
@@ -1194,7 +1194,7 @@ def interface(
         Control the number of reported contacts. Can be an
         integer (keep the first n contacts) or a float
         representing a fraction [0,1] of the total number of
-        contacts.Default is 5.
+        contacts. Default is 5.
     n_smooth_hw : int, default is 0
         Plots of the time-traces will be smoothed using a
         window of 2*n_smooth_hw
