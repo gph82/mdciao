@@ -1024,7 +1024,7 @@ def fontsize_get(iax):
         :obj:`iax`, most likely belonging to the
         fragment-label texts
     """
-    n_polygons = len([obj for obj in iax.artists if isinstance(obj, _CP)])
+    n_polygons = len([obj for obj in iax.findobj(_CP)])
     sizes = {"n_polygons": [],
              "other": []}
 

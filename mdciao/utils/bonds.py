@@ -9,19 +9,44 @@ residues of an :obj:`mdtraj.Topology`
 
 """
 import numpy as _np
+from scipy.sparse.csgraph import connected_components as _concom
 
-# This is lifted from mdas, the original source shall remain there
+def connected_sets(mat):
+    r"""
+    Return the connected components/sets of a an adjacency matrix
+
+    Uses :obj:`~scipy.sparse.csgraph.connected_components`
+    under the hood with directed=False
+
+    Parameters
+    ----------
+    mat : 2D _np.array, square matrix (M,M)
+        Adjacency matrix, can be symmetric or not.
+        Nodes are always self-adjacent, i.e.
+        the diagonal of :obj:`mat` is ignored
+
+    Returns
+    -------
+    sets: list
+        The connected components as 1D _np.ndarrays
+    """
+    sets = []
+    nsets, labels = _concom(mat, directed=False)
+    for ii in range(nsets):
+        sets.append(_np.flatnonzero(labels==ii))
+    return sets
+
 def top2residue_bond_matrix(top,
                             force_resSeq_breaks=False,
                             verbose=True,
                             create_standard_bonds=False):
-    '''
-    Returns a residue-residue bond matrix from the topology file.
-    The entries in the bond matrix will have either 1 or 0, where 1 signifies a bond is present.
+    r"""Return a symmetric residue-residue bond matrix from a :obj:`~mdtraj.Topology`.
+
+    The bonds used are those found in :obj:`~mdtraj.Topology.bonds`
 
     Parameters
     ----------
-    top : :py:class:`mdtraj.Topology`
+    top : :obj:`mdtraj.Topology`
     force_resSeq_breaks : boolean, default is False
         Delete bonds if there is a resSeq jump between residues.
     verbose : boolean, default is True
@@ -29,19 +54,15 @@ def top2residue_bond_matrix(top,
     create_standard_bonds : boolean, default is False
         Advanced users only, can easily lead to wrong
         results in case of .gro files, because
-        :obj:`mdtraj.Topology.create_standard_bonds`
+        :obj:`~mdtraj.Topology.create_standard_bonds`
         needs chain information to avoid creating
         bonds between residues that follow one another
-
-
-        
     Returns
     -------
-    numpy matrix
+    residue_bond_matrix : 2D np.ndarray
         Returns a symmetric adjacency matrix with entries ij=1 and ji=1,
         if there is a bond between residue i and residue j.
-
-    '''
+    """
 
     if len(top._bonds) == 0:
         if create_standard_bonds:
@@ -67,10 +88,11 @@ def top2residue_bond_matrix(top,
 
     return residue_bond_matrix
 
+#TODO do we need this anymore?
 def top2residuebonds(top,**top2residue_bond_matrix_kwargs):
     return _residue_bond_matrix_to_triu_bonds(top2residue_bond_matrix(top, **top2residue_bond_matrix_kwargs))
 
-
+#TODO do we need this anymore?
 def _residue_bond_matrix_to_triu_bonds(residue_bond_matrix):
     _np.testing.assert_array_equal(residue_bond_matrix, residue_bond_matrix.T), \
         ("This is not a symmetric residue bond matrix\n", residue_bond_matrix)
@@ -79,7 +101,6 @@ def _residue_bond_matrix_to_triu_bonds(residue_bond_matrix):
         if residue_bond_matrix[ii, jj] == 1:
             bonds.append([ii, jj])
     return bonds
-
 
 def bonded_neighborlist_from_top(top, n=1, verbose=False):
     """
@@ -98,27 +119,52 @@ def bonded_neighborlist_from_top(top, n=1, verbose=False):
     neighbor_list : list of lists
         Lisf of len top.n_residues. The i-th  list
         contains the :obj:`n` -bonded neighbors of
-        the i-th residue.
+        the i-th residue, in ascending order
     """
 
-    #todo this is very slow and a bit of overkill if one is only interested in the
-    #neighbors of one particular residue
     residue_bond_matrix = top2residue_bond_matrix(top,verbose=verbose)
-    neighbor_list = [[ii] for ii in range(residue_bond_matrix.shape[0])]
+    return neighborlists_from_adjacency_matrix(residue_bond_matrix, n)
+
+#todo this is very slow and a bit of overkill if one is only interested in the
+#neighbors of one particular residue
+# Do it graph-thetically, ideally
+def neighborlists_from_adjacency_matrix(mat, n):
+    r"""
+    Return neighborlists from an adjacency matrix.
+
+    The diagonal of :obj:`mat` is ignored, i.e. it can be 0 or 1
+
+    Parameters
+    ----------
+    mat : 2D _np.array, square matrix (M,M)
+        Adjacency matrix, can be symmetric or not
+    n : int
+        Connectedness.
+
+    Returns
+    -------
+    neighbors : list
+        A list of len M where the i-th entry
+        contains the indices of the nodes
+        separated from the i-ith node by
+        a maximum of :obj:`n` jumps. The indices
+        are always in ascending order
+    """
+    neighbor_list = [[ii] for ii in range(mat.shape[0])]
     for kk in range(n):
         for ridx, ilist in enumerate(neighbor_list):
             new_neighborlist = [ii for ii in ilist]
             for rn in ilist:
-                row = residue_bond_matrix[rn]
+                row = mat[rn]
                 bonded = _np.flatnonzero(row)
-                toadd = [nn for nn in bonded if nn not in ilist and nn!=ridx]
+                toadd = [nn for nn in bonded if nn not in ilist and nn != ridx]
                 if len(toadd):
-                    #print("neighbor %u adds new neighbor %s:"%(rn, toadd))
+                    # print("neighbor %u adds new neighbor %s:"%(rn, toadd))
                     new_neighborlist += toadd
-                    #print("so that the new neighborlist is: %s"%new_neighborlist)
+                    # print("so that the new neighborlist is: %s"%new_neighborlist)
 
-            neighbor_list[ridx] = [ii for ii in _np.unique(new_neighborlist) if ii!=ridx]
-            #break
+            neighbor_list[ridx] = [ii for ii in _np.unique(new_neighborlist) if ii != ridx]
+            # break
 
     # Check that the neighborlist works both ways
     for ii, ilist in enumerate(neighbor_list):

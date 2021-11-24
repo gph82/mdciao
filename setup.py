@@ -49,7 +49,6 @@ setup(
                     "astunparse<1.6.3; python_version=='3.8'",
                     "pandas",
                     "matplotlib",
-                    "msmtools",
                     "scipy",
                     "joblib",
                     "openpyxl",

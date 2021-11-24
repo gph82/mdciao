@@ -29,6 +29,7 @@ from mpl_chord_diagram import chord_diagram as _chord_diagram
 from collections import namedtuple as _namedtuple
 
 from matplotlib import pyplot as _plt
+from matplotlib.lines import Line2D as _Line2D
 from matplotlib.patches import CirclePolygon as _CP
 from inspect import signature as _signature
 
@@ -370,7 +371,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                                                      angle_offset=angle_offset,
                                                      aura=aura)
 
-        circle_radius_in_pts = iax.artists[0].radius * _points2dataunits(iax).mean()
+        circle_radius_in_pts = plot_attribs["dots"][0].radius * _points2dataunits(iax).mean()
         lw = circle_radius_in_pts # ??
 
     # All formed contacts
@@ -403,7 +404,7 @@ def freqs2flare(freqs, res_idxs_pairs,
     if subplot:
         if iax is iax.figure.axes[-1]:
             [_futils.fontsize_apply(iax, jax) for jax in iax.figure.axes]
-            minwidth = min([_np.unique([line.get_linewidth() for line in jax.lines if line.get_label().startswith("_line")]) for jax in iax.figure.axes])
+            minwidth = min([_np.unique([line.get_linewidth() for line in jax.findobj(_Line2D)]) for jax in iax.figure.axes])
             [[line.set_linewidth(minwidth) for line in jax.lines] for jax in iax.figure.axes]
     return iax, idxs_of_pairs2plot, plot_attribs
 

@@ -799,11 +799,15 @@ class Test_compare(unittest.TestCase):
                                  contacts.ContactPair([0,3],[[.1, .2, .2]], [[0., 1., 2.]])])
 
     def test_just_works(self):
-        myfig, freqs, __ = cli.compare({"CG1": self.CG1, "CG2": self.CG2},
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            with remember_cwd():
+                os.chdir(tmpdir)
+                myfig, freqs, plotted_freqs = cli.compare({"CG1": self.CG1, "CG2": self.CG2},
                                        ctc_cutoff_Ang=1.5, anchor="0")
-        myfig.tight_layout()
-        # myfig.savefig("1.test.png",bbox_inches="tight")
-        _plt.close("all")
+                myfig.tight_layout()
+                assert isinstance(freqs, dict)
+                assert isinstance(plotted_freqs, dict)
+                _plt.close("all")
 
 if __name__ == '__main__':
     unittest.main()
