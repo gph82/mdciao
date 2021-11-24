@@ -93,7 +93,7 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
         Control how many contacts to report per residue. There's two
         types of behaviour:
         * If int, it means directly keep these many contacts
-        * if float, it must be in in [0,1] and represents a fraction
+        * if float, it must be in [0,1] and represents a fraction
           of the total number of contacts to keep
     restrict_to_resSeq: iterable, default is None
         Only cycle through the residues in :obj:`res_idxs` with these resSeq indices.
@@ -6136,7 +6136,7 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
         The frequencies in descending order
     or_frac : float, default is .9
         Orientation fraction, i.e. print how many contacts
-        would be needed to caputre this fraction of the
+        would be needed to capture this fraction of the
         neighborhood. Can be None and nothing will be printed
 
     Returns
