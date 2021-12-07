@@ -52,7 +52,7 @@ setup(
                     "scipy",
                     "joblib",
                     "openpyxl",
-                    "biopython",
+                    "biopython>=1.77",
                     "ipython",
                     "XlsxWriter",
                     "requests",
