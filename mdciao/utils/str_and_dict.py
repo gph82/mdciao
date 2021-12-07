@@ -1112,6 +1112,10 @@ class FilenameGenerator(object):
         return self.fullpath_overall_fig.replace("overall@", "matrix@")
 
     @property
-    def fullpath_flare_pdf(self):
-        return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"), 'pdf'])
+    def fullpath_flare_vec(self):
+        if self.graphic_ext == "svg":
+            gx = self.graphic_ext
+        else:
+            gx = "pdf"
+        return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"),gx])
 

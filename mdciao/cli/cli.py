@@ -1498,8 +1498,8 @@ def interface(
                                                              )
             ifig.tight_layout()
             if savefigs:
-                ifig.savefig(fn.fullpath_flare_pdf, bbox_inches="tight")
-                print(fn.fullpath_flare_pdf)
+                ifig.savefig(fn.fullpath_flare_vec, bbox_inches="tight")
+                print(fn.fullpath_flare_vec)
 
         if plot_timedep or separate_N_ctcs:
             myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
