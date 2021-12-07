@@ -564,7 +564,7 @@ def parser_for_interface():
                                           'To help in the identification of these two groups of residues, '
                                           'the peptide-chain in the input topology '
                                           'can be automatically broken down into fragments and use them as input. '
-                                          'The number of shown contacts depends on the parameters "n_ctcs" and '
+                                          'The number of shown contacts depends on the parameters "ctc_control" and '
                                           '"min_freq". ')
 
     _parser_add_fragments(parser)
@@ -579,9 +579,9 @@ def parser_for_interface():
     _parser_add_cutoff(parser)
     _parser_add_ctc_control(parser, default=50)
     parser.add_argument("-mf", "--min_freq", type=float, default=.05,
-                        help="Do not show frequencies smaller than this. If you notice the output being"
-                             "truncated a values too far away from this, you need to increase the"
-                             "'n_ctcs' parameter" )
+                        help="Do not show frequencies smaller than this. Default is 0.05. If you notice the output being "
+                             "truncated at values much larger than this, but suspect that some contacts "
+                             "are not being reported, increase the 'ctc_control' parameter")
     parser.add_argument("-ic", "--interface_cutoff_Ang", type=float,
                         help="The interface between both groups is defined as the set of group_1-group_2-"
                              "distances that are within this "
