@@ -208,8 +208,8 @@ def _parser_add_matrix(parser):
 
 def _parser_add_flare(parser):
     parser.add_argument('--no-flare', dest='flareplot', action='store_false',
-                        help="Do not produce a flare plot of interface the contact matrix. The format will be .pdf no matter "
-                             "the value of --graphic_ext")
+                        help="Do not produce a flare plot of the interface contact matrix. If produced, regardless of the '--graphic_ext', "
+                             "the flareplot will always be in .pdf-format, unless '--graphic_ext' is 'svg'.")
     parser.set_defaults(flareplot=True)
 
 def _parser_add_output_dir(parser):

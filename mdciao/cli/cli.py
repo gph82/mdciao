@@ -1263,8 +1263,9 @@ def interface(
         https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html
     flareplot : bool, default is True
         Produce a flare plot of interface the contact
-        matrix. The format will .pdf no matter the value of
-        :obj:`graphic_ext`
+        matrix. Regardless of the :obj:`graphic_ext`,
+        the flareplot will always be in .pdf-format,
+        unless :obj:`graphic_ext` is 'svg'.
     save_nomenclature_files : bool, default is False
         Save available nomenclature definitions to disk so
         that they can be accessed locally in later uses.
