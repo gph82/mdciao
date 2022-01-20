@@ -68,10 +68,14 @@ def top2residue_bond_matrix(top,
         if create_standard_bonds:
             top.create_standard_bonds()
         else:
-            raise ValueError("\nThe parsed topology does not contain bonds. "
-                             "If your input is a .gro file, you are advised to\n"
-                             " * to generate a .pdb with chain information\n"
-                             " * try to use naive bond generation with mdciao.utils.bonds.top2residue_bond_matrix_naive")
+            raise ValueError("\nThe parsed topology does not contain any bonds in the top._bonds attribute.\n"
+                             " * If you are using low-level methods, like mdciao.utils.bonds.top2residue_bond_matrix,\n"
+                             "   try using 'create_standard_bonds=True'. This will 'create bonds based on the atom\n"
+                             "   and residue names for all standard residue types'.\n"
+                             " * If you are using CLI methods like mdciao.cli.residue_neighborhoods or mdc_neighborhoods.py,\n"
+                             "   try using 'naive_bonds=True'. This will create bonds between adjacent residues regardless of\n"
+                             "   atom-types.\n"
+                             "Please read the docs of the different options for potential pitfalls and risks!")
 
     residue_bond_matrix = _np.zeros((top.n_residues, top.n_residues), dtype=int)
     for ibond in top._bonds:
