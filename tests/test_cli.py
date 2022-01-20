@@ -339,12 +339,16 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                       no_disk=True,
                                       figures=False
                                       )
-        cli.residue_neighborhoods("R131",
-                                  [geom_CAs],
-                                  no_disk=True,
-                                  figures=False,
-                                  naive_bonds=True
-                                  )
+        n = cli.residue_neighborhoods("R131",
+                                      [geom_CAs],
+                                      no_disk=True,
+                                      figures=False,
+                                      naive_bonds=True,
+                                      nlist_cutoff_Ang=1000,
+                                      ctc_cutoff_Ang=1000,
+                                      ctc_control=1.,
+                                      )["neighborhoods"][861]
+        assert n.n_ctcs==geom_CAs.top.n_residues-4-4-1# all residues minus 4 neighbors (x2 directions) minus itself
 
     def test_precomputed(self):
         CG1 = list(cli.residue_neighborhoods([1043],
