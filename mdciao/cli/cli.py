@@ -844,15 +844,15 @@ def residue_neighborhoods(residues,
         try:
             nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
         except ValueError as e:
-            print(e)
             if naive_bonds:
-                print("Creating a naive linear bond-list: residue 'n' is considered bonded to its \n"
-                      "adjacent 'n+1' and 'n-1' residues. Following bond-breaks will enforced:\n regardless of adjacency.")
+                print("Creating a naive linear bond-list: residue 'n' will be considered bonded to its \n"
+                      "adjacent 'n+1' and 'n-1' residues. Additionally, these bond-breaks will enforced:")
                 print(" * between non-protein residues")
                 print(" * between the above '%s' fragment definitions"%fragments)
                 mat = _mdcu.bonds.top2residue_bond_matrix_naive(refgeom.top, fragments=fragments_as_residue_idxs)
                 nl = _mdcu.bonds.neighborlists_from_adjacency_matrix(mat, n_nearest)
             else:
+                print(e)
                 raise ValueError("You can create a naive bond-list between adjacent residues with the\n"
                                  "option naive_bonds. This might lead to artifacts, use this option at your own risk!")
 
