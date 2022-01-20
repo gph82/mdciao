@@ -504,7 +504,7 @@ def idx_at_fraction(val_desc_order, frac):
 
     assert all(_np.diff(val_desc_order)<=0), "Values must be in descending order!"
     assert 0<=frac<=1, "Fraction has to be in [0,1] ,not %s"%frac
-    normalized_cumsum = (_np.cumsum(val_desc_order) / _np.sum(val_desc_order)).round(2) >= frac
+    normalized_cumsum = (_np.cumsum(val_desc_order) / _np.sum(val_desc_order)) >= frac
     return _np.flatnonzero(normalized_cumsum>=frac)[0]
 
 
