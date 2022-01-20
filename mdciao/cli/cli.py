@@ -782,7 +782,7 @@ def residue_neighborhoods(residues,
     naive_bonds : bool, default is False
         If :obj:`top` doesn't automatically yield
         a list bonds between residues, build naive
-        (=linear) bonds using :obj:`mdciao.utils.bonds.top2residue_bond_matrix_naive`)
+        (=linear) bonds using :obj:`mdciao.utils.bonds.top2residue_bond_matrix_naive`
         These bonds are needed to exclude bonded neighbors
         using :obj:`n_nearest`
     Returns
@@ -846,14 +846,15 @@ def residue_neighborhoods(residues,
         except ValueError as e:
             print(e)
             if naive_bonds:
-                print("Creating a naive linear bond-list: n is neighbor with n+1 and n-1 within with breaks enforced: ")
+                print("Creating a naive linear bond-list: residue 'n' is considered bonded to its \n"
+                      "adjacent 'n+1' and 'n-1' residues. Following bond-breaks will enforced:\n regardless of adjacency.")
                 print(" * between non-protein residues")
                 print(" * between the above '%s' fragment definitions"%fragments)
                 mat = _mdcu.bonds.top2residue_bond_matrix_naive(refgeom.top, fragments=fragments_as_residue_idxs)
                 nl = _mdcu.bonds.neighborlists_from_adjacency_matrix(mat, n_nearest)
             else:
-                raise ValueError("You can use naive bond-listing by using serial indices with the\n"
-                                 "option naive_bonds. Use this option at your own risk")
+                raise ValueError("You can create a naive bond-list between adjacent residues with the\n"
+                                 "option naive_bonds. This might lead to artifacts, use this option at your own risk!")
 
 
     # Use it to prune the contact indices
