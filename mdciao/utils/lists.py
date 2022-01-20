@@ -501,10 +501,12 @@ def idx_at_fraction(val_desc_order, frac):
         Index of val where the fraction is attained for the first time.
         For the number of entries of :obj:`val`, just use n+1
     """
-
     assert all(_np.diff(val_desc_order)<=0), "Values must be in descending order!"
     assert 0<=frac<=1, "Fraction has to be in [0,1] ,not %s"%frac
-    normalized_cumsum = (_np.cumsum(val_desc_order) / _np.sum(val_desc_order)) >= frac
+    normalized_cumsum = (_np.cumsum(val_desc_order) / _np.sum(val_desc_order)).round(5) >= frac
+    #The rounding factor can be significant if many contacts are involved,
+    # the numercal comparison cannot be 1.0000000000000 because it might be never reached.
+    # Previsouly it was round(2) but yields errors for very long lists of contacts
     return _np.flatnonzero(normalized_cumsum>=frac)[0]
 
 
