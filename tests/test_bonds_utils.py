@@ -160,5 +160,56 @@ class Test_connected_sets(unittest.TestCase):
                          [0, 0, 0, 0, 0, 0, 0, 0]])
         sets = bonds.connected_sets(mat)
         self.assertListEqual([ss.tolist() for ss in sets], [[0,1,2],[3,4,5,6],[7]])
+
+class Test_top2residue_bond_matrix_naive(unittest.TestCase):
+
+    def setUp(self):
+        self.geom = md.load(test_filenames.small_monomer)
+        self.fragments = [[0,1,2],[3,4,5],[6,7]]
+        """
+          Auto-detected fragments with method 'chains'
+          fragment      0 with      3 AAs    GLU30 (     0) -    TRP32 (2     ) (0) 
+          fragment      1 with      3 AAs    ILE26 (     3) -    LYS29 (5     ) (1)  resSeq jumps
+          fragment      2 with      2 AAs   P0G381 (     6) -   GDP382 (7     ) (2) 
+    
+        """
+
+    def test_just_works(self):
+        mat = bonds.top2residue_bond_matrix_naive(self.geom.top)
+        _np.testing.assert_array_equal(mat,
+                                       _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
+                                                  [1, 1, 1, 0, 0, 0, 0, 0],
+                                                  [0, 1, 1, 1, 0, 0, 0, 0],
+                                                  [0, 0, 1, 1, 1, 0, 0, 0],
+                                                  [0, 0, 0, 1, 1, 1, 0, 0],
+                                                  [0, 0, 0, 0, 1, 1, 0, 0],
+                                                  [0, 0, 0, 0, 0, 0, 1, 0],
+                                                  [0, 0, 0, 0, 0, 0, 0, 1]])
+                                       )
+
+    def test_all_protein(self):
+        mat = bonds.top2residue_bond_matrix_naive(self.geom.top, only_protein=False)
+        _np.testing.assert_array_equal(mat,
+                                       _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
+                                                  [1, 1, 1, 0, 0, 0, 0, 0],
+                                                  [0, 1, 1, 1, 0, 0, 0, 0],
+                                                  [0, 0, 1, 1, 1, 0, 0, 0],
+                                                  [0, 0, 0, 1, 1, 1, 0, 0],
+                                                  [0, 0, 0, 0, 1, 1, 1, 0],
+                                                  [0, 0, 0, 0, 0, 1, 1, 1],
+                                                  [0, 0, 0, 0, 0, 0, 1, 1]])
+                                       )
+    def test_protein_chains(self):
+        mat = bonds.top2residue_bond_matrix_naive(self.geom.top, fragments=self.fragments)
+        _np.testing.assert_array_equal(mat,
+                                       _np.array([[1, 1, 0, 0, 0, 0, 0, 0],
+                                                  [1, 1, 1, 0, 0, 0, 0, 0],
+                                                  [0, 1, 1, 0, 0, 0, 0, 0],
+                                                  [0, 0, 0, 1, 1, 0, 0, 0],
+                                                  [0, 0, 0, 1, 1, 1, 0, 0],
+                                                  [0, 0, 0, 0, 1, 1, 0, 0],
+                                                  [0, 0, 0, 0, 0, 0, 1, 0],
+                                                  [0, 0, 0, 0, 0, 0, 0, 1]])
+                                       )
 if __name__ == '__main__':
    unittest.main()

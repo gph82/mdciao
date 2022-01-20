@@ -386,6 +386,13 @@ def _parser_add_guess(parser):
                         help="Try not to be interactive. This can make wrong choices for the user, advanced only.")
     parser.set_defaults(accept_guess=False)
 
+def _parser_add_naive_bonds(parser):
+    parser.add_argument('--naive_bonds', "-nb", dest='naive_bonds', action='store_true',
+                        help="Build naive, linear bonds between protein residues "
+                             "of the same fragment if mdtraj can't build them automatically. "
+                             "For more info check mdciao.utils.bonds.top2residue_bond_matrix_naive ")
+    parser.set_defaults(naive_bonds=False)
+
 # TODO group the parser better!
 # TODO add short versions of the most frequent options
 def parser_for_rn():
@@ -446,6 +453,7 @@ def parser_for_rn():
     _parser_add_guess(parser)
     _parser_add_switch(parser)
     _parser_add_atomtypes(parser)
+    _parser_add_naive_bonds(parser)
     return parser
 
 def _parser_add_switch(parser):
@@ -784,7 +792,7 @@ def parser_for_residues():
     _parser_add_nomenclature(parser)
     _parser_add_topology(parser)
     _parser_add_guess(parser)
-    _parser_add_fragments(parser)
+    _parser_add_fragments(parser) #todo check why the formatting is off here but not in parser for rn
     return parser
 
 

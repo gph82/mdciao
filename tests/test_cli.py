@@ -330,6 +330,21 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                           [self.traj, self.traj_reverse],
                                           top,
                                           output_dir=tmpdir)
+    def test_naive_bonds_CAs(self):
+        geom_CAs = self.geom[0].atom_slice(self.geom[0].top.select("name CA"))
+        print(geom_CAs)
+        with pytest.raises(ValueError):
+            cli.residue_neighborhoods("R131",
+                                      [geom_CAs],
+                                      no_disk=True,
+                                      figures=False
+                                      )
+        cli.residue_neighborhoods("R131",
+                                  [geom_CAs],
+                                  no_disk=True,
+                                  figures=False,
+                                  naive_bonds=True
+                                  )
 
     def test_precomputed(self):
         CG1 = list(cli.residue_neighborhoods([1043],
