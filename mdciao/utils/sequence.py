@@ -481,7 +481,7 @@ def re_match_df(df):
                 if all(_df.loc[[rr[0] - 1, rr[-1] + 1]]["match"]) and \
                         all(["-" not in df[key].values[rr] for key in ["AA_0",
                                                                    "AA_1"]]):  # this checks for no insertions in the alignment ("=equal length ranges")
-                    _df.at[rr, "match"] = True
+                    _df.loc[rr, "match"] = True
             except KeyError:
                 continue
 
