@@ -6,4 +6,4 @@ mdtraj==1.9.3
 numpy==1.16.4
 scipy==1.2.1
 Bio
-ipython==7.8.0
+ipython==7.16.3
