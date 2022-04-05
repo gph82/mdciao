@@ -327,26 +327,35 @@ def compare_groups_of_contacts(groups,
 
     return myfig, freqs, plotted_freqs
 
-def _color_dict_guesser(colors, key_list):
+def _color_dict_guesser(colors, keys):
     r"""
     Helper function to construct a color dictionary from variable user input
 
     Parameters
     ----------
     colors : None, str, list or dict
-        * None: use the first len(key_list) "tab10" colors
-        * str: name of the matplotlib colormap to interpolate to len(key_list) colors
+        * None: use the first n "tab10" colors, where
+          n is determined by :obj:`keys`
+        * str: name of the matplotlib colormap to interpolate to n colors.
+          Can be qualitative like "Set2", "tab10" or quantitative like "viridis" or "Reds"
           https://matplotlib.org/stable/tutorials/colors/colormaps.html
         * list: list of colors (["r","g","b"])
-          Turn this list into a dictionary keyed with :ob:`key_list`
-    key_list : list
-        List of strings to use as keys for the
-        color dictionary that will be ultimately returned
+          Turn this list into a dictionary keyed with :obj:`keys`
+    keys : int or list
+        If int, create a list of keys = _np.arange(keys).
+        If list, use that list directly keys for the
+        color dictionary that will be returned
 
     Returns
     -------
     colors : dict
     """
+    if isinstance(keys, int):
+        assert keys>0, ("If integer,'keys' has to be > 0 ")
+        key_list = _np.arange(keys)
+    else:
+        key_list = keys
+
     if isinstance(colors,dict):
         assert all([key in colors.keys() for key in key_list])
     elif colors is None:
