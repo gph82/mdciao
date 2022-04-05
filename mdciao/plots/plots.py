@@ -128,9 +128,10 @@ def compare_groups_of_contacts(groups,
           * dictionaries where the keys are residue-pairs
           (one letter-codes, no fragment info, as in :obj:`ContactGroup.ctc_labels_short`)
           and the values are contact frequencies [0,1]
-          * ascii-files (see :obj:`freq_datfile2freqdict`)
-            with the contact labels in the second and frequencies in
-            the third column
+          * ascii-files with the contact the frequencies in the first
+            column and labels in the second and/or third column,
+            see :obj:`~mdciao.contacts.ContactGroup.frequency_str_ASCII_file`
+            and :obj:`~mdciao.utils.str_and_dict.freq_ascii2dict`
           * .xlsx files with the header in the second row,
             containing at least the column-names "label" and "freqs"
 
