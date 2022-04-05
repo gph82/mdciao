@@ -740,9 +740,20 @@ def parser_for_CGN_overview():
 
 def parser_for_compare_neighborhoods():
     parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies "
-                                                 "from different files by generating a comparison plot and table")
+                                                 "from different files by generating a comparison plot and table",
+                                     formatter_class=SmartFormatter
+                                     )
     parser.add_argument("files", type=str, nargs="+",
-                        help="Files (ASCII or .xlsx) containing the frequencies and labels in the first columns")
+                        help="R|Files (ASCII or .xlsx) containing the frequencies \n"
+                             "and labels in the first two or three columns. Minimal examples \n"
+                             "could be :\n"
+                             ">>> #freq     label\n"
+                             ">>> 1.        GLU30-ALA50\n"
+                             ">>> .75       ALA50-ASP40\n"
+                             "or\n"
+                             ">>> 1.        GLU30 ALA50\n"
+                             ">>> .75       ALA50 ASP40\n"
+                             "Lines startint with '#' are ignored")
     parser.add_argument("-a","--anchor",type=str,default=None,
                         help="A residue that appears in all contacts. "
                              "It will be eliminated from the labels for clarity.")

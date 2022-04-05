@@ -405,13 +405,31 @@ def freq_file2dict(ifile, defrag=None):
 
 def freq_ascii2dict(ifile, comment=["#"]):
     r"""
-    Reads an ascii file that contains contact frequencies (1st) column and
-    contact labels . Columns are separated by tabs or spaces.
+    Reads an ASCII file that contains contact frequencies
+    (1st column) and contact labels (2nd and/or 3rd column).
+    Columns are separated by tabs or spaces.
 
     Contact labels have to come after the frequency in the
     form of "res1 res2, "res1-res2" or "res1 - res2",
 
-    Columns other than the frequencies and the residue labels are ignored
+    Columns other than the frequencies and the residue labels are ignored.
+
+    Examples
+    --------
+    File produced by mdciao:
+
+    >>> #freq              label              residue idxs  sum
+    >>> 0.59 R389@G.H5.21    - L394@G.H5.26    348 353    0.59
+    >>> 0.46 L394@G.H5.26    - K270@6.32x32    353 972    1.05
+    >>> 0.34 L388@G.H5.20    - L394@G.H5.26    347 353    1.39
+    >>> 0.32 L394@G.H5.26    - L230@5.69x69    353 957    1.71
+    >>> 0.04 R385@G.H5.17    - L394@G.H5.26    344 353    1.75
+
+    Minimal file with mixed labeling
+
+    >>> 1 ALA30-GLU50
+    >>> .5 ASP31 - GLU51
+    >>> .1 ASP31 GLU50
 
 
     TODO use pandas to allow more flex, not needed for the moment
@@ -420,13 +438,14 @@ def freq_ascii2dict(ifile, comment=["#"]):
     ----------
     ifile : str
         The filename to be read
-
     comment : list of chars
         Any line starting with any of these
         characters will be ignored
     Returns
     -------
     freqdict : dictionary
+        Keys are "res1-res2" (regardless of input)
+        and values are freqs
 
     """
     #TODO consider using pandas
