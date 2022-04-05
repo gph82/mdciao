@@ -36,7 +36,7 @@ _allowed_fragment_methods = ['chains',
                              ]
 
 
-def print_fragments(fragments, top, **print_frag_kwargs):
+def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
     """Inform about fragments, very thinly wrapping around :obj:`print_frag`
 
     Parameters
@@ -44,6 +44,9 @@ def print_fragments(fragments, top, **print_frag_kwargs):
     fragments : dict or list
         Iterable with the sets of residue indexes
     top : :obj:`~mdtraj.Topology`
+    max_lines : int, default is 40
+        Maximum number of lines to print. E.g. if 40,
+        first 20 and last 20 will be printed
     print_frag_kwargs : opt, keyword args for :obj:`print_frag`
 
     Returns
@@ -57,7 +60,7 @@ def print_fragments(fragments, top, **print_frag_kwargs):
     frag_list = []
     for ii, iseg in _fragments.items():
         frag_list.append(print_frag(ii, top, iseg, return_string=True, **print_frag_kwargs))
-    n = 20
+    n = _np.round(max_lines/2).astype(int)
     if n * 2 < len(frag_list):
         frag_list = frag_list[:n] + ["...[long list: omitted %u items]..." % (len(frag_list) - 2 * n)] + frag_list[-n:]
     print("\n".join(frag_list))
