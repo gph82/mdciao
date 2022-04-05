@@ -433,7 +433,7 @@ def freq_ascii2dict(ifile, comment=["#"]):
     outdict = {}
     with open(ifile) as f:
         for iline in f.read().splitlines():
-            if iline.strip()[0] not in comment:
+            if iline.strip()[0] not in comment and len(iline)>0:
                 try:
                     iline = iline.replace("-"," ").split()
                     freq, names = float(iline[0]),"%s-%s"%(iline[1],iline[2])
