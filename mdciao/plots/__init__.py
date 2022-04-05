@@ -9,6 +9,7 @@ Plotting functions
    plot_unified_freq_dicts
    plot_unified_distro_dicts
    compare_violins
+   color_dict_guesser
 
 """
 

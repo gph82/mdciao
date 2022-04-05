@@ -25,7 +25,7 @@ import mdtraj as _md
 from os import path as _path
 
 import mdciao.plots as _mdcplots
-from mdciao.plots.plots import _add_grey_banded_bg, _color_dict_guesser #TODO prolly make public?
+from mdciao.plots.plots import _add_grey_banded_bg
 import mdciao.utils as _mdcu
 import mdciao.nomenclature as _mdcn
 from mdciao.nomenclature.nomenclature import _consensus_maps2consensus_frags
@@ -3845,7 +3845,7 @@ class ContactGroup(object):
             order = _np.argsort(freqs)[::-1]
         else:
             order = _np.arange(len(freqs))
-        color = [list(_color_dict_guesser(color,order).values())[oo] for oo in order]
+        color = [list(_mdcplots.color_dict_guesser(color, order).values())[oo] for oo in order]
         ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
                                                      jax=ax,
                                                      color=color,
@@ -4083,11 +4083,11 @@ class ContactGroup(object):
                     order = [oo for oo in order if freqs[oo] > zero_freq]
 
             order = order[:max_n+1]
-            color = _color_dict_guesser(color, _np.arange(self.n_ctcs))
+            color = _mdcplots.color_dict_guesser(color, _np.arange(self.n_ctcs))
 
         elif _mdcu.lists.is_iterable(display_sort):
             order = _np.array([int(dd) for dd in display_sort])
-            color = _color_dict_guesser(color, order)
+            color = _mdcplots.color_dict_guesser(color, order)
 
         ax, violins = _mdcplots.plots._plot_violin_baseplot([data4violin[oo] for oo in order],
                                                             jax=ax,
@@ -5142,7 +5142,7 @@ class ContactGroup(object):
                                                                                      "mean" :"mean"}[scheme],
                                     shorten_AAs=True,
                                     ctc_cutoff_Ang=ctc_cutoff_Ang)[0]
-            colors = _mdcplots.plots._color_dict_guesser("Set1",_np.arange(n_frames))
+            colors = _mdcplots.color_dict_guesser("Set1", _np.arange(n_frames))
             for pp, (pair, frame_vals) in enumerate(zip(traj_frames, closest_values)):
                 for ii, dd in enumerate(frame_vals):
                     iax.plot(ii,dd*10,".",color=colors[pp])
@@ -6273,7 +6273,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
                   False: 'all'}[is_interface]
 
     kwargs = {}
-    fixed_color_list = _np.array(list(_mdcplots.plots._color_dict_guesser("tab10", _np.arange(100)).values()))
+    fixed_color_list = _np.array(list(_mdcplots.color_dict_guesser("tab10", _np.arange(100)).values()))
 
     def reconfigure_fragments(df,kwargs):
         for frag_key in ['consensus frag', 'fragname', "frag"]:
