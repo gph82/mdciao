@@ -234,7 +234,7 @@ def compare_groups_of_contacts(groups,
         assert all([igroup.is_interface for igroup in groups.values()])
 
     freqs = {key: {} for key in groups.keys()}
-    colors = _color_dict_guesser(colors, freqs.keys())
+    colors = color_dict_guesser(colors, freqs.keys())
 
     for key, ifile in groups.items():
         if isinstance(ifile, str):
@@ -327,23 +327,24 @@ def compare_groups_of_contacts(groups,
 
     return myfig, freqs, plotted_freqs
 
-def _color_dict_guesser(colors, keys):
+def color_dict_guesser(colors, keys):
     r"""
-    Helper function to construct a color dictionary from variable user input
+    Helper function to construct a color dictionary from user input
 
     Parameters
     ----------
     colors : None, str, list or dict
-        * None: use the first n "tab10" colors, where
+        * None: use the first :obj:`n` "tab10" colors, where
           n is determined by :obj:`keys`
-        * str: name of the matplotlib colormap to interpolate to n colors.
-          Can be qualitative like "Set2", "tab10" or quantitative like "viridis" or "Reds"
+        * str: name of the matplotlib colormap to interpolate to :obj:`n` colors.
+          Can be qualitative like "Set2" or "tab20" or
+          quantitative like "viridis" or "Reds". For more info see:
           https://matplotlib.org/stable/tutorials/colors/colormaps.html
         * list: list of colors (["r","g","b"])
           Turn this list into a dictionary keyed with :obj:`keys`
     keys : int or list
         If int, create a list of keys = _np.arange(keys).
-        If list, use that list directly keys for the
+        If list, use that list directly as keys for the
         color dictionary that will be returned
 
     Returns
@@ -925,7 +926,7 @@ def plot_unified_distro_dicts(distros,
     distros_by_ctc_by_sys = dict(distros_by_ctc_by_sys)
 
     # Prepare the dict
-    colors = _color_dict_guesser(colors,system_keys)
+    colors = color_dict_guesser(colors, system_keys)
 
     n_cols = _np.min((n_cols, len(all_ctc_keys)))
     n_rows = _np.ceil(len(all_ctc_keys) / n_cols).astype(int)
@@ -1062,7 +1063,7 @@ def compare_violins(groups,
     means_per_ctc_per_sys = {key:_np.nanmean(_np.hstack(list(val.values()))) for key, val in data4violins_per_ctc_per_sys.items()}
 
     # Prepare the dict
-    colordict = _color_dict_guesser(colors, all_sys_keys)
+    colordict = color_dict_guesser(colors, all_sys_keys)
 
     sorting_idxs = _np.argsort(list(means_per_ctc_per_sys.values()))
     key2ii = {all_ctc_keys[idx]: ii for ii, idx in enumerate(sorting_idxs)}

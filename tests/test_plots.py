@@ -9,7 +9,7 @@ from mdciao.contacts import ContactGroup, ContactPair
 from mdciao.examples import ContactGroupL394
 from mdciao.cli import interface as _cli_interface
 from mdciao import plots
-from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict, _color_dict_guesser, _try_colormap_string, _plot_violin_baseplot
+from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict, color_dict_guesser, _try_colormap_string, _plot_violin_baseplot
 
 from tempfile import TemporaryDirectory as _TDir
 import os
@@ -440,32 +440,32 @@ class Test_colormaps(unittest.TestCase):
             _try_colormap_string("Chet",10)
 
     def test_color_dict_guesser_None(self):
-        colors = _color_dict_guesser(None, ["sys1","sys2","sys3"])
+        colors = color_dict_guesser(None, ["sys1", "sys2", "sys3"])
         colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
         ref_color = _np.array(list(_cm.get_cmap("tab10")([0,1,2])))[:,:-1]
         _np.testing.assert_array_equal(colors_rgb_array, ref_color)
         self.assertListEqual(list(colors.keys()), ["sys1","sys2","sys3"])
 
     def test_color_dict_guesser_cmap(self):
-        colors = _color_dict_guesser("Set2", ["sys1", "sys2", "sys3"])
+        colors = color_dict_guesser("Set2", ["sys1", "sys2", "sys3"])
         colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
         ref_color = _np.array(list(_cm.get_cmap("Set2")([0, 1, 2])))[:, :-1]
         _np.testing.assert_array_equal(colors_rgb_array, ref_color)
         self.assertListEqual(list(colors.keys()), ["sys1", "sys2", "sys3"])
 
     def test_color_dict_guesser_cmap_n(self):
-        colors = _color_dict_guesser("Set2", 3)
+        colors = color_dict_guesser("Set2", 3)
         colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
         ref_color = _np.array(list(_cm.get_cmap("Set2")([0, 1, 2])))[:, :-1]
         _np.testing.assert_array_equal(colors_rgb_array, ref_color)
         self.assertListEqual(list(colors.keys()), [0, 1, 2])
 
     def test_color_dict_guesser_list(self):
-        colors = _color_dict_guesser(["r","g","b"], ["sys1", "sys2"])
+        colors = color_dict_guesser(["r", "g", "b"], ["sys1", "sys2"])
         self.assertDictEqual(colors, {"sys1":"r","sys2":"g"})
 
     def test_color_dict_guesser_dict(self):
-        colors = _color_dict_guesser({"sys1": "r", "sys2": "g"}, ["sys1", "sys2"])
+        colors = color_dict_guesser({"sys1": "r", "sys2": "g"}, ["sys1", "sys2"])
         self.assertDictEqual(colors, {"sys1": "r", "sys2": "g"})
 
 class Test_plot_violin_baseplot(unittest.TestCase):
