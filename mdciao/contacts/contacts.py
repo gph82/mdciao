@@ -4083,7 +4083,7 @@ class ContactGroup(object):
                     order = [oo for oo in order if freqs[oo] > zero_freq]
 
             order = order[:max_n+1]
-            color = _mdcplots.color_dict_guesser(color, _np.arange(self.n_ctcs))
+            color = _mdcplots.color_dict_guesser(color, self.n_ctcs)
 
         elif _mdcu.lists.is_iterable(display_sort):
             order = _np.array([int(dd) for dd in display_sort])
@@ -5142,7 +5142,7 @@ class ContactGroup(object):
                                                                                      "mean" :"mean"}[scheme],
                                     shorten_AAs=True,
                                     ctc_cutoff_Ang=ctc_cutoff_Ang)[0]
-            colors = _mdcplots.color_dict_guesser("Set1", _np.arange(n_frames))
+            colors = _mdcplots.color_dict_guesser("Set1", n_frames)
             for pp, (pair, frame_vals) in enumerate(zip(traj_frames, closest_values)):
                 for ii, dd in enumerate(frame_vals):
                     iax.plot(ii,dd*10,".",color=colors[pp])
