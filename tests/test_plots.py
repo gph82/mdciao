@@ -9,7 +9,7 @@ from mdciao.contacts import ContactGroup, ContactPair
 from mdciao.examples import ContactGroupL394
 from mdciao.cli import interface as _cli_interface
 from mdciao import plots
-from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict, color_dict_guesser, _try_colormap_string, _plot_violin_baseplot
+from mdciao.plots.plots import _plot_freqbars_baseplot, _offset_dict, color_dict_guesser, _try_colormap_string, _plot_violin_baseplot, _color_tiler
 
 from tempfile import TemporaryDirectory as _TDir
 import os
@@ -467,6 +467,28 @@ class Test_colormaps(unittest.TestCase):
     def test_color_dict_guesser_dict(self):
         colors = color_dict_guesser({"sys1": "r", "sys2": "g"}, ["sys1", "sys2"])
         self.assertDictEqual(colors, {"sys1": "r", "sys2": "g"})
+
+class Test_color_tiler(unittest.TestCase):
+
+    def test_str(self):
+        self.assertListEqual(['red', 'red', 'red', 'red', 'red'], _color_tiler("red", 5))  # pure str
+
+    def test_list(self):
+        self.assertListEqual(['red', 'red', 'red', 'red', 'red'],
+                             _color_tiler(["red"], 5))  # list of str with 1 item
+
+        self.assertListEqual(['red', 'blue', 'red', 'blue', 'red'],
+                             _color_tiler(["red", "blue"], 5))  # list of strs
+
+    def test_array(self):
+        self.assertListEqual([[1.0, 0.0, 0.0],
+                              [0.0, 1.0, 0.0],
+                              [0.0, 0.0, 1.0],
+                              [1.0, 0.0, 0.0],
+                              [0.0, 1.0, 0.0]],
+                             _color_tiler([[1., 0., 0.],  # red
+                                           [0., 1., 0.],  # green
+                                           [0., 0., 1.]], 5))  # blue
 
 class Test_plot_violin_baseplot(unittest.TestCase):
 

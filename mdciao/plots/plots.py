@@ -1626,3 +1626,49 @@ def _plot_violin_baseplot(vdata,
     for vio,col in zip(violins["bodies"],colors):
         vio.set_color(col)
     return jax, violins
+
+def _color_tiler(colors, n):
+    r"""
+    Tile colors up to n individual colors, related flare._utils.tocol_list_from_input_and_fragments
+
+    This is how it works
+
+    >>> plots._color_tiler("red",5)             #pure str
+    >>> ['red', 'red', 'red', 'red', 'red']
+
+    >>> plots._color_tiler(["red"],5)           # list of str with 1 item
+    >>> ['red', 'red', 'red', 'red', 'red']
+
+    >>> plots._color_tiler(["red", "blue"], 5)  # list of strs
+    >>> ['red', 'blue', 'red', 'blue', 'red']
+
+    >>> plots._color_tiler([[1., 0., 0.],       # red
+    >>>                     [0., 1., 0.],       # green
+    >>>                     [0., 0., 1.]], 5)   # blue
+    >>> [[1.0, 0.0, 0.0],
+    >>>  [0.0, 1.0, 0.0],
+    >>>  [0.0, 0.0, 1.0],
+    >>>  [1.0, 0.0, 0.0],
+    >>>  [0.0, 1.0, 0.0]]
+
+    Parameters
+    ----------
+    colors : str, list, array
+        Color input to be tiled up to :ob:`n` colors
+        using :obj:`numpy.tile`, e.g.
+    n : int
+        The number of needed colors
+
+    Returns
+    -------
+    tiled_colors : list
+
+    """
+    if isinstance(colors,str):
+        tiled_colors = _np.tile(colors,  _np.ceil(n / 1).astype(int) )[:n]
+    elif _np.array(colors).ndim in [0,1]:
+        tiled_colors = _np.tile(colors,  _np.ceil(n / len(colors)).astype(int) )[:n]
+    else:
+        tiled_colors = _np.tile(colors, (_np.ceil(n / len(colors)).astype(int),1))[:n]
+
+    return tiled_colors.tolist()

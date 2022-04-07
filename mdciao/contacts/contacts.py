@@ -25,7 +25,7 @@ import mdtraj as _md
 from os import path as _path
 
 import mdciao.plots as _mdcplots
-from mdciao.plots.plots import _add_grey_banded_bg
+from mdciao.plots.plots import _add_grey_banded_bg, _color_tiler
 import mdciao.utils as _mdcu
 import mdciao.nomenclature as _mdcn
 from mdciao.nomenclature.nomenclature import _consensus_maps2consensus_frags
@@ -1809,7 +1809,7 @@ class ContactPair(object):
         """
         if color_scheme is None:
             color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
-        color_scheme = _np.tile(color_scheme, _np.ceil(self.n.n_trajs / len(color_scheme)).astype(int) + 1)
+        color_scheme = _color_tiler(color_scheme, self.n.n_trajs )
         iax.set_ylabel('D / $\\AA$', rotation=90)
         if isinstance(ylim_Ang, (int, float)):
             iax.set_ylim([0, ylim_Ang])
@@ -4602,7 +4602,7 @@ class ContactGroup(object):
         #Plot ncontacts in the last frame
         if color_scheme is None:
             color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
-        color_scheme = _np.tile(color_scheme, _np.ceil(self.n_trajs / len(color_scheme)).astype(int) + 1)
+        color_scheme = _color_tiler(color_scheme, self.n_trajs)
         icol = iter(color_scheme)
         for n_ctcs_t, itime, traj_name in zip(self.n_ctcs_timetraces(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
                                               self.time_arrays,
