@@ -323,19 +323,12 @@ class Test_plot_w_smoothing_auto(unittest.TestCase):
         x = [0,1,2,3,4,5]
         y = [0,1,2,3,4,5]
         _plt.figure()
-        plots.plot_w_smoothing_auto(_plt.gca(), y,
-                                    "test", "r",
-                                    x=x,
-                                    n_smooth_hw=1,
-                                    gray_background=True)
+        plots.plot_w_smoothing_auto(_plt.gca(), y, "test", "r", x=x, background=True, n_smooth_hw=1)
 
     def test_creates_x(self):
         y = [0,1,2,3,4,5]
         _plt.figure()
-        plots.plot_w_smoothing_auto(_plt.gca(), y,
-                                    "test", "r",
-                                    n_smooth_hw=1,
-                                    gray_background=True)
+        plots.plot_w_smoothing_auto(_plt.gca(), y, "test", "r", background=True, n_smooth_hw=1)
 
 class Test_color_by_values(unittest.TestCase):
     def setUp(self):
