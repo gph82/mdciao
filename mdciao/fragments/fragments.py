@@ -383,6 +383,52 @@ def _break_fragments(breakers, fragments):
                 fragments = fragments[:ifrag] + subfrags + fragments[ifrag + 1:]
     return fragments
 
+#TODO use this throught the code instead of the python explicit way
+def fragment_slice(traj : _md.Trajectory, fragments, keys_or_idxs=None):
+    r"""
+
+    Slice a geometry using arbitrary fragment definitions, a la :obj:`mdtraj.Trajectory.atom_slice`
+
+    Note
+    ----
+    Regardless of the order in which the selection
+    is done (e.g. keys_or_idxs=[1,0]) the returned
+    :obj:`sliced_traj` will always be in ascending
+    order atoms as they appear in :obj:`traj`
+    Parameters
+    ----------
+    traj : :obj:`mdtraj.Trajectory`
+        The trajectory to slice
+    fragments : list or dict
+        The fragment definitions as residue indices.
+        Can be as a list or a as a dict, e.g. the output of
+        :obj:`mdciao.fragments.get_fragments` (list) or
+        :obj:`mdciao.nomenclature.LabelerGPCR.top2frags` (dict)
+    keys_or_idxs : iterable or None
+        The keys or indices of the
+        fragments to slice to, i.e.
+        to keep. If None, all
+        all fragments are used
+        as a selection
+
+    Returns
+    -------
+    sliced_traj : :obj:`mdtraj.Trajectory`
+        A copy of :obj:`traj` only with the
+        atoms present in the selected fragments
+
+    """
+
+    if keys_or_idxs is None:
+        if isinstance(fragments,dict):
+            keys_or_idxs = list(fragments.keys())
+        else:
+            keys_or_idxs = _np.arange(len(fragments))
+
+    _fragments = _np.hstack([fragments[idx] for idx in keys_or_idxs])
+
+    return traj.atom_slice([aa.index for aa in traj.top.atoms if aa.residue.index in _fragments])
+
 def _dry_fragments(fragments, top):
     r"""
     Remove water molecules from :obj:`fragments` and append them at the end as their own fragment(s)

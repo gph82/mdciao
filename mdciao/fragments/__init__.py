@@ -13,6 +13,7 @@ please note the API is not yet stable.
    :nosignatures:
 
     get_fragments
+    fragment_slice
     print_frag
     overview
     match_fragments
