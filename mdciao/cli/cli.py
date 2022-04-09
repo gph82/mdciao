@@ -1566,7 +1566,7 @@ def sites(site_inputs,
           graphic_ext=".pdf",
           t_unit='ns',
           curve_color="auto",
-          gray_background=False,
+          background=False,
           graphic_dpi=150,
           short_AA_names=False,
           save_nomenclature_files=False,
@@ -1699,8 +1699,14 @@ def sites(site_inputs,
     curve_color : str, default is 'auto'
         Type of color used for the curves. Alternatives are
         "P" or "H"
-    gray_background : bool, default is False
-        Use gray background when using smoothing windows
+    background : bool, or color-like, (str, hex, rgb), default is True
+        When smoothing, the original curve can
+        appear in the background in different colors
+        * True:  use a fainted version of :obj:`color`
+        * False: don't plot any background
+        * color-like: use this color for the background,
+          can be: str, hex, rgba, anything
+          `matplotlib.pyplot.colors` understands
     graphic_dpi : int, default is 150
         Dots per Inch (DPI) of the graphic output. Only has
         an effect for bitmap outputs.
@@ -1859,7 +1865,7 @@ def sites(site_inputs,
                                                n_smooth_hw=n_smooth_hw,
                                                dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
                                                t_unit=t_unit,
-                                               gray_background=gray_background,
+                                               background=background,
                                                shorten_AAs=short_AA_names,
                                                plot_N_ctcs=True,
                                                ylim_Ang=ylim_Ang,
