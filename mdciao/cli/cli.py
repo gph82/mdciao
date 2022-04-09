@@ -542,7 +542,7 @@ def residue_neighborhoods(residues,
                           output_desc='neighborhood',
                           t_unit='ns',
                           curve_color="auto",
-                          gray_background=False,
+                          background=True,
                           graphic_dpi=150,
                           short_AA_names=False,
                           allow_same_fragment_ctcs=True,
@@ -726,8 +726,14 @@ def residue_neighborhoods(residues,
         Unit used for the temporal axis.
     curve_color : str, default is 'auto'
         Type of color used for the curves. Alternatives are "P" or "H"
-    gray_background : bool, default is False
-        Use gray background when using smoothing windows
+    background : bool, or color-like, (str, hex, rgb), default is True
+        When smoothing, the original curve can
+        appear in the background in different colors
+        * True:  use a fainted version of :obj:`color`
+        * False: don't plot any background
+        * color-like: use this color for the background,
+          can be: str, hex, rgba, anything
+          `matplotlib.pyplot.colors` understands
     graphic_dpi : int, default is 150
         Dots per Inch (DPI) of the graphic output. Only has
         an effect for bitmap outputs.
@@ -988,19 +994,19 @@ def residue_neighborhoods(residues,
             # TODO perhaps it would be better to bury dt in the plotting directly?
             panelheight = 3
             myfig = CG.plot_timedep_ctcs(panelheight,
-                                            color_scheme=_color_schemes(curve_color),
-                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                            switch_off_Ang=switch_off_Ang,
-                                            dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
-                                            gray_background=gray_background,
-                                            n_smooth_hw=n_smooth_hw,
-                                            plot_N_ctcs=True,
-                                            pop_N_ctcs=separate_N_ctcs,
-                                            shorten_AAs=short_AA_names,
-                                            skip_timedep=not plot_timedep,
-                                            t_unit=t_unit,
-                                            ylim_Ang=ylim_Ang,
-                                            )
+                                         color_scheme=_color_schemes(curve_color),
+                                         ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                         switch_off_Ang=switch_off_Ang,
+                                         dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
+                                         background=background,
+                                         n_smooth_hw=n_smooth_hw,
+                                         plot_N_ctcs=True,
+                                         pop_N_ctcs=separate_N_ctcs,
+                                         shorten_AAs=short_AA_names,
+                                         skip_timedep=not plot_timedep,
+                                         t_unit=t_unit,
+                                         ylim_Ang=ylim_Ang,
+                                         )
 
             # One title for all axes on top
             title = CG.anchor_res_and_fragment_str
