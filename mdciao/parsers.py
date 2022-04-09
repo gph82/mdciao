@@ -23,6 +23,7 @@
 import argparse
 from mdciao.plots.plots import _colorstring
 from mdciao.examples.examples import ExamplesCLTs as _xCLT
+from matplotlib.colors import is_color_like as _is_color_like
 
 # https://stackoverflow.com/questions/3853722/python-argparse-how-to-insert-newline-in-the-help-text
 class SmartFormatter(argparse.HelpFormatter):
@@ -152,11 +153,15 @@ def _parser_add_curve_color(parser):
                         help="Type of color used for the curves. Default is auto. Alternatives are 'P' or 'H'",
                         default="auto")
 
-def _parser_add_gray_backgroud(parser):
-    parser.add_argument('--gray-background', dest='gray_background', action='store_true',
-                        help="Use gray background when using smoothing windows."
-                             " Default is False")
-    parser.set_defaults(gray_background=False)
+def _parser_add_background(parser):
+    parser.add_argument('--background', "-bg",
+                        type=_bool_or_color_like,
+                        default=True,
+                        help="Type of background when using smoothing windows."
+                             " Default (True) is to use the unsmoothed curve's color. "
+                             " A color string e.g. 'g' or 'red' or 'gray' also works, "
+                             "as does an RGB string '0.5, 1., 0.5'.  "
+                             "Use False for no color.")
 
 def _parser_add_fragments(parser):
     parser.add_argument("-fr",'--fragments', default=['lig_resSeq+'], nargs='+',
@@ -289,6 +294,19 @@ def _int_or_float_type(val):
         else:
             val = float(val)
 
+    return val
+
+def _bool_or_color_like(val):
+    r""" Turn strings into booleans, rgb floats keep color-like strings"""
+    if str(val).lower()=="true":
+        val = True
+    elif str(val).lower()=="false":
+        val = False
+    elif len(str(val).strip(",").split(","))==3:
+        val = [float(ii) for ii in str(val).strip(",").split(",")]
+    if not isinstance(val,bool):
+        assert _is_color_like(val), "The argument 'background' has to be boolean (True/False) or color-like, but '%s' (%s) is neither" % (
+        val, type(val))
     return val
 
 def _parser_add_ctc_control(parser, default=5):
@@ -439,7 +457,7 @@ def parser_for_rn():
     _parser_add_output_desc(parser, default='neighborhood')
     _parser_add_t_unit(parser)
     _parser_add_curve_color(parser)
-    _parser_add_gray_backgroud(parser)
+    _parser_add_background(parser)
     _parser_add_graphic_dpi(parser)
     _parser_add_short_AA_names(parser)
     _parser_add_no_fragfrag(parser)
@@ -508,7 +526,7 @@ def parser_for_dih():
     _parser_add_output_desc(parser, default='dih')
     _parser_add_t_unit(parser)
     _parser_add_curve_color(parser)
-    _parser_add_gray_backgroud(parser)
+    _parser_add_background(parser)
     _parser_add_graphic_dpi(parser)
     _parser_add_short_AA_names(parser)
     _parser_add_time_traces(parser)
@@ -547,7 +565,7 @@ def parser_for_sites():
     _parser_add_t_unit(parser)
     _parser_add_graphic_ext(parser)
     _parser_add_curve_color(parser)
-    _parser_add_gray_backgroud(parser)
+    _parser_add_background(parser)
     _parser_add_graphic_dpi(parser)
     _parser_add_ylim_Ang(parser)
     _parser_add_short_AA_names(parser)
@@ -618,7 +636,7 @@ def parser_for_interface():
     _parser_add_graphic_dpi(parser)
     _parser_add_curve_color(parser)
     _parser_add_t_unit(parser)
-    _parser_add_gray_backgroud(parser)
+    _parser_add_background(parser)
     _parser_add_short_AA_names(parser)
     parser.add_argument('--no-sort_by_av_ctcs', dest='sort_by_av_ctcs', action='store_false',
                         help="When presenting the results summarized by residue, "
