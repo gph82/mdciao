@@ -70,7 +70,7 @@ def plot_w_smoothing_auto(ax, y,
         * False: don't plot any background
         * color-like: use this color for the background,
           can be: str, hex, rgba, anything
-          `matplotlib.pyplot.colors` understands
+          :obj:`matplotlib.pyplot.colors` understands
     n_smooth_hw : int, default is 0
         Half-size of the smoothing window.
         If 0, this method is identical to
@@ -102,15 +102,18 @@ def plot_w_smoothing_auto(ax, y,
         label = None
 
         if background:
-            if _is_color_like(background):
+            if isinstance(background,bool):
+                pass
+            else:
+                assert _is_color_like(background), "The argument 'background' has to be boolean (True/False) or color-like, but '%s' (%s) is neither"%(background, type(background))
                 color = background
 
-            _line2D = ax.plot(x, y,
-                              label=label,
-                              alpha=alpha,
-                              color=color)[0]
-            if line2D is None:
-                line2D = _line2D
+    _line2D = ax.plot(x, y,
+                      label=label,
+                      alpha=alpha,
+                      color=color)[0]
+    if line2D is None:
+        line2D = _line2D
 
     return line2D
 
