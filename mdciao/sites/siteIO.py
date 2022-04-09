@@ -96,11 +96,10 @@ def sites_to_res_pairs(site_dicts, top,
                        fragments=None,
                        **get_fragments_kwargs,
                        ):
-    r"""Return the pairs of res_idxs needed to compute
-    all the contacts contained in all the input sites.
+    r"""Return the pairs of res_idxs needed to compute the contacts contained in the input sites.
 
     The idea is to join all needed pairs of res_idxs
-    in one list regardless of where they come from.
+    in one list regardless of what site they come from.
 
     Parameters
     ----------
@@ -120,7 +119,8 @@ def sites_to_res_pairs(site_dicts, top,
     res_idxs_pairs : 2D np.ndarray
         Unique residue pairs contained in the :obj:`site_dicts`,
         expressed as residue indices of :obj:`top`
-        [0,1] is considered != [0,1]
+        [0,1] is considered != [0,1]. Any residues that
+        couldn't be found will appear as 'None'
     site_maps : list
         For each site, a list with the indices of :obj:`res_idxs_pairs`
         that match the site's pairs.
