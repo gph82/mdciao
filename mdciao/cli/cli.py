@@ -1042,7 +1042,7 @@ def interface(
         fragment_names="",
         graphic_dpi=150,
         graphic_ext=".pdf",
-        gray_background=False,
+        background=True,
         interface_cutoff_Ang=35,
         ctc_control=20,
         n_smooth_hw=0,
@@ -1197,8 +1197,14 @@ def interface(
         an effect for bitmap outputs.
     graphic_ext : str, default is '.pdf'
         The extension (=format) of the saved figures
-    gray_background : bool, default is False
-        Use gray background when using smoothing windows
+    background : bool, or color-like, (str, hex, rgb), default is True
+        When smoothing, the original curve can
+        appear in the background in different colors
+        * True:  use a fainted version of :obj:`color`
+        * False: don't plot any background
+        * color-like: use this color for the background,
+          can be: str, hex, rgba, anything
+          `matplotlib.pyplot.colors` understands
     interface_cutoff_Ang : float, default is 35
         The interface between both groups is defined as the
         set of group_1-group_2-distances that are within
@@ -1525,7 +1531,7 @@ def interface(
                                                    color_scheme=_color_schemes(curve_color),
                                                    ctc_cutoff_Ang=ctc_cutoff_Ang,
                                                    dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
-                                                   gray_background=gray_background,
+                                                   background=background,
                                                    n_smooth_hw=n_smooth_hw,
                                                    plot_N_ctcs=True,
                                                    pop_N_ctcs=separate_N_ctcs,
