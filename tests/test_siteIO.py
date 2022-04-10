@@ -174,6 +174,18 @@ class Test_sites_to_ctc_idxs(unittest.TestCase):
             _np.testing.assert_equal(str(self.geom.top.residue(ii)),resi)
             _np.testing.assert_equal(str(self.geom.top.residue(jj)),resj)
 
+    def test_Nones_get_differentiated_and_added(self):
+        # Even though the first two ones yield both (None,None) pairs, they
+        # will get added to the list. The third one will be recognized
+        # as a seen None,None
+        ctc_idxs, site_maps = mdciao.sites.sites_to_res_pairs([{"name": "bogus1",       "pairs": {"AAresSeq": ["AAA1-AAA2"]}},
+                                                               {"name": "bogus2",       "pairs": {"AAresSeq": ["AAA3-AAA4"]}},
+                                                               {"name": "bogus1_repeat","pairs": {"AAresSeq": ["AAA1-AAA2"]}},
+                                                               ], self.geom.top)
+        _np.testing.assert_array_equal(ctc_idxs, [[None,None],
+                                                  [None,None]])
+        self.assertListEqual(site_maps, [[0],[1],[0]])
+
 
 if __name__ == '__main__':
     unittest.main()

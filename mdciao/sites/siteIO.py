@@ -101,10 +101,15 @@ def sites_to_res_pairs(site_dicts, top,
     The idea is to join all needed pairs of res_idxs
     in one list regardless of what site they come from.
 
+    Note
+    ----
+    Any residue not found in :obj:`top` is assigned
+    a 'None' in the returned :obj:`res_idx_pairs`.
+
     Parameters
     ----------
     site_dicts : list of dicts
-        Check :obj:`x2site` for how these dicts look like
+        Anything that :obj:`mdciao.sites.x2site` understands
     top : :obj:`~mdtraj.Topology`
     fragments : list, default is None
         You can pass along fragment definitions so that
@@ -123,7 +128,7 @@ def sites_to_res_pairs(site_dicts, top,
         couldn't be found will appear as 'None'
     site_maps : list
         For each site, a list with the indices of :obj:`res_idxs_pairs`
-        that match the site's pairs.
+        that matches the site's pairs in :obj:`res_idxs_pairs`
     """
     if fragments is None:
         fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
@@ -135,16 +140,16 @@ def sites_to_res_pairs(site_dicts, top,
     site_maps = []
     for ii, site in enumerate(site_dicts):
         imap=[]
-        for bond_type, bonds in site["pairs"].items():
+        for bond_type, bonds in x2site(site)["pairs"].items():
             for bond in bonds:
-                pair = tuple(get_pair_lambda[bond_type](bond))
+                pair = tuple(list(get_pair_lambda[bond_type](bond))+list(bond))
                 if pair not in res_idxs_pairs:
                     res_idxs_pairs.append(pair)
                     pair2idx[pair]=len(res_idxs_pairs)-1
                 imap.append(pair2idx[pair])
         site_maps.append(imap)
     #print(site_maps)
-    return _np.vstack(res_idxs_pairs), site_maps
+    return _np.vstack([pair[:2] for pair in res_idxs_pairs]), site_maps
 
 def site2str(site):
     r""" Produce a printable str for sitefile (json) or site-dict"""
