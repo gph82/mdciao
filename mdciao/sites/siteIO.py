@@ -164,6 +164,65 @@ def sites_to_res_pairs(site_dicts, top,
     #print(site_maps)
     return _np.vstack([pair[:2] for pair in res_idxs_pairs]), site_maps
 
+def discard_empty_sites(ctc_idxs, site_maps, site_list, allow_partial_sites=True):
+    r"""
+    Helper method to reconfigure the output of :obj:`sites_to_res_pairs`
+    discarding 'None'-entries
+
+    Parameters
+    ----------
+    ctc_idxs : list
+        List of residue index pairs
+    site_maps : list
+        List of len :obj:`sites`. Each item
+        is itself a list, s.t. :obj:`site_maps[ii]`
+        contains the list of indices of pairs
+        in :obj:`ctc_idxs` that belong to the ii-th site
+    site_list : list
+        List containing site definitions
+    allow_partial_sites : bool, default is True
+        If False, a single 'None' is enough to
+        eliminate the entire site. Default
+        is to prune the site definitions
+        of the 'None' values but keep
+        the ones that work
+
+    Returns
+    -------
+    out_ctc_idxs : list
+        Like :obj:`ctc_idxs` but with the
+        non-None entries only
+    out_site_maps : list
+        Like :obj:`site_maps` but with
+        updated indices, both of
+        the residue pairs in :obj:`site_maps`
+        and of the sites in :obj:`out_sites`
+        non-None entries
+    out_sites : list
+        The sites that weren't eliminated.
+    discarded : dict
+        Keys are "partial" and "full" indicating
+        the indices of the sites in :obj:`site_list`
+        where either partial deletion took place
+        or the full site was deleted
+    """
+    discarded = {}
+    if allow_partial_sites:
+        gets_eliminated = lambda site : all([None in pair for pair in site["pairs"]["residx"]])
+    else:
+        gets_eliminated = lambda site : any([None in pair for pair in site["pairs"]["residx"]])
+
+    out_sites = [{"name": isite["name"],
+                  "pairs": {"residx": [list(ctc_idxs[ii]) for ii in site_maps[ii] if None not in list(ctc_idxs[ii])]},
+                  } for ii, isite in enumerate(site_list)]
+    discarded["partial"] = [ii for ii, isite in enumerate(out_sites) if len(isite["pairs"]["residx"])<len(site_maps[ii])]
+    out_sites = {key: isite for key, isite in enumerate(out_sites) if not gets_eliminated(isite)}
+    discarded["full"] = [ii for ii in range(len(site_list)) if ii not in out_sites.keys()]
+    [isite.__setitem__("n_pairs", len(isite["pairs"]["residx"])) for isite in out_sites.values()]
+    out_ctc_idxs, out_site_maps = sites_to_res_pairs(out_sites.values(),
+                                                     None)  # we know we won't need top or frags, can just parse None
+    return out_ctc_idxs, out_site_maps, list(out_sites.values()), discarded
+
 def site2str(site):
     r""" Produce a printable str for sitefile (json) or site-dict"""
     if isinstance(site,str):
