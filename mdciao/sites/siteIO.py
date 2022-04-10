@@ -73,13 +73,24 @@ def x2site(site, fmt="AAresSeq"):
         assert len(bondtype)==1 and bondtype[0] in ["AAresSeq","residx"]
         bondtype = bondtype[0]
         pairs = idict["pairs"][bondtype]
-        idict["n_pairs"] = len(pairs)
-        if isinstance(pairs[0][0],str):  # can only be str spearated by "-"
-            idict["pairs"][bondtype] = [item.split("-") for item in pairs if item[0] != '#' and "-" in item]
+        if isinstance(pairs[0][0],str):  # can only be str separated by "-"
+            _pairs = []
+            for item in pairs:
+                if item[0].strip() != '#':
+                    if "-" in item and isinstance(item,str):
+                        _pairs.append(item.split("-"))
+                    elif not isinstance(item, str) and len(item)==2:
+                        _pairs.append(item)
+                    else:
+                        raise ValueError("Can't understand %s"%item)
+                idict["pairs"][bondtype] = _pairs
+
             if bondtype=="residx":
                 idict["pairs"][bondtype] = [[int(pp) for pp in pair] for pair in  idict["pairs"][bondtype]]
         else:
             assert all([len(bond)==2 for bond in pairs]),pairs
+        idict["n_pairs"] = len(idict["pairs"][bondtype])
+
     except KeyError:
         print("Malformed file for the site %s:\n%s" % (site,idict))
         raise

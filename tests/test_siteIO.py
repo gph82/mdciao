@@ -67,6 +67,20 @@ class Test_x2site(unittest.TestCase):
             "name": "interesting contacts",
             "n_pairs": 6})
 
+    def test_runs_w_residx_str_list(self):
+        site = mdciao.sites.x2site({"pairs":
+            {"residx": [
+                ["353", "972"],
+                ["340", "956"],
+                ["343", "956"],
+                ["344", "956"],
+                ["340", "959"],
+                ["343", "865"]]},
+            "name": "interesting contacts",
+            "n_pairs": 6})
+
+        print(site)
+
     def test_raises(self):
         with pytest.raises(KeyError):
              mdciao.sites.x2site({"fonds":
@@ -91,7 +105,32 @@ class Test_x2site(unittest.TestCase):
         _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][2], ['GDP396', 'VAL202'])
         _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][3], ['THR204', 'SER54'])
         _np.testing.assert_array_equal(site["pairs"]["AAresSeq"][4], ['MG397', 'THR204'])
-        site = mdciao.sites.x2site(site)
+
+    def test_runs_w_dict_of_lists_of_res(self):
+        site = mdciao.sites.x2site(test_filenames.GDP_json)
+        #Run it again, should yield the same dict
+        self.assertDictEqual(site, mdciao.sites.x2site(site))
+
+
+    def test_runs_w_residx_and_comment(self):
+        site = mdciao.sites.x2site({"name": "interesting contacts",
+                                    "pairs": {"residx": [
+                                        "353-972",
+                                        "340-956",
+                                        "# 343-956",
+                                        "344-956",
+                                        "340-959",
+                                        "343-865"
+                                    ]}})
+        self.assertDictEqual(site, {"pairs": {"residx": [
+            [353, 972],
+            [340, 956],
+            # [343,956],
+            [344, 956],
+            [340, 959],
+            [343, 865]
+        ]}, "name": "interesting contacts",
+            "n_pairs": 5})
 
     def test_raises_wo_name(self):
         site = mdciao.sites.x2site(test_filenames.GDP_name_json)
