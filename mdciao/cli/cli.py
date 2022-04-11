@@ -542,7 +542,7 @@ def residue_neighborhoods(residues,
                           output_desc='neighborhood',
                           t_unit='ns',
                           curve_color="auto",
-                          gray_background=False,
+                          background=True,
                           graphic_dpi=150,
                           short_AA_names=False,
                           allow_same_fragment_ctcs=True,
@@ -726,8 +726,14 @@ def residue_neighborhoods(residues,
         Unit used for the temporal axis.
     curve_color : str, default is 'auto'
         Type of color used for the curves. Alternatives are "P" or "H"
-    gray_background : bool, default is False
-        Use gray background when using smoothing windows
+    background : bool, or color-like, (str, hex, rgb), default is True
+        When smoothing, the original curve can
+        appear in the background in different colors
+        * True:  use a fainted version of :obj:`color`
+        * False: don't plot any background
+        * color-like: use this color for the background,
+          can be: str, hex, rgba, anything
+          `matplotlib.pyplot.colors` understands
     graphic_dpi : int, default is 150
         Dots per Inch (DPI) of the graphic output. Only has
         an effect for bitmap outputs.
@@ -988,19 +994,19 @@ def residue_neighborhoods(residues,
             # TODO perhaps it would be better to bury dt in the plotting directly?
             panelheight = 3
             myfig = CG.plot_timedep_ctcs(panelheight,
-                                            color_scheme=_color_schemes(curve_color),
-                                            ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                            switch_off_Ang=switch_off_Ang,
-                                            dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
-                                            gray_background=gray_background,
-                                            n_smooth_hw=n_smooth_hw,
-                                            plot_N_ctcs=True,
-                                            pop_N_ctcs=separate_N_ctcs,
-                                            shorten_AAs=short_AA_names,
-                                            skip_timedep=not plot_timedep,
-                                            t_unit=t_unit,
-                                            ylim_Ang=ylim_Ang,
-                                            )
+                                         color_scheme=_color_schemes(curve_color),
+                                         ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                         switch_off_Ang=switch_off_Ang,
+                                         dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
+                                         background=background,
+                                         n_smooth_hw=n_smooth_hw,
+                                         plot_N_ctcs=True,
+                                         pop_N_ctcs=separate_N_ctcs,
+                                         shorten_AAs=short_AA_names,
+                                         skip_timedep=not plot_timedep,
+                                         t_unit=t_unit,
+                                         ylim_Ang=ylim_Ang,
+                                         )
 
             # One title for all axes on top
             title = CG.anchor_res_and_fragment_str
@@ -1036,7 +1042,7 @@ def interface(
         fragment_names="",
         graphic_dpi=150,
         graphic_ext=".pdf",
-        gray_background=False,
+        background=True,
         interface_cutoff_Ang=35,
         ctc_control=20,
         n_smooth_hw=0,
@@ -1191,8 +1197,14 @@ def interface(
         an effect for bitmap outputs.
     graphic_ext : str, default is '.pdf'
         The extension (=format) of the saved figures
-    gray_background : bool, default is False
-        Use gray background when using smoothing windows
+    background : bool, or color-like, (str, hex, rgb), default is True
+        When smoothing, the original curve can
+        appear in the background in different colors
+        * True:  use a fainted version of :obj:`color`
+        * False: don't plot any background
+        * color-like: use this color for the background,
+          can be: str, hex, rgba, anything
+          `matplotlib.pyplot.colors` understands
     interface_cutoff_Ang : float, default is 35
         The interface between both groups is defined as the
         set of group_1-group_2-distances that are within
@@ -1519,7 +1531,7 @@ def interface(
                                                    color_scheme=_color_schemes(curve_color),
                                                    ctc_cutoff_Ang=ctc_cutoff_Ang,
                                                    dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
-                                                   gray_background=gray_background,
+                                                   background=background,
                                                    n_smooth_hw=n_smooth_hw,
                                                    plot_N_ctcs=True,
                                                    pop_N_ctcs=separate_N_ctcs,
@@ -1554,7 +1566,7 @@ def sites(site_inputs,
           graphic_ext=".pdf",
           t_unit='ns',
           curve_color="auto",
-          gray_background=False,
+          background=True,
           graphic_dpi=150,
           short_AA_names=False,
           save_nomenclature_files=False,
@@ -1581,12 +1593,15 @@ def sites(site_inputs,
     ----------
     site_inputs : list, default is None
         List of sites to compute. Sites can be either
-        paths to site file(s) in json formats or
+        paths to site file(s) in json format or
         directly a site dictionary. A site dictionary
         is something like {"name":"site",
                            "pairs":{"AAresSeq":["GLU30-ARG40",
                                                 "LYS31-W70"]}}
-        See :obj:`mdciao.sites` for more info
+        Any site containing a residue that can't be
+        found in the topology will be discarded.
+        See :obj:`mdciao.sites` for more info on
+        the site format.
     trajectories :
         The MD-trajectories to calculate the frequencies
         from. This input is pretty flexible. For more info check
@@ -1687,8 +1702,14 @@ def sites(site_inputs,
     curve_color : str, default is 'auto'
         Type of color used for the curves. Alternatives are
         "P" or "H"
-    gray_background : bool, default is False
-        Use gray background when using smoothing windows
+    background : bool, or color-like, (str, hex, rgb), default is True
+        When smoothing, the original curve can
+        appear in the background in different colors
+        * True:  use a fainted version of :obj:`color`
+        * False: don't plot any background
+        * color-like: use this color for the background,
+          can be: str, hex, rgba, anything
+          `matplotlib.pyplot.colors` understands
     graphic_dpi : int, default is 150
         Dots per Inch (DPI) of the graphic output. Only has
         an effect for bitmap outputs.
@@ -1769,10 +1790,21 @@ def sites(site_inputs,
                                                           save_nomenclature_files=save_nomenclature_files)
     sites = [_mdcsites.x2site(ff) for ff in site_inputs]
     ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
-                                                                    fragments=fragments_as_residue_idxs,
-                                                                    default_fragment_idx=default_fragment_index,
-                                                                    fragment_names=fragment_names)
+                                                             fragments=fragments_as_residue_idxs,
+                                                             default_fragment_idx=default_fragment_index,
+                                                             fragment_names=fragment_names)
+    if None in ctc_idxs_small:
+        print("Some definitions of the 'site_inputs' contain one or more residue(s) not found in the input topology.\n"
+              "These sites have been discarded and won't appear in the ouput: ")
+        ctc_idxs_small, site_maps, _sites, discarded = _mdcsites.discard_empty_sites(ctc_idxs_small,site_maps, sites, allow_partial_sites=False)
+        for ii in discarded["full"]:
+            print(" * site '%s' (idx %u)"%(sites[ii]["name"],ii))
+        if len(_sites)==0:
+            raise ValueError("No site(s) could be constructed, please check the above messages and your review your site(s)' definitions.")
+        else:
+            sites = _sites
 
+    print("These are the residues that could be found:")
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq GPCR  CGN".split())))
     for idx in _np.unique(ctc_idxs_small):
         print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, _mdcu.lists.in_what_fragment(idx,
@@ -1847,7 +1879,7 @@ def sites(site_inputs,
                                                n_smooth_hw=n_smooth_hw,
                                                dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
                                                t_unit=t_unit,
-                                               gray_background=gray_background,
+                                               background=background,
                                                shorten_AAs=short_AA_names,
                                                plot_N_ctcs=True,
                                                ylim_Ang=ylim_Ang,

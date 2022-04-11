@@ -21,6 +21,12 @@ R385-Q229
 D381-K232
 Q384-I135
 
+For unformatted ascii files (.dat, .txt etc),
+if the first line starts with "#", it will be used
+as name for the site, otherwise the filename
+will be used. Also, any lines starting
+with "#" will be ignored
+
 The ascii-files can be annotated if the `JSON <https://www.json.org/json-en.html>`_
 format is used:
 
@@ -45,6 +51,16 @@ by using dictionaries, e.g.::
                         "R385-Q229",
                         "D381-K232",
                         "Q384-I135"
+                        ]}}
+Or ::
+   my_site = {"name":"interesting contacts",
+              "pairs":{"AAresSeq":[
+                        ["L394","K270"],
+                        ["D381","Q229"],
+                        ["Q384","Q229"],
+                        ["R385","Q229"],
+                        ["D381","K232"],
+                        ["Q384","I135"]
                         ]}}
 
 You can specify the "pairs" as "AAresSeq" (like above)

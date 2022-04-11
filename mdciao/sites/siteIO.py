@@ -73,13 +73,24 @@ def x2site(site, fmt="AAresSeq"):
         assert len(bondtype)==1 and bondtype[0] in ["AAresSeq","residx"]
         bondtype = bondtype[0]
         pairs = idict["pairs"][bondtype]
-        idict["n_pairs"] = len(pairs)
-        if isinstance(pairs[0][0],str):  # can only be str spearated by "-"
-            idict["pairs"][bondtype] = [item.split("-") for item in pairs if item[0] != '#' and "-" in item]
+        if isinstance(pairs[0][0],str):  # can only be str separated by "-"
+            _pairs = []
+            for item in pairs:
+                if item[0].strip() != '#':
+                    if "-" in item and isinstance(item,str):
+                        _pairs.append(item.split("-"))
+                    elif not isinstance(item, str) and len(item)==2:
+                        _pairs.append(item)
+                    else:
+                        raise ValueError("Can't understand %s"%item)
+                idict["pairs"][bondtype] = _pairs
+
             if bondtype=="residx":
                 idict["pairs"][bondtype] = [[int(pp) for pp in pair] for pair in  idict["pairs"][bondtype]]
         else:
             assert all([len(bond)==2 for bond in pairs]),pairs
+        idict["n_pairs"] = len(idict["pairs"][bondtype])
+
     except KeyError:
         print("Malformed file for the site %s:\n%s" % (site,idict))
         raise
@@ -96,16 +107,20 @@ def sites_to_res_pairs(site_dicts, top,
                        fragments=None,
                        **get_fragments_kwargs,
                        ):
-    r"""Return the pairs of res_idxs needed to compute
-    all the contacts contained in all the input sites.
+    r"""Return the pairs of res_idxs needed to compute the contacts contained in the input sites.
 
     The idea is to join all needed pairs of res_idxs
-    in one list regardless of where they come from.
+    in one list regardless of what site they come from.
+
+    Note
+    ----
+    Any residue not found in :obj:`top` is assigned
+    a 'None' in the returned :obj:`res_idx_pairs`.
 
     Parameters
     ----------
     site_dicts : list of dicts
-        Check :obj:`x2site` for how these dicts look like
+        Anything that :obj:`mdciao.sites.x2site` understands
     top : :obj:`~mdtraj.Topology`
     fragments : list, default is None
         You can pass along fragment definitions so that
@@ -120,10 +135,11 @@ def sites_to_res_pairs(site_dicts, top,
     res_idxs_pairs : 2D np.ndarray
         Unique residue pairs contained in the :obj:`site_dicts`,
         expressed as residue indices of :obj:`top`
-        [0,1] is considered != [0,1]
+        [0,1] is considered != [0,1]. Any residues that
+        couldn't be found will appear as 'None'
     site_maps : list
         For each site, a list with the indices of :obj:`res_idxs_pairs`
-        that match the site's pairs.
+        that matches the site's pairs in :obj:`res_idxs_pairs`
     """
     if fragments is None:
         fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
@@ -135,7 +151,13 @@ def sites_to_res_pairs(site_dicts, top,
     site_maps = []
     for ii, site in enumerate(site_dicts):
         imap=[]
-        for bond_type, bonds in site["pairs"].items():
+        for bond_type, bonds in x2site(site)["pairs"].items():
+            if bond_type=="AAresSeq":
+                if fragments is None:
+                    fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
+                get_pair_lambda =  lambda bond: _mdcu.residue_and_atom.residues_from_descriptors(bond, fragments, top)[0]
+            elif bond_type=="residx":
+                get_pair_lambda = lambda bond: bond
             for bond in bonds:
                 pair = tuple(get_pair_lambda[bond_type](bond))
                 if pair not in res_idxs_pairs:
@@ -144,7 +166,70 @@ def sites_to_res_pairs(site_dicts, top,
                 imap.append(pair2idx[pair])
         site_maps.append(imap)
     #print(site_maps)
-    return _np.vstack(res_idxs_pairs), site_maps
+    return _np.vstack([pair[:2] for pair in res_idxs_pairs]), site_maps
+
+def discard_empty_sites(ctc_idxs, site_maps, site_list, allow_partial_sites=True):
+    r"""
+    Helper method to reconfigure the output of :obj:`sites_to_res_pairs`
+    discarding 'None'-entries
+
+    Parameters
+    ----------
+    ctc_idxs : list
+        List of residue index pairs
+    site_maps : list
+        List of len :obj:`sites`. Each item
+        is itself a list, s.t. :obj:`site_maps[ii]`
+        contains the list of indices of pairs
+        in :obj:`ctc_idxs` that belong to the ii-th site
+    site_list : list
+        List containing site definitions
+    allow_partial_sites : bool, default is True
+        If False, a single 'None' is enough to
+        eliminate the entire site. Default
+        is to prune the site definitions
+        of the 'None' values but keep
+        the ones that work
+
+    Returns
+    -------
+    out_ctc_idxs : list
+        Like :obj:`ctc_idxs` but with the
+        non-None entries only
+    out_site_maps : list
+        Like :obj:`site_maps` but with
+        updated indices, both of
+        the residue pairs in :obj:`site_maps`
+        and of the sites in :obj:`out_sites`
+        non-None entries
+    out_sites : list
+        The sites that weren't eliminated.
+    discarded : dict
+        Keys are "partial" and "full" indicating
+        the indices of the sites in :obj:`site_list`
+        where either partial deletion took place
+        or the full site was discarded completely
+    """
+    discarded = {}
+    if allow_partial_sites:
+        gets_eliminated = lambda site : all([None in pair for pair in site["pairs"]["residx"]])
+    else:
+        gets_eliminated = lambda site : any([None in pair for pair in site["pairs"]["residx"]])
+
+    out_sites = [{"name": isite["name"],
+                  "pairs": {"residx": [list(ctc_idxs[ii]) for ii in site_maps[ii]]}}
+                 for ii, isite in enumerate(site_list)]
+
+    out_sites = {key: isite for key, isite in enumerate(out_sites) if not gets_eliminated(isite)}
+    [isite["pairs"].__setitem__("residx", [pair for pair in isite["pairs"]["residx"] if None not in pair]) for isite in out_sites.values()]
+
+    discarded["partial"] = [ii for ii, isite in out_sites.items() if len(isite["pairs"]["residx"])<len(site_maps[ii])]
+    discarded["full"] = [ii for ii in range(len(site_list)) if ii not in out_sites.keys()]
+
+    out_sites = {key: isite for key, isite in out_sites.items() if len(isite["pairs"]["residx"])>0}
+    [isite.__setitem__("n_pairs", len(isite["pairs"]["residx"])) for isite in out_sites.values()]
+    out_ctc_idxs, out_site_maps = sites_to_res_pairs(out_sites.values(), None)  # we know we won't need top or frags, can just parse None
+    return out_ctc_idxs, out_site_maps, list(out_sites.values()), discarded
 
 def site2str(site):
     r""" Produce a printable str for sitefile (json) or site-dict"""

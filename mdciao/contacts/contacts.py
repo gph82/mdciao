@@ -1776,7 +1776,7 @@ class ContactPair(object):
                         switch_off_Ang=None,
                         n_smooth_hw=0,
                         dt=1,
-                        gray_background=False,
+                        background=True,
                         shorten_AAs=False,
                         t_unit='ps',
                         ylim_Ang=10,
@@ -1795,7 +1795,14 @@ class ContactPair(object):
             smoothing window
         dt : float, default is 1
             The how units in :obj:`t_unit` one frame represents
-        gray_background
+        background : bool, or color-like, (str, hex, rgb), default is True
+            When smoothing, the original curve can
+            appear in the background in different colors
+            * True:  use a fainted version of :obj:`color`
+            * False: don't plot any background
+            * color-like: use this color for the background,
+              can be: str, hex, rgba, anything
+          `   matplotlib.pyplot.colors` understands
         shorten_AAs
         t_unit
         ylim_Ang : float or "auto"
@@ -1825,12 +1832,8 @@ class ContactPair(object):
             if ctc_cutoff_Ang > 0:
                 ilabel += ' (%u%%)' % (self.frequency_per_traj(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)[traj_idx] * 100)
 
-            _mdcplots.plot_w_smoothing_auto(iax, ictc_traj * 10,
-                                            ilabel,
-                                            color_scheme[traj_idx],
-                                            x=itime * dt,
-                                            gray_background=gray_background,
-                                            n_smooth_hw=n_smooth_hw)
+            _mdcplots.plot_w_smoothing_auto(iax, ictc_traj * 10, ilabel, color_scheme[traj_idx], x=itime * dt,
+                                            background=background, n_smooth_hw=n_smooth_hw)
 
         iax.legend(loc=1, fontsize=_rcParams["font.size"] * .75,
                    ncol=_np.ceil(self.n.n_trajs / max_handles_per_row).astype(int)
@@ -4596,7 +4599,7 @@ class ContactGroup(object):
                             color_scheme=None,
                             dt=1, t_unit="ps",
                             n_smooth_hw=0,
-                            gray_background=False,
+                            background=True,
                             max_handles_per_row=4,
                             ):
         #Plot ncontacts in the last frame
@@ -4607,10 +4610,8 @@ class ContactGroup(object):
         for n_ctcs_t, itime, traj_name in zip(self.n_ctcs_timetraces(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
                                               self.time_arrays,
                                               self.trajlabels):
-            _mdcplots.plot_w_smoothing_auto(iax, n_ctcs_t, traj_name, next(icol),
-                                            x=itime * dt,
-                                            gray_background=gray_background,
-                                            n_smooth_hw=n_smooth_hw)
+            _mdcplots.plot_w_smoothing_auto(iax, n_ctcs_t, traj_name, next(icol), x=itime * dt,
+                                            background=background, n_smooth_hw=n_smooth_hw)
 
         iax.set_ylabel('$\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
         iax.set_xlabel('t / %s'%t_unit)

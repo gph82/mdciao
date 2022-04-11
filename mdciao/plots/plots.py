@@ -27,6 +27,8 @@ from matplotlib import \
     pyplot as _plt, \
     cm as _cm
 
+from matplotlib.colors import is_color_like as _is_color_like
+
 from mpl_toolkits.axes_grid1 import \
     make_axes_locatable as _make_axes_locatable
 
@@ -40,8 +42,9 @@ def plot_w_smoothing_auto(ax, y,
                           label,
                           color,
                           x = None,
-                          gray_background=False,
-                          n_smooth_hw=0):
+                          background=True,
+                          n_smooth_hw=0,
+                          ls="-"):
     r"""
     A wrapper around :obj:`matplotlib.pyplot.plot` that allows
     to add a smoothing window (or not). See
@@ -60,21 +63,30 @@ def plot_w_smoothing_auto(ax, y,
     x : iterable of floats, default is None
         If not provided, will default to
         x = _np.arange(len(y))
-    gray_background : bool, default is False
-        If True, instead of using a fainted version
-        of :obj:`color`, the original :obj:`y`
-        will be plotted in gray
-        (useful to avoid over-coloring plots)
+    background : bool, or color-like, (str, hex, rgb), default is True
+        When smoothing, the original curve can
+        appear in the background in different colors
+        * True:  use a fainted version of :obj:`color`
+        * False: don't plot any background
+        * color-like: use this color for the background,
+          can be: str, hex, rgba, anything
+          :obj:`matplotlib.pyplot.colors` understands
     n_smooth_hw : int, default is 0
         Half-size of the smoothing window.
         If 0, this method is identical to
         :obj:`matplotlib.pyplot.plot`
+    ls : str, default is "-"
+        The linestyle of the line, one of
+        [-', '--', '-.', ':', ''], more info
+        here for :obj:`matplotlib.lines.line2D`
 
     Returns
     -------
-    None
+    Line2D : :obj:`matplotlib.pyplot.Line2D`
+        The 2D smoothed line
 
     """
+    line2D = None
     alpha = 1
     if x is None:
         x = _np.arange(len(y))
@@ -82,18 +94,28 @@ def plot_w_smoothing_auto(ax, y,
         alpha = .2
         x_smooth = _mdcu.lists.window_average_fast(_np.array(x), half_window_size=n_smooth_hw)
         y_smooth = _mdcu.lists.window_average_fast(_np.array(y), half_window_size=n_smooth_hw)
-        ax.plot(x_smooth,
-                y_smooth,
-                label=label,
-                color=color)
+        line2D = ax.plot(x_smooth,
+                         y_smooth,
+                         label=label,
+                         color=color,
+                         ls=ls)[0]
         label = None
 
-        if gray_background:
-            color = "gray"
-    ax.plot(x, y,
-            label=label,
-            alpha=alpha,
-            color=color)
+        if background:
+            if isinstance(background,bool):
+                pass
+            else:
+                assert _is_color_like(background), "The argument 'background' has to be boolean (True/False) or color-like, but '%s' (%s) is neither"%(background, type(background))
+                color = background
+
+    _line2D = ax.plot(x, y,
+                      label=label,
+                      alpha=alpha,
+                      color=color)[0]
+    if line2D is None:
+        line2D = _line2D
+
+    return line2D
 
 def compare_groups_of_contacts(groups,
                                colors=None,

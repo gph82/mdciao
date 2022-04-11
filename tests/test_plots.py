@@ -323,19 +323,52 @@ class Test_plot_w_smoothing_auto(unittest.TestCase):
         x = [0,1,2,3,4,5]
         y = [0,1,2,3,4,5]
         _plt.figure()
-        plots.plot_w_smoothing_auto(_plt.gca(), y,
-                                    "test", "r",
-                                    x=x,
-                                    n_smooth_hw=1,
-                                    gray_background=True)
+        line2D = plots.plot_w_smoothing_auto(_plt.gca(), y, "test", "r", x=x, background=True, n_smooth_hw=1)
+        assert isinstance(line2D, _plt.Line2D)
+        _plt.close(_plt.gcf())
 
     def test_creates_x(self):
         y = [0,1,2,3,4,5]
         _plt.figure()
-        plots.plot_w_smoothing_auto(_plt.gca(), y,
-                                    "test", "r",
-                                    n_smooth_hw=1,
-                                    gray_background=True)
+        line2D = plots.plot_w_smoothing_auto(_plt.gca(), y, "test", "r", background=True, n_smooth_hw=1)
+        assert isinstance(line2D, _plt.Line2D)
+        _plt.close(_plt.gcf())
+
+    def test_background_False(self):
+        y = [0,1,2,3,4,5]
+        _plt.figure()
+        line2D = plots.plot_w_smoothing_auto(_plt.gca(), y, "test", "r", background=False, n_smooth_hw=1)
+        assert isinstance(line2D, _plt.Line2D)
+        _plt.close(_plt.gcf())
+
+    def test_background_str(self):
+        y = [0,1,2,3,4,5]
+        _plt.figure()
+        line2D = plots.plot_w_smoothing_auto(_plt.gca(), y, "test", "r", background="green", n_smooth_hw=1)
+        assert isinstance(line2D, _plt.Line2D)
+        _plt.close(_plt.gcf())
+
+    def test_background_rgb(self):
+        y = [0,1,2,3,4,5]
+        _plt.figure()
+        line2D = plots.plot_w_smoothing_auto(_plt.gca(), y, "test", "r", background=[1.,0.,0.], n_smooth_hw=1)
+        assert isinstance(line2D, _plt.Line2D)
+        _plt.close(_plt.gcf())
+
+    def test_background_raises(self):
+        y = [0,1,2,3,4,5]
+        _plt.figure()
+        with self.assertRaises(AssertionError):
+            line2D = plots.plot_w_smoothing_auto(_plt.gca(), y, "test", "r", background=["A",0.,0.], n_smooth_hw=1)
+
+    def test_no_smoothing(self):
+        y = [0,1,2,3,4,5]
+        _plt.figure()
+        line2D = plots.plot_w_smoothing_auto(_plt.gca(), y, "test", "r", )
+        assert isinstance(line2D, _plt.Line2D)
+        _plt.close(_plt.gcf())
+
+
 
 class Test_color_by_values(unittest.TestCase):
     def setUp(self):
