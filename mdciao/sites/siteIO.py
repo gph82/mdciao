@@ -204,7 +204,7 @@ def discard_empty_sites(ctc_idxs, site_maps, site_list, allow_partial_sites=True
         Keys are "partial" and "full" indicating
         the indices of the sites in :obj:`site_list`
         where either partial deletion took place
-        or the full site was deleted
+        or the full site was discarded completely
     """
     discarded = {}
     if allow_partial_sites:
@@ -213,14 +213,18 @@ def discard_empty_sites(ctc_idxs, site_maps, site_list, allow_partial_sites=True
         gets_eliminated = lambda site : any([None in pair for pair in site["pairs"]["residx"]])
 
     out_sites = [{"name": isite["name"],
-                  "pairs": {"residx": [list(ctc_idxs[ii]) for ii in site_maps[ii] if None not in list(ctc_idxs[ii])]},
-                  } for ii, isite in enumerate(site_list)]
-    discarded["partial"] = [ii for ii, isite in enumerate(out_sites) if len(isite["pairs"]["residx"])<len(site_maps[ii])]
+                  "pairs": {"residx": [list(ctc_idxs[ii]) for ii in site_maps[ii]]}}
+                 for ii, isite in enumerate(site_list)]
+
     out_sites = {key: isite for key, isite in enumerate(out_sites) if not gets_eliminated(isite)}
+    [isite["pairs"].__setitem__("residx", [pair for pair in isite["pairs"]["residx"] if None not in pair]) for isite in out_sites.values()]
+
+    discarded["partial"] = [ii for ii, isite in out_sites.items() if len(isite["pairs"]["residx"])<len(site_maps[ii])]
     discarded["full"] = [ii for ii in range(len(site_list)) if ii not in out_sites.keys()]
+
+    out_sites = {key: isite for key, isite in out_sites.items() if len(isite["pairs"]["residx"])>0}
     [isite.__setitem__("n_pairs", len(isite["pairs"]["residx"])) for isite in out_sites.values()]
-    out_ctc_idxs, out_site_maps = sites_to_res_pairs(out_sites.values(),
-                                                     None)  # we know we won't need top or frags, can just parse None
+    out_ctc_idxs, out_site_maps = sites_to_res_pairs(out_sites.values(), None)  # we know we won't need top or frags, can just parse None
     return out_ctc_idxs, out_site_maps, list(out_sites.values()), discarded
 
 def site2str(site):

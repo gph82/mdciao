@@ -227,32 +227,35 @@ class Test_sites_to_ctc_idxs(unittest.TestCase):
 
 class Test_discard_empty_sites(unittest.TestCase):
 
-    def test_just_works(self):
-        site_list = [
-            {'name': 'site0', 'pairs': {'AAresSeq': ['ALA20-ALA21',         #ALA20 doesn't exist
-                                                     'GLU101-GLU122']}},    #both exist
+    def setUp(self):
+        self.site_list = [
+            {'name': 'site0', 'pairs': {'AAresSeq': ['ALA20-ALA21',  # ALA20 doesn't exist
+                                                     'GLU101-GLU122']}},  # both exist
 
-            {'name': 'site1', 'pairs': {'AAresSeq': ['GLU31-ALA20',         #GLU31 and ALA20 don't exist
-                                                     'GLU17-GLU12']}},      #both exist
+            {'name': 'site1', 'pairs': {'AAresSeq': ['GLU31-ALA20',  # GLU31 and ALA20 don't exist
+                                                     'GLU17-GLU12']}},  # both exist
 
-            {'name': 'site2', 'pairs': {'AAresSeq': ['GLN101-ALA122']}},    #GLN101 doesn't exist
+            {'name': 'site2', 'pairs': {'AAresSeq': ['GLN101-ALA122']}},  # GLN101 doesn't exist
 
-            {'name': 'site3', 'pairs': {'AAresSeq': ['GLU101-GLU122']}}]    #both exist, but was seen before
+            {'name': 'site3', 'pairs': {'AAresSeq': ['GLU101-GLU122']}}]  # both exist, but was seen before
         top = _md.load(test_filenames.top_pdb).top
 
-        ctc_idxs, site_maps = mdciao.sites.sites_to_res_pairs(site_list, top)
-        _np.testing.assert_array_equal(ctc_idxs, [[None, 374],
+        self.ctc_idxs, self.site_maps = mdciao.sites.sites_to_res_pairs(self.site_list, top)
+
+        # This has to work otherwise the below tests don't make sense
+        _np.testing.assert_array_equal(self.ctc_idxs, [[None, 374],
                                                   [69, 852],
                                                   [None, None],
                                                   [709, 365],
                                                   [None, None]])
-        self.assertListEqual(site_maps, [[0, 1],
-                                         [2, 3],
-                                         [4],
-                                         [1]])
-        # Now is the actual test, since when we take out None's and empty sites, idxs change
+        self.assertListEqual(self.site_maps, [[0, 1],
+                                              [2, 3],
+                                              [4],
+                                              [1]])
 
-        new_ctc_idxs, new_site_maps, new_sites, discarded = mdciao.sites.discard_empty_sites(ctc_idxs, site_maps, site_list)
+    def test_just_works(self):
+
+        new_ctc_idxs, new_site_maps, new_sites, discarded = mdciao.sites.discard_empty_sites(self.ctc_idxs, self.site_maps, self.site_list)
         _np.testing.assert_array_equal(new_ctc_idxs, [
                                                 # [None, 374],
                                                 [69, 852],
@@ -264,12 +267,29 @@ class Test_discard_empty_sites(unittest.TestCase):
                                          [1],
                                          [0],
                                          ])
-        self.assertListEqual(discarded["partial"], [0,1,2])
+        self.assertListEqual(discarded["partial"], [0,1])
         self.assertListEqual(discarded["full"],[2])
-
+        assert len(new_site_maps)==3
         self.assertDictEqual(new_sites[0], {"name": "site0", "pairs": {"residx": [[69, 852]]}, "n_pairs": 1})
         self.assertDictEqual(new_sites[1], {"name": "site1", "pairs": {"residx": [[709, 365]]}, "n_pairs": 1})
         self.assertDictEqual(new_sites[2], {"name": "site3", "pairs": {"residx": [[69, 852]]}, "n_pairs": 1})
+
+    def test_just_works_full(self):
+        new_ctc_idxs, new_site_maps, new_sites, discarded = mdciao.sites.discard_empty_sites(self.ctc_idxs, self.site_maps,
+                                                                                             self.site_list, allow_partial_sites=False)
+        _np.testing.assert_array_equal(new_ctc_idxs, [
+            # [None, 374],
+            [69, 852],
+            # [None, None],
+            #[709, 365],
+            # [None, None]
+        ])
+        self.assertListEqual(new_site_maps, [[0]])
+        self.assertListEqual(discarded["partial"], [])
+        self.assertListEqual(discarded["full"], [0,1,2])
+        assert len(new_site_maps)==1
+        self.assertDictEqual(new_sites[0], {"name": "site3", "pairs": {"residx": [[69, 852]]}, "n_pairs": 1})
+
 
 
 if __name__ == '__main__':
