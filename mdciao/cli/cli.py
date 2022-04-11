@@ -1593,12 +1593,15 @@ def sites(site_inputs,
     ----------
     site_inputs : list, default is None
         List of sites to compute. Sites can be either
-        paths to site file(s) in json formats or
+        paths to site file(s) in json format or
         directly a site dictionary. A site dictionary
         is something like {"name":"site",
                            "pairs":{"AAresSeq":["GLU30-ARG40",
                                                 "LYS31-W70"]}}
-        See :obj:`mdciao.sites` for more info
+        Any site containing a residue that can't be
+        found in the topology will be discarded.
+        See :obj:`mdciao.sites` for more info on
+        the site format.
     trajectories :
         The MD-trajectories to calculate the frequencies
         from. This input is pretty flexible. For more info check
@@ -1787,10 +1790,21 @@ def sites(site_inputs,
                                                           save_nomenclature_files=save_nomenclature_files)
     sites = [_mdcsites.x2site(ff) for ff in site_inputs]
     ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
-                                                                    fragments=fragments_as_residue_idxs,
-                                                                    default_fragment_idx=default_fragment_index,
-                                                                    fragment_names=fragment_names)
+                                                             fragments=fragments_as_residue_idxs,
+                                                             default_fragment_idx=default_fragment_index,
+                                                             fragment_names=fragment_names)
+    if None in ctc_idxs_small:
+        print("Some definitions of the 'site_inputs' contain one or more residue(s) not found in the input topology.\n"
+              "These sites have been discarded and won't appear in the ouput: ")
+        ctc_idxs_small, site_maps, _sites, discarded = _mdcsites.discard_empty_sites(ctc_idxs_small,site_maps, sites, allow_partial_sites=False)
+        for ii in discarded["full"]:
+            print(" * site '%s' (idx %u)"%(sites[ii]["name"],ii))
+        if len(_sites)==0:
+            raise ValueError("No site(s) could be constructed, please check the above messages and your review your site(s)' definitions.")
+        else:
+            sites = _sites
 
+    print("These are the residues that could be found:")
     print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq GPCR  CGN".split())))
     for idx in _np.unique(ctc_idxs_small):
         print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, _mdcu.lists.in_what_fragment(idx,
