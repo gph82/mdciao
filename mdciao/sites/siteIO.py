@@ -141,7 +141,11 @@ def sites_to_res_pairs(site_dicts, top,
         For each site, a list with the indices of :obj:`res_idxs_pairs`
         that matches the site's pairs in :obj:`res_idxs_pairs`
     """
+    if fragments is None:
+        fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
 
+    get_pair_lambda = {"AAresSeq":lambda bond :_mdcu.residue_and_atom.residues_from_descriptors(bond, fragments, top)[0],
+                       "residx" : lambda bond : bond}
     res_idxs_pairs = []
     pair2idx = {}
     site_maps = []
@@ -155,7 +159,7 @@ def sites_to_res_pairs(site_dicts, top,
             elif bond_type=="residx":
                 get_pair_lambda = lambda bond: bond
             for bond in bonds:
-                pair = tuple(list(get_pair_lambda(bond))+list(bond))
+                pair = tuple(get_pair_lambda[bond_type](bond))
                 if pair not in res_idxs_pairs:
                     res_idxs_pairs.append(pair)
                     pair2idx[pair]=len(res_idxs_pairs)-1
