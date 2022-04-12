@@ -154,7 +154,7 @@ def sites_to_res_pairs(site_dicts, top,
             elif bond_type=="residx":
                 get_pair_lambda = lambda bond: bond
             for bond in bonds:
-                pair = tuple(get_pair_lambda(bond))
+                pair = tuple(list(get_pair_lambda(bond))+list(bond))
                 if pair not in res_idxs_pairs:
                     res_idxs_pairs.append(pair)
                     pair2idx[pair]=len(res_idxs_pairs)-1
