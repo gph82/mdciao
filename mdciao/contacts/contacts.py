@@ -1845,10 +1845,12 @@ class ContactPair(object):
         ctc_label = _mdcu.str_and_dict.latex_superscript_fragments(ctc_label)
         if ctc_cutoff_Ang > 0:
             ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang) * 100)
-
-        iax.text(_np.mean(iax.get_xlim()), 1 * 10 / _np.max((10, iax.get_ylim()[1])),  # fudge factor for labels
-                 ctc_label,
-                 ha='center')
+        #TODO implement the iax.transAxes everywhere a fuzzy axis position is computed (flareplot?)
+        iax.text(
+            .5, .1,
+            ctc_label,
+            transform=iax.transAxes,
+            ha='center')
         if ctc_cutoff_Ang > 0:
             iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
 
