@@ -2930,8 +2930,8 @@ class ContactGroup(object):
 
 
     def frequency_dicts(self, ctc_cutoff_Ang,
-                       sort=False,
-                       **kwargs):
+                        sort_by_freq=False,
+                        **kwargs):
         """
         Wraps around the method :obj:`ContactPair.frequency_dict`
         of each of the underlying :obj:`ContactPair` s and
@@ -2941,7 +2941,7 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang : float
             Cutoff in Angstrom. The comparison operator is "<="
-        sort : bool, default is False
+        sort_by_freq : bool, default is False
             Sort by descending frequency. Default
             is to return in the same order
             as :obj:`ContactGroup._contacts`
@@ -2955,7 +2955,7 @@ class ContactGroup(object):
         """
         self._check_cutoff_ok(ctc_cutoff_Ang)
         frequency_dicts = [cp.frequency_dict(ctc_cutoff_Ang=ctc_cutoff_Ang, **kwargs) for cp in self._contacts]
-        if sort:
+        if sort_by_freq:
             frequency_dicts = sorted(frequency_dicts,
                                      key=lambda value: value["freq"],
                                      reverse=True)
@@ -3180,7 +3180,7 @@ class ContactGroup(object):
     def frequency_dataframe(self, ctc_cutoff_Ang,
                             switch_off_Ang=None,
                             atom_types=False,
-                            sort=False,
+                            sort_by_freq=False,
                             **ctc_fd_kwargs):
         r"""
         Output a formatted dataframe with fields "label", "freq" and "sum", optionally
@@ -3199,7 +3199,7 @@ class ContactGroup(object):
         atom_types : bool, default is false
             Include the relative frequency of atom-type-pairs
             involved in the contact
-        sort : bool, default is False
+        sort_by_freq : bool, default is False
             Sort by descending frequency value,
             default is to keep the order of
             :obj:`self._contacts`
@@ -3222,7 +3222,7 @@ class ContactGroup(object):
                 jdict["by_atomtypes"]=istr
 
         idf = _DF(idicts)
-        if sort:
+        if sort_by_freq:
             idf.sort_values("freq",
                             ignore_index=True,
                             inplace=True,
@@ -3235,7 +3235,7 @@ class ContactGroup(object):
                         fname,
                         switch_off_Ang=None,
                         write_interface=True,
-                        sort=False,
+                        sort_by_freq=False,
                         **freq_dataframe_kwargs):
         r"""
         Print and/or save frequencies as a formatted table
@@ -3265,7 +3265,7 @@ class ContactGroup(object):
             table where residues are sorted
             by interface membership and per-residue
             interface participation.
-        sort : bool, default is False
+        sort_by_freq : bool, default is False
             Only has effect if self.is_interface is True
             and :obj:`write_interface` is True. Sort the
             second sheet by descending order of frequencies
@@ -3289,7 +3289,7 @@ class ContactGroup(object):
                                                **freq_dataframe_kwargs)
             idfs = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                         switch_off_Ang=switch_off_Ang,
-                                                        sort_by_freq=sort,
+                                                        sort_by_freq=sort_by_freq,
                                                         list_by_interface=write_interface,
                                                         return_as_dataframe=True)
             self.frequency_spreadsheet(main_DF,idfs,ctc_cutoff_Ang,fname)
@@ -3766,7 +3766,7 @@ class ContactGroup(object):
                            label_fontsize_factor=1,
                            truncate_at=None,
                            atom_types=False,
-                           sort=False,
+                           sort_by_freq=False,
                            sum_freqs=True,
                            total_freq=None,
                            defrag=None,
@@ -3812,7 +3812,7 @@ class ContactGroup(object):
         atom_types : bool, default is False
             Use stripe-patterns to inform about the
             types of interactions (sidechain, backbone, etc)
-        sort : boolean, default is False
+        sort_by_freq : boolean, default is False
             The frequencies are by default plotted in the order
             in which the :obj:`ContactPair`-objects are stored
             in the :obj:`ContactGroup`-object's _contact_pairs
@@ -3848,7 +3848,7 @@ class ContactGroup(object):
         freqs = self.frequency_per_contact(ctc_cutoff_Ang,
                                            switch_off_Ang=switch_off_Ang,
                                            )
-        if sort:
+        if sort_by_freq:
             order = _np.argsort(freqs)[::-1]
         else:
             order = _np.arange(len(freqs))
@@ -4177,7 +4177,7 @@ class ContactGroup(object):
                                 label_fontsize_factor=1,
                                 sum_freqs=True,
                                 plot_atomtypes=False,
-                                sort=False):
+                                sort_by_freq=False):
         r"""
         Wrapper around :obj:`ContactGroup.plot_freqs_as_bars`
         for plotting neighborhoods
@@ -4216,7 +4216,7 @@ class ContactGroup(object):
         plot_atomtypes : bool, default is False
             Add stripes to frequency bars to include
             the atom-types (backbone, sidechain, etc)
-        sort : boolean, default is False
+        sort_by_freq : boolean, default is False
             The frequencies are by default plotted in the order
             in which the :obj:`ContactPair`-objects are stored
             in the :obj:`ContactGroup`-object's _contact_pairs
@@ -4238,7 +4238,7 @@ class ContactGroup(object):
                                      shorten_AAs=shorten_AAs,
                                      truncate_at=None,
                                      atom_types=plot_atomtypes,
-                                     sort=sort,
+                                     sort_by_freq=sort_by_freq,
                                      switch_off_Ang=switch_off_Ang,
                                      label_fontsize_factor=label_fontsize_factor,
                                      color=color,
@@ -4641,7 +4641,7 @@ class ContactGroup(object):
                                     truncate_at=0,
                                     bar_width_in_inches=.75,
                                     list_by_interface=False,
-                                    sort=True,
+                                    sort_by_freq=True,
                                     interface_vline=False):
         r"""
         Bar plot with per-residue sums of frequencies (called \Sigma in mdciao)
@@ -4674,7 +4674,7 @@ class ContactGroup(object):
             the subplot
         list_by_interface : boolean, default is True
             Separate residues by interface
-        sort : boolean, default is True
+        sort_by_freq : boolean, default is True
             Sort sums of freqs in descending order
         interface_vline : bool, default is False
             Plot a vertical line visually separating both interfaces
@@ -4688,7 +4688,7 @@ class ContactGroup(object):
         # Base list of dicts
         frq_dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                              switch_off_Ang=switch_off_Ang,
-                                                             sort_by_freq=sort,
+                                                             sort_by_freq=sort_by_freq,
                                                              shorten_AAs=shorten_AAs,
                                                              list_by_interface=list_by_interface)
 

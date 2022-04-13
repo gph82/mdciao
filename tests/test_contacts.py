@@ -1547,7 +1547,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
              self.cp1_w_anchor_and_frags_and_top],
             neighbors_excluded=0
         )
-        self.assertDictEqual(CG.frequency_dicts(2, split_label=False, sort=True),
+        self.assertDictEqual(CG.frequency_dicts(2, split_label=False, sort_by_freq=True),
                              {"E30@fragA-W32@fragC": 1 / 5,
                               "E30@fragA-V31@fragB": 2 / 5})
 
@@ -1799,7 +1799,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_dataframe_just_runs(self):
         CG = contacts.ContactGroup([self.cp1_w_atom_types, self.cp2_w_atom_types])
-        df = CG.frequency_dataframe(3.5, sort=True, atom_types=True)
+        df = CG.frequency_dataframe(3.5, sort_by_freq=True, atom_types=True)
         assert isinstance(df, _DF)
 
 class TestContactGroupFrequencies_max_cutoff(TestBaseClassContactGroup):
@@ -1918,7 +1918,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_freqs_as_bars_display_sort(self):
         CG = self.CG_cp1_cp2
-        CG.plot_freqs_as_bars(2, "test_site", sort=True)
+        CG.plot_freqs_as_bars(2, "test_site", sort_by_freq=True)
 
 
     def test_plot_freqs_as_bars_total_freq(self):

@@ -1452,7 +1452,7 @@ def interface(
 
     if savetabs:
         print("The following files have been created:")
-        ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort=sort_by_av_ctcs)
+        ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort_by_freq=sort_by_av_ctcs)
         print(fn.fullpath_overall_excel)
         ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_dat, atom_types=True)
         print(fn.fullpath_overall_dat)
@@ -1492,7 +1492,7 @@ def interface(
                                                  label_fontsize_factor=panelsize2font / panelsize,
                                                  truncate_at=.05,
                                                  shorten_AAs=short_AA_names,
-                                                 sort=sort_by_av_ctcs,
+                                                 sort_by_freq=sort_by_av_ctcs,
                                                  )
         histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
