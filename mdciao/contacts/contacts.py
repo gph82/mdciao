@@ -4171,7 +4171,7 @@ class ContactGroup(object):
                                 label_fontsize_factor=1,
                                 sum_freqs=True,
                                 plot_atomtypes=False,
-                                display_sort=False):
+                                sort=False):
         r"""
         Wrapper around :obj:`ContactGroup.plot_freqs_as_bars`
         for plotting neighborhoods
@@ -4210,7 +4210,7 @@ class ContactGroup(object):
         plot_atomtypes : bool, default is False
             Add stripes to frequency bars to include
             the atom-types (backbone, sidechain, etc)
-        display_sort : boolean, default is False
+        sort : boolean, default is False
             The frequencies are by default plotted in the order
             in which the :obj:`ContactPair`-objects are stored
             in the :obj:`ContactGroup`-object's _contact_pairs
@@ -4232,7 +4232,7 @@ class ContactGroup(object):
                                      shorten_AAs=shorten_AAs,
                                      truncate_at=None,
                                      atom_types=plot_atomtypes,
-                                     sort=display_sort,
+                                     sort=sort,
                                      switch_off_Ang=switch_off_Ang,
                                      label_fontsize_factor=label_fontsize_factor,
                                      color=color,
