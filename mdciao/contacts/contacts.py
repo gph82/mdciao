@@ -3083,10 +3083,11 @@ class ContactGroup(object):
 
         # Use the residue@frag representation but avoid empty fragments
         list_out = []
+        residx2resnamefragnamebest = self.residx2resnamefragnamebest(shorten_AAs=shorten_AAs)
         for ifreq in freqs:
             idict = {}
             for idx, val in ifreq.items():
-                key = self.residx2resnamefragnamebest(shorten_AAs=shorten_AAs)[idx]
+                key = residx2resnamefragnamebest[idx]
                 idict[key] = val
             list_out.append(idict)
 
