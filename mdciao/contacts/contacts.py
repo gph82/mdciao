@@ -3759,9 +3759,8 @@ class ContactGroup(object):
                            shorten_AAs=False,
                            label_fontsize_factor=1,
                            truncate_at=None,
-
                            atom_types=False,
-                           display_sort=False,
+                           sort=False,
                            sum_freqs=True,
                            total_freq=None,
                            defrag=None,
@@ -3781,8 +3780,8 @@ class ContactGroup(object):
         xlim : float, default is None
             The right limit of the x-axis.
             +.5 will be added to this number
-            to accomdate some padding around
-            the barse. If None, it's chosen
+            to accommodate some padding around
+            the bars. If None, it's chosen
             automatically
         ax : :obj:`~matplotlib.axes.Axes`, default is None
             Draw into this axis. If None is passed,
@@ -3807,7 +3806,7 @@ class ContactGroup(object):
         atom_types : bool, default is False
             Use stripe-patterns to inform about the
             types of interactions (sidechain, backbone, etc)
-        display_sort : boolean, default is False
+        sort : boolean, default is False
             The frequencies are by default plotted in the order
             in which the :obj:`ContactPair`-objects are stored
             in the :obj:`ContactGroup`-object's _contact_pairs
@@ -3843,7 +3842,7 @@ class ContactGroup(object):
         freqs = self.frequency_per_contact(ctc_cutoff_Ang,
                                            switch_off_Ang=switch_off_Ang,
                                            )
-        if display_sort:
+        if sort:
             order = _np.argsort(freqs)[::-1]
         else:
             order = _np.arange(len(freqs))
@@ -4232,7 +4231,7 @@ class ContactGroup(object):
                                      shorten_AAs=shorten_AAs,
                                      truncate_at=None,
                                      atom_types=plot_atomtypes,
-                                     display_sort=display_sort,
+                                     sort=display_sort,
                                      switch_off_Ang=switch_off_Ang,
                                      label_fontsize_factor=label_fontsize_factor,
                                      color=color,
