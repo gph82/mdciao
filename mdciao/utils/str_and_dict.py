@@ -364,6 +364,26 @@ def sum_dict_per_residue(idict, sep):
         out_dict[key2].append(freq)
     return {key:_np.sum(val) for key, val in out_dict.items()}
 
+def sort_dict_by_asc_values(idict, reverse=False):
+    r""" Sort a dictionary by values
+
+    Parameters
+    ----------
+    idict : dict
+        Input dictionary
+    reverse : bool, default is False
+        Reverse the sorting order,
+        i.e. sort by ascending order
+        of values
+
+    Returns
+    -------
+    odict : dict
+        Indict sorted with its keys
+         sorted by its values
+    """
+    return {key: val for key, val in sorted(idict.items(), key=lambda item: item[1], reverse=reverse)}
+
 def freq_file2dict(ifile, defrag=None):
     r"""
     Read a file containing the frequencies ("freq") and labels ("label")

@@ -541,6 +541,13 @@ class Test_aggregate_freq_dict_per_residue(unittest.TestCase):
         np.testing.assert_equal(out_dict["C"], 10 + 1000)
         np.testing.assert_equal(out_dict["D"], 1000 + 100)
 
+class Test_sort_dict(unittest.TestCase):
+
+    def test_works(self):
+        indict = {"A":0.5, "B":1.0, "C":.75}
+        self.assertDictEqual(str_and_dict.sort_dict_by_asc_values(indict),               {"A": 0.5, "C": .75, "B": 1.0})
+        self.assertDictEqual(str_and_dict.sort_dict_by_asc_values(indict, reverse=True), {"B": 1.0, "C": .75, "A": 0.5})
+
 class Test_label2componentsdict(unittest.TestCase):
 
     def setUp(self):
