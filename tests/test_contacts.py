@@ -1588,7 +1588,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     def test_frequency_per_residue_name_no_sort(self):
         CG = self.CG
-        freq_dict = CG.frequency_sum_per_residue_names(2, sort=False)[0]
+        freq_dict = CG.frequency_sum_per_residue_names(2, sort_by_freq=False)[0]
         assert len(freq_dict) == 3
         _np.testing.assert_equal(freq_dict["E30@fragA"], 2 / 5 + 1 / 5)
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
@@ -2587,7 +2587,7 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         print(I.frequency_dataframe(2))
         print(I.interface_residxs)
         idicts = I.frequency_sum_per_residue_names(2,
-                                                   sort=False,
+                                                   sort_by_freq=False,
                                                    list_by_interface=True)
 
         assert len(idicts) == 2

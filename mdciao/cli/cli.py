@@ -1445,7 +1445,7 @@ def interface(
     dfs = ctc_grp_intf.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                        list_by_interface=True,
                                                        return_as_dataframe=True,
-                                                       sort=sort_by_av_ctcs)
+                                                       sort_by_freq=sort_by_av_ctcs)
     print(dfs[0].round({"freq":2}))
     print()
     print(dfs[1].round({"freq":2}))

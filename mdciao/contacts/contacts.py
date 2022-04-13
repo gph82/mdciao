@@ -3031,14 +3031,14 @@ class ContactGroup(object):
 
     def frequency_sum_per_residue_names(self, ctc_cutoff_Ang,
                                         switch_off_Ang=None,
-                                        sort=True,
+                                        sort_by_freq=True,
                                         shorten_AAs=True,
                                         list_by_interface=False,
                                         return_as_dataframe=False,
                                         fragsep="@"):
         r"""
-        Aggregate the frequencies of :obj:`frequency_per_contact` keyed
-        by residue name, using the most informative names possible,
+        Aggregate the frequencies of :obj:`frequency_per_contact` by residue name,
+        using the most informative names possible,
         see :obj:`self.residx2resnamefragnamebest` for more info on this
 
         Parameters
@@ -3047,13 +3047,14 @@ class ContactGroup(object):
             The cutoff to use
         switch_off_Ang : float, default is None
             TODO
-        sort : bool, default is True
-            Sort by dictionary by descending order of frequencies
+        sort_by_freq : bool, default is True
+            Sort by descending order of frequencies.
+            If :obj:`list_by_interface` is True,
+            then sorting will be descending within
+            each member of the interface, see
+            :obj:`self.interface_residxs` for more info.
             If False, residues are in ascending order
-            within each member of the interface, as returned
-            by self.interface_residxs
-            TODO dicts have order since py 3.6 and it is useful for creating
-            TODO a dataframe, then excel_table that's already sorted by descending frequencies
+            of residue indices
         shorten_AAs : bool, default is True
             Use E30 instead of GLU30
         list_by_interface : bool, default is False
@@ -3072,18 +3073,13 @@ class ContactGroup(object):
             (False) is to be of len=1
 
         """
-        freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)
+        freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, sort_by_freq=sort_by_freq)
 
         if list_by_interface and self.is_interface:
                 freqs = [{idx:freqs[idx] for idx in iint} for iint in self.interface_residxs]
         else:
             freqs = [freqs] #this way it is a list either way
 
-        if sort:
-            freqs = [{key:val for key, val in sorted(idict.items(),
-                                                     key=lambda item: item[1],
-                                                     reverse=True)}
-                     for idict in freqs]
 
         # Use the residue@frag representation but avoid empty fragments
         list_out = []
@@ -3294,7 +3290,7 @@ class ContactGroup(object):
                                                **freq_dataframe_kwargs)
             idfs = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                         switch_off_Ang=switch_off_Ang,
-                                                        sort=sort,
+                                                        sort_by_freq=sort,
                                                         list_by_interface=write_interface,
                                                         return_as_dataframe=True)
             self.frequency_spreadsheet(main_DF,idfs,ctc_cutoff_Ang,fname)
@@ -4692,10 +4688,10 @@ class ContactGroup(object):
 
         # Base list of dicts
         frq_dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
-                                                          switch_off_Ang=switch_off_Ang,
-                                                          sort=sort,
-                                                          shorten_AAs=shorten_AAs,
-                                                          list_by_interface=list_by_interface)
+                                                             switch_off_Ang=switch_off_Ang,
+                                                             sort_by_freq=sort,
+                                                             shorten_AAs=shorten_AAs,
+                                                             list_by_interface=list_by_interface)
 
         # TODO the method plot_freqs_as_bars is very similar but
         # i think it's better to keep them separated
