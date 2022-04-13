@@ -232,7 +232,7 @@ def site2str(site):
         return site
     elif isinstance(site,dict):
         assert "name" in site.keys()
-        return 'site dict with name %s'%site["name"]
+        return "site dict with name '%s'"%site["name"]
     else:
         raise ValueError("What is this site %s? Only dicts or files are accepted"%site)
 
