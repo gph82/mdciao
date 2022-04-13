@@ -3035,7 +3035,7 @@ class ContactGroup(object):
                                         shorten_AAs=True,
                                         list_by_interface=False,
                                         return_as_dataframe=False,
-                                        fragsep="@"):
+                                        ):
         r"""
         Aggregate the frequencies of :obj:`frequency_per_contact` by residue name,
         using the most informative names possible,
@@ -3062,8 +3062,6 @@ class ContactGroup(object):
             Only has an effect if self.is_interface
         return_as_dataframe : bool, default is False
             Return an :obj:`~pandas.DataFrame` with the column names labels and freqs
-        fragsep : str, default is @
-            String to separate residue@fragname
         Returns
         -------
         res : list
