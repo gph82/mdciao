@@ -3901,7 +3901,7 @@ class ContactGroup(object):
         return ax
 
     def plot_violins(self,
-                     display_sort=False,
+                     sort=False,
                      ctc_cutoff_Ang=None,
                      truncate_at_mean=None,
                      zero_freq=1e-2,
@@ -3949,7 +3949,7 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        display_sort : iterable of ints, boolean, int, default is False
+        sort : iterable of ints, boolean, int, default is False
             Can be different things:
              * iterable of ints
                 Strongest selection. Show only these residue pairs,
@@ -4005,11 +4005,12 @@ class ContactGroup(object):
               the same residue pair always gets the same
               color, regardless of order in which they appear.
               This way you can track a violin across different
-              orders
+              sorting orders
             * str, it has to be a matplotlib color or a case-sensitive matplotlib colorname
               https://matplotlib.org/stable/tutorials/colors/colormaps.html
             * dict, keys are integers and values are colors
-              This is the best way to work with display_sort = [ii,jj],
+              This is the best way to work with :obj:`sort`
+              is an iterable of ints, e.g. [ii,jj],
               because you can pass only those colors here as {ii:"red",jj:"blue"}
             * If None, the 'tab10' colormap (tableau) is chosen
         shorten_AAs : bool, default is None
@@ -4060,13 +4061,13 @@ class ContactGroup(object):
             freqs = self.frequency_per_contact(ctc_cutoff_Ang,
                                                switch_off_Ang=switch_off_Ang,
                                                )
-        if isinstance(display_sort, (bool, int)):
-            if not isinstance(display_sort, bool): #https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
-                max_n = display_sort
+        if isinstance(sort, (bool, int)):
+            if not isinstance(sort, bool): #https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
+                max_n = sort
             else:
                 max_n = len(data4violin)
 
-            if display_sort:
+            if sort:
                 if ctc_cutoff_Ang is None:
                     order = _np.argsort(means)[:max_n]
                 else:
@@ -4086,8 +4087,8 @@ class ContactGroup(object):
             order = order[:max_n+1]
             color = _mdcplots.color_dict_guesser(color, self.n_ctcs)
 
-        elif _mdcu.lists.is_iterable(display_sort):
-            order = _np.array([int(dd) for dd in display_sort])
+        elif _mdcu.lists.is_iterable(sort):
+            order = _np.array([int(dd) for dd in sort])
             color = _mdcplots.color_dict_guesser(color, order)
 
         ax, violins = _mdcplots.plots._plot_violin_baseplot([data4violin[oo] for oo in order],

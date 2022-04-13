@@ -1950,7 +1950,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_violins_options1(self):
         CG = examples.ContactGroupL394()
-        iax, order = CG.plot_violins(display_sort=True,
+        iax, order = CG.plot_violins(sort=True,
                                      shorten_AAs=True,
                                      ctc_cutoff_Ang=3.5,
                                      # xlim=2
@@ -1962,7 +1962,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_violins_options2(self):
         CG = examples.ContactGroupL394()
-        iax, order = CG.plot_violins(display_sort=True,
+        iax, order = CG.plot_violins(sort=True,
                                      shorten_AAs=True,
                                      truncate_at_mean=3.7
                                      )
@@ -1973,7 +1973,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_violins_options3(self):
         CG = examples.ContactGroupL394()
-        iax, order = CG.plot_violins(display_sort=[0, 4],
+        iax, order = CG.plot_violins(sort=[0, 4],
                                      shorten_AAs=True,
                                      truncate_at_mean=3.7
                                      )
@@ -1985,7 +1985,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_violins_options4(self):
         CG = examples.ContactGroupL394()
-        iax, order = CG.plot_violins(display_sort=2,
+        iax, order = CG.plot_violins(sort=2,
                                      shorten_AAs=True,
                                      stride=2,
                                      )
