@@ -3792,7 +3792,7 @@ class ContactGroup(object):
             The color for the bars. If string or RGB array, all
             bars will have this color. If list, it's assumed
             in the order of the self.res_idx_pairs. It will
-            get re-sorted according to :obj:`display_sort`,
+            get re-sorted according to :obj:`sort`,
             s.t. residues always have the same color not
             matter the order
         shorten_AAs : bool, default is None
@@ -3936,7 +3936,7 @@ class ContactGroup(object):
 
         Hence, to control the number of shown contacts, you can control the
         you can use these parameters, sorted somewhat hierarchically
-         * display_sort
+         * sort
          * ctc_cutoff_ang
          * truncate_at_mean
          * zero_freq
@@ -3974,7 +3974,7 @@ class ContactGroup(object):
         ctc_cutoff_Ang : opt, default is None
             If provided, contact-frequencies will
             be computed and shown in the contact-labels.
-            Additionally, if :obj:`display_sort`
+            Additionally, if :obj:`sort`
             is True or int, then the violins are sorted
             by contact-frequency in the plot
         truncate_at_mean : float, default is None
@@ -4188,7 +4188,7 @@ class ContactGroup(object):
             The color for the bars. If string or RGB array, all
             bars will have this color. If list, it's assumed
             in the order of the self.res_idx_pairs. It will
-            get re-sorted according to :obj:`display_sort`,
+            get re-sorted according to :obj:`sort`,
             s.t. residues always have the same color not
             matter the order
         xmax : int, default is None
