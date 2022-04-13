@@ -1559,10 +1559,17 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_per_residue_idx(self):
         CG = self.CG
         freq_dict = CG.frequency_sum_per_residue_idx_dict(2)
-        assert len(freq_dict) == 3
-        _np.testing.assert_equal(freq_dict[0], 2 / 5 + 1 / 5)
-        _np.testing.assert_equal(freq_dict[1], 2 / 5)
-        _np.testing.assert_equal(freq_dict[2], 1 / 5)
+        self.assertDictEqual(freq_dict, {0: 2 / 5 + 1 / 5,
+                                         1: 2 / 5,
+                                         2: 1/ 5})
+
+    #TODO This test is smh superflous with this CG but I wont write another one
+    def test_frequency_per_residue_idx_reverse(self):
+        CG = self.CG
+        freq_dict = CG.frequency_sum_per_residue_idx_dict(2, sort_by_freq=False)
+        self.assertDictEqual(freq_dict, {0: 2 / 5 + 1 / 5,
+                                         1: 2 / 5,
+                                         2: 1/ 5})
 
     def test_frequency_per_residue_idx_return_array(self):
         CG = self.CG

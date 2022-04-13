@@ -2982,6 +2982,7 @@ class ContactGroup(object):
 
     def frequency_sum_per_residue_idx_dict(self, ctc_cutoff_Ang,
                                            switch_off_Ang=None,
+                                           sort_by_freq=True,
                                            return_array=False):
         r"""
         Dictionary of aggregated :obj:`frequency_per_contact` per residue indices
@@ -2994,6 +2995,12 @@ class ContactGroup(object):
             The cutoff to use
         switch_off_Ang : float, default is None
             TODO
+        sort_by_freq : bool, default is True
+            Sort the dictionary by descending
+            order of frequency. If False,
+            it will be sorted by residue index.
+            :obj:`sort_by_freq` only has effect if
+            :obj:`return_array` is False
         return_array : bool, default is False
             If True, the return value is not a dict
             but an array of len(self.top.n_residues)
@@ -3011,6 +3018,10 @@ class ContactGroup(object):
             dict_sum[idx1].append(ifreq)
             dict_sum[idx2].append(ifreq)
         dict_sum = {key: _np.sum(val) for key, val in dict_sum.items()}
+        if sort_by_freq:
+            dict_sum = _mdcu.str_and_dict.sort_dict_by_asc_values(dict_sum, reverse=True)
+        else:
+            dict_sum = {key: dict_sum[key] for key in sorted(dict_sum.keys())}
         if return_array:
             array_sum = _np.zeros(self.top.n_residues)
             array_sum[list(dict_sum.keys())] = list(dict_sum.values())
