@@ -3907,7 +3907,7 @@ class ContactGroup(object):
         return ax
 
     def plot_violins(self,
-                     sort=False,
+                     sort_by=False,
                      ctc_cutoff_Ang=None,
                      truncate_at_mean=None,
                      zero_freq=1e-2,
@@ -3955,7 +3955,7 @@ class ContactGroup(object):
 
         Parameters
         ----------
-        sort : iterable of ints, boolean, int, default is False
+        sort_by : iterable of ints, boolean, int, default is False
             Can be different things:
              * iterable of ints
                 Strongest selection. Show only these residue pairs,
@@ -4067,13 +4067,13 @@ class ContactGroup(object):
             freqs = self.frequency_per_contact(ctc_cutoff_Ang,
                                                switch_off_Ang=switch_off_Ang,
                                                )
-        if isinstance(sort, (bool, int)):
-            if not isinstance(sort, bool): #https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
-                max_n = sort
+        if isinstance(sort_by, (bool, int)):
+            if not isinstance(sort_by, bool): #https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
+                max_n = sort_by
             else:
                 max_n = len(data4violin)
 
-            if sort:
+            if sort_by:
                 if ctc_cutoff_Ang is None:
                     order = _np.argsort(means)[:max_n]
                 else:
@@ -4093,8 +4093,8 @@ class ContactGroup(object):
             order = order[:max_n+1]
             color = _mdcplots.color_dict_guesser(color, self.n_ctcs)
 
-        elif _mdcu.lists.is_iterable(sort):
-            order = _np.array([int(dd) for dd in sort])
+        elif _mdcu.lists.is_iterable(sort_by):
+            order = _np.array([int(dd) for dd in sort_by])
             color = _mdcplots.color_dict_guesser(color, order)
 
         ax, violins = _mdcplots.plots._plot_violin_baseplot([data4violin[oo] for oo in order],
