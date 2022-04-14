@@ -154,6 +154,11 @@ def delete_pattern_in_ctc_label(pattern, label, sep):
     assert len(new_name) == 1, (new_name, pattern)
     return new_name[0], deleted_half_keys
 
+# Order key alphabetically using the separator_key
+def order_key(key, sep):
+    split_key = splitlabel(key,sep)
+    return sep.join([split_key[ii] for ii in _np.argsort(split_key)])
+
 def unify_freq_dicts(freqs,
                      exclude=None,
                      key_separator="-",
@@ -217,11 +222,6 @@ def unify_freq_dicts(freqs,
        {A:{key1:valA1, key2:valA2, key3:valA3},
         B:{key1:0,     key2:valB2, key3:valB3}}
     """
-
-    # Order key alphabetically using the separator_key
-    def order_key(key, sep):
-        split_key = splitlabel(key,sep)
-        return sep.join([split_key[ii] for ii in _np.argsort(split_key)])
 
     # Create a copy, with re-ordered keys if needed
     freqs_work = {}
