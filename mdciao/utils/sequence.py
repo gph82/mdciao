@@ -21,6 +21,8 @@ import numpy as _np
 from pandas import DataFrame as _DF
 from Bio.pairwise2 import align as _Bioalign
 from .lists import contiguous_ranges as _cranges
+import pandas as _pd
+from IPython.display import display as _display
 
 
 # See "Define original properties" https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
@@ -73,10 +75,9 @@ def print_verbose_dataframe(df):
     -------
 
     """
-    import pandas as _pd
-    from IPython.display import display as _display
-    with _pd.option_context('display.max_rows', None,
-                            'display.max_columns', None,
+    rows, columns = df.shape
+    with _pd.option_context('display.max_rows', rows,
+                            'display.max_columns', columns,
                             'display.width', 1000):
         _display(df)
 
