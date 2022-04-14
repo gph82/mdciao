@@ -548,6 +548,33 @@ class Test_sort_dict(unittest.TestCase):
         self.assertDictEqual(str_and_dict.sort_dict_by_asc_values(indict),               {"A": 0.5, "C": .75, "B": 1.0})
         self.assertDictEqual(str_and_dict.sort_dict_by_asc_values(indict, reverse=True), {"B": 1.0, "C": .75, "A": 0.5})
 
+
+class Test_lexsort_ctc_labels(unittest.TestCase):
+
+    def test_works(self):
+        labels = ["ALA30@3.50-GLU50", "HIS28-GLU50", "ALA30-GLU20"]
+        sorted_labels, order = str_and_dict.lexsort_ctc_labels(labels)
+        self.assertListEqual(sorted_labels, ["HIS28-GLU50", "ALA30-GLU20", "ALA30@3.50-GLU50"])
+        self.assertListEqual(order.tolist(), [1, 2, 0])
+
+    def test_works_reverse(self):
+        labels = ["ALA30@3.50-GLU50", "HIS28-GLU50", "ALA30-GLU20"]
+        sorted_labels, order = str_and_dict.lexsort_ctc_labels(labels, reverse=True)
+        self.assertListEqual(sorted_labels, ["HIS28-GLU50", "ALA30-GLU20", "ALA30@3.50-GLU50"][::-1])
+        self.assertListEqual(order.tolist(), [1, 2, 0][::-1])
+
+    def test_works_second_column_first(self):
+        labels = ["ALA30@3.50-GLU50", "HIS28-GLU50", "ALA30-GLU20"]
+        sorted_labels, order = str_and_dict.lexsort_ctc_labels(labels, columns=[1, 0])
+        self.assertListEqual(sorted_labels, ["ALA30-GLU20", "HIS28-GLU50", "ALA30@3.50-GLU50"])
+        self.assertListEqual(order.tolist(), [2, 1, 0])
+
+    def test_works_second_column_first_reverse(self):
+        labels = ["ALA30@3.50-GLU50", "HIS28-GLU50", "ALA30-GLU20"]
+        sorted_labels, order = str_and_dict.lexsort_ctc_labels(labels, columns=[1, 0], reverse=True)
+        self.assertListEqual(sorted_labels, ["ALA30@3.50-GLU50", "HIS28-GLU50", "ALA30-GLU20"])
+        self.assertListEqual(order.tolist(), [0, 1, 2])
+
 class Test_label2componentsdict(unittest.TestCase):
 
     def setUp(self):

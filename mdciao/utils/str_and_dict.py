@@ -384,6 +384,59 @@ def sort_dict_by_asc_values(idict, reverse=False):
     """
     return {key: val for key, val in sorted(idict.items(), key=lambda item: item[1], reverse=reverse)}
 
+def lexsort_ctc_labels(ctc_labels, reverse=False, columns=[0,1], sep="-") -> list:
+    r"""
+    Sort contact-labels in ascending order of resSeq using both columns
+
+    Wraps around :obj:`numpy.lexsort` with some string handling
+
+    >>> labels = ["ALA30@3.50-GLU50",
+    >>>           "HIS28-GLU50",
+    >>>           "ALA30-GLU20"]
+    >>> sorted_labels, order = mdciao.utils.str_and_dict.lexsort_ctc_labels(labels)
+    >>> sorted_ctc_labels
+    >>> ['HIS28-GLU50',
+    >>>  'ALA30-GLU20',
+    >>>  'ALA30@3.50-GLU50']
+
+    Parameters
+    ----------
+    ctc_labels : list of np.ndarray
+        Strings describing the contact
+        residues. It can contain also
+        fragment information, which
+        will be ignored when sorting
+        but returned in :obj:`sorted_ctc_labels`
+    reverse : bool, default is False
+        If True, sort in descending
+        order, instead of ascending
+    columns : list
+        The order of the columns,
+        e.g. [0,1] means sort first
+        by first column (idx 0),
+        then by second column (idx 1).
+    sep : char, default is "-"
+        The character to use
+        when separating the
+        contact label into both residues
+
+    Returns
+    -------
+    order : 1D np.ndarray
+        The indices of :obj:`ctc_labels` that
+        sort it into :obj:`sorted_ctc_labels`
+    sorted_ctc_labels : list
+        The sorted contact labels
+    """
+    resSeqs = _np.vstack(
+        [[intblocks_in_str(pp)[0] for pp in splitlabel(lab,sep)] for lab in ctc_labels])
+
+    order = _np.lexsort([resSeqs[:, columns[1]], resSeqs[:, columns[0]]])
+    if reverse:
+        order=order[::-1]
+    sorted_ctc_labels = [ctc_labels[ii] for ii in order]
+    return sorted_ctc_labels, order
+
 def freq_file2dict(ifile, defrag=None):
     r"""
     Read a file containing the frequencies ("freq") and labels ("label")
