@@ -2612,14 +2612,14 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
                                                    list_by_interface=True)
 
         assert len(idicts) == 2
-        items0, items1 = list(idicts[0].items()), list(idicts[1].items())
-        _np.testing.assert_array_equal(items0[0], ["E30@3.50", 1.])
-        _np.testing.assert_array_equal(items0[1], ["V34", 1 / 3])
-        _np.testing.assert_array_equal(items0[2], ["V33@3.51", 0.])
-
-        _np.testing.assert_array_equal(items1[0], ["V31@4.50", 2 / 3.])
-        _np.testing.assert_array_equal(items1[1], ["W32@5.50", 1 / 3])
-        _np.testing.assert_array_equal(items1[2], ["G35", 1 / 3])
+        self.assertDictEqual(idicts[0],
+                             {"E30@3.50": 1.,
+                              "V33@3.51": 0.,
+                              "V34" : 1 / 3})
+        self.assertDictEqual(idicts[1],
+                             {"V31@4.50" : 2 / 3,
+                              "W32@5.50" : 1 / 3,
+                              "G35" : 1 / 3})
 
     # smh repeated from testing ContactGroup itself,
     # leaving it here
