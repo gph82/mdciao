@@ -454,6 +454,58 @@ class Test_offset_dict(unittest.TestCase):
 
         self.assertEqual(width,.2)
 
+class Test_dict_sorter(unittest.TestCase):
+
+    def setUp(self):
+        self.indict = {'R131-E392': 4.1,
+                       'P138-M386': 6.85,
+                       'K270-L394': 4.68,
+                       'T274-L393': 4.95,
+                       'Q142-I382': 7.73,
+                       'T68-R389': 7.77,
+                       'Y141-R389': 8.02,
+                       'T274-E392': 5.73,
+                       'V222-L393': 6.92}
+
+    def test_residue(self):
+        sorted_keys = plots.plots._key_sorter("residue", self.indict)
+
+        self.assertListEqual(sorted_keys, [
+            'T68-R389',
+            "R131-E392",
+            "P138-M386",
+            'Y141-R389',
+            'Q142-I382',
+            'V222-L393',
+            'K270-L394',
+            'T274-E392',
+            'T274-L393',
+        ])
+
+    def test_mean(self):
+        sorted_keys = plots.plots._key_sorter("mean", self.indict)
+
+        self.assertListEqual(sorted_keys,
+                             list({'R131-E392': 4.1,
+                                   'K270-L394': 4.68,
+                                   'T274-L393': 4.95,
+                                   'T274-E392': 5.73,
+                                   'P138-M386': 6.85,
+                                   'V222-L393': 6.92,
+                                   'Q142-I382': 7.73,
+                                   'T68-R389': 7.77,
+                                   'Y141-R389': 8.02,
+                                   }.keys()))
+
+    def test_list(self):
+        sorted_keys = plots.plots._key_sorter(["Y141-R389", "bogus1", "R131-E392", "bogus"], self.indict)
+
+        self.assertListEqual(sorted_keys, ["Y141-R389","R131-E392"])
+
+    def test_raises(self):
+        with self.assertRaises(ValueError):
+            plots.plots._key_sorter("bogus", self.indict)
+
 
 class Test_colormaps(unittest.TestCase):
 

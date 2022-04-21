@@ -1247,6 +1247,47 @@ def compare_violins(groups,
     return myfig, iax, list(key2ii.keys())
 
 
+def _key_sorter(sort_by, indict):
+    r"""
+    Helper method to sort the keys of a dictionary according to some rules
+
+    Parameters
+    ----------
+    sort_by : str or list
+        Currently, can be
+        * "residue", i.e. sort the dict
+           by the resSeq of the contact labels
+        * "value", i.e. sort the dict
+           by the values of the :obj:`indict`
+        * list, i.e. sort the dict
+          following this list, i.e.
+          return the intersection
+          of this list with the dict's keys
+    indict : dict
+        The dictionary to be
+        sorted according to
+        some :obj:`sort_by` criterion.
+        It's assumed that the keys
+        are contact labels with
+        "-" as the separator
+    Returns
+    -------
+    ordered_keys : list
+        The list of sorted keys
+    """
+    all_ctc_keys= list(indict.keys())
+    if isinstance(sort_by, str) and sort_by == "residue":
+        ordered_keys = _mdcu.str_and_dict.lexsort_ctc_labels(all_ctc_keys)[0]
+    elif isinstance(sort_by, str) and sort_by == "mean":
+        ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
+    elif isinstance(sort_by, list):
+        assert set(sort_by).intersection(all_ctc_keys), ("The 'sort_by' list '%s' doesn't contain any of the available contact pairs '%s'"%(sort_by, all_ctc_keys))
+        ordered_keys = [key for key in sort_by if key in all_ctc_keys]
+    else:
+        raise ValueError("Argument 'sort_by' has to be either 'residue', 'mean', or list (contact labels) not '%s'"%sort_by)
+
+    return ordered_keys
+
 def add_tilted_labels_to_patches(jax, labels,
                                  label_fontsize_factor=1,
                                  trunc_y_labels_at=.65,
