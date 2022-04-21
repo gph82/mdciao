@@ -1176,25 +1176,12 @@ def compare_violins(groups,
     all_sys_keys = list(_groups.keys())
     all_ctc_keys = list(data4violins_per_sys_per_ctc[all_sys_keys[0]])
     data4violins_per_ctc_per_sys = {key:{sk:data4violins_per_sys_per_ctc[sk][key] for sk in all_sys_keys} for key in all_ctc_keys}
-    means_per_ctc_per_sys = {key:_np.nanmean(_np.hstack(list(val.values()))) for key, val in data4violins_per_ctc_per_sys.items()}
+    means_per_ctc_across_sys = {key:_np.nanmean(_np.hstack(list(val.values()))) for key, val in data4violins_per_ctc_per_sys.items()}
 
     # Prepare the dict
     colordict = color_dict_guesser(colors, all_sys_keys)
-
-    if isinstance(sort_by, str):
-        if sort_by == "residue":
-            order = _mdcu.str_and_dict.lexsort_ctc_labels(all_ctc_keys)[1]
-            key2ii = {all_ctc_keys[idx] : ii for ii, idx in enumerate(order)}
-            sorting_idxs = [[ii for ii, key in enumerate(all_ctc_keys) if key==oo][0] for oo in key2ii.keys()]
-        elif sort_by == "mean":
-            sorting_idxs = _np.argsort(list(means_per_ctc_per_sys.values()))
-            key2ii = {all_ctc_keys[idx]: ii for ii, idx in enumerate(sorting_idxs)}
-    elif isinstance(sort_by, list):
-        assert set(sort_by).intersection(all_ctc_keys), ("The 'sort_by' list '%s' doesn't contain any of the available contact pairs '%s'"%(sort_by, all_ctc_keys))
-        sorting_idxs = [[ii for ii, key in enumerate(all_ctc_keys) if key==oo][0] for oo in sort_by]
-        key2ii = {key : ii for ii, key in enumerate(sort_by)}
-    else:
-        raise ValueError("Argument 'sort_by' has to be either 'residue', 'mean', list (of contact labels) not '%s'"%sort_by)
+    sorted_keys = _key_sorter(sort_by, means_per_ctc_across_sys)
+    key2ii = {key : ii for ii, key in enumerate(sorted_keys)}
     delta, width = _offset_dict(list(_groups.keys()))
 
     if figsize is None:
@@ -1204,7 +1191,7 @@ def compare_violins(groups,
     _add_grey_banded_bg(_plt.gca(), len(all_ctc_keys))
 
     for syskey in all_sys_keys:
-        positions = [key2ii[key]+delta[syskey] for key, val in data4violins_per_sys_per_ctc[syskey].items() if not val is _np.nan and key in key2ii.keys()]
+        positions = [key2ii[key]+delta[syskey] for key, val in data4violins_per_sys_per_ctc[syskey].items() if val is not _np.nan and key in key2ii.keys()]
         idata = [val for key, val in data4violins_per_sys_per_ctc[syskey].items() if val is not _np.nan and key in key2ii.keys()]
         violins = _plt.violinplot(idata, positions=positions,
                                   widths=width,
@@ -1229,13 +1216,13 @@ def compare_violins(groups,
 
     if ctc_cutoff_Ang is not None:
         iax.axhline(ctc_cutoff_Ang, color="gray",ls="--", zorder=-10)
-    _plt.xticks(_np.arange(len(sorting_idxs)),[prepare_str(all_ctc_keys[ii]) for ii in sorting_idxs],
+    _plt.xticks(_np.arange(len(key2ii)),[prepare_str(key) for key in key2ii.keys()],
                 rotation=45,
                 va="top",
                 ha="right",
                 rotation_mode="anchor"
                 )
-    iax.set_xlim([0-.5,len(sorting_idxs)-.5])
+    iax.set_xlim([0-.5,len(key2ii)-.5])
     iax.set_ylabel("D / $\AA$")
     if ymax is not None:
         iax.set_ylim([iax.get_ylim()[0], ymax])
