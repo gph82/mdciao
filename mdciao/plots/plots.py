@@ -991,27 +991,42 @@ def compare_violins(groups,
                     colors=None,
                     ctc_cutoff_Ang=None,
                     fontsize=16,
-                    figsize=(10,7),
                     mutations_dict={},
                     legend_rows=4,
                     AA_format='short',
                     defrag='@',
                     anchor=None,
                     ymax=None,
+                    key_separator="-",
+                    sort_by="mean",
+                    figsize=None,
+                    panelheight_inches=5,
+                    inch_per_contacts=1,
                     ):
     r"""
-    Plot all distance-distributions several :obj:`~mdciao.contacts.ContactGroup` s together using :obj:`~matplotlib.pyplot.violinplot` s
+    Plot all distance-distributions of several :obj:`~mdciao.contacts.ContactGroup` s together using :obj:`~matplotlib.pyplot.violinplot` s
+
+    Contacts across different :obj:`groups` are grouped together by
+    matching their contact labels, since the residue indices
+    might differ across :obj:`groups`. To achieve this:
+        * "K30-D40" is considered equivalent to "D40-D30",
+          use :obj:`key_separator` to change this.
+        * "K30-D40" is considered equivalent to "K30-E40"
+          if a :obj:`mutations_dict={"E40":"D40"}` is passed
+        * "K30@3.50-D40" is considered equivalent to "K30-D40"
+          if you defragment your labels using :obj:`defrag="@"`
 
     Parameters
     ----------
-    groups : dictionary of :obj:`~mdciao.contacts.ContactGroup`-objects
-        The keys are the system/setup descriptors, e.g. "WT", "MUT" etc
+    groups : dictionary or list of :obj:`~mdciao.contacts.ContactGroup`-objects
+        The keys are the system/setup descriptors, e.g. "WT", "MUT" etc.
+        If list, keys will be generated on the fly "mdcCG 0, mdcCG 1..."
     colors : iterable (list or dict), or str, default is None
         * If list, the colors will be assigned in the same
           order of :obj:`groups`.
         * If dict, has to have the
           same keys as :obj:`groups`.
-        * If str, it has to be a case-sensitve colormap-name of matplotlib:
+        * If str, it has to be a case-sensitive colormap-name of matplotlib:
           https://matplotlib.org/stable/tutorials/colors/colormaps.html
         * If None, the 'tab10' colormap (tableau) is chosen
         TODO: I could set the default to "tab10", but then it'd
@@ -1021,9 +1036,24 @@ def compare_violins(groups,
         at this distance value.
     fontsize : int, default is 16
         Will be used in :obj:`~matplotlib.rcParams` ["font.size"]
-    figsize : iterable of len 2
-        Figure size (x,y), in inches.
-        # TODO be less invasive
+    panelheight_inches : int, default is 5
+        The height of the panel, in inches.
+        Determines the figure size
+        if :obj:`figsize` is None,
+        else has no effect
+    inch_per_contacts : int, default is 1
+        How many inches each contact-pair
+        is given in the panel. Determines
+        the figure size if :obj:`figsize` is None,
+        else has no effect
+    figsize : None or iterable of len 2, default is None
+        Figure size (x,y), in inches. If None,
+        one will be created using :obj:`panelheight_inches`
+        and :obj:`inch_per_contacts`.
+        If you are transposing the figure
+        using :obj:`vertical_plot`, you do not
+        have to invert (y,x) this parameter here, it is
+        done automatically.
     mutations_dict : dictionary, default is {}
         A mutation dictionary that contains allows to plot together
         residues that would otherwise be identified as different
@@ -1048,39 +1078,102 @@ def compare_violins(groups,
     ymax : float, default is None
         Maximum value of the y-axis,
         default is to set it automatically
+    key_separator : str, default is "-"
+        How each contact label separates
+        the pair of residues, "ALA50-GLU30".
+        If you set this to None, it means
+        the label won't be separated before
+        matching and "ALA50-GLU30" will be
+        different from "GLU30-ALA50".
+    sort_by : str or list, default is 'mean'
+        By default, the violins are sorted
+        by ascending order of mean distance, i.e.
+        from most "formed" on the left of the plot
+        to least "formed" on the right of the plot.
+        However, for each residue pair, this mean is
+        an average over the distance in all
+        the different :obj:`groups`, so some
+        heterogeneity is expected. Alternatively,
+        you can sort using the contact labels,
+        regardless of the distance values. Note
+        that for this, string comparisons between
+        contact-labels will take place. and that
+        contact-labels are altered by :obj:`key_separator`
+        to unify across different :obj:`groups`
+        Try setting :obj:`key_separator` to None
+        if you see unexpected behavior, although
+        though this might have other side effects,
+        (see obj:~`mdciao.utils.str_and_dict.unify_freq_dicts`)
+        :obj:`sort_by` can be a:
+            * str : 'residue'
+              Sort by ascending residue sequence index (resSeq),
+              which will be inferred from each contact label,
+              e.g. 30 for "GLU30@3.50". See :obj:`~mdciao.contacts.ContactGroup.gen_ctc_labels`
+              for more info on how they are generated.
+              Internally, the order is generated via
+              :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`.
+              If you want to reverse or alter this
+              ascending default order, we recommend using
+              :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`
+              **before** calling :obj:`compare_violins` and use
+              its output (sorted_ctc_labels) as a list
+              argument for :obj:`sort_by`. Also note that
+              residue indices as contained in
+              :obj:`~mdciao.contacts.ContactGroup.res_idx_pairs`
+            * list : a list of contact labels,
+              eg. ["GLU30-ALA30", "ARG131@3.50-TYR20"].
+              Only these residue pairs (in this order)
+              will be shown, regardless of what other
+              pairs are contained in the :obj:`groups`. It
+              assumes the user knows what contacts
+              are present and can come up with a meaningful
+              list. Not all labels need to be in all
+              :obj:`groups` nor do all :obj:`groups`
+              have to contain all labels, but at least
+              one label needs to match, otherwise the
+              method will fail
 
     Returns
     -------
     fig : :obj:`~matplotlib.figure.Figure`
     ax :  :obj:`~matplotlib.axes.Axes`
+    labels : list
+        The list of plotted labels,
+        in the order they are plotted
     """
     _fontsize=_rcParams["font.size"]
     _rcParams["font.size"] = fontsize
 
     # Gather data
     data4violins_per_sys_per_ctc={}
-    for syskey, group in groups.items():
+    if isinstance(groups,list):
+        _groups = {"mdcCG %u" % ii : item for ii, item in enumerate(groups)}
+    else:
+        _groups = groups
+
+    for syskey, group in _groups.items():
         labels = group.gen_ctc_labels(AA_format=AA_format,
                                       fragments=[True if defrag is None else False][0],
                                       )
         idict = {key : _np.hstack(cp.time_traces.ctc_trajs) * 10
                  for key, cp in zip(labels, group._contacts)}
-        #TODO avoid repetition
-        if anchor is not None:
-            idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
-            if len(_np.unique(deleted_half_keys))>1:
-                raise ValueError("The anchor patterns differ by key, this is strange: %s"%deleted_half_keys)
-            else:
-                anchor=_mdcu.str_and_dict.defrag_key(deleted_half_keys[0],defrag=defrag,sep=" ")
         data4violins_per_sys_per_ctc[syskey] = idict
 
     # Unify it
     data4violins_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(data4violins_per_sys_per_ctc,
                                                                        replacement_dict=mutations_dict,
                                                                        is_freq=False,
-                                                                       val_missing=_np.nan)
+                                                                       val_missing=_np.nan,
+                                                                       key_separator=key_separator) #todo use kwargs?
+    # TODO avoid repetition
+    if anchor is not None:
+        for key, idict in data4violins_per_sys_per_ctc.items():
+            data4violins_per_sys_per_ctc[key], deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
+        if len(_np.unique(deleted_half_keys)) > 1:
+            raise ValueError("The anchor patterns differ by key, this is strange: %s" % deleted_half_keys)
+
     # Gather keys
-    all_sys_keys = list(groups.keys())
+    all_sys_keys = list(_groups.keys())
     all_ctc_keys = list(data4violins_per_sys_per_ctc[all_sys_keys[0]])
     data4violins_per_ctc_per_sys = {key:{sk:data4violins_per_sys_per_ctc[sk][key] for sk in all_sys_keys} for key in all_ctc_keys}
     means_per_ctc_per_sys = {key:_np.nanmean(_np.hstack(list(val.values()))) for key, val in data4violins_per_ctc_per_sys.items()}
@@ -1088,23 +1181,31 @@ def compare_violins(groups,
     # Prepare the dict
     colordict = color_dict_guesser(colors, all_sys_keys)
 
-    sorting_idxs = _np.argsort(list(means_per_ctc_per_sys.values()))
-    key2ii = {all_ctc_keys[idx]: ii for ii, idx in enumerate(sorting_idxs)}
-    delta, width = _offset_dict(list(groups.keys()))
+    if isinstance(sort_by, str):
+        if sort_by == "residue":
+            order = _mdcu.str_and_dict.lexsort_ctc_labels(all_ctc_keys)[1]
+            key2ii = {all_ctc_keys[idx] : ii for ii, idx in enumerate(order)}
+            sorting_idxs = [[ii for ii, key in enumerate(all_ctc_keys) if key==oo][0] for oo in key2ii.keys()]
+        elif sort_by == "mean":
+            sorting_idxs = _np.argsort(list(means_per_ctc_per_sys.values()))
+            key2ii = {all_ctc_keys[idx]: ii for ii, idx in enumerate(sorting_idxs)}
+    elif isinstance(sort_by, list):
+        assert set(sort_by).intersection(all_ctc_keys), ("The 'sort_by' list '%s' doesn't contain any of the available contact pairs '%s'"%(sort_by, all_ctc_keys))
+        sorting_idxs = [[ii for ii, key in enumerate(all_ctc_keys) if key==oo][0] for oo in sort_by]
+        key2ii = {key : ii for ii, key in enumerate(sort_by)}
+    else:
+        raise ValueError("Argument 'sort_by' has to be either 'residue', 'mean', list (of contact labels) not '%s'"%sort_by)
+    delta, width = _offset_dict(list(_groups.keys()))
 
+    if figsize is None:
+        figsize=(len(key2ii)*inch_per_contacts, panelheight_inches)
     myfig = _plt.figure(figsize=figsize)
     iax = _plt.gca()
-    """
-    for ctc_key, ii in key2ii.items():
-        iax.plot(ii, means_per_ctc_per_sys[ctc_key],"ok")
-        for syskey,sysdata_per_ctc in data4violins_per_sys_per_ctc.items():
-            iax.plot(ii+delta[syskey],_np.nanmean(sysdata_per_ctc[ctc_key]),"x", color=colordict[syskey])
-    """
-
     _add_grey_banded_bg(_plt.gca(), len(all_ctc_keys))
+
     for syskey in all_sys_keys:
-        positions = [key2ii[key]+delta[syskey] for key, val in data4violins_per_sys_per_ctc[syskey].items() if not val is _np.nan]
-        idata = [val for val in data4violins_per_sys_per_ctc[syskey].values() if val is not _np.nan]
+        positions = [key2ii[key]+delta[syskey] for key, val in data4violins_per_sys_per_ctc[syskey].items() if not val is _np.nan and key in key2ii.keys()]
+        idata = [val for key, val in data4violins_per_sys_per_ctc[syskey].items() if val is not _np.nan and key in key2ii.keys()]
         violins = _plt.violinplot(idata, positions=positions,
                                   widths=width,
                                   showmeans=True,
@@ -1128,23 +1229,22 @@ def compare_violins(groups,
 
     if ctc_cutoff_Ang is not None:
         iax.axhline(ctc_cutoff_Ang, color="gray",ls="--", zorder=-10)
-    _plt.xticks(_np.arange(len(all_ctc_keys)),[prepare_str(all_ctc_keys[ii]) for ii in sorting_idxs],
+    _plt.xticks(_np.arange(len(sorting_idxs)),[prepare_str(all_ctc_keys[ii]) for ii in sorting_idxs],
                 rotation=45,
                 va="top",
-                ha="right"
+                ha="right",
+                rotation_mode="anchor"
                 )
-    iax.set_xlim([0-.5,len(all_ctc_keys)-.5])
+    iax.set_xlim([0-.5,len(sorting_idxs)-.5])
     iax.set_ylabel("D / $\AA$")
     if ymax is not None:
         iax.set_ylim([iax.get_ylim()[0], ymax])
 
-
     iax.legend(ncol=_np.ceil(len(all_sys_keys) / legend_rows).astype(int),loc="upper left")
     myfig.tight_layout()
 
-
     _rcParams["font.size"] = _fontsize
-    return myfig, iax
+    return myfig, iax, list(key2ii.keys())
 
 
 def add_tilted_labels_to_patches(jax, labels,
