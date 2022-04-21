@@ -384,7 +384,7 @@ def sort_dict_by_asc_values(idict, reverse=False):
     """
     return {key: val for key, val in sorted(idict.items(), key=lambda item: item[1], reverse=reverse)}
 
-def lexsort_ctc_labels(ctc_labels, reverse=False, columns=[0,1], sep="-") -> list:
+def lexsort_ctc_labels(ctc_labels, reverse=False, columns=[0,1], sep="-") -> tuple:
     r"""
     Sort contact-labels in ascending order of resSeq using both columns
 
