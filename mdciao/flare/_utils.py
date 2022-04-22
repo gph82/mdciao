@@ -574,11 +574,6 @@ def add_parent_labels(kwargs_freqs2flare, flareplot_attrs, kwargs_pffp):
 
     Parameters
     ----------
-    kwargs_pffp : dict
-        The optional arguments passed
-        initially to plot_freqs_as_flareplot.
-        It has to contain the keys "fragments"
-        and "fragment_names"
     kwargs_freqs2flare : dict
         The dictionary of kwargs computed inside
         plot_freqs_as_flareplot  by using
@@ -587,7 +582,11 @@ def add_parent_labels(kwargs_freqs2flare, flareplot_attrs, kwargs_pffp):
     flareplot_attrs : dict
         The dictionary of flareplot attributes
         produced by freqs2flare.
-
+    kwargs_pffp : dict
+        The optional arguments passed
+        initially to plot_freqs_as_flareplot.
+        It has to contain the keys "fragments"
+        and "fragment_names"
     Returns
     -------
     flareplot_attrs : dict
