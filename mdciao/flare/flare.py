@@ -998,7 +998,11 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
 
     # Create fake "dot" object with a  .radius attribute for compatibility with the downstream _utils.add_parent_labels
     dot = _namedtuple("fake_dot", ["radius"])
-    return iax, non_zeros, {"fragment_names": non_zero_fragment_names,
-                            "fragment_labels": frag_labels,
-                            "r": _futils._outermost_corner_of_fancypatches(frag_labels),
-                            "dots": [dot(_signature(_chord_diagram).parameters["width"].default / 4)]}
+    return_dict = {"fragment_names": non_zero_fragment_names,
+                   "fragment_labels": frag_labels,
+                   "r": _futils._outermost_corner_of_fancypatches(frag_labels),
+                   "dots": [dot(_signature(_chord_diagram).parameters["width"].default / 4)]}
+    if add_sigma:
+        return_dict["sigma_labels"] = sigma_labels
+
+    return iax, non_zeros, return_dict
