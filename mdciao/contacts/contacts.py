@@ -3074,7 +3074,7 @@ class ContactGroup(object):
         freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, sort_by_freq=sort_by_freq)
 
         if list_by_interface and self.is_interface:
-                freqs = [{idx:freqs[idx] for idx in iint} for iint in self.interface_residxs]
+                freqs = [{idx:val for idx, val in freqs.items() if idx in iint} for iint in self.interface_residxs]
         else:
             freqs = [freqs] #this way it is a list either way
 
