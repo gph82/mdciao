@@ -4893,7 +4893,7 @@ class ContactGroup(object):
         #ifig.tight_layout()
         return ifig, iax
 
-    def _flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose):
+    def _flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose) -> _DF:
         r"""
         Construct a :obj:`~pandas.DataFrame` with the per-residue information for flareplot
 
@@ -6333,7 +6333,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
         reconfigure_fragments(df, kwargs)
         kwargs["sparse_residues"] = _np.hstack(
             [df.index[df["interface residx"] == ii].values.tolist() for ii in [0, 1]])
-        _populate_colors_if_needed(kwargs, df, fixed_color_list).astype(int)
+        _populate_colors_if_needed(kwargs, df, fixed_color_list)
 
     elif scheme == 'residues_sparse':
         reconfigure_fragments(df, kwargs)
