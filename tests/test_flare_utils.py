@@ -621,3 +621,17 @@ class Test_sparsify_sym_matrix(TestCase):
         np.testing.assert_array_equal(nz, [0,2])
         np.testing.assert_array_equal(nm, [[1,2],
                                            [2,3]])
+
+class Test_sparsify_sym_matrix_by_row_sum(TestCase):
+
+    def test_just_works(self):
+        #First row.sum() is below eps, will be eliminated
+        # Because matrix is sym, first column also goes
+        mat = np.array([[0, 0, 0.01],
+                        [0, .02, .02],
+                        [0.01, .02, 0.0]])
+        sparse_mat, kept_idxs, lost_value = _utils.sparsify_sym_matrix_by_row_sum(np.array(mat), eps=1e-2)
+        np.testing.assert_array_equal([[0.02, 0.02],
+                                       [0.02, 0.0]], sparse_mat)
+        np.testing.assert_array_equal([1,2], kept_idxs)
+        np.testing.assert_almost_equal(0.01, lost_value)

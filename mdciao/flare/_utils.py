@@ -1224,13 +1224,17 @@ def sparsify_sym_matrix(mat, eps=1e-2):
     r"""
     Return a sparse matrix
 
+    Checks of > eps are done element-wise,
+    for entire row/column sum checks,
+    see :obj: sparsify_sym_matrix_by_row_sum
+
     Parameters
     ----------
     mat : 2D np.ndarray of shape(N,N)
-        The matrix
+        The symmetric matrix
     eps : float, default is 1e-2
         Elements of :obj:`mat` are
-        considered zero if <= eps
+        considered non-zero if > eps
 
     Returns
     -------
@@ -1240,3 +1244,26 @@ def sparsify_sym_matrix(mat, eps=1e-2):
     non_zeros = _np.flatnonzero(_np.any(mat > eps, axis=1))
     mat = mat[non_zeros, :][:, non_zeros]
     return mat, non_zeros
+
+def sparsify_sym_matrix_by_row_sum(mat, eps=1e-2):
+    r"""
+    Return a sparse matrix
+
+    Parameters
+    ----------
+    mat : 2D np.ndarray of shape(N,N)
+        The symmetric matrix
+    eps : float, default is 1e-2
+        Rows/Columns Elements of :obj:`mat` are
+        considered non-zero row.sum() > eps
+
+    Returns
+    -------
+    mat, non_zeros
+    """
+    assert (mat==mat.T).all() #checks for squareness and symmetry
+    non_zeros = _np.flatnonzero(mat.sum(1)>eps)
+    zeros = _np.flatnonzero(mat.sum(1)<=eps)
+    discarded = mat.sum(1)[zeros].sum()
+    mat = mat[non_zeros, :][:, non_zeros]
+    return mat, non_zeros, discarded
