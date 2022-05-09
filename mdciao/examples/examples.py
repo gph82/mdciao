@@ -194,7 +194,8 @@ class ExamplesCLTs(object):
 
     def _join_args(self,clt):
         oneline = self.__getattribute__(clt)
-        if self.test and all([istr not in clt for istr in ["_overview", "mdc_fragments", "mdc_pdb"]]):
+        # Only add the -ni argument where it's needed
+        if self.test and all([istr not in clt for istr in ["_overview", "mdc_fragments", "mdc_pdb", "mdc_compare", "mdc_notebooks"]]):
             oneline += ["-ni"]
         return " ".join(oneline)
 
@@ -208,14 +209,13 @@ class ExamplesCLTs(object):
               "or you can paste the line below into your terminal, add/edit options and then execute:\n"%clt)
         print(oneline)
 
-    def run(self, clt,show=True, output_dir="."):
+    def run(self, clt,show=True):
         if show:
             self.show(clt)
         oneline = self._join_args(clt)
-        #if self.test:
-        #    oneline = oneline
-
-        CP = _run(oneline.split())
+        CP = []
+        for line in oneline.split("\n\n"):
+            CP.append(_run(line.split()))
         if self.test:
             return CP
 
