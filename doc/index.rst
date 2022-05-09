@@ -6,7 +6,7 @@
 mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 ==============================================================================
 
-|Python Package| |Coverage| |DOI| |License|
+|Pip Package| |Python Package| |Coverage| |DOI| |License|
 
 .. figure:: imgs/banner.png
    :scale: 33%
@@ -47,6 +47,10 @@ and calculates the  time-traces of residue-residue distances, and from there, **
  * Frequencies are just **averages** over the input data. In some cases, *simply* computing averages is a bad idea. The user is `responsible for deciding over what data to average <https://en.wikipedia.org/wiki/Garbage_in,_garbage_out>`_. For example, if your data is highly heterogenous you might want to `cluster <https://manual.gromacs.org/documentation/2018/onlinehelp/gmx-cluster.html>`_ your data into into `cluster1.xtc`, ``cluster.2.xtc`` etc and then do a per-cluster analysis with ``mdciao``
 
  These issues (if/when they arise) can be spotted easily by looking at the time-traces and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
+
+.. |Pip Package| image::
+   https://badge.fury.io/py/mdciao.svg
+   :target: https://badge.fury.io/py/mdciao
 
 .. |Python Package| image::
    https://github.com/gph82/mdciao/actions/workflows/python-package.yml/badge.svg
