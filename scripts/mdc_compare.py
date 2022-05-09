@@ -22,8 +22,14 @@
 ##############################################################################
 from mdciao.parsers import parser_for_compare_neighborhoods
 from mdciao.cli import compare
-import matplotlib
-matplotlib.use('TkAgg')
+# This was originally to be able to produce plots in headless mode, but it's failing in the tests
+# relevant:
+# * http://omz-software.com/pythonista/matplotlib/users/shell.html
+#   "With the TkAgg backend, which uses the Tkinter user interface toolkit, you can use matplotlib from an arbitrary non-gui python shell"
+# * https://github.com/gph82/mdciao/runs/6352808503?check_suite_focus=true
+#   raise ImportError(', "ImportError: Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running"
+#import matplotlib
+#matplotlib.use('TkAgg')
 # Get and instantiate parser
 parser = parser_for_compare_neighborhoods()
 a  = parser.parse_args()
