@@ -99,7 +99,7 @@ class Test_ExamplesCLTs(unittest.TestCase):
             os.chdir(self.tmpdir)
             CP = self.xCLTs.run("mdc_compare")
             for iCP in CP:
-                print(iCP.decode().splitlines())
+                print(iCP.stderr.decode().splitlines())
             assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
     def test_mdc_residues(self):
