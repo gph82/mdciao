@@ -3996,7 +3996,7 @@ class ContactGroup(object):
         zero_freq : float, default is 1e-2
             Frequencies below this number will
             be considered zero and not shown. For this parameter
-            to have effect, you need a ctc_cutoff_Ang
+            to have effect, you need a :obj:`ctc_cutoff_Ang`
         switch_off_Ang : float, default is None
             TODO
         ax : None or :obj:`~matplotlib.axes.Axes`, default is None
