@@ -388,6 +388,8 @@ def color_dict_guesser(colors, keys):
         if _is_colormapstring(colors):
             return {key: color for key, color in zip(key_list,_try_colormap_string(colors,len(key_list)))}
         else:
+            assert any([_is_color_like(colors), all([_is_color_like(char) for char in colors])]),\
+                ValueError("'%s' is neither a matplotlib colormap, nor a matplotlib color, nor exclusively made up from valid matplotlib one-letter color-codes 'bcgkmrwy'"%colors)
             return {key:colors for key in key_list}
 
     if isinstance(colors, list):
