@@ -1331,21 +1331,8 @@ def interface(
     print("Will compute contact frequencies for trajectories:\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
-    if user_wants_consensus and all([str(cons).lower() == 'none' for cons in [GPCR_uniprot, CGN_PDB]]):
-        raise ValueError(
-            "User wants to define interface fragments using consensus labels, but no consensus labels were provided via the 'CGN_PDB' or the 'GPCR_uniprot' arguments.")
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
-    consensus_frags, consensus_maps, consensus_labelers = \
-        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
-                                                           "CGN": CGN_PDB},
-                                                          refgeom.top,
-                                                          fragments_as_residue_idxs,
-                                                          accept_guess=accept_guess,
-                                                          save_nomenclature_files=save_nomenclature_files)
-    top2confrag = _np.full(refgeom.top.n_residues, None)
-    for key, val in consensus_frags.items():
-        top2confrag[val] = key
+    fragments_as_residue_idxs, fragment_names, user_wants_consensus, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
+        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_PDB, accept_guess, save_nomenclature_files)
     if user_wants_consensus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2, answers=[frag_idxs_group_1, frag_idxs_group_2])
@@ -2179,3 +2166,71 @@ def fragment_overview(topology,
     """
 
     return _mdcfrg.overview(topology,methods=methods, AAs=AAs)
+
+def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uniprot, CGN_PDB, accept_guess, save_nomenclature_files):
+    r"""
+
+    Frankenstein method to parse and handle the many fragment-definition, -naming, -selection options
+    taking into account also consensus information
+
+    Ideally, all exposed cli methods should end up using this to parse the many fragment options
+
+    Internally, uses other parsing methods as well:
+    * mdciao.fragments.fragments._fragments_strings_to_fragments
+    * mdciao.cli._parse_fragment_naming_options
+    * mdciao.cli._parse_consensus_options_and_return_fragment_defs, which itself wraps around
+      * mdciao.cli._parse_consensus_option
+
+    Parameters
+    ----------
+    fragments : comes directly from the top API call (cli.interface(fragments=whatever)
+    top : the topology as md.Topology
+    GPCR_uniprot : comes directly from the top API call (cli.interface(GPCR_uniprot=whatever)
+    CGN_PDB : comes directly from the top API call (cli.interface(CGN_PDB=whatever)
+    fragment_names : comes directly from the top API call (cli.interface(fragment_names=whatever)
+    accept_guess : comes directly from the top API call (cli.interface(accept_guess=whatever)
+    save_nomenclature_files : boolean
+
+    Returns
+    -------
+    fragments_as_residue_idxs : list
+        The actual fragment definitions as residue indices of top
+    fragment_names : list of strings
+        The fragment names resulting from user input
+    user_wants_consensus : bool
+        Whether it was inferred from the value of :obj:`fragments`
+        that the user wanted consensus
+    consensus_frags : dictionary
+        A dictionary of consensus fragments, keyed
+        by consensus fragment names (ICL3, 3.5, G.H5...)
+        and valued with lists of the residues of :obj:`top` in them
+    consensus_maps : list
+        List of consensus maps (which are lists themselves)
+        in case any consensus info was given, otherwise the
+        lists will be full of Nones. Consensus maps result
+        from calling LabelerConsensus.top2labels on :obj:`top`
+        and have a len top.n_residues
+    consensus_labelers : list
+        List of LabelerConsensus-objects if any consensus info was given,
+    top2confrag : list
+        Of len top.n_residues, maps each residue
+        index of :obj:`top` to their consensus
+        fragment name
+    """
+    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, top, verbose=True)
+    if user_wants_consensus and all([str(cons).lower() == 'none' for cons in [GPCR_uniprot, CGN_PDB]]):
+        raise ValueError(
+            "User wants to define interface fragments using consensus labels, but no consensus labels were provided via the 'CGN_PDB' or the 'GPCR_uniprot' arguments.")
+    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
+    consensus_frags, consensus_maps, consensus_labelers = \
+        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
+                                                           "CGN": CGN_PDB},
+                                                          top,
+                                                          fragments_as_residue_idxs,
+                                                          accept_guess=accept_guess,
+                                                          save_nomenclature_files=save_nomenclature_files)
+    top2confrag = _np.full(top.n_residues, None)
+    for key, val in consensus_frags.items():
+        top2confrag[val] = key
+
+    return fragments_as_residue_idxs, fragment_names, user_wants_consensus, consensus_labelers, consensus_maps, consensus_frags, top2confrag
