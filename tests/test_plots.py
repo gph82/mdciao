@@ -610,7 +610,28 @@ class Test_plot_compare_violins(unittest.TestCase):
         #fig.savefig("test.pdf")
         _plt.close("all")
 
-    def test_works_no_defrag_and_list(self):
+    def test_works_no_defrag_and_list_zero_freq_remove_identities(self):
+        fig, ax, sorted_keys = plots.compare_violins([self.CGL394, self.CGL394_larger],
+                                                     anchor="L394",
+                                                     ymax=10, ctc_cutoff_Ang=4,
+                                                     zero_freq=.5,
+                                                     remove_identities=True,
+                                                     identity_cutoff=.90,
+                                                     defrag=None)
+        # This should hold
+        """
+        {'L394@G.H5.26-I233@5.72x72': 0.39285714285714285, # below zero_freq
+        'R389@G.H5.21-L394@G.H5.26': 0.9464285714285714,  # above identity
+        'L388@G.H5.20-L394@G.H5.26': 0.9464285714285714,  # above identity
+        'R385@G.H5.17-L394@G.H5.26': 0.6964285714285714, 
+        'L394@G.H5.26-L230@5.69x69': 0.8392857142857143, 
+        'L394@G.H5.26-K270@6.32x32': 0.4642857142857143,  # below zero_freq
+        'L394@G.H5.26-K267@6.29x29': 0.0, # below zero_freq
+        'L394@G.H5.26-Q229@5.68x68': 0.0} # below zero_freq
+        """
+        self.assertListEqual(sorted_keys, ["L230@5.69x69", 'R385@G.H5.17'])
+
+    def ___test_works_no_defrag_and_list(self):
         fig, ax, sorted_keys = plots.compare_violins([self.CGL394, self.CGL394_larger],
                                         anchor="L394",
                                         ymax=10, ctc_cutoff_Ang=4,
@@ -618,4 +639,3 @@ class Test_plot_compare_violins(unittest.TestCase):
 
         #fig.savefig("test.pdf")
         _plt.close("all")
-

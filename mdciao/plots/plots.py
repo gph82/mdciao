@@ -1004,6 +1004,9 @@ def compare_violins(groups,
                     figsize=None,
                     panelheight_inches=5,
                     inch_per_contacts=1,
+                    zero_freq = 1e-2,
+                    remove_identities=False,
+                    identity_cutoff=1,
                     ):
     r"""
     Plot all distance-distributions of several :obj:`~mdciao.contacts.ContactGroup` s together using :obj:`~matplotlib.pyplot.violinplot` s
@@ -1134,6 +1137,21 @@ def compare_violins(groups,
               have to contain all labels, but at least
               one label needs to match, otherwise the
               method will fail
+    zero_freq : float, default is 1e-2
+        Frequencies below this number will
+        be considered zero and not shown it they are
+        zero for the same residue pair across all :obj:`groups`
+        For this parameter to have effect, you need a
+        :obj:`ctc_cutoff_Ang`
+    remove_identities : bool, default is False
+        If True, the contacts where
+        freq[sys][ctc] >= :obj:`identity_cutoff`
+        across all systems will not be plotted
+        nor considered in the sum over contacts
+    identity_cutoff : float, default is 1
+        If :obj:`remove_identities`, use this value to define what
+        is considered an identity, s.t. contacts with values e.g. .95
+        can also be removed
 
     Returns
     -------
@@ -1147,7 +1165,8 @@ def compare_violins(groups,
     _rcParams["font.size"] = fontsize
 
     # Gather data
-    data4violins_per_sys_per_ctc={}
+    data4violins_per_sys_per_ctc = {}
+    freqs_per_sys_per_ctc = {}
     if isinstance(groups,list):
         _groups = {"mdcCG %u" % ii : item for ii, item in enumerate(groups)}
     else:
@@ -1160,6 +1179,8 @@ def compare_violins(groups,
         idict = {key : _np.hstack(cp.time_traces.ctc_trajs) * 10
                  for key, cp in zip(labels, group._contacts)}
         data4violins_per_sys_per_ctc[syskey] = idict
+        if ctc_cutoff_Ang is not None:
+            freqs_per_sys_per_ctc[syskey] = {key:freq for key, freq in zip(labels, group.frequency_per_contact(ctc_cutoff_Ang))}
 
     # Unify it
     data4violins_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(data4violins_per_sys_per_ctc,
@@ -1167,6 +1188,26 @@ def compare_violins(groups,
                                                                        is_freq=False,
                                                                        val_missing=_np.nan,
                                                                        key_separator=key_separator) #todo use kwargs?
+    # Delete some keys if all freqs are < zero_freq
+    if ctc_cutoff_Ang is not None:
+        # First unify
+        freqs_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(freqs_per_sys_per_ctc,
+                                                                    replacement_dict=mutations_dict,
+                                                                    is_freq=True,
+                                                                    val_missing=0,
+                                                                    verbose=False,
+                                                                    key_separator=key_separator)  # todo use kwargs?
+        #Since the dict is unified, we can do this
+        _freq_dict = _defdict(list)
+        for idict in freqs_per_sys_per_ctc.values():
+            for key, freq in idict.items():
+                _freq_dict[key].append(freq)
+        pop_from_below = [key for key, ifreqs in _freq_dict.items() if all([ifreq < zero_freq for ifreq in ifreqs])]
+        pop_from_above = [key for key, ifreqs in _freq_dict.items() if all([ifreq >= identity_cutoff for ifreq in ifreqs])]
+        [[idict.pop(key) for idict in data4violins_per_sys_per_ctc.values()] for key in pop_from_below]
+        if remove_identities:
+            [[idict.pop(key) for idict in data4violins_per_sys_per_ctc.values()] for key in pop_from_above]
+
     # TODO avoid repetition
     if anchor is not None:
         for key, idict in data4violins_per_sys_per_ctc.items():
