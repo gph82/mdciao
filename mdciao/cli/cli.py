@@ -1765,20 +1765,8 @@ def sites(site_inputs,
         "\n ".join([_mdcsites.site2str(ss) for ss in site_inputs]),
         _mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15),stride))
 
-    # TODO decide if/to expose _fragments_strings_to_fragments or refactor it elsewhere
-    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
-    fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
-    consensus_frags, consensus_maps, __ = \
-        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
-                                                           "CGN": CGN_PDB},
-                                                          refgeom.top,
-                                                          fragments_as_residue_idxs,
-                                                          accept_guess=accept_guess,
-                                                          save_nomenclature_files=save_nomenclature_files)
-
-    top2confrag = _np.full(refgeom.top.n_residues, None)
-    for key, val in consensus_frags.items():
-        top2confrag[val] = key
+    fragments_as_residue_idxs, fragment_names, __, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
+        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_PDB, accept_guess, save_nomenclature_files)
 
     sites = [_mdcsites.x2site(ff) for ff in site_inputs]
     ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
