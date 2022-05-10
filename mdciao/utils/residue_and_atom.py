@@ -72,7 +72,7 @@ def residues_from_descriptors(residue_descriptors,
     """
     residxs = []
     fragidxs = []
-    last_answer = '0'
+    last_answer = None
 
 
     if isinstance(residue_descriptors, (str, int)):
@@ -102,7 +102,7 @@ def residues_from_descriptors(residue_descriptors,
                 istr = residue_line("0.0", top.residue(residxs[-1]), fragidxs[-1], additional_resnaming_dicts, fragment_names=fragment_names)
                 print(istr)
         else:
-            istr = "ambiguous definition for AA %s" % key
+            istr = "Ambiguous definition for AA %s" % key
             istr += extra_string_info
             if not just_inform:
                 print(istr)
