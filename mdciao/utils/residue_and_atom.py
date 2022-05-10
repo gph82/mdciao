@@ -73,7 +73,7 @@ def residues_from_descriptors(residue_descriptors,
     residxs = []
     fragidxs = []
     last_answer = None
-
+    first_run = True
 
     if isinstance(residue_descriptors, (str, int)):
         residue_descriptors = [residue_descriptors]
@@ -116,10 +116,16 @@ def residues_from_descriptors(residue_descriptors,
                 fragidxs.extend([ii for ii in cand_fragments if ii not in fragidxs])
                 continue
             if pick_this_fragment_by_default is None:
+                if first_run is True:
+                    last_answer = [int(ii) for ii in _np.unique(cand_fragments)][0]
+                    choice_str = "choose first candidate fragment [%s]" % last_answer
+                    first_run = False
+                else:
+                    choice_str = "repeat last option [%s]" % last_answer
                 prompt = "Input one fragment idx out of %s and press enter (selects all matching residues in that fragment).\n" \
                          "Use one x.y descriptor in case of repeated fragment index.\n" \
-                         "Leave empty and hit enter to repeat last option [%s]" % (
-                         [int(ii) for ii in _np.unique(cand_fragments)], last_answer)
+                         "Leave empty and hit enter %s" % (
+                         [int(ii) for ii in _np.unique(cand_fragments)], choice_str)
 
                 answer = input(prompt)
             else:
@@ -134,7 +140,7 @@ def residues_from_descriptors(residue_descriptors,
                 assert answer in cand_fragments
                 idxs_w_answer = _np.argwhere([answer == ii for ii in cand_fragments]).squeeze()
                 cands = cands[idxs_w_answer]
-            elif '.' in answer and answer in cand_chars:
+            elif '.' in str(answer) and answer in cand_chars:
                 idx_w_answer = _np.argwhere([answer == ii for ii in cand_chars]).squeeze()
                 answer = cand_fragments[idx_w_answer]
                 cands = cands[idx_w_answer]
