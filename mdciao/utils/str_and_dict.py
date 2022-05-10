@@ -167,6 +167,7 @@ def unify_freq_dicts(freqs,
                      per_residue=False,
                      is_freq=True,
                      val_missing=0,
+                     verbose=True
                      ):
     r"""
     Provided with a dictionary of dictionaries, returns an equivalent,
@@ -213,6 +214,8 @@ def unify_freq_dicts(freqs,
     val_missing : anything, default is 0
         What value to assign to the
         missing keys (TODO check the name of this in pandas)
+    verbose : bool, default is True
+        Be verbose
 
 
     Returns
@@ -280,7 +283,7 @@ def unify_freq_dicts(freqs,
             if key not in ifreq.keys():
                 ifreq[key] = val_missing
 
-    if len(not_shared)>0 and is_freq:
+    if len(not_shared)>0 and is_freq and verbose:
         print("These interactions are not shared:\n%s" % (', '.join(not_shared)))
         print("Their cumulative ctc freq is %3.2f. " % _np.sum(
             [[ifreq[key] for ifreq in freqs_work.values()] for key in not_shared]))
