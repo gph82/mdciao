@@ -226,17 +226,17 @@ def unify_freq_dicts(freqs,
         B:{key1:0,     key2:valB2, key3:valB3}}
     """
 
-    # Create a copy, with re-ordered keys if needed
-    freqs_work = {}
-    for key, idict in freqs.items():
-        if str(key_separator).lower()=="none" or len(key_separator)==0:
-            freqs_work[key] = {key:val for key, val in idict.items()}
-        else:
-            freqs_work[key] = {order_key(key, key_separator):val for key, val in idict.items()}
+    # Create a copy
+    freqs_work = {key : {key2: val for key2, val in idict.items()} for key, idict in freqs.items()}
 
-    # Implement replacements
+    # Enforce replacement dictionaries
     if replacement_dict is not None:
-        freqs_work = {key:{replace_w_dict(key2, replacement_dict):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}
+        freqs_work = {key: {replace_w_dict(key2, replacement_dict): val2 for key2, val2 in val.items()} for key, val in
+                      freqs_work.items()}
+
+    #Re - ordered keys if needed
+    if str(key_separator).lower() != "none" and len(key_separator) > 0:
+        freqs_work = {key : {order_key(key2, key_separator): val2 for key2, val2 in idict.items()} for key, idict in freqs_work.items()}
 
     if defrag is not None:
         freqs_work = {key:{defrag_key(key2, defrag):val2 for key2, val2 in val.items()} for key, val in freqs_work.items()}

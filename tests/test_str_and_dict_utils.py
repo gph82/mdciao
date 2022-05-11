@@ -373,6 +373,12 @@ class Test_unify_freq_dicts(unittest.TestCase):
         self.assertDictEqual(out_dict["K40A"], test_dict["K40A"])
         self.assertDictEqual(out_dict["prot"], test_dict["prot"])
 
+    def test_replacement_takes_place_before_reordering(self):
+        ud = str_and_dict.unify_freq_dicts({"WT": {"A100-B200": 1.0},
+                                            "MUT": {"C100-B200": 1.0}},
+                                           replacement_dict={"C100": "A100"})
+
+        self.assertDictEqual(ud, {'WT': {'A100-B200': 1.0}, 'MUT': {'A100-B200': 1.0}})
 
 class Test_average_freq_dicts(unittest.TestCase):
 
