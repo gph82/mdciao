@@ -393,6 +393,10 @@ def lexsort_ctc_labels(ctc_labels, reverse=False, columns=[0,1], sep="-") -> tup
 
     Wraps around :obj:`numpy.lexsort` with some string handling
 
+    It will also work with contact-labels consisting of only one residue,
+    e.g. in the cases where the "anchor" has been deleted or the frequencies
+    have been aggregated to per-residue frequencies
+
     >>> labels = ["ALA30@3.50-GLU50",
     >>>           "HIS28-GLU50",
     >>>           "ALA30-GLU20"]
@@ -434,7 +438,10 @@ def lexsort_ctc_labels(ctc_labels, reverse=False, columns=[0,1], sep="-") -> tup
     resSeqs = _np.vstack(
         [[intblocks_in_str(pp)[0] for pp in splitlabel(lab,sep)] for lab in ctc_labels])
 
-    order = _np.lexsort([resSeqs[:, columns[1]], resSeqs[:, columns[0]]])
+    if resSeqs.shape[1]==1:
+        order = _np.argsort(resSeqs.squeeze())
+    else:
+        order = _np.lexsort([resSeqs[:, columns[1]], resSeqs[:, columns[0]]])
     if reverse:
         order=order[::-1]
     sorted_ctc_labels = [ctc_labels[ii] for ii in order]

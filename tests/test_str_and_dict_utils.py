@@ -563,6 +563,11 @@ class Test_lexsort_ctc_labels(unittest.TestCase):
         self.assertListEqual(sorted_labels, ["HIS28-GLU50", "ALA30-GLU20", "ALA30@3.50-GLU50"])
         self.assertListEqual(order.tolist(), [1, 2, 0])
 
+    def test_works_one_residue(self):
+        labels = ["GLU50", "ALA30", "GLU20"]
+        sorted_labels, order = str_and_dict.lexsort_ctc_labels(labels)
+        self.assertListEqual(sorted_labels, ["GLU20", "ALA30", "GLU50"])
+        self.assertListEqual(order.tolist(), [2, 1, 0])
     def test_works_reverse(self):
         labels = ["ALA30@3.50-GLU50", "HIS28-GLU50", "ALA30-GLU20"]
         sorted_labels, order = str_and_dict.lexsort_ctc_labels(labels, reverse=True)
