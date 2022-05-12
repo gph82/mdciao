@@ -24,9 +24,10 @@ import requests as _requests
 
 from mdtraj import load_pdb as _load_pdb
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
-from shutil import copy as _copy
+from shutil import copy as _copy, copyfileobj as _copyfileobj
 
 from urllib.error import HTTPError as _HTTPError, URLError as _URLError
+from urllib.request import urlopen as _urlopen
 
 def _url2json(url,timeout,verbose):
     r""" Wraps around :obj:`requests.get` and tries to do :obj:`requests.Response.json`
@@ -129,22 +130,22 @@ def pdb2traj(code,
     print_v = lambda s, **kwargs: [print(s, **kwargs) if verbose else None][0]
     print_v("Checking %s" % url1, end=" ...", flush=True)
     geom = None
+    # From https://docs.python.org/3/howto/urllib2.html#fetching-urls
     try:
-        a = _requests.get(url1)
-        if a.ok:
-            with _NamedTemporaryFile(mode="w", suffix=".pdb") as f:
-                f.writelines(a.text)
-                print_v("done")
-                geom = _load_pdb(f.name) #TODO use string.IO
-                if filename is not None:
-                    print_v("Saving to %s..." % filename, end="", flush=True)
-                    if filename.lower().endswith(".pdb"):
-                        _copy(f.name, filename)
-                    else:
-                        geom.save(filename)
-                    print_v(filename)
-        else:
-            raise _URLError(a.text,filename=url1)
+        with _urlopen(url1) as response:
+            if response.status == 200:
+                with _NamedTemporaryFile(delete=True) as tmp_file:
+                    _copyfileobj(response, tmp_file)
+                    geom = _load_pdb(tmp_file.name)
+                    if filename is not None:
+                        print_v("Saving to %s..." % filename, end="", flush=True)
+                        if filename.lower().endswith(".pdb"):
+                            _copy(tmp_file.name, filename)
+                        else:
+                            geom.save(filename)
+                        print_v(filename)
+            else:
+                raise _URLError(response.reason,filename=url1)
 
 
     except (_HTTPError, _URLError) as e:
