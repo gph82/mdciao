@@ -891,3 +891,17 @@ class Test_UniProtACtoPDBs(unittest.TestCase):
                                              {'key': 'Resolution', 'value': '2.50 A'},
                                              {'key': 'Chains', 'value': 'A/B=146-480'}]},
                              )
+
+class Test_mdTopology2DF(unittest.TestCase):
+    def test_just_works(self):
+        top = md.load(examples.filenames.small_monomer).top
+        self.assertListEqual(['   Xray_position residue  code  Sequence_Index AAresSeq',
+                              '0              0     GLU     E              30      E30',
+                              '1              1     VAL     V              31      V31',
+                              '2              2     TRP     W              32      W32',
+                              '3              3     ILE     I              26      I26',
+                              '4              4     GLU     E              27      E27',
+                              '5              5     LYS     K              29      K29',
+                              '6              6     P0G  None             381     X381',
+                              '7              7     GDP  None             382     X382'],
+                             nomenclature.nomenclature._mdTopology2DF(top).to_string().splitlines())

@@ -2090,3 +2090,31 @@ def _UniProtACtoPDBs(UniProtAC,
             if entry["database"].lower()=="pdb":
                 PDBs_UPKB[entry["id"].lower()] = entry
     return PDBs_UPKB
+
+def _mdTopology2DF(top) -> _DataFrame:
+    r"""
+    Return an :obj:`~mdtraj.Topology` as a :obj:`~pandas.DataFrame`
+
+    The residue attributes are mapped to columns follows:
+    "Xray_position": rr.index
+    "residue" : rr.name
+    "code" : rr.code
+    "Sequence_Index" : rr.resSeq
+    "AAresSeq": shorten_AA(rr, substitute_fail="X", keep_index=True)
+
+    Parameters
+    ----------
+    top : :obj:`~mdtraj.Topology`
+
+    Returns
+    -------
+    df : :obj:`~pandas.DataFrame`
+    """
+    for_DF = []
+    for rr in top.residues:
+        for_DF.append({"Xray_position":rr.index,
+                       "residue" : rr.name,
+                       "code" : rr.code,
+                       "Sequence_Index" : rr.resSeq,
+                       "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True)})
+    return _DataFrame(for_DF)
