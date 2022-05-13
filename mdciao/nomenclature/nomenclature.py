@@ -2332,13 +2332,13 @@ def _KLIFS_web_lookup(UniProtAC,
 
     return PDB_DF
 
-def KLIFS_finder(UniProtAC,
-                 format='KLIFS_%s.xlsx',
-                 local_path='.',
-                 try_web_lookup=True,
-                 verbose=True,
-                 dont_fail=False,
-                 write_to_disk=False):
+def _KLIFS_finder(UniProtAC,
+                  format='KLIFS_%s.xlsx',
+                  local_path='.',
+                  try_web_lookup=True,
+                  verbose=True,
+                  dont_fail=False,
+                  write_to_disk=False):
 
     r"""Look up, first locally, then online for the 85-pocket-residues numbering scheme as found in
     the `Kinase–Ligand Interaction Fingerprints and Structure <https://klifs.net/>`_
