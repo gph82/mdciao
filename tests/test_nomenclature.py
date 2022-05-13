@@ -884,7 +884,7 @@ class Test_UniProtACtoPDBs(unittest.TestCase):
         result = nomenclature.nomenclature._UniProtACtoPDBs("P31751")
         assert isinstance(result,dict)
         assert "3e88" in result.keys()
-        self.assertDictEqual(result["3e88"],
+        self.assertDictEqual(result["3E88"],
                              {'database': 'PDB',
                               'id': '3E88',
                               'properties': [{'key': 'Method', 'value': 'X-ray'},

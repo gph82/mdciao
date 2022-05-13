@@ -2057,8 +2057,11 @@ def _UniProtACtoPDBs(UniProtAC,
     Importantly, this metadata contains what chains and residue (sequence) indices
     are associated to the :obj:`UniProtAC`
 
+    Since the metadata itself contains the PDB_id in uppercase under
+    'id', the return dictionary is keyed with uppercase PDB_ids
+
     One such entry is returned as
-    >>>     {'3e88': {'database': 'PDB',
+    >>>     {'3E88': {'database': 'PDB',
     >>>               'id': '3E88',
     >>>               'properties': [{'key': 'Method', 'value': 'X-ray'},
     >>>                              {'key': 'Resolution', 'value': '2.50 A'},
@@ -2088,7 +2091,7 @@ def _UniProtACtoPDBs(UniProtAC,
         for entry in data["uniProtKBCrossReferences"]:
             #print(entry)
             if entry["database"].lower()=="pdb":
-                PDBs_UPKB[entry["id"].lower()] = entry
+                PDBs_UPKB[entry["id"].upper()] = entry
     return PDBs_UPKB
 
 def _mdTopology2DF(top) -> _DataFrame:
