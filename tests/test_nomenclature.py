@@ -956,3 +956,15 @@ class Test_KLIFSDataFrame(unittest.TestCase):
             df_dict = read_excel(f.name, None)
             assert len(df_dict) == 1
             assert isinstance(df_dict["P54311_3SN6"], DataFrame)
+
+class Test_KLIFS_web_lookup(unittest.TestCase):
+
+    def test_just_works(self):
+        KLIFS_df = nomenclature.nomenclature._KLIFS_web_lookup("P31751")
+        assert isinstance(KLIFS_df, nomenclature.nomenclature._KLIFSDataFrame)
+
+    def test_wrong(self):
+        KLIFS_df = nomenclature.nomenclature._KLIFS_web_lookup("P3175111")
+        assert isinstance(KLIFS_df, ValueError)
+
+

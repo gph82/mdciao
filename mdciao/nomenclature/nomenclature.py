@@ -2236,3 +2236,99 @@ class _KLIFSDataFrame(_KDF):
         upon reading an Excel file from disk """
         kwargs["sheet_name"] = "%s_%s" % (self.UniProtAC, self.PDB_id)
         super(_KLIFSDataFrame, self).to_excel(*args, **kwargs)
+
+def _KLIFS_web_lookup(UniProtAC,
+                      KLIFS_API="https://klifs.net/api",
+                      timeout=5,
+                      verbose=True,
+                      url=None):
+    r"""
+    Lookup the best PDB-match on `KLIFS <https://klifs.net/>`_ for a given UniProt accession code
+    and return a :obj:`~pandas.DataFrame` with the PDB-sequence, the residue-pocket nomenclature and
+    the PDB-residues indices matching the :obj:`UniprotAC`
+
+    Note that:
+        * Lookup will  fail if there's more than one kinase_ID for the UniProtAC
+        * The PDB with best KLIFS quality score will be picked
+        * Residues belonging to that UniProt are queried on of UniProtKB
+          using _UniProtACtoPDBs
+        * The returned object is a subclass of :obj:`~pandas.DataFrame`
+          with three extra attributes df.UniProtAC, df.PDB_id, df.PDB_geom
+          an wrapper around df.write_excel that stores df.UniProtAC and df.PDB_id
+          into the spreadsheet's sheet name. Check :obj:`_KLIFSDataFrame` for
+          more info.
+        *
+
+    Parameters
+    ----------
+    UniProtAC : string
+        UniProt accession code
+    KLIFS_API : str, default is "https://klifs.net/api"
+        The database API, check https://klifs.net/swagger/ for documentation
+    verbose : bool, default is True
+        Currently unused
+    url : None, default is None
+        Just for interface compatibility with _finder_writer
+        (watch technical debt be born right here)
+    Returns
+    -------
+    PDB_DF : :obj:`~pandas.DataFrame`
+        A subclass of :obj:`~pandas.DataFrame` with
+        three extra attributes df.UniProtAC, df.PDB_id, df.PDB_geom
+        Will be a ValueError if the lookup was unsuccessful
+
+
+    """
+
+    url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
+
+    with _requests.get(url, timeout=timeout) as resp:
+        if resp.ok:
+            ACjson = resp.json()
+            assert len(ACjson)==1, ValueError("More than one 'kinase_ID's were found to match %s: %s ", (UniProtAC,[entry["kinase_ID"] for entry in ACjson] ))
+            ACjson=ACjson[0]
+            if verbose:
+                print("done!")
+            print("Please cite the following reference to the KLIF structural database:")
+            lit = Literature()
+            print(_format_cite(lit.site_KLIFS))
+            print("For more information, call mdciao.nomenclature.references()")
+            kinase_ID = ACjson["kinase_ID"]
+            url = "%s/structures_list?kinase_ID=%s" % (KLIFS_API, kinase_ID)
+            with _requests.get(url, timeout=timeout) as resp:
+                PDBs = _DataFrame(resp.json())
+
+                # Sort with quality score
+                PDBs.sort_values("quality_score", ascending=False, inplace=True)
+                best_PDB, structure_ID = PDBs[["pdb", "structure_ID"]].values[0]
+                best_PDB = best_PDB.upper()
+
+                # Get the residues
+                url = "%s/interactions_match_residues?structure_ID=%s" % (KLIFS_API, structure_ID)
+                with _requests.get(url, timeout=timeout) as resp:
+                    nomencl = _DataFrame(resp.json())
+                    nomencl.rename(columns={"index":"KLIFS_pocket_index",
+                                            "KLIFS_position" : "KLIFS"}, inplace=True)
+
+                # Get the PDB as DF
+                geom = md_load_rscb(best_PDB, verbose=False)
+                PDB_DF = _mdTopology2DF(geom.top)
+
+                # Temporary str-conversion to merge with nomencl
+                PDB_DF.Xray_position = PDB_DF.Xray_position.astype(str)
+                PDB_DF = PDB_DF.merge(nomencl, how="left",)
+                PDB_DF.Xray_position = PDB_DF.Xray_position.astype(int)
+                PDB_DF = _KLIFSDataFrame(PDB_DF, UniProtAC = UniProtAC, PDB_id=best_PDB, PDB_geom=geom)
+
+                # Get the PDB positions from UniProtKB
+                PDBs_UPKB = _UniProtACtoPDBs(UniProtAC)
+                residue_idxs = _residx_from_UniProtPDBEntry_and_top(PDBs_UPKB[best_PDB], geom.top)
+                uniprot_res = _np.full(geom.n_residues, None)
+                uniprot_res[residue_idxs] = True
+                PDB_DF["UniProtAC_res"] = uniprot_res
+                PDB_DF.replace({_np.nan: None}, inplace=True)
+
+        else:
+            PDB_DF = ValueError('url : "%s", uniprot : "%s" error : "%s"' % (url, UniProtAC, resp.text))
+
+    return PDB_DF
