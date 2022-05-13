@@ -154,9 +154,9 @@ def _PDB_finder(PDB_code, local_path='.',
             if verbose:
                 print("No local PDB file for %s found in directory '%s'" % (PDB_code, local_path), end="")
             if try_web_lookup:
-                _geom, return_file = md_load_rscb(PDB_code,
-                                                  verbose=verbose,
-                                                  return_url=True)
+                _geom, return_file = _md_load_rscb(PDB_code,
+                                                   verbose=verbose,
+                                                   return_url=True)
                 if verbose:
                     print("found! Continuing normally")
 
@@ -431,11 +431,10 @@ def _GPCR_web_lookup(url, verbose=True,
 
     return DFout
 
-#todo document and refactor to better place?
-def md_load_rscb(PDB,
-                 web_address = "https://files.rcsb.org/download",
-                 verbose=False,
-                 return_url=False):
+def _md_load_rscb(PDB,
+                  web_address = "https://files.rcsb.org/download",
+                  verbose=False,
+                  return_url=False):
     r"""
     Input a PDB code get an :obj:`~mdtraj.Trajectory` object.
 
@@ -734,7 +733,7 @@ class LabelerConsensus(object):
         map : list of len = top.n_residues with the consensus labels
         """
         self.aligntop(top, min_hit_rate=min_hit_rate, **aligntop_kwargs)
-        out_list = alignment_df2_conslist(self.most_recent_alignment, allow_nonmatch=allow_nonmatch)
+        out_list = _alignment_df2_conslist(self.most_recent_alignment, allow_nonmatch=allow_nonmatch)
         out_list = out_list + [None for __ in range(top.n_residues - len(out_list))]
         # TODO we could do this padding in the alignment_df2_conslist method itself
         # with an n_residues optarg, IDK about best design choice
@@ -1259,8 +1258,8 @@ class LabelerGPCR(LabelerConsensus):
                 self.dataframe["protein_segment"].unique()}
 
 
-def alignment_df2_conslist(alignment_as_df,
-                           allow_nonmatch=False):
+def _alignment_df2_conslist(alignment_as_df,
+                            allow_nonmatch=False):
     r"""
     Build a list with consensus labels out of an alignment and a consensus dictionary.
 
@@ -1599,8 +1598,8 @@ def _map2defs(cons_list, splitchar="."):
             defs[new_key].append(ii)
     return {key: _np.array(val) for key, val in defs.items()}
 
-def sort_consensus_labels(subset, sorted_superset,
-                          append_diffset=True):
+def _sort_consensus_labels(subset, sorted_superset,
+                           append_diffset=True):
     r"""
     Sort consensus labels (GPCR or CGN)
 
@@ -1654,8 +1653,9 @@ def sort_GPCR_consensus_labels(labels, **kwargs):
     -------
 
     """
-    return sort_consensus_labels(labels, _GPCR_fragments, **kwargs)
-def sort_CGN_consensus_labels(labels, **kwargs):
+    return _sort_consensus_labels(labels, _GPCR_fragments, **kwargs)
+
+def _sort_CGN_consensus_labels(labels, **kwargs):
     r"""
     Sort consensus labels in order of appearance in the canonical GPCR scheme
 
@@ -1670,9 +1670,9 @@ def sort_CGN_consensus_labels(labels, **kwargs):
     -------
 
     """
-    return sort_consensus_labels(labels, _CGN_fragments, **kwargs)
+    return _sort_consensus_labels(labels, _CGN_fragments, **kwargs)
 
-def conslabel2fraglabel(labelres, defrag="@", prefix_GPCR=True):
+def _conslabel2fraglabel(labelres, defrag="@", prefix_GPCR=True):
     r"""
     Return a fragment label from a full consensus following some norms
 
@@ -2310,7 +2310,7 @@ def _KLIFS_web_lookup(UniProtAC,
                                             "KLIFS_position" : "KLIFS"}, inplace=True)
 
                 # Get the PDB as DF
-                geom = md_load_rscb(best_PDB, verbose=False)
+                geom = _md_load_rscb(best_PDB, verbose=False)
                 PDB_DF = _mdTopology2DF(geom.top)
 
                 # Temporary str-conversion to merge with nomencl

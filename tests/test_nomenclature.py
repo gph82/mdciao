@@ -36,15 +36,15 @@ from pandas import DataFrame, read_excel
 class Test_md_load_rscb(unittest.TestCase):
 
     def test_works(self):
-        geom = nomenclature.md_load_rscb("3CAP",
-                                         verbose=True,
-                                         )
+        geom = nomenclature._md_load_rscb("3CAP",
+                                          verbose=True,
+                                          )
         assert isinstance(geom, md.Trajectory)
     def test_works_return_url(self):
-        geom, url = nomenclature.md_load_rscb("3CAP",
-                                              #verbose=True,
-                                              return_url=True
-                                              )
+        geom, url = nomenclature._md_load_rscb("3CAP",
+                                               #verbose=True,
+                                               return_url=True
+                                               )
         assert isinstance(geom, md.Trajectory)
         assert isinstance(url, str)
         assert "http" in url
@@ -753,12 +753,12 @@ class Test_sort_consensus_labels(unittest.TestCase):
                                        sorted)
 
     def test_CGN(self):
-        sorted = nomenclature.sort_CGN_consensus_labels(self.tosort)
+        sorted = nomenclature._sort_CGN_consensus_labels(self.tosort)
         _np.testing.assert_array_equal(["G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20", "H8.10", "V34", "H8.1", "3.50", "2.50"],
                                        sorted)
 
     def test_CGN_dont_append(self):
-        sorted = nomenclature.sort_CGN_consensus_labels(self.tosort, append_diffset=False)
+        sorted = nomenclature._sort_CGN_consensus_labels(self.tosort, append_diffset=False)
         _np.testing.assert_array_equal(["G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20"],
                                        sorted)
 
@@ -796,7 +796,7 @@ class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 class Test_conslabel2fraglabel(unittest.TestCase):
 
     def test_just_works(self):
-        self.assertEqual("TM3",nomenclature.conslabel2fraglabel("GLU30@3.50"))
+        self.assertEqual("TM3", nomenclature._conslabel2fraglabel("GLU30@3.50"))
 
 class Test_alignment_df2_conslist(unittest.TestCase):
 
@@ -831,11 +831,11 @@ class Test_alignment_df2_conslist(unittest.TestCase):
         #                      "PHE2": "3.52"}
 
     def test_works(self):
-        out_list = nomenclature.alignment_df2_conslist(self.df)
+        out_list = nomenclature._alignment_df2_conslist(self.df)
         self.assertListEqual(out_list, ["3.50", None, "3.52"])
 
     def test_works_nonmatch(self):
-        out_list = nomenclature.alignment_df2_conslist(self.df, allow_nonmatch=True)
+        out_list = nomenclature._alignment_df2_conslist(self.df, allow_nonmatch=True)
         self.assertListEqual(out_list, ["3.50", "3.51", "3.52"])
 
 class Test_consensus_maps2consensus_frag(unittest.TestCase):
