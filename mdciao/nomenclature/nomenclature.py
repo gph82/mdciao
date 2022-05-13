@@ -89,7 +89,7 @@ def table2GPCR_by_AAcode(tablefile,
     # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
-    assert scheme in df.keys(), ValueError("'%s' isn't an availabe scheme.\nAvailable schemes are %s"%(scheme, [key for key in df.keys() if key in _GPCR_available_scheme+["display_generic_number"]]))
+    assert scheme in df.keys(), ValueError("'%s' isn't an availabe scheme.\nAvailable schemes are %s"%(scheme, [key for key in df.keys() if key in _GPCR_available_schemes+["display_generic_number"]]))
     AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
