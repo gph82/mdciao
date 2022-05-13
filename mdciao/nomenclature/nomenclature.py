@@ -59,7 +59,7 @@ def _table2GPCR_by_AAcode(tablefile,
         GPCR generic residue numbering in excel format
     scheme : str, default is "BW"
         The numbering scheme to choose. The available
-        schemes depend on what was in the orginial
+        schemes depend on what was in the original
         :obj:`tablefile`. The options may include
         * "generic_display_number" (the one chosen by the GPCRdb)
         * "GPCRdb(A)", "GPCRdb(B)", ...
@@ -89,7 +89,7 @@ def _table2GPCR_by_AAcode(tablefile,
     # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
-    assert scheme in df.keys(), ValueError("'%s' isn't an availabe scheme.\nAvailable schemes are %s"%(scheme, [key for key in df.keys() if key in _GPCR_available_schemes+["display_generic_number"]]))
+    assert scheme in df.keys(), ValueError("'%s' isn't an available scheme.\nAvailable schemes are %s"%(scheme, [key for key in df.keys() if key in _GPCR_available_schemes+["display_generic_number"]]))
     AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
@@ -174,7 +174,7 @@ def _CGN_finder(identifier,
                 write_to_disk=False):
     r"""Provide a four-letter PDB code and look up (first locally, then online)
     for a file that contains the Common-Gprotein-Nomenclature (CGN)
-    consesus labels and return them as a :obj:`DataFrame`. See
+    consensus labels and return them as a :obj:`~pandas.DataFrame`. See
     https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
     and :obj:`_finder_writer` for what's happening under the hood
 
@@ -201,14 +201,14 @@ def _CGN_finder(identifier,
 
     Returns
     -------
-    DF : :obj:`DataFrame` with the consensus nomenclature
+    DF : :obj:`~pandas.DataFrame` with the consensus nomenclature
 
     References
     ----------
     * [2] Flock, T., Ravarani, C., Sun, D. et al.,
-     *Universal allosteric mechanism for Gα activation by GPCRs.*
-     Nature 524, 173–179 (2015)
-     `<https://doi.org/10.1038/nature14663>`
+     * Universal allosteric mechanism for Gα activation by GPCRs.*
+       Nature 524, 173–179 (2015)
+      `<https://doi.org/10.1038/nature14663>`
     """
     file2read = format%identifier
     file2read = _path.join(local_path, file2read)
@@ -281,7 +281,7 @@ def _finder_writer(full_local_path,
     if isinstance(_DF, _DataFrame):
         if write_to_disk:
             if _path.exists(full_local_path):
-                raise FileExistsError("Cannot overwrite exisiting file %s" % full_local_path)
+                raise FileExistsError("Cannot overwrite existing file %s" % full_local_path)
             if _path.splitext(full_local_path)[-1]==".xlsx":
                 _DF.to_excel(full_local_path)
             else:
@@ -406,7 +406,7 @@ def _GPCR_web_lookup(url, verbose=True,
     if verbose:
         print("done!")
     if a.text == '[]':
-        DFout = ValueError('Contacted %s url sucessfully (no 404),\n'
+        DFout = ValueError('Contacted %s url successfully (no 404),\n'
                            'but Uniprot name %s yields nothing' % (url, uniprot_name))
     else:
         df = _read_json(a.text)
@@ -452,7 +452,7 @@ def _md_load_rscb(PDB,
     web_address: str, default is "https://files.rcsb.org/download"
         The web address of the RSCB PDB database
     verbose : bool, default is False
-        Be versose
+        Be verbose
     return_url : bool, default is False
         also return the actual url that was checked
 
@@ -473,7 +473,7 @@ def _md_load_rscb(PDB,
 class LabelerConsensus(object):
     """Parent class to manage consensus notations
 
-    At the moment child classe are
+    At the moment child classes are
      * :obj:`LabelerGPCR` for GPCR-notation, this can be:
        * structure based schemes (Gloriam et al)
        * sequence based schemes
@@ -712,7 +712,7 @@ class LabelerConsensus(object):
             :obj:`~mdtraj.Topology` object
         allow_nonmatch : bool, default is True
             Use consensus labels for non-matching positions
-            in case the non-matches have equal lenghts
+            in case the non-matches have equal lengths
         autofill_consensus : boolean default is False
             Even if there is a consensus mismatch with the sequence of the input
             :obj:`AA2conlab_dict`, try to relabel automagically, s.t.
@@ -815,7 +815,7 @@ class LabelerConsensus(object):
             top2self, self2top = _mdcu.sequence.df2maps(input_dataframe)
 
         # TODO "topmaps" are more straighfdw than dataframes
-        # but in pple we could make a lot of the next bookeeping as df2xxx functions
+        # but in pple we could make a lot of the next bookkeeping as df2xxx functions
 
         defs = self._selfmap2frags(self2top)
 
@@ -1495,7 +1495,7 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
                           **guess_kwargs):
     r"""
 
-    Guess wich fragments of a topology best align with a consensus nomenclature
+    Guess which fragments of a topology best align with a consensus nomenclature
 
     Wraps around :obj:`guess_nomenclature_fragments` to interpret its answer
 
