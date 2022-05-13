@@ -519,6 +519,8 @@ class LabelerConsensus(object):
         self._fragments_as_conlabs = {key: [self.AA2conlab[AA] for AA in val]
                                       for key, val in self.fragments.items()}
 
+        self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
+
     @property
     def ref_PDB(self):
         r""" PDB code used for instantiation"""
@@ -1073,9 +1075,6 @@ class LabelerCGN(LabelerConsensus):
         self._AA2conlab = {key: self._dataframe[self._dataframe[PDB_input] == key][self._nomenclature_key].to_list()[0]
                            for key in self._dataframe[PDB_input].to_list()}
 
-        self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
-
-
         self._fragments = _defdict(list)
         for ires, key in self.AA2conlab.items():
             try:
@@ -1235,7 +1234,6 @@ class LabelerGPCR(LabelerConsensus):
         # The title of the column with this field varies between CGN and GPCR
         self._AAresSeq_key = "AAresSeq"
         self._AA2conlab, self._fragments = table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key, return_fragments=True)
-        self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
                                   local_path=local_path,
