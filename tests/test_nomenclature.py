@@ -899,7 +899,7 @@ class Test_UniProtACtoPDBs(unittest.TestCase):
     def test_just_works(self):
         result = nomenclature._UniProtACtoPDBs("P31751")
         assert isinstance(result, dict)
-        assert "3e88" in result.keys()
+        assert "3e88".upper() in result.keys()
         self.assertDictEqual(result["3E88"],
                              {'database': 'PDB',
                               'id': '3E88',
