@@ -13,15 +13,9 @@ from mdciao import nomenclature
 # It's a sign of bad design to have to import these private methods here
 # for testing, they should be tested by the methods using them or
 # made public
-# When API design is more stable will TODO
-from mdciao.nomenclature.nomenclature import \
-    _CGN_fragments, \
-    _GPCR_web_lookup, \
-    _fill_consensus_gaps, \
-    _map2defs, \
-    _consensus_maps2consensus_frags
-    #_top2consensus_map
-#TODO make these imports cleaner
+# Now tha API is more stable I have decided to hide most of these
+# methods but keep the test
+from mdciao.nomenclature import nomenclature
 from mdciao.examples import filenames as test_filenames
 from mdciao import examples
 
@@ -168,12 +162,12 @@ class Test_CGN_finder(unittest.TestCase):
 class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
 
     def test_works(self):
-        DF = _GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
+        DF = nomenclature._GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
         assert isinstance(DF, DataFrame)
 
     def test_wrong_code(self):
         with pytest.raises(ValueError):
-            raise _GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
+            raise nomenclature._GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
 
 class Test_GPCR_finder(unittest.TestCase):
 
@@ -184,8 +178,8 @@ class Test_GPCR_finder(unittest.TestCase):
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename,str)
-        _np.testing.assert_array_equal(list(df.keys())[:3], nomenclature.nomenclature._GPCR_mandatory_fields)
-        assert any([key in df.keys() for key in nomenclature.nomenclature._GPCR_mandatory_fields]) #at least one scheme
+        _np.testing.assert_array_equal(list(df.keys())[:3], nomenclature._GPCR_mandatory_fields)
+        assert any([key in df.keys() for key in nomenclature._GPCR_mandatory_fields]) #at least one scheme
 
 
     def test_works_online(self):
@@ -195,8 +189,8 @@ class Test_GPCR_finder(unittest.TestCase):
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
         assert "http" in filename
-        _np.testing.assert_array_equal(list(df.keys())[:3],nomenclature.nomenclature._GPCR_mandatory_fields)
-        assert any([key in df.keys() for key in nomenclature.nomenclature._GPCR_mandatory_fields])
+        _np.testing.assert_array_equal(list(df.keys())[:3],nomenclature._GPCR_mandatory_fields)
+        assert any([key in df.keys() for key in nomenclature._GPCR_mandatory_fields])
 
     def test_raises_not_find_locally(self):
         with pytest.raises(FileNotFoundError):
@@ -336,7 +330,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         assert all([len(ii)>0 for ii in self.cgn_local.fragments.values()])
         self.assertEqual(self.cgn_local.fragments["G.HN"][0],"T9")
         self.assertSequenceEqual(list(self.cgn_local.fragments.keys()),
-                                 _CGN_fragments)
+                                nomenclature._CGN_fragments)
 
     def test_correct_fragments_as_conlabs_dict(self):
         # Test "fragments_as_conslabs" dictionary SMH
@@ -344,7 +338,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         assert all([len(ii) > 0 for ii in self.cgn_local.fragments_as_conlabs.values()])
         self.assertEqual(self.cgn_local.fragments_as_conlabs["G.HN"][0], "G.HN.26")
         self.assertSequenceEqual(list(self.cgn_local.fragments_as_conlabs.keys()),
-                                 _CGN_fragments)
+                                nomenclature._CGN_fragments)
 
     def test_correct_fragment_names(self):
         self.assertSequenceEqual(self.cgn_local.fragment_names,
@@ -374,14 +368,14 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     def test_top2frags_just_passes(self):
         defs = self.cgn_local.top2frags(self.cgn_local.top)
         self.assertSequenceEqual(list(defs.keys()),
-                                 _CGN_fragments)
+                                nomenclature._CGN_fragments)
 
     def test_top2frags_gets_dataframe(self):
         self.cgn_local.aligntop(self.cgn_local.top)
         defs = self.cgn_local.top2frags(self.cgn_local.top,
                                         input_dataframe=self.cgn_local.most_recent_alignment)
         self.assertSequenceEqual(list(defs.keys()),
-                                 _CGN_fragments)
+                                nomenclature._CGN_fragments)
 
     def test_top2frags_defs_are_broken_in_frags(self):
 
@@ -394,7 +388,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
                                                       ]
                                             )
             self.assertSequenceEqual(list(defs.keys()),
-                                     _CGN_fragments)
+                                    nomenclature._CGN_fragments)
             _np.testing.assert_array_equal(defs["G.HN"],_np.arange(0,15))
 
     def test_top2frags_defs_are_broken_in_frags_bad_input(self):
@@ -502,7 +496,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
     def test_dataframe(self):
         self.assertIsInstance(self.GPCR_local_w_pdb.dataframe, DataFrame)
         self.assertSequenceEqual(list(self.GPCR_local_w_pdb.dataframe.keys()),
-                                 nomenclature.nomenclature._GPCR_mandatory_fields+nomenclature.nomenclature._GPCR_available_schemes)
+                                 nomenclature._GPCR_mandatory_fields+nomenclature._GPCR_available_schemes)
 
     def test_correct_residue_dicts(self):
         if self.GPCR_local_w_pdb._nomenclature_key=="BW":
@@ -586,14 +580,14 @@ class Test_map2defs(unittest.TestCase):
 
 
     def test_works(self):
-        map2defs = _map2defs(self.cons_list)
+        map2defs = nomenclature._map2defs(self.cons_list)
         assert _np.array_equal(map2defs['3'], [0])
         assert _np.array_equal(map2defs['G.H5'], [1, 2])
         assert _np.array_equal(map2defs['5'], [3])
         _np.testing.assert_equal(len(map2defs),3)
 
     def test_works_w_Nones(self):
-        map2defs = _map2defs(self.cons_list_w_Nones)
+        map2defs = nomenclature._map2defs(self.cons_list_w_Nones)
         assert _np.array_equal(map2defs['3'], [0])
         assert _np.array_equal(map2defs['G.H5'], [3,4])
         assert _np.array_equal(map2defs['5'], [5])
@@ -601,7 +595,7 @@ class Test_map2defs(unittest.TestCase):
 
     def test_works_wo_dot_raises(self):
         with pytest.raises(AssertionError):
-            _map2defs(self.cons_list_wo_dots)
+            nomenclature._map2defs(self.cons_list_wo_dots)
 
 class Test_fill_CGN_gaps(unittest.TestCase):
     def setUp(self):
@@ -611,7 +605,7 @@ class Test_fill_CGN_gaps(unittest.TestCase):
         self.cons_list_in = ['G.HN.26', None, 'G.HN.28', 'G.HN.29', 'G.HN.30']
 
     def test_fill_CGN_gaps_just_works_with_CGN(self):
-        fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.top_mut, verbose=True)
+        fill_cgn = nomenclature._fill_consensus_gaps(self.cons_list_in, self.top_mut, verbose=True)
         self.assertEqual(fill_cgn,self.cons_list_out)
 
 
@@ -624,7 +618,7 @@ class Test_fill_consensus_gaps(unittest.TestCase):
                              "3.50", '3.51', '3.52']
 
     def test_fill_CGN_gaps_just_works_with_GPCR(self):
-        fill_cgn = _fill_consensus_gaps(self.cons_list_in, self.geom.top, verbose=True)
+        fill_cgn = nomenclature._fill_consensus_gaps(self.cons_list_in, self.geom.top, verbose=True)
         self.assertEqual(fill_cgn, self.cons_list_out)
 
 class Test_guess_by_nomenclature(unittest.TestCase):
@@ -851,22 +845,22 @@ class Test_consensus_maps2consensus_frag(unittest.TestCase):
                                                             )
 
             cls.maps[GPCR_scheme] = [lab.top2labels(cls.geom.top) for lab in [cls.CGN, cls.GPCR[GPCR_scheme]]]
-            cls.frags[GPCR_scheme] = [lab.top2frags(cls.geom.top) for lab in [cls.CGN, cls.GPCR[GPCR_scheme]]] # This method doesn't rely on  _consensus_maps2consensus_frags
+            cls.frags[GPCR_scheme] = [lab.top2frags(cls.geom.top) for lab in [cls.CGN, cls.GPCR[GPCR_scheme]]] # This method doesn't rely on   nomenclature._consensus_maps2consensus_frags
 
     def test_works_on_empty(self):
-        maps, frags = _consensus_maps2consensus_frags(self.geom.top, [], verbose=True)
+        maps, frags =  nomenclature._consensus_maps2consensus_frags(self.geom.top, [], verbose=True)
         assert maps == []
         assert frags == {}
 
     def test_works_on_maps(self):
         for imaps in self.maps.values():
-            maps, frags = _consensus_maps2consensus_frags(self.geom.top, imaps, verbose=True)
+            maps, frags = nomenclature._consensus_maps2consensus_frags(self.geom.top, imaps, verbose=True)
             self.assertListEqual(maps, imaps)
             assert frags == {}
 
     def test_works_on_Labelers(self):
         for GPCR_scheme, GPCR in self.GPCR.items():
-            maps, frags = _consensus_maps2consensus_frags(self.geom.top, [self.CGN, GPCR], verbose=True)
+            maps, frags = nomenclature._consensus_maps2consensus_frags(self.geom.top, [self.CGN, GPCR], verbose=True)
             self.assertListEqual(maps, self.maps[GPCR_scheme])
             for ifrags in self.frags[GPCR_scheme]:
                 for key, val in ifrags.items():
@@ -874,7 +868,7 @@ class Test_consensus_maps2consensus_frag(unittest.TestCase):
 
     def test_works_on_mix(self):
         for GPCR_scheme, GPCR in self.GPCR.items():
-            maps, frags = _consensus_maps2consensus_frags(self.geom.top, [self.maps[GPCR_scheme][0], GPCR], verbose=True)
+            maps, frags = nomenclature._consensus_maps2consensus_frags(self.geom.top, [self.maps[GPCR_scheme][0], GPCR], verbose=True)
             self.assertListEqual(maps, self.maps[GPCR_scheme])
             self.assertDictEqual(frags, self.frags[GPCR_scheme][1])
 
@@ -882,7 +876,7 @@ class Test_consensus_maps2consensus_frag(unittest.TestCase):
 class Test_UniProtACtoPDBs(unittest.TestCase):
 
     def test_just_works(self):
-        result = nomenclature.nomenclature._UniProtACtoPDBs("P31751")
+        result = nomenclature._UniProtACtoPDBs("P31751")
         assert isinstance(result,dict)
         assert "3e88" in result.keys()
         self.assertDictEqual(result["3E88"],
@@ -905,11 +899,11 @@ class Test_mdTopology2DF(unittest.TestCase):
                               '5              5     LYS     K              29      K29',
                               '6              6     P0G  None             381     X381',
                               '7              7     GDP  None             382     X382'],
-                             nomenclature.nomenclature._mdTopology2DF(top).to_string().splitlines())
+                             nomenclature._mdTopology2DF(top).to_string().splitlines())
 
 class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
     def test_just_works(self):
-        # nomenclature.nomenclature._UniProtACtoPDBs("P54311")["3SN6"]
+        # nomenclature._UniProtACtoPDBs("P54311")["3SN6"]
         # Beta sub-unit in 3SN6
         PDBentry = {'database': 'PDB',
                     'id': '3SN6',
@@ -917,7 +911,7 @@ class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
                                    {'key': 'Resolution', 'value': '3.20 A'},
                                    {'key': 'Chains', 'value': 'B=2-340'}]} # <---- For some reason GLN1 is not considered in this entry as belonging to the beta sub-unit
         top = md.load(examples.filenames.pdb_3SN6).top
-        res_idxs = nomenclature.nomenclature._residx_from_UniProtPDBEntry_and_top(PDBentry, top)
+        res_idxs = nomenclature._residx_from_UniProtPDBEntry_and_top(PDBentry, top)
 
         """
         mdciao.fragments.get_fragments(mdciao.examples.filenames.pdb_3SN6);
@@ -941,7 +935,7 @@ class Test_KLIFSDataFrame(unittest.TestCase):
                                            local_path=test_filenames.nomenclature_path)[0]
 
     def test_just_works(self):
-        KLIFS_df = nomenclature.nomenclature._KLIFSDataFrame(self.df,
+        KLIFS_df = nomenclature._KLIFSDataFrame(self.df,
                                                              UniProtAC="P54311", PDB_id="3SN6", PDB_geom="bogus")
 
         assert KLIFS_df.PDB_id == "3SN6"
@@ -950,7 +944,7 @@ class Test_KLIFSDataFrame(unittest.TestCase):
 
     def test_write_to_excel(self):
         with _NamedTemporaryFile(suffix=".xlsx") as f:
-            KLIFS_df = nomenclature.nomenclature._KLIFSDataFrame(self.df,
+            KLIFS_df = nomenclature._KLIFSDataFrame(self.df,
                                                                  UniProtAC="P54311", PDB_id="3SN6", PDB_geom="bogus")
             KLIFS_df.to_excel(f.name)
             df_dict = read_excel(f.name, None)
@@ -960,20 +954,20 @@ class Test_KLIFSDataFrame(unittest.TestCase):
 class Test_KLIFS_web_lookup(unittest.TestCase):
 
     def test_just_works(self):
-        KLIFS_df = nomenclature.nomenclature._KLIFS_web_lookup("P31751")
-        assert isinstance(KLIFS_df, nomenclature.nomenclature._KLIFSDataFrame)
+        KLIFS_df = nomenclature._KLIFS_web_lookup("P31751")
+        assert isinstance(KLIFS_df, nomenclature._KLIFSDataFrame)
 
     def test_wrong(self):
-        KLIFS_df = nomenclature.nomenclature._KLIFS_web_lookup("P3175111")
+        KLIFS_df = nomenclature._KLIFS_web_lookup("P3175111")
         assert isinstance(KLIFS_df, ValueError)
 
 class Test_KLIFS_finder(unittest.TestCase):
     def setUp(self):
         self.UniProtAC = "P31751"
-        self.KLIFS_df = nomenclature.nomenclature.KLIFS_finder(self.UniProtAC)[0]
+        self.KLIFS_df = nomenclature.KLIFS_finder(self.UniProtAC)[0]
 
     def test_finds_online(self):
-        assert isinstance(self.KLIFS_df, nomenclature.nomenclature._KLIFSDataFrame)
+        assert isinstance(self.KLIFS_df, nomenclature._KLIFSDataFrame)
 
     def test_finds_local_and_reconstructs_attributes(self):
         with _TDir(suffix="_mdciao_test") as tdir:
