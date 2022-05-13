@@ -1938,7 +1938,9 @@ class Literature():
             "scheme_GPCR_A_BS_2": "Baldwin1997",
             "scheme_GPCR_A_BS_3": "Schwartz1994",
             "scheme_GPCR_A_BS_4": "Schwartz1995",
-            "scheme_CGN" : "Flock2015"
+            "scheme_CGN" : "Flock2015",
+            "site_UniProt" :"Bateman2021",
+            "site_KLIFS" : "Kanev2021"
         }
 
         arts = _parse_bib()
@@ -2087,6 +2089,10 @@ def _UniProtACtoPDBs(UniProtAC,
     url = "%s/%s.json"%(UniProtKB_API, UniProtAC)
     PDBs_UPKB = {}
     with _requests.get(url) as resp:
+        print("Please cite the following reference to the UniProt Knowledgebase:")
+        lit = Literature()
+        print(_format_cite(lit.site_UniProt))
+        print("For more information, call mdciao.nomenclature.references()")
         data = resp.json()
         for entry in data["uniProtKBCrossReferences"]:
             #print(entry)
