@@ -20,10 +20,8 @@ Functions
     :nosignatures:
     :toctree: generated/
 
+    guess_by_nomenclature
     guess_nomenclature_fragments
-    PDB_finder
-    GPCR_finder
-    md_load_rscb
     references
 
 Classes

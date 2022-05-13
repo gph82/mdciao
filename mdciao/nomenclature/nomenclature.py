@@ -1387,7 +1387,7 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     there are more than one consensus(es) at play (e.g. GPCR and CGN).
 
     Wil raise error if both dictionaries have a consensus label for
-    the same index (unsual case)
+    the same index (unusual case)
 
     Parameters
     ----------
