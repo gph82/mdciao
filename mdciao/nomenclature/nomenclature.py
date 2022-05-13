@@ -45,11 +45,11 @@ import requests as _requests
 
 from natsort import natsorted as _natsorted
 
-def table2GPCR_by_AAcode(tablefile,
-                         scheme="BW",
-                         keep_AA_code=True,
-                         return_fragments=False,
-                         ):
+def _table2GPCR_by_AAcode(tablefile,
+                          scheme="BW",
+                          keep_AA_code=True,
+                          return_fragments=False,
+                          ):
     r"""
     Dictionary AAcodes so that e.g. AAcode2GPCR["R131"] -> '3.50' from a Excel file or an :obj:`pandas.DataFrame`
 
@@ -107,9 +107,9 @@ def table2GPCR_by_AAcode(tablefile,
     else:
         return AAcode2GPCR
 
-def PDB_finder(PDB_code, local_path='.',
-               try_web_lookup=True,
-               verbose=True):
+def _PDB_finder(PDB_code, local_path='.',
+                try_web_lookup=True,
+                verbose=True):
     r"""Return an :obj:`~mdtraj.Trajectory` by loading a local
     file or optionally looking up online, see :obj:`md_load_rscb`
 
@@ -165,13 +165,13 @@ def PDB_finder(PDB_code, local_path='.',
 
     return _geom, return_file
 
-def CGN_finder(identifier,
-               format='CGN_%s.txt',
-               local_path='.',
-               try_web_lookup=True,
-               verbose=True,
-               dont_fail=False,
-               write_to_disk=False):
+def _CGN_finder(identifier,
+                format='CGN_%s.txt',
+                local_path='.',
+                try_web_lookup=True,
+                verbose=True,
+                dont_fail=False,
+                write_to_disk=False):
     r"""Provide a four-letter PDB code and look up (first locally, then online)
     for a file that contains the Common-Gprotein-Nomenclature (CGN)
     consesus labels and return them as a :obj:`DataFrame`. See
@@ -302,14 +302,13 @@ def _finder_writer(full_local_path,
             raise _DF
 
 
-# TODO consider making private?
-def GPCR_finder(GPCR_descriptor,
-                format = "%s.xlsx",
-                local_path=".",
-                try_web_lookup=True,
-                verbose=True,
-                dont_fail=False,
-                write_to_disk=False):
+def _GPCR_finder(GPCR_descriptor,
+                 format = "%s.xlsx",
+                 local_path=".",
+                 try_web_lookup=True,
+                 verbose=True,
+                 dont_fail=False,
+                 write_to_disk=False):
     r"""
     Return a :obj:`~pandas.DataFrame` containing
     generic GPCR-numbering.
@@ -510,9 +509,9 @@ class LabelerConsensus(object):
         self._ref_top = None
         self._ref_PDB = ref_PDB
         if ref_PDB is not None:
-            self._geom_PDB, self._PDB_file = PDB_finder(ref_PDB,
-                                                        **PDB_finder_kwargs,
-                                                        )
+            self._geom_PDB, self._PDB_file = _PDB_finder(ref_PDB,
+                                                         **PDB_finder_kwargs,
+                                                         )
         self._conlab2AA = {val: key for key, val in self.AA2conlab.items()}
 
         self._fragment_names = list(self.fragments.keys())
@@ -1062,11 +1061,11 @@ class LabelerCGN(LabelerConsensus):
             # TODO does the check need to have the .txt extension?
             # TODO do we even need this check?
             #assert len(PDB_input) == 4 and "CGN_%s.txt" % PDB_input == basename
-        self._dataframe, self._tablefile = CGN_finder(PDB_input,
-                                                      local_path=local_path,
-                                                      try_web_lookup=try_web_lookup,
-                                                      verbose=verbose,
-                                                      write_to_disk=write_to_disk)
+        self._dataframe, self._tablefile = _CGN_finder(PDB_input,
+                                                       local_path=local_path,
+                                                       try_web_lookup=try_web_lookup,
+                                                       verbose=verbose,
+                                                       write_to_disk=write_to_disk)
         # The title of the column with this field varies between CGN and GPCR
         AAresSeq_key = [key for key in list(self.dataframe.keys()) if key.lower() not in [self._nomenclature_key.lower(), "Sort number".lower()]]
         assert len(AAresSeq_key)==1
@@ -1224,16 +1223,16 @@ class LabelerGPCR(LabelerConsensus):
         self._nomenclature_key = GPCR_scheme
         # TODO now that the finder call is the same we could
         # avoid cde repetition here
-        self._dataframe, self._tablefile = GPCR_finder(uniprot_name,
-                                                       format=format,
-                                                       local_path=local_path,
-                                                       try_web_lookup=try_web_lookup,
-                                                       verbose=verbose,
-                                                       write_to_disk=write_to_disk
-                                                       )
+        self._dataframe, self._tablefile = _GPCR_finder(uniprot_name,
+                                                        format=format,
+                                                        local_path=local_path,
+                                                        try_web_lookup=try_web_lookup,
+                                                        verbose=verbose,
+                                                        write_to_disk=write_to_disk
+                                                        )
         # The title of the column with this field varies between CGN and GPCR
         self._AAresSeq_key = "AAresSeq"
-        self._AA2conlab, self._fragments = table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key, return_fragments=True)
+        self._AA2conlab, self._fragments = _table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key, return_fragments=True)
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
                                   local_path=local_path,

@@ -52,21 +52,21 @@ class Test_md_load_rscb(unittest.TestCase):
 class Test_PDB_finder(unittest.TestCase):
 
     def test_works_locally(self):
-        geom, filename = nomenclature.PDB_finder(path.splitext(test_filenames.top_pdb)[0],
-                                                 local_path=test_filenames.example_path,
-                                                 try_web_lookup=False)
+        geom, filename = nomenclature._PDB_finder(path.splitext(test_filenames.top_pdb)[0],
+                                                  local_path=test_filenames.example_path,
+                                                  try_web_lookup=False)
         assert isinstance(geom, md.Trajectory)
         assert isinstance(filename, str)
 
     def test_works_locally_pdbgz(self):
-        geom, filename = nomenclature.PDB_finder("3SN6",
-                                                 local_path=test_filenames.RSCB_pdb_path,
-                                                 try_web_lookup=False)
+        geom, filename = nomenclature._PDB_finder("3SN6",
+                                                  local_path=test_filenames.RSCB_pdb_path,
+                                                  try_web_lookup=False)
         assert isinstance(geom, md.Trajectory)
         assert isinstance(filename, str)
 
     def test_works_online(self):
-        geom, filename = nomenclature.PDB_finder("3SN6")
+        geom, filename = nomenclature._PDB_finder("3SN6")
 
         assert isinstance(geom, md.Trajectory)
         assert isinstance(filename, str)
@@ -74,23 +74,23 @@ class Test_PDB_finder(unittest.TestCase):
 
     def test_fails_bc_no_online_access(self):
         with pytest.raises((OSError,FileNotFoundError)):
-            nomenclature.PDB_finder("3SN6",
-                                    try_web_lookup=False)
+            nomenclature._PDB_finder("3SN6",
+                                     try_web_lookup=False)
 
 class Test_CGN_finder(unittest.TestCase):
 
     def test_works_locally(self):
-        df, filename = nomenclature.CGN_finder("3SN6",
-                                               try_web_lookup=False,
-                                               local_path=test_filenames.nomenclature_path)
+        df, filename = nomenclature._CGN_finder("3SN6",
+                                                try_web_lookup=False,
+                                                local_path=test_filenames.nomenclature_path)
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename,str)
         _np.testing.assert_array_equal(list(df.keys()),["CGN","Sort number","3SN6"])
 
     def test_works_online(self):
-        df, filename = nomenclature.CGN_finder("3SN6",
-                                               )
+        df, filename = nomenclature._CGN_finder("3SN6",
+                                                )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
@@ -99,11 +99,11 @@ class Test_CGN_finder(unittest.TestCase):
 
     def test_works_online_and_writes_to_disk_excel(self):
         with _TDir(suffix="_mdciao_test") as tdir:
-            df, filename = nomenclature.CGN_finder("3SN6",
-                                                   format="%s.xlsx",
-                                                   local_path=tdir,
-                                                   write_to_disk=True
-                                                   )
+            df, filename = nomenclature._CGN_finder("3SN6",
+                                                    format="%s.xlsx",
+                                                    local_path=tdir,
+                                                    write_to_disk=True
+                                                    )
 
             assert isinstance(df, DataFrame)
             assert isinstance(filename, str)
@@ -113,11 +113,11 @@ class Test_CGN_finder(unittest.TestCase):
 
     def test_works_online_and_writes_to_disk_ascii(self):
         with _TDir(suffix="_mdciao_test") as tdir:
-            df, filename = nomenclature.CGN_finder("3SN6",
-                                                   local_path=tdir,
-                                                   format="%s.txt",
-                                                   write_to_disk=True
-                                                   )
+            df, filename = nomenclature._CGN_finder("3SN6",
+                                                    local_path=tdir,
+                                                    format="%s.txt",
+                                                    write_to_disk=True
+                                                    )
 
             assert isinstance(df, DataFrame)
             assert isinstance(filename, str)
@@ -130,37 +130,37 @@ class Test_CGN_finder(unittest.TestCase):
             infile = test_filenames.CGN_3SN6
             copy(infile,tdir)
             with pytest.raises(FileExistsError):
-                nomenclature.CGN_finder("3SN6",
-                                        try_web_lookup=False,
-                                        local_path=tdir,
-                                        write_to_disk=True
-                                        )
+                nomenclature._CGN_finder("3SN6",
+                                         try_web_lookup=False,
+                                         local_path=tdir,
+                                         write_to_disk=True
+                                         )
 
 
 
     def test_raises_not_find_locally(self):
         with pytest.raises(FileNotFoundError):
-            nomenclature.CGN_finder("3SN6",
-                                    try_web_lookup=False
-                                    )
+            nomenclature._CGN_finder("3SN6",
+                                     try_web_lookup=False
+                                     )
 
     def test_not_find_locally_but_no_fail(self):
-        DF, filename = nomenclature.CGN_finder("3SN6",
-                                               try_web_lookup=False,
-                                               dont_fail=True
-                                               )
+        DF, filename = nomenclature._CGN_finder("3SN6",
+                                                try_web_lookup=False,
+                                                dont_fail=True
+                                                )
         assert DF is None
         assert isinstance(filename,str)
 
     def test_raises_not_find_online(self):
         with pytest.raises(HTTPError):
-            nomenclature.CGN_finder("3SNw",
-                                    )
+            nomenclature._CGN_finder("3SNw",
+                                     )
 
     def test_not_find_online_but_no_raise(self):
-        df, filename =    nomenclature.CGN_finder("3SNw",
-                                                  dont_fail=True
-                                                  )
+        df, filename =    nomenclature._CGN_finder("3SNw",
+                                                   dont_fail=True
+                                                   )
         assert df is None
         assert isinstance(filename,str)
         assert "www" in filename
@@ -178,9 +178,9 @@ class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
 class Test_GPCR_finder(unittest.TestCase):
 
     def test_works_locally(self):
-        df, filename = nomenclature.GPCR_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
-                                                try_web_lookup=False,
-                                                )
+        df, filename = nomenclature._GPCR_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
+                                                 try_web_lookup=False,
+                                                 )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename,str)
@@ -189,8 +189,8 @@ class Test_GPCR_finder(unittest.TestCase):
 
 
     def test_works_online(self):
-        df, filename = nomenclature.GPCR_finder("adrb2_human",
-                                                )
+        df, filename = nomenclature._GPCR_finder("adrb2_human",
+                                                 )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
@@ -200,28 +200,28 @@ class Test_GPCR_finder(unittest.TestCase):
 
     def test_raises_not_find_locally(self):
         with pytest.raises(FileNotFoundError):
-            nomenclature.GPCR_finder("B2AR",
-                                     try_web_lookup=False
-                                     )
+            nomenclature._GPCR_finder("B2AR",
+                                      try_web_lookup=False
+                                      )
 
     def test_not_find_locally_but_no_fail(self):
-        DF, filename = nomenclature.GPCR_finder("B2AR",
-                                                try_web_lookup=False,
-                                                dont_fail=True
-                                                )
+        DF, filename = nomenclature._GPCR_finder("B2AR",
+                                                 try_web_lookup=False,
+                                                 dont_fail=True
+                                                 )
         assert DF is None
         assert isinstance(filename,str)
 
 
     def test_raises_not_find_online(self):
         with pytest.raises(ValueError):
-            nomenclature.GPCR_finder("B2AR",
-                                     )
+            nomenclature._GPCR_finder("B2AR",
+                                      )
 
     def test_not_find_online_but_no_raise(self):
-        df, filename =    nomenclature.GPCR_finder("3SNw",
-                                                   dont_fail=True
-                                                   )
+        df, filename =    nomenclature._GPCR_finder("3SNw",
+                                                    dont_fail=True
+                                                    )
         assert df is None
         assert isinstance(filename,str)
 
@@ -230,7 +230,7 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
         self.file = test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx
 
     def test_just_works(self):
-        table2GPCR = nomenclature.table2GPCR_by_AAcode(tablefile = self.file)
+        table2GPCR = nomenclature._table2GPCR_by_AAcode(tablefile = self.file)
         self.assertDictEqual(table2GPCR,
                              {'Q26': '1.25',
                               'E27': '1.26',
@@ -241,7 +241,7 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
                               })
 
     def test_keep_AA_code_test(self): #dictionary keys will only have AA id
-        table2GPCR = nomenclature.table2GPCR_by_AAcode(tablefile = self.file, keep_AA_code=False)
+        table2GPCR = nomenclature._table2GPCR_by_AAcode(tablefile = self.file, keep_AA_code=False)
         self.assertDictEqual(table2GPCR,
                              {26: '1.25',
                               27: '1.26',
@@ -252,8 +252,8 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
                            })
 
     def test_table2GPCR_by_AAcode_return_fragments(self):
-        table2GPCR, defs = nomenclature.table2GPCR_by_AAcode(tablefile=self.file,
-                                                           return_fragments=True)
+        table2GPCR, defs = nomenclature._table2GPCR_by_AAcode(tablefile=self.file,
+                                                              return_fragments=True)
 
         self.assertDictEqual(defs,{'TM1':  ["Q26","E27"],
                                    "ICL1": ["E62","R63"],
@@ -262,7 +262,7 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
         from pandas import read_excel
         df = read_excel(self.file, header=0, engine="openpyxl")
 
-        table2GPCR = nomenclature.table2GPCR_by_AAcode(tablefile=df)
+        table2GPCR = nomenclature._table2GPCR_by_AAcode(tablefile=df)
         self.assertDictEqual(table2GPCR,
                              {'Q26': '1.25',
                               'E27': '1.26',
@@ -936,9 +936,9 @@ class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
 class Test_KLIFSDataFrame(unittest.TestCase):
 
     def setUp(self):
-        self.df = nomenclature.CGN_finder("3SN6",
-                                          try_web_lookup=False,
-                                          local_path=test_filenames.nomenclature_path)[0]
+        self.df = nomenclature._CGN_finder("3SN6",
+                                           try_web_lookup=False,
+                                           local_path=test_filenames.nomenclature_path)[0]
 
     def test_just_works(self):
         KLIFS_df = nomenclature.nomenclature._KLIFSDataFrame(self.df,
