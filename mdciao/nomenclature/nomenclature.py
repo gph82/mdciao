@@ -1638,7 +1638,7 @@ def _sort_consensus_labels(subset, sorted_superset,
 
     return labs_out
 
-def sort_GPCR_consensus_labels(labels, **kwargs):
+def _sort_GPCR_consensus_labels(labels, **sort_consensus_labels_kwargs):
     r"""
     Sort consensus labels in order of appearance in the canonical GPCR scheme
 
@@ -1646,14 +1646,14 @@ def sort_GPCR_consensus_labels(labels, **kwargs):
     ----------
     labels : iterable
         The input consensus labels
-    kwargs : dict, optional
+    sort_consensus_labels_kwargs : dict, optional
         Optional arguments for :obj:`sort_consensus_labels`
 
     Returns
     -------
 
     """
-    return _sort_consensus_labels(labels, _GPCR_fragments, **kwargs)
+    return _sort_consensus_labels(labels, _GPCR_fragments, **sort_consensus_labels_kwargs)
 
 def _sort_CGN_consensus_labels(labels, **kwargs):
     r"""
