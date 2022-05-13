@@ -967,4 +967,30 @@ class Test_KLIFS_web_lookup(unittest.TestCase):
         KLIFS_df = nomenclature.nomenclature._KLIFS_web_lookup("P3175111")
         assert isinstance(KLIFS_df, ValueError)
 
+class Test_KLIFS_finder(unittest.TestCase):
+    def setUp(self):
+        self.UniProtAC = "P31751"
+        self.KLIFS_df = nomenclature.nomenclature.KLIFS_finder(self.UniProtAC)[0]
+
+    def test_finds_online(self):
+        assert isinstance(self.KLIFS_df, nomenclature.nomenclature._KLIFSDataFrame)
+
+    def test_finds_local_and_reconstructs_attributes(self):
+        with _TDir(suffix="_mdciao_test") as tdir:
+            full_path_local_filename = path.join(tdir,"KLIFS_%s.xlsx"%self.UniProtAC)
+            self.KLIFS_df.to_excel(full_path_local_filename)
+            df, filename = nomenclature.KLIFS_finder(self.UniProtAC ,try_web_lookup=False,local_path=tdir)
+            assert df.PDB_id == self.KLIFS_df.PDB_id
+            assert df.UniProtAC == self.KLIFS_df.UniProtAC
+            assert df.PDB_geom is None
+
+
+    def test_finds_local_with_explicit_filename(self):
+        with _TDir(suffix="_mdciao_test") as tdir:
+            full_path_local_filename = path.join(tdir,"very_specific.xlsx")
+            self.KLIFS_df.to_excel(full_path_local_filename)
+            df, filename = nomenclature.KLIFS_finder(full_path_local_filename)
+            assert df.PDB_id == self.KLIFS_df.PDB_id
+            assert df.UniProtAC == self.KLIFS_df.UniProtAC
+            assert df.PDB_geom is None
 

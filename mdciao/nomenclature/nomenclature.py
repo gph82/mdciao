@@ -2332,3 +2332,84 @@ def _KLIFS_web_lookup(UniProtAC,
             PDB_DF = ValueError('url : "%s", uniprot : "%s" error : "%s"' % (url, UniProtAC, resp.text))
 
     return PDB_DF
+
+def KLIFS_finder(UniProtAC,
+                 format='KLIFS_%s.xlsx',
+                 local_path='.',
+                 try_web_lookup=True,
+                 verbose=True,
+                 dont_fail=False,
+                 write_to_disk=False):
+
+    r"""Look up, first locally, then online for the 85-pocket-residues numbering scheme as found in
+    the `Kinase–Ligand Interaction Fingerprints and Structure <https://klifs.net/>`_
+    return them as a :obj:`~pandas.DataFrame`.
+
+    Please see the relevant references in :obj:`LabelerKLIFS`.
+
+    When reading from disk, attributes DF.UniProtAC and DF.PDB_code
+    get populated, but DF.PDB_geom is left as None. Use directly
+    :obj:`LabelerKLIFS`, which wraps around this method, to populate
+    all three of them
+
+    Internally, this method wraps around :obj:`_finder_writer`
+
+    Parameters
+    ----------
+    UniProtAC : str
+       UniProt Accession Code, e.g. P31751 or
+       filename e.g. 'KLIFS_P31751.xlsx'
+    format : str
+        A format string that turns the :obj:`identifier`
+        into a filename for local lookup, in case the
+        user has custom filenames, e.g. KLIFS_P31751.xlsx
+    local_path : str
+        The local path to the local KLIFS data file
+    try_web_lookup : bool, default is True
+        If the local lookup fails, go online
+    verbose : bool, default is True
+        Be verbose
+    dont_fail : bool, default is False
+        Do not raise any errors that would interrupt
+        a workflow and simply return None
+    write_to_disk : bool, default is False
+        Save the data to disk
+
+    Returns
+    -------
+    DF : :obj:`~pandas.DataFrame`
+        Contains the KLIFS consensus nomenclature, and
+        some extra attributes like DF.UniProtAC, DF.PDB_code, DF.PDB_geom
+        If the lookup wasn't successful this will be a ValueError
+    return_name : str
+        The URL or local path to
+        the file that was used
+    """
+
+    if _path.exists(UniProtAC):
+        fullpath = UniProtAC
+        try_web_lookup=False
+    else:
+        xlsxname = format % UniProtAC
+        fullpath = _path.join(local_path, xlsxname)
+    KLIFS_API = "https://klifs.net/api"
+    url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
+
+    def _read_excel_as_KDF(fullpath):
+        idict = _read_excel(fullpath,
+                    None)
+        assert len(idict)==1
+        for key, val in idict.items():
+            UniProtAC, PDB_id = key.split("_")
+            return _KLIFSDataFrame(val.replace({_np.nan: None}),
+                                   UniProtAC=UniProtAC, PDB_id=PDB_id)
+
+    local_lookup_lambda = lambda fullpath : _read_excel_as_KDF(fullpath)
+
+    web_looukup_lambda = lambda url : _KLIFS_web_lookup(UniProtAC, verbose=verbose, url=url)
+    return _finder_writer(fullpath, local_lookup_lambda,
+                          url, web_looukup_lambda,
+                          try_web_lookup=try_web_lookup,
+                          verbose=verbose,
+                          dont_fail=dont_fail,
+                          write_to_disk=write_to_disk)
