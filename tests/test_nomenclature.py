@@ -29,13 +29,13 @@ from pandas import DataFrame, read_excel
 class Test_md_load_rscb(unittest.TestCase):
 
     def test_works(self):
-        geom = nomenclature._md_load_rscb("3CAP",
+        geom = nomenclature._md_load_rcsb("3CAP",
                                           verbose=True,
                                           )
         assert isinstance(geom, md.Trajectory)
 
     def test_works_return_url(self):
-        geom, url = nomenclature._md_load_rscb("3CAP",
+        geom, url = nomenclature._md_load_rcsb("3CAP",
                                                # verbose=True,
                                                return_url=True
                                                )

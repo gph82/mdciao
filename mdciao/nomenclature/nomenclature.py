@@ -158,7 +158,7 @@ def _PDB_finder(PDB_code, local_path='.',
             if verbose:
                 print("No local PDB file for %s found in directory '%s'" % (PDB_code, local_path), end="")
             if try_web_lookup:
-                _geom, return_file = _md_load_rscb(PDB_code,
+                _geom, return_file = _md_load_rcsb(PDB_code,
                                                    verbose=verbose,
                                                    return_url=True)
                 if verbose:
@@ -435,7 +435,7 @@ def _GPCR_web_lookup(url, verbose=True,
 
     return DFout
 
-def _md_load_rscb(PDB,
+def _md_load_rcsb(PDB,
                   web_address = "https://files.rcsb.org/download",
                   verbose=False,
                   return_url=False):
@@ -1025,7 +1025,7 @@ class LabelerCGN(LabelerConsensus):
                 * a PDB four-letter-code is inferred from the filename, e.g. 'ABCD'
                 * a file '/abs/path/to/some/dir/ABCD.pdb(.gz)' is looked for
                 * if not found and :obj:`try_web_lookup` is True, then
-                  'ABCD' is looked up online in the PDB rscb database
+                  'ABCD' is looked up online in the PDB rcsb database
 
             * Full path to an existing PDB-file, e.g.
               '/abs/path/to/some/dir/ABCD.pdb(.gz)'. Then this happens:
@@ -2325,7 +2325,7 @@ def _KLIFS_web_lookup(UniProtAC,
                                             "KLIFS_position" : "KLIFS"}, inplace=True)
 
                 # Get the PDB as DF
-                geom = _md_load_rscb(best_PDB, verbose=False)
+                geom = _md_load_rcsb(best_PDB, verbose=False)
                 PDB_DF = _mdTopology2DF(geom.top)
 
                 # Temporary str-conversion to merge with nomencl
