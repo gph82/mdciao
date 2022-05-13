@@ -240,7 +240,7 @@ def _finder_writer(full_local_path,
                    write_to_disk=False):
     r"""
     Try local lookup with a local lambda, then web lookup with a
-    web lamdda and try to return a :obj:`DataFrame`
+    web lambda and try to return a :obj:`DataFrame`
     Parameters
     ----------
     full_local_path
@@ -254,7 +254,9 @@ def _finder_writer(full_local_path,
     Returns
     -------
     df : DataFrame or None
-
+    return_name : str
+        The URL or local path to
+        the file that was used
     """
     try:
         return_name = full_local_path
@@ -440,6 +442,10 @@ def md_load_rscb(PDB,
 
     Thinly wraps around :obj:`~mdtraj.load_pdb` by constructing
     the url for the user.
+
+    The difference with mdciao.pdb.pdb2traj is that pdb2traj
+    actually downloads the full PDB file with annotations etc,
+    which would be different from simply doing traj.save_pdb
 
     Parameters
     ----------
@@ -1145,7 +1151,7 @@ class LabelerGPCR(LabelerConsensus):
     like Oliveira and Baldwin-Schwarz
     can be used for residue mapping, labeling,
     but not for fragmentation. They are still
-    partially usable but we have decideda
+    partially usable but we have decided
     to omit them from the docs. Please
     see the full reference page for their citation.
 
