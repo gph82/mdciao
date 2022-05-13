@@ -2455,7 +2455,8 @@ def _KLIFS_finder(UniProtAC,
 
     def _read_excel_as_KDF(fullpath):
         idict = _read_excel(fullpath,
-                            None)
+                            None,
+                            engine="openpyxl")
         assert len(idict) == 1
         for key, val in idict.items():
             UniProtAC, PDB_id = key.split("_")
