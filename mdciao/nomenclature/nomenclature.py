@@ -1823,6 +1823,12 @@ def compatible_consensus_fragments(top,
         List of :obj:`mdciao.nomenclature.LabelerConsensus`-objects
         that will generate new consensus maps for all residues
         in :obj:`top`
+    autofill_consensus : boolean default is False
+        Even if there is a consensus mismatch with the sequence of the input
+        :obj:`AA2conlab_dict`, try to relabel automagically, s.t.
+         * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
+         will be grouped relabeled as
+         * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
 
     Returns
     -------
@@ -2281,9 +2287,9 @@ def _KLIFS_web_lookup(UniProtAC,
 
     url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
 
-    with _requests.get(url, timeout=timeout) as resp:
-        if resp.ok:
-            ACjson = resp.json()
+    with _requests.get(url, timeout=timeout) as resp1:
+        if resp1.ok:
+            ACjson = resp1.json()
             assert len(ACjson)==1, ValueError("More than one 'kinase_ID's were found to match %s: %s ", (UniProtAC,[entry["kinase_ID"] for entry in ACjson] ))
             ACjson=ACjson[0]
             if verbose:
@@ -2294,8 +2300,8 @@ def _KLIFS_web_lookup(UniProtAC,
             print("For more information, call mdciao.nomenclature.references()")
             kinase_ID = ACjson["kinase_ID"]
             url = "%s/structures_list?kinase_ID=%s" % (KLIFS_API, kinase_ID)
-            with _requests.get(url, timeout=timeout) as resp:
-                PDBs = _DataFrame(resp.json())
+            with _requests.get(url, timeout=timeout) as resp2:
+                PDBs = _DataFrame(resp2.json())
 
                 # Sort with quality score
                 PDBs.sort_values("quality_score", ascending=False, inplace=True)
@@ -2304,8 +2310,8 @@ def _KLIFS_web_lookup(UniProtAC,
 
                 # Get the residues
                 url = "%s/interactions_match_residues?structure_ID=%s" % (KLIFS_API, structure_ID)
-                with _requests.get(url, timeout=timeout) as resp:
-                    nomencl = _DataFrame(resp.json())
+                with _requests.get(url, timeout=timeout) as resp3:
+                    nomencl = _DataFrame(resp3.json())
                     nomencl.rename(columns={"index":"KLIFS_pocket_index",
                                             "KLIFS_position" : "KLIFS"}, inplace=True)
 
@@ -2328,7 +2334,7 @@ def _KLIFS_web_lookup(UniProtAC,
                 PDB_DF.replace({_np.nan: None}, inplace=True)
 
         else:
-            PDB_DF = ValueError('url : "%s", uniprot : "%s" error : "%s"' % (url, UniProtAC, resp.text))
+            PDB_DF = ValueError('url : "%s", uniprot : "%s" error : "%s"' % (url, UniProtAC, resp1.text))
 
     return PDB_DF
 
