@@ -905,3 +905,29 @@ class Test_mdTopology2DF(unittest.TestCase):
                               '6              6     P0G  None             381     X381',
                               '7              7     GDP  None             382     X382'],
                              nomenclature.nomenclature._mdTopology2DF(top).to_string().splitlines())
+
+class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
+    def test_just_works(self):
+        # nomenclature.nomenclature._UniProtACtoPDBs("P54311")["3SN6"]
+        # Beta sub-unit in 3SN6
+        PDBentry = {'database': 'PDB',
+                    'id': '3SN6',
+                    'properties': [{'key': 'Method', 'value': 'X-ray'},
+                                   {'key': 'Resolution', 'value': '3.20 A'},
+                                   {'key': 'Chains', 'value': 'B=2-340'}]} # <---- For some reason GLN1 is not considered in this entry as belonging to the beta sub-unit
+        top = md.load(examples.filenames.pdb_3SN6).top
+        res_idxs = nomenclature.nomenclature._residx_from_UniProtPDBEntry_and_top(PDBentry, top)
+
+        """
+        mdciao.fragments.get_fragments(mdciao.examples.filenames.pdb_3SN6);
+        Auto-detected fragments with method 'lig_resSeq+'
+        fragment      0 with    349 AAs     THR9 (     0) -   LEU394 (348   ) (0)  resSeq jumps
+        fragment      1 with    340 AAs     GLN1 (   349) -   ASN340 (688   ) (1) 
+        fragment      2 with     58 AAs     ASN5 (   689) -    ARG62 (746   ) (2) 
+        fragment      3 with    159 AAs  ASN1002 (   747) -  ALA1160 (905   ) (3) 
+        fragment      4 with    284 AAs    GLU30 (   906) -   CYS341 (1189  ) (4)  resSeq jumps
+        fragment      5 with    128 AAs     GLN1 (  1190) -   SER128 (1317  ) (5) 
+        fragment      6 with      1 AAs  P0G1601 (  1318) -  P0G1601 (1318  ) (6) 
+        """
+
+        self.assertListEqual(res_idxs, _np.arange(349+1,688+1).tolist())

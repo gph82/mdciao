@@ -2121,3 +2121,55 @@ def _mdTopology2DF(top) -> _DataFrame:
                        "Sequence_Index" : rr.resSeq,
                        "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True)})
     return _DataFrame(for_DF)
+
+def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
+    r"""
+    Return the indices of residues of a :obj:`top` matching the 'Chains' entry of :obj:`PDBentry`
+
+    Only the first chain will be used in case there's more
+
+    Parameters
+    ----------
+    PDBentry : dict
+        One of the dictionaries coming from
+        :obj:`_UniProtACtoPDBs` containing
+        metadata associated with a PDB entry
+    top : obj:`~mdtraj.Topology`
+        It has to be the topology that
+        results from reading the PDB entry,
+        though no checks are carried out
+    Returns
+    -------
+    residxs : list
+        The list of residue indexes (zero indexed)
+        of :obj:`top` that match the 'Chains' entry
+        of the :obj:`PDBentry`
+
+    """
+
+    property = [prop for prop in PDBentry["properties"] if prop["key"] == "Chains"]
+    assert len(property) == 1
+    chains, residues = property[0]["value"].split("=")
+    # Only takes the first chains
+    chain_id = chains.split("/")[0]
+
+    # Since chain_ids can be duplicated, stop after the first one
+    for chain in top.chains:
+        if chain.chain_id == chain_id:
+            residx2resSeq = {rr.index: rr.resSeq for rr in chain.residues}
+            break
+    # Check that the resSeqs in these segment of top are unique
+    assert len(list(residx2resSeq.values()))==len(_np.unique(list(residx2resSeq.values())))
+
+    # Invert the dict since values are unique and can serve as keys
+    resSeq2residx = {val : key for key, val in residx2resSeq.items()}
+
+    resSeqs = [int(rr) for rr in residues.split("-")]
+    assert len(resSeqs)==2
+    resSeqs = _np.arange(resSeqs[0], resSeqs[1] + 1)
+    residxs = [resSeq2residx[ii] for ii in resSeqs if ii in resSeq2residx.keys()]
+
+    # There can be gaps in the crystallized resSeqs, but not int he indices
+    assert _np.unique(_np.diff(residxs))==[1]
+
+    return residxs
