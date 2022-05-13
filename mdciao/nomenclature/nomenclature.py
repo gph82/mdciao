@@ -85,7 +85,7 @@ def _table2GPCR_by_AAcode(tablefile,
         if return_fragments=True, a dictionary containing the fragments according to the excel file
     """
 
-    if isinstance(tablefile,str):
+    if isinstance(tablefile, str):
         df = _read_excel(tablefile, header=0, engine="openpyxl")
     else:
         df = tablefile
@@ -93,23 +93,25 @@ def _table2GPCR_by_AAcode(tablefile,
     # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
-    assert scheme in df.keys(), ValueError("'%s' isn't an available scheme.\nAvailable schemes are %s"%(scheme, [key for key in df.keys() if key in _GPCR_available_schemes+["display_generic_number"]]))
+    assert scheme in df.keys(), ValueError("'%s' isn't an available scheme.\nAvailable schemes are %s" % (
+    scheme, [key for key in df.keys() if key in _GPCR_available_schemes + ["display_generic_number"]]))
     AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
     for key, AArS in df[["protein_segment", "AAresSeq"]].values:
         fragments[key].append(AArS)
-    fragments = {key:val for key, val in fragments.items()}
+    fragments = {key: val for key, val in fragments.items()}
 
     if keep_AA_code:
         pass
     else:
-        AAcode2GPCR =  {int(key[1:]):val for key, val in AAcode2GPCR.items()}
+        AAcode2GPCR = {int(key[1:]): val for key, val in AAcode2GPCR.items()}
 
     if return_fragments:
         return AAcode2GPCR, fragments
     else:
         return AAcode2GPCR
+
 
 def _PDB_finder(PDB_code, local_path='.',
                 try_web_lookup=True,
@@ -169,6 +171,7 @@ def _PDB_finder(PDB_code, local_path='.',
 
     return _geom, return_file
 
+
 def _CGN_finder(identifier,
                 format='CGN_%s.txt',
                 local_path='.',
@@ -214,11 +217,11 @@ def _CGN_finder(identifier,
        Nature 524, 173–179 (2015)
       `<https://doi.org/10.1038/nature14663>`
     """
-    file2read = format%identifier
+    file2read = format % identifier
     file2read = _path.join(local_path, file2read)
-    rep = lambda istr : [istr.replace(" ","") if isinstance(istr,str) else istr][0]
+    rep = lambda istr: [istr.replace(" ", "") if isinstance(istr, str) else istr][0]
     # using  delim_whitespace=True splits "Sort Number" in two keys, not feasible to generalize ATM
-    local_lookup_lambda = lambda file2read :_read_csv(file2read, delimiter='\t').applymap(rep)
+    local_lookup_lambda = lambda file2read: _read_csv(file2read, delimiter='\t').applymap(rep)
 
     web_address = "www.mrc-lmb.cam.ac.uk"
     url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
@@ -233,6 +236,7 @@ def _CGN_finder(identifier,
                           verbose=verbose,
                           dont_fail=dont_fail,
                           write_to_disk=write_to_disk)
+
 
 def _finder_writer(full_local_path,
                    local2DF_lambda,
@@ -265,7 +269,7 @@ def _finder_writer(full_local_path,
     try:
         return_name = full_local_path
         _DF = local2DF_lambda(full_local_path)
-        print("%s found locally."%full_local_path)
+        print("%s found locally." % full_local_path)
     except FileNotFoundError as e:
         _DF = e
         if verbose:
@@ -286,16 +290,15 @@ def _finder_writer(full_local_path,
         if write_to_disk:
             if _path.exists(full_local_path):
                 raise FileExistsError("Cannot overwrite existing file %s" % full_local_path)
-            if _path.splitext(full_local_path)[-1]==".xlsx":
+            if _path.splitext(full_local_path)[-1] == ".xlsx":
                 _DF.to_excel(full_local_path)
             else:
                 # see https://github.com/pandas-dev/pandas/issues/10415
                 # This saves all values tab-separated s.t.
                 # the resulting file can be re-read by pandas.read_csv
                 _np.savetxt(full_local_path, _DF.to_numpy(str),
-                fmt='%10s',
-                delimiter="\t", header='\t'.join(_DF.keys()), comments='')
-
+                            fmt='%10s',
+                            delimiter="\t", header='\t'.join(_DF.keys()), comments='')
 
             print("wrote %s for future use" % full_local_path)
         return _DF, return_name
@@ -307,7 +310,7 @@ def _finder_writer(full_local_path,
 
 
 def _GPCR_finder(GPCR_descriptor,
-                 format = "%s.xlsx",
+                 format="%s.xlsx",
                  local_path=".",
                  try_web_lookup=True,
                  verbose=True,
@@ -363,25 +366,26 @@ def _GPCR_finder(GPCR_descriptor,
 
     if _path.exists(GPCR_descriptor):
         fullpath = GPCR_descriptor
-        try_web_lookup=False
+        try_web_lookup = False
     else:
         xlsxname = format % GPCR_descriptor
         fullpath = _path.join(local_path, xlsxname)
     GPCRmd = "https://gpcrdb.org/services/residues/extended"
     url = "%s/%s" % (GPCRmd, GPCR_descriptor)
 
-    local_lookup_lambda = lambda fullpath : _read_excel(fullpath,
-                                                        engine="openpyxl",
-                                                        usecols=lambda x : x.lower()!="unnamed: 0",
-                                                        converters={key: str for key in _GPCR_available_schemes},
-                                                        ).replace({_np.nan: None})
-    web_looukup_lambda = lambda url : _GPCR_web_lookup(url, verbose=verbose)
+    local_lookup_lambda = lambda fullpath: _read_excel(fullpath,
+                                                       engine="openpyxl",
+                                                       usecols=lambda x: x.lower() != "unnamed: 0",
+                                                       converters={key: str for key in _GPCR_available_schemes},
+                                                       ).replace({_np.nan: None})
+    web_looukup_lambda = lambda url: _GPCR_web_lookup(url, verbose=verbose)
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
                           try_web_lookup=try_web_lookup,
                           verbose=verbose,
                           dont_fail=dont_fail,
                           write_to_disk=write_to_disk)
+
 
 def _GPCR_web_lookup(url, verbose=True,
                      timeout=5):
@@ -405,8 +409,8 @@ def _GPCR_web_lookup(url, verbose=True,
     return_fields = ["protein_segment",
                      "AAresSeq",
                      "display_generic_number"]
-    pop_fields = ["sequence_number","amino_acid", "alternative_generic_numbers"]
-    #TODO use _url2json here
+    pop_fields = ["sequence_number", "amino_acid", "alternative_generic_numbers"]
+    # TODO use _url2json here
     if verbose:
         print("done!")
     if a.text == '[]':
@@ -426,7 +430,7 @@ def _GPCR_web_lookup(url, verbose=True,
                 pass
 
         DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
-        return_fields += [key for key in DFout.keys() if key not in return_fields+pop_fields]
+        return_fields += [key for key in DFout.keys() if key not in return_fields + pop_fields]
         DFout = DFout[return_fields]
         print("Please cite the following reference to the GPCRdb:")
         lit = Literature()
@@ -435,8 +439,9 @@ def _GPCR_web_lookup(url, verbose=True,
 
     return DFout
 
+
 def _md_load_rcsb(PDB,
-                  web_address = "https://files.rcsb.org/download",
+                  web_address="https://files.rcsb.org/download",
                   verbose=False,
                   return_url=False):
     r"""
@@ -474,6 +479,7 @@ def _md_load_rcsb(PDB,
     else:
         return igeom
 
+
 class LabelerConsensus(object):
     """Parent class to manage consensus notations
 
@@ -490,6 +496,7 @@ class LabelerConsensus(object):
     The consensus labels are abbreviated to 'conlab' throughout
 
     """
+
     def __init__(self, ref_PDB=None, **PDB_finder_kwargs):
         r"""
 
@@ -543,7 +550,8 @@ class LabelerConsensus(object):
     @property
     def seq(self):
         r""" The reference sequence in :obj:`dataframe`"""
-        return ''.join([_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe[self._AAresSeq_key].values.squeeze()])
+        return ''.join(
+            [_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe[self._AAresSeq_key].values.squeeze()])
 
     @property
     def conlab2AA(self):
@@ -558,7 +566,6 @@ class LabelerConsensus(object):
             * self.AA2conlab["R131"] -> '3.50'
             * self.AA2conlab["R201"] -> "G.hfs2.2" """
 
-
         return self._AA2conlab
 
     @property
@@ -567,6 +574,7 @@ class LabelerConsensus(object):
 
         This index is the row-index of the table, don't count on it being aligned with anything"""
         return self._idx2conlab
+
     @property
     def fragment_names(self):
         r"""Name of the fragments according to the consensus labels
@@ -659,18 +667,18 @@ class LabelerConsensus(object):
                                   **top2labels_kwargs,
                                   )
         out_dict = {}
-        for ii,imap in enumerate(map):
-            if imap is not None and str(imap).lower()!="none":
+        for ii, imap in enumerate(map):
+            if imap is not None and str(imap).lower() != "none":
                 if imap in out_dict.keys():
                     raise ValueError("Entries %u and %u of the map, "
                                      "i.e. residues %s and %s of the input topology "
                                      "both have the same label %s.\n"
-                                     "This method cannot work with a map like this!"%(out_dict[imap], ii,
-                                                                                     top.residue(out_dict[imap]),
-                                                                                     top.residue(ii),
-                                                                                     imap))
+                                     "This method cannot work with a map like this!" % (out_dict[imap], ii,
+                                                                                        top.residue(out_dict[imap]),
+                                                                                        top.residue(ii),
+                                                                                        imap))
                 else:
-                    out_dict[imap]=ii
+                    out_dict[imap] = ii
         return out_dict
 
     def top2labels(self, top,
@@ -824,19 +832,20 @@ class LabelerConsensus(object):
         defs = self._selfmap2frags(self2top)
 
         new_defs = {}
-        map_conlab = [self.idx2conlab[top2self[topidx]] if topidx in top2self.keys() else None for topidx in range(top.n_residues)]
+        map_conlab = [self.idx2conlab[top2self[topidx]] if topidx in top2self.keys() else None for topidx in
+                      range(top.n_residues)]
 
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
                 new_defs[key] = _mdcfrg.check_if_subfragment(res_idxs, key, fragments, top, map_conlab)
 
         for key, res_idxs in new_defs.items():
-            defs[key]=res_idxs
+            defs[key] = res_idxs
 
         for ii, (key, res_idxs) in enumerate(defs.items()):
             istr = _mdcfrg.print_frag(key, top, res_idxs, fragment_desc='',
-                               idx2label=map_conlab,
-                               return_string=True)
+                                      idx2label=map_conlab,
+                                      return_string=True)
             if verbose:
                 print(istr)
 
@@ -844,8 +853,9 @@ class LabelerConsensus(object):
 
     def _selfmap2frags(self, self2top):
         r""" Take a self2top-mapping (coming from self.aligntop) and turn it into consensus fragment definitions """
-        defs = {key:[self2top[idx] for idx in val if idx in self2top.keys()] for key,val in self.fragments_as_idxs.items()}
-        defs = {key:val for key, val in defs.items() if len(val)>0}
+        defs = {key: [self2top[idx] for idx in val if idx in self2top.keys()] for key, val in
+                self.fragments_as_idxs.items()}
+        defs = {key: val for key, val in defs.items() if len(val) > 0}
         return defs
 
     def aligntop(self, top,
@@ -933,33 +943,34 @@ class LabelerConsensus(object):
             conlab = _np.full(len(idf), None)
             conlab[_np.flatnonzero(idf["idx_0"].isin(top2self.keys()))] = self.dataframe.iloc[list(top2self.values())][
                 self._nomenclature_key]
-            if isinstance(top, str) or str(_frag_str).lower()=="none" or len(df)==1:
+            if isinstance(top, str) or str(_frag_str).lower() == "none" or len(df) == 1:
                 if debug:
-                    print("I'm not checking fragment compatibility because ",isinstance(top, str), _frag_str is None, _frag_str,len(df))
+                    print("I'm not checking fragment compatibility because ", isinstance(top, str), _frag_str is None,
+                          _frag_str, len(df))
                 break
             else:
                 if fragments is None:
-                    #Only do it the first time around
+                    # Only do it the first time around
                     fragments = _mdcfrg.fragments.get_fragments(top, _frag_str, verbose=False)
                 unbroken = True
                 consfrags = self._selfmap2frags(self2top)
                 if debug:
-                    print("Iteration ",ii)
-                    _mdcfrg.print_fragments(consfrags,top)
+                    print("Iteration ", ii)
+                    _mdcfrg.print_fragments(consfrags, top)
                 for fraglab, fragidxs in consfrags.items():
-                    spread_frg = _mdcfrg.check_if_subfragment(fragidxs,fraglab,fragments, top, map_conlab=conlab, prompt=False)
+                    spread_frg = _mdcfrg.check_if_subfragment(fragidxs, fraglab, fragments, top, map_conlab=conlab,
+                                                              prompt=False)
                     if debug:
-                        print(ii,fraglab, spread_frg)
+                        print(ii, fraglab, spread_frg)
                     if not spread_frg:
                         unbroken = False
                         break
                 if unbroken:
                     break
-        assert unbroken,("None of the %u optimal alignments produce consensus fragments "
-                         "compatible with the fragmentation %s"%(len(df),str(_frag_str)))
+        assert unbroken, ("None of the %u optimal alignments produce consensus fragments "
+                          "compatible with the fragmentation %s" % (len(df), str(_frag_str)))
 
         df = idf
-
 
         df = df.join(_DataFrame({"conlab": conlab}))
 
@@ -1000,6 +1011,7 @@ class LabelerConsensus(object):
         except AttributeError:
             print("No alignment has been carried out with this object yet")
             return None
+
 
 class LabelerCGN(LabelerConsensus):
     """
@@ -1055,7 +1067,7 @@ class LabelerCGN(LabelerConsensus):
             * rcsb.org (for the PDB)
         """
 
-        self._nomenclature_key="CGN"
+        self._nomenclature_key = "CGN"
 
         # TODO see fragment_overview...are there clashes
         if _path.exists(PDB_input):
@@ -1063,15 +1075,16 @@ class LabelerCGN(LabelerConsensus):
             PDB_input = _path.splitext(basename)[0].replace("CGN_", "")
             # TODO does the check need to have the .txt extension?
             # TODO do we even need this check?
-            #assert len(PDB_input) == 4 and "CGN_%s.txt" % PDB_input == basename
+            # assert len(PDB_input) == 4 and "CGN_%s.txt" % PDB_input == basename
         self._dataframe, self._tablefile = _CGN_finder(PDB_input,
                                                        local_path=local_path,
                                                        try_web_lookup=try_web_lookup,
                                                        verbose=verbose,
                                                        write_to_disk=write_to_disk)
         # The title of the column with this field varies between CGN and GPCR
-        AAresSeq_key = [key for key in list(self.dataframe.keys()) if key.lower() not in [self._nomenclature_key.lower(), "Sort number".lower()]]
-        assert len(AAresSeq_key)==1
+        AAresSeq_key = [key for key in list(self.dataframe.keys()) if
+                        key.lower() not in [self._nomenclature_key.lower(), "Sort number".lower()]]
+        assert len(AAresSeq_key) == 1
         self._AAresSeq_key = AAresSeq_key
 
         self._AA2conlab = {key: self._dataframe[self._dataframe[PDB_input] == key][self._nomenclature_key].to_list()[0]
@@ -1083,7 +1096,7 @@ class LabelerCGN(LabelerConsensus):
                 new_key = '.'.join(key.split(".")[:-1])
             except:
                 print(key)
-            #print(key,new_key)
+            # print(key,new_key)
             self._fragments[new_key].append(ires)
         LabelerConsensus.__init__(self, ref_PDB=PDB_input,
                                   local_path=local_path,
@@ -1100,9 +1113,10 @@ class LabelerCGN(LabelerConsensus):
         -------
         """
         AAresSeq_list = self.dataframe[self._AAresSeq_key].values.squeeze()
-        assert len(_np.unique(AAresSeq_list))==len(AAresSeq_list),"Redundant residue names in the dataframe? Somethings wrong"
-        AAresSeq2idx = {key:idx for idx,key in enumerate(AAresSeq_list)}
-        defs =  {key: [AAresSeq2idx[AAresSeq] for AAresSeq in val] for key, val in self.fragments.items()}
+        assert len(_np.unique(AAresSeq_list)) == len(
+            AAresSeq_list), "Redundant residue names in the dataframe? Somethings wrong"
+        AAresSeq2idx = {key: idx for idx, key in enumerate(AAresSeq_list)}
+        defs = {key: [AAresSeq2idx[AAresSeq] for AAresSeq in val] for key, val in self.fragments.items()}
         return defs
 
 
@@ -1157,6 +1171,7 @@ class LabelerGPCR(LabelerConsensus):
     see the full reference page for their citation.
 
     """
+
     def __init__(self, uniprot_name,
                  ref_PDB=None,
                  GPCR_scheme="display_generic_number",
@@ -1164,7 +1179,7 @@ class LabelerGPCR(LabelerConsensus):
                  format="%s.xlsx",
                  verbose=True,
                  try_web_lookup=True,
-                 #todo write to disk should be moved to the superclass at some point
+                 # todo write to disk should be moved to the superclass at some point
                  write_to_disk=False):
         r"""
 
@@ -1235,7 +1250,8 @@ class LabelerGPCR(LabelerConsensus):
                                                         )
         # The title of the column with this field varies between CGN and GPCR
         self._AAresSeq_key = "AAresSeq"
-        self._AA2conlab, self._fragments = _table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key, return_fragments=True)
+        self._AA2conlab, self._fragments = _table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key,
+                                                                 return_fragments=True)
         # TODO can we do this using super?
         LabelerConsensus.__init__(self, ref_PDB,
                                   local_path=local_path,
@@ -1289,7 +1305,7 @@ def _alignment_df2_conslist(alignment_as_df,
     """
 
     n_residues = _np.max([int(ival) for ival in alignment_as_df["idx_0"].values if str(ival).isdigit()])
-    out_list = _np.full(n_residues+1, None)
+    out_list = _np.full(n_residues + 1, None)
 
     if allow_nonmatch:
         _df = _mdcu.sequence.re_match_df(alignment_as_df)
@@ -1299,6 +1315,7 @@ def _alignment_df2_conslist(alignment_as_df,
 
     out_list[_df["idx_0"].values.astype(int)] = _df["conlab"].values
     return out_list.tolist()
+
 
 def _fill_consensus_gaps(consensus_list, top, verbose=False):
     r""" Try to fill consensus-nomenclature gaps based on adjacent labels
@@ -1338,38 +1355,41 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
     """
 
     defs = _map2defs(consensus_list)
-    #todo decrease verbosity
+    # todo decrease verbosity
     # Iterate over fragments
     for frag_key, conlabs in defs.items():
         # Identify problem cases
-        if len(conlabs)!=conlabs[-1]-conlabs[0]+1:
+        if len(conlabs) != conlabs[-1] - conlabs[0] + 1:
             if verbose:
                 print(frag_key)
             if "x" in consensus_list[conlabs[0]]:
-                raise ValueError("Can't fill gaps in non 'BW' GPCR-nomenclature, like the provided '%s'"%consensus_list[conlabs[0]])
+                raise ValueError(
+                    "Can't fill gaps in non 'BW' GPCR-nomenclature, like the provided '%s'" % consensus_list[
+                        conlabs[0]])
 
             # Initialize residue_idxs_wo_consensus_labels control variables
             offset = int(consensus_list[conlabs[0]].split(".")[-1])
-            consensus_kept=True
+            consensus_kept = True
             suggestions = []
-            residue_idxs_wo_consensus_labels=[]
+            residue_idxs_wo_consensus_labels = []
 
             # Check whether we can predict the consensus labels correctly
-            for ii in _np.arange(conlabs[0],conlabs[-1]+1):
-                suggestions.append('%s.%u'%(frag_key,offset))
+            for ii in _np.arange(conlabs[0], conlabs[-1] + 1):
+                suggestions.append('%s.%u' % (frag_key, offset))
                 if consensus_list[ii] is None:
                     residue_idxs_wo_consensus_labels.append(ii)
-                else: # meaning, we have a consensus label, check it against suggestion
-                    consensus_kept *= suggestions[-1]==consensus_list[ii]
+                else:  # meaning, we have a consensus label, check it against suggestion
+                    consensus_kept *= suggestions[-1] == consensus_list[ii]
                 if verbose:
-                    print('%6u %8s %10s %10s %s'%(ii, top.residue(ii),consensus_list[ii], suggestions[-1], consensus_kept))
+                    print('%6u %8s %10s %10s %s' % (
+                    ii, top.residue(ii), consensus_list[ii], suggestions[-1], consensus_kept))
                 offset += 1
             if verbose:
                 print()
             if consensus_kept:
                 if verbose:
                     print("The consensus was kept, I am relabelling these:")
-                for idx, res_idx in enumerate(_np.arange(conlabs[0],conlabs[-1]+1)):
+                for idx, res_idx in enumerate(_np.arange(conlabs[0], conlabs[-1] + 1)):
                     if res_idx in residue_idxs_wo_consensus_labels:
                         consensus_list[res_idx] = suggestions[idx]
                         if verbose:
@@ -1380,6 +1400,7 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
             if verbose:
                 print()
     return consensus_list
+
 
 def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     """
@@ -1406,13 +1427,14 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
         label of the residue idx if present else :obj:`no_key`
 
     """
-    labels  = [idict[idx] for idict in consensus_maps]
-    good_label = _np.unique([ilab for ilab in labels if str(ilab).lower()!="none"]).tolist()
-    assert len(good_label)<=1, "There can only be one good label, but for residue %u found %s"%(idx, good_label)
+    labels = [idict[idx] for idict in consensus_maps]
+    good_label = _np.unique([ilab for ilab in labels if str(ilab).lower() != "none"]).tolist()
+    assert len(good_label) <= 1, "There can only be one good label, but for residue %u found %s" % (idx, good_label)
     try:
         return good_label[0]
     except IndexError:
         return no_key
+
 
 def guess_nomenclature_fragments(refseq, top,
                                  fragments=None,
@@ -1466,8 +1488,8 @@ def guess_nomenclature_fragments(refseq, top,
     try:
         seq_consensus = refseq.seq
     except AttributeError:
-        assert isinstance(refseq,str),"refseq has to be either a %s with a 'seq' method or a string" \
-                                      "but not a %s."%(LabelerConsensus,type(str))
+        assert isinstance(refseq, str), "refseq has to be either a %s with a 'seq' method or a string" \
+                                        "but not a %s." % (LabelerConsensus, type(str))
         seq_consensus = refseq
 
     # TODO create a method out of this
@@ -1475,21 +1497,21 @@ def guess_nomenclature_fragments(refseq, top,
     hit_idxs = df[df["match"]]["idx_0"].values
     hits, guess = [], []
     for ii, ifrag in enumerate(fragments):
-        hit = _np.intersect1d(ifrag,hit_idxs)
+        hit = _np.intersect1d(ifrag, hit_idxs)
         if len(hit) / len(ifrag) >= min_hit_rate:
             guess.append(ii)
         if verbose:
             print(ii, len(hit) / len(ifrag))
         hits.append(hit)
 
-    guessed_res_idxs=[]
-    if len(guess)>0:
+    guessed_res_idxs = []
+    if len(guess) > 0:
         guessed_res_idxs = _np.hstack([fragments[ii] for ii in guess])
 
     if return_residue_idxs:
         guess = guessed_res_idxs
 
-    if empty is None and len(guess)==0:
+    if empty is None and len(guess) == 0:
         guess = None
     return guess
 
@@ -1548,7 +1570,8 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
     if accept_guess:
         answer = guess_as_string
     else:
-        answer = input("Input alternative in a format 1,2-6,10,20-25 or\nhit enter to accept the guess %s\n"%guess_as_string)
+        answer = input(
+            "Input alternative in a format 1,2-6,10,20-25 or\nhit enter to accept the guess %s\n" % guess_as_string)
 
     if answer == '':
         answer = guess_as_string
@@ -1560,6 +1583,7 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
     else:
         answer = [int(ii) for ii in answer.split(",")]
     return answer
+
 
 def _map2defs(cons_list, splitchar="."):
     r"""
@@ -1590,17 +1614,19 @@ def _map2defs(cons_list, splitchar="."):
     """
     defs = _defdict(list)
     for ii, key in enumerate(cons_list):
-        if str(key).lower()!= "none":
+        if str(key).lower() != "none":
             assert splitchar in _mdcu.lists.force_iterable(key), "Consensus keys have to have a '%s'-character" \
-                                     " in them, but '%s' (type %s) hasn't"%(splitchar, str(key), type(key))
-            if key[0].isnumeric(): # it means it is GPCR
-                new_key =key.split(splitchar)[0]
-            elif key[0].isalpha(): # it means it CGN
+                                                                 " in them, but '%s' (type %s) hasn't" % (
+                                                                 splitchar, str(key), type(key))
+            if key[0].isnumeric():  # it means it is GPCR
+                new_key = key.split(splitchar)[0]
+            elif key[0].isalpha():  # it means it CGN
                 new_key = '.'.join(key.split(splitchar)[:-1])
             else:
                 raise Exception([ii, splitchar])
             defs[new_key].append(ii)
     return {key: _np.array(val) for key, val in defs.items()}
+
 
 def _sort_consensus_labels(subset, sorted_superset,
                            append_diffset=True):
@@ -1626,7 +1652,7 @@ def _sort_consensus_labels(subset, sorted_superset,
     by_frags = _defdict(dict)
     for item in subset:
         try:
-            frag, idx = item.rsplit(".",maxsplit=1)
+            frag, idx = item.rsplit(".", maxsplit=1)
             by_frags[frag][idx] = item
         except:
             pass
@@ -1641,6 +1667,7 @@ def _sort_consensus_labels(subset, sorted_superset,
         labs_out += [item for item in subset if item not in labs_out]
 
     return labs_out
+
 
 def _sort_GPCR_consensus_labels(labels, **sort_consensus_labels_kwargs):
     r"""
@@ -1659,6 +1686,7 @@ def _sort_GPCR_consensus_labels(labels, **sort_consensus_labels_kwargs):
     """
     return _sort_consensus_labels(labels, _GPCR_fragments, **sort_consensus_labels_kwargs)
 
+
 def _sort_CGN_consensus_labels(labels, **kwargs):
     r"""
     Sort consensus labels in order of appearance in the canonical GPCR scheme
@@ -1675,6 +1703,7 @@ def _sort_CGN_consensus_labels(labels, **kwargs):
 
     """
     return _sort_consensus_labels(labels, _CGN_fragments, **kwargs)
+
 
 def _conslabel2fraglabel(labelres, defrag="@", prefix_GPCR=True):
     r"""
@@ -1698,10 +1727,11 @@ def _conslabel2fraglabel(labelres, defrag="@", prefix_GPCR=True):
     """
 
     label = labelres.split(defrag)[-1]
-    label = label.rsplit(".",maxsplit=1)[0]
+    label = label.rsplit(".", maxsplit=1)[0]
     if prefix_GPCR and str(label) in _GPCR_num2lett.keys():
         label = _GPCR_num2lett[label]
     return label
+
 
 _GPCR_num2lett = {
     "1": "TM1 ",
@@ -1720,60 +1750,60 @@ _GPCR_num2lett = {
     "8": "H8",
 }
 
-_GPCR_fragments=["NT",
-                 "1", "TM1 ",
-                 "12","ICL1",
-                 "2", "TM2",
-                 "23","ECL1",
-                 "3", "TM3",
-                 "34","ICL2",
-                 "4", "TM4",
-                 "45","ECL2",
-                 "5", "TM5",
-                 "56","ICL3",
-                 "6", "TM6",
-                 "67","ECL3",
-                 "7", "TM7",
-                 "78",
-                 "8", "H8",
-                 "CT"]
+_GPCR_fragments = ["NT",
+                   "1", "TM1 ",
+                   "12", "ICL1",
+                   "2", "TM2",
+                   "23", "ECL1",
+                   "3", "TM3",
+                   "34", "ICL2",
+                   "4", "TM4",
+                   "45", "ECL2",
+                   "5", "TM5",
+                   "56", "ICL3",
+                   "6", "TM6",
+                   "67", "ECL3",
+                   "7", "TM7",
+                   "78",
+                   "8", "H8",
+                   "CT"]
 
 _CGN_fragments = ['G.HN',
-                 'G.hns1',
-                 'G.S1',
-                 'G.s1h1',
-                 'G.H1',
-                 'H.HA',
-                 'H.hahb',
-                 'H.HB',
-                 'H.hbhc',
-                 'H.HC',
-                 'H.hchd',
-                 'H.HD',
-                 'H.hdhe',
-                 'H.HE',
-                 'H.hehf',
-                 'H.HF',
-                 'G.hfs2',
-                 'G.S2',
-                 'G.s2s3',
-                 'G.S3',
-                 'G.s3h2',
-                 'G.H2',
-                 'G.h2s4',
-                 'G.S4',
-                 'G.s4h3',
-                 'G.H3',
-                 'G.h3s5',
-                 'G.S5',
-                 'G.s5hg',
-                 'G.HG',
-                 'G.hgh4',
-                 'G.H4',
-                 'G.h4s6',
-                 'G.S6',
-                 'G.s6h5',
-                 'G.H5']
+                  'G.hns1',
+                  'G.S1',
+                  'G.s1h1',
+                  'G.H1',
+                  'H.HA',
+                  'H.hahb',
+                  'H.HB',
+                  'H.hbhc',
+                  'H.HC',
+                  'H.hchd',
+                  'H.HD',
+                  'H.hdhe',
+                  'H.HE',
+                  'H.hehf',
+                  'H.HF',
+                  'G.hfs2',
+                  'G.S2',
+                  'G.s2s3',
+                  'G.S3',
+                  'G.s3h2',
+                  'G.H2',
+                  'G.h2s4',
+                  'G.S4',
+                  'G.s4h3',
+                  'G.H3',
+                  'G.h3s5',
+                  'G.S5',
+                  'G.s5hg',
+                  'G.HG',
+                  'G.hgh4',
+                  'G.H4',
+                  'G.h4s6',
+                  'G.S6',
+                  'G.s6h5',
+                  'G.H5']
 
 _GPCR_mandatory_fields = ["protein_segment",
                           "AAresSeq",
@@ -1785,6 +1815,7 @@ _GPCR_available_schemes = ["BW",
                            "GPCRdb(A)", "GPCRdb(B)", "GPCRdb(C)", "GPCRdb(F)", "GPCRdb(D)",
                            "Oliveira", "BS",
                            ]
+
 
 # TODO this method is not used anywhere anymore, consider deleting
 def compatible_consensus_fragments(top,
@@ -1847,7 +1878,8 @@ def compatible_consensus_fragments(top,
 
     # Same here
     new_maps = [iCL.top2labels(top, autofill_consensus=autofill_consensus, verbose=False) for iCL in CLs]
-    unified_new_consensus_map = [choose_between_consensus_dicts(idx,new_maps,no_key=None) for idx in range(top.n_residues)]
+    unified_new_consensus_map = [choose_between_consensus_dicts(idx, new_maps, no_key=None) for idx in
+                                 range(top.n_residues)]
 
     # Now incorporate new labels while checking with clashes with old ones
     for ii in range(top.n_residues):
@@ -1858,14 +1890,14 @@ def compatible_consensus_fragments(top,
             unified_existing_consensus_map[ii] = new_val
         # otherwise check no clashes with the existing map
         else:
-            #print(existing_val, "ex not None")
-            #print(new_val, "new val")
-            assert existing_val==new_val, (new_val, existing_val, ii, top.residue(ii))
+            # print(existing_val, "ex not None")
+            # print(new_val, "new val")
+            assert existing_val == new_val, (new_val, existing_val, ii, top.residue(ii))
 
     new_frags = {}
     for iCL in CLs:
         new_frags.update(iCL.top2frags(top,
-                                       #map_conlab=unified_new_consensus_map,
+                                       # map_conlab=unified_new_consensus_map,
                                        verbose=False))
 
     # This should hold anyway bc of top2frags calling conlab2residx
@@ -1928,14 +1960,15 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
                       in consensus_info]
     return consensus_maps, consensus_frags
 
+
 class Literature():
     r"""Quick access to the some of the references used by :obj:`nomenclature`"""
 
-    #TODO this could be fine tuned but ATM its better to have all top-level attrs
+    # TODO this could be fine tuned but ATM its better to have all top-level attrs
     def __init__(self):
         self._keymap = {
             "site_GPCRdb": "Kooistra2021",
-            "site_PDB" : "Berman2000",
+            "site_PDB": "Berman2000",
             "scheme_GPCR_struct1": "Isberg2015",
             "scheme_GPCR_struct2": "Isberg2016",
             "scheme_GPCR_A": "Ballesteros1995",
@@ -1947,9 +1980,9 @@ class Literature():
             "scheme_GPCR_A_BS_2": "Baldwin1997",
             "scheme_GPCR_A_BS_3": "Schwartz1994",
             "scheme_GPCR_A_BS_4": "Schwartz1995",
-            "scheme_CGN" : "Flock2015",
-            "site_UniProt" :"Bateman2021",
-            "site_KLIFS" : "Kanev2021"
+            "scheme_CGN": "Flock2015",
+            "site_UniProt": "Bateman2021",
+            "site_KLIFS": "Kanev2021"
         }
 
         arts = _parse_bib()
@@ -1957,33 +1990,36 @@ class Literature():
         assert all([key in self._keymap.values() for key in arts.keys()]), (self._keymap.values(), arts.keys())
         for key, val in self._keymap.items():
             setattr(self, key, _art2cite(arts[val]))
-            setattr(self, key+'_json', arts[val])
+            setattr(self, key + '_json', arts[val])
 
-def _format_cite(cite,bullet="*", indent=1):
-    star = " "*indent+bullet+" "
-    othr = " "*indent+" "+" "
+
+def _format_cite(cite, bullet="*", indent=1):
+    star = " " * indent + bullet + " "
+    othr = " " * indent + " " + " "
     lines = cite.splitlines()
-    lines = _twrap(lines[0],100)+lines[1:]
-    lines = "\n".join([star+lines[0]]+[othr+line for line in lines[1:]])
+    lines = _twrap(lines[0], 100) + lines[1:]
+    lines = "\n".join([star + lines[0]] + [othr + line for line in lines[1:]])
     return lines
+
 
 def _art2cite(art):
     first = True
-    #first = False
+    # first = False
     authors = art.author.split(" and ")
     if first:
         lname = authors[0].split(",")[0].strip()
     else:
         lname = authors[-1].split(",")[0].strip()
     lines = []
-    lines.append("%s et al, (%s) %s"%(lname, art.year, art.title))
-    lines.append("%s %s, %s"%(art.journal, art.volume, art.pages))
+    lines.append("%s et al, (%s) %s" % (lname, art.year, art.title))
+    lines.append("%s %s, %s" % (art.journal, art.volume, art.pages))
     try:
-        lines.append("https://doi.org/%s"%art.doi)
+        lines.append("https://doi.org/%s" % art.doi)
     except AttributeError:
         pass
     lines = "\n".join(lines)
     return lines
+
 
 def _parse_bib(bibfile=None):
     r"""
@@ -2006,26 +2042,29 @@ def _parse_bib(bibfile=None):
         available in :obj:`bib`
     """
     if bibfile is None:
-        bibfile =  _filenames.nomenclature_bib
+        bibfile = _filenames.nomenclature_bib
     with open(bibfile) as f:
         bibstr = f.read()
 
-    articles = [[line.rstrip(",") for line in art.rstrip("\n").strip("{}").splitlines()] for art in bibstr.split("@article")]
-    articles = {art[0]:art[1:] for art in articles if len(art)>0}
-    articles = {key:_art2dict(art) for key, art in articles.items()}
-    articles = {key:_dict2namedtupple(val,key) for key, val in articles.items()}
+    articles = [[line.rstrip(",") for line in art.rstrip("\n").strip("{}").splitlines()] for art in
+                bibstr.split("@article")]
+    articles = {art[0]: art[1:] for art in articles if len(art) > 0}
+    articles = {key: _art2dict(art) for key, art in articles.items()}
+    articles = {key: _dict2namedtupple(val, key) for key, val in articles.items()}
     return articles
+
 
 def _art2dict(lines):
     art = {}
     for line in lines:
-        key, val = line.split("=",1)
+        key, val = line.split("=", 1)
         art[key.strip()] = val.strip().strip("{}")
     return art
 
-def _dict2namedtupple(idict,key):
-    nt = _namedtuple("article",list(idict.keys())+["key"])
-    return nt(*idict.values(),key)
+
+def _dict2namedtupple(idict, key):
+    nt = _namedtuple("article", list(idict.keys()) + ["key"])
+    return nt(*idict.values(), key)
 
 
 def references():
@@ -2056,7 +2095,8 @@ def references():
         print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
     print()
     print("You can find all these references distributed as BibTex file distributed with mdciao here")
-    print(" * %s"%_filenames.nomenclature_bib)
+    print(" * %s" % _filenames.nomenclature_bib)
+
 
 def _UniProtACtoPDBs(UniProtAC,
                      UniProtKB_API="https://rest.uniprot.org/uniprotkb"):
@@ -2095,7 +2135,7 @@ def _UniProtACtoPDBs(UniProtAC,
 
     """
 
-    url = "%s/%s.json"%(UniProtKB_API, UniProtAC)
+    url = "%s/%s.json" % (UniProtKB_API, UniProtAC)
     PDBs_UPKB = {}
     with _requests.get(url) as resp:
         print("Please cite the following reference to the UniProt Knowledgebase:")
@@ -2104,10 +2144,11 @@ def _UniProtACtoPDBs(UniProtAC,
         print("For more information, call mdciao.nomenclature.references()")
         data = resp.json()
         for entry in data["uniProtKBCrossReferences"]:
-            #print(entry)
-            if entry["database"].lower()=="pdb":
+            # print(entry)
+            if entry["database"].lower() == "pdb":
                 PDBs_UPKB[entry["id"].upper()] = entry
     return PDBs_UPKB
+
 
 def _mdTopology2DF(top) -> _DataFrame:
     r"""
@@ -2130,12 +2171,13 @@ def _mdTopology2DF(top) -> _DataFrame:
     """
     for_DF = []
     for rr in top.residues:
-        for_DF.append({"Xray_position":rr.index,
-                       "residue" : rr.name,
-                       "code" : rr.code,
-                       "Sequence_Index" : rr.resSeq,
+        for_DF.append({"Xray_position": rr.index,
+                       "residue": rr.name,
+                       "code": rr.code,
+                       "Sequence_Index": rr.resSeq,
                        "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True)})
     return _DataFrame(for_DF)
+
 
 def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
     r"""
@@ -2168,7 +2210,6 @@ def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
     # Only takes the first chains
     chain_id = chains.split("/")[0]
 
-
     for ii, chain in enumerate(top.chains):
         try:
             try_chain_id = chain_id.id
@@ -2179,20 +2220,21 @@ def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
             # Since chain_ids can be duplicated, stop after the first one
             break
     # Check that the resSeqs in these segment of top are unique
-    assert len(list(residx2resSeq.values()))==len(_np.unique(list(residx2resSeq.values())))
+    assert len(list(residx2resSeq.values())) == len(_np.unique(list(residx2resSeq.values())))
 
     # Invert the dict since values are unique and can serve as keys
-    resSeq2residx = {val : key for key, val in residx2resSeq.items()}
+    resSeq2residx = {val: key for key, val in residx2resSeq.items()}
 
     resSeqs = [int(rr) for rr in residues.split("-")]
-    assert len(resSeqs)==2
+    assert len(resSeqs) == 2
     resSeqs = _np.arange(resSeqs[0], resSeqs[1] + 1)
     residxs = [resSeq2residx[ii] for ii in resSeqs if ii in resSeq2residx.keys()]
 
     # There can be gaps in the crystallized resSeqs, but not int he indices
-    assert _np.unique(_np.diff(residxs))==[1]
+    assert _np.unique(_np.diff(residxs)) == [1]
 
     return residxs
+
 
 class _KDF(_DataFrame):
     r"""
@@ -2251,6 +2293,7 @@ class _KLIFSDataFrame(_KDF):
         kwargs["sheet_name"] = "%s_%s" % (self.UniProtAC, self.PDB_id)
         super(_KLIFSDataFrame, self).to_excel(*args, **kwargs)
 
+
 def _KLIFS_web_lookup(UniProtAC,
                       KLIFS_API="https://klifs.net/api",
                       timeout=5,
@@ -2299,8 +2342,9 @@ def _KLIFS_web_lookup(UniProtAC,
     with _requests.get(url, timeout=timeout) as resp1:
         if resp1.ok:
             ACjson = resp1.json()
-            assert len(ACjson)==1, ValueError("More than one 'kinase_ID's were found to match %s: %s ", (UniProtAC,[entry["kinase_ID"] for entry in ACjson] ))
-            ACjson=ACjson[0]
+            assert len(ACjson) == 1, ValueError("More than one 'kinase_ID's were found to match %s: %s ",
+                                                (UniProtAC, [entry["kinase_ID"] for entry in ACjson]))
+            ACjson = ACjson[0]
             if verbose:
                 print("done!")
             print("Please cite the following reference to the KLIF structural database:")
@@ -2321,8 +2365,8 @@ def _KLIFS_web_lookup(UniProtAC,
                 url = "%s/interactions_match_residues?structure_ID=%s" % (KLIFS_API, structure_ID)
                 with _requests.get(url, timeout=timeout) as resp3:
                     nomencl = _DataFrame(resp3.json())
-                    nomencl.rename(columns={"index":"KLIFS_pocket_index",
-                                            "KLIFS_position" : "KLIFS"}, inplace=True)
+                    nomencl.rename(columns={"index": "KLIFS_pocket_index",
+                                            "KLIFS_position": "KLIFS"}, inplace=True)
 
                 # Get the PDB as DF
                 geom = _md_load_rcsb(best_PDB, verbose=False)
@@ -2330,9 +2374,9 @@ def _KLIFS_web_lookup(UniProtAC,
 
                 # Temporary str-conversion to merge with nomencl
                 PDB_DF.Xray_position = PDB_DF.Xray_position.astype(str)
-                PDB_DF = PDB_DF.merge(nomencl, how="left",)
+                PDB_DF = PDB_DF.merge(nomencl, how="left", )
                 PDB_DF.Xray_position = PDB_DF.Xray_position.astype(int)
-                PDB_DF = _KLIFSDataFrame(PDB_DF, UniProtAC = UniProtAC, PDB_id=best_PDB, PDB_geom=geom)
+                PDB_DF = _KLIFSDataFrame(PDB_DF, UniProtAC=UniProtAC, PDB_id=best_PDB, PDB_geom=geom)
 
                 # Get the PDB positions from UniProtKB
                 PDBs_UPKB = _UniProtACtoPDBs(UniProtAC)
@@ -2347,6 +2391,7 @@ def _KLIFS_web_lookup(UniProtAC,
 
     return PDB_DF
 
+
 def _KLIFS_finder(UniProtAC,
                   format='KLIFS_%s.xlsx',
                   local_path='.',
@@ -2354,7 +2399,6 @@ def _KLIFS_finder(UniProtAC,
                   verbose=True,
                   dont_fail=False,
                   write_to_disk=False):
-
     r"""Look up, first locally, then online for the 85-pocket-residues numbering scheme as found in
     the `Kinase–Ligand Interaction Fingerprints and Structure <https://klifs.net/>`_
     return them as a :obj:`~pandas.DataFrame`.
@@ -2402,7 +2446,7 @@ def _KLIFS_finder(UniProtAC,
 
     if _path.exists(UniProtAC):
         fullpath = UniProtAC
-        try_web_lookup=False
+        try_web_lookup = False
     else:
         xlsxname = format % UniProtAC
         fullpath = _path.join(local_path, xlsxname)
@@ -2411,16 +2455,16 @@ def _KLIFS_finder(UniProtAC,
 
     def _read_excel_as_KDF(fullpath):
         idict = _read_excel(fullpath,
-                    None)
-        assert len(idict)==1
+                            None)
+        assert len(idict) == 1
         for key, val in idict.items():
             UniProtAC, PDB_id = key.split("_")
             return _KLIFSDataFrame(val.replace({_np.nan: None}),
                                    UniProtAC=UniProtAC, PDB_id=PDB_id)
 
-    local_lookup_lambda = lambda fullpath : _read_excel_as_KDF(fullpath)
+    local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath)
 
-    web_looukup_lambda = lambda url : _KLIFS_web_lookup(UniProtAC, verbose=verbose, url=url)
+    web_looukup_lambda = lambda url: _KLIFS_web_lookup(UniProtAC, verbose=verbose, url=url)
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
                           try_web_lookup=try_web_lookup,
