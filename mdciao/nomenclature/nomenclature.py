@@ -37,13 +37,17 @@ from collections import defaultdict as _defdict, namedtuple as _namedtuple
 from textwrap import wrap as _twrap
 
 from mdciao.filenames import FileNames as _FN
-_filenames = _FN()
 
 from os import path as _path
 
 import requests as _requests
 
 from natsort import natsorted as _natsorted
+
+from string import ascii_uppercase as _ascii_uppercase
+
+_filenames = _FN()
+
 
 def _table2GPCR_by_AAcode(tablefile,
                           scheme="BW",
@@ -2164,10 +2168,15 @@ def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
     # Only takes the first chains
     chain_id = chains.split("/")[0]
 
-    # Since chain_ids can be duplicated, stop after the first one
-    for chain in top.chains:
-        if chain.chain_id == chain_id:
+
+    for ii, chain in enumerate(top.chains):
+        try:
+            try_chain_id = chain_id.id
+        except AttributeError:
+            try_chain_id = _ascii_uppercase[ii]
+        if try_chain_id == chain_id:
             residx2resSeq = {rr.index: rr.resSeq for rr in chain.residues}
+            # Since chain_ids can be duplicated, stop after the first one
             break
     # Check that the resSeqs in these segment of top are unique
     assert len(list(residx2resSeq.values()))==len(_np.unique(list(residx2resSeq.values())))
