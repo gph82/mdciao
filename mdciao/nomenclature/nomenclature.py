@@ -2173,3 +2173,60 @@ def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
     assert _np.unique(_np.diff(residxs))==[1]
 
     return residxs
+
+class _KDF(_DataFrame):
+    r"""
+    Sub-class of an :obj:`~pandas.DataFrame` to include KLIFS-associated metadata.
+
+    Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
+    for more info
+    """
+
+    # normal properties
+    _metadata = ["UniProtAC", "PDB_id", "PDB_geom"]
+
+    @property
+    def _constructor(self):
+        return _KDF
+
+
+class _KLIFSDataFrame(_KDF):
+    r"""
+    Sub-class of an :obj:`~pandas.DataFrame` to include KLIFS-associated metadata as attributes
+
+    Simply pass arguments e.g. 'UniProtAC=P31751' and PDB_id="3e8d" and PDB_geom=md.Trajectory()
+     * can be then accessed via self.UniProtAC, self.PDB_id and self.PDB_geom
+     * they are preserved downstream after operating on the df
+
+    Note that no checks are done to see if these arguments are of the expected class
+
+    It also thinly wraps around :obj:`~pandas.DataFrame.to_excel` s.t. the attributes
+    self.UniProtAC and self.PDB_id are saved into the sheet name, e.g. as "P31751_3e8d"
+    and can be recovered upon reading an Excel file from disk
+
+    Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
+    for more info
+    """
+
+    def __init__(self, *args, **kwargs):
+        argdict = {"UniProtAC": None,
+                   "PDB_id": None,
+                   "PDB_geom": None}
+
+        for key in argdict.keys():
+            val = kwargs.get(key)
+            if val is not None:
+                argdict[key] = kwargs.pop(key)
+
+        super().__init__(*args, **kwargs)
+
+        for key, val in argdict.items():
+            setattr(self, key, val)
+
+    def to_excel(self, *args, **kwargs):
+        r""" Thinly wrap around :obj:`~pandas.DataFrame.to_excel`
+        s.t. the attributes self.UniProtAC and self.PDB_id are saved into
+        the sheet name, e.g. as "P31751_3e8d" and can be recovered
+        upon reading an Excel file from disk """
+        kwargs["sheet_name"] = "%s_%s" % (self.UniProtAC, self.PDB_id)
+        super(_KLIFSDataFrame, self).to_excel(*args, **kwargs)

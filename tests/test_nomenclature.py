@@ -2,7 +2,8 @@ import unittest
 import mdtraj as md
 import numpy as _np
 from os import path
-from tempfile import TemporaryDirectory as _TDir, mkdtemp
+from tempfile import TemporaryDirectory as _TDir, mkdtemp, NamedTemporaryFile as _NamedTemporaryFile
+
 import shutil
 from urllib.error import HTTPError
 from shutil import copy
@@ -28,7 +29,7 @@ from mdciao.fragments import get_fragments
 
 import mock
 
-from pandas import DataFrame
+from pandas import DataFrame, read_excel
 
 
 
@@ -931,3 +932,27 @@ class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
         """
 
         self.assertListEqual(res_idxs, _np.arange(349+1,688+1).tolist())
+
+class Test_KLIFSDataFrame(unittest.TestCase):
+
+    def setUp(self):
+        self.df = nomenclature.CGN_finder("3SN6",
+                                          try_web_lookup=False,
+                                          local_path=test_filenames.nomenclature_path)[0]
+
+    def test_just_works(self):
+        KLIFS_df = nomenclature.nomenclature._KLIFSDataFrame(self.df,
+                                                             UniProtAC="P54311", PDB_id="3SN6", PDB_geom="bogus")
+
+        assert KLIFS_df.PDB_id == "3SN6"
+        assert KLIFS_df.UniProtAC == "P54311"
+        assert KLIFS_df.PDB_geom == "bogus"
+
+    def test_write_to_excel(self):
+        with _NamedTemporaryFile(suffix=".xlsx") as f:
+            KLIFS_df = nomenclature.nomenclature._KLIFSDataFrame(self.df,
+                                                                 UniProtAC="P54311", PDB_id="3SN6", PDB_geom="bogus")
+            KLIFS_df.to_excel(f.name)
+            df_dict = read_excel(f.name, None)
+            assert len(df_dict) == 1
+            assert isinstance(df_dict["P54311_3SN6"], DataFrame)
