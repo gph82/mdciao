@@ -44,7 +44,7 @@ from requests import get as _rget
 from tqdm.auto import tqdm as _tqdma
 import contextlib as _contextlib
 from mdciao.cli import residue_neighborhoods as _residue_neighborhoods, interface as _interface
-from mdciao.nomenclature import LabelerGPCR as _LabelerGPCR, LabelerCGN as _LabelerCGN
+from mdciao.nomenclature import LabelerGPCR as _LabelerGPCR, LabelerCGN as _LabelerCGN, LabelerKLIFS as _LabelerKLIFS
 from tempfile import TemporaryDirectory as _TDir, TemporaryFile as _TF
 import io as _io
 @_contextlib.contextmanager
@@ -533,3 +533,13 @@ def Interface_B2AR_Gas(**kwargs):
         print(b.getvalue())
         b.close()
         raise e
+
+def KLIFSLabeler_P31751():
+    r"""Build an :obj:`~mdciao.nomenclature.LabelerKLIFS` with the KLIFS_P31751.xlsx and 3E8D.pdb.gz.pdb files shipped with mdciao"""
+    with _TDir(suffix="_mdciao_example_KLIFS") as t:
+        for fn in [filenames.KLIFS_P31751_xlsx, filenames.pdb_3E8D]:
+            _link(fn, _path.join(t, _path.basename(fn)))
+
+        with remember_cwd():
+            _chdir(t)
+            return _LabelerKLIFS("P31751", try_web_lookup=False)
