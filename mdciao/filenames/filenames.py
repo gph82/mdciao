@@ -53,7 +53,7 @@ class FileNames(object):
             self.notebooks_path = _path.join(sfpath,"mdciao","examples")
 
         self.bogus_pdb_path = _path.join(self.test_data_path, "bogus_pdb")
-        self.RCSB_pdb_path =  _path.join(self.test_data_path, "RSCB_pdb")
+        self.RCSB_pdb_path =  _path.join(self.test_data_path, "RCSB_pdb")
         self.example_path =   _path.join(self.test_data_path,"examples")
         self.nomenclature_path = _path.join(self.test_data_path,"nomenclature")
         self.json_path = _path.join(self.test_data_path,"json")
