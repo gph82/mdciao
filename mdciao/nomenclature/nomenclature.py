@@ -2465,10 +2465,119 @@ def _KLIFS_finder(UniProtAC,
 
     local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath)
 
-    web_looukup_lambda = lambda url: _KLIFS_web_lookup(UniProtAC, verbose=verbose, url=url)
+    web_looukup_lambda = lambda url: _KLIFS_web_lookup(UniProtAC, verbose=verbose, url=url, timeout=15)
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
                           try_web_lookup=try_web_lookup,
                           verbose=verbose,
                           dont_fail=dont_fail,
                           write_to_disk=write_to_disk)
+
+
+class LabelerKLIFS(LabelerConsensus):
+    """Obtain and manipulate Kinase-Ligand Interaction notation of the 85 pocket-residues of kinases.
+
+    The residue notation is obtained from the
+    `Kinase–Ligand Interaction Fingerprints and Structure database, KLIFS <https://klifs.net/>`_ .
+
+    """
+
+    def __init__(self, UniProtAC,
+                 local_path=".",
+                 format="KLIFS_%s.xlsx",
+                 verbose=True,
+                 try_web_lookup=True,
+                 write_to_disk=False):
+
+        r"""
+
+         Parameters
+         ----------
+         UniProtAC : str
+             UniProt Accession Code, e.g. P31751
+             it gets directly passed to :obj:`_KLIFS_finder`
+             Can be anything that can be used to try and find
+             the needed information, locally or online:
+             * a UniProt Accession Code, e.g. 'P31751'
+             * a full local filename, e.g. 'KLIFS_P31751.xlsx'
+         local_path : str, default is "."
+             Since the :obj:`UniProtAC` is turned into
+             a filename in case it's a descriptor,
+             this is the local path where to (potentially) look for files.
+             In case :obj:`UniProtAC` is just a filename,
+             we can turn it into a full path to
+             a local file using this parameter, which
+             is passed to :obj:`_KLIFS_finder`
+             and :obj:`LabelerConsensus`. Note that this
+             optional parameter is here for compatibility
+             reasons with other methods and might disappear
+             in the future.
+         format : str, default is "KLIFS_%s.xlsx"
+             How to construct a filename out of
+             :obj:`UniProtAC`
+         verbose : bool, default is True
+             Be verbose. Gets passed to :obj:`_KLIFS_finder`
+         try_web_lookup : bool, default is True
+             Try a web lookup on the KLIFS of the :obj:`UniProtAC`.
+             If :obj:`UniProtAC` is e.g. "KLIFS_P31751.xlsx",
+             including the extension "xslx", then the lookup will
+             fail. This what the :obj:`format` parameter is for
+         write_to_disk : bool, default is False
+             Save an excel file with the nomenclature
+             information
+         """
+
+        self._nomenclature_key = "KLIFS"
+        self._AAresSeq_key = "AAresSeq"
+        self._dataframe, self._tablefile = _KLIFS_finder(UniProtAC,
+                                                         format=format,
+                                                         local_path=local_path,
+                                                         try_web_lookup=try_web_lookup,
+                                                         verbose=verbose,
+                                                         write_to_disk=write_to_disk
+                                                         )
+
+        # TODO this works also for CGN, we could make a method out of this
+        self._AA2conlab = {}
+        for __, row in self.dataframe[self.dataframe.UniProtAC_res.astype(bool)].iterrows():
+            key = "%s%u" % (row.residue, row.Sequence_Index)
+            assert key not in self._AA2conlab
+            self._AA2conlab[key] = row[self._nomenclature_key]
+
+        self._fragments = _defdict(list)
+        for ires, key in self.AA2conlab.items():
+            if "." in str(key):
+                frag_key = ".".join(key.split(".")[:-1])
+                self._fragments[frag_key].append(ires)
+
+        if self._dataframe.PDB_geom is None:
+            super().__init__(ref_PDB=self._dataframe.PDB_id,
+                             local_path=local_path,
+                             try_web_lookup=try_web_lookup,
+                             verbose=verbose)
+        else:
+            super().__init__(ref_PDB=None,
+                             local_path=local_path,
+                             try_web_lookup=try_web_lookup,
+                             verbose=verbose)
+            self._geom_PDB = self.dataframe.PDB_geom
+            self._ref_PDB = self.dataframe.PDB_id
+
+        # todo unify across Labelers
+        self._fragments_as_idxs = {
+            fragkey: self.dataframe[self.dataframe.KLIFS.map(
+                lambda x: str(x).startswith(fragkey))].index.values.tolist()
+            for fragkey in self.fragment_names}
+
+    @property
+    def fragments_as_idxs(self):
+        r""" Dictionary of fragments keyed with fragment names
+        and valued with idxs of the first column of self.dataframe,
+        regardless of these residues having a consensus label or not
+
+        Returns
+        -------
+        fragments_as_idxs : dict
+        """
+
+        return self._fragments_as_idxs

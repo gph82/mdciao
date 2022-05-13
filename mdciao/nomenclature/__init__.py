@@ -32,6 +32,7 @@ Classes
 
     LabelerGPCR
     LabelerCGN
+    LabelerKLIFS
     Literature
 
 
