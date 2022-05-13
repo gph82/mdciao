@@ -876,3 +876,18 @@ class Test_consensus_maps2consensus_frag(unittest.TestCase):
             maps, frags = _consensus_maps2consensus_frags(self.geom.top, [self.maps[GPCR_scheme][0], GPCR], verbose=True)
             self.assertListEqual(maps, self.maps[GPCR_scheme])
             self.assertDictEqual(frags, self.frags[GPCR_scheme][1])
+
+
+class Test_UniProtACtoPDBs(unittest.TestCase):
+
+    def test_just_works(self):
+        result = nomenclature.nomenclature._UniProtACtoPDBs("P31751")
+        assert isinstance(result,dict)
+        assert "3e88" in result.keys()
+        self.assertDictEqual(result["3e88"],
+                             {'database': 'PDB',
+                              'id': '3E88',
+                              'properties': [{'key': 'Method', 'value': 'X-ray'},
+                                             {'key': 'Resolution', 'value': '2.50 A'},
+                                             {'key': 'Chains', 'value': 'A/B=146-480'}]},
+                             )

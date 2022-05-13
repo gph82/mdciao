@@ -2046,3 +2046,47 @@ def references():
     print()
     print("You can find all these references distributed as BibTex file distributed with mdciao here")
     print(" * %s"%_filenames.nomenclature_bib)
+
+def _UniProtACtoPDBs(UniProtAC,
+                     UniProtKB_API="https://rest.uniprot.org/uniprotkb"):
+    r"""
+    Retrieve PDB entries (and some metadata) associated with a UniprotAccession code
+    by contacting the UniProt Kknowledgebase (https://www.uniprot.org/help/uniprotkb)
+    and looking up the 'uniProtKBCrossReferences' entry of the response
+
+    Importantly, this metadata contains what chains and residue (sequence) indices
+    are associated to the :obj:`UniProtAC`
+
+    One such entry is returned as
+    >>>     {'3e88': {'database': 'PDB',
+    >>>               'id': '3E88',
+    >>>               'properties': [{'key': 'Method', 'value': 'X-ray'},
+    >>>                              {'key': 'Resolution', 'value': '2.50 A'},
+    >>>                              {'key': 'Chains', 'value': 'A/B=146-480'}]}}
+
+    Parameters
+    ----------
+    UniProtAC : str
+        UniProt Accession code, e.g. 'P31751'
+        Check for more info check https://www.uniprot.org/help/accession_numbers
+    UniProtKB_API : str
+        The url for programmatic access
+
+    Returns
+    -------
+    PDBs_UPKB : dict
+        PDB metadata associated with the
+        :obj:`UniProtAC`, keyed with the
+        PDB-ids (four letter codes) themselves
+
+    """
+
+    url = "%s/%s.json"%(UniProtKB_API, UniProtAC)
+    PDBs_UPKB = {}
+    with _requests.get(url) as resp:
+        data = resp.json()
+        for entry in data["uniProtKBCrossReferences"]:
+            #print(entry)
+            if entry["database"].lower()=="pdb":
+                PDBs_UPKB[entry["id"].lower()] = entry
+    return PDBs_UPKB
