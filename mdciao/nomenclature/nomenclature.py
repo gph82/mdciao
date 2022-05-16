@@ -1982,7 +1982,9 @@ class Literature():
             "scheme_GPCR_A_BS_4": "Schwartz1995",
             "scheme_CGN": "Flock2015",
             "site_UniProt": "Bateman2021",
-            "site_KLIFS": "Kanev2021"
+            "site_KLIFS": "Kanev2021",
+            "scheme_KLIFS1" : "VanLinden2014",
+            "scheme_KLIFS2": "Kooistra2016"
         }
 
         arts = _parse_bib()
@@ -2075,7 +2077,7 @@ def references():
     lit: Literature = Literature()
     print("mdciao.nomenclature functions thanks to these online databases. "
           "Please cite them if you use this module:")
-    for attr in ["site_GPCRdb", "site_PDB", "scheme_CGN"]:
+    for attr in ["site_GPCRdb", "site_PDB", "scheme_CGN", "site_KLIFS"]:
         print(_format_cite(getattr(lit, attr)))
     print()
 
@@ -2083,7 +2085,7 @@ def references():
     print(" * Structure based GPCR notation")
     for attr in ["scheme_GPCR_struct1", "scheme_GPCR_struct2"]:
         print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
-    print(" * Sequence based GPCR schemes schemes:")
+    print(" * Sequence based GPCR schemes:")
     for attr in ["scheme_GPCR_B",
                  "scheme_GPCR_C",
                  "scheme_GPCR_F",
@@ -2092,6 +2094,9 @@ def references():
                  "scheme_GPCR_A_BS_2",
                  "scheme_GPCR_A_BS_3",
                  "scheme_GPCR_A_BS_4"]:
+        print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
+    print(" * KLIFS 85 ligand binding site residues of kinses")
+    for attr in ["scheme_KLIFS1", "scheme_KLIFS2", "site_KLIFS"]:
         print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
     print()
     print("You can find all these references distributed as BibTex file distributed with mdciao here")
@@ -2342,6 +2347,11 @@ def _KLIFS_web_lookup(UniProtAC,
     with _requests.get(url, timeout=timeout) as resp1:
         if resp1.ok:
             ACjson = resp1.json()
+            if len(ACjson) > 1:
+                print()
+                df = _DataFrame(ACjson)
+                #df.pop("")
+                print(df)
             assert len(ACjson) == 1, ValueError("More than one 'kinase_ID's were found to match %s: %s ",
                                                 (UniProtAC, [entry["kinase_ID"] for entry in ACjson]))
             ACjson = ACjson[0]
