@@ -9,7 +9,7 @@ Uses local files and/or accesses the following databases and their public APIs
  * `RCSB PDB rcsb.org <https://rcsb.org/>`_
  * `UniProt Knowledgebase <https://www.uniprot.org/>`_
 
-Please see the individual documentation for further references and cite them
+Please see the individual documentation of the `Labeler Classes <Classes>`_ for further references and cite them
 whenever you use these nomenclature schemes in your final publication.
 
 Additionally, use :obj:`mdciao.nomenclature.references` anytime to get more info.

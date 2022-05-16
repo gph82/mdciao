@@ -1193,6 +1193,8 @@ class LabelerGPCR(LabelerConsensus):
             * a uniprot descriptor, e.g. `adrb2_human`
             * a full local filename
             * a part of a local filename
+            Please note the the difference between UniProt Accession Code
+            and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
         GPCR_scheme : str, default is 'display_generic_number'
             The GPCR nomenclature scheme to use.
             The default is to use what the GPCRdb
@@ -2490,6 +2492,18 @@ class LabelerKLIFS(LabelerConsensus):
     The residue notation is obtained from the
     `Kinase–Ligand Interaction Fingerprints and Structure database, KLIFS <https://klifs.net/>`_ .
 
+    These are the relevant references, but please check `how to cite KLIFS <https://klifs.net/faq.php>`_ in case of doubt:
+
+    * Van Linden, O. P. J., Kooistra, A. J., Leurs, R., De Esch, I. J. P., & De Graaf, C. (2014).
+      KLIFS: A knowledge-based structural database to navigate kinase-ligand interaction space.
+      Journal of Medicinal Chemistry, 57(2), 249–277. https://doi.org/10.1021/JM400378W
+    * Kooistra, A. J., Kanev, G. K., Van Linden, O. P. J., Leurs, R., De Esch, I. J. P., & De Graaf, C. (2016).
+      KLIFS: a structural kinase-ligand interaction database.
+      Nucleic Acids Research, 44(D1), D365–D371. https://doi.org/10.1093/NAR/GKV1082
+    * Kanev, G. K., de Graaf, C., Westerman, B. A., de Esch, I. J. P., & Kooistra, A. J. (2021).
+      KLIFS: an overhaul after the first 5 years of supporting kinase research.
+      Nucleic Acids Research, 49(D1), D562–D569. https://doi.org/10.1093/NAR/GKAA895
+
     """
 
     def __init__(self, UniProtAC,
@@ -2501,41 +2515,43 @@ class LabelerKLIFS(LabelerConsensus):
 
         r"""
 
-         Parameters
-         ----------
-         UniProtAC : str
-             UniProt Accession Code, e.g. P31751
-             it gets directly passed to :obj:`_KLIFS_finder`
-             Can be anything that can be used to try and find
-             the needed information, locally or online:
+        Parameters
+        ----------
+        UniProtAC : str
+            UniProt Accession Code, e.g. P31751
+            it gets directly passed to :obj:`_KLIFS_finder`
+            Can be anything that can be used to try and find
+            the needed information, locally or online:
              * a UniProt Accession Code, e.g. 'P31751'
              * a full local filename, e.g. 'KLIFS_P31751.xlsx'
-         local_path : str, default is "."
-             Since the :obj:`UniProtAC` is turned into
-             a filename in case it's a descriptor,
-             this is the local path where to (potentially) look for files.
-             In case :obj:`UniProtAC` is just a filename,
-             we can turn it into a full path to
-             a local file using this parameter, which
-             is passed to :obj:`_KLIFS_finder`
-             and :obj:`LabelerConsensus`. Note that this
-             optional parameter is here for compatibility
-             reasons with other methods and might disappear
-             in the future.
-         format : str, default is "KLIFS_%s.xlsx"
-             How to construct a filename out of
-             :obj:`UniProtAC`
-         verbose : bool, default is True
-             Be verbose. Gets passed to :obj:`_KLIFS_finder`
-         try_web_lookup : bool, default is True
-             Try a web lookup on the KLIFS of the :obj:`UniProtAC`.
-             If :obj:`UniProtAC` is e.g. "KLIFS_P31751.xlsx",
-             including the extension "xslx", then the lookup will
-             fail. This what the :obj:`format` parameter is for
-         write_to_disk : bool, default is False
-             Save an excel file with the nomenclature
-             information
-         """
+            Please note the the difference between UniProt Accession Code
+            and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+        local_path : str, default is "."
+            Since the :obj:`UniProtAC` is turned into
+            a filename in case it's a descriptor,
+            this is the local path where to (potentially) look for files.
+            In case :obj:`UniProtAC` is just a filename,
+            we can turn it into a full path to
+            a local file using this parameter, which
+            is passed to :obj:`_KLIFS_finder`
+            and :obj:`LabelerConsensus`. Note that this
+            optional parameter is here for compatibility
+            reasons with other methods and might disappear
+            in the future.
+        format : str, default is "KLIFS_%s.xlsx"
+            How to construct a filename out of
+            :obj:`UniProtAC`
+        verbose : bool, default is True
+            Be verbose. Gets passed to :obj:`_KLIFS_finder`
+        try_web_lookup : bool, default is True
+            Try a web lookup on the KLIFS of the :obj:`UniProtAC`.
+            If :obj:`UniProtAC` is e.g. "KLIFS_P31751.xlsx",
+            including the extension "xslx", then the lookup will
+            fail. This what the :obj:`format` parameter is for
+            write_to_disk : bool, default is False
+            Save an excel file with the nomenclature
+            information
+        """
 
         self._nomenclature_key = "KLIFS"
         self._AAresSeq_key = "AAresSeq"
