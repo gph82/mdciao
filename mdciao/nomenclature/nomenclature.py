@@ -2576,7 +2576,7 @@ class LabelerKLIFS(LabelerConsensus):
         # todo unify across Labelers
         self._fragments_as_idxs = {
             fragkey: self.dataframe[self.dataframe.KLIFS.map(
-                lambda x: str(x).startswith(fragkey))].index.values.tolist()
+                lambda x: ".".join(str(x).split(".")[:-1])==fragkey)].index.values.tolist()
             for fragkey in self.fragment_names}
 
     @property
