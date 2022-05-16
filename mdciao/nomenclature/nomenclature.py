@@ -2107,7 +2107,7 @@ def _UniProtACtoPDBs(UniProtAC,
                      UniProtKB_API="https://rest.uniprot.org/uniprotkb"):
     r"""
     Retrieve PDB entries (and some metadata) associated with a UniprotAccession code
-    by contacting the UniProt Kknowledgebase (https://www.uniprot.org/help/uniprotkb)
+    by contacting the UniProt Knowledgebase (https://www.uniprot.org/help/uniprotkb)
     and looking up the 'uniProtKBCrossReferences' entry of the response
 
     Importantly, this metadata contains what chains and residue (sequence) indices
