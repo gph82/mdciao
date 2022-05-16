@@ -2095,7 +2095,7 @@ def references():
                  "scheme_GPCR_A_BS_3",
                  "scheme_GPCR_A_BS_4"]:
         print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
-    print(" * KLIFS 85 ligand binding site residues of kinses")
+    print(" * KLIFS 85 ligand binding site residues of kinases")
     for attr in ["scheme_KLIFS1", "scheme_KLIFS2", "site_KLIFS"]:
         print(_format_cite(getattr(lit, attr), bullet="-", indent=3))
     print()
