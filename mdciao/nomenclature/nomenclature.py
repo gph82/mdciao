@@ -870,8 +870,8 @@ class LabelerConsensus(object):
         Wraps around :obj:`mdciao.utils.sequence.align_tops_or_seqs`
 
         The indices of self are indices (row-indices)
-        of the original :obj:`LabelerConsensus.dataframe`,
-        which are the the ones in :obj:`ConsensusLabelers.seq`
+        of the original :obj:`~nomenclature.mdciao.LabelerConsensus.dataframe`,
+        which are the ones in :obj:`~mdciao.nomenclature.LabelerConsensus.seq`
 
         top : :obj:`~mdtraj.Topology` object or string
         restrict_to_residxs: iterable of integers, default is None
@@ -903,7 +903,7 @@ class LabelerConsensus(object):
             ```
             In order to choose between these alignments, it's
             checked which alignment observes the
-            fragments obtained from the the :obj:`top` using this
+            fragments obtained from the :obj:`top` using this
             fragmentation heuristics. So, if XXLXX is split
             fragmented into [XX],[LXX], then
             the second alignment will be chosen, given
@@ -1193,7 +1193,7 @@ class LabelerGPCR(LabelerConsensus):
             * a uniprot descriptor, e.g. `adrb2_human`
             * a full local filename
             * a part of a local filename
-            Please note the the difference between UniProt Accession Code
+            Please note the difference between UniProt Accession Code
             and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
         GPCR_scheme : str, default is 'display_generic_number'
             The GPCR nomenclature scheme to use.
@@ -2524,7 +2524,7 @@ class LabelerKLIFS(LabelerConsensus):
             the needed information, locally or online:
              * a UniProt Accession Code, e.g. 'P31751'
              * a full local filename, e.g. 'KLIFS_P31751.xlsx'
-            Please note the the difference between UniProt Accession Code
+            Please note the difference between UniProt Accession Code
             and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
         local_path : str, default is "."
             Since the :obj:`UniProtAC` is turned into

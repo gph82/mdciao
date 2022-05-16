@@ -810,7 +810,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     r"""
 
     #TODO rename the strings to something else
-    Try to understand how the the user wants to fragment the topology
+    Try to understand how the user wants to fragment the topology
     Pretty flexible
 
     Check also :obj:`rangeexpand` to understand the expressions

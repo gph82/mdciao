@@ -660,7 +660,7 @@ def latex_mathmode(istr, enclose=True):
 
     Works "opposite" to :obj:`replace4latex` and for the moment
     it's my (very bad) solution for latexifying contact-labels' fragments
-    as super indices where the the fragments themselves contain
+    as super indices where the fragments themselves contain
     sub-indices (GLU30^$\beta_2AR}
 
 
