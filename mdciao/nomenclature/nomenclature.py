@@ -1194,7 +1194,7 @@ class LabelerGPCR(LabelerConsensus):
             * a full local filename
             * a part of a local filename
             Please note the difference between UniProt Accession Code
-            and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+            and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_.
         GPCR_scheme : str, default is 'display_generic_number'
             The GPCR nomenclature scheme to use.
             The default is to use what the GPCRdb
@@ -2490,7 +2490,7 @@ class LabelerKLIFS(LabelerConsensus):
     """Obtain and manipulate Kinase-Ligand Interaction notation of the 85 pocket-residues of kinases.
 
     The residue notation is obtained from the
-    `Kinase–Ligand Interaction Fingerprints and Structure database, KLIFS <https://klifs.net/>`_ .
+    `Kinase–Ligand Interaction Fingerprints and Structure database, KLIFS <https://klifs.net/>`_.
 
     These are the relevant references, but please check `how to cite KLIFS <https://klifs.net/faq.php>`_ in case of doubt:
 
@@ -2525,7 +2525,7 @@ class LabelerKLIFS(LabelerConsensus):
              * a UniProt Accession Code, e.g. 'P31751'
              * a full local filename, e.g. 'KLIFS_P31751.xlsx'
             Please note the difference between UniProt Accession Code
-            and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+            and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_.
         local_path : str, default is "."
             Since the :obj:`UniProtAC` is turned into
             a filename in case it's a descriptor,
