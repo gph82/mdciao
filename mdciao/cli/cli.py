@@ -658,7 +658,9 @@ def residue_neighborhoods(residues,
         neighbor-list is created, for each residue, that includes
         the residues up to :obj:`nlist_cutoff_Ang` from the residue.
         Increase this parameters (e.g. to 30) if you expect large conformational
-        changes and/or the geometry in :obj:`topology`
+        changes and/or the geometry in :obj:`topology`. Setting
+        this cutoff to None is equivalent to using no cutoff,
+        i.e. all possible contacts are regarded
     n_smooth_hw: int, default is 0
         Plots of the time-traces will be smoothed using a window
         of 2*n_smooth_hw
@@ -886,10 +888,13 @@ def residue_neighborhoods(residues,
         fragment_idxs = [[_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair] for pair in ctc_idxs]
         ctc_idxs = [ctc_idxs[ii] for (ii,pair) in enumerate(fragment_idxs) if pair[0]!=pair[1]]
 
-    print(
-        "\nPre-computing likely neighborhoods by reducing the neighbor-list\n"
-        "to those within %u Angstrom"%nlist_cutoff_Ang,
-        end=" ",flush=True)
+    if nlist_cutoff_Ang is None:
+        nlist_cutoff_Ang = _np.inf
+    else:
+        print(
+            "\nPre-computing likely neighborhoods by reducing the neighbor-list\n"
+            "to those within %u Angstrom"%nlist_cutoff_Ang,
+            end=" ",flush=True)
 
     if pre_computed_distance_matrix is not None:
         if not pre_computed_distance_matrix.shape[0] == pre_computed_distance_matrix.shape[1] == refgeom.top.n_residues:
