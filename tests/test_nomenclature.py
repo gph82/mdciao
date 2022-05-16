@@ -17,6 +17,7 @@ from mdciao import nomenclature
 # methods but keep the test
 from mdciao.nomenclature import nomenclature
 from mdciao.examples import filenames as test_filenames
+from mdciao.utils.lists import assert_no_intersection
 from mdciao import examples
 
 from mdciao.fragments import get_fragments
@@ -1013,3 +1014,39 @@ class Test_KLIFS_finder(unittest.TestCase):
             assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.UniProtAC == self.KLIFS_df.UniProtAC
             assert df.PDB_geom is None
+
+class TestLabelerKLIFS(unittest.TestCase):
+
+    # The setup is in itself a test
+    def test_setup_local(self):
+        self.KLIFS = nomenclature.LabelerKLIFS(test_filenames.KLIFS_P31751_xlsx,
+                                               local_path=test_filenames.RCSB_pdb_path)
+
+    def test_setup_localKLIFS_webPDB(self):
+        self.KLIFS = nomenclature.LabelerKLIFS(test_filenames.KLIFS_P31751_xlsx,
+                                               )
+    # Only code specific to this object
+    def test_fragments_as_idxs(self):
+        self.KLIFS = nomenclature.LabelerKLIFS(test_filenames.KLIFS_P31751_xlsx,
+                                               local_path=test_filenames.RCSB_pdb_path)
+        assert_no_intersection(list(self.KLIFS.fragments_as_idxs.values()))
+        self.assertDictEqual(self.KLIFS.fragments_as_idxs,
+                             {'I': [156, 157, 158],
+                              'g.l': [159, 160, 161, 162, 163, 164],
+                              'II': [165, 166, 167, 168],
+                              'III': [178, 179, 180, 181, 182, 183],
+                              'αC': [196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206],
+                              'b.l': [207, 208, 210, 211, 212, 213, 214],
+                              'IV': [215, 216, 217, 218],
+                              'V': [226, 227, 228],
+                              'GK': [229],
+                              'hinge': [230, 231, 232],
+                              'linker': [233, 234, 235, 236],
+                              'αD': [237, 238, 239, 240, 241, 242, 243],
+                              'αE': [265, 266, 267, 268, 269],
+                              'VI': [270, 271, 272],
+                              'c.l': [273, 274, 275, 276, 277, 278, 279, 280],
+                              'VII': [281, 282, 283],
+                              'VIII': [291],
+                              'xDFG': [292, 293, 294, 295],
+                              'a.l': [296, 297]})
