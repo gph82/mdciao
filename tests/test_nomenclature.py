@@ -56,7 +56,7 @@ class Test_PDB_finder(unittest.TestCase):
 
     def test_works_locally_pdbgz(self):
         geom, filename = nomenclature._PDB_finder("3SN6",
-                                                  local_path=test_filenames.RSCB_pdb_path,
+                                                  local_path=test_filenames.RCSB_pdb_path,
                                                   try_web_lookup=False)
         assert isinstance(geom, md.Trajectory)
         assert isinstance(filename, str)
@@ -639,11 +639,11 @@ class Test_guess_by_nomenclature(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        GPCRlabs_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
+        GPCRlabs_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RCSB_pdb_path)
 
         cls.GPCR_local_w_pdb = nomenclature.LabelerGPCR(GPCRlabs_file,
                                                         ref_PDB="3SN6",
-                                                        local_path=test_filenames.RSCB_pdb_path,
+                                                        local_path=test_filenames.RCSB_pdb_path,
                                                         format="%s",
                                                         )
         cls.fragments = get_fragments(cls.GPCR_local_w_pdb.top)
@@ -694,11 +694,11 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
     # The setup is in itself a test
     @classmethod
     def setUpClass(cls):
-        GPCRlabs_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RSCB_pdb_path)
+        GPCRlabs_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RCSB_pdb_path)
 
         cls.GPCR_local_w_pdb = nomenclature.LabelerGPCR(GPCRlabs_file,
                                                         ref_PDB="3SN6",
-                                                        local_path=test_filenames.RSCB_pdb_path,
+                                                        local_path=test_filenames.RCSB_pdb_path,
                                                         format="%s",
                                                         )
         cls.fragments = get_fragments(cls.GPCR_local_w_pdb.top, verbose=False)
