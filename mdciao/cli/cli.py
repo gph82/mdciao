@@ -101,16 +101,18 @@ def _parse_consensus_option(option, consensus_type,
            full of Nones is returned
          * str
           The needed identifier to instantiate an
-          :obj:`LabelerGPCR` or an :obj:`LabelerCGN` object.
-          Examples would be a :obj:`uniprot_name` or a :obj:`ref_PDB`,
+          :obj:`LabelerGPCR`, :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
+          Examples would be a :obj:`uniprot_name`, a :obj:`ref_PDB`, or
+          an :obj:`uniprot_AC`
           respectively
          * :obj:`LabelerConsensus`
-          An already instantiated :obj:`LabelerGPCR` or :obj:`LabelerCGN`
+          An already instantiated :obj:`LabelerGPCR`,
+          :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
           The method then does nothing. Usecase are repeated
           calls to any of the methods in :obj:`command_line_tools`
           without each call instantiating its own :obj:`LabelerConsensus`
     consensus_type : str
-        Either "CGN" or "GPCR"
+        Either "CGN", "GPCR", "KLIFS"
     top : :obj:`mdtraj.Topology`
     fragments : iterable of iterables of ints
         How the :obj:`top` is fragmented. Helps
@@ -136,7 +138,8 @@ def _parse_consensus_option(option, consensus_type,
             LC_out = None
         else:
             LC_out = {"GPCR": _mdcnomenc.LabelerGPCR,
-                      "CGN":_mdcnomenc.LabelerCGN}[consensus_type](option, **LabelerConsensus_kwargs)
+                      "CGN": _mdcnomenc.LabelerCGN,
+                      "KLIFS": _mdcnomenc.LabelerKLIFS}[consensus_type](option, **LabelerConsensus_kwargs)
 
     #todo add a class check here instead of failing later on
     else:
