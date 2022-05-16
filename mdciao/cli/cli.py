@@ -2008,18 +2008,22 @@ def pdb(code,
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
 
-def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None,
+def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None, KLIFS_uniprotAC=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
+
+    option_dict = {"GPCR": GPCR_uniprot,
+                   "CGN": CGN_PDB,
+                   "KLIFS": KLIFS_uniprotAC}
+
     consensus_frags, consensus_maps, consensus_labelers = \
-        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
-                                                           "CGN": CGN_PDB},
+        _parse_consensus_options_and_return_fragment_defs(option_dict,
                                                           top,
                                                           fragments,
                                                           verbose=True,
                                                           save_nomenclature_files=save_nomenclature_files,
                                                           accept_guess=accept_guess)
-    consensus_maps = {"GPCR": consensus_maps[0],
-                      "CGN": consensus_maps[1]}
+
+    consensus_maps = {key : consensus_maps[ii] for ii, key in enumerate(option_dict.keys())}
 
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
                                                                         pick_this_fragment_by_default=None,
