@@ -541,6 +541,7 @@ def residue_neighborhoods(residues,
                           table_ext=".dat",
                           GPCR_uniprot=None,
                           CGN_PDB=None,
+                          KLIFS_uniprotAC=None,
                           output_dir='.',
                           output_desc='neighborhood',
                           t_unit='ns',
@@ -721,6 +722,15 @@ def residue_neighborhoods(residues,
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
+    KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
+        Uniprot Accession Code for KLIFS nomenclature. If str, e.g. "adrb2_human",
+        try to locate a local filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerKLIFS`, use this object directly
+        (allows for object re-use when in API mode). See :obj:`mdciao.nomenclature`
+        for more info and references. Please note
+        the difference between UniProt Accession Code
+        and UniProt entry name as explained
+        `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     output_dir : str, default is '.'
         directory to which the results are written.
     output_desc : str, default is 'neighborhood'
@@ -837,7 +847,7 @@ def residue_neighborhoods(residues,
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
                                                                    midstring=mid_string, GPCR_uniprot=GPCR_uniprot,
-                                                                   CGN_PDB=CGN_PDB,
+                                                                   CGN_PDB=CGN_PDB, KLIFS_uniprotAC=KLIFS_uniprotAC,
                                                                    save_nomenclature_files=save_nomenclature_files,
                                                                    accept_guess=accept_guess,
                                                                    interpret_as_res_idxs=res_idxs, sort=sort)
