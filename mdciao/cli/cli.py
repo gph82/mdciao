@@ -1152,24 +1152,22 @@ def interface(
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
-    GPCR_uniprot : str, default is 'None'
-        Try to find Ballesteros-Weinstein definitions. If
-        str, e.g. "adrb2_human", try to locate a local
-        filename or do a web lookup in the GPCRdb.
-        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object
-        directly (allows for object re-use when in API mode)
-        See :obj:`mdciao.nomenclature` for more info and
-        references.
-    CGN_PDB : str, default is 'None'
-        Try to find Common G-alpha Numbering definitions. If
-        str, e.g. "3SN6", try to locate local filenames
-        ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups in
-        https://www.mrc-lmb.cam.ac.uk/CGN/ and
-        http://www.rcsb.org/. If
-        :obj:`mdciao.nomenclature.LabelerCGN`, use this
-        object directly (allows for object re-use when in API
-        mode) See :obj:`mdciao.nomenclature` for more info
-        and references.
+    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+        For GPCR nomenclature. If str, e.g. "adrb2_human".
+        will try to locate a local filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
+        (allows for object re-use when in API mode).
+        See :obj:`mdciao.nomenclature` for more info and references.
+        Please note the difference between UniProt Accession Code
+        and UniProt entry name
+        as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
+        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and references.
     chunksize_in_frames : int, default is 10000
         Stream through the trajectory data in chunks of this
         many frames Can lead to memory errors if
@@ -1188,7 +1186,7 @@ def interface(
         There exist several input modes:
 
         * ["consensus"] : use things like "TM*" or "G.H*", i.e.
-         Ballesteros-Weinstein or CGN-sub-subunit labels.
+         GPCR or CGN-sub-subunit labels.
         * List of len 1 with some fragmentation heuristic, e.g.
          ["lig_resSeq+"] : will use the default of
          :obj:`mdciao.fragments.get_fragments`. See there for
@@ -1647,31 +1645,29 @@ def sites(site_inputs,
         window of 2*n_smooth_hw
     pbc : bool, default is True
         Use periodic boundary conditions
-    GPCR_uniprot : str, default is 'None'
-        Try to find Ballesteros-Weinstein definitions. If
-        str, e.g. "adrb2_human", try to locate a local
-        filename or do a web lookup in the GPCRdb.
-        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object
-        directly (allows for object re-use when in API mode)
-        See :obj:`mdciao.nomenclature` for more info and
-        references.
-    CGN_PDB : str, default is 'None'
-        Try to find Common G-alpha Numbering definitions. If
-        str, e.g. "3SN6", try to locate local filenames
-        ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups in
-        https://www.mrc-lmb.cam.ac.uk/CGN/ and
-        http://www.rcsb.org/. If
-        :obj:`mdciao.nomenclature.LabelerCGN`, use this
-        object directly (allows for object re-use when in
-        API mode) See :obj:`mdciao.nomenclature` for more
-        info and references.
+    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+        For GPCR nomenclature. If str, e.g. "adrb2_human".
+        will try to locate a local filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
+        (allows for object re-use when in API mode).
+        See :obj:`mdciao.nomenclature` for more info and references.
+        Please note the difference between UniProt Accession Code
+        and UniProt entry name
+        as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
+        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and references.
     fragments : list, default is ['lig_resSeq+']
         Fragment control. For compatibility reasons, it has
         to be a list, even if it only has one element.
         There exist several input modes:
 
         * ["consensus"] : use things like "TM*" or "G.H*", i.e.
-         Ballesteros-Weinstein or CGN-sub-subunit labels.
+         GPCR or CGN-sub-subunit labels.
         * List of len 1 with some fragmentation heuristic, e.g.
          ["lig_resSeq+"]. will use the default of
          :obj:`mdciao.fragments.get_fragments`. See there for
@@ -2080,15 +2076,21 @@ def residue_selection(expression,
     top : str, :obj:`~mdtraj.Trajectory`, or :obj:`~mdtraj.Topology`
         The topology to use.
     GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
-        Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
-        try to locate a local filename or do a web lookup in the GPCRdb.
-        If :obj:`~mdciao.nomenclature.LabelerGPCR`, use this object directly
+        For GPCR nomenclature. If str, e.g. "adrb2_human".
+        will try to locate a local filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
+        (allows for object re-use when in API mode).
         See :obj:`mdciao.nomenclature` for more info and references.
+        Please note the difference between UniProt Accession Code
+        and UniProt entry name
+        as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
-        Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
         try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and references.
     save_nomenclature_files : bool, default is False
         Save available nomenclature definitions to disk so :
     accept_guess : bool, default is False
@@ -2099,7 +2101,7 @@ def residue_selection(expression,
         * None: use the default :obj:`~mdciao.fragments.get_fragments`,
           currently 'lig_resSeq+'
         * ["consensus"] : use things like "TM*" or "G.H*", i.e.
-         Ballesteros-Weinstein or CGN-sub-subunit labels.
+         GPCR or CGN-sub-subunit labels.
         * List of len 1 with some fragmentation heuristic, e.g.
          ["lig_resSeq+"]. will use the default of
          :obj:`mdciao.fragments.get_fragments`. See there for
