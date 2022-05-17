@@ -678,7 +678,7 @@ def residue_neighborhoods(residues,
         There exist several input modes:
 
         * ["consensus"] : use things like "TM*" or "G.H*", i.e.
-         Ballesteros-Weinstein or CGN-sub-subunit labels.
+         GPCR or CGN-sub-subunit labels.
         * List of len 1 with some fragmentation heuristic, e.g.
          ["lig_resSeq+"]. will use the default of
          :obj:`mdciao.fragments.get_fragments`. See there for
@@ -712,20 +712,23 @@ def residue_neighborhoods(residues,
     table_ext : str, default is ".dat"
         The extension (=format) of the saved tables
     GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
-        Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
-        try to locate a local filename or do a web lookup in the GPCRdb.
+        For GPCR nomenclature. If str, e.g. "adrb2_human".
+        will try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
-        (allows for object re-use when in API mode)
+        (allows for object re-use when in API mode).
         See :obj:`mdciao.nomenclature` for more info and references.
+        Please note the difference between UniProt Accession Code
+        and UniProt entry name
+        as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
-        Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
         try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
-        Uniprot Accession Code for KLIFS nomenclature. If str, e.g. "adrb2_human",
+        Uniprot Accession Code for kinase KLIFS nomenclature. If str, e.g. "P31751",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerKLIFS`, use this object directly
         (allows for object re-use when in API mode). See :obj:`mdciao.nomenclature`
