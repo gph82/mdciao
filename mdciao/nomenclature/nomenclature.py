@@ -2157,7 +2157,7 @@ def _UniProtACtoPDBs(UniProtAC,
     return PDBs_UPKB
 
 
-def _mdTopology2DF(top) -> _DataFrame:
+def _mdTopology2residueDF(top) -> _DataFrame:
     r"""
     Return an :obj:`~mdtraj.Topology` as a :obj:`~pandas.DataFrame`
 
@@ -2382,7 +2382,7 @@ def _KLIFS_web_lookup(UniProtAC,
 
                 # Get the PDB as DF
                 geom = _md_load_rcsb(best_PDB, verbose=False)
-                PDB_DF = _mdTopology2DF(geom.top)
+                PDB_DF = _mdTopology2residueDF(geom.top)
 
                 # Temporary str-conversion to merge with nomencl
                 PDB_DF.Xray_position = PDB_DF.Xray_position.astype(str)

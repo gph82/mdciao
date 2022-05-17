@@ -922,7 +922,7 @@ class Test_mdTopology2DF(unittest.TestCase):
                               '5              5     LYS     K              29      K29',
                               '6              6     P0G  None             381     X381',
                               '7              7     GDP  None             382     X382'],
-                             nomenclature._mdTopology2DF(top).to_string().splitlines())
+                             nomenclature._mdTopology2residueDF(top).to_string().splitlines())
 
 
 class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
