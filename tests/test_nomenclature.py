@@ -1020,7 +1020,8 @@ class TestLabelerKLIFS(unittest.TestCase):
     # The setup is in itself a test
     def test_setup_local(self):
         self.KLIFS = nomenclature.LabelerKLIFS(test_filenames.KLIFS_P31751_xlsx,
-                                               local_path=test_filenames.RCSB_pdb_path)
+                                               local_path=test_filenames.RCSB_pdb_path,
+                                               try_web_lookup=False)
 
     def test_setup_localKLIFS_webPDB(self):
         self.KLIFS = nomenclature.LabelerKLIFS(test_filenames.KLIFS_P31751_xlsx,
@@ -1050,3 +1051,12 @@ class TestLabelerKLIFS(unittest.TestCase):
                               'VIII': [291],
                               'xDFG': [292, 293, 294, 295],
                               'a.l': [296, 297]})
+
+class Test_mdTrajectory_and_spreadsheets(unittest.TestCase):
+
+    def test_reading_and_writing_works(self):
+        pdb = md.load(examples.filenames.pdb_3SN6)
+        with _NamedTemporaryFile(suffix="_3SN6.xlsx") as f:
+            nomenclature._mdTrajectory2spreadsheets(pdb,f.name)
+            read_pdb = nomenclature._Spreadsheets2mdTrajectory(f.name)
+            assert pdb == read_pdb

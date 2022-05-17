@@ -30,7 +30,10 @@ from pandas import \
     read_json as _read_json, \
     read_excel as _read_excel, \
     read_csv as _read_csv, \
-    DataFrame as _DataFrame
+    DataFrame as _DataFrame, \
+    ExcelWriter as _ExcelWriter
+
+from contextlib import contextmanager
 
 from collections import defaultdict as _defdict, namedtuple as _namedtuple
 
@@ -2185,6 +2188,54 @@ def _mdTopology2residueDF(top) -> _DataFrame:
                        "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True)})
     return _DataFrame(for_DF)
 
+def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
+    r"""
+
+    Parameters
+    ----------
+    traj : obj`:~mdtraj.Trajectory`
+    dest : :obj:`~pandas.ExcelWriter` or str
+        Either the open ExcelWriter object or,
+        if a string is passed, a the ExcelWriter
+        object will be created on the fly
+    kwargs_to_excel : keyword args for :obj:`pandas.DataFrame.to_excel`
+        Can't contain sheet_name or index, will raise Exception
+
+    """
+    topdf, bonds = traj.top.to_dataframe()
+    bondsdf, xyzdf = _DataFrame(bonds), _DataFrame(traj.xyz[0])
+    unitcelldf = _DataFrame({"lengths": traj.unitcell_lengths[0],
+                             "angles": traj.unitcell_angles[0]})
+    # When dropping py36 support, use directly the contextlib.nullcontext for py37 and beyond
+    # slack FTW :https://stackoverflow.com/a/55902915
+    @contextmanager
+    def nullcontext(enter_result=None):
+        yield enter_result
+
+    if isinstance(dest,str):
+        cm = _ExcelWriter(dest)
+    else:
+        cm = nullcontext(dest)
+
+    with cm as f:
+        _DataFrame.to_excel(topdf, f, sheet_name="topology", index=False, **kwargs_to_excel)
+        _DataFrame.to_excel(bondsdf, f, sheet_name="bonds", index=False, **kwargs_to_excel)
+        _DataFrame.to_excel(unitcelldf, f, sheet_name="unitcell", index=False, **kwargs_to_excel)
+        _DataFrame.to_excel(xyzdf, f, sheet_name="xyz", index=False, **kwargs_to_excel)
+
+def _Spreadsheets2mdTrajectory(source):
+    if isinstance(source, dict):
+        idict = source
+    else:
+        idict = _read_excel(source,
+                            None,
+                            engine="openpyxl")
+    topology = _md.Topology.from_dataframe(idict["topology"], bonds=idict["bonds"].values)
+    xyz = idict["xyz"].values
+    geom = _md.Trajectory(xyz, topology,
+                          unitcell_angles = idict["unitcell"].angles,
+                          unitcell_lengths = idict["unitcell"].lengths)
+    return geom
 
 def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
     r"""
