@@ -26,4 +26,5 @@ from mdciao.parsers import parser_for_GPCR_overview
 from mdciao.cli.cli import _fragment_overview
 parser = parser_for_GPCR_overview()
 a  = parser.parse_args()
+setattr(a, 'input_', a.GPCR_uniprot_or_file)
 _fragment_overview(a,"GPCR")
