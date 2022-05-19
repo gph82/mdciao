@@ -80,9 +80,11 @@ class ExamplesCLTs(object):
         self.xtc = filenames.traj_xtc
         self.pdb = filenames.top_pdb
         self.GPCRlabs_file = filenames.adrb2_human_xlsx
+        self.KLIFSlabs_file = filenames.KLIFS_P31751_xlsx
         self.CGN_file = filenames.CGN_3SN6
         self.sitefile = filenames.tip_json
         self.pdb_3SN6 = filenames.pdb_3SN6
+        self.KLIFS_pdb = filenames.pdb_3E8D
 
         self.test = test
         cwd = _getcwd()
@@ -131,6 +133,12 @@ class ExamplesCLTs(object):
         return ["mdc_GPCR_overview.py",
                 "%s" % self.GPCRlabs_file,
                 "-t %s" % self.pdb]
+
+    @property
+    def mdc_KLIFS_overview(self):
+        return ["mdc_KLIFS_overview.py",
+                "%s" % self.KLIFSlabs_file,
+                "-t %s" % self.KLIFS_pdb]
 
     @property
     def mdc_CGN_overview(self):
