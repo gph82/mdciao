@@ -956,26 +956,21 @@ class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
 class Test_KLIFSDataFrame(unittest.TestCase):
 
     def setUp(self):
-        self.df = nomenclature._CGN_finder("3SN6",
-                                           try_web_lookup=False,
-                                           local_path=test_filenames.nomenclature_path)[0]
+        self.df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx)
+        self.geom = md.load(test_filenames.pdb_3E8D)
 
     def test_just_works(self):
-        KLIFS_df = nomenclature._KLIFSDataFrame(self.df,
-                                                UniProtAC="P54311", PDB_id="3SN6", PDB_geom="bogus")
-
-        assert KLIFS_df.PDB_id == "3SN6"
-        assert KLIFS_df.UniProtAC == "P54311"
-        assert KLIFS_df.PDB_geom == "bogus"
+        assert self.df.PDB_id == "3E8D"
+        assert self.df.UniProtAC == "P31751"
+        assert self.df.PDB_geom == self.geom
 
     def test_write_to_excel(self):
         with _NamedTemporaryFile(suffix=".xlsx") as f:
-            KLIFS_df = nomenclature._KLIFSDataFrame(self.df,
-                                                    UniProtAC="P54311", PDB_id="3SN6", PDB_geom="bogus")
-            KLIFS_df.to_excel(f.name)
+            self.df.to_excel(f.name)
             df_dict = read_excel(f.name, None)
-            assert len(df_dict) == 1
-            assert isinstance(df_dict["P54311_3SN6"], DataFrame)
+            assert len(df_dict) == 5
+            assert isinstance(df_dict["P31751_3E8D"], DataFrame)
+            assert nomenclature._Spreadsheets2mdTrajectory(df_dict)==self.geom
 
 
 class Test_KLIFS_web_lookup(unittest.TestCase):
