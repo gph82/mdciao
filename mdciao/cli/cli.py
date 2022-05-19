@@ -456,34 +456,38 @@ def _trajsNtop2xtcsNrefgeom(trajectories,topology):
 
 def _fragment_overview(a,labtype):
     r"""
-    provide the CLTs GPCR_overview and CGN_overview
+    provide the CLTs GPCR_overview and CGN_overview and KLIFS_overview
 
     Parameters
     ----------
     a : :obj:`argparse.Namespace` object
         Contains the arguments used by the user
-    labtype : srt, "GPCR" or "CGN"
+    labtype : srt, "GPCR", "CGN", "KLIFS"
         lets the code know which :obj:`LabelerConsensus` to use
 
     Returns
     -------
     None
     """
+
+    class_dict = {"GPCR":_mdcnomenc.LabelerGPCR,
+                  "KLIFS":_mdcnomenc.LabelerKLIFS}
+
     if labtype == "CGN":
         val = a.PDB_code_or_txtfile
         obj = _mdcnomenc.LabelerCGN(val, write_to_disk=a.write_to_disk)
 
-    elif labtype == "GPCR":
-        val = a.GPCR_uniprot_or_file
+    elif labtype in class_dict.keys():
+        val = a.input_
         if _path.exists(val):
             format = "%s"
         else:
-            format = _signature(_mdcnomenc.LabelerGPCR).parameters["format"].default
-        obj = _mdcnomenc.LabelerGPCR(val,
-                                     format=format,
-                                     write_to_disk=a.write_to_disk)
+            format = _signature(class_dict[labtype]).parameters["format"].default
+        obj = class_dict[labtype](val,
+                                  format=format,
+                                  write_to_disk=a.write_to_disk)
     else:
-        raise ValueError("Don't know the consensus type %s, only 'GPCR' and 'CGN'"%labtype)
+        raise ValueError("Don't know the consensus type %s, only 'GPCR', 'CGN', 'KLIFS'"%labtype)
 
     if a.topology is not None:
         top = _md.load(a.topology).top
