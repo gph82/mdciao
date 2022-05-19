@@ -738,6 +738,28 @@ def parser_for_CGN_overview():
 
     return parser
 
+def parser_for_KLIFS_overview():
+    parser = argparse.ArgumentParser(description="Produce an overview of a the Kinase 85 pocket-residues nomenclature,"
+                                                 "optionally mapping it on an input topology. "
+                                                 "This nomenclature can be read locally or over the network from the "
+                                                 "KLIFS database." )
+
+    parser.add_argument("UniProtAC_or_excelfile", type=str,
+                        help="Get KLIFS definitions from here. A UniProt accession code, "
+                             "e.g. P31751 or a path to a an Excel File 'KLIFS_P31751.xlsx'."
+                             "If nothing is found locally, there will be a web-lookup "
+                             "in KLIFS, see https://klifs.net ."
+                             )
+    parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
+
+    _parser_add_write_to_disk(parser)
+    _parser_add_print_conlab(parser)
+    #_parser_add_fill_gaps(parser)
+    _parser_add_AAs(parser)
+    _parser_add_conslabels(parser)
+
+    return parser
+
 def parser_for_compare_neighborhoods():
     parser = argparse.ArgumentParser(description="Compare residue-residue contact frequencies "
                                                  "from different files by generating a comparison plot and table",
