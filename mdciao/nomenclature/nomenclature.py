@@ -2545,15 +2545,6 @@ def _KLIFS_finder(UniProtAC,
     KLIFS_API = "https://klifs.net/api"
     url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
 
-    def _read_excel_as_KDF(fullpath):
-        idict = _read_excel(fullpath,
-                            None,
-                            engine="openpyxl")
-        assert len(idict) == 1
-        for key, val in idict.items():
-            UniProtAC, PDB_id = key.split("_")
-            return _KLIFSDataFrame(val.replace({_np.nan: None}),
-                                   UniProtAC=UniProtAC, PDB_id=PDB_id)
 
     local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath)
 
@@ -2565,6 +2556,32 @@ def _KLIFS_finder(UniProtAC,
                           dont_fail=dont_fail,
                           write_to_disk=write_to_disk)
 
+def _read_excel_as_KDF(fullpath):
+    r"""
+    Read a KLIFS Excel file and return a :obj:`_KLIFSDataFrame`
+
+    The PDB geom is instantiated from the extra-sheets of the Excel file
+
+    Parameters
+    ----------
+    fullpath : str
+        Path to the Excel file
+
+    Returns
+    -------
+    df : :obj:`_KLIFSDataFrame`
+
+    """
+    idict = _read_excel(fullpath,
+                        None,
+                        engine="openpyxl")
+    assert len(idict) == 5
+    keys = list(idict.keys())
+    UniProtAC, PDB_id = keys[0].split("_")
+    geom = _Spreadsheets2mdTrajectory(idict)
+    df = _KLIFSDataFrame(idict[keys[0]].replace({_np.nan: None}),
+                         UniProtAC=UniProtAC, PDB_id=PDB_id, PDB_geom=geom)
+    return df
 
 class LabelerKLIFS(LabelerConsensus):
     """Obtain and manipulate Kinase-Ligand Interaction notation of the 85 pocket-residues of kinases.
