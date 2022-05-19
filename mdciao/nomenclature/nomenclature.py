@@ -2330,17 +2330,22 @@ class _KDF(_DataFrame):
 
 class _KLIFSDataFrame(_KDF):
     r"""
-    Sub-class of an :obj:`~pandas.DataFrame` to include KLIFS-associated metadata as attributes
+    Sub-class of an :obj:`~pandas.DataFrame` to include KLIFS-associated metadata as attributes.
 
-    Simply pass arguments e.g. 'UniProtAC=P31751' and PDB_id="3e8d" and PDB_geom=md.Trajectory()
-     * can be then accessed via self.UniProtAC, self.PDB_id and self.PDB_geom
-     * they are preserved downstream after operating on the df
+    Simply pass arguments e.g. 'UniProtAC=P31751', PDB_id="3e8d",
+    and PDB_geom=geom (an :obj:`~mdtraj.Trajectory`) and then will
+    be accessible via self.UniProtAC, self.PDB_id and self.PDB_geom
 
-    Note that no checks are done to see if these arguments are of the expected class
+    Note that no checks are done to see if these arguments are of the expected class.
 
-    It also thinly wraps around :obj:`~pandas.DataFrame.to_excel` s.t. the attributes
-    self.UniProtAC and self.PDB_id are saved into the sheet name, e.g. as "P31751_3e8d"
-    and can be recovered upon reading an Excel file from disk
+    Implements its own :obj:`~pandas.DataFrame.to_excel`
+    s.t. the attributes self.UniProtAC, self.PDB_id are saved
+    into the sheet name, e.g. as "P31751_3e8d" and can be
+    recovered upon reading an Excel file from disk.
+    self.PDB_geom is also stored as extra sheets in the
+    same file, s.t. when reading that Excel File using
+    :obj:`_read_excel_as_KDF`, self.PDB_geom is re-instantiated
+    as well as a :obj:`~mdtraj.Trajectory`.
 
     Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
     for more info
