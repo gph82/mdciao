@@ -2361,13 +2361,24 @@ class _KLIFSDataFrame(_KDF):
         for key, val in argdict.items():
             setattr(self, key, val)
 
-    def to_excel(self, *args, **kwargs):
-        r""" Thinly wrap around :obj:`~pandas.DataFrame.to_excel`
-        s.t. the attributes self.UniProtAC and self.PDB_id are saved into
-        the sheet name, e.g. as "P31751_3e8d" and can be recovered
-        upon reading an Excel file from disk """
-        kwargs["sheet_name"] = "%s_%s" % (self.UniProtAC, self.PDB_id)
-        super(_KLIFSDataFrame, self).to_excel(*args, **kwargs)
+    def to_excel(self, excel_writer, **kwargs):
+        r""" Like :obj:`~pandas.DataFrame.to_excel` but saves also the PDB topology and coordinates
+
+        Also, the attributes self.UniProtAC and self.PDB_id are saved into
+        the first sheet's name, e.g. as "P31751_3e8d" and can be recovered
+        upon reading an Excel file from disk.
+
+        The other sheet's are called "topology", "bonds", "unitcell", and "xyz"
+
+        If :obj:kwargs contains arguments "sheet_name", "index",
+        an Exception will be thrown. """
+
+        with _ExcelWriter(excel_writer) as writer:
+            _DataFrame.to_excel(self, writer,
+                                index=False,
+                                sheet_name="%s_%s" % (self.UniProtAC, self.PDB_id),
+                                **kwargs)
+            _mdTrajectory2spreadsheets(self.PDB_geom, writer, **kwargs)
 
 
 def _KLIFS_web_lookup(UniProtAC,

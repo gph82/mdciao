@@ -988,6 +988,15 @@ class Test_KLIFS_web_lookup(unittest.TestCase):
         KLIFS_df = nomenclature._KLIFS_web_lookup("P3175111")
         assert isinstance(KLIFS_df, ValueError)
 
+class Test_read_excel_as_KDF(unittest.TestCase):
+
+    def test_just_works(self):
+        df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx)
+        assert isinstance(df, nomenclature._KLIFSDataFrame)
+
+        geom = md.load(test_filenames.pdb_3E8D)
+        assert geom == df.PDB_geom
+
 
 class Test_KLIFS_finder(unittest.TestCase):
     def setUp(self):
