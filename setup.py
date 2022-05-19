@@ -87,6 +87,7 @@ setup(
              'scripts/mdc_fragments.py',
              'scripts/mdc_GPCR_overview.py',
              'scripts/mdc_CGN_overview.py',
+             'scripts/mdc_KLIFS_overview.py',
              'scripts/mdc_compare.py',
              'scripts/mdc_examples.py',
              'scripts/mdc_pdb.py',
