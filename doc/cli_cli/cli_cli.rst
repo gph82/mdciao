@@ -13,6 +13,7 @@ We refer to the command-line-tools collectively as the command-line-interface, o
  Available command line tools are:
   * mdc_GPCR_overview.py
   * mdc_CGN_overview.py
+  * mdc_KLIFS_overview.py
   * mdc_compare.py
   * mdc_fragments.py
   * mdc_interface.py
@@ -40,6 +41,7 @@ We refer to the command-line-tools collectively as the command-line-interface, o
    mdc_compare
    mdc_GPCR_overview
    mdc_CGN_overview
+   mdc_KLIFS_overview
    mdc_residues
    mdc_pdb
    mdc_notebooks
