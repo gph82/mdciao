@@ -16,11 +16,12 @@ mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 
 Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org>`_ for visualizaton. It tries to automatically use the consensus nomenclature for
 
-* GPCRs, e.g. `Ballesteros-Weinstein-Numbering <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_ or structure-based schemes by `Gloriam et al <https://doi.org/10.1016/j.tips.2014.11.001>`_, and
-* G-proteins, via `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_
+* GPCRs, e.g. `Ballesteros-Weinstein-Numbering <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_ or structure-based schemes by `Gloriam et al <https://doi.org/10.1016/j.tips.2014.11.001>`_,
+* G-proteins, via `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_, and
+* Kinases, via their `85 pocket-residue numbering scheme <https://doi.org/10.1021/JM400378W>`_.
 
 by either using local files or on-the-fly lookups of the `GPCRdb <https://gpcrdb.org/>`_
-and/or `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_
+and/or `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_ and/or `KLIFS <https://klifs.net/>`_, respectively.
 
 Licenses
 ========
