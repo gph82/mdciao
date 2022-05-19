@@ -1055,8 +1055,12 @@ class TestLabelerKLIFS(unittest.TestCase):
 class Test_mdTrajectory_and_spreadsheets(unittest.TestCase):
 
     def test_reading_and_writing_works(self):
-        pdb = md.load(examples.filenames.pdb_3SN6)
-        with _NamedTemporaryFile(suffix="_3SN6.xlsx") as f:
-            nomenclature._mdTrajectory2spreadsheets(pdb,f.name)
-            read_pdb = nomenclature._Spreadsheets2mdTrajectory(f.name)
-            assert pdb == read_pdb
+        for pdb in [examples.filenames.pdb_3SN6,
+                    examples.filenames.pdb_1U19,
+                    examples.filenames.pdb_3CAP,
+                    examples.filenames.pdb_3E8D]:
+            geom = md.load(pdb)
+            with _NamedTemporaryFile(suffix="_pdb_as.xlsx") as f:
+                nomenclature._mdTrajectory2spreadsheets(geom,f.name)
+                read_pdb = nomenclature._Spreadsheets2mdTrajectory(f.name)
+                assert geom == read_pdb

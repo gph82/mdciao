@@ -2224,13 +2224,31 @@ def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
         _DataFrame.to_excel(xyzdf, f, sheet_name="xyz", index=False, **kwargs_to_excel)
 
 def _Spreadsheets2mdTrajectory(source):
+    r""" Generate a :obj:`~mdtraj.Trajectory` from an Excel file or a dict with DataFrames
+
+    Parameters
+    ----------
+    source : dict or str
+        A dictionary of :obj:`~pandas.Dataframe`
+        or a filename of an ExcelFile. It
+        has to contain the keys or sheet names
+        "topology", "bonds", "xyz" and "unitcell",
+        and will have been typically generated
+        with :obj:`_mdTrajectory2spreadsheets`
+
+    Returns
+    -------
+    traj : :obj:`~mdtraj.Trajectory`
+
+    """
+    from ._md_from_dataframe import from_dataframe as _from_dataframe
     if isinstance(source, dict):
         idict = source
     else:
         idict = _read_excel(source,
                             None,
                             engine="openpyxl")
-    topology = _md.Topology.from_dataframe(idict["topology"], bonds=idict["bonds"].values)
+    topology = _from_dataframe(idict["topology"], bonds=idict["bonds"].values)
     xyz = idict["xyz"].values
     geom = _md.Trajectory(xyz, topology,
                           unitcell_angles = idict["unitcell"].angles,
