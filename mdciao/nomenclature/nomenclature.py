@@ -2502,10 +2502,9 @@ def _KLIFS_finder(UniProtAC,
 
     Please see the relevant references in :obj:`LabelerKLIFS`.
 
-    When reading from disk, attributes DF.UniProtAC and DF.PDB_code
-    get populated, but DF.PDB_geom is left as None. Use directly
-    :obj:`LabelerKLIFS`, which wraps around this method, to populate
-    all three of them
+    When reading from disk, the method _read_excel_as_KDF is used,
+    which automatically populates attributes DF.UniProtAC, DF.PDB_code
+    and DF.PDB_geom.
 
     Internally, this method wraps around :obj:`_finder_writer`
 
@@ -2594,7 +2593,37 @@ class LabelerKLIFS(LabelerConsensus):
     The residue notation is obtained from the
     `Kinase–Ligand Interaction Fingerprints and Structure database, KLIFS <https://klifs.net/>`_.
 
-    These are the relevant references, but please check `how to cite KLIFS <https://klifs.net/faq.php>`_ in case of doubt:
+    The online lookup logic, implemented by the low-level method :obj:`_KLIFS_web_lookup`, is:
+
+     * Query `KLIFS <https://klifs.net/>`_ with the UniProt accession code and
+       get best structure match (highest KLIFS score) and its associated PDB.
+     * Query `KLIFS <https://klifs.net/>`_ again for that structure/PDB
+       and get their 85 pocket residue indices (in that specific PDB file)
+       and their consensus names.
+     * Query `UniProtKB <https://www.uniprot.org/>`_ on that PDB for
+       the chainID and residue info associated with that UniProt accession code.
+     * Query `RCSB PDB <https://rcsb.org/>`_ and get the geometry.
+    All the above information is stored in this object and accessible via
+    its attributes, check their individual documentation for more info.
+
+    The local lookup logic, implemented by the low-level method :obj:`_KLIFS_finder`, is:
+
+     * Use the :obj:`UniProtAC` directly or in combination with :obj:`format` ="KLIFS_%s.xlsx"
+       and :obj:`local_path` to locate a local excel file. That excel file has been
+       generated previously by calling :obj:`LabelerKLIFS` with :obj:`write_to_disk=True`
+       or by using the :obj:`LabelerKLIFS.dataframe.to_excel` method of an
+       already instantiated :obj:`LabelerKLIFS` object. That Excel file will
+       contain, apart from the nomenclature, all other attributes, including
+       the PDB geometry, needed to re-generate the  :obj:`LabelerKLIFS` locally.
+       An example Excel file has been distributed with mdciao and you can find it with:
+
+       >>> import mdciao
+       >>> mdciao.examples.filenames.KLIFS_P31751_xlsx
+
+    References
+    ----------
+    These are the most relevant references on the nomenclature itself,
+    but please check `how to cite KLIFS <https://klifs.net/faq.php>`_ in case of doubt:
 
     * Van Linden, O. P. J., Kooistra, A. J., Leurs, R., De Esch, I. J. P., & De Graaf, C. (2014).
       KLIFS: A knowledge-based structural database to navigate kinase-ligand interaction space.
@@ -2650,7 +2679,7 @@ class LabelerKLIFS(LabelerConsensus):
             If :obj:`UniProtAC` is e.g. "KLIFS_P31751.xlsx",
             including the extension "xslx", then the lookup will
             fail. This what the :obj:`format` parameter is for
-            write_to_disk : bool, default is False
+        write_to_disk : bool, default is False
             Save an excel file with the nomenclature
             information
         """
