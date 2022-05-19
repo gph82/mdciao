@@ -995,29 +995,36 @@ class Test_read_excel_as_KDF(unittest.TestCase):
 
 class Test_KLIFS_finder(unittest.TestCase):
     def setUp(self):
+        # This acts as test_find_online
         self.UniProtAC = "P31751"
         self.KLIFS_df = nomenclature._KLIFS_finder(self.UniProtAC)[0]
+        self.geom = md.load(test_filenames.pdb_3E8D)
 
     def test_finds_online(self):
         assert isinstance(self.KLIFS_df, nomenclature._KLIFSDataFrame)
+        assert self.KLIFS_df.PDB_id == "3E8D"
+        assert self.KLIFS_df.UniProtAC == "P31751"
+        assert self.KLIFS_df.PDB_geom == self.geom
 
-    def test_finds_local_and_reconstructs_attributes(self):
-        with _TDir(suffix="_mdciao_test") as tdir:
-            full_path_local_filename = path.join(tdir, "KLIFS_%s.xlsx" % self.UniProtAC)
-            self.KLIFS_df.to_excel(full_path_local_filename)
-            df, filename = nomenclature._KLIFS_finder(self.UniProtAC, try_web_lookup=False, local_path=tdir)
-            assert df.PDB_id == self.KLIFS_df.PDB_id
-            assert df.UniProtAC == self.KLIFS_df.UniProtAC
-            assert df.PDB_geom is None
+    def test_finds_local_with_uniprot(self):
+        df, filename = nomenclature._KLIFS_finder(self.UniProtAC, try_web_lookup=False,
+                                                  local_path=test_filenames.nomenclature_path)
+        assert df.PDB_id == self.KLIFS_df.PDB_id
+        assert df.UniProtAC == self.KLIFS_df.UniProtAC
+        assert df.PDB_geom == self.geom
 
     def test_finds_local_with_explicit_filename(self):
-        with _TDir(suffix="_mdciao_test") as tdir:
-            full_path_local_filename = path.join(tdir, "very_specific.xlsx")
-            self.KLIFS_df.to_excel(full_path_local_filename)
-            df, filename = nomenclature._KLIFS_finder(full_path_local_filename)
+        with _NamedTemporaryFile(suffix=".xslxs") as f:
+        #with _TDir(suffix="_mdciao_test") as tdir:
+            copy(test_filenames.KLIFS_P31751_xlsx, f.name)
+            #full_path_local_filename = path.join(tdir, "very_specific.xlsx")
+            #self.KLIFS_df.to_excel(full_path_local_filename)
+            df, filename = nomenclature._KLIFS_finder(f.name)
+            assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.UniProtAC == self.KLIFS_df.UniProtAC
-            assert df.PDB_geom is None
+            assert df.PDB_geom == self.geom
+
 
 class TestLabelerKLIFS(unittest.TestCase):
 
