@@ -76,7 +76,7 @@ class Test_ExamplesCLTs(unittest.TestCase):
             CP = self.xCLTs.run("mdc_GPCR_overview",
                                 # show=True
                                 )
-        assert _np.unique([iCP.returncode for iCP in CP]) == 0
+        assert _np.unique([iCP.returncode for iCP in CP]) == 0, CP
 
     def test_mdc_CGN(self):
         with remember_cwd():

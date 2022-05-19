@@ -24,6 +24,5 @@ from mdciao.parsers import parser_for_KLIFS_overview
 from mdciao.cli.cli import _fragment_overview
 parser = parser_for_KLIFS_overview()
 a  = parser.parse_args()
-setattr(a, 'input_', a.UniProtAC_or_excelfile)
 setattr(a, "fill_gaps", False)
 _fragment_overview(a,"KLIFS")

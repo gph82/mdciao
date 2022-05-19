@@ -59,6 +59,18 @@ def _inform_of_parser(parser,args=None):
             fmt = '%s="%s",'
         print(fmt % (key, dval))
 
+class Populate_input_Action(argparse.Action):
+    r"""
+    Create an alias named "input_" for this argument.
+
+    Helps create a common interface for cli._fragment_overview
+
+    https://docs.python.org/3/library/argparse.html#action
+    Ctr+F "FooAction"
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, 'input_', values)
+
 def _parser_top_traj(description=None):
     r"""
     Instantiate the basic parsers which can take topology and trajectories
@@ -692,7 +704,8 @@ def parser_for_GPCR_overview():
                              "If a file is not found locally, look for\n"
                              " Ballesteros-Weinstein definitions in the GPCRdb\n"
                              "using this string as uniprot code, "
-                             "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
+                             "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details.",
+                        action=Populate_input_Action
                         )
     parser.add_argument("-t",'--topology', type=str, help='Topology file', default=None)
 
@@ -748,7 +761,8 @@ def parser_for_KLIFS_overview():
                         help="Get KLIFS definitions from here. A UniProt accession code, "
                              "e.g. P31751 or a path to a an Excel File 'KLIFS_P31751.xlsx'."
                              "If nothing is found locally, there will be a web-lookup "
-                             "in KLIFS, see https://klifs.net ."
+                             "in KLIFS, see https://klifs.net .",
+                        action=Populate_input_Action,
                              )
     parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
 
