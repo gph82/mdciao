@@ -53,7 +53,7 @@ class FileNames(object):
             self.notebooks_path = _path.join(sfpath,"mdciao","examples")
 
         self.bogus_pdb_path = _path.join(self.test_data_path, "bogus_pdb")
-        self.RSCB_pdb_path =  _path.join(self.test_data_path,"RSCB_pdb" )
+        self.RCSB_pdb_path =  _path.join(self.test_data_path, "RCSB_pdb")
         self.example_path =   _path.join(self.test_data_path,"examples")
         self.nomenclature_path = _path.join(self.test_data_path,"nomenclature")
         self.json_path = _path.join(self.test_data_path,"json")
@@ -74,9 +74,10 @@ class FileNames(object):
         self.ions_and_water = _path.join(self.bogus_pdb_path, "water_and_ions.pdb.gz")
 
         # Pure-PDBs
-        self.pdb_3CAP = _path.join(self.RSCB_pdb_path,"3cap.pdb.gz")
-        self.pdb_1U19 = _path.join(self.RSCB_pdb_path,"1u19.pdb.gz")
-        self.pdb_3SN6 = _path.join(self.RSCB_pdb_path,"3SN6.pdb.gz")
+        self.pdb_3CAP = _path.join(self.RCSB_pdb_path, "3cap.pdb.gz")
+        self.pdb_1U19 = _path.join(self.RCSB_pdb_path, "1u19.pdb.gz")
+        self.pdb_3SN6 = _path.join(self.RCSB_pdb_path, "3SN6.pdb.gz")
+        self.pdb_3E8D = _path.join(self.RCSB_pdb_path, "3E8D.pdb.gz")
 
         # Traj
         self.top_pdb = _path.join(self.example_path,"gs-b2ar.noH.pdb")
@@ -92,6 +93,7 @@ class FileNames(object):
         self.pdb_3SN6_mut = _path.join(self.nomenclature_path, "3SN6_GLU10GLX.pdb.gz")
         self.adrb2_human_xlsx = _path.join(self.nomenclature_path,"adrb2_human.xlsx")
         self.nomenclature_bib = _path.join(self.nomenclature_path,"nomenclature.bib")
+        self.KLIFS_P31751_xlsx = _path.join(self.nomenclature_path, "KLIFS_P31751.xlsx")
 
         #json
         self.GDP_json = _path.join(self.json_path,"GDP.json")

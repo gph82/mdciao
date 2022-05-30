@@ -59,6 +59,18 @@ def _inform_of_parser(parser,args=None):
             fmt = '%s="%s",'
         print(fmt % (key, dval))
 
+class Populate_input_Action(argparse.Action):
+    r"""
+    Create an alias named "input_" for this argument.
+
+    Helps create a common interface for cli._fragment_overview
+
+    https://docs.python.org/3/library/argparse.html#action
+    Ctr+F "FooAction"
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, 'input_', values)
+
 def _parser_top_traj(description=None):
     r"""
     Instantiate the basic parsers which can take topology and trajectories
@@ -692,7 +704,8 @@ def parser_for_GPCR_overview():
                              "If a file is not found locally, look for\n"
                              " Ballesteros-Weinstein definitions in the GPCRdb\n"
                              "using this string as uniprot code, "
-                             "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
+                             "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details.",
+                        action=Populate_input_Action
                         )
     parser.add_argument("-t",'--topology', type=str, help='Topology file', default=None)
 
@@ -733,6 +746,29 @@ def parser_for_CGN_overview():
     _parser_add_write_to_disk(parser)
     _parser_add_print_conlab(parser)
     _parser_add_fill_gaps(parser)
+    _parser_add_AAs(parser)
+    _parser_add_conslabels(parser)
+
+    return parser
+
+def parser_for_KLIFS_overview():
+    parser = argparse.ArgumentParser(description="Produce an overview of a the Kinase 85 pocket-residues nomenclature,"
+                                                 "optionally mapping it on an input topology. "
+                                                 "This nomenclature can be read locally or over the network from the "
+                                                 "KLIFS database." )
+
+    parser.add_argument("UniProtAC_or_excelfile", type=str,
+                        help="Get KLIFS definitions from here. A UniProt accession code, "
+                             "e.g. P31751 or a path to a an Excel File 'KLIFS_P31751.xlsx'."
+                             "If nothing is found locally, there will be a web-lookup "
+                             "in KLIFS, see https://klifs.net .",
+                        action=Populate_input_Action,
+                             )
+    parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
+
+    _parser_add_write_to_disk(parser)
+    _parser_add_print_conlab(parser)
+    #_parser_add_fill_gaps(parser)
     _parser_add_AAs(parser)
     _parser_add_conslabels(parser)
 

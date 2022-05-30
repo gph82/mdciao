@@ -1,30 +1,20 @@
 r"""
-Get and manipulate consensus nomenclature for GPCRs and G-proteins.
+Get and manipulate consensus nomenclature for GPCRs, G-proteins, and Kinases.
 
-Uses local files and/or accesses the following databases:
+Uses local files and/or accesses the following databases and their public APIs
 
  * `GPCRdb <https://gpcrdb.org/>`_
- * `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_
- * `http://www.rcsb.org/ <https://files.rcsb.org/download>`_
+ * `Common Gα Numbering (CGN) scheme <https://www.mrc-lmb.cam.ac.uk/CGN/>`_
+ * `KLIFS - The structural kinase database <https://klifs.net/>`_
+ * `RCSB PDB rcsb.org <https://rcsb.org/>`_
+ * `UniProt Knowledgebase <https://www.uniprot.org/>`_
 
-Please see the individual documentation for further references and cite them
+Please see the individual documentation of the `Labeler Classes <Classes>`_ for further references and cite them
 whenever you use these nomenclature schemes in your final publication.
 
+Additionally, use :obj:`mdciao.nomenclature.references` anytime to get more info.
 
 .. currentmodule:: mdciao.nomenclature
-
-Functions
-=========
-
-.. autosummary::
-    :nosignatures:
-    :toctree: generated/
-
-    guess_nomenclature_fragments
-    PDB_finder
-    GPCR_finder
-    md_load_rscb
-    references
 
 Classes
 =======
@@ -34,8 +24,19 @@ Classes
 
     LabelerGPCR
     LabelerCGN
+    LabelerKLIFS
     Literature
 
+Functions
+=========
+
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+
+    guess_by_nomenclature
+    guess_nomenclature_fragments
+    references
 
 References
 ==========
@@ -73,9 +74,22 @@ These are some of the references most relevant to this module:
 
  * Flock, T., Ravarani, C. N. J., Sun, D., Venkatakrishnan, A. J., Kayikci, M., Tate, C. G., … Babu, M. M. (2015). Universal allosteric mechanism for Gα activation by GPCRs. Nature 2015 524:7564, 524(7564), 173–179. https://doi.org/10.1038/nature14663
 
+* KLIFS 85 ligand binding site residues of kinases
+
+ * Van Linden, O. P. J., Kooistra, A. J., Leurs, R., De Esch, I. J. P., & De Graaf, C. (2014). KLIFS: A knowledge-based structural database to navigate kinase-ligand interaction space. Journal of Medicinal Chemistry, 57(2), 249–277. https://doi.org/10.1021/JM400378W
+ * Kooistra, A. J., Kanev, G. K., Van Linden, O. P. J., Leurs, R., De Esch, I. J. P., & De Graaf, C. (2016). KLIFS: a structural kinase-ligand interaction database. Nucleic Acids Research, 44(D1), D365–D371. https://doi.org/10.1093/NAR/GKV1082
+ * Kanev, G. K., de Graaf, C., Westerman, B. A., de Esch, I. J. P., & Kooistra, A. J. (2021). KLIFS: an overhaul after the first 5 years of supporting kinase research. Nucleic Acids Research, 49(D1), D562–D569. https://doi.org/10.1093/NAR/GKAA895
+
+
 * PDB
 
  * Berman, H. M., Westbrook, J., Feng, Z., Gilliland, G., Bhat, T. N., Weissig, H., … Bourne, P. E. (2000, January 1). The Protein Data Bank. Nucleic Acids Research. Oxford Academic. https://doi.org/10.1093/nar/28.1.235
+
+* UniProt
+
+ * Bateman, A., Martin, M. J., Orchard, S., Magrane, M., Agivetova, R., Ahmad, S., … Zhang, J. (2021). UniProt: the universal protein knowledgebase in 2021. Nucleic Acids Research, 49(D1), D480–D489. https://doi.org/10.1093/NAR/GKAA1100
+
+
 
 
 """

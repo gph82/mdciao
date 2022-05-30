@@ -101,16 +101,18 @@ def _parse_consensus_option(option, consensus_type,
            full of Nones is returned
          * str
           The needed identifier to instantiate an
-          :obj:`LabelerGPCR` or an :obj:`LabelerCGN` object.
-          Examples would be a :obj:`uniprot_name` or a :obj:`ref_PDB`,
+          :obj:`LabelerGPCR`, :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
+          Examples would be a :obj:`uniprot_name`, a :obj:`ref_PDB`, or
+          an :obj:`uniprot_AC`
           respectively
          * :obj:`LabelerConsensus`
-          An already instantiated :obj:`LabelerGPCR` or :obj:`LabelerCGN`
+          An already instantiated :obj:`LabelerGPCR`,
+          :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
           The method then does nothing. Usecase are repeated
           calls to any of the methods in :obj:`command_line_tools`
           without each call instantiating its own :obj:`LabelerConsensus`
     consensus_type : str
-        Either "CGN" or "GPCR"
+        Either "CGN", "GPCR", "KLIFS"
     top : :obj:`mdtraj.Topology`
     fragments : iterable of iterables of ints
         How the :obj:`top` is fragmented. Helps
@@ -136,7 +138,8 @@ def _parse_consensus_option(option, consensus_type,
             LC_out = None
         else:
             LC_out = {"GPCR": _mdcnomenc.LabelerGPCR,
-                      "CGN":_mdcnomenc.LabelerCGN}[consensus_type](option, **LabelerConsensus_kwargs)
+                      "CGN": _mdcnomenc.LabelerCGN,
+                      "KLIFS": _mdcnomenc.LabelerKLIFS}[consensus_type](option, **LabelerConsensus_kwargs)
 
     #todo add a class check here instead of failing later on
     else:
@@ -453,34 +456,38 @@ def _trajsNtop2xtcsNrefgeom(trajectories,topology):
 
 def _fragment_overview(a,labtype):
     r"""
-    provide the CLTs GPCR_overview and CGN_overview
+    provide the CLTs GPCR_overview and CGN_overview and KLIFS_overview
 
     Parameters
     ----------
     a : :obj:`argparse.Namespace` object
         Contains the arguments used by the user
-    labtype : srt, "GPCR" or "CGN"
+    labtype : srt, "GPCR", "CGN", "KLIFS"
         lets the code know which :obj:`LabelerConsensus` to use
 
     Returns
     -------
     None
     """
+
+    class_dict = {"GPCR":_mdcnomenc.LabelerGPCR,
+                  "KLIFS":_mdcnomenc.LabelerKLIFS}
+
     if labtype == "CGN":
         val = a.PDB_code_or_txtfile
         obj = _mdcnomenc.LabelerCGN(val, write_to_disk=a.write_to_disk)
 
-    elif labtype == "GPCR":
-        val = a.GPCR_uniprot_or_file
+    elif labtype in class_dict.keys():
+        val = a.input_
         if _path.exists(val):
             format = "%s"
         else:
-            format = _signature(_mdcnomenc.LabelerGPCR).parameters["format"].default
-        obj = _mdcnomenc.LabelerGPCR(val,
-                                     format=format,
-                                     write_to_disk=a.write_to_disk)
+            format = _signature(class_dict[labtype]).parameters["format"].default
+        obj = class_dict[labtype](val,
+                                  format=format,
+                                  write_to_disk=a.write_to_disk)
     else:
-        raise ValueError("Don't know the consensus type %s, only 'GPCR' and 'CGN'"%labtype)
+        raise ValueError("Don't know the consensus type %s, only 'GPCR', 'CGN', 'KLIFS'"%labtype)
 
     if a.topology is not None:
         top = _md.load(a.topology).top
@@ -538,6 +545,7 @@ def residue_neighborhoods(residues,
                           table_ext=".dat",
                           GPCR_uniprot=None,
                           CGN_PDB=None,
+                          KLIFS_uniprotAC=None,
                           output_dir='.',
                           output_desc='neighborhood',
                           t_unit='ns',
@@ -654,7 +662,9 @@ def residue_neighborhoods(residues,
         neighbor-list is created, for each residue, that includes
         the residues up to :obj:`nlist_cutoff_Ang` from the residue.
         Increase this parameters (e.g. to 30) if you expect large conformational
-        changes and/or the geometry in :obj:`topology`
+        changes and/or the geometry in :obj:`topology`. Setting
+        this cutoff to None is equivalent to using no cutoff,
+        i.e. all possible contacts are regarded
     n_smooth_hw: int, default is 0
         Plots of the time-traces will be smoothed using a window
         of 2*n_smooth_hw
@@ -672,7 +682,7 @@ def residue_neighborhoods(residues,
         There exist several input modes:
 
         * ["consensus"] : use things like "TM*" or "G.H*", i.e.
-         Ballesteros-Weinstein or CGN-sub-subunit labels.
+         GPCR or CGN-sub-subunit labels.
         * List of len 1 with some fragmentation heuristic, e.g.
          ["lig_resSeq+"]. will use the default of
          :obj:`mdciao.fragments.get_fragments`. See there for
@@ -706,18 +716,30 @@ def residue_neighborhoods(residues,
     table_ext : str, default is ".dat"
         The extension (=format) of the saved tables
     GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
-        Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
-        try to locate a local filename or do a web lookup in the GPCRdb.
+        For GPCR nomenclature. If str, e.g. "adrb2_human".
+        will try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
-        (allows for object re-use when in API mode)
+        (allows for object re-use when in API mode).
         See :obj:`mdciao.nomenclature` for more info and references.
+        Please note the difference between UniProt Accession Code
+        and UniProt entry name
+        as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
-        Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
         try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
+    KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
+        Uniprot Accession Code for kinase KLIFS nomenclature. If str, e.g. "P31751",
+        try to locate a local filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerKLIFS`, use this object directly
+        (allows for object re-use when in API mode). See :obj:`mdciao.nomenclature`
+        for more info and references. Please note
+        the difference between UniProt Accession Code
+        and UniProt entry name as explained
+        `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     output_dir : str, default is '.'
         directory to which the results are written.
     output_desc : str, default is 'neighborhood'
@@ -834,7 +856,7 @@ def residue_neighborhoods(residues,
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
                                                                    midstring=mid_string, GPCR_uniprot=GPCR_uniprot,
-                                                                   CGN_PDB=CGN_PDB,
+                                                                   CGN_PDB=CGN_PDB, KLIFS_uniprotAC=KLIFS_uniprotAC,
                                                                    save_nomenclature_files=save_nomenclature_files,
                                                                    accept_guess=accept_guess,
                                                                    interpret_as_res_idxs=res_idxs, sort=sort)
@@ -873,10 +895,13 @@ def residue_neighborhoods(residues,
         fragment_idxs = [[_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair] for pair in ctc_idxs]
         ctc_idxs = [ctc_idxs[ii] for (ii,pair) in enumerate(fragment_idxs) if pair[0]!=pair[1]]
 
-    print(
-        "\nPre-computing likely neighborhoods by reducing the neighbor-list\n"
-        "to those within %u Angstrom"%nlist_cutoff_Ang,
-        end=" ",flush=True)
+    if nlist_cutoff_Ang is None:
+        nlist_cutoff_Ang = _np.inf
+    else:
+        print(
+            "\nPre-computing likely neighborhoods by reducing the neighbor-list\n"
+            "to those within %u Angstrom"%nlist_cutoff_Ang,
+            end=" ",flush=True)
 
     if pre_computed_distance_matrix is not None:
         if not pre_computed_distance_matrix.shape[0] == pre_computed_distance_matrix.shape[1] == refgeom.top.n_residues:
@@ -1131,24 +1156,22 @@ def interface(
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
-    GPCR_uniprot : str, default is 'None'
-        Try to find Ballesteros-Weinstein definitions. If
-        str, e.g. "adrb2_human", try to locate a local
-        filename or do a web lookup in the GPCRdb.
-        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object
-        directly (allows for object re-use when in API mode)
-        See :obj:`mdciao.nomenclature` for more info and
-        references.
-    CGN_PDB : str, default is 'None'
-        Try to find Common G-alpha Numbering definitions. If
-        str, e.g. "3SN6", try to locate local filenames
-        ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups in
-        https://www.mrc-lmb.cam.ac.uk/CGN/ and
-        http://www.rcsb.org/. If
-        :obj:`mdciao.nomenclature.LabelerCGN`, use this
-        object directly (allows for object re-use when in API
-        mode) See :obj:`mdciao.nomenclature` for more info
-        and references.
+    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+        For GPCR nomenclature. If str, e.g. "adrb2_human".
+        will try to locate a local filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
+        (allows for object re-use when in API mode).
+        See :obj:`mdciao.nomenclature` for more info and references.
+        Please note the difference between UniProt Accession Code
+        and UniProt entry name
+        as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
+        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and references.
     chunksize_in_frames : int, default is 10000
         Stream through the trajectory data in chunks of this
         many frames Can lead to memory errors if
@@ -1167,7 +1190,7 @@ def interface(
         There exist several input modes:
 
         * ["consensus"] : use things like "TM*" or "G.H*", i.e.
-         Ballesteros-Weinstein or CGN-sub-subunit labels.
+         GPCR or CGN-sub-subunit labels.
         * List of len 1 with some fragmentation heuristic, e.g.
          ["lig_resSeq+"] : will use the default of
          :obj:`mdciao.fragments.get_fragments`. See there for
@@ -1626,31 +1649,29 @@ def sites(site_inputs,
         window of 2*n_smooth_hw
     pbc : bool, default is True
         Use periodic boundary conditions
-    GPCR_uniprot : str, default is 'None'
-        Try to find Ballesteros-Weinstein definitions. If
-        str, e.g. "adrb2_human", try to locate a local
-        filename or do a web lookup in the GPCRdb.
-        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object
-        directly (allows for object re-use when in API mode)
-        See :obj:`mdciao.nomenclature` for more info and
-        references.
-    CGN_PDB : str, default is 'None'
-        Try to find Common G-alpha Numbering definitions. If
-        str, e.g. "3SN6", try to locate local filenames
-        ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups in
-        https://www.mrc-lmb.cam.ac.uk/CGN/ and
-        http://www.rcsb.org/. If
-        :obj:`mdciao.nomenclature.LabelerCGN`, use this
-        object directly (allows for object re-use when in
-        API mode) See :obj:`mdciao.nomenclature` for more
-        info and references.
+    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+        For GPCR nomenclature. If str, e.g. "adrb2_human".
+        will try to locate a local filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
+        (allows for object re-use when in API mode).
+        See :obj:`mdciao.nomenclature` for more info and references.
+        Please note the difference between UniProt Accession Code
+        and UniProt entry name
+        as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
+        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and references.
     fragments : list, default is ['lig_resSeq+']
         Fragment control. For compatibility reasons, it has
         to be a list, even if it only has one element.
         There exist several input modes:
 
         * ["consensus"] : use things like "TM*" or "G.H*", i.e.
-         Ballesteros-Weinstein or CGN-sub-subunit labels.
+         GPCR or CGN-sub-subunit labels.
         * List of len 1 with some fragmentation heuristic, e.g.
          ["lig_resSeq+"]. will use the default of
          :obj:`mdciao.fragments.get_fragments`. See there for
@@ -2005,18 +2026,22 @@ def pdb(code,
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
 
-def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None,
+def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None, KLIFS_uniprotAC=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
+
+    option_dict = {"GPCR": GPCR_uniprot,
+                   "CGN": CGN_PDB,
+                   "KLIFS": KLIFS_uniprotAC}
+
     consensus_frags, consensus_maps, consensus_labelers = \
-        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
-                                                           "CGN": CGN_PDB},
+        _parse_consensus_options_and_return_fragment_defs(option_dict,
                                                           top,
                                                           fragments,
                                                           verbose=True,
                                                           save_nomenclature_files=save_nomenclature_files,
                                                           accept_guess=accept_guess)
-    consensus_maps = {"GPCR": consensus_maps[0],
-                      "CGN": consensus_maps[1]}
+
+    consensus_maps = {key : consensus_maps[ii] for ii, key in enumerate(option_dict.keys())}
 
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
                                                                         pick_this_fragment_by_default=None,
@@ -2055,15 +2080,21 @@ def residue_selection(expression,
     top : str, :obj:`~mdtraj.Trajectory`, or :obj:`~mdtraj.Topology`
         The topology to use.
     GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
-        Try to find Ballesteros-Weinstein definitions. If str, e.g. "adrb2_human",
-        try to locate a local filename or do a web lookup in the GPCRdb.
-        If :obj:`~mdciao.nomenclature.LabelerGPCR`, use this object directly
+        For GPCR nomenclature. If str, e.g. "adrb2_human".
+        will try to locate a local filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
+        (allows for object re-use when in API mode).
         See :obj:`mdciao.nomenclature` for more info and references.
+        Please note the difference between UniProt Accession Code
+        and UniProt entry name
+        as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
-        Try to find Common G-alpha Numbering definitions. If str, e.g. "3SN6",
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
         try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        (allows for object re-use when in API mode)
+        See :obj:`mdciao.nomenclature` for more info and references.
     save_nomenclature_files : bool, default is False
         Save available nomenclature definitions to disk so :
     accept_guess : bool, default is False
@@ -2074,7 +2105,7 @@ def residue_selection(expression,
         * None: use the default :obj:`~mdciao.fragments.get_fragments`,
           currently 'lig_resSeq+'
         * ["consensus"] : use things like "TM*" or "G.H*", i.e.
-         Ballesteros-Weinstein or CGN-sub-subunit labels.
+         GPCR or CGN-sub-subunit labels.
         * List of len 1 with some fragmentation heuristic, e.g.
          ["lig_resSeq+"]. will use the default of
          :obj:`mdciao.fragments.get_fragments`. See there for
