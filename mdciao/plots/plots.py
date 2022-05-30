@@ -1270,7 +1270,9 @@ def compare_violins(groups,
     if ymax is not None:
         iax.set_ylim([iax.get_ylim()[0], ymax])
 
-    iax.legend(ncol=_np.ceil(len(all_sys_keys) / legend_rows).astype(int),loc="upper left")
+    iax.legend(ncol=_np.ceil(len(all_sys_keys) / legend_rows).astype(int),
+               #loc="upper left"
+               )
     myfig.tight_layout()
 
     _rcParams["font.size"] = _fontsize
