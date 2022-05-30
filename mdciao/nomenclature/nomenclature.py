@@ -1018,7 +1018,7 @@ class LabelerConsensus(object):
 
 class LabelerCGN(LabelerConsensus):
     """
-    Class to abstract, handle, and use common-Gprotein-nomenclature.
+    Obtain and manipulate common-Gprotein-nomenclature.
     See https://www.mrc-lmb.cam.ac.uk/CGN/faq.html for more info.
     """
 
