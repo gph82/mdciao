@@ -618,6 +618,8 @@ def add_parent_labels(kwargs_freqs2flare, flareplot_attrs, kwargs_pffp):
             plotted_fragTexts_by_input_idx = {key: val[0] for key, val in plotted_fragTexts_by_input_idx.items()}
             parent_labels, parent_xy = [], []
 
+            #Store the axis before it gets removed
+            iax = flareplot_attrs["fragment_labels"][0].axes
             _, kid_by_parents = _find_parent_list(kwargs_freqs2flare["fragments"], kwargs_pffp["fragments"])
             for parent_idx, kids in kid_by_parents.items():
                 present_kids_by_TextObject_idx = [plotted_fragTexts_by_input_idx[kk] for kk in kids if kk in plotted_fragTexts_by_input_idx.keys()]
@@ -635,7 +637,7 @@ def add_parent_labels(kwargs_freqs2flare, flareplot_attrs, kwargs_pffp):
                 parent_labels = add_fragment_labels([[None]]*len(parent_labels),
                                                     [_replace4latex(str(ifrag)) for ifrag in
                                                      parent_labels],
-                                                    flareplot_attrs["fragment_labels"][0].axes,
+                                                    iax,
                                                     fontsize=flareplot_attrs["fragment_labels"][0].get_fontsize() * 2,
                                                     r=flareplot_attrs["r"]+flareplot_attrs["dots"][0].radius*4,
                                                     xy=_np.array(parent_xy))
