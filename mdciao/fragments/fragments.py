@@ -803,7 +803,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
         answr = _mdcu.lists.rangeexpand(answr)
         assert all([idx in ifrags for idx in answr])
         tokeep = _np.hstack([idx for ii, idx in enumerate(sub_frag) if ifrags[ii] in answr]).tolist()
-        if len(tokeep) > len(ifrags):
+        if len(tokeep) >= len(ifrags):
             raise ValueError("Cannot keep these fragments %s!" % (str(answr)))
         return tokeep
     else:
