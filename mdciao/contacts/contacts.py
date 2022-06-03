@@ -6284,7 +6284,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
     fixed_color_list = _np.array(list(_mdcplots.color_dict_guesser("tab10", _np.arange(100)).values()))
 
     def reconfigure_fragments(df,kwargs):
-        for frag_key in ['consensus frag', 'fragname', "frag"]:
+        for frag_key in ['consensus frag', 'fragname', "frag", "interface fragment"]:
             if frag_key in df.keys():
                 kwargs["fragment_names"] = _pdunique(df[frag_key]).tolist()
                 kwargs["fragments"] = [df.index[df[frag_key] == key].values.astype(int).tolist() for key in
