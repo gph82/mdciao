@@ -740,7 +740,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     Let's assume the GPCR-nomenclature tells us that TM6 is [0,1,2,3]
     and we have already divided the topology into fragments
     using :obj:`get_fragments`, with method "resSeq+", meaning
-    we have fragments for the receptor, Ga,Gb,Gg
+    we have fragments for the receptor,Ga,Gb,Gg
 
     The purpose is to check whether the GPCR-fragmentation is
     contained in the previous fragmentation:
@@ -757,9 +757,11 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     Parameters
     ----------
     sub_frag : iterable of integers
+        The fragment to be checked if
+        subfragment of `fragments`
     fragname : str
     fragments : iterable of iterables of integers
-    top : :obj:`mdtraj.Trajectory`object
+    top : :obj:`~mdtraj.Trajectory` object
     map_conlab : list or dict, default is None
         maps residue idxs to consensus labels
     prompt : bool, default is True
@@ -770,7 +772,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     Returns
     -------
     tokeep = 1D numpy array
-        If no clashes were found, this will be contain the same residues as
+        If no clashes were found, this will contain the same residues as
         :obj:`sub_frag` without prompting the user.
         Otherwise, the user has to input whether to leave the definition intact
         or pick a sub-set
@@ -786,7 +788,8 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
         # This only happens if more than one fragment is present
         print_frag(fragname, top, sub_frag, fragment_desc='',
                    idx2label=map_conlab)
-        print("  %s clashes with other fragment definitions"%fragname)
+        print(" Subfragment %s clashes with other fragment definitions,\n"
+              " because the residues of %s span over more than 1 fragment:"%(fragname, fragname))
         for jj in frag_cands:
             istr = print_frag(jj, top, fragments[jj],
                               fragment_desc="   input fragment",
