@@ -785,11 +785,13 @@ class LabelerConsensus(object):
             definitions (:obj:`defs`) clash with the input in :obj:`fragments`.
             *Clash* means that the consensus definitions span over more
             than one of the fragments in defined in :obj:`fragments`.
-
-            An interactive prompt will ask the user which fragments to
-            keep in case of clashes.
-
-            Check :obj:`check_if_subfragment` for more info
+            If this happens, an interactive prompt will ask
+            the user which fragments to keep in case of clashes.
+            Check :obj:`mdciao.nomenclature.check_if_subfragment` for more info
+            Note
+            ----
+            If these fragments don't cover the entire `top`, an error
+            will be thrown.
         min_hit_rate : float, default is .5
             With big topologies, like a receptor-Gprotein system,
             the "brute-force" alignment method
@@ -824,6 +826,12 @@ class LabelerConsensus(object):
         if isinstance(top, str):
             top = _md.load(top).top
 
+        if fragments is not None:
+            res_array = _np.arange(top.n_residues)
+            frag_array = _np.unique(_np.hstack(fragments))
+            dfset = set(res_array).difference(frag_array)
+            assert len(dfset)==0, "The 'fragments' definition doesn't cover all the %u residues found in 'top'.\n" \
+                                  "There's %u missing residues:\n%s"%(top.n_residues, len(dfset), dfset)
         if input_dataframe is None:
             top2self, self2top = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment)
         else:
