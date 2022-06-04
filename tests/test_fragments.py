@@ -68,12 +68,15 @@ class Test_print_fragments(unittest.TestCase):
         self.fragments = mdcfragments.get_fragments(self.geom.top, verbose=False)
 
     def test_lists(self):
-        mdcfragments.print_fragments(self.fragments, self.geom.top)
-
+        printed_list = mdcfragments.print_fragments(self.fragments, self.geom.top)
+        assert all([isinstance(item,str) for item in printed_list])
+        assert len(printed_list)==len(self.fragments)
     def test_dict(self):
         frags = {"A":self.fragments[0],
                  "B":self.fragments[1]}
-        mdcfragments.print_fragments(frags, self.geom.top)
+        printed_list = mdcfragments.print_fragments(frags, self.geom.top)
+        assert all([isinstance(item,str) for item in printed_list])
+        assert len(printed_list)==2
 
 class Test_get_fragments_methods(unittest.TestCase):
 

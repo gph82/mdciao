@@ -51,6 +51,9 @@ def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
 
     Returns
     -------
+    frag_list : list
+        List of the strings that
+        are being printed, for further use
 
     """
     if isinstance(fragments,list):
@@ -64,6 +67,7 @@ def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
     if n * 2 < len(frag_list):
         frag_list = frag_list[:n] + ["...[long list: omitted %u items]..." % (len(frag_list) - 2 * n)] + frag_list[-n:]
     print("\n".join(frag_list))
+    return frag_list
 
 def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                idx2label=None,
@@ -1109,10 +1113,10 @@ def mix_fragments(highest_res_idx, consensus_frags, fragments, fragment_names):
     r"""Mix consensus frags with user-provided fragment definitions
 
     Wrapper around :obj:`mdciao.fragments.splice_orphan_fragments`,
-    will possible be merged with it in the future.
-    The wrapper does several pre and post processing things
+    will possibly be merged with it in the future.
+    The wrapper does several pre and post processing things.
     pre-processing:
-     * that makes the `consensus_frags` the main frags
+     * makes the `consensus_frags` the main frags
      and the `fragments` the `other_fragments`.
      * It allows for `fragments` and/or `fragment_names`
      to be None and creates names on the fly if needed
