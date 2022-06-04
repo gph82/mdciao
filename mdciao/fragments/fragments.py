@@ -1112,14 +1112,14 @@ def mix_fragments(highest_res_idx, consensus_frags, fragments, fragment_names):
     will possible be merged with it in the future.
     The wrapper does several pre and post processing things
     pre-processing:
-     * that makes the :obj: `consensus_frags` the main frags
-     and the :obj:`fragments` the :obj:`other_fragments`.
-     * It allows for :obj:`fragments` and/or :obj:`fragment_names`
+     * that makes the `consensus_frags` the main frags
+     and the `fragments` the `other_fragments`.
+     * It allows for `fragments` and/or `fragment_names`
      to be None and creates names on the fly if needed
     post-processing:
      * renames orphan fragments as sub-fragments of original
       fragments if possible
-    In theory, if "fragments" covers all residues, no
+    In theory, if `fragments` covers all residues, no
     orphan's should be left
 
     Note
