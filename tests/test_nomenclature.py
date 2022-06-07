@@ -19,7 +19,8 @@ from mdciao.nomenclature import nomenclature
 from mdciao.examples import filenames as test_filenames
 from mdciao.utils.lists import assert_no_intersection
 from mdciao import examples
-
+from mdciao.utils.sequence import top2seq
+from mdciao.utils.residue_and_atom import shorten_AA
 from mdciao.fragments import get_fragments
 
 import mock
@@ -425,7 +426,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         self.assertDictEqual(top2self, self2top)
 
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq, restrict_to_residxs=[2, 3])
+        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq, restrict_to_residxs=[2, 3], min_hit_rate=0)
         self.assertDictEqual(top2self, self2top)
         self.assertTrue(all([key in [2, 3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
@@ -553,7 +554,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
         self.assertIsInstance(self.GPCR_local_w_pdb.most_recent_alignment, DataFrame)
 
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top = self.GPCR_local_w_pdb.aligntop(self.GPCR_local_w_pdb.seq, restrict_to_residxs=[2, 3])
+        top2self, self2top = self.GPCR_local_w_pdb.aligntop(self.GPCR_local_w_pdb.seq, restrict_to_residxs=[2, 3], min_hit_rate=0)
         self.assertDictEqual(top2self, self2top)
         self.assertTrue(all([key in [2, 3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
@@ -561,6 +562,70 @@ class TestLabelerGPCR_local(unittest.TestCase):
     def test_uniprot_name(self):
         self.assertEqual(self.GPCR_local_w_pdb.uniprot_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
 
+class Test_aligntop_full(unittest.TestCase):
+    # Has to be done with full GPCR nomencl, not with small one
+
+    def setUp(self):
+        self.GPCR = examples.GPCRLabeler_ardb2_human()
+        self.geom = md.load(examples.filenames.pdb_3SN6)
+        self.frags = get_fragments(self.geom.top) # receptor is idx 4
+        self.anchors = {"1.50x50": 'N51',  # Anchor residues
+                        "2.50x50": 'D79',
+                        "3.50x50": 'R131',
+                        "4.50x50": 'W158',
+                        "5.50x50": 'P211',
+                        "6.50x50": 'P288',
+                        "7.50x50": 'P323',
+                        "8.50x50": 'F332'}
+        self.right_confrags = self.GPCR.top2frags(self.geom.top)
+    def check_anchors(self, self2top):
+        for clab, aa in self.anchors.items():
+            assert self.GPCR.conlab2AA[clab] == aa # Assert the above anchor-dict holds before doing anything
+            # Grab the dataframe row-indices which are used by top2self and self2top
+            row_idx = self.GPCR.conlab2idx[clab]
+            # Make the move from the dataframe to the top via the map
+            top_idx = self2top[row_idx]
+            # Grab the residue from the top
+            top_res = self.geom.top.residue(top_idx)
+            # Check that it's actually the anchor residue
+            assert aa == shorten_AA(top_res, keep_index=True)
+
+
+
+    def test_default_str_w_top(self):
+        top2self, self2top =self.GPCR.aligntop(self.geom.top)
+        _np.testing.assert_array_equal(self.frags[4],list(top2self.keys()))
+        # The right fragment has been identified when the topology can be segmented
+
+    def test_default_str_w_seq(self):
+        top2self, self2top =self.GPCR.aligntop(top2seq(self.geom.top))
+        # Necessarily, some mismatches will appear in this alignment, because
+        # the receptor in 3SN6 starts at GLU30, all other residues of the N-term
+        # before that have been aligned in small chunks in the ca. 1000 residues
+        # of the G-protein in 3SN6 up to the GLU30 of the B2AR
+        # The check here is to check that the most conserved regions are there
+        self.check_anchors(self2top)
+
+    def test_default_None_w_top(self):
+        top2self, self2top =self.GPCR.aligntop(self.geom.top, fragments=None)
+        _np.testing.assert_array_equal(self.frags[4],list(top2self.keys()))
+        # The right fragment has been identified when the topology can be segmented
+
+    def test_default_None_w_seq(self):
+        top2self, self2top =self.GPCR.aligntop(top2seq(self.geom.top), fragments=None)
+        self.check_anchors(self2top)
+
+    def test_default_False(self):
+        top2self, self2top =self.GPCR.aligntop(self.geom.top, fragments=False)
+        self.check_anchors(self2top)
+
+    def test_explict_definition_missing_frags(self):
+        # This is the hardest test, we input an existing fragment definition
+        # which doesn't cover all consensus parts, but only the tip of TM6
+        # we still recover them via the mix-fragments
+        fragments = self.right_confrags["TM6"][-10:]
+        top2self, self2top =self.GPCR.aligntop(self.geom.top, fragments=[fragments])
+        _np.testing.assert_array_equal(self.frags[4],list(top2self.keys()))
 
 class Test_choose_between_consensus_dicts(unittest.TestCase):
 

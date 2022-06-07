@@ -870,11 +870,11 @@ class LabelerConsensus(object):
 
     def aligntop(self, top,
                  restrict_to_residxs=None,
-                 min_hit_rate=0,
-                 verbose=False,
-                 fragments='resSeq'):
+                 min_hit_rate=.5,
+                 fragments='resSeq',
+                 verbose=False):
         r""" Align a topology with the object's sequence.
-        Returns two maps (top2self, self2top) and
+        Returns two maps (`top2self`, `self2top`) and
         populates the attribute self.most_recent_alignment
 
         Wraps around :obj:`mdciao.utils.sequence.align_tops_or_seqs`
@@ -883,13 +883,17 @@ class LabelerConsensus(object):
         of the original :obj:`~nomenclature.mdciao.LabelerConsensus.dataframe`,
         which are the ones in :obj:`~mdciao.nomenclature.LabelerConsensus.seq`
 
+        Parameters
+        ----------
         top : :obj:`~mdtraj.Topology` object or string
-        restrict_to_residxs: iterable of integers, default is None
-            Use only these residues for alignment and labelling purposes
-            Helps "guide" the alignment method. E.g., one might be
-            passing an Ballesteros-Weinstein in :obj:`AA2conlab_dict` but
-            the topology also contains the whole G-protein. If available,
-            one can pass here the indices of residues of the receptor
+        restrict_to_residxs : iterable of integers, default is None
+            Use only these residues for alignment and labelling purposes.
+            Helps "guide" the alignment method. E.g., for big topologies
+            the the alignment might find some small matches somewhere
+            and, in some corner cases, match those instead of the
+            desired ones. Here, one can pass residues indices
+            defining the topology segment wherein the match should
+            be contained to.
         min_hit_rate : float, default .5
             With big topologies and many fragments,
             the alignment method (:obj:`mdciao.sequence.my_bioalign`)
@@ -901,40 +905,93 @@ class LabelerConsensus(object):
             with more than 50% alignment in the pre-alignment.
             If :obj:`min_hit_rate`>0, :obj`restrict_to_residx`
             has to be None.
-        fragments : str or None, default is 'resSeq'
-            The fragmentation heuristic passed to
-            :obj:`mdciao.fragments.get_fragments` to resolve
-            situations where two alignments share the optimal score.
-            Eg., aligning XXLXX to XXLLXX yields
-            ```
-            XXLLXX      XXLLXX
-            ||| ||  vs  ||  ||
-            XXL XX      XX LXX
-            ```
-            In order to choose between these alignments, it's
+        fragments : str, iterable, None, or bool, default is 'resSeq'
+            Fragment definitions to resolve situations where
+            two (or more) alignments share the optimal alignment score.
+            Consider aligning an input sequence 'XXLXX' to the object's
+            sequence 'XXLLXX'. There are two equally scored alignments::
+
+                XXL XX      XX LXX
+                ||| ||  vs  || |||
+                XXLLXX      XXLLXX
+
+            In order to choose between these two alignments, it's
             checked which alignment observes the
-            fragments obtained from the :obj:`top` using this
-            fragmentation heuristics. So, if XXLXX is split
-            fragmented into [XX],[LXX], then
-            the second alignment will be chosen, given
-            that it respects that fragmentation
-            Only has an effect if more than one alignment is possible
-            Set it None to simply take the first alignment that
-            comes out of (:obj:`mdciao.sequence.my_bioalign`)
-            Note, this only has meaning when the input
-            :obj:`top` objects are actual
-            :obj:`~mdtraj.Trajectory` objects that carry the sequence
-            index information. If :obj:`top` is a string, then there's
-            no fragmentation heuristic possible
+            fragment definition passed here. This definition
+            can be passed explicitly as iterable of integers
+            or implicitly as a fragmentation heuristic, which
+            will be used by :obj:`mdciao.fragments.get_fragments`
+            on the :obj:`top`. So, if e.g. the input 'XXLXX' sequence
+            is fragmented (explicitly or implicitly)
+            into [XX],[LXX], then the second alignment
+            will be chosen, given that it respects that fragmentation.
+
+            Note
+            ----
+            `fragments` only has an effect if both
+             * the `top` is an actual :obj:`~mdtraj.Topology` carrying the sequence
+              indices, since if `top` is a sequence
+              string, then there's no fragmentation heuristic possible.
+             * two or more alignments share the optimal alignment score
+            The method avoids breaking the consensus definitions
+            across the input `fragments`, while also providing
+            consensus definitions for those other residues not
+            present in `fragments`. This is done by using 'resSeq' to infer
+            the missing fragmentation. This keeps the functionality of
+            respecting the original `fragments` while also providing
+            consensus fragmentation other parts of the topology.
+            For compatibility with other methods,
+            passing `fragments=None` will still use the fragmentation
+            heuristic (this might change in the future).
+            **To explicitly circumvent this forced fragmentation
+            and subsequent check, use `fragments=False`.
+            This will simply use the first alignment that comes out of
+            :obj:`mdciao.utils.sequence.my_bioalign`, regardless
+            of there being other, equally scored, alignments and potential
+            clashes with sensitive fragmentations.**
         verbose: boolean, default is False
             be verbose
+        Returns
+        ------
+        top2self : dict
+            Maps indices of `top` to indices
+            of this objects self.seq
+        self2top : dict
+            Maps indices of this object's seq.seq
+            to indices of this self.seq
         """
+        debug = True
+        n_residues = [len(top) if isinstance(top,str) else top.n_residues][0]
+        # Define fragments even if it turns out we will not need them
+        # The code is easier to follow this way
+        if isinstance(fragments, str):
+            _frag_str = fragments
+            if isinstance(top, _md.Topology):
+                _fragments = _mdcfrg.fragments.get_fragments(top, _frag_str, verbose=False)
+            else:
+                _fragments = [_np.arange(n_residues)]
+        elif fragments is None:
+            _frag_str = "resSeq"
+            if isinstance(top, _md.Topology):
+                _fragments = _mdcfrg.fragments.get_fragments(top, _frag_str, verbose=False)
+            else:
+                _fragments = [_np.arange(n_residues)]
+        elif fragments is False:
+            _frag_str = "False"
+            _fragments = [_np.arange(n_residues)]
+        elif fragments is not None:
+            _frag_str = "explict definition"
+            _fragments = _mdcfrg.fragments.get_fragments(top, "resSeq", verbose=False)
+            _fragments = _mdcfrg.mix_fragments(n_residues-1,
+                                                     {"input %u"%ii :fr for ii, fr in enumerate(fragments)},
+                                                     _fragments, None)[0]
 
-        if min_hit_rate > 0:
+        if (min_hit_rate > 0):
             assert restrict_to_residxs is None
             restrict_to_residxs = guess_nomenclature_fragments(self.seq,
                                                                top,
-                                                               _mdcfrg.get_fragments(top, verbose=False),
+                                                               _fragments,
+                                                               verbose=debug,
                                                                min_hit_rate=min_hit_rate,
                                                                return_residue_idxs=True, empty=None)
 
@@ -944,24 +1001,22 @@ class LabelerConsensus(object):
                                                return_DF=True,
                                                verbose=verbose,
                                                )
-        debug = False
-        _frag_str = fragments
-        fragments = None
         unbroken = True
         for ii, idf in enumerate(df):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
             conlab = _np.full(len(idf), None)
             conlab[_np.flatnonzero(idf["idx_0"].isin(top2self.keys()))] = self.dataframe.iloc[list(top2self.values())][
                 self._nomenclature_key]
-            if isinstance(top, str) or str(_frag_str).lower() == "none" or len(df) == 1:
+            if isinstance(top, str) or str(_frag_str).lower() in ["none", "false"] or len(df) == 1:
                 if debug:
-                    print("I'm not checking fragment compatibility because ", isinstance(top, str), _frag_str is None,
-                          _frag_str, len(df))
+                    print("I'm not checking fragment compatibility because at least one of these statements is True")
+                    print(" * the input topology is a sequence string, s.t. no fragments can be extracted: %s" % isinstance(top, str))
+                    print(" * There is only one pairwise alignment with the maximum score: ", len(df)==1, len(df))
+                    print(" * The fragmentation heuristics where False or None: ", str(_frag_str).lower() in ["none", "false"], _frag_str)
+                    #      _frag_str, len(df))
                 break
             else:
-                if fragments is None:
-                    # Only do it the first time around
-                    fragments = _mdcfrg.fragments.get_fragments(top, _frag_str, verbose=False)
+                fragments = _fragments # This will have been defined already
                 unbroken = True
                 consfrags = self._selfmap2frags(self2top)
                 if debug:
@@ -977,8 +1032,11 @@ class LabelerConsensus(object):
                         break
                 if unbroken:
                     break
-        assert unbroken, ("None of the %u optimal alignments produce consensus fragments "
-                          "compatible with the fragmentation %s" % (len(df), str(_frag_str)))
+        assert unbroken, ("None of the %u best pairwise alignments yield consensus fragments "
+                          "compatible with the '%s' fragmentation-heuristic, which yields\n%s\n"
+                          "Try increasing the `min_hit_rate` "
+                          "or using `restrict_to_residxs` to restrict the alignment only to the "
+                          "residues most likely to belong to this object's `self.seq` attribute." % (len(df), str(_frag_str), "\n".join(_mdcfrg.print_fragments(fragments, top))))
 
         df = idf
 
