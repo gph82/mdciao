@@ -45,7 +45,7 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 
  * the kinetic information is averaged out. Contacts quickly breaking and forming and contacts that break (or form) only once **will have the same frequency** as long as the **fraction of total time** they are formed is the same. For analysis taking kinetics into account, use. e.g. `pyemma <http://mdtraj.org>`_.
  * The sharp, "distance-only" cutoff can sometimes over- or under-represent some interaction types. Modules like `get_contacts <https://github.com/getcontacts/getcontacts>`_ capture these interactions better, and have a ton of other features features.
- * Frequencies are just **averages** over the input data. In some cases, *simply* computing averages is a bad idea. The user is `responsible for deciding over what data to average <https://en.wikipedia.org/wiki/Garbage_in,_garbage_out>`_. For example, if your data is highly heterogenous you might want to `cluster <https://manual.gromacs.org/documentation/2018/onlinehelp/gmx-cluster.html>`_ your data into into `cluster1.xtc`, ``cluster.2.xtc`` etc and then do a per-cluster analysis with ``mdciao``
+ * Frequencies are just **averages** over the input data. In some cases, *simply* computing averages is a bad idea. The user is `responsible for deciding over what data to average <https://en.wikipedia.org/wiki/Garbage_in,_garbage_out>`_. For example, if your data is highly heterogenous you might want to `cluster <https://manual.gromacs.org/documentation/2018/onlinehelp/gmx-cluster.html>`_ your data into into ``cluster1.xtc``, ``cluster.2.xtc`` etc and then do a per-cluster analysis with ``mdciao``
 
  These issues (if/when they arise) can be spotted easily by looking at the time-traces and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
 
@@ -82,4 +82,5 @@ and calculates the  time-traces of residue-residue distances, and from there, **
    cli_cli/cli_cli
    api/api
    FAQ
+   gallery
 
