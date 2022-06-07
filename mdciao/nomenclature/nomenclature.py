@@ -611,7 +611,7 @@ class LabelerConsensus(object):
         return self._fragments_as_conlabs
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> _DataFrame:
         r"""
         :obj:`~pandas.DataFrame` summarizing this object's information
 
@@ -989,7 +989,7 @@ class LabelerConsensus(object):
         return top2self, self2top
 
     @property
-    def most_recent_alignment(self):
+    def most_recent_alignment(self) -> _DataFrame:
         r"""A :obj:`~pandas.DataFrame` with the most recent alignment
 
         Expert use only
