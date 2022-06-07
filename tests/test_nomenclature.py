@@ -414,10 +414,10 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
                                        self.cgn_local.fragment_names)
 
     def test_PDB_full_path_exists(self):
-        self.cgn_local = nomenclature.LabelerCGN(self._CGN_3SN6_file,
-                                                 try_web_lookup=False,
-                                                 local_path=self.tmpdir,
-                                                 )
+        nomenclature.LabelerCGN(self._CGN_3SN6_file,
+                                try_web_lookup=False,
+                                local_path=self.tmpdir,
+                                )
 
     # These tests only test it runs, not that the alignment is correct
     #  those checks are done in sequence tests
