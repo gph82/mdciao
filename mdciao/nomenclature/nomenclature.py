@@ -532,7 +532,7 @@ class LabelerConsensus(object):
                                       for key, val in self.fragments.items()}
 
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
-
+        self._conlab2idx = {lab : idx for idx, lab in enumerate(self.idx2conlab) if lab is not None}
     @property
     def ref_PDB(self):
         r""" PDB code used for instantiation"""
@@ -563,6 +563,13 @@ class LabelerConsensus(object):
             * self.conlab2AA["G.hfs2.2"] -> 'R201' """
         return self._conlab2AA
 
+    @property
+    def conlab2idx(self):
+        r""" Dictionary with consensus labels as keys and zero-indexed row-indices of self.dataframe, as values so that e.g.
+                   * self.conlab2AA["3.50"] -> 'R131' or
+                   * self.conlab2AA["G.hfs2.2"] -> 'R201' """
+
+        return self._conlab2idx
     @property
     def AA2conlab(self):
         r""" Dictionary with short AA-codes as keys, so that e.g.
