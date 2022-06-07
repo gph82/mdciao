@@ -4953,7 +4953,7 @@ class ContactGroup(object):
             [list_of_dicts[res].update({"interface residx": ii}) for res in self.interface_residxs[ii]]
 
         if consensus_maps is not None:
-            consensus_maps, consensus_frags = _consensus_maps2consensus_frags(self.top, consensus_maps, verbose=verbose)
+            consensus_maps, consensus_frags = _consensus_maps2consensus_frags(self.top, consensus_maps, verbose=verbose, fragments=fragments)
             if len(consensus_frags) > 0:
                 kwargs_freqs2flare["fragments"], kwargs_freqs2flare["fragment_names"] = \
                     _mdcfr.mix_fragments(self.top.n_residues - 1, consensus_frags, fragments, fragment_names)
