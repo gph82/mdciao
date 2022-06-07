@@ -1976,7 +1976,7 @@ def compatible_consensus_fragments(top,
     return new_frags
 
 
-def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
+def _consensus_maps2consensus_frags(top, consensus_info, verbose=True, fragments=None):
     r"""
     Consensus fragments (like TM6 or G.H5) and maps from different input types
 
@@ -2007,6 +2007,17 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
             called on-the-fly, generating lists
             like the ones described above.
     verbose : bool, default is True
+    fragments : iterable of ints, default is None
+        The purpose of passing other fragment definitions
+         here is that they **might** be used to
+         to check whether obtained consensus fragments clash
+         with these definitions or not. This is done by calling
+         :obj:`~mdciao.fragments.check_if_subfragment`, check
+         the docs there to find out what 'clash' means).
+         The check will be carried out by
+         :obj:`mdciao.nomenclature.LabelerConsensus.aligntop`
+         only in cases when there's more than one optimal alignment.
+
 
     Returns
     -------
@@ -2022,11 +2033,11 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True):
         (not the maps) in the :obj:`consensus info`
     """
 
-    consensus_frags = [cmap.top2frags(top, verbose=verbose) for cmap in consensus_info if
+    consensus_frags = [cmap.top2frags(top, verbose=verbose, fragments=fragments) for cmap in consensus_info if
                        isinstance(cmap, LabelerConsensus)]
     _mdcu.lists.assert_no_intersection([item for d in consensus_frags for item in d.values()], "consensus fragment")
     consensus_frags = {key: val for d in consensus_frags for key, val in d.items()}
-    consensus_maps = [cmap if not isinstance(cmap, LabelerConsensus) else cmap.top2labels(top) for cmap
+    consensus_maps = [cmap if not isinstance(cmap, LabelerConsensus) else cmap.top2labels(top, fragments=fragments) for cmap
                       in consensus_info]
     return consensus_maps, consensus_frags
 
