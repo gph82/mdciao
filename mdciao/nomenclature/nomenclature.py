@@ -789,8 +789,8 @@ class LabelerConsensus(object):
         fragments: iterable of integers, default is None
             The user can parse an existing list of fragment-definitions
             (via residue idxs) to check if the newly found, consensus
-            definitions (:obj:`defs`) clash with the input in :obj:`fragments`.
-            *Clash* means that the consensus definitions span over more
+            definitions (`defs`) clash with the input in `fragments`.
+            *Clash* means that the `defs` would span over more
             than one of the fragments in defined in :obj:`fragments`.
 
             An interactive prompt will ask the user which fragments to
@@ -832,7 +832,7 @@ class LabelerConsensus(object):
             top = _md.load(top).top
 
         if input_dataframe is None:
-            top2self, self2top = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment)
+            top2self, self2top = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment, fragments=fragments)
         else:
             top2self, self2top = _mdcu.sequence.df2maps(input_dataframe)
 
