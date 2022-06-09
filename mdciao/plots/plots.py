@@ -756,7 +756,8 @@ def plot_unified_freq_dicts(freqs,
         _plt.xlim(0, ylim)
         _plt.ylim(0 - width, ii + width * len(freqs_by_sys_by_ctc))
         _plt.xticks([0, .25, .50, .75, 1])
-        [_plt.gca().axvline(ii, ls=":", color="k", zorder=-1) for ii in [.25, .5, .75]]
+        ax.grid(axis="x", ls=":", color="k", zorder=-10)
+        ax.set_axisbelow(True)
         _plt.gca().invert_yaxis()
 
         if sort_by == "std":
@@ -791,7 +792,8 @@ def plot_unified_freq_dicts(freqs,
         else:
             yticks = _np.arange(0,_np.ceil(ylim),.50)
         _plt.yticks(yticks)
-        [_plt.gca().axhline(ii, ls=":", color="k", zorder=-1) for ii in yticks[1:-1]]
+        ax.grid(axis="y", ls=":", color="k", zorder=-10)
+        ax.set_axisbelow(True)
         if sort_by == "std":
             _plt.plot(list(sorted_value_by_ctc_by_sys.values()),
                       color='k', alpha=.25, ls=':')
