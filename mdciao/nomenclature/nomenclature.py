@@ -960,7 +960,7 @@ class LabelerConsensus(object):
             Maps indices of this object's seq.seq
             to indices of this self.seq
         """
-        debug = True
+        debug = False
         n_residues = [len(top) if isinstance(top,str) else top.n_residues][0]
         # Define fragments even if it turns out we will not need them
         # The code is easier to follow this way
