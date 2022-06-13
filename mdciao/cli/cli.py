@@ -1579,6 +1579,7 @@ def sites(site_inputs,
           pbc=True,
           GPCR_uniprot="None",
           CGN_PDB="None",
+          KLIFS_uniprotAC=None,
           fragments=['lig_resSeq+'],
           default_fragment_index=None,
           fragment_names="",
@@ -1675,6 +1676,15 @@ def sites(site_inputs,
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
+    KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
+        Uniprot Accession Code for kinase KLIFS nomenclature. If str, e.g. "P31751",
+        try to locate a local filename or do a web lookup in the GPCRdb.
+        If :obj:`mdciao.nomenclature.LabelerKLIFS`, use this object directly
+        (allows for object re-use when in API mode). See :obj:`mdciao.nomenclature`
+        for more info and references. Please note
+        the difference between UniProt Accession Code
+        and UniProt entry name as explained
+        `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     fragments : list, default is ['lig_resSeq+']
         Fragment control. For compatibility reasons, it has
         to be a list, even if it only has one element.
@@ -1797,7 +1807,7 @@ def sites(site_inputs,
         _mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15),stride))
 
     fragments_as_residue_idxs, fragment_names, __, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
-        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_PDB, accept_guess, save_nomenclature_files)
+        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_PDB, KLIFS_uniprotAC, accept_guess, save_nomenclature_files)
 
     sites = [_mdcsites.x2site(ff) for ff in site_inputs]
     ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
