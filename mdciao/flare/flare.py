@@ -158,7 +158,6 @@ def freqs2flare(freqs, res_idxs_pairs,
         serial-numbers, assuming the molecule only has one long peptidic-chain.
     freq_cutoff : float, default is 0
         Contact frequencies lower than this value will not be shown
-    iax : :obj:`~matplotlib.axes.Axes`, default is None
     iax : :obj:`~matplotlib.axes.Axes`
         Parse an axis to draw on, otherwise one will be created
         using :obj:`panelsize`. In case you want to
@@ -207,10 +206,12 @@ def freqs2flare(freqs, res_idxs_pairs,
     colors: boolean, default is True
         Color control. Can take different inputs
          * True: use one different color per segment
-         * False: defaults to gray.
+         * False: defaults to gray
          * str or char: use that color for all residues (e.g. "r" or "red")
          * A list of strings of len = number of drawn residues, which is
-           equal to len(np.hstack(fragments)). Any other length will produce an error
+           equal to len(np.hstack(fragments))
+         * A list of strings of len = len(fragments)
+        Any other length will produce an error
     fontsize : float, default is None
         Currently, the fontsize is internally
         computed as a function of the dotsize,
