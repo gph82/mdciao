@@ -532,6 +532,7 @@ def residue_neighborhoods(residues,
                           stride=1,
                           ctc_control=5,
                           n_nearest=4,
+                          scheme="closest-heavy",
                           chunksize_in_frames=10000,
                           nlist_cutoff_Ang=15,
                           n_smooth_hw=0,
@@ -651,7 +652,12 @@ def residue_neighborhoods(residues,
         representing a fraction [0,1] of the total number of
         contacts. Default is 5.
     n_nearest : int, default is 4
-        Exclude these many bonded neighbors for each residue, i.e
+        Exclude these many bonded neighbors for each residue
+    scheme : str, default is 'closest-heavy'
+        Type of scheme for computing distance between
+        residues. Choices are {'ca', 'closest', 'closest-
+        heavy', 'sidechain', 'sidechain-heavy'}. See
+        :obj:`mdtraj.compute_distances` documentation for more info
     chunksize_in_frames : int, default is 10000
         Stream through the trajectory data in chunks of this many frames
         Can lead to memory errors if :obj:`n_jobs` makes it so that
@@ -930,10 +936,12 @@ def residue_neighborhoods(residues,
               len(ctc_idxs), len(ctc_idxs_small)))
 
     ctcs_trajs, time_arrays, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
-                                                       chunksize=chunksize_in_frames, return_times_and_atoms=True,
-                                                       consolidate=False,
-                                                       n_jobs=n_jobs,
-                                                       )
+                                                                 chunksize=chunksize_in_frames,
+                                                                 return_times_and_atoms=True,
+                                                                 consolidate=False,
+                                                                 n_jobs=n_jobs,
+                                                                 scheme=scheme,
+                                                                 )
     print() # to make sure we don't overwrite output
     actcs = _np.vstack(ctcs_trajs)
     if switch_off_Ang is None:
