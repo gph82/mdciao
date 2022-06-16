@@ -484,6 +484,7 @@ def parser_for_rn():
     _parser_add_switch(parser)
     _parser_add_atomtypes(parser)
     _parser_add_naive_bonds(parser)
+    _parser_add_scheme(parser)
     return parser
 
 def _parser_add_switch(parser):
