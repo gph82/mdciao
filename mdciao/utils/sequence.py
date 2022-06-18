@@ -102,7 +102,7 @@ def top2seq(top, replacement_letter="X"):
 
 def my_bioalign(seq1, seq2,
                 method="globalms",
-                argstuple=(1,0,-1,0),
+                argstuple=(1,0,-1,-.05),
                 kwargs = {"penalize_end_gaps":False}):
     r"""
     Align two sequences using a method of :obj:`Bioalign`
@@ -111,13 +111,13 @@ def my_bioalign(seq1, seq2,
     ----
     This is a one-liner wrapper around whatever method
     of :obj:`Bioalign` has been chosen, typically
-    pairwise2.align.globalxs
+    pairwise2.align.globalms
 
     The intention is to only use *this* method throughout
     mdciao, and change *here* any alignment parameters s.t.
     alignment is done using *always* the same parameters.
 
-    The exposed arguments :obj:`method` and :obj:`argstuple`
+    The exposed arguments `method` and `argstuple`
     are there for future development but will raise
     NotImplementedErrors if changed.
 
@@ -128,9 +128,13 @@ def my_bioalign(seq1, seq2,
     ----------
     seq1 : str, any length
     seq2 : str, any length
-    method : str, default is "globalxs"
-    argstuple : tuple, default is (-1,0)
-        The
+    method : str, default is "globalms"
+    argstuple : tuple, default is (-1,0,-1,-.05)
+        The tuple controlling penalties for:
+        * matches
+        * mismatches
+        * opening a gap
+        * extending the gap
 
     Returns
     -------
@@ -141,9 +145,9 @@ def my_bioalign(seq1, seq2,
 
 
     """
-    # This is to be able to raise the NotImplemented but also to hard-code the only allowd method here
+    # This is to be able to raise the NotImplemented but also to hard-code the only allowEd method here
     allowed_method="globalms"
-    allowed_tuple = (1, 0, -1,0)
+    allowed_tuple = (1, 0, -1, -.05)
     if method!=allowed_method:
         raise (NotImplementedError("At the moment only %s is "
                                    "allowed as alignment method"%method))
