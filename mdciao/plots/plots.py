@@ -662,6 +662,7 @@ def plot_unified_freq_dicts(freqs,
         [idict.pop(ctc) for idict in freqs_by_sys_by_ctc.values()]
         all_ctc_keys.remove(ctc)
 
+    ylim = _np.max([ylim, _np.ceil(_np.hstack([list(val.values()) for val in freqs_by_sys_by_ctc.values()]).max())])
     # Prepare the dict that stores the order for plotting
     # and the values used for that sorting
     sorted_value_by_ctc_by_sys = {key: val for (key, val) in
