@@ -221,7 +221,7 @@ def compare_groups_of_contacts(groups,
         Instead of plotting contact frequencies,
         plot contact distributions
     interface : bool, default is False
-        As if per_residue=True and
+        Asks if per_residue=True and
         then sorts the residues into
         interface fragments. Will fail
         if the passed :obj:`groups`
@@ -268,7 +268,7 @@ def compare_groups_of_contacts(groups,
                                                  split_label=False,
                                                  bins=_np.max([20, (_np.sqrt(ifile.n_frames_total) / 2).round().astype(int)]))
             else:
-                assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a ctc_cutoff_Ang parameter"
+                assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a `ctc_cutoff_Ang` parameter"
                 if not interface:
                     idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               AA_format=AA_format,
@@ -326,7 +326,7 @@ def compare_groups_of_contacts(groups,
         freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude,
                                             per_residue=[per_residue if not interface else False][0],
                                             defrag=defrag)
-        if per_residue:
+        if per_residue or interface:
             kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
             kwargs_plot_unified_freq_dicts["remove_identities"] = False
 
