@@ -769,24 +769,28 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     map_conlab : list or dict, default is None
         maps residue idxs to consensus labels
     prompt : bool, default is True
-        When False, no prompt is issues,
+        When False, no prompt is issued,
         and the returned value is a boolean
-        whether sub_frag is actually a sub-fragment
-        of fragments or not
+        whether or not `sub_frag` is actually a sub-fragment (=subset)
+        of any one fragment of `fragments`
     Returns
     -------
-    tokeep = 1D numpy array
-        If no clashes were found, this will contain the same residues as
+    answer : 1D numpy array or boolean
+        If `prompt` is True and no clashes were found,
+        this will contain the same residues as
         :obj:`sub_frag` without prompting the user.
-        Otherwise, the user has to input whether to leave the definition intact
-        or pick a sub-set
+        Otherwise, the user has to input whether
+        to leave the definition intact or pick a sub-set
+        If `prompt` is False, this is a boolean
+        saying whether `sub_frag` is a sub-fragment (subset)
+        of any one fragment of `fragments`
     """
     # Get the fragment idxs of all residues in this fragment
     ifrags = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in sub_frag]
 
     frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
     if not prompt:
-        return not len(frag_cands) > 1
+        return len(frag_cands) <= 1
 
     if len(frag_cands) > 1 and not keep_all:
         # This only happens if more than one fragment is present
