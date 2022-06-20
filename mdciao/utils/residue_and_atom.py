@@ -108,7 +108,7 @@ def residues_from_descriptors(residue_descriptors,
                 print(istr)
             cand_chars = _np.hstack([['%s.%u'%(key,ii) for ii in range(n)] for key, n in _Counter(cand_fragments).items()]).tolist()
             for cc, ss, char in zip(cands, cand_fragments, cand_chars):
-                istr = residue_line(char, top.residue(cc), ss, additional_resnaming_dicts)
+                istr = residue_line(char, top.residue(cc), ss, additional_resnaming_dicts, fragment_names=fragment_names)
                 print(istr)
             if just_inform:
                 print()
