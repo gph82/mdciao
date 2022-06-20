@@ -865,6 +865,7 @@ def residue_neighborhoods(residues,
                                                                    CGN_PDB=CGN_PDB, KLIFS_uniprotAC=KLIFS_uniprotAC,
                                                                    save_nomenclature_files=save_nomenclature_files,
                                                                    accept_guess=accept_guess,
+                                                                   fragment_names=fragment_names,
                                                                    interpret_as_res_idxs=res_idxs, sort=sort)
 
     top2confrag = _np.full(refgeom.top.n_residues, None)
