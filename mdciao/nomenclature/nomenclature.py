@@ -375,7 +375,7 @@ def _GPCR_finder(GPCR_descriptor,
         xlsxname = format % GPCR_descriptor
         fullpath = _path.join(local_path, xlsxname)
     GPCRmd = "https://gpcrdb.org/services/residues/extended"
-    url = "%s/%s" % (GPCRmd, GPCR_descriptor)
+    url = "%s/%s" % (GPCRmd, GPCR_descriptor.lower())
 
     local_lookup_lambda = lambda fullpath: _read_excel(fullpath,
                                                        engine="openpyxl",
