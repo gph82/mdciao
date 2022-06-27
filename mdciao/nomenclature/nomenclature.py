@@ -50,6 +50,7 @@ from natsort import natsorted as _natsorted
 from string import ascii_uppercase as _ascii_uppercase
 
 _filenames = _FN()
+_AA_chars_no_X = [char for char in _md.core.residue_names._AMINO_ACID_CODES.values() if char not in ["X", None]]
 
 
 def _table2GPCR_by_AAcode(tablefile,
@@ -1532,7 +1533,8 @@ def guess_nomenclature_fragments(refseq, top,
         If not str, the sequence will
         be gotten from `LabelerConsensus.seq` method
     top:
-        :py:class:`~mdtraj.Topology` object
+        :py:class:`~mdtraj.Topology` object or string
+        containing the sequence.
     fragments : iterable of iterables of idxs
         How `top` is split into fragments
         If None, will be generated using get_fragments defaults
@@ -1565,8 +1567,12 @@ def guess_nomenclature_fragments(refseq, top,
                                         "but not a %s." % (LabelerConsensus, type(str))
         seq_consensus = refseq
 
-    protein_df = _DataFrame({"idx_0" : _np.arange(top.n_residues),
-                             "is_protein" : [rr.is_protein for rr in top.residues]})
+    if isinstance(top, _md.Topology):
+        protein_df = _DataFrame({"idx_0" : _np.arange(top.n_residues),
+                                 "is_protein" : [rr.is_protein for rr in top.residues]})
+    else:
+        protein_df = _DataFrame({"idx_0": _np.arange(len(top)),
+                                 "is_protein": [char in _AA_chars_no_X for char in top]})
     # TODO create a method out of this
     df = _mdcu.sequence.align_tops_or_seqs(top, seq_consensus)[0] #picking the first one here w/o asking if there's equivalent aligns might be problematic
     df = df.merge(protein_df, how="inner")
