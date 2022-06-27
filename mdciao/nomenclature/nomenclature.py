@@ -2540,25 +2540,20 @@ def _KLIFS_web_lookup(UniProtAC,
                 # Sort with quality score
                 PDBs.sort_values("quality_score", ascending=False, inplace=True)
                 best_PDB, structure_ID = PDBs[["pdb", "structure_ID"]].values[0]
+                #print(structure_ID,"structure ID")
                 best_PDB = best_PDB.upper()
-
+                #print("best PDB", best_PDB)
                 # Get the residues
                 url = "%s/interactions_match_residues?structure_ID=%s" % (KLIFS_API, structure_ID)
                 with _requests.get(url, timeout=timeout) as resp3:
                     nomencl = _DataFrame(resp3.json())
                     nomencl.rename(columns={"index": "KLIFS_pocket_index",
                                             "KLIFS_position": "KLIFS"}, inplace=True)
+                    nomencl.Xray_position = nomencl.Xray_position.astype(int)
 
                 # Get the PDB as DF
                 geom = _md_load_rcsb(best_PDB, verbose=False)
                 PDB_DF = _mdTopology2residueDF(geom.top)
-
-                # Temporary str-conversion to merge with nomencl
-                PDB_DF.Xray_position = PDB_DF.Xray_position.astype(str)
-                PDB_DF = PDB_DF.merge(nomencl, how="left", )
-                PDB_DF.Xray_position = PDB_DF.Xray_position.astype(int)
-                PDB_DF = _KLIFSDataFrame(PDB_DF, UniProtAC=UniProtAC, PDB_id=best_PDB, PDB_geom=geom)
-
                 # Get the PDB positions from UniProtKB
                 PDBs_UPKB = _UniProtACtoPDBs(UniProtAC)
                 residue_idxs = _residx_from_UniProtPDBEntry_and_top(PDBs_UPKB[best_PDB], geom.top)
@@ -2567,6 +2562,11 @@ def _KLIFS_web_lookup(UniProtAC,
                 PDB_DF["UniProtAC_res"] = uniprot_res
                 PDB_DF.replace({_np.nan: None}, inplace=True)
 
+                double_condidtion = PDB_DF[(PDB_DF.UniProtAC_res) & (PDB_DF.Sequence_Index.map(lambda x : x in nomencl.Xray_position.values))]
+                KLIFS_labels = _np.full(geom.n_residues,None)
+                KLIFS_labels[double_condidtion.index.values] = nomencl.KLIFS.values
+                PDB_DF["KLIFS"] = KLIFS_labels
+                PDB_DF = _KLIFSDataFrame(PDB_DF, UniProtAC=UniProtAC, PDB_id=best_PDB, PDB_geom=geom)
         else:
             PDB_DF = ValueError('url : "%s", uniprot : "%s" error : "%s"' % (url, UniProtAC, resp1.text))
 
