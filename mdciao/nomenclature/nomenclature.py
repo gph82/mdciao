@@ -2241,11 +2241,12 @@ def _mdTopology2residueDF(top) -> _DataFrame:
     Return an :obj:`~mdtraj.Topology` as a :obj:`~pandas.DataFrame`
 
     The residue attributes are mapped to columns follows:
-    "Xray_position": rr.index
+    "serial_index": rr.index
     "residue" : rr.name
     "code" : rr.code
     "Sequence_Index" : rr.resSeq
     "AAresSeq": shorten_AA(rr, substitute_fail="X", keep_index=True)
+    "chain_index ": rr.chain.index
 
     Parameters
     ----------
@@ -2257,11 +2258,12 @@ def _mdTopology2residueDF(top) -> _DataFrame:
     """
     for_DF = []
     for rr in top.residues:
-        for_DF.append({"Xray_position": rr.index,
+        for_DF.append({"serial_index": rr.index,
                        "residue": rr.name,
                        "code": rr.code,
                        "Sequence_Index": rr.resSeq,
-                       "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True)})
+                       "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True),
+                       "chain_index" : rr.chain.index})
     return _DataFrame(for_DF)
 
 def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
