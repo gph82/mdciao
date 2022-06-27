@@ -1140,3 +1140,116 @@ class Test_mdTrajectory_and_spreadsheets(unittest.TestCase):
                 nomenclature._mdTrajectory2spreadsheets(geom,f.name)
                 read_pdb = nomenclature._Spreadsheets2mdTrajectory(f.name)
                 assert geom == read_pdb
+
+
+class Test_AlignerConsensus(unittest.TestCase):
+
+    def setUp(self):
+
+        self.geom_3SN6 = md.load(test_filenames.pdb_3SN6)
+        self.geom_3CAP = md.load(test_filenames.pdb_3CAP)
+        self.geom_1U19 = md.load(test_filenames.pdb_1U19)
+
+        self.CL_adrb2_human = nomenclature.LabelerGPCR(test_filenames.adrb2_human_xlsx)
+        self.CL_opsd_bovin = nomenclature.LabelerGPCR("opsd_bovin")
+
+        self.maps_3SN6 = self.CL_adrb2_human.top2labels(self.geom_3SN6.top)
+        self.maps_3CAP = self.CL_opsd_bovin.top2labels(self.geom_3CAP.top)
+        self.maps_1U19 = self.CL_opsd_bovin.top2labels(self.geom_1U19.top)
+
+    def test_with_maps(self):
+        AC = nomenclature.AlignerConsensus(tops={"3CAP": self.geom_3CAP.top,
+                                                 "3SN6": self.geom_3SN6.top
+                                                 },
+                                           maps={"3SN6": self.maps_3SN6,
+                                                 "3CAP": self.maps_3CAP
+                                                 })
+        self.assertListEqual(AC.keys, ["3CAP", "3SN6"])
+        self.assertIsInstance(AC.residxs, DataFrame)
+        self.assertIsInstance(AC.AAresSeq, DataFrame)
+        self.assertIsInstance(AC.CAidxs, DataFrame)
+        self.assertListEqual(list(AC.residxs.keys()), ["consensus"]+AC.keys)
+        self.assertListEqual(list(AC.AAresSeq.keys()), ["consensus"]+AC.keys)
+        self.assertListEqual(list(AC.CAidxs.keys()), ["consensus"]+AC.keys)
+
+
+        matches = AC.residxs_match(patterns="3.5*")
+        self.assertEqual(matches.to_string(),
+                        "    consensus  3CAP  3SN6\n"
+                        "102   3.50x50   134  1007\n"
+                        "103   3.51x51   135  1008\n"
+                        "104   3.52x52   136  1009\n"
+                        "105   3.53x53   137  1010\n"
+                        "106   3.54x54   138  1011\n"
+                        "107   3.55x55   139  1012\n"
+                        "108   3.56x56   140  1013"
+                         )
+        matches = AC.AAresSeq_match(patterns="3.5*")
+        self.assertEqual(matches.to_string(),
+                         "    consensus    3CAP    3SN6\n"
+                         "102   3.50x50  ARG135  ARG131\n"
+                         "103   3.51x51  TYR136  TYR132\n"
+                         "104   3.52x52  VAL137  PHE133\n"
+                         "105   3.53x53  VAL138  ALA134\n"
+                         "106   3.54x54  VAL139  ILE135\n"
+                         "107   3.55x55  CYS140  THR136\n"
+                         "108   3.56x56  LYS141  SER137"
+                         )
+        matches = AC.CAidxs_match(patterns="3.5*")
+        self.assertEqual(matches.to_string(),
+                         "    consensus  3CAP  3SN6\n"
+                         "102   3.50x50  1065  7835\n"
+                         "103   3.51x51  1076  7846\n"
+                         "104   3.52x52  1088  7858\n"
+                         "105   3.53x53  1095  7869\n"
+                         "106   3.54x54  1102  7874\n"
+                         "107   3.55x55  1109  7882\n"
+                         "108   3.56x56  1115  7889"
+                         )
+
+    def test_with_CL(self):
+        AC = nomenclature.AlignerConsensus(tops={"3CAP": self.geom_3CAP.top,
+                                                 "1U19": self.geom_1U19.top
+                                                 },
+                                           CL=self.CL_opsd_bovin)
+        self.assertListEqual(AC.keys, ["3CAP", "1U19"])
+        self.assertIsInstance(AC.residxs, DataFrame)
+        self.assertIsInstance(AC.AAresSeq, DataFrame)
+        self.assertIsInstance(AC.CAidxs, DataFrame)
+        self.assertListEqual(list(AC.residxs.keys()), ["consensus"] + AC.keys)
+        self.assertListEqual(list(AC.AAresSeq.keys()), ["consensus"] + AC.keys)
+        self.assertListEqual(list(AC.CAidxs.keys()), ["consensus"] + AC.keys)
+
+        matches = AC.residxs_match(patterns="3.5*")
+        self.assertEqual(matches.to_string(),
+                         "    consensus  3CAP  1U19\n"
+                         "102   3.50x50   134   484\n"
+                         "103   3.51x51   135   485\n"
+                         "104   3.52x52   136   486\n"
+                         "105   3.53x53   137   487\n"
+                         "106   3.54x54   138   488\n"
+                         "107   3.55x55   139   489\n"
+                         "108   3.56x56   140   490"
+                         )
+        matches = AC.AAresSeq_match(patterns="3.5*")
+        self.assertEqual(matches.to_string(),
+                         "    consensus    3CAP    1U19\n"
+                         "102   3.50x50  ARG135  ARG135\n"
+                         "103   3.51x51  TYR136  TYR136\n"
+                         "104   3.52x52  VAL137  VAL137\n"
+                         "105   3.53x53  VAL138  VAL138\n"
+                         "106   3.54x54  VAL139  VAL139\n"
+                         "107   3.55x55  CYS140  CYS140\n"
+                         "108   3.56x56  LYS141  LYS141"
+                         )
+        matches = AC.CAidxs_match(patterns="3.5*")
+        self.assertEqual(matches.to_string(),
+                         "    consensus  3CAP  1U19\n"
+                         "102   3.50x50  1065  3817\n"
+                         "103   3.51x51  1076  3828\n"
+                         "104   3.52x52  1088  3840\n"
+                         "105   3.53x53  1095  3847\n"
+                         "106   3.54x54  1102  3854\n"
+                         "107   3.55x55  1109  3861\n"
+                         "108   3.56x56  1115  3867"
+                         )

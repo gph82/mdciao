@@ -25,6 +25,7 @@ Classes
     LabelerGPCR
     LabelerCGN
     LabelerKLIFS
+    AlignerConsensus
     Literature
 
 Functions

@@ -1357,6 +1357,303 @@ class LabelerGPCR(LabelerConsensus):
                 self.dataframe["protein_segment"].unique()}
 
 
+class AlignerConsensus(object):
+    """Use consensus labels for multiple sequence alignment
+
+    Instead of doing an *actual* multiple sequence alignment, we can exploit
+    the existing consensus labels to align positions
+    across very different (=low sequence identity) topologies/sequences.
+
+    For example (edited table)::
+
+        consensus    3CAP    3SN6
+        3.50x50  ARG135  ARG131
+        3.51x51  TYR136  TYR132
+        3.52x52  VAL137  PHE133
+
+    Or, for residue atom indices (edited table)::
+
+        consensus  3CAP  3SN6
+        3.50x50  1065  7835
+        3.51x51  1076  7846
+        3.52x52  1088  7858
+
+
+    """
+
+    def __init__(self, tops, maps=None, CL: LabelerConsensus = None):
+        r"""
+
+        Parameters
+        ----------
+        tops : dict
+            Dictionary of :obj:`~mdtraj.Topology` objects. Keys
+            can be arbitrary identifiers to distinguish among
+            the `tops`, like different PDB IDs or system-setups (WT vs MUT).
+            These keys will be used throughout the object in this order
+        maps : dict, default is None
+            Dictionary of dictionaries, each mapping residue
+            indices of each the `tops` to a consensus label.
+            Typically, this map comes from invoking
+            :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`
+            on the respective `top`.
+        CL : :obj:`~mdciao.nomenclature.LabelerConsensus`, default is None
+            If provided, it is assumed that this object can operate on all
+            `tops`, because all the sequences in `tops` are a good
+            match with the descriptor (e.g. a UniProt Accession Code)
+            used to create the `CL`. Hence, the the `maps`
+            can be generated on-the-fly using this object.
+            Note, however, that in this case there is likely very high
+            sequence similarities between the `tops` and a normal sequence
+            alignment works as well.
+        """
+        self._tops = tops
+        if CL is not None:
+            assert maps is None
+            self._maps = {}
+            for key, itop in self.tops.items():
+                self._maps[key] = CL.top2labels(itop)
+        else:
+            assert maps is not None
+            self._maps = maps
+
+        self._keys = list(tops.keys())
+        self._residxs = None
+        for key in self.keys:
+            imap = self.maps[key]
+            idx2lab = {ii: lab for ii, lab in enumerate(imap) if lab is not None}
+            idf = _DataFrame([idx2lab.values(), idx2lab.keys()], index=["consensus",
+                                                                        key], ).T
+
+            if self._residxs is None:
+                self._residxs = idf
+            else:
+                self._residxs = self._residxs.merge(idf, how="outer")
+        # self._residxs = self._residxs.replace({_np.nan:None})
+        self._residxs = self._residxs.sort_values("consensus")  # This sorts produces bogus order in KLIFS, GCN #TODO
+        self._residxs = self._residxs.reset_index(drop=True)
+
+        self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
+        for key in self.keys:
+            self._AAresSeq[key] = [[str(self.tops[key].residue(int(ii))) if not _np.isnan(ii) else ii][0] for ii in
+                                   self.residxs[key]]
+            self._CAidxs[key] = [[self.tops[key].residue(int(ii)).atom("CA").index if not _np.isnan(ii) else ii][0] for
+                                 ii in
+                                 self.residxs[key]]
+
+    @property
+    def tops(self) -> dict:
+        r"""
+        The topologies given at input
+        """
+        return self._tops
+
+    @property
+    def maps(self) -> dict:
+        r"""
+        The dictionaries mapping residue indices of the `tops` to consensus labels.
+
+        These maps were either given at input or created
+        on-the-fly with the provided `LabelerConsensus`
+        """
+        return self._maps
+
+    @property
+    def residxs(self) -> _DataFrame:
+        r"""
+        The :obj:`~pandas.DataFrame` containing the alignment based on consensus labels
+
+        Indices are zero-based residue indices of the respective `tops`.
+
+        Currently, sorted alphabetically by consensus labels,
+        which works well for GPCR, not so much for CGN, KLIFS
+        (this will change soon)
+
+        Will have NaNs where residues weren't found,
+        i.e. a given `map` didn't contain that consensus label
+
+        Returns
+        -------
+
+        df : :obj:`~pandas.DataFrame`
+
+        """
+        return self._residxs
+
+    @property
+    def keys(self) -> list:
+        r"""
+        The keys with which the `tops` and/or the `maps` were given at input
+        """
+        return self._keys
+
+    @property
+    def CAidxs(self) -> _DataFrame:
+        r"""
+        The :obj:`~pandas.DataFrame` containing the alignment based on consensus labels
+
+        Indices are zero-based atom indices of the respective `tops`.
+
+        Currently, sorted alphabetically by consensus labels,
+        which works well for GPCR, not so much for CGN, KLIFS
+        (this will change soon)
+
+        Will have NaNs where residues weren't found,
+        i.e. a given `map` didn't contain that consensus label
+
+        Returns
+        -------
+
+        df : :obj:`~pandas.DataFrame`
+        """
+        return self._CAidxs
+
+    @property
+    def AAresSeq(self) -> _DataFrame:
+        r"""
+        The :obj:`~pandas.DataFrame` containing the alignment based on consensus labels
+
+        'AAreSeq' means labels like 'ARG130' and so on.
+
+        Currently, sorted alphabetically by consensus labels,
+        which works well for GPCR, not so much for CGN, KLIFS
+        (this will change soon)
+
+        Will have NaNs where residues weren't found,
+        i.e. a given `map` didn't contain that consensus label
+
+        Returns
+        -------
+
+        df : :obj:`~pandas.DataFrame`
+        """
+        return self._AAresSeq
+
+    def residxs_match(self, patterns=None, keys=None) -> _DataFrame:
+        r"""
+        Filter the `self.residxs` to the rows where all consensus labels are present.
+
+        You can filter by consensus label using `patterns` and by system using `keys`.
+
+        Parameters
+        ----------
+        patterns : str, default is None
+            A list in CSV-format of patterns to be matched
+            by the consensus labels. Matches are done using
+            Unix filename pattern matching, and are allows
+            for exclusion, e.g.
+             * "H*,-H8" will include all TMs but not H8
+             * "G.S*" will include all beta-sheets
+        keys : list, default is None
+            If only a sub-set of columns need to match,
+            provide them here as list of strings. If
+            None, all columns (except `filter_on`) will be used.
+
+        Returns
+        -------
+        df : :obj:`~pandas.DataFrame`
+        """
+        return _only_matches(self.residxs, keys=keys, patterns=patterns, filter_on="consensus").astype({key : int for key in self.keys})
+
+    def AAresSeq_match(self, patterns=None, keys=None) -> _DataFrame:
+        r"""
+        Filter the `self.AAreSeq` to the rows where all consensus labels are present.
+
+        You can filter by consensus label using `patterns` and by system using `keys`.
+
+        Parameters
+        ----------
+        patterns : str, default is None
+            A list in CSV-format of patterns to be matched
+            by the consensus labels. Matches are done using
+            Unix filename pattern matching, and are allows
+            for exclusion, e.g.
+             * "H*,-H8" will include all TMs but not H8
+             * "G.S*" will include all beta-sheets
+        keys : list, default is None
+            If only a sub-set of columns need to match,
+            provide them here as list of strings. If
+            None, all columns (except `filter_on`) will be used.
+
+        Returns
+        -------
+        df : :obj:`~pandas.DataFrame`
+        """
+        return _only_matches(self.AAresSeq, keys=keys, patterns=patterns, filter_on="consensus")
+
+    def CAidxs_match(self, patterns=None, keys=None) -> _DataFrame:
+        r"""
+        Filter the `self.CAidxs` to the rows where all consensus labels are present.
+
+        You can filter by consensus label using `patterns` and by system using `keys`.
+
+        Parameters
+        ----------
+        patterns : str, default is None
+            A list in CSV-format of patterns to be matched
+            by the consensus labels. Matches are done using
+            Unix filename pattern matching, and are allows
+            for exclusion, e.g.
+             * "H*,-H8" will include all TMs but not H8
+             * "G.S*" will include all beta-sheets
+        keys : list, default is None
+            If only a sub-set of columns need to match,
+            provide them here as list of strings. If
+            None, all columns (except `filter_on`) will be used.
+
+        Returns
+        -------
+        df : :obj:`~pandas.DataFrame`
+        """
+        return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus").astype({key : int for key in self.keys})
+
+
+def _only_matches(df,
+                  patterns=None,
+                  filter_on="index",
+                  keys=None, ) -> _DataFrame:
+    r"""
+    Row-filter an :obj:`~pandas.DataFrame` by keys (=column names) and patterns
+
+    Filtering means:
+    * don't include rows where None or Nans appear
+    * include  anything that matches `patterns`
+
+    Parameters
+    ----------
+    df : :obj:`~pandas.DataFrame`
+        The dataframe to be filter by matches
+    patterns : str, default is None
+        A list in CSV-format of patterns to be matched
+        Matches are done using Unix filename pattern matching
+        and are allowed for exclusion, e.g.
+         * "H*,-H8" will include all TMs but not H8
+         * "G.S*" will include all beta-sheets
+    filter_on : str, default is 'index'
+        The column of `df` on which the `patterns`
+        will be sued for a match
+    keys : list, default is None
+        If only a sub-set of columns need to match,
+        provide them here as list of strings. If
+        None, all columns (except `filter_on`) will be used.
+
+
+    Returns
+    -------
+    df : :obj:`~pandas.DataFrame`
+    """
+    if keys is None:
+        keys = [key for key in df.keys() if key != filter_on]
+
+    matches = [~df[key].isnull() for key in keys]
+    if patterns is not None:
+        matching_keys = _mdcu.str_and_dict.fnmatch_ex(patterns, df[filter_on])
+        matches = [df[filter_on].map(lambda x: x in matching_keys)] + matches
+    matches = _np.vstack(matches).T
+    # print(matches)
+    return df[matches.all(1)]
+
+
 def _alignment_df2_conslist(alignment_as_df,
                             allow_nonmatch=False):
     r"""
@@ -1576,8 +1873,8 @@ def guess_nomenclature_fragments(refseq, top,
         seq_consensus = refseq
 
     if isinstance(top, _md.Topology):
-        protein_df = _DataFrame({"idx_0" : _np.arange(top.n_residues),
-                                 "is_protein" : [rr.is_protein for rr in top.residues]})
+        protein_df = _DataFrame({"idx_0": _np.arange(top.n_residues),
+                                 "is_protein": [rr.is_protein for rr in top.residues]})
     else:
         protein_df = _DataFrame({"idx_0": _np.arange(len(top)),
                                  "is_protein": [char in _AA_chars_no_X for char in top]})
