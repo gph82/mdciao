@@ -1515,8 +1515,12 @@ def guess_nomenclature_fragments(refseq, top,
     """Guess what fragments in the topology best match
     the consensus labels in a :obj:`LabelerConsensus` object
 
-    The guess uses a cutoff for the quality of
-    each segment's alignment to the sequence in :obj:`CLin`
+    The guess uses a cutoff, `min_hit_rate`, for the quality of
+    each segment's alignment to the sequence in `CLin`.
+
+    It only counts the matches for the protein residues of
+    `top`, i.e. waters, ions, non-peptidic polymers are
+    note taken into account.
 
     You can use the method to identify the receptor
     in topology where other molecules (e.g. the Gprot)
@@ -1526,12 +1530,11 @@ def guess_nomenclature_fragments(refseq, top,
     ----------
     refseq: str or :class:`LabelerConsensus`
         If not str, the sequence will
-        be gotten from obj:`LabelerConsensus.seq` method
-
+        be gotten from `LabelerConsensus.seq` method
     top:
         :py:class:`~mdtraj.Topology` object
     fragments : iterable of iterables of idxs
-        How :obj:`top` is split into fragments
+        How `top` is split into fragments
         If None, will be generated using get_fragments defaults
     min_hit_rate: float, default is .6
         Only fragments with hit rates higher than this
@@ -1547,7 +1550,7 @@ def guess_nomenclature_fragments(refseq, top,
     Returns
     -------
     guess: list
-        indices of the fragments (or residues) with higher hit-rate than :obj:`cutoff`
+        indices of the fragments (or residues) with higher hit-rate than `min_hit_rate`
 
 
     """
@@ -1562,16 +1565,19 @@ def guess_nomenclature_fragments(refseq, top,
                                         "but not a %s." % (LabelerConsensus, type(str))
         seq_consensus = refseq
 
+    protein_df = _DataFrame({"idx_0" : _np.arange(top.n_residues),
+                             "is_protein" : [rr.is_protein for rr in top.residues]})
     # TODO create a method out of this
-    df = _mdcu.sequence.align_tops_or_seqs(top, seq_consensus)[0]
-    hit_idxs = df[df["match"]]["idx_0"].values
+    df = _mdcu.sequence.align_tops_or_seqs(top, seq_consensus)[0] #picking the first one here w/o asking if there's equivalent aligns might be problematic
+    df = df.merge(protein_df, how="inner")
+    hit_idxs = df[df.match & df.is_protein].idx_0.values
     hits, guess = [], []
     for ii, ifrag in enumerate(fragments):
         hit = _np.intersect1d(ifrag, hit_idxs)
         if len(hit) / len(ifrag) >= min_hit_rate:
             guess.append(ii)
         if verbose:
-            print(ii, len(hit) / len(ifrag))
+            print(ii, len(hit) / len(ifrag), len(hit), len(ifrag))
         hits.append(hit)
 
     guessed_res_idxs = []
