@@ -996,9 +996,17 @@ class LabelerConsensus(object):
                                                                min_hit_rate=min_hit_rate,
                                                                return_residue_idxs=True, empty=None)
 
+        # In principle I'm introducing this only for KLIFS, could be for all nomenclatures
+        if self._nomenclature_key == "KLIFS" :
+            chain_id = self.dataframe.chain_index[_np.hstack(list(self.fragments_as_idxs.values()))].unique()
+            assert len(chain_id)==1
+            seq_1_res_idxs = self.dataframe[self.dataframe.chain_index==chain_id[0]].index
+        else:
+            seq_1_res_idxs = None
         df = _mdcu.sequence.align_tops_or_seqs(top,
                                                self.seq,
                                                seq_0_res_idxs=restrict_to_residxs,
+                                               seq_1_res_idxs=seq_1_res_idxs,
                                                return_DF=True,
                                                verbose=verbose,
                                                )
@@ -1013,7 +1021,7 @@ class LabelerConsensus(object):
                     print("I'm not checking fragment compatibility because at least one of these statements is True")
                     print(" * the input topology is a sequence string, s.t. no fragments can be extracted: %s" % isinstance(top, str))
                     print(" * There is only one pairwise alignment with the maximum score: ", len(df)==1, len(df))
-                    print(" * The fragmentation heuristics where False or None: ", str(_frag_str).lower() in ["none", "false"], _frag_str)
+                    print(" * The fragmentation heuristics were False or None: ", str(_frag_str).lower() in ["none", "false"], _frag_str)
                     #      _frag_str, len(df))
                 break
             else:
