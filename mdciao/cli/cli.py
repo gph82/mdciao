@@ -849,7 +849,7 @@ def residue_neighborhoods(residues,
         save_nomenclature_files = False
 
     # More input control
-    ylim_Ang=_np.float(ylim_Ang)
+    ylim_Ang=float(ylim_Ang)
     print("Will compute contact frequencies for (%u items):\n%s"
           "\n with a stride of %u frames" % (len(xtcs),_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
@@ -1801,7 +1801,7 @@ def sites(site_inputs,
 
     """
 
-    ylim_Ang = _np.float(ylim_Ang)
+    ylim_Ang = float(ylim_Ang)
     _offer_to_create_dir(output_dir)
     xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories, topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
