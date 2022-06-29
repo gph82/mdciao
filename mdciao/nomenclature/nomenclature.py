@@ -98,7 +98,7 @@ def _table2GPCR_by_AAcode(tablefile,
     # figure out best practice to avoid code-repetition
     # This is the most important
     assert scheme in df.keys(), ValueError("'%s' isn't an available scheme.\nAvailable schemes are %s" % (
-    scheme, [key for key in df.keys() if key in _GPCR_available_schemes + ["display_generic_number"]]))
+        scheme, [key for key in df.keys() if key in _GPCR_available_schemes + ["display_generic_number"]]))
     AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
@@ -533,7 +533,8 @@ class LabelerConsensus(object):
                                       for key, val in self.fragments.items()}
 
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
-        self._conlab2idx = {lab : idx for idx, lab in enumerate(self.idx2conlab) if lab is not None}
+        self._conlab2idx = {lab: idx for idx, lab in enumerate(self.idx2conlab) if lab is not None}
+
     @property
     def ref_PDB(self):
         r""" PDB code used for instantiation"""
@@ -571,6 +572,7 @@ class LabelerConsensus(object):
                    * self.conlab2AA["G.hfs2.2"] -> 'R201' """
 
         return self._conlab2idx
+
     @property
     def AA2conlab(self):
         r""" Dictionary with short AA-codes as keys, so that e.g.
@@ -833,7 +835,8 @@ class LabelerConsensus(object):
             top = _md.load(top).top
 
         if input_dataframe is None:
-            top2self, self2top = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment, fragments=fragments)
+            top2self, self2top = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment,
+                                               fragments=fragments)
         else:
             top2self, self2top = _mdcu.sequence.df2maps(input_dataframe)
 
@@ -922,7 +925,7 @@ class LabelerConsensus(object):
             can be passed explicitly as iterable of integers
             or implicitly as a fragmentation heuristic, which
             will be used by :obj:`mdciao.fragments.get_fragments`
-            on the :obj:`top`. So, if e.g. the input 'XXLXX' sequence
+            on the `top`. So, if e.g. the input 'XXLXX' sequence
             is fragmented (explicitly or implicitly)
             into [XX],[LXX], then the second alignment
             will be chosen, given that it respects that fragmentation.
@@ -1794,7 +1797,7 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
                     consensus_kept *= suggestions[-1] == consensus_list[ii]
                 if verbose:
                     print('%6u %8s %10s %10s %s' % (
-                    ii, top.residue(ii), consensus_list[ii], suggestions[-1], consensus_kept))
+                        ii, top.residue(ii), consensus_list[ii], suggestions[-1], consensus_kept))
                 offset += 1
             if verbose:
                 print()
@@ -2040,7 +2043,7 @@ def _map2defs(cons_list, splitchar="."):
         if str(key).lower() != "none":
             assert splitchar in _mdcu.lists.force_iterable(key), "Consensus keys have to have a '%s'-character" \
                                                                  " in them, but '%s' (type %s) hasn't" % (
-                                                                 splitchar, str(key), type(key))
+                                                                     splitchar, str(key), type(key))
             if key[0].isnumeric():  # it means it is GPCR
                 new_key = key.split(splitchar)[0]
             elif key[0].isalpha():  # it means it CGN
@@ -2390,7 +2393,8 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True, fragments
                        isinstance(cmap, LabelerConsensus)]
     _mdcu.lists.assert_no_intersection([item for d in consensus_frags for item in d.values()], "consensus fragment")
     consensus_frags = {key: val for d in consensus_frags for key, val in d.items()}
-    consensus_maps = [cmap if not isinstance(cmap, LabelerConsensus) else cmap.top2labels(top, fragments=fragments) for cmap
+    consensus_maps = [cmap if not isinstance(cmap, LabelerConsensus) else cmap.top2labels(top, fragments=fragments) for
+                      cmap
                       in consensus_info]
     return consensus_maps, consensus_frags
 
@@ -2417,7 +2421,7 @@ class Literature():
             "scheme_CGN": "Flock2015",
             "site_UniProt": "Bateman2021",
             "site_KLIFS": "Kanev2021",
-            "scheme_KLIFS1" : "VanLinden2014",
+            "scheme_KLIFS1": "VanLinden2014",
             "scheme_KLIFS2": "Kooistra2016"
         }
 
@@ -2616,8 +2620,9 @@ def _mdTopology2residueDF(top) -> _DataFrame:
                        "code": rr.code,
                        "Sequence_Index": rr.resSeq,
                        "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True),
-                       "chain_index" : rr.chain.index})
+                       "chain_index": rr.chain.index})
     return _DataFrame(for_DF)
+
 
 def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
     r"""
@@ -2637,13 +2642,14 @@ def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
     bondsdf, xyzdf = _DataFrame(bonds), _DataFrame(traj.xyz[0])
     unitcelldf = _DataFrame({"lengths": traj.unitcell_lengths[0],
                              "angles": traj.unitcell_angles[0]})
+
     # When dropping py36 support, use directly the contextlib.nullcontext for py37 and beyond
     # slack FTW :https://stackoverflow.com/a/55902915
     @contextmanager
     def nullcontext(enter_result=None):
         yield enter_result
 
-    if isinstance(dest,str):
+    if isinstance(dest, str):
         cm = _ExcelWriter(dest)
     else:
         cm = nullcontext(dest)
@@ -2653,6 +2659,7 @@ def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
         _DataFrame.to_excel(bondsdf, f, sheet_name="bonds", index=False, **kwargs_to_excel)
         _DataFrame.to_excel(unitcelldf, f, sheet_name="unitcell", index=False, **kwargs_to_excel)
         _DataFrame.to_excel(xyzdf, f, sheet_name="xyz", index=False, **kwargs_to_excel)
+
 
 def _Spreadsheets2mdTrajectory(source):
     r""" Generate a :obj:`~mdtraj.Trajectory` from an Excel file or a dict with DataFrames
@@ -2682,9 +2689,10 @@ def _Spreadsheets2mdTrajectory(source):
     topology = _from_dataframe(idict["topology"], bonds=idict["bonds"].values)
     xyz = idict["xyz"].values
     geom = _md.Trajectory(xyz, topology,
-                          unitcell_angles = idict["unitcell"].angles,
-                          unitcell_lengths = idict["unitcell"].lengths)
+                          unitcell_angles=idict["unitcell"].angles,
+                          unitcell_lengths=idict["unitcell"].lengths)
     return geom
+
 
 def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
     r"""
@@ -2804,7 +2812,7 @@ class _KLIFSDataFrame(_KDF):
         the first sheet's name, e.g. as "P31751_3e8d" and can be recovered
         upon reading an Excel file from disk.
 
-        The other sheet's are called "topology", "bonds", "unitcell", and "xyz"
+        The other sheets are called "topology", "bonds", "unitcell", and "xyz"
 
         If :obj:kwargs contains arguments "sheet_name", "index",
         an Exception will be thrown. """
@@ -2868,7 +2876,7 @@ def _KLIFS_web_lookup(UniProtAC,
             if len(ACjson) > 1:
                 print()
                 df = _DataFrame(ACjson)
-                #df.pop("")
+                # df.pop("")
                 print(df)
             assert len(ACjson) == 1, ValueError("More than one 'kinase_ID's were found to match %s: %s ",
                                                 (UniProtAC, [entry["kinase_ID"] for entry in ACjson]))
@@ -2887,9 +2895,9 @@ def _KLIFS_web_lookup(UniProtAC,
                 # Sort with quality score
                 PDBs.sort_values("quality_score", ascending=False, inplace=True)
                 best_PDB, structure_ID = PDBs[["pdb", "structure_ID"]].values[0]
-                #print(structure_ID,"structure ID")
+                # print(structure_ID,"structure ID")
                 best_PDB = best_PDB.upper()
-                #print("best PDB", best_PDB)
+                # print("best PDB", best_PDB)
                 # Get the residues
                 url = "%s/interactions_match_residues?structure_ID=%s" % (KLIFS_API, structure_ID)
                 with _requests.get(url, timeout=timeout) as resp3:
@@ -2909,8 +2917,9 @@ def _KLIFS_web_lookup(UniProtAC,
                 PDB_DF["UniProtAC_res"] = uniprot_res
                 PDB_DF.replace({_np.nan: None}, inplace=True)
 
-                double_condidtion = PDB_DF[(PDB_DF.UniProtAC_res) & (PDB_DF.Sequence_Index.map(lambda x : x in nomencl.Xray_position.values))]
-                KLIFS_labels = _np.full(geom.n_residues,None)
+                double_condidtion = PDB_DF[
+                    (PDB_DF.UniProtAC_res) & (PDB_DF.Sequence_Index.map(lambda x: x in nomencl.Xray_position.values))]
+                KLIFS_labels = _np.full(geom.n_residues, None)
                 KLIFS_labels[double_condidtion.index.values] = nomencl.KLIFS.values
                 PDB_DF["KLIFS"] = KLIFS_labels
                 PDB_DF = _KLIFSDataFrame(PDB_DF, UniProtAC=UniProtAC, PDB_id=best_PDB, PDB_geom=geom)
@@ -2980,7 +2989,6 @@ def _KLIFS_finder(UniProtAC,
     KLIFS_API = "https://klifs.net/api"
     url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
 
-
     local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath)
 
     web_looukup_lambda = lambda url: _KLIFS_web_lookup(UniProtAC, verbose=verbose, url=url, timeout=15)
@@ -2990,6 +2998,7 @@ def _KLIFS_finder(UniProtAC,
                           verbose=verbose,
                           dont_fail=dont_fail,
                           write_to_disk=write_to_disk)
+
 
 def _read_excel_as_KDF(fullpath):
     r"""
@@ -3017,6 +3026,7 @@ def _read_excel_as_KDF(fullpath):
     df = _KLIFSDataFrame(idict[keys[0]].replace({_np.nan: None}),
                          UniProtAC=UniProtAC, PDB_id=PDB_id, PDB_geom=geom)
     return df
+
 
 class LabelerKLIFS(LabelerConsensus):
     """Obtain and manipulate Kinase-Ligand Interaction notation of the 85 pocket-residues of kinases.
@@ -3154,7 +3164,7 @@ class LabelerKLIFS(LabelerConsensus):
         # todo unify across Labelers
         self._fragments_as_idxs = {
             fragkey: self.dataframe[self.dataframe.KLIFS.map(
-                lambda x: ".".join(str(x).split(".")[:-1])==fragkey)].index.values.tolist()
+                lambda x: ".".join(str(x).split(".")[:-1]) == fragkey)].index.values.tolist()
             for fragkey in self.fragment_names}
 
     @property
