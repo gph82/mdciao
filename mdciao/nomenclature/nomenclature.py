@@ -526,6 +526,8 @@ class LabelerConsensus(object):
             self._geom_PDB, self._PDB_file = _PDB_finder(ref_PDB,
                                                          **PDB_finder_kwargs,
                                                          )
+            if _path.exists(self._PDB_file):
+                print("%s found locally."%self._PDB_file)
         self._conlab2AA = {val: key for key, val in self.AA2conlab.items()}
 
         self._fragment_names = list(self.fragments.keys())
