@@ -21,7 +21,7 @@ from mdciao.utils.lists import assert_no_intersection
 from mdciao import examples
 from mdciao.utils.sequence import top2seq
 from mdciao.utils.residue_and_atom import shorten_AA
-from mdciao.fragments import get_fragments
+from mdciao.fragments import get_fragments, fragment_slice
 
 import mock
 
@@ -626,6 +626,86 @@ class Test_aligntop_full(unittest.TestCase):
         fragments = self.right_confrags["TM6"][-10:]
         top2self, self2top =self.GPCR.aligntop(self.geom.top, fragments=[fragments])
         _np.testing.assert_array_equal(self.frags[4],list(top2self.keys()))
+
+class Test_aligntop_fragment_clashes(unittest.TestCase):
+    """
+    We're testing some aligntop cases through the top2frags results, which are easier to check
+    """
+
+    def setUp(self):
+        self.CGN = examples.CGNLabeler_3SN6()
+        self.GPCR = examples.GPCRLabeler_ardb2_human()
+        self.b2ar = md.load(examples.filenames.actor_pdb)
+
+    def test_first_aligment_collides_with_resSeq(self):
+        """
+
+        There's two alignments sharing the same score of 276
+
+        In the first alignment, TM5 and TM6 are defined as
+        fragment    TM5 with     36 AAs   ASN196           (   166) -   GLN231           (201   ) (TM5)
+        fragment    TM6 with     37 AAs   LYS232           (   202) -   GLN299           (238   ) (TM6)  resSeq jumps
+
+
+        in which TM6 is broken, because the receptor resSeqs -fragments are
+
+        fragment      0 with    203 AAs    GLU30           (     0) -   LYS232           (202   ) (0)
+        fragment      1 with     78 AAs   PHE264           (   203) -  CYSP341           (280   ) (1)
+
+        In the second alignment, TM5 and TM6 are defined as
+
+        fragment    TM5 with     37 AAs   ASN196           (   166) -   LYS232           (202   ) (TM5)
+        fragment    TM6 with     36 AAs   PHE264           (   203) -   GLN299           (238   ) (TM6)
+
+        Which is correct with LYS232 being the last TM5 res (second alignment) and not the first of TM6 (first alignment)
+
+
+        """
+        frags = self.GPCR.top2frags(self.b2ar.top)
+
+        self.assertListEqual(frags["TM5"], _np.arange(166, 202 + 1).tolist())
+        self.assertListEqual(frags["TM6"], _np.arange(203, 238+1).tolist())
+
+    def test_alignment_collides_with_but_frag_is_compatible(self):
+
+        frags = get_fragments(self.b2ar.top)
+        just_gprot = fragment_slice(self.b2ar, frags, [1])
+        broken_gprot = just_gprot.atom_slice(just_gprot.top.select("residue != 220"))
+
+        """
+        
+        The first alignment yields:
+        
+        G.s2s3 with      2 AAs   ASP215@G.s2s3.1  (   199) -   LYS216@G.s2s3.2  (200   ) (G.s2s3) 
+          G.S3 with      7 AAs   VAL217@G.S3.1    (   201) -   VAL224@G.S3.8    (207   ) (G.S3)  resSeq jumps
+    
+        in which G.S3 is broken, because the broken_gprot fragments are like this as resSeq
+        
+        fragment      0 with     69 AAs    CYSP2           (     0) -    GLY70           (68    ) (0) 
+        fragment      1 with    135 AAs    ASP85           (    69) -   PHE219           (203   ) (1) 
+        fragment      2 with    174 AAs   MET221           (   204) -   LEU394           (377   ) (2)
+        
+        [Note, this forced situation is more common, it's just we hadn't encountered it yet] 
+
+        However, even if G.S3 is broken across resSeq, the found G.S3 fits with the G.S3 defined in 
+        the reference sequence, since:
+        
+        top residues ['V217', 'N218', 'F219',         'M221', 'F222', 'D223', 'V224']
+        ref residues ['V217', 'N218', 'F219', 'H220', 'M221', 'F222', 'D223', 'V224']
+
+        The missing H220 has broken the Gprot (in the resSeq) heuristic s.t. G.S3 will always be 
+        "broken" across fragments, _in all optimal aligments_, but that is just because the
+        check_if_subfragment check, with the resSeq heuristic, is really hard to pass.
+        
+        However, resSeq seems to be the right heuristic to pick here, because it's better to 
+        
+        * break all things as much as possible first
+        * patch some of them together later via seq-align if we have that information 
+
+        """
+        frags = self.CGN.top2frags(broken_gprot.top)
+
+        self.assertListEqual(frags["G.S3"], _np.arange(201, 207 + 1).tolist())
 
 class Test_choose_between_consensus_dicts(unittest.TestCase):
 

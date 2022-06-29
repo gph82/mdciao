@@ -962,7 +962,8 @@ class LabelerConsensus(object):
             to indices of this self.seq
         """
         debug = False
-        n_residues = [len(top) if isinstance(top,str) else top.n_residues][0]
+        #debug = True
+        n_residues = [len(top) if isinstance(top, str) else top.n_residues][0]
         # Define fragments even if it turns out we will not need them
         # The code is easier to follow this way
         if isinstance(fragments, str):
@@ -983,24 +984,24 @@ class LabelerConsensus(object):
         elif fragments is not None:
             _frag_str = "explict definition"
             _fragments = _mdcfrg.fragments.get_fragments(top, "resSeq", verbose=False)
-            _fragments = _mdcfrg.mix_fragments(n_residues-1,
-                                                     {"input %u"%ii :fr for ii, fr in enumerate(fragments)},
-                                                     _fragments, None)[0]
+            _fragments = _mdcfrg.mix_fragments(n_residues - 1,
+                                               {"input %u" % ii: fr for ii, fr in enumerate(fragments)},
+                                               _fragments, None)[0]
 
         if (min_hit_rate > 0):
             assert restrict_to_residxs is None
             restrict_to_residxs = guess_nomenclature_fragments(self.seq,
                                                                top,
                                                                _fragments,
-                                                               verbose=debug,
+                                                               verbose=verbose or debug,
                                                                min_hit_rate=min_hit_rate,
                                                                return_residue_idxs=True, empty=None)
 
         # In principle I'm introducing this only for KLIFS, could be for all nomenclatures
-        if self._nomenclature_key == "KLIFS" :
+        if self._nomenclature_key == "KLIFS":
             chain_id = self.dataframe.chain_index[_np.hstack(list(self.fragments_as_idxs.values()))].unique()
-            assert len(chain_id)==1
-            seq_1_res_idxs = self.dataframe[self.dataframe.chain_index==chain_id[0]].index
+            assert len(chain_id) == 1
+            seq_1_res_idxs = self.dataframe[self.dataframe.chain_index == chain_id[0]].index
         else:
             seq_1_res_idxs = None
         df = _mdcu.sequence.align_tops_or_seqs(top,
@@ -1010,42 +1011,77 @@ class LabelerConsensus(object):
                                                return_DF=True,
                                                verbose=verbose,
                                                )
-        unbroken = True
+        consfrags = []
+        # For clever alternatives https://stackoverflow.com/a/3844832
+        for ii, idf in enumerate(df):
+            top2self, self2top = _mdcu.sequence.df2maps(idf)
+            consfrags.append(self._selfmap2frags(self2top))
+        all_fragments_equal = all(
+            [cf == consfrags[0] for cf in consfrags[:1]])  # vacously True https://stackoverflow.com/a/19602868
+
+        frags_already_printed = False
         for ii, idf in enumerate(df):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
             conlab = _np.full(len(idf), None)
             conlab[_np.flatnonzero(idf["idx_0"].isin(top2self.keys()))] = self.dataframe.iloc[list(top2self.values())][
                 self._nomenclature_key]
             if isinstance(top, str) or str(_frag_str).lower() in ["none", "false"] or len(df) == 1:
+                confrags_compatible_with_frags = True
                 if debug:
                     print("I'm not checking fragment compatibility because at least one of these statements is True")
-                    print(" * the input topology is a sequence string, s.t. no fragments can be extracted: %s" % isinstance(top, str))
-                    print(" * There is only one pairwise alignment with the maximum score: ", len(df)==1, len(df))
-                    print(" * The fragmentation heuristics were False or None: ", str(_frag_str).lower() in ["none", "false"], _frag_str)
+                    print(
+                        " * the input topology is a sequence string, s.t. no fragments can be extracted: %s" % isinstance(
+                            top, str))
+                    print(" * There is only one pairwise alignment with the maximum score: ", len(df) == 1, len(df))
+                    print(" * The fragmentation heuristics were False or None: ",
+                          str(_frag_str).lower() in ["none", "false"], _frag_str)
                     #      _frag_str, len(df))
                 break
             else:
-                fragments = _fragments # This will have been defined already
-                unbroken = True
+                fragments = _fragments  # This will have been defined already
+                confrags_compatible_with_frags = True
                 consfrags = self._selfmap2frags(self2top)
                 if debug:
                     print("Iteration ", ii)
                     _mdcfrg.print_fragments(consfrags, top)
-                for fraglab, fragidxs in consfrags.items():
-                    spread_frg = _mdcfrg.check_if_subfragment(fragidxs, fraglab, fragments, top, map_conlab=conlab,
-                                                              prompt=False)
+                for frag_idx, (confraglab, confragidxs) in enumerate(consfrags.items()):
+                    confrag_is_subfragment = _mdcfrg.check_if_subfragment(confragidxs, confraglab, fragments, top,
+                                                                          map_conlab=conlab,
+                                                                          prompt=False)
                     if debug:
-                        print(ii, fraglab, spread_frg)
-                    if not spread_frg:
-                        unbroken = False
-                        break
-                if unbroken:
+                        print(ii, confraglab, confrag_is_subfragment)
+                    if not confrag_is_subfragment:
+                        if not frags_already_printed:
+                            print("fragments derived from '%s':"%_frag_str)
+                            _mdcfrg.print_fragments(_fragments, top)
+                            frags_already_printed = True
+                        print(
+                            "The consensus-sequence alignment nr. %u  (score = %u, %u other alignments also have this score),\n"
+                            "defines the consensus fragment '%s' having clashes with the fragment definitions derived from '%s':" % (
+                                ii, idf.alignment_score , len(df)-1, confraglab, _frag_str))
+                        _mdcfrg.print_frag(frag_idx, top, confragidxs, resSeq_jumps=True, idx2label=conlab,
+                                           fragment_desc="%s" % confraglab)
+                        confragAAs = [_mdcu.residue_and_atom.shorten_AA(top.residue(idx), keep_index=True) for idx in
+                                      confragidxs]
+
+                        if not set(self.fragments[confraglab]).issuperset(confragAAs):
+                            confrags_compatible_with_frags = False
+                            break
+                        else:
+                            print("However all residues assigned to '%s' in the `top` are contained in reference consensus\n"
+                                  "fragment (in name and index), so this alignment is considered compatible."%(confraglab))
+
+                if confrags_compatible_with_frags:
+                    if ii>0:
+                        print("Picking alignment nr. %u with no aparent breaks."%ii)
                     break
-        assert unbroken, ("None of the %u best pairwise alignments yield consensus fragments "
-                          "compatible with the '%s' fragmentation-heuristic, which yields\n%s\n"
-                          "Try increasing the `min_hit_rate` "
-                          "or using `restrict_to_residxs` to restrict the alignment only to the "
-                          "residues most likely to belong to this object's `self.seq` attribute." % (len(df), str(_frag_str), "\n".join(_mdcfrg.print_fragments(fragments, top))))
+        assert confrags_compatible_with_frags, ("None of the %u best pairwise alignments yield consensus fragments "
+                                                "compatible with the '%s' fragmentation-heuristic, which yields\n%s\n"
+                                                "Try increasing the `min_hit_rate` "
+                                                "or using `restrict_to_residxs` to restrict the alignment only to\nthose "
+                                                "residues of top` most likely to belong to this object's sequence as stored in `self.seq`." % (
+                                                len(df), str(_frag_str),
+                                                "\n".join(_mdcfrg.print_fragments(fragments, top))))
 
         df = idf
 
