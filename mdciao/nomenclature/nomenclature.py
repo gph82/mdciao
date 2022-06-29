@@ -1992,7 +1992,8 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
                  top.residue(fragments[guess[0]][0]),
                  top.residue(fragments[guess[-1]][-1])))
     else:
-        print("No guessed fragment")
+        print("None of the above fragments appear to have sequences matching "
+              "the consensus\nlabeler (type '%s')."%type(CLin).__name__)
         return None
 
     if accept_guess:
