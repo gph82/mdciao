@@ -38,6 +38,8 @@ from os import path as _path
 
 from collections import defaultdict as _defdict
 
+import mdtraj as _md
+
 def plot_w_smoothing_auto(ax, y,
                           label,
                           color,
@@ -1010,6 +1012,7 @@ def compare_violins(groups,
                     zero_freq = 1e-2,
                     remove_identities=False,
                     identity_cutoff=1,
+                    representatives=None,
                     ):
     r"""
     Plot all distance-distributions of several :obj:`~mdciao.contacts.ContactGroup` s together using :obj:`~matplotlib.pyplot.violinplot` s
@@ -1155,6 +1158,40 @@ def compare_violins(groups,
         If :obj:`remove_identities`, use this value to define what
         is considered an identity, s.t. contacts with values e.g. .95
         can also be removed
+    representatives : anything (bool, int, dict, list) default is None
+        Plot, with a small dot on top of the violins,
+        the values of the residue-residue distances of representative
+        geometries. The representative geometries can be parsed
+        directly as a dict of :obj:`~mdtraj.Trajectory` objects,
+        or extracted on-the-fly by calling the :obj:`mdciao.contacts.ContactGroup.repframes`
+        method of each of the `groups`. Check the docs of
+        :obj:`mdciao.contacts.ContactGroup.repframes` to find out what is meant
+        with "representative".
+        This is what each type of input does:
+
+        * boolean True:
+          Calls :obj:`mdciao.ContactGroup.repframes` with the
+          method's default parameters and plots the result
+        * int > 0:
+          Calls :obj:`mdciao.ContactGroup.repframes` with the
+          parameter `n_frames` set to this integer. This parameter
+          controls how many representatives are extracted and
+          subsequently plotted.
+        * dict of parameters:
+          A dictionary with explict values for the optional
+          parameters of :obj:`mdciao.contacts.ContactGroup.repframes`,
+          usually `n_frames` (an int) and `scheme`, ("mean" or "mode"),
+          depending what you mean with "representative". Check the method's
+          documentation for more info.
+        * dict of :obj:`~mdtraj.Trajectory` objects:
+          Has to have the same keys as `groups`. No checks are done
+          whether these objects match the actual molecular topologies
+          of `groups`, so beware of potential mismatches here.
+          Typically, these frames come from having used
+          :obj:`mdciao.contacts.ContactGroup.repframes` with
+          `return_traj`=True.
+        * dict of dicts containing values
+          #TODO not implemented yet
 
     Returns
     -------
@@ -1174,7 +1211,7 @@ def compare_violins(groups,
         _groups = {"mdcCG %u" % ii : item for ii, item in enumerate(groups)}
     else:
         _groups = groups
-
+    repframes_per_sys_per_ctc = {}
     for syskey, group in _groups.items():
         labels = group.gen_ctc_labels(AA_format=AA_format,
                                       fragments=[True if defrag is None else False][0],
@@ -1185,12 +1222,37 @@ def compare_violins(groups,
         if ctc_cutoff_Ang is not None:
             freqs_per_sys_per_ctc[syskey] = {key:freq for key, freq in zip(labels, group.frequency_per_contact(ctc_cutoff_Ang))}
 
-    # Unify it
+        if bool(representatives):
+            # Do we have representatives?
+            if isinstance(representatives, bool):
+                d = group.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang)[2]
+            if isinstance(representatives, int) and representatives>0:
+                d = group.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, n_frames=representatives)[2].T
+            if isinstance(representatives, dict) and len(representatives)>0:
+                if syskey not in representatives.keys() :
+                    representatives.pop("ctc_cutoff_ang", None)
+                    representatives.pop("show_violins", None)
+                    d = group.repframes(**representatives)[2].T
+                else:
+                    assert isinstance(representatives[syskey], _md.Trajectory)
+                    d = _md.compute_contacts(representatives[syskey], contacts=group.res_idxs_pairs)[0].T
+            repframes_per_sys_per_ctc[syskey] = {key: val * 10 for key, val in
+                                                 zip(labels, d)}
+
+    representatives = bool(representatives)
+    # Unify data
     data4violins_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(data4violins_per_sys_per_ctc,
                                                                        replacement_dict=mutations_dict,
                                                                        is_freq=False,
                                                                        val_missing=_np.nan,
                                                                        key_separator=key_separator) #todo use kwargs?
+    if representatives:
+        repframes_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(repframes_per_sys_per_ctc,
+                                                                        replacement_dict=mutations_dict,
+                                                                        is_freq=False,
+                                                                        val_missing=_np.nan,
+                                                                        key_separator=key_separator)
+
     # Delete some keys if all freqs are < zero_freq
     if ctc_cutoff_Ang is not None:
         # First unify
@@ -1217,6 +1279,13 @@ def compare_violins(groups,
             data4violins_per_sys_per_ctc[key], deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
         if len(_np.unique(deleted_half_keys)) > 1:
             raise ValueError("The anchor patterns differ by key, this is strange: %s" % deleted_half_keys)
+
+        if representatives is not {}:
+            for key, idict in repframes_per_sys_per_ctc.items():
+                repframes_per_sys_per_ctc[key], deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict,
+                                                                                                          anchor)
+            if len(_np.unique(deleted_half_keys)) > 1:
+                raise ValueError("The anchor patterns differ by key, this is strange: %s" % deleted_half_keys)
 
     # Gather keys
     all_sys_keys = list(_groups.keys())
@@ -1250,6 +1319,12 @@ def compare_violins(groups,
         _plt.plot(_np.nan, _np.nan, "d",color=colordict[syskey],
                   #alpha=vio.get_alpha()*1.5,
                   label=syskey)
+        if representatives:
+            irep = _np.vstack([val for key, val in repframes_per_sys_per_ctc[syskey].items() if val is not _np.nan and key in key2ii.keys()])
+            _plt.plot(positions, irep, "o ",
+                      ms=2.5,
+                      color=colordict[syskey]
+                      )
 
     # Cosmetics
     if defrag is None:

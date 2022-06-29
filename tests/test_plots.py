@@ -630,6 +630,7 @@ class Test_plot_compare_violins(unittest.TestCase):
         'L394@G.H5.26-Q229@5.68x68': 0.0} # below zero_freq
         """
         self.assertListEqual(sorted_keys, ["L230@5.69x69", 'R385@G.H5.17'])
+        _plt.close("all")
 
     def ___test_works_no_defrag_and_list(self):
         fig, ax, sorted_keys = plots.compare_violins([self.CGL394, self.CGL394_larger],
@@ -637,5 +638,42 @@ class Test_plot_compare_violins(unittest.TestCase):
                                         ymax=10, ctc_cutoff_Ang=4,
                                         defrag=None)
 
+        #fig.savefig("test.pdf")
+        _plt.close("all")
+
+    def test_repframes_True(self):
+        fig, ax, sorted_keys = plots.compare_violins({"small": self.CGL394, "big": self.CGL394_larger},
+                                                     anchor="L394",
+                                                     ymax=10, ctc_cutoff_Ang=4,
+                                                     representatives=True)
+
+
+        #fig.savefig("test.pdf")
+        _plt.close("all")
+
+    def test_repframes_int(self):
+        fig, ax, sorted_keys = plots.compare_violins({"small": self.CGL394, "big": self.CGL394_larger},
+                                                     anchor="L394",
+                                                     ymax=10, ctc_cutoff_Ang=4,
+                                                     representatives=2)
+        # fig.savefig("test.pdf")
+        _plt.close("all")
+
+    def test_repframes_dict_kwargs(self):
+        fig, ax, sorted_keys = plots.compare_violins({"small": self.CGL394, "big": self.CGL394_larger},
+                                                     anchor="L394",
+                                                     ymax=10, ctc_cutoff_Ang=4,
+                                                     representatives={"n_frames":3, "scheme":"mean"})
+        #fig.savefig("test.pdf")
+        _plt.close("all")
+
+    def test_repframes_dict_geoms(self):
+        traj = _md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
+        repframes = {"small" : traj[:3],
+                     "big" : traj[:5]}
+        fig, ax, sorted_keys = plots.compare_violins({"small": self.CGL394, "big": self.CGL394_larger},
+                                                     anchor="L394",
+                                                     ymax=10, ctc_cutoff_Ang=4,
+                                                     representatives=repframes)
         #fig.savefig("test.pdf")
         _plt.close("all")
