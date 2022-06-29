@@ -1682,6 +1682,7 @@ def _only_matches(df,
     Returns
     -------
     df : :obj:`~pandas.DataFrame`
+        Will only have `filter_on`+`keys` as columns
     """
     if keys is None:
         keys = [key for key in df.keys() if key != filter_on]
@@ -1692,7 +1693,7 @@ def _only_matches(df,
         matches = [df[filter_on].map(lambda x: x in matching_keys)] + matches
     matches = _np.vstack(matches).T
     # print(matches)
-    return df[matches.all(1)]
+    return df[matches.all(1)][[filter_on]+keys]
 
 
 def _alignment_df2_conslist(alignment_as_df,
