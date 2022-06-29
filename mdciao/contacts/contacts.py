@@ -5169,7 +5169,10 @@ class ContactGroup(object):
                 reptraj = self._contacts[0]._attribute_trajs.trajs[traj_idx]
                 print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
                 if isinstance(reptraj, str):
-                    geoms.append(_md.load(reptraj, top=self.top,frame=frame_idx))
+                    if _path.exists(reptraj):
+                        geoms.append(_md.load(reptraj, top=self.top,frame=frame_idx))
+                    else:
+                        raise FileNotFoundError("The file %s can't be found anymore. Is this an `mdciao.examples` object?"%reptraj)
                 else:
                     geoms.append(reptraj[frame_idx])
             return_tuple += tuple([geoms])
