@@ -1174,39 +1174,46 @@ class Test_KLIFS_finder(unittest.TestCase):
 class TestLabelerKLIFS(unittest.TestCase):
 
     # The setup is in itself a test
-    def test_setup_local(self):
+    def setUp(self):
         self.KLIFS = nomenclature.LabelerKLIFS(test_filenames.KLIFS_P31751_xlsx,
                                                local_path=test_filenames.RCSB_pdb_path,
                                                try_web_lookup=False)
 
+
     def test_setup_localKLIFS_webPDB(self):
-        self.KLIFS = nomenclature.LabelerKLIFS(test_filenames.KLIFS_P31751_xlsx,
+        KLIFS = nomenclature.LabelerKLIFS(test_filenames.KLIFS_P31751_xlsx,
                                                )
     # Only code specific to this object
     def test_fragments_as_idxs(self):
-        self.KLIFS = nomenclature.LabelerKLIFS(test_filenames.KLIFS_P31751_xlsx,
-                                               local_path=test_filenames.RCSB_pdb_path)
         assert_no_intersection(list(self.KLIFS.fragments_as_idxs.values()))
         self.assertDictEqual(self.KLIFS.fragments_as_idxs,
-                             {'I': [156, 157, 158],
-                              'g.l': [159, 160, 161, 162, 163, 164],
-                              'II': [165, 166, 167, 168],
-                              'III': [178, 179, 180, 181, 182, 183],
-                              'αC': [196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206],
-                              'b.l': [207, 208, 210, 211, 212, 213, 214],
-                              'IV': [215, 216, 217, 218],
-                              'V': [226, 227, 228],
-                              'GK': [229],
-                              'hinge': [230, 231, 232],
-                              'linker': [233, 234, 235, 236],
-                              'αD': [237, 238, 239, 240, 241, 242, 243],
-                              'αE': [265, 266, 267, 268, 269],
-                              'VI': [270, 271, 272],
-                              'c.l': [273, 274, 275, 276, 277, 278, 279, 280],
-                              'VII': [281, 282, 283],
-                              'VIII': [291],
-                              'xDFG': [292, 293, 294, 295],
-                              'a.l': [296, 297]})
+                             {'I': [10, 11, 12],
+                              'g.l': [13, 14, 15, 16, 17, 18],
+                              'II': [19, 20, 21, 22],
+                              'III': [32, 33, 34, 35, 36, 37],
+                              'αC': [50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60],
+                              'b.l': [61, 62, 64, 65, 66, 67, 68],
+                              'IV': [69, 70, 71, 72],
+                              'V': [80, 81, 82],
+                              'GK': [83],
+                              'hinge': [84, 85, 86],
+                              'linker': [87, 88, 89, 90],
+                              'αD': [91, 92, 93, 94, 95, 96, 97],
+                              'αE': [119, 120, 121, 122, 123],
+                              'VI': [124, 125, 126],
+                              'c.l': [127, 128, 129, 130, 131, 132, 133, 134],
+                              'VII': [135, 136, 137],
+                              'VIII': [145],
+                              'xDFG': [146, 147, 148, 149],
+                              'a.l': [150, 151]})
+
+    def test_KLIFs_fragmentation(self):
+        self.geom = md.load(test_filenames.pdb_3E8D)
+
+        frags = self.KLIFS.top2frags(self.geom.top)
+
+        # The pdb of geom and the pdb of self.KLIFS is the same pdb
+        self.assertDictEqual(frags, self.KLIFS.fragments_as_idxs)
 
 class Test_mdTrajectory_and_spreadsheets(unittest.TestCase):
 
