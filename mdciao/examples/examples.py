@@ -249,6 +249,7 @@ def ContactGroupL394(**kwargs):
     CG : a :obj:`~mdciao.contacts.ContactGroup`
 
     """
+    # TODO make a method out of this link+cd_tmpdir+return
     with _TDir(suffix="_mdciao_example_CG") as t:
         for fn in [filenames.pdb_3SN6, filenames.traj_xtc,
                    filenames.top_pdb,
@@ -498,8 +499,13 @@ def GPCRLabeler_ardb2_human(**kwargs):
 
 def CGNLabeler_3SN6(**kwargs):
     r"""Build an :obj:`~mdciao.nomenclature.LabelerCGN` with the CGN_3SN6.txt and 3SN6.pdb files shipped with mdciao"""
-    return _LabelerCGN(filenames.CGN_3SN6,**kwargs)
-
+    with _TDir(suffix="_mdciao_example_CGNLabeler") as t:
+        for fn in [filenames.pdb_3SN6, filenames.CGN_3SN6]:
+            _link(fn, _path.join(t, _path.basename(fn)))
+        with remember_cwd():
+            _chdir(t)
+            CGN = _LabelerCGN("3SN6",**kwargs)
+    return CGN
 
 def Interface_B2AR_Gas(**kwargs):
     r"""
