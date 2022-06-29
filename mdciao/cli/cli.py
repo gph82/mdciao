@@ -152,8 +152,8 @@ def _parse_consensus_option(option, consensus_type,
                                                   # verbose=True
                                                   )
         if answer is None:
-            print("No fragments belonging to the %s nomenclature\n"
-                  "could be guessed based on your fragments, this might be a weird case"%consensus_type)
+            print("No fragments belonging to the %s nomenclature could be guessed based\n"
+                  "on your fragments, this might be a weird case."%consensus_type)
             map_out = [None]*top.n_residues
         else:
             restrict_to_residxs = _np.hstack([fragments[ii] for ii in answer])
