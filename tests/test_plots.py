@@ -632,7 +632,7 @@ class Test_plot_compare_violins(unittest.TestCase):
         self.assertListEqual(sorted_keys, ["L230@5.69x69", 'R385@G.H5.17'])
         _plt.close("all")
 
-    def ___test_works_no_defrag_and_list(self):
+    def test_works_no_defrag_and_list(self):
         fig, ax, sorted_keys = plots.compare_violins([self.CGL394, self.CGL394_larger],
                                         anchor="L394",
                                         ymax=10, ctc_cutoff_Ang=4,
