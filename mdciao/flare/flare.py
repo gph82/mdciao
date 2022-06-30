@@ -883,17 +883,23 @@ def add_fragmented_residue_labels(fragments,
     return labels
 
 def freqs2chord(freqs, res_idxs_pairs, fragments,
-                fragment_names=None, iax=None, panelsize=10,
+                fragment_names=None,
+                iax=None,
+                panelsize=10,
                 fragment_colors=None,
                 add_sigma=True,
+                normalize_to_sigma=None,
+                min_sigma=0,
+                clockwise=True,
                 ):
     r"""
     Coarse-grain the per-residue frequencies into a per-fragment `chord-diagram <https://en.wikipedia.org/wiki/Chord_diagram>`_.
 
-    Residues belonging to the same fragments get turned into
+    Can be thought of as a coarse-grained flareplot, where
+    residues belonging to the same fragments get turned into
     arcs instead of being plotted as individual dots.
     Each arc-length is proportional to the fragments' overall number of
-    contacts, NOT to the number of residues that the arc represents.
+    contacts, NOT to the number of residues that the arc contains.
 
     If fragments don't participate in any contacts, they
     are hidden, i.e. the plot is always 'sparse'
@@ -917,22 +923,59 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         A list of floats representing frequencies
     res_idxs_pairs : list of pairs of integers, default is None
         The pairs of residue indices behind each freq entry
-        in :obj:`freqs`. They can be any integers that could represent
+        in `freqs`. They can be any integers that could represent
         a residue. The only hard condition is that the set
         of np.unique(res_idxs_pairs) must be contained
-        within :obj:`fragments`
+        within `fragments`
     fragments : a list of lists of integers
         These are the fragments used to coarse-grain
-        the :obj:`freqs`. They can have to be a superset
-        of the idxs in :obj:`res_idxs_pairs`
+        the `freqs`. Any residue index of `res_idxs_pairs`
+        that has a non-zero frequency associated to it
+        in `freqs` has to appear in one (and only one)
+        of the `fragments`.
     fragment_names : list, default is None
         The fragment names
     iax: :obj:`~matplotlib.axes.Axes`, default is None
-    iax : :obj:`~matplotlib.axes.Axes`
         Parse an axis to draw on, otherwise one will be created
-        using :obj:`panelsize`.
+        using `panelsize`.
+    normalize_to_sigma : float, default is None
+        If a float is provided, then the arcs
+        of the chord-diagram can occupy the
+        full 360% degrees of the circumference if,
+        and only if, the sum over all per-fragment
+        contacts (Sigma) aggregates to `normalize_sigma`.
+        If they aggregate to a smaller value, then
+        they will occupy a proportionately smaller
+        portion of the circumference. If they aggregate
+        to a larger value, then a error will be thrown.
+        The default behavior (None) is to always occupy
+        the full 360°, but this makes it hard to
+        compare across different chord-diagrams for systems
+        with different Sigmas, since they are scaled
+        to 360° by default.
+    min_sigma : float, default is 0
+        `fragments` with less contacts than this, i.e.
+        aggregating to Sigma smaller than this,
+        aren't plotted. Please note that this
+        cutoff applies only to the aggregated, per-fragment value, i.e.
+        if enough individual contacts, each with frequencies
+        < min_sigma, appear in one fragment and aggregate
+        to a value > min_sigma, then this fragment is plotted.
+        fragments dropped because of `min_sigma`, aren't
+        considered when computing how much of the circumference
+        is occupied by the diagram, i.e.  the Sigma used
+        to `normalize_to_sigma` doesn't include them.
     panelsize : int, default is 10
         The panelsize for the plot, in inches
+    clockwise : bool, default is True
+        Plot fragments (=arcs)
+        clock-wise from 0° (3 o'clock),
+        the same way that the flareplots do.
+        If False, progress counter-clock-wise.
+        The order in which the fragments are
+        plotted is the order in which they
+        appear in `fragments`, regardless of
+        what indices they contain.
     fragment_colors : iterable of color-likes
         The colors given to the arcs representing
         the fragments
@@ -949,23 +992,41 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
     plot_attribs : dict
         Objects of the plot, for the user to
         to manipulate further. Some attributes:
-        "fragment_names", "fragment_labels",
-        "dots", "r"
-        The attribute "dots" is a shim namedtuple
+        "sigmas", "fragment_names", "fragment_labels",
+        "dots", "r". The attribute "dots" is a shim namedtuple
         with one single attribute, "radius",
         for compatibility with downstream
-        manipulations
+        manipulations.
     """
     # Coarse grain the matrix
     mat_CG = _futils.coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments)
-
-    # Get the sparse matrix
+    print(mat_CG)
+    # Get the sparse matrix (element-wise)
     sparse_mat, non_zeros = _futils.sparsify_sym_matrix(mat_CG)
 
     non_zero_fragment_names = [[fragment_names[ii] for ii in non_zeros] if fragment_names is not None else None][0]
-    non_zero_fragment_colors = [[fragment_colors[ii] for ii in non_zeros[::-1]] if fragment_colors is not None else None][0]
-    # TODO when https://codeberg.org/tfardet/mpl_chord_diagram/pulls/32 gets released to pypi, [::-1] will not be needed
-    order = _np.arange(len(non_zeros))[::-1]
+    non_zero_fragment_colors = [[fragment_colors[ii] for ii in non_zeros] if fragment_colors is not None else None][0]
+
+    # Get the sparse matrix (row/column wise)
+    sparse_mat, non_zeros, discarded = _futils.sparsify_sym_matrix_by_row_sum(sparse_mat, min_sigma)
+
+    non_zero_fragment_names = \
+        [[non_zero_fragment_names[ii] for ii in non_zeros] if fragment_names is not None else None][0]
+    non_zero_fragment_colors = \
+        [[non_zero_fragment_colors[ii] for ii in non_zeros] if fragment_colors is not None else None][0]
+
+    order = _np.arange(len(non_zeros))
+    if clockwise:
+        order = order[::-1]
+
+    if normalize_to_sigma:
+        assert _np.round(normalize_to_sigma, 6) >= _np.round(sparse_mat.sum() / 2, 6), \
+            ValueError("The Sigma value for normalizing has to be larger than "
+                       "the aggregated `freqs`, but `normalize_to_sigma` = %4.2f < %4.2f = sum(freqs) "%
+                       (_np.round(normalize_to_sigma, 6), _np.round(sparse_mat.sum() / 2, 6)))
+        extent = 360 * sparse_mat.sum() / 2 / normalize_to_sigma
+    else:
+        extent = 360
 
     # Grab text objects already in the input axis
     old_texts = []
@@ -975,11 +1036,12 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         old_texts = list(iax.texts)
 
     res = _chord_diagram(sparse_mat,
-                   chord_colors="gray",
-                   order=order,
-                   names=non_zero_fragment_names,
-                   colors=non_zero_fragment_colors,
-                   ax=iax)
+                         chord_colors="gray",
+                         order=order,
+                         names=non_zero_fragment_names,
+                         colors=non_zero_fragment_colors,
+                         ax=iax,
+                         extent=extent)
 
     # Grab the new text-labels and un-overlap them
     frag_labels = [txt for txt in iax.texts if txt not in old_texts]  # only grab new text-objects
@@ -1002,7 +1064,8 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
     return_dict = {"fragment_names": non_zero_fragment_names,
                    "fragment_labels": frag_labels,
                    "r": _futils._outermost_corner_of_fancypatches(frag_labels),
-                   "dots": [dot(_signature(_chord_diagram).parameters["width"].default / 4)]}
+                   "dots": [dot(_signature(_chord_diagram).parameters["width"].default / 4)],
+                   "sigmas": sparse_mat.sum(0)} # we don't need [order[::-1]] here!!
     if add_sigma:
         return_dict["sigma_labels"] = sigma_labels
 

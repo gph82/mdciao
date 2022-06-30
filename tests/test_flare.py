@@ -101,23 +101,109 @@ class TestAddBezier(TestCase):
         node_pairs = [(xy[ii],xy[jj]) for (ii,jj) in pairs]
         bzcurves =  flare.add_bezier_curves(iax,node_pairs
                                           )
+        plt.close("all")
         #iax.figure.savefig("test.png")
 
 class TestChord(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.pairs = np.reshape(np.arange(40), (2, -1)).T
+        print(cls.pairs)
+        cls.frags = np.reshape(np.arange(49), (7, 7))
+        # pairs go up to 40, frags up to 49, that frag will disappear
+        print(cls.frags)
+        cls.freqs = np.arange(20)
+        cls.fragment_names = ["A", "B", "C", "D", "E", "F", "G"]
+        print(cls.freqs)
+        print(cls.freqs.sum())
+
     def test_just_works(self):
-        pairs = np.reshape(np.arange(40), (2, -1)).T
-        frags=np.reshape(np.arange(49), (7, 7))
-        #pairs go up to 40, frags up to 49, that frag will disappear
-        freqs = np.arange(20)
-        fragment_names = ["A", "B", "C", "D", "E", "F", "G"]
-        iax, nonzeros, plotattrs = flare.freqs2chord(freqs,
-                                      pairs,
-                                      frags,
-                                      fragment_names=fragment_names)
+
+        iax, nonzeros, plotattrs = flare.freqs2chord(self.freqs,
+                                                     self.pairs,
+                                                     self.frags,
+                                                     fragment_names=self.fragment_names)
         assert isinstance(iax, plt.Axes)
-        assert len(iax.texts)==6+6
-        np.testing.assert_array_equal(nonzeros,[0,1,2,3,4,5])
-        for key in ["fragment_names","fragment_labels","r","dots"]:
+        assert len(iax.texts) == 6 + 6
+        print(plotattrs["sigmas"])
+        np.testing.assert_array_equal(nonzeros, [0, 1, 2, 3, 4, 5])
+        for key in ["fragment_names", "fragment_labels", "r", "dots", "sigmas"]:
             assert key in plotattrs.keys()
-        assert plotattrs["dots"][0].radius>0
+        np.testing.assert_array_equal(plotattrs["sigmas"], [21, 70, 99, 28, 77, 85])
+        assert plotattrs["dots"][0].radius > 0
+        #iax.figure.savefig("test.ref.pdf")
+        plt.close("all")
+
+    def test_one_less_fragment(self):
+
+        iax, nonzeros, plotattrs = flare.freqs2chord(self.freqs,
+                                                     self.pairs,
+                                                     self.frags,
+                                                     fragment_names=self.fragment_names,
+                                                     min_sigma=25,
+                                                     )
+        """
+        This is how the coarse grain matrix looks like, 
+        row nr. 0 wil be dropped
+        [[ 0.  0.  0. 21.  0.  0.  0.]
+         [ 0.  0.  0.  7. 63.  0.  0.]
+         [ 0.  0.  0.  0. 14. 85.  0.]
+         [21.  7.  0.  0.  0.  0.  0.]
+         [ 0. 63. 14.  0.  0.  0.  0.]
+         [ 0.  0. 85.  0.  0.  0.  0.]
+         [ 0.  0.  0.  0.  0.  0.  0.]]
+
+        """
+        #iax.figure.savefig("test.one_less.pdf")
+        print(plotattrs["sigmas"])
+        assert isinstance(iax, plt.Axes)
+        assert len(iax.texts) == 5 + 5
+        np.testing.assert_array_equal(nonzeros, [1, 2, 3, 4, 5])
+        for key in ["fragment_names", "fragment_labels", "r", "dots", "sigmas"]:
+            assert key in plotattrs.keys()
+        np.testing.assert_array_equal(plotattrs["sigmas"], [# A isn't there bc 21 < 25
+                                                            70, 99,
+                                                            7, # note that frag-D has lost 21 cts from A
+                                                            77, 85])
+        assert plotattrs["dots"][0].radius > 0
+        plt.close("all")
+
+
+    def test_half_circle(self):
+
+        iax, nonzeros, plotattrs = flare.freqs2chord(self.freqs,
+                                                     self.pairs,
+                                                     self.frags,
+                                                     fragment_names=self.fragment_names,
+                                                     normalize_to_sigma=self.freqs.sum()*2,
+                                                     )
+        #iax.figure.savefig("test.half.pdf")
+        assert isinstance(iax, plt.Axes)
+        assert len(iax.texts) == 6 + 6
+        np.testing.assert_array_equal(nonzeros, [0, 1, 2, 3, 4, 5])
+        for key in ["fragment_names", "fragment_labels", "r", "dots", "sigmas"]:
+            assert key in plotattrs.keys()
+        np.testing.assert_array_equal(plotattrs["sigmas"], [21, 70, 99, 28, 77, 85])
+        assert plotattrs["dots"][0].radius > 0
+        plt.close("all")
+        print(plotattrs["sigmas"])
+
+    def test_counter_clockwise(self):
+
+        iax, nonzeros, plotattrs = flare.freqs2chord(self.freqs,
+                                                     self.pairs,
+                                                     self.frags,
+                                                     fragment_names=self.fragment_names,
+                                                     clockwise=False,
+                                                     )
+        iax.figure.savefig("test.ccwise.pdf")
+        assert isinstance(iax, plt.Axes)
+        assert len(iax.texts) == 6 + 6
+        np.testing.assert_array_equal(nonzeros, [0, 1, 2, 3, 4, 5])
+        for key in ["fragment_names", "fragment_labels", "r", "dots"]:
+            assert key in plotattrs.keys()
+        np.testing.assert_array_equal(plotattrs["sigmas"], [21, 70, 99, 28, 77, 85])
+        assert plotattrs["dots"][0].radius > 0
+        plt.close("all")
+        print(plotattrs["sigmas"])
