@@ -6469,16 +6469,16 @@ def _dataframe2flarekwargs2(fcdf, scheme, intf, zero_freq=1e-2,):
         kwargs["sparse_residues"] = nonzero_residues
         kwargs["colors"] = fcdf["frag_color"].values[nonzero_residues]
 
-    elif scheme == "consensus":
-        assert "consensus frag" in fcdf.keys(), ValueError("Can't use 'scheme=consensus' if 'consensus_maps' doesn't contain the right objects.")
+    #elif scheme == "consensus":
+        #assert "consensus frag" in fcdf.keys(), ValueError("Can't use 'scheme=consensus' if 'consensus_maps' doesn't contain the right objects.")
         # Would like to use groupby but need an index column name
-        good_confrags = {key: val for key, val in confrags.items()
-                         if set(val).intersection(interface_fragments)}
+        #good_confrags = {key: val for key, val in confrags.items()
+        #                 if set(val).intersection(interface_residxs)}
 
-        kwargs["fragments"] = list(good_confrags.values())
-        kwargs["sparse_residues"] = _np.hstack(kwargs["fragments"])
-        kwargs["fragment_names"] = list(good_confrags.keys())
-        kwargs["colors"] = fcdf["frag_color"].values[kwargs["sparse_residues"]]
+        #kwargs["fragments"] = list(good_confrags.values())
+        #kwargs["sparse_residues"] = _np.hstack(kwargs["fragments"])
+        #kwargs["fragment_names"] = list(good_confrags.keys())
+        #kwargs["colors"] = fcdf["frag_color"].values[kwargs["sparse_residues"]]
 
     elif scheme == "consensus_sparse":
         assert "consensus frag" in fcdf.keys(), ValueError("Can't use 'scheme=consensus' if 'consensus_maps' doesn't contain the right objects.")
