@@ -4814,7 +4814,14 @@ class ContactGroup(object):
                 plot as many residues as possible. E.g.,
                 if a :obj:`self.topology` is present,
                 plot all its residues. This can be modified
-                with :obj:`fragments`, see above.
+                with `fragments`, see above. Using
+                'all' without any `fragments` means that the
+                topology won't be separated into interface fragments,
+                even if it is an interface. Given that
+                some of the topology (which the user
+                insists on plotting) might not have been
+                assigned to either side of the interface,
+                it's unclear how to proceed here.
              * 'interface':
                 use only the fragments in
                 :obj:`self.interface_fragments`. Will
