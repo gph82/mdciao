@@ -4862,8 +4862,12 @@ class ContactGroup(object):
         """
 
         df = self._flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose=False)
-
-        kwargs_freqs2flare.update(_dataframe2flarekwargs(df, scheme))
+        #Colors get their own treatment, since they don't get used in _flareargs2df
+        fcdf = full_color_list(self.top, df,
+                               colors=kwargs_freqs2flare.get("colors",None),
+                               )
+        #kwargs_freqs2flare.update(_dataframe2flarekwargs(df, scheme))
+        kwargs_freqs2flare.update(_dataframe2flarekwargs2(fcdf, scheme, self))
 
         from_tuple, kwargs_freqs2flare["SS"] = _mdcu.residue_and_atom.get_SS(SS)
 
