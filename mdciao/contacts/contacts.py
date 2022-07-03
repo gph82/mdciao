@@ -4906,6 +4906,9 @@ class ContactGroup(object):
         All parameters behave as explained in :obj:`~mdciao.contacts.ContactGroup.plot_freqs_as_flareplot`,
         not documenting here to avoid double doc maintenance
 
+        If no fragments are given, one single fragment containing all residues will be created
+
+        If fragments but no fragment_names are given, fragments get the names frag 0, frag 1 etc
         Parameters
         ----------
         ctc_cutoff_Ang
@@ -4940,13 +4943,17 @@ class ContactGroup(object):
                     try:
                         list_of_dicts[idx]["frag"]=ii
 
-                        if fragment_names is not None:
+                        if fragment_names is None:
+                            list_of_dicts[idx]["fragname"]="frag %u"%ii
+                        else:
                             list_of_dicts[idx]["fragname"]=fragment_names[ii]
                     except IndexError:
                         pass
                         # We don't have to have fragment definitions for all residues
                         # If using same fragment definitions for diferent topologies
                         # the user is responsible for any mismatches
+        else:
+            [lod.update({"frag": 0, "fragname":"frag 0"}) for lod in list_of_dicts]
 
         for ii in [0, 1]:
             [list_of_dicts[res].update({"interface fragment":ii}) for res in self.interface_fragments[ii]]
