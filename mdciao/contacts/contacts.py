@@ -6512,8 +6512,8 @@ def full_color_list(
     if colors is None:
         _colors = list(_mdcplots.color_dict_guesser("tab10", _np.arange(len(frags_from_df))).values())
         jdf["frag_color"] = list(_mdcflare._utils.col_list_from_input_and_fragments(_colors, frags_from_df))
-
-    jdf["frag_color"] = list(_mdcflare._utils.col_list_from_input_and_fragments(colors, frags_from_df))
+    else:
+        jdf["frag_color"] = list(_mdcflare._utils.col_list_from_input_and_fragments(colors, frags_from_df))
 
     if "interface fragment" in df.keys():
         # TODO do this from self.interface_indices
