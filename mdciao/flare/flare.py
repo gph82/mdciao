@@ -566,12 +566,12 @@ def circle_plot_residues(fragments,
         dot_radius = r * _np.sin(_np.pi/n_positions)
         dot_radius_in_pts = dot_radius*_points2dataunits(iax).mean()
         if dot_radius_in_pts < 1.5:
-            print(ValueError("Drawing this many residues (%u) in "
+            print(ValueError("Drawing this many dots (%u residues + %u padding spaces) in "
                              "a panel %3.1f inches wide/high "
                              "forces too small dotsizes and fontsizes.\n"
                              "If crowding effects "
                              "occur, either reduce the number of residues or increase "
-                             "the panel size"%(n_positions, panelsize)))
+                             "the panel size"%(len(xy), n_positions-len(xy), panelsize)))
         #TODO replace this with a call to RegularPolyCollection
         CPs = [_CP(ixy,
                    radius=dot_radius,
