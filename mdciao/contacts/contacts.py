@@ -47,7 +47,8 @@ from tqdm import tqdm as _tqdm
 
 from matplotlib import \
     pyplot as _plt,\
-    rcParams as _rcParams
+    rcParams as _rcParams,\
+    colors as _mplcolors
 
 from pandas import \
     DataFrame as _DF, \
@@ -6459,6 +6460,8 @@ def _dataframe2flarekwargs2(fcdf, scheme, intf, zero_freq=1e-2,):
         assert intf.is_interface
         kwargs["sparse_residues"] = _np.hstack([frag for frag in fragments
                                                if set(frag).intersection(nonzero_residues)])
+        kwargs["colors"] = fcdf["intf_colors"].values[kwargs["sparse_residues"]]
+        kwargs["sparse_residues"] = kwargs["sparse_residues"][[_mplcolors.is_color_like(icol) for icol in kwargs["colors"]]]
         kwargs["colors"] = fcdf["intf_colors"].values[kwargs["sparse_residues"]]
 
     elif scheme == "residues":
