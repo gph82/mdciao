@@ -6258,6 +6258,7 @@ def _delta_freq_pairs(freqsA, pairsA, freqsB, pairsB):
     delta = _np.array(list(delta.values()))
     return delta, pairs
 
+'''
 def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
     r"""
     Infer the kwargs needed for freqs2flare from a dataframe
@@ -6387,7 +6388,7 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
         kwargs["sparse_residues"] = df.index[df["sparse_residues"] == 1].values.astype(int).tolist()
         if "colors" in kwargs.keys():
             kwargs["colors"]=[kwargs["colors"][ii] for ii in kwargs["sparse_residues"]]
-    return kwargs
+'''
 
 def _dataframe2flarekwargs2(fcdf, scheme, intf, zero_freq=1e-2,):
     r"""
