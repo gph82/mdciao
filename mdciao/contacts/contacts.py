@@ -4845,15 +4845,8 @@ class ContactGroup(object):
              * 'residues_sparse' :
                 plot only the residues that have a non-zero
                 frequency
-             * 'consensus':
-                like 'interface_sparse', but more
-                fine-grained because the sub-domains
-                resulting from the consensus labels will be
-                used as fragment definitions. For this,
-                the :obj:`consensus_maps` need to
-                be actual :obj:`LabelerConsensus`-objects
              * 'consensus_sparse':
-                like 'consensus', but
+                like 'interface_sparse', but
                 leaving out sub-domains not participating
                 in the interface with any contacts.For this,
                 the :obj:`consensus_maps` need to
