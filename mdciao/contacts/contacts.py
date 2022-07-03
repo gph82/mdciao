@@ -6385,6 +6385,155 @@ def _dataframe2flarekwargs(df, scheme, zero_freq=1e-2):
             kwargs["colors"]=[kwargs["colors"][ii] for ii in kwargs["sparse_residues"]]
     return kwargs
 
+def _dataframe2flarekwargs2(fcdf, scheme, intf, zero_freq=1e-2,):
+    r"""
+    Infer the kwargs needed for freqs2flare from a dataframe
+
+    Note
+    ----
+    It's easier to infer the freqs2flare kwargs
+    from the "pre-filled" DF than to map out all
+    possible combinations of input parameters,
+    which leads to a lot of code that's
+    almost identical.
+
+    Parameters
+    ----------
+    df : :obj:`~pandas.DataFrame`
+        It has already been pre-filled
+        with per-residue information
+        by :obj:`mdciao.contacts.ContactGroup._flareargs2df`
+    scheme : str
+        The scheme used for the fragmentation
+        of the flareplot
+    zero_freq : float, default is 0.01
+        What to consider "zero" frequency
+        default is less than one percent
+    Returns
+    -------
+    kwargs : dict
+        The optional arguments for :obj:`mdciao.flare.freqs2flare`
+
+    """
+    # Avoiding the np.unique or pandas.unique to get rid of NaNs
+    #is_interface = [len(_np.hstack([fcdf.index[fcdf["interface fragment"] == ii].values.tolist() for ii in [0,1]]))>0 if "interface fragment" in fcdf.keys() else False][0]
+    if scheme == 'auto':
+        scheme = {True: 'interface',
+                  False: 'all'}[intf.is_interface]
+
+    if intf.is_interface:
+        interface_fragments = _np.unique(_np.hstack(intf.interface_fragments))
+
+    residues = _np.unique(_np.hstack(intf.res_idxs_pairs))
+    nonzero_residues = fcdf[fcdf.freq > zero_freq].index.values
+    fragments = [_np.flatnonzero(fcdf.frag == ii) for ii in fcdf.frag.unique()]
+
+    kwargs = {
+        "fragments": fragments,
+        "fragment_names": fcdf[~fcdf["fragname"].isnull()]["fragname"].unique()
+
+    }
+    if "textlabels" in fcdf.keys():
+        kwargs.update({"textlabels": fcdf.textlabels.values.tolist()})
+
+    if "consensus frag" in fcdf.keys():
+        confrag_names = fcdf[~fcdf["consensus frag"].isnull()]["consensus frag"].unique()
+        confrags = {confrag: fcdf[fcdf["consensus frag"] == confrag].index.values for confrag in confrag_names}
+        kwargs["fragment_names"] = list(confrags.keys())
+        kwargs["fragments"] = list(confrags.values())
+
+    if scheme == "all":
+        kwargs["sparse_residues"] = _np.arange(intf.top.n_residues)
+        kwargs["colors"] = fcdf["frag_color"].values
+
+    elif scheme == "interface":
+        assert intf.is_interface
+        kwargs["sparse_residues"] = interface_fragments
+        kwargs["colors"] = fcdf["intf_colors"].values[interface_fragments]
+    elif scheme == "interface_sparse":
+        assert intf.is_interface
+        kwargs["sparse_residues"] = _np.hstack([frag for frag in fragments
+                                               if set(frag).intersection(nonzero_residues)])
+        kwargs["colors"] = fcdf["intf_colors"].values[kwargs["sparse_residues"]]
+
+    elif scheme == "residues":
+        kwargs["sparse_residues"] = residues
+        kwargs["colors"] = fcdf["frag_color"].values[residues]
+
+    elif scheme == "residues_sparse":
+        kwargs["sparse_residues"] = nonzero_residues
+        kwargs["colors"] = fcdf["frag_color"].values[nonzero_residues]
+
+    elif scheme == "consensus":
+        assert "consensus frag" in fcdf.keys(), ValueError("Can't use 'scheme=consensus' if 'consensus_maps' doesn't contain the right objects.")
+        # Would like to use groupby but need an index column name
+        good_confrags = {key: val for key, val in confrags.items()
+                         if set(val).intersection(interface_fragments)}
+
+        kwargs["fragments"] = list(good_confrags.values())
+        kwargs["sparse_residues"] = _np.hstack(kwargs["fragments"])
+        kwargs["fragment_names"] = list(good_confrags.keys())
+        kwargs["colors"] = fcdf["frag_color"].values[kwargs["sparse_residues"]]
+
+    elif scheme == "consensus_sparse":
+        assert "consensus frag" in fcdf.keys(), ValueError("Can't use 'scheme=consensus' if 'consensus_maps' doesn't contain the right objects.")
+        good_confrags = {key: val for key, val in confrags.items()
+                         if set(val).intersection(nonzero_residues)}
+        kwargs["fragments"] = list(good_confrags.values())
+        kwargs["sparse_residues"] = _np.hstack(kwargs["fragments"])
+        kwargs["fragment_names"] = list(good_confrags.keys())
+        kwargs["colors"] = fcdf["frag_color"].values[kwargs["sparse_residues"]]
+
+    else:
+        raise NotImplementedError(scheme)
+
+    return kwargs
+
+def full_color_list(
+        top,
+        df,
+        colors=None,
+):
+    firsts = ["name", "frag", "fragname", "frag_color"]
+
+    jdf = df.copy()
+
+    if "frag" in df.keys():
+        frags_from_df = [_np.flatnonzero(df.frag == ii) for ii in df.frag.unique()]
+    else:
+        frags_from_df = [_np.arange(top.n_residues)]
+
+
+    if colors is None:
+        _colors = list(_mdcplots.color_dict_guesser("tab10", _np.arange(len(frags_from_df))).values())
+        jdf["frag_color"] = list(_mdcflare._utils.col_list_from_input_and_fragments(_colors, frags_from_df))
+
+    jdf["frag_color"] = list(_mdcflare._utils.col_list_from_input_and_fragments(colors, frags_from_df))
+
+    if "interface fragment" in df.keys():
+        # TODO do this from self.interface_indices
+        intf_from_df = [_np.flatnonzero(df["interface fragment"] == ii) for ii in
+                        df[~df["interface fragment"].isnull()]["interface fragment"].unique()]
+        intf_colors = [None] * top.n_residues
+        if colors is None:
+            _colors = _mdcplots.color_dict_guesser("tab10", [0,1])
+            _colors = _mdcflare._utils.col_list_from_input_and_fragments(_colors, intf_from_df)
+        else:
+            _colors = jdf["frag_color"].values[_np.hstack(intf_from_df)]
+
+        for ii, idx in enumerate(_np.hstack(intf_from_df)):
+            #print(ii, idx)
+            intf_colors[idx]=_colors[ii]
+        jdf["intf_colors"] = intf_colors
+        firsts.extend(["interface fragment", "intf_colors"])
+    if "consensus frag" in df.keys():
+        consfr_from_df = df[~df["consensus frag"].isnull()]["consensus frag"].unique()
+        cols = _mdcplots.color_dict_guesser("tab10", consfr_from_df)
+        jdf["consfrag colors"] = [_np.round(cols[key], 2) for key in df["consensus frag"]]
+        firsts.extend(["consensus frag", "consfrag colors"])
+
+    return jdf[firsts + [key for key in jdf.keys() if key not in firsts]]
+
 def _populate_colors_if_needed(kwargs, df, fixed_color_list):
     if "colors" not in kwargs.keys() and "frag" in df.keys():
             kwargs["colors"] = _np.vstack([fixed_color_list[int(df["frag"][ii])] for ii in kwargs["sparse_residues"]])
