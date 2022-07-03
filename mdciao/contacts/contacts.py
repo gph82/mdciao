@@ -5439,7 +5439,7 @@ class ContactGroup(object):
             Transpose the contact matrix in the plot
         label_type : str, default is "best"
             Best tries resname@consensus(>fragname>fragidx)
-            Alternatives are "residue" or "consensus", but"consensus" alone
+            Alternatives are "residue" or "consensus", but "consensus" alone
             might lead to empty labels since it is not guaranteed
             that all residues of the interface have consensus labels
         plot_mat_kwargs: see :obj:`plot_mat`
