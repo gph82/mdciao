@@ -6524,8 +6524,11 @@ def full_color_list(
                         df[~df["interface fragment"].isnull()]["interface fragment"].unique()]
         intf_colors = [None] * top.n_residues
         if colors is None:
-            _colors = _mdcplots.color_dict_guesser("tab10", [0,1])
-            _colors = _mdcflare._utils.col_list_from_input_and_fragments(_colors, intf_from_df)
+            if len(frags_from_df)==1: #means no fragments, TODO think about other way of infering this
+                _colors = _mdcplots.color_dict_guesser("tab10", [0,1])
+                _colors = _mdcflare._utils.col_list_from_input_and_fragments(_colors, intf_from_df)
+            else:
+                _colors = jdf["frag_color"].values[_np.hstack(intf_from_df)]
         else:
             _colors = jdf["frag_color"].values[_np.hstack(intf_from_df)]
 
