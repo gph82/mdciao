@@ -4883,7 +4883,7 @@ class ContactGroup(object):
         """
 
         # We need three (!) methods to guess around the fragments/names/colors...this is bad but "easier" to debug
-        df = self._flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose=False)
+        df = self._args2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose=False)
         fcdf = _full_color_list(self.top, df, colors=fragment_colors)
         kwargs_freqs2flare.update(self._dataframe2flarekwargs(fcdf, scheme))
 
@@ -4915,18 +4915,15 @@ class ContactGroup(object):
         #ifig.tight_layout()
         return ifig, iax
 
-    def _flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose) -> _DF:
+    def _args2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose) -> _DF:
         r"""
         Construct a :obj:`~pandas.DataFrame` with the per-residue information for flareplot
 
-        This DF will be passed to _dataframe2flarekwargs and full_color_list before
+        This DF will be passed to _dataframe2flarekwargs and _full_color_list before
         reaching freqs2flare.
 
         It's convenient to take a look here (inline or saving as spreadsheet)
         to identify potential sources of mislabeling.
-
-        All parameters behave as explained in :obj:`~mdciao.contacts.ContactGroup.plot_freqs_as_flareplot`,
-        not documenting here to avoid double doc maintenance
 
         If no fragments are given, one single fragment containing all residues will be created
 
@@ -4938,7 +4935,7 @@ class ContactGroup(object):
         three methods:
         * _dataframe2flarekwargs
         * _full_color_list
-        * _flareargs2df
+        * _args2df
         This is sub-optimal but has proven the easiest to debug,
         providing three different cut-points to look at the per-residue
         tables for values like fragment, fragment_names, and colors
