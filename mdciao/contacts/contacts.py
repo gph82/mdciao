@@ -4739,14 +4739,25 @@ class ContactGroup(object):
     def plot_freqs_as_flareplot(self, ctc_cutoff_Ang,
                                 fragments=None,
                                 fragment_names=None,
+                                fragment_colors=None,
                                 consensus_maps=None,
                                 SS=None,
                                 scheme='auto',
                                 **kwargs_freqs2flare,
                                 ):
         r"""
-        Produce contact flareplots by thinly wrapping around :obj:`mdciao.flare.freqs2flare`
+        Produce contact flareplots by wrapping around :obj:`mdciao.flare.freqs2flare`
 
+        Note
+        ----
+        The logic to assign fragments and colors can lead to
+        unexpected behavior in cases where too much guess-work
+        has to be done. If a particular combination of fragments
+        and colors is desired but not achievable through this
+        method, it is *highly recommended* the user uses
+        :obj:`mdciao.flare.freqs2flare` directly and experiment
+        there with parameter combinations. It is also a good
+        idea to the the notebook called "Controlling Flareplots"
 
         Parameters
         ----------
@@ -4760,6 +4771,10 @@ class ContactGroup(object):
             will not be plotted, see below.
         fragment_names : list of strings, default is None
             The fragment names, at least len(fragments)
+        fragment_colors : None or list of color-likes
+            Will be used to give the `fragments`
+            their colors, needs to be color-like
+            and of len(fragments)
         consensus_maps : list, default is None
             The items of this list are either:
              * indexables containing the consensus
@@ -4806,7 +4821,7 @@ class ContactGroup(object):
                 and when this fails, self.top
                 will be passed (e.g. .xtc, .dcd)
              * array_like
-                Use the SS from here, s.t.ss_inf[idx]
+                Use the SS from here, s.t. ss_inf[idx]
                 gives the SS-info for the residue
                 with that idx
         scheme : str, default is 'auto'
@@ -4852,9 +4867,14 @@ class ContactGroup(object):
                 the :obj:`consensus_maps` need to
                 be actual :obj:`LabelerConsensus`-objects
         kwargs_freqs2flare: optargs
-            Keyword arguments for :obj:`mdciao.flare.freqs2flare`
-            except for :obj:`top`. :obj:`ss_array`, :obj:`fragments`
-            and :obj:`fragment_names`
+            Keyword arguments for :obj:`mdciao.flare.freqs2flare`.
+            Note that many of these kwargs will be overwritten,
+            mostly to accommodate the scheme+fragment+color combinations
+            but not only (please see the note above). These kwargs
+            that this method manipualtes internally and might
+            be overwritten are:
+            * `top`, `ss_array`, `fragments`, `fragment_names`
+              `fragment_names`, `colors`, `sparse_residues`
 
         Returns
         -------
@@ -4862,12 +4882,10 @@ class ContactGroup(object):
         iax : :obj:`matplotlib.axes.Axes`
         """
 
+        # We need three (!) methods to guess around the fragments/names/colors...this is bad but "easier" to debug
         df = self._flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, {}, verbose=False)
-        #Colors get their own treatment, since they don't get used in _flareargs2df
-        fcdf = full_color_list(self.top, df,
-                               colors=kwargs_freqs2flare.get("colors",None),
-                               )
-        kwargs_freqs2flare.update(_dataframe2flarekwargs2(fcdf, scheme, self))
+        fcdf = _full_color_list(self.top, df, colors=fragment_colors)
+        kwargs_freqs2flare.update(self._dataframe2flarekwargs(fcdf, scheme))
 
         from_tuple, kwargs_freqs2flare["SS"] = _mdcu.residue_and_atom.get_SS(SS)
 
@@ -4901,7 +4919,7 @@ class ContactGroup(object):
         r"""
         Construct a :obj:`~pandas.DataFrame` with the per-residue information for flareplot
 
-        This DF will be passed to _dataframe2flarekwargs before
+        This DF will be passed to _dataframe2flarekwargs and full_color_list before
         reaching freqs2flare.
 
         It's convenient to take a look here (inline or saving as spreadsheet)
@@ -4913,6 +4931,18 @@ class ContactGroup(object):
         If no fragments are given, one single fragment containing all residues will be created
 
         If fragments but no fragment_names are given, fragments get the names frag 0, frag 1 etc
+
+        Note
+        ----
+        The logic to populate the above optargs is split across
+        three methods:
+        * _dataframe2flarekwargs
+        * _full_color_list
+        * _flareargs2df
+        This is sub-optimal but has proven the easiest to debug,
+        providing three different cut-points to look at the per-residue
+        tables for values like fragment, fragment_names, and colors
+
         Parameters
         ----------
         ctc_cutoff_Ang
