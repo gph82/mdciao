@@ -4757,7 +4757,7 @@ class ContactGroup(object):
         method, it is *highly recommended* the user uses
         :obj:`mdciao.flare.freqs2flare` directly and experiment
         there with parameter combinations. It is also a good
-        idea to the the notebook called "Controlling Flareplots"
+        idea to check out the notebook called "Controlling Flareplots"
 
         Parameters
         ----------
@@ -4871,7 +4871,7 @@ class ContactGroup(object):
             Note that many of these kwargs will be overwritten,
             mostly to accommodate the scheme+fragment+color combinations
             but not only (please see the note above). These kwargs
-            that this method manipualtes internally and might
+            that this method manipulates internally and might
             be overwritten are:
             * `top`, `ss_array`, `fragments`, `fragment_names`
               `fragment_names`, `colors`, `sparse_residues`
@@ -4883,7 +4883,7 @@ class ContactGroup(object):
         """
 
         # We need three (!) methods to guess around the fragments/names/colors...this is bad but "easier" to debug
-        df = self._flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, {}, verbose=False)
+        df = self._flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose=False)
         fcdf = _full_color_list(self.top, df, colors=fragment_colors)
         kwargs_freqs2flare.update(self._dataframe2flarekwargs(fcdf, scheme))
 
@@ -4915,7 +4915,7 @@ class ContactGroup(object):
         #ifig.tight_layout()
         return ifig, iax
 
-    def _flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose) -> _DF:
+    def _flareargs2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose) -> _DF:
         r"""
         Construct a :obj:`~pandas.DataFrame` with the per-residue information for flareplot
 
@@ -4946,7 +4946,6 @@ class ContactGroup(object):
         Parameters
         ----------
         ctc_cutoff_Ang
-        kwargs_freqs2flare
         fragments
         fragment_names
         consensus_maps
@@ -4956,8 +4955,8 @@ class ContactGroup(object):
         :obj:`~pandas.DataFrame`
 
         """
-        kwargs_freqs2flare["fragments"] = fragments
-        kwargs_freqs2flare["fragment_names"] =  fragment_names
+        kwargs_freqs2flare = {"fragments": fragments,
+                              "fragment_names": fragment_names}
 
         list_of_dicts= [{"name":str(res)} for res in self.top.residues]
         if fragments is not None:
