@@ -4931,17 +4931,6 @@ class ContactGroup(object):
 
         list_of_dicts= [{"name":str(res)} for res in self.top.residues]
         if fragments is not None:
-            # TODO this check is not really generalizable to all situations
-            # leaving it out for the moment until debugging gives a better pic
-            # of the most effective solution
-            #if self.is_interface:
-            #    is_subfrag = [_mdcfr.fragments.check_if_subfragment(fr,
-            #                                                        'input fragment',
-            #                                                        self.interface_fragments, self.top, prompt=False)
-            #                  for fr in fragments]
-            #
-            #    assert all(is_subfrag), ValueError("Some input fragments have residues in both 'self.interface fragments'")
-
             for ii, ifrag in enumerate(fragments):
                 for idx in ifrag:
                     try:
