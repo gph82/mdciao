@@ -147,6 +147,17 @@ class Test_fetch_example_data(unittest.TestCase):
                 assert unzipped_files[0]=="A.dat"
                 assert unzipped_files[1]=="B.dat"
 
+    def test_alias(self):
+        with TemporaryDirectory(suffix="_mdciao_test_fetch") as td:
+            with remember_cwd():
+                os.chdir(td)
+                local_path = examples.fetch_example_data("test",
+                                                         unzip=False)
+                assert os.path.exists(local_path)
+                # assert os.path.exists((os.path.splitext(local_path))[0])
+                files = os.listdir(td)
+                assert len(files) == 1
+                assert files[0] == "mdciao_test_small.zip"
 
 class Test_notebooks(unittest.TestCase):
 

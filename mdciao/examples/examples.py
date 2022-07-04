@@ -377,25 +377,48 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
         return _path.join(cwd,answer)
 
 
-def fetch_example_data(url="http://proteinformatics.org/mdciao/mdciao_example.zip",
+def fetch_example_data(alias_or_url="http://proteinformatics.org/mdciao/mdciao_example.zip",
                        unzip=True):
-    r"""
-    Download the example data from the url and unzip it to the working directory.
+    r""" Download the example data as zipfile and unzip it to the working directory.
 
-    This example data is kindly provided by Dr. H. Batebi.
+    This data is used in the notebooks:
+     * Manuscript.ipynb (b2ar@Gs)
+     * Tutorial.ipynb (b2ar@Gs)
+     * Missing_Contacts.ipynb (b2ar@Gs)
+     * EGFR Kinase Inhibitors.ipynb (EGFR)
+    which can all be run locally issuing,
+    from the CLI:
 
+    >>>  mdc_notebooks.py
+
+    or from the API:
+
+    >>> mdciao.examples.notebooks()
+
+    Note
+    ----
     New filenames for the downloaded file, and the resulting folder
-    will be generated to avoid overwriting.
-
-    No files will be overwritten when extracting.
+    will be generated to avoid overwriting. No files will
+    be overwritten when extracting.
 
     Parameters
     ----------
-    url : str
-        The url to download from
+    alias_or_url : str
+        The url or the alias to download example data.
+        Currently, these are the available aliases and their urls
+         * b2ar@Gs : https://proteinformatics.org/mdciao/mdciao_example.zip
+          Beta 2 adrenergic receptor in complex with Gs-protein. Provided
+          kindly by H. Batebi (1 traj, ca. 10 MBs, 280 frames, dt = 10 ps)
+
+         * EGFR : http://proteinformatics.uni-leipzig.de/mdciao/example_kinases.zip
+          Epidermal Growth Factor Receptor (EGFR) in complex with
+          four inhibitors. The inhibitors and their PDB IDs are
+          P31@3POZ, W321@3W32, EUX1@6LUB and  7VH1@7VRE.
+          The data has been generated using `TeachOpenCADD <https://projects.volkamerlab.org/teachopencadd/index.html>`_ .
+          (4 trajs, ca 10 MBs each, ca 500 frames each, dt = 1ns)
+
     unzip : bool, default is True
-        Try unzipping the file
-        after downloading
+        Try unzipping the file after downloading
 
     Returns
     -------
@@ -403,6 +426,17 @@ def fetch_example_data(url="http://proteinformatics.org/mdciao/mdciao_example.zi
         The full path to the downloaded data
 
     """
+    # TODO change to proteinformatics.org when ssl problems get fixed
+    alias2url = {"b2ar@Gs": "https://proteinformatics.uni-leipzig.de//mdciao/mdciao_example.zip",
+                 "EGFR": "https://proteinformatics.uni-leipzig.de/mdciao/example_kinases.zip",
+                 "test": "https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip"}
+
+    if alias_or_url in alias2url.keys():
+        url = alias2url[alias_or_url]
+    elif alias_or_url in alias2url.values():
+        url = alias_or_url
+    else:
+        raise ValueError("Cannot find %s in the known aliases or in the known urls:\n%s" % (alias_or_url, alias2url))
     downed_file_full = _down_url_safely(url)
     if unzip:
         return _unzip2dir(downed_file_full)
