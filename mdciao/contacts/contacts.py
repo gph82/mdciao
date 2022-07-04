@@ -4862,7 +4862,7 @@ class ContactGroup(object):
         iax : :obj:`matplotlib.axes.Axes`
         """
 
-        df = self._flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, kwargs_freqs2flare, verbose=False)
+        df = self._flareargs2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, {}, verbose=False)
         #Colors get their own treatment, since they don't get used in _flareargs2df
         fcdf = full_color_list(self.top, df,
                                colors=kwargs_freqs2flare.get("colors",None),
