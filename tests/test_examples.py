@@ -115,7 +115,7 @@ class Test_down_safely(unittest.TestCase):
         with TemporaryDirectory(suffix="_mdciao_test_down_safely") as td:
             with remember_cwd():
                 os.chdir(td)
-                local_path = examples._down_url_safely("http://proteinformatics.org/mdciao/mdciao_test_small.zip",verbose=True)
+                local_path = examples._down_url_safely("https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",verbose=True)
                 assert os.path.exists(local_path)
 
 class Test_fetch_example_data(unittest.TestCase):
@@ -124,7 +124,7 @@ class Test_fetch_example_data(unittest.TestCase):
         with TemporaryDirectory(suffix="_mdciao_test_fetch") as td:
             with remember_cwd():
                 os.chdir(td)
-                local_path = examples.fetch_example_data("http://proteinformatics.org/mdciao/mdciao_test_small.zip",unzip=False)
+                local_path = examples.fetch_example_data("https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",unzip=False)
                 assert os.path.exists(local_path)
                 #assert os.path.exists((os.path.splitext(local_path))[0])
                 files =  os.listdir(td)
@@ -135,7 +135,7 @@ class Test_fetch_example_data(unittest.TestCase):
         with TemporaryDirectory(suffix="_mdciao_test_fetch") as td:
             with remember_cwd():
                 os.chdir(td)
-                local_path = examples.fetch_example_data("http://proteinformatics.org/mdciao/mdciao_test_small.zip",unzip=True)
+                local_path = examples.fetch_example_data("https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",unzip=True)
                 assert os.path.exists(local_path)
                 assert os.path.exists((os.path.splitext(local_path))[0])
                 files =  sorted(os.listdir(td))
