@@ -54,7 +54,7 @@ jobs:
     - name: Test with pytest and coverage macos
       run: |
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
-        pytest -n 8 -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc -k test_has_to_enter_recursion
+        pytest -n 8 -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc -k Test_recursive_funct
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
