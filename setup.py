@@ -78,7 +78,8 @@ setup(
         ("data_for_mdciao/notebooks", ["mdciao/examples/Tutorial.ipynb"]),
         ("data_for_mdciao/notebooks", ["mdciao/examples/Missing_Contacts.ipynb"]),
         ("data_for_mdciao/notebooks", ["mdciao/examples/Manuscript.ipynb"]),
-        ("data_for_mdciao/notebooks", ["mdciao/examples/Flareplot_Schemes.ipynb"])
+        ("data_for_mdciao/notebooks", ["mdciao/examples/Flareplot_Schemes.ipynb"]),
+        ("data_for_mdciao/notebooks", ["mdciao/examples/EGFR_Kinase_Inhibitors.ipynb"])
 
     ],
     scripts=['scripts/mdc_neighborhoods.py',
