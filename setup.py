@@ -74,7 +74,7 @@ setup(
                                           'tests/data/nomenclature/nomenclature.bib',
                                           'tests/data/nomenclature/KLIFS_P31751.xlsx']),
         ('data_for_mdciao/json', ['tests/data/json/tip.json']),
-        ('data_for_mdciao/RSCB_pdb', ['tests/data/RSCB_pdb/3SN6.pdb.gz']),
+        ('data_for_mdciao/RCSB_pdb', ['tests/data/RCSB_pdb/3SN6.pdb.gz']),
         ("data_for_mdciao/notebooks", ["mdciao/examples/Tutorial.ipynb"]),
         ("data_for_mdciao/notebooks", ["mdciao/examples/Missing_Contacts.ipynb"]),
         ("data_for_mdciao/notebooks", ["mdciao/examples/Manuscript.ipynb"]),

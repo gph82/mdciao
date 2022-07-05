@@ -121,7 +121,7 @@ def _PDB_finder(PDB_code, local_path='.',
                 try_web_lookup=True,
                 verbose=True):
     r"""Return an :obj:`~mdtraj.Trajectory` by loading a local
-    file or optionally looking up online, see :obj:`md_load_rscb`
+    file or optionally looking up online, see :obj:`md_load_RCSB`
 
     Note
     ----
@@ -141,7 +141,7 @@ def _PDB_finder(PDB_code, local_path='.',
     try_web_lookup : bool, default is True
         If the file :obj:`ref_PDB` cannot be found locally
         as .pdb or .pdb.gz, a web lookup will be tried
-        using :obj:`md_load_rscb`
+        using :obj:`md_load_RCSB`
     verbose : boolean, default is True
         Be verbose
 
@@ -463,7 +463,7 @@ def _md_load_rcsb(PDB,
     PDB : str
         4-letter PDB code
     web_address: str, default is "https://files.rcsb.org/download"
-        The web address of the RSCB PDB database
+        The web address of the RCSB PDB database
     verbose : bool, default is False
         Be verbose
     return_url : bool, default is False

@@ -28,7 +28,7 @@ import mock
 from pandas import DataFrame, read_excel
 
 
-class Test_md_load_rscb(unittest.TestCase):
+class Test_md_load_rcsb(unittest.TestCase):
 
     def test_works(self):
         geom = nomenclature._md_load_rcsb("3CAP",

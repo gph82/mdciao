@@ -1,6 +1,6 @@
 r"""
 
-RSCB-PDB web lookups
+RCSB-PDB web lookups
 
 Relevant links:
  * https://data.rcsb.org/index.html#data-api

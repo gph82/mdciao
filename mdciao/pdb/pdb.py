@@ -103,7 +103,7 @@ def pdb2traj(code,
              verbose=True,
              url="https://files.rcsb.org/download/",
              ):
-    r""" Return a :obj:`~mdtraj.Trajectory` from a four-letter PDB code via RSCB PBB lookup
+    r""" Return a :obj:`~mdtraj.Trajectory` from a four-letter PDB code via RCSB PDB lookup
 
     Thinly wraps around :obj:`mdtraj.load_pdb`, printing the corresponding citation.
     Will return None if lookup fails
