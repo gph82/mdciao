@@ -87,7 +87,7 @@ class Test_recursive_funct(unittest.TestCase):
                 input_values = (val for val in ["this_file_exists_01.txt",""])
                 with mock.patch('builtins.input', lambda *x: next(input_values)):
                     res = examples._recursive_prompt("this_file_exists.txt", "this_file_exists",is_file=True,verbose=True)
-                    assert res==os.path.join(td,"this_file_exists_03.txt")
+                    assert os.path.realpath(res)==os.path.join(os.path.realpath(td),"this_file_exists_03.txt")
 
     def test_new_file_is_good(self):
         with TemporaryDirectory(suffix="_mdciao_test_recursive") as td:
