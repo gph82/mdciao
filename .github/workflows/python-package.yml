@@ -9,7 +9,9 @@ on:
   pull_request:
     branches: [ master ]
   workflow_dispatch:
-  
+
+env:
+  BEZIER_NO_EXTENSION: true
 
 jobs:
   build:
