@@ -2690,6 +2690,7 @@ def _Spreadsheets2mdTrajectory(source):
         idict = _read_excel(source,
                             None,
                             engine="openpyxl")
+    idict["topology"].segmentID.fillna("", inplace=True)
     topology = _from_dataframe(idict["topology"], bonds=idict["bonds"].values)
     xyz = idict["xyz"].values
     geom = _md.Trajectory(xyz, topology,
