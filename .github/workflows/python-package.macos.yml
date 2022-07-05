@@ -1,0 +1,68 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python package macos
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+env:
+  BEZIER_NO_EXTENSION: true
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+        python-version: [3.7, 3.8, 3.9, '3.10']
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest pytest-cov pytest-xdist
+   #    if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Install package
+      run: |
+        pip install --upgrade pip
+        pip install --upgrade setuptools
+        python setup.py install_egg_info
+        pip install -e .
+        pip freeze
+    #- name: Lint with flake8
+    #  run: |
+    #    # stop the build if there are Python syntax errors or undefined names
+    #    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    #    # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+    #    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    #- name: Test with pytest and coverage MacOs one single thread and ignoring calls to scripts (WIP)
+    #  if: runner.os == 'macOs'
+    #  run: |
+    #    pytest -vs --cov=./ --cov-report=xml --disable-warnings --ignore-glob="test_scripts.py"
+    # if: runner.os == 'macOs'
+    - name: Test with pytest and coverage macos
+      run: |
+        echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
+        pytest -n 8 -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        #directory: ./coverage/reports/
+        flags: unittests
+        env_vars: OS,PYTHON
+        name: codecov-umbrella
+        fail_ci_if_error: true
+        #path_to_write_report: ./coverage/codecov_report.gz
+
