@@ -69,7 +69,7 @@ This is an informal list of known issues and TODOs:
 System Requirements
 ===================
 At the moment, ``mdciao`` is CI-tested only for GNU/Linux and Python versions
-3.6, 3.7, 3.8, 3.9. MacOS CI-tests are failing currently because of a segmentation error (139 and 11) when `calling mdtraj.dsssp <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_.
+3.7, 3.8, 3.9, and 3.10. MacOS CI-tests are failing currently because of a segmentation error (139 and 11) when `calling mdtraj.dsssp <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_.
 
 Authors
 =======
