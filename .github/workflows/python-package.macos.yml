@@ -12,6 +12,8 @@ on:
 
 env:
   BEZIER_NO_EXTENSION: true
+  OPENBLAS_NUM_THREADS: 1 
+  MKL_NUM_THREADS : 1
 
 jobs:
   build:
@@ -20,7 +22,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v2
@@ -54,7 +56,7 @@ jobs:
     - name: Test with pytest and coverage macos
       run: |
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
-        pytest -n 8 -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc -k Test_get_SS
+        pytest -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
