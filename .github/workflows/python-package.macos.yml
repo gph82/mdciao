@@ -12,6 +12,8 @@ on:
 
 env:
   BEZIER_NO_EXTENSION: true
+  OPENBLAS_NUM_THREADS: 1 
+  MKL_NUM_THREADS : 1
 
 jobs:
   build:
