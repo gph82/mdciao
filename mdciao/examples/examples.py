@@ -377,7 +377,7 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
         return _path.join(cwd,answer)
 
 
-def fetch_example_data(alias_or_url="http://proteinformatics.org/mdciao/mdciao_example.zip",
+def fetch_example_data(alias_or_url="b2ar@Gs",
                        unzip=True):
     r""" Download the example data as zipfile and unzip it to the working directory.
 
