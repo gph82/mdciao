@@ -406,7 +406,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
     alias_or_url : str
         The url or the alias to download example data.
         Currently, these are the available aliases and their urls
-         * b2ar@Gs : https://proteinformatics.org/mdciao/mdciao_example.zip
+         * b2ar@Gs : https://proteinformatics.uni-leipzig.de/mdciao/mdciao_example.zip
           Beta 2 adrenergic receptor in complex with Gs-protein. Provided
           kindly by H. Batebi (1 traj, ca. 10 MBs, 280 frames, dt = 10 ps)
 
