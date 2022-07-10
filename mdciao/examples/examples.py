@@ -386,6 +386,8 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
      * Tutorial.ipynb (b2ar@Gs)
      * Missing_Contacts.ipynb (b2ar@Gs)
      * EGFR Kinase Inhibitors.ipynb (EGFR)
+     * Comparing_CGs_Bars.ipyn (cov19)
+     * Comparing_CGs_Flares.ipynb (cov19)
     which can all be run locally issuing,
     from the CLI:
 
@@ -408,14 +410,23 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
         Currently, these are the available aliases and their urls
          * b2ar@Gs : https://proteinformatics.uni-leipzig.de/mdciao/mdciao_example.zip
           Beta 2 adrenergic receptor in complex with Gs-protein. Provided
-          kindly by H. Batebi (1 traj, ca. 10 MBs, 280 frames, dt = 10 ps)
+          kindly by H. Batebi (1 traj, ca. 10 MB, 280 frames, dt = 10 ps)
 
          * EGFR : http://proteinformatics.uni-leipzig.de/mdciao/example_kinases.zip
           Epidermal Growth Factor Receptor (EGFR) in complex with
           four inhibitors. The inhibitors and their PDB IDs are
           P31@3POZ, W321@3W32, EUX1@6LUB and  7VH1@7VRE.
           The data has been generated using `TeachOpenCADD <https://projects.volkamerlab.org/teachopencadd/index.html>`_ .
-          (4 trajs, ca 10 MBs each, ca 500 frames each, dt = 1ns)
+          (4 trajs, ca 10 MB each, ca 500 frames each, dt = 1ns)
+
+         * cov19 : https://proteinformatics.uni-leipzig.de/mdciao/example_cov19.zip
+          SARS-CoV-2 spike protein receptor binding domain (RBD) bound
+          to human angiotensin converting enzyme-related carboypeptidase (ACE2).
+          The files already contain processed trajectory data, in the form
+          of mdciao.contacts.ContactGroup-objects stored as npy files.
+          Original data generated at the Chodera Lab by Ivy Zhang,
+          made available via `molSSI <https://covid.molssi.org//simulations/#foldinghome-simulations-of-the-sars-cov-2-spike-rbd-bound-to-human-ace2>`_.
+          (1 npy file with interfaces for 4 setups and one sample trajectory file, ca 35 MB)
 
     unzip : bool, default is True
         Try unzipping the file after downloading
@@ -429,6 +440,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
     # TODO change to proteinformatics.org when ssl problems get fixed
     alias2url = {"b2ar@Gs": "https://proteinformatics.uni-leipzig.de//mdciao/mdciao_example.zip",
                  "EGFR": "https://proteinformatics.uni-leipzig.de/mdciao/example_kinases.zip",
+                 "cov19" : "https://proteinformatics.uni-leipzig.de/mdciao/example_cov19.zip",
                  "test": "https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip"}
 
     if alias_or_url in alias2url.keys():
