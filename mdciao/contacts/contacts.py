@@ -4869,12 +4869,14 @@ class ContactGroup(object):
         kwargs_freqs2flare: optargs
             Keyword arguments for :obj:`mdciao.flare.freqs2flare`.
             Note that many of these kwargs will be overwritten,
-            mostly to accommodate the scheme+fragment+color combinations
-            but not only (please see the note above). These kwargs
+            mostly to accommodate the scheme+fragment+color combinations,
+            but not only (please see the note above). These are the kwargs
             that this method manipulates internally and might
-            be overwritten are:
+            be overwritten:
             * `top`, `ss_array`, `fragments`, `fragment_names`
-              `fragment_names`, `colors`, `sparse_residues`
+              `fragment_names`, `colors`
+            Note that some of freqs2flare kwargs (in particular `sparse_residues`)
+            might alter (with or w/o conflict) the `scheme` option.
 
         Returns
         -------
@@ -4885,7 +4887,7 @@ class ContactGroup(object):
         # We need three (!) methods to guess around the fragments/names/colors...this is bad but "easier" to debug
         df = self._args2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose=False)
         fcdf = _full_color_list(self.top, df, colors=fragment_colors)
-        kwargs_freqs2flare.update(self._dataframe2flarekwargs(fcdf, scheme))
+        kwargs_freqs2flare.update(self._dataframe2flarekwargs(fcdf, scheme, sparse_residues=kwargs_freqs2flare.get("sparse_residues", None)))
 
         from_tuple, kwargs_freqs2flare["SS"] = _mdcu.residue_and_atom.get_SS(SS)
 
