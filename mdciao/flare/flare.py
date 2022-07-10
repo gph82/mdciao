@@ -997,7 +997,6 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
     """
     # Coarse grain the matrix
     mat_CG = _futils.coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments)
-    print(mat_CG)
     # Get the sparse matrix (element-wise)
     sparse_mat, non_zeros = _futils.sparsify_sym_matrix(mat_CG)
 
