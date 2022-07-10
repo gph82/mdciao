@@ -5000,13 +5000,17 @@ class ContactGroup(object):
 
         return df
 
-    def _dataframe2flarekwargs(self, fcdf, scheme, zero_freq=1e-2, ):
+    def _dataframe2flarekwargs(self, fcdf, scheme, zero_freq=1e-2, sparse_residues=None):
         r"""
         Populate the kwargs needed for freqs2flare from a dataframe
 
         After many tries, the stablest way to interface with freqs2flare
         is through the "sparse_residues" parameter, which overrides every
         other logic/guessing taking place inside freqs2flare.
+
+        This is, of course, unless the user has provided themselves
+        a "sparse_residues" kwarg, which is kept and used to trim-down
+        the pre-residue information (currently only "colors") of fcdf
 
         So the main goal of this method is to populate
         * "sparse_residues"
@@ -5103,6 +5107,10 @@ class ContactGroup(object):
 
         else:
             raise NotImplementedError(scheme)
+
+        if sparse_residues is not None:
+            kwargs["sparse_residues"] = sparse_residues
+            kwargs["colors"] = kwargs["colors"][sparse_residues]
 
         return kwargs
 
