@@ -74,7 +74,7 @@ Operating systems and Python versions
 -------------------------------------
 ``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and MacOs. Tested python versions are:
 
-* Python: 3.7, 3.8, 3.9, 3.10
+* GNU/Linux: 3.7, 3.8, 3.9, 3.10
 * MacOs: 3.7, 3.8, 3.9
 
 So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
