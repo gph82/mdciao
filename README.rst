@@ -73,7 +73,7 @@ System Requirements
 * Python: 3.7, 3.8, 3.9, 3.10
 * MacOs: 3.7, 3.8, 3.9
 
-So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
+So everything should work *out of the box* in these conditions.
 
 Authors
 =======
