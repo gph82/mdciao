@@ -72,7 +72,15 @@ This should install ``mdciao`` along with all its dependencies. Optionally using
 
 Operating systems and Python versions
 -------------------------------------
-``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux (MacOs is failing, see `this <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_). Compatible Python versions are currently 3.7, 3.8, 3.9, and 3.10. So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
+``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and MacOs. Tested python versions are:
+
+* Python: 3.7, 3.8, 3.9, 3.10
+* MacOs: 3.7, 3.8, 3.9
+
+So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
+
+.. note::
+MacOs CI tests sometimes fail with (semi)random segmentation faults, in particular when using mdtraj and compute_dssp, but are in principle sane. (`example of recently passed test <https://github.com/gph82/mdciao/actions/runs/2648833037>`_, `example of recently failed tests <https://github.com/gph82/mdciao/runs/7272124587?check_suite_focus=true>`_). More the details on the segmentation error (139 and 11) when `calling mdtraj.dsssp can be found here <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_.
 
 
 Python interpreter and environment
