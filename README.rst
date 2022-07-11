@@ -1,7 +1,7 @@
 mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 ==============================================================================
 
-|Pip Package| |Python Package| |Coverage| |DOI| |License|
+|Pip Package| |Python Package| |MacOs Package| |Coverage| |DOI| |License|
 
 .. figure:: doc/imgs/banner.png
    :scale: 33%
@@ -68,15 +68,19 @@ This is an informal list of known issues and TODOs:
 
 System Requirements
 ===================
-At the moment, ``mdciao`` is CI-tested only for GNU/Linux and Python versions
-3.7, 3.8, 3.9, and 3.10. MacOS CI-tests are failing currently because of a segmentation error (139 and 11) when `calling mdtraj.dsssp <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_.
+``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and MacOs. Tested python versions are:
+
+* Python: 3.7, 3.8, 3.9, 3.10
+* MacOs: 3.7, 3.8, 3.9
+
+So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
 
 Authors
 =======
 ``mdciao`` is written and maintained by Guillermo Pérez-Hernández (`ORCID <http://orcid.org/0000-0002-9287-8704>`_) currently at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_ in the
 `Charité Universitäsmedizin Berlin <https://www.charite.de/>`_.
 
-Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2021 (in preparation)"
+Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2022 (submitted)"
 
 .. |Pip Package| image::
    https://badge.fury.io/py/mdciao.svg
@@ -85,6 +89,10 @@ Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2021 (in preparat
 .. |Python Package| image::
    https://github.com/gph82/mdciao/actions/workflows/python-package.yml/badge.svg
    :target: https://github.com/gph82/mdciao/actions/workflows/python-package.yml
+
+.. |MacOs Package| image::
+   https://github.com/gph82/mdciao/actions/workflows/python-package.macos.yml/badge.svg
+   :target: https://github.com/gph82/mdciao/actions/workflows/python-package.macos.yml
 
 .. |Coverage| image::
    https://codecov.io/gh/gph82/mdciao/branch/master/graph/badge.svg?
