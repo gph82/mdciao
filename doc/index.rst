@@ -81,6 +81,5 @@ and calculates the  time-traces of residue-residue distances, and from there, **
    notebooks/Covid-19-Spike-Protein-Interface.ipynb
    cli_cli/cli_cli
    api/api
-   FAQ
    gallery
 
