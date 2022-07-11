@@ -6,7 +6,7 @@
 mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
 ==============================================================================
 
-|Pip Package| |Python Package| |Coverage| |DOI| |License|
+|Pip Package| |Python Package| |MacOs Package| |Coverage| |DOI| |License|
 
 .. figure:: imgs/banner.png
    :scale: 33%
@@ -56,6 +56,10 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 .. |Python Package| image::
    https://github.com/gph82/mdciao/actions/workflows/python-package.yml/badge.svg
    :target: https://github.com/gph82/mdciao/actions/workflows/python-package.yml
+
+.. |MacOs Package| image::
+   https://github.com/gph82/mdciao/actions/workflows/python-package.macos.yml/badge.svg
+   :target: https://github.com/gph82/mdciao/actions/workflows/python-package.macos.yml
 
 .. |Coverage| image::
    https://codecov.io/gh/gph82/mdciao/branch/master/graph/badge.svg
