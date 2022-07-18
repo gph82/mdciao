@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods
-==============================================================================
+mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data
+===================================================================================
 
 |Pip Package| |Python Package| |MacOs Package| |Coverage| |DOI| |License|
 
