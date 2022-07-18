@@ -25,7 +25,7 @@ setup(
     name="mdciao",
     version=__version__,
     author_email="guillermo.perez@charite.de",
-    description="mdciao: Analysis of Molecular Dynamics Simulations Using Residue Neighborhoods",
+    description="mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data",
     url="https://github.com/gph82/mdciao",
     project_urls={
         "docs": "http://proteinformatics.org/mdciao",
