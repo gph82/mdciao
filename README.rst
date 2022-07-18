@@ -33,14 +33,34 @@ Licenses
 
   >>> pip-licenses | grep module_name
 
+Documentation
+=============
+Currently, docs are hosted at `<http://proteinformatics.org/mdciao/>`_, but this can change in the future.
+
+System Requirements
+===================
+``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and MacOs. Tested python versions are:
+
+* GNU/Linux: 3.7, 3.8, 3.9, 3.10
+* MacOs: 3.7, 3.8, 3.9
+
+So everything should work *out of the box* in these conditions.
+
+Authors
+=======
+``mdciao`` is written and maintained by Guillermo Pérez-Hernández (`ORCID <http://orcid.org/0000-0002-9287-8704>`_) currently at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_ in the
+`Charité Universitäsmedizin Berlin <https://www.charite.de/>`_.
+
+Please cite:
+ * mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data
+    | Guillermo Pérez-Hernández, Peter-Werner Hildebrand
+    | bioRxiv 2022.07.15.500163
+    | https://doi.org/10.1101/2022.07.15.500163
+
 Status
 ======
 ``mdciao`` is in its initial development, with versions 0.Y.Z. Anything MAY change at any time.
 `The public API SHOULD NOT be considered stable <https://semver.org/#spec-item-4>`_.
-
-Documentation
-=============
-Currently, docs are hosted at `<http://proteinformatics.org/mdciao/>`_, but this can change in the future.
 
 TODOs
 =====
@@ -65,22 +85,6 @@ This is an informal list of known issues and TODOs:
  * The way uniprot or PDB codes are transformed to relative and/or absolute filenames to check if they exist locally should be unified across all lookup functions, like GPCR_finder, PDB_finder and/or the different LabelerConsensus objects, possibly by dropping optargs like 'local_path' or 'format'.
  * Some closely related methods could/should be integrated into each other by generalising a bit, but sometimes the generalisation is unnecessarily complicated to code (or I simply forget that the closely related method already exists) and re-code (and test!) for a slightly different scenario (though I try to hard to avoid it). E.g. there's several methods for computing, reporting, and saving contact frequencies and contact-matrices, or different methods to assign residue idxs to fragments, depending on particual the goal of the assignment, like find_parent_list, in_what_(N)_fragments, or assign_fragments. Still, I opted for more smaller methods, which are individually easier to maintain, but that could simply be a `questionable choice <https://en.wikipedia.org/wiki/Technical_debt>`_.
  * The 'dictionary unifying' methods could be preplaced with pandas.DataFrame.merge/join
-
-System Requirements
-===================
-``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and MacOs. Tested python versions are:
-
-* GNU/Linux: 3.7, 3.8, 3.9, 3.10
-* MacOs: 3.7, 3.8, 3.9
-
-So everything should work *out of the box* in these conditions.
-
-Authors
-=======
-``mdciao`` is written and maintained by Guillermo Pérez-Hernández (`ORCID <http://orcid.org/0000-0002-9287-8704>`_) currently at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_ in the
-`Charité Universitäsmedizin Berlin <https://www.charite.de/>`_.
-
-Please cite "mdciao, G. Pérez-Hernández and P.W. Hildebrand, 2022 (submitted)"
 
 .. |Pip Package| image::
    https://badge.fury.io/py/mdciao.svg
