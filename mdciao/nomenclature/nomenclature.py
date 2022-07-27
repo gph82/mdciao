@@ -1027,9 +1027,10 @@ class LabelerConsensus(object):
         frags_already_printed = False
         for ii, idf in enumerate(df):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
-            conlab = _np.full(len(idf), None)
-            conlab[_np.flatnonzero(idf["idx_0"].isin(top2self.keys()))] = self.dataframe.iloc[list(top2self.values())][
+            alignment_column2conlab = _np.full(len(idf), None)
+            alignment_column2conlab[_np.flatnonzero(idf["idx_0"].isin(top2self.keys()))] = self.dataframe.iloc[list(top2self.values())][
                 self._nomenclature_key]
+            topidx2conlab = {row.idx_0 : alignment_column2conlab[row_index] for row_index, row in idf[idf.match].iterrows()}
             if isinstance(top, str) or str(_frag_str).lower() in ["none", "false"] or len(df) == 1:
                 confrags_compatible_with_frags = True
                 if debug:
@@ -1051,7 +1052,7 @@ class LabelerConsensus(object):
                     _mdcfrg.print_fragments(consfrags, top)
                 for frag_idx, (confraglab, confragidxs) in enumerate(consfrags.items()):
                     confrag_is_subfragment = _mdcfrg.check_if_subfragment(confragidxs, confraglab, fragments, top,
-                                                                          map_conlab=conlab,
+                                                                          map_conlab=topidx2conlab,
                                                                           prompt=False)
                     if debug:
                         print(ii, confraglab, confrag_is_subfragment)
@@ -1064,7 +1065,7 @@ class LabelerConsensus(object):
                             "The consensus-sequence alignment nr. %u  (score = %u, %u other alignments also have this score),\n"
                             "defines the consensus fragment '%s' having clashes with the fragment definitions derived from '%s':" % (
                                 ii, idf.alignment_score , len(df)-1, confraglab, _frag_str))
-                        _mdcfrg.print_frag(frag_idx, top, confragidxs, resSeq_jumps=True, idx2label=conlab,
+                        _mdcfrg.print_frag(frag_idx, top, confragidxs, resSeq_jumps=True, idx2label=topidx2conlab,
                                            fragment_desc="%s" % confraglab)
                         confragAAs = [_mdcu.residue_and_atom.shorten_AA(top.residue(idx), keep_index=True) for idx in
                                       confragidxs]
@@ -1090,7 +1091,7 @@ class LabelerConsensus(object):
 
         df = idf
 
-        df = df.join(_DataFrame({"conlab": conlab}))
+        df = df.join(_DataFrame({"conlab": alignment_column2conlab}))
 
         self._last_alignment_df = df
 
