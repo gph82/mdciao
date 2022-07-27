@@ -31,9 +31,13 @@ class Test_url2json(unittest.TestCase):
                                                     5,True)
         assert isinstance(idict,dict)
 
-    def test_work_wrong_url(self):
-        idict = pdb.pdb._url2json("https://data.rsbc.org/rest/v1/core/entry/13SN6",
+    def test_work_url_works_json_is_404(self):
+        idict = pdb.pdb._url2json("https://data.rcsb.org/rest/v1/core/entry/13SN6",
                                                     5,True)
+        assert idict["status"] == 404
+
+    def test_work_url_works_cant_json(self):
+        idict = pdb.pdb._url2json("https://rcsb.org",5, True)
         assert isinstance(idict,ValueError)
 
 
