@@ -763,8 +763,8 @@ def add_residue_labels(iax,
             else:
                 idxs = top.residue(res_idx).resSeq + aa_offset
                 ilabel = ("%s%u" % (top.residue(res_idx).code, idxs)).replace("None", top.residue(res_idx).name)
-            if highlight_residxs is not None and res_idx in highlight_residxs:
-                txtclr = "red"
+        if highlight_residxs is not None and res_idx in highlight_residxs:
+            txtclr = "red"
 
         try:
             ilabel = replacement_labels[res_idx]
