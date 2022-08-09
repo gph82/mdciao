@@ -190,15 +190,21 @@ def discard_empty_sites(ctc_idxs, site_maps, site_list, allow_partial_sites=True
     -------
     out_ctc_idxs : list
         Like :obj:`ctc_idxs` but with the
-        non-None entries only
+        non-None entries only. Will
+        be an empty list if no sites
+        could be build.
     out_site_maps : list
         Like :obj:`site_maps` but with
         updated indices, both of
         the residue pairs in :obj:`site_maps`
         and of the sites in :obj:`out_sites`
-        non-None entries
+        non-None entries. Will
+        be an empty list if no sites
+        could be build.
     out_sites : list
-        The sites that weren't eliminated.
+        The sites that weren't eliminated. Will
+        be an empty list if no sites
+        could be build.
     discarded : dict
         Keys are "partial" and "full" indicating
         the indices of the sites in :obj:`site_list`
@@ -223,8 +229,11 @@ def discard_empty_sites(ctc_idxs, site_maps, site_list, allow_partial_sites=True
 
     out_sites = {key: isite for key, isite in out_sites.items() if len(isite["pairs"]["residx"])>0}
     [isite.__setitem__("n_pairs", len(isite["pairs"]["residx"])) for isite in out_sites.values()]
-    out_ctc_idxs, out_site_maps = sites_to_res_pairs(out_sites.values(), None)  # we know we won't need top or frags, can just parse None
-    return out_ctc_idxs, out_site_maps, list(out_sites.values()), discarded
+    if len(out_sites) == 0:
+        return [], [], list(out_sites.values()), discarded
+    else:
+        out_ctc_idxs, out_site_maps = sites_to_res_pairs(out_sites.values(), None)  # we know we won't need top or frags, can just parse None
+        return out_ctc_idxs, out_site_maps, list(out_sites.values()), discarded
 
 def site2str(site):
     r""" Produce a printable str for sitefile (json) or site-dict"""

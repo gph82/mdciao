@@ -238,9 +238,9 @@ class Test_discard_empty_sites(unittest.TestCase):
             {'name': 'site2', 'pairs': {'AAresSeq': ['GLN101-ALA122']}},  # GLN101 doesn't exist
 
             {'name': 'site3', 'pairs': {'AAresSeq': ['GLU101-GLU122']}}]  # both exist, but was seen before
-        top = _md.load(test_filenames.top_pdb).top
+        self.top = _md.load(test_filenames.top_pdb).top
 
-        self.ctc_idxs, self.site_maps = mdciao.sites.sites_to_res_pairs(self.site_list, top)
+        self.ctc_idxs, self.site_maps = mdciao.sites.sites_to_res_pairs(self.site_list, self.top)
 
         # This has to work otherwise the below tests don't make sense
         _np.testing.assert_array_equal(self.ctc_idxs, [[None, 374],
@@ -290,7 +290,17 @@ class Test_discard_empty_sites(unittest.TestCase):
         assert len(new_site_maps)==1
         self.assertDictEqual(new_sites[0], {"name": "site3", "pairs": {"residx": [[69, 852]]}, "n_pairs": 1})
 
-
+    def test_all_empty(self):
+        site_list = self.site_list[:2]  # The first two sites have each one nonexistent pair
+        ctc_idxs, site_maps = mdciao.sites.sites_to_res_pairs(site_list, self.top)
+        new_ctc_idxs, new_site_maps, new_sites, discarded = mdciao.sites.discard_empty_sites(ctc_idxs,
+                                               site_maps,
+                                               site_list[:2],
+                                               allow_partial_sites=False, #both sites will be discarded
+                                               )
+        assert len(new_ctc_idxs)==len(new_site_maps)==len(new_sites)==0
+        assert len(discarded["partial"])==0
+        assert discarded["full"]==[0,1]
 
 if __name__ == '__main__':
     unittest.main()
