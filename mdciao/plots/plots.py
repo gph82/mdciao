@@ -110,12 +110,15 @@ def plot_w_smoothing_auto(ax, y,
                 assert _is_color_like(background), "The argument 'background' has to be boolean (True/False) or color-like, but '%s' (%s) is neither"%(background, type(background))
                 color = background
 
-    _line2D = ax.plot(x, y,
-                      label=label,
-                      alpha=alpha,
-                      color=color)[0]
-    if line2D is None:
-        line2D = _line2D
+            _line2D = ax.plot(x, y,
+                              label=label,
+                              alpha=alpha,
+                              color=color)[0]
+    else:
+        line2D = ax.plot(x, y,
+                          label=label,
+                          alpha=alpha,
+                          color=color)[0]
 
     return line2D
 
@@ -639,19 +642,28 @@ def plot_unified_freq_dicts(freqs,
     dicts_values_to_sort = {"mean":{},
                             "std": {},
                             "keep":{},
-                            "numeric":{}}
+                            "numeric":{},
+                            "list":{}}
     for ii, key in enumerate(all_ctc_keys):
         dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])*len(freqs_by_sys_by_ctc)
         dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
         dicts_values_to_sort["keep"][key] = len(all_ctc_keys)-ii+lower_cutoff_val # trick to keep the same logic
         dicts_values_to_sort["numeric"][key] = _mdcu.str_and_dict.intblocks_in_str(key)[0]
-
-    # Pop the keys for higher freqs and lower values, stor
+    if isinstance(sort_by,list):
+        #print("this is the input list   len(%u)"%len(sort_by),sort_by)
+        #print("this is the all_ctc_keys len(%u)"%len(all_ctc_keys),all_ctc_keys)
+        _sorted_keys = _key_sorter(sort_by,{key : None for key in all_ctc_keys})
+        #print("this are the sorted all         ",_sorted_keys)
+        dicts_values_to_sort["list"]={key : [-jj for jj, key2 in enumerate(_sorted_keys) if key2==key][0] for key in all_ctc_keys if key in _sorted_keys}
+        #print("and this is the order",dicts_values_to_sort["list"])
+        sort_by = "list"
+        # Pop the keys for higher freqs and lower values, stor
     drop_below = {"std":  lambda ctc: dicts_values_to_sort["std"][ctc] <= lower_cutoff_val,
                   "mean": lambda ctc: all([idict[ctc] <= lower_cutoff_val for idict in freqs_by_sys_by_ctc.values()]),
                   }
     drop_below["keep"]=drop_below["mean"]
     drop_below["numeric"]=drop_below["mean"]
+    drop_below["list"]=drop_below["mean"]
     drop_above = lambda ctc : all([idict[ctc]>=identity_cutoff for idict in freqs_by_sys_by_ctc.values()]) \
                               and remove_identities
     keys_popped_above, ctc_keys_popped_below = [], []
