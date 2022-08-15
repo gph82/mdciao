@@ -1591,6 +1591,7 @@ def sites(site_inputs,
           CGN_PDB="None",
           KLIFS_uniprotAC=None,
           fragments=['lig_resSeq+'],
+          allow_partial_sites=False,
           default_fragment_index=None,
           fragment_names="",
           output_dir='.',
@@ -1731,6 +1732,11 @@ def sites(site_inputs,
         generate LaTeX expressions from stuff like "Galpha"
         You can use fragment_names="None" or "" to avoid
         using fragment names
+    allow_partial_sites : bool, default is False
+        If False, a single missing residue is enough to
+        discard an entire site. If True,
+        the site definitions get modified to
+        to keep the residues that could be found
     output_dir : str, default is '.'
         directory to which the results are written
     graphic_ext : str, default is '.pdf'
@@ -1826,8 +1832,8 @@ def sites(site_inputs,
                                                              fragment_names=fragment_names)
     if None in ctc_idxs_small:
         print("Some definitions of the 'site_inputs' contain one or more residue(s) not found in the input topology.\n"
-              "These sites have been discarded and won't appear in the ouput: ")
-        ctc_idxs_small, site_maps, _sites, discarded = _mdcsites.discard_empty_sites(ctc_idxs_small,site_maps, sites, allow_partial_sites=False)
+              "These sites have been discarded and won't appear in the output: ")
+        ctc_idxs_small, site_maps, _sites, discarded = _mdcsites.discard_empty_sites(ctc_idxs_small,site_maps, sites, allow_partial_sites=allow_partial_sites)
         for ii in discarded["full"]:
             print(" * site '%s' (idx %u)"%(sites[ii]["name"],ii))
         if len(_sites)==0:

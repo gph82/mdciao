@@ -450,6 +450,42 @@ class Test_sites(TestCLTBaseClass):
             assert output_sites["site3"].n_ctcs == 1
             _np.testing.assert_array_equal(output_sites["site3"].res_idxs_pairs[0], [ 69, 852])
 
+    def test_sites_w_incomplete_sites_allow_partial_sites(self):
+        # Only the last site will survive
+        site_list = [
+            {'name': 'site0', 'pairs': {'AAresSeq': ['ALA20-ALA21',  # ALA20 doesn't exist
+                                                     'GLU101-GLU122']}},  # both exist
+
+            {'name': 'site1', 'pairs': {'AAresSeq': ['GLU31-ALA20',  # GLU31 and ALA20 don't exist
+                                                     'GLU17-GLU12']}},  # both exist
+
+            {'name': 'site2', 'pairs': {'AAresSeq': ['GLN101-ALA122']}},  # GLN101 doesn't exist
+
+            {'name': 'site3', 'pairs': {'AAresSeq': ['GLU101-GLU122']}}  # both exist, but was seen before
+        ]
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            output_sites = cli.sites(site_list,
+                                     [self.traj, self.traj_reverse],
+                                     self.geom,
+                                     distro=True,
+                                     figures=False,
+                                     no_disk=True,
+                                     output_dir=tmpdir,
+                                     allow_partial_sites=True)
+            assert len(output_sites)==3
+            assert output_sites["site0"]
+            assert output_sites["site0"].n_ctcs == 1
+            _np.testing.assert_array_equal(output_sites["site0"].res_idxs_pairs[0], [69, 852])
+
+            assert output_sites["site1"]
+            assert output_sites["site1"].n_ctcs == 1
+            _np.testing.assert_array_equal(output_sites["site1"].res_idxs_pairs[0], [709, 365])
+
+            assert "site3" in output_sites.keys()
+            assert output_sites["site3"]
+            assert output_sites["site3"].n_ctcs == 1
+            _np.testing.assert_array_equal(output_sites["site3"].res_idxs_pairs[0], [ 69, 852])
+
 class Test_interface(TestCLTBaseClass):
 
     @classmethod
