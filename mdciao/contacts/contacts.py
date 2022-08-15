@@ -1706,7 +1706,7 @@ class ContactPair(object):
         assert len(stacked_counts)==len(stacked_at_pair_trajs)==self._attribute_n.n_frames_total,\
             (len(stacked_counts) , len(stacked_at_pair_trajs) , self._attribute_n.n_frames_total)
 
-        unique_at_pairs = _np.unique(stacked_at_pair_trajs,axis=0).squeeze()
+        unique_at_pairs = _np.unique(stacked_at_pair_trajs,axis=0).squeeze().reshape(-1,2)
         #Dictionary implementation 2x faster than sparse-matrix implementation!
         mat = {"%u-%u" % tuple(ap):0 for ap in unique_at_pairs}
         for ((ii, jj), cc) in zip(stacked_at_pair_trajs, stacked_counts):
