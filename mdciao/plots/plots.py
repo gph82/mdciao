@@ -537,12 +537,14 @@ def plot_unified_freq_dicts(freqs,
     fontsize : int, default is 16
         Will be used in :obj:`matplotlib._rcParams["font.size"]
         # TODO be less invasive
-    sort_by : str, default is "mean"
-        The property by which to sort the contacts.
-        It is always descending and the property can be:
-         * "mean" sort by mean frequency over all systems, making most
+    sort_by : str or list of strings, default is "mean"
+        If str, the property by which to sort the contacts.
+        If list, the list of contact labels in the order in
+        which they will be shown.
+        If str, the possibilities are
+         * "mean" sort (descending) by mean frequency over all systems, making most
            frequent contacts appear on the left/top of the plot.
-         * "std" sort by per-contact standard deviation over all systems, making
+         * "std" sort (descending) by per-contact standard deviation over all systems, making
            the contacts with most different values appear on top. This
            highlights more "deviant" contacts and might hence be
            more informative than "mean" in cases where a lot of
@@ -551,11 +553,19 @@ def plot_unified_freq_dicts(freqs,
            that marks the std for each contact group
          * "keep" keep the contacts in whatever order they have in the
            first dictionary
-         * "numeric" sort the contacts by the first number
+         * "numeric" sort (ascending) the contacts by the first number
           that appears in the contact labels, e.g. "30" if
           the label is "GLU30@3.50-GDP". You can use this
           to order by resSeq if the AA to sort by is the
           first one of the pair.
+        * list of contact-labels : sort in the order established
+          by this list. What will actually be plotted is the
+          intersection of this list and the available
+          contact labels of `freqs` *after* other parameters
+          like `lower_cutoff_val` or `identity_cutoff`
+          have taken effect, e.g. if a contact-label is
+          discarded because of `lower_cutoff_val`,
+          adding the label to this list won't have any effect.
     lower_cutoff_val : float, default is 0
         Hide contacts with small values. "values" changes
         meaning depending on :obj:`sort_by`. If :obj:`sort_by` is:
@@ -622,7 +632,7 @@ def plot_unified_freq_dicts(freqs,
     ax : :obj:`~matplotlib.axes.Axes`
     freqs : dict
         Dictionary of dictionaries with the plotted frequencies
-        in the plotted order. It's keyed with first wity
+        in the plotted order. It's keyed with first
         system-names first and contact-names second, like
         the input. It has the :obj:`sort_by` strategy
         as an extra key containing the value that resorted
@@ -650,12 +660,8 @@ def plot_unified_freq_dicts(freqs,
         dicts_values_to_sort["keep"][key] = len(all_ctc_keys)-ii+lower_cutoff_val # trick to keep the same logic
         dicts_values_to_sort["numeric"][key] = _mdcu.str_and_dict.intblocks_in_str(key)[0]
     if isinstance(sort_by,list):
-        #print("this is the input list   len(%u)"%len(sort_by),sort_by)
-        #print("this is the all_ctc_keys len(%u)"%len(all_ctc_keys),all_ctc_keys)
         _sorted_keys = _key_sorter(sort_by,{key : None for key in all_ctc_keys})
-        #print("this are the sorted all         ",_sorted_keys)
         dicts_values_to_sort["list"]={key : [-jj for jj, key2 in enumerate(_sorted_keys) if key2==key][0] for key in all_ctc_keys if key in _sorted_keys}
-        #print("and this is the order",dicts_values_to_sort["list"])
         sort_by = "list"
         # Pop the keys for higher freqs and lower values, stor
     drop_below = {"std":  lambda ctc: dicts_values_to_sort["std"][ctc] <= lower_cutoff_val,
@@ -717,7 +723,8 @@ def plot_unified_freq_dicts(freqs,
 
     for jj, (skey, sfreq) in enumerate(freqs_by_sys_by_ctc.items()):
         # Sanity check
-        assert len(sfreq) == len(sorted_value_by_ctc_by_sys), "This shouldnt happen"
+        if sort_by != "list":
+            assert len(sfreq) == len(sorted_value_by_ctc_by_sys), "This shouldnt happen"
 
         bar_array = [sfreq[key] for key in sorted_value_by_ctc_by_sys.keys()]
         x_array = _np.arange(len(bar_array))
