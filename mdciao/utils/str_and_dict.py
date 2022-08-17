@@ -24,6 +24,8 @@ from collections import defaultdict as _defdict
 from natsort import natsorted as _natsorted
 from inspect import signature as _signature
 import docstring_parser as _dsp
+from matplotlib import docstring as _mpldocstring
+
 
 tunit2tunit = {"ps":  {"ps": 1, "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
@@ -1224,7 +1226,7 @@ class FilenameGenerator(object):
         return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"),gx])
 
 
-def kwargs_docstring(obj):
+def _kwargs_docstring(obj):
     r"""Return the formatted docstring of a callable object's keyword arguments"""
     sig = _signature(obj)
     dp = _dsp.parse(obj.__doc__)
@@ -1238,3 +1240,22 @@ def kwargs_docstring(obj):
                 break
     assert params!=''
     return params
+
+def _kwargs_subs(funct_or_method):
+    r"""One line, one argument decorator to substitute kwargs docstrings
+
+    Will substitute the expression "%(substitute_kwargs)s" anywhere in the
+    docstring of the method it decorates with the optional parameter
+    docstring of funct_or_method
+
+    Parameters
+    ----------
+    funct_or_method : method or function
+
+    Returns
+    -------
+    dec : mpldocstring.Substitution object
+    """
+
+    return _mpldocstring.Substitution(
+        substitute_kwargs=_kwargs_docstring(funct_or_method))
