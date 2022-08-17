@@ -36,7 +36,7 @@ my_frag_colors=[
 from os import path as _path, mkdir as _mkdir
 import numpy as _np
 import mdtraj as _md
-from matplotlib import pyplot as _plt, rcParams as _rcParams, colors as _mplcolors
+from matplotlib import pyplot as _plt, rcParams as _rcParams, colors as _mplcolors, docstring as _mpldocstring
 
 from pandas import DataFrame as _DF
 from pandas import ExcelWriter as _ExcelWriter
@@ -1934,6 +1934,7 @@ def sites(site_inputs,
 
     return site_as_gc
 
+@_mpldocstring.Substitution(substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(_mdcplots.compare_groups_of_contacts))
 def compare(datasets, graphic_ext=".pdf", output_desc="freq_comparison", pop=False, **kwargs):
     r"""
 
@@ -1975,7 +1976,12 @@ def compare(datasets, graphic_ext=".pdf", output_desc="freq_comparison", pop=Fal
         force the figure to be drawn.
     kwargs : dict
         Optional arguments for
-        :obj:`~mdciao.plots.compare_groups_of_contacts`
+        :obj:`~mdciao.plots.compare_groups_of_contacts`,
+        which can be any of the following:
+
+    Other Parameters
+    ----------------
+    %(substitute_kwargs)s
 
     Returns
     -------
