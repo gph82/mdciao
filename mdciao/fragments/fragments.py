@@ -35,41 +35,6 @@ _allowed_fragment_methods = ['chains',
                              'resSeq_bonds',
                              "None",
                              ]
-
-
-def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
-    """Inform about fragments, very thinly wrapping around :obj:`print_frag`
-
-    Parameters
-    ----------
-    fragments : dict or list
-        Iterable with the sets of residue indexes
-    top : :obj:`~mdtraj.Topology`
-    max_lines : int, default is 40
-        Maximum number of lines to print. E.g. if 40,
-        first 20 and last 20 will be printed
-    print_frag_kwargs : opt, keyword args for :obj:`print_frag`
-
-    Returns
-    -------
-    frag_list : list
-        List of the strings that
-        are being printed, for further use
-
-    """
-    if isinstance(fragments,list):
-        _fragments = {ii:val for ii, val in enumerate(fragments)}
-    else:
-        _fragments = {key:val for key, val in fragments.items()}
-    frag_list = []
-    for ii, iseg in _fragments.items():
-        frag_list.append(print_frag(ii, top, iseg, return_string=True, **print_frag_kwargs))
-    n = _np.round(max_lines/2).astype(int)
-    if n * 2 < len(frag_list):
-        frag_list = frag_list[:n] + ["...[long list: omitted %u items]..." % (len(frag_list) - 2 * n)] + frag_list[-n:]
-    print("\n".join(frag_list))
-    return frag_list
-
 def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                idx2label=None,
                return_string=False,
@@ -145,6 +110,50 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
         return istr
     else:
         print(istr, **print_kwargs)
+
+@_mpldocstring.Substitution(
+        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(print_frag))
+
+def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
+    """Inform about fragments, very thinly wrapping around :obj:`print_frag`
+
+    Parameters
+    ----------
+    fragments : dict or list
+        Iterable with the sets of residue indexes
+    top : :obj:`~mdtraj.Topology`
+    max_lines : int, default is 40
+        Maximum number of lines to print. E.g. if 40,
+        first 20 and last 20 will be printed
+    print_frag_kwargs : dict
+        Optional keyword args for :obj:`print_frag`,
+        as listed below
+
+    Other Parameters
+    ----------------
+    %(substitute_kwargs)s
+
+    Returns
+    -------
+    frag_list : list
+        List of the strings that
+        are being printed, for further use
+
+    """
+    if isinstance(fragments,list):
+        _fragments = {ii:val for ii, val in enumerate(fragments)}
+    else:
+        _fragments = {key:val for key, val in fragments.items()}
+    frag_list = []
+    for ii, iseg in _fragments.items():
+        frag_list.append(print_frag(ii, top, iseg, return_string=True, **print_frag_kwargs))
+    n = _np.round(max_lines/2).astype(int)
+    if n * 2 < len(frag_list):
+        frag_list = frag_list[:n] + ["...[long list: omitted %u items]..." % (len(frag_list) - 2 * n)] + frag_list[-n:]
+    print("\n".join(frag_list))
+    return frag_list
+
+
 
 @_mpldocstring.Substitution(
         substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(_mdcu.residue_and_atom.residues_from_descriptors))
