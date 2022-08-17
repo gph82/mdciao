@@ -50,7 +50,7 @@ def residues_from_descriptors(residue_descriptors,
         Pick this fragment without asking in case of ambiguity.
         If None, the user will we prompted
     fragment_names:
-        list of strings providing informative names input :obj:`fragments`
+        list of strings providing informative names for the input :obj:`fragments`
     additional_resnaming_dicts : dict of dicts, default is None
         Dictionary of dictionaries. Lower-level dicts are keyed
         with residue indices and valued with additional residue names.
@@ -61,7 +61,8 @@ def residues_from_descriptors(residue_descriptors,
         methods use this.
     just_inform : bool, default is False
         Just inform about the AAs, don't ask for a selection
-    extra_string_info: string with any additional info to be printed in case of ambiguity
+    extra_string_info: str,
+        string with any additional info to be printed in case of ambiguity
 
     Returns
     -------
