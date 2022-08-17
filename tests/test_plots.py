@@ -5,6 +5,7 @@ import pytest
 from matplotlib import pyplot as _plt, cm as _cm
 from matplotlib.colors import is_color_like, to_rgb
 
+import mdciao.contacts
 from mdciao.contacts import ContactGroup, ContactPair
 from mdciao.examples import ContactGroupL394
 from mdciao.cli import interface as _cli_interface
@@ -173,6 +174,31 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
                                                   {"CG1": "r"})
         #myfig.savefig("12.test_just_one.png",bbox_inches="tight")
         _plt.close("all")
+
+    def test_sort_by_keys(self):
+        neigh : mdciao.contacts.ContactGroup = ContactGroupL394()
+        freqs = neigh.frequency_dicts(3.5)
+        # The following list, test_list
+        # * reverses the order
+        # * deletes the most frequent one (the last one) "R389@G.H5.21    - L394@G.H5.26"
+        # * adds a bogus-key
+        # * duplicates an entry "L388@G.H5.20    - L394@G.H5.26"
+        test_list = list(freqs.keys())[::-1][:-1]+["bogus-key"]+["L388@G.H5.20    - L394@G.H5.26"]
+        myfig, myax, plotted_freqs = plots.plot_unified_freq_dicts({"L394":freqs},
+                                                        sort_by=test_list,
+                                                        lower_cutoff_val=.2,
+                                                        )
+        #myfig.tight_layout()
+        #myfig.savefig("test.keys.png")
+        self.assertListEqual(test_list[1:-2], # First one will be missed bc.
+                                              # lower_cutoff_val, last two because bogus and repetition
+                             list(plotted_freqs["L394"].keys()))
+        print(plotted_freqs["L394"])
+        assert "L394" in plotted_freqs.keys()
+        assert "list" in plotted_freqs.keys()
+        _plt.close("all")
+
+
 
 class Test_plot_unified_distro_dicts(unittest.TestCase):
 
