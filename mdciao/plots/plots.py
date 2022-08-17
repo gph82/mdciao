@@ -25,8 +25,9 @@ import numpy as _np
 from matplotlib import \
     rcParams as _rcParams, \
     pyplot as _plt, \
-    cm as _cm, \
-    docstring as _mpldocstring
+    cm as _cm
+
+from mdciao.utils.str_and_dict import _kwargs_subs
 
 from matplotlib.colors import is_color_like as _is_color_like
 
@@ -479,7 +480,7 @@ def plot_unified_freq_dicts(freqs,
     _rcParams["font.size"] = _fontsize
     return myfig, _plt.gca(),  out_dict
 
-@_mpldocstring.Substitution(substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(plot_unified_freq_dicts))
+@_kwargs_subs(plot_unified_freq_dicts)
 def compare_groups_of_contacts(groups,
                                colors=None,
                                mutations_dict={},

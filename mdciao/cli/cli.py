@@ -36,7 +36,7 @@ my_frag_colors=[
 from os import path as _path, mkdir as _mkdir
 import numpy as _np
 import mdtraj as _md
-from matplotlib import pyplot as _plt, rcParams as _rcParams, colors as _mplcolors, docstring as _mpldocstring
+from matplotlib import pyplot as _plt, rcParams as _rcParams, colors as _mplcolors
 
 from pandas import DataFrame as _DF
 from pandas import ExcelWriter as _ExcelWriter
@@ -54,6 +54,7 @@ import mdciao.sites as _mdcsites
 import mdciao.plots as _mdcplots
 
 import mdciao.utils as _mdcu
+from mdciao.utils.str_and_dict import _kwargs_subs
 
 def _offer_to_create_dir(output_dir):
     r"""
@@ -1934,7 +1935,8 @@ def sites(site_inputs,
 
     return site_as_gc
 
-@_mpldocstring.Substitution(substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(_mdcplots.compare_groups_of_contacts))
+
+@_kwargs_subs(_mdcplots.compare_groups_of_contacts)
 def compare(datasets, graphic_ext=".pdf", output_desc="freq_comparison", pop=False, **kwargs):
     r"""
 
