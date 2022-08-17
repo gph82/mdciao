@@ -14,6 +14,7 @@ please note the API is not yet stable.
 
     get_fragments
     fragment_slice
+    print_fragments
     print_frag
     overview
     match_fragments
