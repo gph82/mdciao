@@ -2933,7 +2933,8 @@ def _KLIFS_web_lookup(UniProtAC,
                 PDB_DF = _mdTopology2residueDF(geom.top)
                 # Get the PDB positions from UniProtKB
                 PDBs_UPKB = _UniProtACtoPDBs(UniProtAC)
-                residue_idxs = _residx_from_UniProtPDBEntry_and_top(PDBs_UPKB[best_PDB], geom.top)
+                residue_idxs = _residx_from_UniProtPDBEntry_and_top(PDBs_UPKB[best_PDB], geom.top,
+                                                                    target_resSeqs=nomencl.Xray_position.values)
                 uniprot_res = _np.full(geom.n_residues, None)
                 uniprot_res[residue_idxs] = True
                 PDB_DF["UniProtAC_res"] = uniprot_res
