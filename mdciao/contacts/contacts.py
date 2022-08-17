@@ -27,6 +27,7 @@ from os import path as _path
 import mdciao.plots as _mdcplots
 from mdciao.plots.plots import _add_grey_banded_bg, _color_tiler
 import mdciao.utils as _mdcu
+from mdciao.utils.str_and_dict import _kwargs_subs
 import mdciao.nomenclature as _mdcn
 from mdciao.nomenclature.nomenclature import _consensus_maps2consensus_frags
 import mdciao.fragments as _mdcfr
@@ -48,8 +49,7 @@ from tqdm import tqdm as _tqdm
 from matplotlib import \
     pyplot as _plt,\
     rcParams as _rcParams,\
-    colors as _mplcolors, \
-    docstring as _mpldocstring
+    colors as _mplcolors
 
 from pandas import \
     DataFrame as _DF, \
@@ -2350,9 +2350,7 @@ class ContactGroup(object):
 
         return [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
-    @_mpldocstring.Substitution(
-        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(
-            ContactPair.gen_label))
+    @_kwargs_subs(ContactPair.gen_label)
     def gen_ctc_labels(self, **kwargs) -> list:
         r"""Generate a labels with different parameters
 
@@ -2926,8 +2924,7 @@ class ContactGroup(object):
                 ctc_idxs.append([ii,_np.argwhere(pair==idx).squeeze()])
         return _np.vstack(ctc_idxs)
 
-    @_mpldocstring.Substitution(
-        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(ContactPair.frequency_dict))
+    @_kwargs_subs(ContactPair.frequency_dict)
     def frequency_dicts(self, ctc_cutoff_Ang,
                         sort_by_freq=False,
                         **kwargs):
@@ -3641,8 +3638,7 @@ class ContactGroup(object):
         return _delta_freq_pairs(    self.frequency_per_contact(ctc_cutoff_Ang),   self.res_idxs_pairs,
                                  otherCG.frequency_per_contact(ctc_cutoff_Ang), otherCG.res_idxs_pairs)
 
-    @_mpldocstring.Substitution(
-        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(ContactPair.relative_frequency_of_formed_atom_pairs_overall_trajs))
+    @_kwargs_subs(ContactPair.relative_frequency_of_formed_atom_pairs_overall_trajs)
     def relative_frequency_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang, switch_off_Ang=None, **kwargs) -> list:
         r"""
         Relative frequencies interaction-type (by atom-type) for all contact-pairs in the ContactGroup
@@ -3705,7 +3701,7 @@ class ContactGroup(object):
         """
         return [ictc.distro_overall_trajs(bins=bins) for ictc in self._contacts]
 
-    @_mpldocstring.Substitution(substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(ContactPair.label_flex))
+    @_kwargs_subs(ContactPair.label_flex)
     def distribution_dicts(self,
                            bins=10,
                            **kwargs):
@@ -4742,9 +4738,7 @@ class ContactGroup(object):
             jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
         return jax
 
-    @_mpldocstring.Substitution(
-        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(
-            _mdcflare.freqs2flare))
+    @_kwargs_subs(_mdcflare.freqs2flare)
     def plot_freqs_as_flareplot(self, ctc_cutoff_Ang,
                                 fragments=None,
                                 fragment_names=None,
