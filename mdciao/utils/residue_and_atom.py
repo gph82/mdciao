@@ -16,8 +16,10 @@ from fnmatch import filter as _fn_filter
 import numpy as _np
 from  pandas import unique as _pandas_unique
 from mdciao.utils.lists import in_what_N_fragments as _in_what_N_fragments, force_iterable as _force_iterable
+from mdciao.utils.str_and_dict import kwargs_docstring as _kwargs_docstring
 from collections import Counter as _Counter
 from pandas import DataFrame as _DF
+from matplotlib import docstring as _mpldocstring
 
 def residues_from_descriptors(residue_descriptors,
                               fragments, top,
@@ -158,6 +160,8 @@ def residues_from_descriptors(residue_descriptors,
 
     return residxs, fragidxs
 
+@_mpldocstring.Substitution(
+        substitute_kwargs=_kwargs_docstring(residues_from_descriptors))
 def rangeexpand_residues2residxs(range_as_str, fragments, top,
                                  interpret_as_res_idxs=False,
                                  sort=False,
@@ -199,7 +203,12 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     sort : bool
         sort the expanded range on return
     residues_from_descriptors_kwargs:
-        Optional parameters for :obj:`residues_from_descriptors`
+        Optional parameters for :obj:`~mdciao.utils.residue_and_atom.residues_from_descriptors`,
+        which are listed below
+
+    Other Parameters
+    ---------------
+    %(substitute_kwargs)s
 
     Returns
     -------
