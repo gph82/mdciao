@@ -2117,6 +2117,23 @@ def _sort_GPCR_consensus_labels(labels, **sort_consensus_labels_kwargs):
     """
     return _sort_consensus_labels(labels, _GPCR_fragments, **sort_consensus_labels_kwargs)
 
+def _sort_KLIFS_consensus_labels(labels, **sort_consensus_labels_kwargs):
+    r"""
+    Sort consensus labels in order of appearance in the canonical KLIFS scheme
+
+    Parameters
+    ----------
+    labels : iterable
+        The input consensus labels
+    sort_consensus_labels_kwargs : dict, optional
+        Optional arguments for :obj:`sort_consensus_labels`
+
+    Returns
+    -------
+
+    """
+    return _sort_consensus_labels(labels, _KLIFS_fragments, **sort_consensus_labels_kwargs)
+
 
 def _sort_CGN_consensus_labels(labels, **kwargs):
     r"""
@@ -2235,6 +2252,27 @@ _CGN_fragments = ['G.HN',
                   'G.S6',
                   'G.s6h5',
                   'G.H5']
+
+_KLIFS_fragments = ['I',
+                    'g.l',
+                    'II',
+                    'III',
+                    'αC',
+                    'b.l',
+                    'IV',
+                    'V',
+                    'GK',
+                    'hinge',
+                    'linker',
+                    'αD',
+                    'αE',
+                    'VI',
+                    'c.l',
+                    'VII',
+                    'VIII',
+                    'xDFG',
+                    'a.l']
+
 
 _GPCR_mandatory_fields = ["protein_segment",
                           "AAresSeq",

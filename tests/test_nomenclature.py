@@ -895,12 +895,12 @@ if __name__ == '__main__':
 class Test_sort_consensus_labels(unittest.TestCase):
 
     def setUp(self):
-        self.tosort = ["G.H1.10", "H.HA.20", "H8.10", "V34", "H8.1", "3.50", "2.50", "G.H1.1", "H.HA.10"]
+        self.tosort = ["G.H1.10", "H.HA.20", 'a.l.85', "H8.10", 'αC.25', "V34", "H8.1", "3.50", "2.50", "G.H1.1", "H.HA.10", 'αD.55']
 
     def test_GPCR(self):
         sorted = nomenclature._sort_GPCR_consensus_labels(self.tosort)
         _np.testing.assert_array_equal(
-            ["2.50", "3.50", "H8.1", "H8.10", "G.H1.10", "H.HA.20", "V34", "G.H1.1", "H.HA.10"],
+            ["2.50", "3.50", "H8.1", "H8.10", "G.H1.10", "H.HA.20", 'a.l.85', 'αC.25', "V34", "G.H1.1", "H.HA.10", 'αD.55'],
             sorted)
 
     def test_GPCR_dont_append(self):
@@ -911,7 +911,7 @@ class Test_sort_consensus_labels(unittest.TestCase):
     def test_CGN(self):
         sorted = nomenclature._sort_CGN_consensus_labels(self.tosort)
         _np.testing.assert_array_equal(
-            ["G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20", "H8.10", "V34", "H8.1", "3.50", "2.50"],
+            ["G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20", 'a.l.85', "H8.10", 'αC.25', "V34", "H8.1", "3.50", "2.50", 'αD.55'],
             sorted)
 
     def test_CGN_dont_append(self):
@@ -919,6 +919,16 @@ class Test_sort_consensus_labels(unittest.TestCase):
         _np.testing.assert_array_equal(["G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20"],
                                        sorted)
 
+    def test_KLIFS(self):
+        sorted = nomenclature._sort_KLIFS_consensus_labels(self.tosort)
+        _np.testing.assert_array_equal(
+            [ 'αC.25', 'αD.55', 'a.l.85',"G.H1.10", "H.HA.20","H8.10", "V34", "H8.1", "3.50", "2.50", "G.H1.1", "H.HA.10"],
+            sorted)
+
+    def test_KLIFS_dont_append(self):
+        sorted = nomenclature._sort_KLIFS_consensus_labels(self.tosort, append_diffset=False)
+        _np.testing.assert_array_equal(['αC.25', 'αD.55', 'a.l.85'],
+                                       sorted)
 
 class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 
