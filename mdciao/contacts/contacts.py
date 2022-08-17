@@ -4746,6 +4746,9 @@ class ContactGroup(object):
             jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
         return jax
 
+    @_mpldocstring.Substitution(
+        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(
+            _mdcflare.freqs2flare))
     def plot_freqs_as_flareplot(self, ctc_cutoff_Ang,
                                 fragments=None,
                                 fragment_names=None,
@@ -4876,22 +4879,27 @@ class ContactGroup(object):
                 in the interface with any contacts.For this,
                 the :obj:`consensus_maps` need to
                 be actual :obj:`LabelerConsensus`-objects
-        kwargs_freqs2flare: optargs
-            Keyword arguments for :obj:`mdciao.flare.freqs2flare`.
-            Note that many of these kwargs will be overwritten,
-            mostly to accommodate the scheme+fragment+color combinations,
+        kwargs_freqs2flare: dict
+            Optional keyword arguments for :obj:`mdciao.flare.freqs2flare`.
+            Note that many of these kwargs will be overwritten internally
+            by this method, mostly to accommodate the scheme+fragment+color combinations,
             but not only (please see the note above). These are the kwargs
             that this method manipulates internally and might
             be overwritten:
-            * `top`, `ss_array`, `fragments`, `fragment_names`
-              `fragment_names`, `colors`
-            Note that some of freqs2flare kwargs (in particular `sparse_residues`)
+             * `top`, `ss_array`, `fragments`, `fragment_names`
+               `fragment_names`, `colors`
+            Note that some of values in `kwargs_freqs2flare` (in particular `sparse_residues`)
             might alter (with or w/o conflict) the `scheme` option.
+            The full list of optional arguments is listed below
+
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
 
         Returns
         -------
-        ifig : :obj:``~matplotlib.figure.Figure`
-        iax : :obj:`matplotlib.axes.Axes`
+        ifig : :obj:`~matplotlib.figure.Figure`
+        iax : :obj:`~matplotlib.axes.Axes`
         """
 
         # We need three (!) methods to guess around the fragments/names/colors...this is bad but "easier" to debug
