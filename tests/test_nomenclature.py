@@ -1097,6 +1097,59 @@ class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
 
         self.assertListEqual(res_idxs, _np.arange(349 + 1, 688 + 1).tolist())
 
+    def test_two_chains_picks_first_one(self):
+        # nomenclature._UniProtACtoPDBs("P31751")["3E8D"]
+        # Beta sub-unit in 3SN6
+        PDBentry = {'database': 'PDB',
+                    'id': '3E8D',
+                    'properties': [{'key': 'Method', 'value': 'X-ray'},
+                                   {'key': 'Resolution', 'value': '2.70 A'},
+                                   {'key': 'Chains', 'value': 'A/B=146-480'}]}
+
+        top = md.load(examples.filenames.pdb_3E8D).top
+        res_idxs = nomenclature._residx_from_UniProtPDBEntry_and_top(PDBentry, top)
+
+        """
+        mdciao.fragments.get_fragments(mdciao.examples.filenames.pdb_3E8D);
+        Auto-detected fragments with method 'lig_resSeq+'
+        fragment      0 with    316 AAs   LYS146 (     0) -   ARG480 (315   ) (0)  resSeq jumps
+        fragment      1 with    318 AAs   LYS146 (   316) -   ARG480 (633   ) (1)  resSeq jumps
+        fragment      2 with     10 AAs     GLY3 (   634) -    GLU12 (643   ) (2) 
+        fragment      3 with     10 AAs     GLY3 (   644) -    GLU12 (653   ) (3) 
+        fragment      4 with      1 AAs     G981 (   654) -     G981 (654   ) (4) 
+        fragment      5 with      1 AAs     G981 (   655) -     G981 (655   ) (5) 
+        fragment      6 with     41 AAs     HOH7 (   656) -    HOH40 (696   ) (6)  resSeq jumps
+        """
+
+        self.assertListEqual(res_idxs, _np.arange(0, 315 + 1).tolist())
+
+    def test_two_chains_picks_second_one(self):
+        # nomenclature._UniProtACtoPDBs("P31751")["3E8D"]
+        # Beta sub-unit in 3SN6
+        PDBentry = {'database': 'PDB',
+                    'id': '3E8D',
+                    'properties': [{'key': 'Method', 'value': 'X-ray'},
+                                   {'key': 'Resolution', 'value': '2.70 A'},
+                                   {'key': 'Chains', 'value': 'A/B=146-480'}]}
+
+        top = md.load(examples.filenames.pdb_3E8D).top
+        res_idxs = nomenclature._residx_from_UniProtPDBEntry_and_top(PDBentry, top, target_resSeqs=[rr.resSeq for rr in top.chain(1).residues])
+
+        """
+        mdciao.fragments.get_fragments(mdciao.examples.filenames.pdb_3E8D);
+        Auto-detected fragments with method 'lig_resSeq+'
+        fragment      0 with    316 AAs   LYS146 (     0) -   ARG480 (315   ) (0)  resSeq jumps
+        fragment      1 with    318 AAs   LYS146 (   316) -   ARG480 (633   ) (1)  resSeq jumps
+        fragment      2 with     10 AAs     GLY3 (   634) -    GLU12 (643   ) (2) 
+        fragment      3 with     10 AAs     GLY3 (   644) -    GLU12 (653   ) (3) 
+        fragment      4 with      1 AAs     G981 (   654) -     G981 (654   ) (4) 
+        fragment      5 with      1 AAs     G981 (   655) -     G981 (655   ) (5) 
+        fragment      6 with     41 AAs     HOH7 (   656) -    HOH40 (696   ) (6)  resSeq jumps
+        """
+
+        self.assertListEqual(res_idxs, _np.arange(316, 633 + 1).tolist())
+
+
 
 class Test_KLIFSDataFrame(unittest.TestCase):
 

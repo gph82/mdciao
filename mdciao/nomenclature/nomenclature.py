@@ -2700,11 +2700,12 @@ def _Spreadsheets2mdTrajectory(source):
     return geom
 
 
-def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
+def _residx_from_UniProtPDBEntry_and_top(PDBentry, top, target_resSeqs=None):
     r"""
     Return the indices of residues of a :obj:`top` matching the 'Chains' entry of :obj:`PDBentry`
 
-    Only the first chain will be used in case there's more
+    The method picks the first chain of `top` that matches any of the entries in 'Chains',
+    but it can be forced to keep trying with other chains of `top` via the parameter `target_resSeq`
 
     Parameters
     ----------
@@ -2715,7 +2716,17 @@ def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
     top : obj:`~mdtraj.Topology`
         It has to be the topology that
         results from reading the PDB entry,
-        though no checks are carried out
+        s.t. chain entries are the canonical
+        ones, though no checks are carried out
+    target_resSeqs : list, default is None
+        Only accept chains of `top` that contain
+        at least all these residue sequence
+        indices, i.e. the 30 of GLU30. Helps
+        in cases where there are two
+        equivalent chains but one of them
+        is missing some key residues
+
+
     Returns
     -------
     residxs : list
@@ -2728,18 +2739,23 @@ def _residx_from_UniProtPDBEntry_and_top(PDBentry, top):
     property = [prop for prop in PDBentry["properties"] if prop["key"] == "Chains"]
     assert len(property) == 1
     chains, residues = property[0]["value"].split("=")
-    # Only takes the first chains
-    chain_id = chains.split("/")[0]
 
+    chain_ids = chains.split("=")[0].split("/")
     for ii, chain in enumerate(top.chains):
         try:
-            try_chain_id = chain_id.id
+            try_chain_id = chain.chain_id
         except AttributeError:
             try_chain_id = _ascii_uppercase[ii]
-        if try_chain_id == chain_id:
+        if try_chain_id in chain_ids:
             residx2resSeq = {rr.index: rr.resSeq for rr in chain.residues}
             # Since chain_ids can be duplicated, stop after the first one
-            break
+            if target_resSeqs is None:
+                break
+            else:
+                # Don't break until all needed residues have been found
+                if set(target_resSeqs).issubset(residx2resSeq.values()):
+                    break
+
     # Check that the resSeqs in these segment of top are unique
     assert len(list(residx2resSeq.values())) == len(_np.unique(list(residx2resSeq.values())))
 
