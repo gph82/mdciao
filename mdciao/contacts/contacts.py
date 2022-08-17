@@ -3709,12 +3709,13 @@ class ContactGroup(object):
         """
         return [ictc.distro_overall_trajs(bins=bins) for ictc in self._contacts]
 
+    @_mpldocstring.Substitution(substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(ContactPair.label_flex))
     def distribution_dicts(self,
                            bins=10,
                            **kwargs):
         """
         Wraps around the method :obj:`ContactGroup.distributions_of_distances`
-        and returns one distribution dict keyed by contact label (see kwargs and CP.label_flex
+        and returns one distribution dict keyed by contact label
 
         Parameters
         ----------
@@ -3723,8 +3724,13 @@ class ContactGroup(object):
             bins in the given range (10, by default). If `bins` is a
             sequence, it defines a monotonically increasing array of bin edges,
             including the rightmost edge, allowing for non-uniform bin widths.
-        kwargs : optional keyword arguments
-            Check :obj:`ContactPair.frequency_dict`
+        kwargs : dict
+            Optional keyword arguments for :obj:`ContactPair.label_flex`,
+            which are listed below
+
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
 
         Returns
         -------
