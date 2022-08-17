@@ -22,6 +22,8 @@ from os import path as _path, listdir as _ls
 import re as _re
 from collections import defaultdict as _defdict
 from natsort import natsorted as _natsorted
+from inspect import signature as _signature
+import docstring_parser as _dsp
 
 tunit2tunit = {"ps":  {"ps": 1, "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ns":  {"ps": 1e3, "ns": 1,    "mus": 1e-3, "ms":1e-6},
@@ -1221,3 +1223,18 @@ class FilenameGenerator(object):
             gx = "pdf"
         return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"),gx])
 
+
+def kwargs_docstring(obj):
+    r"""Return the formatted docstring of a callable object's keyword arguments"""
+    sig = _signature(obj)
+    dp = _dsp.parse(obj.__doc__)
+    params = ""
+    for p in dp.params:
+        for arg in p.arg_name.replace(" ", "").split(","):
+            if arg in sig.parameters.keys() and ("=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3):
+                line = "%s : %s\n" % (p.arg_name, p.type_name)
+                line += "\t%s\n"%("\n\t".join(p.description.splitlines()))
+                params += line
+                break
+    assert params!=''
+    return params
