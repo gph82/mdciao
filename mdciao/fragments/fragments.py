@@ -25,6 +25,7 @@ import mdtraj as _md
 from mdtraj.core.residue_names import _PROTEIN_RESIDUES
 import mdciao.utils as _mdcu
 from pandas import unique as _pandas_unique
+from matplotlib import docstring as _mpldocstring
 
 _allowed_fragment_methods = ['chains',
                              'resSeq',
@@ -145,6 +146,8 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
     else:
         print(istr, **print_kwargs)
 
+@_mpldocstring.Substitution(
+        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(_mdcu.residue_and_atom.residues_from_descriptors))
 def get_fragments(top,
                   method='lig_resSeq+',
                   fragment_breaker_fullresname=None,
@@ -233,6 +236,10 @@ def get_fragments(top,
         None means no limit for positive jumps
     kwargs_residues_from_descriptors : optional
         additional arguments, see :obj:`~mdciao.residue_and_atom.residues_from_descriptors`
+
+    Other Parameters
+    ---------------
+    %(substitute_kwargs)s
 
     Returns
     -------
