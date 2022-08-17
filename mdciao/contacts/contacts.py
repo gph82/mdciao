@@ -1565,7 +1565,7 @@ class ContactPair(object):
             Will get the "best" information
             available, ie consensus>fragname>fragindex
         delete_anchor : bool, default is False
-            the anchor
+            Delete the anchor from the label
 
         Returns
         -------
@@ -2350,21 +2350,17 @@ class ContactGroup(object):
 
         return [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
 
+    @_mpldocstring.Substitution(
+        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(
+            ContactPair.gen_label))
     def gen_ctc_labels(self, **kwargs) -> list:
         r"""Generate a labels with different parameters
 
         Wraps around :obj:`mdciao.contacts.ContactPair.gen_label`
 
-        Kwargs
-        ----------
-        AA_format : str, default is "short"
-            Alternative is "long" ("E30" vs "GLU30")
-        fragments : bool, default is False
-            Include fragment information
-            Will get the "best" information
-            available, ie consensus>fragname>fragindex
-        delete_anchor : bool, default is False
-            the anchor
+        Parameters
+        ---------
+        %(substitute_kwargs)s
 
         Returns
         -------
