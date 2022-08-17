@@ -48,7 +48,8 @@ from tqdm import tqdm as _tqdm
 from matplotlib import \
     pyplot as _plt,\
     rcParams as _rcParams,\
-    colors as _mplcolors
+    colors as _mplcolors, \
+    docstring as _mpldocstring
 
 from pandas import \
     DataFrame as _DF, \
@@ -2929,7 +2930,8 @@ class ContactGroup(object):
                 ctc_idxs.append([ii,_np.argwhere(pair==idx).squeeze()])
         return _np.vstack(ctc_idxs)
 
-
+    @_mpldocstring.Substitution(
+        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(ContactPair.frequency_dict))
     def frequency_dicts(self, ctc_cutoff_Ang,
                         sort_by_freq=False,
                         **kwargs):
@@ -2946,8 +2948,14 @@ class ContactGroup(object):
             Sort by descending frequency. Default
             is to return in the same order
             as :obj:`ContactGroup._contacts`
-        kwargs : optional keyword arguments
-            Check :obj:`ContactPair.frequency_dict`
+        kwargs : optional keyword arguments for
+            :obj:`ContactPair.frequency_dict`,
+            which are listed below:
+
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
+
 
         Returns
         -------
