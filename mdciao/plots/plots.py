@@ -25,7 +25,8 @@ import numpy as _np
 from matplotlib import \
     rcParams as _rcParams, \
     pyplot as _plt, \
-    cm as _cm
+    cm as _cm, \
+    docstring as _mpldocstring
 
 from matplotlib.colors import is_color_like as _is_color_like
 
@@ -121,362 +122,6 @@ def plot_w_smoothing_auto(ax, y,
                           color=color)[0]
 
     return line2D
-
-def compare_groups_of_contacts(groups,
-                               colors=None,
-                               mutations_dict={},
-                               width=.2,
-                               ax=None,
-                               figsize=(10, 5),
-                               fontsize=16,
-                               anchor=None,
-                               plot_singles=False,
-                               exclude=None,
-                               ctc_cutoff_Ang=None,
-                               AA_format='short',
-                               defrag='@',
-                               per_residue=False,
-                               title='comparison',
-                               distro=False,
-                               interface=False,
-                               **kwargs_plot_unified_freq_dicts,
-                               ):
-    r"""
-    Compare contact groups across different systems using different plots and strategies
-
-    Parameters
-    ----------
-    groups : iterable (list or dict)
-        The contact groups. If dict, the keys will be used as names
-        for the contact groups, e.g. "WT", "MUT" etc, if list the keys
-        will be auto-generated.
-        The values can be:
-          * :obj:`ContactGroup` objects
-          * dictionaries where the keys are residue-pairs
-          (one letter-codes, no fragment info, as in :obj:`ContactGroup.ctc_labels_short`)
-          and the values are contact frequencies [0,1]
-          * ascii-files with the contact the frequencies in the first
-            column and labels in the second and/or third column,
-            see :obj:`~mdciao.contacts.ContactGroup.frequency_str_ASCII_file`
-            and :obj:`~mdciao.utils.str_and_dict.freq_ascii2dict`
-          * .xlsx files with the header in the second row,
-            containing at least the column-names "label" and "freqs"
-
-        Note
-        ----
-        If a :obj:`ContactGroup` is passed, then a :obj:`ctc_cutoff_Ang`
-        needs to be passed along, otherwise frequencies cannot be computed
-        on-the-fly
-    colors : iterable (list or dict), or str, default is None
-        * If list, the colors will be assigned in the same
-          order of :obj:`groups`.
-        * If dict, has to have the
-          same keys as :obj:`groups`.
-        * If str, it has to be a case-sensitve colormap-name of matplotlib:
-          https://matplotlib.org/stable/tutorials/colors/colormaps.html
-        * If None, the 'tab10' colormap (tableau) is chosen
-    mutations_dict : dictionary, default is {}
-        A mutation dictionary that contains allows to plot together
-        residues that would otherwise be identified as different
-        contacts. If there were two mutations, e.g A30K and D35A
-        the mutation dictionary will be {"A30":"K30", "D35":"A35"}.
-        You can also use this parameter for correcting indexing
-        offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}
-    width : float, default is .2
-        The witdth of the bars
-    ax : :obj:`~matplotlib.axes.Axes`
-        Axis to draw on
-    figsize : tuple, default is (10,5)
-        The figure size in inches, in case it is
-        instantiated automatically by not passing an :obj:`ax`
-    fontsize : float, default is 16
-        The fontsize to use
-    anchor : str, default is None
-        This string will be deleted from the contact labels,
-        leaving only the partner-residue to identify the contact.
-        The deletion takes place after the :obj:`mutations_dict`
-        has been applied. The final anchor label will be that
-        of the deleted keys (allows for keeping e.g. pre-existing
-        consensus nomenclature).
-        No consistency-checks are carried out, i.e. use
-        at your own risk
-    plot_singles : bool, default is False
-        Produce one extra figure with as many subplots as systems
-        in :obj:`dictionary_of_groups`, where each system is
-        plotted separately. The labels used will have been already
-        "mutated" using :obj:`mutations_dict` and "anchored" using
-        :obj:`anchor`. This plot is temporary and cannot be saved
-    exclude : list, default is None
-        keys containing these strings will be excluded.
-        NOTE: This is not implemented yet, will raise an error
-    ctc_cutoff_Ang : float, default is None
-        Needed value to compute frequencies on-the-fly
-        if the input was using :obj:`ContactGroup` objects
-    AA_format : str, default is "short"
-        see :obj:`~mdciao.contacts.ContactPair.frequency_dict` for more info
-    defrag : str, default is "@"
-        see :obj:`~mdciao.utils.str_and_dict.unify_freq_dicts` for more info
-    per_residue : bool, default is False
-        Unify dictionaries by residue and not by pairs.
-        If True, :obj:`remove_identities` is set to False
-        automatically when calling :obj:`plot_unified_freq_dicts`
-    title : str, default is "comparison"
-        The title for the plot
-    distro : bool, default is False
-        Instead of plotting contact frequencies,
-        plot contact distributions
-    interface : bool, default is False
-        Asks if per_residue=True and
-        then sorts the residues into
-        interface fragments. Will fail
-        if the passed :obj:`groups`
-        don't have self.is_interface==True
-
-    Returns
-    -------
-    myfig : :obj:`~matplotlib.pyplot.Figure`
-        Figure with the comparison plot
-    freqs : dictionary
-        Unified frequency dictionaries,
-        including mutations and anchor
-    plotted_freqs : dictionary
-        Like :obj:`freqs` but sorted and purged
-        according to the user-defined input options,
-        s.t. it represents the plotted values
-    """
-    if isinstance(groups, dict):
-        pass
-    else:
-        _groups = {}
-        for ii, item in enumerate(groups):
-            if isinstance(item,str):
-                key = _path.splitext(_path.basename(item))[0]
-            elif isinstance(item,dict):
-                key = "dict"
-            else:
-                key = "mdcCG"
-            _groups["%s (%u)"%(key,ii)]=item
-        groups = _groups
-
-    if interface:
-        assert all([igroup.is_interface for igroup in groups.values()])
-
-    freqs = {key: {} for key in groups.keys()}
-    colors = color_dict_guesser(colors, freqs.keys())
-
-    for key, ifile in groups.items():
-        if isinstance(ifile, str):
-            idict = _mdcu.str_and_dict.freq_file2dict(ifile)
-        elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
-            if distro:
-                idict = ifile.distribution_dicts(AA_format=AA_format,
-                                                 split_label=False,
-                                                 bins=_np.max([20, (_np.sqrt(ifile.n_frames_total) / 2).round().astype(int)]))
-            else:
-                assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a `ctc_cutoff_Ang` parameter"
-                if not interface:
-                    idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                              AA_format=AA_format,
-                                              split_label=False)
-                else:
-                    idict = ifile.frequency_sum_per_residue_names(ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                                  shorten_AAs=[True if AA_format=="short" else False][0],
-                                                                  list_by_interface=True)
-                    idict[0].update(idict[1])
-                    idict=idict[0]
-                    kwargs_plot_unified_freq_dicts["sort_by"]="keep"
-        else:
-            idict = {key:val for key, val in ifile.items()}
-
-        idict = {_mdcu.str_and_dict.replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
-
-        if anchor is not None:
-            idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
-            if len(_np.unique(deleted_half_keys))>1:
-                raise ValueError("The anchor patterns differ by key, this is strange: %s"%deleted_half_keys)
-            else:
-                anchor=_mdcu.str_and_dict.defrag_key(deleted_half_keys[0],defrag=defrag,sep=" ")
-        freqs[key] = idict
-
-    if distro:
-        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, is_freq=False)
-        myfig, __ = plot_unified_distro_dicts(freqs, colors=colors,
-                                              ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                              fontsize=fontsize,
-                                              **kwargs_plot_unified_freq_dicts)
-        if anchor is not None:
-            title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
-        myfig.suptitle(title, y=1, va="bottom", fontsize=_rcParams["font.size"]*2)
-        plotted_freqs = None
-    else:
-        if plot_singles:
-            nrows = len(freqs)
-            myfig, myax = _plt.subplots(nrows, 1,
-                                        sharey=True,
-                                        sharex=True,
-                                        figsize=(figsize[0], figsize[1]*nrows))
-            for iax, (key, ifreq) in zip(myax, freqs.items()):
-                plot_unified_freq_dicts({key: ifreq},
-                                        colordict=colors,
-                                        ax=iax, width=width,
-                                        fontsize=fontsize,
-                                        **kwargs_plot_unified_freq_dicts)
-                if anchor is not None:
-                    _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
-                                    "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
-                                    ha="right", va="bottom")
-
-            myfig.tight_layout()
-            # _plt.show()
-        freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude,
-                                            per_residue=[per_residue if not interface else False][0],
-                                            defrag=defrag)
-        if per_residue or interface:
-            kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
-            kwargs_plot_unified_freq_dicts["remove_identities"] = False
-
-        if ctc_cutoff_Ang is not None:
-            title = title+'@%2.1f AA'%ctc_cutoff_Ang
-        if anchor is not None:
-            title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
-
-        myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
-                                                            colordict=colors,
-                                                            ax=ax,
-                                                            width=width,
-                                                            fontsize=fontsize,
-                                                            figsize=figsize,
-                                                            title=title,
-                                                            half_sigma=per_residue,
-                                                            **kwargs_plot_unified_freq_dicts)
-
-        _plt.gcf().tight_layout()
-        #_plt.show()
-
-    return myfig, freqs, plotted_freqs
-
-def color_dict_guesser(colors, keys):
-    r"""
-    Helper function to construct a color dictionary from user input
-
-    Parameters
-    ----------
-    colors : None, str, list or dict
-        * None: use the first :obj:`n` "tab10" colors, where
-          n is determined by :obj:`keys`
-        * str: name of the matplotlib colormap to interpolate to :obj:`n` colors.
-          Can be qualitative like "Set2" or "tab20" or
-          quantitative like "viridis" or "Reds". For more info see:
-          https://matplotlib.org/stable/tutorials/colors/colormaps.html
-        * list: list of colors (["r","g","b"])
-          Turn this list into a dictionary keyed with :obj:`keys`
-    keys : int or list
-        If int, create a list of keys = _np.arange(keys).
-        If list, use that list directly as keys for the
-        color dictionary that will be returned
-
-    Returns
-    -------
-    colors : dict
-    """
-    if isinstance(keys, int):
-        assert keys>0, ("If integer,'keys' has to be > 0 ")
-        key_list = _np.arange(keys)
-    else:
-        key_list = keys
-
-    if isinstance(colors,dict):
-        assert all([key in colors.keys() for key in key_list])
-    elif colors is None:
-        return {key: val for key, val in zip(key_list, _colorstring.split(","))}
-    elif isinstance(colors,str):
-        if _is_colormapstring(colors):
-            return {key: color for key, color in zip(key_list,_try_colormap_string(colors,len(key_list)))}
-        else:
-            assert any([_is_color_like(colors), all([_is_color_like(char) for char in colors])]),\
-                ValueError("'%s' is neither a matplotlib colormap, nor a matplotlib color, nor exclusively made up from valid matplotlib one-letter color-codes 'bcgkmrwy'"%colors)
-            return {key:colors for key in key_list}
-
-    if isinstance(colors, list):
-        assert len(colors) >= len(key_list)
-        colors = {key:val for key, val in zip(key_list, colors)}
-
-    return colors
-
-def _try_colormap_string(colors, N):
-    r"""
-    This method does two things:
-    * wrap the Exception thrown by matplotlib in a more informative error
-    * cycle through color values in cases where the input :obj:`N` is larger than the colormaps's .N colors
-
-    Parameters
-    ----------
-    colors : string
-        Name of the matplotlib colormap, check
-        here for more info:
-        https://matplotlib.org/stable/tutorials/colors/colormaps.html
-    N : int
-        Number of colors
-
-    Returns
-    -------
-    colors : list
-        Len is :obj:`N`, each item is a np.ndarray of len(3)
-    """
-    try:
-        cmap = getattr(_cm, colors)
-    except AttributeError as e:
-        print(
-            "Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html"%colors)
-        raise e
-    if cmap.N >= N:
-        if cmap.N > 20:
-            interp = _np.linspace(0, 1, N)
-        else:
-            # These are the qualititave colormaps you  don't want to interpolate
-            interp = _np.arange(N)
-        return cmap(interp)[:, :-1].tolist()
-    else:
-        return _np.vstack([cmap(_np.arange(cmap.N)) for ii in range(_np.ceil(N/cmap.N).astype(int))])[:N,:-1].tolist()
-
-
-def _is_colormapstring(istr):
-    try:
-        getattr(_cm, istr)
-        return True
-    except:
-        return False
-
-"""
-def add_hover_ctc_labels(iax, ctc_mat,
-                         label_dict_by_index=None,
-                         fmt='%3.1f',
-                         hover=True,
-                         cutoff=.01,
-                        ):
-    import mplcursors as _mplc
-    assert ctc_mat.shape[0] == ctc_mat.shape[1]
-
-    scatter_idxs_pairs = _np.argwhere(_np.abs(ctc_mat) > cutoff).squeeze()
-    print("Adding %u labels" % len(scatter_idxs_pairs))
-    if label_dict_by_index is None:
-        fmt = '%s-%s' + '\n%s' % fmt
-        labels = [fmt % (ii, jj, ctc_mat[ii, jj]) for ii, jj in scatter_idxs_pairs]
-    else:
-        labels = [label_dict_by_index[ii][jj] for ii, jj in scatter_idxs_pairs]
-
-    artists = iax.scatter(*scatter_idxs_pairs.T,
-                          s=.1,
-                          # c="green"
-                          alpha=0
-                          )
-
-    cursor = _mplc.cursor(
-        pickables=artists,
-        hover=hover,
-    )
-    cursor.connect("add", lambda sel: sel.annotation.set_text(labels[sel.target.index]))
-"""
 
 def plot_unified_freq_dicts(freqs,
                             colordict=None,
@@ -833,6 +478,376 @@ def plot_unified_freq_dicts(freqs,
 
     _rcParams["font.size"] = _fontsize
     return myfig, _plt.gca(),  out_dict
+
+@_mpldocstring.Substitution(substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(plot_unified_freq_dicts))
+def compare_groups_of_contacts(groups,
+                               colors=None,
+                               mutations_dict={},
+                               width=.2,
+                               ax=None,
+                               figsize=(10, 5),
+                               fontsize=16,
+                               anchor=None,
+                               plot_singles=False,
+                               exclude=None,
+                               ctc_cutoff_Ang=None,
+                               AA_format='short',
+                               defrag='@',
+                               per_residue=False,
+                               title='comparison',
+                               distro=False,
+                               interface=False,
+                               **kwargs_plot_unified_freq_dicts,
+                               ):
+    r"""
+    Compare contact groups across different systems using different plots and strategies
+
+    Parameters
+    ----------
+    groups : iterable (list or dict)
+        The contact groups. If dict, the keys will be used as names
+        for the contact groups, e.g. "WT", "MUT" etc, if list the keys
+        will be auto-generated.
+        The values can be:
+          * :obj:`ContactGroup` objects
+          * dictionaries where the keys are residue-pairs
+          (one letter-codes, no fragment info, as in :obj:`ContactGroup.ctc_labels_short`)
+          and the values are contact frequencies [0,1]
+          * ascii-files with the contact the frequencies in the first
+            column and labels in the second and/or third column,
+            see :obj:`~mdciao.contacts.ContactGroup.frequency_str_ASCII_file`
+            and :obj:`~mdciao.utils.str_and_dict.freq_ascii2dict`
+          * .xlsx files with the header in the second row,
+            containing at least the column-names "label" and "freqs"
+
+        Note
+        ----
+        If a :obj:`ContactGroup` is passed, then a :obj:`ctc_cutoff_Ang`
+        needs to be passed along, otherwise frequencies cannot be computed
+        on-the-fly
+    colors : iterable (list or dict), or str, default is None
+        * If list, the colors will be assigned in the same
+          order of :obj:`groups`.
+        * If dict, has to have the
+          same keys as :obj:`groups`.
+        * If str, it has to be a case-sensitve colormap-name of matplotlib:
+          https://matplotlib.org/stable/tutorials/colors/colormaps.html
+        * If None, the 'tab10' colormap (tableau) is chosen
+    mutations_dict : dictionary, default is {}
+        A mutation dictionary that contains allows to plot together
+        residues that would otherwise be identified as different
+        contacts. If there were two mutations, e.g A30K and D35A
+        the mutation dictionary will be {"A30":"K30", "D35":"A35"}.
+        You can also use this parameter for correcting indexing
+        offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}
+    width : float, default is .2
+        The witdth of the bars
+    ax : :obj:`~matplotlib.axes.Axes`
+        Axis to draw on
+    figsize : tuple, default is (10,5)
+        The figure size in inches, in case it is
+        instantiated automatically by not passing an :obj:`ax`
+    fontsize : float, default is 16
+        The fontsize to use
+    anchor : str, default is None
+        This string will be deleted from the contact labels,
+        leaving only the partner-residue to identify the contact.
+        The deletion takes place after the :obj:`mutations_dict`
+        has been applied. The final anchor label will be that
+        of the deleted keys (allows for keeping e.g. pre-existing
+        consensus nomenclature).
+        No consistency-checks are carried out, i.e. use
+        at your own risk
+    plot_singles : bool, default is False
+        Produce one extra figure with as many subplots as systems
+        in :obj:`dictionary_of_groups`, where each system is
+        plotted separately. The labels used will have been already
+        "mutated" using :obj:`mutations_dict` and "anchored" using
+        :obj:`anchor`. This plot is temporary and cannot be saved
+    exclude : list, default is None
+        keys containing these strings will be excluded.
+        NOTE: This is not implemented yet, will raise an error
+    ctc_cutoff_Ang : float, default is None
+        Needed value to compute frequencies on-the-fly
+        if the input was using :obj:`ContactGroup` objects
+    AA_format : str, default is "short"
+        see :obj:`~mdciao.contacts.ContactPair.frequency_dict` for more info
+    defrag : str, default is "@"
+        see :obj:`~mdciao.utils.str_and_dict.unify_freq_dicts` for more info
+    per_residue : bool, default is False
+        Unify dictionaries by residue and not by pairs.
+        If True, :obj:`remove_identities` is set to False
+        automatically when calling :obj:`plot_unified_freq_dicts`
+    title : str, default is "comparison"
+        The title for the plot
+    distro : bool, default is False
+        Instead of plotting contact frequencies,
+        plot contact distributions
+    interface : bool, default is False
+        Asks if per_residue=True and
+        then sorts the residues into
+        interface fragments. Will fail
+        if the passed :obj:`groups`
+        don't have self.is_interface==True
+    kwargs_plot_unified_freq_dicts : dict
+        Optional arguments for
+        :obj:`~mdciao.plots.plot_unified_freq_dicts`.
+        Some of them will be overwritten, e.g.
+        if `interface` or `per_residue` are True,
+        then `remove_identities` or `sort_by`
+        get set internally for consistency.
+        The optional parameters of are:
+
+    Other Parameters
+    ----------------
+    %(substitute_kwargs)s
+
+
+    Returns
+    -------
+    myfig : :obj:`~matplotlib.figure.Figure`
+        Figure with the comparison plot
+    freqs : dictionary
+        Unified frequency dictionaries,
+        including mutations and anchor
+    plotted_freqs : dictionary
+        Like `freqs` but sorted and purged
+        according to the user-defined input options,
+        s.t. it represents the plotted values
+    """
+    if isinstance(groups, dict):
+        pass
+    else:
+        _groups = {}
+        for ii, item in enumerate(groups):
+            if isinstance(item,str):
+                key = _path.splitext(_path.basename(item))[0]
+            elif isinstance(item,dict):
+                key = "dict"
+            else:
+                key = "mdcCG"
+            _groups["%s (%u)"%(key,ii)]=item
+        groups = _groups
+
+    if interface:
+        assert all([igroup.is_interface for igroup in groups.values()])
+
+    freqs = {key: {} for key in groups.keys()}
+    colors = color_dict_guesser(colors, freqs.keys())
+
+    for key, ifile in groups.items():
+        if isinstance(ifile, str):
+            idict = _mdcu.str_and_dict.freq_file2dict(ifile)
+        elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
+            if distro:
+                idict = ifile.distribution_dicts(AA_format=AA_format,
+                                                 split_label=False,
+                                                 bins=_np.max([20, (_np.sqrt(ifile.n_frames_total) / 2).round().astype(int)]))
+            else:
+                assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a `ctc_cutoff_Ang` parameter"
+                if not interface:
+                    idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                              AA_format=AA_format,
+                                              split_label=False)
+                else:
+                    idict = ifile.frequency_sum_per_residue_names(ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                                  shorten_AAs=[True if AA_format=="short" else False][0],
+                                                                  list_by_interface=True)
+                    idict[0].update(idict[1])
+                    idict=idict[0]
+                    kwargs_plot_unified_freq_dicts["sort_by"]="keep"
+        else:
+            idict = {key:val for key, val in ifile.items()}
+
+        idict = {_mdcu.str_and_dict.replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
+
+        if anchor is not None:
+            idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
+            if len(_np.unique(deleted_half_keys))>1:
+                raise ValueError("The anchor patterns differ by key, this is strange: %s"%deleted_half_keys)
+            else:
+                anchor=_mdcu.str_and_dict.defrag_key(deleted_half_keys[0],defrag=defrag,sep=" ")
+        freqs[key] = idict
+
+    if distro:
+        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, is_freq=False)
+        myfig, __ = plot_unified_distro_dicts(freqs, colors=colors,
+                                              ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                              fontsize=fontsize,
+                                              **kwargs_plot_unified_freq_dicts)
+        if anchor is not None:
+            title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
+        myfig.suptitle(title, y=1, va="bottom", fontsize=_rcParams["font.size"]*2)
+        plotted_freqs = None
+    else:
+        if plot_singles:
+            nrows = len(freqs)
+            myfig, myax = _plt.subplots(nrows, 1,
+                                        sharey=True,
+                                        sharex=True,
+                                        figsize=(figsize[0], figsize[1]*nrows))
+            for iax, (key, ifreq) in zip(myax, freqs.items()):
+                plot_unified_freq_dicts({key: ifreq},
+                                        colordict=colors,
+                                        ax=iax, width=width,
+                                        fontsize=fontsize,
+                                        **kwargs_plot_unified_freq_dicts)
+                if anchor is not None:
+                    _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
+                                    "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
+                                    ha="right", va="bottom")
+
+            myfig.tight_layout()
+            # _plt.show()
+        freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude,
+                                            per_residue=[per_residue if not interface else False][0],
+                                            defrag=defrag)
+        if per_residue or interface:
+            kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
+            kwargs_plot_unified_freq_dicts["remove_identities"] = False
+
+        if ctc_cutoff_Ang is not None:
+            title = title+'@%2.1f AA'%ctc_cutoff_Ang
+        if anchor is not None:
+            title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
+
+        myfig, iax, plotted_freqs = plot_unified_freq_dicts(freqs,
+                                                            colordict=colors,
+                                                            ax=ax,
+                                                            width=width,
+                                                            fontsize=fontsize,
+                                                            figsize=figsize,
+                                                            title=title,
+                                                            half_sigma=per_residue,
+                                                            **kwargs_plot_unified_freq_dicts)
+
+        _plt.gcf().tight_layout()
+        #_plt.show()
+
+    return myfig, freqs, plotted_freqs
+
+def color_dict_guesser(colors, keys):
+    r"""
+    Helper function to construct a color dictionary from user input
+
+    Parameters
+    ----------
+    colors : None, str, list or dict
+        * None: use the first :obj:`n` "tab10" colors, where
+          n is determined by :obj:`keys`
+        * str: name of the matplotlib colormap to interpolate to :obj:`n` colors.
+          Can be qualitative like "Set2" or "tab20" or
+          quantitative like "viridis" or "Reds". For more info see:
+          https://matplotlib.org/stable/tutorials/colors/colormaps.html
+        * list: list of colors (["r","g","b"])
+          Turn this list into a dictionary keyed with :obj:`keys`
+    keys : int or list
+        If int, create a list of keys = _np.arange(keys).
+        If list, use that list directly as keys for the
+        color dictionary that will be returned
+
+    Returns
+    -------
+    colors : dict
+    """
+    if isinstance(keys, int):
+        assert keys>0, ("If integer,'keys' has to be > 0 ")
+        key_list = _np.arange(keys)
+    else:
+        key_list = keys
+
+    if isinstance(colors,dict):
+        assert all([key in colors.keys() for key in key_list])
+    elif colors is None:
+        return {key: val for key, val in zip(key_list, _colorstring.split(","))}
+    elif isinstance(colors,str):
+        if _is_colormapstring(colors):
+            return {key: color for key, color in zip(key_list,_try_colormap_string(colors,len(key_list)))}
+        else:
+            assert any([_is_color_like(colors), all([_is_color_like(char) for char in colors])]),\
+                ValueError("'%s' is neither a matplotlib colormap, nor a matplotlib color, nor exclusively made up from valid matplotlib one-letter color-codes 'bcgkmrwy'"%colors)
+            return {key:colors for key in key_list}
+
+    if isinstance(colors, list):
+        assert len(colors) >= len(key_list)
+        colors = {key:val for key, val in zip(key_list, colors)}
+
+    return colors
+
+def _try_colormap_string(colors, N):
+    r"""
+    This method does two things:
+    * wrap the Exception thrown by matplotlib in a more informative error
+    * cycle through color values in cases where the input :obj:`N` is larger than the colormaps's .N colors
+
+    Parameters
+    ----------
+    colors : string
+        Name of the matplotlib colormap, check
+        here for more info:
+        https://matplotlib.org/stable/tutorials/colors/colormaps.html
+    N : int
+        Number of colors
+
+    Returns
+    -------
+    colors : list
+        Len is :obj:`N`, each item is a np.ndarray of len(3)
+    """
+    try:
+        cmap = getattr(_cm, colors)
+    except AttributeError as e:
+        print(
+            "Your input colors string '%s' is not a matplotlib colormap.\n Check https://matplotlib.org/stable/tutorials/colors/colormaps.html"%colors)
+        raise e
+    if cmap.N >= N:
+        if cmap.N > 20:
+            interp = _np.linspace(0, 1, N)
+        else:
+            # These are the qualititave colormaps you  don't want to interpolate
+            interp = _np.arange(N)
+        return cmap(interp)[:, :-1].tolist()
+    else:
+        return _np.vstack([cmap(_np.arange(cmap.N)) for ii in range(_np.ceil(N/cmap.N).astype(int))])[:N,:-1].tolist()
+
+
+def _is_colormapstring(istr):
+    try:
+        getattr(_cm, istr)
+        return True
+    except:
+        return False
+
+"""
+def add_hover_ctc_labels(iax, ctc_mat,
+                         label_dict_by_index=None,
+                         fmt='%3.1f',
+                         hover=True,
+                         cutoff=.01,
+                        ):
+    import mplcursors as _mplc
+    assert ctc_mat.shape[0] == ctc_mat.shape[1]
+
+    scatter_idxs_pairs = _np.argwhere(_np.abs(ctc_mat) > cutoff).squeeze()
+    print("Adding %u labels" % len(scatter_idxs_pairs))
+    if label_dict_by_index is None:
+        fmt = '%s-%s' + '\n%s' % fmt
+        labels = [fmt % (ii, jj, ctc_mat[ii, jj]) for ii, jj in scatter_idxs_pairs]
+    else:
+        labels = [label_dict_by_index[ii][jj] for ii, jj in scatter_idxs_pairs]
+
+    artists = iax.scatter(*scatter_idxs_pairs.T,
+                          s=.1,
+                          # c="green"
+                          alpha=0
+                          )
+
+    cursor = _mplc.cursor(
+        pickables=artists,
+        hover=hover,
+    )
+    cursor.connect("add", lambda sel: sel.annotation.set_text(labels[sel.target.index]))
+"""
 
 def _add_grey_banded_bg(ax, n):
     r"""
