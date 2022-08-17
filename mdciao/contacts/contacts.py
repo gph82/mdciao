@@ -3645,6 +3645,8 @@ class ContactGroup(object):
         return _delta_freq_pairs(    self.frequency_per_contact(ctc_cutoff_Ang),   self.res_idxs_pairs,
                                  otherCG.frequency_per_contact(ctc_cutoff_Ang), otherCG.res_idxs_pairs)
 
+    @_mpldocstring.Substitution(
+        substitute_kwargs=_mdcu.str_and_dict.kwargs_docstring(ContactPair.relative_frequency_of_formed_atom_pairs_overall_trajs))
     def relative_frequency_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang, switch_off_Ang=None, **kwargs) -> list:
         r"""
         Relative frequencies interaction-type (by atom-type) for all contact-pairs in the ContactGroup
@@ -3666,19 +3668,13 @@ class ContactGroup(object):
             Cutoff in Angstrom. The comparison operator is "<="
         switch_off_Ang : float, default is None
             TODO
+        kwargs : dict
+            Optional parameters for :obj:`mdciao.ContactPair.relative_frequency_of_formed_atom_pairs_overall_trajs`,
+            which are listed below.
 
         Other Parameters
         ----------------
-        keep_resname: bool, default is False
-            Keep the atom's residue name in its descriptor. Only make
-            sense if consolidate_by_atom_type is False
-        aggregate_by_atomtype: bool, default is True
-            Aggregate the frequencies of the contact by tye atom types involved.
-            Atom types are backbone, sidechain or other (BB,SC, X)
-        min_freq: float, default is .05
-            Do not report relative frequencies below this cutoff, e.g.
-            "BB-BB":.9, "BB-SC":0.03, "SC-SC":0.03, "SC-BB":0.03
-            gets reported as "BB-BB":.9
+        %(substitute_kwargs)s
 
         Returns
         -------
