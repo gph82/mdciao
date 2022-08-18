@@ -594,7 +594,7 @@ def Interface_B2AR_Gas(**kwargs):
         b.close()
         raise e
 
-def KLIFSLabeler_P31751():
+def KLIFSLabeler_P31751() -> _LabelerKLIFS:
     r"""Build an :obj:`~mdciao.nomenclature.LabelerKLIFS` with the KLIFS_P31751.xlsx and 3E8D.pdb.gz.pdb files shipped with mdciao"""
     with _TDir(suffix="_mdciao_example_KLIFS") as t:
         for fn in [filenames.KLIFS_P31751_xlsx, filenames.pdb_3E8D]:

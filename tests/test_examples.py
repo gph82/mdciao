@@ -37,6 +37,12 @@ class Test_Interface_B2AR_Gas(unittest.TestCase):
         with self.assertRaises(Exception):
             CG = examples.Interface_B2AR_Gas(bogus_arg="bogus")
 
+class Test_KLIFSLabeler_P31751(unittest.TestCase):
+    def test_works(self):
+        KLIFS = examples.KLIFSLabeler_P31751()
+        assert KLIFS._nomenclature_key == "KLIFS"
+
+
 class Test_Zip(unittest.TestCase):
 
     def test_works(self):

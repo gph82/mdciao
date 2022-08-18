@@ -91,6 +91,8 @@ latex_elements = {
 
 }
 
+nbsphinx_execute = 'never'
+
 html_last_updated_fmt=""
 try:
     from importlib import metadata
