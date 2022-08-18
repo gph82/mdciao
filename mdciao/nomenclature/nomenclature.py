@@ -1472,7 +1472,9 @@ class AlignerConsensus(object):
             else:
                 self._residxs = self._residxs.merge(idf, how="outer")
         # self._residxs = self._residxs.replace({_np.nan:None})
-        self._residxs = self._residxs.sort_values("consensus")  # This sorts produces bogus order in KLIFS, GCN #TODO
+        sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)
+        assert len(sorted_keys)==len(self._residxs["consensus"]),  (len(sorted_keys), len(self._residxs["consensus"]))
+        self._residxs = self._residxs.sort_values("consensus", key=lambda col: col.map(lambda x: sorted_keys.index(x)))
         self._residxs = self._residxs.reset_index(drop=True)
 
         self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
