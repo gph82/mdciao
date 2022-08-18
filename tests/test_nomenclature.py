@@ -930,6 +930,26 @@ class Test_sort_consensus_labels(unittest.TestCase):
         _np.testing.assert_array_equal(['αC.25', 'αD.55', 'a.l.85'],
                                        sorted)
 
+    def test_sort_all_consensus_labels(self):
+        sorted = nomenclature._sort_all_consensus_labels(self.tosort, append_diffset=False, order = ["CGN","KLIFS", "GPCR"])
+        _np.testing.assert_array_equal(
+            [
+             "G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20",
+             'αC.25', 'αD.55', 'a.l.85', 
+             "2.50", "3.50", "H8.1", "H8.10"],
+            sorted)
+
+    def test_sort_all_consensus_labels_append(self):
+        sorted = nomenclature._sort_all_consensus_labels(self.tosort, append_diffset=True,
+                                                         order=["CGN", "KLIFS"])
+        _np.testing.assert_array_equal(
+            [
+                "G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20",
+                'αC.25', 'αD.55', 'a.l.85',
+                "H8.10", "V34", "H8.1", "3.50", "2.50"
+                 ],
+            sorted)
+
 class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 
     def setUp(self):
