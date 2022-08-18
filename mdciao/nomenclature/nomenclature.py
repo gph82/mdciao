@@ -2180,6 +2180,49 @@ def _conslabel2fraglabel(labelres, defrag="@", prefix_GPCR=True):
         label = _GPCR_num2lett[label]
     return label
 
+def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN","KLIFS"], ):
+    r"""
+    Sort a mix of consensus labels GPCR, CGN, KLIFS
+
+    Parameters
+    ----------
+    labels : list
+        List of consensus labels. If
+        it contains other labels like
+        "None", None, "bogus", these
+        labels will be put at the
+        end of `sorted_labels` unless
+        explicitly deactivated with
+        `append_diffset`.
+        append_diffset : bool, default is True
+        Append the non-consensus labels
+        at the end of `sorted_labels`
+    order : list
+        The order in which consensus labels
+        will be sorted. Keys missing here
+        won't be sorted in the output, i.e.
+        if order=["GPCR","KLIFS"] then
+        all CGN labels (if any) will either
+        be at the end of the list (`append_diffset` = True)
+        or entirely missing (`append_diffset` = False)
+
+    Returns
+    -------
+    sorted_labels : list
+        Sorted consensus labels
+    """
+
+    lambdas = {"GPCR":  lambda labels: _sort_GPCR_consensus_labels(labels, append_diffset=False),
+               "CGN":   lambda labels: _sort_CGN_consensus_labels(labels, append_diffset=False),
+               "KLIFS": lambda labels: _sort_KLIFS_consensus_labels(labels, append_diffset=False)}
+
+    sorted_labels = []
+    for key in order:
+        sorted_labels += lambdas[key](labels)
+    if append_diffset:
+        sorted_labels += [lab for lab in labels if lab not in sorted_labels]
+
+    return sorted_labels
 
 _GPCR_num2lett = {
     "1": "TM1 ",
