@@ -27,6 +27,7 @@ from mdciao import __path__ as mdc_path
 from subprocess import run as _run
 from zipfile import ZipFile as _ZF
 from mdciao.filenames import FileNames as _FN
+import mdtraj as _md
 
 filenames = _FN()
 mdc_path = _path.split(mdc_path[0])[0]
@@ -44,8 +45,9 @@ from requests import get as _rget
 from tqdm.auto import tqdm as _tqdma
 import contextlib as _contextlib
 from mdciao.cli import residue_neighborhoods as _residue_neighborhoods, interface as _interface
-from mdciao.nomenclature import LabelerGPCR as _LabelerGPCR, LabelerCGN as _LabelerCGN, LabelerKLIFS as _LabelerKLIFS
+from mdciao.nomenclature import LabelerGPCR as _LabelerGPCR, LabelerCGN as _LabelerCGN, LabelerKLIFS as _LabelerKLIFS, AlignerConsensus as _AlignerConsensus
 from tempfile import TemporaryDirectory as _TDir, TemporaryFile as _TF
+from mdciao.fragments import get_fragments as _get_fragments
 import io as _io
 @_contextlib.contextmanager
 def remember_cwd():
@@ -603,3 +605,18 @@ def KLIFSLabeler_P31751() -> _LabelerKLIFS:
         with remember_cwd():
             _chdir(t)
             return _LabelerKLIFS("P31751", try_web_lookup=False)
+
+def AlignerConsensus_B2AR_HUMAN_vs_OPSD_BOVIN() -> _AlignerConsensus:
+    r""" Build an :obj:`mdciao.nomenclature.AlignerConsensus` for the B2AR in 3SN6 and the OPS in 3CAP"""
+    g3SN6 = _md.load(filenames.pdb_3SN6)
+    g3CAP = _md.load(filenames.pdb_3CAP)
+
+    GPCR_b2ar = GPCRLabeler_ardb2_human()
+    GPCR_ops = _LabelerGPCR("OPSD_BOVIN")
+
+    maps = {"B2AR": GPCR_b2ar.top2labels(g3SN6.top),
+            "OPS": GPCR_ops.top2labels(g3CAP.top)}
+
+    return _AlignerConsensus({"B2AR": g3SN6.top,
+                              "OPS": g3CAP.top},
+                             maps=maps)
