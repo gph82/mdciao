@@ -181,7 +181,7 @@ def plot_unified_freq_dicts(freqs,
         the figure size if :obj:`figsize` is None,
         else has no effect
     fontsize : int, default is 16
-        Will be used in :obj:`matplotlib._rcParams["font.size"]
+        Will be used in :obj:`matplotlib._rcParams["font.size"]`
         # TODO be less invasive
     sort_by : str or list of strings, default is "mean"
         If str, the property by which to sort the contacts.
