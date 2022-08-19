@@ -25,6 +25,7 @@ import numpy as _np
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
+from mdciao.utils.str_and_dict import _kwargs_subs
 
 from pandas import \
     read_json as _read_json, \
@@ -854,11 +855,12 @@ class LabelerConsensus(object):
 
         return top2self, self2top
 
+    @_kwargs_subs(aligntop)
     def top2labels(self, top,
                    allow_nonmatch=True,
                    autofill_consensus=True,
                    min_hit_rate=.5,
-                   **aligntop_kwargs):
+                   **aligntop_kwargs) -> list:
 
         r""" Align the sequence of :obj:`top` to the sequence used
         to initialize this :obj:`LabelerConsensus` and return a
@@ -884,7 +886,7 @@ class LabelerConsensus(object):
          * reconstruct what the label could be using a heuristic
            to "autofill" the consensus labels, using
            :obj:`autofill_consensus`.
-           See :obj:`_fill_consensus_gaps` for more info
+           See :obj:`_fill_consensus_gaps` for more info.
 
         Note
         ----
@@ -902,7 +904,7 @@ class LabelerConsensus(object):
             Even if there is a consensus mismatch with the sequence of the input
             :obj:`AA2conlab_dict`, try to relabel automagically, s.t.
              * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
-             will be grouped relabeled as
+            will be relabeled as
              * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
         min_hit_rate : float, default is .5
             With big topologies and many fragments,
@@ -912,10 +914,19 @@ class LabelerConsensus(object):
             takes place to populate :obj:`restrict_to_residxs`
             with indices of those the fragments
             (:obj:`mdciao.fragments.get_fragments` defaults)
-            with more than 50% alignment in the pre-alignment.
+            with more than 50%% alignment in the pre-alignment.
+        aligntop_kwargs : dict
+            Optional parameters for :obj:`~mdciao.nomenclature.LabelerConsensus.aligntop`,
+            which are listed below
+
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
+
         Returns
         -------
-        map : list of len = top.n_residues with the consensus labels
+        map : list
+            List of len = top.n_residues with the consensus labels
         """
         self.aligntop(top, min_hit_rate=min_hit_rate, **aligntop_kwargs)
         out_list = _alignment_df2_conslist(self.most_recent_alignment, allow_nonmatch=allow_nonmatch)
