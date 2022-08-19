@@ -854,71 +854,6 @@ class LabelerConsensus(object):
 
         return top2self, self2top
 
-    def conlab2residx(self, top,
-                      map=None,
-                      **top2labels_kwargs,
-                      ):
-        r"""
-        Returns a dictionary keyed by consensus labels and valued
-        by residue indices of the input topology in :obj:`top`.
-
-        The default behaviour is to internally align :obj:`top`
-        with the object's available consensus dictionary
-        on the fly using :obj:`self.top2labels`. See the docs
-        there for **top2labels_kwargs, in particular
-        restrict_to_residxs, keep_consensus, and min_hit_rate
-
-        Note
-        ----
-        This method is able to work with a new topology every
-        time, performing a sequence alignment every call.
-        The intention is to instantiate a
-        :obj:`LabelerConsensus` just one time and use it with as
-        many topologies as you like without changing any attribute
-        of :obj:`self`.
-
-        HOWEVER, if you know what you are doing, you can provide a
-        list of consensus labels yourself using :obj:`map`. Then,
-        this method is nothing but a table lookup (almost)
-
-        Warning
-        -------
-        No checks are performed to see if the input of :obj:`map`
-        actually matches the residues of :obj:`top` in any way,
-        so that the output can be rubbish and go unnoticed.
-
-        Parameters
-        ----------
-        top : :obj:`~mdtraj.Topology`
-        map : list, default is None
-            A pre-computed residx2consensuslabel map, i.e. the
-            output of a previous, external call to :obj:`_top2consensus_map`
-            If it contains duplicates, it is a malformed list.
-            See the note above for more info
-
-        Returns
-        -------
-        dict : keyed by consensus labels and valued with residue idxs
-        """
-        if map is None:
-            map = self.top2labels(top,
-                                  **top2labels_kwargs,
-                                  )
-        out_dict = {}
-        for ii, imap in enumerate(map):
-            if imap is not None and str(imap).lower() != "none":
-                if imap in out_dict.keys():
-                    raise ValueError("Entries %u and %u of the map, "
-                                     "i.e. residues %s and %s of the input topology "
-                                     "both have the same label %s.\n"
-                                     "This method cannot work with a map like this!" % (out_dict[imap], ii,
-                                                                                        top.residue(out_dict[imap]),
-                                                                                        top.residue(ii),
-                                                                                        imap))
-                else:
-                    out_dict[imap] = ii
-        return out_dict
-
     def top2labels(self, top,
                    allow_nonmatch=True,
                    autofill_consensus=True,
@@ -992,6 +927,71 @@ class LabelerConsensus(object):
 
         self._last_top2labels = out_list
         return out_list
+
+    def conlab2residx(self, top,
+                      map=None,
+                      **top2labels_kwargs,
+                      ):
+        r"""
+        Returns a dictionary keyed by consensus labels and valued
+        by residue indices of the input topology in :obj:`top`.
+
+        The default behaviour is to internally align :obj:`top`
+        with the object's available consensus dictionary
+        on the fly using :obj:`self.top2labels`. See the docs
+        there for **top2labels_kwargs, in particular
+        restrict_to_residxs, keep_consensus, and min_hit_rate
+
+        Note
+        ----
+        This method is able to work with a new topology every
+        time, performing a sequence alignment every call.
+        The intention is to instantiate a
+        :obj:`LabelerConsensus` just one time and use it with as
+        many topologies as you like without changing any attribute
+        of :obj:`self`.
+
+        HOWEVER, if you know what you are doing, you can provide a
+        list of consensus labels yourself using :obj:`map`. Then,
+        this method is nothing but a table lookup (almost)
+
+        Warning
+        -------
+        No checks are performed to see if the input of :obj:`map`
+        actually matches the residues of :obj:`top` in any way,
+        so that the output can be rubbish and go unnoticed.
+
+        Parameters
+        ----------
+        top : :obj:`~mdtraj.Topology`
+        map : list, default is None
+            A pre-computed residx2consensuslabel map, i.e. the
+            output of a previous, external call to :obj:`_top2consensus_map`
+            If it contains duplicates, it is a malformed list.
+            See the note above for more info
+
+        Returns
+        -------
+        dict : keyed by consensus labels and valued with residue idxs
+        """
+        if map is None:
+            map = self.top2labels(top,
+                                  **top2labels_kwargs,
+                                  )
+        out_dict = {}
+        for ii, imap in enumerate(map):
+            if imap is not None and str(imap).lower() != "none":
+                if imap in out_dict.keys():
+                    raise ValueError("Entries %u and %u of the map, "
+                                     "i.e. residues %s and %s of the input topology "
+                                     "both have the same label %s.\n"
+                                     "This method cannot work with a map like this!" % (out_dict[imap], ii,
+                                                                                        top.residue(out_dict[imap]),
+                                                                                        top.residue(ii),
+                                                                                        imap))
+                else:
+                    out_dict[imap] = ii
+        return out_dict
 
     def top2frags(self, top,
                   fragments=None,
