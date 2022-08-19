@@ -939,19 +939,20 @@ class LabelerConsensus(object):
         self._last_top2labels = out_list
         return out_list
 
+    @_kwargs_subs(top2labels)
     def conlab2residx(self, top,
                       map=None,
                       **top2labels_kwargs,
                       ):
         r"""
         Returns a dictionary keyed by consensus labels and valued
-        by residue indices of the input topology in :obj:`top`.
+        by residue indices of the input topology in `top`.
 
-        The default behaviour is to internally align :obj:`top`
+        The default behaviour is to internally align `top`
         with the object's available consensus dictionary
-        on the fly using :obj:`self.top2labels`. See the docs
-        there for **top2labels_kwargs, in particular
-        restrict_to_residxs, keep_consensus, and min_hit_rate
+        on the fly using :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`.
+        See the docs there for **top2labels_kwargs, in particular
+        `restrict_to_residxs`, `keep_consensus`, and `min_hit_rate
 
         Note
         ----
@@ -963,13 +964,13 @@ class LabelerConsensus(object):
         of :obj:`self`.
 
         HOWEVER, if you know what you are doing, you can provide a
-        list of consensus labels yourself using :obj:`map`. Then,
+        list of consensus labels yourself using `map`. Then,
         this method is nothing but a table lookup (almost)
 
         Warning
         -------
-        No checks are performed to see if the input of :obj:`map`
-        actually matches the residues of :obj:`top` in any way,
+        No checks are performed to see if the input of `map`
+        actually matches the residues of `top` in any way,
         so that the output can be rubbish and go unnoticed.
 
         Parameters
@@ -980,6 +981,14 @@ class LabelerConsensus(object):
             output of a previous, external call to :obj:`_top2consensus_map`
             If it contains duplicates, it is a malformed list.
             See the note above for more info
+        top2labels_kwargs : dict
+            Optional parameters for
+            :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`,
+            which are listed below
+
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
 
         Returns
         -------
