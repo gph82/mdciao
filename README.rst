@@ -69,7 +69,6 @@ This is an informal list of known issues and TODOs:
    If a given cutoff makes a ContactPair have freq=0, should the CP be kept in the CG, simply not reported? There's now a branch for that: https://github.com/gph82/mdciao/tree/buffer_neighborhood
  * overhaul the "printing" system with proper logging and warnings (perhaps use `loguru <https://github.com/Delgan/loguru>`_)
  * progressbar not very informative for one chunked trajectory or parallel runs
- * Building the docs with sphinx v>2.4.4 doesn't autogen a class' method's linked doc
  * the affiliation of a residue to a fragment is done as "res@frag" on the string output and res^frag in figures, this implementation is simply using replace("@","^"), could be better
  * parallel execution with memory mdtraj.Trajectory objects should be better
  * harmonize documentation API cli methods (mdciao.cli) and the CLI scripts (mdc_*)
@@ -84,7 +83,7 @@ This is an informal list of known issues and TODOs:
  * There's many other TODOs spread throughout the code
  * The way uniprot or PDB codes are transformed to relative and/or absolute filenames to check if they exist locally should be unified across all lookup functions, like GPCR_finder, PDB_finder and/or the different LabelerConsensus objects, possibly by dropping optargs like 'local_path' or 'format'.
  * Some closely related methods could/should be integrated into each other by generalising a bit, but sometimes the generalisation is unnecessarily complicated to code (or I simply forget that the closely related method already exists) and re-code (and test!) for a slightly different scenario (though I try to hard to avoid it). E.g. there's several methods for computing, reporting, and saving contact frequencies and contact-matrices, or different methods to assign residue idxs to fragments, depending on particual the goal of the assignment, like find_parent_list, in_what_(N)_fragments, or assign_fragments. Still, I opted for more smaller methods, which are individually easier to maintain, but that could simply be a `questionable choice <https://en.wikipedia.org/wiki/Technical_debt>`_.
- * The 'dictionary unifying' methods could be preplaced with pandas.DataFrame.merge/join
+ * The 'dictionary unifying' methods could be replaced with pandas.DataFrame.merge/join
 
 .. |Pip Package| image::
    https://badge.fury.io/py/mdciao.svg
