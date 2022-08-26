@@ -534,6 +534,8 @@ class LabelerConsensus(object):
         self._fragment_names = list(self.fragments.keys())
         self._fragments_as_conlabs = {key: [self.AA2conlab[AA] for AA in val]
                                       for key, val in self.fragments.items()}
+        self._fragments_as_resSeqs = {key : [_mdcu.residue_and_atom.int_from_AA_code(ival) for ival in val]
+                                      for key, val in self.fragments.items()}
 
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
         self._conlab2idx = {lab: idx for idx, lab in enumerate(self.idx2conlab) if lab is not None}
@@ -615,6 +617,17 @@ class LabelerConsensus(object):
         -------
         """
         return self._fragments_as_conlabs
+
+    @property
+    def fragments_as_resSeqs(self) -> dict:
+        r""" Dictionary of fragments keyed with fragment names
+        and valued with the residue sequence indices (resSeq) in that fragment
+
+        Returns
+        -------
+        fragments_as_resSeqs : dict
+        """
+        return self._fragments_as_resSeqs
 
     @property
     def dataframe(self) -> _DataFrame:
