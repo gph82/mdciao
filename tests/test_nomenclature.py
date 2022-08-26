@@ -346,6 +346,13 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         self.assertSequenceEqual(list(self.cgn_local.fragments_as_conlabs.keys()),
                                  nomenclature._CGN_fragments)
 
+    def test_correct_fragments_as_resSeq(self):
+            self.assertIsInstance(self.cgn_local.fragments_as_resSeqs, dict)
+            assert all([len(ii) > 0 for ii in self.cgn_local.fragments_as_resSeqs.values()])
+            self.assertEqual(self.cgn_local.fragments_as_resSeqs["G.H5"][-1], 394)
+            self.assertListEqual(self.cgn_local.fragments_as_resSeqs["G.s6h5"], [364, 365, 366, 367, 368]) #TCAT
+            self.assertSequenceEqual(list(self.cgn_local.fragments_as_resSeqs.keys()),
+                                     nomenclature._CGN_fragments)
     def test_correct_fragment_names(self):
         self.assertSequenceEqual(self.cgn_local.fragment_names,
                                  list(self.cgn_local.fragments.keys()))
