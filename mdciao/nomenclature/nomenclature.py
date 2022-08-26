@@ -619,6 +619,17 @@ class LabelerConsensus(object):
         return self._fragments_as_conlabs
 
     @property
+    def fragments_as_resSeqs(self) -> dict:
+        r""" Dictionary of fragments keyed with fragment names
+        and valued with the residue sequence indices (resSeq) in that fragment
+
+        Returns
+        -------
+        fragments_as_resSeqs : dict
+        """
+        return self._fragments_as_resSeqs
+
+    @property
     def dataframe(self) -> _DataFrame:
         r"""
         :obj:`~pandas.DataFrame` summarizing this object's information
