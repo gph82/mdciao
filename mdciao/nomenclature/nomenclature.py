@@ -1630,7 +1630,7 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.residxs, keys=keys, patterns=patterns, filter_on="consensus").astype({key : int for key in self.keys})
+        return _only_matches(self.residxs, keys=keys, patterns=patterns, filter_on="consensus").astype({key : int for key in [self.keys if keys is None else keys][0]})
 
     def AAresSeq_match(self, patterns=None, keys=None) -> _DataFrame:
         r"""
@@ -1682,7 +1682,7 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus").astype({key : int for key in self.keys})
+        return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus").astype({key : int for key in [self.keys if keys is None else keys][0]})
 
 
 def _only_matches(df,
