@@ -1532,6 +1532,7 @@ class AlignerConsensus(object):
 
         These maps were either given at input or created
         on-the-fly with the provided `LabelerConsensus`
+        using the method :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`
         """
         return self._maps
 
