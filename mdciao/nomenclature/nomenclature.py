@@ -1532,6 +1532,7 @@ class AlignerConsensus(object):
 
         These maps were either given at input or created
         on-the-fly with the provided `LabelerConsensus`
+        using the method :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`
         """
         return self._maps
 
@@ -1606,11 +1607,73 @@ class AlignerConsensus(object):
         """
         return self._AAresSeq
 
-    def residxs_match(self, patterns=None, keys=None) -> _DataFrame:
+    def residxs_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
         r"""
-        Filter the `self.residxs` to the rows where all consensus labels are present.
+        Filter the `self.residxs` by rows and columns.
 
         You can filter by consensus label using `patterns` and by system using `keys`.
+
+        By default, rows where None, or NaNs are present are excluded.
+
+        Parameters
+        ----------
+        patterns : str, default is None
+            A list in CSV-format of patterns to be matched
+            by the consensus labels. Matches are done using
+            Unix filename pattern matching, and are allows
+            for exclusion, e.g.
+             * "H*,-H8" will include all TMs but not H8
+             * "G.S*" will include all beta-sheets
+        keys : list, default is None
+            If only a sub-set of columns need to match,
+            provide them here as list of strings. If
+            None, all columns will be used.
+        omit_missing : bool, default is True
+            Omit rows with missing values.
+
+        Returns
+        -------
+        df : :obj:`~pandas.DataFrame`
+        """
+        return _only_matches(self.residxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing).astype({key : int for key in [self.keys if keys is None else keys][0]})
+
+    def AAresSeq_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
+        r"""
+        Filter the `self.AAresSeq` by rows and columns.
+
+        You can filter by consensus label using `patterns` and by system using `keys`.
+
+        By default, rows where None, or NaNs are present are excluded.
+
+        Parameters
+        ----------
+        patterns : str, default is None
+            A list in CSV-format of patterns to be matched
+            by the consensus labels. Matches are done using
+            Unix filename pattern matching, and are allows
+            for exclusion, e.g.
+             * "H*,-H8" will include all TMs but not H8
+             * "G.S*" will include all beta-sheets
+        keys : list, default is None
+            If only a sub-set of columns need to match,
+            provide them here as list of strings. If
+            None, all columns will be used.
+        omit_missing : bool, default is True
+            Omit rows with missing values,
+
+        Returns
+        -------
+        df : :obj:`~pandas.DataFrame`
+        """
+        return _only_matches(self.AAresSeq, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing)
+
+    def CAidxs_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
+        r"""
+        Filter the `self.CAidxs` by rows and columns.
+
+        You can filter by consensus label using `patterns` and by system using `keys`.
+
+        By default, rows where None, or NaNs are present are excluded.
 
         Parameters
         ----------
@@ -1625,81 +1688,32 @@ class AlignerConsensus(object):
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
             None, all columns (except `filter_on`) will be used.
+        omit_missing : bool, default is True
+            Omit rows with missing values
 
         Returns
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.residxs, keys=keys, patterns=patterns, filter_on="consensus").astype({key : int for key in self.keys})
-
-    def AAresSeq_match(self, patterns=None, keys=None) -> _DataFrame:
-        r"""
-        Filter the `self.AAreSeq` to the rows where all consensus labels are present.
-
-        You can filter by consensus label using `patterns` and by system using `keys`.
-
-        Parameters
-        ----------
-        patterns : str, default is None
-            A list in CSV-format of patterns to be matched
-            by the consensus labels. Matches are done using
-            Unix filename pattern matching, and are allows
-            for exclusion, e.g.
-             * "H*,-H8" will include all TMs but not H8
-             * "G.S*" will include all beta-sheets
-        keys : list, default is None
-            If only a sub-set of columns need to match,
-            provide them here as list of strings. If
-            None, all columns (except `filter_on`) will be used.
-
-        Returns
-        -------
-        df : :obj:`~pandas.DataFrame`
-        """
-        return _only_matches(self.AAresSeq, keys=keys, patterns=patterns, filter_on="consensus")
-
-    def CAidxs_match(self, patterns=None, keys=None) -> _DataFrame:
-        r"""
-        Filter the `self.CAidxs` to the rows where all consensus labels are present.
-
-        You can filter by consensus label using `patterns` and by system using `keys`.
-
-        Parameters
-        ----------
-        patterns : str, default is None
-            A list in CSV-format of patterns to be matched
-            by the consensus labels. Matches are done using
-            Unix filename pattern matching, and are allows
-            for exclusion, e.g.
-             * "H*,-H8" will include all TMs but not H8
-             * "G.S*" will include all beta-sheets
-        keys : list, default is None
-            If only a sub-set of columns need to match,
-            provide them here as list of strings. If
-            None, all columns (except `filter_on`) will be used.
-
-        Returns
-        -------
-        df : :obj:`~pandas.DataFrame`
-        """
-        return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus").astype({key : int for key in self.keys})
+        return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing).astype({key : int for key in [self.keys if keys is None else keys][0]})
 
 
 def _only_matches(df,
                   patterns=None,
                   filter_on="index",
-                  keys=None, ) -> _DataFrame:
+                  keys=None,
+                  dropna=True) -> _DataFrame:
     r"""
-    Row-filter an :obj:`~pandas.DataFrame` by keys (=column names) and patterns
+    Row-filter an :obj:`~pandas.DataFrame` by patterns in the values and column-filter by keys in the column names
 
     Filtering means:
-    * don't include rows where None or Nans appear
-    * include  anything that matches `patterns`
+     * don't include rows where None or Nans appear (except if relax=True)
+     * include  anything that matches `patterns`
 
     Parameters
     ----------
     df : :obj:`~pandas.DataFrame`
-        The dataframe to be filter by matches
+        The dataframe to be filter by matching `patterns` and `keys`
     patterns : str, default is None
         A list in CSV-format of patterns to be matched
         Matches are done using Unix filename pattern matching
@@ -1713,7 +1727,9 @@ def _only_matches(df,
         If only a sub-set of columns need to match,
         provide them here as list of strings. If
         None, all columns (except `filter_on`) will be used.
-
+    dropna : bool, default is True
+        Use :obj:`~pandas.Dataframe.dropna` row-wise
+        before returning
 
     Returns
     -------
@@ -1723,13 +1739,13 @@ def _only_matches(df,
     if keys is None:
         keys = [key for key in df.keys() if key != filter_on]
 
-    matches = [~df[key].isnull() for key in keys]
     if patterns is not None:
         matching_keys = _mdcu.str_and_dict.fnmatch_ex(patterns, df[filter_on])
-        matches = [df[filter_on].map(lambda x: x in matching_keys)] + matches
-    matches = _np.vstack(matches).T
-    # print(matches)
-    return df[matches.all(1)][[filter_on]+keys]
+        matches = df[filter_on].map(lambda x: x in matching_keys)
+    df = df[matches][[filter_on]+keys]
+    if dropna:
+        df = df.dropna()
+    return df
 
 
 def _alignment_df2_conslist(alignment_as_df,
