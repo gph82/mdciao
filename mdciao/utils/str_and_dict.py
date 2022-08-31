@@ -1233,12 +1233,13 @@ def _kwargs_docstring(obj):
     params = ""
     for p in dp.params:
         for arg in p.arg_name.replace(" ", "").split(","):
-            if arg in sig.parameters.keys() and ("=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3):
-                line = "%s : %s\n" % (p.arg_name, p.type_name)
-                line += "\t%s\n"%("\n\t".join(p.description.splitlines()))
-                params += line
+            if arg in sig.parameters.keys() and (
+                    "=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3):
+                line = '%s : %s\n%s' % (p.arg_name, p.type_name,
+                                        ''.join(['\t%s\n' % (desc) for desc in p.description.splitlines()]))
+                params += line.expandtabs(4)
                 break
-    assert params!=''
+    assert params != ''
     return params
 
 def _kwargs_subs(funct_or_method):
