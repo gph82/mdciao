@@ -1433,90 +1433,160 @@ class LabelerGPCR(LabelerConsensus):
 
 
 class AlignerConsensus(object):
-    """Use consensus labels for multiple sequence alignment
+    """Use consensus labels for multiple sequence alignment.
 
-    Instead of doing an *actual* multiple sequence alignment, we can exploit
-    the existing consensus labels to align positions
+    Instead of doing an *actual* multiple sequence alignment,
+    we can exploit the existing consensus labels to align residues
     across very different (=low sequence identity) topologies/sequences.
 
-    For example (edited table)::
+    This object can work both with and without specific topologies and
+    with different types of inputs.
 
-        consensus    3CAP    3SN6
-        3.50x50  ARG135  ARG131
-        3.51x51  TYR136  TYR132
-        3.52x52  VAL137  PHE133
+    Without topologies, the alignment via the consensus labels is limited
+    to the reference UniProt residue sequence indices:
 
-    Or, for residue atom indices (edited table)::
+    >>> import mdciao
+    >>> # Get the consensus labels from the GPCRdb and store them in a dict
+    >>> maps = { "OPS": mdciao.nomenclature.LabelerGPCR("opsd_bovin"),
+    >>>         "B2AR": mdciao.nomenclature.LabelerGPCR("adrb2_human"),
+    >>>         "MUOR": mdciao.nomenclature.LabelerGPCR("oprm_mouse")}
+    >>> # Pass the maps to AlignerConsensus
+    >>> AC = mdciao.nomenclature.AlignerConsensus(maps)
+    >>> AC.AAresSeq_match("3.5*")
+        consensus   OPS  B2AR  MUOR
+    117   3.50x50  R131  R135  R165
+    118   3.51x51  Y132  Y136  Y166
+    119   3.52x52  F133  V137  I167
+    120   3.53x53  A134  V138  A168
+    [...]
 
-        consensus  3CAP  3SN6
-        3.50x50  1065  7835
-        3.51x51  1076  7846
-        3.52x52  1088  7858
+    With topologies, e.g. coming from specific pdbs (or
+    from your own MD-setups) the alignment can be expressed
+    in terms of residue indices or CA-atom indices of those
+    specific topologies. In this example, we are loading
+    directly from the PDB, but you could load your own files
+    with your own setups:
 
+    >>> pdb3CAP = mdciao.cli.pdb("3CAP")
+    >>> pdb3SN6 = mdciao.cli.pdb("3SN6")
+    >>> pdbMUOR = mdciao.cli.pdb("6DDF")
+    >>> AC = mdciao.nomenclature.AlignerConsensus(maps,
+    >>>                                           tops={ "OPS": pdb3CAP.top,
+    >>>                                                 "B2AR": pdb3SN6.top,
+    >>>                                                 "MUOR": pdbMUOR.top})
 
+    Zero-indexed, per-topology C-alpha atom indices:
+
+    >>> AC.CAidxs_match("3.5*")
+        consensus   OPS  B2AR  MUOR
+    114   3.50x50  1065  7835  5370
+    115   3.51x51  1076  7846  5381
+    116   3.52x52  1088  7858  5393
+    117   3.53x53  1095  7869  5401
+    [...]
+
+    Zero-indexed, per-topology residue serial indices
+
+    >>> AC.residxs_match("3.5*")
+        consensus  OPS  B2AR  MUOR
+    114   3.50x50  134  1007   706
+    115   3.51x51  135  1008   707
+    116   3.52x52  136  1009   708
+    117   3.53x53  137  1010   709
+    [...]
     """
 
-    def __init__(self, tops, maps=None, CL: LabelerConsensus = None):
+    def __init__(self, maps, tops=None):
         r"""
 
         Parameters
         ----------
-        tops : dict
-            Dictionary of :obj:`~mdtraj.Topology` objects. Keys
-            can be arbitrary identifiers to distinguish among
-            the `tops`, like different PDB IDs or system-setups (WT vs MUT).
-            These keys will be used throughout the object in this order
-        maps : dict, default is None
-            Dictionary of dictionaries, each mapping residue
-            indices of each the `tops` to a consensus label.
-            Typically, this map comes from invoking
-            :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`
-            on the respective `top`.
-        CL : :obj:`~mdciao.nomenclature.LabelerConsensus`, default is None
-            If provided, it is assumed that this object can operate on all
-            `tops`, because all the sequences in `tops` are a good
-            match with the descriptor (e.g. a UniProt Accession Code)
-            used to create the `CL`. Hence, the the `maps`
-            can be generated on-the-fly using this object.
-            Note, however, that in this case there is likely very high
-            sequence similarities between the `tops` and a normal sequence
-            alignment works as well.
+        maps : dict
+            Dictionary of "maps", each one mapping residues
+            to consensus labels. The keys of the dict
+            can be arbitrary identifiers, to distinguish among
+            the different systems, like different UniProt Codes,
+            PDB IDs, or user specific for system-setups
+            (WT vs MUT etc). The values in `maps` can be:
+
+            * Type :obj:`~mdciao.nomenclature.LabelerGPCR`, :obj:`~mdciao.nomenclature.LabelerCGN`,
+              or :obj:`~mdciao.nomenclature.LabelerKLIFS`
+             Recommended option, the most succint and versatile.
+             Pass this object and the maps will get created
+             internally on-the-fly either by
+             calling :obj:`~mdciao.nomenclature.LabelerGPCR.AA2conlab`
+             (if no `tops` passed) or by calling :obj:`~mdciao.nomenclature.LabelerGPCR.top2labels`
+             (if `tops` were passed).
+
+            * Type dict.
+             Only works if `tops` is None. Keyed with residue
+             names (AAresSeq) and valued with consensus labels.
+             Useful if for some reason you want to modify the dicts
+             that are created by :obj:`~mdciao.nomenclature.LabelerGPCR.AA2conlab`
+             before using them here.
+
+            * Type list
+             Only works if `tops` is not None. Zero-indexed with
+             residue indices of the `tops` and valued with
+             consensus labels. Useful if for some reason
+             :obj:`~mdciao.nomenclature.LabelerGPCR.top2labels`
+             doesn't work automatically on the `tops`. This
+             method sometimes fail if it can't cleanly align the
+             consensus sequence to the residues in `tops`
+
+        tops : dict or None, default is None
+            A dictionary of :obj:`~mdtraj.Topology` objects,
+            which will allow to express the consensus alignment
+            also in terms of residue and atom indices.
+            If `tops` is present, self.keys will be in
+            the same order as they appear in `tops`.
         """
         self._tops = tops
-        if CL is not None:
-            assert maps is None
-            self._maps = {}
-            for key, itop in self.tops.items():
-                self._maps[key] = CL.top2labels(itop)
-        else:
-            assert maps is not None
-            self._maps = maps
+        # we keep the order of keys if top is present
+        self._maps = {key : maps[key] for key in [maps.keys() if tops is None else tops.keys()][0]}
+        self._keys = list(self._maps.keys())
+        for key, imap in self.maps.items():
+            if isinstance(imap, dict):
+                assert self.tops is None, ValueError("If `maps` contains dictionaries, then `tops` has to be None")
+                self._maps[key] = imap #nothing to do, already a dict
+            elif isinstance(imap, list):
+                assert self.tops is not None, ("If `maps` contains lists, then `tops` can't be None")
+                self._maps[key] = {ii: lab for ii, lab in enumerate(imap)} # turn into dict
+            elif isinstance(imap, LabelerConsensus):
+                if self.tops is None:
+                    self._maps[key]=imap.AA2conlab # nothing to do, already a dict
+                else:
+                    self._maps[key]={ii : lab for ii, lab in enumerate(imap.top2labels(self.tops[key]))}
+            else:
+                raise ValueError("`maps` should contain either list, dicts, or %s objects, but found %s for key %s"%(LabelerConsensus, type(imap), key))
+        self._maps = {key : {ii : lab for ii, lab in imap.items() if str(lab).lower()!="none"} for key, imap in self.maps.items()}
 
-        self._keys = list(tops.keys())
         self._residxs = None
-        for key in self.keys:
-            imap = self.maps[key]
-            idx2lab = {ii: lab for ii, lab in enumerate(imap) if lab is not None}
-            idf = _DataFrame([idx2lab.values(), idx2lab.keys()], index=["consensus",
+        for key, imap in self.maps.items():
+            idf = _DataFrame([imap.values(), imap.keys()], index=["consensus",
                                                                         key], ).T
 
             if self._residxs is None:
                 self._residxs = idf
             else:
                 self._residxs = self._residxs.merge(idf, how="outer")
-        # self._residxs = self._residxs.replace({_np.nan:None})
+
         sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)
         assert len(sorted_keys)==len(self._residxs["consensus"]),  (len(sorted_keys), len(self._residxs["consensus"]))
         self._residxs = self._residxs.sort_values("consensus", key=lambda col: col.map(lambda x: sorted_keys.index(x)))
         self._residxs = self._residxs.reset_index(drop=True)
 
-        self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
-        for key in self.keys:
-            self._AAresSeq[key] = [[str(self.tops[key].residue(int(ii))) if not _np.isnan(ii) else ii][0] for ii in
-                                   self.residxs[key]]
-            self._CAidxs[key] = [[self.tops[key].residue(int(ii)).atom("CA").index if not _np.isnan(ii) else ii][0] for
-                                 ii in
-                                 self.residxs[key]]
+        if self.tops is not None:
+            self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
+            for key in self.keys:
+                self._AAresSeq[key] = [[str(self.tops[key].residue(int(ii))) if not _np.isnan(ii) else ii][0] for ii in
+                                       self.residxs[key]]
+                self._CAidxs[key] = [[self.tops[key].residue(int(ii)).atom("CA").index if not _np.isnan(ii) else ii][0] for
+                                     ii in
+                                     self.residxs[key]]
+        else:
+            self._AAresSeq = self.residxs
+            self._residxs, self._CAidxs = None, None
 
     @property
     def tops(self) -> dict:
