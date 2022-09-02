@@ -1656,10 +1656,13 @@ class AlignerConsensus(object):
             self._residxs = self._residxs.astype({key: "Int64" for key in self.keys})
             for key in self.keys:
                 not_nulls = ~self.residxs[key].isnull()
-                self._AAresSeq[key] = [[str(self.tops[key].residue(ii)) if not_null else ii][0]
+                self._AAresSeq[key] = [[_mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),keep_index=True) if not_null else ii][0]
                                        for not_null, ii in zip(not_nulls, self.residxs[key])]
                 self._CAidxs[key] = [[self.tops[key].residue(ii).atom("CA").index if not_null else ii][0]
                                      for not_null, ii in zip(not_nulls, self.residxs[key])]
+                self._maps[key] = {val : key for ii, (not_null, (key, val)) in enumerate(zip(not_nulls, self.AAresSeq[["consensus", key]].values)) if
+                                                not_null}
+
             self._CAidxs = self._CAidxs.astype({key: "Int64" for key in self.keys})
         else:
             self._AAresSeq = self.residxs
@@ -1675,12 +1678,7 @@ class AlignerConsensus(object):
     @property
     def maps(self) -> dict:
         r"""
-        The dictionaries mapping residue to consensus labels.
-
-        If not `tops` were given at input, the maps are
-        keyed with short residue names, e.g. E30.
-        Otherwise, if `tops` were given, then the maps
-        are keyed with residue sequence indices
+        The dictionaries mapping residue names to consensus labels.
         """
         return self._maps
 
@@ -1727,9 +1725,6 @@ class AlignerConsensus(object):
     def AAresSeq(self) -> _DataFrame:
         r"""
         Consensus-label alignment expressed as residues
-
-        If `tops` were passed, the residues will be in "long" format, e.g.
-        GLU30, otherwise its "short", E30.
 
         Will have NaNs where residues weren't found,
         i.e. a given `map` didn't contain that consensus label

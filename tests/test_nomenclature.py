@@ -1375,14 +1375,14 @@ class Test_AlignerConsensus(unittest.TestCase):
         # s.t. only residues present in the tops get
         # imported into the, in this case it means we
         cls._string_AAresSeq_w_tops = "\n".join([
-        "    consensus    3CAP    3SN6",
-        "102   3.50x50  ARG135  ARG131",
-        "103   3.51x51  TYR136  TYR132",
-        "104   3.52x52  VAL137  PHE133",
-        "105   3.53x53  VAL138  ALA134",
-        "106   3.54x54  VAL139  ILE135",
-        "107   3.55x55  CYS140  THR136",
-        "108   3.56x56  LYS141  SER137"])
+        "    consensus  3CAP  3SN6",
+        "102   3.50x50  R135  R131",
+        "103   3.51x51  Y136  Y132",
+        "104   3.52x52  V137  F133",
+        "105   3.53x53  V138  A134",
+        "106   3.54x54  V139  I135",
+        "107   3.55x55  C140  T136",
+        "108   3.56x56  K141  S137"])
 
         cls._string_residxs = "\n".join([
         "    consensus  3CAP  3SN6",
@@ -1493,40 +1493,40 @@ class Test_AlignerConsensus(unittest.TestCase):
     def test_match_AAresSeq_with_keys(self):
         matches = self.AC_list_w_tops.AAresSeq_match("3.5*", keys=["3SN6"])
         self.assertEqual(matches.to_string(),
-                         '    consensus    3SN6\n'
-                         '102   3.50x50  ARG131\n'
-                         '103   3.51x51  TYR132\n'
-                         '104   3.52x52  PHE133\n'
-                         '105   3.53x53  ALA134\n'
-                         '106   3.54x54  ILE135\n'
-                         '107   3.55x55  THR136\n'
-                         '108   3.56x56  SER137'
+                         '    consensus  3SN6\n'
+                         '102   3.50x50  R131\n'
+                         '103   3.51x51  Y132\n'
+                         '104   3.52x52  F133\n'
+                         '105   3.53x53  A134\n'
+                         '106   3.54x54  I135\n'
+                         '107   3.55x55  T136\n'
+                         '108   3.56x56  S137'
                          )
 
     def test_missing(self):
         matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=True)
         self.assertEqual(matches.to_string(),
-                         "    consensus    3CAP    1U19\n"
-                         #"102   3.50x50  ARG135    <NA>\n"
-                         "103   3.51x51  TYR136  TYR136\n"
-                         "104   3.52x52  VAL137  VAL137\n"
-                         "105   3.53x53  VAL138  VAL138\n"
-                         "106   3.54x54  VAL139  VAL139\n"
-                         "107   3.55x55  CYS140  CYS140\n"
-                         "108   3.56x56  LYS141  LYS141"
+                         "    consensus  3CAP  1U19\n"
+                         #"102   3.50x50  R135    <NA>\n"
+                         "103   3.51x51  Y136  Y136\n"
+                         "104   3.52x52  V137  V137\n"
+                         "105   3.53x53  V138  V138\n"
+                         "106   3.54x54  V139  V139\n"
+                         "107   3.55x55  C140  C140\n"
+                         "108   3.56x56  K141  K141"
                          )
 
     def test_missing_False(self):
         matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=False)
         self.assertEqual(matches.to_string(),
-                         "    consensus    3CAP    1U19\n"
-                         "102   3.50x50  ARG135    <NA>\n"
-                         "103   3.51x51  TYR136  TYR136\n"
-                         "104   3.52x52  VAL137  VAL137\n"
-                         "105   3.53x53  VAL138  VAL138\n"
-                         "106   3.54x54  VAL139  VAL139\n"
-                         "107   3.55x55  CYS140  CYS140\n"
-                         "108   3.56x56  LYS141  LYS141"
+                         "    consensus  3CAP  1U19\n"
+                         "102   3.50x50  R135  <NA>\n"
+                         "103   3.51x51  Y136  Y136\n"
+                         "104   3.52x52  V137  V137\n"
+                         "105   3.53x53  V138  V138\n"
+                         "106   3.54x54  V139  V139\n"
+                         "107   3.55x55  C140  C140\n"
+                         "108   3.56x56  K141  K141"
                          )
 
     def test_nones(self):
@@ -1538,3 +1538,19 @@ class Test_AlignerConsensus(unittest.TestCase):
             AC = nomenclature.AlignerConsensus({"3CAP": "string",
                                                 "3SN6": None},
                                              )
+
+    def test_select_keys(self):
+        maps = self.AC_maps_w_tops.maps
+        maps["3CAP"] = {key : val for key, val in maps["3CAP"].items() if not val.startswith("3.")} #pop TM3 out of the 3CAP's map
+        AC = nomenclature.AlignerConsensus(maps)
+        matches = AC.AAresSeq_match("3.5*", select_keys=True)
+        self.assertEqual(matches.to_string(),
+                         '    consensus  3SN6\n'
+                         '102   3.50x50  R131\n'
+                         '103   3.51x51  Y132\n'
+                         '104   3.52x52  F133\n'
+                         '105   3.53x53  A134\n'
+                         '106   3.54x54  I135\n'
+                         '107   3.55x55  T136\n'
+                         '108   3.56x56  S137'
+                         )
