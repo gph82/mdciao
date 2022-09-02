@@ -1453,13 +1453,29 @@ class AlignerConsensus(object):
     >>>         "MUOR": mdciao.nomenclature.LabelerGPCR("oprm_mouse")}
     >>> # Pass the maps to AlignerConsensus
     >>> AC = mdciao.nomenclature.AlignerConsensus(maps)
+    >>> AC.AAresSeq
+        consensus   OPS  B2AR  MUOR
+    0     1.25x25   NaN   Q26   NaN
+    1     1.26x26   NaN   E27   NaN
+    2     1.27x27   NaN   R28   NaN
+    3     1.28x28   E33   D29   NaN
+    4     1.29x29   P34   E30   M65
+    ..        ...   ...   ...   ...
+    285   8.55x55  V318  Q337  R348
+    286   8.56x56  T319  E338  E349
+    287   8.57x57  T320  L339  F350
+    288   8.58x58  L321  L340  C351
+    289   8.59x59  C322  C341  I352
+
+    You can also filter the aligment using the `_match` methods
+
     >>> AC.AAresSeq_match("3.5*")
         consensus   OPS  B2AR  MUOR
     117   3.50x50  R131  R135  R165
     118   3.51x51  Y132  Y136  Y166
     119   3.52x52  F133  V137  I167
     120   3.53x53  A134  V138  A168
-    [...]
+    ..        ...   ...   ...   ...
 
     With topologies, e.g. coming from specific pdbs (or
     from your own MD-setups) the alignment can be expressed
@@ -1486,7 +1502,7 @@ class AlignerConsensus(object):
     117   3.53x53  1095  7869  5401
     [...]
 
-    Zero-indexed, per-topology residue serial indices
+    Zero-indexed, per-topology residue serial indices:
 
     >>> AC.residxs_match("3.5*")
         consensus  OPS  B2AR  MUOR
@@ -1494,7 +1510,61 @@ class AlignerConsensus(object):
     115   3.51x51  135  1008   707
     116   3.52x52  136  1009   708
     117   3.53x53  137  1010   709
-    [...]
+    ..        ...   ...   ...   ...
+
+    By default, the `_match` methods return only rows were all
+    present systems ("OPS","B2AR", "MUOR" in the example)
+    have consensus labels. E.g. here we ask for TM5 residues
+    present in all three systems:
+
+    >>> AC.AAresSeq_match("5.*")
+        consensus   OPS  B2AR  MUOR
+    167   5.35x36  N200  N196  E229
+    168   5.36x37  E201  Q197  N230
+    169   5.37x38  S202  A198  L231
+    ..        ...   ...   ...   ...
+    198   5.66x66  K231  K227  K260
+    199   5.67x67  E232  R228  S261
+    200   5.68x68  A233  Q229  V262
+
+    But you can get relax the match and get an overview of missing
+    residues using `omit_missing=False`:
+
+    >>> AC.AAresSeq_match("5.*", omit_missing=False)
+        consensus   OPS  B2AR  MUOR
+    162   5.30x31   NaN   NaN  P224
+    163   5.31x32   NaN   NaN  T225
+    164   5.32x33   NaN   NaN  W226
+    165   5.33x34   NaN   NaN  Y227
+    166   5.34x35  N199   NaN  W228
+    167   5.35x36  N200  N196  E229
+    ..        ...   ...   ...   ...
+    200   5.68x68  A233  Q229  V262
+    201   5.69x69  A234  L230   NaN
+    202   5.70x70  A235  Q231   NaN
+    203   5.71x71  Q236  K232   NaN
+    204   5.72x72  Q237  I233   NaN
+    205   5.73x73   NaN  D234   NaN
+    206   5.74x74   NaN  K235   NaN
+    207   5.75x75   NaN  S236   NaN
+    208   5.76x76   NaN  E237   NaN
+
+    Here, we see e.g. that "MUOR" has more residues present at
+    the beginning of TM5 (first row, from P224@5.30x31 on) and also that
+    e.g. "B2AR" has the longest TM5 (last row, until E237@5.76x76).
+
+    Finally, instead of selecting for labels,
+    you can also select for systems, i.e. "Show me the systems that
+    have my selection labels". Here, we ask what systems have '5.70...5.79' residues:
+
+    >>> AC.AAresSeq_match("5.7*", select_keys=True)
+        consensus   OPS  B2AR
+    202   5.70x70  A235  Q231
+    203   5.71x71  Q236  K232
+    204   5.72x72  Q237  I233
+
+    You notice the "MUOR"-column is missing, because it doesn't have '5.7*' residues
+
     """
 
     def __init__(self, maps, tops=None):
@@ -1670,7 +1740,7 @@ class AlignerConsensus(object):
         """
         return self._AAresSeq
 
-    def residxs_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
+    def residxs_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
         r"""
         Filter the `self.residxs` by rows and columns.
 
@@ -1691,6 +1761,11 @@ class AlignerConsensus(object):
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
             None, all columns will be used.
+        select_keys : bool, default is False
+            Use the `patterns` not only to select
+            for rows but also to select for columns, i.e.
+            for keys. Keys (=columns) not featuring
+            any `patterns` will be dropped.
         omit_missing : bool, default is True
             Omit rows with missing values.
 
@@ -1698,9 +1773,10 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.residxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing)
+        return _only_matches(self.residxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
+                             filter_on="consensus")
 
-    def AAresSeq_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
+    def AAresSeq_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
         r"""
         Filter the `self.AAresSeq` by rows and columns.
 
@@ -1721,6 +1797,11 @@ class AlignerConsensus(object):
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
             None, all columns will be used.
+        select_keys : bool, default is False
+            Use the `patterns` not only to select
+            for rows but also to select for columns, i.e.
+            for keys. Keys (=columns) not featuring
+            any `patterns` will be dropped.
         omit_missing : bool, default is True
             Omit rows with missing values,
 
@@ -1728,9 +1809,10 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.AAresSeq, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing)
+        return _only_matches(self.AAresSeq, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
+                             filter_on="consensus")
 
-    def CAidxs_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
+    def CAidxs_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
         r"""
         Filter the `self.CAidxs` by rows and columns.
 
@@ -1751,6 +1833,11 @@ class AlignerConsensus(object):
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
             None, all columns (except `filter_on`) will be used.
+        select_keys : bool, default is False
+            Use the `patterns` not only to select
+            for rows but also to select for columns, i.e.
+            for keys. Keys (=columns) not featuring
+            any `patterns` will be dropped.
         omit_missing : bool, default is True
             Omit rows with missing values
 
@@ -1758,7 +1845,8 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing)
+        return _only_matches(self.CAidxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
+                             filter_on="consensus")
 
 
 def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, dropna=True, filter_on="index") -> _DataFrame:
@@ -1787,7 +1875,8 @@ def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, d
     select_keys : bool, default is False
         Use the `patterns` not only to select
         for rows but also to select for columns, i.e.
-        for keys.
+        for keys. Keys (=columns) not featuring
+        any `patterns` will be dropped.
     dropna : bool, default is True
         Use :obj:`~pandas.Dataframe.dropna` row-wise
         before returning
