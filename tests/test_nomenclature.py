@@ -1507,7 +1507,7 @@ class Test_AlignerConsensus(unittest.TestCase):
         matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=True)
         self.assertEqual(matches.to_string(),
                          "    consensus    3CAP    1U19\n"
-                         #"102   3.50x50  ARG135     NaN\n"
+                         #"102   3.50x50  ARG135    <NA>\n"
                          "103   3.51x51  TYR136  TYR136\n"
                          "104   3.52x52  VAL137  VAL137\n"
                          "105   3.53x53  VAL138  VAL138\n"
@@ -1520,7 +1520,7 @@ class Test_AlignerConsensus(unittest.TestCase):
         matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=False)
         self.assertEqual(matches.to_string(),
                          "    consensus    3CAP    1U19\n"
-                         "102   3.50x50  ARG135     NaN\n"
+                         "102   3.50x50  ARG135    <NA>\n"
                          "103   3.51x51  TYR136  TYR136\n"
                          "104   3.52x52  VAL137  VAL137\n"
                          "105   3.53x53  VAL138  VAL138\n"

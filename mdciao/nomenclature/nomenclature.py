@@ -25,6 +25,7 @@ import numpy as _np
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
+import pandas
 from mdciao.utils.str_and_dict import _kwargs_subs
 
 from pandas import \
@@ -1563,8 +1564,8 @@ class AlignerConsensus(object):
 
         self._residxs = None
         for key, imap in self.maps.items():
-            idf = _DataFrame([imap.values(), imap.keys()], index=["consensus",
-                                                                        key], ).T
+            idf = _DataFrame([imap.values(), imap.keys()],
+                             index=["consensus", key]).T
 
             if self._residxs is None:
                 self._residxs = idf
@@ -1578,12 +1579,14 @@ class AlignerConsensus(object):
 
         if self.tops is not None:
             self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
+            self._residxs = self._residxs.astype({key: "Int64" for key in self.keys})
             for key in self.keys:
-                self._AAresSeq[key] = [[str(self.tops[key].residue(int(ii))) if not _np.isnan(ii) else ii][0] for ii in
-                                       self.residxs[key]]
-                self._CAidxs[key] = [[self.tops[key].residue(int(ii)).atom("CA").index if not _np.isnan(ii) else ii][0] for
-                                     ii in
-                                     self.residxs[key]]
+                not_nulls = ~self.residxs[key].isnull()
+                self._AAresSeq[key] = [[str(self.tops[key].residue(ii)) if not_null else ii][0]
+                                       for not_null, ii in zip(not_nulls, self.residxs[key])]
+                self._CAidxs[key] = [[self.tops[key].residue(ii).atom("CA").index if not_null else ii][0]
+                                     for not_null, ii in zip(not_nulls, self.residxs[key])]
+            self._CAidxs = self._CAidxs.astype({key: "Int64" for key in self.keys})
         else:
             self._AAresSeq = self.residxs
             self._residxs, self._CAidxs = None, None
@@ -1598,60 +1601,50 @@ class AlignerConsensus(object):
     @property
     def maps(self) -> dict:
         r"""
-        The dictionaries mapping residue indices of the `tops` to consensus labels.
+        The dictionaries mapping residue to consensus labels.
 
-        These maps were either given at input or created
-        on-the-fly with the provided `LabelerConsensus`
-        using the method :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`
+        If not `tops` were given at input, the maps are
+        keyed with short residue names, e.g. E30.
+        Otherwise, if `tops` were given, then the maps
+        are keyed with residue sequence indices
         """
         return self._maps
 
     @property
     def residxs(self) -> _DataFrame:
         r"""
-        The :obj:`~pandas.DataFrame` containing the alignment based on consensus labels
-
-        Indices are zero-based residue indices of the respective `tops`.
-
-        Currently, sorted alphabetically by consensus labels,
-        which works well for GPCR, not so much for CGN, KLIFS
-        (this will change soon)
+        Consensus-label alignment expressed as zero-indexed residue indices of the respective `tops`
 
         Will have NaNs where residues weren't found,
         i.e. a given `map` didn't contain that consensus label
 
+        Returns None if no `tops` were given at input.
+
         Returns
         -------
-
         df : :obj:`~pandas.DataFrame`
-
         """
         return self._residxs
 
     @property
     def keys(self) -> list:
         r"""
-        The keys with which the `tops` and/or the `maps` were given at input
+        The keys with which the `maps` and the `tops` were given at input
         """
         return self._keys
 
     @property
     def CAidxs(self) -> _DataFrame:
         r"""
-        The :obj:`~pandas.DataFrame` containing the alignment based on consensus labels
+        Consensus-label alignment expressed as atom indices of the C-alpha atoms of respective `tops`
 
-        Indices are zero-based atom indices of the respective `tops`.
-
-        Currently, sorted alphabetically by consensus labels,
-        which works well for GPCR, not so much for CGN, KLIFS
-        (this will change soon)
-
-        Will have NaNs where residues weren't found,
+        Will have NaNs where atoms weren't found,
         i.e. a given `map` didn't contain that consensus label
+
+        Returns None if no `tops` were given at input.
 
         Returns
         -------
-
         df : :obj:`~pandas.DataFrame`
         """
         return self._CAidxs
@@ -1659,20 +1652,16 @@ class AlignerConsensus(object):
     @property
     def AAresSeq(self) -> _DataFrame:
         r"""
-        The :obj:`~pandas.DataFrame` containing the alignment based on consensus labels
+        Consensus-label alignment expressed as residues
 
-        'AAreSeq' means labels like 'ARG130' and so on.
-
-        Currently, sorted alphabetically by consensus labels,
-        which works well for GPCR, not so much for CGN, KLIFS
-        (this will change soon)
+        If `tops` were passed, the residues will be in "long" format, e.g.
+        GLU30, otherwise its "short", E30.
 
         Will have NaNs where residues weren't found,
         i.e. a given `map` didn't contain that consensus label
 
         Returns
         -------
-
         df : :obj:`~pandas.DataFrame`
         """
         return self._AAresSeq
@@ -1705,7 +1694,7 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.residxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing).astype({key : int for key in [self.keys if keys is None else keys][0]})
+        return _only_matches(self.residxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing)
 
     def AAresSeq_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
         r"""
@@ -1765,7 +1754,7 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing).astype({key : int for key in [self.keys if keys is None else keys][0]})
+        return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing)
 
 
 def _only_matches(df,
