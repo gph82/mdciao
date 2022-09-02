@@ -1531,14 +1531,18 @@ class AlignerConsensus(object):
              residue indices of the `tops` and valued with
              consensus labels. Useful if for some reason
              :obj:`~mdciao.nomenclature.LabelerGPCR.top2labels`
-             doesn't work automatically on the `tops`. This
-             method sometimes fail if it can't cleanly align the
-             consensus sequence to the residues in `tops`
+             doesn't work automatically on the `tops`, since
+             :obj:`~mdciao.nomenclature.LabelerGPCR.top2labels`
+             sometimes fails if it can't cleanly align the
+             consensus sequences to the residues in the `tops`.
 
         tops : dict or None, default is None
             A dictionary of :obj:`~mdtraj.Topology` objects,
             which will allow to express the consensus alignment
-            also in terms of residue and atom indices.
+            also in terms of residue indices and of atom indices,
+            using :obj:`~mdciao.nomenclature.AlignerConsensus.CAidxs`
+            and :obj:`~mdciao.nomenclature.AlignerConsensus.residxs`,
+            respectively (otherwise these methods return None).
             If `tops` is present, self.keys will be in
             the same order as they appear in `tops`.
         """
@@ -1757,7 +1761,7 @@ class AlignerConsensus(object):
         return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing)
 
 
-def _only_matches(df,
+def _only_matches(df : _DataFrame,
                   patterns=None,
                   filter_on="index",
                   keys=None,
@@ -1771,8 +1775,9 @@ def _only_matches(df,
 
     Parameters
     ----------
-    df : :obj:`~pandas.DataFrame`
-        The dataframe to be filter by matching `patterns` and `keys`
+    df : :obj:`~pandas.DataFrame` or None
+        The dataframe to be filter by matching `patterns` and `keys`.
+        If None, the method simply returns None.
     patterns : str, default is None
         A list in CSV-format of patterns to be matched
         Matches are done using Unix filename pattern matching
@@ -1795,6 +1800,8 @@ def _only_matches(df,
     df : :obj:`~pandas.DataFrame`
         Will only have `filter_on`+`keys` as columns
     """
+    if df is None:
+        return None
     if keys is None:
         keys = [key for key in df.keys() if key != filter_on]
 

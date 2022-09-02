@@ -1528,3 +1528,13 @@ class Test_AlignerConsensus(unittest.TestCase):
                          "107   3.55x55  CYS140  CYS140\n"
                          "108   3.56x56  LYS141  LYS141"
                          )
+
+    def test_nones(self):
+        assert self.AC_maps_no_tops.CAidxs_match() is None
+        assert self.AC_maps_no_tops.residxs_match() is None
+
+    def test_raises(self):
+        with self.assertRaises(ValueError):
+            AC = nomenclature.AlignerConsensus({"3CAP": "string",
+                                                "3SN6": None},
+                                             )
