@@ -1761,11 +1761,7 @@ class AlignerConsensus(object):
         return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing)
 
 
-def _only_matches(df : _DataFrame,
-                  patterns=None,
-                  filter_on="index",
-                  keys=None,
-                  dropna=True) -> _DataFrame:
+def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, dropna=True, filter_on="index") -> _DataFrame:
     r"""
     Row-filter an :obj:`~pandas.DataFrame` by patterns in the values and column-filter by keys in the column names
 
@@ -1784,16 +1780,20 @@ def _only_matches(df : _DataFrame,
         and are allowed for exclusion, e.g.
          * "H*,-H8" will include all TMs but not H8
          * "G.S*" will include all beta-sheets
-    filter_on : str, default is 'index'
-        The column of `df` on which the `patterns`
-        will be sued for a match
     keys : list, default is None
         If only a sub-set of columns need to match,
         provide them here as list of strings. If
         None, all columns (except `filter_on`) will be used.
+    select_keys : bool, default is False
+        Use the `patterns` not only to select
+        for rows but also to select for columns, i.e.
+        for keys.
     dropna : bool, default is True
         Use :obj:`~pandas.Dataframe.dropna` row-wise
         before returning
+     filter_on : str, default is 'index'
+        The column of `df` on which the `patterns`
+        will be used for a match
 
     Returns
     -------
@@ -1808,7 +1808,11 @@ def _only_matches(df : _DataFrame,
     if patterns is not None:
         matching_keys = _mdcu.str_and_dict.fnmatch_ex(patterns, df[filter_on])
         matches = df[filter_on].map(lambda x: x in matching_keys)
-    df = df[matches][[filter_on]+keys]
+        df = df[matches]
+    df = df[[filter_on]+keys]
+
+    if select_keys:
+        df = df[[key for key in df.keys() if not all(df[key].isna())]]
     if dropna:
         df = df.dropna()
     return df
