@@ -2205,6 +2205,11 @@ def _sort_consensus_labels(subset, sorted_superset,
         except:
             pass
 
+    # In case any negative integers are in the keys (=labels) convert them to ints s.t. natsort can work with them
+    by_frags = {key : {[int(key2) if any([val2.startswith("-") for val2 in val]) else key2][0]: val2
+                       for key2, val2 in val.items()
+                       } for key, val in by_frags.items()}
+
     labs_out = []
     for frag in sorted_superset:
         if frag in by_frags.keys():
