@@ -45,7 +45,7 @@ class Test_KLIFSLabeler_P31751(unittest.TestCase):
 class Test_AlignerConsensus_B2AR_HUMAN_vs_OPSD_BOVIN(unittest.TestCase):
     def test_works(self):
         AC = examples.AlignerConsensus_B2AR_HUMAN_vs_OPSD_BOVIN()
-        self.assertDictEqual({'B2AR': 'ARG131', 'OPS': 'ARG135'},
+        self.assertDictEqual({'B2AR': 'R131', 'OPS': 'R135'},
                              AC.AAresSeq_match("3.50x50")[["B2AR","OPS"]].squeeze().to_dict())
 
 class Test_Zip(unittest.TestCase):
