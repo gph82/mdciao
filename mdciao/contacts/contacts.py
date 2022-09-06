@@ -1788,10 +1788,12 @@ class ContactPair(object):
         Plot this contact's timetraces for all trajs onto :obj:`ax`
         Parameters
         ----------
-        iax
+        iax : :obj:`~matplotlib.axes.Axes`,
+            Axis on which to draw
         color_scheme : list, default is None
             Pass a list of colors understandable by matplotlib
-        ctc_cutoff_Ang
+        ctc_cutoff_Ang : int, default is 0,
+            Cutoff in Angstrom
         n_smooth_hw: int, default is 0
             Size, in frames, of half the window size of the
             smoothing window
@@ -1804,13 +1806,15 @@ class ContactPair(object):
             * False: don't plot any background
             * color-like: use this color for the background,
               can be: str, hex, rgba, anything
-          `   matplotlib.pyplot.colors` understands
-        shorten_AAs
-        t_unit
+              :obj:`~matplotlib.pyplot.colors` understands
+        shorten_AAs : bool, default is True
+            Whether to shorten GLU30 to E30
+        t_unit : str, default is 'ps'
+            The label for the time axis (x-axis)
         ylim_Ang : float or "auto"
             The limit in Angstrom of the y-axis
-        max_handles_per_row : int, default is
-            legend control
+        max_handles_per_row : int, default is 4
+            How many rows the legend can have
 
         Returns
         -------
@@ -4488,6 +4492,7 @@ class ContactGroup(object):
 
         return jax
 
+    @_kwargs_subs(ContactPair._plot_timetrace)
     def plot_timedep_ctcs(self, panelheight,
                           plot_N_ctcs=True,
                           pop_N_ctcs=False,
@@ -4516,21 +4521,10 @@ class ContactGroup(object):
             the time trace of overall formed contacts. This sets
             pop_N_ctcs to True internally
         plot_timetrace_kwargs: dict
-            Optional parameters for :obj:`_plot_timedep_Nctcs`
+            Optional parameters for :obj:`mdciao.ContactPair._plot_timetrace`.
+            The parameters are listed below.
 
-        Returns
-        -------
-        list_of_figs : list
-            The wanted figure(s)
 
-         Note
-        ----
-            The keywords :obj:`plot_N_ctcs`, :obj:`pop_N_ctcs`, and :obj:`skip_timedep`
-            allow this method to both include or totally exclude the total
-            number of contacts and/or the time-traces in the figure.
-            This might change in the figure,
-            it was coded this way to avoid breaking the command_line tools
-            API. Also note that some combinations will produce an empty return!
 
 
         """
@@ -5320,6 +5314,7 @@ class ContactGroup(object):
         return return_tuple
 
     def to_new_ContactGroup(self, CSVexpression,
+                            residue_indices=None,
                             allow_multiple_matches=False,
                             merge=True):
         r"""
@@ -5333,6 +5328,9 @@ class ContactGroup(object):
             new :obj:`ContactGroup`. See
             :obj:`mdciao.utils.residue_and_atom.find_AA` for
             the syntax of the expression.
+        residue_indices : list, default is None,
+            Input your selection via zero-indexed residue indices
+            of `self.top`
         allow_multiple_matches : bool, default is False
             Fail if the substrings of the :obj:`CSVexpression`
             return more than one residue. Protects from over-grabbing
@@ -5350,17 +5348,22 @@ class ContactGroup(object):
             :obj:`CSVexpression` and valued with
             :obj:`ContactGroups`
         """
-        matching_CPs = []
-        keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
-        for exp in keys:
-            match = _mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top)
-            if not allow_multiple_matches and len(match)>1:
-                print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
-                _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
-                raise ValueError
+        if CSVexpression is not None:
+            assert residue_indices is None
+            matching_CPs = []
+            keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
+            for exp in keys:
+                match = _mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top)
+                if not allow_multiple_matches and len(match)>1:
+                    print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
+                    _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
+                    raise ValueError
 
-            idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,match))>0]
-            matching_CPs.append(idxs)
+                idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,match))>0]
+                matching_CPs.append(idxs)
+        else:
+            assert CSVexpression is None
+            matching_CPs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,residue_indices))>0]
 
         if merge:
             Ns = ContactGroup(
