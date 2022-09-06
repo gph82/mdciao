@@ -25,6 +25,7 @@ import numpy as _np
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
+import pandas
 from mdciao.utils.str_and_dict import _kwargs_subs
 
 from pandas import \
@@ -1433,90 +1434,239 @@ class LabelerGPCR(LabelerConsensus):
 
 
 class AlignerConsensus(object):
-    """Use consensus labels for multiple sequence alignment
+    """Use consensus labels for multiple sequence alignment.
 
-    Instead of doing an *actual* multiple sequence alignment, we can exploit
-    the existing consensus labels to align positions
+    Instead of doing an *actual* multiple sequence alignment,
+    we can exploit the existing consensus labels to align residues
     across very different (=low sequence identity) topologies/sequences.
 
-    For example (edited table)::
+    This object can work both with and without specific topologies and
+    with different types of inputs.
 
-        consensus    3CAP    3SN6
-        3.50x50  ARG135  ARG131
-        3.51x51  TYR136  TYR132
-        3.52x52  VAL137  PHE133
+    Without topologies, the alignment via the consensus labels is limited
+    to the reference UniProt residue sequence indices:
 
-    Or, for residue atom indices (edited table)::
+    >>> import mdciao
+    >>> # Get the consensus labels from the GPCRdb and store them in a dict
+    >>> maps = { "OPS": mdciao.nomenclature.LabelerGPCR("opsd_bovin"),
+    >>>         "B2AR": mdciao.nomenclature.LabelerGPCR("adrb2_human"),
+    >>>         "MUOR": mdciao.nomenclature.LabelerGPCR("oprm_mouse")}
+    >>> # Pass the maps to AlignerConsensus
+    >>> AC = mdciao.nomenclature.AlignerConsensus(maps)
+    >>> AC.AAresSeq
+        consensus   OPS  B2AR  MUOR
+    0     1.25x25   NaN   Q26   NaN
+    1     1.26x26   NaN   E27   NaN
+    2     1.27x27   NaN   R28   NaN
+    3     1.28x28   E33   D29   NaN
+    4     1.29x29   P34   E30   M65
+    ..        ...   ...   ...   ...
+    285   8.55x55  V318  Q337  R348
+    286   8.56x56  T319  E338  E349
+    287   8.57x57  T320  L339  F350
+    288   8.58x58  L321  L340  C351
+    289   8.59x59  C322  C341  I352
 
-        consensus  3CAP  3SN6
-        3.50x50  1065  7835
-        3.51x51  1076  7846
-        3.52x52  1088  7858
+    You can also filter the aligment using the `_match` methods
 
+    >>> AC.AAresSeq_match("3.5*")
+        consensus   OPS  B2AR  MUOR
+    117   3.50x50  R131  R135  R165
+    118   3.51x51  Y132  Y136  Y166
+    119   3.52x52  F133  V137  I167
+    120   3.53x53  A134  V138  A168
+    ..        ...   ...   ...   ...
+
+    With topologies, e.g. coming from specific pdbs (or
+    from your own MD-setups) the alignment can be expressed
+    in terms of residue indices or CA-atom indices of those
+    specific topologies. In this example, we are loading
+    directly from the PDB, but you could load your own files
+    with your own setups:
+
+    >>> pdb3CAP = mdciao.cli.pdb("3CAP")
+    >>> pdb3SN6 = mdciao.cli.pdb("3SN6")
+    >>> pdbMUOR = mdciao.cli.pdb("6DDF")
+    >>> AC = mdciao.nomenclature.AlignerConsensus(maps,
+    >>>                                           tops={ "OPS": pdb3CAP.top,
+    >>>                                                 "B2AR": pdb3SN6.top,
+    >>>                                                 "MUOR": pdbMUOR.top})
+
+    Zero-indexed, per-topology C-alpha atom indices:
+
+    >>> AC.CAidxs_match("3.5*")
+        consensus   OPS  B2AR  MUOR
+    114   3.50x50  1065  7835  5370
+    115   3.51x51  1076  7846  5381
+    116   3.52x52  1088  7858  5393
+    117   3.53x53  1095  7869  5401
+    [...]
+
+    Zero-indexed, per-topology residue serial indices:
+
+    >>> AC.residxs_match("3.5*")
+        consensus  OPS  B2AR  MUOR
+    114   3.50x50  134  1007   706
+    115   3.51x51  135  1008   707
+    116   3.52x52  136  1009   708
+    117   3.53x53  137  1010   709
+    ..        ...   ...   ...   ...
+
+    By default, the `_match` methods return only rows were all
+    present systems ("OPS","B2AR", "MUOR" in the example)
+    have consensus labels. E.g. here we ask for TM5 residues
+    present in all three systems:
+
+    >>> AC.AAresSeq_match("5.*")
+        consensus   OPS  B2AR  MUOR
+    167   5.35x36  N200  N196  E229
+    168   5.36x37  E201  Q197  N230
+    169   5.37x38  S202  A198  L231
+    ..        ...   ...   ...   ...
+    198   5.66x66  K231  K227  K260
+    199   5.67x67  E232  R228  S261
+    200   5.68x68  A233  Q229  V262
+
+    But you can get relax the match and get an overview of missing
+    residues using `omit_missing=False`:
+
+    >>> AC.AAresSeq_match("5.*", omit_missing=False)
+        consensus   OPS  B2AR  MUOR
+    162   5.30x31   NaN   NaN  P224
+    163   5.31x32   NaN   NaN  T225
+    164   5.32x33   NaN   NaN  W226
+    165   5.33x34   NaN   NaN  Y227
+    166   5.34x35  N199   NaN  W228
+    167   5.35x36  N200  N196  E229
+    ..        ...   ...   ...   ...
+    200   5.68x68  A233  Q229  V262
+    201   5.69x69  A234  L230   NaN
+    202   5.70x70  A235  Q231   NaN
+    203   5.71x71  Q236  K232   NaN
+    204   5.72x72  Q237  I233   NaN
+    205   5.73x73   NaN  D234   NaN
+    206   5.74x74   NaN  K235   NaN
+    207   5.75x75   NaN  S236   NaN
+    208   5.76x76   NaN  E237   NaN
+
+    Here, we see e.g. that "MUOR" has more residues present at
+    the beginning of TM5 (first row, from P224@5.30x31 on) and also that
+    e.g. "B2AR" has the longest TM5 (last row, until E237@5.76x76).
+
+    Finally, instead of selecting for labels,
+    you can also select for systems, i.e. "Show me the systems that
+    have my selection labels". Here, we ask what systems have '5.70...5.79' residues:
+
+    >>> AC.AAresSeq_match("5.7*", select_keys=True)
+        consensus   OPS  B2AR
+    202   5.70x70  A235  Q231
+    203   5.71x71  Q236  K232
+    204   5.72x72  Q237  I233
+
+    You notice the "MUOR"-column is missing, because it doesn't have '5.7*' residues
 
     """
 
-    def __init__(self, tops, maps=None, CL: LabelerConsensus = None):
+    def __init__(self, maps, tops=None):
         r"""
 
         Parameters
         ----------
-        tops : dict
-            Dictionary of :obj:`~mdtraj.Topology` objects. Keys
-            can be arbitrary identifiers to distinguish among
-            the `tops`, like different PDB IDs or system-setups (WT vs MUT).
-            These keys will be used throughout the object in this order
-        maps : dict, default is None
-            Dictionary of dictionaries, each mapping residue
-            indices of each the `tops` to a consensus label.
-            Typically, this map comes from invoking
-            :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`
-            on the respective `top`.
-        CL : :obj:`~mdciao.nomenclature.LabelerConsensus`, default is None
-            If provided, it is assumed that this object can operate on all
-            `tops`, because all the sequences in `tops` are a good
-            match with the descriptor (e.g. a UniProt Accession Code)
-            used to create the `CL`. Hence, the the `maps`
-            can be generated on-the-fly using this object.
-            Note, however, that in this case there is likely very high
-            sequence similarities between the `tops` and a normal sequence
-            alignment works as well.
+        maps : dict
+            Dictionary of "maps", each one mapping residues
+            to consensus labels. The keys of the dict
+            can be arbitrary identifiers, to distinguish among
+            the different systems, like different UniProt Codes,
+            PDB IDs, or user specific for system-setups
+            (WT vs MUT etc). The values in `maps` can be:
+
+            * Type :obj:`~mdciao.nomenclature.LabelerGPCR`, :obj:`~mdciao.nomenclature.LabelerCGN`,
+              or :obj:`~mdciao.nomenclature.LabelerKLIFS`
+             Recommended option, the most succint and versatile.
+             Pass this object and the maps will get created
+             internally on-the-fly either by
+             calling :obj:`~mdciao.nomenclature.LabelerGPCR.AA2conlab`
+             (if no `tops` passed) or by calling :obj:`~mdciao.nomenclature.LabelerGPCR.top2labels`
+             (if `tops` were passed).
+
+            * Type dict.
+             Only works if `tops` is None. Keyed with residue
+             names (AAresSeq) and valued with consensus labels.
+             Useful if for some reason you want to modify the dicts
+             that are created by :obj:`~mdciao.nomenclature.LabelerGPCR.AA2conlab`
+             before using them here.
+
+            * Type list
+             Only works if `tops` is not None. Zero-indexed with
+             residue indices of the `tops` and valued with
+             consensus labels. Useful if for some reason
+             :obj:`~mdciao.nomenclature.LabelerGPCR.top2labels`
+             doesn't work automatically on the `tops`, since
+             :obj:`~mdciao.nomenclature.LabelerGPCR.top2labels`
+             sometimes fails if it can't cleanly align the
+             consensus sequences to the residues in the `tops`.
+
+        tops : dict or None, default is None
+            A dictionary of :obj:`~mdtraj.Topology` objects,
+            which will allow to express the consensus alignment
+            also in terms of residue indices and of atom indices,
+            using :obj:`~mdciao.nomenclature.AlignerConsensus.CAidxs`
+            and :obj:`~mdciao.nomenclature.AlignerConsensus.residxs`,
+            respectively (otherwise these methods return None).
+            If `tops` is present, self.keys will be in
+            the same order as they appear in `tops`.
         """
         self._tops = tops
-        if CL is not None:
-            assert maps is None
-            self._maps = {}
-            for key, itop in self.tops.items():
-                self._maps[key] = CL.top2labels(itop)
-        else:
-            assert maps is not None
-            self._maps = maps
+        # we keep the order of keys if top is present
+        self._maps = {key : maps[key] for key in [maps.keys() if tops is None else tops.keys()][0]}
+        self._keys = list(self._maps.keys())
+        for key, imap in self.maps.items():
+            if isinstance(imap, dict):
+                assert self.tops is None, ValueError("If `maps` contains dictionaries, then `tops` has to be None")
+                self._maps[key] = imap #nothing to do, already a dict
+            elif isinstance(imap, list):
+                assert self.tops is not None, ("If `maps` contains lists, then `tops` can't be None")
+                self._maps[key] = {ii: lab for ii, lab in enumerate(imap)} # turn into dict
+            elif isinstance(imap, LabelerConsensus):
+                if self.tops is None:
+                    self._maps[key]=imap.AA2conlab # nothing to do, already a dict
+                else:
+                    self._maps[key]={ii : lab for ii, lab in enumerate(imap.top2labels(self.tops[key]))}
+            else:
+                raise ValueError("`maps` should contain either list, dicts, or %s objects, but found %s for key %s"%(LabelerConsensus, type(imap), key))
+        self._maps = {key : {ii : lab for ii, lab in imap.items() if str(lab).lower()!="none"} for key, imap in self.maps.items()}
 
-        self._keys = list(tops.keys())
         self._residxs = None
-        for key in self.keys:
-            imap = self.maps[key]
-            idx2lab = {ii: lab for ii, lab in enumerate(imap) if lab is not None}
-            idf = _DataFrame([idx2lab.values(), idx2lab.keys()], index=["consensus",
-                                                                        key], ).T
+        for key, imap in self.maps.items():
+            idf = _DataFrame([imap.values(), imap.keys()],
+                             index=["consensus", key]).T
 
             if self._residxs is None:
                 self._residxs = idf
             else:
                 self._residxs = self._residxs.merge(idf, how="outer")
-        # self._residxs = self._residxs.replace({_np.nan:None})
+
         sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)
         assert len(sorted_keys)==len(self._residxs["consensus"]),  (len(sorted_keys), len(self._residxs["consensus"]))
         self._residxs = self._residxs.sort_values("consensus", key=lambda col: col.map(lambda x: sorted_keys.index(x)))
         self._residxs = self._residxs.reset_index(drop=True)
 
-        self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
-        for key in self.keys:
-            self._AAresSeq[key] = [[str(self.tops[key].residue(int(ii))) if not _np.isnan(ii) else ii][0] for ii in
-                                   self.residxs[key]]
-            self._CAidxs[key] = [[self.tops[key].residue(int(ii)).atom("CA").index if not _np.isnan(ii) else ii][0] for
-                                 ii in
-                                 self.residxs[key]]
+        if self.tops is not None:
+            self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
+            self._residxs = self._residxs.astype({key: "Int64" for key in self.keys})
+            for key in self.keys:
+                not_nulls = ~self.residxs[key].isnull()
+                self._AAresSeq[key] = [[_mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),keep_index=True) if not_null else ii][0]
+                                       for not_null, ii in zip(not_nulls, self.residxs[key])]
+                self._CAidxs[key] = [[self.tops[key].residue(ii).atom("CA").index if not_null else ii][0]
+                                     for not_null, ii in zip(not_nulls, self.residxs[key])]
+                self._maps[key] = {val : key for ii, (not_null, (key, val)) in enumerate(zip(not_nulls, self.AAresSeq[["consensus", key]].values)) if
+                                                not_null}
+
+            self._CAidxs = self._CAidxs.astype({key: "Int64" for key in self.keys})
+        else:
+            self._AAresSeq = self.residxs
+            self._residxs, self._CAidxs = None, None
 
     @property
     def tops(self) -> dict:
@@ -1528,60 +1678,45 @@ class AlignerConsensus(object):
     @property
     def maps(self) -> dict:
         r"""
-        The dictionaries mapping residue indices of the `tops` to consensus labels.
-
-        These maps were either given at input or created
-        on-the-fly with the provided `LabelerConsensus`
-        using the method :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`
+        The dictionaries mapping residue names to consensus labels.
         """
         return self._maps
 
     @property
     def residxs(self) -> _DataFrame:
         r"""
-        The :obj:`~pandas.DataFrame` containing the alignment based on consensus labels
-
-        Indices are zero-based residue indices of the respective `tops`.
-
-        Currently, sorted alphabetically by consensus labels,
-        which works well for GPCR, not so much for CGN, KLIFS
-        (this will change soon)
+        Consensus-label alignment expressed as zero-indexed residue indices of the respective `tops`
 
         Will have NaNs where residues weren't found,
         i.e. a given `map` didn't contain that consensus label
 
+        Returns None if no `tops` were given at input.
+
         Returns
         -------
-
         df : :obj:`~pandas.DataFrame`
-
         """
         return self._residxs
 
     @property
     def keys(self) -> list:
         r"""
-        The keys with which the `tops` and/or the `maps` were given at input
+        The keys with which the `maps` and the `tops` were given at input
         """
         return self._keys
 
     @property
     def CAidxs(self) -> _DataFrame:
         r"""
-        The :obj:`~pandas.DataFrame` containing the alignment based on consensus labels
+        Consensus-label alignment expressed as atom indices of the C-alpha atoms of respective `tops`
 
-        Indices are zero-based atom indices of the respective `tops`.
-
-        Currently, sorted alphabetically by consensus labels,
-        which works well for GPCR, not so much for CGN, KLIFS
-        (this will change soon)
-
-        Will have NaNs where residues weren't found,
+        Will have NaNs where atoms weren't found,
         i.e. a given `map` didn't contain that consensus label
+
+        Returns None if no `tops` were given at input.
 
         Returns
         -------
-
         df : :obj:`~pandas.DataFrame`
         """
         return self._CAidxs
@@ -1589,25 +1724,18 @@ class AlignerConsensus(object):
     @property
     def AAresSeq(self) -> _DataFrame:
         r"""
-        The :obj:`~pandas.DataFrame` containing the alignment based on consensus labels
-
-        'AAreSeq' means labels like 'ARG130' and so on.
-
-        Currently, sorted alphabetically by consensus labels,
-        which works well for GPCR, not so much for CGN, KLIFS
-        (this will change soon)
+        Consensus-label alignment expressed as residues
 
         Will have NaNs where residues weren't found,
         i.e. a given `map` didn't contain that consensus label
 
         Returns
         -------
-
         df : :obj:`~pandas.DataFrame`
         """
         return self._AAresSeq
 
-    def residxs_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
+    def residxs_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
         r"""
         Filter the `self.residxs` by rows and columns.
 
@@ -1628,6 +1756,11 @@ class AlignerConsensus(object):
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
             None, all columns will be used.
+        select_keys : bool, default is False
+            Use the `patterns` not only to select
+            for rows but also to select for columns, i.e.
+            for keys. Keys (=columns) not featuring
+            any `patterns` will be dropped.
         omit_missing : bool, default is True
             Omit rows with missing values.
 
@@ -1635,9 +1768,10 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.residxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing).astype({key : int for key in [self.keys if keys is None else keys][0]})
+        return _only_matches(self.residxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
+                             filter_on="consensus")
 
-    def AAresSeq_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
+    def AAresSeq_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
         r"""
         Filter the `self.AAresSeq` by rows and columns.
 
@@ -1658,6 +1792,11 @@ class AlignerConsensus(object):
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
             None, all columns will be used.
+        select_keys : bool, default is False
+            Use the `patterns` not only to select
+            for rows but also to select for columns, i.e.
+            for keys. Keys (=columns) not featuring
+            any `patterns` will be dropped.
         omit_missing : bool, default is True
             Omit rows with missing values,
 
@@ -1665,9 +1804,10 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.AAresSeq, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing)
+        return _only_matches(self.AAresSeq, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
+                             filter_on="consensus")
 
-    def CAidxs_match(self, patterns=None, keys=None, omit_missing=True) -> _DataFrame:
+    def CAidxs_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
         r"""
         Filter the `self.CAidxs` by rows and columns.
 
@@ -1688,6 +1828,11 @@ class AlignerConsensus(object):
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
             None, all columns (except `filter_on`) will be used.
+        select_keys : bool, default is False
+            Use the `patterns` not only to select
+            for rows but also to select for columns, i.e.
+            for keys. Keys (=columns) not featuring
+            any `patterns` will be dropped.
         omit_missing : bool, default is True
             Omit rows with missing values
 
@@ -1695,14 +1840,11 @@ class AlignerConsensus(object):
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.CAidxs, keys=keys, patterns=patterns, filter_on="consensus", dropna=omit_missing).astype({key : int for key in [self.keys if keys is None else keys][0]})
+        return _only_matches(self.CAidxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
+                             filter_on="consensus")
 
 
-def _only_matches(df,
-                  patterns=None,
-                  filter_on="index",
-                  keys=None,
-                  dropna=True) -> _DataFrame:
+def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, dropna=True, filter_on="index") -> _DataFrame:
     r"""
     Row-filter an :obj:`~pandas.DataFrame` by patterns in the values and column-filter by keys in the column names
 
@@ -1712,37 +1854,49 @@ def _only_matches(df,
 
     Parameters
     ----------
-    df : :obj:`~pandas.DataFrame`
-        The dataframe to be filter by matching `patterns` and `keys`
+    df : :obj:`~pandas.DataFrame` or None
+        The dataframe to be filter by matching `patterns` and `keys`.
+        If None, the method simply returns None.
     patterns : str, default is None
         A list in CSV-format of patterns to be matched
         Matches are done using Unix filename pattern matching
         and are allowed for exclusion, e.g.
          * "H*,-H8" will include all TMs but not H8
          * "G.S*" will include all beta-sheets
-    filter_on : str, default is 'index'
-        The column of `df` on which the `patterns`
-        will be sued for a match
     keys : list, default is None
         If only a sub-set of columns need to match,
         provide them here as list of strings. If
         None, all columns (except `filter_on`) will be used.
+    select_keys : bool, default is False
+        Use the `patterns` not only to select
+        for rows but also to select for columns, i.e.
+        for keys. Keys (=columns) not featuring
+        any `patterns` will be dropped.
     dropna : bool, default is True
         Use :obj:`~pandas.Dataframe.dropna` row-wise
         before returning
+     filter_on : str, default is 'index'
+        The column of `df` on which the `patterns`
+        will be used for a match
 
     Returns
     -------
     df : :obj:`~pandas.DataFrame`
         Will only have `filter_on`+`keys` as columns
     """
+    if df is None:
+        return None
     if keys is None:
         keys = [key for key in df.keys() if key != filter_on]
 
     if patterns is not None:
         matching_keys = _mdcu.str_and_dict.fnmatch_ex(patterns, df[filter_on])
         matches = df[filter_on].map(lambda x: x in matching_keys)
-    df = df[matches][[filter_on]+keys]
+        df = df[matches]
+    df = df[[filter_on]+keys]
+
+    if select_keys:
+        df = df[[key for key in df.keys() if not all(df[key].isna())]]
     if dropna:
         df = df.dropna()
     return df
@@ -2138,6 +2292,11 @@ def _sort_consensus_labels(subset, sorted_superset,
             by_frags[frag][idx] = item
         except:
             pass
+
+    # In case any negative integers are in the keys (=labels) convert them to ints s.t. natsort can work with them
+    by_frags = {key : {[int(key2) if any([val2.startswith("-") for val2 in val]) else key2][0]: val2
+                       for key2, val2 in val.items()
+                       } for key, val in by_frags.items()}
 
     labs_out = []
     for frag in sorted_superset:

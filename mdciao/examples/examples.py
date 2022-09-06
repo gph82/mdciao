@@ -617,6 +617,6 @@ def AlignerConsensus_B2AR_HUMAN_vs_OPSD_BOVIN() -> _AlignerConsensus:
     maps = {"B2AR": GPCR_b2ar.top2labels(g3SN6.top),
             "OPS": GPCR_ops.top2labels(g3CAP.top)}
 
-    return _AlignerConsensus({"B2AR": g3SN6.top,
-                              "OPS": g3CAP.top},
-                             maps=maps)
+    return _AlignerConsensus(maps, tops={"B2AR": g3SN6.top,
+                                         "OPS": g3CAP.top},
+                             )
