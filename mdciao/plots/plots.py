@@ -483,7 +483,7 @@ def plot_unified_freq_dicts(freqs,
 @_kwargs_subs(plot_unified_freq_dicts)
 def compare_groups_of_contacts(groups,
                                colors=None,
-                               mutations_dict={},
+                               mutations_dict=None,
                                width=.2,
                                ax=None,
                                figsize=(10, 5),
@@ -534,13 +534,13 @@ def compare_groups_of_contacts(groups,
         * If str, it has to be a case-sensitve colormap-name of matplotlib:
           https://matplotlib.org/stable/tutorials/colors/colormaps.html
         * If None, the 'tab10' colormap (tableau) is chosen
-    mutations_dict : dictionary, default is {}
-        A mutation dictionary that contains allows to plot together
+    mutations_dict : dictionary, default is None
+        A mutation dictionary that allows to plot together
         residues that would otherwise be identified as different
         contacts. If there were two mutations, e.g A30K and D35A
         the mutation dictionary will be {"A30":"K30", "D35":"A35"}.
         You can also use this parameter for correcting indexing
-        offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}
+        offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}.
     width : float, default is .2
         The witdth of the bars
     ax : :obj:`~matplotlib.axes.Axes`
@@ -660,7 +660,8 @@ def compare_groups_of_contacts(groups,
         else:
             idict = {key:val for key, val in ifile.items()}
 
-        idict = {_mdcu.str_and_dict.replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
+        if mutations_dict is not None:
+            idict = {_mdcu.str_and_dict.replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
 
         if anchor is not None:
             idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
