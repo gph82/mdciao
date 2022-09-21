@@ -395,7 +395,7 @@ def lexsort_ctc_labels(ctc_labels, reverse=False, columns=[0,1], sep="-") -> tup
     r"""
     Sort contact-labels in ascending order of resSeq using both columns
 
-    Wraps around :obj:`numpy.lexsort` with some string handling
+    Wraps around :obj:`numpy.lexsort` with some string handling.
 
     It will also work with contact-labels consisting of only one residue,
     e.g. in the cases where the "anchor" has been deleted or the frequencies
@@ -433,11 +433,11 @@ def lexsort_ctc_labels(ctc_labels, reverse=False, columns=[0,1], sep="-") -> tup
 
     Returns
     -------
+    sorted_ctc_labels : list
+        The sorted contact labels
     order : 1D np.ndarray
         The indices of :obj:`ctc_labels` that
         sort it into :obj:`sorted_ctc_labels`
-    sorted_ctc_labels : list
-        The sorted contact labels
     """
     resSeqs = _np.vstack(
         [[intblocks_in_str(pp)[0] for pp in splitlabel(lab,sep)] for lab in ctc_labels])
