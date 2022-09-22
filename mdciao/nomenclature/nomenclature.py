@@ -1438,10 +1438,8 @@ class AlignerConsensus(object):
 
     Instead of doing an *actual* multiple sequence alignment,
     we can exploit the existing consensus labels to align residues
-    across very different (=low sequence identity) topologies/sequences.
-
-    This object can work both with and without specific topologies and
-    with different types of inputs.
+    across very different (=low sequence identity) sequences and,
+    optionally, topologies.
 
     Without topologies, the alignment via the consensus labels is limited
     to the reference UniProt residue sequence indices:
@@ -1478,8 +1476,8 @@ class AlignerConsensus(object):
     ..        ...   ...   ...   ...
 
     With topologies, e.g. coming from specific pdbs (or
-    from your own MD-setups) the alignment can be expressed
-    in terms of residue indices or CA-atom indices of those
+    from your own MD-setups), the alignment can be expressed
+    in terms of residue indices or Cɑ-atom indices of those
     specific topologies. In this example, we are loading
     directly from the PDB, but you could load your own files
     with your own setups:
@@ -1492,7 +1490,7 @@ class AlignerConsensus(object):
     >>>                                                 "B2AR": pdb3SN6.top,
     >>>                                                 "MUOR": pdbMUOR.top})
 
-    Zero-indexed, per-topology C-alpha atom indices:
+    Zero-indexed, per-topology Cɑ atom indices:
 
     >>> AC.CAidxs_match("3.5*")
         consensus   OPS  B2AR  MUOR
@@ -1708,7 +1706,7 @@ class AlignerConsensus(object):
     @property
     def CAidxs(self) -> _DataFrame:
         r"""
-        Consensus-label alignment expressed as atom indices of the C-alpha atoms of respective `tops`
+        Consensus-label alignment expressed as atom indices of the Cɑ atoms of respective `tops`
 
         Will have NaNs where atoms weren't found,
         i.e. a given `map` didn't contain that consensus label
