@@ -51,6 +51,8 @@ from natsort import natsorted as _natsorted
 
 from string import ascii_uppercase as _ascii_uppercase
 
+from inspect import signature as _signature
+
 _filenames = _FN()
 _AA_chars_no_X = [char for char in _md.core.residue_names._AMINO_ACID_CODES.values() if char not in ["X", None]]
 
@@ -2101,7 +2103,7 @@ def guess_nomenclature_fragments(refseq, top,
     verbose: boolean
         be verbose
     return_residue_idxs : bool, default is False
-        Return the list residue indices directly,
+        Return the list of residue indices directly,
         instead of returning a list of fragment idxs.
     empty : class, list or None, default is list
         What to return in case of an emtpy guess,
@@ -2154,15 +2156,16 @@ def guess_nomenclature_fragments(refseq, top,
         guess = None
     return guess
 
-
-def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
+@_kwargs_subs(guess_nomenclature_fragments, exclude=["fragments", "return_residue_idxs"])
+def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
                           return_str=True, accept_guess=False,
+                          return_residue_idxs=False,
                           **guess_kwargs):
     r"""
 
-    Guess which fragments of a topology best align with a consensus nomenclature
+    Guess which fragments of a topology best align with a consensus nomenclature.
 
-    Wraps around :obj:`guess_nomenclature_fragments` to interpret its answer
+    Wraps around :obj:`guess_nomenclature_fragments` to interpret its answer.
 
     Parameters
     ----------
@@ -2173,32 +2176,74 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
         The topology whose fragments
         are being matched with those
         in :obj:`CLin`
-    fragments : iterable
-        Fragment definitions
-    nomenclature_name : str
+    fragments : iterable of iterables of idxs or str, default is None
+        How `top` is split into fragments. If list of lists of indices,
+        these are the fragments expressed as residue indices
+        of `top`. If None or str, the `fragments` will be generated
+        using :obj:`mdciao.fragments.get_fragments`,
+        either with the default scheme (if `fragments` is None)
+        or with the scheme-name provided by `fragments` (e.g.
+        `fragments`="chains" or `fragments`="resSeq+".
+        See the note at the bottom for how `fragments`
+        relates to `return_residue_idxs`.
+    nomenclature_name : str, default is None
         A string identifying the nomenclature
         type, e.g. "CGN" or "GPCR". For logging
-        purposes
+        purposes. If None, it will the derived
+        from the class name of `CLin`.
     return_str : bool, default is True
         Return the answer the user provided
-        in case an alternative guess
+        in case an alternative guess.
     accept_guess : bool, default is False
         Accept the guess of :obj:`guess_nomenclature_fragments`
-        without asking for confirmation
+        without asking for confirmation.
+    return_residue_idxs : bool, default is False
+        Return the list of residue indices directly,
+        instead of returning a list of fragment idxs.
+        Only has an effect if
     guess_kwargs : dict, optional
-        Keyword arguments for :obj:`guess_nomenclature_fragments`
+        Keyword arguments for some of the keyword arguments
+        of :obj:`guess_nomenclature_fragments`, which
+        are listed below.
+
+    Other Parameters
+    ----------------
+    %(substitute_kwargs)s
 
     Returns
     -------
-    answer : str
-        Only if return_str is True
+    answer : list or str
+        The indices of the fragments of `top` that best
+        match the reference sequence in `CLin`. If `return_residue_idxs`
+        is True, then the indices will be actual residue indices,
+        and not fragment indices.
+
+    Note
+    ----
+    If the user doesn't provide any `fragments`, this method will generate
+    them on-the-fly and subsequently guess which one of them matches
+    `CLin` the best. Hence, `fragments`=None only makes sense if
+    `return_residue_idxs` is True, because then the actual
+    residue indices of `top` that best match `CLin` are returned.
+    Otherwise, the method would say something like "The labels align best
+    with fragments 0,1", and return the indices
+    [0,1], which are useless since we don't know what
+    the fragments are. In this case, an Exception is thrown.
 
     """
-    guess = guess_nomenclature_fragments(CLin, top, fragments, **guess_kwargs)
+    if nomenclature_name is None:
+        nomenclature_name = type(CLin).__name__.replace("Labeler", "")
+    if fragments is None or isinstance(fragments,str):
+        fragments = _mdcfrg.get_fragments(top, [_signature(_mdcfrg.get_fragments).parameters["method"].default if fragments is None else fragments][0],
+                                          verbose=True)
+        if return_residue_idxs is False:
+            raise ValueError("`fragments` can't be None if `return_residue_idxs` is False.\n"
+                             "Please see the note at the end of this method's documentation")
+    guess = guess_nomenclature_fragments(CLin, top, fragments=fragments, **guess_kwargs)
     guess_as_string = ','.join(['%s' % ii for ii in guess])
 
     if len(guess) > 0:
-        print("%s-labels align best with fragments: %s (first-last: %s-%s)."
+        print("The %s-labels align best with fragments: %s (first-last: %s-%s)."
               % (nomenclature_name, str(guess),
                  top.residue(fragments[guess[0]][0]),
                  top.residue(fragments[guess[-1]][-1])))
@@ -2222,6 +2267,8 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
         pass
     else:
         answer = [int(ii) for ii in answer.split(",")]
+        if return_residue_idxs:
+            answer = _np.hstack([fragments[ii] for ii in answer]).tolist()
     return answer
 
 
