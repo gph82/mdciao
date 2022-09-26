@@ -392,8 +392,7 @@ def maptops(top0,
             top1,
             allow_nonmatch=False,
             ):
-    r""" map residues between topologies or sequences
-    via their serial indices a sequence alignment
+    r""" Use pairwise sequence alignment to produce maps of residue indices between topologies or sequences
 
     Parameters
     ----------
