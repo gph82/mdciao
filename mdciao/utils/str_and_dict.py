@@ -490,7 +490,7 @@ def freq_file2dict(ifile, defrag=None):
 
     return res
 
-def freq_ascii2dict(ifile, comment=["#"]):
+def freq_ascii2dict(ifile, comment="#"):
     r"""
     Reads an ASCII file that contains contact frequencies
     (1st column) and contact labels (2nd and/or 3rd column).
@@ -525,7 +525,7 @@ def freq_ascii2dict(ifile, comment=["#"]):
     ----------
     ifile : str
         The filename to be read
-    comment : list of chars
+    comment : str, default is '#'
         Any line starting with any of these
         characters will be ignored
     Returns
