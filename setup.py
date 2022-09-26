@@ -88,7 +88,8 @@ setup(
         ("data_for_mdciao/notebooks", ["mdciao/examples/Flareplot_Schemes.ipynb"]),
         ("data_for_mdciao/notebooks", ["mdciao/examples/EGFR_Kinase_Inhibitors.ipynb"]),
         ("data_for_mdciao/notebooks", ["mdciao/examples/Comparing_CGs_Bars.ipynb"]),
-        ("data_for_mdciao/notebooks", ["mdciao/examples/Comparing_CGs_Flares.ipynb"])
+        ("data_for_mdciao/notebooks", ["mdciao/examples/Comparing_CGs_Flares.ipynb"]),
+        ("data_for_mdciao/notebooks", ["mdciao/examples/MSA_via_Consensus_Labels.ipynb"])
     ],
     scripts=['scripts/mdc_neighborhoods.py',
              'scripts/mdc_sites.py',
