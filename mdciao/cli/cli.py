@@ -148,7 +148,6 @@ def _parse_consensus_option(option, consensus_type,
 
     if LC_out is not None:
         answer = _mdcnomenc.guess_by_nomenclature(LC_out, top, fragments, consensus_type,
-                                                  return_str=False,
                                                   accept_guess=accept_guess,
                                                   # verbose=True
                                                   )
