@@ -1259,8 +1259,8 @@ def _kwargs_docstring(obj, exclude=None):
     assert params != ''
     return params
 
-def _kwargs_subs(funct_or_method):
-    r"""One line, one argument decorator to substitute kwargs docstrings
+def _kwargs_subs(funct_or_method, exclude=None):
+    r"""Substitute the expression 'kwargs docstrings' in the decorated method with those of `funct_or_method`
 
     Will substitute the expression "%(substitute_kwargs)s" anywhere in the
     docstring of the method it decorates with the optional parameter
@@ -1269,6 +1269,11 @@ def _kwargs_subs(funct_or_method):
     Parameters
     ----------
     funct_or_method : method or function
+    exclude : list, default is None
+        A list of argument names (strings). Arguments of `obj`
+        matching those in `exclude` will be excluded from
+        the returned docstring.
+
 
     Returns
     -------
@@ -1276,4 +1281,4 @@ def _kwargs_subs(funct_or_method):
     """
 
     return _mpldocstring.Substitution(
-        substitute_kwargs=_kwargs_docstring(funct_or_method))
+        substitute_kwargs=_kwargs_docstring(funct_or_method, exclude=exclude))
