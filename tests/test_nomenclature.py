@@ -1556,3 +1556,16 @@ class Test_AlignerConsensus(unittest.TestCase):
                          '107   3.55x55  T136\n'
                          '108   3.56x56  S137'
                          )
+
+    def test_sequence_match(self):
+        df = self.AC_maps_no_tops.sequence_match(patterns="3.5*")
+
+        self.assertEqual("      3CAP  3SN6\n"
+                         "3CAP  100%   29%\n"
+                         "3SN6   29%  100%\n", df.to_string())
+
+    def test_sequence_match_absolute(self):
+        df = self.AC_maps_no_tops.sequence_match(patterns="3.5*", absolute=True)
+        self.assertEqual("      3CAP  3SN6\n" \
+                         "3CAP     7     2\n" \
+                         "3SN6     2     7", df.to_string())
