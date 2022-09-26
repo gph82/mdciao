@@ -807,7 +807,9 @@ class Test_guess_by_nomenclature(unittest.TestCase):
             answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,
                                                         self.GPCR_local_w_pdb.top,
                                                         self.fragments,
-                                                        "GPCR")
+                                                        nomenclature_name="GPCR",
+                                                        return_str=True,
+                                                        )
             self.assertEqual(answer, "4")
 
     def test_works_return_answer_as_list(self):
@@ -817,8 +819,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
             answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,
                                                         self.GPCR_local_w_pdb.top,
                                                         self.fragments,
-                                                        "GPCR",
-                                                        return_str=False,
+                                                        nomenclature_name="GPCR",
                                                         )
             self.assertSequenceEqual(answer, [4])
 
@@ -826,8 +827,9 @@ class Test_guess_by_nomenclature(unittest.TestCase):
         answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,
                                                     self.GPCR_local_w_pdb.top,
                                                     self.fragments,
-                                                    "GPCR",
-                                                    accept_guess=True
+                                                    nomenclature_name="GPCR",
+                                                    accept_guess=True,
+                                                    return_str=True,
                                                     )
         self.assertEqual(answer, "4")
 
@@ -835,7 +837,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
         answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,
                                                     self.GPCR_local_w_pdb.top,
                                                     self.fragments,
-                                                    "GPCR",
+                                                    nomenclature_name="GPCR",
                                                     accept_guess=True,
                                                     min_hit_rate=2,  # impossible rate
                                                     )
