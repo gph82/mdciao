@@ -25,7 +25,6 @@ import numpy as _np
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
-import pandas
 from mdciao.utils.str_and_dict import _kwargs_subs
 
 from pandas import \
@@ -1843,6 +1842,79 @@ class AlignerConsensus(object):
         return _only_matches(self.CAidxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
                              filter_on="consensus")
 
+    def sequence_match(self,patterns=None, absolute=False)-> _DataFrame:
+        r"""Matrix with the percentage of sequence identity within the set of the residues sharing consensus labels
+
+        The comparison is done between the reference consensus sequences
+        in self.AAresSeq, i.e., independently of any `tops` that the user
+        has provided.
+
+        Example:
+        >>> AC.sequence_match(patterns="3.5*")
+               OPS  B2AR  MUOR
+        OPS   100%   29%   57%
+        B2AR   29%  100%   43%
+        MUOR   57%   43%  100%
+
+        Meaning, for the residues having consensus labels 3.50 to 3.59,
+        B2AR and OPS have 29% identity, or OPS and MUOR 57%. You can
+        express this as absolute nubmer of residues:
+        >>> AC.match_percentage("3.*", absolute=True)
+              OPS  B2AR  MUOR
+        OPS     7     2     4
+        B2AR    2     7     3
+        MUOR    4     3     7
+
+        You can check which residues these are:
+        >>> AC.AAresSeq_match("3.5*")
+            consensus   OPS  B2AR  MUOR
+        117   3.50x50  R135  R131  R165
+        118   3.51x51  Y136  Y132  Y166
+        119   3.52x52  V137  F133  I167
+        120   3.53x53  V138  A134  A168
+        121   3.54x54  V139  I135  V169
+        122   3.55x55  C140  T136  C170
+        123   3.56x56  K141  S137  H171
+
+        You can see the two OPS/B2AR matches in 3.50x50 and 3.51x51
+
+        Parameters
+        ----------
+        patterns : str, default is None
+            A list in CSV-format of patterns to be matched
+            by the consensus labels. Matches are done using
+            Unix filename pattern matching, and are allows
+            for exclusion, e.g. "3.*,-3.5*." will include all
+            residues in TM3 except those in the segment 3.50...3.59
+        absolute : bool, default is False
+            Instead of returning a percentage, return
+            the nubmer of matching residues as integers
+
+        Returns
+        -------
+        match :  :obj:`~pandas.DataFrame`
+            The matrix of sequence identity, for residues sharing consensus labels across
+            the different systems.
+        """
+        match = _defdict(dict)
+        for key1 in self.keys:
+            for key2 in self.keys:
+                if key1!=key2:
+                    res = self.AAresSeq_match(patterns=patterns, keys=[key1,key2])
+                    ident = (res[key1].map(lambda x : x[0])==res[key2].map(lambda x : x[0])).sum()
+                else:
+                    res = self.AAresSeq_match(patterns=patterns, keys=[key1])
+                    ident = len(res)
+                if not absolute:
+                    ident = _np.round(ident / len(res) * 100)
+                match[key1][key2] = ident  # .round()
+
+        df = _DataFrame(match, dtype=int)
+
+        if not absolute:
+            df = df.applymap(lambda x: "%u%%" % x)
+
+        return df
 
 def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, dropna=True, filter_on="index") -> _DataFrame:
     r"""
