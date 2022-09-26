@@ -1897,6 +1897,12 @@ def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, d
         df = df[[key for key in df.keys() if not all(df[key].isna())]]
     if dropna:
         df = df.dropna()
+
+    # Try to return integers when possible
+    try:
+        df = df.astype({key:int for key in df.keys() if key!=filter_on})
+    except (ValueError, TypeError) as e:
+        pass
     return df
 
 
