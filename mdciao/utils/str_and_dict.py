@@ -1226,15 +1226,32 @@ class FilenameGenerator(object):
         return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"),gx])
 
 
-def _kwargs_docstring(obj):
-    r"""Return the formatted docstring of a callable object's keyword arguments"""
+def _kwargs_docstring(obj, exclude=None):
+    r""" Return the formatted docstring of a callable object's keyword arguments.
+
+    Parameters
+    ----------
+    obj : callable
+        The method or class whose docstring will be extracted
+    exclude : list, default is None
+        A list of argument names (strings). Arguments of `obj`
+        matching those in `exclude` will be excluded from
+        the returned docstring.
+
+    Returns
+    -------
+    docstring :  str
+    """
     sig = _signature(obj)
     dp = _dsp.parse(obj.__doc__)
     params = ""
+    if exclude is None:
+        exclude=[]
     for p in dp.params:
         for arg in p.arg_name.replace(" ", "").split(","):
             if arg in sig.parameters.keys() and (
-                    "=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3):
+                    "=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3) \
+                    and arg not in exclude:
                 line = '%s : %s\n%s' % (p.arg_name, p.type_name,
                                         ''.join(['\t%s\n' % (desc) for desc in p.description.splitlines()]))
                 params += line.expandtabs(4)
