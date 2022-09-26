@@ -2158,7 +2158,7 @@ def guess_nomenclature_fragments(refseq, top,
 
 @_kwargs_subs(guess_nomenclature_fragments, exclude=["fragments", "return_residue_idxs"])
 def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
-                          return_str=True, accept_guess=False,
+                          return_str=False, accept_guess=False,
                           return_residue_idxs=False,
                           **guess_kwargs):
     r"""
@@ -2191,7 +2191,7 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
         type, e.g. "CGN" or "GPCR". For logging
         purposes. If None, it will the derived
         from the class name of `CLin`.
-    return_str : bool, default is True
+    return_str : bool, default is False
         Return the answer the user provided
         in case an alternative guess.
     accept_guess : bool, default is False
@@ -2212,12 +2212,14 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
 
     Returns
     -------
-    answer : list or str
+    answer : list or None
         The indices of the fragments of `top` that best
-        match the reference sequence in `CLin`. If `return_residue_idxs`
+        match the reference sequence in `CLin`. If none match,
+        then None will be returned. If `return_residue_idxs`
         is True, then the indices will be actual residue indices,
-        and not fragment indices.
-
+        and not fragment indices (see the note below for more).
+        If return_str is True, the the answer is returned
+        as a string of comma-separated-values.
     Note
     ----
     If the user doesn't provide any `fragments`, this method will generate
