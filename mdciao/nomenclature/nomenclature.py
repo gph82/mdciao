@@ -1748,9 +1748,8 @@ class AlignerConsensus(object):
             A list in CSV-format of patterns to be matched
             by the consensus labels. Matches are done using
             Unix filename pattern matching, and are allows
-            for exclusion, e.g.
-             * "H*,-H8" will include all TMs but not H8
-             * "G.S*" will include all beta-sheets
+            for exclusion, e.g. "3.*,-3.5*." will include all
+            residues in TM3 except those in the segment 3.50...3.59
         keys : list, default is None
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
@@ -1784,9 +1783,8 @@ class AlignerConsensus(object):
             A list in CSV-format of patterns to be matched
             by the consensus labels. Matches are done using
             Unix filename pattern matching, and are allows
-            for exclusion, e.g.
-             * "H*,-H8" will include all TMs but not H8
-             * "G.S*" will include all beta-sheets
+            for exclusion, e.g. "3.*,-3.5*." will include all
+            residues in TM3 except those in the segment 3.50...3.59
         keys : list, default is None
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
@@ -1820,8 +1818,8 @@ class AlignerConsensus(object):
             A list in CSV-format of patterns to be matched
             by the consensus labels. Matches are done using
             Unix filename pattern matching, and are allows
-            for exclusion, e.g.
-             * "H*,-H8" will include all TMs but not H8
+            for exclusion, e.g. "3.*,-3.5*." will include all
+            residues in TM3 except those in the segment 3.50...3.59H8
              * "G.S*" will include all beta-sheets
         keys : list, default is None
             If only a sub-set of columns need to match,
@@ -1931,10 +1929,10 @@ def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, d
         If None, the method simply returns None.
     patterns : str, default is None
         A list in CSV-format of patterns to be matched
-        Matches are done using Unix filename pattern matching
-        and are allowed for exclusion, e.g.
-         * "H*,-H8" will include all TMs but not H8
-         * "G.S*" will include all beta-sheets
+        by the consensus labels. Matches are done using
+        Unix filename pattern matching, and are allows
+        for exclusion, e.g. "3.*,-3.5*." will include all
+        residues in TM3 except those in the segment 3.50...3.59
     keys : list, default is None
         If only a sub-set of columns need to match,
         provide them here as list of strings. If
