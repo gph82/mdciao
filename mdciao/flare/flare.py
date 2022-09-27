@@ -275,7 +275,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         fail
     aura : iterable, default is None
         Scalar array, indexed with residue indices,
-        e.g. RMSF, SASA, conv. degree...
+        e.g. RMSF, SASA, degree of conservation etc.
         It will be drawn as an *aura* around the
         flareplot.
     coarse_grain : bool, default is False
