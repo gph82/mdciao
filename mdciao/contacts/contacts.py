@@ -4738,7 +4738,7 @@ class ContactGroup(object):
             jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
         return jax
 
-    @_kwargs_subs(_mdcflare.freqs2flare)
+    @_kwargs_subs(_mdcflare.freqs2flare, exclude=["fragments", "SS", "fragment_names", "colors", "top"])
     def plot_freqs_as_flareplot(self, ctc_cutoff_Ang,
                                 fragments=None,
                                 fragment_names=None,
