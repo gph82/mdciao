@@ -39,6 +39,7 @@ extensions = [
 #    "numpydoc",
 ]
 
+napoleon_use_param = False
 # Napoleon Settings for showing class documentation's init doc
 #napoleon_include_init_with_doc = True
 
