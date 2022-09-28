@@ -374,28 +374,6 @@ def col_list_from_input_and_fragments(colors,
 
     return col_list
 
-def draw_arcs(fragments, iax, colors=None,
-              lw=1,
-              center=0, r=1, angle_offset=0, **cartify_kwargs):
-
-    if colors is None:
-        colors = ["k"]*len(fragments)
-    angles = cartify_fragments(fragments,r=r, return_angles=True, **cartify_kwargs)[1]*180/_np.pi
-    from mdciao.utils.lists import re_warp
-    angles = re_warp(angles,[len(ifrag) for ifrag in fragments])
-    from matplotlib.patches import Arc as _Arc
-    for ii, iang in enumerate(angles):
-        iarc = _Arc(center,
-                    width=r,
-                    height=r,
-                    angle=angle_offset,
-                    theta1=iang[-1],
-                    theta2=iang[0],
-                    lw=lw,
-                    color=colors[ii],
-                    )
-        iax.add_artist(iarc)
-
 def should_this_residue_pair_get_a_curve(
                                          fragments,
                                          mute_fragments=None,
