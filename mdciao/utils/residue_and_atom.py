@@ -283,7 +283,7 @@ def int_from_AA_code(key):
     except ValueError:
         return None
 
-def name_from_AA(key):
+def name_from_AA(key) -> str:
     """
     Return the residue name from a string
 
@@ -299,8 +299,16 @@ def name_from_AA(key):
 
     """
 
-
-    return ''.join([ii for ii in str(key) if ii.isalpha()])
+    if isinstance(key, _md.core.topology.Residue):
+        name = key.name
+    else:
+        rev_key = key[::-1]
+        # Iterate from tail to head and break at the first alphabetic char
+        for ii, char in enumerate(rev_key):
+            if char.isalpha():
+                break
+        name = rev_key[ii:][::-1]
+    return name
 
 def shorten_AA(AA, substitute_fail=None, keep_index=False):
     r"""
