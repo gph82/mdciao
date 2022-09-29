@@ -404,7 +404,7 @@ def _break_fragments(breakers, fragments):
     return fragments
 
 #TODO use this throught the code instead of the python explicit way
-def fragment_slice(traj : _md.Trajectory, fragments, keys_or_idxs=None):
+def fragment_slice(traj : _md.Trajectory, fragments, keys_or_idxs=None) -> _md.Trajectory:
     r"""
 
     Slice a geometry using arbitrary fragment definitions, a la :obj:`mdtraj.Trajectory.atom_slice`
@@ -421,13 +421,13 @@ def fragment_slice(traj : _md.Trajectory, fragments, keys_or_idxs=None):
         The trajectory to slice
     fragments : list or dict
         The fragment definitions as residue indices.
-        Can be as a list or a as a dict, e.g. the output of
+        Can be as a list or as a dict, e.g. the output of
         :obj:`mdciao.fragments.get_fragments` (list) or
         :obj:`mdciao.nomenclature.LabelerGPCR.top2frags` (dict)
     keys_or_idxs : iterable or None
         The keys or indices of the
         fragments to slice to, i.e.
-        to keep. If None, all
+        to keep. If None
         all fragments are used
         as a selection
 
