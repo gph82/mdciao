@@ -707,5 +707,57 @@ class Test_consensus_mix_fragment_info(unittest.TestCase):
             mixed_frags.pop(key)
         assert mixed_frags == {}
 
+class Test_fragment_slice(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.geom = md.load(test_filenames.actor_pdb)
+        cls.fragments_list = mdcfragments.get_fragments(cls.geom.top)
+        """
+        Auto-detected fragments with method 'lig_resSeq+'
+        fragment      0 with    281 AAs    GLU30 (     0) -  CYSP341 (280   ) (0)  resSeq jumps
+        fragment      1 with    379 AAs    CYSP2 (   281) -   LEU394 (659   ) (1)  resSeq jumps
+        fragment      2 with    339 AAs     SER2 (   660) -   ASN340 (998   ) (2) 
+        fragment      3 with     67 AAs     ALA2 (   999) -   CYSG68 (1065  ) (3) 
+        fragment      4 with      1 AAs   P0G395 (  1066) -   P0G395 (1066  ) (4) 
+        fragment      5 with      1 AAs   GDP396 (  1067) -   GDP396 (1067  ) (5) 
+        fragment      6 with      1 AAs    MG397 (  1068) -    MG397 (1068  ) (6)   
+        """
+        cls.fragments_dict = {"B2AR": cls.fragments_list[0],
+                              "Ga":   cls.fragments_list[1],
+                              "Gb":   cls.fragments_list[2],
+                              "Gg":   cls.fragments_list[3],
+                              "P0G":  cls.fragments_list[4],
+                              "GDP":  cls.fragments_list[5],
+                              "Mg":   cls.fragments_list[6]
+                              }
+    def test_just_works(self):
+        new_geom = mdcfragments.fragment_slice(self.geom, self.fragments_list[:1])
+        new_frags = mdcfragments.get_fragments(new_geom.top)
+        assert new_geom.n_residues == 281
+        assert len(new_frags) == 1
+        assert len(new_frags[0]) == 281
+        assert str(new_geom.top.residue(0)) == "GLU30"
+        assert str(new_geom.top.residue(280)) == "CYSP341"
+
+    def test_keys(self):
+        new_geom = mdcfragments.fragment_slice(self.geom, self.fragments_dict, keys_or_idxs=["Gb"])
+        new_frags = mdcfragments.get_fragments(new_geom.top)
+        assert new_geom.n_residues == 339
+        assert len(new_frags) == 1
+        assert len(new_frags[0]) == 339
+        assert str(new_geom.top.residue(0)) == "SER2"
+        assert str(new_geom.top.residue(338)) == "ASN340"
+
+    def test_dict_no_keys(self):
+        new_geom = mdcfragments.fragment_slice(self.geom, {key: self.fragments_dict[key] for key in ["Gg", "P0G"]})
+        new_frags = mdcfragments.get_fragments(new_geom.top)
+        assert new_geom.n_residues == 68
+        assert len(new_frags) == 2
+        assert len(new_frags[0]) == 67
+        assert len(new_frags[1]) == 1
+        assert str(new_geom.top.residue(0)) == "ALA2"
+        assert str(new_geom.top.residue(66)) == "CYSG68"
+        assert str(new_geom.top.residue(67)) == "P0G395"
 if __name__ == '__main__':
     unittest.main()
