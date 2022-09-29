@@ -322,7 +322,7 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
         The residue in question
 
     substitute_fail: str, default is None
-        If there is no .code  attribute, different options are there
+        If there is no .code  attribute, there are different options
         depending on the value of this parameter
         * None : throw an exception when no short code is found (default)
         * 'long' : keep the residue's long name, i.e. do nothing
@@ -341,7 +341,10 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
 
     if isinstance(AA,str):
         name = name_from_AA(AA)
-        res = '%s%u' % ([name if len(name) == 1 else _AMINO_ACID_CODES.get(name)][0], int_from_AA_code(AA))
+        if name.isnumeric():
+            res = name
+        else:
+            res = '%s%u' % ([name if len(name) == 1 else _AMINO_ACID_CODES.get(name)][0], int_from_AA_code(AA))
     else:
         res = '%s%u'%(AA.code,AA.resSeq)
 
