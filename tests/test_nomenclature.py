@@ -1562,7 +1562,7 @@ class Test_AlignerConsensus(unittest.TestCase):
 
         self.assertEqual("      3CAP  3SN6\n"
                          "3CAP  100%   29%\n"
-                         "3SN6   29%  100%\n", df.to_string())
+                         "3SN6   29%  100%", df.to_string())
 
     def test_sequence_match_absolute(self):
         df = self.AC_maps_no_tops.sequence_match(patterns="3.5*", absolute=True)
