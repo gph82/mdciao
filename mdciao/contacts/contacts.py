@@ -4584,6 +4584,8 @@ class ContactGroup(object):
                     figs_to_return.append(fig_N_ctcs)
                 else:
                     iax = next(axes_iter)
+            else:
+                iax = None
             ctc_cutoff_Ang = plot_timetrace_kwargs.pop("ctc_cutoff_Ang")
             for pkey in ["shorten_AAs", "ylim_Ang"]:
                 try:
