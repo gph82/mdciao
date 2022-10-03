@@ -4523,14 +4523,14 @@ class ContactGroup(object):
         list_of_figs : list
             The wanted figure(s)
 
-         Note
+        Note
         ----
-            The keywords :obj:`plot_N_ctcs`, :obj:`pop_N_ctcs`, and :obj:`skip_timedep`
-            allow this method to both include or totally exclude the total
-            number of contacts and/or the time-traces in the figure.
-            This might change in the figure,
-            it was coded this way to avoid breaking the command_line tools
-            API. Also note that some combinations will produce an empty return!
+        The keywords `plot_N_ctcs`, `pop_N_ctcs`, and `skip_timedep`
+        allow this method to both include or totally exclude the total
+        number of contacts and/or the time-traces in the figure.
+        This might change in the figure, it was coded this way
+        to avoid breaking the command_line tools API.
+        Also note that some combinations will produce an empty return!
 
 
         """
