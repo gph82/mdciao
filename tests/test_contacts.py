@@ -2076,7 +2076,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_timedep_ctcs(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        figs = CG.plot_timedep_ctcs(1)
+        figs = CG.plot_timedep_ctcs()
         _np.testing.assert_equal(len(figs), 1)
         assert isinstance(figs[0], _plt.Figure)
         ifig = figs[0]
@@ -2085,7 +2085,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_timedep_ctcs_with_valid_cutoff_no_pop(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1)
+        figs = CG.plot_timedep_ctcs(ctc_cutoff_Ang=1)
         ifig = figs[0]
         _np.testing.assert_equal(len(figs), 1)
         _np.testing.assert_equal(len(ifig.axes), 2 + 1 + 1)  # 2 + twinx + N
@@ -2093,8 +2093,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_timedep_ctcs_with_valid_cutoff_w_pop(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
-                                    pop_N_ctcs=True)
+        figs = CG.plot_timedep_ctcs(pop_N_ctcs=True, ctc_cutoff_Ang=1)
         _np.testing.assert_equal(len(figs), 2)
         _np.testing.assert_equal(len(figs[0].axes), 2 + 1)  # 2 + twinx
         _np.testing.assert_equal(len(figs[1].axes), 1)
@@ -2102,14 +2101,13 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_timedep_ctcs_skip_empty(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        figs = CG.plot_timedep_ctcs(1, skip_timedep=True)
+        figs = CG.plot_timedep_ctcs(skip_timedep=True)
         _np.testing.assert_equal(len(figs), 0)
         _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_w_valid_cutoff(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        figs = CG.plot_timedep_ctcs(1, ctc_cutoff_Ang=1,
-                                    skip_timedep=True)
+        figs = CG.plot_timedep_ctcs(skip_timedep=True, ctc_cutoff_Ang=1)
         _np.testing.assert_equal(len(figs), 1)
         _np.testing.assert_equal(len(figs[0].axes), 1)  # Just nctc
         _plt.close("all")
