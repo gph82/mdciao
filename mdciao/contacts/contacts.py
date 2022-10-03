@@ -4572,17 +4572,6 @@ class ContactGroup(object):
                                      **plot_timetrace_kwargs
                                      )
 
-            # Cosmetics
-            [iax.set_xticklabels([]) for iax in myax[:self.n_ctcs-1]]
-            [iax.set_xlabel('') for iax in myax[:self.n_ctcs - 1]]
-            # TODO figure out how to put xticklabels on top
-            axtop, axbottom = myax[0], myax[-1]
-            iax2 = axtop.twiny()
-            iax2.set_xticks(axbottom.get_xticks())
-            iax2.set_xticklabels(axbottom.get_xticklabels())
-            iax2.set_xlim(axtop.get_xlim())
-            iax2.set_xlabel(axbottom.get_xlabel())
-
         if valid_cutoff:
             if plot_N_ctcs:
                 if pop_N_ctcs:
@@ -4596,10 +4585,25 @@ class ContactGroup(object):
                     plot_timetrace_kwargs.pop(pkey)
                 except KeyError:
                     pass
-            self._plot_timedep_Nctcs(iax,
+            if iax is not None:
+                self._plot_timedep_Nctcs(iax,
                                      ctc_cutoff_Ang,
                                      **plot_timetrace_kwargs,
                                      )
+        for iax in myax:
+            iax2 : _plt.Axes = iax.twiny()
+            iax2.set_xlim(iax.get_xlim())
+            iax2.set_xticklabels([])
+            iax2.set_xlabel(None)
+
+        axtop, axbottom = myax[0], myax[-1]
+        iax2: _plt.Axes = axtop.twiny()
+        iax2.set_xlim(iax.get_xlim())
+        iax2.set_xlabel(axbottom.get_xlabel(), va="bottom")
+
+        # Cosmetics
+        [iax.set_xticklabels([]) for iax in myax[:self.n_ctcs-1]]
+        [iax.set_xlabel(None) for iax in myax[:self.n_ctcs - 1]]
         [ifig.tight_layout(pad=0, h_pad=0, w_pad=0) for ifig in figs_to_return]
         return figs_to_return
 
