@@ -4488,20 +4488,16 @@ class ContactGroup(object):
 
         return jax
 
-    def plot_timedep_ctcs(self, panelheight,
-                          plot_N_ctcs=True,
-                          pop_N_ctcs=False,
-                          skip_timedep=False,
-                          **plot_timetrace_kwargs,
-                          ):
+    def plot_timedep_ctcs(self, panelheight=3, plot_N_ctcs=True, pop_N_ctcs=False, skip_timedep=False,
+                          **plot_timetrace_kwargs):
         r"""
         For each trajectory, plot the time-traces of the all the contacts
         (one per panel) and/or the timetrace of the overall number of contacts
 
         Parameters
         ----------
-        panelheight : int
-            The height of the per-contact panels
+        panelheight : float, default is 3
+            The height of the per-contact panels, in inches
         plot_N_ctcs : bool, default is True
             Add an extra panel at the bottom of the figure containing
             the number of formed contacts for each frame for each trajecotry
