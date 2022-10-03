@@ -4521,10 +4521,21 @@ class ContactGroup(object):
             the time trace of overall formed contacts. This sets
             pop_N_ctcs to True internally
         plot_timetrace_kwargs: dict
-            Optional parameters for :obj:`mdciao.ContactPair._plot_timetrace`.
-            The parameters are listed below.
+            Optional parameters for :obj:`_plot_timedep_Nctcs`
 
+        Returns
+        -------
+        list_of_figs : list
+            The wanted figure(s)
 
+        Note
+        ----
+        The keywords `plot_N_ctcs`, `pop_N_ctcs`, and `skip_timedep`
+        allow this method to both include or totally exclude the total
+        number of contacts and/or the time-traces in the figure.
+        This might change in the figure, it was coded this way
+        to avoid breaking the command_line tools API.
+        Also note that some combinations will produce an empty return!
 
 
         """
