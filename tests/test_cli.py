@@ -99,7 +99,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
     def test_works(self):
         with _TDir(suffix="_test_mdciao") as tmpdir:
-            myfig = self.ctc_grp.plot_timedep_ctcs(3,ctc_cutoff_Ang=3)
+            myfig = self.ctc_grp.plot_timedep_ctcs(ctc_cutoff_Ang=3)
             fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig,
                                                            savetrajs=True)
@@ -107,10 +107,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
 
     def test_separate_N_ctcs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            myfig = self.ctc_grp.plot_timedep_ctcs(3,
-                                                   ctc_cutoff_Ang=3,
-                                                   pop_N_ctcs=True,
-                                                   )
+            myfig = self.ctc_grp.plot_timedep_ctcs(pop_N_ctcs=True, ctc_cutoff_Ang=3)
             fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp,fn,myfig,
                                                            separate_N_ctcs=True,
@@ -119,11 +116,7 @@ class Test_manage_timdep_plot_options(TestCLTBaseClass):
             _plt.close("all")
     def test_just_N_ctcs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            myfig = self.ctc_grp.plot_timedep_ctcs(3,
-                                                   ctc_cutoff_Ang=3,
-                                                   pop_N_ctcs=True,
-                                                   skip_timedep=True,
-                                                   )
+            myfig = self.ctc_grp.plot_timedep_ctcs(pop_N_ctcs=True, skip_timedep=True, ctc_cutoff_Ang=3)
             fn= str_and_dict.FilenameGenerator("test_neig",3,tmpdir,"png","dat",150,"ps")
             cli._manage_timedep_ploting_and_saving_options(self.ctc_grp, fn, myfig,
                                                            separate_N_ctcs=True,
