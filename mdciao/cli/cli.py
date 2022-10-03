@@ -1027,9 +1027,7 @@ def residue_neighborhoods(residues,
         for CG in neighborhoods.values():
             # TODO this plot_N_ctcs and skip_timedep is very bad, but ATM my only chance without major refactor
             # TODO perhaps it would be better to bury dt in the plotting directly?
-            panelheight = 3
-            myfig = CG.plot_timedep_ctcs(panelheight,
-                                         color_scheme=_color_schemes(curve_color),
+            myfig = CG.plot_timedep_ctcs(color_scheme=_color_schemes(curve_color),
                                          ctc_cutoff_Ang=ctc_cutoff_Ang,
                                          switch_off_Ang=switch_off_Ang,
                                          dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
@@ -1492,7 +1490,6 @@ def interface(
         print(fn.fullpath_pdb)
 
     if figures:
-        panelheight = 3
         n_cols = 1
         n_rows = 2
         panelsize = 4
@@ -1557,8 +1554,7 @@ def interface(
                 print(fn.fullpath_flare_vec)
 
         if plot_timedep or separate_N_ctcs:
-            myfig = ctc_grp_intf.plot_timedep_ctcs(panelheight,
-                                                   color_scheme=_color_schemes(curve_color),
+            myfig = ctc_grp_intf.plot_timedep_ctcs(color_scheme=_color_schemes(curve_color),
                                                    ctc_cutoff_Ang=ctc_cutoff_Ang,
                                                    dt=_mdcu.str_and_dict.tunit2tunit["ps"][t_unit],
                                                    background=background,
@@ -1910,8 +1906,7 @@ def sites(site_inputs,
 
     if figures and plot_timedep:
         for site_name, isite_nh in site_as_gc.items():
-            panelheight = 4
-            myfig = isite_nh.plot_timedep_ctcs(panelheight,
+            myfig = isite_nh.plot_timedep_ctcs(panelheight = 4,
                                                color_scheme=_color_schemes(curve_color),
                                                ctc_cutoff_Ang=ctc_cutoff_Ang,
                                                n_smooth_hw=n_smooth_hw,
