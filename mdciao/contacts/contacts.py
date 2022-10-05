@@ -4490,11 +4490,15 @@ class ContactGroup(object):
 
         return jax
 
+    @_kwargs_subs(ContactPair.plot_timetrace)
     def plot_timedep_ctcs(self, panelheight=3, plot_N_ctcs=True, pop_N_ctcs=False, skip_timedep=False,
                           **plot_timetrace_kwargs):
         r"""
         For each trajectory, plot the time-traces of the all the contacts
         (one per panel) and/or the timetrace of the overall number of contacts
+
+        In order for the number of contacts to be plotted,
+        `ctc_cutoff_Ang` should be provided.
 
         Parameters
         ----------
@@ -4514,7 +4518,12 @@ class ContactGroup(object):
             the time trace of overall formed contacts. This sets
             pop_N_ctcs to True internally
         plot_timetrace_kwargs: dict
-            Optional parameters for :obj:`_plot_timedep_Nctcs`
+            Optional parameters for :obj:`mdciao.contacts.ContactPair.plot_timetrace`,
+            which are documented below:
+
+        Other Parameters
+        ---------
+        %(substitute_kwargs)s
 
         Returns
         -------
@@ -4526,7 +4535,7 @@ class ContactGroup(object):
         The keywords `plot_N_ctcs`, `pop_N_ctcs`, and `skip_timedep`
         allow this method to both include or totally exclude the total
         number of contacts and/or the time-traces in the figure.
-        This might change in the figure, it was coded this way
+        This might change in the future, it was coded this way
         to avoid breaking the command_line tools API.
         Also note that some combinations will produce an empty return!
 
