@@ -1771,40 +1771,42 @@ class ContactPair(object):
             return {key:count/_np.sum(counts) for key, count in zip(atom_pairs, counts)
                     if count/_np.sum(counts)>min_freq}
 
-    def _plot_timetrace(self,
-                        iax,
-                        color_scheme=None,
-                        ctc_cutoff_Ang=0,
-                        switch_off_Ang=None,
-                        n_smooth_hw=0,
-                        dt=1,
-                        background=True,
-                        shorten_AAs=False,
-                        t_unit='ps',
-                        ylim_Ang=10,
-                        max_handles_per_row=4,
-                        ):
+    def plot_timetrace(self,
+                       iax,
+                       color_scheme=None,
+                       ctc_cutoff_Ang=0,
+                       switch_off_Ang=None,
+                       n_smooth_hw=0,
+                       dt=1,
+                       background=True,
+                       shorten_AAs=False,
+                       t_unit='ps',
+                       ylim_Ang=10,
+                       max_handles_per_row=4,
+                       ):
         r"""
-        Plot this contact's timetraces for all trajs onto :obj:`ax`
+        Plot this ContactPair's timetraces for all trajs onto :`ax`
+
         Parameters
         ----------
         iax : :obj:`~matplotlib.axes.Axes`,
             Axis on which to draw
         color_scheme : list, default is None
-            Pass a list of colors understandable by matplotlib
-        ctc_cutoff_Ang : int, default is 0,
-            Cutoff in Angstrom
+            Pass a list of colors, each one should be
+            understandable by :obj:`matplotlib.colors.is_color_like`
+        ctc_cutoff_Ang : float, default is 0,
+            The cutoff to use, in Angstrom
         n_smooth_hw: int, default is 0
             Size, in frames, of half the window size of the
             smoothing window
         dt : float, default is 1
-            The how units in :obj:`t_unit` one frame represents
+            The how units in `t_unit` one frame represents
         background : bool, or color-like, (str, hex, rgb), default is True
             When smoothing, the original curve can
             appear in the background in different colors
-            * True:  use a fainted version of :obj:`color`
-            * False: don't plot any background
-            * color-like: use this color for the background,
+             * True:  use a fainted version of `color`
+             * False: don't plot any background
+             * color-like: use this color for the background,
               can be: str, hex, rgba, anything
               :obj:`~matplotlib.pyplot.colors` understands
         shorten_AAs : bool, default is True
@@ -4568,9 +4570,9 @@ class ContactGroup(object):
 
             # Plot individual contacts
             for ictc in self._contacts:
-                ictc._plot_timetrace(next(axes_iter),
-                                     **plot_timetrace_kwargs
-                                     )
+                ictc.plot_timetrace(next(axes_iter),
+                                    **plot_timetrace_kwargs
+                                    )
 
         if valid_cutoff:
             if plot_N_ctcs:
