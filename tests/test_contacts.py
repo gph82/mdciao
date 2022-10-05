@@ -2080,7 +2080,8 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _np.testing.assert_equal(len(figs), 1)
         assert isinstance(figs[0], _plt.Figure)
         ifig = figs[0]
-        _np.testing.assert_equal(len(ifig.axes), 2 + 1)  # 2 + twinx
+        #ifig.savefig("test.png")
+        _np.testing.assert_equal(len(ifig.axes), 2 + 2 )  # 2 + 2 x twiny, no N_ctcs bc there's no cutoff
         _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_no_pop(self):
@@ -2088,15 +2089,17 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         figs = CG.plot_timedep_ctcs(ctc_cutoff_Ang=1)
         ifig = figs[0]
         _np.testing.assert_equal(len(figs), 1)
-        _np.testing.assert_equal(len(ifig.axes), 2 + 1 + 1)  # 2 + twinx + N
+        #ifig.savefig("test.png")
+        _np.testing.assert_equal(len(ifig.axes), 2 + 2 + 1 + 1)  # 2 + 2 x twiny + N_ctcs + N_ctcs_twiny
         _plt.close("all")
 
     def test_plot_timedep_ctcs_with_valid_cutoff_w_pop(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(pop_N_ctcs=True, ctc_cutoff_Ang=1)
         _np.testing.assert_equal(len(figs), 2)
-        _np.testing.assert_equal(len(figs[0].axes), 2 + 1)  # 2 + twinx
-        _np.testing.assert_equal(len(figs[1].axes), 1)
+        _np.testing.assert_equal(len(figs[0].axes), 2 + 2)  # 2 + 2 x twiny
+        _np.testing.assert_equal(len(figs[1].axes), 1 + 1) # N_ctcs + N_ctcs_twiny
+        #figs[1].savefig("test.png")
         _plt.close("all")
 
     def test_plot_timedep_ctcs_skip_empty(self):
@@ -2109,7 +2112,8 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(skip_timedep=True, ctc_cutoff_Ang=1)
         _np.testing.assert_equal(len(figs), 1)
-        _np.testing.assert_equal(len(figs[0].axes), 1)  # Just nctc
+        _np.testing.assert_equal(len(figs[0].axes), 1 + 1)  # N_ctcs + N_ctcs_twiny
+        #figs[0].savefig("test.png")
         _plt.close("all")
 
     def test_plot_distance_distributions_just_works(self):
