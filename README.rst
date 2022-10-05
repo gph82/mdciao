@@ -59,8 +59,9 @@ Please cite:
 
 Status
 ======
-``mdciao`` is in its initial development, with versions 0.Y.Z. Anything MAY change at any time.
-`The public API SHOULD NOT be considered stable <https://semver.org/#spec-item-4>`_.
+``mdciao`` is approaching its first major release, so less changes in the API and CLI calls are expected. Still, please
+note that some changes are very likely to happen. For more info on semantic versioning please check
+`the semver page <https://semver.org/#spec-item-4>`_.
 
 TODOs
 =====
