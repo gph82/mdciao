@@ -4537,7 +4537,7 @@ class ContactGroup(object):
         valid_cutoff = "ctc_cutoff_Ang" in plot_timetrace_kwargs.keys() \
                        and plot_timetrace_kwargs["ctc_cutoff_Ang"] > 0
 
-
+        myax = None
         figs_to_return = []
         if self.n_frames_total==1:
             #print("Just one frame, not plotting any time-traces")
@@ -4575,38 +4575,45 @@ class ContactGroup(object):
         if valid_cutoff:
             if plot_N_ctcs:
                 if pop_N_ctcs:
-                    iax = ax_N_ctcs
                     figs_to_return.append(fig_N_ctcs)
                 else:
-                    iax = next(axes_iter)
+                    ax_N_ctcs = next(axes_iter)
             else:
-                iax = None
+                ax_N_ctcs = None
             ctc_cutoff_Ang = plot_timetrace_kwargs.pop("ctc_cutoff_Ang")
             for pkey in ["shorten_AAs", "ylim_Ang"]:
                 try:
                     plot_timetrace_kwargs.pop(pkey)
                 except KeyError:
                     pass
-            if iax is not None:
-                self._plot_timedep_Nctcs(iax,
+            if ax_N_ctcs is not None:
+                self._plot_timedep_Nctcs(ax_N_ctcs,
                                      ctc_cutoff_Ang,
                                      **plot_timetrace_kwargs,
                                      )
-        for iax in myax:
-            iax2 : _plt.Axes = iax.twiny()
-            iax2.set_xlim(iax.get_xlim())
-            iax2.set_xticklabels([])
-            iax2.set_xlabel(None)
+                if pop_N_ctcs:
+                    iax2 = ax_N_ctcs.twiny()
+                    iax2.set_xlim(ax_N_ctcs.get_xlim())
+                    iax2.set_xticklabels([])
 
-        axtop, axbottom = myax[0], myax[-1]
-        iax2: _plt.Axes = axtop.twiny()
-        iax2.set_xlim(iax.get_xlim())
-        iax2.set_xlabel(axbottom.get_xlabel(), va="bottom")
+        if myax is not None:
+            for ii, iax in enumerate(myax):
+                iax2 : _plt.Axes = iax.twiny()
+                iax2.set_xlim(iax.get_xlim())
+                if ii>0:
+                    iax2.set_xticklabels([])
+                    iax2.set_xlabel(None)
+                else:
+                    iax2.set_xlabel(myax[0].get_xlabel())
 
-        # Cosmetics
-        [iax.set_xticklabels([]) for iax in myax[:self.n_ctcs-1]]
-        [iax.set_xlabel(None) for iax in myax[:self.n_ctcs - 1]]
+            # Once the twins have been set, eliminate ticks and labels
+            # for all except the last one
+            [iax.set_xticklabels([]) for iax in myax[:self.n_ctcs-1]]
+            [iax.set_xlabel(None) for iax in myax[:self.n_ctcs - 1]]
+
+        # This needs to be out of the if in case we popped N_ctcs
         [ifig.tight_layout(pad=0, h_pad=0, w_pad=0) for ifig in figs_to_return]
+
         return figs_to_return
 
     def _plot_timedep_Nctcs(self,
