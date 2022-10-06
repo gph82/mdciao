@@ -5417,11 +5417,23 @@ class ContactGroup(object):
         Returns
         -------
         CGs : dict
-            The dictionary is keyed with :obj:`self.trajlabels`
-            and valued with ContactGroups that consist that
-            only contain information regarding one single
-            trajectory
+            The dictionary is keyed with each of the
+            original :obj:`self.trajlabels`, and valued
+            with ContactGroups that consist that only contain
+            information regarding that single trajectory.
 
+        Note
+        ----
+        The attribute :obj:`mdciao.contacts.ContactGroup.trajlabels`
+        of the *returned*, n-th `CG` will necessarily only contain
+        one trajectory label. In case the original labels were strings
+        containing pathnames, that name will coincide with he n-th
+        original `trajlabel`. On the contrary, in case it contained
+        a placeholder name created on-the-fly (e.g. 'mdtraj.01') because
+        no pathnames were originally known, but rather :obj:`mdtraj.Trajectories`
+        were passed as `trajs`, that placeholder-name gets re-setted
+        to `mdtraj.00` since each *returned* `CG` only "knows" one
+        `traj` and it's necessarily the first one.
         """
         cp_batches = []
         for cp in self._contacts:
