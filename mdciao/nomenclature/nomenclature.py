@@ -25,7 +25,6 @@ import numpy as _np
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
-import pandas
 from mdciao.utils.str_and_dict import _kwargs_subs
 
 from pandas import \
@@ -50,6 +49,8 @@ import requests as _requests
 from natsort import natsorted as _natsorted
 
 from string import ascii_uppercase as _ascii_uppercase
+
+from inspect import signature as _signature
 
 _filenames = _FN()
 _AA_chars_no_X = [char for char in _md.core.residue_names._AMINO_ACID_CODES.values() if char not in ["X", None]]
@@ -1747,9 +1748,8 @@ class AlignerConsensus(object):
             A list in CSV-format of patterns to be matched
             by the consensus labels. Matches are done using
             Unix filename pattern matching, and are allows
-            for exclusion, e.g.
-             * "H*,-H8" will include all TMs but not H8
-             * "G.S*" will include all beta-sheets
+            for exclusion, e.g. "3.*,-3.5*." will include all
+            residues in TM3 except those in the segment 3.50...3.59
         keys : list, default is None
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
@@ -1783,9 +1783,8 @@ class AlignerConsensus(object):
             A list in CSV-format of patterns to be matched
             by the consensus labels. Matches are done using
             Unix filename pattern matching, and are allows
-            for exclusion, e.g.
-             * "H*,-H8" will include all TMs but not H8
-             * "G.S*" will include all beta-sheets
+            for exclusion, e.g. "3.*,-3.5*." will include all
+            residues in TM3 except those in the segment 3.50...3.59
         keys : list, default is None
             If only a sub-set of columns need to match,
             provide them here as list of strings. If
@@ -1819,8 +1818,8 @@ class AlignerConsensus(object):
             A list in CSV-format of patterns to be matched
             by the consensus labels. Matches are done using
             Unix filename pattern matching, and are allows
-            for exclusion, e.g.
-             * "H*,-H8" will include all TMs but not H8
+            for exclusion, e.g. "3.*,-3.5*." will include all
+            residues in TM3 except those in the segment 3.50...3.59H8
              * "G.S*" will include all beta-sheets
         keys : list, default is None
             If only a sub-set of columns need to match,
@@ -1841,6 +1840,79 @@ class AlignerConsensus(object):
         return _only_matches(self.CAidxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
                              filter_on="consensus")
 
+    def sequence_match(self,patterns=None, absolute=False)-> _DataFrame:
+        r"""Matrix with the percentage of sequence identity within the set of the residues sharing consensus labels
+
+        The comparison is done between the reference consensus sequences
+        in self.AAresSeq, i.e., independently of any `tops` that the user
+        has provided.
+
+        Example:
+        >>> AC.sequence_match(patterns="3.5*")
+               OPS  B2AR  MUOR
+        OPS   100%   29%   57%
+        B2AR   29%  100%   43%
+        MUOR   57%   43%  100%
+
+        Meaning, for the residues having consensus labels 3.50 to 3.59,
+        B2AR and OPS have 29% identity, or OPS and MUOR 57%. You can
+        express this as absolute nubmer of residues:
+        >>> AC.match_percentage("3.*", absolute=True)
+              OPS  B2AR  MUOR
+        OPS     7     2     4
+        B2AR    2     7     3
+        MUOR    4     3     7
+
+        You can check which residues these are:
+        >>> AC.AAresSeq_match("3.5*")
+            consensus   OPS  B2AR  MUOR
+        117   3.50x50  R135  R131  R165
+        118   3.51x51  Y136  Y132  Y166
+        119   3.52x52  V137  F133  I167
+        120   3.53x53  V138  A134  A168
+        121   3.54x54  V139  I135  V169
+        122   3.55x55  C140  T136  C170
+        123   3.56x56  K141  S137  H171
+
+        You can see the two OPS/B2AR matches in 3.50x50 and 3.51x51
+
+        Parameters
+        ----------
+        patterns : str, default is None
+            A list in CSV-format of patterns to be matched
+            by the consensus labels. Matches are done using
+            Unix filename pattern matching, and are allows
+            for exclusion, e.g. "3.*,-3.5*." will include all
+            residues in TM3 except those in the segment 3.50...3.59
+        absolute : bool, default is False
+            Instead of returning a percentage, return
+            the nubmer of matching residues as integers
+
+        Returns
+        -------
+        match :  :obj:`~pandas.DataFrame`
+            The matrix of sequence identity, for residues sharing consensus labels across
+            the different systems.
+        """
+        match = _defdict(dict)
+        for key1 in self.keys:
+            for key2 in self.keys:
+                if key1!=key2:
+                    res = self.AAresSeq_match(patterns=patterns, keys=[key1,key2])
+                    ident = (res[key1].map(lambda x : x[0])==res[key2].map(lambda x : x[0])).sum()
+                else:
+                    res = self.AAresSeq_match(patterns=patterns, keys=[key1])
+                    ident = len(res)
+                if not absolute:
+                    ident = _np.round(ident / len(res) * 100)
+                match[key1][key2] = ident  # .round()
+
+        df = _DataFrame(match, dtype=int)
+
+        if not absolute:
+            df = df.applymap(lambda x: "%u%%" % x)
+
+        return df
 
 def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, dropna=True, filter_on="index") -> _DataFrame:
     r"""
@@ -1857,10 +1929,10 @@ def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, d
         If None, the method simply returns None.
     patterns : str, default is None
         A list in CSV-format of patterns to be matched
-        Matches are done using Unix filename pattern matching
-        and are allowed for exclusion, e.g.
-         * "H*,-H8" will include all TMs but not H8
-         * "G.S*" will include all beta-sheets
+        by the consensus labels. Matches are done using
+        Unix filename pattern matching, and are allows
+        for exclusion, e.g. "3.*,-3.5*." will include all
+        residues in TM3 except those in the segment 3.50...3.59
     keys : list, default is None
         If only a sub-set of columns need to match,
         provide them here as list of strings. If
@@ -1897,6 +1969,12 @@ def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, d
         df = df[[key for key in df.keys() if not all(df[key].isna())]]
     if dropna:
         df = df.dropna()
+
+    # Try to return integers when possible
+    try:
+        df = df.astype({key:int for key in df.keys() if key!=filter_on})
+    except (ValueError, TypeError) as e:
+        pass
     return df
 
 
@@ -2095,7 +2173,7 @@ def guess_nomenclature_fragments(refseq, top,
     verbose: boolean
         be verbose
     return_residue_idxs : bool, default is False
-        Return the list residue indices directly,
+        Return the list of residue indices directly,
         instead of returning a list of fragment idxs.
     empty : class, list or None, default is list
         What to return in case of an emtpy guess,
@@ -2148,15 +2226,16 @@ def guess_nomenclature_fragments(refseq, top,
         guess = None
     return guess
 
-
-def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
-                          return_str=True, accept_guess=False,
+@_kwargs_subs(guess_nomenclature_fragments, exclude=["fragments", "return_residue_idxs"])
+def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
+                          return_str=False, accept_guess=False,
+                          return_residue_idxs=False,
                           **guess_kwargs):
     r"""
 
-    Guess which fragments of a topology best align with a consensus nomenclature
+    Guess which fragments of a topology best align with a consensus nomenclature.
 
-    Wraps around :obj:`guess_nomenclature_fragments` to interpret its answer
+    Wraps around :obj:`guess_nomenclature_fragments` to interpret its answer.
 
     Parameters
     ----------
@@ -2167,32 +2246,76 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
         The topology whose fragments
         are being matched with those
         in :obj:`CLin`
-    fragments : iterable
-        Fragment definitions
-    nomenclature_name : str
+    fragments : iterable of iterables of idxs or str, default is None
+        How `top` is split into fragments. If list of lists of indices,
+        these are the fragments expressed as residue indices
+        of `top`. If None or str, the `fragments` will be generated
+        using :obj:`mdciao.fragments.get_fragments`,
+        either with the default scheme (if `fragments` is None)
+        or with the scheme-name provided by `fragments` (e.g.
+        `fragments`="chains" or `fragments`="resSeq+".
+        See the note at the bottom for how `fragments`
+        relates to `return_residue_idxs`.
+    nomenclature_name : str, default is None
         A string identifying the nomenclature
         type, e.g. "CGN" or "GPCR". For logging
-        purposes
-    return_str : bool, default is True
+        purposes. If None, it will the derived
+        from the class name of `CLin`.
+    return_str : bool, default is False
         Return the answer the user provided
-        in case an alternative guess
+        in case an alternative guess.
     accept_guess : bool, default is False
         Accept the guess of :obj:`guess_nomenclature_fragments`
-        without asking for confirmation
+        without asking for confirmation.
+    return_residue_idxs : bool, default is False
+        Return the list of residue indices directly,
+        instead of returning a list of fragment idxs.
+        Only has an effect if
     guess_kwargs : dict, optional
-        Keyword arguments for :obj:`guess_nomenclature_fragments`
+        Keyword arguments for some of the keyword arguments
+        of :obj:`guess_nomenclature_fragments`, which
+        are listed below.
+
+    Other Parameters
+    ----------------
+    %(substitute_kwargs)s
 
     Returns
     -------
-    answer : str
-        Only if return_str is True
+    answer : list or None
+        The indices of the fragments of `top` that best
+        match the reference sequence in `CLin`. If none match,
+        then None will be returned. If `return_residue_idxs`
+        is True, then the indices will be actual residue indices,
+        and not fragment indices (see the note below for more).
+        If return_str is True, the the answer is returned
+        as a string of comma-separated-values.
+    Note
+    ----
+    If the user doesn't provide any `fragments`, this method will generate
+    them on-the-fly and subsequently guess which one of them matches
+    `CLin` the best. Hence, `fragments`=None only makes sense if
+    `return_residue_idxs` is True, because then the actual
+    residue indices of `top` that best match `CLin` are returned.
+    Otherwise, the method would say something like "The labels align best
+    with fragments 0,1", and return the indices
+    [0,1], which are useless since we don't know what
+    the fragments are. In this case, an Exception is thrown.
 
     """
-    guess = guess_nomenclature_fragments(CLin, top, fragments, **guess_kwargs)
+    if nomenclature_name is None:
+        nomenclature_name = type(CLin).__name__.replace("Labeler", "")
+    if fragments is None or isinstance(fragments,str):
+        fragments = _mdcfrg.get_fragments(top, [_signature(_mdcfrg.get_fragments).parameters["method"].default if fragments is None else fragments][0],
+                                          verbose=True)
+        if return_residue_idxs is False:
+            raise ValueError("`fragments` can't be None if `return_residue_idxs` is False.\n"
+                             "Please see the note at the end of this method's documentation")
+    guess = guess_nomenclature_fragments(CLin, top, fragments=fragments, **guess_kwargs)
     guess_as_string = ','.join(['%s' % ii for ii in guess])
 
     if len(guess) > 0:
-        print("%s-labels align best with fragments: %s (first-last: %s-%s)."
+        print("The %s-labels align best with fragments: %s (first-last: %s-%s)."
               % (nomenclature_name, str(guess),
                  top.residue(fragments[guess[0]][0]),
                  top.residue(fragments[guess[-1]][-1])))
@@ -2216,6 +2339,8 @@ def guess_by_nomenclature(CLin, top, fragments, nomenclature_name,
         pass
     else:
         answer = [int(ii) for ii in answer.split(",")]
+        if return_residue_idxs:
+            answer = _np.hstack([fragments[ii] for ii in answer]).tolist()
     return answer
 
 

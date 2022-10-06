@@ -115,3 +115,16 @@ They are the best starting point to copy and modify with your own data.
            |br| `Covid-19 Spike Protein <notebooks/Covid-19-Spike-Protein-Interface.html>`_
            |br| `Example 2: Molecular Interfaces <notebooks/Covid-19-Spike-Protein-Interface.html>`_
 
+    * - .. figure:: imgs/MSA_via_Consensus_Labels.png
+           :target: notebooks/MSA_via_Consensus_Labels.html
+           :height: 100px
+
+           ..
+
+           |br| `3D Multiple Sequence Alignment via <notebooks/MSA_via_Consensus_Labels.html>`_
+           |br| `Consensus Labels on μ-Opioid Receptor, <notebooks/MSA_via_Consensus_Labels.html>`_
+           |br| `β2 Adregneric Receptor, Opsin, and <notebooks/MSA_via_Consensus_Labels.html>`_
+           |br| `Dopamine D1 Receptor <notebooks/MSA_via_Consensus_Labels.html>`_
+
+
+      - ..

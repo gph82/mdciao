@@ -65,6 +65,7 @@ Status
 TODOs
 =====
 This is an informal list of known issues and TODOs:
+ * Adopt this project structure https://github.com/MolSSI/cookiecutter-cms
  * keeping vs reporting contacts: a design choice has to be made wrt to the effect of ctc_cutoff_Ang on a ContactGroup:
    If a given cutoff makes a ContactPair have freq=0, should the CP be kept in the CG, simply not reported? There's now a branch for that: https://github.com/gph82/mdciao/tree/buffer_neighborhood
  * overhaul the "printing" system with proper logging and warnings (perhaps use `loguru <https://github.com/Delgan/loguru>`_)

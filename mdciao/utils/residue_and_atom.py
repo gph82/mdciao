@@ -283,7 +283,7 @@ def int_from_AA_code(key):
     except ValueError:
         return None
 
-def name_from_AA(key):
+def name_from_AA(key) -> str:
     """
     Return the residue name from a string
 
@@ -299,8 +299,16 @@ def name_from_AA(key):
 
     """
 
-
-    return ''.join([ii for ii in str(key) if ii.isalpha()])
+    if isinstance(key, _md.core.topology.Residue):
+        name = key.name
+    else:
+        rev_key = key[::-1]
+        # Iterate from tail to head and break at the first alphabetic char
+        for ii, char in enumerate(rev_key):
+            if char.isalpha():
+                break
+        name = rev_key[ii:][::-1]
+    return name
 
 def shorten_AA(AA, substitute_fail=None, keep_index=False):
     r"""
@@ -314,7 +322,7 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
         The residue in question
 
     substitute_fail: str, default is None
-        If there is no .code  attribute, different options are there
+        If there is no .code  attribute, there are different options
         depending on the value of this parameter
         * None : throw an exception when no short code is found (default)
         * 'long' : keep the residue's long name, i.e. do nothing
@@ -333,7 +341,10 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
 
     if isinstance(AA,str):
         name = name_from_AA(AA)
-        res = '%s%u' % ([name if len(name) == 1 else _AMINO_ACID_CODES.get(name)][0], int_from_AA_code(AA))
+        if name.isnumeric():
+            res = name
+        else:
+            res = '%s%u' % ([name if len(name) == 1 else _AMINO_ACID_CODES.get(name)][0], int_from_AA_code(AA))
     else:
         res = '%s%u'%(AA.code,AA.resSeq)
 

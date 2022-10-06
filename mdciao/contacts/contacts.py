@@ -873,7 +873,7 @@ class _ContactStrings(object):
         r"""
         The fragment name will try to pick the consensus nomenclature.
         If no consensus label for the residue exists, the actual fragment
-        names are used as fallback (which themselves fallback to the fragment index)
+        names are used as fallback, which themselves fallback to the fragment index.
         Only if no consensus label, no fragment name and no fragment indices are there,
         will this yeild "None" as a string.
 
@@ -1573,7 +1573,7 @@ class ContactPair(object):
         """
         if self.neighborhood is None and delete_anchor:
             delete_anchor  = False
-            print("Can't ContactPair.gen_label() can't use 'delete anchor=True', this is not a neighborhood.\n"
+            print("ContactPair.gen_label() can't use `delete_anchor=True`, this is not a neighborhood.\n"
                   "Setting it to 'False'")
 
         if not delete_anchor:
@@ -4732,7 +4732,7 @@ class ContactGroup(object):
             jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
         return jax
 
-    @_kwargs_subs(_mdcflare.freqs2flare)
+    @_kwargs_subs(_mdcflare.freqs2flare, exclude=["fragments", "SS", "fragment_names", "colors", "top"])
     def plot_freqs_as_flareplot(self, ctc_cutoff_Ang,
                                 fragments=None,
                                 fragment_names=None,

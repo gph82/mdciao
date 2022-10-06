@@ -148,7 +148,6 @@ def _parse_consensus_option(option, consensus_type,
 
     if LC_out is not None:
         answer = _mdcnomenc.guess_by_nomenclature(LC_out, top, fragments, consensus_type,
-                                                  return_str=False,
                                                   accept_guess=accept_guess,
                                                   # verbose=True
                                                   )
@@ -330,7 +329,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
     fn : :obj:`mdciao.utils.str_and_dict.FilenameGenerator`
     myfig :obj:`matplotlib.figure.Figure`
     plot_timedep : bool, default is True
-    separate_N_ctcs : bool, defaul tis True
+    separate_N_ctcs : bool, default is True
     t_unit : str or None, default is None
     savefigs : bool, default is True
     savetrajs : bool, default is False
@@ -376,7 +375,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
             _plt.close(ifig)
             print(fname)
 
-    # even if no figures were produced or saved, we can still be save the trajs
+    # even if no figures were produced or saved, we can still save the trajs
     if savetrajs:
         ctc_grp.save_trajs(fn.output_desc, fn.table_ext, fn.output_dir, t_unit=fn.t_unit, verbose=True)
         if separate_N_ctcs:
@@ -642,7 +641,7 @@ def residue_neighborhoods(residues,
     res_idxs : bool, default is False
         Whether the indices of :obj:`residues` should be understood as
          * zero-indexed, residue serial indices or
-         * residue sequence, eg. 30 in GLU30, this is called 'resSeq'
+         * residue sequence, e.g. 30 in GLU30, this is called 'resSeq'
          in an :obj:`mdtraj.core.Residue`-object
     ctc_cutoff_Ang : float, default is 3.5
         Any residue-residue distance is considered a contact if d<=ctc_cutoff_Ang
@@ -1125,7 +1124,7 @@ def interface(
     in a receptor--G-protein complex, one partner is
     the receptor and the other partner is the G-protein.
 
-    By default, mdciao.interface doesn't allow interface
+    By default, mdciao.cli.interface doesn't allow interface
     members to share residues. However, sometimes it's
     useful to allow it because the contacts of one fragment
     with itself (the self-contacts) are also important.
@@ -1736,7 +1735,7 @@ def sites(site_inputs,
     allow_partial_sites : bool, default is False
         If False, a single missing residue is enough to
         discard an entire site. If True,
-        the site definitions get modified to
+        the site definitions get modified
         to keep the residues that could be found
     output_dir : str, default is '.'
         directory to which the results are written

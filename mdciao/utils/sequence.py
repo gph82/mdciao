@@ -162,24 +162,6 @@ def my_bioalign(seq1, seq2,
                                                     str(argstuple)))
 
 
-def alignmentDF2score(df: _DF) -> int:
-    print(df.alignment_score)
-    tot_matches = df.match.sum()
-    print(tot_matches)
-    score = tot_matches
-    for cont_ranges in [_cranges(df.idx_0 == "~"),
-                        _cranges(df.idx_1 == "~")]:
-        #print(cont_ranges)
-        if True in cont_ranges.keys():
-            for irange in cont_ranges[True]:
-                if irange[0]!=0:# or irange[-1]:
-                    print(irange)
-                    open_gap_penalty = - 1
-                    extend_gap_penalty = - .05 * (len(irange)-1)
-                    score += open_gap_penalty + extend_gap_penalty
-                    print("score", score)
-    return score
-
 def alignment_result_to_list_of_dicts(ialg,
                                       seq_0_res_idxs,
                                       seq_1_res_idxs,
@@ -392,8 +374,7 @@ def maptops(top0,
             top1,
             allow_nonmatch=False,
             ):
-    r""" map residues between topologies or sequences
-    via their serial indices a sequence alignment
+    r""" Use pairwise sequence alignment to produce maps of residue indices between topologies or sequences
 
     Parameters
     ----------

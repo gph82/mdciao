@@ -490,7 +490,7 @@ def freq_file2dict(ifile, defrag=None):
 
     return res
 
-def freq_ascii2dict(ifile, comment=["#"]):
+def freq_ascii2dict(ifile, comment="#"):
     r"""
     Reads an ASCII file that contains contact frequencies
     (1st column) and contact labels (2nd and/or 3rd column).
@@ -525,7 +525,7 @@ def freq_ascii2dict(ifile, comment=["#"]):
     ----------
     ifile : str
         The filename to be read
-    comment : list of chars
+    comment : str, default is '#'
         Any line starting with any of these
         characters will be ignored
     Returns
@@ -1226,15 +1226,32 @@ class FilenameGenerator(object):
         return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"),gx])
 
 
-def _kwargs_docstring(obj):
-    r"""Return the formatted docstring of a callable object's keyword arguments"""
+def _kwargs_docstring(obj, exclude=None):
+    r""" Return the formatted docstring of a callable object's keyword arguments.
+
+    Parameters
+    ----------
+    obj : callable
+        The method or class whose docstring will be extracted
+    exclude : list, default is None
+        A list of argument names (strings). Arguments of `obj`
+        matching those in `exclude` will be excluded from
+        the returned docstring.
+
+    Returns
+    -------
+    docstring :  str
+    """
     sig = _signature(obj)
     dp = _dsp.parse(obj.__doc__)
     params = ""
+    if exclude is None:
+        exclude=[]
     for p in dp.params:
         for arg in p.arg_name.replace(" ", "").split(","):
             if arg in sig.parameters.keys() and (
-                    "=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3):
+                    "=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3) \
+                    and arg not in exclude:
                 line = '%s : %s\n%s' % (p.arg_name, p.type_name,
                                         ''.join(['\t%s\n' % (desc) for desc in p.description.splitlines()]))
                 params += line.expandtabs(4)
@@ -1242,8 +1259,8 @@ def _kwargs_docstring(obj):
     assert params != ''
     return params
 
-def _kwargs_subs(funct_or_method):
-    r"""One line, one argument decorator to substitute kwargs docstrings
+def _kwargs_subs(funct_or_method, exclude=None):
+    r"""Substitute the expression 'kwargs docstrings' in the decorated method with those of `funct_or_method`
 
     Will substitute the expression "%(substitute_kwargs)s" anywhere in the
     docstring of the method it decorates with the optional parameter
@@ -1252,6 +1269,11 @@ def _kwargs_subs(funct_or_method):
     Parameters
     ----------
     funct_or_method : method or function
+    exclude : list, default is None
+        A list of argument names (strings). Arguments of `obj`
+        matching those in `exclude` will be excluded from
+        the returned docstring.
+
 
     Returns
     -------
@@ -1259,4 +1281,4 @@ def _kwargs_subs(funct_or_method):
     """
 
     return _mpldocstring.Substitution(
-        substitute_kwargs=_kwargs_docstring(funct_or_method))
+        substitute_kwargs=_kwargs_docstring(funct_or_method, exclude=exclude))

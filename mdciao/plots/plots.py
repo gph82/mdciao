@@ -239,11 +239,18 @@ def plot_unified_freq_dicts(freqs,
     ylim : float, default is 1
         The limit on the y-axis
     assign_w_color : boolean, default is False
-        If there are contacts where only one system (as in keys, of :obj:`freqs`)
-        appears, color the textlabel of that contact with the system's color
+        Color the text of the contact-labels according to
+        the following criterion.
+         * If all frequencies are below the `lower_cutoff_val`
+           except for one system, then the label adopts
+           the color of this system and gets prepended with a "+" sign.
+         * If all frequencies are above the `lower_cutoff_val`
+           except for one system, then the label adopts
+           the color of this system and gets prepended with a "-" sign
+        For more details see the paragraph "Visual Aides"
+        `of this notebook <https://proteinformatics.uni-leipzig.de/mdciao/notebooks/Comparing_CGs_Bars.html#Visual-Aides>`_
     title : str, default is None
-        The title of the plot,
-        if any
+        The title of the plot, if any
     legend_rows : int, default is 4
         The maximum number of rows per column of the legend.
         If you have 10 systems, :obj:`legend_rows`=5 means
