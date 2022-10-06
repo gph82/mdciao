@@ -5414,7 +5414,9 @@ class ContactGroup(object):
 
         CGs = {key: ContactGroup([ptcp[ii] for ptcp in cp_batches],
                                  neighbors_excluded=self.neighbors_excluded,
-                                 max_cutoff_Ang=self.max_cutoff_Ang)
+                                 max_cutoff_Ang=self.max_cutoff_Ang,
+                                 top=self.top, name=self.name,
+                                 interface_fragments=self.interface_fragments)
                for ii, key in enumerate(self.trajlabels)}
 
         return CGs
