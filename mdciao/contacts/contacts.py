@@ -5408,6 +5408,45 @@ class ContactGroup(object):
                   for mCPs, key in zip(matching_CPs, keys)}
         return Ns
 
+    def to_ContactGroups_per_traj(self) -> dict:
+        r"""
+        Break this ContactGroup (potentially containing many trajectories) into individual, per-trajectory ContactGroups
+
+        Returns
+        -------
+        CGs : dict
+            The dictionary is keyed with :obj:`self.trajlabels`
+            and valued with ContactGroups that consist that
+            only contain information regarding one single
+            trajectory
+
+        """
+        cp_batches = []
+        for cp in self._contacts:
+            per_traj_cp = []
+            for ii in range(cp.n.n_trajs):
+                per_traj_cp.append(ContactPair(cp.residues.idxs_pair,
+                                               [cp.time_traces.ctc_trajs[ii]],
+                                               [cp.time_traces.time_trajs[ii]],
+                                               top=cp.top,
+                                               anchor_residue_idx=cp.residues.anchor_residue_index,
+                                               consensus_labels=cp.residues.consensus_labels,
+                                               trajs=[cp.time_traces.trajs[ii]],
+                                               fragment_idxs=cp.fragments.idxs,
+                                               consensus_fragnames=cp.fragments.consensus,
+                                               fragment_names=cp.fragments.names,
+                                               fragment_colors=cp.fragments.colors,
+                                               atom_pair_trajs=[cp.time_traces.atom_pair_trajs[ii]]
+                                               ))
+            cp_batches.append(per_traj_cp)
+
+        CGs = {key: ContactGroup([ptcp[ii] for ptcp in cp_batches],
+                                 neighbors_excluded=self.neighbors_excluded,
+                                 max_cutoff_Ang=self.max_cutoff_Ang)
+               for ii, key in enumerate(self.trajlabels)}
+
+        return CGs
+
     def retop(self,top, mapping, deepcopy=False):
         r"""Return a copy of this object with a different topology.
 
