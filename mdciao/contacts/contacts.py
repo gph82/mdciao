@@ -1034,9 +1034,11 @@ class ContactPair(object):
             time traces of the time-values, in ps. Not having the same shape as ctc_trajs will raise an error
         top : :py:class:`mdtraj.Topology`, default is None
             topology associated with the contact
-        trajs: list of :obj:`mdtraj.Trajectory` objects, default is None
-            The molecular trajectories responsible for which the contact has been evaluated.
-            Not having the same shape as ctc_trajs will raise an error
+        trajs: list, default is None
+            The molecular trajectories for which the contact has been evaluated.
+            The list can contain of :obj:`~mdtraj.Trajectory` objects or
+            strings with pathnames to the trajectory files.
+            Not having the same shape as `ctc_trajs` will raise an error
         atom_pair_trajs: list of iterables of integers, default is None
             Time traces of the pair of atom indices responsible for the distance in :obj:`ctc_trajs`
             Has to be of len(ctc_trajs) and each iterable of shape(Nframes, 2)
