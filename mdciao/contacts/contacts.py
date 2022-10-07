@@ -1800,7 +1800,7 @@ class ContactPair(object):
             Size, in frames, of half the window size of the
             smoothing window
         dt : float, default is 1
-            The how units in `t_unit` one frame represents
+            How many units of `t_unit` one frame represents
         background : bool, or color-like, (str, hex, rgb), default is True
             When smoothing, the original curve can
             appear in the background in different colors
@@ -4707,7 +4707,9 @@ class ContactGroup(object):
             Overlap a grid of faint dashed lines on x and y ticks
         freq : bool, default is True
             Annotate each contact with its contact-frequency
-            on the right y-axis
+            on the right y-axis. When multiple trajectories
+            are plotted, the label includes per-trajectory
+            and overall frequencies.
         bookends : bool, default is True
             Indicate the beginning and end of each trajectory
             with a faint dashed line, to differentiate non
@@ -4718,14 +4720,15 @@ class ContactGroup(object):
             Whether to include or not
             the fragment information in the contact
             labels
+
         Returns
         -------
         fig : :obj:`~matplotlib.pyplot.Figure`
         """
         overall_freqs = self.frequency_per_contact(ctc_cutoff_Ang)
-
-        cmap = _mplcolors.ListedColormap([[0, 0, 0, 0], color], N=2)
         bintrajs = self.binarize_trajs(ctc_cutoff_Ang, order="traj")
+        freqs_per_traj = [bt.sum(axis=0)/bt.shape[0] for bt in bintrajs]
+        cmap = _mplcolors.ListedColormap([[0, 0, 0, 0], color], N=2)
         scaled_global_time_min, scaled_global_time_max = self.time_min * dt, self.time_max * dt
         if figsize is None:
             figsize = (panelwidth, self.n_ctcs * inches_per_contact * len(bintrajs))
@@ -4789,8 +4792,12 @@ class ContactGroup(object):
                 iax2.set_xlim(iax.get_xlim())
                 iax2.set_ylim(iax.get_ylim())
                 iax2.set_yticks(_np.arange(self.n_ctcs))
-                labs = iax2.set_yticklabels(
-                ["%u%% " % (ifreq * 100) for ifreq in overall_freqs], va="center")
+                if self.n_trajs==1:
+                    ylabels = ["%u%% " % (ifreq * 100) for ifreq in overall_freqs]
+                else:
+                    ylabels = ["%u%% (%u%% overall)" % (ifreq * 100, ofreq * 100) for ifreq, ofreq in zip(freqs_per_traj[ii], overall_freqs)]
+                labs = iax2.set_yticklabels(ylabels, va="center")
+
 
                 if ii==0:
                     iax.text(
