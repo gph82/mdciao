@@ -4659,6 +4659,158 @@ class ContactGroup(object):
                    loc=1,
                    )
 
+    def plot_timedep_ctcs_matrix(self, ctc_cutoff_Ang,
+                                 inches_per_contact=.35,
+                                 figsize=None,
+                                 panelwidth=10,
+                                 color="lightblue",
+                                 shorten_AAs=True,
+                                 dt=1,
+                                 t_unit='ps',
+                                 grid=True,
+                                 freq=True,
+                                 bookends=True,
+                                 defrag=None,
+                                 ) -> _plt.Figure:
+        r"""
+        Per-trajectory time-traces of the formed contacts, shown as binary traces (formed or not formed)
+
+        Each trajectory gets displayed in its own panel.
+
+        Note
+        ----
+        Contacts are shown in descending order of contact-frequency,
+        as obtained using `ctc_cutoff_Ang`, over all dataset.
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            The cutoff to use, in Angstrom
+        inches_per_contact : float, default is .5
+            The height, in inches, that each contact
+            will take up on the whole plot. Making
+            this number to small to make the figure
+            look flatter might squeeze contact-labels
+            vertically, try instead using `panaelwidth`
+        figsize : tuple, default is None,
+            Default behavior is to set the size of
+            the figure automatically as
+            height, width = self.n_trajs * self.n_ctcs*inches_per_contact, panelwidth
+            s.t. figure sizes are consistent across systems and number
+            of contacts. However, you can override this behavior
+            by setting the figszie yourself.
+        panelwidth : float, default is 10
+            In inches, the width of the figure
+        color : any color-like, default is "lightblue"
+            The color assigned to the formed contacts
+        shorten_AAs : bool, default is True
+            Whether to use short verions of residue names
+        dt : float, default is 1
+            How many units of `t_unit` one frame represents
+        t_unit : str, default is "ps"
+            The time unit with which to label the x-axis
+        grid : boolean, default is True
+            Overlap a grid of faint dashed lines on x and y ticks
+        freq : bool, default is True
+            Annotate each contact with its contact-frequency
+            on the right y-axis
+        bookends : bool, default is True
+            Indicate the beginning and end of each trajectory
+            with a faint dashed line, to differentiate non
+            formed contacts from simply absent trajectory data.
+            Only has effect if trajectories have different
+            starting or ending timestamps.
+        defrag : bool, default is None
+            Whether to include or not
+            the fragment information in the contact
+            labels
+        Returns
+        -------
+        fig : :obj:`~matplotlib.pyplot.Figure`
+        """
+        overall_freqs = self.frequency_per_contact(ctc_cutoff_Ang)
+
+        cmap = _mplcolors.ListedColormap([[0, 0, 0, 0], color], N=2)
+        bintrajs = self.binarize_trajs(ctc_cutoff_Ang, order="traj")
+        scaled_global_time_min, scaled_global_time_max = self.time_min * dt, self.time_max * dt
+        if figsize is None:
+            figsize = (panelwidth, self.n_ctcs * inches_per_contact * len(bintrajs))
+        myfig, myax = _plt.subplots(len(bintrajs), 1, figsize=figsize, squeeze=False)
+        myfig : _plt.Figure
+        for ii, itraj in enumerate(bintrajs):
+            scaled_time_array = self.time_arrays[ii] * dt
+            extent = [scaled_time_array[0], scaled_time_array[-1], self.n_ctcs-.5, 0-.5]
+
+            iax : _plt.Axes = myax[ii,0]
+            _plt.sca(iax)
+            _plt.matshow(itraj.T[:self.n_ctcs], fignum=0, aspect="auto", cmap=cmap, extent=extent)
+
+            iax.set_yticks(_np.arange(self.n_ctcs))
+            ctc_labels = _np.array(self.gen_ctc_labels(AA_format={True:"short", False:"long"}[shorten_AAs],fragments=not bool(defrag)))
+            ctc_labels = [_mdcu.str_and_dict.latex_superscript_fragments(lab) for lab in ctc_labels]
+            iax.set_yticklabels(ctc_labels)
+            iax.set_xlim(scaled_global_time_min - .5 * dt, scaled_global_time_max - .5 * dt)
+            myfig.draw_without_rendering()
+            iax2 : _plt.Axes = iax.twiny()
+            iax2.set_xticks([])
+            iax2.set_xlim(scaled_global_time_min - .5 * dt, scaled_global_time_max - .5 * dt)
+            iax.tick_params(axis="x", labelbottom=True, labeltop=True)
+            iax.xaxis.set_ticks_position("both")
+            rend = iax.figure.canvas.get_renderer()
+
+            if ii == 0:
+                y_max = _np.max([iax.transAxes.inverted().transform(txt.get_window_extent(rend).corners()[-1])[-1]
+                                 for txt in iax.get_xticklabels()])
+                iax.set_title('t / %s' % _mdcu.str_and_dict.replace4latex(t_unit),
+                              y=y_max,
+                              # va="top",
+                              fontsize=iax.xaxis.label.get_fontsize()
+                              )
+
+            if self.n_trajs==1:
+                iax.tick_params(axis="x", labelbottom=True, labeltop=True)
+                iax.set_xlabel('t / %s' % _mdcu.str_and_dict.replace4latex(t_unit))
+            else:
+                if ii==0:
+                    iax.tick_params(axis="x", labelbottom=False, labeltop=True)
+                elif 0 < ii < self.n_trajs -1:
+                    iax.tick_params(axis="x", labelbottom=False, labeltop=False)
+                elif ii == self.n_trajs -1:
+                    iax.tick_params(axis="x", labelbottom=True, labeltop=False)
+                    iax.set_xlabel('t / %s' % _mdcu.str_and_dict.replace4latex(t_unit))
+
+            if grid:
+                iax.grid(axis="x", ls='--',lw=.5, color='k', alpha=.75, zorder=10)
+                _plt.hlines(_np.arange(self.n_ctcs) + .5, scaled_global_time_min - .5, scaled_global_time_max +.5,
+                            ls='--', lw=.5, color='k', alpha=.75, zorder=10
+                            )
+            if bookends:
+                if scaled_time_array[0]>scaled_global_time_min:
+                    iax.axvline(scaled_time_array[0],  ls='--', lw=.5, color=color, zorder=10)
+                if scaled_time_array[-1] < scaled_global_time_max:
+                    iax.axvline(scaled_time_array[-1], ls='--', lw=.5, color=color, zorder=10)
+
+            if freq:
+                iax2 = iax.twinx()
+                iax2.set_xlim(iax.get_xlim())
+                iax2.set_ylim(iax.get_ylim())
+                iax2.set_yticks(_np.arange(self.n_ctcs))
+                labs = iax2.set_yticklabels(
+                ["%u%% " % (ifreq * 100) for ifreq in overall_freqs], va="center")
+
+                if ii==0:
+                    iax.text(
+                        1, y_max,
+                        "$\downarrow$ freq@%3.1f $\\AA\downarrow$"%ctc_cutoff_Ang,
+                        va="top",
+                        transform=iax.transAxes,
+                        ha='left')
+
+            iax.plot(_np.nan, _np.nan, " ", label=self._contacts[0].labels.trajstrs[ii])
+            iax.legend(handlelength=0)
+        myfig.tight_layout()
+        return myfig
+
     def plot_frequency_sums_as_bars(self,
                                     ctc_cutoff_Ang,
                                     title_str,
