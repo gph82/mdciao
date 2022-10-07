@@ -4726,7 +4726,8 @@ class ContactGroup(object):
         fig : :obj:`~matplotlib.pyplot.Figure`
         """
         overall_freqs = self.frequency_per_contact(ctc_cutoff_Ang)
-        bintrajs = self.binarize_trajs(ctc_cutoff_Ang, order="traj")
+        desc_order_of_freq = _np.argsort(overall_freqs)[::-1]
+        bintrajs = [bt[:,desc_order_of_freq] for bt in  self.binarize_trajs(ctc_cutoff_Ang, order="traj")]
         freqs_per_traj = [bt.sum(axis=0)/bt.shape[0] for bt in bintrajs]
         cmap = _mplcolors.ListedColormap([[0, 0, 0, 0], color], N=2)
         scaled_global_time_min, scaled_global_time_max = self.time_min * dt, self.time_max * dt
@@ -4740,10 +4741,10 @@ class ContactGroup(object):
 
             iax : _plt.Axes = myax[ii,0]
             _plt.sca(iax)
-            _plt.matshow(itraj.T[:self.n_ctcs], fignum=0, aspect="auto", cmap=cmap, extent=extent)
+            _plt.matshow(itraj.T, fignum=0, aspect="auto", cmap=cmap, extent=extent)
 
             iax.set_yticks(_np.arange(self.n_ctcs))
-            ctc_labels = _np.array(self.gen_ctc_labels(AA_format={True:"short", False:"long"}[shorten_AAs],fragments=not bool(defrag)))
+            ctc_labels = _np.array(self.gen_ctc_labels(AA_format={True:"short", False:"long"}[shorten_AAs],fragments=not bool(defrag)))[desc_order_of_freq]
             ctc_labels = [_mdcu.str_and_dict.latex_superscript_fragments(lab) for lab in ctc_labels]
             iax.set_yticklabels(ctc_labels)
             iax.set_xlim(scaled_global_time_min - .5 * dt, scaled_global_time_max - .5 * dt)
@@ -4793,9 +4794,9 @@ class ContactGroup(object):
                 iax2.set_ylim(iax.get_ylim())
                 iax2.set_yticks(_np.arange(self.n_ctcs))
                 if self.n_trajs==1:
-                    ylabels = ["%u%% " % (ifreq * 100) for ifreq in overall_freqs]
+                    ylabels = ["%u%% " % (ifreq * 100) for ifreq in overall_freqs[desc_order_of_freq]]
                 else:
-                    ylabels = ["%u%% (%u%% overall)" % (ifreq * 100, ofreq * 100) for ifreq, ofreq in zip(freqs_per_traj[ii], overall_freqs)]
+                    ylabels = ["%u%% (%u%% overall)" % (ifreq * 100, ofreq * 100) for ifreq, ofreq in zip(freqs_per_traj[ii][desc_order_of_freq], overall_freqs[desc_order_of_freq])]
                 labs = iax2.set_yticklabels(ylabels, va="center")
 
 
