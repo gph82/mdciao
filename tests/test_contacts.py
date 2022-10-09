@@ -1519,6 +1519,40 @@ class TestContactGroup(TestBaseClassContactGroup):
         assert isinstance(new_CG_dict, dict)
         self.assertSequenceEqual(list(new_CG_dict),CSV.split(","))
         assert all([isinstance(val, contacts.ContactGroup) for val in new_CG_dict.values()])
+
+    def test_to_ContactGroups_per_traj(self):
+        traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
+        CG : contacts.ContactGroup = _mdcli.residue_neighborhoods("L394",[traj, traj[:-1]],figures=False, no_disk=True)["neighborhoods"][353]
+        new_CGs = CG.to_ContactGroups_per_traj()
+        assert len(new_CGs)==2
+        self.assertListEqual(list(new_CGs.keys()), CG.trajlabels)
+        for ii, (key, iCG) in enumerate(new_CGs.items()):
+            iCG : contacts.ContactGroup
+            # Identical stuff
+            _np.testing.assert_array_equal(CG.res_idxs_pairs, iCG.res_idxs_pairs)
+            _np.testing.assert_array_equal(CG.consensus_labels, iCG.consensus_labels)
+            _np.testing.assert_array_equal(CG.ctc_labels, iCG.ctc_labels)
+            _np.testing.assert_array_equal(CG.neighbors_excluded, iCG.neighbors_excluded)
+            _np.testing.assert_array_equal(CG.max_cutoff_Ang, iCG.max_cutoff_Ang)
+            _np.testing.assert_array_equal(CG.interface_fragments, iCG.interface_fragments)
+            _np.testing.assert_array_equal(CG.max_cutoff_Ang, iCG.max_cutoff_Ang)
+            _np.testing.assert_array_equal(CG.n_ctcs, iCG.n_ctcs)
+            _np.testing.assert_array_equal(CG.fragment_names_best, iCG.fragment_names_best)
+            _np.testing.assert_array_equal(CG.is_neighborhood, iCG.is_neighborhood)
+            _np.testing.assert_array_equal(CG.name, iCG.name)
+
+            # Index dependent stuff
+            _np.testing.assert_array_equal(CG.time_arrays[ii], iCG.time_arrays[0])
+            _np.testing.assert_array_equal(CG.n_frames[ii], iCG.n_frames_total)
+            _np.testing.assert_array_equal(iCG.trajlabels[0], 'mdtraj.00')
+
+            for jj in range(CG.n_ctcs):
+                _np.testing.assert_array_equal( CG._contacts[jj].time_traces.ctc_trajs[ii],
+                                               iCG._contacts[jj].time_traces.ctc_trajs[0])
+                _np.testing.assert_array_equal( CG._contacts[jj].time_traces.atom_pair_trajs[ii],
+                                               iCG._contacts[jj].time_traces.atom_pair_trajs[0])
+                assert CG._contacts[jj].time_traces.trajs[ii] is iCG._contacts[jj].time_traces.trajs[0]
+
 class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
     @classmethod

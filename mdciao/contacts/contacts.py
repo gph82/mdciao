@@ -1034,9 +1034,11 @@ class ContactPair(object):
             time traces of the time-values, in ps. Not having the same shape as ctc_trajs will raise an error
         top : :py:class:`mdtraj.Topology`, default is None
             topology associated with the contact
-        trajs: list of :obj:`mdtraj.Trajectory` objects, default is None
-            The molecular trajectories responsible for which the contact has been evaluated.
-            Not having the same shape as ctc_trajs will raise an error
+        trajs: list, default is None
+            The molecular trajectories for which the contact has been evaluated.
+            The list can contain of :obj:`~mdtraj.Trajectory` objects or
+            strings with pathnames to the trajectory files.
+            Not having the same shape as `ctc_trajs` will raise an error
         atom_pair_trajs: list of iterables of integers, default is None
             Time traces of the pair of atom indices responsible for the distance in :obj:`ctc_trajs`
             Has to be of len(ctc_trajs) and each iterable of shape(Nframes, 2)
@@ -1815,8 +1817,12 @@ class ContactPair(object):
             The time unit with which to label the x-axis
         ylim_Ang : float or "auto"
             The limit in Angstrom of the y-axis
-        max_handles_per_row : int, default is
-            legend control
+        max_handles_per_row : int, default is 4
+            How many rows the legend can have
+
+        Returns
+        -------
+
         """
         if color_scheme is None:
             color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
@@ -5500,6 +5506,7 @@ class ContactGroup(object):
         return return_tuple
 
     def to_new_ContactGroup(self, CSVexpression,
+                            residue_indices=None,
                             allow_multiple_matches=False,
                             merge=True):
         r"""
@@ -5513,6 +5520,9 @@ class ContactGroup(object):
             new :obj:`ContactGroup`. See
             :obj:`mdciao.utils.residue_and_atom.find_AA` for
             the syntax of the expression.
+        residue_indices : list, default is None,
+            Input your selection via zero-indexed residue indices
+            of `self.top`
         allow_multiple_matches : bool, default is False
             Fail if the substrings of the :obj:`CSVexpression`
             return more than one residue. Protects from over-grabbing
@@ -5530,17 +5540,22 @@ class ContactGroup(object):
             :obj:`CSVexpression` and valued with
             :obj:`ContactGroups`
         """
-        matching_CPs = []
-        keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
-        for exp in keys:
-            match = _mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top)
-            if not allow_multiple_matches and len(match)>1:
-                print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
-                _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
-                raise ValueError
+        if CSVexpression is not None:
+            assert residue_indices is None
+            matching_CPs = []
+            keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
+            for exp in keys:
+                match = _mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top)
+                if not allow_multiple_matches and len(match)>1:
+                    print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
+                    _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
+                    raise ValueError
 
-            idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,match))>0]
-            matching_CPs.append(idxs)
+                idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,match))>0]
+                matching_CPs.append(idxs)
+        else:
+            assert CSVexpression is None
+            matching_CPs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,residue_indices))>0]
 
         if merge:
             Ns = ContactGroup(
@@ -5554,6 +5569,59 @@ class ContactGroup(object):
                                      max_cutoff_Ang=self.max_cutoff_Ang) if len(mCPs) > 0 else None][0]
                   for mCPs, key in zip(matching_CPs, keys)}
         return Ns
+
+    def to_ContactGroups_per_traj(self) -> dict:
+        r"""
+        Break this ContactGroup (potentially containing many trajectories) into individual, per-trajectory ContactGroups
+
+        Returns
+        -------
+        CGs : dict
+            The dictionary is keyed with each of the
+            original :obj:`self.trajlabels`, and valued
+            with ContactGroups that consist that only contain
+            information regarding that single trajectory.
+
+        Note
+        ----
+        The attribute :obj:`mdciao.contacts.ContactGroup.trajlabels`
+        of the *returned*, n-th `CG` will necessarily only contain
+        one trajectory label. In case the original labels were strings
+        containing pathnames, that name will coincide with he n-th
+        original `trajlabel`. On the contrary, in case it contained
+        a placeholder name created on-the-fly (e.g. 'mdtraj.01') because
+        no pathnames were originally known, but rather :obj:`mdtraj.Trajectories`
+        were passed as `trajs`, that placeholder-name gets re-setted
+        to `mdtraj.00` since each *returned* `CG` only "knows" one
+        `traj` and it's necessarily the first one.
+        """
+        cp_batches = []
+        for cp in self._contacts:
+            per_traj_cp = []
+            for ii in range(cp.n.n_trajs):
+                per_traj_cp.append(ContactPair(cp.residues.idxs_pair,
+                                               [cp.time_traces.ctc_trajs[ii]],
+                                               [cp.time_traces.time_trajs[ii]],
+                                               top=cp.top,
+                                               anchor_residue_idx=cp.residues.anchor_residue_index,
+                                               consensus_labels=cp.residues.consensus_labels,
+                                               trajs=[cp.time_traces.trajs[ii]],
+                                               fragment_idxs=cp.fragments.idxs,
+                                               consensus_fragnames=cp.fragments.consensus,
+                                               fragment_names=cp.fragments.names,
+                                               fragment_colors=cp.fragments.colors,
+                                               atom_pair_trajs=[cp.time_traces.atom_pair_trajs[ii]]
+                                               ))
+            cp_batches.append(per_traj_cp)
+
+        CGs = {key: ContactGroup([ptcp[ii] for ptcp in cp_batches],
+                                 neighbors_excluded=self.neighbors_excluded,
+                                 max_cutoff_Ang=self.max_cutoff_Ang,
+                                 top=self.top, name=self.name,
+                                 interface_fragments=self.interface_fragments)
+               for ii, key in enumerate(self.trajlabels)}
+
+        return CGs
 
     def retop(self,top, mapping, deepcopy=False):
         r"""Return a copy of this object with a different topology.
