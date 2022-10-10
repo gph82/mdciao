@@ -1590,6 +1590,13 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         freqs = CG.frequency_per_contact(2)
         _np.testing.assert_array_equal([2 / 5, 1 / 5], freqs)
 
+    def test_frequency_per_traj(self):
+        CG = self.CG
+        freqs = CG.frequency_per_traj(2)
+        _np.testing.assert_array_equal(freqs[0],[2/3, 1/3])
+        _np.testing.assert_array_equal(freqs[1],[0, 0])
+
+
     def test_frequency_per_residue_idx(self):
         CG = self.CG
         freq_dict = CG.frequency_sum_per_residue_idx_dict(2)
