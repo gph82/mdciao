@@ -2990,6 +2990,32 @@ class ContactGroup(object):
         self._check_cutoff_ok(ctc_cutoff_Ang)
         return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang) for ictc in self._contacts])
 
+    def frequency_per_traj(self, ctc_cutoff_Ang,
+                              switch_off_Ang=None) -> _np.ndarray:
+        r"""
+        Frequency per contact, per-trajectory, over all trajectory
+
+        Wraps around :obj:`mdciao.contacts.ContactPair.frequency_per_traj`
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            The cutoff to use
+        switch_off_Ang : float, default is None
+            TODO
+
+        Returns
+        -------
+        freqs : np.ndarray
+            Shape (n,m) is (self.n_trajs, self.n_ctcs)
+
+        """
+
+        self._check_cutoff_ok(ctc_cutoff_Ang)
+
+        freqs =  _np.array([ictc.frequency_per_traj(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang) for ictc in self._contacts])
+        return freqs.T
+
     def frequency_sum_per_residue_idx_dict(self, ctc_cutoff_Ang,
                                            switch_off_Ang=None,
                                            sort_by_freq=True,
