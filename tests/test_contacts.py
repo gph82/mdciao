@@ -2157,6 +2157,56 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         #figs[0].savefig("test.png")
         _plt.close("all")
 
+    def test_plot_timedep_ctcs_matrix(self):
+        traj1 = md.load(test_filenames.traj_xtc, top=test_filenames.top_pdb)
+        traj2 = traj1[:]
+        traj2.time += 100
+        r = _mdcli.residue_neighborhoods("L394", [traj1, traj1[:5], traj2],
+                                         ctc_control=1.0, no_disk=True,
+                                         figures=False)
+        r: contacts.ContactGroup = r["neighborhoods"][353]
+        fig, plotted_freqs, plotted_trajs = r.plot_timedep_ctcs_matrix(3,
+                                                                       dt=1e-3, t_unit="ns",
+                                                                       )
+        freqs_by_freq = r.frequency_dicts(3.0, sort_by_freq=True, split_label=False)
+        self.assertDictEqual(plotted_freqs, freqs_by_freq)
+        self.assertEqual(len(plotted_trajs),r.n_trajs)
+        for ii, (traj, iax) in enumerate(zip(plotted_trajs, fig.axes)):
+            img_array = list(iax.get_images())[0].get_array()
+            self.assertEqual(img_array.shape[0], len(plotted_freqs))
+            self.assertEqual(img_array.shape[1],  r.n_frames[ii])
+            _np.testing.assert_array_equal(img_array, traj)
+        self.assertEqual(ii,r.n_trajs-1)
+        #fig.savefig("test.png")
+        _plt.close("all")
+
+    def test_plot_timedep_ctcs_matrix_anchor_1_traj_ctc_control_2(self):
+        traj1 = md.load(test_filenames.traj_xtc, top=test_filenames.top_pdb)
+        r = _mdcli.residue_neighborhoods("L394", traj1,
+                                         ctc_control=1.0, no_disk=True,
+                                         figures=False)
+        r: contacts.ContactGroup = r["neighborhoods"][353]
+        fig, plotted_freqs, plotted_trajs = r.plot_timedep_ctcs_matrix(3,
+                                                                       dt=1e-3, t_unit="ns",
+                                                                       anchor="LEU394",
+                                                                       shorten_AAs=False,
+                                                                       defrag=None,
+                                                                       ctc_control=2,
+                                                                       )
+        freqs_by_freq = r.frequency_dicts(3.0, sort_by_freq=True, split_label=False, defrag=None, AA_format="long")
+        freqs_by_freq = _mdcu.str_and_dict.delete_exp_in_keys(freqs_by_freq, "LEU394")[0]
+        freqs_by_freq = {key : val for ii, (key,val) in enumerate(freqs_by_freq.items()) if ii<2}
+        self.assertDictEqual(plotted_freqs, freqs_by_freq)
+        self.assertEqual(len(plotted_trajs),r.n_trajs)
+        for ii, (traj, iax) in enumerate(zip(plotted_trajs, fig.axes)):
+            img_array = list(iax.get_images())[0].get_array()
+            self.assertEqual(img_array.shape[0], len(plotted_freqs))
+            self.assertEqual(img_array.shape[1],  r.n_frames[ii])
+            _np.testing.assert_array_equal(img_array, traj)
+        self.assertEqual(ii,r.n_trajs-1)
+        fig.savefig("test.png")
+        _plt.close("all")
+
     def test_plot_distance_distributions_just_works(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         jax = CG.plot_distance_distributions()

@@ -4694,19 +4694,22 @@ class ContactGroup(object):
                                  dt=1,
                                  t_unit='ps',
                                  grid=True,
-                                 freq=True,
+                                 show_freqs=True,
+                                 anchor=None,
                                  bookends=True,
                                  defrag=None,
-                                 ) -> _plt.Figure:
+                                 ctc_control=None,
+                                 ) -> tuple:
         r"""
-        Per-trajectory time-traces of the formed contacts, shown as binary traces (formed or not formed)
+        Per-trajectory time-traces of the formed contacts, shown as binary traces, i.e. formed or not formed.
 
         Each trajectory gets displayed in its own panel.
 
         Note
         ----
         Contacts are shown in descending order of contact-frequency,
-        as obtained using `ctc_cutoff_Ang`, over all dataset.
+        as obtained using `ctc_cutoff_Ang`, over all dataset. Expect
+        different orders when changing `ctc_cutoff_Ang`.
 
         Parameters
         ----------
@@ -4715,18 +4718,20 @@ class ContactGroup(object):
         inches_per_contact : float, default is .5
             The height, in inches, that each contact
             will take up on the whole plot. Making
-            this number to small to make the figure
+            this number too small to make the figure
             look flatter might squeeze contact-labels
-            vertically, try instead using `panaelwidth`
+            vertically, try instead using `panaelwidth`.
         figsize : tuple, default is None,
             Default behavior is to set the size of
             the figure automatically as
-            height, width = self.n_trajs * self.n_ctcs*inches_per_contact, panelwidth
+
+            height, width = self.n_trajs * self.n_ctcs * inches_per_contact, panelwidth
+
             s.t. figure sizes are consistent across systems and number
             of contacts. However, you can override this behavior
-            by setting the figszie yourself.
+            by setting the figsize yourself here.
         panelwidth : float, default is 10
-            In inches, the width of the figure
+            The width of the figure, in inches
         color : any color-like, default is "lightblue"
             The color assigned to the formed contacts
         shorten_AAs : bool, default is True
@@ -4737,11 +4742,18 @@ class ContactGroup(object):
             The time unit with which to label the x-axis
         grid : boolean, default is True
             Overlap a grid of faint dashed lines on x and y ticks
-        freq : bool, default is True
-            Annotate each contact with its contact-frequency
-            on the right y-axis. When multiple trajectories
-            are plotted, the label includes per-trajectory
-            and overall frequencies.
+        show_freqs : bool, default is True
+            Use the right-handside y-axis to annotate each
+            contact with its contact-frequency. When multiple
+            trajectories are plotted, the label includes
+            per-trajectory frequency and overall frequency.
+        anchor : str, default is None
+            This string will be deleted from the contact labels,
+            leaving only the partner-residue to identify the contact.
+            The final anchor label will be that of the deleted keys
+            (allows for keeping e.g. pre-existing consensus nomenclature).
+            No consistency-checks are carried out, i.e. use
+            at your own risk (plus it looks ugly, somehow).
         bookends : bool, default is True
             Indicate the beginning and end of each trajectory
             with a faint dashed line, to differentiate non
@@ -4749,36 +4761,87 @@ class ContactGroup(object):
             Only has effect if trajectories have different
             starting or ending timestamps.
         defrag : bool, default is None
-            Whether to include or not
-            the fragment information in the contact
-            labels
+            Whether or not to include the fragment
+            information in the contact labels
+        ctc_control : None, float or int, default None
+            Control the number of contacts that gets
+            plotted. Default is to show all regardless
+            of their frequency value.
+             * If integer, interpret directly
+               as number of contacts to be shown, e.g.
+               `ctc_control` = 5 means show the 5 most frequent
+               contacts (regardless of how many other there might be).
+             * If float must be between [0,1]. It is interpreted
+               as fraction of the total number of contacts to keep
+               over all dataset, i.e. ctc_control=.75 means show contacts
+               until 75% of all aggregated frequency is shown.
+             * If None show all contacts regardless of their
+               frequency.
+            The difference between None and 1.0 (100% of overall frequency)
+            is that `ctc_control` = None will still show zero-frequency
+            contacts, whereas `ctc_control` = 1.0 won't,
+            since 100% of overall frequency is achieved *without*
+            the zero-frequency contacts
 
         Returns
         -------
         fig : :obj:`~matplotlib.pyplot.Figure`
+            The figure with the plots
+        plotted_freqs : dict
+            A dictionary keyed with
+            the plotted contact labels and
+            valued with the plotted overall frequencies.
+            Keys are sorted in the same order
+            as plotted.
+        plotted_trajs :  list
+            The binary trajectories, as
+            plotted, i.e. each item of
+            this list is a np.ndarray of
+            shape (len(plotted_freqs), n_frames_i),
+            where i is the trajectory index.
+            The order of the rows is the same
+            as the order of the keys in `plotted_freqs`.
         """
+
+        #Freqs
         overall_freqs = self.frequency_per_contact(ctc_cutoff_Ang)
         desc_order_of_freq = _np.argsort(overall_freqs)[::-1]
-        bintrajs = [bt[:,desc_order_of_freq] for bt in  self.binarize_trajs(ctc_cutoff_Ang, order="traj")]
-        freqs_per_traj = [bt.sum(axis=0)/bt.shape[0] for bt in bintrajs]
-        cmap = _mplcolors.ListedColormap([[0, 0, 0, 0], color], N=2)
+        bintrajs =   self.binarize_trajs(ctc_cutoff_Ang, order="traj")
+        freqs_per_traj = self.frequency_per_traj(ctc_cutoff_Ang)
+
+        #Time
         scaled_global_time_min, scaled_global_time_max = self.time_min * dt, self.time_max * dt
+
+        # Figure
+        cmap = _mplcolors.ListedColormap([[0, 0, 0, 0], color], N=2)
+        n_rows_per_panel = [self.n_ctcs if ctc_control is None else _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, overall_freqs[desc_order_of_freq])[0]][0]
+        ctc_labels = _np.array(
+            self.gen_ctc_labels(AA_format={True: "short", False: "long"}[shorten_AAs], fragments=not bool(defrag)))
+        if anchor is not None:
+            idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys({key : None for key in ctc_labels}, anchor)
+            if len(_np.unique(deleted_half_keys)) > 1:
+                raise ValueError("The anchor patterns differ by key, this is strange: %s" % deleted_half_keys)
+            else:
+                ctc_labels = _np.array(list(idict.keys()))
+                anchor = _mdcu.str_and_dict.defrag_key(deleted_half_keys[0], defrag=defrag, sep=" ")
+
         if figsize is None:
-            figsize = (panelwidth, self.n_ctcs * inches_per_contact * len(bintrajs))
-        myfig, myax = _plt.subplots(len(bintrajs), 1, figsize=figsize, squeeze=False)
+            figsize = (panelwidth, n_rows_per_panel * inches_per_contact * self.n_trajs)
+        myfig, myax = _plt.subplots(self.n_trajs, 1, figsize=figsize, squeeze=False,tight_layout=True)
         myfig : _plt.Figure
+        plotted_freqs = {key:val for key, val in zip(ctc_labels[desc_order_of_freq[:n_rows_per_panel]],
+                                                     overall_freqs[desc_order_of_freq[:n_rows_per_panel]])}
+        plotted_bintrajs = []
         for ii, itraj in enumerate(bintrajs):
             scaled_time_array = self.time_arrays[ii] * dt
-            extent = [scaled_time_array[0], scaled_time_array[-1], self.n_ctcs-.5, 0-.5]
+            extent = [scaled_time_array[0], scaled_time_array[-1], n_rows_per_panel-.5, 0-.5]
 
             iax : _plt.Axes = myax[ii,0]
             _plt.sca(iax)
-            _plt.matshow(itraj.T, fignum=0, aspect="auto", cmap=cmap, extent=extent)
-
-            iax.set_yticks(_np.arange(self.n_ctcs))
-            ctc_labels = _np.array(self.gen_ctc_labels(AA_format={True:"short", False:"long"}[shorten_AAs],fragments=not bool(defrag)))[desc_order_of_freq]
-            ctc_labels = [_mdcu.str_and_dict.latex_superscript_fragments(lab) for lab in ctc_labels]
-            iax.set_yticklabels(ctc_labels)
+            _plt.matshow(itraj.T[desc_order_of_freq[:n_rows_per_panel]], fignum=0, aspect="auto", cmap=cmap, extent=extent)
+            plotted_bintrajs.append(itraj.T[desc_order_of_freq[:n_rows_per_panel]])
+            iax.set_yticks(_np.arange(n_rows_per_panel))
+            iax.set_yticklabels([_mdcu.str_and_dict.latex_superscript_fragments(lab) for lab in ctc_labels[desc_order_of_freq[:n_rows_per_panel]]])
             iax.set_xlim(scaled_global_time_min - .5 * dt, scaled_global_time_max - .5 * dt)
             myfig.draw_without_rendering()
             iax2 : _plt.Axes = iax.twiny()
@@ -4791,12 +4854,18 @@ class ContactGroup(object):
             if ii == 0:
                 y_max = _np.max([iax.transAxes.inverted().transform(txt.get_window_extent(rend).corners()[-1])[-1]
                                  for txt in iax.get_xticklabels()])
-                iax.set_title('t / %s' % _mdcu.str_and_dict.replace4latex(t_unit),
-                              y=y_max,
-                              # va="top",
-                              fontsize=iax.xaxis.label.get_fontsize()
-                              )
-
+                iax.text(x=.5, y=y_max,
+                         s='t / %s' % _mdcu.str_and_dict.replace4latex(t_unit),
+                         va="center", ha="center",
+                         transform=iax.transAxes,
+                         )
+                if anchor is not None:
+                    iax.text(
+                        0, y_max,
+                        "$\downarrow$ %s and$\downarrow$   " % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
+                        va="top",
+                        transform=iax.transAxes,
+                        ha='right')
             if self.n_trajs==1:
                 iax.tick_params(axis="x", labelbottom=True, labeltop=True)
                 iax.set_xlabel('t / %s' % _mdcu.str_and_dict.replace4latex(t_unit))
@@ -4811,7 +4880,7 @@ class ContactGroup(object):
 
             if grid:
                 iax.grid(axis="x", ls='--',lw=.5, color='k', alpha=.75, zorder=10)
-                _plt.hlines(_np.arange(self.n_ctcs) + .5, scaled_global_time_min - .5, scaled_global_time_max +.5,
+                _plt.hlines(_np.arange(n_rows_per_panel) + .5, scaled_global_time_min - .5, scaled_global_time_max +.5,
                             ls='--', lw=.5, color='k', alpha=.75, zorder=10
                             )
             if bookends:
@@ -4820,15 +4889,16 @@ class ContactGroup(object):
                 if scaled_time_array[-1] < scaled_global_time_max:
                     iax.axvline(scaled_time_array[-1], ls='--', lw=.5, color=color, zorder=10)
 
-            if freq:
+            if show_freqs:
                 iax2 = iax.twinx()
                 iax2.set_xlim(iax.get_xlim())
                 iax2.set_ylim(iax.get_ylim())
-                iax2.set_yticks(_np.arange(self.n_ctcs))
+                iax2.set_yticks(_np.arange(n_rows_per_panel))
                 if self.n_trajs==1:
-                    ylabels = ["%u%% " % (ifreq * 100) for ifreq in overall_freqs[desc_order_of_freq]]
+                    ylabels = ["%u%% " % (ifreq * 100) for ifreq in overall_freqs[desc_order_of_freq[:n_rows_per_panel]]]
                 else:
-                    ylabels = ["%u%% (%u%% overall)" % (ifreq * 100, ofreq * 100) for ifreq, ofreq in zip(freqs_per_traj[ii][desc_order_of_freq], overall_freqs[desc_order_of_freq])]
+                    ylabels = ["%u%% (%u%% overall)" % (ifreq * 100, ofreq * 100) for ifreq, ofreq in zip(freqs_per_traj[ii][desc_order_of_freq[:n_rows_per_panel]],
+                                                                                                          overall_freqs[desc_order_of_freq[:n_rows_per_panel]])]
                 labs = iax2.set_yticklabels(ylabels, va="center")
 
 
@@ -4842,8 +4912,12 @@ class ContactGroup(object):
 
             iax.plot(_np.nan, _np.nan, " ", label=self._contacts[0].labels.trajstrs[ii])
             iax.legend(handlelength=0)
-        myfig.tight_layout()
-        return myfig
+
+        #https://stackoverflow.com/a/44971177
+        w, h = myfig.get_size_inches()
+        padding_h =  myfig.subplotpars.top - myfig.subplotpars.bottom
+        myfig.set_size_inches(w, h/padding_h)
+        return myfig, plotted_freqs, plotted_bintrajs
 
     def plot_frequency_sums_as_bars(self,
                                     ctc_cutoff_Ang,
