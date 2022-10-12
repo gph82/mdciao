@@ -560,7 +560,7 @@ def residue_line(item_desc, residue, frag_idx,
         You can pass {"GPCR":{895:"3.50", ...} here and that label
         will be displayed next to the residue.
     table : bool, default is False
-        Assume a header has been aready printed
+        Assume a header has been already printed
         out and print the line with the
         inline tags
 
