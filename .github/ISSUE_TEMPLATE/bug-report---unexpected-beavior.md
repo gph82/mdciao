@@ -1,5 +1,5 @@
 ---
-name: Bug Report
+name: Bug Report / Unexpected Beavior
 about: The following are just suggestions for you to fill-in and make our work easier.
   The more info you provide, the higher the chances that we can solve the issue.
 title: ''
