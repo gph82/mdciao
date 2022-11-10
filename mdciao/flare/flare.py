@@ -274,7 +274,8 @@ def freqs2flare(freqs, res_idxs_pairs,
         plots when heuristics about font-sizing
         fail
     aura : iterable, default is None
-        Scalar array, indexed with residue indices,
+        Scalar array (positive or negative),
+        indexed with residue indices,
         e.g. RMSF, SASA, degree of conservation etc.
         It will be drawn as an *aura* around the
         flareplot.
