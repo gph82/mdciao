@@ -1111,11 +1111,11 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
     if any([a<0 for a in aura]):
         raise NotImplementedError("Negative aura-values not implemented yet")
 
-    aura /= aura.max()
+    aura /= aura.max()-aura.min()
     if subtract_baseline:
         aura -= aura.min()
         aura /= aura.max()
-    assert  aura.max()==1
+    _np.testing.assert_almost_equal(aura.max() - aura.min(), 1)
 
     aura *= r * width
 
