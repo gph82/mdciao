@@ -521,7 +521,8 @@ def circle_plot_residues(fragments,
         If provided, residue labels wil be auto-generated from
         here
     aura : iterable, default is None
-        Scalar array, indexed with residue indices,
+        Scalar array (positive or negative),
+        indexed with residue indices,
         e.g. RMSF, SASA, conv. degree...
         It will be drawn as an *aura* around the
         flareplot.
