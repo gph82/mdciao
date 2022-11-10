@@ -24,7 +24,8 @@ import numpy as _np
 
 from ._textutils import \
     outermost_text_corner as _outermost_corner_of_fancypatches, \
-    any_overlap_via_FancyBoxPach
+    any_overlap_via_FancyBoxPach, \
+    plot_fancypatches
 
 from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
