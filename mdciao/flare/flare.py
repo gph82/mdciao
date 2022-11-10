@@ -617,7 +617,7 @@ def circle_plot_residues(fragments,
                                                aa_offset=aa_offset,
                                                replacement_labels=replacement_labels)
         if debug:
-            _futils._plot_fancypatches(labels, lw=dot_radius_in_pts / 10)
+            _futils.plot_fancypatches(labels, lw=dot_radius_in_pts / 10)
             iax.add_artist(_plt.Circle(center,
                                        radius=outer_r_in_data_units,
                                        ec='green',
@@ -659,7 +659,7 @@ def circle_plot_residues(fragments,
 
         outer_r_in_data_units = _futils._outermost_corner_of_fancypatches(ss_labels)
         if debug:
-            _futils._plot_fancypatches(ss_labels, lw=dot_radius_in_pts / 10)
+            _futils.plot_fancypatches(ss_labels, lw=dot_radius_in_pts / 10)
             iax.add_artist(_plt.Circle(center,
                                        radius=outer_r_in_data_units,
                                        ec='purple',
