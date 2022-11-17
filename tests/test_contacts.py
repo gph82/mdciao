@@ -27,6 +27,7 @@ import pytest
 from mdciao import contacts
 from mdciao import examples
 from mdciao import nomenclature
+from mdciao.cli import sites as _mdcsites
 from pandas import DataFrame as _DF
 import pickle
 
@@ -1491,34 +1492,79 @@ class TestContactGroup(TestBaseClassContactGroup):
                 assert len(repframes)==len(RMSDd)==len(values)==len(trajs)==10
                 assert isinstance(trajs[0], md.Trajectory)
 
-    def test_to_new_ContactGroup(self):
-        from mdciao.cli import sites
-        CG = sites([{"name": "test_random",
-                     "pairs": {"residx": [[100, 200],
-                                          [100, 300],
-                                          [10, 40],
-                                          [200, 50],
-                                          [20, 40],
-                                          [10, 20]]
-                               }}],
-                   test_filenames.traj_xtc,
-                   test_filenames.top_pdb,
-                   no_disk=True,
-                   figures=False)["test_random"]
+    def test_to_new_ContactGroup_CSV(self):
+        CG = _mdcsites([{"name": "test_random",
+                         "pairs": {"residx": [[100, 200],
+                                              [100, 300],
+                                              [10, 40],
+                                              [200, 50],
+                                              [20, 40],
+                                              [10, 20]]
+                                   }}],
+                       test_filenames.traj_xtc,
+                       test_filenames.top_pdb,
+                       no_disk=True,
+                       figures=False)["test_random"]
+        keys = [str(CG.top.residue(ii)) for ii in [200,10, 1]]
+        CSV = ','.join(keys)
 
-        CSV = ','.join([str(CG.top.residue(ii)) for ii in [200,10]])
-
-        new_CG : contacts.ContactGroup = CG.to_new_ContactGroup(CSV)
+        new_CG : contacts.ContactGroup = CG.to_new_ContactGroup(CSVexpression=CSV)
+        assert new_CG.n_ctcs == 4
         assert new_CG._contacts[0] is CG._contacts[0]
         assert new_CG._contacts[1] is CG._contacts[2]
         assert new_CG._contacts[2] is CG._contacts[3]
         assert new_CG._contacts[3] is CG._contacts[5]
         assert isinstance(new_CG,contacts.ContactGroup)
 
-        new_CG_dict = CG.to_new_ContactGroup(CSV,merge=False)
-        assert isinstance(new_CG_dict, dict)
-        self.assertSequenceEqual(list(new_CG_dict),CSV.split(","))
-        assert all([isinstance(val, contacts.ContactGroup) for val in new_CG_dict.values()])
+        new_CG_dict = CG.to_new_ContactGroup(CSVexpression=CSV, merge=False)
+
+        self.assertSequenceEqual(list(new_CG_dict.keys()),CSV.split(","))
+
+        assert new_CG_dict[keys[0]].n_ctcs == 2
+        assert new_CG_dict[keys[0]]._contacts[0] is CG._contacts[0]
+        assert new_CG_dict[keys[0]]._contacts[1] is CG._contacts[3]
+
+        assert new_CG_dict[keys[1]].n_ctcs == 2
+        assert new_CG_dict[keys[1]]._contacts[0] is CG._contacts[2]
+        assert new_CG_dict[keys[1]]._contacts[1] is CG._contacts[5]
+
+        assert new_CG_dict[keys[2]] is None
+
+
+    def test_to_new_ContactGroup_residue_indices(self):
+        CG = _mdcsites([{"name": "test_random",
+                         "pairs": {"residx": [[100, 200],
+                                              [100, 300],
+                                              [10, 40],
+                                              [200, 50],
+                                              [20, 40],
+                                              [10, 20]]
+                                   }}],
+                       test_filenames.traj_xtc,
+                       test_filenames.top_pdb,
+                       no_disk=True,
+                       figures=False)["test_random"]
+
+        residue_indices = [10, 40, 1]
+        new_CG : contacts.ContactGroup = CG.to_new_ContactGroup(residue_indices=residue_indices)
+        assert new_CG.n_ctcs == 3
+        assert new_CG._contacts[0] is CG._contacts[2]
+        assert new_CG._contacts[1] is CG._contacts[4]
+        assert new_CG._contacts[2] is CG._contacts[5]
+        assert isinstance(new_CG,contacts.ContactGroup)
+
+        new_CG_dict = CG.to_new_ContactGroup(residue_indices=residue_indices, merge=False)
+        self.assertSequenceEqual(list(new_CG_dict.keys()),residue_indices)
+        assert new_CG_dict[residue_indices[0]].n_ctcs == 2
+        assert new_CG_dict[residue_indices[0]]._contacts[0] is CG._contacts[2]
+        assert new_CG_dict[residue_indices[0]]._contacts[1] is CG._contacts[5]
+
+        assert new_CG_dict[residue_indices[1]].n_ctcs == 2
+        assert new_CG_dict[residue_indices[1]]._contacts[0] is CG._contacts[2]
+        assert new_CG_dict[residue_indices[1]]._contacts[1] is CG._contacts[4]
+
+        assert new_CG_dict[residue_indices[2]] is None
+
 
     def test_to_ContactGroups_per_traj(self):
         traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
