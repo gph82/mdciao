@@ -5605,28 +5605,34 @@ class ContactGroup(object):
             return_tuple += tuple([geoms])
         return return_tuple
 
-    def to_new_ContactGroup(self, CSVexpression,
+    def to_new_ContactGroup(self,
+                            CSVexpression=None,
                             residue_indices=None,
-                            allow_multiple_matches=False,
-                            merge=True):
+                            allow_multiple_matches=False, merge=True):
         r"""
         Creates a new :obj:`ContactGroup` from this une using a CSV expression to filter for residues
 
         Parameters
         ----------
-        CSVexpression : str
+        CSVexpression : str or None, default is None
             CSV expression like "GLU30,K*" to select
             the residue-pairs of :obj:`self` for the
             new :obj:`ContactGroup`. See
             :obj:`mdciao.utils.residue_and_atom.find_AA` for
-            the syntax of the expression.
+            the syntax of the expression. If
+            `CSVexpression` and `residue_indices`
+            are mutually exclusive, one of them
+            has to be None.
         residue_indices : list, default is None,
             Input your selection via zero-indexed residue indices
-            of `self.top`
+            of `self.top`. `CSVexpression` and `residue_indices`
+            are mutually exclusive, one of them
+            has to be None.
         allow_multiple_matches : bool, default is False
             Fail if the substrings of the :obj:`CSVexpression`
             return more than one residue. Protects from over-grabbing
-            residues
+            residues. Only has effect if `CSVexpression` is
+            used, since `residue_indices` matches are unique
         merge : bool, default is True
             Merge the selected residue-pairs into
             one single :obj:`ContactGroup`. If False
@@ -5640,9 +5646,9 @@ class ContactGroup(object):
             :obj:`CSVexpression` and valued with
             :obj:`ContactGroups`
         """
+        matching_CPs = []
         if CSVexpression is not None:
             assert residue_indices is None
-            matching_CPs = []
             keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
             for exp in keys:
                 match = _mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top)
@@ -5655,7 +5661,10 @@ class ContactGroup(object):
                 matching_CPs.append(idxs)
         else:
             assert CSVexpression is None
-            matching_CPs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,residue_indices))>0]
+            for ri in residue_indices: # Too keep the merge functionality with nonmatching residxs, we need this iteration
+                idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair, ri)) > 0]
+                matching_CPs.append(idxs)
+            keys = residue_indices
 
         if merge:
             Ns = ContactGroup(
