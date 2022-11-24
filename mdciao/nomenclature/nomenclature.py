@@ -179,28 +179,28 @@ def _PDB_finder(PDB_code, local_path='.',
     return _geom, return_file
 
 
-def _CGN_finder(identifier,
-                format='CGN_%s.txt',
+def _CGN_finder(uniprot_name,
+                format='%s.txt',
                 local_path='.',
                 try_web_lookup=True,
                 verbose=True,
                 dont_fail=False,
                 write_to_disk=False):
-    r"""Provide a four-letter PDB code and look up (first locally, then online)
+    r"""Provide a Uniprot name and look up (first locally, then online)
     for a file that contains the Common-Gprotein-Nomenclature (CGN)
     consensus labels and return them as a :obj:`~pandas.DataFrame`. See
     https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
-    and :obj:`_finder_writer` for what's happening under the hood
+    and `_finder_writer` for what's happening under the hood
 
 
     Parameters
     ----------
-    identifier : str
-        Typically, a PDB code
+    uniprot_name : str
+        Uniprot Name, e.g "GNAS2_HUMAN"
     format : str
-        A format string that turns the :obj:`identifier`
+        A format string that turns the `uniprot_name`
         into a filename for local lookup, in case the
-        user has custom filenames, e.g. 3SN6_consensus.txt
+        user has custom filenames, e.g. GNAS2_HUMAN_consensus.txt
     local_path : str
         The local path to the local consensus file
     try_web_lookup : bool, default is True
@@ -224,14 +224,14 @@ def _CGN_finder(identifier,
        Nature 524, 173–179 (2015)
       `<https://doi.org/10.1038/nature14663>`
     """
-    file2read = format % identifier
+    file2read = format % uniprot_name
     file2read = _path.join(local_path, file2read)
     rep = lambda istr: [istr.replace(" ", "") if isinstance(istr, str) else istr][0]
     # using  delim_whitespace=True splits "Sort Number" in two keys, not feasible to generalize ATM
     local_lookup_lambda = lambda file2read: _read_csv(file2read, delimiter='\t').applymap(rep)
 
     web_address = "www.mrc-lmb.cam.ac.uk"
-    url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
+    url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, uniprot_name)
     web_lookup_lambda = local_lookup_lambda
 
     print("Using CGN-nomenclature, please cite")
