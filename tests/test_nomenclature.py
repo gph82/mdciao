@@ -78,26 +78,26 @@ class Test_PDB_finder(unittest.TestCase):
 class Test_CGN_finder(unittest.TestCase):
 
     def test_works_locally(self):
-        df, filename = nomenclature._CGN_finder("3SN6",
+        df, filename = nomenclature._CGN_finder("GNAS2_HUMAN",
                                                 try_web_lookup=False,
                                                 local_path=test_filenames.nomenclature_path)
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
-        _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "3SN6"])
+        _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "GNAS2_HUMAN"])
 
     def test_works_online(self):
-        df, filename = nomenclature._CGN_finder("3SN6",
+        df, filename = nomenclature._CGN_finder("GNAS2_HUMAN",
                                                 )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
         assert "http" in filename
-        _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "3SN6"])
+        _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "GNAS2_HUMAN"])
 
     def test_works_online_and_writes_to_disk_excel(self):
         with _TDir(suffix="_mdciao_test") as tdir:
-            df, filename = nomenclature._CGN_finder("3SN6",
+            df, filename = nomenclature._CGN_finder("GNAS2_HUMAN",
                                                     format="%s.xlsx",
                                                     local_path=tdir,
                                                     write_to_disk=True
@@ -106,12 +106,12 @@ class Test_CGN_finder(unittest.TestCase):
             assert isinstance(df, DataFrame)
             assert isinstance(filename, str)
             assert "http" in filename
-            _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "3SN6"])
-            assert path.exists(path.join(tdir, "3SN6.xlsx"))
+            _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "GNAS2_HUMAN"])
+            assert path.exists(path.join(tdir, "GNAS2_HUMAN.xlsx"))
 
     def test_works_online_and_writes_to_disk_ascii(self):
         with _TDir(suffix="_mdciao_test") as tdir:
-            df, filename = nomenclature._CGN_finder("3SN6",
+            df, filename = nomenclature._CGN_finder("GNAS2_HUMAN",
                                                     local_path=tdir,
                                                     format="%s.txt",
                                                     write_to_disk=True
@@ -120,15 +120,15 @@ class Test_CGN_finder(unittest.TestCase):
             assert isinstance(df, DataFrame)
             assert isinstance(filename, str)
             assert "http" in filename
-            _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "3SN6"])
-            assert path.exists(path.join(tdir, "3SN6.txt"))
+            _np.testing.assert_array_equal(list(df.keys()), ["CGN", "Sort number", "GNAS2_HUMAN"])
+            assert path.exists(path.join(tdir, "GNAS2_HUMAN.txt"))
 
     def test_works_local_does_not_overwrite(self):
         with _TDir(suffix="_mdciao_test") as tdir:
-            infile = test_filenames.CGN_3SN6
+            infile = test_filenames.GNAS2_HUMAN
             copy(infile, tdir)
             with pytest.raises(FileExistsError):
-                nomenclature._CGN_finder("3SN6",
+                nomenclature._CGN_finder("GNAS2_HUMAN",
                                          try_web_lookup=False,
                                          local_path=tdir,
                                          write_to_disk=True
@@ -136,12 +136,12 @@ class Test_CGN_finder(unittest.TestCase):
 
     def test_raises_not_find_locally(self):
         with pytest.raises(FileNotFoundError):
-            nomenclature._CGN_finder("3SN6",
+            nomenclature._CGN_finder("GNAS2_HUMAN",
                                      try_web_lookup=False
                                      )
 
     def test_not_find_locally_but_no_fail(self):
-        DF, filename = nomenclature._CGN_finder("3SN6",
+        DF, filename = nomenclature._CGN_finder("GNAS2_HUMAN",
                                                 try_web_lookup=False,
                                                 dont_fail=True
                                                 )
@@ -150,11 +150,11 @@ class Test_CGN_finder(unittest.TestCase):
 
     def test_raises_not_find_online(self):
         with pytest.raises(HTTPError):
-            nomenclature._CGN_finder("3SNw",
+            nomenclature._CGN_finder("GNAS2_HUMANE",
                                      )
 
     def test_not_find_online_but_no_raise(self):
-        df, filename = nomenclature._CGN_finder("3SNw",
+        df, filename = nomenclature._CGN_finder("GNAS2_HUMANE",
                                                 dont_fail=True
                                                 )
         assert df is None
@@ -296,9 +296,12 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         self.tmpdir = mkdtemp("_test_mdciao_CGN_local")
         self._CGN_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.CGN_3SN6))
         self._PDB_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.pdb_3SN6))
+        self._GNAS2_HUMAN_file = path.join(self.tmpdir, path.basename(test_filenames.GNAS2_HUMAN))
+        self.top = md.load(test_filenames.pdb_3SN6).top
         shutil.copy(test_filenames.CGN_3SN6, self._CGN_3SN6_file)
         shutil.copy(test_filenames.pdb_3SN6, self._PDB_3SN6_file)
-        self.cgn_local = nomenclature.LabelerCGN("3SN6",
+        shutil.copy(test_filenames.GNAS2_HUMAN, self._GNAS2_HUMAN_file)
+        self.cgn_local = nomenclature.LabelerCGN("GNAS2_HUMAN",
                                                  try_web_lookup=False,
                                                  local_path=self.tmpdir,
                                                  )
@@ -309,22 +312,12 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
 
     def test_correct_files(self):
         _np.testing.assert_equal(self.cgn_local.tablefile,
-                                 self._CGN_3SN6_file)
-        _np.testing.assert_equal(self.cgn_local.ref_PDB,
-                                 "3SN6")
-
-    def test_mdtraj_attributes(self):
-        pass
-        # _np.testing.assert_equal(cgn_local.geom,
-        #                         self._geom_3SN6)
-
-        # _np.testing.assert_equal(cgn_local.top,
-        #                         self._geom_3SN6.top)
+                                 self._GNAS2_HUMAN_file)
 
     def test_dataframe(self):
         self.assertIsInstance(self.cgn_local.dataframe, DataFrame)
         self.assertSequenceEqual(list(self.cgn_local.dataframe.keys()),
-                                 ["CGN", "Sort number", "3SN6"])
+                                 ["CGN", "Sort number", "GNAS2_HUMAN"])
 
     def test_correct_residue_dicts(self):
         _np.testing.assert_equal(self.cgn_local.conlab2AA["G.hfs2.2"], "R201")
@@ -334,7 +327,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         # Test "fragments" dictionary SMH
         self.assertIsInstance(self.cgn_local.fragments, dict)
         assert all([len(ii) > 0 for ii in self.cgn_local.fragments.values()])
-        self.assertEqual(self.cgn_local.fragments["G.HN"][0], "T9")
+        self.assertEqual(self.cgn_local.fragments["G.HN"][0], "M1")
         self.assertSequenceEqual(list(self.cgn_local.fragments.keys()),
                                  nomenclature._CGN_fragments)
 
@@ -342,7 +335,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         # Test "fragments_as_conslabs" dictionary SMH
         self.assertIsInstance(self.cgn_local.fragments_as_conlabs, dict)
         assert all([len(ii) > 0 for ii in self.cgn_local.fragments_as_conlabs.values()])
-        self.assertEqual(self.cgn_local.fragments_as_conlabs["G.HN"][0], "G.HN.26")
+        self.assertEqual(self.cgn_local.fragments_as_conlabs["G.HN"][0], "G.HN.1")
         self.assertSequenceEqual(list(self.cgn_local.fragments_as_conlabs.keys()),
                                  nomenclature._CGN_fragments)
 
@@ -360,7 +353,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     def test_conlab2residx_wo_input_map(self):
         # More than anthing, this is testing _top2consensus_map
         # I know this a priori using find_AA
-        out_dict = self.cgn_local.conlab2residx(self.cgn_local.top)
+        out_dict = self.cgn_local.conlab2residx(self.top)
         self.assertEqual(out_dict["G.hfs2.2"], 164)
 
     def test_conlab2residx_w_input_map(self):
@@ -368,7 +361,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
 
         map = [None for ii in range(200)]
         map[164] = "G.hfs2.2"
-        out_dict = self.cgn_local.conlab2residx(self.cgn_local.top, map=map)
+        out_dict = self.cgn_local.conlab2residx(self.top, map=map)
         self.assertEqual(out_dict["G.hfs2.2"], 164)
 
     def test_conlab2residx_w_input_map_duplicates(self):
@@ -376,38 +369,38 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         map[164] = "G.hfs2.2"  # I know this a priori using find_AA
         map[165] = "G.hfs2.2"
         with pytest.raises(ValueError):
-            self.cgn_local.conlab2residx(self.cgn_local.top, map=map)
+            self.cgn_local.conlab2residx(self.top, map=map)
 
     def test_top2frags_just_passes(self):
-        defs = self.cgn_local.top2frags(self.cgn_local.top)
-        self.assertSequenceEqual(list(defs.keys()),
-                                 nomenclature._CGN_fragments)
+        defs = self.cgn_local.top2frags(self.top)
+        self.assertListEqual(list(set(nomenclature._CGN_fragments).difference(list(defs.keys()))),
+                             ["G.h1ha"]) # 3SN6 is lacking this element
 
     def test_top2frags_gets_dataframe(self):
-        self.cgn_local.aligntop(self.cgn_local.top)
-        defs = self.cgn_local.top2frags(self.cgn_local.top,
+        self.cgn_local.aligntop(self.top)
+        defs = self.cgn_local.top2frags(self.top,
                                         input_dataframe=self.cgn_local.most_recent_alignment)
-        self.assertSequenceEqual(list(defs.keys()),
-                                 nomenclature._CGN_fragments)
+        self.assertListEqual(list(set(nomenclature._CGN_fragments).difference(list(defs.keys()))),
+                             ["G.h1ha"]) # 3SN6 is lacking this element
 
     def test_top2frags_defs_are_broken_in_frags(self):
         input_values = (val for val in ["0-1"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            defs = self.cgn_local.top2frags(self.cgn_local.top,
+            defs = self.cgn_local.top2frags(self.top,
                                             fragments=[_np.arange(0, 10),
                                                        _np.arange(10, 15),
                                                        _np.arange(15, 20)
                                                        ]
                                             )
-            self.assertSequenceEqual(list(defs.keys()),
-                                     nomenclature._CGN_fragments)
+            self.assertListEqual(list(set(nomenclature._CGN_fragments).difference(list(defs.keys()))),
+                                 ["G.h1ha"]) # 3SN6 is lacking this element
             _np.testing.assert_array_equal(defs["G.HN"], _np.arange(0, 15))
 
     def test_top2frags_defs_are_broken_in_frags_bad_input(self):
         input_values = (val for val in ["0-2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
             with pytest.raises(ValueError):
-                self.cgn_local.top2frags(self.cgn_local.top,
+                self.cgn_local.top2frags(self.top,
                                          fragments=[_np.arange(0, 10),
                                                     _np.arange(10, 15),
                                                     _np.arange(15, 40)]
@@ -421,7 +414,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
                                        self.cgn_local.fragment_names)
 
     def test_PDB_full_path_exists(self):
-        nomenclature.LabelerCGN(self._CGN_3SN6_file,
+        nomenclature.LabelerCGN(self._GNAS2_HUMAN_file,
                                 try_web_lookup=False,
                                 local_path=self.tmpdir,
                                 )
@@ -442,7 +435,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         assert self.cgn_local.most_recent_top2labels is None
 
     def test_most_recent_labels_works(self):
-        labels = self.cgn_local.top2labels(self.cgn_local.top)
+        labels = self.cgn_local.top2labels(self.top)
         self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
 
 
@@ -459,11 +452,6 @@ class TestLabelerGPCR_local_woPDB(unittest.TestCase):
 
         self.GPCR_local_no_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
                                                           try_web_lookup=False)
-
-    def test_correct_files(self):
-        _np.testing.assert_equal(self.GPCR_local_no_pdb.ref_PDB,
-                                 None)
-
 
 class TestLabelerGPCR_local(unittest.TestCase):
 
@@ -499,17 +487,6 @@ class TestLabelerGPCR_local(unittest.TestCase):
     def test_correct_files(self):
         _np.testing.assert_equal(self.GPCR_local_w_pdb.tablefile,
                                  self._GPCRmd_B2AR_nomenclature_test_xlsx)
-        _np.testing.assert_equal(self.GPCR_local_w_pdb.ref_PDB,
-                                 "3SN6")
-
-    def test_mdtraj_attributes(self):
-        pass
-        # _np.testing.assert_equal(cgn_local.geom,
-        #                         self._geom_3SN6)
-
-        # _np.testing.assert_equal(cgn_local.top,
-        #                         self._geom_3SN6.top)
-
     def test_dataframe(self):
         self.assertIsInstance(self.GPCR_local_w_pdb.dataframe, DataFrame)
         self.assertSequenceEqual(list(self.GPCR_local_w_pdb.dataframe.keys()),
@@ -967,12 +944,12 @@ class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 
     def test_works(self):
         # Obtain the full objects first
-        full_map = self.cgn_local.top2labels(self.top,
+        full_map = self.top2labels(self.top,
                                              autofill_consensus=True,
                                              # verbose=True
                                              )
 
-        frag_defs = self.cgn_local.top2frags(self.top,
+        frag_defs = self.top2frags(self.top,
                                              verbose=False,
                                              # show_alignment=True,
                                              # map_conlab=full_map
