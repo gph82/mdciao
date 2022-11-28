@@ -146,7 +146,7 @@ class ExamplesCLTs(object):
     def mdc_CGN_overview(self):
         # This is the only one that needs network access
         return ["mdc_CGN_overview.py",
-                "%s" % '3SN6',
+                "%s" % 'GNAS2_HUMAN',
                 "-t %s" % self.pdb,
                 ]
 
