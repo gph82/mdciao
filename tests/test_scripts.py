@@ -30,9 +30,9 @@ class Test_ExamplesCLTs(unittest.TestCase):
         for fn in [filenames.traj_xtc,
                    filenames.top_pdb,
                    filenames.adrb2_human_xlsx,
-                   filenames.CGN_3SN6,
-                   filenames.tip_json,
-                   filenames.pdb_3SN6]:
+                   filenames.GNAS2_HUMAN,
+                   filenames.tip_json
+                   ]:
             os.symlink(fn, os.path.join(self.tmpdir, os.path.basename(fn)))
 
     def tearDown(self):
