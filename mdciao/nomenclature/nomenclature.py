@@ -504,7 +504,7 @@ class LabelerConsensus(object):
 
     """
 
-    def __init__(self, ref_PDB=None, **PDB_finder_kwargs):
+    def __init__(self, **PDB_finder_kwargs):
         r"""
 
         Parameters
@@ -519,18 +519,8 @@ class LabelerConsensus(object):
         try_web_lookup: bool, default is True
             If the local files are not found, try automatically a web lookup at
              * www.mrc-lmb.cam.ac.uk (for CGN)
-             * rcsb.org (for the PDB)
 
         """
-        self._geom_PDB = None
-        self._ref_top = None
-        self._ref_PDB = ref_PDB
-        if ref_PDB is not None:
-            self._geom_PDB, self._PDB_file = _PDB_finder(ref_PDB,
-                                                         **PDB_finder_kwargs,
-                                                         )
-            if _path.exists(self._PDB_file):
-                print("%s found locally."%self._PDB_file)
         self._conlab2AA = {val: key for key, val in self.AA2conlab.items()}
 
         self._fragment_names = list(self.fragments.keys())
@@ -541,23 +531,6 @@ class LabelerConsensus(object):
 
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
         self._conlab2idx = {lab: idx for idx, lab in enumerate(self.idx2conlab) if lab is not None}
-
-    @property
-    def ref_PDB(self):
-        r""" PDB code used for instantiation"""
-        return self._ref_PDB
-
-    @property
-    def geom(self):
-        r""" :obj:`~mdtraj.Trajectory` with with what was found
-        (locally or online) using :obj:`ref_PDB`"""
-        return self._geom_PDB
-
-    @property
-    def top(self):
-        r""" :obj:`~mdtraj.Topology` with with what was found
-                (locally or online) using :obj:`ref_PDB`"""
-        return self._geom_PDB.top
 
     @property
     def seq(self):
