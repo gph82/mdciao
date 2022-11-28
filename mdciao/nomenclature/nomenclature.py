@@ -1290,7 +1290,6 @@ class LabelerGPCR(LabelerConsensus):
     """
 
     def __init__(self, uniprot_name,
-                 ref_PDB=None,
                  GPCR_scheme="display_generic_number",
                  local_path=".",
                  format="%s.xlsx",
@@ -1324,11 +1323,6 @@ class LabelerGPCR(LabelerConsensus):
             'GPCRdb(C)', 'GPCRdb(F)', 'GPCRdb(D)',
             'Oliveira', 'BS', but not all are guaranteed
             to work
-        ref_PDB : str, default is None
-            If passed, this structure will be downloaded
-            and attached as an :obj:`~mdtraj.Trajectory`
-            object to this to this :obj:`LabelerGPCR` object
-            as its :obj:`LabelerGPCR.geom` attribute
         local_path : str, default is "."
             Since the :obj:`uniprot_name` is turned into
             a filename in case it's a descriptor,
@@ -1372,7 +1366,7 @@ class LabelerGPCR(LabelerConsensus):
         self._AA2conlab, self._fragments = _table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key,
                                                                  return_fragments=True)
         # TODO can we do this using super?
-        LabelerConsensus.__init__(self, ref_PDB,
+        LabelerConsensus.__init__(self,
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
