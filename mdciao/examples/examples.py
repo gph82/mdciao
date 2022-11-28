@@ -36,7 +36,7 @@ long2short = {"--residues" : "-r",
               "--n_smooth_hw" : "-ns",
               "--table_ext" : "-tx",
               "--GPCR_uniprot" : "--GPCR",
-              "--CGN_PDB"   : "--CGN"
+              "--CGN_uniprot"   : "--CGN"
               }
 
 long2long = {key:key for key in long2short.keys()}
@@ -83,7 +83,7 @@ class ExamplesCLTs(object):
         self.pdb = filenames.top_pdb
         self.GPCRlabs_file = filenames.adrb2_human_xlsx
         self.KLIFSlabs_file = filenames.KLIFS_P31751_xlsx
-        self.CGN_file = filenames.CGN_3SN6
+        self.CGN_file = filenames.GNAS2_HUMAN
         self.sitefile = filenames.tip_json
         self.pdb_3SN6 = filenames.pdb_3SN6
         self.KLIFS_pdb = filenames.pdb_3E8D
@@ -109,7 +109,7 @@ class ExamplesCLTs(object):
                 self.opt_dict["--n_smooth_hw"] + " 1",
                 self.opt_dict["--table_ext"] + " xlsx",
                 self.opt_dict["--GPCR_uniprot"] + " %s" % self.GPCRlabs_file,
-                self.opt_dict["--CGN_PDB"] + " %s" % self.CGN_file,
+                self.opt_dict["--CGN_uniprot"] + " %s" % self.CGN_file,
                 ]
     @property
     def mdc_sites(self):
@@ -117,7 +117,7 @@ class ExamplesCLTs(object):
                 "%s %s" % (self.pdb, self.xtc),
                 " --site_files %s" % self.sitefile,
                 " --GPCR_uniprot %s" % self.GPCRlabs_file,
-                " --CGN_PDB %s" % self.CGN_file
+                " --CGN_uniprot %s" % self.CGN_file
                 ]
 
     @property
@@ -128,7 +128,7 @@ class ExamplesCLTs(object):
                 " --frag_idxs_group_2 3",
                 " --ctc_control 20",
                 " --GPCR_uniprot %s" % self.GPCRlabs_file,
-                " --CGN_PDB %s" % self.CGN_file,
+                " --CGN_uniprot %s" % self.CGN_file,
                 ]
     @property
     def mdc_GPCR_overview(self):
@@ -267,7 +267,7 @@ def ContactGroupL394(**kwargs):
                                       "n_smooth_hw": 1,
                                       "figures": False,
                                       "GPCR_uniprot": _path.basename(filenames.adrb2_human_xlsx),
-                                      "CGN_PDB": _path.basename(filenames.GNAS2_HUMAN),
+                                      "CGN_uniprot": _path.basename(filenames.GNAS2_HUMAN),
                                       "no_disk":True,
                                       "accept_guess": True}
                     for key, val in kwargs.items():
@@ -579,7 +579,7 @@ def Interface_B2AR_Gas(**kwargs):
             example_kwargs = {"topology": filenames.top_pdb,
                               "figures": False,
                               "GPCR_uniprot": GPCRLabeler_ardb2_human(),
-                              "CGN_PDB": CGNLabeler_3SN6(),
+                              "CGN_uniprot": CGNLabeler_3SN6(),
                               "no_disk": True,
                               "frag_idxs_group_1":[0],
                               "frag_idxs_group_2":[3],
