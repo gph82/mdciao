@@ -657,9 +657,8 @@ class Test_consensus_mix_fragment_info(unittest.TestCase):
             _np.testing.assert_array_equal(_np.arange(val[0],val[-1]+1),
                                            mixed_frags[key], key)
             mixed_frags.pop(key)
-        self.assertDictEqual(mixed_frags, {"orphan 0": [280, 281, 282, 283, 284, 285, 286, 287], # last CYS of B2AR and initial GaN residues missing in def if H.N
-                                           "orphan 1": [339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352], # Q59-K88 gap of Ga
-                                           "orphan 2": _np.hstack([frag for frag in self.fragments[2:]]).tolist()  # Gb, Gg, Mg, GDP, the rest
+        self.assertDictEqual(mixed_frags, {"orphan 0": [280, 281, 282], # last CYS of B2AR and initial two CYSP2, CYSP3 of the GaN
+                                           "orphan 1": _np.hstack([frag for frag in self.fragments[2:]]).tolist()  # Gb, Gg, Mg, GDP, the rest
                                            })
 
     def test_works_w_other_frags(self):
@@ -672,8 +671,7 @@ class Test_consensus_mix_fragment_info(unittest.TestCase):
                                            mixed_frags[key], key)
             mixed_frags.pop(key)
         for key, val in {"subfrag 0 of frag 0": [280], #last CYS of B2AR
-                         "subfrag 0 of frag 1": [281, 282, 283, 284, 285, 286, 287],  # Initial GaN residues missing in def
-                         "subfrag 1 of frag 1": [339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352], # Q59-K88 gap
+                         "subfrag 0 of frag 1": [281, 282],  # Initial two CYSP2, CYSP3 of the GaN
                          "frag 2": self.fragments[2],
                          "frag 3": self.fragments[3],
                          "frag 4": self.fragments[4],
@@ -695,8 +693,7 @@ class Test_consensus_mix_fragment_info(unittest.TestCase):
                                            mixed_frags[key], key)
             mixed_frags.pop(key)
         for key, val in {"subfrag 0 of B2AR": [280], #last CYS of B2AR
-                         "subfrag 0 of Ga": [281, 282, 283, 284, 285, 286, 287],  # Initial GaN residues missing in def
-                         "subfrag 1 of Ga": [339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352], # Q59-K88 gap
+                         "subfrag 0 of Ga": [281, 282],  # Initial two CYSP2, CYSP3 of the GaN
                          "Gb": self.fragments[2],
                          "Gg": self.fragments[3],
                          "P0G": self.fragments[4],
