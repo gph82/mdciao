@@ -275,11 +275,9 @@ class TestClassSetUpTearDown_CGN_local(unittest.TestCase):
     # The setup is in itself a test
     def setUp(self):
         self.tmpdir = mkdtemp("_test_mdciao_CGN_local")
-        self._CGN_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.CGN_3SN6))
-        self._PDB_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.pdb_3SN6))
-        shutil.copy(test_filenames.CGN_3SN6, self._CGN_3SN6_file)
-        shutil.copy(test_filenames.pdb_3SN6, self._PDB_3SN6_file)
-        self.cgn_local = nomenclature.LabelerCGN("3SN6",
+        self._CGN_GNAS2_HUMAN_file =path.join(self.tmpdir, path.basename(test_filenames.GNAS2_HUMAN))
+        shutil.copy(test_filenames.GNAS2_HUMAN, self._CGN_GNAS2_HUMAN_file)
+        self.cgn_local = nomenclature.LabelerCGN("GNAS2_HUMAN",
                                                  try_web_lookup=False,
                                                  local_path=self.tmpdir,
                                                  )
@@ -294,12 +292,8 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     # The setup is in itself a test
     def setUp(self):
         self.tmpdir = mkdtemp("_test_mdciao_CGN_local")
-        self._CGN_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.CGN_3SN6))
-        self._PDB_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.pdb_3SN6))
         self._GNAS2_HUMAN_file = path.join(self.tmpdir, path.basename(test_filenames.GNAS2_HUMAN))
         self.top = md.load(test_filenames.pdb_3SN6).top
-        shutil.copy(test_filenames.CGN_3SN6, self._CGN_3SN6_file)
-        shutil.copy(test_filenames.pdb_3SN6, self._PDB_3SN6_file)
         shutil.copy(test_filenames.GNAS2_HUMAN, self._GNAS2_HUMAN_file)
         self.cgn_local = nomenclature.LabelerCGN("GNAS2_HUMAN",
                                                  try_web_lookup=False,
@@ -437,21 +431,6 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     def test_most_recent_labels_works(self):
         labels = self.cgn_local.top2labels(self.top)
         self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
-
-
-class TestLabelerGPCR_local_woPDB(unittest.TestCase):
-
-    # The setup is in itself a test
-    def setUp(self):
-        self._geom_3SN6 = md.load(test_filenames.pdb_3SN6)
-        self.tmpdir = mkdtemp("_test_mdciao_GPCR_local_no_pdb")
-        self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir,
-                                                             path.basename(
-                                                                 test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
-        shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx, self._GPCRmd_B2AR_nomenclature_test_xlsx)
-
-        self.GPCR_local_no_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
-                                                          try_web_lookup=False)
 
 class TestLabelerGPCR_local(unittest.TestCase):
 
@@ -768,18 +747,18 @@ class Test_guess_by_nomenclature(unittest.TestCase):
         GPCRlabs_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RCSB_pdb_path)
 
         cls.GPCR_local_w_pdb = nomenclature.LabelerGPCR(GPCRlabs_file,
-                                                        ref_PDB="3SN6",
                                                         local_path=test_filenames.RCSB_pdb_path,
                                                         format="%s",
                                                         )
-        cls.fragments = get_fragments(cls.GPCR_local_w_pdb.top)
+        cls.top = md.load(test_filenames.pdb_3SN6).top
+        cls.fragments = get_fragments(cls.top)
 
     def test_works_on_enter(self):
         import mock
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,
-                                                        self.GPCR_local_w_pdb.top,
+                                                        self.top,
                                                         self.fragments,
                                                         nomenclature_name="GPCR",
                                                         return_str=True,
@@ -791,7 +770,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,
-                                                        self.GPCR_local_w_pdb.top,
+                                                        self.top,
                                                         self.fragments,
                                                         nomenclature_name="GPCR",
                                                         )
@@ -799,7 +778,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
 
     def test_works_return_guess(self):
         answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,
-                                                    self.GPCR_local_w_pdb.top,
+                                                    self.top,
                                                     self.fragments,
                                                     nomenclature_name="GPCR",
                                                     accept_guess=True,
@@ -809,7 +788,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
 
     def test_works_return_None(self):
         answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,
-                                                    self.GPCR_local_w_pdb.top,
+                                                    self.top,
                                                     self.fragments,
                                                     nomenclature_name="GPCR",
                                                     accept_guess=True,
@@ -825,15 +804,15 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
         GPCRlabs_file = path.relpath(test_filenames.adrb2_human_xlsx, test_filenames.RCSB_pdb_path)
 
         cls.GPCR_local_w_pdb = nomenclature.LabelerGPCR(GPCRlabs_file,
-                                                        ref_PDB="3SN6",
                                                         local_path=test_filenames.RCSB_pdb_path,
                                                         format="%s",
                                                         )
-        cls.fragments = get_fragments(cls.GPCR_local_w_pdb.top, verbose=False)
+        cls.top = md.load(test_filenames.pdb_3SN6).top
+        cls.fragments = get_fragments(cls.top, verbose=False)
 
     def test_finds_frags(self):
         guessed_frags = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb,
-                                                                  self.GPCR_local_w_pdb.top,
+                                                                  self.top,
                                                                   fragments=self.fragments,
                                                                   verbose=True,
                                                                   )
@@ -841,7 +820,7 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
 
     def test_finds_frags_res(self):
         guessed_res = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb,
-                                                                self.GPCR_local_w_pdb.top,
+                                                                self.top,
                                                                 fragments=self.fragments,
                                                                 return_residue_idxs=True
                                                                 )
@@ -849,13 +828,13 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
 
     def test_finds_frags_no_frags(self):
         guessed_frags = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb,
-                                                                  self.GPCR_local_w_pdb.top,
+                                                                  self.top,
                                                                   )
         _np.testing.assert_array_equal([4], guessed_frags)
 
     def test_finds_frags_seq_as_str(self):
         guessed_frags = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb.seq,
-                                                                  self.GPCR_local_w_pdb.top,
+                                                                  self.top,
                                                                   fragments=self.fragments,
                                                                   )
         _np.testing.assert_array_equal([4], guessed_frags)
@@ -863,7 +842,7 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
     def test_finds_frags_nothing_None(self):
         seq = "THISSENTENCEWILLNEVERALIGN"
         guessed_frags = nomenclature.guess_nomenclature_fragments(seq,
-                                                                  self.GPCR_local_w_pdb.top,
+                                                                  self.top,
                                                                   fragments=self.fragments,
                                                                   empty=None
                                                                   )
@@ -941,12 +920,12 @@ class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 
     def test_works(self):
         # Obtain the full objects first
-        full_map = self.top2labels(self.top,
+        full_map = self.cgn_local.top2labels(self.top,
                                              autofill_consensus=True,
                                              # verbose=True
                                              )
 
-        frag_defs = self.top2frags(self.top,
+        frag_defs = self.cgn_local.top2frags(self.top,
                                              verbose=False,
                                              # show_alignment=True,
                                              # map_conlab=full_map
@@ -1014,7 +993,7 @@ class Test_consensus_maps2consensus_frag(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.CGN = nomenclature.LabelerCGN(examples.filenames.CGN_3SN6)
+        cls.CGN = nomenclature.LabelerCGN(examples.filenames.GNAS2_HUMAN)
         cls.geom = md.load(examples.filenames.actor_pdb)
         cls.GPCR, cls.maps, cls.frags = {}, {}, {}
         for GPCR_scheme in ["BW", "GPCRdb(A)", "GPCRdb(B)"]:
