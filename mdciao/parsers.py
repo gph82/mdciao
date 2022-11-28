@@ -737,11 +737,13 @@ def parser_for_CGN_overview():
                                                  " nomenclature, optionally mapping it on an input topology. "
                                                  "The CGN nomenclature can be read locally or over the network" )
 
-    parser.add_argument("PDB_code_or_txtfile", type=str,
+    parser.add_argument("uniprot_name_or_txtfile", type=str,
                         help="Get CGN definitions from here. If a file is not "
                              "found locally, there will be a web-lookup "
-                             "in a database using a PDB code, "
-                             "e.g. 3SN6. see www.mrc-lmb.cam.ac.uk")
+                             "in a database using a Uniprot name, "
+                             "e.g. 'GNAS2_HUMAN'. See www.mrc-lmb.cam.ac.uk",
+                        action=Populate_input_Action
+                        )
     parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
 
     _parser_add_write_to_disk(parser)
