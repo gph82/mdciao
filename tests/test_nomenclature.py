@@ -593,7 +593,7 @@ class Test_aligntop_fragment_clashes(unittest.TestCase):
     """
 
     def setUp(self):
-        self.CGN = examples.CGNLabeler_3SN6()
+        self.CGN = examples.CGNLabeler_GNAS2_HUMAN()
         self.GPCR = examples.GPCRLabeler_ardb2_human()
         self.b2ar = md.load(examples.filenames.actor_pdb)
 

@@ -10,7 +10,7 @@ from mdciao import fragments as mdcfragments
 from mdciao.fragments.fragments import _allowed_fragment_methods, _fragments_strings_to_fragments
 
 from mdciao.examples import filenames as test_filenames
-from mdciao.examples import CGNLabeler_3SN6, GPCRLabeler_ardb2_human
+from mdciao.examples import CGNLabeler_GNAS2_HUMAN, GPCRLabeler_ardb2_human
 from mdciao.utils.sequence import top2seq
 from mdciao.nomenclature.nomenclature import _consensus_maps2consensus_frags
 import pytest
@@ -644,7 +644,7 @@ class Test_consensus_mix_fragment_info(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.GPCR = GPCRLabeler_ardb2_human(GPCR_scheme="BW")
-        cls.CGN = CGNLabeler_3SN6()
+        cls.CGN = CGNLabeler_GNAS2_HUMAN()
         cls.geom = md.load(test_filenames.actor_pdb)
         cls.consensus_frags = _consensus_maps2consensus_frags(cls.geom.top, [cls.GPCR, cls.CGN])[1]
         cls.fragments = mdcfragments.get_fragments(cls.geom.top)
