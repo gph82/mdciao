@@ -1682,7 +1682,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
             neighbors_excluded=0
         )
         cls.GPCR = examples.GPCRLabeler_ardb2_human()
-        cls.CGN = examples.CGNLabeler_3SN6()
+        cls.CGN = examples.CGNLabeler_GNAS2_HUMAN()
         cls.intf = examples.examples.Interface_B2AR_Gas(GPCR_uniprot = cls.GPCR,
                                                         CGN_uniprot = cls.CGN)
         cls.total_intf_freq_at_3 = cls.intf.frequency_per_contact(3.0).sum()

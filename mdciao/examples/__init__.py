@@ -11,10 +11,10 @@ Helper functions for demos and data download
    ContactGroupL394
    Interface_B2AR_Gas
    GPCRLabeler_ardb2_human
-   CGNLabeler_3SN6
+   CGNLabeler_GNAS2_HUMAN
    KLIFSLabeler_P31751
    notebooks
    fetch_example_data
    filenames
 """
-from .examples import ContactGroupL394, Interface_B2AR_Gas, GPCRLabeler_ardb2_human, CGNLabeler_3SN6, filenames, notebooks, fetch_example_data, KLIFSLabeler_P31751, AlignerConsensus_B2AR_HUMAN_vs_OPSD_BOVIN
+from .examples import ContactGroupL394, Interface_B2AR_Gas, GPCRLabeler_ardb2_human, CGNLabeler_GNAS2_HUMAN, filenames, notebooks, fetch_example_data, KLIFSLabeler_P31751, AlignerConsensus_B2AR_HUMAN_vs_OPSD_BOVIN
