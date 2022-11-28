@@ -485,13 +485,11 @@ def _fragment_overview(a,labtype):
     """
 
     class_dict = {"GPCR":_mdcnomenc.LabelerGPCR,
-                  "KLIFS":_mdcnomenc.LabelerKLIFS}
+                  "KLIFS":_mdcnomenc.LabelerKLIFS,
+                  "CGN": _mdcnomenc.LabelerCGN}
 
-    if labtype == "CGN":
-        val = a.PDB_code_or_txtfile
-        obj = _mdcnomenc.LabelerCGN(val, write_to_disk=a.write_to_disk)
 
-    elif labtype in class_dict.keys():
+    if labtype in class_dict.keys():
         val = a.input_
         if _path.exists(val):
             format = "%s"
