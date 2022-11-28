@@ -743,9 +743,9 @@ def residue_neighborhoods(residues,
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
-        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
-        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
-        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "GNAS2_HUMAN",
+        try to locate local filenames "GNAS2_HUMAN.txt" or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
@@ -1186,9 +1186,9 @@ def interface(
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
-        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
-        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
-        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "GNAS2_HUMAN",
+        try to locate local filenames "GNAS2_HUMAN.txt" or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
@@ -1688,9 +1688,9 @@ def sites(site_inputs,
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
-        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
-        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
-        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "GNAS2_HUMAN",
+        try to locate local filenames "GNAS2_HUMAN.txt" or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
@@ -2138,9 +2138,9 @@ def residue_selection(expression,
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
-        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
-        try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
-        in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
+        For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "GNAS2_HUMAN",
+        try to locate local filenames "GNAS2_HUMAN.txt" or do web lookups
+        in https://www.mrc-lmb.cam.ac.uk/CGN/.
         If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
