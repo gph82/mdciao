@@ -73,7 +73,7 @@ setup(
         ('data_for_mdciao/examples', ['tests/data/examples/gs-b2ar.noH.stride.5.xtc',
                                       'tests/data/examples/gs-b2ar.noH.pdb']),
         ('data_for_mdciao/nomenclature', ['tests/data/nomenclature/adrb2_human.xlsx',
-                                          'tests/data/nomenclature/CGN_3SN6.txt',
+                                          'tests/data/nomenclature/GNAS2_HUMAN.txt',
                                           'tests/data/nomenclature/nomenclature.bib',
                                           'tests/data/nomenclature/KLIFS_P31751.xlsx']),
         ('data_for_mdciao/json', ['tests/data/json/tip.json']),
