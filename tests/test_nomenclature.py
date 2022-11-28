@@ -459,13 +459,10 @@ class TestLabelerGPCR_local(unittest.TestCase):
     def setUp(self):
         self._geom_3SN6 = md.load(test_filenames.pdb_3SN6)
         self.tmpdir = mkdtemp("_test_mdciao_GPCR_local")
-        self._PDB_3SN6_file = path.join(self.tmpdir, path.basename(test_filenames.pdb_3SN6))
         self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(
             test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
-        shutil.copy(test_filenames.pdb_3SN6, self._PDB_3SN6_file)
         shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx, self._GPCRmd_B2AR_nomenclature_test_xlsx)
         self.GPCR_local_w_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
-                                                         ref_PDB="3SN6",
                                                          try_web_lookup=False,
                                                          local_path=self.tmpdir,
                                                          )
