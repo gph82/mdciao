@@ -557,7 +557,7 @@ def residue_neighborhoods(residues,
                           graphic_ext=".pdf",
                           table_ext=".dat",
                           GPCR_uniprot=None,
-                          CGN_PDB=None,
+                          CGN_uniprot=None,
                           KLIFS_uniprotAC=None,
                           output_dir='.',
                           output_desc='neighborhood',
@@ -742,7 +742,7 @@ def residue_neighborhoods(residues,
         Please note the difference between UniProt Accession Code
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
-    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+    CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
         try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
@@ -874,7 +874,7 @@ def residue_neighborhoods(residues,
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
                                                                    midstring=mid_string, GPCR_uniprot=GPCR_uniprot,
-                                                                   CGN_PDB=CGN_PDB, KLIFS_uniprotAC=KLIFS_uniprotAC,
+                                                                   CGN_uniprot=CGN_uniprot, KLIFS_uniprotAC=KLIFS_uniprotAC,
                                                                    save_nomenclature_files=save_nomenclature_files,
                                                                    accept_guess=accept_guess,
                                                                    fragment_names=fragment_names,
@@ -1078,7 +1078,7 @@ def interface(
         frag_idxs_group_1=None,
         frag_idxs_group_2=None,
         GPCR_uniprot="None",
-        CGN_PDB="None",
+        CGN_uniprot="None",
         KLIFS_uniprotAC=None,
         chunksize_in_frames=10000,
         ctc_cutoff_Ang=3.5,
@@ -1185,7 +1185,7 @@ def interface(
         Please note the difference between UniProt Accession Code
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
-    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+    CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
         try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
@@ -1384,7 +1384,7 @@ def interface(
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
     fragments_as_residue_idxs, fragment_names, user_wants_consensus, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
-        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_PDB, KLIFS_uniprotAC, accept_guess, save_nomenclature_files)
+        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_uniprot, KLIFS_uniprotAC, accept_guess, save_nomenclature_files)
     if user_wants_consensus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2, answers=[frag_idxs_group_1, frag_idxs_group_2])
@@ -1595,7 +1595,7 @@ def sites(site_inputs,
           n_smooth_hw=0,
           pbc=True,
           GPCR_uniprot="None",
-          CGN_PDB="None",
+          CGN_uniprot="None",
           KLIFS_uniprotAC=None,
           fragments=['lig_resSeq+'],
           allow_partial_sites=False,
@@ -1687,7 +1687,7 @@ def sites(site_inputs,
         Please note the difference between UniProt Accession Code
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
-    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+    CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
         try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
@@ -1830,7 +1830,7 @@ def sites(site_inputs,
         _mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15),stride))
 
     fragments_as_residue_idxs, fragment_names, __, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
-        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_PDB, KLIFS_uniprotAC, accept_guess, save_nomenclature_files)
+        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_uniprot, KLIFS_uniprotAC, accept_guess, save_nomenclature_files)
 
     sites = [_mdcsites.x2site(ff) for ff in site_inputs]
     ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
@@ -2075,11 +2075,11 @@ def pdb(code,
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
 
-def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_PDB=None, KLIFS_uniprotAC=None,
+def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_uniprot=None, KLIFS_uniprotAC=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
 
     option_dict = {"GPCR": GPCR_uniprot,
-                   "CGN": CGN_PDB,
+                   "CGN": CGN_uniprot,
                    "KLIFS": KLIFS_uniprotAC}
 
     consensus_frags, consensus_maps, consensus_labelers = \
@@ -2112,7 +2112,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
 
 def residue_selection(expression,
                       top, GPCR_uniprot=None,
-                      CGN_PDB=None,
+                      CGN_uniprot=None,
                       save_nomenclature_files=False,
                       accept_guess=False,
                       fragments=None):
@@ -2137,7 +2137,7 @@ def residue_selection(expression,
         Please note the difference between UniProt Accession Code
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
-    CGN_PDB : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+    CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "3SN6",
         try to locate local filenames ("3SN6.pdb", "CGN_3SN6.txt") or do web lookups
         in https://www.mrc-lmb.cam.ac.uk/CGN/ and http://www.rcsb.org/.
@@ -2196,7 +2196,7 @@ def residue_selection(expression,
                                                                    _top, verbose=True)
     res_idxs_list, consensus_maps, __ = _res_resolver(expression, _top, _frags,
                                                       midstring="Your selection '%s' yields:" % expression,
-                                                      GPCR_uniprot=GPCR_uniprot, CGN_PDB=CGN_PDB,
+                                                      GPCR_uniprot=GPCR_uniprot, CGN_uniprot=CGN_uniprot,
                                                       save_nomenclature_files=save_nomenclature_files,
                                                       accept_guess=accept_guess,
                                                       just_inform=True)
@@ -2235,7 +2235,7 @@ def fragment_overview(topology,
 
     return _mdcfrg.overview(topology,methods=methods, AAs=AAs)
 
-def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uniprot, CGN_PDB, KLIFS_uniprotAC, accept_guess, save_nomenclature_files):
+def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uniprot, CGN_uniprot, KLIFS_uniprotAC, accept_guess, save_nomenclature_files):
     r"""
 
     Frankenstein method to parse and handle the many fragment-definition, -naming, -selection options
@@ -2256,7 +2256,7 @@ def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uni
     fragments : comes directly from the top API call (cli.interface(fragments=whatever)
     top : the topology as md.Topology
     GPCR_uniprot : comes directly from the top API call (cli.interface(GPCR_uniprot=whatever)
-    CGN_PDB : comes directly from the top API call (cli.interface(CGN_PDB=whatever)
+    CGN_uniprot : comes directly from the top API call (cli.interface(CGN_uniprot=whatever)
     KLIFS_uniprotAC : comes directly from the top API call (cli.interface(KLIFS_uniprotAC=whatever)
     fragment_names : comes directly from the top API call (cli.interface(fragment_names=whatever)
     accept_guess : comes directly from the top API call (cli.interface(accept_guess=whatever)
@@ -2289,13 +2289,13 @@ def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uni
         fragment name
     """
     fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, top, verbose=True)
-    if user_wants_consensus and all([str(cons).lower() == 'none' for cons in [GPCR_uniprot, CGN_PDB, KLIFS_uniprotAC]]):
+    if user_wants_consensus and all([str(cons).lower() == 'none' for cons in [GPCR_uniprot, CGN_uniprot, KLIFS_uniprotAC]]):
         raise ValueError(
-            "User wants to define interface fragments using consensus labels, but no consensus labels were provided via the 'CGN_PDB' or the 'GPCR_uniprot' arguments.")
+            "User wants to define interface fragments using consensus labels, but no consensus labels were provided via the 'CGN_uniprot' or the 'GPCR_uniprot' arguments.")
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     consensus_frags, consensus_maps, consensus_labelers = \
         _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
-                                                           "CGN": CGN_PDB,
+                                                           "CGN": CGN_uniprot,
                                                            "KLIFS": KLIFS_uniprotAC},
                                                           top,
                                                           fragments_as_residue_idxs,
