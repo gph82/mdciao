@@ -253,9 +253,9 @@ def ContactGroupL394(**kwargs):
     """
     # TODO make a method out of this link+cd_tmpdir+return
     with _TDir(suffix="_mdciao_example_CG") as t:
-        for fn in [filenames.pdb_3SN6, filenames.traj_xtc,
+        for fn in [filenames.traj_xtc,
                    filenames.top_pdb,
-                   filenames.adrb2_human_xlsx, filenames.CGN_3SN6]:
+                   filenames.adrb2_human_xlsx, filenames.GNAS2_HUMAN]:
             _link(fn, _path.join(t, _path.basename(fn)))
 
         with remember_cwd():
@@ -267,7 +267,7 @@ def ContactGroupL394(**kwargs):
                                       "n_smooth_hw": 1,
                                       "figures": False,
                                       "GPCR_uniprot": _path.basename(filenames.adrb2_human_xlsx),
-                                      "CGN_PDB": _path.basename(filenames.CGN_3SN6),
+                                      "CGN_PDB": _path.basename(filenames.GNAS2_HUMAN),
                                       "no_disk":True,
                                       "accept_guess": True}
                     for key, val in kwargs.items():
