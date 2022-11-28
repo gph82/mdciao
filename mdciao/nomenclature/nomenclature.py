@@ -1146,7 +1146,7 @@ class LabelerCGN(LabelerConsensus):
     See https://www.mrc-lmb.cam.ac.uk/CGN/faq.html for more info.
     """
 
-    def __init__(self, PDB_input,
+    def __init__(self, uniprot_name,
                  local_path='.',
                  try_web_lookup=True,
                  verbose=True,
@@ -1155,29 +1155,21 @@ class LabelerCGN(LabelerConsensus):
 
         Parameters
         ----------
-        PDB_input: str
-            The PDB-file to be used. For compatibility reasons, there's different use-cases.
+        uniprot_name: str
+            UniProt name, e.g. 'GNAS2_HUMAN'. Please note the difference between UniProt Accession Code
+            and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_.
+            For compatibility reasons, there's different use-cases.
 
             * Full path to an existing file containing the CGN nomenclature,
-            e.g. '/abs/path/to/some/dir/CGN_ABCD.txt' (or ABCD.txt). Then this happens:
+            e.g. '/abs/path/to/some/dir/GNAS2_HUMAN.txt' (or GNAS2_HUMAN.xlsx). Then this happens:
                 * :obj:`local_path` gets overridden with '/abs/path/to/some/dir/'
-                * a PDB four-letter-code is inferred from the filename, e.g. 'ABCD'
-                * a file '/abs/path/to/some/dir/ABCD.pdb(.gz)' is looked for
-                * if not found and :obj:`try_web_lookup` is True, then
-                  'ABCD' is looked up online in the PDB rcsb database
+                * if none of these files can be found and :obj:`try_web_lookup` is True, then
+                  'GNAS2_HUMAN' is looked up online in the CGN database
 
-            * Full path to an existing PDB-file, e.g.
-              '/abs/path/to/some/dir/ABCD.pdb(.gz)'. Then this happens:
-                * :obj:`local_path` gets overridden with '/abs/path/to/some/dir/'
-                * a file '/abs/path/to/some/dir/CGN_ABCD.txt is looked for
-                * if not found and :obj:`try_web_lookup` is True, then
-                  'ABCD' is looked up online in the CGN database
-
-            * Four letter code, e.g. 'ABCD'. Then this happens:
-                * look for the files '3SN6.pdb' and 'CGN_3SN6.txt' in :obj:`local_path`
-                * if one or both of these files cannot be found there,
-                  look up in their respective online databases (if
-                  :obj:`try_web_lookup` is True)
+            * Uniprot Accession Code, e.g. 'GNAS2_HUMAN'. Then this happens:
+                * look for the files 'GNAS2_HUMAN.txt' or 'GNAS2_HUMAN.xlsx' in `local_path`
+                * if none of these files can be found and :obj:`try_web_lookup` is True, then
+                  'GNAS2_HUMAN' is looked up online in the CGN database
 
         Note
         ----
@@ -1190,20 +1182,18 @@ class LabelerCGN(LabelerConsensus):
 
         try_web_lookup: bool, default is True
             If the local files are not found, try automatically a web lookup at
-            * www.mrc-lmb.cam.ac.uk (for CGN)
-            * rcsb.org (for the PDB)
+            * www.mrc-lmb.cam.ac.uk
         """
 
         self._nomenclature_key = "CGN"
 
         # TODO see fragment_overview...are there clashes
-        if _path.exists(PDB_input):
-            local_path, basename = _path.split(PDB_input)
-            PDB_input = _path.splitext(basename)[0].replace("CGN_", "")
+        if _path.exists(uniprot_name):
+            local_path, basename = _path.split(uniprot_name)
+            uniprot_name = _path.splitext(basename)[0]#.replace("CGN_", "")
             # TODO does the check need to have the .txt extension?
             # TODO do we even need this check?
-            # assert len(PDB_input) == 4 and "CGN_%s.txt" % PDB_input == basename
-        self._dataframe, self._tablefile = _CGN_finder(PDB_input,
+        self._dataframe, self._tablefile = _CGN_finder(uniprot_name,
                                                        local_path=local_path,
                                                        try_web_lookup=try_web_lookup,
                                                        verbose=verbose,
@@ -1214,8 +1204,8 @@ class LabelerCGN(LabelerConsensus):
         assert len(AAresSeq_key) == 1
         self._AAresSeq_key = AAresSeq_key
 
-        self._AA2conlab = {key: self._dataframe[self._dataframe[PDB_input] == key][self._nomenclature_key].to_list()[0]
-                           for key in self._dataframe[PDB_input].to_list()}
+        self._AA2conlab = {key: self._dataframe[self._dataframe[uniprot_name] == key][self._nomenclature_key].to_list()[0]
+                           for key in self._dataframe[uniprot_name].to_list()}
 
         self._fragments = _defdict(list)
         for ires, key in self.AA2conlab.items():
@@ -1225,7 +1215,7 @@ class LabelerCGN(LabelerConsensus):
                 print(key)
             # print(key,new_key)
             self._fragments[new_key].append(ires)
-        LabelerConsensus.__init__(self, ref_PDB=PDB_input,
+        LabelerConsensus.__init__(self,
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
