@@ -1149,6 +1149,7 @@ class LabelerCGN(LabelerConsensus):
 
     def __init__(self, uniprot_name,
                  local_path='.',
+                 format="%s.txt",
                  try_web_lookup=True,
                  verbose=True,
                  write_to_disk=None):
@@ -1180,7 +1181,9 @@ class LabelerCGN(LabelerConsensus):
 
         local_path: str, default is '.'
             The local path where these files exist, if they exist
-
+        format : str, default is "%s.txt"
+            How to construct a filename out of
+            `uniprot_name`
         try_web_lookup: bool, default is True
             If the local files are not found, try automatically a web lookup at
             * www.mrc-lmb.cam.ac.uk
@@ -1198,7 +1201,8 @@ class LabelerCGN(LabelerConsensus):
                                                        local_path=local_path,
                                                        try_web_lookup=try_web_lookup,
                                                        verbose=verbose,
-                                                       write_to_disk=write_to_disk)
+                                                       write_to_disk=write_to_disk,
+                                                       format=format)
         # The title of the column with this field varies between CGN and GPCR
         AAresSeq_key = [key for key in list(self.dataframe.keys()) if
                         key.lower() not in [self._nomenclature_key.lower(), "Sort number".lower()]]
