@@ -517,6 +517,7 @@ class Test_Aura(TestCase):
                                                  )
         _utils.add_aura(xy, np.mod(np.arange(len(xy)), 3), iax, r=cpr_dict["r"])
         # iax.figure.savefig("test.png")
+        plt.close("all")
 
     def test_works_w_options(self):
         iax, xy, cpr_dict = circle_plot_residues([np.arange(50),
@@ -525,14 +526,17 @@ class Test_Aura(TestCase):
         _utils.add_aura(xy, np.mod(np.arange(len(xy)), 3), iax, r=cpr_dict["r"],
                         lines=False)
         # iax.figure.savefig("test.png")
-
-    def test_raises(self):
+        plt.close("all")
+    def test_negative(self):
         iax, xy, cpr_dict = circle_plot_residues([np.arange(50),
                                                   np.arange(50, 100)],
                                                  )
-        with self.assertRaises(NotImplementedError):
-            _utils.add_aura(xy, -np.mod(np.arange(len(xy)), 3), iax, r=cpr_dict["r"],
-                            lines=True)
+        neg = np.ones(len(xy))
+        neg[int(len(neg)/2):]=-1
+        _utils.add_aura(xy, neg*np.mod(np.arange(len(xy)), 3), iax, r=cpr_dict["r"],
+                        lines=True)
+        #iax.figure.savefig("test.png")
+        plt.close("all")
 
 
 class TestGetSetFonts(TestCase):
