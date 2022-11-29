@@ -6748,17 +6748,11 @@ def _delta_freq_pairs(freqsA, pairsA, freqsB, pairsB):
 def _full_color_list(top, df, colors=None) -> _DF:
     r"""
 
-    Ad-hoc private method to interface plot_freqs_as_flareplot with .freqs2flare is.
+    Ad-hoc private method to interface plot_freqs_as_flareplot with .freqs2flare.
     The trickiest part of all is to implement consistent color
     schemes that "make sense" while let the user make some choices.
 
-
-    been to mplement some guessing around the
-    best combination of fragmentation and colors for different
-    types of input on fragmentation and colors
-
     The main idea is to incorporate per-residue color values
-    to use in combination with
 
     Main ideas:
      * Create
@@ -6778,7 +6772,12 @@ def _full_color_list(top, df, colors=None) -> _DF:
     jdf = df.copy()
 
     if "frag" in df.keys():
-        frags_from_df = [_np.flatnonzero(df.frag == ii) for ii in df.frag.unique()]
+        # Keep present frags (non-nans)
+        frags_from_df = {ii : _np.flatnonzero(df.frag == ii) for ii in df.frag.unique() if not _np.isnan(ii)}
+        # Splice it with the orphans s.t. the each residue gets assigned a fragment,
+        # even if they don't end up being used anywhere
+        frags_from_df = _mdcfr.splice_orphan_fragments(list(frags_from_df.values()),
+                                                       list(frags_from_df.keys()), highest_res_idx=df.shape[0]-1)[0]
     else:
         frags_from_df = [_np.arange(top.n_residues)]
 
