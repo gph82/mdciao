@@ -460,7 +460,7 @@ class Test_residue_line(unittest.TestCase):
         istr = residue_and_atom.residue_line("0.0", res, 3,
                                              consensus_maps={"GPCR": {861: "3.50"}},
                                              fragment_names=["frag0", "frag1", "frag2", "frag3"])
-        assert istr == "0.0)       ARG131 in fragment 3 (frag3) with residue index 861 (GPCR: 3.50)"
+        assert istr == "0.0)       ARG131 in fragment 3 (frag3) with residue index 861 ( GPCR: ARG131@3.50)"
 
     def test_table(self):
         top = md.load(test_filenames.top_pdb).top
