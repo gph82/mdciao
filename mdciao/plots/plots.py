@@ -550,8 +550,16 @@ def compare_groups_of_contacts(groups,
         offsets, e.g {"GDP395":"GDP", "GDP396":"GDP"}.
     width : float, default is .2
         The witdth of the bars
-    ax : :obj:`~matplotlib.axes.Axes`
-        Axis to draw on
+    ax : :obj:`~matplotlib.axes.Axes` or array thereof, default is None
+        The default is to let the method draw its own figure
+        and axis, but you can pass pre-exisintg axis here.
+        If `distro` is False, it means only one axis is
+        needed, so you can pass the axis object direclty here.
+        If `distro` is True, a subplot is needed, where
+        each panel contains the distributions of each contact.
+        Hence, pass an array of axis if `distro` is True.  See
+        :obj:`mdciao.plots.plot_unified_distro_dicts` for more
+        info (in particular `ax_array`).
     figsize : tuple, default is (10,5)
         The figure size in inches, in case it is
         instantiated automatically by not passing an :obj:`ax`
@@ -683,7 +691,7 @@ def compare_groups_of_contacts(groups,
         myfig, __ = plot_unified_distro_dicts(freqs, colors=colors,
                                               ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               fontsize=fontsize,
-                                              ax=ax,
+                                              ax_array=ax,
                                               **kwargs_plot_unified_freq_dicts)
         if anchor is not None:
             title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
