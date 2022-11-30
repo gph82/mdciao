@@ -1975,6 +1975,8 @@ class ContactGroup(object):
         self._max_cutoff_Ang = max_cutoff_Ang
         self._modes = None
         self._means = None
+        self._maxima = None
+        self._minima = None
         self._stacked_time_traces = None
         self._shared_anchor_residue_index = None
         if top is None:
@@ -5428,7 +5430,7 @@ class ContactGroup(object):
     @property
     def means(self):
         r"""
-        The mean value over all distance time-traces
+        Per-contact mean values over all distance time-traces
 
         Returns
         -------
@@ -5443,11 +5445,47 @@ class ContactGroup(object):
             self._means = _np.mean(self.stacked_time_traces,axis=0)
         return self._means
 
+    @property
+    def minima(self):
+        r"""
+        Per-contact minimum values over all distance time-traces
+
+        Returns
+        -------
+        mean : 1D np.array of len(self.n_ctcs)
+            No unit transformation is done,
+            whatever was given at instantiation
+            (most likely nanometers), is
+            returned here
+
+        """
+        if self._minima is None:
+            self._minima = _np.min(self.stacked_time_traces,axis=0)
+        return self._minima
+
+    @property
+    def maxima(self):
+        r"""
+        Per-contact maximum values over all distance time-traces
+
+        Returns
+        -------
+        mean : 1D np.array of len(self.n_ctcs)
+            No unit transformation is done,
+            whatever was given at instantiation
+            (most likely nanometers), is
+            returned here
+
+        """
+        if self._maxima is None:
+            self._maxima = _np.max(self.stacked_time_traces,axis=0)
+        return self._maxima
+
 
     @property
     def modes(self):
         r"""
-        The `modes <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ over all distance time-traces
+        Per-contact `modes <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ over all distance time-traces
 
         Note
         ----
@@ -5512,6 +5550,14 @@ class ContactGroup(object):
               to the mean values of the distances
               You can check the means in
               :obj:`~mdciao.contacts.ContactGroup.means`
+            * "min" : minimize average distance
+              to the minimum values of the distances
+              You can check the means in
+              :obj:`~mdciao.contacts.ContactGroup.minima`
+            * "max" : minimize average distance
+              to the maximum values of the distances
+              You can check the means in
+              :obj:`~mdciao.contacts.ContactGroup.maxima`
         ctc_cutoff_Ang : float, default is None
             THIS IS EXPERIMENTAL
             If given, the contact frequencies
@@ -5558,7 +5604,9 @@ class ContactGroup(object):
 
         all_ds = self.stacked_time_traces
         ref = {"mode" : self.modes,
-               "mean" : self.means}
+               "mean" : self.means,
+               "min" : self.minima,
+               "max" : self.maxima}
 
         if ctc_cutoff_Ang is None:
             weights = _np.ones(self.n_ctcs)

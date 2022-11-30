@@ -1481,6 +1481,38 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(values[0], [10])  # traj 1, frame 0
         assert RMSDd[0] == _np.abs(ref_mean-10)
 
+    def test_repframe_minima(self):
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
+                                                         [[2],
+                                                          [10],
+                                                          [15, 15, 10, 15, 1]],
+                                                         [[0],
+                                                          [0],
+                                                          [0, 1, 2, 3, 4]])])
+        repframes, RMSDd, values = CG.repframes(scheme="min")
+        traj_idx, frame_idx = repframes[0]
+        assert traj_idx  == 2
+        assert frame_idx == 4
+        ref_min = 1
+        _np.testing.assert_array_equal(values[0], ref_min)
+        assert RMSDd[0] == 0
+
+    def test_repframe_maxima(self):
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
+                                                         [[2],
+                                                          [16],
+                                                          [15, 15, 10, 15, 1]],
+                                                         [[0],
+                                                          [0],
+                                                          [0, 1, 2, 3, 4]])])
+        repframes, RMSDd, values = CG.repframes(scheme="max")
+        traj_idx, frame_idx = repframes[0]
+        assert traj_idx  == 1
+        assert frame_idx == 0
+        ref_max = 16
+        _np.testing.assert_array_equal(values[0], ref_max)
+        assert RMSDd[0] == 0
+
     def test_repframe_w_traj_violines_many_frames_just_runs(self):
         CG = examples.ContactGroupL394()
         with _TDir(suffix="_mdciao_example_CG") as t:
