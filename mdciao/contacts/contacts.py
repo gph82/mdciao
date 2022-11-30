@@ -3715,7 +3715,7 @@ class ContactGroup(object):
         self._check_cutoff_ok(ctc_cutoff_Ang)
         return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang,**kwargs) for ictc in self._contacts]
 
-    def distributions_of_distances(self, bins=10):
+    def _distributions_of_distances(self, bins=10):
         r"""
         Histograms the distance values of each contact,
         returning a list with as many distributions as there
@@ -3765,7 +3765,7 @@ class ContactGroup(object):
         fdict : dictionary
 
         """
-        distro_dicts = {ictc.label_flex(**kwargs) : data for ictc, data in zip(self._contacts, self.distributions_of_distances(
+        distro_dicts = {ictc.label_flex(**kwargs) : data for ictc, data in zip(self._contacts, self._distributions_of_distances(
             bins=bins))}
 
 
@@ -4495,7 +4495,7 @@ class ContactGroup(object):
         jax.set_title(title_str)
 
         # Base plot
-        for ii, ((h, x), label) in enumerate(zip(self.distributions_of_distances(bins=bins), label_bars)):
+        for ii, ((h, x), label) in enumerate(zip(self._distributions_of_distances(bins=bins), label_bars)):
             label = _mdcu.str_and_dict.latex_superscript_fragments(label)
             if ctc_cutoff_Ang is not None:
                 if ii==0:
