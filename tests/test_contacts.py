@@ -1597,6 +1597,46 @@ class TestContactGroup(TestBaseClassContactGroup):
 
         assert new_CG_dict[residue_indices[2]] is None
 
+    def test_to_new_ContactGroup_residue_indices_n_residues_is_2(self):
+        CG = _mdcsites([{"name": "test_random",
+                         "pairs": {"residx": [[100, 200],
+                                              [100, 300],
+                                              [10, 40], #2
+                                              [200, 50],
+                                              [20, 40], #4
+                                              [50, 20], #5
+                                              [70, 20]] # this last one woud've been pikced up if n_residues=1
+                                   }}],
+                       test_filenames.traj_xtc,
+                       test_filenames.top_pdb,
+                       no_disk=True,
+                       figures=False)["test_random"]
+
+        residue_indices = [10, 40, 20, 50]
+        new_CG : contacts.ContactGroup = CG.to_new_ContactGroup(residue_indices=residue_indices, n_residues=2)
+
+        assert isinstance(new_CG, contacts.ContactGroup)
+        assert new_CG.n_ctcs == 3
+        assert new_CG._contacts[0] is CG._contacts[2]
+        assert new_CG._contacts[1] is CG._contacts[4]
+        assert new_CG._contacts[2] is CG._contacts[5]
+
+
+        new_CG_dict = CG.to_new_ContactGroup(residue_indices=residue_indices, merge=False, n_residues=2)
+        self.assertSequenceEqual(list(new_CG_dict.keys()),residue_indices)
+        assert new_CG_dict[residue_indices[0]].n_ctcs == 1
+        assert new_CG_dict[residue_indices[0]]._contacts[0] is CG._contacts[2]
+
+        assert new_CG_dict[residue_indices[1]].n_ctcs == 2
+        assert new_CG_dict[residue_indices[1]]._contacts[0] is CG._contacts[2]
+        assert new_CG_dict[residue_indices[1]]._contacts[1] is CG._contacts[4]
+
+        assert new_CG_dict[residue_indices[2]].n_ctcs == 2
+        assert new_CG_dict[residue_indices[2]]._contacts[0] is CG._contacts[4]
+        assert new_CG_dict[residue_indices[2]]._contacts[1] is CG._contacts[5]
+
+        assert new_CG_dict[residue_indices[3]].n_ctcs == 1
+        assert new_CG_dict[residue_indices[3]]._contacts[0] is CG._contacts[5]
 
     def test_to_ContactGroups_per_traj(self):
         traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
