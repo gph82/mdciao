@@ -101,7 +101,7 @@ def residues_from_descriptors(residue_descriptors,
             residxs.append(cands[0])
             fragidxs.append(cand_fragments[0])
             if just_inform:
-                istr = residue_line("0.0", top.residue(residxs[-1]), fragidxs[-1], additional_resnaming_dicts, fragment_names=fragment_names)
+                istr = residue_line("0.0", top.residue(residxs[-1]), fragidxs[-1], consensus_maps = additional_resnaming_dicts, fragment_names=fragment_names)
                 print(istr)
         else:
             istr = "Ambiguous definition for residue %s" % key
