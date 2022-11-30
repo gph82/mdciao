@@ -105,6 +105,7 @@ def x2site(site, fmt="AAresSeq"):
 
 def sites_to_res_pairs(site_dicts, top,
                        fragments=None,
+                       default_fragment_index=None,
                        **get_fragments_kwargs,
                        ):
     r"""Return the pairs of res_idxs needed to compute the contacts contained in the input sites.
@@ -127,6 +128,12 @@ def sites_to_res_pairs(site_dicts, top,
         it's easier to de-duplicate any AA in your input.
         Otherwise, these will be created on-the-fly
         by :obj:`mdciao.fragments.get_fragments`
+    default_fragment_index : NoneType, default is None
+        In case a residue identified as, e.g, "GLU30", appears
+        more than one time in the topology, e.g. in case of
+        a dimer, pass which fragment/monomer should be chosen
+        by default. The default behaviour (None)
+        will prompt the user when necessary
     get_fragments_kwargs :
         see :obj:`fragments.get_fragments`
 
@@ -150,7 +157,8 @@ def sites_to_res_pairs(site_dicts, top,
             if bond_type=="AAresSeq":
                 if fragments is None:
                     fragments = _mdcfrg.get_fragments(top, **get_fragments_kwargs)
-                get_pair_lambda =  lambda bond: _mdcu.residue_and_atom.residues_from_descriptors(bond, fragments, top)[0]
+                get_pair_lambda =  lambda bond: _mdcu.residue_and_atom.residues_from_descriptors(bond, fragments, top,
+                                                                                                 pick_this_fragment_by_default=default_fragment_index)[0]
             elif bond_type=="residx":
                 get_pair_lambda = lambda bond: bond
             for bond in bonds:
