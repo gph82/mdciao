@@ -932,6 +932,7 @@ def _offset_dict(keys, wpad=.2, width=None):
 def plot_unified_distro_dicts(distros,
                               colors=None,
                               ctc_cutoff_Ang = None,
+                              ax_array=None,
                               panelheight_inches=5,
                               fontsize=16,
                               n_cols=1,
@@ -944,39 +945,51 @@ def plot_unified_distro_dicts(distros,
     Parameters
     ----------
     distros : dictionary of dictionaries
-            The first-level dict is keyed by system names,
-            e.g distros.keys() = ["WT","D10A","D10R"].
+        The first-level dict is keyed by system names,
+        e.g distros.keys() = ["WT","D10A","D10R"].
             The second-level dict is keyed by contact names
     colors : iterable (list or dict), or str, default is None
-            * If list, the colors will be assigned in the same
-              order of :obj:`groups`.
-            * If dict, has to have the
-              same keys as :obj:`groups`.
-            * If str, it has to be a case-sensitve colormap-name of matplotlib:
-              https://matplotlib.org/stable/tutorials/colors/colormaps.html
-            * If None, the 'tab10' colormap (tableau) is chosen
-            be hard coded in a lot places
-    ctc_cutoff_Ang : float
-            The cutoff to use
+        * If list, the colors will be assigned in the same
+          order of :obj:`groups`.
+        * If dict, has to have the
+          same keys as :obj:`groups`.
+        * If str, it has to be a case-sensitve colormap-name of matplotlib:
+          https://matplotlib.org/stable/tutorials/colors/colormaps.html
+        * If None, the 'tab10' colormap (tableau) is chosen
+        be hard coded in a lot places
+    ctc_cutoff_Ang : float, default is None
+        The cutoff to use
+    ax_array : np.ndarray containing :obj:`~matplotlib.axes.Axes`, default is None
+        By default, the method creates its
+        own figure and subplots,  but you can
+        pass a pre-existing array of subplots here,
+        and the distributions will be plotted onto them.
+        Be aware that no checks are done to see if `ax_array`
+        has enough panels to accommodate all contacts, or the
+        size of the figure is good for readability etc.
     panelheight_inches : int, default is 5
-            The height of each panel. Currently
-            the only control on figure size, which
-            is instantiated as
-            >>> figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches)
+        The height of each panel. Currently
+        the only control on figure size, which
+        is instantiated as
+        >>> figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches)
+        Only has an effect if ax_array is None.
     fontsize : int, default is 16
-            Will be used in :obj:`matplotlib._rcParams["font.size"]
-            # TODO be less invasive
+        Will be used in :obj:`matplotlib._rcParams["font.size"]
+        # TODO be less invasive
     n_cols : int, default is 1
-            Number of columns of the plot
+        Number of columns of the plot, the rows
+        will be computed automatically to accommodate enough
+        panels for the number of contacts in the `distros`. Only
+        has an effect if ax_array is None.
     legend_rows : int, default is 4
-            The maximum number of rows per column of the legend.
-            If you have 10 systems, :obj:`legend_rows`=5 means
-            you'll get two columns, =2 means you'll get five.
+        The maximum number of rows per column of the legend.
+        If you have 10 systems, :obj:`legend_rows`=5 means
+        you'll get two columns, =2 means you'll get five.
     sharex : bool, default is False
-            Whether the panels (subplots) will share their
-            x-axis. Can be True or "col", for sharing
-            across columns. See :obj:`~matplotlib.pyplot.subplots`
-            for more info.
+        Whether the panels (subplots) will share their
+        x-axis. Can be True or "col", for sharing
+        across columns. See :obj:`~matplotlib.pyplot.subplots`
+        for more info. Only has an effect if ax_array is None.
 
     Returns
     -------
@@ -1005,10 +1018,14 @@ def plot_unified_distro_dicts(distros,
     n_cols = _np.min((n_cols, len(all_ctc_keys)))
     n_rows = _np.ceil(len(all_ctc_keys) / n_cols).astype(int)
 
-    myfig, myax = _plt.subplots(n_rows, n_cols,
-                                sharey=True,
-                                sharex=sharex,
-                                figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches), squeeze=False)
+    if ax_array is None:
+        myfig, myax = _plt.subplots(n_rows, n_cols,
+                                    sharey=True,
+                                    sharex=sharex,
+                                    figsize=(n_cols * panelheight_inches * 2, n_rows * panelheight_inches), squeeze=False)
+    else:
+        myax = ax_array
+        myfig = myax.flatten()[0].figure
 
 
     for iax, (ctc_key, per_sys_distros) in zip(myax.flatten(),distros_by_ctc_by_sys.items()):
