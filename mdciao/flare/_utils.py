@@ -1152,7 +1152,7 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
             artists.append(_PG(poly, alpha=.80, color=col_list[jj],lw=0))
 
         iax.add_artist(artists[-1])
-    return artists, r+aura.max()
+    return artists, r + r * width #the span of the aura is now guaranteed to be 1 * witdh * r
 
 def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments,
                                check_if_subset=True):
