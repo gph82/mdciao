@@ -90,7 +90,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
         labfirst = "%8s%-10s" % (rfirst, maplabel_first)
         lablast = "%8s%-10s" % (rlast, maplabel_last)
-        istr = "%s %6s with %6u AAs %8s%s (%6u) - %8s%s (%-6u) (%s) " % \
+        istr = "%s %6s with %6u AAs %8s%s (%4u) - %8s%s (%-4u) (%s) " % \
                (fragment_desc, str(frag_idx), len(fragment),
                 #labfirst,
                 rfirst, labfmt%maplabel_first,
