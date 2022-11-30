@@ -1824,7 +1824,7 @@ def sites(site_inputs,
     sites = [_mdcsites.x2site(ff) for ff in site_inputs]
     ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
                                                              fragments=fragments_as_residue_idxs,
-                                                             default_fragment_idx=default_fragment_index,
+                                                             default_fragment_index=default_fragment_index,
                                                              fragment_names=fragment_names)
     if None in ctc_idxs_small:
         print("Some definitions of the 'site_inputs' contain one or more residue(s) not found in the input topology.\n"
