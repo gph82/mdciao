@@ -536,10 +536,10 @@ def residue_line(item_desc, residue, frag_idx,
                  table=False):
     r"""Return a string that describes the residue
 
-    Can be used justo to inform or to help dis-ambiguating:
-    0.0)        GLU10 in fragment 0 with residue index  6 (CGN: G.HN.27)
-    ...
-    1.0)        GLU10 in fragment 1 with residue index 363
+    Can be used just to to inform or to help dis-ambiguating:
+
+    >>> 0.0)        LEU45 with residue index   41 in fragment 0  (  CGN: LEU45@G.S1.6)
+    >>> 3.0)        LEU45 with residue index  775 in fragment 3  ( GPCR: LEU45@1.44x44)
 
 
     Parameters
@@ -587,7 +587,7 @@ def residue_line(item_desc, residue, frag_idx,
                 try:
                     jstr = val1[res_idx]
                     if jstr is not None:
-                        extra += '%s: %s ' % (key1, val1[res_idx])
+                        extra += '%5s: %s@%s ' % (key1, str(residue), val1[res_idx])
                 except (KeyError,IndexError):
                     pass
             if len(extra) > 0:
