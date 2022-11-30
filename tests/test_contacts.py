@@ -1418,7 +1418,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         CG = self.CG_cp1_cp2
         h1, x1 = self.cp1.distro_overall_trajs(bins=10)
         h2, x2 = self.cp2.distro_overall_trajs(bins=10)
-        distros = CG.distributions_of_distances(bins=10)
+        distros = CG._distributions_of_distances(bins=10)
         _np.testing.assert_array_equal(distros[0][0], h1)
         _np.testing.assert_array_equal(distros[0][1], x1)
         _np.testing.assert_array_equal(distros[1][0], h2)
@@ -1428,7 +1428,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         CG = self.CG_cp1_cp2
         dicts = CG.distribution_dicts(bins=10,split_label=False)
         _np.testing.assert_array_equal(list(dicts.keys()), ["0-1", "0-2"])
-        for a, b in zip(dicts.values(),CG.distributions_of_distances(bins=10)):
+        for a, b in zip(dicts.values(), CG._distributions_of_distances(bins=10)):
             _np.testing.assert_array_equal(a[0],b[0])
             _np.testing.assert_array_equal(a[1],b[1])
 
