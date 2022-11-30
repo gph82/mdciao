@@ -5656,9 +5656,19 @@ class ContactGroup(object):
     def to_new_ContactGroup(self,
                             CSVexpression=None,
                             residue_indices=None,
-                            allow_multiple_matches=False, merge=True):
+                            allow_multiple_matches=False, merge=True,
+                            keep_interface=True,
+                            n_residues=1):
         r"""
         Creates a new :obj:`ContactGroup` from this une using a CSV expression to filter for residues
+
+        The filtering of ContactPairs against `CSVexpression` or `residue_indices`
+        can be such that:
+        * one residue match per ContactPair is enough, or
+        * both residues of the ContactPair need to match
+        for the ContactPair to be selected for the new ContactGroup.
+        See `n_residues` for more info.
+
 
         Parameters
         ----------
@@ -5686,6 +5696,20 @@ class ContactGroup(object):
             one single :obj:`ContactGroup`. If False
             every sub-string of :obj:`CSVexpression`
             returns its own :obj:`ContactGroup`
+        keep_interface : bool, default is True
+            If self.is_interface and `merge` are
+            both True, then returned ContactGroup
+            will also be an interfaces itself
+        n_residues : int, default is 1
+            Number of residues-matches that
+            a ContactPair has to have be selected
+            for the new ContactGroup. By default,
+            one residue alone is enough. Using `n_residues` = 2
+            selects only ContactPairs where
+            the both residues match against `CSVexpression`
+            or `residue_indices`. This is useful when
+            trying to keep interface properties. Any `n_residues`
+            value different from [1,2] will raise an error.
 
         Returns
         -------
@@ -5694,31 +5718,38 @@ class ContactGroup(object):
             :obj:`CSVexpression` and valued with
             :obj:`ContactGroups`
         """
-        matching_CPs = []
+        assert n_residues in [1,2]
         if CSVexpression is not None:
             assert residue_indices is None
             keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
+            matches = []
             for exp in keys:
-                match = _mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top)
-                if not allow_multiple_matches and len(match)>1:
+                matches.append(_mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top))
+                if not allow_multiple_matches and len(matches[-1])>1:
                     print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
                     _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
                     raise ValueError
-
-                idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,match))>0]
-                matching_CPs.append(idxs)
+            valid_matches = _np.unique(_np.hstack([match for match in matches if len(match)>0]))
         else:
             assert CSVexpression is None
-            for ri in residue_indices: # Too keep the merge functionality with nonmatching residxs, we need this iteration
-                idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair, ri)) > 0]
-                matching_CPs.append(idxs)
             keys = residue_indices
+            matches = residue_indices
+            valid_matches = residue_indices
+
+        matching_CPs = []
+        second_condition = {1: lambda pair : True,
+                            2: lambda pair : len(_np.intersect1d(pair, valid_matches))>=2}
+        for key, match in zip(keys, matches):
+            idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair, match)) > 0 and second_condition[n_residues](pair)]
+            matching_CPs.append(idxs)
+
 
         if merge:
             Ns = ContactGroup(
                 [self._contacts[ii] for ii in _np.unique(_np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0]))],
                 neighbors_excluded=self.neighbors_excluded,
-                max_cutoff_Ang=self.max_cutoff_Ang
+                max_cutoff_Ang=self.max_cutoff_Ang,
+                interface_fragments=[self.interface_fragments if keep_interface and self.is_interface else None][0]
                 )
         else:
             Ns = {key: [ContactGroup([self._contacts[ii] for ii in mCPs],
