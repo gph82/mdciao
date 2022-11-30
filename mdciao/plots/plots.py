@@ -683,6 +683,7 @@ def compare_groups_of_contacts(groups,
         myfig, __ = plot_unified_distro_dicts(freqs, colors=colors,
                                               ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               fontsize=fontsize,
+                                              ax=ax,
                                               **kwargs_plot_unified_freq_dicts)
         if anchor is not None:
             title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
