@@ -744,7 +744,6 @@ def _assert_method_allowed(method):
 
 def check_if_subfragment(sub_frag, fragname, fragments, top,
                          map_conlab=None,
-                         keep_all=False,
                          prompt=True):
     r"""
     Input an iterable of integers representing a fragment and check if
@@ -803,7 +802,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
 
     frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
     if prompt:
-        if len(frag_cands) > 1 and not keep_all:
+        if len(frag_cands) > 1:
             # This only happens if more than one fragment is present
             print_frag(fragname, top, sub_frag, fragment_desc='',
                        idx2label=map_conlab)

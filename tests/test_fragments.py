@@ -520,14 +520,6 @@ class Test_intersecting_fragments(unittest.TestCase):
         assert isinstance(res,bool)
         assert res is False
 
-    def test_clashes_keeps_all(self):
-        result =   mdcfragments.check_if_subfragment(_np.arange(3, 9),
-                                                            "test_frag",
-                                                     self.fragments,
-                                                     self.top,
-                                                     keep_all=True)
-        _np.testing.assert_array_equal(_np.arange(3,9),result)
-
 class Test__get_fragments_by_jumps_in_sequence(unittest.TestCase):
 
     def test_works(self):
