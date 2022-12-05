@@ -756,14 +756,14 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     -------
     Let's assume the GPCR-nomenclature tells us that TM6 is [0,1,2,3]
     and we have already divided the topology into fragments
-    using :obj:`get_fragments`, with method "resSeq+", meaning
+    using :obj:`~mdciao.fragments.get_fragments`, with method "resSeq+", meaning
     we have fragments for the receptor,Ga,Gb,Gg
 
     The purpose is to check whether the GPCR-fragmentation is
     contained in the previous fragmentation:
-    * [0,1,2,3] and :obj:`fragments`=[[0,1,2,3,4,6], [7,8,9]]
+    * [0,1,2,3] and `fragments`=[[0,1,2,3,4,6], [7,8,9]]
     is not a clash, bc TM6 is contained in fragments[0]
-    * [0,1,2,3] and :obj:`fragments`=[[0,1],[2,3],[4,5,6,7,8]]
+    * [0,1,2,3] and `fragments`=[[0,1],[2,3],[4,5,6,7,8]]
     is a clash. In this case the user will be prompted to choose
     which subset of "TM6" to keep:
      * "0": [0,1]
@@ -791,7 +791,7 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     answer : 1D numpy array or boolean
         If `prompt` is True and no clashes were found,
         this will contain the same residues as
-        :obj:`sub_frag` without prompting the user.
+        `sub_frag` without prompting the user.
         Otherwise, the user has to input whether
         to leave the definition intact or pick a sub-set
         If `prompt` is False, this is a boolean
@@ -802,33 +802,33 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
     ifrags = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in sub_frag]
 
     frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
-    if not prompt:
-        return len(frag_cands) <= 1
-
-    if len(frag_cands) > 1 and not keep_all:
-        # This only happens if more than one fragment is present
-        print_frag(fragname, top, sub_frag, fragment_desc='',
-                   idx2label=map_conlab)
-        print(" Subfragment %s clashes with other fragment definitions,\n"
-              " because the residues of %s span over more than 1 fragment:"%(fragname, fragname))
-        for jj in frag_cands:
-            istr = print_frag(jj, top, fragments[jj],
-                              fragment_desc="   input fragment",
-                              return_string=True,
-                              label_width=0)
-            n_in_fragment = len(_np.intersect1d(sub_frag, fragments[jj]))
-            if n_in_fragment < len(fragments[jj]):
-                istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
-            print(istr)
-        answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):" % fragname)
-        answr = _mdcu.lists.rangeexpand(answr)
-        assert all([idx in ifrags for idx in answr])
-        tokeep = _np.hstack([idx for ii, idx in enumerate(sub_frag) if ifrags[ii] in answr]).tolist()
-        if len(tokeep) >= len(ifrags):
-            raise ValueError("Cannot keep these fragments %s!" % (str(answr)))
-        return tokeep
+    if prompt:
+        if len(frag_cands) > 1 and not keep_all:
+            # This only happens if more than one fragment is present
+            print_frag(fragname, top, sub_frag, fragment_desc='',
+                       idx2label=map_conlab)
+            print(" Subfragment %s clashes with other fragment definitions,\n"
+                  " because the residues of %s span over more than 1 fragment:"%(fragname, fragname))
+            for jj in frag_cands:
+                istr = print_frag(jj, top, fragments[jj],
+                                  fragment_desc="   input fragment",
+                                  return_string=True,
+                                  label_width=0)
+                n_in_fragment = len(_np.intersect1d(sub_frag, fragments[jj]))
+                if n_in_fragment < len(fragments[jj]):
+                    istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
+                print(istr)
+            answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):" % fragname)
+            answr = _mdcu.lists.rangeexpand(answr)
+            assert all([idx in ifrags for idx in answr])
+            tokeep = _np.hstack([idx for ii, idx in enumerate(sub_frag) if ifrags[ii] in answr]).tolist()
+            if len(tokeep) >= len(ifrags):
+                raise ValueError("Cannot keep these fragments %s!" % (str(answr)))
+            return tokeep
+        else:
+            return sub_frag
     else:
-        return sub_frag
+        return len(frag_cands) <= 1
 
 def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     r"""
