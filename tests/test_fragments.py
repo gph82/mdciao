@@ -493,32 +493,39 @@ class Test_intersecting_fragments(unittest.TestCase):
         self.top = md.load(test_filenames.top_pdb).top
 
     def test_no_clashes(self):
-        result =   mdcfragments.check_if_subfragment([6, 7, 8],
-                                                            "test_frag",
-                                                     self.fragments,
-                                                     self.top,
-                                                     )
-        _np.testing.assert_array_equal(result, [6,7,8])
+        was_subfragment, subfrag_after_prompt, intersects_with = mdcfragments.check_if_fragment_clashes([6, 7, 8],
+                                                                                                       "test_frag",
+                                                                                                       self.fragments,
+                                                                                                       self.top,
+                                                                                                       )
+        assert was_subfragment
+        _np.testing.assert_array_equal(intersects_with, [1])
+        _np.testing.assert_array_equal(subfrag_after_prompt, [6,7,8])
 
     def test_clashes(self):
         input_values = (val for val in ["0"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
-            result =   mdcfragments.check_if_subfragment(_np.arange(3, 9),
-                                                            "test_frag",
-                                                         self.fragments,
-                                                         self.top,
-                                                         )
-            _np.testing.assert_array_equal(result,[3,4])
+            was_subfragment, subfrag_after_prompt, intersects_with = mdcfragments.check_if_fragment_clashes(
+                _np.arange(3, 9),
+                "test_frag",
+                self.fragments,
+                self.top,
+                )
+            assert was_subfragment is False
+            _np.testing.assert_array_equal(intersects_with, [0,1])
+            _np.testing.assert_array_equal(subfrag_after_prompt, [3,4])
 
     def test_clashes_no_prompt(self):
-        res =   mdcfragments.check_if_subfragment(_np.arange(3, 9),
-                                                        "test_frag",
-                                                     self.fragments,
-                                                     self.top,
-                                                  prompt=False,
-                                                     )
-        assert isinstance(res,bool)
-        assert res is False
+        was_subfragment, subfrag_after_prompt, intersects_with = mdcfragments.check_if_fragment_clashes(
+            _np.arange(3, 9),
+            "test_frag",
+            self.fragments,
+            self.top,
+            prompt=False,
+            )
+        assert was_subfragment is False
+        _np.testing.assert_array_equal(intersects_with, [0, 1])
+        _np.testing.assert_array_equal(subfrag_after_prompt, _np.arange(3, 9))
 
 class Test__get_fragments_by_jumps_in_sequence(unittest.TestCase):
 

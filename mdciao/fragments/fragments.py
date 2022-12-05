@@ -742,39 +742,58 @@ def _assert_method_allowed(method):
                                                       'Know methods are\n%s ' %
                                                       (method, "\n".join(_allowed_fragment_methods)))
 
-def check_if_subfragment(sub_frag, fragname, fragments, top,
-                         map_conlab=None,
-                         prompt=True):
+def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
+                              map_conlab=None,
+                              prompt=True):
     r"""
     Input an iterable of integers representing a fragment and check if
     it clashes with other fragment definitions.
 
-    Return False/True or prompt for a choice in case it is necessary
+    Return False/True or prompt for a choice in case it is necessary.
+
+    "clash" means that `sub_frag` extends over more than one
+    of the fragment in `fragments`.
 
     Example
     -------
-    Let's assume the GPCR-nomenclature tells us that TM6 is [0,1,2,3]
-    and we have already divided the topology into fragments
-    using :obj:`~mdciao.fragments.get_fragments`, with method "resSeq+", meaning
-    we have fragments for the receptor,Ga,Gb,Gg
+    In general, `fragments` will be a coarse definition,
+    e.g. splitting a given `top` into residues for the
+    receptor, Galpha-subunit, Gbeta-subunit and Ggamma-subunit,
+    while `sub_frag` will be a finer definition, e.g. the
+    residues of `top` that belong to a sub-domain, e.g.
+    TM6 of the receptor. Hence, in theory, the TM6 residues
+    should all be in one, and only one, fragment of `fragments`.
 
-    The purpose is to check whether the GPCR-fragmentation is
-    contained in the previous fragmentation:
-    * [0,1,2,3] and `fragments`=[[0,1,2,3,4,6], [7,8,9]]
-    is not a clash, bc TM6 is contained in fragments[0]
+    If the residues of `sub_frag` (e.g. TM6) are spread across
+    more than one coarse fragment, there could be potential
+    problems with the definition of TM6, of `fragments`
+    or of both. Since this might not always be the case, e.g.
+    e.g. TM6 appears partly in two coarse `fragments`, because
+    the receptor is actually split into two coarse `fragments`
+    bc. it's an incomplete model missing some residues in the
+    middle of TM6, the user can "patch" these residues together manually
+    using `prompt` = True.
+
+    Some cases
+    * [0,1,2,3] and `fragments`=[[0,1,2,3,4,6], [7,8,9]] #receptor, G-protein fragments
+     is not a clash, bc TM6 is contained in fragments[0]
     * [0,1,2,3] and `fragments`=[[0,1],[2,3],[4,5,6,7,8]]
-    is a clash. In this case the user will be prompted to choose
-    which subset of "TM6" to keep:
+     is a clash. In this case the user will be prompted to choose
+     which subset of "TM6" to keep:
      * "0": [0,1]
      * "1": [2,3]
      * "0-1" [0,1,2,3]
 
+    Note
+    ----
+    If `sub_frag` is totally outside the definitions
+    of `fragments`, then this counts as not a clash
 
     Parameters
     ----------
     sub_frag : iterable of integers
-        The fragment to be checked if
-        subfragment of `fragments`
+        The fragment to be checked against `fragments`
+        for clashes.
     fragname : str
     fragments : iterable of iterables of integers
     top : :obj:`~mdtraj.Trajectory` object
@@ -782,20 +801,22 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
         maps residue idxs to consensus labels
     prompt : bool, default is True
         When False, no prompt is issued,
-        and the returned value is a boolean
-        whether or not `sub_frag` is actually a sub-fragment (=subset)
-        of any one fragment of `fragments`
     Returns
     -------
-    answer : 1D numpy array or boolean
-        If `prompt` is True and no clashes were found,
-        this will contain the same residues as
-        `sub_frag` without prompting the user.
-        Otherwise, the user has to input whether
-        to leave the definition intact or pick a sub-set
-        If `prompt` is False, this is a boolean
-        saying whether `sub_frag` is a sub-fragment (subset)
-        of any one fragment of `fragments`
+    was_subfragment : boolean
+        Whether `sub_frag` was a sub-fragment of `fragments`
+    subfrag_after_prompt : 1D numpy array
+        If no clashes were found, or `prompt` was False,
+        then this is equal to `is_subfragment`, because there
+        simply weren't clashes or because no action was
+        taken to remedy them.
+        If clashes were found and `prompt` was True,
+        then this is a new definition for `sub_frag` that
+        will contain the residues resulting from user-input.
+    intersects_with : list
+        The indices of `fragments` that contain one
+        or more indices of `sub_frag`. If len(intersects_with)>1,
+        then `was_subfragment` will have been False
     """
     # Get the fragment idxs of all residues in this fragment
     ifrags = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in sub_frag]
@@ -806,8 +827,8 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
             # This only happens if more than one fragment is present
             print_frag(fragname, top, sub_frag, fragment_desc='',
                        idx2label=map_conlab)
-            print(" Subfragment %s clashes with other fragment definitions,\n"
-                  " because the residues of %s span over more than 1 fragment:"%(fragname, fragname))
+            print(" Subfragment '%s' clashes with other fragment definitions,\n"
+                  " because the residues of '%s' span over more than 1 fragment:"%(fragname, fragname))
             for jj in frag_cands:
                 istr = print_frag(jj, top, fragments[jj],
                                   fragment_desc="   input fragment",
@@ -823,11 +844,11 @@ def check_if_subfragment(sub_frag, fragname, fragments, top,
             tokeep = _np.hstack([idx for ii, idx in enumerate(sub_frag) if ifrags[ii] in answr]).tolist()
             if len(tokeep) >= len(ifrags):
                 raise ValueError("Cannot keep these fragments %s!" % (str(answr)))
-            return tokeep
+            return len(frag_cands) <= 1, tokeep, frag_cands,
         else:
-            return sub_frag
+            return len(frag_cands) <= 1, sub_frag, frag_cands
     else:
-        return len(frag_cands) <= 1
+        return len(frag_cands) <= 1, sub_frag, frag_cands
 
 def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     r"""
