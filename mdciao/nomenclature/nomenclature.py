@@ -1111,7 +1111,7 @@ class LabelerConsensus(object):
 
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
-                new_defs[key] = _mdcfrg.check_if_subfragment(res_idxs, key, fragments, top, map_conlab)
+                new_defs[key] = _mdcfrg.check_if_subfragment(res_idxs, key, fragments, top, map_conlab=map_conlab)
 
         for key, res_idxs in new_defs.items():
             defs[key] = res_idxs
