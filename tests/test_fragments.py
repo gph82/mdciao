@@ -15,6 +15,9 @@ from mdciao.utils.sequence import top2seq
 from mdciao.nomenclature.nomenclature import _consensus_maps2consensus_frags
 import pytest
 
+from contextlib import redirect_stdout as _redirect_stdout
+from io import StringIO as _StringIO
+
 
 
 class Test_overview(unittest.TestCase):
@@ -77,6 +80,15 @@ class Test_print_fragments(unittest.TestCase):
         printed_list = mdcfragments.print_fragments(frags, self.geom.top)
         assert all([isinstance(item,str) for item in printed_list])
         assert len(printed_list)==2
+
+    def test_no_print(self):
+        f = _StringIO()
+        with _redirect_stdout(f):
+            printed_list = mdcfragments.print_fragments(self.fragments, self.geom.top, just_return_string=True)
+            assert all([isinstance(item, str) for item in printed_list])
+            assert len(printed_list) == len(self.fragments)
+        assert len(f.getvalue())==0
+
 
 class Test_get_fragments_methods(unittest.TestCase):
 
