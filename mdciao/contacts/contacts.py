@@ -3374,7 +3374,7 @@ class ContactGroup(object):
                                                              index=False
                                                              )
 
-        writer.save()
+        writer.close()
 
     def frequency_str_ASCII_file(self, idf,
                                  ascii_file=None):
