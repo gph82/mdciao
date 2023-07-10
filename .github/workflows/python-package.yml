@@ -5,7 +5,7 @@ name: Python [3.7,3.8,3.9,3.10] Linux
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, patch2 ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
