@@ -1276,13 +1276,13 @@ def assign_fragments(res_idxs, fragments, raise_on_missing=True):
     _mdcu.lists.assert_no_intersection(fragments, word="fragments")
     frag_idxs = _mdcu.lists.in_what_N_fragments(res_idxs, fragments)
     orphans = _np.flatnonzero([len(par) == 0 for par in frag_idxs])
-    frag_idxs = _np.squeeze(frag_idxs)
+    frag_idxs = [[int(ii) if len(ii)>0 else ii][0] for ii in frag_idxs]
     if len(orphans)>0:
         if raise_on_missing:
             raise ValueError("residues %s don't appear in any 'fragments'. "
                              "If you're OK with this, set 'check_if_subset=False'" % (_np.array(res_idxs)[orphans]))
         else:
-            res_idxs = _np.delete(res_idxs, orphans)
-            frag_idxs = _np.delete(frag_idxs, orphans)
+            res_idxs = _np.array([ri for ii, ri in enumerate(res_idxs) if ii not in orphans])
+            frag_idxs = _np.array([ri for ii, ri in enumerate(frag_idxs) if ii not in orphans])
 
     return frag_idxs, res_idxs
