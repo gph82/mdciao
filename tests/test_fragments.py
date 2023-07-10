@@ -533,12 +533,12 @@ class Test__get_fragments_by_jumps_in_sequence(unittest.TestCase):
     def test_works(self):
         seq = [0, 1, 2, 3, 4, 80, 81, 82, 50, 51, 52]
         frags, elements = mdcfragments._get_fragments_by_jumps_in_sequence(seq)
-        _np.testing.assert_array_equal(frags, [[0, 1, 2, 3, 4],
-                                               [5, 6, 7],
-                                               [8, 9, 10]])
-        _np.testing.assert_array_equal(elements, [[0, 1, 2, 3, 4],
-                                                  [80, 81, 82],
-                                                  [50, 51, 52]])
+        self.assertListEqual(frags, [[0, 1, 2, 3, 4],
+                                     [5, 6, 7],
+                                     [8, 9, 10]])
+        self.assertListEqual(elements, [[0, 1, 2, 3, 4],
+                                        [80, 81, 82],
+                                        [50, 51, 52]])
 
 class Test_splice_fragments(unittest.TestCase):
 
@@ -549,12 +549,12 @@ class Test_splice_fragments(unittest.TestCase):
         fragnames = ["A", "B", "C"]
         newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames)
 
-        _np.testing.assert_array_equal(newfrags, [[0, 1, 2, 3],
-                                                  [4, 5],
-                                                  [6, 7, 8],
-                                                  [9, 10, 11],
-                                                  [12, 13, 14]])
-        _np.testing.assert_array_equal(newnames, ["A", "?", "B", "?", "C"])
+        self.assertListEqual(newfrags, [[0, 1, 2, 3],
+                                        [4, 5],
+                                        [6, 7, 8],
+                                        [9, 10, 11],
+                                        [12, 13, 14]])
+        self.assertListEqual(newnames, ["A", "?", "B", "?", "C"])
 
     def test_works_no_action_needed(self):
         fragments = [[0, 1, 2, 3],
@@ -563,8 +563,8 @@ class Test_splice_fragments(unittest.TestCase):
         fragnames = ["A", "B", "C"]
         newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames)
 
-        _np.testing.assert_array_equal(newfrags, fragments)
-        _np.testing.assert_array_equal(newnames, fragnames)
+        self.assertListEqual(newfrags, fragments)
+        self.assertListEqual(newnames, fragnames)
 
     def test_works_naming(self):
         fragments = [[0, 1, 2, 3],
@@ -573,12 +573,12 @@ class Test_splice_fragments(unittest.TestCase):
         fragnames = ["A", "B", "C"]
         newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames, orphan_name='orphan_%u')
 
-        _np.testing.assert_array_equal(newfrags, [[0, 1, 2, 3],
-                                                  [4, 5],
-                                                  [6, 7, 8],
-                                                  [9, 10, 11],
-                                                  [12, 13, 14]])
-        _np.testing.assert_array_equal(newnames, ["A", "orphan_0", "B", "orphan_1", "C"])
+        self.assertListEqual(newfrags, [[0, 1, 2, 3],
+                                        [4, 5],
+                                        [6, 7, 8],
+                                        [9, 10, 11],
+                                        [12, 13, 14]])
+        self.assertListEqual(newnames, ["A", "orphan_0", "B", "orphan_1", "C"])
 
     def test_nmax(self):
         fragments = [[0, 1, 2, 3],
@@ -614,12 +614,12 @@ class Test_splice_fragments(unittest.TestCase):
         newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames,
                                                                   other_fragments={"ex1":[4, 5]})
 
-        _np.testing.assert_array_equal(newfrags, [[0, 1, 2, 3],
-                                                  [4, 5],
-                                                  [6, 7],
-                                                  [8, 9, 10],
-                                                 ])
-        _np.testing.assert_array_equal(newnames, ["A", "ex1", "?", "C"])
+        self.assertListEqual(newfrags, [[0, 1, 2, 3],
+                                        [4, 5],
+                                        [6, 7],
+                                        [8, 9, 10],
+                                        ])
+        self.assertListEqual(newnames, ["A", "ex1", "?", "C"])
 
 class Test_assign_fragments(unittest.TestCase):
 
