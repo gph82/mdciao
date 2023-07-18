@@ -142,7 +142,7 @@ class Test_my_bioalign(unittest.TestCase):
         with pytest.raises(NotImplementedError):
             sequence.my_bioalign(None, None, method="other")
         with pytest.raises(NotImplementedError):
-            sequence.my_bioalign(None, None, argstuple=(-2, 1))
+            sequence.my_bioalign(None, None, extend_gap_score=10)
 
 class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
 

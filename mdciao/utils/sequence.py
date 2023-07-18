@@ -23,6 +23,8 @@ from Bio.pairwise2 import align as _Bioalign
 from .lists import contiguous_ranges as _cranges
 import pandas as _pd
 from IPython.display import display as _display
+from collections import namedtuple as _namedtuple
+from Bio import Align as _BioAlign
 
 
 # See "Define original properties" https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
@@ -100,7 +102,7 @@ def top2seq(top, replacement_letter="X"):
 
     return ''.join([str(rr.code).replace("None",replacement_letter) for rr in top.residues])
 
-def my_bioalign(seq1, seq2,
+def _my_bioalign(seq1, seq2,
                 method="globalms",
                 argstuple=(1,0,-1,-.05),
                 kwargs = {"penalize_end_gaps":False}):
@@ -160,6 +162,102 @@ def my_bioalign(seq1, seq2,
                                    "allowed as argument tuple, got"
                                    "instead %s"%(str(allowed_tuple),
                                                     str(argstuple)))
+
+
+def my_bioalign(seq1, seq2,
+                method="global",
+                match=1, mismatch=0, open_gap_score=-1, extend_gap_score=-0.05,
+                n_max=1000
+                ):
+    r"""
+    Align two sequences using :obj:`Bio.Align.PairwiseAligner`
+
+    Note
+    ----
+    The intention is to only use *this* method throughout
+    mdciao, and change *here* any alignment parameters s.t.
+    alignment is done using *always* the same parameters.
+
+    See https://biopython.org/docs/1.75/api/Bio.Align.html?#Bio.Align.PairwiseAligner
+    for more info
+
+    Parameters
+    ----------
+    seq1 : str, any length
+    seq2 : str, any length
+    method : str, default is "global"
+        Gets passed as argument "mode" to
+        the underlying :obj:~`Bio.Align.PairwiseAligner`
+        At the moment, any other value will raise NotImplementedError.
+    match : int or float, default is 1
+        Score value for a match.
+        At the moment, any other value will raise NotImplementedError.
+    mismatch : int or float, default is 0
+        Penalty value (non-positve score) for a mismatch.
+        At the moment, any other value will raise NotImplementedError.
+    open_gap_score : int or float, default is -1
+        Penalty value (non-positve score) for opening a gap.
+        At the moment, any other value will raise NotImplementedError.
+    extend_gap_score : int or float, default is 0.05
+        Penalty value (non-positve score) for extending a gap.
+        At the moment, any other value will raise NotImplementedError.
+    n_max : int, default is 1000
+        The maximum number of returned alignments.
+
+    Returns
+    -------
+    alignments : list
+        A list of namedtuples, each containing seq1,seq2,score.
+
+    """
+    _my_alg = _namedtuple("NamedTuplePairwiseAlignments", ["seq1", "seq2", "score"])
+
+    # This is to be able to raise the NotImplemented but also to hard-code the only allowed method here
+    allowed_method="global"
+    end_gap_score = 0 # equivalent to the old "penalize_end_gaps": False in pairwise2
+    if method!=allowed_method:
+        raise (NotImplementedError("At the moment only %s is "
+                                   "allowed as alignment method"%method))
+
+    allowed_kwargs = {"match": 1, "mismatch": 0, "open_gap_score": -1, "extend_gap_score": -0.05}
+
+    provided_kwargs = {key : val for key, val in locals().items() if key in allowed_kwargs}
+    if allowed_kwargs == provided_kwargs:
+        a = _BioAlign.PairwiseAligner(mode=method,
+                                      match=match, mismatch=mismatch, open_gap_score=open_gap_score,
+                                      extend_gap_score=extend_gap_score, end_gap_score=end_gap_score)
+        alignments = [a for __, a in zip(range(n_max), a.align(seq1,seq2))]
+        scores = _np.array([a.score for a in alignments])
+
+        # Some edge cases in the tests produce alignments with no overlap at all, i.e. with an empty a.aligned attribute,
+        # that are equally scored with other alignments, e.g.
+        # ---X       --X
+        # ----  vs   ---
+        # IWN-       IWN
+        # have the same scores b.c. mismatches are valued with 0
+
+        # These alignments are badly scored alignments in "guess" mode that can be discarded safely
+        # Hence, we mark the start of the alignment as _np.inf s.t. they sink
+        # to the bottom the list of equally (badly) scored alignments
+        starting_alignment_idxs = [[a.aligned[1][0][0] if len(a.aligned[1])>0 else _np.inf][0] for a in alignments]
+
+        # TODO
+        # Then comes this very interim solution, to not touch the test-suite ATM, checkout
+        # this issue to find out why this reordering https://github.com/biopython/biopython/issues/4360
+
+        # In each block of equally scored alignments, sort by ascending order
+        # of first match-index for sequence 2
+        order = _np.lexsort((starting_alignment_idxs, -scores))
+        # reorder
+        alignments = [alignments[ii] for ii in order[:n_max]]
+        scores = [a.score for a in alignments] #reorder scores
+        seqs = [a.format().splitlines() for a in alignments]
+        algs = [_my_alg(s[0],s[-1],score) for s,score in zip(seqs,scores)]
+        return algs
+    else:
+        raise NotImplementedError(f"At the moment, the keyword arguments {list(allowed_kwargs.keys()) }are exposed"
+                                  f"to make them highly visible, but their values can't be changed from {allowed_kwargs}."
+                                  f"The input was instead {provided_kwargs}")
 
 
 
