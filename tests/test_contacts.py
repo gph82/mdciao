@@ -320,11 +320,11 @@ class TestFragments(unittest.TestCase):
         cors = Residues([10, 20],
                         ["GLU25", "ALA35"]
                         )
-        self.assertEquals(cors.names[0],"GLU25")
-        self.assertEquals(cors.names[1],"ALA35")
+        self.assertEqual(cors.names[0],"GLU25")
+        self.assertEqual(cors.names[1],"ALA35")
 
-        self.assertEquals(cors.names_short[0],"E25")
-        self.assertEquals(cors.names_short[1],"A35")
+        self.assertEqual(cors.names_short[0],"E25")
+        self.assertEqual(cors.names_short[1],"A35")
 
 
 class TestNeighborhoodNames(unittest.TestCase):
