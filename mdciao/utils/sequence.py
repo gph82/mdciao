@@ -213,7 +213,7 @@ def alignment_result_to_list_of_dicts(ialg,
                                       verbose=False,
                                       ):
     r"""
-    Input an alignment result (:obj:`ialg`) and return it as
+    Input an alignment result `ialg` and return it as
     a list of per-residue dictionaries with other complementary keys.
 
     This list of dictionaries is very suitable for further operations
@@ -225,9 +225,8 @@ def alignment_result_to_list_of_dicts(ialg,
 
     Parameters
     ----------
-    ialg: list
-        list with four entries, see obj:`my_bioalign`
-        and https://biopython.org/DIST/docs/api/Bio.pairwise2-module.html
+    ialg: namedtuple
+        See return value of obj:`my_bioalign`
         for more info
     topology_0: :obj:`mdtraj.Topology` object
     seq_0_res_idxs:
