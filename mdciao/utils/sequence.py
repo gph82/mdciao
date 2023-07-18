@@ -19,7 +19,6 @@ Functions
 """
 import numpy as _np
 from pandas import DataFrame as _DF
-from Bio.pairwise2 import align as _Bioalign
 from .lists import contiguous_ranges as _cranges
 import pandas as _pd
 from IPython.display import display as _display
@@ -101,68 +100,6 @@ def top2seq(top, replacement_letter="X"):
     assert len(replacement_letter)==1
 
     return ''.join([str(rr.code).replace("None",replacement_letter) for rr in top.residues])
-
-def _my_bioalign(seq1, seq2,
-                method="globalms",
-                argstuple=(1,0,-1,-.05),
-                kwargs = {"penalize_end_gaps":False}):
-    r"""
-    Align two sequences using a method of :obj:`Bioalign`
-
-    Note
-    ----
-    This is a one-liner wrapper around whatever method
-    of :obj:`Bioalign` has been chosen, typically
-    pairwise2.align.globalms
-
-    The intention is to only use *this* method throughout
-    mdciao, and change *here* any alignment parameters s.t.
-    alignment is done using *always* the same parameters.
-
-    The exposed arguments `method` and `argstuple`
-    are there for future development but will raise
-    NotImplementedErrors if changed.
-
-    See https://biopython.org/DIST/docs/api/Bio.pairwise2-module.html
-    for more info
-
-    Parameters
-    ----------
-    seq1 : str, any length
-    seq2 : str, any length
-    method : str, default is "globalms"
-    argstuple : tuple, default is (-1,0,-1,-.05)
-        The tuple controlling penalties for:
-        * matches
-        * mismatches
-        * opening a gap
-        * extending the gap
-
-    Returns
-    -------
-    alignments : list
-        A list of tuples, each containing seq1,seq2,score.
-        See https://biopython.org/DIST/docs/api/Bio.pairwise2-module.html
-        for more info
-
-
-    """
-    # This is to be able to raise the NotImplemented but also to hard-code the only allowEd method here
-    allowed_method="globalms"
-    allowed_tuple = (1, 0, -1, -.05)
-    if method!=allowed_method:
-        raise (NotImplementedError("At the moment only %s is "
-                                   "allowed as alignment method"%method))
-
-
-    if tuple(argstuple) == tuple(allowed_tuple):
-        return getattr(_Bioalign, method)(seq1, seq2, *argstuple, **kwargs)
-    else:
-        raise NotImplementedError("At the moment only %s is "
-                                   "allowed as argument tuple, got"
-                                   "instead %s"%(str(allowed_tuple),
-                                                    str(argstuple)))
-
 
 def my_bioalign(seq1, seq2,
                 method="global",
