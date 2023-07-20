@@ -188,7 +188,11 @@ def my_bioalign(seq1, seq2,
         # reorder
         alignments = [alignments[ii] for ii in order[:n_max]]
         scores = [a.score for a in alignments] #reorder scores
-        seqs = [a.format().splitlines() for a in alignments]
+        if hasattr(alignments[0],"sequences"): # some more backward compatibility
+            seqs = [a._format_generalized().replace(" ","").splitlines() for a in alignments]
+        else:
+            seqs = [a.format().splitlines() for a in alignments]
+
         algs = [_my_alg(s[0],s[-1],score) for s,score in zip(seqs,scores)]
         return algs
     else:
