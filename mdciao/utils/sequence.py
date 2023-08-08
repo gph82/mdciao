@@ -141,6 +141,7 @@ def my_bioalign(seq1, seq2,
     n_max : int, default is 1000
         The maximum number of returned alignments.
 
+
     Returns
     -------
     alignments : list
@@ -199,7 +200,6 @@ def my_bioalign(seq1, seq2,
         raise NotImplementedError(f"At the moment, the keyword arguments {list(allowed_kwargs.keys()) }are exposed"
                                   f"to make them highly visible, but their values can't be changed from {allowed_kwargs}."
                                   f"The input was instead {provided_kwargs}")
-
 
 def alignment_result_to_list_of_dicts(ialg,
                                       seq_0_res_idxs,

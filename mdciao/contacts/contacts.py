@@ -1791,8 +1791,8 @@ class ContactPair(object):
 
         Parameters
         ----------
-        iax : :obj:`~matplotlib.axes.Axes`,
-            Axis on which to draw
+        iax : :obj:`~matplotlib.pyplot.Axes`
+            The axis where to plot the timetrace
         color_scheme : list, default is None
             Pass a list of colors, each one should be
             understandable by :obj:`matplotlib.colors.is_color_like`
@@ -1810,11 +1810,11 @@ class ContactPair(object):
              * False: don't plot any background
              * color-like: use this color for the background,
               can be: str, hex, rgba, anything
-              :obj:`~matplotlib.pyplot.colors` understands
-        shorten_AAs : bool, default is True
-            Whether to shorten GLU30 to E30
+              :obj:`matplotlib.colors.is_color_like` understands
+        shorten_AAs : bool, default is False
+            Whether to shorten the AA labels
         t_unit : str, default is 'ps'
-            The label for the time axis (x-axis)
+            The time unit with which to label the x-axis
         ylim_Ang : float or "auto"
             The limit in Angstrom of the y-axis
         max_handles_per_row : int, default is 4
