@@ -501,10 +501,6 @@ class Test_parse_residue_and_fragments(TestCase):
                                                                     fragments=fragments,
                                                                     sparse_fragments=True)[0]
         np.testing.assert_equal(len(res_idxs_as_fragments), 2)
-        print("AAAA")
-        print(res_idxs_as_fragments)
-        print(len(res_idxs_as_fragments))
-        print(type(res_idxs_as_fragments))
         self.assertListEqual(res_idxs_as_fragments, [[1, 2, 3, 4, 5],
                                                      [10, 11, 12, 13, 14, 15]]
                              )
