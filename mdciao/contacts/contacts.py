@@ -1975,6 +1975,8 @@ class ContactGroup(object):
         self._max_cutoff_Ang = max_cutoff_Ang
         self._modes = None
         self._means = None
+        self._maxima = None
+        self._minima = None
         self._stacked_time_traces = None
         self._shared_anchor_residue_index = None
         if top is None:
@@ -3713,7 +3715,7 @@ class ContactGroup(object):
         self._check_cutoff_ok(ctc_cutoff_Ang)
         return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang,**kwargs) for ictc in self._contacts]
 
-    def distributions_of_distances(self, bins=10):
+    def _distributions_of_distances(self, bins=10):
         r"""
         Histograms the distance values of each contact,
         returning a list with as many distributions as there
@@ -3763,7 +3765,7 @@ class ContactGroup(object):
         fdict : dictionary
 
         """
-        distro_dicts = {ictc.label_flex(**kwargs) : data for ictc, data in zip(self._contacts, self.distributions_of_distances(
+        distro_dicts = {ictc.label_flex(**kwargs) : data for ictc, data in zip(self._contacts, self._distributions_of_distances(
             bins=bins))}
 
 
@@ -4493,7 +4495,7 @@ class ContactGroup(object):
         jax.set_title(title_str)
 
         # Base plot
-        for ii, ((h, x), label) in enumerate(zip(self.distributions_of_distances(bins=bins), label_bars)):
+        for ii, ((h, x), label) in enumerate(zip(self._distributions_of_distances(bins=bins), label_bars)):
             label = _mdcu.str_and_dict.latex_superscript_fragments(label)
             if ctc_cutoff_Ang is not None:
                 if ii==0:
@@ -5428,7 +5430,7 @@ class ContactGroup(object):
     @property
     def means(self):
         r"""
-        The mean value over all distance time-traces
+        Per-contact mean values over all distance time-traces
 
         Returns
         -------
@@ -5443,11 +5445,47 @@ class ContactGroup(object):
             self._means = _np.mean(self.stacked_time_traces,axis=0)
         return self._means
 
+    @property
+    def minima(self):
+        r"""
+        Per-contact minimum values over all distance time-traces
+
+        Returns
+        -------
+        mean : 1D np.array of len(self.n_ctcs)
+            No unit transformation is done,
+            whatever was given at instantiation
+            (most likely nanometers), is
+            returned here
+
+        """
+        if self._minima is None:
+            self._minima = _np.min(self.stacked_time_traces,axis=0)
+        return self._minima
+
+    @property
+    def maxima(self):
+        r"""
+        Per-contact maximum values over all distance time-traces
+
+        Returns
+        -------
+        mean : 1D np.array of len(self.n_ctcs)
+            No unit transformation is done,
+            whatever was given at instantiation
+            (most likely nanometers), is
+            returned here
+
+        """
+        if self._maxima is None:
+            self._maxima = _np.max(self.stacked_time_traces,axis=0)
+        return self._maxima
+
 
     @property
     def modes(self):
         r"""
-        The `modes <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ over all distance time-traces
+        Per-contact `modes <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ over all distance time-traces
 
         Note
         ----
@@ -5512,6 +5550,14 @@ class ContactGroup(object):
               to the mean values of the distances
               You can check the means in
               :obj:`~mdciao.contacts.ContactGroup.means`
+            * "min" : minimize average distance
+              to the minimum values of the distances
+              You can check the means in
+              :obj:`~mdciao.contacts.ContactGroup.minima`
+            * "max" : minimize average distance
+              to the maximum values of the distances
+              You can check the means in
+              :obj:`~mdciao.contacts.ContactGroup.maxima`
         ctc_cutoff_Ang : float, default is None
             THIS IS EXPERIMENTAL
             If given, the contact frequencies
@@ -5558,7 +5604,9 @@ class ContactGroup(object):
 
         all_ds = self.stacked_time_traces
         ref = {"mode" : self.modes,
-               "mean" : self.means}
+               "mean" : self.means,
+               "min" : self.minima,
+               "max" : self.maxima}
 
         if ctc_cutoff_Ang is None:
             weights = _np.ones(self.n_ctcs)
@@ -5608,9 +5656,19 @@ class ContactGroup(object):
     def to_new_ContactGroup(self,
                             CSVexpression=None,
                             residue_indices=None,
-                            allow_multiple_matches=False, merge=True):
+                            allow_multiple_matches=False, merge=True,
+                            keep_interface=True,
+                            n_residues=1):
         r"""
         Creates a new :obj:`ContactGroup` from this une using a CSV expression to filter for residues
+
+        The filtering of ContactPairs against `CSVexpression` or `residue_indices`
+        can be such that:
+        * one residue match per ContactPair is enough, or
+        * both residues of the ContactPair need to match
+        for the ContactPair to be selected for the new ContactGroup.
+        See `n_residues` for more info.
+
 
         Parameters
         ----------
@@ -5638,6 +5696,20 @@ class ContactGroup(object):
             one single :obj:`ContactGroup`. If False
             every sub-string of :obj:`CSVexpression`
             returns its own :obj:`ContactGroup`
+        keep_interface : bool, default is True
+            If self.is_interface and `merge` are
+            both True, then returned ContactGroup
+            will also be an interfaces itself
+        n_residues : int, default is 1
+            Number of residues-matches that
+            a ContactPair has to have be selected
+            for the new ContactGroup. By default,
+            one residue alone is enough. Using `n_residues` = 2
+            selects only ContactPairs where
+            the both residues match against `CSVexpression`
+            or `residue_indices`. This is useful when
+            trying to keep interface properties. Any `n_residues`
+            value different from [1,2] will raise an error.
 
         Returns
         -------
@@ -5646,31 +5718,38 @@ class ContactGroup(object):
             :obj:`CSVexpression` and valued with
             :obj:`ContactGroups`
         """
-        matching_CPs = []
+        assert n_residues in [1,2]
         if CSVexpression is not None:
             assert residue_indices is None
             keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
+            matches = []
             for exp in keys:
-                match = _mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top)
-                if not allow_multiple_matches and len(match)>1:
+                matches.append(_mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top))
+                if not allow_multiple_matches and len(matches[-1])>1:
                     print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
                     _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
                     raise ValueError
-
-                idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair,match))>0]
-                matching_CPs.append(idxs)
+            valid_matches = _np.unique(_np.hstack([match for match in matches if len(match)>0]))
         else:
             assert CSVexpression is None
-            for ri in residue_indices: # Too keep the merge functionality with nonmatching residxs, we need this iteration
-                idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair, ri)) > 0]
-                matching_CPs.append(idxs)
             keys = residue_indices
+            matches = residue_indices
+            valid_matches = residue_indices
+
+        matching_CPs = []
+        second_condition = {1: lambda pair : True,
+                            2: lambda pair : len(_np.intersect1d(pair, valid_matches))>=2}
+        for key, match in zip(keys, matches):
+            idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair, match)) > 0 and second_condition[n_residues](pair)]
+            matching_CPs.append(idxs)
+
 
         if merge:
             Ns = ContactGroup(
                 [self._contacts[ii] for ii in _np.unique(_np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0]))],
                 neighbors_excluded=self.neighbors_excluded,
-                max_cutoff_Ang=self.max_cutoff_Ang
+                max_cutoff_Ang=self.max_cutoff_Ang,
+                interface_fragments=[self.interface_fragments if keep_interface and self.is_interface else None][0]
                 )
         else:
             Ns = {key: [ContactGroup([self._contacts[ii] for ii in mCPs],
@@ -6748,17 +6827,11 @@ def _delta_freq_pairs(freqsA, pairsA, freqsB, pairsB):
 def _full_color_list(top, df, colors=None) -> _DF:
     r"""
 
-    Ad-hoc private method to interface plot_freqs_as_flareplot with .freqs2flare is.
+    Ad-hoc private method to interface plot_freqs_as_flareplot with .freqs2flare.
     The trickiest part of all is to implement consistent color
     schemes that "make sense" while let the user make some choices.
 
-
-    been to mplement some guessing around the
-    best combination of fragmentation and colors for different
-    types of input on fragmentation and colors
-
     The main idea is to incorporate per-residue color values
-    to use in combination with
 
     Main ideas:
      * Create
@@ -6778,7 +6851,12 @@ def _full_color_list(top, df, colors=None) -> _DF:
     jdf = df.copy()
 
     if "frag" in df.keys():
-        frags_from_df = [_np.flatnonzero(df.frag == ii) for ii in df.frag.unique()]
+        # Keep present frags (non-nans)
+        frags_from_df = {ii : _np.flatnonzero(df.frag == ii) for ii in df.frag.unique() if not _np.isnan(ii)}
+        # Splice it with the orphans s.t. the each residue gets assigned a fragment,
+        # even if they don't end up being used anywhere
+        frags_from_df = _mdcfr.splice_orphan_fragments(list(frags_from_df.values()),
+                                                       list(frags_from_df.keys()), highest_res_idx=df.shape[0]-1)[0]
     else:
         frags_from_df = [_np.arange(top.n_residues)]
 

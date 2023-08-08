@@ -695,6 +695,26 @@ class Test_parse_consensus_option(unittest.TestCase):
             self.assertEqual(lblr,GPCR)
             self.assertIsInstance(residx2conlab,list)
 
+    def test_with_GPCR_labels(self):
+        fragments = mdcfragments.get_fragments(self.geom.top)
+        GPCR = LabelerGPCR(test_filenames.adrb2_human_xlsx)
+        GPCR_labels = GPCR.top2labels(self.geom.top)
+        residx2conlab, lblr = cli._parse_consensus_option(GPCR_labels, "GPCR",
+                                                              self.geom.top,
+                                                              fragments,
+                                                              return_Labeler=True)
+        assert lblr is None
+        assert residx2conlab is GPCR_labels
+    def test_with_GPCR_labels_raises(self):
+        fragments = mdcfragments.get_fragments(self.geom.top)
+        GPCR = LabelerGPCR(test_filenames.adrb2_human_xlsx)
+        GPCR_labels = GPCR.top2labels(self.geom.top)
+        with self.assertRaises(AssertionError):
+            residx2conlab, lblr = cli._parse_consensus_option(GPCR_labels[:20], "GPCR",
+                                                              self.geom.top,
+                                                              fragments,
+                                                              return_Labeler=True)
+
     def test_no_answer(self):
         GPCR = LabelerGPCR(test_filenames.adrb2_human_xlsx)
         residx2conlab, lblr = cli._parse_consensus_option(GPCR, "GPCR",

@@ -274,7 +274,8 @@ def freqs2flare(freqs, res_idxs_pairs,
         plots when heuristics about font-sizing
         fail
     aura : iterable, default is None
-        Scalar array, indexed with residue indices,
+        Scalar array (positive or negative),
+        indexed with residue indices,
         e.g. RMSF, SASA, degree of conservation etc.
         It will be drawn as an *aura* around the
         flareplot.
@@ -521,7 +522,8 @@ def circle_plot_residues(fragments,
         If provided, residue labels wil be auto-generated from
         here
     aura : iterable, default is None
-        Scalar array, indexed with residue indices,
+        Scalar array (positive or negative),
+        indexed with residue indices,
         e.g. RMSF, SASA, conv. degree...
         It will be drawn as an *aura* around the
         flareplot.
@@ -617,7 +619,7 @@ def circle_plot_residues(fragments,
                                                aa_offset=aa_offset,
                                                replacement_labels=replacement_labels)
         if debug:
-            _futils._plot_fancypatches(labels, lw=dot_radius_in_pts / 10)
+            _futils.plot_fancypatches(labels, lw=dot_radius_in_pts / 10)
             iax.add_artist(_plt.Circle(center,
                                        radius=outer_r_in_data_units,
                                        ec='green',
@@ -659,7 +661,7 @@ def circle_plot_residues(fragments,
 
         outer_r_in_data_units = _futils._outermost_corner_of_fancypatches(ss_labels)
         if debug:
-            _futils._plot_fancypatches(ss_labels, lw=dot_radius_in_pts / 10)
+            _futils.plot_fancypatches(ss_labels, lw=dot_radius_in_pts / 10)
             iax.add_artist(_plt.Circle(center,
                                        radius=outer_r_in_data_units,
                                        ec='purple',

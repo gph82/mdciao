@@ -212,6 +212,14 @@ class Test_plot_unified_distro_dicts(unittest.TestCase):
 
     def test_plot_unified_distro_dicts(self):
         plots.plot_unified_distro_dicts(self.dicts, ctc_cutoff_Ang=3.5, n_cols=2,legend_rows=1)
+        #_plt.savefig("test.png")
+        _plt.close("all")
+
+
+    def test_plot_unified_distro_dicts_preexising_ax(self):
+        myfig, myax = _plt.subplots(10,2)
+        plots.plot_unified_distro_dicts(self.dicts, ctc_cutoff_Ang=3.5, n_cols=2,legend_rows=1, ax_array=myax)
+        #_plt.savefig("test.png")
         _plt.close("all")
 
 class Test_compare_groups_of_contacts(unittest.TestCase):

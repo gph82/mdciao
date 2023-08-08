@@ -1418,7 +1418,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         CG = self.CG_cp1_cp2
         h1, x1 = self.cp1.distro_overall_trajs(bins=10)
         h2, x2 = self.cp2.distro_overall_trajs(bins=10)
-        distros = CG.distributions_of_distances(bins=10)
+        distros = CG._distributions_of_distances(bins=10)
         _np.testing.assert_array_equal(distros[0][0], h1)
         _np.testing.assert_array_equal(distros[0][1], x1)
         _np.testing.assert_array_equal(distros[1][0], h2)
@@ -1428,7 +1428,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         CG = self.CG_cp1_cp2
         dicts = CG.distribution_dicts(bins=10,split_label=False)
         _np.testing.assert_array_equal(list(dicts.keys()), ["0-1", "0-2"])
-        for a, b in zip(dicts.values(),CG.distributions_of_distances(bins=10)):
+        for a, b in zip(dicts.values(), CG._distributions_of_distances(bins=10)):
             _np.testing.assert_array_equal(a[0],b[0])
             _np.testing.assert_array_equal(a[1],b[1])
 
@@ -1480,6 +1480,38 @@ class TestContactGroup(TestBaseClassContactGroup):
         ref_mean = _np.mean([[1]+[10]+[1, 15, 10, 15, 15]])
         _np.testing.assert_array_equal(values[0], [10])  # traj 1, frame 0
         assert RMSDd[0] == _np.abs(ref_mean-10)
+
+    def test_repframe_minima(self):
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
+                                                         [[2],
+                                                          [10],
+                                                          [15, 15, 10, 15, 1]],
+                                                         [[0],
+                                                          [0],
+                                                          [0, 1, 2, 3, 4]])])
+        repframes, RMSDd, values = CG.repframes(scheme="min")
+        traj_idx, frame_idx = repframes[0]
+        assert traj_idx  == 2
+        assert frame_idx == 4
+        ref_min = 1
+        _np.testing.assert_array_equal(values[0], ref_min)
+        assert RMSDd[0] == 0
+
+    def test_repframe_maxima(self):
+        CG = contacts.ContactGroup([contacts.ContactPair([0, 1],
+                                                         [[2],
+                                                          [16],
+                                                          [15, 15, 10, 15, 1]],
+                                                         [[0],
+                                                          [0],
+                                                          [0, 1, 2, 3, 4]])])
+        repframes, RMSDd, values = CG.repframes(scheme="max")
+        traj_idx, frame_idx = repframes[0]
+        assert traj_idx  == 1
+        assert frame_idx == 0
+        ref_max = 16
+        _np.testing.assert_array_equal(values[0], ref_max)
+        assert RMSDd[0] == 0
 
     def test_repframe_w_traj_violines_many_frames_just_runs(self):
         CG = examples.ContactGroupL394()
@@ -1565,6 +1597,46 @@ class TestContactGroup(TestBaseClassContactGroup):
 
         assert new_CG_dict[residue_indices[2]] is None
 
+    def test_to_new_ContactGroup_residue_indices_n_residues_is_2(self):
+        CG = _mdcsites([{"name": "test_random",
+                         "pairs": {"residx": [[100, 200],
+                                              [100, 300],
+                                              [10, 40], #2
+                                              [200, 50],
+                                              [20, 40], #4
+                                              [50, 20], #5
+                                              [70, 20]] # this last one woud've been pikced up if n_residues=1
+                                   }}],
+                       test_filenames.traj_xtc,
+                       test_filenames.top_pdb,
+                       no_disk=True,
+                       figures=False)["test_random"]
+
+        residue_indices = [10, 40, 20, 50]
+        new_CG : contacts.ContactGroup = CG.to_new_ContactGroup(residue_indices=residue_indices, n_residues=2)
+
+        assert isinstance(new_CG, contacts.ContactGroup)
+        assert new_CG.n_ctcs == 3
+        assert new_CG._contacts[0] is CG._contacts[2]
+        assert new_CG._contacts[1] is CG._contacts[4]
+        assert new_CG._contacts[2] is CG._contacts[5]
+
+
+        new_CG_dict = CG.to_new_ContactGroup(residue_indices=residue_indices, merge=False, n_residues=2)
+        self.assertSequenceEqual(list(new_CG_dict.keys()),residue_indices)
+        assert new_CG_dict[residue_indices[0]].n_ctcs == 1
+        assert new_CG_dict[residue_indices[0]]._contacts[0] is CG._contacts[2]
+
+        assert new_CG_dict[residue_indices[1]].n_ctcs == 2
+        assert new_CG_dict[residue_indices[1]]._contacts[0] is CG._contacts[2]
+        assert new_CG_dict[residue_indices[1]]._contacts[1] is CG._contacts[4]
+
+        assert new_CG_dict[residue_indices[2]].n_ctcs == 2
+        assert new_CG_dict[residue_indices[2]]._contacts[0] is CG._contacts[4]
+        assert new_CG_dict[residue_indices[2]]._contacts[1] is CG._contacts[5]
+
+        assert new_CG_dict[residue_indices[3]].n_ctcs == 1
+        assert new_CG_dict[residue_indices[3]]._contacts[0] is CG._contacts[5]
 
     def test_to_ContactGroups_per_traj(self):
         traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)

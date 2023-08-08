@@ -24,7 +24,8 @@ import numpy as _np
 
 from ._textutils import \
     outermost_text_corner as _outermost_corner_of_fancypatches, \
-    any_overlap_via_FancyBoxPach
+    any_overlap_via_FancyBoxPach, \
+    plot_fancypatches
 
 from mdciao.plots.plots import _colorstring
 from mdciao.utils.bonds import bonded_neighborlist_from_top
@@ -1056,15 +1057,18 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
     Parameters
     ----------
     xy : np.ndarray of shape (N,2)
-    aura : iterable of positive scalars
-        The value to be plotted, e.g.
+    aura : iterable of scalars
+        The value to be plotted, can
+        be positive or negative, e.g.
         conservation degree, RMSF,
-        SASA, whatever.
-        The indices are indices of
-        :obj:`xy`, s.t. the have to
+        SASA, aggregated contact frequency
+        or e.g. deltas thereof, i.e. containing
+        negative values.
+        The indices of `aura` are indices of
+        `xy`, s.t. the have to
         be in the interval [0,len(xy)]
-        If :obj:`xy` has been "sparsed"
-        somehow, :obj:`aura` needs also
+        If `xy` has been "sparsed"
+        somehow, `aura` needs also
         to be sparsed
     r : float, default is 1
         Radius of the aura's baseline
@@ -1088,7 +1092,8 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
         you are plotting conservation degree in percent and
         all values are between 85 and 100%, not subtracting
         the baseline will make it hard to distinguish anything,
-        all values will appear as "high".
+        all values will appear as "high". If auras have negative
+        values in the, subtract baseline will always be False
     colors : anything
     lines : bool, default is False
         Use lines instead of polygons to represent the aura
@@ -1108,15 +1113,16 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
     assert len(aura) == len(xy) == sum(fragment_lenghts)
     aura = _np.array(aura,dtype=float)
     if any([a<0 for a in aura]):
-        raise NotImplementedError("Negative aura-values not implemented yet")
+        subtract_baseline = False
 
-    aura /= aura.max()
+    aura /= aura.max()-aura.min()
     if subtract_baseline:
         aura -= aura.min()
         aura /= aura.max()
-    assert  aura.max()==1
+    _np.testing.assert_almost_equal(aura.max() - aura.min(), 1)
 
     aura *= r * width
+    r -= aura.min()
 
     col_list = col_list_from_input_and_fragments(colors, [_np.arange(l) for l in fragment_lenghts],alpha=.80)
 
