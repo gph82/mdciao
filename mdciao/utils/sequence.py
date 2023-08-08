@@ -219,6 +219,7 @@ def alignment_result_to_list_of_dicts(ialg,
     Input an alignment result `ialg` and return it as
     a list of per-residue dictionaries with other complementary keys.
 
+
     This list of dictionaries is very suitable for further operations
     with :obj:`pandas.DataFrame`.
 
@@ -231,7 +232,8 @@ def alignment_result_to_list_of_dicts(ialg,
     ialg: namedtuple
         See return value of obj:`my_bioalign`
         for more info
-    topology_0: :obj:`mdtraj.Topology` object
+    topology_0: :obj:`~mdtraj.Topology` object, default is None
+    topology_1: :obj:`~mdtraj.Topology` object, default is None
     seq_0_res_idxs:
         Zero-indexed residue indices of whatever was in seq_0
     seq_1_res_idxs:
@@ -258,8 +260,8 @@ def alignment_result_to_list_of_dicts(ialg,
     assert len(top_0_seq) == len(top_1_seq)
 
     # Do we have the right indices?
-    assert len(seq_1_res_idxs)==len(''.join([ii for ii in top_1_seq if ii.isalpha()]))
-    assert len(seq_0_res_idxs)==len(''.join([ii for ii in top_0_seq if ii.isalpha()]))
+    assert len(seq_1_res_idxs)==len(''.join([ii for ii in top_1_seq if ii!="-"]))
+    assert len(seq_0_res_idxs)==len(''.join([ii for ii in top_0_seq if ii!="-"]))
 
     # Create needed iterators
     seq_1_res_idxs_iterator = iter(seq_1_res_idxs)
@@ -285,13 +287,13 @@ def alignment_result_to_list_of_dicts(ialg,
                                key_idx_seq_1: '~',
                                key_idx_seq_0: '~'})
 
-        if rt.isalpha():
+        if rt!="-":
             if topology_0 is not None:
                 alignment_dict[-1][key_full_resname_seq_0] = next(resname_top_0_iterator)
                 alignment_dict[-1][key_resSeq_seq_0] = next(top_0_resSeq_iterator)
             alignment_dict[-1][key_idx_seq_0] = next(idx_seq_0_iterator)
 
-        if rr.isalpha():
+        if rr!="-":
             alignment_dict[-1][key_idx_seq_1] = next(seq_1_res_idxs_iterator)
             if topology_1 is not None:
                 alignment_dict[-1][key_full_resname_seq_1] = next(resname_top_1_iterator)

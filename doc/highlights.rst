@@ -8,7 +8,7 @@ Highlights
 .. _`initial example`:
 * paper-ready tables and figures from the command line::
 
-   mdc_neighborhoods.py prot.pdb traj.xtc -r L394 --GPCR adrb2_human --CGN 3SN6 -ni -at #ni: not interactive, at: show atom-types
+   mdc_neighborhoods.py prot.pdb traj.xtc -r L394 --GPCR adrb2_human --CGN GNAS2_HUMAN -ni -at #ni: not interactive, at: show atom-types
 
   .. figure:: imgs/bars_and_PDF.png
       :scale: 40%
@@ -53,13 +53,11 @@ Highlights
     * Flock et al, (2015) Universal allosteric mechanism for G$\alpha$ activation by GPCRs
       Nature 2015 524:7564 524, 173--179
       https://doi.org/10.1038/nature14663
-   No local file ./CGN_3SN6.txt found, checking online in
-   https://www.mrc-lmb.cam.ac.uk/CGN/lookup_results/3SN6.txt ...done without 404, continuing.
-   No local PDB file for 3SN6 found in directory '.', checking online in
-   https://files.rcsb.org/download/3SN6.pdb ...found! Continuing normally
-   CGN-labels align best with fragments: [0] (first-last: LEU4-LEU394).
+   No local file ./GNAS2_HUMAN.txt found, checking online in
+   https://www.mrc-lmb.cam.ac.uk/CGN/lookup_results/GNAS2_HUMAN.txt ...done without 404, continuing.
+   The CGN-labels align best with fragments: [0] (first-last: LEU4-LEU394).
    These are the CGN fragments mapped onto your topology:
-      G.HN with   28 AAs     THR9@G.HN.26   (   5) -    VAL36@G.HN.53   (32  ) (G.HN)
+      G.HN with   33 AAs    LEU4@G.HN.10    (   0) -    VAL36@G.HN.53   (32  ) (G.HN)
     G.hns1 with    3 AAs    TYR37@G.hns1.1  (  33) -    ALA39@G.hns1.3  (35  ) (G.hns1)
       G.S1 with    7 AAs    THR40@G.S1.1    (  36) -    LEU46@G.S1.7    (42  ) (G.S1)
    ...
@@ -83,7 +81,7 @@ Highlights
   - *G.HN.** : CGN-nomenclature for the :math:`G\alpha_N`-subunit
  You can check your selection **before** running a computation by using ``mdc_residues.py``::
 
-  >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --GPCR adrb2_human --CGN 3SN6 -ni
+  >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --GPCR adrb2_human --CGN GNAS2_HUMAN -ni
   Your selection 'GLU*,P0G,380-394,G.HN.*' yields:
     residue      residx    fragment      resSeq       GPCR        CGN
       GLU10           6           0         10       None    G.HN.27
@@ -154,7 +152,7 @@ Highlights
 
 * use fragment definitions --like the ones above, ``0`` for the :math:`G\alpha`-unit and ``3`` for the receptor-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
 
-   >>> mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --GPCR adrb2_human --CGN 3SN6 -t "3SN6 beta2AR-Galpha interface" -ni
+   >>> mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --GPCR adrb2_human --CGN GNAS2_HUMAN -t "3SN6 beta2AR-Galpha interface" -ni
    ...
    These 50 contacts capture 15.40 (~99%) of the total frequency 15.52 (over 21177 contacts)
    As orientation value, 31 ctcs already capture 90.0% of 15.52.
