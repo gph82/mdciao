@@ -1,4 +1,4 @@
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 from setuptools import setup, find_packages
 import os
 os.environ["BEZIER_NO_EXTENSION"]="true" # Check https://github.com/dhermes/bezier/releases/tag/2020.2.3
