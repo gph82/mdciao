@@ -36,7 +36,7 @@ long2short = {"--residues" : "-r",
               "--n_smooth_hw" : "-ns",
               "--table_ext" : "-tx",
               "--GPCR_uniprot" : "--GPCR",
-              "--CGN_PDB"   : "--CGN"
+              "--CGN_uniprot"   : "--CGN"
               }
 
 long2long = {key:key for key in long2short.keys()}
@@ -83,7 +83,7 @@ class ExamplesCLTs(object):
         self.pdb = filenames.top_pdb
         self.GPCRlabs_file = filenames.adrb2_human_xlsx
         self.KLIFSlabs_file = filenames.KLIFS_P31751_xlsx
-        self.CGN_file = filenames.CGN_3SN6
+        self.CGN_file = filenames.GNAS2_HUMAN
         self.sitefile = filenames.tip_json
         self.pdb_3SN6 = filenames.pdb_3SN6
         self.KLIFS_pdb = filenames.pdb_3E8D
@@ -109,7 +109,7 @@ class ExamplesCLTs(object):
                 self.opt_dict["--n_smooth_hw"] + " 1",
                 self.opt_dict["--table_ext"] + " xlsx",
                 self.opt_dict["--GPCR_uniprot"] + " %s" % self.GPCRlabs_file,
-                self.opt_dict["--CGN_PDB"] + " %s" % self.CGN_file,
+                self.opt_dict["--CGN_uniprot"] + " %s" % self.CGN_file,
                 ]
     @property
     def mdc_sites(self):
@@ -117,7 +117,7 @@ class ExamplesCLTs(object):
                 "%s %s" % (self.pdb, self.xtc),
                 " --site_files %s" % self.sitefile,
                 " --GPCR_uniprot %s" % self.GPCRlabs_file,
-                " --CGN_PDB %s" % self.CGN_file
+                " --CGN_uniprot %s" % self.CGN_file
                 ]
 
     @property
@@ -128,7 +128,7 @@ class ExamplesCLTs(object):
                 " --frag_idxs_group_2 3",
                 " --ctc_control 20",
                 " --GPCR_uniprot %s" % self.GPCRlabs_file,
-                " --CGN_PDB %s" % self.CGN_file,
+                " --CGN_uniprot %s" % self.CGN_file,
                 ]
     @property
     def mdc_GPCR_overview(self):
@@ -146,7 +146,7 @@ class ExamplesCLTs(object):
     def mdc_CGN_overview(self):
         # This is the only one that needs network access
         return ["mdc_CGN_overview.py",
-                "%s" % '3SN6',
+                "%s" % 'GNAS2_HUMAN',
                 "-t %s" % self.pdb,
                 ]
 
@@ -253,9 +253,9 @@ def ContactGroupL394(**kwargs):
     """
     # TODO make a method out of this link+cd_tmpdir+return
     with _TDir(suffix="_mdciao_example_CG") as t:
-        for fn in [filenames.pdb_3SN6, filenames.traj_xtc,
+        for fn in [filenames.traj_xtc,
                    filenames.top_pdb,
-                   filenames.adrb2_human_xlsx, filenames.CGN_3SN6]:
+                   filenames.adrb2_human_xlsx, filenames.GNAS2_HUMAN]:
             _link(fn, _path.join(t, _path.basename(fn)))
 
         with remember_cwd():
@@ -267,7 +267,7 @@ def ContactGroupL394(**kwargs):
                                       "n_smooth_hw": 1,
                                       "figures": False,
                                       "GPCR_uniprot": _path.basename(filenames.adrb2_human_xlsx),
-                                      "CGN_PDB": _path.basename(filenames.CGN_3SN6),
+                                      "CGN_uniprot": _path.basename(filenames.GNAS2_HUMAN),
                                       "no_disk":True,
                                       "accept_guess": True}
                     for key, val in kwargs.items():
@@ -545,14 +545,14 @@ def GPCRLabeler_ardb2_human(**kwargs):
     r"""Build an :obj:`~mdciao.nomenclature.LabelerGPCR` with the adrb2_human.xlsx file shipped with mdciao"""
     return _LabelerGPCR(filenames.adrb2_human_xlsx,**kwargs)
 
-def CGNLabeler_3SN6(**kwargs):
-    r"""Build an :obj:`~mdciao.nomenclature.LabelerCGN` with the CGN_3SN6.txt and 3SN6.pdb files shipped with mdciao"""
+def CGNLabeler_GNAS2_HUMAN(**kwargs):
+    r"""Build an :obj:`~mdciao.nomenclature.LabelerCGN` with the GNAS2_HUMAN.txt file shipped with mdciao"""
     with _TDir(suffix="_mdciao_example_CGNLabeler") as t:
-        for fn in [filenames.pdb_3SN6, filenames.CGN_3SN6]:
+        for fn in [filenames.GNAS2_HUMAN]:
             _link(fn, _path.join(t, _path.basename(fn)))
         with remember_cwd():
             _chdir(t)
-            CGN = _LabelerCGN("3SN6",**kwargs)
+            CGN = _LabelerCGN("GNAS2_HUMAN",**kwargs)
     return CGN
 
 def Interface_B2AR_Gas(**kwargs):
@@ -579,7 +579,7 @@ def Interface_B2AR_Gas(**kwargs):
             example_kwargs = {"topology": filenames.top_pdb,
                               "figures": False,
                               "GPCR_uniprot": GPCRLabeler_ardb2_human(),
-                              "CGN_PDB": CGNLabeler_3SN6(),
+                              "CGN_uniprot": CGNLabeler_GNAS2_HUMAN(),
                               "no_disk": True,
                               "frag_idxs_group_1":[0],
                               "frag_idxs_group_2":[3],

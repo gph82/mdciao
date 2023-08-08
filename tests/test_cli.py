@@ -267,14 +267,13 @@ class Test_residue_neighborhood(TestCLTBaseClass):
 
     def test_nomenclature_CGN(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
-            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.GNAS2_HUMAN, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
                 cli.residue_neighborhoods("R131",
                                           [self.traj, self.traj_reverse],
                                           self.geom,
-                                          CGN_PDB="3SN6",
+                                          CGN_uniprot="GNAS2_HUMAN",
                                           output_dir=tmpdir,
                                           accept_guess=True,
                                           no_disk=self.no_disk
@@ -282,14 +281,13 @@ class Test_residue_neighborhood(TestCLTBaseClass):
 
     def test_nomenclature_CGN_and_GPCR(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
-            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.GNAS2_HUMAN, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
                 cli.residue_neighborhoods("R131",
                                           [self.traj, self.traj_reverse],
                                           self.geom,
-                                          CGN_PDB="3SN6",
+                                          CGN_uniprot="GNAS2_HUMAN",
                                           GPCR_uniprot=test_filenames.adrb2_human_xlsx,
                                           output_dir=tmpdir,
                                           accept_guess=True,
@@ -555,8 +553,7 @@ class Test_interface(TestCLTBaseClass):
 
     def test_w_nomenclature_CGN_GPCR(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
-            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.GNAS2_HUMAN, tmpdir)
             shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
@@ -565,7 +562,7 @@ class Test_interface(TestCLTBaseClass):
                               output_dir=tmpdir,
                               fragments=["967-1001",  # TM6
                                          "328-353"],  # a5
-                              CGN_PDB="3SN6",
+                              CGN_uniprot="GNAS2_HUMAN",
                               GPCR_uniprot="adrb2_human",
                               accept_guess=True,
                               flareplot=False,
@@ -575,8 +572,7 @@ class Test_interface(TestCLTBaseClass):
     def test_w_nomenclature_CGN_GPCR_fragments_are_consensus(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["TM6", "*H5"])
-            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
-            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.GNAS2_HUMAN, tmpdir)
             shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
@@ -585,7 +581,7 @@ class Test_interface(TestCLTBaseClass):
                                   self.geom,
                                   output_dir=tmpdir,
                                   fragments=["consensus"],
-                                  CGN_PDB="3SN6",
+                                  CGN_uniprot="GNAS2_HUMAN",
                                   GPCR_uniprot="adrb2_human",
                                   accept_guess=True,
                                   flareplot=False,
@@ -595,8 +591,7 @@ class Test_interface(TestCLTBaseClass):
     def test_w_nomenclature_CGN_GPCR_fragments_are_consensus_and_flareplot(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["TM6", "*H5"])
-            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
-            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.GNAS2_HUMAN, tmpdir)
             shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
@@ -605,7 +600,7 @@ class Test_interface(TestCLTBaseClass):
                                   self.geom,
                                   output_dir=tmpdir,
                                   fragments=["consensus"],
-                                  CGN_PDB="3SN6",
+                                  CGN_uniprot="GNAS2_HUMAN",
                                   GPCR_uniprot="adrb2_human",
                                   accept_guess=True,
                                   #no_disk=self.no_disk
@@ -623,8 +618,7 @@ class Test_interface(TestCLTBaseClass):
 
     def test_w_nomenclature_CGN_GPCR_fragments_are_consensus_and_flareplot_and_self_interface(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
-            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            shutil.copy(test_filenames.GNAS2_HUMAN, tmpdir)
             shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
@@ -634,7 +628,7 @@ class Test_interface(TestCLTBaseClass):
                               n_nearest=4,
                               output_dir=tmpdir,
                               fragments=["consensus"],
-                              CGN_PDB="3SN6",
+                              CGN_uniprot="GNAS2_HUMAN",
                               GPCR_uniprot="adrb2_human",
                               accept_guess=True,
                               frag_idxs_group_1='TM6',
@@ -835,14 +829,12 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
 
     def test_CGN_paths(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            path_to_CGN_3SN6 = _path.join(tmpdir,_path.basename(test_filenames.CGN_3SN6))
-            #path_to_PDB_3SN6 = _path.join(tmpdir,_path.basename(test_filenames.pdb_3SN6))
-            shutil.copy(test_filenames.CGN_3SN6, tmpdir)
-            shutil.copy(test_filenames.pdb_3SN6, tmpdir)
+            path_to_GNAS2_HUMAN = _path.join(tmpdir,_path.basename(test_filenames.GNAS2_HUMAN))
+            shutil.copy(test_filenames.GNAS2_HUMAN, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
                 a = parser_for_CGN_overview()
-                a = a.parse_args([path_to_CGN_3SN6])
+                a = a.parse_args([path_to_GNAS2_HUMAN])
                 a.__setattr__("topology",test_filenames.top_pdb)
                 cli._fragment_overview(a, "CGN")
 
@@ -865,7 +857,7 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
 
     def test_AAs(self):
         a = parser_for_CGN_overview()
-        a = a.parse_args([test_filenames.CGN_3SN6,
+        a = a.parse_args([test_filenames.GNAS2_HUMAN,
                           ])
         a.__setattr__("AAs","LEU394,LEU395")
         a.__setattr__("topology",test_filenames.top_pdb)

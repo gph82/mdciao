@@ -179,28 +179,28 @@ def _PDB_finder(PDB_code, local_path='.',
     return _geom, return_file
 
 
-def _CGN_finder(identifier,
-                format='CGN_%s.txt',
+def _CGN_finder(uniprot_name,
+                format='%s.txt',
                 local_path='.',
                 try_web_lookup=True,
                 verbose=True,
                 dont_fail=False,
                 write_to_disk=False):
-    r"""Provide a four-letter PDB code and look up (first locally, then online)
+    r"""Provide a Uniprot name and look up (first locally, then online)
     for a file that contains the Common-Gprotein-Nomenclature (CGN)
     consensus labels and return them as a :obj:`~pandas.DataFrame`. See
     https://www.mrc-lmb.cam.ac.uk/CGN/ for more info on this nomenclature
-    and :obj:`_finder_writer` for what's happening under the hood
+    and `_finder_writer` for what's happening under the hood
 
 
     Parameters
     ----------
-    identifier : str
-        Typically, a PDB code
+    uniprot_name : str
+        Uniprot Name, e.g "GNAS2_HUMAN"
     format : str
-        A format string that turns the :obj:`identifier`
+        A format string that turns the `uniprot_name`
         into a filename for local lookup, in case the
-        user has custom filenames, e.g. 3SN6_consensus.txt
+        user has custom filenames, e.g. GNAS2_HUMAN_consensus.txt
     local_path : str
         The local path to the local consensus file
     try_web_lookup : bool, default is True
@@ -224,14 +224,14 @@ def _CGN_finder(identifier,
        Nature 524, 173–179 (2015)
       `<https://doi.org/10.1038/nature14663>`
     """
-    file2read = format % identifier
+    file2read = format % uniprot_name
     file2read = _path.join(local_path, file2read)
     rep = lambda istr: [istr.replace(" ", "") if isinstance(istr, str) else istr][0]
     # using  delim_whitespace=True splits "Sort Number" in two keys, not feasible to generalize ATM
     local_lookup_lambda = lambda file2read: _read_csv(file2read, delimiter='\t').applymap(rep)
 
     web_address = "www.mrc-lmb.cam.ac.uk"
-    url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, identifier)
+    url = "https://%s/CGN/lookup_results/%s.txt" % (web_address, uniprot_name)
     web_lookup_lambda = local_lookup_lambda
 
     print("Using CGN-nomenclature, please cite")
@@ -499,12 +499,13 @@ class LabelerConsensus(object):
          * Class-C: Pin
          * Class-F: Wang
      * :obj:`LabelerCGN` for Common-Gprotein-nomenclature (CGN)
+     * :obj:`LabelerKLIFS` for Kinase-Ligand Interaction notation of the 85 pocket-residues of kinases
 
     The consensus labels are abbreviated to 'conlab' throughout
 
     """
 
-    def __init__(self, ref_PDB=None, **PDB_finder_kwargs):
+    def __init__(self, **PDB_finder_kwargs):
         r"""
 
         Parameters
@@ -519,18 +520,8 @@ class LabelerConsensus(object):
         try_web_lookup: bool, default is True
             If the local files are not found, try automatically a web lookup at
              * www.mrc-lmb.cam.ac.uk (for CGN)
-             * rcsb.org (for the PDB)
 
         """
-        self._geom_PDB = None
-        self._ref_top = None
-        self._ref_PDB = ref_PDB
-        if ref_PDB is not None:
-            self._geom_PDB, self._PDB_file = _PDB_finder(ref_PDB,
-                                                         **PDB_finder_kwargs,
-                                                         )
-            if _path.exists(self._PDB_file):
-                print("%s found locally."%self._PDB_file)
         self._conlab2AA = {val: key for key, val in self.AA2conlab.items()}
 
         self._fragment_names = list(self.fragments.keys())
@@ -541,23 +532,6 @@ class LabelerConsensus(object):
 
         self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
         self._conlab2idx = {lab: idx for idx, lab in enumerate(self.idx2conlab) if lab is not None}
-
-    @property
-    def ref_PDB(self):
-        r""" PDB code used for instantiation"""
-        return self._ref_PDB
-
-    @property
-    def geom(self):
-        r""" :obj:`~mdtraj.Trajectory` with with what was found
-        (locally or online) using :obj:`ref_PDB`"""
-        return self._geom_PDB
-
-    @property
-    def top(self):
-        r""" :obj:`~mdtraj.Topology` with with what was found
-                (locally or online) using :obj:`ref_PDB`"""
-        return self._geom_PDB.top
 
     @property
     def seq(self):
@@ -1173,8 +1147,9 @@ class LabelerCGN(LabelerConsensus):
     See https://www.mrc-lmb.cam.ac.uk/CGN/faq.html for more info.
     """
 
-    def __init__(self, PDB_input,
+    def __init__(self, uniprot_name,
                  local_path='.',
+                 format="%s.txt",
                  try_web_lookup=True,
                  verbose=True,
                  write_to_disk=None):
@@ -1182,29 +1157,21 @@ class LabelerCGN(LabelerConsensus):
 
         Parameters
         ----------
-        PDB_input: str
-            The PDB-file to be used. For compatibility reasons, there's different use-cases.
+        uniprot_name: str
+            UniProt name, e.g. 'GNAS2_HUMAN'. Please note the difference between UniProt Accession Code
+            and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_.
+            For compatibility reasons, there's different use-cases.
 
             * Full path to an existing file containing the CGN nomenclature,
-            e.g. '/abs/path/to/some/dir/CGN_ABCD.txt' (or ABCD.txt). Then this happens:
+            e.g. '/abs/path/to/some/dir/GNAS2_HUMAN.txt' (or GNAS2_HUMAN.xlsx). Then this happens:
                 * :obj:`local_path` gets overridden with '/abs/path/to/some/dir/'
-                * a PDB four-letter-code is inferred from the filename, e.g. 'ABCD'
-                * a file '/abs/path/to/some/dir/ABCD.pdb(.gz)' is looked for
-                * if not found and :obj:`try_web_lookup` is True, then
-                  'ABCD' is looked up online in the PDB rcsb database
+                * if none of these files can be found and :obj:`try_web_lookup` is True, then
+                  'GNAS2_HUMAN' is looked up online in the CGN database
 
-            * Full path to an existing PDB-file, e.g.
-              '/abs/path/to/some/dir/ABCD.pdb(.gz)'. Then this happens:
-                * :obj:`local_path` gets overridden with '/abs/path/to/some/dir/'
-                * a file '/abs/path/to/some/dir/CGN_ABCD.txt is looked for
-                * if not found and :obj:`try_web_lookup` is True, then
-                  'ABCD' is looked up online in the CGN database
-
-            * Four letter code, e.g. 'ABCD'. Then this happens:
-                * look for the files '3SN6.pdb' and 'CGN_3SN6.txt' in :obj:`local_path`
-                * if one or both of these files cannot be found there,
-                  look up in their respective online databases (if
-                  :obj:`try_web_lookup` is True)
+            * Uniprot Accession Code, e.g. 'GNAS2_HUMAN'. Then this happens:
+                * look for the files 'GNAS2_HUMAN.txt' or 'GNAS2_HUMAN.xlsx' in `local_path`
+                * if none of these files can be found and :obj:`try_web_lookup` is True, then
+                  'GNAS2_HUMAN' is looked up online in the CGN database
 
         Note
         ----
@@ -1214,35 +1181,36 @@ class LabelerCGN(LabelerConsensus):
 
         local_path: str, default is '.'
             The local path where these files exist, if they exist
-
+        format : str, default is "%s.txt"
+            How to construct a filename out of
+            `uniprot_name`
         try_web_lookup: bool, default is True
             If the local files are not found, try automatically a web lookup at
-            * www.mrc-lmb.cam.ac.uk (for CGN)
-            * rcsb.org (for the PDB)
+            * www.mrc-lmb.cam.ac.uk
         """
 
         self._nomenclature_key = "CGN"
 
         # TODO see fragment_overview...are there clashes
-        if _path.exists(PDB_input):
-            local_path, basename = _path.split(PDB_input)
-            PDB_input = _path.splitext(basename)[0].replace("CGN_", "")
+        if _path.exists(uniprot_name):
+            local_path, basename = _path.split(uniprot_name)
+            uniprot_name = _path.splitext(basename)[0]#.replace("CGN_", "")
             # TODO does the check need to have the .txt extension?
             # TODO do we even need this check?
-            # assert len(PDB_input) == 4 and "CGN_%s.txt" % PDB_input == basename
-        self._dataframe, self._tablefile = _CGN_finder(PDB_input,
+        self._dataframe, self._tablefile = _CGN_finder(uniprot_name,
                                                        local_path=local_path,
                                                        try_web_lookup=try_web_lookup,
                                                        verbose=verbose,
-                                                       write_to_disk=write_to_disk)
+                                                       write_to_disk=write_to_disk,
+                                                       format=format)
         # The title of the column with this field varies between CGN and GPCR
         AAresSeq_key = [key for key in list(self.dataframe.keys()) if
                         key.lower() not in [self._nomenclature_key.lower(), "Sort number".lower()]]
         assert len(AAresSeq_key) == 1
         self._AAresSeq_key = AAresSeq_key
 
-        self._AA2conlab = {key: self._dataframe[self._dataframe[PDB_input] == key][self._nomenclature_key].to_list()[0]
-                           for key in self._dataframe[PDB_input].to_list()}
+        self._AA2conlab = {key: self._dataframe[self._dataframe[uniprot_name] == key][self._nomenclature_key].to_list()[0]
+                           for key in self._dataframe[uniprot_name].to_list()}
 
         self._fragments = _defdict(list)
         for ires, key in self.AA2conlab.items():
@@ -1252,7 +1220,7 @@ class LabelerCGN(LabelerConsensus):
                 print(key)
             # print(key,new_key)
             self._fragments[new_key].append(ires)
-        LabelerConsensus.__init__(self, ref_PDB=PDB_input,
+        LabelerConsensus.__init__(self,
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
@@ -1327,7 +1295,6 @@ class LabelerGPCR(LabelerConsensus):
     """
 
     def __init__(self, uniprot_name,
-                 ref_PDB=None,
                  GPCR_scheme="display_generic_number",
                  local_path=".",
                  format="%s.xlsx",
@@ -1361,11 +1328,6 @@ class LabelerGPCR(LabelerConsensus):
             'GPCRdb(C)', 'GPCRdb(F)', 'GPCRdb(D)',
             'Oliveira', 'BS', but not all are guaranteed
             to work
-        ref_PDB : str, default is None
-            If passed, this structure will be downloaded
-            and attached as an :obj:`~mdtraj.Trajectory`
-            object to this to this :obj:`LabelerGPCR` object
-            as its :obj:`LabelerGPCR.geom` attribute
         local_path : str, default is "."
             Since the :obj:`uniprot_name` is turned into
             a filename in case it's a descriptor,
@@ -1409,7 +1371,7 @@ class LabelerGPCR(LabelerConsensus):
         self._AA2conlab, self._fragments = _table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key,
                                                                  return_fragments=True)
         # TODO can we do this using super?
-        LabelerConsensus.__init__(self, ref_PDB,
+        LabelerConsensus.__init__(self,
                                   local_path=local_path,
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
@@ -2597,6 +2559,7 @@ _CGN_fragments = ['G.HN',
                   'G.S1',
                   'G.s1h1',
                   'G.H1',
+                  'G.h1ha',
                   'H.HA',
                   'H.hahb',
                   'H.HB',

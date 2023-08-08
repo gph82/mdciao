@@ -245,7 +245,7 @@ def _parser_add_nomenclature(parser):
                              'Default is False',
                         default=False)
     parser.set_defaults(save_nomenclature_files=False)
-    parser.add_argument("-GGN","--CGN_PDB", type=str, help="PDB code for a consensus G-protein nomenclature", default='None')
+    parser.add_argument("-CGN","--CGN_uniprot", type=str, help="Uniprot name, e.g. 'GNAS2_HUMAN' for a consensus G-protein nomenclature", default='None')
 
 def _parser_add_graphic_ext(parser):
     parser.add_argument('-gx','--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
@@ -737,11 +737,13 @@ def parser_for_CGN_overview():
                                                  " nomenclature, optionally mapping it on an input topology. "
                                                  "The CGN nomenclature can be read locally or over the network" )
 
-    parser.add_argument("PDB_code_or_txtfile", type=str,
+    parser.add_argument("uniprot_name_or_txtfile", type=str,
                         help="Get CGN definitions from here. If a file is not "
                              "found locally, there will be a web-lookup "
-                             "in a database using a PDB code, "
-                             "e.g. 3SN6. see www.mrc-lmb.cam.ac.uk")
+                             "in a database using a Uniprot name, "
+                             "e.g. 'GNAS2_HUMAN'. See www.mrc-lmb.cam.ac.uk",
+                        action=Populate_input_Action
+                        )
     parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
 
     _parser_add_write_to_disk(parser)
