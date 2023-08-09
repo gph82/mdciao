@@ -798,9 +798,9 @@ class LabelerConsensus(object):
                     print("Iteration ", ii)
                     _mdcfrg.print_fragments(consfrags, top)
                 for frag_idx, (confraglab, confragidxs) in enumerate(consfrags.items()):
-                    confrag_is_subfragment = _mdcfrg.check_if_subfragment(confragidxs, confraglab, fragments, top,
-                                                                          map_conlab=topidx2conlab,
-                                                                          prompt=False)
+                    confrag_is_subfragment, _, cand_frags = _mdcfrg.check_if_fragment_clashes(confragidxs, confraglab, fragments, top,
+                                                                               map_conlab=alignment_column2conlab,
+                                                                               prompt=False)
                     if debug:
                         print(ii, confraglab, confrag_is_subfragment)
                     if not confrag_is_subfragment:
@@ -1033,7 +1033,7 @@ class LabelerConsensus(object):
             An interactive prompt will ask the user which fragments to
             keep in case of clashes.
 
-            Check :obj:`check_if_subfragment` for more info
+            Check :obj:`check_if_fragment_clashes` for more info
         min_hit_rate : float, default is .5
             With big topologies, like a receptor-Gprotein system,
             the "brute-force" alignment method
@@ -1085,7 +1085,7 @@ class LabelerConsensus(object):
 
         for ii, (key, res_idxs) in enumerate(defs.items()):
             if fragments is not None:
-                new_defs[key] = _mdcfrg.check_if_subfragment(res_idxs, key, fragments, top, map_conlab=map_conlab)
+                _, new_defs[key], _ = _mdcfrg.check_if_fragment_clashes(res_idxs, key, fragments, top, map_conlab=map_conlab)
 
         for key, res_idxs in new_defs.items():
             defs[key] = res_idxs
@@ -2747,10 +2747,10 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True, fragments
     verbose : bool, default is True
     fragments : iterable of ints, default is None
         The purpose of passing other fragment definitions
-         here is that they **might** be used to
+         here is that they **might** be used
          to check whether obtained consensus fragments clash
          with these definitions or not. This is done by calling
-         :obj:`~mdciao.fragments.check_if_subfragment`, check
+         :obj:`~mdciao.fragments.check_if_fragment_clashes`, check
          the docs there to find out what 'clash' means).
          The check will be carried out by
          :obj:`mdciao.nomenclature.LabelerConsensus.aligntop`

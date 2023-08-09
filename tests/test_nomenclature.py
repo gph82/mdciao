@@ -655,7 +655,7 @@ class Test_aligntop_fragment_clashes(unittest.TestCase):
 
         The missing H220 has broken the Gprot (in the resSeq) heuristic s.t. G.S3 will always be 
         "broken" across fragments, _in all optimal aligments_, but that is just because the
-        check_if_subfragment check, with the resSeq heuristic, is really hard to pass.
+        check_if_fragment_clashes check, with the resSeq heuristic, is really hard to pass.
         
         However, resSeq seems to be the right heuristic to pick here, because it's better to 
         
