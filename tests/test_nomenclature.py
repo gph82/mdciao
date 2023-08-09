@@ -864,6 +864,11 @@ class Test_sort_consensus_labels(unittest.TestCase):
         _np.testing.assert_array_equal(
             ["2.50", "3.50", "H8.1", "H8.10", "G.H1.10", "H.HA.20", 'a.l.85', 'αC.25', "V34", "G.H1.1", "H.HA.10", 'αD.55'],
             sorted)
+    def test_GPCR(self):
+        sorted = nomenclature._sort_GPCR_consensus_labels(["TM3", "TM2"])
+        _np.testing.assert_array_equal(
+            ["TM2","TM3"],
+            sorted)
 
     def test_GPCR_dont_append(self):
         sorted = nomenclature._sort_GPCR_consensus_labels(self.tosort, append_diffset=False)
