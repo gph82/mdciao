@@ -112,7 +112,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
         print(istr, **print_kwargs)
 
 @_kwargs_subs(print_frag)
-def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
+def print_fragments(fragments, top, max_lines=40, just_return_string=False, **print_frag_kwargs):
     """Inform about fragments, very thinly wrapping around :obj:`print_frag`
 
     Parameters
@@ -123,6 +123,9 @@ def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
     max_lines : int, default is 40
         Maximum number of lines to print. E.g. if 40,
         first 20 and last 20 will be printed
+    just_return_string : bool, default is False
+        Whether to actually print the fragments
+        or just return the formatted string
     print_frag_kwargs : dict
         Optional keyword args for :obj:`print_frag`,
         as listed below
@@ -148,7 +151,8 @@ def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
     n = _np.round(max_lines/2).astype(int)
     if n * 2 < len(frag_list):
         frag_list = frag_list[:n] + ["...[long list: omitted %u items]..." % (len(frag_list) - 2 * n)] + frag_list[-n:]
-    print("\n".join(frag_list))
+    if not just_return_string:
+        print("\n".join(frag_list))
     return frag_list
 
 
