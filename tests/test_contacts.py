@@ -2243,6 +2243,39 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _np.testing.assert_equal(len(ifig.axes), 2 + 2 )  # 2 + 2 x twiny, no N_ctcs bc there's no cutoff
         _plt.close("all")
 
+    def test_plot_timedep_ctcs_sort_by_freq(self):
+        # We can test the correct order using the labels, which get genarated internally and
+        # are uniquelly associated with the ContactPair
+
+        # reverse the ContactPairs s.t. the frequences are in ascending (unusual) order
+        CG =  contacts.ContactGroup(self.CG_cp1_cp2_both_w_anchor_and_frags._contacts[::-1],
+                                    neighbors_excluded=0)
+
+        figs = CG.plot_timedep_ctcs(ctc_cutoff_Ang=2)
+        # text labels look like this, we can grab the freqs from there
+        # '0$^{\\mathrm{fragA}}$-2$^{\\mathrm{fragC}}$ (20%)',
+        # '0$^{\\mathrm{fragA}}$-1$^{\\mathrm{fragB}}$ (40%)'
+        ifig = figs[0]
+        _np.testing.assert_equal(len(ifig.axes), 2 + 2 + 1 + 1)  # 2 + 2 x twiny + N_ctcs + N_ctcs_twiny
+
+        freqs = []
+        for ax in ifig.axes:
+            for txt in ax.texts:
+                freqs.append(txt.get_text().split()[-1].strip("()%"))
+        self.assertListEqual(freqs,['20','40']) #<- the freqs didn't get sorted
+
+        figs = CG.plot_timedep_ctcs(ctc_cutoff_Ang=2, sort_by_freq=True)
+        ifig = figs[0]
+        freqs = []
+        for ax in ifig.axes:
+            for txt in ax.texts:
+                freqs.append(txt.get_text().split()[-1].strip("()%"))
+        self.assertListEqual(freqs, ['40', '20'])  # <- the freqs got sorted in descending order
+
+        #ifig.savefig("test.png")
+        _np.testing.assert_equal(len(ifig.axes), 2 + 2 + 1 + 1 )  # 2 + 2 x twiny + N_ctcs + N_ctcs_twiny
+        _plt.close("all")
+
     def test_plot_timedep_ctcs_with_valid_cutoff_no_pop(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
         figs = CG.plot_timedep_ctcs(ctc_cutoff_Ang=1)

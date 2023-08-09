@@ -4527,8 +4527,9 @@ class ContactGroup(object):
 
         return jax
 
-    @_kwargs_subs(ContactPair.plot_timetrace)
+    @_kwargs_subs(ContactPair.plot_timetrace, exclude=["ctc_cutoff_Ang"])
     def plot_timedep_ctcs(self, panelheight=3, plot_N_ctcs=True, pop_N_ctcs=False, skip_timedep=False,
+                          ctc_cutoff_Ang = None, sort_by_freq=False,
                           **plot_timetrace_kwargs):
         r"""
         For each trajectory, plot the time-traces of the all the contacts
@@ -4554,6 +4555,17 @@ class ContactGroup(object):
             Skip plotting the individual timetraces and plot only
             the time trace of overall formed contacts. This sets
             pop_N_ctcs to True internally
+        ctc_cutoff_Ang : float, default is None,
+            The cutoff to use, in Angstrom
+        sort_by_freq : bool, default is False
+            Sort by descending frequency. Default
+            is to plot in the same order
+            as :obj:`ContactGroup._contacts`,
+            which will be in descending order
+            of frequencies with the cutoff used
+            originally to compute this :obj:`ContactGroup`
+            Only works if a `ctc_cutoff_Ang`
+            is provided.
         plot_timetrace_kwargs: dict
             Optional parameters for :obj:`mdciao.contacts.ContactPair.plot_timetrace`,
             which are documented below:
@@ -4578,8 +4590,11 @@ class ContactGroup(object):
 
 
         """
-        valid_cutoff = "ctc_cutoff_Ang" in plot_timetrace_kwargs.keys() \
-                       and plot_timetrace_kwargs["ctc_cutoff_Ang"] > 0
+        valid_cutoff = ctc_cutoff_Ang is not None and ctc_cutoff_Ang > 0
+        order = _np.arange(self.n_ctcs)
+        if valid_cutoff and sort_by_freq is True:
+            order = _np.argsort(self.frequency_per_contact(ctc_cutoff_Ang))[::-1]
+
 
         myax = None
         figs_to_return = []
@@ -4611,8 +4626,9 @@ class ContactGroup(object):
             axes_iter = iter(myax)
 
             # Plot individual contacts
-            for ictc in self._contacts:
+            for ictc in _np.array(self._contacts)[order]:
                 ictc.plot_timetrace(next(axes_iter),
+                                    ctc_cutoff_Ang=ctc_cutoff_Ang,
                                     **plot_timetrace_kwargs
                                     )
 
@@ -4624,7 +4640,6 @@ class ContactGroup(object):
                     ax_N_ctcs = next(axes_iter)
             else:
                 ax_N_ctcs = None
-            ctc_cutoff_Ang = plot_timetrace_kwargs.pop("ctc_cutoff_Ang")
             for pkey in ["shorten_AAs", "ylim_Ang"]:
                 try:
                     plot_timetrace_kwargs.pop(pkey)
