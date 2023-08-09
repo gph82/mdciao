@@ -1776,7 +1776,7 @@ class ContactPair(object):
     def plot_timetrace(self,
                        iax,
                        color_scheme=None,
-                       ctc_cutoff_Ang=0,
+                       ctc_cutoff_Ang=None,
                        switch_off_Ang=None,
                        n_smooth_hw=0,
                        dt=1,
@@ -1796,8 +1796,9 @@ class ContactPair(object):
         color_scheme : list, default is None
             Pass a list of colors, each one should be
             understandable by :obj:`matplotlib.colors.is_color_like`
-        ctc_cutoff_Ang : float, default is 0,
-            The cutoff to use, in Angstrom
+        ctc_cutoff_Ang : float or None, default is None
+            The cutoff to use, in Angstrom. If None,
+            don't use any cutoff.
         n_smooth_hw: int, default is 0
             Size, in frames, of half the window size of the
             smoothing window
@@ -1826,6 +1827,8 @@ class ContactPair(object):
         """
         if color_scheme is None:
             color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
+        valid_cutoff = ctc_cutoff_Ang is not None and ctc_cutoff_Ang > 0
+
         color_scheme = _color_tiler(color_scheme, self.n.n_trajs )
         iax.set_ylabel('D / $\\AA$', rotation=90)
         if isinstance(ylim_Ang, (int, float)):
@@ -1839,7 +1842,7 @@ class ContactPair(object):
                                                                     self.labels.trajstrs)):
 
             ilabel = '%s' % trjlabel
-            if ctc_cutoff_Ang > 0:
+            if valid_cutoff:
                 ilabel += ' (%u%%)' % (self.frequency_per_traj(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)[traj_idx] * 100)
 
             _mdcplots.plot_w_smoothing_auto(iax, ictc_traj * 10, ilabel, color_scheme[traj_idx], x=itime * dt,
@@ -1853,7 +1856,7 @@ class ContactPair(object):
         if shorten_AAs:
             ctc_label = self.labels.w_fragments_short_AA
         ctc_label = _mdcu.str_and_dict.latex_superscript_fragments(ctc_label)
-        if ctc_cutoff_Ang > 0:
+        if valid_cutoff:
             ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang) * 100)
         #TODO implement the iax.transAxes everywhere a fuzzy axis position is computed (flareplot?)
         iax.text(
@@ -1861,10 +1864,10 @@ class ContactPair(object):
             ctc_label,
             transform=iax.transAxes,
             ha='center')
-        if ctc_cutoff_Ang > 0:
+        if valid_cutoff:
             iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
 
-        if switch_off_Ang is not None:
+        if valid_cutoff and switch_off_Ang is not None:
             iax.axhline(ctc_cutoff_Ang+switch_off_Ang, color='k', ls='--', zorder=10)
 
         iax.set_xlabel('t / %s' % _mdcu.str_and_dict.replace4latex(t_unit))
