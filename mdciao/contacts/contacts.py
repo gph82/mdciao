@@ -3411,7 +3411,7 @@ class ContactGroup(object):
                                                              index=False
                                                              )
 
-        writer.save()
+        writer.close()
 
     def frequency_str_ASCII_file(self, idf,
                                  ascii_file=None):
@@ -6663,7 +6663,7 @@ def _linear_switchoff(d, cutoff, switch_off):
     res = m * _np.array(d) + b
     res[d < cutoff] = 1
     res[d > (cutoff + switch_off)] = 0
-    return _np.array(res,dtype=_np.float)
+    return _np.array(res,dtype=float)
 
 def _quadratic_switchoff(d, cutoff, switch_off):
     r"""
@@ -6688,7 +6688,7 @@ def _quadratic_switchoff(d, cutoff, switch_off):
     res = k*(d-cutoff)**2+c
     res[d < cutoff] = 1
     res[d > (cutoff + switch_off)] = 0
-    return _np.array(res,dtype=_np.float)
+    return _np.array(res,dtype=float)
 
 def _sum_ctc_freqs_by_atom_type(atom_pairs, counts):
     r"""

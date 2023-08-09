@@ -427,7 +427,7 @@ class Test_parse_residue_and_fragments(TestCase):
                      [20, 21, 50]]
         res_idxs_as_fragments, _, _  = _utils._parse_residue_and_fragments(self.res_idx_pairs, fragments=fragments)
         np.testing.assert_equal(len(res_idxs_as_fragments), len(fragments))
-        np.testing.assert_array_equal(res_idxs_as_fragments, fragments)
+        self.assertListEqual(res_idxs_as_fragments, fragments)
 
     def test_fragments_sparse_residues(self):
         fragments = [[0],
@@ -438,7 +438,7 @@ class Test_parse_residue_and_fragments(TestCase):
         res_idxs_as_fragments, _, _  = _utils._parse_residue_and_fragments(self.res_idx_pairs, sparse_residues=True,
                                                                     fragments=fragments)
         np.testing.assert_equal(len(res_idxs_as_fragments), 2)
-        np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4], [10, 11, 12, 15]])
+        self.assertListEqual(res_idxs_as_fragments, [[1, 2, 3, 4], [10, 11, 12, 15]])
 
     def test_fragments_sparse_residues_w_anchor_and_mute(self):
         fragments = [[0],
@@ -501,9 +501,9 @@ class Test_parse_residue_and_fragments(TestCase):
                                                                     fragments=fragments,
                                                                     sparse_fragments=True)[0]
         np.testing.assert_equal(len(res_idxs_as_fragments), 2)
-        np.testing.assert_array_equal(res_idxs_as_fragments, [[1, 2, 3, 4, 5],
-                                                              [10, 11, 12, 13, 14, 15]]
-                                      )
+        self.assertListEqual(res_idxs_as_fragments, [[1, 2, 3, 4, 5],
+                                                     [10, 11, 12, 13, 14, 15]]
+                             )
 
 class Test_Aura(TestCase):
 
@@ -611,7 +611,6 @@ class Test_coarse_grain_freqs_by_frag(TestCase):
         ref_mat[0,1]=ref_mat[1,0]=3
         ref_mat[0,2]=ref_mat[2,0]=4 #since the second pair didn't get summed
         ref_mat[1,2]=ref_mat[2,1]=6
-
         mat = _utils.coarse_grain_freqs_by_frag(freqs, pairs, frags, check_if_subset=False)
         np.testing.assert_array_equal(mat, ref_mat)
 

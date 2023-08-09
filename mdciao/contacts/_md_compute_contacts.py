@@ -28,7 +28,7 @@
 
 #    The modifications consist in including the indices
 #    of the closest atom-pairs in the returned values. The
-#    modified lines are 212, 243, 244, and 255
+#    modified lines are 141-143, 260, 264, 265, and 276
 ##############################################################################
 
 
@@ -62,6 +62,11 @@
 # http://oss-watch.ac.uk/resources/lgpl
 #https://www.gnu.org/licenses/gpl-faq.html#AllCompatibility
 
+##############################################################################
+# Imports
+##############################################################################
+
+from __future__ import print_function, division
 import numpy as _np
 import mdtraj as _md
 from mdtraj.utils import ensure_type
@@ -69,6 +74,11 @@ import itertools
 from mdtraj.utils.six import string_types
 from mdtraj.utils.six.moves import xrange
 from mdtraj.core import element
+
+##############################################################################
+# Code
+##############################################################################
+
 def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonprotein=True, periodic=True,
                      soft_min=False, soft_min_beta=20):
     """Compute the distance between pairs of residues in a trajectory.
@@ -128,12 +138,15 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
         output `distances` may not match up with the indexing of the input
         `contacts`. But the indexing of `distances` *will* match up with
         the indexing of `residue_pairs`
+    atom_pairs :  np.ndarray, shape=(n_pairs, 2), dtype=int
+        Each row of this return value gives the indices of the atoms
+        involved in the contact.
 
     Examples
     --------
     >>> # To compute the contact distance between residue 0 and 10 and
     >>> # residues 0 and 11
-    >>> _md.compute_contacts(t, [[0, 10], [0, 11]])
+    >>> md.compute_contacts(t, [[0, 10], [0, 11]])
 
     >>> # the itertools library can be useful to generate the arrays of indices
     >>> group_1 = [0, 1, 2]
@@ -141,7 +154,7 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
     >>> pairs = list(itertools.product(group_1, group_2))
     >>> print(pairs)
     [(0, 10), (0, 11), (1, 10), (1, 11), (2, 10), (2, 11)]
-    >>> _md.compute_contacts(t, pairs)
+    >>> md.compute_contacts(t, pairs)
 
     See Also
     --------
@@ -173,8 +186,8 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
             raise ValueError('No acceptable residue pairs found')
 
     else:
-        residue_pairs = ensure_type(_np.asarray(contacts), dtype=_np.int, ndim=2, name='contacts',
-                                    shape=(None, 2), warn_on_cast=False)
+        residue_pairs = ensure_type(_np.asarray(contacts), dtype=int, ndim=2, name='contacts',
+                               shape=(None, 2), warn_on_cast=False)
         if not _np.all((residue_pairs >= 0) * (residue_pairs < traj.n_residues)):
             raise ValueError('contacts requests a residue that is not in the permitted range')
 
@@ -224,7 +237,12 @@ def compute_contacts(traj, contacts='all', scheme='closest-heavy', ignore_nonpro
                                   for residue in traj.topology.residues]
         elif scheme == 'sidechain-heavy':
             # then remove the hydrogens from the above list
-            residue_membership = [[atom.index for atom in residue.atoms if atom.is_sidechain and not (atom.element == element.hydrogen)]
+            if 'GLY' in [residue.name for residue in traj.topology.residues]:
+              import warnings
+              warnings.warn('selected topology includes at least one glycine residue, which has no heavy atoms in its sidechain. The distances involving glycine residues '
+                            'will be computed using the sidechain hydrogen instead.')
+            residue_membership = [[atom.index for atom in residue.atoms if atom.is_sidechain and not (atom.element == element.hydrogen)] if not residue.name == 'GLY'
+                                  else [atom.index for atom in residue.atoms if atom.is_sidechain]
                                   for residue in traj.topology.residues]
 
         residue_lens = [len(ainds) for ainds in residue_membership]

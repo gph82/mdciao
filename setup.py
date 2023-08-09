@@ -1,4 +1,4 @@
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 from setuptools import setup, find_packages
 import os
 os.environ["BEZIER_NO_EXTENSION"]="true" # Check https://github.com/dhermes/bezier/releases/tag/2020.2.3
@@ -51,10 +51,14 @@ setup(
                     "astunparse<1.6.3; python_version=='3.8'",
                     "pandas",
                     "matplotlib",
+                    "matplotlib<=3.5.3; python_version<'3.8'",
+                    "scipy<=1.9.0; python_version<='3.8'",
                     "scipy",
                     "joblib",
                     "openpyxl",
                     "biopython>=1.77",
+                    "ipython<=8.12; python_version<='3.8'",
+                    "ipython==7.*; python_version=='3.7'",
                     "ipython",
                     "XlsxWriter",
                     "requests",

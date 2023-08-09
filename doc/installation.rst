@@ -47,12 +47,15 @@ Installation from source
 
 * If you are not familiar with Python environments, please read this `Python interpreter and environment`_ note before continuing.
 
-* ``cd`` to the (unzipped) ``mdciao`` directory and execute the ``setup.py`` file::
+* ``cd`` to the (unzipped) ``mdciao`` directory and `install from the local source files <https://packaging.python.org/en/latest/tutorials/installing-packages/#installing-from-a-local-src-tree>`_::
 
-   python setup.py install
+   python3 -m pip install .
 
+  This should install ``mdciao`` along with all its dependencies. Also, you can use: ::
 
-This should install ``mdciao`` along with all its dependencies. Optionally using `develop` instead of `install` means that the ``mdciao`` in your Python path points directly to the sources directory, s.t. changes in the source take effect immediately without re-installing
+   python3 -m pip install -e .
+
+  Adding the option `-e` or `--editable`, means that the ``mdciao`` in your Python path points directly to the sources directory, s.t. changes in the source take effect immediately without re-installing
 
 .. _warning:
 .. warning::
@@ -80,7 +83,7 @@ Operating systems and Python versions
 So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
 
 .. note::
-MacOs CI tests sometimes fail with (semi)random segmentation faults, in particular when using mdtraj and compute_dssp, but are in principle sane. (`example of recently passed test <https://github.com/gph82/mdciao/actions/runs/2648833037>`_, `example of recently failed tests <https://github.com/gph82/mdciao/runs/7272124587?check_suite_focus=true>`_). More the details on the segmentation error (139 and 11) when `calling mdtraj.dsssp can be found here <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_.
+ MacOs CI tests sometimes fail with (semi)random segmentation faults, in particular when using mdtraj and compute_dssp, but are in principle sane. (`example of recently passed test <https://github.com/gph82/mdciao/actions/runs/2648833037>`_, `example of recently failed tests <https://github.com/gph82/mdciao/runs/7272124587?check_suite_focus=true>`_). More the details on the segmentation error (139 and 11) when `calling mdtraj.dsssp can be found here <https://github.com/gph82/mdciao/runs/2415051993?check_suite_focus=true>`_.
 
 
 Python interpreter and environment

@@ -2036,7 +2036,7 @@ def compare(datasets, graphic_ext=".pdf", output_desc="freq_comparison", pop=Fal
                                                                startrow=offset,
                                                                startcol=0,
                                                                )
-    writer.save()
+    writer.close()
     print(fname_excel)
     if pop:
         myfig.tight_layout()

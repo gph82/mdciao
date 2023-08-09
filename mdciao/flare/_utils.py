@@ -931,6 +931,7 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse_residues=False,
     Returns
     -------
     residues_as_fragments, anchor_fragments, mute_fragments
+    residues_as_fragmetns : list of lists
     """
     res_idxs = _np.unique(res_idxs_pairs)
     if sparse_fragments:
@@ -981,7 +982,7 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse_residues=False,
         re_indexed.append(am_frags)
     anchor_fragments, mute_fragments = re_indexed
 
-    return residues_as_fragments, anchor_fragments, mute_fragments
+    return [list(rr) for rr in residues_as_fragments], anchor_fragments, mute_fragments
 
 
 def fontsize_get(iax):
