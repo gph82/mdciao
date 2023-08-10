@@ -1052,8 +1052,12 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         for ii, rr in enumerate(res):
             __, psi = _futils.cart2pol(rr[0],rr[1])
             x, y = _futils.pol2cart(1 - .1 / 2, psi)
+            if _np.sin(psi) < 0:
+                psi += _np.pi/2
+            else:
+                psi -= _np.pi/2
             sigma_labels.append(iax.text(x, y, sigma_values[order[ii]],
-                     rotation_mode="anchor", ha="center", va="center", rotation=rr[-1],
+                     rotation_mode="anchor", ha="center", va="center", rotation=psi*180/_np.pi,
                                          bbox={"boxstyle": "square,pad=0.0", "fc": "white", "ec": "none", "alpha": .5}))
         _futils.un_overlap_via_fontsize(sigma_labels, fac=.90)
 
