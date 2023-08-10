@@ -203,7 +203,9 @@ def plot_unified_freq_dicts(freqs,
           that appears in the contact labels, e.g. "30" if
           the label is "GLU30@3.50-GDP". You can use this
           to order by resSeq if the AA to sort by is the
-          first one of the pair.
+          first one of the pair. Please note, all contact
+          labels need to have at least one number in them,
+          things like "GDP-MG" won't work with sort_by="numeric".
         * list of contact-labels : sort in the order established
           by this list. What will actually be plotted is the
           intersection of this list and the available
@@ -311,12 +313,21 @@ def plot_unified_freq_dicts(freqs,
         dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])*len(freqs_by_sys_by_ctc)
         dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
         dicts_values_to_sort["keep"][key] = len(all_ctc_keys)-ii+lower_cutoff_val # trick to keep the same logic
-        dicts_values_to_sort["numeric"][key] = _mdcu.str_and_dict.intblocks_in_str(key)[0]
+        try:
+            dicts_values_to_sort["numeric"][key] = _mdcu.str_and_dict.intblocks_in_str(key)[0]
+        except:
+            if sort_by=="numeric":
+                raise ValueError(f"You only can use sort_by='{sort_by}' if all contact labels contain numbers. "
+                                 f"'{key}' does not. Use another 'sort_by' method.")
     if isinstance(sort_by,list):
         _sorted_keys = _key_sorter(sort_by,{key : None for key in all_ctc_keys})
         dicts_values_to_sort["list"]={key : [-jj for jj, key2 in enumerate(_sorted_keys) if key2==key][0] for key in all_ctc_keys if key in _sorted_keys}
         sort_by = "list"
         # Pop the keys for higher freqs and lower values, stor
+    else:
+        if sort_by not in list(dicts_values_to_sort.keys())[:-1]:
+            raise ValueError(f"The argument 'sort_by' needs to be one of {list(dicts_values_to_sort.keys())[:-1]} "
+                             f"but got sort_by='{sort_by}' instead.")
     drop_below = {"std":  lambda ctc: dicts_values_to_sort["std"][ctc] <= lower_cutoff_val,
                   "mean": lambda ctc: all([idict[ctc] <= lower_cutoff_val for idict in freqs_by_sys_by_ctc.values()]),
                   }
