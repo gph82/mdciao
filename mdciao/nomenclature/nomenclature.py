@@ -633,7 +633,7 @@ class LabelerConsensus(object):
         Wraps around :obj:`mdciao.utils.sequence.align_tops_or_seqs`
 
         The indices of self are indices (row-indices)
-        of the original :obj:`~nomenclature.mdciao.LabelerConsensus.dataframe`,
+        of the original :obj:`~mdciao.nomenclature.LabelerConsensus.dataframe`,
         which are the ones in :obj:`~mdciao.nomenclature.LabelerConsensus.seq`
 
         Parameters
@@ -768,27 +768,29 @@ class LabelerConsensus(object):
         for ii, idf in enumerate(df):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
             consfrags.append(self._selfmap2frags(self2top))
-        all_fragments_equal = all(
-            [cf == consfrags[0] for cf in consfrags[:1]])  # vacously True https://stackoverflow.com/a/19602868
-
+        n_alignments=len(df)
         frags_already_printed = False
         for ii, idf in enumerate(df):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
-            alignment_column2conlab = _np.full(len(idf), None)
-            alignment_column2conlab[_np.flatnonzero(idf["idx_0"].isin(top2self.keys()))] = self.dataframe.iloc[list(top2self.values())][
-                self._nomenclature_key]
-            topidx2conlab = {row.idx_0 : alignment_column2conlab[row_index] for row_index, row in idf[idf.match].iterrows()}
-            if isinstance(top, str) or str(_frag_str).lower() in ["none", "false"] or len(df) == 1:
+            topidx2conlab = _np.full([len(top) if isinstance(top,str) else top.n_residues][0], None)
+            topidx2conlab[list(top2self.keys())] = self.dataframe.iloc[list(top2self.values())][self._nomenclature_key]
+
+
+            idf = _mdcu.sequence.AlignmentDataFrame(idf.merge(_DataFrame(
+                {"idx_0": _np.arange(len(topidx2conlab)),
+                 "conlab": topidx2conlab}), how="left", on="idx_0").replace(_np.nan, None),
+                alignment_score=idf.alignment_score)
+
+            if isinstance(top, str) or str(_frag_str).lower() in ["none", "false"] or n_alignments == 1:
                 confrags_compatible_with_frags = True
                 if debug:
                     print("I'm not checking fragment compatibility because at least one of these statements is True")
                     print(
                         " * the input topology is a sequence string, s.t. no fragments can be extracted: %s" % isinstance(
                             top, str))
-                    print(" * There is only one pairwise alignment with the maximum score: ", len(df) == 1, len(df))
+                    print(" * There is only one pairwise alignment with the maximum score: ", n_alignments == 1, n_alignments)
                     print(" * The fragmentation heuristics were False or None: ",
                           str(_frag_str).lower() in ["none", "false"], _frag_str)
-                    #      _frag_str, len(df))
                 break
             else:
                 fragments = _fragments  # This will have been defined already
@@ -797,50 +799,94 @@ class LabelerConsensus(object):
                 if debug:
                     print("Iteration ", ii)
                     _mdcfrg.print_fragments(consfrags, top)
+                alignment_already_printed = False
                 for frag_idx, (confraglab, confragidxs) in enumerate(consfrags.items()):
-                    confrag_is_subfragment, _, cand_frags = _mdcfrg.check_if_fragment_clashes(confragidxs, confraglab, fragments, top,
-                                                                               map_conlab=alignment_column2conlab,
-                                                                               prompt=False)
+                    confrag_is_subfragment, _, cand_frags = _mdcfrg.check_if_fragment_clashes(confragidxs, confraglab,
+                                                                                              fragments, top,
+                                                                                              map_conlab=topidx2conlab,
+                                                                                              prompt=False)
                     if debug:
                         print(ii, confraglab, confrag_is_subfragment)
                     if not confrag_is_subfragment:
                         if not frags_already_printed:
-                            print("fragments derived from '%s':"%_frag_str)
-                            _mdcfrg.print_fragments(_fragments, top)
+                            print("Fragments derived from '%s':"%_frag_str)
+                            printed_fragments = _mdcfrg.print_fragments(_fragments, top)
                             frags_already_printed = True
-                        print(
-                            "The consensus-sequence alignment nr. %u  (score = %u, %u other alignments also have this score),\n"
-                            "defines the consensus fragment '%s' having clashes with the fragment definitions derived from '%s':" % (
-                                ii, idf.alignment_score , len(df)-1, confraglab, _frag_str))
-                        _mdcfrg.print_frag(frag_idx, top, confragidxs, resSeq_jumps=True, idx2label=topidx2conlab,
-                                           fragment_desc="%s" % confraglab)
+
+                        if not alignment_already_printed:
+                            print("* Alignment %2u"% (ii))
+                            _mdcu.str_and_dict.print_wrap(f"There are clashes between the above '{_frag_str}' definitions and the consensus fragments' definitions:")
+                            alignment_already_printed=True
+
+                        istr = _mdcfrg.print_frag(confraglab, top, confragidxs, resSeq_jumps=True, idx2label=topidx2conlab,
+                                                  #fragment_desc="clash:",
+                                                  just_return_string=True)
+                        print(istr)
+                        current_clashing_fragments = "\n".join([_mdcfrg.print_frag(frag_idx, top, fragments[frag_idx],
+                                                                                   resSeq_jumps=True,
+                                                                                   idx2label=topidx2conlab,
+                                                                                   just_return_string=True) for frag_idx in
+                                                                cand_frags])
+                        print(f"clashes/spreads across these '{_frag_str}' fragments:")
+                        print(current_clashing_fragments)
+
+                        if verbose:
+                            _mdcu.sequence.print_verbose_dataframe(
+                                idf[idf[idf.idx_0.values == confragidxs[0]].index[0] - 1 - 5:
+                                    idf[idf.idx_0.values == confragidxs[-1]].index[0] + 2 +5]
+                            )
+
+
                         confragAAs = [_mdcu.residue_and_atom.shorten_AA(top.residue(idx), keep_index=True) for idx in
                                       confragidxs]
-
                         if not set(self.fragments[confraglab]).issuperset(confragAAs):
                             confrags_compatible_with_frags = False
+                            only_in_top = set(confragAAs).difference(self.fragments[confraglab])
+                            current_clashing_confrag = f"=> {confraglab} is not compatible with alignment '{ii}'. "
+                            istr = current_clashing_confrag+\
+                                   f"The following residues of your input `top` seem to be the problem: {only_in_top}. "
+                            if ii<len(df)-1:
+                                    istr += f"Moving to the next equally scored alignment" \
+                                            f" (score={idf.alignment_score:.2f}) to check if these clashes disappear."
+                            elif ii==len(df)-1:
+                                istr += f"This was the last available alignment."
+                            if not verbose:
+                                istr += f" Re-rerun with `verbose=True` to show the problematic part of this alignment here."
+
+                            _mdcu.str_and_dict.print_wrap(istr)
                             break
+
                         else:
-                            print("However all residues assigned to '%s' in the `top` are contained in reference consensus\n"
-                                  "fragment (in name and index), so this alignment is considered compatible."%(confraglab))
+                            istr = f"but all the residues of `top` that have been assigned to {confraglab} using this " \
+                                   f"alignment are contained (= same name, same index) in the reference {confraglab}, " \
+                                   f"meaning, there's probably just a hole in {confraglab} in your `top`."
+                            if not verbose:
+                                istr += " Rerun with `verbose=True` to show that part of this alignment here."
+                            _mdcu.str_and_dict.print_wrap(istr)
+                            print(f"=> {confraglab} is hence considered compatible with alignment '{ii}'.")
 
                 if confrags_compatible_with_frags:
                     if ii>0:
-                        print("Picking alignment nr. %u with no aparent breaks."%ii)
+                        print("Picking alignment nr. %u with no apparent breaks."%ii)
                     break
-        assert confrags_compatible_with_frags, ("None of the %u best pairwise alignments yield consensus fragments "
-                                                "compatible with the '%s' fragmentation-heuristic, which yields\n%s\n"
-                                                "Try increasing the `min_hit_rate` "
-                                                "or using `restrict_to_residxs` to restrict the alignment only to\nthose "
-                                                "residues of top` most likely to belong to this object's sequence as stored in `self.seq`." % (
-                                                len(df), str(_frag_str),
-                                                "\n".join(_mdcfrg.print_fragments(fragments, top))))
+            print()
 
-        df = idf
+            assertion_error_str = _mdcu.str_and_dict.print_wrap(
+                f"\nNone of the {n_alignments} best pairwise alignments yield consensus fragments " \
+                f"compatible with the \'{_frag_str}\' fragmentation-heuristic:\n",
+                just_return_string=True)
+            assertion_error_str += "\n%s\n"
+            assertion_error_str += f"Current clashes are\n{current_clashing_confrag}See above for more details."
+            assertion_error_str += "\n" + _mdcu.str_and_dict.print_wrap(
+                f"Use `verbose=True` to see the (consensus incompatible) alignments. "
+                f"Also, you can try increasing the `min_hit_rate` or using `restrict_to_residxs` to restrict the alignment " \
+                "only to those residues of `top` that most likely belong to the reference sequence as stored in " \
+                "`self.seq`. Finally, if you _really_ know what you are doing, set the `fragments` yourself to avoid clashes.",
+                just_return_string=True)
 
-        df = df.join(_DataFrame({"conlab": alignment_column2conlab}))
+        assert confrags_compatible_with_frags, (assertion_error_str % "\n".join(printed_fragments))
 
-        self._last_alignment_df = df
+        self._last_alignment_df = idf
 
         return top2self, self2top
 

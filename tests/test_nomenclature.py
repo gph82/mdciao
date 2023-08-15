@@ -293,7 +293,8 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     def setUp(self):
         self.tmpdir = mkdtemp("_test_mdciao_CGN_local")
         self._GNAS2_HUMAN_file = path.join(self.tmpdir, path.basename(test_filenames.GNAS2_HUMAN))
-        self.top = md.load(test_filenames.pdb_3SN6).top
+        self.geom = md.load(test_filenames.pdb_3SN6)
+        self.top = self.geom.top
         shutil.copy(test_filenames.GNAS2_HUMAN, self._GNAS2_HUMAN_file)
         self.cgn_local = nomenclature.LabelerCGN("GNAS2_HUMAN",
                                                  try_web_lookup=False,
@@ -431,6 +432,13 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     def test_most_recent_labels_works(self):
         labels = self.cgn_local.top2labels(self.top)
         self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
+
+    def test_hole_in_subdomain(self):
+        frags = self.cgn_local.top2frags(self.top)
+        a5_w_hole_idxs = frags["G.H5"][:5]+frags["G.H5"][-5:]
+        a5_w_hole_geom = self.geom.atom_slice([aa.index for aa in self.geom.top.atoms if aa.residue.index in frags["G.H5"][:5] + frags["G.H5"][-5:]])
+        self.cgn_local.aligntop(a5_w_hole_geom.top,verbose=True)
+
 
 class TestLabelerGPCR_local(unittest.TestCase):
 
