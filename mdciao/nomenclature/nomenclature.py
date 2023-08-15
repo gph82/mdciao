@@ -1012,7 +1012,7 @@ class LabelerConsensus(object):
         r"""
         Return the subdomains derived from the
         consensus nomenclature and map it out
-        in terms of residue indices of the input :obj:`top`
+        in terms of residue indices of the input `top`
 
         Note
         ----
@@ -1022,7 +1022,7 @@ class LabelerConsensus(object):
         Parameters
         ----------
         top:
-            :py:class:`~mdtraj.Topology` or path to topology file (e.g. a pdb)
+            :obj:`~mdtraj.Topology` or path to topology file (e.g. a pdb)
         fragments: iterable of integers, default is None
             The user can parse an existing list of fragment-definitions
             (via residue idxs) to check if the newly found, consensus
