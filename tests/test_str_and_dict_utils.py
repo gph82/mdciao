@@ -11,6 +11,8 @@ from tempfile import TemporaryDirectory as _TDir
 
 import pytest
 
+import io as _io, contextlib as _contextlib
+
 from pandas import \
     DataFrame as _DF,\
     ExcelWriter as _XW
@@ -801,6 +803,20 @@ class Test_FilenameGenerator(unittest.TestCase):
     def test_keeps_svg(self):
         fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","svg", "dat",150,"ps")
         self.assertEqual(fn.fullpath_flare_vec, "project/beta2_Gs.flare@3.5_Ang.svg")
+
+class Test_print_wrap(unittest.TestCase):
+
+    def test_just_prints(self):
+        string = "AAAABBBB"
+        b = _io.StringIO()
+        with _contextlib.redirect_stdout(b):
+            str_and_dict.print_wrap(string, 4)
+        self.assertEqual(b.getvalue(), "AAAA\nBBBB\n")
+    def test_just_returns(self):
+        string = "AAAABBBB"
+        wrapped = str_and_dict.print_wrap(string,4, just_return_string=True)
+        self.assertEqual(wrapped, "AAAA\nBBBB")
+
 
 
 

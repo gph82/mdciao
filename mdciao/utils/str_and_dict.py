@@ -25,6 +25,7 @@ from natsort import natsorted as _natsorted
 from inspect import signature as _signature
 import docstring_parser as _dsp
 from matplotlib import docstring as _mpldocstring
+from textwrap import wrap as _twrap
 
 
 tunit2tunit = {"ps":  {"ps": 1, "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
@@ -162,6 +163,28 @@ def delete_pattern_in_ctc_label(pattern, label, sep):
 def order_key(key, sep):
     split_key = splitlabel(key,sep)
     return sep.join([split_key[ii] for ii in _np.argsort(split_key)])
+
+def print_wrap(text, width=100, just_return_string=False,**kwargs):
+    r"""
+    Print the `text` wrapping the lines to a given character `width`
+
+    Parameters
+    ----------
+    text : str
+        The text to wrap
+    width : int, default is 100
+        The maximum number of characters per line
+    just_return_string : bool, default is False
+        Instead of printing, just return the string
+    kwargs: dict, optional
+        Keyword arguments for print()
+
+    """
+    istr = "\n".join(_twrap(text, width))
+    if just_return_string:
+        return istr
+    else:
+        print(istr,**kwargs)
 
 def unify_freq_dicts(freqs,
                      exclude=None,
