@@ -2126,9 +2126,11 @@ def guess_nomenclature_fragments(refseq, top,
     top:
         :py:class:`~mdtraj.Topology` object or string
         containing the sequence.
-    fragments : iterable of iterables of idxs
-        How `top` is split into fragments
-        If None, will be generated using get_fragments defaults
+    fragments : iterable of iterables of idxs, str, or None
+        How `top` is split into fragments. If str, use this
+        heuristic when calling :obj:`~mdciao.fragments.get_fragments`.
+        If None, will be generated
+        using tje default option for :obj:`~mdciao.fragments.get_fragments`
     min_hit_rate: float, default is .6
         Only fragments with hit rates higher than this
         will be returned as a guess
@@ -2150,6 +2152,8 @@ def guess_nomenclature_fragments(refseq, top,
 
     if fragments is None:
         fragments = _mdcfrg.get_fragments(top, verbose=False)
+    elif isinstance(fragments,str):
+        fragments = _mdcfrg.fragments.get_fragments(top,method=fragments,verbose=False)
 
     try:
         seq_consensus = refseq.seq
@@ -2169,13 +2173,16 @@ def guess_nomenclature_fragments(refseq, top,
     df = df.merge(protein_df, how="inner")
     hit_idxs = df[df.match & df.is_protein].idx_0.values
     hits, guess = [], []
+    summary = []
     for ii, ifrag in enumerate(fragments):
         hit = _np.intersect1d(ifrag, hit_idxs)
         if len(hit) / len(ifrag) >= min_hit_rate:
             guess.append(ii)
-        if verbose:
-            print(ii, len(hit) / len(ifrag), len(hit), len(ifrag))
         hits.append(hit)
+        summary.append([len(hit) / len(ifrag), len(hit), len(ifrag)])
+    if verbose:
+        print(_DataFrame(summary, columns=["hit rate", "# hits", "len(frg)"],
+                         ).to_string(formatters={"hit rate" : "{:,.2f}".format}))
 
     guessed_res_idxs = []
     if len(guess) > 0:

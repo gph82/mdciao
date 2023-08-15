@@ -818,6 +818,14 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
                                                                   )
         _np.testing.assert_array_equal([4], guessed_frags)
 
+    def test_finds_frags_w_named_heuristic(self):
+        guessed_frags = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb,
+                                                                  self.top,
+                                                                  fragments="resSeq",
+                                                                  verbose=True,
+                                                                  )
+        _np.testing.assert_array_equal([7, 8, 9], guessed_frags)
+
     def test_finds_frags_res(self):
         guessed_res = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb,
                                                                 self.top,
