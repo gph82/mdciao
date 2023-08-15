@@ -52,11 +52,11 @@ class Test_print_frag(unittest.TestCase):
 
     def test_returns(self):
         assert isinstance(mdcfragments.print_frag(0, self.geom.top, self.fragments[0],
-                                                  return_string=True), str)
+                                                  just_return_string=True), str)
 
     def test_uses_labels(self):
         outstr =  mdcfragments.print_frag(0, self.geom.top, self.fragments[0],
-                                          return_string=True,
+                                          just_return_string=True,
                                           idx2label={self.fragments[0][0 ]:"labelfirst",
                                         self.fragments[0][-1]:"labellast"})
         assert "@labelfirst" in outstr

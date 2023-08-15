@@ -37,7 +37,7 @@ _allowed_fragment_methods = ['chains',
                              ]
 def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                idx2label=None,
-               return_string=False,
+               just_return_string=False,
                resSeq_jumps=True,
                label_width=10,
                **print_kwargs):
@@ -63,8 +63,8 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
         to the label descriptor. You can set this to zero
         if you know :obj:`idx2label` is None for all
         printed lines
-    return_string: bool, default is False
-        Instead of printing, return the string
+    just_return_string : bool, default is False
+        Instead of printing, just return the string
     print_kwargs:
         Optional keyword arguments to pass to the print function, e.g. "end=","" and such
 
@@ -106,7 +106,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
     except:
         print(fragment)
         raise
-    if return_string:
+    if just_return_string:
         return istr
     else:
         print(istr, **print_kwargs)
@@ -144,7 +144,7 @@ def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
         _fragments = {key:val for key, val in fragments.items()}
     frag_list = []
     for ii, iseg in _fragments.items():
-        frag_list.append(print_frag(ii, top, iseg, return_string=True, **print_frag_kwargs))
+        frag_list.append(print_frag(ii, top, iseg, just_return_string=True, **print_frag_kwargs))
     n = _np.round(max_lines/2).astype(int)
     if n * 2 < len(frag_list):
         frag_list = frag_list[:n] + ["...[long list: omitted %u items]..." % (len(frag_list) - 2 * n)] + frag_list[-n:]
@@ -832,7 +832,7 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
             for jj in frag_cands:
                 istr = print_frag(jj, top, fragments[jj],
                                   fragment_desc="   input fragment",
-                                  return_string=True,
+                                  just_return_string=True,
                                   label_width=0)
                 n_in_fragment = len(_np.intersect1d(sub_frag, fragments[jj]))
                 if n_in_fragment < len(fragments[jj]):

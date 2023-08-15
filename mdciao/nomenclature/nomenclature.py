@@ -1093,7 +1093,7 @@ class LabelerConsensus(object):
         for ii, (key, res_idxs) in enumerate(defs.items()):
             istr = _mdcfrg.print_frag(key, top, res_idxs, fragment_desc='',
                                       idx2label=map_conlab,
-                                      return_string=True)
+                                      just_return_string=True)
             if verbose:
                 print(istr)
 
