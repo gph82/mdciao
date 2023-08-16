@@ -227,7 +227,7 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
         self.file = test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx
 
     def test_just_works(self):
-        table2GPCR = nomenclature._table2GPCR_by_AAcode(tablefile=self.file)
+        table2GPCR = nomenclature._GPCRdbDataFrame2conlabs(tablefile=self.file)
         self.assertDictEqual(table2GPCR,
                              {'Q26': '1.25',
                               'E27': '1.26',
@@ -238,7 +238,7 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
                               })
 
     def test_keep_AA_code_test(self):  # dictionary keys will only have AA id
-        table2GPCR = nomenclature._table2GPCR_by_AAcode(tablefile=self.file, keep_AA_code=False)
+        table2GPCR = nomenclature._GPCRdbDataFrame2conlabs(tablefile=self.file, keep_AA_code=False)
         self.assertDictEqual(table2GPCR,
                              {26: '1.25',
                               27: '1.26',
@@ -249,8 +249,8 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
                               })
 
     def test_table2GPCR_by_AAcode_return_fragments(self):
-        table2GPCR, defs = nomenclature._table2GPCR_by_AAcode(tablefile=self.file,
-                                                              return_fragments=True)
+        table2GPCR, defs = nomenclature._GPCRdbDataFrame2conlabs(tablefile=self.file,
+                                                                 return_fragments=True)
 
         self.assertDictEqual(defs, {'TM1': ["Q26", "E27"],
                                     "ICL1": ["E62", "R63"],
@@ -260,7 +260,7 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
         from pandas import read_excel
         df = read_excel(self.file, header=0, engine="openpyxl")
 
-        table2GPCR = nomenclature._table2GPCR_by_AAcode(tablefile=df)
+        table2GPCR = nomenclature._GPCRdbDataFrame2conlabs(tablefile=df)
         self.assertDictEqual(table2GPCR,
                              {'Q26': '1.25',
                               'E27': '1.26',

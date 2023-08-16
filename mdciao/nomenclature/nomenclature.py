@@ -56,11 +56,11 @@ _filenames = _FN()
 _AA_chars_no_X = [char for char in _md.core.residue_names._AMINO_ACID_CODES.values() if char not in ["X", None]]
 
 
-def _table2GPCR_by_AAcode(tablefile,
-                          scheme="BW",
-                          keep_AA_code=True,
-                          return_fragments=False,
-                          ):
+def _GPCRdbDataFrame2conlabs(tablefile,
+                             scheme="BW",
+                             keep_AA_code=True,
+                             return_fragments=False,
+                             ):
     r"""
     Dictionary AAcodes so that e.g. AAcode2GPCR["R131"] -> '3.50' from a Excel file or an :obj:`pandas.DataFrame`
 
@@ -1403,8 +1403,8 @@ class LabelerGPCR(LabelerConsensus):
                                                           )
         # The title of the column with this field varies between CGN and GPCR
         self._AAresSeq_key = "AAresSeq"
-        self._AA2conlab, self._fragments = _table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key,
-                                                                 return_fragments=True)
+        self._AA2conlab, self._fragments = _GPCRdbDataFrame2conlabs(self.dataframe, scheme=self._nomenclature_key,
+                                                                    return_fragments=True)
         # TODO can we do this using super?
         LabelerConsensus.__init__(self,
                                   local_path=local_path,
