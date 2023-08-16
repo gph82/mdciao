@@ -510,23 +510,7 @@ class LabelerConsensus(object):
 
     """
 
-    def __init__(self, **PDB_finder_kwargs):
-        r"""
-
-        Parameters
-        ----------
-        ref_PDB : str
-            4-letter PDB code
-        tablefile: str, default is 'GPCRmd_B2AR_nomenclature'
-            The PDB four letter code that will be used for CGN purposes
-        ref_path: str,default is '.'
-            The local path where the needed files are
-
-        try_web_lookup: bool, default is True
-            If the local files are not found, try automatically a web lookup at
-             * www.mrc-lmb.cam.ac.uk (for CGN)
-
-        """
+    def __init__(self, **kwargs):
         self._conlab2AA = {val: key for key, val in self.AA2conlab.items()}
 
         self._fragment_names = list(self.fragments.keys())
