@@ -30,7 +30,7 @@ class Test_ExamplesCLTs(unittest.TestCase):
         for fn in [filenames.traj_xtc,
                    filenames.top_pdb,
                    filenames.adrb2_human_xlsx,
-                   filenames.GNAS2_HUMAN,
+                   filenames.gnas2_human_xlsx,
                    filenames.tip_json
                    ]:
             os.symlink(fn, os.path.join(self.tmpdir, os.path.basename(fn)))

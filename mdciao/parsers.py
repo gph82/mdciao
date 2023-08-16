@@ -245,7 +245,7 @@ def _parser_add_nomenclature(parser):
                              'Default is False',
                         default=False)
     parser.set_defaults(save_nomenclature_files=False)
-    parser.add_argument("-CGN","--CGN_uniprot", type=str, help="Uniprot name, e.g. 'GNAS2_HUMAN' for a consensus G-protein nomenclature", default='None')
+    parser.add_argument("-CGN","--CGN_uniprot", type=str, help="Uniprot name, e.g. 'gnas2_human' for a consensus G-protein nomenclature", default='None')
 
 def _parser_add_graphic_ext(parser):
     parser.add_argument('-gx','--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
@@ -741,7 +741,7 @@ def parser_for_CGN_overview():
                         help="Get CGN definitions from here. If a file is not "
                              "found locally, there will be a web-lookup "
                              "in a database using a Uniprot name, "
-                             "e.g. 'GNAS2_HUMAN'. See www.mrc-lmb.cam.ac.uk",
+                             "e.g. 'gnas2_human'. See www.mrc-lmb.cam.ac.uk",
                         action=Populate_input_Action
                         )
     parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)

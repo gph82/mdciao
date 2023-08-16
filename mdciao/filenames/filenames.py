@@ -88,7 +88,7 @@ class FileNames(object):
         self.traj_xtc = _path.join(self.example_path, "gs-b2ar.noH.stride.5.xtc")
 
         # nomenclature
-        self.GNAS2_HUMAN = _path.join(self.nomenclature_path,"GNAS2_HUMAN.txt")
+        self.gnas2_human_xlsx = _path.join(self.nomenclature_path, "gnas2_human.xlsx")
         self.GPCRmd_B2AR_nomenclature_test_xlsx = _path.join(self.nomenclature_path,"GPCRmd_B2AR_nomenclature_test.xlsx")
         self.pdb_3SN6_mut = _path.join(self.nomenclature_path, "3SN6_GLU10GLX.pdb.gz")
         self.adrb2_human_xlsx = _path.join(self.nomenclature_path,"adrb2_human.xlsx")

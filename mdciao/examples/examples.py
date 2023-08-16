@@ -83,7 +83,7 @@ class ExamplesCLTs(object):
         self.pdb = filenames.top_pdb
         self.GPCRlabs_file = filenames.adrb2_human_xlsx
         self.KLIFSlabs_file = filenames.KLIFS_P31751_xlsx
-        self.CGN_file = filenames.GNAS2_HUMAN
+        self.CGN_file = filenames.gnas2_human_xlsx
         self.sitefile = filenames.tip_json
         self.pdb_3SN6 = filenames.pdb_3SN6
         self.KLIFS_pdb = filenames.pdb_3E8D
@@ -146,7 +146,7 @@ class ExamplesCLTs(object):
     def mdc_CGN_overview(self):
         # This is the only one that needs network access
         return ["mdc_CGN_overview.py",
-                "%s" % 'GNAS2_HUMAN',
+                "%s" % 'gnas2_human',
                 "-t %s" % self.pdb,
                 ]
 
@@ -255,7 +255,7 @@ def ContactGroupL394(**kwargs):
     with _TDir(suffix="_mdciao_example_CG") as t:
         for fn in [filenames.traj_xtc,
                    filenames.top_pdb,
-                   filenames.adrb2_human_xlsx, filenames.GNAS2_HUMAN]:
+                   filenames.adrb2_human_xlsx, filenames.gnas2_human_xlsx]:
             _link(fn, _path.join(t, _path.basename(fn)))
 
         with remember_cwd():
@@ -267,7 +267,7 @@ def ContactGroupL394(**kwargs):
                                       "n_smooth_hw": 1,
                                       "figures": False,
                                       "GPCR_uniprot": _path.basename(filenames.adrb2_human_xlsx),
-                                      "CGN_uniprot": _path.basename(filenames.GNAS2_HUMAN),
+                                      "CGN_uniprot": _path.basename(filenames.gnas2_human_xlsx),
                                       "no_disk":True,
                                       "accept_guess": True}
                     for key, val in kwargs.items():
@@ -546,13 +546,13 @@ def GPCRLabeler_ardb2_human(**kwargs):
     return _LabelerGPCR(filenames.adrb2_human_xlsx,**kwargs)
 
 def CGNLabeler_GNAS2_HUMAN(**kwargs):
-    r"""Build an :obj:`~mdciao.nomenclature.LabelerCGN` with the GNAS2_HUMAN.txt file shipped with mdciao"""
+    r"""Build an :obj:`~mdciao.nomenclature.LabelerCGN` with the gnas2_human.txt file shipped with mdciao"""
     with _TDir(suffix="_mdciao_example_CGNLabeler") as t:
-        for fn in [filenames.GNAS2_HUMAN]:
+        for fn in [filenames.gnas2_human_xlsx]:
             _link(fn, _path.join(t, _path.basename(fn)))
         with remember_cwd():
             _chdir(t)
-            CGN = _LabelerCGN("GNAS2_HUMAN",**kwargs)
+            CGN = _LabelerCGN("gnas2_human",**kwargs)
     return CGN
 
 def Interface_B2AR_Gas(**kwargs):

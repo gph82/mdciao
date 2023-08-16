@@ -102,22 +102,27 @@ def _table2GPCR_by_AAcode(tablefile,
     # This is the most important
     assert scheme in df.keys(), ValueError("'%s' isn't an available scheme.\nAvailable schemes are %s" % (
         scheme, [key for key in df.keys() if key in _GPCR_available_schemes + ["display_generic_number"]]))
-    AAcode2GPCR = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
+    AA2conlab = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
     # Locate definition lines and use their indices
     fragments = _defdict(list)
+
+    if all([len(conlab.split("."))==3 for conlab in AA2conlab.values()]): #ad-hoc inferring CGN or GPCR
+        present_frags = df.display_generic_number.map(lambda x : (".".join(x.split(".")[:-1]))).unique() #ad-hoc for present fragment names
+        assert all(["." in fragname for fragname in present_frags])
+        name2fullname = {key.split(".")[1] : key for key in present_frags}
+        name2fullname.update({val : val for val in name2fullname.values()}) #allows for re-runs
+        df.protein_segment = df.protein_segment.map(lambda x : name2fullname[x])
     for key, AArS in df[["protein_segment", "AAresSeq"]].values:
         fragments[key].append(AArS)
     fragments = {key: val for key, val in fragments.items()}
 
-    if keep_AA_code:
-        pass
-    else:
-        AAcode2GPCR = {int(key[1:]): val for key, val in AAcode2GPCR.items()}
+    if not keep_AA_code:
+        AA2conlab = {int(key[1:]): val for key, val in AA2conlab.items()}
 
     if return_fragments:
-        return AAcode2GPCR, fragments
+        return AA2conlab, fragments
     else:
-        return AAcode2GPCR
+        return AA2conlab
 
 
 def _PDB_finder(PDB_code, local_path='.',
@@ -196,7 +201,7 @@ def _CGN_finder(uniprot_name,
     Parameters
     ----------
     uniprot_name : str
-        Uniprot Name, e.g "GNAS2_HUMAN"
+        Uniprot Name, e.g "gnas2_human"
     format : str
         A format string that turns the `uniprot_name`
         into a filename for local lookup, in case the
@@ -316,7 +321,7 @@ def _finder_writer(full_local_path,
             raise _DF
 
 
-def _GPCR_finder(GPCR_descriptor,
+def _GPCR_finder(descriptor,
                  format="%s.xlsx",
                  local_path=".",
                  try_web_lookup=True,
@@ -325,7 +330,7 @@ def _GPCR_finder(GPCR_descriptor,
                  write_to_disk=False):
     r"""
     Return a :obj:`~pandas.DataFrame` containing
-    generic GPCR-numbering.
+    generic GPCR or CGN generic residue numbering.
 
     The lookup is first local and then online
     on the `GPCRdb <https://gpcrdb.org/>`
@@ -337,48 +342,48 @@ def _GPCR_finder(GPCR_descriptor,
 
     Parameters
     ----------
-    GPCR_descriptor : str
+    descriptor : str
         Anything that can be used to find the needed
-        GPCR information, locally or online:
-         * a uniprot descriptor, e.g. `adrb2_human`
-         * a full local filename, e.g. `my_GPCR_consensus.txt` or
-          `path/to/my_GPCR_consensus.txt`
-         * the "basename" filename, `adrb2_human` if
-          `adrb2_human.xlsx` exists on :obj:`local_path`
-          (see below :obj:`format`)
+        information, locally or online:
+         * a uniprot descriptor, e.g. 'adrb2_human', 'gnas2_human'
+         * a full local filename, e.g. `my_consensus.txt` or
+          `path/to/my_consensus.txt`
+         * the "basename" filename, e.g. 'adrb2_human' if
+          'adrb2_human.xlsx' exists on `local_path`
+          (see below `format`)
         All these ways of doing the same thing (descriptor, basename, fullname,
         localpath, fullpath) are for compatibility with other methods.
     format : str, default is "%s.xlsx".
-        If :obj:`GPCR_descriptor` is not readable directly,
-        try to find "GPCR_descriptor.xlsx" locally on :obj:`local_path`
+        If `descriptor` is not readable directly,
+        try to find "descriptor.xlsx" locally on :obj:`local_path`
     local_path : str, default is "."
-        If :obj:`GPCR_descriptor` doesn't find the file locally,
-        then try "local_path/GPCR_descriptor" before trying online
+        If `descriptor` doesn't find the file locally,
+        then try "local_path/descriptor" before trying online
     try_web_lookup : boolean, default is True.
         If local lookup variants fail, go online, else Fail
     verbose : bool, default is False
         Be verbose.
     dont_fail : bool, default is False
         If True, when the lookup fails None will
-        be returned. By default the method raises
+        be returned. By default, the method raises
         an exception if it could not find the info.
     write_to_disk : boolean, default is False
-        Save the found GPCR consensus nomenclature info locally.
+        Save the found consensus nomenclature info locally.
 
     Returns
     -------
     df : DataFrame or None
-        The GPCR consensus nomenclature information as :obj:`~pandas.DataFrame`
+        The consensus nomenclature information as :obj:`~pandas.DataFrame`
     """
 
-    if _path.exists(GPCR_descriptor):
-        fullpath = GPCR_descriptor
+    if _path.exists(descriptor):
+        fullpath = descriptor
         try_web_lookup = False
     else:
-        xlsxname = format % GPCR_descriptor
+        xlsxname = format % descriptor
         fullpath = _path.join(local_path, xlsxname)
     GPCRmd = "https://gpcrdb.org/services/residues/extended"
-    url = "%s/%s" % (GPCRmd, GPCR_descriptor.lower())
+    url = "%s/%s" % (GPCRmd, descriptor.lower())
 
     local_lookup_lambda = lambda fullpath: _read_excel(fullpath,
                                                        engine="openpyxl",
@@ -1188,8 +1193,7 @@ class LabelerConsensus(object):
             print("No alignment has been carried out with this object yet")
             return None
 
-
-class LabelerCGN(LabelerConsensus):
+class _LabelerCGN(LabelerConsensus):
     """
     Obtain and manipulate common-Gprotein-nomenclature.
     See https://www.mrc-lmb.cam.ac.uk/CGN/faq.html for more info.
@@ -1206,20 +1210,20 @@ class LabelerCGN(LabelerConsensus):
         Parameters
         ----------
         uniprot_name: str
-            UniProt name, e.g. 'GNAS2_HUMAN'. Please note the difference between UniProt Accession Code
+            UniProt name, e.g. 'gnas2_human'. Please note the difference between UniProt Accession Code
             and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_.
             For compatibility reasons, there's different use-cases.
 
             * Full path to an existing file containing the CGN nomenclature,
-            e.g. '/abs/path/to/some/dir/GNAS2_HUMAN.txt' (or GNAS2_HUMAN.xlsx). Then this happens:
+            e.g. '/abs/path/to/some/dir/gnas2_human.txt' (or gnas2_human.xlsx). Then this happens:
                 * :obj:`local_path` gets overridden with '/abs/path/to/some/dir/'
                 * if none of these files can be found and :obj:`try_web_lookup` is True, then
-                  'GNAS2_HUMAN' is looked up online in the CGN database
+                  'gnas2_human' is looked up online in the CGN database
 
-            * Uniprot Accession Code, e.g. 'GNAS2_HUMAN'. Then this happens:
-                * look for the files 'GNAS2_HUMAN.txt' or 'GNAS2_HUMAN.xlsx' in `local_path`
+            * Uniprot Accession Code, e.g. 'gnas2_human'. Then this happens:
+                * look for the files 'gnas2_human.txt' or 'gnas2_human.xlsx' in `local_path`
                 * if none of these files can be found and :obj:`try_web_lookup` is True, then
-                  'GNAS2_HUMAN' is looked up online in the CGN database
+                  'gnas2_human' is looked up online in the CGN database
 
         Note
         ----
@@ -1442,7 +1446,7 @@ class LabelerGPCR(LabelerConsensus):
 
         return {key: list(self.dataframe[self.dataframe["protein_segment"] == key].index) for key in
                 self.dataframe["protein_segment"].unique()}
-
+LabelerCGN = LabelerGPCR
 
 class AlignerConsensus(object):
     """Use consensus labels for multiple sequence alignment.
