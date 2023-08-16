@@ -526,7 +526,7 @@ class LabelerConsensus(object):
     def seq(self):
         r""" The reference sequence in :obj:`dataframe`"""
         return ''.join(
-            [_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe[self._AAresSeq_key].values.squeeze()])
+            [_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe.AAresSeq.values.squeeze()])
 
     @property
     def conlab2AA(self):
@@ -1401,8 +1401,6 @@ class LabelerGPCR(LabelerConsensus):
                                                           verbose=verbose,
                                                           write_to_disk=write_to_disk
                                                           )
-        # The title of the column with this field varies between CGN and GPCR
-        self._AAresSeq_key = "AAresSeq"
         self._AA2conlab, self._fragments = _GPCRdbDataFrame2conlabs(self.dataframe, scheme=self._nomenclature_key,
                                                                     return_fragments=True)
         # TODO can we do this using super?
@@ -3569,7 +3567,6 @@ class LabelerKLIFS(LabelerConsensus):
         """
 
         self._nomenclature_key = "KLIFS"
-        self._AAresSeq_key = "AAresSeq"
         self._dataframe, self._tablefile = _KLIFS_finder(UniProtAC,
                                                          format=format,
                                                          local_path=local_path,
