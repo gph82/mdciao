@@ -778,8 +778,10 @@ class LabelerConsensus(object):
 
             idf = _mdcu.sequence.AlignmentDataFrame(idf.merge(_DataFrame(
                 {"idx_0": _np.arange(len(topidx2conlab)),
-                 "conlab": topidx2conlab}), how="left", on="idx_0").replace(_np.nan, None),
+                 "conlab": topidx2conlab}), how="left", on="idx_0"), #.replace(_np.nan, None)
                 alignment_score=idf.alignment_score)
+            # .replace has ffil problem with pandas < 1.5, not with > 2. allowing
+            idf.conlab = [[val if val is not _np.nan else None][0] for val in idf.conlab.values]
 
             if isinstance(top, str) or str(_frag_str).lower() in ["none", "false"] or n_alignments == 1:
                 confrags_compatible_with_frags = True
