@@ -97,7 +97,7 @@ def _table2GPCR_by_AAcode(tablefile,
     else:
         df = tablefile
 
-    # TODO some overlap here with with _GPCR_web_lookup of GPCR_finder
+    # TODO some overlap here with with _GPCR_web_lookup of GPCRdb_finder
     # figure out best practice to avoid code-repetition
     # This is the most important
     assert scheme in df.keys(), ValueError("'%s' isn't an available scheme.\nAvailable schemes are %s" % (
@@ -321,13 +321,13 @@ def _finder_writer(full_local_path,
             raise _DF
 
 
-def _GPCR_finder(descriptor,
-                 format="%s.xlsx",
-                 local_path=".",
-                 try_web_lookup=True,
-                 verbose=True,
-                 dont_fail=False,
-                 write_to_disk=False):
+def _GPCRdb_finder(descriptor,
+                   format="%s.xlsx",
+                   local_path=".",
+                   try_web_lookup=True,
+                   verbose=True,
+                   dont_fail=False,
+                   write_to_disk=False):
     r"""
     Return a :obj:`~pandas.DataFrame` containing
     generic GPCR or CGN generic residue numbering.
@@ -1293,9 +1293,8 @@ class _LabelerCGN(LabelerConsensus):
         defs = {key: [AAresSeq2idx[AAresSeq] for AAresSeq in val] for key, val in self.fragments.items()}
         return defs
 
-
 class LabelerGPCR(LabelerConsensus):
-    """Obtain and manipulate GPCR notation.
+    """Obtain and manipulate consensus notation coming from the GPCRdb.
 
     This is based on the awesome GPCRdb REST-API,
     and follows the different schemes provided
@@ -1360,7 +1359,7 @@ class LabelerGPCR(LabelerConsensus):
         ----------
         uniprot_name : str
             Descriptor by which to find the nomenclature,
-            it gets directly passed to :obj:`GPCR_finder`
+            it gets directly passed to :obj:`GPCRdb_finder`
             Can be anything that can be used to try and find
             the needed information, locally or online:
             * a uniprot descriptor, e.g. `adrb2_human`
@@ -1387,7 +1386,7 @@ class LabelerGPCR(LabelerConsensus):
             In case :obj:`uniprot_name` is just a filename,
             we can turn it into a full path to
             a local file using this parameter, which
-            is passed to :obj:`GPCR_finder`
+            is passed to :obj:`GPCRdb_finder`
             and :obj:`LabelerConsensus`. Note that this
             optional parameter is here for compatibility
             reasons with other methods and might disappear
@@ -1396,7 +1395,7 @@ class LabelerGPCR(LabelerConsensus):
             How to construct a filename out of
             :obj:`uniprot_name`
         verbose : bool, default is True
-            Be verbose. Gets passed to :obj:`GPCR_finder`
+            Be verbose. Gets passed to :obj:`GPCRdb_finder`
             :obj:`LabelerConsensus`
         try_web_lookup : bool, default is True
             Try a web lookup on the GPCRdb of the :obj:`uniprot_name`.
@@ -1411,13 +1410,13 @@ class LabelerGPCR(LabelerConsensus):
         self._nomenclature_key = GPCR_scheme
         # TODO now that the finder call is the same we could
         # avoid cde repetition here
-        self._dataframe, self._tablefile = _GPCR_finder(uniprot_name,
-                                                        format=format,
-                                                        local_path=local_path,
-                                                        try_web_lookup=try_web_lookup,
-                                                        verbose=verbose,
-                                                        write_to_disk=write_to_disk
-                                                        )
+        self._dataframe, self._tablefile = _GPCRdb_finder(uniprot_name,
+                                                          format=format,
+                                                          local_path=local_path,
+                                                          try_web_lookup=try_web_lookup,
+                                                          verbose=verbose,
+                                                          write_to_disk=write_to_disk
+                                                          )
         # The title of the column with this field varies between CGN and GPCR
         self._AAresSeq_key = "AAresSeq"
         self._AA2conlab, self._fragments = _table2GPCR_by_AAcode(self.dataframe, scheme=self._nomenclature_key,
@@ -1446,6 +1445,7 @@ class LabelerGPCR(LabelerConsensus):
 
         return {key: list(self.dataframe[self.dataframe["protein_segment"] == key].index) for key in
                 self.dataframe["protein_segment"].unique()}
+
 LabelerCGN = LabelerGPCR
 
 class AlignerConsensus(object):

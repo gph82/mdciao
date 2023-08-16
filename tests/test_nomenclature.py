@@ -173,12 +173,12 @@ class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
             raise nomenclature._GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
 
 
-class Test_GPCR_finder(unittest.TestCase):
+class Test_GPCRdb_finder(unittest.TestCase):
 
     def test_works_locally(self):
-        df, filename = nomenclature._GPCR_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
-                                                 try_web_lookup=False,
-                                                 )
+        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
+                                                   try_web_lookup=False,
+                                                   )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
@@ -186,8 +186,8 @@ class Test_GPCR_finder(unittest.TestCase):
         assert any([key in df.keys() for key in nomenclature._GPCR_mandatory_fields])  # at least one scheme
 
     def test_works_online(self):
-        df, filename = nomenclature._GPCR_finder("adrb2_human",
-                                                 )
+        df, filename = nomenclature._GPCRdb_finder("adrb2_human",
+                                                   )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
@@ -197,27 +197,27 @@ class Test_GPCR_finder(unittest.TestCase):
 
     def test_raises_not_find_locally(self):
         with pytest.raises(FileNotFoundError):
-            nomenclature._GPCR_finder("B2AR",
-                                      try_web_lookup=False
-                                      )
+            nomenclature._GPCRdb_finder("B2AR",
+                                        try_web_lookup=False
+                                        )
 
     def test_not_find_locally_but_no_fail(self):
-        DF, filename = nomenclature._GPCR_finder("B2AR",
-                                                 try_web_lookup=False,
-                                                 dont_fail=True
-                                                 )
+        DF, filename = nomenclature._GPCRdb_finder("B2AR",
+                                                   try_web_lookup=False,
+                                                   dont_fail=True
+                                                   )
         assert DF is None
         assert isinstance(filename, str)
 
     def test_raises_not_find_online(self):
         with pytest.raises(ValueError):
-            nomenclature._GPCR_finder("B2AR",
-                                      )
+            nomenclature._GPCRdb_finder("B2AR",
+                                        )
 
     def test_not_find_online_but_no_raise(self):
-        df, filename = nomenclature._GPCR_finder("3SNw",
-                                                 dont_fail=True
-                                                 )
+        df, filename = nomenclature._GPCRdb_finder("3SNw",
+                                                   dont_fail=True
+                                                   )
         assert df is None
         assert isinstance(filename, str)
 
