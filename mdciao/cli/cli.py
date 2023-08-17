@@ -494,7 +494,10 @@ def _fragment_overview(a,labtype):
         if _path.exists(val):
             format = "%s"
         else:
-            format = _signature(class_dict[labtype]).parameters["format"].default
+            if labtype == "KLIFS":
+                format = _signature(class_dict[labtype]).parameters["format"].default
+            else:
+                format = _signature(class_dict[labtype].__bases__[0]).parameters["format"].default
         obj = class_dict[labtype](val,
                                   format=format,
                                   write_to_disk=a.write_to_disk)
