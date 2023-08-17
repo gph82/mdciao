@@ -3,13 +3,12 @@ Get and manipulate consensus nomenclature for GPCRs, G-proteins, and Kinases.
 
 Uses local files and/or accesses the following databases and their public APIs
 
- * `GPCRdb <https://gpcrdb.org/>`_
- * `Common Gα Numbering (CGN) scheme <https://www.mrc-lmb.cam.ac.uk/CGN/>`_
+ * `GPCRdb <https://gpcrdb.org/>`_ for GPCRs and G-proteins with Common Gα Numbering (CGN)
  * `KLIFS - The structural kinase database <https://klifs.net/>`_
  * `RCSB PDB rcsb.org <https://rcsb.org/>`_
  * `UniProt Knowledgebase <https://www.uniprot.org/>`_
 
-Please see the individual documentation of the `Labeler Classes <Classes>`_ for further references and cite them
+Please see the individual documentation of the Labeler classes_ for further references and cite them
 whenever you use these nomenclature schemes in your final publication.
 
 Additionally, use :obj:`mdciao.nomenclature.references` anytime to get more info.

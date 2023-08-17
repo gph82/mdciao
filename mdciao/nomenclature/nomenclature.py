@@ -1277,60 +1277,10 @@ class _LabelerCGN(LabelerConsensus):
         defs = {key: [AAresSeq2idx[AAresSeq] for AAresSeq in val] for key, val in self.fragments.items()}
         return defs
 
-class LabelerGPCR(LabelerConsensus):
-    """Obtain and manipulate consensus notation coming from the GPCRdb.
-
-    This is based on the awesome GPCRdb REST-API,
-    and follows the different schemes provided
-    there. These schemes can be:
-
-    * structure based schemes, available for all GPCR classes.
-      You can use them by instantiating with "GPCRdb(A)", "GPCRdb(B)" etc.
-      The relevant references are:
-     * Isberg et al, (2015) Generic GPCR residue numbers - Aligning topology maps while minding the gaps,
-       Trends in Pharmacological Sciences 36, 22--31,
-       https://doi.org/10.1016/j.tips.2014.11.001
-     * Isberg et al, (2016) GPCRdb: An information system for G protein-coupled receptors,
-       Nucleic Acids Research 44, D356--D364,
-       https://doi.org/10.1093/nar/gkv1178
-
-    * sequence based schemes, with different names depending on the GPCR class
-     * Class-A:
-       Ballesteros et al, (1995) Integrated methods for the construction of three-dimensional models
-       and computational probing of structure-function relations in G protein-coupled receptors,
-       Methods in Neurosciences 25, 366--428,
-       https://doi.org/10.1016/S1043-9471(05)80049-7
-     * Class-B:
-       Wootten et al, (2013) Polar transmembrane interactions drive formation of ligand-specific
-       and signal pathway-biased family B G protein-coupled receptor conformations,
-       Proceedings of the National Academy of Sciences of the United States of America 110, 5211--5216,
-       https://doi.org/10.1073/pnas.1221585110
-     * Class-C:
-       Pin et al, (2003) Evolution, structure, and activation mechanism of family 3/C G-protein-coupled receptors
-       Pharmacology and Therapeutics 98, 325--354
-       https://doi.org/10.1016/S0163-7258(03)00038-X
-     * Class-F:
-       Wu et al, (2014) Structure of a class C GPCR metabotropic glutamate receptor 1 bound to an allosteric modulator
-       Science 344, 58--64
-       https://doi.org/10.1126/science.1249489
-
-    Note
-    ----
-    Not all schemes might work work for all methods
-    of this class. In particular, fragmentation
-    heuristics are derived from 3.50(x50)-type
-    formats. Other class A schemes
-    like Oliveira and Baldwin-Schwarz
-    can be used for residue mapping, labeling,
-    but not for fragmentation. They are still
-    partially usable but we have decided
-    to omit them from the docs. Please
-    see the full reference page for their citation.
-
-    """
+class LabelerGPCRdb(LabelerConsensus):
 
     def __init__(self, uniprot_name,
-                 GPCR_scheme="display_generic_number",
+                 scheme="display_generic_number",
                  local_path=".",
                  format="%s.xlsx",
                  verbose=True,
@@ -1342,58 +1292,63 @@ class LabelerGPCR(LabelerConsensus):
         Parameters
         ----------
         uniprot_name : str
-            Descriptor by which to find the nomenclature,
-            it gets directly passed to :obj:`GPCRdb_finder`
-            Can be anything that can be used to try and find
-            the needed information, locally or online:
-            * a uniprot descriptor, e.g. `adrb2_human`
-            * a full local filename
-            * a part of a local filename
+            Descriptor by which to find the generic residue labels,
+            it gets directly passed to :obj:`GPCRdb_finder`,
+            which can handle three cases of `uniprot_name` being:
+
+            * Uniprot Accession Code, e.g. 'adrb2_human'. Then this happens:
+
+                * look for the files 'adrb2_human.txt' or 'adrb2_human.xlsx'
+                  in `local_path` (see `format` for more info)
+                * if none of these files can be found and `try_web_lookup`
+                  is True, then 'adrb2_human' is looked up online in the GPCRdb
+
+            * Full path to an existing file containing the nomenclature,
+              e.g. '/abs/path/to/some/dir/adrb2_human.txt' (or adrb2_human.xlsx).
+              Then this happens:
+
+                * `local_path` gets overridden with '/abs/path/to/some/dir/'
+                *  if none of these files can be found and `try_web_lookup` is True, then
+                  'gnas2_human' is looked up online in the GPCRdb
+
             Please note the difference between UniProt Accession Code
             and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_.
-        GPCR_scheme : str, default is 'display_generic_number'
-            The GPCR nomenclature scheme to use.
-            The default is to use what the GPCRdb
+        scheme : str, default is 'display_generic_number'
+            The nomenclature scheme to use. Has no effect
+            for G-proteins. It is only important for GPCRs,
+            where the default is to use what the GPCRdb
             itself has chosen for this particular
-            uniprot code. Not all schemes will be
+            GPCR. Not all schemes will be
             available for all choices of
-            :obj:`uniprot_name`. You can
+            GPCRs. You can
             choose from: 'BW', 'Wootten', 'Pin',
             'Wang', 'Fungal', 'GPCRdb(A)', 'GPCRdb(B)',
             'GPCRdb(C)', 'GPCRdb(F)', 'GPCRdb(D)',
             'Oliveira', 'BS', but not all are guaranteed
             to work
         local_path : str, default is "."
-            Since the :obj:`uniprot_name` is turned into
-            a filename in case it's a descriptor,
-            this is the local path where to (potentially) look for files.
-            In case :obj:`uniprot_name` is just a filename,
+            Since the `uniprot_name` is turned into
+            a filename, this is the local path where
+            to (potentially) look for files.
+            In case `uniprot_name` is just a filename,
             we can turn it into a full path to
             a local file using this parameter, which
-            is passed to :obj:`GPCRdb_finder`
-            and :obj:`LabelerConsensus`. Note that this
-            optional parameter is here for compatibility
-            reasons with other methods and might disappear
-            in the future.
+            is passed to :obj:`GPCRdb_finder`.
         format : str, default is "%s.xlsx"
             How to construct a filename out of
             :obj:`uniprot_name`
         verbose : bool, default is True
             Be verbose. Gets passed to :obj:`GPCRdb_finder`
-            :obj:`LabelerConsensus`
         try_web_lookup : bool, default is True
-            Try a web lookup on the GPCRdb of the :obj:`uniprot_name`.
-            If :obj:`uniprot_name` is e.g. "adrb2_human.xlsx",
+            Try a web lookup on the GPCRdb of the `uniprot_name`.
+            If `uniprot_name` is e.g. "adrb2_human.xlsx",
             including the extension "xslx", then the lookup will
-            fail. This what the :obj:`format` parameter is for
+            fail. This what the `format` parameter is for
         write_to_disk : bool, default is False
             Save an excel file with the nomenclature
             information
         """
 
-        self._nomenclature_key = GPCR_scheme
-        # TODO now that the finder call is the same we could
-        # avoid cde repetition here
         self._dataframe, self._tablefile = _GPCRdb_finder(uniprot_name,
                                                           format=format,
                                                           local_path=local_path,
@@ -1401,7 +1356,7 @@ class LabelerGPCR(LabelerConsensus):
                                                           verbose=verbose,
                                                           write_to_disk=write_to_disk
                                                           )
-        self._AA2conlab, self._fragments = _GPCRdbDataFrame2conlabs(self.dataframe, scheme=self._nomenclature_key,
+        self._AA2conlab, self._fragments = _GPCRdbDataFrame2conlabs(self.dataframe, scheme=scheme,
                                                                     return_fragments=True)
         # TODO can we do this using super?
         LabelerConsensus.__init__(self,
@@ -1428,7 +1383,87 @@ class LabelerGPCR(LabelerConsensus):
         return {key: list(self.dataframe[self.dataframe["protein_segment"] == key].index) for key in
                 self.dataframe["protein_segment"].unique()}
 
-LabelerCGN = LabelerGPCR
+
+class LabelerGPCR(LabelerGPCRdb):
+    r"""
+    Obtain and manipulate GPCR generic residue numbering
+    provided by the `GPCRdb <https://gpcrdb.org/>`_.
+
+    This is based on the awesome GPCRdb REST-API.
+
+    The generic residue labels are called indistinctly "consensus labels"
+    or simply "nomenclature" throughout mdciao.
+
+    The `GPCRdb <https://gpcrdb.org/>`_ offers different schemes for GPCR labels:
+
+       * structure based schemes, available for all GPCR classes.
+         You can use them by instantiating with "GPCRdb(A)", "GPCRdb(B)" etc.
+         The relevant references are:
+        * Isberg et al, (2015) Generic GPCR residue numbers - Aligning topology maps while minding the gaps,
+          Trends in Pharmacological Sciences 36, 22--31,
+          https://doi.org/10.1016/j.tips.2014.11.001
+        * Isberg et al, (2016) GPCRdb: An information system for G protein-coupled receptors,
+          Nucleic Acids Research 44, D356--D364,
+          https://doi.org/10.1093/nar/gkv1178
+
+       * sequence based schemes, with different names depending on the GPCR class
+        * Class-A:
+          Ballesteros et al, (1995) Integrated methods for the construction of three-dimensional models
+          and computational probing of structure-function relations in G protein-coupled receptors,
+          Methods in Neurosciences 25, 366--428,
+          https://doi.org/10.1016/S1043-9471(05)80049-7
+        * Class-B:
+          Wootten et al, (2013) Polar transmembrane interactions drive formation of ligand-specific
+          and signal pathway-biased family B G protein-coupled receptor conformations,
+          Proceedings of the National Academy of Sciences of the United States of America 110, 5211--5216,
+          https://doi.org/10.1073/pnas.1221585110
+        * Class-C:
+          Pin et al, (2003) Evolution, structure, and activation mechanism of family 3/C G-protein-coupled receptors
+          Pharmacology and Therapeutics 98, 325--354
+          https://doi.org/10.1016/S0163-7258(03)00038-X
+        * Class-F:
+          Wu et al, (2014) Structure of a class C GPCR metabotropic glutamate receptor 1 bound to an allosteric modulator
+          Science 344, 58--64
+          https://doi.org/10.1126/science.1249489
+
+   Note
+   ----
+   Not all schemes might work work for all methods
+   of this class. In particular, fragmentation
+   heuristics are derived from 3.50(x50)-type
+   formats. Other class A schemes
+   like Oliveira and Baldwin-Schwarz
+   can be used for residue mapping, labeling,
+   but not for fragmentation. They are still
+   partially usable but we have decided
+   to omit them from the docs. Please
+   see the full reference page for their citation.
+   """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._nomenclature_key = kwargs.get("scheme")
+
+class LabelerCGN(LabelerGPCRdb):
+    r"""
+    Obtain and manipulate G-protein generic residue numbering, i.e. 'Common Gα Numbering', CGN[1]
+    provided by the `GPCRdb <https://gpcrdb.org/>`_.
+
+    This is based on the awesome GPCRdb REST-API.
+
+    The generic residue labels are called indistinctly "consensus labels"
+    or simply "nomenclature" throughout mdciao.
+
+    For an overview on CGN, see
+    `the original website <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_.
+
+    * Flock et al, (2015) Universal allosteric mechanism for Gα activation by GPCRs
+      Nature 2015 524:7564 524, 173--179
+      https://doi.org/10.1038/nature14663
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, scheme="display_generic_number", **kwargs)
+        self._nomenclature_key = "CGN"
 
 class AlignerConsensus(object):
     """Use consensus labels for multiple sequence alignment.
