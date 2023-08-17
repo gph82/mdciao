@@ -40,7 +40,7 @@ class Test_Interface_B2AR_Gas(unittest.TestCase):
 class Test_KLIFSLabeler_P31751(unittest.TestCase):
     def test_works(self):
         KLIFS = examples.KLIFSLabeler_P31751()
-        assert KLIFS._nomenclature_key == "KLIFS"
+        assert KLIFS._conlab_column == "KLIFS"
 
 class Test_AlignerConsensus_B2AR_HUMAN_vs_OPSD_BOVIN(unittest.TestCase):
     def test_works(self):

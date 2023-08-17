@@ -390,14 +390,14 @@ class TestLabelerGPCR_local(unittest.TestCase):
                                  nomenclature._GPCR_mandatory_fields + nomenclature._GPCR_available_schemes)
 
     def test_correct_residue_dicts(self):
-        if self.GPCR_local_w_pdb._nomenclature_key == "BW":
+        if self.GPCR_local_w_pdb._conlab_column == "BW":
             _np.testing.assert_equal(self.GPCR_local_w_pdb.conlab2AA["1.25"], "Q26")
             _np.testing.assert_equal(self.GPCR_local_w_pdb.AA2conlab["Q26"], "1.25")
-        elif self.GPCR_local_w_pdb._nomenclature_key == "display_generic_number":
+        elif self.GPCR_local_w_pdb._conlab_column == "display_generic_number":
             _np.testing.assert_equal(self.GPCR_local_w_pdb.conlab2AA["1.25x25"], "Q26")
             _np.testing.assert_equal(self.GPCR_local_w_pdb.AA2conlab["Q26"], "1.25x25")
         else:
-            raise ValueError("no tests written for %s yet" % (self.GPCR_local_w_pdb._nomenclature_key))
+            raise ValueError("no tests written for %s yet" % (self.GPCR_local_w_pdb._conlab_column))
 
     def test_correct_fragments_dict(self):
         # Test "fragments" dictionary SMH
@@ -414,7 +414,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
         self.assertSequenceEqual(list(self.GPCR_local_w_pdb.fragments_as_conlabs.keys()),
                                  ["TM1", "ICL1", "TM2"])
         self.assertDictEqual(self.GPCR_local_w_pdb.fragments_as_conlabs,
-                             self.conlab_frag_dicts[self.GPCR_local_w_pdb._nomenclature_key])
+                             self.conlab_frag_dicts[self.GPCR_local_w_pdb._conlab_column])
 
     def test_correct_fragment_names(self):
         self.assertSequenceEqual(self.GPCR_local_w_pdb.fragment_names,
@@ -932,7 +932,7 @@ class Test_consensus_maps2consensus_frag(unittest.TestCase):
         cls.GPCR, cls.maps, cls.frags = {}, {}, {}
         for GPCR_scheme in ["BW", "GPCRdb(A)", "GPCRdb(B)"]:
             cls.GPCR[GPCR_scheme] = nomenclature.LabelerGPCR(examples.filenames.adrb2_human_xlsx,
-                                                             GPCR_scheme=GPCR_scheme
+                                                             scheme=GPCR_scheme
                                                              )
 
             cls.maps[GPCR_scheme] = [lab.top2labels(cls.geom.top) for lab in [cls.CGN, cls.GPCR[GPCR_scheme]]]

@@ -452,7 +452,7 @@ class LabelerConsensus(object):
         self._fragments_as_resSeqs = {key : [_mdcu.residue_and_atom.int_from_AA_code(ival) for ival in val]
                                       for key, val in self.fragments.items()}
 
-        self._idx2conlab = self.dataframe[self._nomenclature_key].values.tolist()
+        self._idx2conlab = self.dataframe[self._conlab_column].values.tolist()
         self._conlab2idx = {lab: idx for idx, lab in enumerate(self.idx2conlab) if lab is not None}
 
     @property
@@ -672,7 +672,7 @@ class LabelerConsensus(object):
                                                                return_residue_idxs=True, empty=None)
 
         # In principle I'm introducing this only for KLIFS, could be for all nomenclatures
-        if self._nomenclature_key == "KLIFS":
+        if self._conlab_column == "KLIFS":
             chain_id = self.dataframe.chain_index[_np.hstack(list(self.fragments_as_idxs.values()))].unique()
             assert len(chain_id) == 1
             seq_1_res_idxs = self.dataframe[self.dataframe.chain_index == chain_id[0]].index
@@ -695,7 +695,7 @@ class LabelerConsensus(object):
         for ii, idf in enumerate(df):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
             topidx2conlab = _np.full([len(top) if isinstance(top,str) else top.n_residues][0], None)
-            topidx2conlab[list(top2self.keys())] = self.dataframe.iloc[list(top2self.values())][self._nomenclature_key]
+            topidx2conlab[list(top2self.keys())] = self.dataframe.iloc[list(top2self.values())][self._conlab_column]
 
 
             idf = _mdcu.sequence.AlignmentDataFrame(idf.merge(_DataFrame(
@@ -1191,6 +1191,8 @@ class LabelerGPCRdb(LabelerConsensus):
                                                           )
         self._AA2conlab, self._fragments = _GPCRdbDataFrame2conlabs(self.dataframe, scheme=scheme,
                                                                     return_fragments=True)
+
+        self._conlab_column = scheme
         # TODO can we do this using super?
         LabelerConsensus.__init__(self,
                                   local_path=local_path,
@@ -1274,7 +1276,6 @@ class LabelerGPCR(LabelerGPCRdb):
    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._nomenclature_key = kwargs.get("scheme")
 
 class LabelerCGN(LabelerGPCRdb):
     r"""
@@ -1296,7 +1297,6 @@ class LabelerCGN(LabelerGPCRdb):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, scheme="display_generic_number", **kwargs)
-        self._nomenclature_key = "CGN"
 
 class AlignerConsensus(object):
     """Use consensus labels for multiple sequence alignment.
@@ -3434,7 +3434,7 @@ class LabelerKLIFS(LabelerConsensus):
             information
         """
 
-        self._nomenclature_key = "KLIFS"
+        self._conlab_column = "KLIFS"
         self._dataframe, self._tablefile = _KLIFS_finder(UniProtAC,
                                                          format=format,
                                                          local_path=local_path,
@@ -3448,7 +3448,7 @@ class LabelerKLIFS(LabelerConsensus):
         for __, row in self.dataframe[self.dataframe.UniProtAC_res.astype(bool)].iterrows():
             key = "%s%u" % (row.residue, row.Sequence_Index)
             assert key not in self._AA2conlab
-            self._AA2conlab[key] = row[self._nomenclature_key]
+            self._AA2conlab[key] = row[self._conlab_column]
 
         self._fragments = _defdict(list)
         for ires, key in self.AA2conlab.items():
