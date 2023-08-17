@@ -213,7 +213,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
                                                  try_web_lookup=False,
                                                  local_path=self.tmpdir,
                                                  )
-
+        self.S6_AAresSeq =  ['CYS359', 'TYR360', 'PRO361', 'HIS362', 'PHE363']
     def tearDown(self):
         # Remove the directory after the test
         shutil.rmtree(self.tmpdir)
@@ -283,6 +283,18 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         defs = self.cgn_local.top2frags(self.top)
         self.assertListEqual(list(set(nomenclature._CGN_fragments).difference(list(defs.keys()))),
                              ["G.h1ha"]) # 3SN6 is lacking this element
+        self.assertListEqual([str(self.top.residue(ii)) for ii in defs["G.S6"]], self.S6_AAresSeq)
+
+    def test_top2frags_w_atoms(self):
+        defs = self.cgn_local.top2frags(self.top)
+        atoms_from_frags = []
+        for ii in defs["G.S6"]:
+            atoms_from_frags.extend(list(self.top.residue(ii).atoms))
+        defs_atoms = self.cgn_local.top2frags(self.top, atoms=True)
+        self.assertListEqual(list(set(nomenclature._CGN_fragments).difference(list(defs_atoms.keys()))),
+                             ["G.h1ha"])  # 3SN6 is lacking this element
+        self.assertListEqual(atoms_from_frags, [self.top.atom(ii) for ii in defs_atoms["G.S6"]])
+
 
     def test_top2frags_gets_dataframe(self):
         self.cgn_local.aligntop(self.top)

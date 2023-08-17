@@ -972,13 +972,15 @@ class LabelerConsensus(object):
                     out_dict[imap] = ii
         return out_dict
 
+    # TODO return atoms
     def top2frags(self, top,
                   fragments=None,
                   min_hit_rate=.5,
                   input_dataframe=None,
                   show_alignment=False,
+                  atoms=False,
                   verbose=True,
-                  ):
+                  ) -> dict:
         r"""
         Return the subdomains derived from the
         consensus nomenclature and map it out
@@ -986,7 +988,7 @@ class LabelerConsensus(object):
 
         Note
         ----
-        This method uses :obj:`aligntop` internally,
+        This method uses `aligntop` internally,
         see the doc on that method for more info.
 
         Parameters
@@ -998,12 +1000,13 @@ class LabelerConsensus(object):
             (via residue idxs) to check if the newly found, consensus
             definitions (`defs`) clash with the input in `fragments`.
             *Clash* means that the `defs` would span over more
-            than one of the fragments in defined in :obj:`fragments`.
+            than one of the fragments in defined in `fragments`.
 
             An interactive prompt will ask the user which fragments to
             keep in case of clashes.
 
-            Check :obj:`check_if_fragment_clashes` for more info
+            Check the method :obj:`~mdciao.fragments.check_if_fragment_clashes`
+            for more info
         min_hit_rate : float, default is .5
             With big topologies, like a receptor-Gprotein system,
             the "brute-force" alignment method
@@ -1025,6 +1028,8 @@ class LabelerConsensus(object):
             the self.most_recent_alignment
         show_alignment : bool, default is False,
             Show the entire alignment as :obj:`~pandas.DataFrame`
+        atoms : bool, default is False
+            Instead of returning residue indices, return atom indices
         verbose : bool, default is True
             Also print the definitions
 
@@ -1032,7 +1037,7 @@ class LabelerConsensus(object):
         -------
         defs : dictionary
             Dictionary with subdomain names as keys
-            and lists of indices as values
+            and arrays of indices (residue or atom) as values
         """
 
         if isinstance(top, str):
@@ -1066,7 +1071,8 @@ class LabelerConsensus(object):
                                       just_return_string=True)
             if verbose:
                 print(istr)
-
+        if atoms:
+            defs = {key : _np.hstack([[aa.index for aa in top.residue(ii).atoms] for ii in frag]) for key, frag in defs.items()}
         return dict(defs)
 
     def _selfmap2frags(self, self2top):
