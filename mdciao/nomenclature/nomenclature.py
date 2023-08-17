@@ -390,7 +390,7 @@ def _GPCRdb_finder(descriptor,
                                                        usecols=lambda x: x.lower() != "unnamed: 0",
                                                        converters={key: str for key in _GPCR_available_schemes},
                                                        ).replace({_np.nan: None})
-    web_looukup_lambda = lambda url: _GPCR_web_lookup(url, verbose=verbose)
+    web_looukup_lambda = lambda url: _GPCRdb_web_lookup(url, verbose=verbose)
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
                           try_web_lookup=try_web_lookup,
@@ -399,10 +399,10 @@ def _GPCRdb_finder(descriptor,
                           write_to_disk=write_to_disk)
 
 
-def _GPCR_web_lookup(url, verbose=True,
-                     timeout=5):
+def _GPCRdb_web_lookup(url, verbose=True,
+                       timeout=5):
     r"""
-    Lookup this url for a GPCR-notation
+    Lookup this url for a GPCR- or CGN notation
     return a ValueError if the lookup returns an empty json
     Parameters
     ----------

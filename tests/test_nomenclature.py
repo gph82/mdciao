@@ -165,12 +165,12 @@ class Test_CGN_finder(unittest.TestCase):
 class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
 
     def test_works(self):
-        DF = nomenclature._GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
+        DF = nomenclature._GPCRdb_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
         assert isinstance(DF, DataFrame)
 
     def test_wrong_code(self):
         with pytest.raises(ValueError):
-            raise nomenclature._GPCR_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
+            raise nomenclature._GPCRdb_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
 
 
 class Test_GPCRdb_finder(unittest.TestCase):
