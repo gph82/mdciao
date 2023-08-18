@@ -21,6 +21,7 @@ Classes
 .. autosummary::
     :toctree: generated
 
+    LabelerConsensus
     LabelerGPCR
     LabelerCGN
     LabelerKLIFS

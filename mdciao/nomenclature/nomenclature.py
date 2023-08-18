@@ -439,7 +439,7 @@ class LabelerConsensus(object):
      * :obj:`LabelerCGN` for Common-Gprotein-nomenclature (CGN)
      * :obj:`LabelerKLIFS` for Kinase-Ligand Interaction notation of the 85 pocket-residues of kinases
 
-    The consensus labels are abbreviated to 'conlab' throughout
+    The consensus labels are abbreviated to 'conlab' throughout.
 
     """
 
