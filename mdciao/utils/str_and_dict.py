@@ -34,6 +34,68 @@ tunit2tunit = {"ps":  {"ps": 1, "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ms":  {"ps": 1e9, "ns": 1e6,  "mus": 1e3,  "ms":1},
                }
 
+def _kwargs_docstring(obj, exclude=None):
+    r""" Return the formatted docstring of a callable object's keyword arguments.
+
+    Parameters
+    ----------
+    obj : callable
+        The method or class whose docstring will be extracted
+    exclude : list, default is None
+        A list of argument names (strings). Arguments of `obj`
+        matching those in `exclude` will be excluded from
+        the returned docstring.
+
+    Returns
+    -------
+    docstring :  str
+    """
+    sig = _signature(obj)
+    dp = _dsp.parse(obj.__doc__)
+    params = ""
+    if exclude is None:
+        exclude=[]
+    for p in dp.params:
+        for arg in p.arg_name.replace(" ", "").split(","):
+            if arg in sig.parameters.keys() and (
+                    "=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3) \
+                    and arg not in exclude:
+                #if params=="":
+                #    first_tab=""
+                #else:
+                #    first_tab="\t"
+
+                line = f"{p.arg_name} : {p.type_name}\n"
+                line += ''.join(['\t%s\n' % (desc) for desc in p.description.splitlines()])
+                params += line.expandtabs(4)
+                break
+    assert params != ''
+    return params
+
+def _kwargs_subs(funct_or_method, exclude=None):
+    r"""Substitute the expression 'kwargs docstrings' in the decorated method with those of `funct_or_method`
+
+    Will substitute the expression "%(substitute_kwargs)s" anywhere in the
+    docstring of the method it decorates with the optional parameter
+    docstring of funct_or_method
+
+    Parameters
+    ----------
+    funct_or_method : method or function
+    exclude : list, default is None
+        A list of argument names (strings). Arguments of `obj`
+        matching those in `exclude` will be excluded from
+        the returned docstring.
+
+
+    Returns
+    -------
+    dec : mpldocstring.Substitution object
+    """
+
+    return _mpldocstring.Substitution(
+        substitute_kwargs=_kwargs_docstring(funct_or_method, exclude=exclude))
+
 def get_sorted_trajectories(trajectories):
     r"""
     Common parser for something that can be interpreted as a trajectory
@@ -317,6 +379,7 @@ def unify_freq_dicts(freqs,
 
     return freqs_work
 
+@_kwargs_subs(unify_freq_dicts)
 def average_freq_dict(freqs,
                       weights=None,
                       **unify_freq_dicts_kwargs
@@ -343,7 +406,12 @@ def average_freq_dict(freqs,
     weights : dict, default is None
         relative weights of each dictionary
 
-    unify_freq_dicts_kwargs
+    unify_freq_dicts_kwargs : Optional keyword args for :obj:`~mdciao.utils.str_and_dict.unify_freq_dicts`
+        as listed below
+
+    Other Parameters
+    ----------------
+    %(substitute_kwargs)s
 
     Returns
     -------
@@ -1247,61 +1315,3 @@ class FilenameGenerator(object):
         else:
             gx = "pdf"
         return '.'.join([self.fullpath_overall_no_ext.replace("overall@", "flare@"),gx])
-
-
-def _kwargs_docstring(obj, exclude=None):
-    r""" Return the formatted docstring of a callable object's keyword arguments.
-
-    Parameters
-    ----------
-    obj : callable
-        The method or class whose docstring will be extracted
-    exclude : list, default is None
-        A list of argument names (strings). Arguments of `obj`
-        matching those in `exclude` will be excluded from
-        the returned docstring.
-
-    Returns
-    -------
-    docstring :  str
-    """
-    sig = _signature(obj)
-    dp = _dsp.parse(obj.__doc__)
-    params = ""
-    if exclude is None:
-        exclude=[]
-    for p in dp.params:
-        for arg in p.arg_name.replace(" ", "").split(","):
-            if arg in sig.parameters.keys() and (
-                    "=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3) \
-                    and arg not in exclude:
-                line = '%s : %s\n%s' % (p.arg_name, p.type_name,
-                                        ''.join(['\t%s\n' % (desc) for desc in p.description.splitlines()]))
-                params += line.expandtabs(4)
-                break
-    assert params != ''
-    return params
-
-def _kwargs_subs(funct_or_method, exclude=None):
-    r"""Substitute the expression 'kwargs docstrings' in the decorated method with those of `funct_or_method`
-
-    Will substitute the expression "%(substitute_kwargs)s" anywhere in the
-    docstring of the method it decorates with the optional parameter
-    docstring of funct_or_method
-
-    Parameters
-    ----------
-    funct_or_method : method or function
-    exclude : list, default is None
-        A list of argument names (strings). Arguments of `obj`
-        matching those in `exclude` will be excluded from
-        the returned docstring.
-
-
-    Returns
-    -------
-    dec : mpldocstring.Substitution object
-    """
-
-    return _mpldocstring.Substitution(
-        substitute_kwargs=_kwargs_docstring(funct_or_method, exclude=exclude))
