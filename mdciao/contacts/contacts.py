@@ -5561,7 +5561,7 @@ class ContactGroup(object):
               to the most likely distance, i.e.
               to the mode, i.e. to the
               distance values at which
-              the distributions (:obj:`plot_distance_distributions')
+              the distributions (:obj:`plot_distance_distributions`)
               peak. You can check the modes in
               :obj:`~mdciao.contacts.ContactGroup.modes`
             * "mean" : minimize average distance

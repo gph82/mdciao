@@ -1338,7 +1338,7 @@ def interface(
     cmap : str, default is 'binary'
         The colormap for the contact matrix. Default is
         'binary' which is black and white, but you can
-        choose anthing from here:
+        choose anything from here:
         https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html
     flareplot : bool, default is True
         Produce a flare plot of interface the contact
