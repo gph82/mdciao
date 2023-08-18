@@ -744,49 +744,49 @@ class Test_guess_nomenclature_fragments(unittest.TestCase):
         cls.fragments = get_fragments(cls.top, verbose=False)
 
     def test_finds_frags(self):
-        guessed_frags = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb,
-                                                                  self.top,
-                                                                  fragments=self.fragments,
-                                                                  verbose=True,
-                                                                  )
+        guessed_frags = nomenclature.matching_fragments(self.GPCR_local_w_pdb,
+                                                        self.top,
+                                                        fragments=self.fragments,
+                                                        verbose=True,
+                                                        )
         _np.testing.assert_array_equal([4], guessed_frags)
 
     def test_finds_frags_w_named_heuristic(self):
-        guessed_frags = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb,
-                                                                  self.top,
-                                                                  fragments="resSeq",
-                                                                  verbose=True,
-                                                                  )
+        guessed_frags = nomenclature.matching_fragments(self.GPCR_local_w_pdb,
+                                                        self.top,
+                                                        fragments="resSeq",
+                                                        verbose=True,
+                                                        )
         _np.testing.assert_array_equal([7, 8, 9], guessed_frags)
 
     def test_finds_frags_res(self):
-        guessed_res = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb,
-                                                                self.top,
-                                                                fragments=self.fragments,
-                                                                return_residue_idxs=True
-                                                                )
+        guessed_res = nomenclature.matching_fragments(self.GPCR_local_w_pdb,
+                                                      self.top,
+                                                      fragments=self.fragments,
+                                                      return_residue_idxs=True
+                                                      )
         _np.testing.assert_array_equal(self.fragments[4], guessed_res)
 
     def test_finds_frags_no_frags(self):
-        guessed_frags = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb,
-                                                                  self.top,
-                                                                  )
+        guessed_frags = nomenclature.matching_fragments(self.GPCR_local_w_pdb,
+                                                        self.top,
+                                                        )
         _np.testing.assert_array_equal([4], guessed_frags)
 
     def test_finds_frags_seq_as_str(self):
-        guessed_frags = nomenclature.guess_nomenclature_fragments(self.GPCR_local_w_pdb.seq,
-                                                                  self.top,
-                                                                  fragments=self.fragments,
-                                                                  )
+        guessed_frags = nomenclature.matching_fragments(self.GPCR_local_w_pdb.seq,
+                                                        self.top,
+                                                        fragments=self.fragments,
+                                                        )
         _np.testing.assert_array_equal([4], guessed_frags)
 
     def test_finds_frags_nothing_None(self):
         seq = "THISSENTENCEWILLNEVERALIGN"
-        guessed_frags = nomenclature.guess_nomenclature_fragments(seq,
-                                                                  self.top,
-                                                                  fragments=self.fragments,
-                                                                  empty=None
-                                                                  )
+        guessed_frags = nomenclature.matching_fragments(seq,
+                                                        self.top,
+                                                        fragments=self.fragments,
+                                                        empty=None
+                                                        )
         print(guessed_frags)
         assert guessed_frags is None
 

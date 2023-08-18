@@ -664,12 +664,12 @@ class LabelerConsensus(object):
 
         if (min_hit_rate > 0):
             assert restrict_to_residxs is None
-            restrict_to_residxs = guess_nomenclature_fragments(self.seq,
-                                                               top,
-                                                               _fragments,
-                                                               verbose=verbose or debug,
-                                                               min_hit_rate=min_hit_rate,
-                                                               return_residue_idxs=True, empty=None)
+            restrict_to_residxs = matching_fragments(self.seq,
+                                                     top,
+                                                     _fragments,
+                                                     verbose=verbose or debug,
+                                                     min_ID_rate=min_hit_rate,
+                                                     return_residue_idxs=True, empty=None)
 
         # In principle I'm introducing this only for KLIFS, could be for all nomenclatures
         if self._conlab_column == "KLIFS":
@@ -2006,16 +2006,15 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
         return no_key
 
 
-def guess_nomenclature_fragments(refseq, top,
-                                 fragments=None,
-                                 min_hit_rate=.6,
-                                 verbose=False,
-                                 return_residue_idxs=False,
-                                 empty=list):
-    """Guess what fragments in the topology best match
-    the consensus labels in a :obj:`LabelerConsensus` object
+def matching_fragments(refseq, top,
+                       fragments=None,
+                       min_ID_rate=.6,
+                       verbose=False,
+                       return_residue_idxs=False,
+                       empty=list):
+    """Return fragments of the topology that match the reference sequence of :obj:`LabelerConsensus` object
 
-    The guess uses a cutoff, `min_hit_rate`, for the quality of
+    Matches are defined using `min_hit_rate` is used as a cutoff
     each segment's alignment to the sequence in `CLin`.
 
     It only counts the matches for the protein residues of
@@ -2028,28 +2027,29 @@ def guess_nomenclature_fragments(refseq, top,
 
     Parameters
     ----------
-    refseq: str or :class:`LabelerConsensus`
+    refseq: str or :obj:`LabelerConsensus`
         If not str, the sequence will
-        be gotten from `LabelerConsensus.seq` method
+        be gotten from :obj:`LabelerConsensus.seq` method
     top:
-        :py:class:`~mdtraj.Topology` object or string
+        :obj:`~mdtraj.Topology` object or string
         containing the sequence.
     fragments : iterable of iterables of idxs, str, or None
         How `top` is split into fragments. If str, use this
         heuristic when calling :obj:`~mdciao.fragments.get_fragments`.
-        If None, will be generated
-        using tje default option for :obj:`~mdciao.fragments.get_fragments`
-    min_hit_rate: float, default is .6
-        Only fragments with hit rates higher than this
-        will be returned as a guess
+        If None, will be generated using tje default option for
+        :obj:`~mdciao.fragments.get_fragments`
+    min_ID_rate: float, default is .6
+        Only fragments with sequence identity higher
+        than this rate [0,1] will be returned as a guess
     verbose: boolean
         be verbose
     return_residue_idxs : bool, default is False
         Return the list of residue indices directly,
         instead of returning a list of fragment idxs.
     empty : class, list or None, default is list
-        What to return in case of an emtpy guess,
+        What to return in case of an empty guess,
         an empty list or a None
+
     Returns
     -------
     guess: list
@@ -2080,30 +2080,31 @@ def guess_nomenclature_fragments(refseq, top,
     df = _mdcu.sequence.align_tops_or_seqs(top, seq_consensus)[0] #picking the first one here w/o asking if there's equivalent aligns might be problematic
     df = df.merge(protein_df, how="inner")
     hit_idxs = df[df.match & df.is_protein].idx_0.values
-    hits, guess = [], []
+    hits, matching_frag_idxs = [], []
     summary = []
     for ii, ifrag in enumerate(fragments):
         hit = _np.intersect1d(ifrag, hit_idxs)
-        if len(hit) / len(ifrag) >= min_hit_rate:
-            guess.append(ii)
+        if len(hit) / len(ifrag) >= min_ID_rate:
+            matching_frag_idxs.append(ii)
         hits.append(hit)
         summary.append([len(hit) / len(ifrag), len(hit), len(ifrag)])
+
     if verbose:
         print(_DataFrame(summary, columns=["hit rate", "# hits", "len(frg)"],
                          ).to_string(formatters={"hit rate" : "{:,.2f}".format}))
 
-    guessed_res_idxs = []
-    if len(guess) > 0:
-        guessed_res_idxs = _np.hstack([fragments[ii] for ii in guess])
+    matching_res_idxs = []
+    if len(matching_frag_idxs) > 0:
+        matching_res_idxs = _np.hstack([fragments[ii] for ii in matching_frag_idxs])
 
     if return_residue_idxs:
-        guess = guessed_res_idxs
+        matching_frag_idxs = matching_res_idxs
 
-    if empty is None and len(guess) == 0:
-        guess = None
-    return guess
+    if empty is None and len(matching_frag_idxs) == 0:
+        matching_frag_idxs = None
+    return matching_frag_idxs
 
-@_kwargs_subs(guess_nomenclature_fragments, exclude=["fragments", "return_residue_idxs"])
+@_kwargs_subs(matching_fragments, exclude=["fragments", "return_residue_idxs"])
 def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
                           return_str=False, accept_guess=False,
                           return_residue_idxs=False,
@@ -2188,7 +2189,7 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
         if return_residue_idxs is False:
             raise ValueError("`fragments` can't be None if `return_residue_idxs` is False.\n"
                              "Please see the note at the end of this method's documentation")
-    guess = guess_nomenclature_fragments(CLin, top, fragments=fragments, **guess_kwargs)
+    guess = matching_fragments(CLin, top, fragments=fragments, **guess_kwargs)
     guess_as_string = ','.join(['%s' % ii for ii in guess])
 
     if len(guess) > 0:
