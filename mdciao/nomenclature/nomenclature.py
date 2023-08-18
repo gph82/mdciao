@@ -768,8 +768,9 @@ class LabelerConsensus(object):
                             confrags_compatible_with_frags = False
                             only_in_top = set(confragAAs).difference(self.fragments[confraglab])
                             current_clashing_confrag = f"=> {confraglab} is not compatible with alignment '{ii}'. "
-                            istr = current_clashing_confrag+\
-                                   f"The following residues of your input `top` seem to be the problem: {only_in_top}. "
+                            current_clashing_residues = f"The following residues of your input `top` seem to be the problem: {only_in_top}. "
+                            istr = current_clashing_confrag+current_clashing_residues
+
                             if ii<len(df)-1:
                                     istr += f"Moving to the next equally scored alignment" \
                                             f" (score={idf.alignment_score:.2f}) to check if these clashes disappear."
@@ -801,7 +802,7 @@ class LabelerConsensus(object):
                 f"compatible with the \'{_frag_str}\' fragmentation-heuristic:\n",
                 just_return_string=True)
             assertion_error_str += "\n%s\n"
-            assertion_error_str += f"Current clashes are\n{current_clashing_confrag}See above for more details."
+            assertion_error_str += f"Current clashes are\n{current_clashing_confrag}\n{current_clashing_residues}See above for more details."
             assertion_error_str += "\n" + _mdcu.str_and_dict.print_wrap(
                 f"Use `verbose=True` to see the (consensus incompatible) alignments. "
                 f"Also, you can try increasing the `min_seqID_rate` or using `restrict_to_residxs` to restrict the alignment " \
