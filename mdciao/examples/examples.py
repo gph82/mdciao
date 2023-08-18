@@ -545,7 +545,7 @@ def GPCRLabeler_ardb2_human(**kwargs):
     r"""Build an :obj:`~mdciao.nomenclature.LabelerGPCR` with the adrb2_human.xlsx file shipped with mdciao"""
     return _LabelerGPCR(filenames.adrb2_human_xlsx,**kwargs)
 
-def CGNLabeler_GNAS2_HUMAN(**kwargs):
+def CGNLabeler_gnas2_human(**kwargs):
     r"""Build an :obj:`~mdciao.nomenclature.LabelerCGN` with the gnas2_human.txt file shipped with mdciao"""
     with _TDir(suffix="_mdciao_example_CGNLabeler") as t:
         for fn in [filenames.gnas2_human_xlsx]:
@@ -579,7 +579,7 @@ def Interface_B2AR_Gas(**kwargs):
             example_kwargs = {"topology": filenames.top_pdb,
                               "figures": False,
                               "GPCR_uniprot": GPCRLabeler_ardb2_human(),
-                              "CGN_uniprot": CGNLabeler_GNAS2_HUMAN(),
+                              "CGN_uniprot": CGNLabeler_gnas2_human(),
                               "no_disk": True,
                               "frag_idxs_group_1":[0],
                               "frag_idxs_group_2":[3],

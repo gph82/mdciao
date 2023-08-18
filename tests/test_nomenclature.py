@@ -188,8 +188,8 @@ class TestClassSetUpTearDown_CGN_local(unittest.TestCase):
     # The setup is in itself a test
     def setUp(self):
         self.tmpdir = mkdtemp("_test_mdciao_CGN_local")
-        self._CGN_GNAS2_HUMAN_file =path.join(self.tmpdir, path.basename(test_filenames.gnas2_human_xlsx))
-        shutil.copy(test_filenames.gnas2_human_xlsx, self._CGN_GNAS2_HUMAN_file)
+        self._CGN_gnas2_human_file =path.join(self.tmpdir, path.basename(test_filenames.gnas2_human_xlsx))
+        shutil.copy(test_filenames.gnas2_human_xlsx, self._CGN_gnas2_human_file)
         self.cgn_local = nomenclature.LabelerCGN("gnas2_human",
                                                  try_web_lookup=False,
                                                  local_path=self.tmpdir,
@@ -205,10 +205,10 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     # The setup is in itself a test
     def setUp(self):
         self.tmpdir = mkdtemp("_test_mdciao_CGN_local")
-        self._GNAS2_HUMAN_file = path.join(self.tmpdir, path.basename(test_filenames.gnas2_human_xlsx))
+        self._gnas2_human_file = path.join(self.tmpdir, path.basename(test_filenames.gnas2_human_xlsx))
         self.geom = md.load(test_filenames.pdb_3SN6)
         self.top = self.geom.top
-        shutil.copy(test_filenames.gnas2_human_xlsx, self._GNAS2_HUMAN_file)
+        shutil.copy(test_filenames.gnas2_human_xlsx, self._gnas2_human_file)
         self.cgn_local = nomenclature.LabelerCGN("gnas2_human",
                                                  try_web_lookup=False,
                                                  local_path=self.tmpdir,
@@ -220,7 +220,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
 
     def test_correct_files(self):
         _np.testing.assert_equal(self.cgn_local.tablefile,
-                                 self._GNAS2_HUMAN_file)
+                                 self._gnas2_human_file)
 
     def test_dataframe(self):
         self.assertIsInstance(self.cgn_local.dataframe, DataFrame)
@@ -334,7 +334,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
                                        self.cgn_local.fragment_names)
 
     def test_PDB_full_path_exists(self):
-        nomenclature.LabelerCGN(self._GNAS2_HUMAN_file,
+        nomenclature.LabelerCGN(self._gnas2_human_file,
                                 try_web_lookup=False,
                                 local_path=self.tmpdir,
                                 )
@@ -526,7 +526,7 @@ class Test_aligntop_fragment_clashes(unittest.TestCase):
     """
 
     def setUp(self):
-        self.CGN = examples.CGNLabeler_GNAS2_HUMAN()
+        self.CGN = examples.CGNLabeler_gnas2_human()
         self.GPCR = examples.GPCRLabeler_ardb2_human()
         self.b2ar = md.load(examples.filenames.actor_pdb)
 

@@ -829,12 +829,12 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
 
     def test_CGN_paths(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            path_to_GNAS2_HUMAN = _path.join(tmpdir, _path.basename(test_filenames.gnas2_human_xlsx))
+            path_to_gnas2_human = _path.join(tmpdir, _path.basename(test_filenames.gnas2_human_xlsx))
             shutil.copy(test_filenames.gnas2_human_xlsx, tmpdir)
             with remember_cwd():
                 os.chdir(tmpdir)
                 a = parser_for_CGN_overview()
-                a = a.parse_args([path_to_GNAS2_HUMAN])
+                a = a.parse_args([path_to_gnas2_human])
                 a.__setattr__("topology",test_filenames.top_pdb)
                 cli._fragment_overview(a, "CGN")
 
