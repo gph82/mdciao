@@ -166,7 +166,7 @@ def _parse_consensus_option(option, consensus_type,
         else:
             restrict_to_residxs = _np.hstack([fragments[ii] for ii in answer])
             map_out = LC_out.top2labels(top,
-                                        min_hit_rate=0,  # We need give-up the re-guessing here,
+                                        min_seqID_rate=0,  # We need give-up the re-guessing here,
                                         # because explicitely done it before with an option for
                                         # interactivity
                                         restrict_to_residxs=restrict_to_residxs,

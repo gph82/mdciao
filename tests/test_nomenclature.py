@@ -346,7 +346,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         self.assertDictEqual(top2self, self2top)
 
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq, restrict_to_residxs=[2, 3], min_hit_rate=0)
+        top2self, self2top = self.cgn_local.aligntop(self.cgn_local.seq, restrict_to_residxs=[2, 3], min_seqID_rate=0)
         self.assertDictEqual(top2self, self2top)
         self.assertTrue(all([key in [2, 3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
@@ -447,7 +447,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
         self.assertIsInstance(self.GPCR_local_w_pdb.most_recent_alignment, DataFrame)
 
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top = self.GPCR_local_w_pdb.aligntop(self.GPCR_local_w_pdb.seq, restrict_to_residxs=[2, 3], min_hit_rate=0)
+        top2self, self2top = self.GPCR_local_w_pdb.aligntop(self.GPCR_local_w_pdb.seq, restrict_to_residxs=[2, 3], min_seqID_rate=0)
         self.assertDictEqual(top2self, self2top)
         self.assertTrue(all([key in [2, 3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
@@ -725,7 +725,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
                                                     self.fragments,
                                                     nomenclature_name="GPCR",
                                                     accept_guess=True,
-                                                    min_hit_rate=2,  # impossible rate
+                                                    min_seqID_rate=2,  # impossible rate
                                                     )
         self.assertEqual(answer, None)
 

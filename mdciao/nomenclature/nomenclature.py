@@ -545,7 +545,7 @@ class LabelerConsensus(object):
 
     def aligntop(self, top,
                  restrict_to_residxs=None,
-                 min_hit_rate=.5,
+                 min_seqID_rate=.5,
                  fragments='resSeq',
                  verbose=False):
         r""" Align a topology with the object's sequence.
@@ -569,16 +569,16 @@ class LabelerConsensus(object):
             desired ones. Here, one can pass residues indices
             defining the topology segment wherein the match should
             be contained to.
-        min_hit_rate : float, default .5
+        min_seqID_rate : float, default .5
             With big topologies and many fragments,
             the alignment method (:obj:`mdciao.sequence.my_bioalign`)
             sometimes yields sub-optimal results. A value
-            :obj:`min_hit_rate` >0, e.g. .5 means that a pre-alignment
+            :obj:`min_seqID_rate` >0, e.g. .5 means that a pre-alignment
             takes place to populate :obj:`restrict_to_residxs`
             with indices of those the fragments
             (:obj:`mdciao.fragments.get_fragments` defaults)
             with more than 50% alignment in the pre-alignment.
-            If :obj:`min_hit_rate`>0, :obj`restrict_to_residx`
+            If :obj:`min_seqID_rate`>0, :obj`restrict_to_residx`
             has to be None.
         fragments : str, iterable, None, or bool, default is 'resSeq'
             Fragment definitions to resolve situations where
@@ -626,6 +626,7 @@ class LabelerConsensus(object):
             clashes with sensitive fragmentations.**
         verbose: boolean, default is False
             be verbose
+
         Returns
         ------
         top2self : dict
@@ -662,13 +663,13 @@ class LabelerConsensus(object):
                                                {"input %u" % ii: fr for ii, fr in enumerate(fragments)},
                                                _fragments, None)[0]
 
-        if (min_hit_rate > 0):
+        if (min_seqID_rate > 0):
             assert restrict_to_residxs is None
             restrict_to_residxs = matching_fragments(self.seq,
                                                      top,
                                                      _fragments,
                                                      verbose=verbose or debug,
-                                                     min_ID_rate=min_hit_rate,
+                                                     min_seqID_rate=min_seqID_rate,
                                                      return_residue_idxs=True, empty=None)
 
         # In principle I'm introducing this only for KLIFS, could be for all nomenclatures
@@ -803,7 +804,7 @@ class LabelerConsensus(object):
             assertion_error_str += f"Current clashes are\n{current_clashing_confrag}See above for more details."
             assertion_error_str += "\n" + _mdcu.str_and_dict.print_wrap(
                 f"Use `verbose=True` to see the (consensus incompatible) alignments. "
-                f"Also, you can try increasing the `min_hit_rate` or using `restrict_to_residxs` to restrict the alignment " \
+                f"Also, you can try increasing the `min_seqID_rate` or using `restrict_to_residxs` to restrict the alignment " \
                 "only to those residues of `top` that most likely belong to the reference sequence as stored in " \
                 "`self.seq`. Finally, if you _really_ know what you are doing, set the `fragments` yourself to avoid clashes.",
                 just_return_string=True)
@@ -818,7 +819,7 @@ class LabelerConsensus(object):
     def top2labels(self, top,
                    allow_nonmatch=True,
                    autofill_consensus=True,
-                   min_hit_rate=.5,
+                   min_seqID_rate=.5,
                    **aligntop_kwargs) -> list:
 
         r""" Align the sequence of :obj:`top` to the sequence used
@@ -865,11 +866,11 @@ class LabelerConsensus(object):
              * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
             will be relabeled as
              * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
-        min_hit_rate : float, default is .5
+        min_seqID_rate : float, default is .5
             With big topologies and many fragments,
             the alignment method (:obj:`mdciao.sequence.my_bioalign`)
             sometimes yields sub-optimal results. A value
-            :obj:`min_hit_rate` >0, e.g. .5 means that a pre-alignment
+            :obj:`min_seqID_rate` >0, e.g. .5 means that a pre-alignment
             takes place to populate :obj:`restrict_to_residxs`
             with indices of those the fragments
             (:obj:`mdciao.fragments.get_fragments` defaults)
@@ -887,7 +888,7 @@ class LabelerConsensus(object):
         map : list
             List of len = top.n_residues with the consensus labels
         """
-        self.aligntop(top, min_hit_rate=min_hit_rate, **aligntop_kwargs)
+        self.aligntop(top, min_seqID_rate=min_seqID_rate, **aligntop_kwargs)
         out_list = _alignment_df2_conslist(self.most_recent_alignment, allow_nonmatch=allow_nonmatch)
         out_list = out_list + [None for __ in range(top.n_residues - len(out_list))]
         # TODO we could do this padding in the alignment_df2_conslist method itself
@@ -911,7 +912,7 @@ class LabelerConsensus(object):
         with the object's available consensus dictionary
         on the fly using :obj:`~mdciao.nomenclature.LabelerConsensus.top2labels`.
         See the docs there for **top2labels_kwargs, in particular
-        `restrict_to_residxs`, `keep_consensus`, and `min_hit_rate
+        `restrict_to_residxs`, `keep_consensus`, and `min_seqID_rate`
 
         Note
         ----
@@ -975,7 +976,7 @@ class LabelerConsensus(object):
     # TODO return atoms
     def top2frags(self, top,
                   fragments=None,
-                  min_hit_rate=.5,
+                  min_seqID_rate=.5,
                   input_dataframe=None,
                   show_alignment=False,
                   atoms=False,
@@ -1007,7 +1008,7 @@ class LabelerConsensus(object):
 
             Check the method :obj:`~mdciao.fragments.check_if_fragment_clashes`
             for more info
-        min_hit_rate : float, default is .5
+        min_seqID_rate : float, default is .5
             With big topologies, like a receptor-Gprotein system,
             the "brute-force" alignment method
             (check :obj:`mdciao.sequence.my_bioalign`)
@@ -1015,7 +1016,7 @@ class LabelerConsensus(object):
             finding short snippets of reference sequence
             that align in a completely wrong part of the topology.
             To avoid this, an initial, exploratory alignment
-            is carried out. :obj:`min_hit_rate` = .5 means that
+            is carried out. :obj:`min_seqID_rate` = .5 means that
             only the fragments (:obj:`mdciao.fragments.get_fragments` defaults)
             with more than 50% alignment in this exploration
             are used to improve the second alignment
@@ -1044,7 +1045,7 @@ class LabelerConsensus(object):
             top = _md.load(top).top
 
         if input_dataframe is None:
-            top2self, self2top = self.aligntop(top, min_hit_rate=min_hit_rate, verbose=show_alignment,
+            top2self, self2top = self.aligntop(top, min_seqID_rate=min_seqID_rate, verbose=show_alignment,
                                                fragments=fragments)
         else:
             top2self, self2top = _mdcu.sequence.df2maps(input_dataframe)
@@ -2008,13 +2009,13 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
 
 def matching_fragments(refseq, top,
                        fragments=None,
-                       min_ID_rate=.6,
+                       min_seqID_rate=.6,
                        verbose=False,
                        return_residue_idxs=False,
                        empty=list):
     """Return fragments of the topology that match the reference sequence of :obj:`LabelerConsensus` object
 
-    Matches are defined using `min_hit_rate` is used as a cutoff
+    Matches are defined using `min_seqID_rate` is used as a cutoff
     each segment's alignment to the sequence in `CLin`.
 
     It only counts the matches for the protein residues of
@@ -2038,7 +2039,7 @@ def matching_fragments(refseq, top,
         heuristic when calling :obj:`~mdciao.fragments.get_fragments`.
         If None, will be generated using tje default option for
         :obj:`~mdciao.fragments.get_fragments`
-    min_ID_rate: float, default is .6
+    min_seqID_rate: float, default is .6
         Only fragments with sequence identity higher
         than this rate [0,1] will be returned as a guess
     verbose: boolean
@@ -2052,8 +2053,8 @@ def matching_fragments(refseq, top,
 
     Returns
     -------
-    guess: list
-        indices of the fragments (or residues) with higher hit-rate than `min_hit_rate`
+    matches : list
+        indices of the fragments (or residues) with higher hit-rate than `min_seqIDhit_rate`
 
 
     """
@@ -2084,7 +2085,7 @@ def matching_fragments(refseq, top,
     summary = []
     for ii, ifrag in enumerate(fragments):
         hit = _np.intersect1d(ifrag, hit_idxs)
-        if len(hit) / len(ifrag) >= min_ID_rate:
+        if len(hit) / len(ifrag) >= min_seqID_rate:
             matching_frag_idxs.append(ii)
         hits.append(hit)
         summary.append([len(hit) / len(ifrag), len(hit), len(ifrag)])
