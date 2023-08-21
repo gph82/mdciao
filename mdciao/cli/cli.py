@@ -98,7 +98,7 @@ def _parse_consensus_option(option, consensus_type,
     option : the option that was passed as argument.
         There's four usecases:
          * None, str(None)
-           Nothing happens, an residx2conlab map
+           Nothing happens, a residx2conlab map
            full of Nones is returned
          * str
           The needed identifier to instantiate an
