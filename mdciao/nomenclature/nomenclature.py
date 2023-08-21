@@ -426,12 +426,13 @@ def _md_load_rcsb(PDB,
 
 
 class LabelerConsensus(object):
-    """Parent class to manage consensus notations
+    """Parent class to manage consensus notations.
 
     This object should not be invoked by the user directly, it is visible
     here for documentation purposes.
 
     At the moment child classes are
+
      * :obj:`LabelerGPCR` for GPCR-notation, this can be:
        * structure based schemes (Gloriam et al)
        * sequence based schemes
