@@ -5358,7 +5358,7 @@ class ContactGroup(object):
 
         residues = _np.unique(_np.hstack(self.res_idxs_pairs))
         nonzero_residues = fcdf[fcdf.freq > zero_freq].index.values
-        fragments = [_np.flatnonzero(fcdf.frag == ii) for ii in fcdf.frag.unique()]
+        fragments = [_np.flatnonzero(fcdf.frag == ii) for ii in fcdf[~fcdf.frag.isnull()].frag.unique()]
 
         kwargs = {
             "fragments": fragments,
