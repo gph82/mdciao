@@ -3470,17 +3470,13 @@ class LabelerKLIFS(LabelerConsensus):
                 self._fragments[frag_key].append(ires)
 
         if self._dataframe.PDB_geom is None:
-            super().__init__(ref_PDB=self._dataframe.PDB_id,
-                             local_path=local_path,
+            super().__init__(local_path=local_path,
                              try_web_lookup=try_web_lookup,
                              verbose=verbose)
         else:
-            super().__init__(ref_PDB=None,
-                             local_path=local_path,
+            super().__init__(local_path=local_path,
                              try_web_lookup=try_web_lookup,
                              verbose=verbose)
-            self._geom_PDB = self.dataframe.PDB_geom
-            self._ref_PDB = self.dataframe.PDB_id
 
         # todo unify across Labelers
         self._fragments_as_idxs = {
