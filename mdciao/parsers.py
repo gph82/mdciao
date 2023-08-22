@@ -695,21 +695,20 @@ def parser_for_frag_overview():
     _parser_add_AAs(parser)
     return parser
 
+
 def parser_for_GPCR_overview():
-    parser = argparse.ArgumentParser(description='Produce an overview of a GPCR consensus '
-                                                 'nomenclature, optionally mapping it on an input topology. '
-                                                 'The nomenclature can be read locally or over the network')
+    parser = argparse.ArgumentParser(description='Provide an overview of GPCR consensus nomenclature,'
+                                                 ' optionally mapping it on an input topology. '
+                                                 'The nomenclature can be read locally or over the network.')
 
     parser.add_argument("GPCR_uniprot_or_file", type=str,
-                        help="Get Ballesteros-Weinstein definitions from here.\n"
-                             "If a file is not found locally, look for\n"
-                             " Ballesteros-Weinstein definitions in the GPCRdb\n"
-                             "using this string as uniprot code, "
-                             "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details.",
+                        help="Get GPCR definitions from here.\n"
+                             "If a file is not found locally, check the GPCRdb\n"
+                             "using this string as uniprot code e.g. adrb2_human. "
+                             "See https://gpcrdb.org/services/ for more details.",
                         action=Populate_input_Action
                         )
-    parser.add_argument("-t",'--topology', type=str, help='Topology file', default=None)
-
+    parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
 
     _parser_add_write_to_disk(parser)
     _parser_add_print_conlab(parser)
@@ -732,16 +731,17 @@ def parser_for_pdb():
                              "'--ext' will be ignored. Default is to save '$code.pdb'")
     return parser
 
-def parser_for_CGN_overview():
-    parser = argparse.ArgumentParser(description="Produce an overview of a G-alpha Numbering (CGN)-type"
-                                                 " nomenclature, optionally mapping it on an input topology. "
-                                                 "The CGN nomenclature can be read locally or over the network" )
 
-    parser.add_argument("uniprot_name_or_txtfile", type=str,
-                        help="Get CGN definitions from here. If a file is not "
-                             "found locally, there will be a web-lookup "
-                             "in a database using a Uniprot name, "
-                             "e.g. 'gnas2_human'. See www.mrc-lmb.cam.ac.uk",
+def parser_for_CGN_overview():
+    parser = argparse.ArgumentParser(description="Provide an overview of a G-alpha Numbering (CGN)-type nomenclature,"
+                                                 " optionally mapping it on an input topology. "
+                                                 "The nomenclature can be read locally or over the network")
+
+    parser.add_argument("CGN_uniprot_or_file", type=str,
+                        help="Get CGN nomenclature definitions from here. \n"
+                             "If a file is not found locally, check the GPCRdb\n"
+                             "using this string as uniprot code e.g. gnas2_human. "
+                             "See https://gpcrdb.org/services/ for more details.",
                         action=Populate_input_Action
                         )
     parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
