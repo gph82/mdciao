@@ -747,9 +747,8 @@ def residue_neighborhoods(residues,
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "gnas2_human",
-        try to locate local filenames "gnas2_human.txt" or do web lookups
-        in https://www.mrc-lmb.cam.ac.uk/CGN/.
-        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        try to locate local filenames "gnas2_human.xlsx" or do web lookups
+        in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
@@ -1190,9 +1189,8 @@ def interface(
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "gnas2_human",
-        try to locate local filenames "gnas2_human.txt" or do web lookups
-        in https://www.mrc-lmb.cam.ac.uk/CGN/.
-        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        try to locate local filenames "gnas2_human.xlsx" or do web lookups
+        in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
@@ -1692,9 +1690,8 @@ def sites(site_inputs,
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "gnas2_human",
-        try to locate local filenames "gnas2_human.txt" or do web lookups
-        in https://www.mrc-lmb.cam.ac.uk/CGN/.
-        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        try to locate local filenames "gnas2_human.xlsx" or do web lookups
+        in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
@@ -2142,9 +2139,8 @@ def residue_selection(expression,
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "gnas2_human",
-        try to locate local filenames "gnas2_human.txt" or do web lookups
-        in https://www.mrc-lmb.cam.ac.uk/CGN/.
-        If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
+        try to locate local filenames "gnas2_human.xlsx" or do web lookups
+        in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     save_nomenclature_files : bool, default is False
