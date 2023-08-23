@@ -234,18 +234,30 @@ def _parser_add_output_dir(parser):
                         default='.')
 
 def _parser_add_nomenclature(parser):
-    parser.add_argument("-GPCR", "--GPCR_uniprot", type=str,
-                        help="Look for Ballesteros-Weinstein definitions in the GPCRdb using a uniprot code, "
-                             "e.g. adrb2_human. See https://gpcrdb.org/services/ for more details."
+    parser.add_argument("-GPCR", "--GPCR_UniProt", type=str,
+                        help="Look for GPCR consensus nomenclature, e.g Ballesteros-Weinstein, using this UniProt name, "
+                             "e.g. adrb2_human. First, try locally with 'adrb2_human.xlsx' (or a full path to the file), "
+                             "then do a web-lookup on the fly on the GPCRdb. See https://gpcrdb.org/services/ for more details."
                              "Default is None.",
                         default='None')
+    parser.add_argument("-CGN","--CGN_UniProt", type=str,
+                        help="Look for Common-G-protein-Nomenclature, CGN, using this UniProt name, "
+                             "e.g. gnas2_human. First, try locally with 'gnas2_human.xlsx' (or a full path to the file), "
+                             "then do a web-lookup on the fly on the GPCRdb. See https://gpcrdb.org/services/ for more details."
+                             "Default is None.",
+                        default='None')
+    parser.add_argument("-KLIFS","--KLIFS_UniProtAC", type=str,
+                        help="Look for Kinase consensus nomenclature, KLIFS, using this UniProt Accession Code, "
+                             "e.g. P31751. First, try locally with 'KLIFS_P31751.xlsx' (or a full path to the file), "
+                             "then do a web-lookup on the fly on KLIFS. See https://klifs.net/ for more details.",
+                        default="None",
+                             )
     parser.add_argument("--save_nomenclature",dest='save_nomenclature_files',action="store_true",
                         help='Save available nomenclature definitions to disk so that they can '
                              'be accessed locally in later uses. '
                              'Default is False',
                         default=False)
     parser.set_defaults(save_nomenclature_files=False)
-    parser.add_argument("-CGN","--CGN_uniprot", type=str, help="Uniprot name, e.g. 'gnas2_human' for a consensus G-protein nomenclature", default='None')
 
 def _parser_add_graphic_ext(parser):
     parser.add_argument('-gx','--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
@@ -701,7 +713,7 @@ def parser_for_GPCR_overview():
                                                  ' optionally mapping it on an input topology. '
                                                  'The nomenclature can be read locally or over the network.')
 
-    parser.add_argument("GPCR_uniprot_or_file", type=str,
+    parser.add_argument("GPCR_UniProt_or_file", type=str,
                         help="Get GPCR definitions from here.\n"
                              "If a file is not found locally, check the GPCRdb\n"
                              "using this string as uniprot code e.g. adrb2_human. "
@@ -737,7 +749,7 @@ def parser_for_CGN_overview():
                                                  " optionally mapping it on an input topology. "
                                                  "The nomenclature can be read locally or over the network")
 
-    parser.add_argument("CGN_uniprot_or_file", type=str,
+    parser.add_argument("CGN_UniProt_or_file", type=str,
                         help="Get CGN nomenclature definitions from here. \n"
                              "If a file is not found locally, check the GPCRdb\n"
                              "using this string as uniprot code e.g. gnas2_human. "

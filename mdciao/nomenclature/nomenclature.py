@@ -278,7 +278,7 @@ def _GPCRdb_finder(descriptor,
     descriptor : str
         Anything that can be used to find the needed
         information, locally or online:
-         * a uniprot descriptor, e.g. 'adrb2_human', 'gnas2_human'
+         * a UniProt name, e.g. 'adrb2_human', 'gnas2_human'
          * a full local filename, e.g. `my_consensus.txt` or
           `path/to/my_consensus.txt`
          * the "basename" filename, e.g. 'adrb2_human' if
@@ -348,7 +348,7 @@ def _GPCRdb_web_lookup(url, verbose=True,
     -------
     DF : :obj:`~pandas.DataFrame`
     """
-    uniprot_name = url.split("/")[-1]
+    UniProt_name = url.split("/")[-1]
     a = _requests.get(url, timeout=timeout)
 
     return_fields = ["protein_segment",
@@ -360,7 +360,7 @@ def _GPCRdb_web_lookup(url, verbose=True,
         print("done!")
     if a.text == '[]':
         DFout = ValueError('Contacted %s url successfully (no 404),\n'
-                           'but Uniprot name %s yields nothing' % (url, uniprot_name))
+                           'but Uniprot name %s yields nothing' % (url, UniProt_name))
     else:
         df = _read_json(a.text)
         mydict = df.T.to_dict()
@@ -1124,7 +1124,7 @@ class LabelerConsensus(object):
 
 class LabelerGPCRdb(LabelerConsensus):
 
-    def __init__(self, uniprot_name,
+    def __init__(self, UniProt_name,
                  scheme="display_generic_number",
                  local_path=".",
                  format="%s.xlsx",
@@ -1136,10 +1136,10 @@ class LabelerGPCRdb(LabelerConsensus):
 
         Parameters
         ----------
-        uniprot_name : str
+        UniProt_name : str
             Descriptor by which to find the generic residue labels,
             it gets directly passed to :obj:`GPCRdb_finder`,
-            which can handle three cases of `uniprot_name` being:
+            which can handle three cases of `UniProt_name` being:
 
             * Uniprot Accession Code, e.g. 'adrb2_human'. Then this happens:
 
@@ -1172,21 +1172,21 @@ class LabelerGPCRdb(LabelerConsensus):
             'Oliveira', 'BS', but not all are guaranteed
             to work
         local_path : str, default is "."
-            Since the `uniprot_name` is turned into
+            Since the `UniProt_name` is turned into
             a filename, this is the local path where
             to (potentially) look for files.
-            In case `uniprot_name` is just a filename,
+            In case `UniProt_name` is just a filename,
             we can turn it into a full path to
             a local file using this parameter, which
             is passed to :obj:`GPCRdb_finder`.
         format : str, default is "%s.xlsx"
             How to construct a filename out of
-            :obj:`uniprot_name`
+            :obj:`UniProt_name`
         verbose : bool, default is True
             Be verbose. Gets passed to :obj:`GPCRdb_finder`
         try_web_lookup : bool, default is True
-            Try a web lookup on the GPCRdb of the `uniprot_name`.
-            If `uniprot_name` is e.g. "adrb2_human.xlsx",
+            Try a web lookup on the GPCRdb of the `UniProt_name`.
+            If `UniProt_name` is e.g. "adrb2_human.xlsx",
             including the extension "xslx", then the lookup will
             fail. This what the `format` parameter is for
         write_to_disk : bool, default is False
@@ -1194,7 +1194,7 @@ class LabelerGPCRdb(LabelerConsensus):
             information
         """
 
-        self._dataframe, self._tablefile = _GPCRdb_finder(uniprot_name,
+        self._dataframe, self._tablefile = _GPCRdb_finder(UniProt_name,
                                                           format=format,
                                                           local_path=local_path,
                                                           try_web_lookup=try_web_lookup,
@@ -1211,11 +1211,11 @@ class LabelerGPCRdb(LabelerConsensus):
                                   try_web_lookup=try_web_lookup,
                                   verbose=verbose)
 
-        self._uniprot_name = uniprot_name
+        self._UniProt_name = UniProt_name
 
     @property
-    def uniprot_name(self):
-        return self._uniprot_name
+    def UniProt_name(self):
+        return self._UniProt_name
 
     @property
     def fragments_as_idxs(self):
@@ -3246,7 +3246,7 @@ def _KLIFS_web_lookup(UniProtAC,
                 PDB_DF["KLIFS"] = KLIFS_labels
                 PDB_DF = _KLIFSDataFrame(PDB_DF, UniProtAC=UniProtAC, PDB_id=best_PDB, PDB_geom=geom)
         else:
-            PDB_DF = ValueError('url : "%s", uniprot : "%s" error : "%s"' % (url, UniProtAC, resp1.text))
+            PDB_DF = ValueError('url : "%s", UniProt Accession Code: "%s" error : "%s"' % (url, UniProtAC, resp1.text))
 
     return PDB_DF
 

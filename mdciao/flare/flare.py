@@ -1069,6 +1069,7 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
                    "dots": [dot(_signature(_chord_diagram).parameters["width"].default / 4)],
                    "sigmas": sparse_mat.sum(0)} # we don't need [order[::-1]] here!!
     if add_sigma:
+        #TODO check that "clockwise" changes order of sigma labels
         return_dict["sigma_labels"] = sigma_labels
 
     return iax, non_zeros, return_dict

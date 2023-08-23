@@ -35,8 +35,8 @@ mdc_path = _path.split(mdc_path[0])[0]
 long2short = {"--residues" : "-r",
               "--n_smooth_hw" : "-ns",
               "--table_ext" : "-tx",
-              "--GPCR_uniprot" : "--GPCR",
-              "--CGN_uniprot"   : "--CGN"
+              "--GPCR_UniProt" : "--GPCR",
+              "--CGN_UniProt"   : "--CGN"
               }
 
 long2long = {key:key for key in long2short.keys()}
@@ -108,16 +108,16 @@ class ExamplesCLTs(object):
                 self.opt_dict["--residues"] + " L394",
                 self.opt_dict["--n_smooth_hw"] + " 1",
                 self.opt_dict["--table_ext"] + " xlsx",
-                self.opt_dict["--GPCR_uniprot"] + " %s" % self.GPCRlabs_file,
-                self.opt_dict["--CGN_uniprot"] + " %s" % self.CGN_file,
+                self.opt_dict["--GPCR_UniProt"] + " %s" % self.GPCRlabs_file,
+                self.opt_dict["--CGN_UniProt"] + " %s" % self.CGN_file,
                 ]
     @property
     def mdc_sites(self):
         return ["mdc_sites.py ",
                 "%s %s" % (self.pdb, self.xtc),
                 " --site_files %s" % self.sitefile,
-                " --GPCR_uniprot %s" % self.GPCRlabs_file,
-                " --CGN_uniprot %s" % self.CGN_file
+                " --GPCR_UniProt %s" % self.GPCRlabs_file,
+                " --CGN_UniProt %s" % self.CGN_file
                 ]
 
     @property
@@ -127,8 +127,8 @@ class ExamplesCLTs(object):
                 " --frag_idxs_group_1 0-2",
                 " --frag_idxs_group_2 3",
                 " --ctc_control 20",
-                " --GPCR_uniprot %s" % self.GPCRlabs_file,
-                " --CGN_uniprot %s" % self.CGN_file,
+                " --GPCR_UniProt %s" % self.GPCRlabs_file,
+                " --CGN_UniProt %s" % self.CGN_file,
                 ]
     @property
     def mdc_GPCR_overview(self):
@@ -188,7 +188,7 @@ class ExamplesCLTs(object):
         return ["mdc_residues.py ",
                 "P0G,380-394,3.5* "
                 "%s"% (self.pdb),
-                " --GPCR_uniprot %s" % self.GPCRlabs_file,
+                " --GPCR_UniProt %s" % self.GPCRlabs_file,
                 "-ni"]
 
     @property
@@ -266,8 +266,8 @@ def ContactGroupL394(**kwargs):
                     example_kwargs = {"topology": _path.basename(filenames.top_pdb),
                                       "n_smooth_hw": 1,
                                       "figures": False,
-                                      "GPCR_uniprot": _path.basename(filenames.adrb2_human_xlsx),
-                                      "CGN_uniprot": _path.basename(filenames.gnas2_human_xlsx),
+                                      "GPCR_UniProt": _path.basename(filenames.adrb2_human_xlsx),
+                                      "CGN_UniProt": _path.basename(filenames.gnas2_human_xlsx),
                                       "no_disk":True,
                                       "accept_guess": True}
                     for key, val in kwargs.items():
@@ -578,8 +578,8 @@ def Interface_B2AR_Gas(**kwargs):
         with _contextlib.redirect_stdout(b):
             example_kwargs = {"topology": filenames.top_pdb,
                               "figures": False,
-                              "GPCR_uniprot": GPCRLabeler_ardb2_human(),
-                              "CGN_uniprot": CGNLabeler_gnas2_human(),
+                              "GPCR_UniProt": GPCRLabeler_ardb2_human(),
+                              "CGN_UniProt": CGNLabeler_gnas2_human(),
                               "no_disk": True,
                               "frag_idxs_group_1":[0],
                               "frag_idxs_group_2":[3],

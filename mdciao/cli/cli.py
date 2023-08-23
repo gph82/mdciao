@@ -102,9 +102,9 @@ def _parse_consensus_option(option, consensus_type,
            full of Nones is returned
          * str
           The needed identifier to instantiate an
-          :obj:`LabelerGPCR`, :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
-          Examples would be a :obj:`uniprot_name`, a :obj:`ref_PDB`, or
-          an :obj:`uniprot_AC`
+          `LabelerGPCR`, :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
+          Examples would be a `UniProt_name`, a `ref_PDB`, or
+          an `UniProt_AC`
           respectively
          * :obj:`LabelerConsensus`
           An already instantiated :obj:`LabelerGPCR`,
@@ -559,9 +559,9 @@ def residue_neighborhoods(residues,
                           fragment_colors=None,
                           graphic_ext=".pdf",
                           table_ext=".dat",
-                          GPCR_uniprot=None,
-                          CGN_uniprot=None,
-                          KLIFS_uniprotAC=None,
+                          GPCR_UniProt=None,
+                          CGN_UniProt=None,
+                          KLIFS_UniProtAC=None,
                           output_dir='.',
                           output_desc='neighborhood',
                           t_unit='ns',
@@ -736,7 +736,7 @@ def residue_neighborhoods(residues,
         The extension (=format) of the saved figures
     table_ext : str, default is ".dat"
         The extension (=format) of the saved tables
-    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    GPCR_UniProt : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         For GPCR nomenclature. If str, e.g. "adrb2_human".
         will try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
@@ -745,13 +745,13 @@ def residue_neighborhoods(residues,
         Please note the difference between UniProt Accession Code
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
-    CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+    CGN_UniProt : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "gnas2_human",
         try to locate local filenames "gnas2_human.xlsx" or do web lookups
         in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
-    KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
+    KLIFS_UniProtAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
         Uniprot Accession Code for kinase KLIFS nomenclature. If str, e.g. "P31751",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerKLIFS`, use this object directly
@@ -875,8 +875,8 @@ def residue_neighborhoods(residues,
                  "%s\nexcluding %u nearest neighbors" \
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
-                                                                   midstring=mid_string, GPCR_uniprot=GPCR_uniprot,
-                                                                   CGN_uniprot=CGN_uniprot, KLIFS_uniprotAC=KLIFS_uniprotAC,
+                                                                   midstring=mid_string, GPCR_UniProt=GPCR_UniProt,
+                                                                   CGN_UniProt=CGN_UniProt, KLIFS_UniProtAC=KLIFS_UniProtAC,
                                                                    save_nomenclature_files=save_nomenclature_files,
                                                                    accept_guess=accept_guess,
                                                                    fragment_names=fragment_names,
@@ -1079,9 +1079,9 @@ def interface(
         topology=None,
         frag_idxs_group_1=None,
         frag_idxs_group_2=None,
-        GPCR_uniprot="None",
-        CGN_uniprot="None",
-        KLIFS_uniprotAC=None,
+        GPCR_UniProt="None",
+        CGN_UniProt="None",
+        KLIFS_UniProtAC=None,
         chunksize_in_frames=10000,
         ctc_cutoff_Ang=3.5,
         curve_color="auto",
@@ -1178,7 +1178,7 @@ def interface(
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
-    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    GPCR_UniProt : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         For GPCR nomenclature. If str, e.g. "adrb2_human".
         will try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
@@ -1187,13 +1187,13 @@ def interface(
         Please note the difference between UniProt Accession Code
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
-    CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+    CGN_UniProt : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "gnas2_human",
         try to locate local filenames "gnas2_human.xlsx" or do web lookups
         in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
-    KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
+    KLIFS_UniProtAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
         Uniprot Accession Code for kinase KLIFS nomenclature. If str, e.g. "P31751",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerKLIFS`, use this object directly
@@ -1385,7 +1385,7 @@ def interface(
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
     fragments_as_residue_idxs, fragment_names, user_wants_consensus, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
-        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_uniprot, KLIFS_uniprotAC, accept_guess, save_nomenclature_files)
+        refgeom.top, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_UniProtAC, accept_guess, save_nomenclature_files)
     if user_wants_consensus:
         intf_frags_as_residxs, \
         intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2, answers=[frag_idxs_group_1, frag_idxs_group_2])
@@ -1595,9 +1595,9 @@ def sites(site_inputs,
           chunksize_in_frames=10000,
           n_smooth_hw=0,
           pbc=True,
-          GPCR_uniprot="None",
-          CGN_uniprot="None",
-          KLIFS_uniprotAC=None,
+          GPCR_UniProt="None",
+          CGN_UniProt="None",
+          KLIFS_UniProtAC=None,
           fragments=['lig_resSeq+'],
           allow_partial_sites=False,
           default_fragment_index=None,
@@ -1679,7 +1679,7 @@ def sites(site_inputs,
         window of 2*n_smooth_hw
     pbc : bool, default is True
         Use periodic boundary conditions
-    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    GPCR_UniProt : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         For GPCR nomenclature. If str, e.g. "adrb2_human".
         will try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
@@ -1688,13 +1688,13 @@ def sites(site_inputs,
         Please note the difference between UniProt Accession Code
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
-    CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+    CGN_UniProt : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "gnas2_human",
         try to locate local filenames "gnas2_human.xlsx" or do web lookups
         in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
-    KLIFS_uniprotAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
+    KLIFS_UniProtAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
         Uniprot Accession Code for kinase KLIFS nomenclature. If str, e.g. "P31751",
         try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerKLIFS`, use this object directly
@@ -1830,7 +1830,7 @@ def sites(site_inputs,
         _mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15),stride))
 
     fragments_as_residue_idxs, fragment_names, __, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
-        refgeom.top, fragments, fragment_names, GPCR_uniprot, CGN_uniprot, KLIFS_uniprotAC, accept_guess, save_nomenclature_files)
+        refgeom.top, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_UniProtAC, accept_guess, save_nomenclature_files)
 
     sites = [_mdcsites.x2site(ff) for ff in site_inputs]
     ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
@@ -2074,12 +2074,12 @@ def pdb(code,
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
 
-def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, CGN_uniprot=None, KLIFS_uniprotAC=None,
+def _res_resolver(res_range, top, fragments, midstring=None, GPCR_UniProt=None, CGN_UniProt=None, KLIFS_UniProtAC=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
 
-    option_dict = {"GPCR": GPCR_uniprot,
-                   "CGN": CGN_uniprot,
-                   "KLIFS": KLIFS_uniprotAC}
+    option_dict = {"GPCR": GPCR_UniProt,
+                   "CGN": CGN_UniProt,
+                   "KLIFS": KLIFS_UniProtAC}
 
     option_dict = {key : val for key, val in option_dict.items() if not str(val).lower()=="none"}
     #print(option_dict)
@@ -2113,8 +2113,9 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
     return res_idxs_list, consensus_maps, consensus_frags
 
 def residue_selection(expression,
-                      top, GPCR_uniprot=None,
-                      CGN_uniprot=None,
+                      top, GPCR_UniProt=None,
+                      CGN_UniProt=None,
+                      KLIFS_UniProtAC=None,
                       save_nomenclature_files=False,
                       accept_guess=False,
                       fragments=None):
@@ -2130,7 +2131,7 @@ def residue_selection(expression,
         descriptors if consensus labels are provided
     top : str, :obj:`~mdtraj.Trajectory`, or :obj:`~mdtraj.Topology`
         The topology to use.
-    GPCR_uniprot : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
+    GPCR_UniProt : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         For GPCR nomenclature. If str, e.g. "adrb2_human".
         will try to locate a local filename or do a web lookup in the GPCRdb.
         If :obj:`mdciao.nomenclature.LabelerGPCR`, use this object directly
@@ -2139,7 +2140,7 @@ def residue_selection(expression,
         Please note the difference between UniProt Accession Code
         and UniProt entry name
         as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
-    CGN_uniprot : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
+    CGN_UniProt : str or :obj:`mdciao.nomenclature.LabelerCGN`, default is None
         For CGN (G-alpha Numbering definitions) nomenclature. If str, e.g. "gnas2_human",
         try to locate local filenames "gnas2_human.xlsx" or do web lookups
         in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
@@ -2197,7 +2198,8 @@ def residue_selection(expression,
                                                                    _top, verbose=True)
     res_idxs_list, consensus_maps, __ = _res_resolver(expression, _top, _frags,
                                                       midstring="Your selection '%s' yields:" % expression,
-                                                      GPCR_uniprot=GPCR_uniprot, CGN_uniprot=CGN_uniprot,
+                                                      GPCR_UniProt=GPCR_UniProt, CGN_UniProt=CGN_UniProt,
+                                                      KLIFS_UniProtAC=KLIFS_UniProtAC,
                                                       save_nomenclature_files=save_nomenclature_files,
                                                       accept_guess=accept_guess,
                                                       just_inform=True)
@@ -2236,7 +2238,7 @@ def fragment_overview(topology,
 
     return _mdcfrg.overview(topology,methods=methods, AAs=AAs)
 
-def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uniprot, CGN_uniprot, KLIFS_uniprotAC, accept_guess, save_nomenclature_files):
+def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_UniProtAC, accept_guess, save_nomenclature_files):
     r"""
 
     Frankenstein method to parse and handle the many fragment-definition, -naming, -selection options
@@ -2256,9 +2258,9 @@ def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uni
     ----------
     fragments : comes directly from the top API call (cli.interface(fragments=whatever)
     top : the topology as md.Topology
-    GPCR_uniprot : comes directly from the top API call (cli.interface(GPCR_uniprot=whatever)
-    CGN_uniprot : comes directly from the top API call (cli.interface(CGN_uniprot=whatever)
-    KLIFS_uniprotAC : comes directly from the top API call (cli.interface(KLIFS_uniprotAC=whatever)
+    GPCR_UniProt : comes directly from the top API call (cli.interface(GPCR_UniProt=whatever)
+    CGN_UniProt : comes directly from the top API call (cli.interface(CGN_UniProt=whatever)
+    KLIFS_UniProtAC : comes directly from the top API call (cli.interface(KLIFS_UniProtAC=whatever)
     fragment_names : comes directly from the top API call (cli.interface(fragment_names=whatever)
     accept_guess : comes directly from the top API call (cli.interface(accept_guess=whatever)
     save_nomenclature_files : boolean
@@ -2292,14 +2294,14 @@ def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uni
         fragment name
     """
     fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, top, verbose=True)
-    if user_wants_consensus and all([str(cons).lower() == 'none' for cons in [GPCR_uniprot, CGN_uniprot, KLIFS_uniprotAC]]):
+    if user_wants_consensus and all([str(cons).lower() == 'none' for cons in [GPCR_UniProt, CGN_UniProt, KLIFS_UniProtAC]]):
         raise ValueError(
-            "User wants to define interface fragments using consensus labels, but no consensus labels were provided via the 'CGN_uniprot' or the 'GPCR_uniprot' arguments.")
+            "User wants to define interface fragments using consensus labels, but no consensus labels were provided via the 'CGN_UniProt' or the 'GPCR_UniProt' arguments.")
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     consensus_frags, consensus_maps, consensus_labelers = \
-        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_uniprot,
-                                                           "CGN": CGN_uniprot,
-                                                           "KLIFS": KLIFS_uniprotAC},
+        _parse_consensus_options_and_return_fragment_defs({"GPCR": GPCR_UniProt,
+                                                           "CGN": CGN_UniProt,
+                                                           "KLIFS": KLIFS_UniProtAC},
                                                           top,
                                                           fragments_as_residue_idxs,
                                                           accept_guess=accept_guess,

@@ -259,7 +259,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
             cli.residue_neighborhoods("R131",
                                       [self.traj, self.traj_reverse],
                                       self.geom,
-                                      GPCR_uniprot=test_filenames.adrb2_human_xlsx,
+                                      GPCR_UniProt=test_filenames.adrb2_human_xlsx,
                                       output_dir=tmpdir,
                                       accept_guess=True,
                                       no_disk=self.no_disk
@@ -273,7 +273,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                 cli.residue_neighborhoods("R131",
                                           [self.traj, self.traj_reverse],
                                           self.geom,
-                                          CGN_uniprot="gnas2_human",
+                                          CGN_UniProt="gnas2_human",
                                           output_dir=tmpdir,
                                           accept_guess=True,
                                           no_disk=self.no_disk
@@ -287,8 +287,8 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                 cli.residue_neighborhoods("R131",
                                           [self.traj, self.traj_reverse],
                                           self.geom,
-                                          CGN_uniprot="gnas2_human",
-                                          GPCR_uniprot=test_filenames.adrb2_human_xlsx,
+                                          CGN_UniProt="gnas2_human",
+                                          GPCR_UniProt=test_filenames.adrb2_human_xlsx,
                                           output_dir=tmpdir,
                                           accept_guess=True,
                                           no_disk=self.no_disk
@@ -562,8 +562,8 @@ class Test_interface(TestCLTBaseClass):
                               output_dir=tmpdir,
                               fragments=["967-1001",  # TM6
                                          "328-353"],  # a5
-                              CGN_uniprot="gnas2_human",
-                              GPCR_uniprot="adrb2_human",
+                              CGN_UniProt="gnas2_human",
+                              GPCR_UniProt="adrb2_human",
                               accept_guess=True,
                               flareplot=False,
                               no_disk=self.no_disk
@@ -581,8 +581,8 @@ class Test_interface(TestCLTBaseClass):
                                   self.geom,
                                   output_dir=tmpdir,
                                   fragments=["consensus"],
-                                  CGN_uniprot="gnas2_human",
-                                  GPCR_uniprot="adrb2_human",
+                                  CGN_UniProt="gnas2_human",
+                                  GPCR_UniProt="adrb2_human",
                                   accept_guess=True,
                                   flareplot=False,
                                   no_disk=self.no_disk
@@ -600,8 +600,8 @@ class Test_interface(TestCLTBaseClass):
                                   self.geom,
                                   output_dir=tmpdir,
                                   fragments=["consensus"],
-                                  CGN_uniprot="gnas2_human",
-                                  GPCR_uniprot="adrb2_human",
+                                  CGN_UniProt="gnas2_human",
+                                  GPCR_UniProt="adrb2_human",
                                   accept_guess=True,
                                   #no_disk=self.no_disk
                                   )
@@ -628,8 +628,8 @@ class Test_interface(TestCLTBaseClass):
                               n_nearest=4,
                               output_dir=tmpdir,
                               fragments=["consensus"],
-                              CGN_uniprot="gnas2_human",
-                              GPCR_uniprot="adrb2_human",
+                              CGN_UniProt="gnas2_human",
+                              GPCR_UniProt="adrb2_human",
                               accept_guess=True,
                               frag_idxs_group_1='TM6',
                               frag_idxs_group_2='TM5,TM6',

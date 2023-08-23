@@ -1683,8 +1683,8 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         )
         cls.GPCR = examples.GPCRLabeler_ardb2_human()
         cls.CGN = examples.CGNLabeler_gnas2_human()
-        cls.intf = examples.examples.Interface_B2AR_Gas(GPCR_uniprot = cls.GPCR,
-                                                        CGN_uniprot = cls.CGN)
+        cls.intf = examples.examples.Interface_B2AR_Gas(GPCR_UniProt = cls.GPCR,
+                                                         CGN_UniProt = cls.CGN)
         cls.total_intf_freq_at_3 = cls.intf.frequency_per_contact(3.0).sum()
         assert cls.total_intf_freq_at_3 > 0
     def test_frequency_dicts(self):

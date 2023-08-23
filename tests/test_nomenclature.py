@@ -453,7 +453,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
 
     def test_uniprot_name(self):
-        self.assertEqual(self.GPCR_local_w_pdb.uniprot_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
+        self.assertEqual(self.GPCR_local_w_pdb.UniProt_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
 
 class Test_aligntop_full(unittest.TestCase):
     # Has to be done with full GPCR nomencl, not with small one

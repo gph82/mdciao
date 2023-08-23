@@ -86,6 +86,7 @@ This is an informal list of known issues and TODOs:
  * The way uniprot or PDB codes are transformed to relative and/or absolute filenames to check if they exist locally should be unified across all lookup functions, like GPCR_finder, PDB_finder and/or the different LabelerConsensus objects, possibly by dropping optargs like 'local_path' or 'format'.
  * Some closely related methods could/should be integrated into each other by generalising a bit, but sometimes the generalisation is unnecessarily complicated to code (or I simply forget that the closely related method already exists) and re-code (and test!) for a slightly different scenario (though I try to hard to avoid it). E.g. there's several methods for computing, reporting, and saving contact frequencies and contact-matrices, or different methods to assign residue idxs to fragments, depending on particual the goal of the assignment, like find_parent_list, in_what_(N)_fragments, or assign_fragments. Still, I opted for more smaller methods, which are individually easier to maintain, but that could simply be a `questionable choice <https://en.wikipedia.org/wiki/Technical_debt>`_.
  * The 'dictionary unifying' methods could be replaced with pandas.DataFrame.merge/join
+ * Writing to files, file manipulation should be done with pathlib
 
 .. |Pip Package| image::
    https://badge.fury.io/py/mdciao.svg
