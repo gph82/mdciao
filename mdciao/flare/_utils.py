@@ -457,7 +457,7 @@ def should_this_residue_pair_get_a_curve(
 
 def add_fragment_labels(fragments,
                         fragment_names,
-                        iax,
+                        ax,
                         angle_offset=0,
                         padding=[0,0,0],
                         fontsize=5,
@@ -477,7 +477,7 @@ def add_fragment_labels(fragments,
         The fragment definitions
     fragment_names  :iterable of strs, len(fragments)
         The fragment names
-    iax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
         The axis to write on
     angle_offset : scalar, scalar default is 0
         Where the circle starts, in degrees. 0 means 3 o'clock,
@@ -530,14 +530,14 @@ def add_fragment_labels(fragments,
         if _np.cos(iang) < 0:
             iang = iang + _np.pi
 
-        fragment_labels.append(iax.text(xseg, yseg, iname,
-                                        ha=ha,
-                                        va=va,
-                                        bbox={"boxstyle": "square,pad=0.0", "fc": "none", "ec": "none", "alpha": .05},
-                                        # we need this transparent Fancybox to check for overlaps
-                                        fontsize=fontsize,
-                                        rotation_mode="anchor",
-                                        rotation=_np.rad2deg(iang)))
+        fragment_labels.append(ax.text(xseg, yseg, iname,
+                                       ha=ha,
+                                       va=va,
+                                       bbox={"boxstyle": "square,pad=0.0", "fc": "none", "ec": "none", "alpha": .05},
+                                       # we need this transparent Fancybox to check for overlaps
+                                       fontsize=fontsize,
+                                       rotation_mode="anchor",
+                                       rotation=_np.rad2deg(iang)))
 
     return fragment_labels
 
@@ -662,7 +662,7 @@ def cart2pol(x, y):
     phi = _np.arctan2(y, x)
     return(rho, phi)
 
-def add_residue_labels(iax,
+def add_residue_labels(ax,
                        xy_labels,
                        res_idxs,
                        fontsize,
@@ -680,7 +680,7 @@ def add_residue_labels(iax,
 
     Parameters
     ----------
-    iax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
     res_idxs : np.ndarray
         The residue indices to use as labels
     xy_labels : 2D-np.ndarray
@@ -758,16 +758,16 @@ def add_residue_labels(iax,
                 phi = phi + _np.pi
                 ha = "right"
             rotation = phi
-        itxt = iax.text(ixy[0], ixy[1], '%s' % ilabel,
-                        color=txtclr,
-                        va="center",
-                        ha=ha,
-                        rotation=_np.rad2deg(rotation),
-                        rotation_mode="anchor",
-                        fontsize=fontsize,
-                        zorder=20,
-                        bbox={"boxstyle":"square,pad=0.0","fc":"none", "ec":"none", "alpha": .05},  # we need this transparent Fancybox to check for overlaps
-                        **text_kwargs)
+        itxt = ax.text(ixy[0], ixy[1], '%s' % ilabel,
+                       color=txtclr,
+                       va="center",
+                       ha=ha,
+                       rotation=_np.rad2deg(rotation),
+                       rotation_mode="anchor",
+                       fontsize=fontsize,
+                       zorder=20,
+                       bbox={"boxstyle":"square,pad=0.0","fc":"none", "ec":"none", "alpha": .05},  # we need this transparent Fancybox to check for overlaps
+                       **text_kwargs)
         labels.append(itxt)
 
     return labels
@@ -985,12 +985,12 @@ def _parse_residue_and_fragments(res_idxs_pairs, sparse_residues=False,
     return [list(rr) for rr in residues_as_fragments], anchor_fragments, mute_fragments
 
 
-def fontsize_get(iax):
+def fontsize_get(ax):
     r"""
     Scan text elements and return a dictionary with fontsizes
     Parameters
     ----------
-    iax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
 
     Returns
     -------
@@ -1004,14 +1004,14 @@ def fontsize_get(iax):
         elements correspond 1st to the residue-label texts
         and 2nd to the residue-SS-label texts
         * "other" contains all other fontsizes in
-        :obj:`iax`, most likely belonging to the
+        :obj:`ax`, most likely belonging to the
         fragment-label texts
     """
-    n_polygons = len([obj for obj in iax.findobj(_CP)])
+    n_polygons = len([obj for obj in ax.findobj(_CP)])
     sizes = {"n_polygons": [],
              "other": []}
 
-    c = _Counter([_np.round(txt.get_fontsize(), 2) for txt in iax.texts])
+    c = _Counter([_np.round(txt.get_fontsize(), 2) for txt in ax.texts])
 
     for key, val in c.items():
         sizes[{True: "n_polygons",
@@ -1049,7 +1049,7 @@ def fontsize_apply(axA, axB):
         fs = _np.round(txt.get_fontsize(), 2)
         txt.set_fontsize(fs2type[fs])
 
-def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_baseline=True,
+def add_aura(xy, aura, ax, r=1, fragment_lenghts=None, width=.10, subtract_baseline=True,
              colors=None,
              lines=False):
     r"""
@@ -1073,7 +1073,7 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
         to be sparsed
     r : float, default is 1
         Radius of the aura's baseline
-    iax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
         The axes containing the flareplot
     width : .10
         The width of the aura, in units of :obj:`r`
@@ -1145,14 +1145,14 @@ def add_aura(xy, aura, iax, r=1, fragment_lenghts=None, width=.10, subtract_base
         base = _np.array(base)
         top = _np.array(top)
         poly = _np.vstack((base, top[::-1]))
-        # iax.scatter(base[:,0],base[:,1],color="r",zorder=100)
-        # iax.scatter(top[:,0],top[:,1],color="g",zorder=100)
+        # ax.scatter(base[:,0],base[:,1],color="r",zorder=100)
+        # ax.scatter(top[:,0],top[:,1],color="g",zorder=100)
         if lines:
             artists.append(_LCol(segments, color=col_list[jj]))
         else:
             artists.append(_PG(poly, alpha=.80, color=col_list[jj],lw=0))
 
-        iax.add_artist(artists[-1])
+        ax.add_artist(artists[-1])
     return artists, r+aura.max()
 
 def coarse_grain_freqs_by_frag(freqs, res_idxs_pairs, fragments,

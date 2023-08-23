@@ -39,7 +39,7 @@ def freqs2flare(freqs, res_idxs_pairs,
                 sparse_fragments=False,
                 exclude_neighbors=1,
                 freq_cutoff=0,
-                iax=None,
+                ax=None,
                 fragment_names=None,
                 center=_np.array([0,0]),
                 r=1,
@@ -158,7 +158,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         serial-numbers, assuming the molecule only has one long peptidic-chain.
     freq_cutoff : float, default is 0
         Contact frequencies lower than this value will not be shown
-    iax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
         Parse an axis to draw on, otherwise one will be created
         using :obj:`panelsize`. In case you want to
         re-use the same cirlce of residues as a
@@ -238,7 +238,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         Only plot the curves connecting the dots, but
         not the dots themselves or any other annotation.
         (labels, fragment names or SS information).
-        The same caution as :obj:`iax` applies.
+        The same caution as :obj:`ax` applies.
     textlabels : bool or array_like, default is True
         How to label the residue dots. Gets passed directly
         to :obj:`mdciao.flare.circle_plot_residues`.
@@ -264,7 +264,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         alpha values. If None, defaults to :obj:`bezier_linecolor`
     subplot : bool, default is False
         If True, the method checks if
-        :obj:`iax` is the last axis in a
+        :obj:`ax` is the last axis in a
         figure (=all other panels have
         been already drawn) and then
         transfers the last plot's
@@ -289,8 +289,8 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     Returns
     -------
-    iax : :obj:`~matplotlib.axes.Axes`
-        You can do iax.figure.savefig("figure.png") to
+    ax : :obj:`~matplotlib.axes.Axes`
+        You can do ax.figure.savefig("figure.png") to
         save the figure. Checkout
         :obj:`~matplotlib.figure.Figure.savefig` for more options
 
@@ -345,8 +345,8 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     if plot_curves_only:
         plot_attribs = {}
-        assert iax is not None, ("You cannot use "
-                                 "plot_curves_only=True and iax=None. Makes no sense")
+        assert ax is not None, ("You cannot use "
+                                 "plot_curves_only=True and ax=None. Makes no sense")
         xy = _futils.cartify_fragments(residues_as_fragments,
                                        r=r,
                                        angle_offset=angle_offset,
@@ -354,26 +354,26 @@ def freqs2flare(freqs, res_idxs_pairs,
                                        )
         xy += center
     else:
-        iax, xy, plot_attribs = circle_plot_residues(residues_as_fragments,
-                                                     fontsize=fontsize,
-                                                     colors=colors,
-                                                     panelsize=panelsize,
-                                                     padding=padding,
-                                                     center=center,
-                                                     ss_array=_get_SS(SS, top=top)[1],
-                                                     fragment_names=fragment_names,
-                                                     iax=iax,
-                                                     markersize=markersize,
-                                                     textlabels=textlabels,
-                                                     shortenAAs=shortenAAs,
-                                                     highlight_residxs=highlight_residxs,
-                                                     aa_offset=aa_offset,
-                                                     top=top,
-                                                     r=r,
-                                                     angle_offset=angle_offset,
-                                                     aura=aura)
+        ax, xy, plot_attribs = circle_plot_residues(residues_as_fragments,
+                                                    fontsize=fontsize,
+                                                    colors=colors,
+                                                    panelsize=panelsize,
+                                                    padding=padding,
+                                                    center=center,
+                                                    ss_array=_get_SS(SS, top=top)[1],
+                                                    fragment_names=fragment_names,
+                                                    ax=ax,
+                                                    markersize=markersize,
+                                                    textlabels=textlabels,
+                                                    shortenAAs=shortenAAs,
+                                                    highlight_residxs=highlight_residxs,
+                                                    aa_offset=aa_offset,
+                                                    top=top,
+                                                    r=r,
+                                                    angle_offset=angle_offset,
+                                                    aura=aura)
 
-        circle_radius_in_pts = plot_attribs["dots"][0].radius * _points2dataunits(iax).mean()
+        circle_radius_in_pts = plot_attribs["dots"][0].radius * _points2dataunits(ax).mean()
         lw = circle_radius_in_pts # ??
 
     # All formed contacts
@@ -392,7 +392,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         pairs_of_nodes = [(xy[residx2markeridx[ii]],
                            xy[residx2markeridx[jj]]) for (ii, jj) in _np.array(res_idxs_pairs)[idxs_of_pairs2plot]]
         alphas = ctcs_averaged[idxs_of_pairs2plot]
-        bezier_curves = add_bezier_curves(iax,
+        bezier_curves = add_bezier_curves(ax,
                                           pairs_of_nodes,
                                           alphas=alphas,
                                           center=center,
@@ -404,11 +404,11 @@ def freqs2flare(freqs, res_idxs_pairs,
         plot_attribs["bezier_curves"] = bezier_curves
 
     if subplot:
-        if iax is iax.figure.axes[-1]:
-            [_futils.fontsize_apply(iax, jax) for jax in iax.figure.axes]
-            minwidth = min([_np.unique([line.get_linewidth() for line in jax.findobj(_Line2D)]) for jax in iax.figure.axes])
-            [[line.set_linewidth(minwidth) for line in jax.lines] for jax in iax.figure.axes]
-    return iax, idxs_of_pairs2plot, plot_attribs
+        if ax is ax.figure.axes[-1]:
+            [_futils.fontsize_apply(ax, jax) for jax in ax.figure.axes]
+            minwidth = min([_np.unique([line.get_linewidth() for line in jax.findobj(_Line2D)]) for jax in ax.figure.axes])
+            [[line.set_linewidth(minwidth) for line in jax.lines] for jax in ax.figure.axes]
+    return ax, idxs_of_pairs2plot, plot_attribs
 
 def circle_plot_residues(fragments,
                          fontsize=None,
@@ -421,7 +421,7 @@ def circle_plot_residues(fragments,
                          center=[0,0],
                          ss_array=None,
                          fragment_names=None,
-                         iax=None,
+                         ax=None,
                          textlabels=True,
                          shortenAAs=True,
                          highlight_residxs=None,
@@ -474,7 +474,7 @@ def circle_plot_residues(fragments,
         The radius of the circle, in axis inuts
     panelsize : float, default is 4
         The panelsize, in inches. Only has effect
-        if :obj:`iax` is None and a new figure
+        if :obj:`ax` is None and a new figure
         is created
     angle_offset : scalar
         Where the circle starts, in degrees. 0 means 3 o'clock,
@@ -491,7 +491,7 @@ def circle_plot_residues(fragments,
         indices are on :obj:`fragments`
     fragment_names : list
         The names of the fragments
-    iax : :obj:`~matplotlib.axes.Axes`, default is None
+    ax : :obj:`~matplotlib.axes.Axes`, default is None
         An axis to draw the dots on. It's parent
         figure has to have a tight_layout=True
         attribute. If no axis is passed,
@@ -530,7 +530,7 @@ def circle_plot_residues(fragments,
 
     Returns
     -------
-    iax, xy, outdict
+    ax, xy, outdict
 
     outdict: dict
          Contains :obj:`matplotlib` objects
@@ -550,23 +550,23 @@ def circle_plot_residues(fragments,
 
     residues_to_plot_as_dots = _np.hstack(fragments)
     col_list = _futils.col_list_from_input_and_fragments(colors, fragments, alpha=.80)
-    if iax is None:
+    if ax is None:
         _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
-        iax = _plt.gca()
+        ax = _plt.gca()
     else:
-        if not iax.figure.get_tight_layout():
+        if not ax.figure.get_tight_layout():
             print("The passed figure was not instantiated with tight_layout=True\n"
                   "This may lead to some errors in the flareplot fontsizes.")
     # Do this first to have an idea of the points per axis unit necessary for the plot
-    iax.set_xlim([center[0] - 3*r, center[0] + 3*r])
-    iax.set_ylim([center[1] - 3*r, center[1] + 3*r])
-    iax.set_aspect('equal')
-    iax.draw(iax.figure.canvas.get_renderer())
+    ax.set_xlim([center[0] - 3 * r, center[0] + 3 * r])
+    ax.set_ylim([center[1] - 3 * r, center[1] + 3 * r])
+    ax.set_aspect('equal')
+    ax.draw(ax.figure.canvas.get_renderer())
 
     # Plot!
     if markersize is None:
         dot_radius = r * _np.sin(_np.pi/n_positions)
-        dot_radius_in_pts = dot_radius*_points2dataunits(iax).mean()
+        dot_radius_in_pts = dot_radius*_points2dataunits(ax).mean()
         if dot_radius_in_pts < 1.5:
             print(ValueError("Drawing this many dots (%u residues + %u padding spaces) in a panel %3.1f inches wide/high "
                              "\nforces too small dotsizes and fontsizes. If crowding effects occur, either reduce the"
@@ -577,19 +577,19 @@ def circle_plot_residues(fragments,
                    facecolor=col_list[ii],
                    edgecolor=None,
                    zorder=10) for ii, ixy in enumerate(xy)]
-        [iax.add_artist(iCP) for iCP in CPs]
+        [ax.add_artist(iCP) for iCP in CPs]
         outer_r_in_data_units = r + dot_radius
     else:
         raise NotImplementedError
 
     if debug:
-        iax.add_artist(_plt.Circle(center,
-                                   radius=outer_r_in_data_units,
-                                   ec='r',
-                                   fc=None,
-                                   fill=False,
-                                   zorder=10,
-                                   lw=dot_radius_in_pts/10))
+        ax.add_artist(_plt.Circle(center,
+                                  radius=outer_r_in_data_units,
+                                  ec='r',
+                                  fc=None,
+                                  fill=False,
+                                  zorder=10,
+                                  lw=dot_radius_in_pts/10))
     # After the dots have been plotted,
     # we use their radius in points
     # as approximate fontsize
@@ -608,7 +608,7 @@ def circle_plot_residues(fragments,
         outer_r_in_data_units += {True: 2,
                                   False:1}[dot_radius<1.5]*dot_radius
         labels = add_fragmented_residue_labels(fragments,
-                                               iax,
+                                               ax,
                                                fontsize,
                                                center=center,
                                                r=outer_r_in_data_units,
@@ -620,24 +620,24 @@ def circle_plot_residues(fragments,
                                                replacement_labels=replacement_labels)
         if debug:
             _futils.plot_fancypatches(labels, lw=dot_radius_in_pts / 10)
-            iax.add_artist(_plt.Circle(center,
-                                       radius=outer_r_in_data_units,
-                                       ec='green',
-                                       fc=None,
-                                       fill=False,
-                                       zorder=10,
-                                       lw=dot_radius_in_pts / 10))
+            ax.add_artist(_plt.Circle(center,
+                                      radius=outer_r_in_data_units,
+                                      ec='green',
+                                      fc=None,
+                                      fill=False,
+                                      zorder=10,
+                                      lw=dot_radius_in_pts / 10))
 
         delta_r = _futils._outermost_corner_of_fancypatches(labels)-outer_r_in_data_units
         outer_r_in_data_units += delta_r*.90 # fudge
         if debug:
-            iax.add_artist(_plt.Circle(center,
-                                       radius=outer_r_in_data_units,
-                                       ec='b',
-                                       fc=None,
-                                       fill=False,
-                                       zorder=10,
-                                       lw=dot_radius_in_pts / 10))
+            ax.add_artist(_plt.Circle(center,
+                                      radius=outer_r_in_data_units,
+                                      ec='b',
+                                      fc=None,
+                                      fill=False,
+                                      zorder=10,
+                                      lw=dot_radius_in_pts / 10))
     # Do we have SS dictionaries
     ss_labels = []
     if ss_array is not None:
@@ -645,7 +645,7 @@ def circle_plot_residues(fragments,
         replacement_labels = {ii: ss_array[ii].replace("NA", " ").replace("E", "B") for ii in
                                  residues_to_plot_as_dots}
         ss_labels = add_fragmented_residue_labels(fragments,
-                                                  iax,
+                                                  ax,
                                                   fontsize * 2,
                                                   center=center,
                                                   r=outer_r_in_data_units,
@@ -662,56 +662,56 @@ def circle_plot_residues(fragments,
         outer_r_in_data_units = _futils._outermost_corner_of_fancypatches(ss_labels)
         if debug:
             _futils.plot_fancypatches(ss_labels, lw=dot_radius_in_pts / 10)
-            iax.add_artist(_plt.Circle(center,
-                                       radius=outer_r_in_data_units,
-                                       ec='purple',
-                                       fc=None,
-                                       fill=False,
-                                       zorder=10,
-                                       lw=dot_radius_in_pts / 10))
+            ax.add_artist(_plt.Circle(center,
+                                      radius=outer_r_in_data_units,
+                                      ec='purple',
+                                      fc=None,
+                                      fill=False,
+                                      zorder=10,
+                                      lw=dot_radius_in_pts / 10))
 
     if aura is not None:
         if debug:
-            iax.add_artist(_plt.Circle([0, 0], outer_r_in_data_units,
-                                       color=None,
-                                       fill=False,
-                                       ec="cyan",
-                                       zorder=10,
-                                       lw=dot_radius_in_pts / 10))
-            iax.add_artist(_plt.Circle([0,0],outer_r_in_data_units, ec="k", alpha=.25, zorder=-100))
+            ax.add_artist(_plt.Circle([0, 0], outer_r_in_data_units,
+                                      color=None,
+                                      fill=False,
+                                      ec="cyan",
+                                      zorder=10,
+                                      lw=dot_radius_in_pts / 10))
+            ax.add_artist(_plt.Circle([0, 0], outer_r_in_data_units, ec="k", alpha=.25, zorder=-100))
 
-        auras, outer_r_in_data_units = _futils.add_aura(xy, aura[_np.hstack(fragments)], iax, outer_r_in_data_units+dot_radius,
-                         [len(fr) for fr in fragments],
-                         subtract_baseline=False
-                         )
+        auras, outer_r_in_data_units = _futils.add_aura(xy, aura[_np.hstack(fragments)], ax, outer_r_in_data_units + dot_radius,
+                                                        [len(fr) for fr in fragments],
+                                                        subtract_baseline=False
+                                                        )
 
         if aura is not None:
             if debug:
-                iax.add_artist(_plt.Circle([0, 0], outer_r_in_data_units,
-                                           ec="g",
-                                           facecolor=None,
-                                           fill=False,
-                                           zorder=10,
-                                           lw=dot_radius_in_pts / 10))
+                ax.add_artist(_plt.Circle([0, 0], outer_r_in_data_units,
+                                          ec="g",
+                                          facecolor=None,
+                                          fill=False,
+                                          zorder=10,
+                                          lw=dot_radius_in_pts / 10))
 
     # Do we have names?
     frag_labels = []
     if fragment_names is not None:
         span = 2 * outer_r_in_data_units
         frag_fontsize_in_aus =  span/6 * 1/5 # (average_word_length, fraction of panel space)
-        frag_fontsize_in_pts = _np.max((3*fontsize, frag_fontsize_in_aus * _points2dataunits(iax).mean()))
+        frag_fontsize_in_pts = _np.max((3*fontsize, frag_fontsize_in_aus * _points2dataunits(ax).mean()))
         outer_r_in_data_units += frag_fontsize_in_aus
         if debug:
-            iax.add_artist(_plt.Circle(center,
-                                       radius=outer_r_in_data_units,
-                                       ec='pink',
-                                       fc=None,
-                                       fill=False,
-                                       zorder=10,
-                                       lw=dot_radius_in_pts / 10))
+            ax.add_artist(_plt.Circle(center,
+                                      radius=outer_r_in_data_units,
+                                      ec='pink',
+                                      fc=None,
+                                      fill=False,
+                                      zorder=10,
+                                      lw=dot_radius_in_pts / 10))
         frag_labels = _futils.add_fragment_labels(fragments,
                                                   [replace4latex(str(ifrag)) for ifrag in fragment_names],
-                                                  iax,
+                                                  ax,
                                                   angle_offset=angle_offset,
                                                   padding=padding,
                                                   fontsize=frag_fontsize_in_pts,
@@ -722,28 +722,28 @@ def circle_plot_residues(fragments,
         outer_r_in_data_units = _futils._outermost_corner_of_fancypatches(frag_labels)
 
         if debug:
-            iax.add_artist(_plt.Circle(center,
-                                       radius=outer_r_in_data_units,
-                                       ec='orange',
-                                       fc=None,
-                                       fill=False,
-                                       zorder=10,
-                                       lw=dot_radius_in_pts / 10))
+            ax.add_artist(_plt.Circle(center,
+                                      radius=outer_r_in_data_units,
+                                      ec='orange',
+                                      fc=None,
+                                      fill=False,
+                                      zorder=10,
+                                      lw=dot_radius_in_pts / 10))
 
-    iax.set_yticks([])
-    iax.set_xticks([])
-    _futils.change_axlims_and_resize_Texts(iax, outer_r_in_data_units)
+    ax.set_yticks([])
+    ax.set_xticks([])
+    _futils.change_axlims_and_resize_Texts(ax, outer_r_in_data_units)
     _futils.un_overlap_via_fontsize(frag_labels, fac=.90)
 
-    return iax, xy, {"fragment_labels":frag_labels,
+    return ax, xy, {"fragment_labels":frag_labels,
                      "dot_labels":labels,
                      "dots":CPs,
                      "SS_labels":ss_labels,
                      "r": outer_r_in_data_units
-                     }
+                    }
 
 
-def add_bezier_curves(iax,
+def add_bezier_curves(ax,
                       nodepairs_xy,
                       alphas=None,
                       center=[0,0],
@@ -757,7 +757,7 @@ def add_bezier_curves(iax,
 
     Parameters
     ----------
-    iax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
         The axes to draw on
     nodepairs_xy : iterable of pairs of pairs of floats
         Each item is a pair of pairs [(x1,y1),(x2,y2)]
@@ -815,7 +815,7 @@ def add_bezier_curves(iax,
             _center = center
         bz_curves.append(_futils.create_flare_bezier_2(nodes, center=_center))
         bz_curves[-1].plot(50,
-                           ax=iax,
+                           ax=ax,
                            alpha=_np.abs(ialpha),
                            color=signed_alphas[_np.sign(ialpha)],
                            lw=lw,  # _np.sqrt(markersize),
@@ -825,7 +825,7 @@ def add_bezier_curves(iax,
     return bz_curves
 
 def add_fragmented_residue_labels(fragments,
-                                  iax,
+                                  ax,
                                   fontsize,
                                   center=[0,0],
                                   r=1,
@@ -843,7 +843,7 @@ def add_fragmented_residue_labels(fragments,
         residues are split into fragments. If no
         :obj:`textlabels` are provided, the idxs
         themselves become the labels
-    iax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
     fontsize : int
     r : scalar
         The radius of the circle, in axis inuts
@@ -871,7 +871,7 @@ def add_fragmented_residue_labels(fragments,
     xy_labels += center
 
     residues_to_plot_as_dots = _np.hstack(fragments)
-    labels = _futils.add_residue_labels(iax,
+    labels = _futils.add_residue_labels(ax,
                                         xy_labels,
                                         residues_to_plot_as_dots,
                                         fontsize,
@@ -883,7 +883,7 @@ def add_fragmented_residue_labels(fragments,
 
 def freqs2chord(freqs, res_idxs_pairs, fragments,
                 fragment_names=None,
-                iax=None,
+                ax=None,
                 panelsize=10,
                 fragment_colors=None,
                 add_sigma=True,
@@ -934,7 +934,7 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         of the `fragments`.
     fragment_names : list, default is None
         The fragment names
-    iax: :obj:`~matplotlib.axes.Axes`, default is None
+    ax: :obj:`~matplotlib.axes.Axes`, default is None
         Parse an axis to draw on, otherwise one will be created
         using `panelsize`.
     normalize_to_sigma : float, default is None
@@ -984,7 +984,7 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
 
     Returns
     -------
-    iax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
     non_zeros : list
         The idxs of :obj:`fragments`
         that have been plotted
@@ -1028,21 +1028,21 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
 
     # Grab text objects already in the input axis
     old_texts = []
-    if iax is None:
+    if ax is None:
         _plt.figure(figsize=(panelsize, panelsize), tight_layout=True)
-        iax = _plt.gca()
-        old_texts = list(iax.texts)
+        ax = _plt.gca()
+        old_texts = list(ax.texts)
 
     res = _chord_diagram(sparse_mat,
                          chord_colors="gray",
                          order=order,
                          names=non_zero_fragment_names,
                          colors=non_zero_fragment_colors,
-                         ax=iax,
+                         ax=ax,
                          extent=extent)
 
     # Grab the new text-labels and un-overlap them
-    frag_labels = [txt for txt in iax.texts if txt not in old_texts]  # only grab new text-objects
+    frag_labels = [txt for txt in ax.texts if txt not in old_texts]  # only grab new text-objects
     [t.set_bbox({"boxstyle": "square,pad=0.5", "fc": "blue", "ec": "none", "alpha": .0}) for t in frag_labels]
     _futils.un_overlap_via_fontsize(frag_labels, fac=.85)
 
@@ -1056,9 +1056,9 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
                 psi += _np.pi/2
             else:
                 psi -= _np.pi/2
-            sigma_labels.append(iax.text(x, y, sigma_values[order[ii]],
-                     rotation_mode="anchor", ha="center", va="center", rotation=psi*180/_np.pi,
-                                         bbox={"boxstyle": "square,pad=0.0", "fc": "white", "ec": "none", "alpha": .5}))
+            sigma_labels.append(ax.text(x, y, sigma_values[order[ii]],
+                                        rotation_mode="anchor", ha="center", va="center", rotation=psi*180/_np.pi,
+                                        bbox={"boxstyle": "square,pad=0.0", "fc": "white", "ec": "none", "alpha": .5}))
         _futils.un_overlap_via_fontsize(sigma_labels, fac=.90)
 
     # Create fake "dot" object with a  .radius attribute for compatibility with the downstream _utils.add_parent_labels
@@ -1072,4 +1072,4 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
         #TODO check that "clockwise" changes order of sigma labels
         return_dict["sigma_labels"] = sigma_labels
 
-    return iax, non_zeros, return_dict
+    return ax, non_zeros, return_dict

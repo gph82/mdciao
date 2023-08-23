@@ -111,7 +111,7 @@ def any_overlap_via_FancyBoxPach(text_objects_1, text_objects_2):
     edges_2 = {}
     iax = text_objects_1[0].axes
     renderer = iax.figure.canvas.get_renderer()
-    #iax.draw(renderer) # otherwise the Fancyboxes get wrong sizes
+    #ax.draw(renderer) # otherwise the Fancyboxes get wrong sizes
     for t1 in text_objects_1:
         t1.draw(renderer)
         edges_1 = text2FBPedges(t1)
@@ -120,11 +120,11 @@ def any_overlap_via_FancyBoxPach(text_objects_1, text_objects_2):
                 if idx2 not in boxes_2.keys():
                     t2.draw(renderer)
                     edges_2[idx2] =  text2FBPedges(t2)
-                    # draw_line(l2,iax,"b",lw=5)
+                    # draw_line(l2,ax,"b",lw=5)
                     xy = FBintersect_via_edges(edges_1, edges_2[idx2])
                     if xy is not False:
                         # print(l2)
-                        #draw_line(l1,iax,"g",lw=5)
+                        #draw_line(l1,ax,"g",lw=5)
                         #t1.axes.plot(xy[0], xy[1], "or", ms=10)
                         #plot_fancypatches([t1, t2], lw=.5)
                         return [t1, t2]

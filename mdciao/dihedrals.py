@@ -164,7 +164,7 @@ def plot_dih(ictc, iax,
 
     iax.set_xlabel('t / %s' % _replace4latex(t_unit))
     iax.set_xlim([0, ictc.time_max * dt])
-    #iax.set_ylim([0,iax.get_ylim()[1]])
+    #ax.set_ylim([0,ax.get_ylim()[1]])
 
 class angle(object):
     r"""Class for storing everything related to a contact"""

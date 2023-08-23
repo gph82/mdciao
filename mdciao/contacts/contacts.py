@@ -1774,7 +1774,7 @@ class ContactPair(object):
                     if count/_np.sum(counts)>min_freq}
 
     def plot_timetrace(self,
-                       iax,
+                       ax,
                        color_scheme=None,
                        ctc_cutoff_Ang=None,
                        switch_off_Ang=None,
@@ -1791,7 +1791,7 @@ class ContactPair(object):
 
         Parameters
         ----------
-        iax : :obj:`~matplotlib.pyplot.Axes`
+        ax : :obj:`~matplotlib.pyplot.Axes`
             The axis where to plot the timetrace
         color_scheme : list, default is None
             Pass a list of colors, each one should be
@@ -1830,9 +1830,9 @@ class ContactPair(object):
         valid_cutoff = ctc_cutoff_Ang is not None and ctc_cutoff_Ang > 0
 
         color_scheme = _color_tiler(color_scheme, self.n.n_trajs )
-        iax.set_ylabel('D / $\\AA$', rotation=90)
+        ax.set_ylabel('D / $\\AA$', rotation=90)
         if isinstance(ylim_Ang, (int, float)):
-            iax.set_ylim([0, ylim_Ang])
+            ax.set_ylim([0, ylim_Ang])
         elif isinstance(ylim_Ang, str) and ylim_Ang.lower() == 'auto':
             pass
         else:
@@ -1845,12 +1845,12 @@ class ContactPair(object):
             if valid_cutoff:
                 ilabel += ' (%u%%)' % (self.frequency_per_traj(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)[traj_idx] * 100)
 
-            _mdcplots.plot_w_smoothing_auto(iax, ictc_traj * 10, ilabel, color_scheme[traj_idx], x=itime * dt,
+            _mdcplots.plot_w_smoothing_auto(ax, ictc_traj * 10, ilabel, color_scheme[traj_idx], x=itime * dt,
                                             background=background, n_smooth_hw=n_smooth_hw)
 
-        iax.legend(loc=1, fontsize=_rcParams["font.size"] * .75,
-                   ncol=_np.ceil(self.n.n_trajs / max_handles_per_row).astype(int)
-                   )
+        ax.legend(loc=1, fontsize=_rcParams["font.size"] * .75,
+                  ncol=_np.ceil(self.n.n_trajs / max_handles_per_row).astype(int)
+                  )
         #ctc_label = self.label
         ctc_label = self.labels.w_fragments
         if shorten_AAs:
@@ -1858,21 +1858,21 @@ class ContactPair(object):
         ctc_label = _mdcu.str_and_dict.latex_superscript_fragments(ctc_label)
         if valid_cutoff:
             ctc_label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang) * 100)
-        #TODO implement the iax.transAxes everywhere a fuzzy axis position is computed (flareplot?)
-        iax.text(
+        #TODO implement the ax.transAxes everywhere a fuzzy axis position is computed (flareplot?)
+        ax.text(
             .5, .1,
             ctc_label,
-            transform=iax.transAxes,
+            transform=ax.transAxes,
             ha='center')
         if valid_cutoff:
-            iax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
+            ax.axhline(ctc_cutoff_Ang, color='k', ls='--', zorder=10)
 
         if valid_cutoff and switch_off_Ang is not None:
-            iax.axhline(ctc_cutoff_Ang+switch_off_Ang, color='k', ls='--', zorder=10)
+            ax.axhline(ctc_cutoff_Ang + switch_off_Ang, color='k', ls='--', zorder=10)
 
-        iax.set_xlabel('t / %s' % _mdcu.str_and_dict.replace4latex(t_unit))
-        iax.set_xlim([self.time_min*dt, self.time_max * dt])
-        iax.set_ylim([0, iax.get_ylim()[1]])
+        ax.set_xlabel('t / %s' % _mdcu.str_and_dict.replace4latex(t_unit))
+        ax.set_xlim([self.time_min * dt, self.time_max * dt])
+        ax.set_ylim([0, ax.get_ylim()[1]])
 
     def __str__(self):
 
@@ -5195,7 +5195,7 @@ class ContactGroup(object):
         Returns
         -------
         ifig : :obj:`~matplotlib.figure.Figure`
-        iax : :obj:`~matplotlib.axes.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
         """
 
         # We need three (!) methods to guess around the fragments/names/colors...this is bad but "easier" to debug
@@ -6031,7 +6031,7 @@ class ContactGroup(object):
 
         Returns
         -------
-        iax : :obj:`~matplotlib.axes.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
         fig : :obj:`matplotlib.pyplot.Figure`
 
         """
@@ -6576,7 +6576,7 @@ class GroupOfInterfaces(object):
                               annotate=True,
                               **kwargs_plot_interface_matrix):
         mat = self.interface_matrix(ctc_cutoff_Ang)
-        iax, pixelsize = _plot_contact_matrix(mat,
+        ax, pixelsize = _plot_contact_matrix(mat,
                                               self.interface_labels_consensus,
                                               **kwargs_plot_interface_matrix)
         offset=8*pixelsize
@@ -6602,25 +6602,25 @@ class GroupOfInterfaces(object):
                 y =  offset+ii+n_x+padding*ii
                 x = -offset-ii    -padding*ii
                 # todo transpose x,y,xlabels ylabels when needed accoding to kwargs
-                iax.text(0-1, y,
+                ax.text(0-1, y,
                          pdb,
                          fontsize=pixelsize*20,
                          ha="right", va="bottom")
-                iax.text(x,0-1,pdb,
+                ax.text(x,0-1,pdb,
                          fontsize=pixelsize*20)
                 for jj, ilab in enumerate(xlabels):
                     pass
-                    iax.text(jj, y,ilab,
+                    ax.text(jj, y,ilab,
                              fontsize=pixelsize*20,
                              rotation=90,
                              ha="center")
                 for jj, ilab in enumerate(ylabels):
-                    iax.text(x, jj, ilab,
+                    ax.text(x, jj, ilab,
                              fontsize=pixelsize*20,
                              va="center"
                              )
 
-        return iax.figure, iax
+        return ax.figure, ax
     
     def rename_orphaned_residues_foreach_interface(self,
                                                    alignment_as_DF,

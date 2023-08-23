@@ -309,7 +309,7 @@ class TestFragmentLabels(TestCase):
         iax.set_ylim([-1, 1])
         fragments = [np.arange(10), np.arange(10, 20)]
         _, _, plattrb = circle_plot_residues(fragments,
-                                             iax=iax,
+                                             ax=iax,
                                              padding=[0, 0, 0])
 
         _utils.add_fragment_labels(fragments, ["frag_10_20", "frag_30_40"],
@@ -512,7 +512,7 @@ class Test_Aura(TestCase):
                                                   np.arange(50, 100)],
                                                  )
         _utils.add_aura(xy, np.mod(np.arange(len(xy)), 3), iax, r=cpr_dict["r"])
-        # iax.figure.savefig("test.png")
+        # ax.figure.savefig("test.png")
         plt.close("all")
 
     def test_works_w_options(self):
@@ -521,7 +521,7 @@ class Test_Aura(TestCase):
                                                  )
         _utils.add_aura(xy, np.mod(np.arange(len(xy)), 3), iax, r=cpr_dict["r"],
                         lines=False)
-        # iax.figure.savefig("test.png")
+        # ax.figure.savefig("test.png")
         plt.close("all")
     def test_negative(self):
         iax, xy, cpr_dict = circle_plot_residues([np.arange(50),
@@ -531,7 +531,7 @@ class Test_Aura(TestCase):
         neg[int(len(neg)/2):]=-1
         _utils.add_aura(xy, neg*np.mod(np.arange(len(xy)), 3), iax, r=cpr_dict["r"],
                         lines=True)
-        #iax.figure.savefig("test.png")
+        #ax.figure.savefig("test.png")
         plt.close("all")
 
 

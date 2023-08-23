@@ -31,7 +31,7 @@ class TestPlotContactMatrix(unittest.TestCase):
                                       colorbar=True,
                                       transpose=True
                                       )
-        #iax.figure.savefig("test.png",bbox_inches="tight")
+        #ax.figure.savefig("test.png",bbox_inches="tight")
         _plt.close("all")
 
     def test_plot_contact_matrix_raises_labels(self):
@@ -640,13 +640,13 @@ class Test_plot_violin_baseplot(unittest.TestCase):
         cls.time_trajs_shifted = [[itraj+.25 for itraj in cp] for cp in cls.time_trajs]
     def test_minimal(self):
         iax, _ = _plot_violin_baseplot(self.time_trajs, labels=self.CGL394.ctc_labels)
-        #iax.figure.savefig("test.pdf")
+        #ax.figure.savefig("test.pdf")
         _plt.close("all")
 
     def test_second_axis(self):
         iax, _ = _plot_violin_baseplot(self.time_trajs)
         iax, _ = _plot_violin_baseplot(self.time_trajs_shifted, labels=self.CGL394.ctc_labels, jax=iax)
-        #iax.figure.savefig("test.pdf")
+        #ax.figure.savefig("test.pdf")
         _plt.close("all")
 
 class Test_plot_compare_violins(unittest.TestCase):

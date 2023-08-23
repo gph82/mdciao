@@ -2111,7 +2111,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                      )
         assert isinstance(iax, _plt.Axes)
         assert isinstance(order, _np.ndarray)
-        # iax.figure.savefig("test.png")
+        # ax.figure.savefig("test.png")
         _plt.close("all")
 
     def test_plot_violins_options1(self):
@@ -2123,7 +2123,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                      )
         assert isinstance(iax, _plt.Axes)
         assert isinstance(order, _np.ndarray)
-        # iax.figure.savefig("test.png")
+        # ax.figure.savefig("test.png")
         _plt.close("all")
 
     def test_plot_violins_options2(self):
@@ -2132,7 +2132,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                      shorten_AAs=True,
                                      truncate_at_mean=3.7
                                      )
-        # iax.figure.savefig("test.png")
+        # ax.figure.savefig("test.png")
         assert isinstance(iax, _plt.Axes)
         assert isinstance(order, _np.ndarray)
         _plt.close("all")
@@ -2143,7 +2143,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                      shorten_AAs=True,
                                      truncate_at_mean=3.7
                                      )
-        # iax.figure.savefig("test.png")
+        # ax.figure.savefig("test.png")
         assert isinstance(iax, _plt.Axes)
         assert isinstance(order, _np.ndarray)
         _np.testing.assert_array_equal(order, [0, 4])
@@ -2155,7 +2155,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                      shorten_AAs=True,
                                      stride=2,
                                      )
-        #iax.figure.savefig("test.png")
+        #ax.figure.savefig("test.png")
         assert isinstance(iax, _plt.Axes)
         assert isinstance(order, _np.ndarray)
         _np.testing.assert_array_equal(order, [0,1])

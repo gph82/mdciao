@@ -848,7 +848,7 @@ def _is_colormapstring(istr):
         return False
 
 """
-def add_hover_ctc_labels(iax, ctc_mat,
+def add_hover_ctc_labels(ax, ctc_mat,
                          label_dict_by_index=None,
                          fmt='%3.1f',
                          hover=True,
@@ -865,7 +865,7 @@ def add_hover_ctc_labels(iax, ctc_mat,
     else:
         labels = [label_dict_by_index[ii][jj] for ii, jj in scatter_idxs_pairs]
 
-    artists = iax.scatter(*scatter_idxs_pairs.T,
+    artists = ax.scatter(*scatter_idxs_pairs.T,
                           s=.1,
                           # c="green"
                           alpha=0
