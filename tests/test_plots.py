@@ -436,8 +436,9 @@ class Test_plot_w_smoothing_auto(unittest.TestCase):
         n_lines_before = len(iax.lines)
         line2D = plots.plot_w_smoothing_auto(y, label= "test", color="r", n_smooth_hw=1)
         assert isinstance(line2D, _plt.Line2D)
-        assert line2D.axes.texts[0].get_text() == "this axes existed before"
+        assert "this axes existed before" in [txt.get_text() for txt in line2D.axes.texts]
         assert len(line2D.axes.lines)==n_lines_before +2 #original lines plus two from the smoothing
+        assert iax is line2D.axes
         _plt.close(_plt.gcf())
 
 
