@@ -469,7 +469,7 @@ class Test_residue_line(unittest.TestCase):
                                              consensus_maps={"GPCR": {861: "3.50"}},
                                              fragment_names=["frag0", "frag1", "frag2", "frag3"],
                                              table=True)
-        assert istr == "    ARG131         861           3        131       3.50       None"
+        assert istr == "    ARG131         861           3         131        3.50"
 
     def test_double_indexing(self):
         self.assertIs(residue_and_atom._try_double_indexing(None, 0, 1), None)

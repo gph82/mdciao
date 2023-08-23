@@ -595,13 +595,13 @@ def residue_line(item_desc, residue, frag_idx,
     else:
         add_dicts = []
         if consensus_maps is not None:
-            for key in ["GPCR","CGN"]:
+            for key in consensus_maps.keys():
                 add_dicts.append(_try_double_indexing(consensus_maps, key, res_idx))
 
-        istr = '%10s  %10u  %10u %10u %10s %10s' % (residue, res_idx,
+        istr = "  ".join(["%10s" % str(item) for item in [residue, res_idx,
                                                     frag_idx,
                                                     residue.resSeq,
-                                                    add_dicts[0], add_dicts[1])
+                                                    ] + add_dicts])
     return istr
 
 def _try_double_indexing(indexable, idx1, idx2):
