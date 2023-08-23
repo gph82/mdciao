@@ -42,13 +42,7 @@ from collections import defaultdict as _defdict
 
 import mdtraj as _md
 
-def plot_w_smoothing_auto(ax, y,
-                          label,
-                          color,
-                          x = None,
-                          background=True,
-                          n_smooth_hw=0,
-                          ls="-"):
+def plot_w_smoothing_auto(y, ax=None, label=None, color="tab:blue", x=None, background=True, n_smooth_hw=0, ls="-"):
     r"""
     A wrapper around :obj:`matplotlib.pyplot.plot` that allows
     to add a smoothing window (or not). See
@@ -56,14 +50,20 @@ def plot_w_smoothing_auto(ax, y,
 
     Parameters
     ----------
-    ax : :obj:`~matplotlib.axes.Axes`
-        The axis where to draw onto
     y : iterable of floats
         The y array
-    label : str
-        Label for the legend
-    color : str
-        anything `matplotlib.pyplot.colors` understands
+    ax : :obj:`~matplotlib.axes.Axes` or None, default is None
+        The axis where to draw onto. If None,
+        the current axis will be used invoking
+        :obj:`~matplotlib.pyplot.gca`. If there's no
+        current axis, one will be created.
+    label : str or None, default is None
+        Label for the legend. If not None,
+        it's understood the user wants a legend
+        and a call to :obj:`~matplotlib.pyplot.legend`
+        will be issued inside this method.
+    color : str or any color-like value
+        Anything `matplotlib.pyplot.colors` understands
     x : iterable of floats, default is None
         If not provided, will default to
         x = _np.arange(len(y))
@@ -90,10 +90,17 @@ def plot_w_smoothing_auto(ax, y,
         The 2D smoothed line
 
     """
-    line2D = None
+
     alpha = 1
     if x is None:
         x = _np.arange(len(y))
+    if ax is None:
+        ax = _plt.gca()
+    if label is None:
+        call_legend=False
+    else:
+        call_legend=True
+
     if n_smooth_hw > 0:
         alpha = .2
         x_smooth = _mdcu.lists.window_average_fast(_np.array(x), half_window_size=n_smooth_hw)
@@ -121,7 +128,8 @@ def plot_w_smoothing_auto(ax, y,
                           label=label,
                           alpha=alpha,
                           color=color)[0]
-
+    if call_legend:
+        ax.legend()
     return line2D
 
 def plot_unified_freq_dicts(freqs,

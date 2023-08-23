@@ -1845,7 +1845,7 @@ class ContactPair(object):
             if valid_cutoff:
                 ilabel += ' (%u%%)' % (self.frequency_per_traj(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)[traj_idx] * 100)
 
-            _mdcplots.plot_w_smoothing_auto(ax, ictc_traj * 10, ilabel, color_scheme[traj_idx], x=itime * dt,
+            _mdcplots.plot_w_smoothing_auto(ictc_traj * 10, ax=ax, label=ilabel, color=color_scheme[traj_idx], x=itime * dt,
                                             background=background, n_smooth_hw=n_smooth_hw)
 
         ax.legend(loc=1, fontsize=_rcParams["font.size"] * .75,
@@ -4693,8 +4693,8 @@ class ContactGroup(object):
         for n_ctcs_t, itime, traj_name in zip(self.n_ctcs_timetraces(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
                                               self.time_arrays,
                                               self.trajlabels):
-            _mdcplots.plot_w_smoothing_auto(iax, n_ctcs_t, traj_name, next(icol), x=itime * dt,
-                                            background=background, n_smooth_hw=n_smooth_hw)
+            _mdcplots.plot_w_smoothing_auto(n_ctcs_t, ax=iax, label=traj_name, color=next(icol), x=itime * dt, background=background,
+                                            n_smooth_hw=n_smooth_hw)
 
         iax.set_ylabel('$\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
         iax.set_xlabel('t / %s'%t_unit)
