@@ -657,7 +657,7 @@ def residue_neighborhoods(residues,
          * zero-indexed, residue serial indices or
          * residue sequence, e.g. 30 in GLU30, this is called 'resSeq'
          in an :obj:`mdtraj.core.Residue`-object
-    ctc_cutoff_Ang : float, default is 3.5
+    ctc_cutoff_Ang : float, default is 4
         Any residue-residue distance is considered a contact if d<=ctc_cutoff_Ang
     stride : int, default is 1
         Stride the input data by this number of frames
@@ -1208,7 +1208,7 @@ def interface(
         :obj:`n_jobs` makes it so that e.g. 4 trajectories
         of 10000 frames each are loaded to memory and their
         residue-residue distances computed
-    ctc_cutoff_Ang : float, default is 3.5
+    ctc_cutoff_Ang : float, default is 4
         Any residue-residue distance is considered a contact
         if d<=ctc_cutoff_Ang
     curve_color : str, default is 'auto'
@@ -1658,7 +1658,7 @@ def sites(site_inputs,
         be used, i.e. when no :obj:`topology` is passed, the first
         :obj:`trajectory` has to be either a .gro or .pdb file, or
         an :obj:`~mdtraj.Trajectory` object
-    ctc_cutoff_Ang : float, default is 3.5
+    ctc_cutoff_Ang : float, default is 4
         Any residue-residue distance is considered a contact
         if d<=ctc_cutoff_Ang
     stride : int, default is 1

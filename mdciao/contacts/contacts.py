@@ -3686,12 +3686,12 @@ class ContactGroup(object):
         regardless of the contact's frequency
 
         >>> CG = mdciao.examples.ContactGroupL394()
-        >>> CG.relative_frequency_formed_atom_pairs_overall_trajs(3.5)
-        [{'SC-BB': 0.33, 'SC-SC': 0.52, 'BB-BB': 0.12},
-         {'BB-SC': 0.73, 'SC-SC': 0.27},
-         {'BB-BB': 0.84, 'SC-SC': 0.16},
-         {'SC-SC': 1.0},
-         {'SC-SC': 0.5, 'BB-SC': 0.5}]
+        >>> CG.relative_frequency_formed_atom_pairs_overall_trajs(4)
+        [{'SC-SC': 0.62, 'SC-BB': 0.21, 'BB-BB': 0.09, 'BB-SC': 0.08}
+         {'BB-BB': 0.74, 'SC-SC': 0.26}
+         {'SC-SC': 1.0}
+         {'BB-SC': 0.59, 'SC-SC': 0.41}
+         {'BB-SC': 0.73, 'SC-SC': 0.27}]
 
         Parameters
         ----------
