@@ -275,7 +275,7 @@ def ContactGroupL394(**kwargs):
                     return _residue_neighborhoods("L394",
                                                   _path.basename(filenames.traj_xtc),
                                                   **example_kwargs,
-                                                  )["neighborhoods"][353]
+                                                  )[353]
 
             except Exception as e:
                 print(b.getvalue())

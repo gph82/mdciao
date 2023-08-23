@@ -338,7 +338,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                       nlist_cutoff_Ang=1000,
                                       ctc_cutoff_Ang=1000,
                                       ctc_control=1.,
-                                      )["neighborhoods"][861]
+                                      )[861]
         assert n.n_ctcs==geom_CAs.top.n_residues-4-4-1# all residues minus 4 neighbors (x2 directions) minus itself
 
     def test_precomputed(self):
@@ -347,7 +347,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                              self.geom,
                                              res_idxs=True,
                                              no_disk=True,
-                                             figures=False)["neighborhoods"].values())[0]
+                                             figures=False).values())[0]
         CG2 = list(cli.residue_neighborhoods([1043],
                                              [self.traj, self.traj_reverse],
                                              self.geom,
@@ -355,8 +355,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                              no_disk=True,
                                              figures=False,
                                              pre_computed_distance_matrix=_np.zeros((self.geom.n_residues,
-                                                                                     self.geom.n_residues)))[
-                       "neighborhoods"].values())[0]
+                                                                                     self.geom.n_residues))).values())[0]
         _np.testing.assert_array_equal(CG1.frequency_per_contact(4), CG2.frequency_per_contact(4))
 
     def test_precomputed_raises(self):

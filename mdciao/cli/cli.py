@@ -835,15 +835,9 @@ def residue_neighborhoods(residues,
         using :obj:`n_nearest`
     Returns
     -------
-    out_dict : dict
-        * neighborhoods : dictionary keyed by unique, zero-indexed residue indices.
-         The values are :obj:`mdciao.contacts.ContactGroup` objects
-        * ctc_idxs : 2D np.ndarray with the residue indices of the contact pairs within obj`:nlist_cutoff_Ang` in at least one frame
-        * ctcs_trajs : list of per-traj 2D np.ndarrays with the mindist between the residues of "ctc_idxs"
-        * time_array : list of per-traj time-arrays
-
-        Usually, only *neighborhoods* is usefull, other entries are there for debugging
-
+    neighborhoods : dict
+        Keyed by unique, zero-indexed residue indices, valued with
+        :obj:`mdciao.contacts.ContactGroup` objects
     """
 
     # Input control residues
@@ -1069,10 +1063,7 @@ def residue_neighborhoods(residues,
                                                        savetrajs=savetrajs
                                                        )
 
-    return {"ctc_idxs": ctc_idxs_small,
-            'ctcs_trajs': ctcs_trajs,
-            'time_array': time_arrays,
-            "neighborhoods": neighborhoods}
+    return neighborhoods
 
 def interface(
         trajectories,

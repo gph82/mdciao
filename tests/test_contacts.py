@@ -1640,7 +1640,7 @@ class TestContactGroup(TestBaseClassContactGroup):
 
     def test_to_ContactGroups_per_traj(self):
         traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
-        CG : contacts.ContactGroup = _mdcli.residue_neighborhoods("L394",[traj, traj[:-1]],figures=False, no_disk=True)["neighborhoods"][353]
+        CG : contacts.ContactGroup = _mdcli.residue_neighborhoods("L394",[traj, traj[:-1]],figures=False, no_disk=True)[353]
         new_CGs = CG.to_ContactGroups_per_traj()
         assert len(new_CGs)==2
         self.assertListEqual(list(new_CGs.keys()), CG.trajlabels)
@@ -2316,7 +2316,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         r = _mdcli.residue_neighborhoods("L394", [traj1, traj1[:5], traj2],
                                          ctc_control=1.0, no_disk=True,
                                          figures=False)
-        r: contacts.ContactGroup = r["neighborhoods"][353]
+        r: contacts.ContactGroup = r[353]
         fig, plotted_freqs, plotted_trajs = r.plot_timedep_ctcs_matrix(3,
                                                                        dt=1e-3, t_unit="ns",
                                                                        )
@@ -2337,7 +2337,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         r = _mdcli.residue_neighborhoods("L394", traj1,
                                          ctc_control=1.0, no_disk=True,
                                          figures=False)
-        r: contacts.ContactGroup = r["neighborhoods"][353]
+        r: contacts.ContactGroup = r[353]
         fig, plotted_freqs, plotted_trajs = r.plot_timedep_ctcs_matrix(3,
                                                                        dt=1e-3, t_unit="ns",
                                                                        anchor="LEU394",
