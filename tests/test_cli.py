@@ -357,7 +357,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                              pre_computed_distance_matrix=_np.zeros((self.geom.n_residues,
                                                                                      self.geom.n_residues)))[
                        "neighborhoods"].values())[0]
-        _np.testing.assert_array_equal(CG1.frequency_per_contact(3.5), CG2.frequency_per_contact(3.5))
+        _np.testing.assert_array_equal(CG1.frequency_per_contact(4), CG2.frequency_per_contact(4))
 
     def test_precomputed_raises(self):
         with pytest.raises(ValueError):

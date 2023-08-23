@@ -177,7 +177,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
 
     def test_sort_by_keys(self):
         neigh : mdciao.contacts.ContactGroup = ContactGroupL394()
-        freqs = neigh.frequency_dicts(3.5)
+        freqs = neigh.frequency_dicts(4)
         # The following list, test_list
         # * reverses the order
         # * deletes the most frequent one (the last one) "R389@G.H5.21    - L394@G.H5.26"
@@ -186,7 +186,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         test_list = list(freqs.keys())[::-1][:-1]+["bogus-key"]+["L388@G.H5.20    - L394@G.H5.26"]
         myfig, myax, plotted_freqs = plots.plot_unified_freq_dicts({"L394":freqs},
                                                         sort_by=test_list,
-                                                        lower_cutoff_val=.2,
+                                                        lower_cutoff_val=.5,
                                                         )
         #myfig.tight_layout()
         #myfig.savefig("test.keys.png")

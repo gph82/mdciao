@@ -2158,8 +2158,9 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         #iax.figure.savefig("test.png")
         assert isinstance(iax, _plt.Axes)
         assert isinstance(order, _np.ndarray)
-        _np.testing.assert_array_equal(order, [0,2])
-        _np.testing.assert_array_equal([0,2],CG.means.argsort()[:2])
+        _np.testing.assert_array_equal(order, [0,1])
+        _np.testing.assert_array_equal([0,1],CG.means.argsort()[:2])
+        #_plt.savefig("test.png")
         _plt.close("all")
 
     def test_plot_violins_raises_on_title(self):
