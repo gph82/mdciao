@@ -1996,26 +1996,26 @@ class ContactGroup(object):
             # TODO imppelment an empty CG or a propety self.empty?
         else:
             # All contacts have the same number of trajs
-            self._n_trajs = _np.unique([ictc.n.n_trajs for ictc in self._contacts])
-            assert len(self._n_trajs)==1, (self._n_trajs, [ictc.n.n_trajs for ictc in self._contacts])
+            self._n_trajs = _np.unique([ictc.n.n_trajs for ictc in self.contact_pairs])
+            assert len(self._n_trajs)==1, (self._n_trajs, [ictc.n.n_trajs for ictc in self.contact_pairs])
             self._n_trajs=self._n_trajs[0]
 
             ref_ctc : ContactPair #TODO check if type-hinting is needed or it's just slow IDE over sshfs
-            ref_ctc = self._contacts[0]
+            ref_ctc = self.contact_pairs[0]
 
             # All trajs have the same length
-            assert all([_np.allclose(ref_ctc.n.n_frames, ictc.n.n_frames) for ictc in self._contacts[1:]])
+            assert all([_np.allclose(ref_ctc.n.n_frames, ictc.n.n_frames) for ictc in self.contact_pairs[1:]])
             self._time_arrays=ref_ctc.time_traces.time_trajs
             assert all([all([_np.array_equal(itime, jtime) for itime, jtime in zip(ref_ctc.time_traces.time_trajs,
                                                                                    ictc.time_traces.time_trajs)])
-                        for ictc in self._contacts[1:]])
+                        for ictc in self.contact_pairs[1:]])
             self._time_max = ref_ctc.time_max
             self._time_min = ref_ctc.time_min
             self._n_frames = ref_ctc.n.n_frames
 
             # All contatcs have the same trajstrs
             already_printed = False
-            for ictc in self._contacts[1:]:
+            for ictc in self.contact_pairs[1:]:
                 assert all([rlab.__hash__() == tlab.__hash__()
                             for rlab, tlab in zip(ref_ctc.labels.trajstrs, ictc.labels.trajstrs)])
                 # todo why did I put this here in the first place
@@ -2094,7 +2094,7 @@ class ContactGroup(object):
                 self._interface_residxs = [[],[]]
                 self._interface_fragments = [[],[]]
 
-            shared = _pdunique([ictc.residues.anchor_residue_index for ictc in self._contacts])
+            shared = _pdunique([ictc.residues.anchor_residue_index for ictc in self.contact_pairs])
             if len(shared) == 1:
                 self._shared_anchor_residue_index = shared[0]
 
@@ -2110,6 +2110,25 @@ class ContactGroup(object):
 
     #todo again the dicussion about named tuples vs a miriad of properties
     # I am opting for properties because of easiness of documenting i
+
+    @property
+    def contact_pairs(self):
+        r"""
+        List of :obj:`~mdciao.contacts.ContactPair` objects composing this :obj:`~mdciao.contacts.ContactGroup`
+
+        Gives direct access for (expert) users to manipulate, plot, save,
+        individual :obj:`~mdciao.contacts.ContactPair` objects
+
+        The order of these :obj:`~mdciao.contacts.ContactPair` objects
+        is the order the `list_of_contact_objects` passed to
+        this :obj:`~mdciao.contacts.ContactGroup` at initialization.
+
+        Returns
+        -------
+        contact_pairs : list
+            List of :obj:`~mdciao.contacts.ContactPair` objects
+        """
+        return self._contacts
 
     @property
     def neighbors_excluded(self) -> int:
@@ -2241,7 +2260,7 @@ class ContactGroup(object):
         -------
         res_idxs_pairs : _np.ndarray
         """
-        return _np.vstack([ictc.residues.idxs_pair for ictc in self._contacts])
+        return _np.vstack([ictc.residues.idxs_pair for ictc in self.contact_pairs])
 
     @property
     def residue_names_short(self) -> list:
@@ -2259,7 +2278,7 @@ class ContactGroup(object):
         -------
         residue_names_short : list
         """
-        return [ictc.residues.names_short for ictc in self._contacts]
+        return [ictc.residues.names_short for ictc in self.contact_pairs]
 
     @property
     def residue_names_long(self) -> list:
@@ -2277,7 +2296,7 @@ class ContactGroup(object):
         -------
         residue_names_long : list
                 """
-        return [ictc.residues.names for ictc in self._contacts]
+        return [ictc.residues.names for ictc in self.contact_pairs]
 
     @property
     def fragment_names_best(self) -> list:
@@ -2303,7 +2322,7 @@ class ContactGroup(object):
         fragment_names_best : list
         """
 
-        return [ictc.labels.fragment_labels_best(fmt="%s") for ictc in self._contacts]
+        return [ictc.labels.fragment_labels_best(fmt="%s") for ictc in self.contact_pairs]
 
     @property
     def ctc_labels(self) -> list:
@@ -2322,7 +2341,7 @@ class ContactGroup(object):
         ctc_labels : list
         """
 
-        return [ictc.labels.no_fragments for ictc in self._contacts]
+        return [ictc.labels.no_fragments for ictc in self.contact_pairs]
 
     @property
     def ctc_labels_short(self) -> list:
@@ -2341,7 +2360,7 @@ class ContactGroup(object):
         ctc_labels_short : list
         """
         return [ictc.labels.no_fragments_short_AA
-                for ictc in self._contacts]
+                for ictc in self.contact_pairs]
 
     @property
     def ctc_labels_w_fragments_short_AA(self) -> list:
@@ -2361,7 +2380,7 @@ class ContactGroup(object):
         ctc_labels_w_fragments_short_AA : list
         """
 
-        return [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
+        return [ictc.labels.w_fragments_short_AA for ictc in self.contact_pairs]
 
     @_kwargs_subs(ContactPair.gen_label)
     def gen_ctc_labels(self, **kwargs) -> list:
@@ -2378,7 +2397,7 @@ class ContactGroup(object):
         labels : list
         """
 
-        return [cp.gen_label(**kwargs) for cp in self._contacts]
+        return [cp.gen_label(**kwargs) for cp in self.contact_pairs]
 
     @property
     def trajlabels(self) -> list:
@@ -2450,7 +2469,7 @@ class ContactGroup(object):
         -------
         consensus_labels : list
         """
-        return [ictc.residues.consensus_labels for ictc in self._contacts]
+        return [ictc.residues.consensus_labels for ictc in self.contact_pairs]
 
     @property
     def consensuslabel2resname(self) -> dict:
@@ -2663,7 +2682,7 @@ class ContactGroup(object):
         label : str
         """
         assert self.is_neighborhood,"There is no anchor residue, This is not a neighborhood."
-        return self._contacts[0].neighborhood.anchor_res_and_fragment_str.rstrip("@")
+        return self.contact_pairs[0].neighborhood.anchor_res_and_fragment_str.rstrip("@")
 
     @property
     def anchor_res_and_fragment_str_short(self) -> str:
@@ -2680,7 +2699,7 @@ class ContactGroup(object):
         label : str
         """
         assert self.is_neighborhood
-        return self._contacts[0].neighborhood.anchor_res_and_fragment_str_short.rstrip("@")
+        return self.contact_pairs[0].neighborhood.anchor_res_and_fragment_str_short.rstrip("@")
 
     @property
     def partner_res_and_fragment_labels(self) -> list:
@@ -2701,7 +2720,7 @@ class ContactGroup(object):
         labels : list
         """
         assert self.is_neighborhood
-        return [ictc.neighborhood.partner_res_and_fragment_str.rstrip("@") for ictc in self._contacts]
+        return [ictc.neighborhood.partner_res_and_fragment_str.rstrip("@") for ictc in self.contact_pairs]
 
     @property
     def partner_res_and_fragment_labels_short(self) -> list:
@@ -2722,7 +2741,7 @@ class ContactGroup(object):
         labels : list
         """
         assert self.is_neighborhood
-        return [ictc.neighborhood.partner_res_and_fragment_str_short.rstrip("@") for ictc in self._contacts]
+        return [ictc.neighborhood.partner_res_and_fragment_str_short.rstrip("@") for ictc in self.contact_pairs]
 
     @property
     def anchor_fragment_color(self) -> str:
@@ -2744,9 +2763,9 @@ class ContactGroup(object):
         color : str
         """
         assert self.is_neighborhood
-        _col = self._contacts[0].fragments.colors[self._contacts[0].residues.anchor_index]
-        cond1 = not any([ictc.fragments.colors[ictc.residues.anchor_index] is None for ictc in self._contacts])
-        cond2 = all([ictc.fragments.colors[ictc.residues.anchor_index] == _col for ictc in self._contacts[1:]])
+        _col = self.contact_pairs[0].fragments.colors[self.contact_pairs[0].residues.anchor_index]
+        cond1 = not any([ictc.fragments.colors[ictc.residues.anchor_index] is None for ictc in self.contact_pairs])
+        cond2 = all([ictc.fragments.colors[ictc.residues.anchor_index] == _col for ictc in self.contact_pairs[1:]])
         if cond1 and cond2:
             return _col
         else:
@@ -2789,9 +2808,9 @@ class ContactGroup(object):
         color : str
         """
         assert self.is_neighborhood
-        _col = self._contacts[0].fragments.colors[self._contacts[0].residues.anchor_index]
-        partner_fragment_colors = [ictc.fragments.colors[ictc.residues.partner_index] for ictc in self._contacts]
-        not any([ictc.fragments.colors[ictc.residues.partner_index] is None for ictc in self._contacts])
+        _col = self.contact_pairs[0].fragments.colors[self.contact_pairs[0].residues.anchor_index]
+        partner_fragment_colors = [ictc.fragments.colors[ictc.residues.partner_index] for ictc in self.contact_pairs]
+        not any([ictc.fragments.colors[ictc.residues.partner_index] is None for ictc in self.contact_pairs])
         if not any([icol is None for icol in partner_fragment_colors]):
             return partner_fragment_colors
         else:
@@ -2831,7 +2850,7 @@ class ContactGroup(object):
         if new_labels is None:
            new_labels = {}
 
-        for cp in self._contacts:
+        for cp in self.contact_pairs:
             consensus_labels = cp.residues.consensus_labels  # We need the attribute outside
             for ii in [0, 1]:
                 if cp.residues.names_short[ii] in new_labels.keys():
@@ -2853,12 +2872,12 @@ class ContactGroup(object):
 
     # Now the functions begin
     def _unique_topology_from_ctcs(self):
-        if all([ictc.top is None for ictc in self._contacts]):
+        if all([ictc.top is None for ictc in self.contact_pairs]):
             return None
 
-        top = _np.unique([ictc.top.__hash__() for ictc in self._contacts])
+        top = _np.unique([ictc.top.__hash__() for ictc in self.contact_pairs])
         if len(top)==1:
-            return self._contacts[0].top
+            return self.contact_pairs[0].top
         else:
             raise ValueError("All contacts in a group of contacts"
                              " should have the same topology, but "
@@ -2893,7 +2912,7 @@ class ContactGroup(object):
         """
         bintrajs = [ictc.binarize_trajs(ctc_cutoff_Ang,
                                         switch_off_Ang=switch_off_Ang
-                                        ) for ictc in self._contacts]
+                                        ) for ictc in self.contact_pairs]
         if order=='contact':
             return bintrajs
         elif order=='traj':
@@ -2969,7 +2988,7 @@ class ContactGroup(object):
 
         """
         self._check_cutoff_ok(ctc_cutoff_Ang)
-        frequency_dicts = [cp.frequency_dict(ctc_cutoff_Ang=ctc_cutoff_Ang, **kwargs) for cp in self._contacts]
+        frequency_dicts = [cp.frequency_dict(ctc_cutoff_Ang=ctc_cutoff_Ang, **kwargs) for cp in self.contact_pairs]
         if sort_by_freq:
             frequency_dicts = sorted(frequency_dicts,
                                      key=lambda value: value["freq"],
@@ -2993,7 +3012,7 @@ class ContactGroup(object):
         freqs : 1D np.ndarray of len(n_ctcs)
         """
         self._check_cutoff_ok(ctc_cutoff_Ang)
-        return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang) for ictc in self._contacts])
+        return _np.array([ictc.frequency_overall_trajs(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang) for ictc in self.contact_pairs])
 
     def frequency_per_traj(self, ctc_cutoff_Ang,
                               switch_off_Ang=None) -> _np.ndarray:
@@ -3018,7 +3037,7 @@ class ContactGroup(object):
 
         self._check_cutoff_ok(ctc_cutoff_Ang)
 
-        freqs =  _np.array([ictc.frequency_per_traj(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang) for ictc in self._contacts])
+        freqs =  _np.array([ictc.frequency_per_traj(ctc_cutoff_Ang,switch_off_Ang=switch_off_Ang) for ictc in self.contact_pairs])
         return freqs.T
 
     def frequency_sum_per_residue_idx_dict(self, ctc_cutoff_Ang,
@@ -3243,7 +3262,7 @@ class ContactGroup(object):
         sort_by_freq : bool, default is False
             Sort by descending frequency value,
             default is to keep the order of
-            :obj:`self._contacts`
+            :obj:`self.contact_pairs`
         ctc_fd_kwargs: named optional arguments
             Check :obj:`ContactPair.frequency_dict` for more info on e.g
             AA_format='short' and or split_label
@@ -3254,7 +3273,7 @@ class ContactGroup(object):
         df : :obj:`pandas.DataFrame`
         """
         self._check_cutoff_ok(ctc_cutoff_Ang)
-        idicts = [ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, atom_types=atom_types, **ctc_fd_kwargs) for ictc in self._contacts]
+        idicts = [ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, atom_types=atom_types, **ctc_fd_kwargs) for ictc in self.contact_pairs]
         if atom_types is True:
             for jdict in idicts:
                 istr =  '%s' % (', '.join(['%3u%% %s' % (val * 100, key)
@@ -3716,7 +3735,7 @@ class ContactGroup(object):
 
         """
         self._check_cutoff_ok(ctc_cutoff_Ang)
-        return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang,**kwargs) for ictc in self._contacts]
+        return [ictc.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang,**kwargs) for ictc in self.contact_pairs]
 
     def _distributions_of_distances(self, bins=10):
         r"""
@@ -3738,7 +3757,7 @@ class ContactGroup(object):
             List of len self.n_ctcs, each entry contains
             the counts and edges of the bins
         """
-        return [ictc.distro_overall_trajs(bins=bins) for ictc in self._contacts]
+        return [ictc.distro_overall_trajs(bins=bins) for ictc in self.contact_pairs]
 
     @_kwargs_subs(ContactPair.label_flex)
     def distribution_dicts(self,
@@ -3768,7 +3787,7 @@ class ContactGroup(object):
         fdict : dictionary
 
         """
-        distro_dicts = {ictc.label_flex(**kwargs) : data for ictc, data in zip(self._contacts, self._distributions_of_distances(
+        distro_dicts = {ictc.label_flex(**kwargs) : data for ictc, data in zip(self.contact_pairs, self._distributions_of_distances(
             bins=bins))}
 
 
@@ -3900,9 +3919,9 @@ class ContactGroup(object):
                                                      color=color,
                                                      lower_cutoff_val=truncate_at)
 
-        label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
+        label_bars = [ictc.labels.w_fragments for ictc in self.contact_pairs]
         if shorten_AAs:
-            label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
+            label_bars = [ictc.labels.w_fragments_short_AA for ictc in self.contact_pairs]
 
         # Cosmetics
         sigma = _np.sum([ipatch.get_height() for ipatch in ax.patches])
@@ -4098,9 +4117,9 @@ class ContactGroup(object):
             title = title_label
 
         if stride!=1:
-            data4violin = [_np.hstack(cp.time_traces.ctc_trajs)[::stride] * 10 for cp in self._contacts]
+            data4violin = [_np.hstack(cp.time_traces.ctc_trajs)[::stride] * 10 for cp in self.contact_pairs]
         else:
-            data4violin = [_np.hstack(cp.time_traces.ctc_trajs) * 10 for cp in self._contacts]
+            data4violin = [_np.hstack(cp.time_traces.ctc_trajs) * 10 for cp in self.contact_pairs]
         means = _np.array([_np.mean(dt) for dt in data4violin])
 
         freqs = None
@@ -4151,9 +4170,9 @@ class ContactGroup(object):
 
 
         #TODO avoid code repetition
-        label_bars = [ictc.labels.w_fragments for ictc in self._contacts]
+        label_bars = [ictc.labels.w_fragments for ictc in self.contact_pairs]
         if shorten_AAs:
-            label_bars = [ictc.labels.w_fragments_short_AA for ictc in self._contacts]
+            label_bars = [ictc.labels.w_fragments_short_AA for ictc in self.contact_pairs]
         if self.is_neighborhood:
             title += "\n%s nearest bonded neighbors excluded\n" % (str(self.neighbors_excluded).replace("None", "no"))
             label_dotref = self.anchor_res_and_fragment_str
@@ -4310,7 +4329,7 @@ class ContactGroup(object):
                                                                                 switch_off_Ang=switch_off_Ang)
 
         df = _DF(list_of_dicts, columns=_hatchets).fillna(0) # Letting pandas work for us filling zeroes
-        swap_order = [ii for ii, ictc in enumerate(self._contacts) if ictc.residues.anchor_index==1]
+        swap_order = [ii for ii, ictc in enumerate(self.contact_pairs) if ictc.residues.anchor_index==1]
         if len(swap_order)>0:
             df.loc[swap_order,["SC-BB", "BB-SC"]] = df.loc[swap_order,["BB-SC", "SC-BB"]].values
         return df
@@ -4626,7 +4645,7 @@ class ContactGroup(object):
             axes_iter = iter(myax)
 
             # Plot individual contacts
-            for ictc in _np.array(self._contacts)[order]:
+            for ictc in _np.array(self.contact_pairs)[order]:
                 ictc.plot_timetrace(next(axes_iter),
                                     ctc_cutoff_Ang=ctc_cutoff_Ang,
                                     **plot_timetrace_kwargs
@@ -4930,7 +4949,7 @@ class ContactGroup(object):
                         transform=iax.transAxes,
                         ha='left')
 
-            iax.plot(_np.nan, _np.nan, " ", label=self._contacts[0].labels.trajstrs[ii])
+            iax.plot(_np.nan, _np.nan, " ", label=self.contact_pairs[0].labels.trajstrs[ii])
             iax.legend(handlelength=0)
 
         #https://stackoverflow.com/a/44971177
@@ -5208,7 +5227,7 @@ class ContactGroup(object):
         # Introspect?
         if from_tuple:
             idx_cp, idx_traj, idx_frame = from_tuple
-            traj = self._contacts[idx_cp].time_traces.trajs[idx_traj]
+            traj = self.contact_pairs[idx_cp].time_traces.trajs[idx_traj]
             if isinstance(traj,str):
                 traj = _md.load(traj,top=self.top,frame=idx_frame)
             else:
@@ -5442,7 +5461,7 @@ class ContactGroup(object):
 
         """
         if self._stacked_time_traces is None:
-            self._stacked_time_traces = _np.vstack([_np.hstack(CP.time_traces.ctc_trajs) for CP in self._contacts]).T
+            self._stacked_time_traces = _np.vstack([_np.hstack(CP.time_traces.ctc_trajs) for CP in self.contact_pairs]).T
         return self._stacked_time_traces
 
     @property
@@ -5659,7 +5678,7 @@ class ContactGroup(object):
         if return_traj:
             geoms = []
             for ii, (traj_idx, frame_idx) in enumerate(traj_frames):
-                reptraj = self._contacts[0]._attribute_trajs.trajs[traj_idx]
+                reptraj = self.contact_pairs[0]._attribute_trajs.trajs[traj_idx]
                 print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
                 if isinstance(reptraj, str):
                     if _path.exists(reptraj):
@@ -5764,13 +5783,13 @@ class ContactGroup(object):
 
         if merge:
             Ns = ContactGroup(
-                [self._contacts[ii] for ii in _np.unique(_np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0]))],
+                [self.contact_pairs[ii] for ii in _np.unique(_np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0]))],
                 neighbors_excluded=self.neighbors_excluded,
                 max_cutoff_Ang=self.max_cutoff_Ang,
                 interface_fragments=[self.interface_fragments if keep_interface and self.is_interface else None][0]
                 )
         else:
-            Ns = {key: [ContactGroup([self._contacts[ii] for ii in mCPs],
+            Ns = {key: [ContactGroup([self.contact_pairs[ii] for ii in mCPs],
                                      neighbors_excluded=self.neighbors_excluded,
                                      max_cutoff_Ang=self.max_cutoff_Ang) if len(mCPs) > 0 else None][0]
                   for mCPs, key in zip(matching_CPs, keys)}
@@ -5802,7 +5821,7 @@ class ContactGroup(object):
         `traj` and it's necessarily the first one.
         """
         cp_batches = []
-        for cp in self._contacts:
+        for cp in self.contact_pairs:
             per_traj_cp = []
             for ii in range(cp.n.n_trajs):
                 per_traj_cp.append(ContactPair(cp.residues.idxs_pair,
@@ -5867,7 +5886,7 @@ class ContactGroup(object):
         -------
         CG : :obj:`ContactGroup`
         """
-        CPs = [CP.retop(top, mapping, deepcopy=deepcopy) for CP in self._contacts]
+        CPs = [CP.retop(top, mapping, deepcopy=deepcopy) for CP in self.contact_pairs]
         interface_fragments = None
         if self.interface_fragments is not None:
             interface_fragments = [[mapping[ii] for ii in iintf if ii in mapping.keys()] for iintf in self.interface_fragments]
@@ -6155,7 +6174,7 @@ class ContactGroup(object):
         for ii in range(self.n_trajs):
             labels = ['time / %s'%t_unit]
             data = [self.time_arrays[ii] * _mdcu.str_and_dict.tunit2tunit["ps"][t_unit]]
-            for ictc in self._contacts:
+            for ictc in self.contact_pairs:
                 labels.append('%s / Ang'%ictc.labels.w_fragments_short_AA)
                 data.append(ictc.time_traces.ctc_trajs[ii]*10)
             data= _np.vstack(data).T
@@ -6189,7 +6208,7 @@ class ContactGroup(object):
 
         bintrajs = self.binarize_trajs(ctc_cutoff_Ang, switch_off_Ang=None, order="traj")
         labels = ['time / %s' % t_unit]
-        for ictc in self._contacts:
+        for ictc in self.contact_pairs:
             labels.append('%s / Ang' % ictc.label)
 
         dicts = []
@@ -6325,7 +6344,7 @@ class ContactGroup(object):
 
         """
 
-        tosave = {"serialized_CPs": [cp._serialized_as_dict(**kwargs) for cp in self._contacts],
+        tosave = {"serialized_CPs": [cp._serialized_as_dict(**kwargs) for cp in self.contact_pairs],
                   "interface_residxs": self.interface_residxs,
                   "name": self.name,
                   "neighbors_excluded":self.neighbors_excluded,
@@ -6347,14 +6366,14 @@ class ContactGroup(object):
         CG : :obj:`ContactGroup`
 
         """
-        return ContactGroup([CP.copy() for CP in self._contacts],
+        return ContactGroup([CP.copy() for CP in self.contact_pairs],
                             interface_fragments=self.interface_fragments,
                             top=self.top,
                             neighbors_excluded=self.neighbors_excluded,
                             max_cutoff_Ang=self.max_cutoff_Ang)
 
     def __hash__(self):
-        return hash(tuple([hash(tuple([CP.__hash__() for CP in self._contacts])),
+        return hash(tuple([hash(tuple([CP.__hash__() for CP in self.contact_pairs])),
                            hash(tuple(self.interface_fragments[0])),
                            hash(tuple(self.interface_fragments[1])),
                            hash(tuple(self.interface_residxs[0])),
