@@ -432,10 +432,12 @@ class Test_plot_w_smoothing_auto(unittest.TestCase):
         y = [0, 1, 2, 3, 4, 5]
         _plt.plot(y)
         _plt.text(0,0,"this axes existed before")
+        iax = _plt.gca()
+        n_lines_before = len(iax.lines)
         line2D = plots.plot_w_smoothing_auto(y, label= "test", color="r", n_smooth_hw=1)
         assert isinstance(line2D, _plt.Line2D)
         assert line2D.axes.texts[0].get_text() == "this axes existed before"
-        assert len(line2D.axes.lines)==3 #original line plus two from the smoothing
+        assert len(line2D.axes.lines)==n_lines_before +2 #original lines plus two from the smoothing
         _plt.close(_plt.gcf())
 
 
