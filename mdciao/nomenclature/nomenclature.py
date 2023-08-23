@@ -147,7 +147,7 @@ def _PDB_finder(PDB_code, local_path='.',
     local_path : str, default is "."
         What directory to look into
     try_web_lookup : bool, default is True
-        If the file :obj:`ref_PDB` cannot be found locally
+        If the file "local_path/PDB_code".pdb cannot be found locally
         as .pdb or .pdb.gz, a web lookup will be tried
         using :obj:`md_load_RCSB`
     verbose : boolean, default is True
