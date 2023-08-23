@@ -191,13 +191,13 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                       accept_guess=False,
                                                       save_nomenclature_files=False,
                                                       verbose=True):
-    consensus_frags, consensus_maps, consensus_labelers = {}, [], {}
+    consensus_frags, consensus_maps, consensus_labelers = {}, {}, {}
     for key, option in option_dict.items():
         map_CL, CL = _parse_consensus_option(option, key, top, fragments_as_residue_idxs,
                                            return_Labeler=True,
                                            accept_guess=accept_guess,
                                            write_to_disk=save_nomenclature_files)
-        consensus_maps.append(map_CL)
+        consensus_maps[key] = map_CL
         if CL is not None:
             consensus_labelers[key] = CL
             empty_map = all([lab is None for lab in map_CL])
