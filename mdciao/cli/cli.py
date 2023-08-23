@@ -1458,7 +1458,7 @@ def interface(
         ifreq = ctc_frequency[idx]
         if ifreq > min_freq:
             pair = ctc_idxs_intf[idx]
-            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps,
+            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, list(consensus_maps.values()),
                                                                 no_key=None) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             ctc_objs.append(_mdcctcs.ContactPair(pair,
@@ -1849,13 +1849,12 @@ def sites(site_inputs,
             sites = _sites
 
     print("These are the residues that could be found:")
-    print('%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq GPCR  CGN".split())))
+    header = "  ".join(["%10s"%head for head in "residue  residx fragment  resSeq".split()+list(consensus_maps.keys())])
+    print(header)
     for idx in _np.unique(ctc_idxs_small):
-        print('%10s  %10u  %10u %10u %10s %10s' % (refgeom.top.residue(idx), idx, _mdcu.lists.in_what_fragment(idx,
-                                                                                                               fragments_as_residue_idxs),
-                                                   idx,
-                                                   consensus_maps[0][idx], consensus_maps[1][idx]))
-
+        print(_mdcu.residue_and_atom.residue_line("",refgeom.top.residue(idx),
+                                                  _mdcu.lists.in_what_fragment(idx,fragments_as_residue_idxs),
+                                                  consensus_maps=consensus_maps, table=True))
     ctcs, time_array, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                        chunksize=chunksize_in_frames,
                                        return_times_and_atoms=True, consolidate=False, periodic=pbc,
@@ -1869,7 +1868,7 @@ def sites(site_inputs,
         site_as_gc[key] = []
         for idx in imap:
             pair = ctc_idxs_small[idx]
-            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps) for idx in pair]
+            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, list(consensus_maps.values())) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             site_as_gc[key].append(_mdcctcs.ContactPair(pair,
                                                [itraj[:, idx] for itraj in ctcs],
@@ -2082,6 +2081,9 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
                    "CGN": CGN_uniprot,
                    "KLIFS": KLIFS_uniprotAC}
 
+    option_dict = {key : val for key, val in option_dict.items() if not str(val).lower()=="none"}
+    #print(option_dict)
+
     consensus_frags, consensus_maps, consensus_labelers = \
         _parse_consensus_options_and_return_fragment_defs(option_dict,
                                                           top,
@@ -2090,7 +2092,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
                                                           save_nomenclature_files=save_nomenclature_files,
                                                           accept_guess=accept_guess)
 
-    consensus_maps = {key : consensus_maps[ii] for ii, key in enumerate(option_dict.keys())}
+    consensus_maps = {key : consensus_maps[key] for key in option_dict.keys()}
 
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
                                                                         pick_this_fragment_by_default=None,
@@ -2101,7 +2103,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_uniprot=None, 
     if midstring is not None:
         print(midstring)
 
-    header = '%10s  %10s  %10s  %10s %10s %10s' % tuple(("residue  residx fragment  resSeq GPCR  CGN".split()))
+    header = "  ".join(["%10s"%head for head in "residue  residx fragment  resSeq".split()+list(consensus_maps.keys())])
     print(header)
     for idx in res_idxs_list:
         print(_mdcu.residue_and_atom.residue_line("", top.residue(idx),
@@ -2274,14 +2276,16 @@ def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uni
         A dictionary of consensus fragments, keyed
         by consensus fragment names (ICL3, 3.5, G.H5...)
         and valued with lists of the residues of :obj:`top` in them
-    consensus_maps : list
-        List of consensus maps (which are lists themselves)
+    consensus_labelers : dict
+        List of LabelerConsensus-objects if any consensus info was given,
+    consensus_maps : dict
+        Dicttionary of consensus maps (anything indexable by residx),
         in case any consensus info was given, otherwise the
         lists will be full of Nones. Consensus maps result
-        from calling LabelerConsensus.top2labels on :obj:`top`
+        from calling LabelerConsensus.top2labels on `top`
         and have a len top.n_residues
-    consensus_labelers : list
-        List of LabelerConsensus-objects if any consensus info was given,
+    consensus_frags :
+        TODO
     top2confrag : list
         Of len top.n_residues, maps each residue
         index of :obj:`top` to their consensus
@@ -2300,6 +2304,8 @@ def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_uni
                                                           fragments_as_residue_idxs,
                                                           accept_guess=accept_guess,
                                                           save_nomenclature_files=save_nomenclature_files)
+    # pop out the Nones of the maps
+    consensus_maps = {key : consensus_maps[key] for key in consensus_labelers.keys()}
     top2confrag = _np.full(top.n_residues, None)
     for key, val in consensus_frags.items():
         top2confrag[val] = key
