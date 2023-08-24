@@ -797,15 +797,11 @@ class TestContactPair(unittest.TestCase):
                                   [[0, 1, 2], [0, 1, 2, 3]],
                                   top=self.geom.top
                                   )
-        _plt.figure()
-        iax = _plt.gca()
-        CP.plot_timetrace(iax,
-                          ctc_cutoff_Ang=2,
-                          shorten_AAs=True,
-                          ylim_Ang="auto")
+
+        CP.plot_timetrace(ctc_cutoff_Ang=2, shorten_AAs=True, ylim_Ang="auto")
+
         with pytest.raises(ValueError):
-            CP.plot_timetrace(iax,
-                              ylim_Ang="max")
+            CP.plot_timetrace(ylim_Ang="max")
 
     def test_retop(self):
         CG = examples.ContactGroupL394()

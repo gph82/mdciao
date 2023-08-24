@@ -1773,26 +1773,21 @@ class ContactPair(object):
             return {key:count/_np.sum(counts) for key, count in zip(atom_pairs, counts)
                     if count/_np.sum(counts)>min_freq}
 
-    def plot_timetrace(self,
-                       ax,
-                       color_scheme=None,
-                       ctc_cutoff_Ang=None,
-                       switch_off_Ang=None,
-                       n_smooth_hw=0,
-                       dt=1,
-                       background=True,
-                       shorten_AAs=False,
-                       t_unit='ps',
-                       ylim_Ang=10,
-                       max_handles_per_row=4,
-                       ):
+    def plot_timetrace(self, ax=None, color_scheme=None, ctc_cutoff_Ang=None, switch_off_Ang=None, n_smooth_hw=0, dt=1,
+                       background=True, shorten_AAs=False, t_unit='ps', ylim_Ang=10, max_handles_per_row=4):
         r"""
-        Plot this ContactPair's timetraces for all trajs onto :`ax`
+        Plot this ContactPair's timetraces for all trajs onto `ax`
 
         Parameters
         ----------
-        ax : :obj:`~matplotlib.pyplot.Axes`
-            The axis where to plot the timetrace
+        ax : None, :obj:`~matplotlib.pyplot.Axes`
+            The axis where to plot the timetrace.
+            Default is to plot on the current axis,
+            and if there's no current axes,
+            a new one will be created. If a new one is
+            created, it'll have the default width and height,
+            you have to change it afterwards or create it
+            beforehand with your desired size.
         color_scheme : list, default is None
             Pass a list of colors, each one should be
             understandable by :obj:`matplotlib.colors.is_color_like`
@@ -1823,8 +1818,13 @@ class ContactPair(object):
 
         Returns
         -------
-
+        ax : :obj:`~matplotlib.pyplot.Axes`
+            The axis with the plotted timetrace
         """
+
+        if ax is None:
+            ax = _plt.gca()
+
         if color_scheme is None:
             color_scheme = _rcParams['axes.prop_cycle'].by_key()["color"]
         valid_cutoff = ctc_cutoff_Ang is not None and ctc_cutoff_Ang > 0
@@ -4646,10 +4646,7 @@ class ContactGroup(object):
 
             # Plot individual contacts
             for ictc in _np.array(self.contact_pairs)[order]:
-                ictc.plot_timetrace(next(axes_iter),
-                                    ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                    **plot_timetrace_kwargs
-                                    )
+                ictc.plot_timetrace(ax=next(axes_iter), ctc_cutoff_Ang=ctc_cutoff_Ang, **plot_timetrace_kwargs)
 
         if valid_cutoff:
             if plot_N_ctcs:
