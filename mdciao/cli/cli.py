@@ -1517,7 +1517,7 @@ def interface(
 
         ctc_grp_intf.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
                                                  title,
-                                                 jax=histoax[1],
+                                                 ax=histoax[1],
                                                  list_by_interface=True,
                                                  label_fontsize_factor=panelsize2font / panelsize,
                                                  truncate_at=.05,

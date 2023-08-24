@@ -1486,12 +1486,12 @@ def _key_sorter(sort_by, indict):
 
     return ordered_keys
 
-def add_tilted_labels_to_patches(jax, labels,
+def add_tilted_labels_to_patches(ax, labels,
                                  label_fontsize_factor=1,
                                  trunc_y_labels_at=.65,
                                  single_label=False):
     r"""
-    Iterate through :obj:`jax.patches` and place the text strings
+    Iterate through :obj:`ax.patches` and place the text strings
     in :obj:`labels` on top of it.
 
     Fragment names are super-scripted and LaTex-words (alpha_2)
@@ -1500,7 +1500,7 @@ def add_tilted_labels_to_patches(jax, labels,
 
     Parameters
     ----------
-    jax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
         The axes onto which the tilted labels
         will be added
     labels : list
@@ -1518,7 +1518,7 @@ def add_tilted_labels_to_patches(jax, labels,
         Helps the method put the fragments in
         super-script
     """
-    for ii, (ipatch, ilab) in enumerate(zip(jax.patches, labels)):
+    for ii, (ipatch, ilab) in enumerate(zip(ax.patches, labels)):
         ix = ii
         iy = ipatch.get_height()
         iy += .05
@@ -1528,17 +1528,17 @@ def add_tilted_labels_to_patches(jax, labels,
             txt = _mdcu.str_and_dict._latex_superscript_one_fragment(ilab)
         else:
             txt = _mdcu.str_and_dict.latex_superscript_fragments(ilab)
-        jax.text(ix, iy, txt,
-                 va='bottom',
-                 ha='left',
-                 rotation=45,
-                 rotation_mode="anchor",
-                 fontsize=_rcParams["font.size"]*label_fontsize_factor,
-                 backgroundcolor="white",
-                 bbox={"boxstyle": "square,pad=0.2",
+        ax.text(ix, iy, txt,
+                va='bottom',
+                ha='left',
+                rotation=45,
+                rotation_mode="anchor",
+                fontsize=_rcParams["font.size"]*label_fontsize_factor,
+                backgroundcolor="white",
+                bbox={"boxstyle": "square,pad=0.2",
                        "fc": "white", "ec": "none", "alpha": .9},
 
-                 )
+                )
 
 def _get_highest_y_of_bbox_in_axes_units(txt_obj):
     r"""
@@ -1570,12 +1570,12 @@ def _get_highest_y_of_bbox_in_axes_units(txt_obj):
     #print(y)
     return y
 
-def _points2dataunits(jax):
+def _points2dataunits(ax):
     r"""
     Return a conversion factor for points 2 dataunits
     Parameters
     ----------
-    jax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
 
     Returns
     -------
@@ -1584,9 +1584,9 @@ def _points2dataunits(jax):
 
     TODO revise that this isn't indeed d2p!!!!
     """
-    bbox = jax.get_window_extent()
+    bbox = ax.get_window_extent()
     dx_pts, dy_pts = bbox.bounds[-2:]
-    dx_in_dataunits, dy_in_dataunits = _np.diff(jax.get_xlim())[0], _np.diff(jax.get_ylim())[0]
+    dx_in_dataunits, dy_in_dataunits = _np.diff(ax.get_xlim())[0], _np.diff(ax.get_ylim())[0]
     return _np.array((dx_pts/dx_in_dataunits, dy_pts / dy_in_dataunits)).T
 
 def highest_y_textobjects_in_Axes_units(ax):
@@ -1614,7 +1614,7 @@ def highest_y_textobjects_in_Axes_units(ax):
          for txt in ax.texts]
     )
 
-def _titlepadding_in_points_no_clashes_w_texts(jax):
+def _titlepadding_in_points_no_clashes_w_texts(ax):
     r"""
     Compute amount of upward padding need to avoid overlap
     between the axis title and any text object in the axis.
@@ -1623,14 +1623,14 @@ def _titlepadding_in_points_no_clashes_w_texts(jax):
 
     Parameters
     ----------
-    jax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
 
     Returns
     -------
     pad_id_points : float or None
 
     """
-    heights = [txt.get_window_extent(jax.figure.canvas.get_renderer()).height for txt in jax.texts]
+    heights = [txt.get_window_extent(ax.figure.canvas.get_renderer()).height for txt in ax.texts]
     if len(heights)>0:
         pad_in_points = _np.max(heights)+_rcParams["axes.titlepad"]*2
     else:
@@ -1711,7 +1711,7 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
         if ihood is not None:
             if distro:
                 ihood.plot_distance_distributions(bins=20,
-                                                  jax=jax,
+                                                  ax=jax,
                                                   label_fontsize_factor=panelsize2font / panelsize,
                                                   shorten_AAs=short_AA_names,
                                                   ctc_cutoff_Ang=ctc_cutoff_Ang,
@@ -1864,7 +1864,7 @@ def _color_by_values(all_ctc_keys, freqs_by_sys_by_ctc, colordict,
     return winners
 
 def _plot_freqbars_baseplot(freqs,
-                            jax=None,
+                            ax=None,
                             lower_cutoff_val=None,
                             bar_width_in_inches=.75,
                             color="tab:blue",
@@ -1876,7 +1876,7 @@ def _plot_freqbars_baseplot(freqs,
     ----------
     freqs : iterable
         The values to plot
-    jax : :obj:`~matplotlib.axes.Axes`, default is None
+    ax : :obj:`~matplotlib.axes.Axes`, default is None
         If None is passed, one will be created
     lower_cutoff_val : float, default is None
         Only plot frequencies above this value (between 0 and 1)
@@ -1890,28 +1890,28 @@ def _plot_freqbars_baseplot(freqs,
 
     Returns
     -------
-    jax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
     """
 
     if lower_cutoff_val is not None:
         freqs = _np.array(freqs)[_np.array(freqs) > lower_cutoff_val]
     xvec = _np.arange(len(freqs))
-    if jax is None:
+    if ax is None:
         _plt.figure(figsize=(_np.max((7,bar_width_in_inches*len(freqs))),5))
-        jax = _plt.gca()
+        ax = _plt.gca()
 
-    patches = jax.bar(xvec, freqs,
-                      width=.25,
-                      color=color
-                      )
-    jax.set_yticks([.25, .50, .75, 1])
-    jax.set_ylim([0, 1])
-    jax.set_xticks([])
-    [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
-    return jax
+    patches = ax.bar(xvec, freqs,
+                     width=.25,
+                     color=color
+                     )
+    ax.set_yticks([.25, .50, .75, 1])
+    ax.set_ylim([0, 1])
+    ax.set_xticks([])
+    [ax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in [.25, .50, .75]]
+    return ax
 
 def _plot_violin_baseplot(vdata,
-                          jax=None,
+                          ax=None,
                           violin_width_in_inches=.75,
                           colors="tab:blue",
                           labels=None,
@@ -1926,7 +1926,7 @@ def _plot_violin_baseplot(vdata,
         Each entry represents a contact-pair and
         is itself a list of time-traces (one time-trace
         per trajectory)
-    jax : :obj:`~matplotlib.axes.Axes`, default is None
+    ax : :obj:`~matplotlib.axes.Axes`, default is None
         If None is passed, one will be created
     violin_width_in_inches : float, default is .75
         The width of the axis will vary with the number of plotted
@@ -1949,16 +1949,16 @@ def _plot_violin_baseplot(vdata,
 
     Returns
     -------
-    jax : :obj:`~matplotlib.axes.Axes`
+    ax : :obj:`~matplotlib.axes.Axes`
     violins : dictionary
         See :obj:`~matplotlib.pyplot.violinplot` for more info
     """
     xvec = _np.arange(len(vdata)) + offset
-    if jax is None:
+    if ax is None:
         _plt.figure(figsize=(_np.max((7, violin_width_in_inches * len(vdata))), 5))
-        jax = _plt.gca()
+        ax = _plt.gca()
     else:
-        _plt.sca(jax)
+        _plt.sca(ax)
     vdata = [_np.hstack(dt) for dt in vdata]
     #means = [_np.mean(dt) for dt in per_CP_timetraces]
     vdata = _np.array(vdata, ndmin=2).T
@@ -1972,7 +1972,7 @@ def _plot_violin_baseplot(vdata,
                               showextrema=False)
     #_plt.plot(xvec, means, " o", colors=colors)
     if labels is None:
-        jax.set_xticks([])
+        ax.set_xticks([])
     else:
         _plt.xticks(xvec, labels, rotation=45, ha="right", va="top",
                     rotation_mode="anchor")
@@ -1986,7 +1986,7 @@ def _plot_violin_baseplot(vdata,
     violins["cmeans"].set_color(colors)
     for vio,col in zip(violins["bodies"],colors):
         vio.set_color(col)
-    return jax, violins
+    return ax, violins
 
 def _color_tiler(colors, n):
     r"""

@@ -3915,7 +3915,7 @@ class ContactGroup(object):
             order = _np.arange(len(freqs))
         color = [list(_mdcplots.color_dict_guesser(color, order).values())[oo] for oo in order]
         ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
-                                                     jax=ax,
+                                                     ax=ax,
                                                      color=color,
                                                      lower_cutoff_val=truncate_at)
 
@@ -4159,7 +4159,7 @@ class ContactGroup(object):
             color = _mdcplots.color_dict_guesser(color, order)
 
         ax, violins = _mdcplots.plots._plot_violin_baseplot([data4violin[oo] for oo in order],
-                                                            jax=ax,
+                                                            ax=ax,
                                                             colors=[color[oo] for oo in order],
                                                             )
         if ctc_cutoff_Ang is not None:
@@ -4334,16 +4334,16 @@ class ContactGroup(object):
             df.loc[swap_order,["SC-BB", "BB-SC"]] = df.loc[swap_order,["BB-SC", "SC-BB"]].values
         return df
 
-    def _add_hatching_by_atomtypes(self, jax, ctc_cutoff_Ang, display_order=False, switch_off_Ang=None,
+    def _add_hatching_by_atomtypes(self, ax, ctc_cutoff_Ang, display_order=False, switch_off_Ang=None,
                                    ):
         r"""
-        Add hatches representing contact-type to the frequency bars in :obj:`jax`
+        Add hatches representing contact-type to the frequency bars in :obj:`ax`
 
         A small legend will appear at the bottom of the plot
 
         Parameters
         ----------
-        jax : :obj:`~matplotlib.axes.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
             The axis where the frequency bars where plotted
         ctc_cutoff_Ang : float
             The cutoff that was used (otherwise we cannot compute atomtype freqs)
@@ -4369,60 +4369,60 @@ class ContactGroup(object):
         hatched_lists = self._get_hatches_for_plotting(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang).values
         if display_order is not None:
             hatched_lists = hatched_lists[display_order]
-        heights = _np.array([ipatch.get_height() for ipatch in jax.patches])
-        width = jax.patches[0].get_width()
-        color = jax.patches[0].get_facecolor()
+        heights = _np.array([ipatch.get_height() for ipatch in ax.patches])
+        width = ax.patches[0].get_width()
+        color = ax.patches[0].get_facecolor()
 
         w_hatched_lists = hatched_lists*heights[:,_np.newaxis]
         for ii, key in enumerate(_hatchets.keys()):
-            jax.bar(_np.arange(len(w_hatched_lists)),
+            ax.bar(_np.arange(len(w_hatched_lists)),
                     w_hatched_lists[:,ii],
-                    color="r",
-                    fill=False,
-                    ec="w",
-                    #ec="lightgray",
-                    alpha=.5,
-                    width=width*1.,
-                    fc=None,
-                    bottom = w_hatched_lists[:,:ii].sum(1),
-                    hatch=_hatchets[key],
-                    lw=0)
+                   color="r",
+                   fill=False,
+                   ec="w",
+                   #ec="lightgray",
+                   alpha=.5,
+                   width=width*1.,
+                   fc=None,
+                   bottom = w_hatched_lists[:,:ii].sum(1),
+                   hatch=_hatchets[key],
+                   lw=0)
 
         # Add the hatchet_legend
-        leg1 = jax.get_legend()
+        leg1 = ax.get_legend()
         # Empty plots
         _hatchets_to_plot = [key for ii, key in enumerate(_hatchets.keys()) if w_hatched_lists[:,ii].sum()>0]
         ebars = [
-            jax.bar(_np.nan, _np.nan,
-                    color="r",
-                    #fill=True,
-                    ec="w",
-                    fc=color,
-                    hatch=_hatchets[key],
-                    #width=.01,
-                    lw=0)[0]
+            ax.bar(_np.nan, _np.nan,
+                   color="r",
+                   #fill=True,
+                   ec="w",
+                   fc=color,
+                   hatch=_hatchets[key],
+                   #width=.01,
+                   lw=0)[0]
             for key in _hatchets_to_plot]
 
-        pd = _mdcplots.plots._points2dataunits(jax)[1]
+        pd = _mdcplots.plots._points2dataunits(ax)[1]
         try:
-            lowbar_fspts = jax.texts[0].get_fontsize() * .75
+            lowbar_fspts = ax.texts[0].get_fontsize() * .75
         except IndexError:
             lowbar_fspts = _rcParams["font.size"] * .75
         lowbar_fsaus = lowbar_fspts / pd
         y_leg = -2 * lowbar_fsaus  # fudged to "close enough"
-        place_legend = lambda y: getattr(jax, "legend")(ebars, _hatchets_to_plot,
-                                                        loc=[0, y],
-                                                        ncol=4,
-                                                        framealpha=0,
-                                                        frameon=False,
-                                                        fontsize=lowbar_fspts,
-                                                        handletextpad=.1,
-                                                        columnspacing=1,
-                                                        handlelength=1.)
+        place_legend = lambda y: getattr(ax, "legend")(ebars, _hatchets_to_plot,
+                                                       loc=[0, y],
+                                                       ncol=4,
+                                                       framealpha=0,
+                                                       frameon=False,
+                                                       fontsize=lowbar_fspts,
+                                                       handletextpad=.1,
+                                                       columnspacing=1,
+                                                       handlelength=1.)
         leg2 = place_legend(y_leg)
 
-        cc, rend = 0, jax.figure.canvas.get_renderer()
-        while jax.bbox.overlaps(leg2.get_window_extent(renderer=rend)):
+        cc, rend = 0, ax.figure.canvas.get_renderer()
+        while ax.bbox.overlaps(leg2.get_window_extent(renderer=rend)):
             leg2.remove()
             y_leg += y_leg*.05
             leg2 = place_legend(y_leg)
@@ -4431,12 +4431,12 @@ class ContactGroup(object):
             if cc>5:
                 break
         if leg1 is not None:
-            jax.add_artist(leg1)
+            ax.add_artist(leg1)
 
     def plot_distance_distributions(self,
                                     bins=10,
                                     xlim=None,
-                                    jax=None,
+                                    ax=None,
                                     shorten_AAs=False,
                                     ctc_cutoff_Ang=None,
                                     legend_sort=True,
@@ -4458,7 +4458,7 @@ class ContactGroup(object):
             Limits of the x-axis.
             Outlier can stretch the scale, this forces it
             to a given range
-        jax : :obj:`~matplotlib.axes.Axes`, default is None
+        ax : :obj:`~matplotlib.axes.Axes`, default is None
             One will be created if None is passed
         shorten_AAs: bool, default is False
             Use amino-acid one-letter codes
@@ -4483,12 +4483,12 @@ class ContactGroup(object):
 
         Returns
         -------
-        jax : :obj:`~matplotlib.axes.Axes`
+        ax : :obj:`~matplotlib.axes.Axes`
 
         """
-        if jax is None:
+        if ax is None:
             _plt.figure(figsize=(7, 5))
-            jax = _plt.gca()
+            ax = _plt.gca()
 
         if self.is_neighborhood:
             title = self.anchor_res_and_fragment_str
@@ -4511,10 +4511,10 @@ class ContactGroup(object):
         title_str = "Distance distribution(s) for %s"%_mdcu.str_and_dict.latex_superscript_fragments(title)
         if ctc_cutoff_Ang is not None:
             title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)
-            jax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
+            ax.axvline(ctc_cutoff_Ang, color="k", ls="--", zorder=-1)
         if self.neighbors_excluded not in [None,0]:
             title_str += "\n%u nearest bonded neighbors excluded" % (self.neighbors_excluded)
-        jax.set_title(title_str)
+        ax.set_title(title_str)
 
         # Base plot
         for ii, ((h, x), label) in enumerate(zip(self._distributions_of_distances(bins=bins), label_bars)):
@@ -4523,28 +4523,28 @@ class ContactGroup(object):
                 if ii==0:
                     freqs = self.frequency_per_contact(ctc_cutoff_Ang)
                 label+=" (%u%%)"%(freqs[ii]*100)
-            jax.plot(x[:-1] * 10, h, label=label)
-            jax.fill_between(x[:-1]*10, h, alpha=.15)
+            ax.plot(x[:-1] * 10, h, label=label)
+            ax.fill_between(x[:-1] * 10, h, alpha=.15)
         if xlim is not None:
-            jax.set_xlim(xlim)
+            ax.set_xlim(xlim)
 
-        jax.set_xlabel("D / $\AA$")
-        jax.set_ylabel("counts ")
-        jax.set_ylim([0,jax.get_ylim()[1]])
-        jax.legend(fontsize=_rcParams["font.size"]*label_fontsize_factor/self.n_ctcs**.25,
-                   ncol=_np.ceil(self.n_ctcs / max_handles_per_row).astype(int),
-                   loc=1,
-                   )
+        ax.set_xlabel("D / $\AA$")
+        ax.set_ylabel("counts ")
+        ax.set_ylim([0, ax.get_ylim()[1]])
+        ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor / self.n_ctcs ** .25,
+                  ncol=_np.ceil(self.n_ctcs / max_handles_per_row).astype(int),
+                  loc=1,
+                  )
         if ctc_cutoff_Ang is not None and legend_sort:
-            handles, labels = jax.get_legend_handles_labels()
-            jax.legend([handles[ii] for ii in _np.argsort(freqs)[::-1]], [labels[ii] for ii in _np.argsort(freqs)[::-1]],
-                       fontsize=_rcParams["font.size"] * label_fontsize_factor / self.n_ctcs ** .25,
-                       ncol=_np.ceil(self.n_ctcs / max_handles_per_row).astype(int),
-                       loc=1
-                       )
-        jax.figure.tight_layout()
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend([handles[ii] for ii in _np.argsort(freqs)[::-1]], [labels[ii] for ii in _np.argsort(freqs)[::-1]],
+                      fontsize=_rcParams["font.size"] * label_fontsize_factor / self.n_ctcs ** .25,
+                      ncol=_np.ceil(self.n_ctcs / max_handles_per_row).astype(int),
+                      loc=1
+                      )
+        ax.figure.tight_layout()
 
-        return jax
+        return ax
 
     @_kwargs_subs(ContactPair.plot_timetrace, exclude=["ctc_cutoff_Ang"])
     def plot_timedep_ctcs(self, panelheight=3, plot_N_ctcs=True, pop_N_ctcs=False, skip_timedep=False,
@@ -4960,7 +4960,7 @@ class ContactGroup(object):
                                     title_str,
                                     switch_off_Ang=None,
                                     xmax=None,
-                                    jax=None,
+                                    ax=None,
                                     shorten_AAs=False,
                                     label_fontsize_factor=1,
                                     truncate_at=0,
@@ -4981,7 +4981,7 @@ class ContactGroup(object):
             TODO
         xmax : float, default is None
             X-axis will extend from -.5 to xmax+.5
-        jax : obj:`~matplotlib.axes.Axes``, default is None
+        ax : obj:`~matplotlib.axes.Axes``, default is None
             If None, one will be created, else draw here
         shorten_AAs : boolean, default is False
             Unused ATM
@@ -4991,7 +4991,7 @@ class ContactGroup(object):
         truncate_at : float, default is 0
             Do not show sums of freqs lower than this value
         bar_width_in_inches : float, default is .75
-            If no :obj:`jax` is parsed, this controls that the
+            If no :obj:`ax` is parsed, this controls that the
             drawn figure always has a size proportional to the
             number of frequencies being shown. Allows for
             combining multiple subplots with different number of bars
@@ -5029,36 +5029,36 @@ class ContactGroup(object):
         freqs = freqs[freqs>truncate_at]
 
         xvec = _np.arange(len(freqs))
-        if jax is None:
+        if ax is None:
             _plt.figure(figsize=(_np.max((7, bar_width_in_inches * len(freqs))), 5))
-            jax = _plt.gca()
+            ax = _plt.gca()
 
-        patches = jax.bar(xvec, freqs,
-                          width=.25)
+        patches = ax.bar(xvec, freqs,
+                         width=.25)
         yticks = _np.arange(.5,_np.max(freqs)+.25, .5)
-        jax.set_yticks(yticks)
-        jax.set_xticks([])
-        [jax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in yticks]
+        ax.set_yticks(yticks)
+        ax.set_xticks([])
+        [ax.axhline(ii, color="lightgray", linestyle="--", zorder=-1) for ii in yticks]
 
         # Cosmetics
-        jax.set_title(
+        ax.set_title(
             "Average nr. contacts @%2.1f $\AA$ \nper residue of '%s'"
             % (ctc_cutoff_Ang, _mdcu.str_and_dict.replace4latex(title_str)))
 
-        _mdcplots.add_tilted_labels_to_patches(jax,
-                                               label_bars[:(jax.get_xlim()[1]).astype(int) + 1],
+        _mdcplots.add_tilted_labels_to_patches(ax,
+                                               label_bars[:(ax.get_xlim()[1]).astype(int) + 1],
                                                label_fontsize_factor=label_fontsize_factor,
                                                trunc_y_labels_at=.65 * _np.max(freqs),
                                                single_label=True,
                                                )
 
         if xmax is not None:
-            jax.set_xlim([-.5, xmax + 1 - .5])
+            ax.set_xlim([-.5, xmax + 1 - .5])
 
         if list_by_interface and interface_vline:
             xpos = len([ifreq for ifreq in frq_dict_list[0].values() if ifreq >truncate_at])
-            jax.axvline(xpos-.5,color="lightgray", linestyle="--",zorder=-1)
-        return jax
+            ax.axvline(xpos - .5, color="lightgray", linestyle="--", zorder=-1)
+        return ax
 
     @_kwargs_subs(_mdcflare.freqs2flare, exclude=["fragments", "SS", "fragment_names", "colors", "top"])
     def plot_freqs_as_flareplot(self, ctc_cutoff_Ang,

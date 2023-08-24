@@ -486,7 +486,7 @@ class Test_freqs_baseplot(unittest.TestCase):
     def test_baseplot_pass_ax(self):
         _plt.plot()
         jax = _plt.gca()
-        assert jax is _plot_freqbars_baseplot([1,2,3], jax=jax)
+        assert jax is _plot_freqbars_baseplot([1,2,3], ax=jax)
         _plt.close("all")
 
     def test_baseplot_truncate(self):
@@ -665,7 +665,7 @@ class Test_plot_violin_baseplot(unittest.TestCase):
 
     def test_second_axis(self):
         iax, _ = _plot_violin_baseplot(self.time_trajs)
-        iax, _ = _plot_violin_baseplot(self.time_trajs_shifted, labels=self.CGL394.ctc_labels, jax=iax)
+        iax, _ = _plot_violin_baseplot(self.time_trajs_shifted, labels=self.CGL394.ctc_labels, ax=iax)
         #ax.figure.savefig("test.pdf")
         _plt.close("all")
 
