@@ -510,6 +510,15 @@ class TestContactPair(unittest.TestCase):
                              [[0, 1, 2], [0, 1, 2, 3]],
                              )
 
+    def test_stacked_contact_trace(self):
+        cpt = contacts.ContactPair([0, 1],
+                             [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
+                             [[0, 1, 2], [0, 1, 2, 3]],
+                             )
+
+        self.assertListEqual([1.0, 1.1, 1.3] + [2.0, 2.1, 2.3, 2.4], cpt.stacked_time_traces.tolist())
+
+
     def test_with_top(self):
         contact_pair_test = contacts.ContactPair([0, 1],
                                                  [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],

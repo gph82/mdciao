@@ -1110,6 +1110,7 @@ class ContactPair(object):
         self._time_max = _np.nanmax(_np.hstack(time_trajs))
         self._time_min = _np.nanmin(_np.hstack(time_trajs))
         self._binarized_trajs = _defdict(dict)
+        self._stacked_time_traces = None
 
     #Trajectories
     @property
@@ -1623,8 +1624,22 @@ class ContactPair(object):
             The bin edges ``(length(hist)+1)``.
 
         """
-        return _np.histogram(_np.hstack(self.time_traces.ctc_trajs),
-                             bins=bins)
+        return _np.histogram(self.stacked_time_traces, bins=bins)
+
+    @property
+    def stacked_time_traces(self) -> _np.ndarray:
+        r"""
+        The time-traces of the contact distance for each trajectory stacked into one array
+
+        Returns
+        -------
+        stacked_time_traces : np.ndarray
+        """
+        if self._stacked_time_traces is None:
+            self._stacked_time_traces = _np.hstack(self.time_traces.ctc_trajs)
+
+        return self._stacked_time_traces
+
 
     def _overall_stacked_formed_atoms(self, ctc_cutoff_Ang):
         r"""
