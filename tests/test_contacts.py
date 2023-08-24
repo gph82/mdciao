@@ -812,6 +812,32 @@ class TestContactPair(unittest.TestCase):
         with pytest.raises(ValueError):
             CP.plot_timetrace(ylim_Ang="max")
 
+    def test_plot_distance_distribution(self):
+        CP = contacts.ContactPair([0, 1],
+                                  [[.10, .25, .13], [.20, .21, .23, .24]],
+                                  [[0, 1, 2], [0, 1, 2, 3]],
+                                  )
+
+        ax = CP.plot_distance_distribution(bins=4, shorten_AAs=True, ctc_cutoff_Ang=2, xlim=[.5, 3])
+
+        #ax.figure.savefig("test.png")
+        _plt.close("all")
+
+    def test_plot_distance_distribution_smoothing(self):
+        CP = contacts.ContactPair([0, 1],
+                                  [[.10, .25, .13], [.20, .21, .23, .24]],
+                                  [[0, 1, 2], [0, 1, 2, 3]],
+                                  )
+
+        ax = CP.plot_distance_distribution(bins=4, shorten_AAs=True, ctc_cutoff_Ang=2, label="True", xlim=[.5, 3],
+                                           smooth_bw=True, background=False)
+        ax = CP.plot_distance_distribution(ax=ax, bins=4, shorten_AAs=True, ctc_cutoff_Ang=2, label=".5", smooth_bw=.5,
+                                           background=True)
+        ax = CP.plot_distance_distribution(ax=ax, bins=4, shorten_AAs=True, ctc_cutoff_Ang=2, label=".5", smooth_bw=.5,
+                                           background="red")
+        ax.figure.savefig("test.png")
+        _plt.close("all")
+
     def test_retop(self):
         CG = examples.ContactGroupL394()
 

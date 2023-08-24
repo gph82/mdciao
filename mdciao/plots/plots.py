@@ -2033,3 +2033,12 @@ def _color_tiler(colors, n):
         tiled_colors = _np.tile(colors, (_np.ceil(n / len(colors)).astype(int),1))[:n]
 
     return tiled_colors.tolist()
+
+#TODO test & document
+def _is_axvline(line, value=None):
+    xvals = line.get_data()[0]
+    res = False
+    res = line.get_label().startswith("_child") and len(xvals)==2 and xvals[0]==xvals[1]
+    if res and value is not None:
+        res = xvals[0]==value
+    return res
