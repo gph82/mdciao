@@ -835,7 +835,7 @@ class TestContactPair(unittest.TestCase):
                                            background=True)
         ax = CP.plot_distance_distribution(ax=ax, bins=4, shorten_AAs=True, ctc_cutoff_Ang=2, label=".5", smooth_bw=.5,
                                            background="red")
-        ax.figure.savefig("test.png")
+        #ax.figure.savefig("test.png")
         _plt.close("all")
 
     def test_retop(self):
@@ -2387,7 +2387,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
             self.assertEqual(img_array.shape[1],  r.n_frames[ii])
             _np.testing.assert_array_equal(img_array, traj)
         self.assertEqual(ii,r.n_trajs-1)
-        fig.savefig("test.png")
+        #fig.savefig("test.png")
         _plt.close("all")
 
     def test_plot_distance_distributions_just_works(self):
