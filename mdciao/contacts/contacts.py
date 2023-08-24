@@ -4561,7 +4561,8 @@ class ContactGroup(object):
                                     legend_sort=True,
                                     label_fontsize_factor=1,
                                     max_handles_per_row=4,
-                                    defrag=None):
+                                    defrag=None,
+                                    smooth_bw=False)-> _plt.Axes:
 
         r"""
         Plot distance distributions for the distance trajectories
@@ -4599,6 +4600,13 @@ class ContactGroup(object):
             Delete fragment labels from
             the residue labels, "G30@frag1"->"G30".
             If None, don't delete the fragment label
+        smooth_bw : bool or float
+            If True smooth the histogram using a
+            Gaussian-kernel-density estimation with
+            an estimator bandwidth of .5 Angstrom.
+            If float, use this value as estimator
+            bandwidth, check :obj:`matplotlib.mlab.GaussianKDE`
+            for more info. If False, don't smooth
 
         Returns
         -------
@@ -4636,14 +4644,13 @@ class ContactGroup(object):
         ax.set_title(title_str)
 
         # Base plot
-        for ii, ((h, x), label) in enumerate(zip(self._distributions_of_distances(bins=bins), label_bars)):
-            label = _mdcu.str_and_dict.latex_superscript_fragments(label)
-            if ctc_cutoff_Ang is not None:
-                if ii==0:
-                    freqs = self.frequency_per_contact(ctc_cutoff_Ang)
-                label+=" (%u%%)"%(freqs[ii]*100)
-            ax.plot(x[:-1] * 10, h, label=label)
-            ax.fill_between(x[:-1] * 10, h, alpha=.15)
+        for ii, cp in enumerate(self.contact_pairs):
+            cp : ContactPair
+            if ctc_cutoff_Ang is not None and ii == 0:
+                freqs = self.frequency_per_contact(ctc_cutoff_Ang)
+            cp.plot_distance_distribution(ax=ax, bins=bins, shorten_AAs=shorten_AAs, defrag=defrag,
+                                          ctc_cutoff_Ang=ctc_cutoff_Ang, smooth_bw=smooth_bw, background=False)
+
         if xlim is not None:
             ax.set_xlim(xlim)
 
