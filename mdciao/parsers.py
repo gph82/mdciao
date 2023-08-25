@@ -176,7 +176,7 @@ def _parser_add_background(parser):
                              "Use False for no color.")
 
 def _parser_add_fragments(parser):
-    parser.add_argument("-fr",'--fragments', default=['lig_resSeq+'], nargs='+',
+    parser.add_argument("-fr",'--fragments', default='lig_resSeq+', nargs='+',
                         help=("R|How to sub-divide the topology into fragments.\n"
                               "Several options possible. Taking the example sequence:\n"
                               "…-A27,Lig28,K29-…-W40,D45-…-W50,CYSP51,GDP52\n"
@@ -194,13 +194,13 @@ def _parser_add_fragments(parser):
                               "     bond in the topology, it's considered a ligand\n"
                               " - 'resSeq_bonds'\n"
                               "     breaks both at resSeq jumps or missing bond\n"
-                              " -  'lig_resSeq+\n'"
+                              " - 'lig_resSeq+'\n"
                               "     Like resSeq+ but put's any non-AA residue into\n"
                               "     it's own fragment:\n"
                               "     […A27][Lig28],[K29,…,W40],[D45,…,W50,CYSP51],[GDP52]\n"
-                              " -  'chains'\n"
+                              " - 'chains'\n"
                               "     breaks into chains of the PDB file/entry\n"
-                              " -   None or 'None\n'"
+                              " -   None or 'None'\n"
                               "     all residues are in one fragment, fragment 0\n"                              
                               " - 'consensus'\n"
                               "     If any consensus nomenclature is provided,\n"
@@ -209,11 +209,11 @@ def _parser_add_fragments(parser):
                               " - 0-10,15,14 20,21,30-50 51 (example, advanced users only)\n" 
                               "     Input arbitrary fragments via their\n"
                               "     residue serial indices (zero-indexed) using space as\n"
-                              "     separator. Not recommended\n."
+                              "     separator. Not recommended.\n"
                               " - 'None'\n"
-                              "     All residues are in one fragment (fragment 0)\n"
-                              "     Can be harmless or potentially dangerous if residue\n "
-                              "     labels are repeated."
+                              "     All residues are in one fragment (fragment 0).\n"
+                              "     Can be harmless or potentially dangerous if residue\n"
+                              "     labels are repeated.\n"
                               "If you are unsure of any of these options, use \n"
                               "the command line tool mdc_fragments.py on \n"
                               "your topology file."))
