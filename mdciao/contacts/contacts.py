@@ -155,6 +155,11 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 pair = residxs_pairs[oo]
                 idx1, idx2 = _mdcu.lists.put_this_idx_first_in_pair(residx, pair)
                 frg1, frg2 = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in [idx1,idx2]]
+                if None in [frg1,frg2]:
+                    outer_res = [rr for rr in _np.unique(residxs_pairs) if rr not in _np.hstack(fragments)]
+                    raise ValueError(f"The following residues appear in the residue neighborhoods but "
+                                     f"are outside of your fragment definitions:\n"
+                                     f"{[top.residue(rr) for rr in outer_res]}")
                 seen_ctcs.append(ifreq)
                 print_if_v("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), ifreq, top.residue(idx1), top.residue(idx2), frg1, frg2, idx1, idx2, oo, isum))
