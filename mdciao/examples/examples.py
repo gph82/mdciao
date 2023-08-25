@@ -547,13 +547,7 @@ def GPCRLabeler_ardb2_human(**kwargs):
 
 def CGNLabeler_gnas2_human(**kwargs):
     r"""Build an :obj:`~mdciao.nomenclature.LabelerCGN` with the gnas2_human.txt file shipped with mdciao"""
-    with _TDir(suffix="_mdciao_example_CGNLabeler") as t:
-        for fn in [filenames.gnas2_human_xlsx]:
-            _link(fn, _path.join(t, _path.basename(fn)))
-        with remember_cwd():
-            _chdir(t)
-            CGN = _LabelerCGN("gnas2_human",**kwargs)
-    return CGN
+    return _LabelerCGN(filenames.gnas2_human_xlsx,**kwargs)
 
 def Interface_B2AR_Gas(**kwargs):
     r"""
