@@ -1008,6 +1008,9 @@ def frag_list_2_frag_groups(frag_list,
                                                                      '(e.g. 0,3 or 2-4,6) for group %u: ' % (ii + 1)))
             elif isinstance(ifrag_idxs, str):
                 groups_as_fragidxs[ii] = _mdcu.lists.rangeexpand(ifrag_idxs.strip(","))
+    outside_idxs = set(_np.hstack(groups_as_fragidxs)).difference(_np.arange(len(frag_list)))
+    if outside_idxs:
+        raise ValueError(f"Can't provide fragment indices {outside_idxs} but only {len(frag_list)} fragments.")
     groups_as_residxs = [sorted(_np.hstack([frag_list[ii] for ii in iint])) for iint in
                             groups_as_fragidxs]
 
