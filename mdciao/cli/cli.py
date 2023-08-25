@@ -1488,7 +1488,8 @@ def interface(
         ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_dat, atom_types=True)
         print(fn.fullpath_overall_dat)
         ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fullpath_pdb, refgeom[0],
-                                          # interface_sign=True
+                                          # interface_sign=True,
+                                          verbose=False
                                           )
         print(fn.fullpath_pdb)
 
