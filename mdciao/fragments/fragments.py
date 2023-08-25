@@ -774,10 +774,10 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
     middle of TM6, the user can "patch" these residues together manually
     using `prompt` = True.
 
-    Some cases
-    * [0,1,2,3] and `fragments`=[[0,1,2,3,4,6], [7,8,9]] #receptor, G-protein fragments
+    Some cases, e.g. with `sub_frag` being the TM6 definition:
+    * `sub_frag`=[0,1,2,3] and `fragments`=[[0,1,2,3,4,6], [7,8,9]] #receptor, G-protein fragments
      is not a clash, bc TM6 is contained in fragments[0]
-    * [0,1,2,3] and `fragments`=[[0,1],[2,3],[4,5,6,7,8]]
+    * `sub_frag`=[0,1,2,3] and `fragments`=[[0,1],[2,3],[4,5,6,7,8]]
      is a clash. In this case the user will be prompted to choose
      which subset of "TM6" to keep:
      * "0": [0,1]
@@ -807,7 +807,7 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
         Whether `sub_frag` was a sub-fragment of `fragments`
     subfrag_after_prompt : 1D numpy array
         If no clashes were found, or `prompt` was False,
-        then this is equal to `is_subfragment`, because there
+        then this is equal to `was_subfragment`, because there
         simply weren't clashes or because no action was
         taken to remedy them.
         If clashes were found and `prompt` was True,
@@ -823,8 +823,8 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
 
     frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
     if prompt:
-        if len(frag_cands) > 1:
-            # This only happens if more than one fragment is present
+        was_subfragment = len(frag_cands) <= 1
+        if not was_subfragment:
             print_frag(fragname, top, sub_frag, fragment_desc='',
                        idx2label=map_conlab)
             print(" Subfragment '%s' clashes with other fragment definitions,\n"
@@ -838,15 +838,16 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
                 if n_in_fragment < len(fragments[jj]):
                     istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
                 print(istr)
-            answr = input("Input what fragment idxs to include into %s  (fmt = 1 or 1-4, or 1,3):" % fragname)
+            answr = input("Input the idxs of the fragments where ECL2 can be found %s  (fmt = 1 or 1-4, or 1,3):" % fragname)
             answr = _mdcu.lists.rangeexpand(answr)
-            assert all([idx in ifrags for idx in answr])
-            tokeep = _np.hstack([idx for ii, idx in enumerate(sub_frag) if ifrags[ii] in answr]).tolist()
-            if len(tokeep) >= len(ifrags):
-                raise ValueError("Cannot keep these fragments %s!" % (str(answr)))
-            return len(frag_cands) <= 1, tokeep, frag_cands,
+            if not all([idx in frag_cands for idx in answr]):
+                raise ValueError(f"Cannot keep fragment {set(answr).difference(frag_cands)}, "
+                                 f"it outside the available candidates {frag_cands}")
+
+            residues_to_keep = _np.hstack([idx for ii, idx in enumerate(sub_frag) if ifrags[ii] in answr]).tolist()
+            return was_subfragment, residues_to_keep, frag_cands,
         else:
-            return len(frag_cands) <= 1, sub_frag, frag_cands
+            return was_subfragment, sub_frag, frag_cands
     else:
         return len(frag_cands) <= 1, sub_frag, frag_cands
 
