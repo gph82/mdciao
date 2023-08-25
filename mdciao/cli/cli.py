@@ -203,8 +203,7 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
             empty_map = all([lab is None for lab in map_CL])
             if not empty_map:
                 if verbose or not accept_guess:
-                    print("These are the %s fragments mapped onto your topology:"%key)
-                #TODO check whether this shouldn't be outside the if verbose???
+                    print("Mapping the %s fragments onto your topology:"%key)
                 consensus_frags.update(CL.top2frags(top,
                                                   input_dataframe=CL.most_recent_alignment,
                                                   fragments=fragments_as_residue_idxs,
