@@ -197,7 +197,7 @@ class TestChord(TestCase):
                                                      fragment_names=self.fragment_names,
                                                      clockwise=False,
                                                      )
-        iax.figure.savefig("test.ccwise.pdf")
+        #iax.figure.savefig("test.ccwise.pdf")
         assert isinstance(iax, plt.Axes)
         assert len(iax.texts) == 6 + 6
         np.testing.assert_array_equal(nonzeros, [0, 1, 2, 3, 4, 5])
