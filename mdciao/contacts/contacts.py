@@ -6235,7 +6235,8 @@ class ContactGroup(object):
     def frequency_to_bfactor(self, ctc_cutoff_Ang,
                              pdbfile,
                              geom,
-                             interface_sign=False):
+                             interface_sign=False,
+                             verbose=True):
         r"""Save the contact frequency aggregated by residue to a pdb file
 
         Parameters
@@ -6252,6 +6253,8 @@ class ContactGroup(object):
             members of the interface different sign
             s.t. the appear with different colors
             in a visualizer
+        verbose : bool, default is True
+            Inform of the file being saved
         Returns
         -------
         bfactors : 1D np.array of len(self.top.n_atoms)
@@ -6268,7 +6271,8 @@ class ContactGroup(object):
             bfactors[interface_0_atoms] *= -1
             sign_desc = " signed"
         geom.save(pdbfile,bfactors=bfactors)
-        print("Contact frequencies stored as%s bfactor in '%s'"%(sign_desc, pdbfile))
+        if verbose:
+            print("Contact frequencies stored as%s bfactor in '%s'"%(sign_desc, pdbfile))
         return bfactors
 
     def _to_per_traj_dicts_for_saving(self, t_unit="ps"):
