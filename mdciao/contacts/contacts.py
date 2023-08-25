@@ -1958,6 +1958,7 @@ class ContactPair(object):
             been plotted.
         """
         h, x = self.distro_overall_trajs(bins=bins)
+        x *= 10
         if ax is None:
             ax = _plt.gca()
 
@@ -1975,25 +1976,25 @@ class ContactPair(object):
 
         if smooth_bw:
             if isinstance(smooth_bw, bool):
-                smooth_bw=.05
-            istack = self.stacked_time_traces
+                smooth_bw=.5
+            istack = self.stacked_time_traces * 10
             model = _GKDE(istack, bw_method=smooth_bw)
             xs = _np.linspace(istack.min(), istack.max(), num=500)
             ys = model.evaluate(xs)
             ys /= ys.max()
             ys *= h.max()
-            line = ax.plot(xs*10, ys, label=label, color=color)[0]
+            line = ax.plot(xs, ys, label=label, color=color)[0]
             if fill_below:
-                ax.fill_between(xs * 10, ys, alpha=.1, color=line.get_color())
+                ax.fill_between(xs, ys, alpha=.1, color=line.get_color())
             if background:
                 if isinstance(background, bool):
-                    ax.plot(x[:-1]*10, h, alpha=.25, color=line.get_color(), zorder=-10)
+                    ax.plot(x[:-1], h, alpha=.25, color=line.get_color(), zorder=-10)
                 else:
-                    ax.plot(x[:-1]*10, h, alpha=.25, color=background, zorder=-10)
+                    ax.plot(x[:-1], h, alpha=.25, color=background, zorder=-10)
         else:
-            line = ax.plot(x[:-1] * 10, h, label=label, color=color)[0]
+            line = ax.plot(x[:-1], h, label=label, color=color)[0]
             if fill_below:
-                ax.fill_between(x[:-1] * 10, h, alpha=.1, color=line.get_color())
+                ax.fill_between(x[:-1], h, alpha=.1, color=line.get_color())
 
         if xlim is not None:
             ax.set_xlim(xlim)
