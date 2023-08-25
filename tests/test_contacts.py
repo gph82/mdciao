@@ -2398,27 +2398,19 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_plot_distance_distributions_just_works_w_options(self):
         CG = self.CG_cp1_cp2_both_w_anchor_and_frags
-        jax = CG.plot_distance_distributions(shorten_AAs=True,
-                                             ctc_cutoff_Ang=3,
-                                             xlim=[-1, 5])
+        jax = CG.plot_distance_distributions(xlim=[-1, 5], shorten_AAs=True, ctc_cutoff_Ang=3)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
     def test_plot_plot_distance_distributions_no_neighborhood(self):
             CG = self.CG_cp1_cp2
-            jax = CG.plot_distance_distributions(shorten_AAs=True,
-                                                 ctc_cutoff_Ang=3,
-                                                 xlim=[-1, 5],
-                                                )
+            jax = CG.plot_distance_distributions(xlim=[-1, 5], shorten_AAs=True, ctc_cutoff_Ang=3)
             assert isinstance(jax, _plt.Axes)
             _plt.close("all")
 
     def test_plot_plot_distance_distributions_no_neighborhood_defrag(self):
             CG = self.CG_cp1_cp2
-            jax = CG.plot_distance_distributions(shorten_AAs=True,
-                                                 ctc_cutoff_Ang=3,
-                                                 xlim=[-1, 5],
-                                                 defrag="@")
+            jax = CG.plot_distance_distributions(xlim=[-1, 5], shorten_AAs=True, ctc_cutoff_Ang=3, defrag="@")
             assert isinstance(jax, _plt.Axes)
             _plt.close("all")
 

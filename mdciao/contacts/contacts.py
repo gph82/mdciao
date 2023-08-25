@@ -1897,7 +1897,7 @@ class ContactPair(object):
         ax.set_ylim([0, ax.get_ylim()[1]])
 
     def plot_distance_distribution(self, ax=None, bins=10, shorten_AAs=False, defrag=None, ctc_cutoff_Ang=None,
-                                   label=None, xlim=None, color=None, fill_below=True, smooth_bw=False,
+                                   delete_anchor=False, label=None, xlim=None, color=None, fill_below=True, smooth_bw=False,
                                    background=True) -> _plt.Axes:
         r"""
 
@@ -1920,6 +1920,9 @@ class ContactPair(object):
             vertical line in the plot. Before the
             vertical line is drawn, it's checked whether the
             plot already contains a similar line.
+        delete_anchor : bool, default is False
+            If True (and possible), the anchor
+            residue will be deleted from the label
         label : str or None, default is None
             Default behavior is to construct the label
             automatically using `shorten_AAs`, `defrag`,
@@ -1960,7 +1963,10 @@ class ContactPair(object):
 
         if label is None:
             label = self.gen_label(AA_format={True: "short", False: "long"}[shorten_AAs],
-                                   fragments=defrag is None)
+                                   fragments=defrag is None, delete_anchor=delete_anchor)
+
+            label = _mdcu.str_and_dict.latex_superscript_fragments(label)
+
             if ctc_cutoff_Ang is not None:
                 label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang) * 100)
 
@@ -1993,7 +1999,7 @@ class ContactPair(object):
             ax.set_xlim(xlim)
         ax.set_xlabel("D / $\AA$")
         ax.set_ylabel("counts ")
-        ax.set_ylim(0)
+        ax.set_ylim(0, max(ax.get_ylim()[1],h.max()+1))
         ax.legend()
 
         return ax

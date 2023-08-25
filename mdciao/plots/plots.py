@@ -1710,12 +1710,9 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                                    CG_dict.items()):
         if ihood is not None:
             if distro:
-                ihood.plot_distance_distributions(bins=20,
-                                                  ax=jax,
-                                                  label_fontsize_factor=panelsize2font / panelsize,
-                                                  shorten_AAs=short_AA_names,
+                ihood.plot_distance_distributions(bins=20, ax=jax, shorten_AAs=short_AA_names,
                                                   ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                  )
+                                                  label_fontsize_factor=panelsize2font / panelsize)
             else:
                 xmax = _np.max([ihood.n_ctcs for ihood in CG_dict.values() if
                                 ihood is not None])
