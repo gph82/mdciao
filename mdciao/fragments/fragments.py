@@ -853,7 +853,6 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
 def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     r"""
 
-    #TODO rename the strings to something else
     Try to understand how the user wants to fragment the topology
     Pretty flexible
 
@@ -862,52 +861,72 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
 
     Parameters
     ----------
-    fragment_input : list of strings
-        Many cases are possible
-        * ["consensus"] : user wants to use
-        consensus labels such as "TM6" etc.
-        Using "resSeq+" heuristic to fragment, and
-        returns :obj:`user_wants_consensus` as True,
-        this will trigger further prompts
-        * [method] : fragment using "method"
-        (see :obj:`get_fragments`) and return
-        user_wants_consensus as False
-        * [['exp1']] : this str represents the
-        residues in one fragment (eg. "0-3,5" : 0,1,2,3,5).
-        Assume that any missing residues belong the other fragment.
-        Return the two fragments and user_wants_consensus as False
-        * [["exp1"],
-           ["exp2"],
-           [...]]
-        These strs are the fragments expressed as residue
-        indices. Evaluate them and return them. Return
-        user_wants_consensus as False
-        * exp can also b ["LEU30-GLU40"]
-        * None or "None"
+    fragment_input :
+        There's different input modes
 
+        * string
+
+          If string, it can be either
+          one of the heuristics allowed
+          in :obj:`get_fragments`, e.g. 'lig_resSeq+',
+          or the string 'consensus'. If 'consensus',
+          then the 'resSeq+' heuristic is used
+          to call :obj:`get_fragments`. Then,
+          `user_wants_consensus` is returned as True (see below)
+          and this will trigger further prompts downstream, s.t.
+          labels such as "TM6" can be used. Please note, "None"
+          is also one of the heuristics, leading to only
+          one fragment.
+        * list
+
+          If list, each entry of the list is interpreted
+          as each fragment's individual definition. Each
+          item in the list is independent of the others,
+          and the list can contain different types.
+
+           * "0-3,5": expands to the indices [0,1,2,3,5]
+           * "LEU30-GLU40": expands to the indices of
+             the residues LEU30 to GLU40, both included
+           * [0,1,2,3,4,5]: does nothing, simply keep these
+             indices
+          If the list is only one entry long, fragment `top`
+          into two fragments, that entry and everything else.
+          `user_wants_consensus` is returned as False (see below).
+          This type of input appears in the output as
+          'user input by residue array or range'.
     top : :obj:`~mdtraj.Topology`
 
     Returns
     -------
-    fragments_as_residue_idxs, user_wants_consensus
+    fragments_as_residue_idxs : list
+    user_wants_consensus : boolean
 
     """
     user_wants_consensus = False
-    assert isinstance(fragment_input,list)
+    if fragment_input is None:
+        fragment_input = "None"
+
+    _allowed_fragment_methods_here = ['consensus']+_allowed_fragment_methods
     #TODO the following line is untested, the usecase not mentioned in the docs...?
     if len(fragment_input)==1 and isinstance(fragment_input[0],str) and " " in fragment_input[0]:
         fragment_input = fragment_input[0].split(" ")
-    #if len(fragment_input)==1 and isinstance(fragment_input[0],str) and "," in fragment_input[0]:
-    #    fragment_input=fragment_input[0].split(",")
-    if str(fragment_input[0]).lower()=="consensus":
-        user_wants_consensus = True
-        method = 'resSeq+'
-        fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
-                                                  verbose=False)
-    elif str(fragment_input[0]) in _allowed_fragment_methods:
-        method = fragment_input[0]
-        fragments_as_residue_idxs = get_fragments(top, method=method,
-                                                  verbose=False)
+
+    if len(fragment_input) == 1 and isinstance(fragment_input[0], str) and fragment_input[0].strip() in _allowed_fragment_methods_here:
+        fragment_input = fragment_input[0]
+
+    if isinstance(fragment_input,str):
+        if fragment_input.lower()=="consensus":
+            user_wants_consensus = True
+            method = 'resSeq+'
+            fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
+                                                      verbose=False)
+        elif fragment_input in _allowed_fragment_methods:
+            method = fragment_input
+            fragments_as_residue_idxs = get_fragments(top, method=method,
+                                                      verbose=False)
+        else:
+            raise ValueError(f"The 'fragments' string has to be one of {['consensus']+_allowed_fragment_methods}, but "
+                             f"the provided string was {fragment_input}")
     else:
         method = "user input by residue array or range"
         fragments_as_residue_idxs = []

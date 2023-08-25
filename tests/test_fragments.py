@@ -279,22 +279,22 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
                                                               method="resSeq",
                                                               verbose=False)
     def test_consensus(self):
-        fragments, conlab  =  _fragments_strings_to_fragments(["consensus"],
-                                                                        self.top)
-        [_np.testing.assert_array_equal(ii,jj) for ii, jj in zip(fragments,
-                                                  self.fragments_by_resSeqplus)]
+        fragments, conlab = _fragments_strings_to_fragments("consensus",
+                                                            self.top)
+        [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
+                                                                  self.fragments_by_resSeqplus)]
         assert conlab
 
     def test_other_method(self):
-        fragments, conlab  =  _fragments_strings_to_fragments(["resSeq"],
-                                                                        self.top)
-        [_np.testing.assert_array_equal(ii,jj) for ii, jj in zip(fragments,
-                                                  self.fragments_by_resSeq)]
+        fragments, conlab = _fragments_strings_to_fragments("resSeq",
+                                                            self.top)
+        [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
+                                                                  self.fragments_by_resSeq)]
         assert not conlab
 
     def test_one_fragment(self):
-        fragments, conlab =  _fragments_strings_to_fragments(["0-10"],
-                                                                       self.top)
+        fragments, conlab = _fragments_strings_to_fragments(["0-10"],
+                                                            self.top)
         other = _np.arange(11, self.top.n_residues)
         [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
                                                                   [_np.arange(11),
@@ -302,34 +302,34 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
         assert not conlab
 
     def test_more_than_one_fragment(self):
-        fragments, conlab =  _fragments_strings_to_fragments(["0-10",
-                                                                       "11-100",
-                                                                       "200-210"],
-                                                                       self.top)
+        fragments, conlab = _fragments_strings_to_fragments(["0-10",
+                                                            "11-100",
+                                                            "200-210"],
+                                                            self.top)
         [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
                                                                   [_np.arange(11),
-                                                                   _np.arange(11,101),
-                                                                   _np.arange(200,211)])]
+                                                                   _np.arange(11, 101),
+                                                                   _np.arange(200, 211)])]
         assert not conlab
 
     def test_verbose(self):
-        fragments, conlab =  _fragments_strings_to_fragments(["0-10",
-                                                                       "11-100",
-                                                                       "200-210"],
-                                                                       self.top,
-                                                                       verbose=True)
+        fragments, conlab = _fragments_strings_to_fragments(["0-10",
+                                                            "11-100",
+                                                            "200-210"],
+                                                            self.top,
+                                                            verbose=True)
 
-    def test_arrays(self):
+    def test_mixed(self):
         fragments, conlab = _fragments_strings_to_fragments([_np.arange(10),
-                                                             "11-100",
-                                                             "200-210"],
+                                                            "GLU15-LEU132",
+                                                            "200-210"],
                                                             self.top,
                                                             verbose=True)
 
     def test_fragment_outside(self):
         fragments, conlab = _fragments_strings_to_fragments([_np.arange(10),
-                                                             "11-100",
-                                                             "200-2100"],
+                                                            "11-100",
+                                                            "200-2100"],
                                                             self.top,
                                                             verbose=True)
 

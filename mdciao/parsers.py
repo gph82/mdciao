@@ -845,7 +845,7 @@ def parser_for_examples():
                         default=None,
                         type=str,
                         help="The command-line-tool (also known as script) to run. Can be part of the name as well\n "
-                             "e.g. 'neigh' for mdc_neighborhood.py")
+                             "e.g. 'neigh' for mdc_neighborhoods.py")
 
     parser.add_argument("-x",
                         action="store_true",
@@ -865,7 +865,7 @@ def parser_for_examples():
 def parser_for_residues():
     parser = argparse.ArgumentParser(description="Find residues in an input topology using Unix filename pattern matching\n"
                                                  "like in an 'ls' Unix operation.",
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+                                     formatter_class=SmartFormatter)
     parser.add_argument("residues",type=str,help="Unix-like expressions and ranges are allowed, e.g.\n"
                                                  "'GLU,PH*,380-394,3.50,GH.5*.', as are consensus descriptors\n"
                                                  "if consensus labels are provided")
