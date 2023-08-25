@@ -4563,17 +4563,9 @@ class ContactGroup(object):
         if leg1 is not None:
             ax.add_artist(leg1)
 
-    def plot_distance_distributions(self,
-                                    bins=10,
-                                    xlim=None,
-                                    ax=None,
-                                    shorten_AAs=False,
-                                    ctc_cutoff_Ang=None,
-                                    legend_sort=True,
-                                    label_fontsize_factor=1,
-                                    max_handles_per_row=4,
-                                    defrag=None,
-                                    smooth_bw=False)-> _plt.Axes:
+    def plot_distance_distributions(self, bins=10, xlim=None, ax=None, shorten_AAs=False, ctc_cutoff_Ang=None,
+                                    legend_sort=True, label_fontsize_factor=1, max_handles_per_row=4, defrag=None,
+                                    smooth_bw=False, background=False) -> _plt.Axes:
 
         r"""
         Plot distance distributions for the distance trajectories
@@ -4618,7 +4610,15 @@ class ContactGroup(object):
             If float, use this value as estimator
             bandwidth, check :obj:`matplotlib.mlab.GaussianKDE`
             for more info. If False, don't smooth
+        background : bool, or color-like, (str, hex, rgb), default is False
+            When smoothing, the original curve can
+            appear in the background in different colors
 
+            * True:  use a fainted version of `color`
+            * False: don't plot any background
+            * color-like: use this color for the background,
+              can be: str, hex, rgba, anything
+              :obj:`matplotlib.pyplot.colors` understands
         Returns
         -------
         ax : :obj:`~matplotlib.axes.Axes`
@@ -4660,7 +4660,8 @@ class ContactGroup(object):
             if ctc_cutoff_Ang is not None and ii == 0:
                 freqs = self.frequency_per_contact(ctc_cutoff_Ang)
             cp.plot_distance_distribution(ax=ax, bins=bins, shorten_AAs=shorten_AAs, defrag=defrag,
-                                          ctc_cutoff_Ang=ctc_cutoff_Ang, smooth_bw=smooth_bw, background=False)
+                                          delete_anchor=self.is_neighborhood, ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                          smooth_bw=smooth_bw, background=background)
 
         if xlim is not None:
             ax.set_xlim(xlim)
