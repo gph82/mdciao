@@ -1063,13 +1063,14 @@ def plot_unified_distro_dicts(distros,
         for sys_key, data in per_sys_distros.items():
             label = sys_key
             if not data in [0,None]:
-                h, x = data
+                h, bin_edges = data
+                x = (bin_edges[:-1]+bin_edges[1:])/2
                 if ctc_cutoff_Ang is not None:
-                    freq = (h[_np.flatnonzero(x[:-1]<=ctc_cutoff_Ang/10)]).sum()/h.sum()
+                    freq = (h[_np.flatnonzero(x<=ctc_cutoff_Ang/10)]).sum()/h.sum()
                     label += " (%u%%)" % (freq * 100)
                 h = h/h.max()
-                iax.plot(x[:-1] * 10, h, label=label, color=colors[sys_key])
-                iax.fill_between(x[:-1] * 10, h, alpha=.15, color=colors[sys_key])
+                iax.plot(x * 10, h, label=label, color=colors[sys_key])
+                iax.fill_between(x * 10, h, alpha=.15, color=colors[sys_key])
 
 
         if ctc_cutoff_Ang is not None:
