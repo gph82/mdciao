@@ -4523,7 +4523,7 @@ class ContactGroup(object):
 
     def plot_distance_distributions(self, bins=10, xlim=None, ax=None, shorten_AAs=False, ctc_cutoff_Ang=None,
                                     legend_sort=True, label_fontsize_factor=1, max_handles_per_row=4, defrag=None,
-                                    smooth_bw=False, background=False) -> _plt.Axes:
+                                    smooth_bw=False, background=True) -> _plt.Axes:
 
         r"""
         Plot distance distributions for the distance trajectories
@@ -4568,7 +4568,7 @@ class ContactGroup(object):
             If float, use this value as estimator
             bandwidth, check :obj:`matplotlib.mlab.GaussianKDE`
             for more info. If False, don't smooth
-        background : bool, or color-like, (str, hex, rgb), default is False
+        background : bool, or color-like, (str, hex, rgb), default is True
             When smoothing, the original curve can
             appear in the background in different colors
 
