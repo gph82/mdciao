@@ -51,8 +51,6 @@ from matplotlib import \
     rcParams as _rcParams,\
     colors as _mplcolors
 
-from matplotlib.mlab import GaussianKDE as _GKDE
-
 from pandas import \
     DataFrame as _DF, \
     ExcelWriter as _ExcelWriter, \
@@ -1896,20 +1894,20 @@ class ContactPair(object):
         ax.set_xlim([self.time_min * dt, self.time_max * dt])
         ax.set_ylim([0, ax.get_ylim()[1]])
 
-    def plot_distance_distribution(self, ax=None, bins=10, shorten_AAs=False, defrag=None, ctc_cutoff_Ang=None,
-                                   delete_anchor=False, label=None, xlim=None, color=None, fill_below=True, smooth_bw=False,
-                                   background=True) -> _plt.Axes:
-        r"""
+    @_kwargs_subs(_mdcplots.histogram_w_smoothing_auto, exclude=["label"])
+    def plot_distance_distribution(self, label=None, shorten_AAs=False, defrag=None, ctc_cutoff_Ang=None,
+                                   delete_anchor=False, xlim=None, **kwargs_histogram_w_smoothing_auto) -> _plt.Axes:
+        r"""Plot the distance distribution of this ContactPair
 
         Parameters
         ----------
-        ax : :obj:`~matplotlib.axes.Axes` or None, default is None
-            The axis to draw onto. If None,
-            the current axis will be used invoking
-            :obj:`~matplotlib.pyplot.gca`. If there's no
-            current axis, one will be created.
-        bins : int, default is 10
+        label : str or None, default is None
+            Default behavior is to construct the label
+            automatically using `shorten_AAs`, `defrag`,
+            and `ctc_cutoff_Ang`, but any label can be passed here
+            to override automatic label generation.
         shorten_AAs : bool, default is False
+            Shorten residue labels from e.g. GLU30 to E30
         defrag : None or char
             None means do not defrag
             the contact label. A character, e.g. "@"
@@ -1922,34 +1920,14 @@ class ContactPair(object):
             plot already contains a similar line.
         delete_anchor : bool, default is False
             If True (and possible), the anchor
-            residue will be deleted from the label
-        label : str or None, default is None
-            Default behavior is to construct the label
-            automatically using `shorten_AAs`, `defrag`,
-            and `ctc_cutoff_Ang`, but any label can be passed here
-            to override automatic label generation.
-        color : None or color-like, default is None
-            Default behaviour is to take the next
-            color of the color-cycle of the plot.
-        fill_below : bool, default is True
-            Fill the area underneath the histogram
-            with a shade of `color`
-        smooth_bw : bool or float
-            If True smooth the histogram using a
-            Gaussian-kernel-density estimation with
-            an estimator bandwidth of .5 Angstrom.
-            If float, use this value as estimator
-            bandwidth, check :obj:`matplotlib.mlab.GaussianKDE`
-            for more info. If False, don't smooth
-        background : bool, or color-like, (str, hex, rgb), default is True
-            When smoothing, the original curve can
-            appear in the background in different colors
+            residue will be deleted from the label.
+        kwargs_histogram_w_smoothing_auto : dict
+            Optional parameters for :obj:`mdciao.plots.histogram_w_smoothing_auto`,
+            which are listed below
 
-            * True:  use a fainted version of `color`
-            * False: don't plot any background
-            * color-like: use this color for the background,
-              can be: str, hex, rgba, anything
-              :obj:`matplotlib.pyplot.colors` understands
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
 
         Returns
         -------
@@ -1957,11 +1935,7 @@ class ContactPair(object):
             The axis (new or inputed) where the distribution has
             been plotted.
         """
-        h, bin_edges = self.distro_overall_trajs(bins=bins)
-        x = (bin_edges[:-1] + bin_edges[1:]) / 2
-        x *= 10
-        if ax is None:
-            ax = _plt.gca()
+
 
         if label is None:
             label = self.gen_label(AA_format={True: "short", False: "long"}[shorten_AAs],
@@ -1972,36 +1946,18 @@ class ContactPair(object):
             if ctc_cutoff_Ang is not None:
                 label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang) * 100)
 
-        if ctc_cutoff_Ang and not any([_mdcplots.plots._is_axvline(line,ctc_cutoff_Ang) for line in ax.lines]):
-            ax.axvline(ctc_cutoff_Ang,color="k",ls="--",zorder=-1)
+        ax = _mdcplots.histogram_w_smoothing_auto(self.stacked_time_traces * 10,
+                                                  label=label,
+                                                  **kwargs_histogram_w_smoothing_auto)
 
-        if smooth_bw:
-            if isinstance(smooth_bw, bool):
-                smooth_bw=.5
-            istack = self.stacked_time_traces * 10
-            model = _GKDE(istack, bw_method=smooth_bw)
-            xs = _np.linspace(istack.min(), istack.max(), num=500)
-            ys = model.evaluate(xs)
-            ys /= ys.max()
-            ys *= h.max()
-            line = ax.plot(xs, ys, label=label, color=color)[0]
-            if fill_below:
-                ax.fill_between(xs, ys, alpha=.1, color=line.get_color())
-            if background:
-                if isinstance(background, bool):
-                    ax.plot(x, h, alpha=.25, color=line.get_color(), zorder=-10)
-                else:
-                    ax.plot(x, h, alpha=.25, color=background, zorder=-10)
-        else:
-            line = ax.plot(x, h, label=label, color=color)[0]
-            if fill_below:
-                ax.fill_between(x, h, alpha=.1, color=line.get_color())
+        if ctc_cutoff_Ang and not any([_mdcplots.plots._is_axvline(line, ctc_cutoff_Ang) for line in ax.lines]):
+            ax.axvline(ctc_cutoff_Ang, color="k", ls="--", zorder=-1)
 
         if xlim is not None:
             ax.set_xlim(xlim)
         ax.set_xlabel("D / $\AA$")
         ax.set_ylabel("counts ")
-        ax.set_ylim(0, max(ax.get_ylim()[1],h.max()+1))
+        #ax.set_ylim(0, max(ax.get_ylim()[1],h.max()+1))
         ax.legend()
 
         return ax
