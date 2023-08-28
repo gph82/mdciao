@@ -3914,7 +3914,7 @@ class ContactGroup(object):
                            shorten_AAs=False,
                            label_fontsize_factor=1,
                            truncate_at=None,
-                           atom_types=False,
+                           plot_atomtypes=False,
                            sort_by_freq=False,
                            sum_freqs=True,
                            total_freq=None,
@@ -3958,7 +3958,7 @@ class ContactGroup(object):
         truncate_at : float, default is None
             Only plot frequencies above this value. Default
             is to plot all
-        atom_types : bool, default is False
+        plot_atomtypes : bool, default is False
             Use stripe-patterns to inform about the
             types of interactions (sidechain, backbone, etc)
         sort_by_freq : boolean, default is False
@@ -4050,7 +4050,7 @@ class ContactGroup(object):
 
         if self.is_neighborhood:
             ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
-        if atom_types:
+        if plot_atomtypes:
             self._add_hatching_by_atomtypes(ax, ctc_cutoff_Ang, display_order=order, switch_off_Ang=switch_off_Ang)
 
         return ax
@@ -4386,7 +4386,7 @@ class ContactGroup(object):
                                      xlim=xmax,
                                      shorten_AAs=shorten_AAs,
                                      truncate_at=None,
-                                     atom_types=plot_atomtypes,
+                                     plot_atomtypes=plot_atomtypes,
                                      sort_by_freq=sort_by_freq,
                                      switch_off_Ang=switch_off_Ang,
                                      label_fontsize_factor=label_fontsize_factor,

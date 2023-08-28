@@ -1820,7 +1820,7 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                                              xlim=xmax,
                                              label_fontsize_factor=panelsize2font / panelsize,
                                              shorten_AAs=short_AA_names,
-                                             atom_types=plot_atomtypes,
+                                             plot_atomtypes=plot_atomtypes,
                                              )
                     if verbose:
                         print()
