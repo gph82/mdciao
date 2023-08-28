@@ -5646,7 +5646,8 @@ class ContactGroup(object):
                   ctc_cutoff_Ang=None,
                   return_traj=False,
                   show_violins=False,
-                  n_frames=1):
+                  n_frames=1,
+                  verbose=True):
         r"""
         Find representative frames for this :obj:`ContactGroup`
 
@@ -5707,7 +5708,9 @@ class ContactGroup(object):
         n_frames : int, default is 1
             The number of representative
             frames to return
-
+        verbose : bool, default is True
+            Inform of the frames that
+            are being selected
         Returns
         -------
         frames : list
@@ -5772,7 +5775,8 @@ class ContactGroup(object):
             geoms = []
             for ii, (traj_idx, frame_idx) in enumerate(traj_frames):
                 reptraj = self.contact_pairs[0]._attribute_trajs.trajs[traj_idx]
-                print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
+                if verbose:
+                    print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
                 if isinstance(reptraj, str):
                     if _path.exists(reptraj):
                         geoms.append(_md.load(reptraj, top=self.top,frame=frame_idx))

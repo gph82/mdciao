@@ -263,6 +263,11 @@ def _parser_add_graphic_ext(parser):
     parser.add_argument('-gx','--graphic_ext', type=str, help="Extension of the output graphics, default is .pdf",
                         default='.pdf')
 
+def _parser_add_repframes(parser):
+    parser.add_argument("--n_repframes", type=int, help="Number of representative frames to use when writing the"
+                                                        "interface strength into a .pdb-file",
+                        default=1)
+
 def _parser_add_no_fragfrag(parser):
     parser.add_argument('-nsf', '--no-same_fragment',
                         help="Don't allow contact partners in the same fragment. Default is to allow it.",
@@ -676,6 +681,7 @@ def parser_for_interface():
     _parser_add_pop(parser)
     _parser_add_guess(parser)
     _parser_add_title(parser)
+    _parser_add_repframes(parser)
     return parser
 
 def parser_for_contact_map():

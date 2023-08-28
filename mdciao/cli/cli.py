@@ -1108,6 +1108,7 @@ def interface(
         savetrajs=False,
         figures=True,
         self_interface=False,
+        n_repframes=1
 ):
     r"""Contact-frequencies between two groups of residues
 
@@ -1115,8 +1116,8 @@ def interface(
     by using residue indices or by defining molecular fragments
     and using these definitions as a shorthand to address
     large sub-domains of the molecular topology. See in particular
-    the documentation for :obj:`fragments`, :obj:`frag_idxs_group_1`
-    obj:`frag_idxs_group_2`.
+    the documentation for `fragments`, `frag_idxs_group_1`
+    `frag_idxs_group_2`.
 
     Typically, the two groups of residues conforming both
     sides of the interface, also called interface members,
@@ -1131,10 +1132,21 @@ def interface(
     with itself (the self-contacts) are also important.
     E.g. the C-terminus of a receptor interfacing with
     the entire receptor, **including the C-terminus**.
-    To allow for this behaviour, use :obj:`self_interface` = True,
-    and possibly increase :obj:`n_nearest`, since otherwise
+    To allow for this behaviour, use `self_interface` = True,
+    and possibly increase `n_nearest`, since otherwise
     neighboring residues of the shared set (e.g. C-terminus)
     will always appear as formed.
+
+    Finally, the interface strength, defined as the
+    per-residue sum of contacts participating in
+    the interface, is written as the `bfactor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_
+    in a .pdb file called (for the default `ctc_cutoff_Ang`=4)
+    'interface.overall@4.0_Ang.as_bfactors.pdb'. You
+    can see an example of how to use this file (e.g. with
+    VMD) in the online documentation. The structures, i.e.
+    frames, in that .pdb-file are chosen using the
+    method :obj:`mdciao.contacts.ContactGroup.n_repframes`.
+    See below the parameter `n_repframes` for more info.
 
     Parameters
     ----------
@@ -1319,7 +1331,7 @@ def interface(
         filenames) Defaults to :obj:`output_desc` if None is given
     min_freq : float, default is 0.1
         Do not show frequencies smaller than this. If you
-        notice the output beingtruncated a values too far
+        notice the output being truncated a values too far
         away from this, you need to increase the :obj:`ctc_control`
         parameter
     contact_matrix : bool, default is True
@@ -1351,6 +1363,22 @@ def interface(
     self_interface : bool, default is False
         Allow the interface members to share
         residues
+    n_repframes : int, default is 1
+        The number of representative frames
+        to write to the .pdb file 'interface.overall@4.0_Ang.as_bfactors.pdb',
+        where the interface strength has been stored
+        as bfactor. A "representative frame" means, in this context,
+        a frame where the pairs of residues participating
+        in the interface are, on average over all pairs,
+        at a distance close to the most-likely the residue-residue
+        distances over all data. This has some caveats,
+        expressed in the documentation of :obj:`mdciao.contacts.ContactGroup.n_repframes`.
+        To check what frames have been chosen as
+        representative, it is better to run mdciao in API
+        mode and call :obj:`mdciao.contacts.ContactGroup.n_repframes`
+        with `show_violins=True`. A value of 0 means don't write
+        any such .pdb file. Max value of 50 frames is enforced.
+
 
     Returns
     -------
@@ -1487,7 +1515,15 @@ def interface(
         print(fn.fullpath_overall_excel)
         ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_dat, atom_types=True)
         print(fn.fullpath_overall_dat)
-        ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fullpath_pdb, refgeom[0],
+        if n_repframes>0:
+            n_repframes = _np.min((n_repframes,50))
+            repframes_geom = ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, return_traj=True, n_frames=n_repframes, verbose=False)[-1]
+            repframes_geom = _md.Trajectory([geom.xyz[0] for geom in repframes_geom], topology=repframes_geom[0].top,
+                                            unitcell_angles=[geom.unitcell_angles[0] for geom in repframes_geom],
+                                            unitcell_lengths=[geom.unitcell_lengths[0] for geom in repframes_geom],
+                                            time=[geom.time[0] for geom in repframes_geom])
+
+            ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fullpath_pdb, repframes_geom,
                                           # interface_sign=True,
                                           verbose=False
                                           )
