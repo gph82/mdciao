@@ -46,7 +46,7 @@ produce the following figures (not the captions):
    :scale: 50%
    :name: freqs
 
-   [``neighborhood.overall@4.0_Ang.png``] Using 4 Å as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein, are shown. :math:`\Sigma` is the sum over frequencies and represents the average number of neighbors of LEU394. The simulation started from the `3SN6 structure <https://www.rcsb.org/structure/3SN6>`_ (beta2 adrenergic receptor-Gs protein complex, no antibody). The simulation itself can be seen interactively `in 3D here <http://proteinformatics.uni-leipzig.de/mdsrv.html?load=file://base/mdciao/gs-b2ar.ngl>`_.
+   [``neighborhood.overall@4.0_Ang.pdf``] Using 4 Å as distance cutoff, the most frequent neighbors of LEU394, the C-terminal residue in the :math:`\alpha_5` helix of the Gs-protein, are shown. :math:`\Sigma` is the sum over frequencies and represents the average number of neighbors of LEU394. The simulation started from the `3SN6 structure <https://www.rcsb.org/structure/3SN6>`_ (beta2 adrenergic receptor-Gs protein complex, no antibody). The simulation itself can be seen interactively `in 3D here <http://proteinformatics.uni-leipzig.de/mdsrv.html?load=file://base/mdciao/gs-b2ar.ngl>`_.
 
 Annotated figures with the timetraces of the above distances are also produced automatically:
 
@@ -54,6 +54,6 @@ Annotated figures with the timetraces of the above distances are also produced a
    :scale: 33%
    :align: center
 
-   [``neighborhood.LEU394.time_trace@4.0_Ang.png``] Time-traces of the residue-residue distances used for the frequencies in :numref:`freqs`. The last time-trace represents the total number of neighbors (:math:`\Sigma`) within the given cutoff at any given moment in the trajectory. On average, LEU394 has around 4 non-bonded neighbors below the cutoff (see legend of :numref:`freqs`).
+   [``neighborhood.LEU394.time_trace@4.0_Ang.pdf``] Time-traces of the residue-residue distances used for the frequencies in :numref:`freqs`. The last time-trace represents the total number of neighbors (:math:`\Sigma`) within the given cutoff at any given moment in the trajectory. On average, LEU394 has around 4 non-bonded neighbors below the cutoff (see legend of :numref:`freqs`).
 
 Anything that gets shown in any way to the output can be saved for later use as human readable ASCII-files (``.dat,.txt``), spreadsheets (``.ods,.xlsx``) or NumPy (``.npy``) files.
