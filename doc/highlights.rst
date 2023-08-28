@@ -1,4 +1,4 @@
-.. https://stackoverflow.com/a/31332035 for forcing paragraph braks after figure captions
+.. https://stackoverflow.com/a/31332035 for forcing paragraph breaks after figure captions
 .. |nbspc| unicode:: U+00A0 .. non-breaking space
 
 
@@ -8,7 +8,7 @@ Highlights
 .. _`initial example`:
 * paper-ready tables and figures from the command line::
 
-   mdc_neighborhoods.py prot.pdb traj.xtc -r L394 --GPCR adrb2_human --CGN GNAS2_HUMAN -ni -at #ni: not interactive, at: show atom-types
+   mdc_neighborhoods.py prot.pdb traj.xtc -r L394 --GPCR adrb2_human --CGN gnas2_human -ni -at #ni: not interactive, at: show atom-types
 
   .. figure:: imgs/bars_and_PDF.png
       :scale: 40%
@@ -32,7 +32,7 @@ Highlights
    For more information, call mdciao.nomenclature.references()
    done without 404, continuing.
    GPCR-labels align best with fragments: [3] (first-last: GLU30-LEU340).
-   These are the GPCR fragments mapped onto your topology:
+   Mapping the GPCR fragments onto your topology:
        TM1 with     32 AAs    GLU30@1.29x29   (   760) -    PHE61@1.60x60   (791   ) (TM1)
       ICL1 with      4 AAs    GLU62@12.48x48  (   792) -    GLN65@12.51x51  (795   ) (ICL1)
        TM2 with     32 AAs    THR66@2.37x37   (   796) -    LYS97@2.68x67   (827   ) (TM2)
@@ -53,20 +53,20 @@ Highlights
     * Flock et al, (2015) Universal allosteric mechanism for G$\alpha$ activation by GPCRs
       Nature 2015 524:7564 524, 173--179
       https://doi.org/10.1038/nature14663
-   No local file ./GNAS2_HUMAN.txt found, checking online in
-   https://www.mrc-lmb.cam.ac.uk/CGN/lookup_results/GNAS2_HUMAN.txt ...done without 404, continuing.
+   No local file ./gnas2_human.xlsx found, checking online in
+   https://gpcrdb.org/services/residues/extended/gnas2_human ...done!
    The CGN-labels align best with fragments: [0] (first-last: LEU4-LEU394).
-   These are the CGN fragments mapped onto your topology:
-      G.HN with   33 AAs    LEU4@G.HN.10    (   0) -    VAL36@G.HN.53   (32  ) (G.HN)
-    G.hns1 with    3 AAs    TYR37@G.hns1.1  (  33) -    ALA39@G.hns1.3  (35  ) (G.hns1)
-      G.S1 with    7 AAs    THR40@G.S1.1    (  36) -    LEU46@G.S1.7    (42  ) (G.S1)
+   Mapping the CGN fragments onto your topology:
+      G.HN with     33 AAs     LEU4@G.HN.10   (   0) -    VAL36@G.HN.53   (32  ) (G.HN)
+    G.hns1 with      3 AAs    TYR37@G.hns1.01 (  33) -    ALA39@G.hns1.03 (35  ) (G.hns1)
+      G.S1 with      7 AAs    THR40@G.S1.01   (  36) -    LEU46@G.S1.07   (42  ) (G.S1)
    ...
-    G.hgh4 with   10 AAs   TYR311@G.hgh4.1  ( 270) -   THR320@G.hgh4.10 (279 ) (G.hgh4)
-      G.H4 with   27 AAs   PRO321@G.H4.1    ( 280) -   ARG347@G.H4.27   (306 ) (G.H4)
-    G.h4s6 with   11 AAs   ILE348@G.h4s6.1  ( 307) -   TYR358@G.h4s6.20 (317 ) (G.h4s6)
-      G.S6 with    5 AAs   CYS359@G.S6.1    ( 318) -   PHE363@G.S6.5    (322 ) (G.S6)
-    G.s6h5 with    5 AAs   THR364@G.s6h5.1  ( 323) -   ASP368@G.s6h5.5  (327 ) (G.s6h5)
-      G.H5 with   26 AAs   THR369@G.H5.1    ( 328) -   LEU394@G.H5.26   (353 ) (G.H5)
+    G.hgh4 with     21 AAs   TYR311@G.hgh4.01 ( 270) -   ASP331@G.hgh4.21 (290 ) (G.hgh4)
+      G.H4 with     16 AAs   PRO332@G.H4.01   ( 291) -   ARG347@G.H4.17   (306 ) (G.H4)
+    G.h4s6 with     11 AAs   ILE348@G.h4s6.01 ( 307) -   TYR358@G.h4s6.20 (317 ) (G.h4s6)
+      G.S6 with      5 AAs   CYS359@G.S6.01   ( 318) -   PHE363@G.S6.05   (322 ) (G.S6)
+    G.s6h5 with      5 AAs   THR364@G.s6h5.01 ( 323) -   ASP368@G.s6h5.05 (327 ) (G.s6h5)
+      G.H5 with     26 AAs   THR369@G.H5.01   ( 328) -   LEU394@G.H5.26   (353 ) (G.H5)
    ...
 
   |nbspc|
@@ -76,32 +76,31 @@ Highlights
 
   - *GLU**: all GLUs, equivalent to *GLU*
   - *P0G*: the B2AR ligand (agonist)
-  - *3.50*: Ballesteros-Weinstein notation
+  - *3.50*: generic-residue numbering for GPCRs
   - *380-394*: range of residues with sequence indices 380 to 394 (both incl.). This is the :math:`G\alpha_5`-subunit.
   - *G.HN.** : CGN-nomenclature for the :math:`G\alpha_N`-subunit
  You can check your selection **before** running a computation by using ``mdc_residues.py``::
 
   >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --GPCR adrb2_human --CGN GNAS2_HUMAN -ni
   Your selection 'GLU*,P0G,380-394,G.HN.*' yields:
-    residue      residx    fragment      resSeq       GPCR        CGN
-      GLU10           6           0         10       None    G.HN.27
-      GLU15          11           0         15       None    G.HN.32
+     residue      residx    fragment      resSeq        GPCR         CGN
+       GLU10           6           0          10        None     G.HN.27
+       GLU15          11           0          15        None     G.HN.32
   ...
-     GLU306        1008           3        306       7.33       None
-     GLU338        1040           3        338       8.56       None
-     P0G395        1043           4        395       None       None
-     ARG131         861           3        131       3.50       None
-     ARG380         339           0        380       None    G.H5.12
-     ASP381         340           0        381       None    G.H5.13
+      GLU306        1008           3         306     7.33x32        None
+      GLU338        1040           3         338     8.56x56        None
+      P0G395        1043           4         395        None        None
+      ARG380         339           0         380        None     G.H5.12
+      ASP381         340           0         381        None     G.H5.13
   ...
-     LEU393         352           0        393       None    G.H5.25
-     LEU394         353           0        394       None    G.H5.26
-       THR9           5           0          9       None    G.HN.26
-      ASP11           7           0         11       None    G.HN.28
-      GLN12           8           0         12       None    G.HN.29
+      LEU393         352           0         393        None     G.H5.25
+      LEU394         353           0         394        None     G.H5.26
+        LEU4           0           0           4        None     G.HN.10
+        GLY5           1           0           5        None     G.HN.11
+        ASN6           2           0           6        None     G.HN.22
   ...
-      GLN35          31           0         35       None    G.HN.52
-      VAL36          32           0         36       None    G.HN.53
+       GLN35          31           0          35        None     G.HN.52
+       VAL36          32           0          36        None     G.HN.53
 
 
  |nbspc|
@@ -154,65 +153,68 @@ Highlights
 
    >>> mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --GPCR adrb2_human --CGN GNAS2_HUMAN -t "3SN6 beta2AR-Galpha interface" -ni
    ...
-   These 50 contacts capture 15.40 (~99%) of the total frequency 15.52 (over 21177 contacts)
-   As orientation value, 31 ctcs already capture 90.0% of 15.52.
-   The 31-th contact has a frequency of 0.14
+   These 50 contacts capture 35.56 (~96%) of the total frequency 36.88 (over 20307 input contacts)
+   As orientation value, the first 44 ctcs already capture 90.0% of 36.88.
+   The 44-th contact has a frequency of 0.42
+
        freq                         label residue idxs    sum
-   0   1.00   D381@G.H5.13    - Q229@5.68      340 956   1.00
-   1   1.00   R385@G.H5.17    - Q229@5.68      344 956   2.00
-   2   1.00   D381@G.H5.13    - K232@5.71      340 959   3.00
-   3   0.98   Q384@G.H5.16    - I135@3.54      343 865   3.98
-   4   0.96   T350@G.h4s6.3   - R239@ICL3      309 966   4.93
-   5   0.85   E392@G.H5.24    - T274@6.36      351 976   5.79
-   6   0.68   Q384@G.H5.16    - Q229@5.68      343 956   6.46
+   1.00   R385@G.H5.17    - Q229@5.68x68      344 956   1.00
+   1.00   D381@G.H5.13    - Q229@5.68x68      340 956   2.00
+   1.00   Q384@G.H5.16    - I135@3.54x54      343 865   3.00
+   1.00   D381@G.H5.13    - K232@5.71x71      340 959   4.00
+   0.99   T350@G.h4s6.03  - R239@ICL3         309 966   4.99
+   0.98   E392@G.H5.24    - T274@6.36x36      351 976   5.97
+   0.96   R385@G.H5.17    - K232@5.71x71      344 959   6.93
+
    ...
    The following files have been created:
-   ./interface.overall@3.5_Ang.xlsx
-   ./interface.overall@3.5_Ang.dat
-   ./interface.overall@3.5_Ang.as_bfactors.pdb
-   ./interface.overall@3.5_Ang.pdf
-   ./interface.matrix@3.5_Ang.pdf
-   ./interface.flare@3.5_Ang.pdf
-   ./interface.time_trace@3.5_Ang.pdf
-   ./interface.mdciaoCG.traj.dat
+   ./interface.overall@4.0_Ang.xlsx
+   ./interface.overall@4.0_Ang.dat
+   ./interface.overall@4.0_Ang.as_bfactors.pdb
+   ./interface.overall@4.0_Ang.pdf
+   ./interface.matrix@4.0_Ang.pdf
+   ./interface.flare@4.0_Ang.pdf
+   ./interface.time_trace@4.0_Ang.pdf
 
- .. figure:: imgs/interface.matrix@3.5_Ang.Fig.4.png
+ .. figure:: imgs/interface.matrix@4.0_Ang.Fig.4.png
       :scale: 25%
       :align: left
       :name: interface_matrix
 
-      [``interface.matrix@3.5_Ang.pdf``](click to enlarge). Interface contact matrix between the :math:`\beta`2AR receptor and the :math:`G\alpha`-unit protein, using a cutoff of 3.5 AA. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor and G-protein. Please note: this is **not a symmetric** contact-matrix. The y-axis shows residues in the :math:`G\alpha`-unit and the x-axis in the receptor.
+      [``interface.matrix@4.0_Ang.pdf``](click to enlarge). Interface contact matrix between the β2AR receptor and the α-unit of the G-protein, using a cutoff of 4.0 Å. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor and G-protein. Please note: this is **not a symmetric** contact-matrix. The y-axis shows residues in the G\α-unit and the x-axis in the receptor.
 
 * Since :numref:`interface_matrix` is bound to incorporate a lot of blank pixels, ``mdciao`` will also produce sparse plots and figures that highlight the formed contacts only:
 
- .. figure:: imgs/interface.overall@3.5_Ang.Fig.5.png
+ .. figure:: imgs/interface.overall@4.0_Ang.Fig.5.png
       :scale: 15%
       :align: left
       :name: interface_bars
 
 
-      [``interface.overall@3.5_Ang.pdf``](click to enlarge) **Upper panel**: most frequent contacts sorted by frequency, i.e. for each non-empty pixel of :numref:`interface_matrix`, there is a bar shown. **Lower panel**: per-residue aggregated contact-frequencies, showing each residue's average participation in the interface (same info will be written to `interface.overall@3.5_Ang.xlsx`). Also, the number of shown contacts/bars can be controlled either with the `--ctc_control` and/or `--min_freq` parameters of `mdc_interface.py`.
+      [``interface.overall@4.0_Ang.pdf``](click to enlarge) **Upper panel**: most frequent contacts sorted by frequency, i.e. for each non-empty pixel of :numref:`interface_matrix`, there is a bar shown. **Lower panel**: per-residue aggregated contact-frequencies, showing each residue's average participation in the interface (same info will be written to `interface.overall@4.0_Ang.xlsx`). Also, the number of shown contacts/bars can be controlled either with the `--ctc_control` and/or `--min_freq` parameters of `mdc_interface.py`.
 
-* A very convenient way to incorporate the molecular topology into the visualization of contact frequencies are the so-called `FlarePlots <https://github.com/GPCRviz/flareplot>`_ (cool live-demo `here <https://gpcrviz.github.io/flareplot/>`_). These show the molecular topology (residues, fragments) on a circle with curves connecting the residues for which a given frequency has been computed. The `mdc_interface.py example`_ above will also generate a flareplot:
+* A very convenient way to incorporate the molecular topology into the visualization of contact frequencies are the so-called `FlarePlots <https://github.com/GPCRviz/flareplot>`_ (cool live-demo `here <https://gpcrviz.github.io/flareplot/>`_). These show the molecular topology (residues, fragments) on a circle with curves connecting the residues for which a given frequency has been computed. ``mdciao`` has its own flareplot implementation in the :obj:`mdciao.flare` module, that can also coarse-graine `flareplots to the molecular fragments <https://proteinformatics.uni-leipzig.de/mdciao/notebooks/Flareplot_Schemes.html#Coarse-Graning-Flareplots:-Chord-Diagrams>`_.  The `mdc_interface.py example`_ above will generates a flareplot by default:
 
- .. figure:: imgs/interface.flare@3.5_Ang.small.png
+ .. figure:: imgs/interface.flare@4.0_Ang.small.png
       :scale: 70%
       :align: left
       :name: fig_flare
 
-      [``interface.flare@3.5_Ang.pdf``](click to enlarge) FlarePlot of the frequencies shown in the figures :numref:`interface_matrix` and :numref:`interface_bars`. Residues are shown as dots on a circumference, split into fragments following any available labelling information. The contact frequencies are represented as lines connecting these dots/residues, with the line-opacity proportional to the frequencie's value. The secondary stucture of each residue is also included as color-coded letters: H(elix), B(eta), C(oil). We can clearly see the :math:`G\alpha_5`-subunit in contact with the receptor's TM3, ICL2, and TM5-ICL3-TM6 regions. Note that this plot is always produced as .pdf to be able to zoom into it as much as needed.
+      [``interface.flare@4.0_Ang.pdf``](click to enlarge) FlarePlot of the frequencies shown in the figures :numref:`interface_matrix` and :numref:`interface_bars`. Residues are shown as dots on a circumference, split into fragments following any available labelling information. The contact frequencies are represented as lines connecting these dots/residues, with the line-opacity proportional to the frequencie's value. The secondary stucture of each residue is also included as color-coded letters: H(elix), B(eta), C(oil). We can clearly see the :math:`G\alpha_5`-subunit in contact with the receptor's TM3, ICL2, and TM5-ICL3-TM6 regions. Note that this plot is always produced as .pdf to be able to zoom into it as much as needed.
 
 * Similar to how the flareplot (:numref:`fig_flare`) is mapping contact-frequencies (:numref:`interface_bars`, upper panel) onto the molecular topology, the next figure maps the **lower** panel :numref:`interface_bars` on the molecular geometry. It simply puts the values shown there in the `temperature factor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_  of a pdb file, representing the calculated interface as a *heatmap*, which can be visualized in VMD using the `Beta coloring <https://www.ks.uiuc.edu/Research/vmd/vmd-1.7.1/ug/node74.html>`_.
 
  .. figure:: imgs/interface_BRG.png
       :scale: 70%
       :align: left
+      :name: fig_interface_strength
 
-      [``interface.overall@3.5_Ang.as_bfactors.pdb``](click to enlarge) 3D visualization of the interface as heatmap (blue-green-red) using `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_. We clearly see the regions noted in :numref:`fig_flare` (TM5-ICL3-TM6 and :math:`G\alpha_5`-subunit) in particular the **residues** of :numref:`interface_bars` (lower panel) light up. Please note that for the homepage-banner (red-blue heatmap), the ``signed_colors`` argument has been used when calling the :obj:`mdciao.flare.freqs2flare` method of the API. At the moment this is not possible just by using ``mdc_interface.py``, sorry!
+
+      [``interface.overall@4.0_Ang.as_bfactors.pdb``](click to enlarge) 3D visualization of the interface as heatmap (blue-green-red) using `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_. We clearly see the regions noted in :numref:`fig_flare` (TM5-ICL3-TM6 and :math:`G\alpha_5`-subunit) in particular the **residues** of :numref:`interface_bars` (lower panel) light up. This heatmap is overlaid on structures representative of the interface, and have been selected using the :obj:`mdciao.contacts.ContactGroup.repframes` method. Please note, for the homepage-banner (red-blue heatmap), the ``signed_colors`` argument has been used when calling the :obj:`mdciao.flare.freqs2flare` method of the API. At the moment this is not possible just by using ``mdc_interface.py``, sorry!
 
  You can use this snippet to generate a VMD `visualiazation state` file, ``view_mdciao_interface.vmd`` to view the heatmap::
 
-   echo 'mol new ./interface.overall@3.5_Ang.as_bfactors.pdb
+   echo 'mol new ./interface.overall@4.0_Ang.as_bfactors.pdb
          mol modstyle 0 0 NewCartoon
          mol modcolor 0 0 Beta
          color scale method BGR ' > view_mdciao_interface.vmd
@@ -245,17 +247,17 @@ Highlights
    >>> mdc_sites.py prot.pdb traj.xtc --site tip.json -at -nf -sa #sa: short AA-names
    ...
    The following files have been created:
-   ./sites.overall@3.5_Ang.pdf
+   ./sites.overall@4.0_Ang.pdf
    ...
 
   generates the following figure (tables are generated but not shown). The option ``-at`` (``--atomtypes``) generates the patterns ("hatching") of the bars. They indicate what atom types (sidechain or backbone) are responsible for the contact:
 
- .. figure:: imgs/sites.overall@3.5_Ang.Fig.6.png
+ .. figure:: imgs/sites.overall@4.0_Ang.Fig.6.png
       :scale: 50%
       :align: left
       :name: sites_freq
 
-      [``sites.overall@3.5_Ang.pdf``](click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.uni-leipzig.de/mdsrv.html?load=file://base/mdciao/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
+      [``sites.overall@4.0_Ang.pdf``](click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.uni-leipzig.de/mdsrv.html?load=file://base/mdciao/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
 
  |nbspc|
 .. _comparison_HL:
@@ -272,7 +274,7 @@ Highlights
 
   Now we use ``mdc_neighborhoods.py`` on it::
 
-   >>> mdc_neighborhoods.py 3SN6.pdb 3SN6.pdb -r R131 -o 3SN6 -co 4 -nf -o 3SN6.X
+   >>> mdc_neighborhoods.py 3SN6.pdb 3SN6.pdb -r R131 -o 3SN6 -nf -o 3SN6.X
    ...
    #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
    1:     1.00   ARG131-TYR391       0-0        1007-345        14     1.00
@@ -286,14 +288,14 @@ Highlights
 
   Now we use ``mdc_neighborhoods.py`` on our data::
 
-   >>> mdc_neighborhoods.py prot.pdb traj.xtc -r R131 -co 4 -nf -o 3SN6.MD
+   >>> mdc_neighborhoods.py prot.pdb traj.xtc -r R131 -nf -o 3SN6.MD
    ...
    #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
-   1:     0.87   ARG131-TYR391       0-0         861-350        12     0.87
-   2:     0.69   ARG131-TYR326       0-0         861-1028      104     1.55
-   3:     0.44   ARG131-TYR219       0-0         861-946        70     1.99
-   4:     0.12   ARG131-ILE278       0-0         861-980        92     2.11
-   These 4 contacts capture 2.11 (~99%) of the total frequency 2.11 (over 115 contacts)
+   1:     0.88   ARG131-TYR391       0-0         861-350        11     0.88
+   2:     0.69   ARG131-TYR326       0-0         861-1028       95     1.56
+   3:     0.44   ARG131-TYR219       0-0         861-946        65     2.00
+   4:     0.12   ARG131-ILE278       0-0         861-980        84     2.12
+   These 4 contacts capture 2.12 (~100%) of the total frequency 2.12 (over 104 input contacts)
    ...
    The following files have been created:
    ...
