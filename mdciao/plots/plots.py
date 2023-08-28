@@ -31,6 +31,8 @@ from mdciao.utils.str_and_dict import _kwargs_subs
 
 from matplotlib.colors import is_color_like as _is_color_like
 
+from matplotlib.mlab import GaussianKDE as _GKDE
+
 from mpl_toolkits.axes_grid1 import \
     make_axes_locatable as _make_axes_locatable
 
@@ -131,6 +133,91 @@ def plot_w_smoothing_auto(y, ax=None, label=None, color="tab:blue", x=None, back
     if call_legend:
         ax.legend()
     return line2D
+
+
+def histogram_w_smoothing_auto(data, bins=10, ax=None,
+                               smooth_bw=True, background=True, fill_below=True,
+                               color=None, label=None) -> _plt.Axes:
+    r"""
+    Plot a histogram of `data` with possibilities of smoothing and filling the area below
+
+    Parameters
+    ----------
+    data : list or 1D _np.ndarray
+        The data to be histogramed and plotted
+    bins : int, default is 10
+        Since this will be passed directly
+        to :obj:`numpy.histogram` it can
+        also take the same values that
+        :obj:`numpy.histogram_bin_edges`
+        can take.
+    ax : :obj:`~matplotlib.axes.Axes` or None, default is None
+        The axis to draw onto. If None,
+        the current axis will be used invoking
+        :obj:`~matplotlib.pyplot.gca`. If there's no
+        current axis, one will be created.
+    smooth_bw : bool or float, default is False
+        If True, smooth the histogram using a
+        Gaussian-kernel-density estimation with
+        an estimator bandwidth of .5 (Angstrom).
+        If float, use this value as estimator
+        bandwidth, check :obj:`matplotlib.mlab.GaussianKDE`
+        for more info.
+    background : bool, or color-like, (str, hex, rgb), default is True
+        When smoothing, the original curve can
+        appear in the background in different colors
+
+        * True:  use a fainted version of `color`
+        * False: don't plot any background
+        * color-like: use this color for the background,
+          can be: str, hex, rgba, anything
+          :obj:`matplotlib.pyplot.colors` understands
+    fill_below : bool, default is True
+        Fill the area underneath the histogram
+        with a shade of `color`
+    color : None or color-like, default is None
+        Default behaviour is to take the next
+        color of the color-cycle of the plot.
+    label : str or None, default is None
+        The label for the data, which will
+        be shown in the legend
+
+
+
+    Returns
+    -------
+    ax : :obj:`~matplotlib.axes.Axes`
+    """
+
+    if ax is None:
+        ax = _plt.gca()
+
+    h, bin_edges = _np.histogram(data, bins=bins)
+    x = (bin_edges[:-1] + bin_edges[1:]) / 2
+    if smooth_bw:
+        if isinstance(smooth_bw, bool):
+            smooth_bw = .5
+        model = _GKDE(data, bw_method=smooth_bw)
+        xs = _np.linspace(data.min(), data.max(), num=500)
+        ys = model.evaluate(xs)
+        ys /= ys.max()
+        ys *= h.max()
+        line = ax.plot(xs, ys, label=label, color=color)[0]
+        if fill_below:
+            ax.fill_between(xs, ys, alpha=.1, color=line.get_color())
+        if background:
+            if isinstance(background, bool):
+                ax.plot(x, h, alpha=.25, color=line.get_color(), zorder=-10)
+            else:
+                ax.plot(x, h, alpha=.25, color=background, zorder=-10)
+    else:
+        line = ax.plot(x, h, label=label, color=color)[0]
+        if fill_below:
+            ax.fill_between(x, h, alpha=.1, color=line.get_color())
+
+    ax.legend()
+
+    return ax
 
 def plot_unified_freq_dicts(freqs,
                             colordict=None,
