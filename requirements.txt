@@ -1,9 +1,0 @@
-pandas==0.24.2
-matplotlib==3.1.0
-mock==3.0.5
-XlsxWriter==1.1.8
-mdtraj==1.9.3
-numpy==1.22.0
-scipy==1.2.1
-Bio
-ipython==7.16.3
