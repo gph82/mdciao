@@ -36,7 +36,7 @@ Functions
     :toctree: generated/
 
     guess_by_nomenclature
-    guess_nomenclature_fragments
+    matching_fragments
     references
 
 References

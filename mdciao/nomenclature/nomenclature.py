@@ -2119,7 +2119,7 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
 
     Guess which fragments of a topology best align with a consensus nomenclature.
 
-    Wraps around :obj:`guess_nomenclature_fragments` to interpret its answer.
+    Wraps around :obj:`matching_fragments` to interpret its answer.
 
     Parameters
     ----------
@@ -2149,7 +2149,7 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
         Return the answer the user provided
         in case an alternative guess.
     accept_guess : bool, default is False
-        Accept the guess of :obj:`guess_nomenclature_fragments`
+        Accept the guess of :obj:`matching_fragments`
         without asking for confirmation.
     return_residue_idxs : bool, default is False
         Return the list of residue indices directly,
@@ -2157,7 +2157,7 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
         Only has an effect if
     guess_kwargs : dict, optional
         Keyword arguments for some of the keyword arguments
-        of :obj:`guess_nomenclature_fragments`, which
+        of :obj:`matching_fragments`, which
         are listed below.
 
     Other Parameters

@@ -730,7 +730,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
         self.assertEqual(answer, None)
 
 
-class Test_guess_nomenclature_fragments(unittest.TestCase):
+class Test_matching_fragments(unittest.TestCase):
     # The setup is in itself a test
     @classmethod
     def setUpClass(cls):
