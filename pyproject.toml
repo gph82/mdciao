@@ -1,0 +1,82 @@
+[build-system]
+requires = [ "setuptools>=61.2",]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mdciao"
+version = "0.0.6"
+authors = [{name = "Guillermo Perez-Hernandez", email = "guillermo.perez@charite.de"}]
+description = "mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data"
+classifiers = [ "Development Status :: 4 - Beta",
+                "Programming Language :: Python :: 3",
+                "Operating System :: OS Independent",
+                "Intended Audience :: Science/Research",
+                "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+                "Topic :: Scientific/Engineering :: Chemistry",
+                "Topic :: Scientific/Engineering :: Bio-Informatics",
+                "Topic :: Scientific/Engineering :: Visualization",]
+requires-python = ">=3.6"
+dependencies = [ "cython",
+                 "numpy>=1.18.1",
+                 "mdtraj",
+                 "astunparse; python_version!='3.8'",
+                 "astunparse<1.6.3; python_version=='3.8'",
+                 "pandas",
+                 "matplotlib<=3.5.3; python_version<'3.8'",
+                 "scipy<=1.9.0; python_version<='3.8'",
+                 "scipy",
+                 "joblib",
+                 "openpyxl",
+                 "biopython>=1.77",
+                 "ipython<=8.12; python_version<='3.8'",
+                 "ipython==7.*; python_version=='3.7'",
+                 "ipython",
+                 "XlsxWriter",
+                 "requests",
+                 "tqdm",
+                 "natsort",
+                 "bezier",
+                 "mpl_chord_diagram>=0.3.2",
+                 "docstring_parser",
+                 "coverage",
+                 "pytest",
+                 "nose", "mock"
+                 ]
+
+
+[project.readme]
+file = "README.rst"
+content-type = "text/x-rst"
+
+[project.urls]
+Homepage = "https://github.com/gph82/mdciao"
+docs = "http://proteinformatics.org/mdciao"
+
+#[project.scripts]
+#mdc_neighborhoods = "mdciao.scripts:mdc_neighborhoods.py"
+#mdc_sites = "mdciao.scripts:mdc_sites.py"
+#mdc_interface = "mdciao.scripts:mdc_interface.py"
+#mdc_fragments = "mdciao.scripts:mdc_fragments.py"
+#mdc_GPCR_overview = "mdciao.scripts:mdc_GPCR_overview.py"
+#mdc_CGN_overview = "mdciao.scripts:mdc_CGN_overview.py"
+#mdc_KLIFS_overview = "mdciao.scripts:mdc_KLIFS_overview.py"
+#mdc_compare = "mdciao.scripts:mdc_compare.py"
+#mdc_examples = "mdciao.scripts:mdc_examples.py"
+#mdc_pdb = "mdciao.scripts:mdc_pdb.py"
+#mdc_residues = "mdciao.scripts:mdc_residues.py"
+#mdc_notebooks = "mdciao.scripts:mdc_notebooks.py"
+
+[tool.setuptools]
+script-files = [ "scripts/mdc_neighborhoods.py",
+                 "scripts/mdc_sites.py",
+                 "scripts/mdc_interface.py",
+                 "scripts/mdc_fragments.py",
+                 "scripts/mdc_GPCR_overview.py",
+                 "scripts/mdc_CGN_overview.py",
+                 "scripts/mdc_KLIFS_overview.py",
+                 "scripts/mdc_compare.py",
+                 "scripts/mdc_examples.py",
+                 "scripts/mdc_pdb.py",
+                 "scripts/mdc_residues.py",
+                 "scripts/mdc_notebooks.py"
+                 ]
