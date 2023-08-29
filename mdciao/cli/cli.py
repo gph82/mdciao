@@ -1081,7 +1081,7 @@ def interface(
         graphic_ext=".pdf",
         background=True,
         interface_cutoff_Ang=35,
-        ctc_control=20,
+        ctc_control=50,
         n_smooth_hw=0,
         output_desc="interface",
         output_dir=".",
@@ -1270,7 +1270,7 @@ def interface(
         Default is 35. Setting this cutoff to None is
         equivalent to using no cutoff,
         i.e. all possible contacts are regarded
-    ctc_control : int, default is 20
+    ctc_control : int, default is 50
         Control the number of reported contacts. Can be an
         integer (keep the first n contacts) or a float
         representing a fraction [0,1] of the total number of
