@@ -19,10 +19,16 @@ We recommend you install ``mdciao`` via the `pip <https://pypi.org/project/pip/>
 
  pip install mdciao
 
-Installation via the `conda <https://conda.io/en/latest/>`_ Python package manager is not ready yet.
+For the impatient, you can directly issue afterwards::
+
+ mdc_examples
+
+for built-in command-line examples to choose from. For a bit more of context, check the :ref:`CLI Tutorial`, the :ref:`API Jupyter Notebook Tutorial`, and the :ref:`Jupyter Notebook Gallery` for real-life, more elaborated notebooks.
 
 .. note::
  As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. More info on how to do this in the note about the `Python interpreter and environment`_.
+
+ Installation via the `conda <https://conda.io/en/latest/>`_ Python package manager is not ready yet.
 
 .. warning::
  If you are interested in latest ``mdciao`` features, please use the `Installation from source`_.

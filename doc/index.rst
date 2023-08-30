@@ -37,7 +37,33 @@ Basic Principle
 * topology files, like *prot.gro* or *prot.pdb*
 * trajectory files, like *traj1.xtc*, *traj2.xtc*
 
-and calculates the  time-traces of residue-residue distances, and from there, **contact frequencies** and **distance distributions**.
+and calculates the  time-traces of residue-residue distances, and from there, **contact frequencies** and **distance distributions**. The most simple command line call would look approximately like this::
+
+ mdc_neighborhoods.py prot.pdb traj.xtc --residues L394
+ [...]
+ #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
+ 1:     0.96   LEU394-ARG389       0-0         353-348        30     0.96
+ 2:     0.92   LEU394-LEU388       0-0         353-347        29     1.88
+ 3:     0.79   LEU394-LEU230       0-0         353-957        51     2.67
+ 4:     0.71   LEU394-ARG385       0-0         353-344        26     3.38
+ 5:     0.50   LEU394-LYS270       0-0         353-972        65     3.88
+ These 5 contacts capture 3.88 (~90%) of the total frequency 4.31 (over 74 input contacts)
+ [...]
+ The following files have been created:
+ ./neighborhood.overall@4.0_Ang.pdf
+ ./neighborhood.LEU394@4.0_Ang.dat
+ ./neighborhood.LEU394.time_trace@4.0_Ang.pdf
+
+You can also invoke::
+
+ mdc_examples.py
+
+for a list of all the built-in command-line toy-examples or::
+
+ mdc_notebooks.py
+
+for live Jupyter notebooks play around with. These are shown in the :ref:`Jupyter Notebook Gallery` along with other real-life, more elaborated examples.
+
 
 .. note::
 
