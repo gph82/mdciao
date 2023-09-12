@@ -3214,7 +3214,7 @@ class ContactGroup(object):
         -------
         res : list
             list of dictionaries (or dataframes).
-            If :obj:`list_by_interface` is True,
+            If `list_by_interface` is True,
             then the list has two items, default
             (False) is to be of len=1
 
