@@ -24,7 +24,10 @@ from collections import defaultdict as _defdict
 from natsort import natsorted as _natsorted
 from inspect import signature as _signature
 import docstring_parser as _dsp
-from matplotlib import docstring as _mpldocstring
+try:
+    from matplotlib import docstring as _mpldocstring
+except ImportError:
+    from matplotlib import _docstring as _mpldocstring
 from textwrap import wrap as _twrap
 
 
