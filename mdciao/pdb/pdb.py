@@ -25,6 +25,10 @@ import requests as _requests
 from mdtraj import load_pdb as _load_pdb
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from shutil import copy as _copy, copyfileobj as _copyfileobj
+try:
+    from shutil import COPY_BUFSIZE as _COPY_BUFSIZE
+except ImportError:
+    _COPY_BUFSIZE =  1024 * 64 #py37 shutil has this buffersize hard-coded 256 * 64, i'm setting 1024 * 64 across the board
 
 from urllib.error import HTTPError as _HTTPError, URLError as _URLError
 from urllib.request import urlopen as _urlopen
@@ -135,7 +139,7 @@ def pdb2traj(code,
         with _urlopen(url1) as response:
             if response.status == 200:
                 with _NamedTemporaryFile(delete=True) as tmp_file:
-                    _copyfileobj(response, tmp_file)
+                    _copyfileobj(response, tmp_file, length=_COPY_BUFSIZE*2)
                     geom = _load_pdb(tmp_file.name)
                     if filename is not None:
                         print_v("Saving to %s..." % filename, end="", flush=True)
