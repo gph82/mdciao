@@ -144,7 +144,8 @@ def plot_w_smoothing_auto(y, ax=None, label=None, color=None, x=None, background
 
 def histogram_w_smoothing_auto(data, bins=10, ax=None,
                                smooth_bw=True, background=True, fill_below=True,
-                               color=None, label=None) -> _plt.Axes:
+                               color=None, label=None,
+                               alpha_below=.25, maxcount=False) -> _plt.Axes:
     r"""
     Plot a histogram of `data` with possibilities of smoothing and filling the area below
 
@@ -163,7 +164,7 @@ def histogram_w_smoothing_auto(data, bins=10, ax=None,
         the current axis will be used invoking
         :obj:`~matplotlib.pyplot.gca`. If there's no
         current axis, one will be created.
-    smooth_bw : bool or float, default is False
+    smooth_bw : bool or float, default is True
         If True, smooth the histogram using a
         Gaussian-kernel-density estimation with
         an estimator bandwidth of .5 (Angstrom).
@@ -188,8 +189,21 @@ def histogram_w_smoothing_auto(data, bins=10, ax=None,
     label : str or None, default is None
         The label for the data, which will
         be shown in the legend
-
-
+    alpha_below : float, default is .25
+        The are below the curve will
+        be filled with this alpha (transparency)
+        value. Only has an effect if `fill_below`
+        is True
+    maxcount : bool or positive float, default is False
+        Normalize when plotting the histogram,
+        s.t. different datasets can be plotted
+        together at the same height even with
+        very different number of absolute
+        counts. If True, counts will be normalized
+        to the maximum number of counts, s.t.
+        histograms will peak at 1. If any other
+        positive value, that's where the peak
+        will be.
 
     Returns
     -------
@@ -200,15 +214,19 @@ def histogram_w_smoothing_auto(data, bins=10, ax=None,
         ax = _plt.gca()
 
     h, bin_edges = _np.histogram(data, bins=bins)
+    if maxcount:
+        h = h/h.max() * maxcount # multiply by boolean if True means multiply by one, if scalar by the value
     x = (bin_edges[:-1] + bin_edges[1:]) / 2
     if smooth_bw:
         if isinstance(smooth_bw, bool):
             smooth_bw = .5
         model = _GKDE(data, bw_method=smooth_bw)
-        xs = _np.linspace(data.min(), data.max(), num=500)
+        xs = _np.linspace(_np.min(data), _np.max(data), num=500)
         ys = model.evaluate(xs)
         ys /= ys.max()
         ys *= h.max()
+        if maxcount:
+            y = ys/ys.max() * maxcount
         line = ax.plot(xs, ys, label=label, color=color)[0]
         if fill_below:
             ax.fill_between(xs, ys, alpha=.1, color=line.get_color())
@@ -220,9 +238,9 @@ def histogram_w_smoothing_auto(data, bins=10, ax=None,
     else:
         line = ax.plot(x, h, label=label, color=color)[0]
         if fill_below:
-            ax.fill_between(x, h, alpha=.1, color=line.get_color())
-
-    ax.legend()
+            ax.fill_between(x, h, alpha=alpha_below, color=line.get_color())
+    if label is not None:
+        ax.legend()
 
     return ax
 

@@ -370,6 +370,14 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
         ifig, __, __  = plots.compare_groups_of_contacts({"1": intf1, "2":intf2}, ctc_cutoff_Ang=30,interface=True)
         #ifig.savefig("test.png")
 
+class test_histogram_w_smoothing_auto(unittest.TestCase):
+
+    def test_just_runs_all(self):
+        ax = plots.histogram_w_smoothing_auto(_np.random.randn(200), bins=20, maxcount=3.14)
+        for line in ax.lines:
+            y = line.get_xydata()[:,1]
+            assert y.max()==3.14
+
 
 class Test_plot_w_smoothing_auto(unittest.TestCase):
 
