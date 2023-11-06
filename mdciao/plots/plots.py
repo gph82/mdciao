@@ -44,7 +44,7 @@ from collections import defaultdict as _defdict
 
 import mdtraj as _md
 
-def plot_w_smoothing_auto(y, ax=None, label=None, color="tab:blue", x=None, background=True, n_smooth_hw=0, ls="-"):
+def plot_w_smoothing_auto(y, ax=None, label=None, color=None, x=None, background=True, n_smooth_hw=0, ls="-"):
     r"""
     A wrapper around :obj:`matplotlib.pyplot.plot` that allows
     to add a smoothing window (or not). See
@@ -64,8 +64,15 @@ def plot_w_smoothing_auto(y, ax=None, label=None, color="tab:blue", x=None, back
         it's understood the user wants a legend
         and a call to :obj:`~matplotlib.pyplot.legend`
         will be issued inside this method.
-    color : str or any color-like value
-        Anything `matplotlib.pyplot.colors` understands
+    color : None, or color-like value, default is None
+        The default is to try to use the next color
+        of the color-cyle of the axis. If no color cycle
+        has been initialized, this is "tab:blue". Note
+        that things may have been drawn already onto
+        the axis w/o a color-cycle initialized, in that
+        case None can't guarantee that colors will be
+        repeat. For full control of this cases, pass
+        a color value here.
     x : iterable of floats, default is None
         If not provided, will default to
         x = _np.arange(len(y))
@@ -113,7 +120,7 @@ def plot_w_smoothing_auto(y, ax=None, label=None, color="tab:blue", x=None, back
                          color=color,
                          ls=ls)[0]
         label = None
-
+        color = line2D.get_color()
         if background:
             if isinstance(background,bool):
                 pass
