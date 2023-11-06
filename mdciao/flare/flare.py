@@ -160,11 +160,11 @@ def freqs2flare(freqs, res_idxs_pairs,
         Contact frequencies lower than this value will not be shown
     ax : :obj:`~matplotlib.axes.Axes`
         Parse an axis to draw on, otherwise one will be created
-        using :obj:`panelsize`. In case you want to
-        re-use the same cirlce of residues as a
+        using `panelsize`. In case you want to
+        re-use the same circle of residues as a
         background to plot different sets
-        of :obj:`freqs`, **YOU HAVE TO USE THE SAME**
-        :obj:`fragments` and :obj:`sparse` values
+        of `freqs`, **YOU HAVE TO USE THE SAME**
+        `fragments` and `sparse` values
          **on all calls**, else the
         bezier lines will be placed erroneously.
     fragment_names: iterable of strings, default is None
@@ -340,7 +340,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         fragment_colors = [fragment_colors[residx2markeridx[ff[0]]] for ff in residues_as_fragments]
         return freqs2chord(_np.average(freqs, axis=0), res_idxs_pairs, residues_as_fragments,
                            fragment_names=fragment_names,fragment_colors=fragment_colors,
-                           panelsize=panelsize
+                           panelsize=panelsize,ax=ax
                            )
 
     if plot_curves_only:
