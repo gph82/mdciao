@@ -218,7 +218,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
                                           sort_by="numerica"
                                           )
 
-class Test_sorting_logic(unittest.TestCase):
+class Test_freqs2values_to_sort(unittest.TestCase):
 
     def setUp(self):
         self.CG1_freqdict = {"4-6":.25, "0-1":1.,   "0-2":.75, "0-3":.50,}
@@ -226,7 +226,7 @@ class Test_sorting_logic(unittest.TestCase):
 
         self.unified_dict = {"CG1":self.CG1_freqdict, "CG2":self.CG2_freqdict}
 
-    def test_freqs2values_to_sort(self):
+    def test_freqs2values_to_sort_works(self):
         values4sorting = plots.plots._freqs2values_to_sort(self.unified_dict)
 
         for key in ["0-1","0-2","0-3","4-6"]:
@@ -249,16 +249,34 @@ class Test_sorting_logic(unittest.TestCase):
         isinstance(values4sorting["numeric"]["DRG-GLU"], ValueError)
         self.assertEqual(values4sorting["numeric"]["1-0"], 1)
 
+class Test_postprocess_values2sort(unittest.TestCase):
 
+    def setUp(self):
+        self.CG1_freqdict = {"4-6": .25, "0-1": 1., "0-2": .75, "0-3": .50, }
+        self.CG2_freqdict = {"0-1": .80, "0-2": .50, "0-3": .1, "4-6": 0}
 
-    def _test_test_values_for_sorting_raises(self):
+        self.unified_dict = {"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict}
+        self.values4sorting = plots.plots._freqs2values_to_sort(self.unified_dict)
+
+    def test_postprocess_values2sort_numeric_good(self):
+        values4sorting2, sort_by = plots.plots._postprocess_values2sort(self.values4sorting, "numeric")
+        self.assertDictEqual(self.values4sorting,values4sorting2)
+        self.assertEqual("numeric",sort_by)
+
+    def test_postprocess_values2sort_numeric_bad(self):
+        values4sorting = plots.plots._freqs2values_to_sort({"no_numb" : {"ALA-GLU": .80, "DRG-GLU": .50, "1-0": 1.0}})
         with self.assertRaises(ValueError):
-            plots.plots._values_for_sorting(self.unified_dict, sort_by="random")
+            plots.plots._postprocess_values2sort(values4sorting, "numeric")
 
+    def test_postprocess_values2sort_raises(self):
         with self.assertRaises(ValueError):
-            idict = {"CG3":{"ALA-GLU":1},
-                     "CG4":{"ALA-GLU":0}}
-            plots.plots._values_for_sorting(idict, sort_by="numeric")
+            plots.plots._postprocess_values2sort(self.values4sorting, sort_by="random")
+
+    def test_postprocess_list(self):
+        keep_keys = ["4-6", "A-B", "0-2"]
+        values4sorting2, sort_by = plots.plots._postprocess_values2sort(self.values4sorting, keep_keys)
+        self.assertListEqual(["4-6", "0-2"], list(values4sorting2["list"].keys()))
+        self.assertEqual(sort_by, "list")
 
     def _test_plot_unified_freq_dicts_remove_identities(self):
         myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG1copy": self.CG1_freqdict},

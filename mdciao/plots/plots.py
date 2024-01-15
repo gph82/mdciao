@@ -301,6 +301,45 @@ def _freqs2values_to_sort(freqs_by_sys_by_ctc):
             dicts_values_to_sort["numeric"][key] = e
     return dicts_values_to_sort
 
+def _postprocess_values2sort(dicts_values_to_sort, sort_by):
+    r"""
+
+    Helper function to make plot_unified_freq_dicts thinner
+
+    * Checks whether the "sort_by" method is allowed
+    * Checks whether the "numeric" sorting is possible
+    * Implements the sort_by=list sorting
+
+    Parameters
+    ----------
+    dicts_values_to_sort : dictionary of dictionaries
+    sort_by : str or list
+
+
+    Returns
+    -------
+    dicts_values_to_sort
+    sort
+    """
+    all_ctc_keys = list(dicts_values_to_sort["mean"].keys())
+    bad_numeric_keys = [key for key, val in dicts_values_to_sort["numeric"].items() if isinstance(val, ValueError)]
+
+    if isinstance(sort_by, list):
+        _sorted_keys = _key_sorter(sort_by, {key: None for key in all_ctc_keys})
+        dicts_values_to_sort["list"] = {key: [-jj for jj, key2 in enumerate(_sorted_keys) if key2 == key][0] for key in
+                                        all_ctc_keys if key in _sorted_keys}
+        sort_by = "list"
+    elif sort_by == "numeric" and len(bad_numeric_keys) > 0:
+        raise ValueError(f"You only can use sort_by='{sort_by}' if all contact labels contain numbers. "
+                         f"The keys '{bad_numeric_keys}' do not contain numbers. Use another 'sort_by' method.")
+
+    else:
+        if sort_by not in list(dicts_values_to_sort.keys())[:-1]:
+            raise ValueError(f"The argument 'sort_by' needs to be one of {list(dicts_values_to_sort.keys())[:-1]} "
+                             f"but got sort_by='{sort_by}' instead.")
+
+    return dicts_values_to_sort, sort_by
+
 def plot_unified_freq_dicts(freqs,
                             colordict=None,
                             width=.2,
