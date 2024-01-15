@@ -245,6 +245,10 @@ class Test_sorting_logic(unittest.TestCase):
 
     def test_freqs2values_to_sort_returns_error(self):
         values4sorting = plots.plots._freqs2values_to_sort({"no_numb" : {"ALA-GLU": .80, "DRG-GLU": .50, "1-0": 1.0}})
+        isinstance(values4sorting["numeric"]["ALA-GLU"], ValueError)
+        isinstance(values4sorting["numeric"]["DRG-GLU"], ValueError)
+        self.assertEqual(values4sorting["numeric"]["1-0"], 1)
+
 
 
     def _test_test_values_for_sorting_raises(self):
