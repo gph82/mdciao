@@ -244,6 +244,63 @@ def histogram_w_smoothing_auto(data, bins=10, ax=None,
 
     return ax
 
+def _freqs2values_to_sort(freqs_by_sys_by_ctc):
+    r"""
+
+    For a dictionary of dictionaries, perform different operations (mean, std, etc)
+    on the the second-level values for all first level keys. Later, these values
+    will be used to sort the second-level keys.
+
+    First level key is typically the system (WT, MUT) and second the contact (GLU30-ALA50).
+
+    The different operations across all contact lab
+    * mean : for each ctc, compute mean across systems
+    * std :  for each ctc, compute std across system
+    * numeric : for each ctc, keep the first integer in the label (e.g. 30 for GLU30)
+        For those labels w/o integers, a ValueError is returned for their key
+    * keep : for each ctc, its position in the first system dictionary.
+
+    Note: This method only produces some values per ctc-label, but these values
+    need some further modification (inversion, shifting) downstream s.t. sorting
+    by descending order can be applied on all "metrics" in the same line.
+
+    Parameters
+    ----------
+    freqs_by_sys_by_ctc : dict
+        Unified dictionary of dictionaries, typically first
+        by system (WT, MUT) and then by contact "GLU30-ALA50"
+
+    Returns
+    -------
+    dicts_values_to_sort :
+        Dictionary of dictionaries, first level is something
+        like "metric" or "logic", e.g. "mean, second level keys
+        are the same as `freqs_by_sys_by_ctc` i.e. ctc-labels
+        typically
+
+    """
+    dicts_values_to_sort = {"mean":{},
+                            "std": {},
+                            "numeric": {},
+                            "keep":{},
+                           }
+    system_keys = list(freqs_by_sys_by_ctc.keys())
+    all_ctc_keys = list(freqs_by_sys_by_ctc[system_keys[0]].keys())
+
+    for ii, key in enumerate(all_ctc_keys):
+        dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])#*len(freqs_by_sys_by_ctc) <- will move this trick outside
+
+        dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
+
+        #dicts_values_to_sort["keep"][key] = len(all_ctc_keys)-ii+lower_cutoff_val # trick to keep the same logic <- will move this trick outside
+        dicts_values_to_sort["keep"][key] = ii
+
+        try:
+            dicts_values_to_sort["numeric"][key] = _mdcu.str_and_dict.intblocks_in_str(key)[0]
+        except ValueError as e:
+            dicts_values_to_sort["numeric"][key] = e
+    return dicts_values_to_sort
+
 def plot_unified_freq_dicts(freqs,
                             colordict=None,
                             width=.2,

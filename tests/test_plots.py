@@ -218,6 +218,203 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
                                           sort_by="numerica"
                                           )
 
+class Test_sorting_logic(unittest.TestCase):
+
+    def setUp(self):
+        self.CG1_freqdict = {"4-6":.25, "0-1":1.,   "0-2":.75, "0-3":.50,}
+        self.CG2_freqdict = {           "0-1":.80,  "0-2":.50, "0-3":.1,     "4-6":0}
+
+        self.unified_dict = {"CG1":self.CG1_freqdict, "CG2":self.CG2_freqdict}
+
+    def test_freqs2values_to_sort(self):
+        values4sorting = plots.plots._freqs2values_to_sort(self.unified_dict)
+
+        for key in ["0-1","0-2","0-3","4-6"]:
+            assert values4sorting["mean"][key]==_np.mean([self.CG1_freqdict[key], self.CG2_freqdict[key]])
+            assert values4sorting["std"][key]==_np.std([self.CG1_freqdict[key], self.CG2_freqdict[key]])
+
+        assert values4sorting["numeric"]["0-1"] == 0
+        assert values4sorting["numeric"]["0-2"] == 0
+        assert values4sorting["numeric"]["0-3"] == 0
+        assert values4sorting["numeric"]["4-6"] == 4
+
+        assert values4sorting["keep"]["4-6"] == 0
+        assert values4sorting["keep"]["0-1"] == 1
+        assert values4sorting["keep"]["0-2"] == 2
+        assert values4sorting["keep"]["0-3"] == 3
+
+    def test_freqs2values_to_sort_returns_error(self):
+        values4sorting = plots.plots._freqs2values_to_sort({"no_numb" : {"ALA-GLU": .80, "DRG-GLU": .50, "1-0": 1.0}})
+
+
+    def _test_test_values_for_sorting_raises(self):
+        with self.assertRaises(ValueError):
+            plots.plots._values_for_sorting(self.unified_dict, sort_by="random")
+
+        with self.assertRaises(ValueError):
+            idict = {"CG3":{"ALA-GLU":1},
+                     "CG4":{"ALA-GLU":0}}
+            plots.plots._values_for_sorting(idict, sort_by="numeric")
+
+    def _test_plot_unified_freq_dicts_remove_identities(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG1copy": self.CG1_freqdict},
+                                                  {"CG1": "r", "CG1copy": "b"},
+                                                  remove_identities=True)
+        #Check that the 0-1 contact has been removed
+        #myfig.savefig("2.test_wo_ident.png", bbox_inches="tight")
+        _plt.close("all")
+
+    def _test_plot_unified_freq_dicts_remove_identities_cutoff(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+                                                  {"CG1": "r", "CG2": "b"},
+                                                  remove_identities=True)
+        #Check that the 0-1 contact is there
+        #myfig.savefig("3.test_wo_ident_cutoff.ref.png", bbox_inches="tight")
+        _plt.close("all")
+
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+                                                  {"CG1": "r", "CG2": "b"},
+                                                  remove_identities=True,
+                                                  identity_cutoff=.95)
+        #Check that the 0-1 contact has been removed
+        #myfig.savefig("4.test_wo_ident_cutoff.png", bbox_inches="tight")
+        _plt.close("all")
+
+    def _test_plot_unified_freq_dicts_lower_cutoff_val(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+                                                  {"CG1": "r", "CG2": "b"},
+                                                  remove_identities=True,
+                                                  identity_cutoff=.9,
+                                                  lower_cutoff_val=.4
+                                                  )
+        #myfig.savefig("5.test_above_below_thres.png", bbox_inches="tight")
+        _plt.close("all")
+
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+                                                  {"CG1": "r", "CG2": "b"},
+                                                  remove_identities=True,
+                                                  identity_cutoff=.95)
+        #myfig.savefig("6.test_wo_ident_cutoff.png", bbox_inches="tight")
+        _plt.close("all")
+
+
+    def _test_plot_unified_freq_dicts_order_std(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+                                                  {"CG1": "r", "CG2": "b"},
+                                                  sort_by="std",
+                                                  lower_cutoff_val=0.0
+                                                  )
+        # Order should be inverted
+        #myfig.savefig("7.test_order.std.png", bbox_inches="tight")
+        _plt.close("all")
+
+    def _test_plot_unified_freq_dicts_order_keep(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1s": self.CG1_freqdict_shuffled, "CG2": self.CG2_freqdict},
+                                                  {"CG1s": "r", "CG2": "b"},
+                                                  sort_by="keep",
+                                                  )
+        # myfig.savefig("8.test_order.keep.png", bbox_inches="tight")
+        _plt.close("all")
+
+
+
+
+    def _test_plot_unified_freq_dicts_remove_identities_vert(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+                                                  {"CG1": "r", "CG2": "b"},
+                                                  remove_identities=True,
+                                                  vertical_plot=True)
+        #myfig.savefig("9.test_wo_ident_vert.png", bbox_inches="tight")
+        _plt.close("all")
+
+    def _test_plot_unified_freq_dicts_remove_identities_vert_order_by_std(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},
+                                                  {"CG1": "r", "CG2": "b"},
+                                                  sort_by="std",
+                                                  #remove_identities=True,
+                                                  lower_cutoff_val=0.0,
+                                                  vertical_plot=True)
+        #myfig.savefig("10.test_vert.std.png", bbox_inches="tight")
+        _plt.close("all")
+
+    def _test_plot_unified_freq_dicts_ylim(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
+                                                  {"CG1":"r", "CG1copy":"b"}, ylim=2.25)
+
+        #myfig.savefig("11.test_ylim.png", bbox_inches="tight")
+        _plt.close("all")
+
+    def _test_plot_unified_freq_dicts_ax(self):
+        _plt.figure()
+        ax = _plt.gca()
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
+                                                  {"CG1":"r", "CG1copy":"b"}, ylim=2.25, ax=ax)
+        assert myax is ax
+        _plt.close("all")
+
+    def _test_plot_unified_freq_dictsfigsize_None(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG1copy": self.CG1_freqdict},
+                                                        {"CG1": "r", "CG1copy": "b"}, ylim=2.25,
+                                                        figsize=None)
+        _plt.close("all")
+
+    def _test_plot_unified_freq_dictswinner(self):
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": {"0-1":0, "0-2":1},
+                                                         "CG12": {"0-1":1, "0-2":0}},
+                                                        figsize=None,
+                                                        assign_w_color=True)
+        _plt.close("all")
+
+    def _test_plot_just_one_dict(self):
+        _plt.figure()
+        ax = _plt.gca()
+        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict},
+                                                  {"CG1": "r"})
+        #myfig.savefig("12.test_just_one.png",bbox_inches="tight")
+        _plt.close("all")
+
+    def _test_sort_by_keys(self):
+        neigh : mdciao.contacts.ContactGroup = ContactGroupL394()
+        freqs = neigh.frequency_dicts(4)
+        # The following list, test_list
+        # * reverses the order
+        # * deletes the most frequent one (the last one) "R389@G.H5.21    - L394@G.H5.26"
+        # * adds a bogus-key
+        # * duplicates an entry "L388@G.H5.20    - L394@G.H5.26"
+        test_list = list(freqs.keys())[::-1][:-1]+["bogus-key"]+["L388@G.H5.20    - L394@G.H5.26"]
+        myfig, myax, plotted_freqs = plots.plot_unified_freq_dicts({"L394":freqs},
+                                                        sort_by=test_list,
+                                                        lower_cutoff_val=.5,
+                                                        )
+        #myfig.tight_layout()
+        #myfig.savefig("test.keys.png")
+        self.assertListEqual(test_list[1:-2], # First one will be missed bc.
+                                              # lower_cutoff_val, last two because bogus and repetition
+                             list(plotted_freqs["L394"].keys()))
+        assert "L394" in plotted_freqs.keys()
+        assert "list" in plotted_freqs.keys()
+        _plt.close("all")
+
+    def _test_sort_by_numeric(self):
+        myfig, myax, plotted_freqs = plots.plot_unified_freq_dicts({"A": {"3-1": 0.1, "2-1": .9}},
+                                                                   sort_by="numeric"
+                                                                   )
+        #myfig.tight_layout()
+        #myfig.savefig("test.keys.png")
+        self.assertDictEqual(plotted_freqs["A"], {"2-1": 0.9, "3-1": .1})
+        assert "numeric" in plotted_freqs.keys()
+        _plt.close("all")
+
+    def _test_sort_by_numeric_raises(self):
+        with self.assertRaises(ValueError):
+            plots.plot_unified_freq_dicts({"A": {"B-A": 0.1, "C-A": .9}},
+                                          sort_by="numeric"
+                                          )
+    def _test_sort_by_wrong_raises(self):
+        with self.assertRaises(ValueError):
+            plots.plot_unified_freq_dicts({"A": {"B-A": 0.1, "C-A": .9}},
+                                          sort_by="numerica"
+                                          )
 
 
 class Test_plot_unified_distro_dicts(unittest.TestCase):
