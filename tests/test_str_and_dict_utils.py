@@ -817,7 +817,13 @@ class Test_print_wrap(unittest.TestCase):
         wrapped = str_and_dict.print_wrap(string,4, just_return_string=True)
         self.assertEqual(wrapped, "AAAA\nBBBB")
 
+class Test_intblocks_in_str(unittest.TestCase):
 
+    def test_just_works(self):
+        self.assertListEqual(str_and_dict.intblocks_in_str("GLU30@3.50-GDP396@frag1"), [30,3,50,396,1])
+    def test_fails(self):
+        with self.assertRaises(ValueError):
+            str_and_dict.intblocks_in_str("GLU")
 
 
 

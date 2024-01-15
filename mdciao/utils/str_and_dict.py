@@ -987,9 +987,14 @@ def splitlabel(label, sep="-", defrag="@"):
 
 def intblocks_in_str(istr):
     r"""
-    Return the integers that appear as contiguous blocks in strings
+    Return the integers that appear as contiguous blocks in strings.
 
     E.g.  "GLU30@3.50-GDP396@frag1" returns [30,3,50,396,1]
+
+    Will raise a ValueError if `istr` doesn't contain any integers
+
+    Related, but not the same as :obj:`~mdciao.utils.residue_and_atom.int_from_AA_code`
+
 
     Parameters
     ----------
@@ -997,11 +1002,14 @@ def intblocks_in_str(istr):
 
     Returns
     -------
-    ints : list
+    ints : list or ValueError if `istr` doesn't have any integers in it
 
     """
-    intblocks = _cranges([char.isdigit() for char in istr])[True]
-    return [int("".join([istr[idx] for idx in block])) for block in intblocks]
+    try:
+        intblocks = _cranges([char.isdigit() for char in istr])[True]
+        return [int("".join([istr[idx] for idx in block])) for block in intblocks]
+    except KeyError as e:
+        raise ValueError(f"{istr} doesn't contain any integers!")
 
 def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
     r"""
