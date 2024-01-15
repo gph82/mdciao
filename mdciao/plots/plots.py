@@ -308,7 +308,8 @@ def _postprocess_values2sort(dicts_values_to_sort, sort_by):
 
     * Checks whether the "sort_by" method is allowed
     * Checks whether the "numeric" sorting is possible
-    * Implements the sort_by=list sorting
+    * Implements the sort_by=list sorting, updating the sort_by variable
+    and returning an index for each key
 
     Parameters
     ----------
@@ -326,7 +327,7 @@ def _postprocess_values2sort(dicts_values_to_sort, sort_by):
 
     if isinstance(sort_by, list):
         _sorted_keys = _key_sorter(sort_by, {key: None for key in all_ctc_keys})
-        dicts_values_to_sort["list"] = {key: [-jj for jj, key2 in enumerate(_sorted_keys) if key2 == key][0] for key in
+        dicts_values_to_sort["list"] = {key: [jj for jj, key2 in enumerate(_sorted_keys) if key2 == key][0] for key in
                                         all_ctc_keys if key in _sorted_keys}
         sort_by = "list"
     elif sort_by == "numeric" and len(bad_numeric_keys) > 0:

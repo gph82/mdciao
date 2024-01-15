@@ -275,7 +275,7 @@ class Test_postprocess_values2sort(unittest.TestCase):
     def test_postprocess_list(self):
         keep_keys = ["4-6", "A-B", "0-2"]
         values4sorting2, sort_by = plots.plots._postprocess_values2sort(self.values4sorting, keep_keys)
-        self.assertListEqual(["4-6", "0-2"], list(values4sorting2["list"].keys()))
+        self.assertDictEqual({"4-6" : 0,  "0-2": 1}, values4sorting2["list"])
         self.assertEqual(sort_by, "list")
 
     def _test_plot_unified_freq_dicts_remove_identities(self):
