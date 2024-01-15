@@ -134,6 +134,17 @@ class Test_GPCRdb_finder(unittest.TestCase):
         assert df is None
         assert isinstance(filename, str)
 
+    def test_wont_fail_if_found_online_and_write_to_disk(self):
+        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
+                                                   try_web_lookup=False,
+                                                   write_to_disk=True,
+                                                   )
+
+        assert isinstance(df, DataFrame)
+        assert isinstance(filename, str)
+        _np.testing.assert_array_equal(list(df.keys())[:3], nomenclature._GPCR_mandatory_fields)
+        assert any([key in df.keys() for key in nomenclature._GPCR_mandatory_fields])  # at least one scheme
+
 
 class Test_table2GPCR_by_AAcode(unittest.TestCase):
     def setUp(self):

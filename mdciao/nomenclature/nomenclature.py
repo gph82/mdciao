@@ -211,10 +211,12 @@ def _finder_writer(full_local_path,
         The URL or local path to
         the file that was used
     """
+    found_locally = False
     try:
         return_name = full_local_path
         _DF = local2DF_lambda(full_local_path)
         print("%s found locally." % full_local_path)
+        found_locally=True
     except FileNotFoundError as e:
         _DF = e
         if verbose:
@@ -232,7 +234,7 @@ def _finder_writer(full_local_path,
                 _DF = e
 
     if isinstance(_DF, _DataFrame):
-        if write_to_disk:
+        if write_to_disk and not found_locally:
             if _path.exists(full_local_path):
                 raise FileExistsError("Cannot overwrite existing file %s" % full_local_path)
             if _path.splitext(full_local_path)[-1] == ".xlsx":
