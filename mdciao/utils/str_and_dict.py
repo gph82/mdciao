@@ -128,7 +128,7 @@ def get_sorted_trajectories(trajectories):
             raise FileNotFoundError("Couldn't find (or pattern-match) anything to '%s'.\n"
                                     "ls $CWD[%s]:\n%s:"%(trajectories,
                                                          _path.abspath(_path.curdir),
-                                                         "\n".join(_ls(_path.curdir))))
+                                                         "\n".join(sorted(_ls(_path.curdir)))))
         else:
             trajectories=_trajectories
 
