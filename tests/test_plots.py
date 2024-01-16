@@ -280,13 +280,81 @@ class Test_postprocess_values2sort(unittest.TestCase):
 
         self.assertEqual(sort_by, "list")
 
-    def _test_plot_unified_freq_dicts_remove_identities(self):
-        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG1copy": self.CG1_freqdict},
-                                                  {"CG1": "r", "CG1copy": "b"},
-                                                  remove_identities=True)
-        #Check that the 0-1 contact has been removed
-        #myfig.savefig("2.test_wo_ident.png", bbox_inches="tight")
-        _plt.close("all")
+class Test_pop_keys_by_scheme(unittest.TestCase):
+    def setUp(self):
+        self.CG1_freqdict = {"4-6": .25, "0-1": 1., "0-2": .75, "0-3": .50}
+        self.CG2_freqdict = {"0-1": .99, "0-2": .50, "0-3": .1, "4-6": 0}
+
+        self.unified_dict = {"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict}
+        """
+        unified_dict
+              CG1   CG2
+        4-6  0.25  0.00
+        0-1  1.00  0.99
+        0-2  0.75  0.50
+        0-3  0.50  0.10
+        
+        values4sorting
+              mean    std  numeric  keep
+        4-6  0.125  0.125        4     0
+        0-1  0.995  0.005        0     1
+        0-2  0.625  0.125        0     2
+        0-3  0.300  0.200        0     3
+
+        values4sorting_post
+              mean    std  numeric  keep  list
+        4-6  0.125  0.125        4     0   0.0
+        0-1  0.995  0.005        0     1   NaN
+        0-2  0.625  0.125        0     2   1.0
+        0-3  0.300  0.200        0     3   NaN
+        """
+        self.values4sorting = plots.plots._freqs2values_to_sort(self.unified_dict)
+        self.values4sorting_post, _ = plots.plots._postprocess_values2sort(self.values4sorting, ["4-6","0-2"])
+
+    def test_pop_keys_by_scheme_mean_remove_identities_and_low(self):
+        all_ctc_keys, freqs_by_sys_by_ctc, ctc_keys_popped_above, ctc_keys_popped_below = \
+            plots.plots._pop_keys_by_scheme("mean", self.unified_dict, self.values4sorting_post,
+                                        0.3, .95, True)
+
+        self.assertListEqual(all_ctc_keys, ["0-2", "0-3"])
+        self.assertListEqual(ctc_keys_popped_above,["0-1"])  # identity_cutoff = .95 drops 0-1
+        self.assertListEqual(ctc_keys_popped_below,["4-6"])  # lower_cutoff_val = .3 drops 4-6
+
+    def test_pop_keys_by_scheme_std_remove_identities_and_low(self):
+        all_ctc_keys, freqs_by_sys_by_ctc, ctc_keys_popped_above, ctc_keys_popped_below = \
+            plots.plots._pop_keys_by_scheme("std", self.unified_dict, self.values4sorting_post,
+                                        0.15, .95, False)
+
+        self.assertListEqual(all_ctc_keys, ["0-3"])
+        self.assertListEqual(ctc_keys_popped_above,[])  # we're not removing identity
+        self.assertListEqual(ctc_keys_popped_below,["4-6", "0-1","0-2"])  # lower_cutoff_val = .15 drops these
+
+    def test_pop_keys_by_scheme_list_remove_identities_and_low(self):
+        all_ctc_keys, freqs_by_sys_by_ctc, ctc_keys_popped_above, ctc_keys_popped_below = \
+            plots.plots._pop_keys_by_scheme("list", self.unified_dict, self.values4sorting_post,
+                                            0.15, .95, True)
+
+        self.assertListEqual(all_ctc_keys, ["4-6","0-2"])
+        self.assertListEqual(ctc_keys_popped_above,["0-1"])  # identity_cutoff = .95 drops 0-1
+        self.assertListEqual(ctc_keys_popped_below, ["0-1", "0-3"])  # these aren't on the list
+
+    def test_pop_keys_by_scheme_numeric_remove_identities_and_low(self):
+        all_ctc_keys, freqs_by_sys_by_ctc, ctc_keys_popped_above, ctc_keys_popped_below = \
+            plots.plots._pop_keys_by_scheme("numeric", self.unified_dict, self.values4sorting_post,
+                                            0.3, .95, True)
+
+        self.assertListEqual(all_ctc_keys, ["0-2", "0-3"])
+        self.assertListEqual(ctc_keys_popped_above, ["0-1"])  # identity_cutoff = .95 drops 0-1
+        self.assertListEqual(ctc_keys_popped_below, ["4-6"])  # lower_cutoff_val = .3 drops 4-6
+
+    def test_pop_keys_by_scheme_keep_remove_identities_and_low(self):
+        all_ctc_keys, freqs_by_sys_by_ctc, ctc_keys_popped_above, ctc_keys_popped_below = \
+            plots.plots._pop_keys_by_scheme("keep", self.unified_dict, self.values4sorting_post,
+                                            0.3, .95, True)
+
+        self.assertListEqual(all_ctc_keys, ["0-2", "0-3"])
+        self.assertListEqual(ctc_keys_popped_above, ["0-1"])  # identity_cutoff = .95 drops 0-1
+        self.assertListEqual(ctc_keys_popped_below, ["4-6"])  # lower_cutoff_val = .3 drops 4-6
 
     def _test_plot_unified_freq_dicts_remove_identities_cutoff(self):
         myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict},

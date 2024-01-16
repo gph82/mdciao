@@ -340,6 +340,63 @@ def _postprocess_values2sort(dicts_values_to_sort, sort_by):
 
     return dicts_values_to_sort, sort_by
 
+def _pop_keys_by_scheme(sort_by, freqs_by_sys_by_ctc, dicts_values_to_sort,
+                        lower_cutoff_val, identity_cutoff, remove_identities):
+    r"""
+
+    Helper method to drop some second-level keys off a dictionary of dictionaries
+
+    The drop is done following different criteria for different sorting schemes.
+
+    The first-level keys are typically system-keys (e.g. WT, MUT) and the second
+    level keys are typically contact labels ("GLU30-ALA50").
+
+    For dropping some keys, either the per-system values for each ctc-key is looked at
+    (dicts_values_to_sort) or the full data (freqs_by_sys_by_ctc) is looked at,
+    this is why both are needed
+    the individual
+
+    It is assumed that dict_values_to_sort has been through:
+    * _freqs2values_to_sort
+    * _postprocess_values2sort
+
+    Parameters
+    ----------
+    dict_values_to_sort
+    freqs_by_sys_by_ctc
+    lower_cutoff_val
+    identity_cutoff
+    remove_identities
+
+    Returns
+    -------
+
+    """
+    all_ctc_keys = list(dicts_values_to_sort["mean"].keys())
+    drop_below = {"std": lambda ctc: dicts_values_to_sort["std"][ctc] <= lower_cutoff_val,
+                  "mean": lambda ctc: all(
+                      [_np.abs(idict[ctc]) <= lower_cutoff_val for idict in freqs_by_sys_by_ctc.values()]),
+                  "list" : lambda ctc: ctc not in dicts_values_to_sort["list"].keys()
+                  }
+    drop_below["keep"] = drop_below["mean"]
+    drop_below["numeric"] = drop_below["mean"]
+
+    drop_above = lambda ctc: all([idict[ctc] >= identity_cutoff for idict in freqs_by_sys_by_ctc.values()]) \
+                             and remove_identities
+    keys_popped_above, ctc_keys_popped_below = [], []
+    for ctc in all_ctc_keys:
+        if drop_below[sort_by](ctc):
+            ctc_keys_popped_below.append(ctc)
+        if drop_above(ctc):
+            keys_popped_above.append(ctc)
+    for ctc in _np.unique(keys_popped_above + ctc_keys_popped_below):
+        [idict.pop(ctc) for idict in freqs_by_sys_by_ctc.values()]
+        all_ctc_keys.remove(ctc)
+
+    return all_ctc_keys, freqs_by_sys_by_ctc, keys_popped_above, ctc_keys_popped_below
+
+
+
 def plot_unified_freq_dicts(freqs,
                             colordict=None,
                             width=.2,
