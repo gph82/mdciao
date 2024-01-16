@@ -246,101 +246,7 @@ def histogram_w_smoothing_auto(data, bins=10, ax=None,
 
     return ax
 
-def _freqs2values_to_sort(freqs_by_sys_by_ctc):
-    r"""
-
-    For a dictionary of dictionaries, perform different operations (mean, std, etc)
-    on the the second-level values for all first level keys. Later, these values
-    will be used to sort and/or drop some second-level keys.
-
-    First level key is typically the system (WT, MUT) and second the contact (GLU30-ALA50).
-
-    The different operations across the contact labels
-    * mean : for each ctc, compute mean across systems
-    * std :  for each ctc, compute std across system
-    * numeric : for each ctc, keep the first integer in the label (e.g. 30 for GLU30)
-        For those labels w/o integers, a ValueError is returned for their key
-    * keep : for each ctc, its position in the first system dictionary.
-
-    Note: This method only produces some values per ctc-label, but these values
-    need some further modification (inversion, shifting) downstream s.t. sorting
-    by descending order can be applied on all "metrics" in the same line.
-
-    Parameters
-    ----------
-    freqs_by_sys_by_ctc : dict
-        Unified dictionary of dictionaries, typically first
-        by system (WT, MUT) and then by contact "GLU30-ALA50"
-
-    Returns
-    -------
-    dicts_values_to_sort :
-        Dictionary of dictionaries, first level is something
-        like "metric" or "logic", e.g. "mean, second level keys
-        are the same as `freqs_by_sys_by_ctc` i.e. ctc-labels
-        typically. These labels are sorted in the same
-        order as in the first, first-level dictionary
-
-    """
-    dicts_values_to_sort = {key : {} for key in _metric_types_for_sorting}
-    system_keys = list(freqs_by_sys_by_ctc.keys())
-    all_ctc_keys = list(freqs_by_sys_by_ctc[system_keys[0]].keys())
-
-    for ii, key in enumerate(all_ctc_keys):
-        dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])#*len(freqs_by_sys_by_ctc) <- will move this trick outside
-
-        dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
-
-        #dicts_values_to_sort["keep"][key] = len(all_ctc_keys)-ii+lower_cutoff_val # trick to keep the same logic <- will move this trick outside
-        dicts_values_to_sort["keep"][key] = ii
-
-        try:
-            dicts_values_to_sort["numeric"][key] = _mdcu.str_and_dict.intblocks_in_str(key)[0]
-        except ValueError as e:
-            dicts_values_to_sort["numeric"][key] = e
-    return dicts_values_to_sort
-
-def _postprocess_values2sort(dicts_values_to_sort, sort_by):
-    r"""
-
-    Helper function to make plot_unified_freq_dicts thinner
-
-    * Checks whether the "sort_by" method is allowed
-    * Checks whether the "numeric" sorting is possible
-    * Implements the sort_by=list sorting, updating the sort_by variable
-    and returning an index for each key
-
-    Parameters
-    ----------
-    dicts_values_to_sort : dictionary of dictionaries
-    sort_by : str or list
-
-
-    Returns
-    -------
-    dicts_values_to_sort
-    sort
-    """
-    all_ctc_keys = list(dicts_values_to_sort["mean"].keys())
-    bad_numeric_keys = [key for key, val in dicts_values_to_sort["numeric"].items() if isinstance(val, ValueError)]
-
-    if isinstance(sort_by, list):
-        _sorted_keys = _key_sorter(sort_by, {key: None for key in all_ctc_keys})
-        dicts_values_to_sort["list"] = {key: [jj for jj, key2 in enumerate(_sorted_keys) if key2 == key][0] for key in
-                                        all_ctc_keys if key in _sorted_keys}
-        sort_by = "list"
-    elif sort_by == "numeric" and len(bad_numeric_keys) > 0:
-        raise ValueError(f"You only can use sort_by='{sort_by}' if all contact labels contain numbers. "
-                         f"The keys '{bad_numeric_keys}' do not contain numbers. Use another 'sort_by' method.")
-
-    else:
-        if sort_by not in _metric_types_for_sorting:
-            raise ValueError(f"The argument 'sort_by' needs to be one of {list(dicts_values_to_sort.keys())[:-1]} "
-                             f"but got sort_by='{sort_by}' instead.")
-
-    return dicts_values_to_sort, sort_by
-
-def _pop_keys_by_scheme(sort_by, freqs_by_sys_by_ctc, dicts_values_to_sort,
+def _pop_keys_by_scheme(sort_by, freqs_by_sys_by_ctc, mean_std_by_ctc,
                         lower_cutoff_val, identity_cutoff, remove_identities):
     r"""
 
@@ -352,49 +258,48 @@ def _pop_keys_by_scheme(sort_by, freqs_by_sys_by_ctc, dicts_values_to_sort,
     level keys are typically contact labels ("GLU30-ALA50").
 
     For dropping some keys, either the per-system values for each ctc-key is looked at
-    (dicts_values_to_sort) or the full data (freqs_by_sys_by_ctc) is looked at,
-    this is why both are needed
-    the individual
-
-    It is assumed that dict_values_to_sort has been through:
-    * _freqs2values_to_sort
-    * _postprocess_values2sort
+    (mean_std_by_ctc) or the full, disaggregated data (freqs_by_sys_by_ctc) is looked at,
+    this is why both variables are needed.
 
     Parameters
     ----------
-    dict_values_to_sort
+    sort_by
     freqs_by_sys_by_ctc
+    mean_std_by_ctc
     lower_cutoff_val
     identity_cutoff
     remove_identities
 
     Returns
     -------
-
+    all_ctc_keys
+    freqs_by_sys_by_ctc
+    keys_popped_above
+    keys_popped_below
     """
-    all_ctc_keys = list(dicts_values_to_sort["mean"].keys())
-    drop_below = {"std": lambda ctc: dicts_values_to_sort["std"][ctc] <= lower_cutoff_val,
+    all_ctc_keys = list(list(freqs_by_sys_by_ctc.values())[0].keys())
+    drop_below = {"std": lambda ctc: mean_std_by_ctc["std"][ctc] <= lower_cutoff_val,
                   "mean": lambda ctc: all(
                       [_np.abs(idict[ctc]) <= lower_cutoff_val for idict in freqs_by_sys_by_ctc.values()]),
-                  "list" : lambda ctc: ctc not in dicts_values_to_sort["list"].keys()
                   }
-    drop_below["keep"] = drop_below["mean"]
+    drop_below["keep"]    = drop_below["mean"]
     drop_below["numeric"] = drop_below["mean"]
+    drop_below["residue"] = drop_below["mean"]
+    drop_below["list"]    = drop_below["mean"]
 
     drop_above = lambda ctc: all([idict[ctc] >= identity_cutoff for idict in freqs_by_sys_by_ctc.values()]) \
                              and remove_identities
-    keys_popped_above, ctc_keys_popped_below = [], []
+    keys_popped_above, keys_popped_below = [], []
     for ctc in all_ctc_keys:
         if drop_below[sort_by](ctc):
-            ctc_keys_popped_below.append(ctc)
+            keys_popped_below.append(ctc)
         if drop_above(ctc):
             keys_popped_above.append(ctc)
-    for ctc in _np.unique(keys_popped_above + ctc_keys_popped_below):
+    for ctc in _np.unique(keys_popped_above + keys_popped_below):
         [idict.pop(ctc) for idict in freqs_by_sys_by_ctc.values()]
         all_ctc_keys.remove(ctc)
 
-    return all_ctc_keys, freqs_by_sys_by_ctc, keys_popped_above, ctc_keys_popped_below
-
+    return all_ctc_keys, freqs_by_sys_by_ctc, keys_popped_above, keys_popped_below
 
 
 def plot_unified_freq_dicts(freqs,
