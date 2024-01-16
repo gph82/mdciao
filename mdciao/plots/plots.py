@@ -44,7 +44,7 @@ from collections import defaultdict as _defdict
 
 import mdtraj as _md
 
-_metric_types_for_sorting = frozenset(["mean", "std", "numeric", "keep"])
+_metric_types_for_sorting = frozenset(["mean", "std", "numeric", "residue", "keep"])
 
 def plot_w_smoothing_auto(y, ax=None, label=None, color=None, x=None, background=True, n_smooth_hw=0, ls="-"):
     r"""
@@ -1719,9 +1719,12 @@ def _key_sorter(sort_by, indict):
     ----------
     sort_by : str or list
         Currently, can be
-        * "residue", i.e. sort the dict
-           by the resSeq of the contact labels
-        * "value", i.e. sort the dict
+        * "residue" or "numeric", i.e. sort the
+          by dict ascending value(s) of the
+          integers present in the labels,
+          typically resSeq of the contact labels
+        * "mean" or "std",
+           i.e. sort the dict ascending,
            by the values of the :obj:`indict`
         * list, i.e. sort the dict
           following this list, i.e.
@@ -1740,10 +1743,14 @@ def _key_sorter(sort_by, indict):
         The list of sorted keys
     """
     all_ctc_keys= list(indict.keys())
-    if isinstance(sort_by, str) and sort_by == "residue":
-        ordered_keys = _mdcu.str_and_dict.lexsort_ctc_labels(all_ctc_keys)[0]
-    elif isinstance(sort_by, str) and sort_by == "mean":
-        ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
+    if isinstance(sort_by, str):
+        if sort_by not in _metric_types_for_sorting:
+            raise ValueError(f"The argument 'sort_by' needs to be one of"
+                             f" {list(_metric_types_for_sorting)} but got sort_by='{sort_by}' instead.")
+        if sort_by in ["residue", "numeric"]:
+            ordered_keys = _mdcu.str_and_dict.lexsort_ctc_labels(all_ctc_keys)[0]
+        if sort_by in ["mean", "std"]:
+            ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
     elif isinstance(sort_by, list):
         assert set(sort_by).intersection(all_ctc_keys), ("The 'sort_by' list '%s' doesn't contain any of the available contact pairs '%s'"%(sort_by, all_ctc_keys))
         ordered_keys = [key for key in sort_by if key in all_ctc_keys]
