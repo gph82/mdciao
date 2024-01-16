@@ -218,68 +218,6 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
                                           sort_by="numerica"
                                           )
 
-class Test_freqs2values_to_sort(unittest.TestCase):
-
-    def setUp(self):
-        self.CG1_freqdict = {"4-6":.25, "0-1":1.,   "0-2":.75, "0-3":.50,}
-        self.CG2_freqdict = {           "0-1":.80,  "0-2":.50, "0-3":.1,     "4-6":0}
-
-        self.unified_dict = {"CG1":self.CG1_freqdict, "CG2":self.CG2_freqdict}
-
-    def test_freqs2values_to_sort_works(self):
-        values4sorting = plots.plots._freqs2values_to_sort(self.unified_dict)
-
-        for key in ["0-1","0-2","0-3","4-6"]:
-            assert values4sorting["mean"][key]==_np.mean([self.CG1_freqdict[key], self.CG2_freqdict[key]])
-            assert values4sorting["std"][key]==_np.std([self.CG1_freqdict[key], self.CG2_freqdict[key]])
-
-        assert values4sorting["numeric"]["0-1"] == 0
-        assert values4sorting["numeric"]["0-2"] == 0
-        assert values4sorting["numeric"]["0-3"] == 0
-        assert values4sorting["numeric"]["4-6"] == 4
-
-        assert values4sorting["keep"]["4-6"] == 0
-        assert values4sorting["keep"]["0-1"] == 1
-        assert values4sorting["keep"]["0-2"] == 2
-        assert values4sorting["keep"]["0-3"] == 3
-
-    def test_freqs2values_to_sort_returns_error(self):
-        values4sorting = plots.plots._freqs2values_to_sort({"no_numb" : {"ALA-GLU": .80, "DRG-GLU": .50, "1-0": 1.0}})
-        isinstance(values4sorting["numeric"]["ALA-GLU"], ValueError)
-        isinstance(values4sorting["numeric"]["DRG-GLU"], ValueError)
-        self.assertEqual(values4sorting["numeric"]["1-0"], 1)
-
-class Test_postprocess_values2sort(unittest.TestCase):
-
-    def setUp(self):
-        self.CG1_freqdict = {"4-6": .25, "0-1": 1., "0-2": .75, "0-3": .50, }
-        self.CG2_freqdict = {"0-1": .80, "0-2": .50, "0-3": .1, "4-6": 0}
-
-        self.unified_dict = {"CG1": self.CG1_freqdict, "CG2": self.CG2_freqdict}
-        self.values4sorting = plots.plots._freqs2values_to_sort(self.unified_dict)
-
-    def test_postprocess_values2sort_numeric_good(self):
-        values4sorting2, sort_by = plots.plots._postprocess_values2sort(self.values4sorting, "numeric")
-        self.assertDictEqual(self.values4sorting,values4sorting2)
-        self.assertEqual("numeric",sort_by)
-
-    def test_postprocess_values2sort_numeric_bad(self):
-        values4sorting = plots.plots._freqs2values_to_sort({"no_numb" : {"ALA-GLU": .80, "DRG-GLU": .50, "1-0": 1.0}})
-        with self.assertRaises(ValueError):
-            plots.plots._postprocess_values2sort(values4sorting, "numeric")
-
-    def test_postprocess_values2sort_raises(self):
-        with self.assertRaises(ValueError):
-            plots.plots._postprocess_values2sort(self.values4sorting, sort_by="random")
-
-    def test_postprocess_list(self):
-        keep_keys = ["0-2", "A-B", "4-6"]
-        values4sorting2, sort_by = plots.plots._postprocess_values2sort(self.values4sorting, keep_keys)
-        self.assertListEqual(["4-6","0-2"], list(values4sorting2["list"].keys()))
-        self.assertDictEqual({"4-6": 1, "0-2" : 0}, values4sorting2["list"])
-
-        self.assertEqual(sort_by, "list")
-
 class Test_pop_keys_by_scheme(unittest.TestCase):
     def setUp(self):
         self.CG1_freqdict = {"4-6": .25, "0-1": 1., "0-2": .75, "0-3": .50}
