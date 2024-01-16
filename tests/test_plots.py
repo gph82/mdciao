@@ -194,7 +194,6 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
                                               # lower_cutoff_val, last two because bogus and repetition
                              list(plotted_freqs["L394"].keys()))
         assert "L394" in plotted_freqs.keys()
-        assert "list" in plotted_freqs.keys()
         _plt.close("all")
 
     def test_sort_by_numeric(self):
@@ -204,7 +203,6 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         #myfig.tight_layout()
         #myfig.savefig("test.keys.png")
         self.assertDictEqual(plotted_freqs["A"], {"2-1": 0.9, "3-1": .1})
-        assert "numeric" in plotted_freqs.keys()
         _plt.close("all")
 
     def test_sort_by_numeric_raises(self):

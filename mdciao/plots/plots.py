@@ -301,6 +301,80 @@ def _pop_keys_by_scheme(sort_by, freqs_by_sys_by_ctc, mean_std_by_ctc,
 
     return all_ctc_keys, freqs_by_sys_by_ctc, keys_popped_above, keys_popped_below
 
+#TODO test
+def _sorting_schemes(freqs_by_sys_by_ctc, sort_by='mean',
+                     lower_cutoff_val=0,
+                     remove_identities=False,
+                     identity_cutoff=1,
+                     ):
+    r"""
+    Sort a dictionary of dictionaries according to different schemes.
+
+    It can also directly drop some keys according to some thresholds.
+
+    Currently private since it might change in the future
+
+    Goal is to make plot_unified_freq_dicts thinner and make use of this everywhere
+
+    Parameters
+    ----------
+    freqs_by_sys_by_ctc
+    sort_by
+    lower_cutoff_val
+    remove_identities
+    identity_cutoff
+
+    Returns
+    -------
+    kept_keys
+    freqs_by_sys_by_ctc
+    keys_popped_above
+    ctc_keys_popped_below
+    mean_std_per_ctc
+
+    """
+
+    system_keys = list(freqs_by_sys_by_ctc.keys())
+    all_ctc_keys = list(freqs_by_sys_by_ctc[system_keys[0]].keys())
+    for sk in system_keys[1:]:
+        assert len(all_ctc_keys) == len(list(freqs_by_sys_by_ctc[sk].keys())), ValueError("This is not a unified dictionary")
+
+    # 0. Compute means and stds for everybody
+    dict_for_sorting = {key: {key : None for key in all_ctc_keys} for key in list(_metric_types_for_sorting)+["list"]}
+    for key in all_ctc_keys:
+        dict_for_sorting["std"][key] = _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])
+        dict_for_sorting["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
+
+    # First, get rid of non-list keys in case sort_by is a list (we do it here instead of its own method)
+    if isinstance(sort_by, list):
+        if not set(sort_by).intersection(all_ctc_keys):
+            raise ValueError(f"The 'sort_by' list '{sort_by}' doesn't contain "
+                             f"any of the available contact pairs '{all_ctc_keys}'")
+        kept_keys = [key for key in sort_by if key in all_ctc_keys] #setops don't conserve order
+        excluded_ctc_keys = [key for key in all_ctc_keys if key not in kept_keys] #setops don't conserve order
+        sort_by = "list"
+    elif sort_by in _metric_types_for_sorting:
+
+        # Then sort, in case sort_by wasn't a list but an actual scheme (has its own method)
+        kept_keys = _sorter_by_key_or_val(sort_by, dict_for_sorting[sort_by])
+        if sort_by in ["mean", "std"]:
+            print("I'm here!!")
+            kept_keys = kept_keys[::-1]
+
+        excluded_ctc_keys = []
+    else:
+        raise ValueError(f"Argument 'sort_by' has to be one of {list(_metric_types_for_sorting)}, but not '{sort_by}'")
+
+    freqs_by_sys_by_ctc = {skey : {key : sval[key] for key in kept_keys} for skey, sval in freqs_by_sys_by_ctc.items()}
+
+    # Finally, get rid of keys too high or too low (has its own method)
+    kept_keys, freqs_by_sys_by_ctc, keys_popped_above, keys_popped_below = \
+        _pop_keys_by_scheme(sort_by, freqs_by_sys_by_ctc, dict_for_sorting,
+                            lower_cutoff_val, identity_cutoff, remove_identities)
+    keys_popped_below+=excluded_ctc_keys
+
+    return kept_keys, freqs_by_sys_by_ctc, keys_popped_above, keys_popped_below, {key : dict_for_sorting[key] for key in ["mean", "std"]}
+
 
 def plot_unified_freq_dicts(freqs,
                             colordict=None,
@@ -465,9 +539,9 @@ def plot_unified_freq_dicts(freqs,
     ax : :obj:`~matplotlib.axes.Axes`
     freqs : dict
         Dictionary of dictionaries with the plotted frequencies
-        in the plotted order. It's keyed with first
+        in the plotted order. It's keyed with
         system-names first and contact-names second, like
-        the input. It has the :obj:`sort_by` strategy
+        the input. It has the `sort_by` strategy
         as an extra key containing the value that resorted
         of that strategy for each contact-name.
 
@@ -482,62 +556,18 @@ def plot_unified_freq_dicts(freqs,
     for sk in system_keys[1:]:
         assert len(all_ctc_keys)==len(list(freqs_by_sys_by_ctc[sk].keys())), "This is not a unified dictionary"
 
-    dicts_values_to_sort = {"mean":{},
-                            "std": {},
-                            "keep":{},
-                            "numeric":{},
-                            "list":{}}
-    for ii, key in enumerate(all_ctc_keys):
-        dicts_values_to_sort["std"][key] =  _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])*len(freqs_by_sys_by_ctc)
-        dicts_values_to_sort["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
-        dicts_values_to_sort["keep"][key] = len(all_ctc_keys)-ii+lower_cutoff_val # trick to keep the same logic
-        try:
-            dicts_values_to_sort["numeric"][key] = _mdcu.str_and_dict.intblocks_in_str(key)[0]
-        except:
-            if sort_by=="numeric":
-                raise ValueError(f"You only can use sort_by='{sort_by}' if all contact labels contain numbers. "
-                                 f"'{key}' does not. Use another 'sort_by' method.")
-    if isinstance(sort_by,list):
-        _sorted_keys = _key_sorter(sort_by,{key : None for key in all_ctc_keys})
-        dicts_values_to_sort["list"]={key : [-jj for jj, key2 in enumerate(_sorted_keys) if key2==key][0] for key in all_ctc_keys if key in _sorted_keys}
-        sort_by = "list"
-        # Pop the keys for higher freqs and lower values, stor
-    else:
-        if sort_by not in list(dicts_values_to_sort.keys())[:-1]:
-            raise ValueError(f"The argument 'sort_by' needs to be one of {list(dicts_values_to_sort.keys())[:-1]} "
-                             f"but got sort_by='{sort_by}' instead.")
-    drop_below = {"std":  lambda ctc: dicts_values_to_sort["std"][ctc] <= lower_cutoff_val,
-                  "mean": lambda ctc: all([idict[ctc] <= lower_cutoff_val for idict in freqs_by_sys_by_ctc.values()]),
-                  }
-    drop_below["keep"]=drop_below["mean"]
-    drop_below["numeric"]=drop_below["mean"]
-    drop_below["list"]=drop_below["mean"]
-    drop_above = lambda ctc : all([idict[ctc]>=identity_cutoff for idict in freqs_by_sys_by_ctc.values()]) \
-                              and remove_identities
-    keys_popped_above, ctc_keys_popped_below = [], []
-    for ctc in all_ctc_keys:
-        if drop_below[sort_by](ctc):
-            ctc_keys_popped_below.append(ctc)
-        if drop_above(ctc):
-            keys_popped_above.append(ctc)
-    for ctc in _np.unique(keys_popped_above+ctc_keys_popped_below):
-        [idict.pop(ctc) for idict in freqs_by_sys_by_ctc.values()]
-        all_ctc_keys.remove(ctc)
+    sorted_ctc_keys, freqs_by_sys_by_ctc, keys_popped_above, ctc_keys_popped_below, mean_std_by_ctc = \
+        _sorting_schemes(freqs_by_sys_by_ctc, sort_by=sort_by,
+                         lower_cutoff_val=lower_cutoff_val,
+                         remove_identities=remove_identities,
+                         identity_cutoff=identity_cutoff)
 
     ylim = _np.max([ylim, _np.ceil(_np.hstack([list(val.values()) for val in freqs_by_sys_by_ctc.values()]).max())])
-    # Prepare the dict that stores the order for plotting
-    # and the values used for that sorting
-    sorted_value_by_ctc_by_sys = {key: val for (key, val) in
-                                  sorted(dicts_values_to_sort[sort_by].items(),
-                                         key=lambda item: item[1],
-                                         reverse={True:False,
-                                                  False:True}[sort_by=="numeric"])
-                                         if key in all_ctc_keys
-                                  }
+
     # Prepare the dict
     if colordict is None:
         colordict = {key:val for key,val in zip(system_keys, _colorstring.split(","))}
-    winners = _color_by_values(all_ctc_keys, freqs_by_sys_by_ctc, colordict,
+    winners = _color_by_values(sorted_ctc_keys, freqs_by_sys_by_ctc, colordict,
                                lower_cutoff_val=lower_cutoff_val, assign_w_color=assign_w_color)
 
     # Prepare the positions of the bars
@@ -545,7 +575,7 @@ def plot_unified_freq_dicts(freqs,
     if ax is None:
         if figsize is None:
             y_figsize=panelheight_inches
-            x_figsize=inch_per_contacts*len(sorted_value_by_ctc_by_sys)
+            x_figsize=inch_per_contacts*len(sorted_ctc_keys)
             figsize = [x_figsize,y_figsize]
         if vertical_plot:
             figsize = figsize[::-1]
@@ -564,11 +594,8 @@ def plot_unified_freq_dicts(freqs,
         two_times="2 x "
 
     for jj, (skey, sfreq) in enumerate(freqs_by_sys_by_ctc.items()):
-        # Sanity check
-        if sort_by != "list":
-            assert len(sfreq) == len(sorted_value_by_ctc_by_sys), "This shouldnt happen"
 
-        bar_array = [sfreq[key] for key in sorted_value_by_ctc_by_sys.keys()]
+        bar_array = [sfreq[key] for key in sorted_ctc_keys]
         x_array = _np.arange(len(bar_array))
 
         # Label
@@ -606,7 +633,7 @@ def plot_unified_freq_dicts(freqs,
             _plt.legend(ncol=_np.ceil(len(system_keys) / legend_rows).astype(int))
 
     if vertical_plot:
-        for ii, key in enumerate(sorted_value_by_ctc_by_sys.keys()):
+        for ii, key in enumerate(sorted_ctc_keys):
             # 1) centered in the middle of the bar, since plt.bar(align="center")
             # 2) displaced by one half width*nbars
             iix = ii \
@@ -625,10 +652,11 @@ def plot_unified_freq_dicts(freqs,
         _plt.gca().invert_yaxis()
 
         if sort_by == "std":
-            _plt.plot(list(sorted_value_by_ctc_by_sys.values()), _np.arange(len(all_ctc_keys)), color='k', alpha=.25, ls=':')
+            _plt.plot([mean_std_by_ctc["std"][key] for key in sorted_ctc_keys],
+                      _np.arange(len(sorted_ctc_keys)), color='k', alpha=.25, ls=':')
 
     else:
-        for ii, key in enumerate(sorted_value_by_ctc_by_sys.keys()):
+        for ii, key in enumerate(sorted_ctc_keys):
             # 1) centered (ha="left") in the middle of the bar, since plt.bar(align="center")
             # 2) slight correction of half-a-fontsize to the left
             # 3) slight correction of one-a-fontsize upwards
@@ -644,7 +672,7 @@ def plot_unified_freq_dicts(freqs,
                       color=winners[key][1]
                       )
             #_plt.gca().axvline(iix) (visual aid)
-        _plt.xticks(_np.arange(len(sorted_value_by_ctc_by_sys)),[])
+        _plt.xticks(_np.arange(len(sorted_ctc_keys)),[])
 
         _plt.xlim(-.5, ii +.5)
         _ax = ax.twiny()
@@ -659,7 +687,7 @@ def plot_unified_freq_dicts(freqs,
         ax.grid(axis="y", ls=":", color="k", zorder=-10)
         ax.set_axisbelow(True)
         if sort_by == "std":
-            _plt.plot(list(sorted_value_by_ctc_by_sys.values()),
+            _plt.plot([mean_std_by_ctc["std"][key] for key in sorted_ctc_keys],
                       color='k', alpha=.25, ls=':')
 
         _plt.ylim(0, ylim)
@@ -667,11 +695,12 @@ def plot_unified_freq_dicts(freqs,
             ax.set_title(_mdcu.str_and_dict.replace4latex(title),
                          pad=_titlepadding_in_points_no_clashes_w_texts(ax)
                          )
-        _add_grey_banded_bg(ax, len(sorted_value_by_ctc_by_sys))
+        _add_grey_banded_bg(ax, len(sorted_ctc_keys))
 
     # Create a by-state dictionary explaining the plot
-    out_dict = {key:{ss: val[ss] for ss in sorted_value_by_ctc_by_sys.keys()} for key, val in freqs_by_sys_by_ctc.items()}
-    out_dict.update({sort_by: {key : _np.round(val,2) for key, val in sorted_value_by_ctc_by_sys.items()}})
+    out_dict = {key:{ss: val[ss] for ss in sorted_ctc_keys} for key, val in freqs_by_sys_by_ctc.items()}
+    for key2 in ["mean", "std"]:
+        out_dict[key2] = {key : _np.round(val) for key, val in mean_std_by_ctc[key2].items()}
 
     _rcParams["font.size"] = _fontsize
     return myfig, _plt.gca(),  out_dict
