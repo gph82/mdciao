@@ -1649,7 +1649,7 @@ def compare_violins(groups,
 
     # Prepare the dict
     colordict = color_dict_guesser(colors, all_sys_keys)
-    sorted_keys = _key_sorter(sort_by, means_per_ctc_across_sys)
+    sorted_keys = _sorter_by_key_or_val(sort_by, means_per_ctc_across_sys)
     key2ii = {key : ii for ii, key in enumerate(sorted_keys)}
     delta, width = _offset_dict(list(_groups.keys()))
 
@@ -1711,17 +1711,17 @@ def compare_violins(groups,
     return myfig, iax, list(key2ii.keys())
 
 
-def _key_sorter(sort_by, indict):
+def _sorter_by_key_or_val(sort_by, indict):
     r"""
     Helper method to sort the keys of a dictionary according to some rules
 
-    The rules might invoke just the keys or just the values of the dict
+    The rules might use just the keys or just the values of the dict
 
     The indict is left unaltered.
 
     Parameters
     ----------
-    sort_by : str or list
+    sort_by : str
         Currently, can be
         * "residue" or "numeric", i.e.
           sort by ascending value(s) of the
@@ -1730,16 +1730,14 @@ def _key_sorter(sort_by, indict):
           Labels lacking any integer values
           will be sorted alphabetically at the end.
         * "mean" or "std"
-           sort the dict ascending,
-           by the values of the :obj:`indict`
-        * list, i.e. sort the dict
-          following this list, i.e.
-          return the intersection
-          of this list with the dict's keys
+          sort the dict ascending,
+          by the values of the `indict`
+        * "keep"
+          keep the order of the keys
     indict : dict
         The dictionary to be
         sorted according to
-        some :obj:`sort_by` criterion.
+        some `sort_by` criterion.
         It's assumed that the keys
         are contact labels with
         "-" as the separator
@@ -1749,7 +1747,8 @@ def _key_sorter(sort_by, indict):
         The list of sorted keys
     """
     all_ctc_keys= list(indict.keys())
-    if isinstance(sort_by, str) and sort_by in ["residue", "numeric"]:
+
+    if sort_by in ["residue", "numeric"]:
         numeric_keys, non_numeric_keys = [], []
         for key in all_ctc_keys:
             try:
@@ -1762,16 +1761,10 @@ def _key_sorter(sort_by, indict):
         # In[5]: natsorted(["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"])
         # Out[5]: ['0-10', '0-20', 'ALA', 'ALA30-GLU40', 'ALA30-GLU50', 'GLU5-ALA20']
         # -> we would want ['0-10', '0-20', 'GLU5-ALA20', 'ALA30-GLU40', 'ALA30-GLU50', 'ALA']
-    elif isinstance(sort_by, str) and sort_by in ["mean", "std"]:
+    elif sort_by in ["mean", "std"]:
         ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
-    elif isinstance(sort_by, str) and sort_by == "keep":
+    elif sort_by == "keep":
         ordered_keys = all_ctc_keys
-    elif isinstance(sort_by, list):
-        assert set(sort_by).intersection(all_ctc_keys), ("The 'sort_by' list '%s' doesn't contain any of the available contact pairs '%s'"%(sort_by, all_ctc_keys))
-        ordered_keys = [key for key in sort_by if key in all_ctc_keys]
-    else:
-        raise ValueError(f"Argument 'sort_by' has to be a list (of contact labels) or one of {list(_metric_types_for_sorting)}, but not '{sort_by}'")
-
     return ordered_keys
 
 def add_tilted_labels_to_patches(ax, labels,

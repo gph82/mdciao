@@ -825,7 +825,7 @@ class Test_offset_dict(unittest.TestCase):
 
         self.assertEqual(width,.2)
 
-class Test_dict_sorter(unittest.TestCase):
+class Test_sorter_by_key_or_val(unittest.TestCase):
 
     def setUp(self):
         self.indict = {'R131-E392': 4.1,
@@ -839,7 +839,7 @@ class Test_dict_sorter(unittest.TestCase):
                        'V222-L393': 6.92}
 
     def test_residue(self):
-        sorted_keys = plots.plots._key_sorter("residue", self.indict)
+        sorted_keys = plots.plots._sorter_by_key_or_val("residue", self.indict)
 
         self.assertListEqual(sorted_keys, [
             'T68-R389',
@@ -854,7 +854,7 @@ class Test_dict_sorter(unittest.TestCase):
         ])
 
     def test_mean(self):
-        sorted_keys = plots.plots._key_sorter("mean", self.indict)
+        sorted_keys = plots.plots._sorter_by_key_or_val("mean", self.indict)
 
         self.assertListEqual(sorted_keys,
                              list({'R131-E392': 4.1,
@@ -868,24 +868,12 @@ class Test_dict_sorter(unittest.TestCase):
                                    'Y141-R389': 8.02,
                                    }.keys()))
 
-    def test_list(self):
-        sorted_keys = plots.plots._key_sorter(["Y141-R389", "bogus1", "R131-E392", "bogus"], self.indict)
-
-        self.assertListEqual(sorted_keys, ["Y141-R389","R131-E392"])
-
-    def test_raises(self):
-        with self.assertRaises(ValueError):
-            plots.plots._key_sorter("bogus", self.indict)
-
     def test_some_non_numeric(self):
-        sorted_keys = plots.plots._key_sorter("numeric",{key : None for key in ["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"]})
+        sorted_keys = plots.plots._sorter_by_key_or_val("numeric", {key : None for key in ["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"]})
         self.assertListEqual(sorted_keys, ['0-10', '0-20', 'GLU5-ALA20', 'ALA30-GLU40', 'ALA30-GLU50', 'ALA'])
-
     def test_keep(self):
-        sorted_keys = plots.plots._key_sorter("keep",{key : None for key in ["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"]})
+        sorted_keys = plots.plots._sorter_by_key_or_val("keep", {key : None for key in ["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"]})
         self.assertListEqual(sorted_keys, ["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"])
-
-
 
 class Test_colormaps(unittest.TestCase):
 
