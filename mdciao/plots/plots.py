@@ -44,6 +44,8 @@ from collections import defaultdict as _defdict
 
 import mdtraj as _md
 
+_metric_types_for_sorting = frozenset(["mean", "std", "numeric", "keep"])
+
 def plot_w_smoothing_auto(y, ax=None, label=None, color=None, x=None, background=True, n_smooth_hw=0, ls="-"):
     r"""
     A wrapper around :obj:`matplotlib.pyplot.plot` that allows
@@ -249,11 +251,11 @@ def _freqs2values_to_sort(freqs_by_sys_by_ctc):
 
     For a dictionary of dictionaries, perform different operations (mean, std, etc)
     on the the second-level values for all first level keys. Later, these values
-    will be used to sort the second-level keys.
+    will be used to sort and/or drop some second-level keys.
 
     First level key is typically the system (WT, MUT) and second the contact (GLU30-ALA50).
 
-    The different operations across all contact lab
+    The different operations across the contact labels
     * mean : for each ctc, compute mean across systems
     * std :  for each ctc, compute std across system
     * numeric : for each ctc, keep the first integer in the label (e.g. 30 for GLU30)
@@ -276,14 +278,11 @@ def _freqs2values_to_sort(freqs_by_sys_by_ctc):
         Dictionary of dictionaries, first level is something
         like "metric" or "logic", e.g. "mean, second level keys
         are the same as `freqs_by_sys_by_ctc` i.e. ctc-labels
-        typically
+        typically. These labels are sorted in the same
+        order as in the first, first-level dictionary
 
     """
-    dicts_values_to_sort = {"mean":{},
-                            "std": {},
-                            "numeric": {},
-                            "keep":{},
-                           }
+    dicts_values_to_sort = {key : {} for key in _metric_types_for_sorting}
     system_keys = list(freqs_by_sys_by_ctc.keys())
     all_ctc_keys = list(freqs_by_sys_by_ctc[system_keys[0]].keys())
 
@@ -335,7 +334,7 @@ def _postprocess_values2sort(dicts_values_to_sort, sort_by):
                          f"The keys '{bad_numeric_keys}' do not contain numbers. Use another 'sort_by' method.")
 
     else:
-        if sort_by not in list(dicts_values_to_sort.keys())[:-1]:
+        if sort_by not in _metric_types_for_sorting:
             raise ValueError(f"The argument 'sort_by' needs to be one of {list(dicts_values_to_sort.keys())[:-1]} "
                              f"but got sort_by='{sort_by}' instead.")
 
