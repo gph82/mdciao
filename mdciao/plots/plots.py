@@ -1715,16 +1715,22 @@ def _key_sorter(sort_by, indict):
     r"""
     Helper method to sort the keys of a dictionary according to some rules
 
+    The rules might invoke just the keys or just the values of the dict
+
+    The indict is left unaltered.
+
     Parameters
     ----------
     sort_by : str or list
         Currently, can be
-        * "residue" or "numeric", i.e. sort the
-          by dict ascending value(s) of the
+        * "residue" or "numeric", i.e.
+          sort by ascending value(s) of the
           integers present in the labels,
-          typically resSeq of the contact labels
-        * "mean" or "std",
-           i.e. sort the dict ascending,
+          typically resSeq of the contact labels.
+          Labels lacking any integer values
+          will be sorted alphabetically at the end.
+        * "mean" or "std"
+           sort the dict ascending,
            by the values of the :obj:`indict`
         * list, i.e. sort the dict
           following this list, i.e.
@@ -1743,19 +1749,28 @@ def _key_sorter(sort_by, indict):
         The list of sorted keys
     """
     all_ctc_keys= list(indict.keys())
-    if isinstance(sort_by, str):
-        if sort_by not in _metric_types_for_sorting:
-            raise ValueError(f"The argument 'sort_by' needs to be one of"
-                             f" {list(_metric_types_for_sorting)} but got sort_by='{sort_by}' instead.")
-        if sort_by in ["residue", "numeric"]:
-            ordered_keys = _mdcu.str_and_dict.lexsort_ctc_labels(all_ctc_keys)[0]
-        if sort_by in ["mean", "std"]:
-            ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
+    if isinstance(sort_by, str) and sort_by in ["residue", "numeric"]:
+        numeric_keys, non_numeric_keys = [], []
+        for key in all_ctc_keys:
+            try:
+                _mdcu.str_and_dict.intblocks_in_str(key)
+                numeric_keys.append(key)
+            except ValueError as e:
+                non_numeric_keys.append(key)
+        ordered_keys = _mdcu.str_and_dict.lexsort_ctc_labels(numeric_keys)[0]+sorted(non_numeric_keys)
+        # we could go with natsorted almost directly but:
+        # In[5]: natsorted(["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"])
+        # Out[5]: ['0-10', '0-20', 'ALA', 'ALA30-GLU40', 'ALA30-GLU50', 'GLU5-ALA20']
+        # -> we would want ['0-10', '0-20', 'GLU5-ALA20', 'ALA30-GLU40', 'ALA30-GLU50', 'ALA']
+    elif isinstance(sort_by, str) and sort_by in ["mean", "std"]:
+        ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
+    elif isinstance(sort_by, str) and sort_by == "keep":
+        ordered_keys = all_ctc_keys
     elif isinstance(sort_by, list):
         assert set(sort_by).intersection(all_ctc_keys), ("The 'sort_by' list '%s' doesn't contain any of the available contact pairs '%s'"%(sort_by, all_ctc_keys))
         ordered_keys = [key for key in sort_by if key in all_ctc_keys]
     else:
-        raise ValueError("Argument 'sort_by' has to be either 'residue', 'mean', or list (contact labels) not '%s'"%sort_by)
+        raise ValueError(f"Argument 'sort_by' has to be a list (of contact labels) or one of {list(_metric_types_for_sorting)}, but not '{sort_by}'")
 
     return ordered_keys
 

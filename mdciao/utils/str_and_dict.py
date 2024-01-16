@@ -506,7 +506,7 @@ def lexsort_ctc_labels(ctc_labels, reverse=False, columns=[0,1], sep="-") -> tup
 
     Parameters
     ----------
-    ctc_labels : list of np.ndarray
+    ctc_labels : list or np.ndarray
         Strings describing the contact
         residues. It can contain also
         fragment information, which

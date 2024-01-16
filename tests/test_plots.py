@@ -877,6 +877,15 @@ class Test_dict_sorter(unittest.TestCase):
         with self.assertRaises(ValueError):
             plots.plots._key_sorter("bogus", self.indict)
 
+    def test_some_non_numeric(self):
+        sorted_keys = plots.plots._key_sorter("numeric",{key : None for key in ["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"]})
+        self.assertListEqual(sorted_keys, ['0-10', '0-20', 'GLU5-ALA20', 'ALA30-GLU40', 'ALA30-GLU50', 'ALA'])
+
+    def test_keep(self):
+        sorted_keys = plots.plots._key_sorter("keep",{key : None for key in ["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"]})
+        self.assertListEqual(sorted_keys, ["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"])
+
+
 
 class Test_colormaps(unittest.TestCase):
 
