@@ -1009,7 +1009,7 @@ def intblocks_in_str(istr):
         intblocks = _cranges([char.isdigit() for char in istr])[True]
         return [int("".join([istr[idx] for idx in block])) for block in intblocks]
     except KeyError as e:
-        raise ValueError(f"{istr} doesn't contain any integers!")
+        raise ValueError(f"'{istr}' doesn't contain any integers!")
 
 def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
     r"""
