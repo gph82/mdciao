@@ -821,7 +821,7 @@ def compare_groups_of_contacts(groups,
         Asks if per_residue=True and
         then sorts the residues into
         interface fragments. Will fail
-        if the passed :obj:`groups`
+        if the passed `groups`
         don't have self.is_interface==True
     kwargs_plot_unified_freq_dicts : dict
         Optional arguments for
@@ -1606,7 +1606,7 @@ def compare_violins(groups,
             vio.set_color(colordict[syskey])
         _plt.plot(_np.nan, _np.nan, "d",color=colordict[syskey],
                   #alpha=vio.get_alpha()*1.5,
-                  label=syskey)
+                  label=_mdcu.str_and_dict.replace4latex(syskey))
         if representatives:
             irep = _np.vstack([val for key, val in repframes_per_sys_per_ctc[syskey].items() if val is not _np.nan and key in key2ii.keys()])
             _plt.plot(positions, irep, "o ",
