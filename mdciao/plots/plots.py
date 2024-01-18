@@ -823,11 +823,16 @@ def compare_groups_of_contacts(groups,
         Instead of plotting contact frequencies,
         plot contact distributions
     interface : bool, default is False
-        Asks if per_residue=True and
-        then sorts the residues into
+        Sorts the residues into
         interface fragments. Will fail
         if the passed `groups`
         don't have self.is_interface==True
+        It enforces a per-residue view,
+        plotting a single bar per residue
+        indicating in how many contacts that
+        residue participates in. See below 'sort_by'
+        for how these residues get sorted
+        within their respective interface fragments.
     kwargs_plot_unified_freq_dicts : dict
         Optional arguments for
         :obj:`~mdciao.plots.plot_unified_freq_dicts`.
@@ -892,17 +897,23 @@ def compare_groups_of_contacts(groups,
                     idict = ifile.frequency_sum_per_residue_names(ctc_cutoff_Ang=ctc_cutoff_Ang,
                                                                   shorten_AAs=[True if AA_format=="short" else False][0],
                                                                   list_by_interface=True)
-                    idict[0].update(idict[1])
-                    idict=idict[0]
-                    kwargs_plot_unified_freq_dicts["sort_by"]="keep"
+
         else:
             idict = {key:val for key, val in ifile.items()}
 
         if mutations_dict is not None:
-            idict = {_mdcu.str_and_dict.replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
+            if interface:
+                idict = [{_mdcu.str_and_dict.replace_w_dict(key, mutations_dict): val for key, val in jdict.items()}
+                         for jdict in idict]
+            else:
+                idict = {_mdcu.str_and_dict.replace_w_dict(key, mutations_dict):val for key, val in idict.items()}
 
         if anchor is not None:
-            idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
+            if interface:
+                res = [_mdcu.str_and_dict.delete_exp_in_keys(jdict, anchor) for jdict in idict]
+                idict, deleted_half_keys = res[0][0], res[0][1], res[1][0] + res[1][1]
+            else:
+                idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys(idict, anchor)
             if len(_np.unique(deleted_half_keys))>1:
                 raise ValueError("The anchor patterns differ by key, this is strange: %s"%deleted_half_keys)
             else:
@@ -928,6 +939,8 @@ def compare_groups_of_contacts(groups,
                                         sharex=True,
                                         figsize=(figsize[0], figsize[1]*nrows))
             for iax, (key, ifreq) in zip(myax, freqs.items()):
+                if interface:
+                    ifreq[0].update(ifreq[1])
                 plot_unified_freq_dicts({key: ifreq},
                                         colordict=colors,
                                         ax=iax, width=width,
@@ -939,10 +952,23 @@ def compare_groups_of_contacts(groups,
                                     ha="right", va="bottom")
 
             myfig.tight_layout()
-            # _plt.show()
-        freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude,
-                                            per_residue=[per_residue if not interface else False][0],
-                                            defrag=defrag)
+
+        if interface:
+            freqs = [_mdcu.str_and_dict.unify_freq_dicts({key : val[ii] for key, val in freqs.items()}, exclude,
+                                                          per_residue=False,
+                                                          defrag=defrag) for ii in [0,1]]
+            by_interface_sorted_keys = [_sorting_schemes(idict, sort_by=kwargs_plot_unified_freq_dicts.get("sort_by", "mean"),
+                                                         remove_identities=False, lower_cutoff_val=0)[0] for idict in freqs]
+            freqs = [{key : {key2 : val[key2] for key2 in by_interface_sorted_keys[ii]} for key, val in ifreq.items()} for ii, ifreq in enumerate(freqs)]
+            kwargs_plot_unified_freq_dicts["sort_by"]="keep"
+
+            for key in freqs[0].keys():
+                freqs[0][key].update(freqs[1][key])
+            freqs = freqs[0]
+        else:
+            freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude,
+                                                per_residue=per_residue,
+                                                defrag=defrag)
         if per_residue or interface:
             kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
             kwargs_plot_unified_freq_dicts["remove_identities"] = False
