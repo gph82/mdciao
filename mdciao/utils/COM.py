@@ -72,3 +72,48 @@ def geom2COMxyz(igeom, residue_idxs=None):
                             for index in residue_idxs]
     COMs_time_res_coords = _np.swapaxes(_np.array(COMs_res_time_coords),0,1)
     return COMs_time_res_coords
+
+def geom2max_residue_radius(geom, residue_idxs=None, res_COMs=None) -> _np.ndarray:
+    r"""
+    Per-residue radius, i.e. the maximum distance between any atom of the residue and the residue's center of mass
+
+    Parameters
+    ----------
+    igeom : :obj:`mdtraj.Trajectory`
+    residue_idxs : iterable of ints, default is None
+        The indices of the residues for which
+        the residue radius will be computed.
+        If None, all residues will be considered.
+        Also, if res_idxs is None, then `res_COM` has to
+        be None as well, else you would be
+        providing res_COMs but no information
+        on what residues they belong to.
+    res_COMs : np.ndarray, default is None
+        The time-traces of the residue COMs.
+        Has to have shape (geom.n_frames, len(residue_idxs).
+        It will be computed on the fly if none is provided.
+
+    Returns
+    -------
+    r : numpy.ndarray
+        Shape (igeom.n_frames, len(residue_idxs))
+
+    """
+    if residue_idxs is None:
+        residue_idxs = _np.arange(geom.n_residues)
+        if res_COMs is not None:
+            raise ValueError("If 'residue_idxs' is None, then 'res_COMs' has to be None as well.")
+
+    if res_COMs is None:
+        res_COMs = geom2COMxyz(geom, residue_idxs=residue_idxs)[:, residue_idxs]
+    else:
+        assert res_COMs.shape[0] == geom.n_frames
+        assert res_COMs.shape[1] == len(residue_idxs)
+    atom_idxs = [[aa.index for aa in geom.top.residue(rr).atoms] for rr in residue_idxs]
+
+    r = [_np.linalg.norm(geom.xyz[:, idxs, :] - res_COMs[:, _np.newaxis, ii], axis=-1).max(axis=1) for ii, idxs in
+         enumerate(atom_idxs)]
+
+    r = _np.vstack(r).T
+
+    return r

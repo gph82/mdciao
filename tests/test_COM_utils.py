@@ -1,3 +1,7 @@
+import tempfile
+
+import numpy as np
+
 from mdciao.utils.COM import *
 import mdtraj as md
 import numpy as _np
@@ -39,6 +43,67 @@ class Test_COM_utils(unittest.TestCase):
                            _np.linalg.norm(self.COMS_mdtraj[:,10]- self.COMS_mdtraj[:,20], axis=1))).T
         COMdist =  geom2COMdist(self.traj_5_frames, residue_pairs=res_pairs)
         _np.testing.assert_allclose(Dref, COMdist)
+
+class Test_geom2max_residue_radius(unittest.TestCase):
+
+    def setUp(self) -> None:
+        pdb = "CRYST1   89.862   89.862  142.612  90.00  90.00  90.00 P 1           1 \n" \
+              "MODEL        0 \n" \
+              "ATOM      1  CA  GLU A  30      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      2  CB  GLU A  30      2.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      3  C   GLU A  30      10.000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      4  CA  VAL A  31      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      5  CB  VAL A  31      0.0000  5.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      6  C   VAL A  31      0.0000  10.000  0.0000  1.00  0.00           C \n" \
+              "ATOM      7  CA  TRP A  32      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      8  CB  TRP A  32      0.0000  0.0000  8.0000  1.00  0.00           C \n" \
+              "ATOM      9  C   TRP A  32      0.0000  0.0000  10.000  1.00  0.00           C \n" \
+              "TER      10      TRP A  32 "
+        with tempfile.NamedTemporaryFile(suffix=".pdb") as tf:
+            with open(tf.name, "w") as f:
+                f.write(pdb)
+            self.geom = md.load(tf.name)
+            self.geom = self.geom.join(self.geom)
+            self.geom._xyz[1,:,:] *= 10
+        # With the above geometry, it's easy to see that the COMs are, for x,y,z respectively
+        # GLU30 (0+2+10)/3 = 4
+        # VAL31 (0+5+10)/3 = 5
+        # TRP31 (0+8+10)/3 = 6
+        # And then the radii are, respectively
+        # GLU30 10 - 4 = 6
+        # VAL31 10 - 5 = 5 or 0 - 5 = 5
+        # TRP31  0 - 6 = -6 in abs 6
+        # Note that we have to multiply x .1 to be back in nm (pdb strg is in Ang)
+        # and that the second frame is the first multiplied by 10
+
+    def test_works(self):
+        rrm = geom2max_residue_radius(self.geom)
+        _np.testing.assert_array_almost_equal(rrm, _np.array([[.6, .5, .6],
+                                                              [6, 5, 6]]))
+
+    def test_w_residxs(self):
+        rrm = geom2max_residue_radius(self.geom, residue_idxs=[1, 2])
+        _np.testing.assert_array_almost_equal(rrm, _np.array([[.5, .6],
+                                                              [5, 6]]))
+
+    def test_w_residxs_and_resCOM(self):
+        rrm = geom2max_residue_radius(self.geom, residue_idxs=[1, 2], res_COMs=_np.array([[[0, .5, 0],
+                                                                                           [0, 0, .6]],
+                                                                                          [[0, 5, 0],
+                                                                                           [0, 0, 6]]
+                                                                                          ]))
+        _np.testing.assert_array_almost_equal(rrm, _np.array([[.5, .6],
+                                                              [5, 6]]))
+
+    def test_raises(self):
+        with self.assertRaises(ValueError):
+            geom2max_residue_radius(self.geom, res_COMs=_np.array([[[0, .5, 0],
+                                                                    [0, 0, .6]],
+                                                                   [[0, 5, 0],
+                                                                    [0, 0, 6]]
+                                                                   ]))
+
+
 
 if __name__ == '__main__':
     unittest.main()
