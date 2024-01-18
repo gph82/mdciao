@@ -455,9 +455,10 @@ def plot_unified_freq_dicts(freqs,
           that appears in the contact labels, e.g. "30" if
           the label is "GLU30@3.50-GDP". You can use this
           to order by resSeq if the AA to sort by is the
-          first one of the pair. Please note, all contact
-          labels need to have at least one number in them,
-          things like "GDP-MG" won't work with sort_by="numeric".
+          first one of the pair. Contact
+          labels without numbers in them will be sorted
+          alphabetically at the end of the labels with numbers.
+         * "residue" alias for "numeric"
         * list of contact-labels : sort in the order established
           by this list. What will actually be plotted is the
           intersection of this list and the available
@@ -468,11 +469,15 @@ def plot_unified_freq_dicts(freqs,
           adding the label to this list won't have any effect.
     lower_cutoff_val : float, default is 0
         Hide contacts with small values. "values" changes
-        meaning depending on :obj:`sort_by`. If :obj:`sort_by` is:
-         * "mean" or "keep" or "numeric", then hide contacts where **all**
-           systems have frequencies lower than this value.
-         * "std", then hide contacts where the standard
-           deviation across systems *itself* is lower than this value.
+        meaning depending on `sort_by`. If `sort_by` is
+        any of
+         * "mean", "keep", "numeric", "residue" or a list,
+           then the contacts where **all**
+           systems have frequencies lower than this value
+           are hidden.
+         * "std", then the contacts where the standard
+           deviation across systems *itself* is 
+           lower than this value are hidden. 
            This hides contacts where all systems are
            similar, regardless of whether they're all
            around 1, around .5 or around 0
