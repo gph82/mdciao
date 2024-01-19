@@ -79,19 +79,20 @@ def geom2max_residue_radius(geom, residue_idxs=None, res_COMs=None) -> _np.ndarr
 
     Parameters
     ----------
-    igeom : :obj:`mdtraj.Trajectory`
+    geom : :obj:`mdtraj.Trajectory`
     residue_idxs : iterable of ints, default is None
         The indices of the residues for which
         the residue radius will be computed.
         If None, all residues will be considered.
-        Also, if res_idxs is None, then `res_COM` has to
+        If `residue_idxs` is None, then `res_COM` has to
         be None as well, else you would be
-        providing res_COMs but no information
+        providing `res_COMs` any information
         on what residues they belong to.
     res_COMs : np.ndarray, default is None
-        The time-traces of the residue COMs.
-        Has to have shape (geom.n_frames, len(residue_idxs).
-        It will be computed on the fly if none is provided.
+        The time-traces of the xyz coordinates of
+        the residue COMs. Has to have
+        shape(geom.n_frames, len(residue_idxs), 3).
+        It will be computed on the fly if None is provided.
 
     Returns
     -------
