@@ -288,7 +288,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     else:
         return actcs, times, aps
 
-@_kwargs_subs(_compute_contacts())
+@_kwargs_subs(_compute_contacts, exclude=["contacts"])
 def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
                  traj_idx,
                  **kwargs_mdcontacts):
