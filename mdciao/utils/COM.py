@@ -27,11 +27,14 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True):
     residue_pairs: iterable of integer pairs
         pairs of residues by their zero-indexed serial indexes
     subtract_max_radii : bool, default is False
-        If True, the maximum radius of each residue
-        in residue pairs (as computed by
-        :obj:`~mdciao.utils.COM.geom2max_residue_radius`.
+        Subtract the sum of maximum radii (as computed by
+        :obj:`~mdciao.utils.COM.geom2max_residue_radius`)
+        of both residues of each residue pair from
+        the residue-residue COM distance, effectively producing
+        a lower bound for the residue-residue mindist.
         Please note that this option can produce negative values,
-        meaning the residue-spheres actually intersect at some point.
+        meaning the (very normal situation) of two residue COMs
+        being closer to each than the sum their max-radii.
     low_mem : bool, default is True
         Try to use less memory by using each residue's
         maximum radius for all frames (instead of a frame-dependent value)
@@ -43,13 +46,14 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True):
 
     Note
     ----
-        In a benchmark case of 6K frames and ~100K `residues_pairs`,
-        with `subtract_max_radii=True`, we kept only those `residue_pairs`
-        with a lower bound smaller than a a given cutoff.
-        As expected, thresholding the residue-mindist values
-        obtained with `low_mem=True` resulted in longer
-        lists of potential contacts (between 20%-30% longer depending
-        on the cutoff), and accordingly longer computation times when calling
+        In a benchmark case of 6K frames and ~100K `residue_pairs`,
+        after using `subtract_max_radii=True`, we checked for `residue_pairs`
+        with a lower-bound for their residue-residue distance
+        smaller than a given cutoff, deeming them potential contacts.
+        As expected, thresholding the values obtained with
+        `low_mem=True` resulted in longer lists of potential
+        contacts (between 20%-30% longer depending on the cutoff),
+        and accordingly longer computation times when calling
         :obj:`mdtraj.compute_contacts` on the kept `residue_pairs`. However,
         those "longer" lists (and times) are not significant at all when expressed as a
         percentage of the initial `residue_pairs`:
