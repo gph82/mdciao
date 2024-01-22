@@ -288,30 +288,30 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
     else:
         return actcs, times, aps
 
+@_kwargs_subs(_compute_contacts())
 def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
                  traj_idx,
                  **kwargs_mdcontacts):
     r"""
-    Wrapper for :obj:`mdtraj.contacts` for strided, chunked computation
-    of contacts
+    Wrapper for :obj:`mdtraj.compute_contacts` for strided, chunked computation of contacts.
 
     Input can be directly :obj:`mdtraj.Trajectory` objects or
-    trajectory files on disk (e.g. xtcs, dcs etc)
+    trajectory files on disk (e.g. xtcs, dcds etc)
 
-    You can fine-tune the computation itself using kwargs_mdcontacts
+    You can fine-tune the computation itself using `kwargs_mdcontacts`
 
     Prints out progress report while working
 
     Parameters
     ----------
-    top: `~mdtraj.Topology`
-    itraj: `~mdtraj.Trajectory` or filename
+    top: :obj:`~mdtraj.Topology`
+    itraj: :obj:`~mdtraj.Trajectory` or filename
     ctc_residxs_pairs: iterable of pairs of residue indices
         Distances to be computed
     chunksize: int
         Size (in frames) of the "chunks" in which the contacts will be computed.
         Decrease the chunksize if you run into memory errors
-    stride:int
+    stride: int
         Stride with which the contacts will be streamed over
     traj_idx: int
         The index of the trajectory being computed. For completeness
@@ -321,8 +321,14 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 
         Note:
         -----
-        If "scheme" is contained in kwargs_mdcontacts and scheme==COM,
-        the center of mass will be computed
+        If "scheme" is contained in `kwargs_mdcontacts` and `scheme==COM`,
+        the distances between residue centers of mass will be computed.
+
+        The optional parameters of are:
+
+    Other Parameters
+    ----------------
+    %(substitute_kwargs)s
 
     Returns
     -------
@@ -336,7 +342,6 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
     iatps: 2D np.ndarray (Nframes, 2*Nctcs)
         atom-indices yielding distances in ictcs, helps dis-aggregate the
         residue interaction into backbone-backbone, backbone-sidechain, or sidechain-sidechain
-
 
     """
     # The creation of lambdas managing the file(xtc,pdb) vs traj case
