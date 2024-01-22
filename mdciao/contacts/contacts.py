@@ -306,8 +306,8 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
     ----------
     top: :obj:`~mdtraj.Topology`
     itraj: :obj:`~mdtraj.Trajectory` or filename
-    ctc_residxs_pairs: iterable of pairs of residue indices
-        Distances to be computed
+    ctc_residxs_pairs : iterable of pairs of residue indices
+        Pairs of residue indices for which lower bounds will be computed
     chunksize: int
         Size (in frames) of the "chunks" in which the contacts will be computed.
         Decrease the chunksize if you run into memory errors
@@ -419,7 +419,7 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         the lower bounds. If `timetrace`, then it has
         shape (itraj.n_frames, len(ctc_residxs_pairs)).
         In case a `ctc_cutoff_Ang` was provided,
-        then its 1D boolean of len(ctc_residxs_pairs).
+        then it's a 1D boolean of len(ctc_residxs_pairs).
     """
 
     iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
