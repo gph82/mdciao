@@ -13,7 +13,7 @@ import mdtraj as _md
 import os.path as _path
 from subprocess import run as _run
 def contact_matrix(trajectories, cutoff_Ang=3,
-                      n_frames_per_traj=20, **mdcontacts_kwargs):
+                   n_frames_per_traj=20, **kwargs_mdcontacts):
     r"""
     Return a matrix with the contact frequency for **all** possible contacts
     over all available frames
@@ -23,7 +23,7 @@ def contact_matrix(trajectories, cutoff_Ang=3,
     n_frames_per_traj: int, default is 20
         Stride the trajectories so that, on average, this number of frames
         is used to compute the contacts
-    mdcontacts_kwargs
+    kwargs_mdcontacts
 
     Returns
     -------
@@ -39,7 +39,7 @@ def contact_matrix(trajectories, cutoff_Ang=3,
     stride=_np.ceil(_np.sum([itraj.n_frames for itraj in trajectories])/n_frames_per_traj).astype(int)
 
     actcs = trajs2ctcs(trajectories, top, ctc_idxs, stride=stride, chunksize=50,
-                       consolidate=True, ignore_nonprotein=False, **mdcontacts_kwargs)
+                       consolidate=True, ignore_nonprotein=False, **kwargs_mdcontacts)
 
     actcs = (actcs <= cutoff_Ang/10).mean(0)
     assert len(actcs)==len(ctc_idxs)
@@ -55,7 +55,7 @@ def contact_matrix(trajectories, cutoff_Ang=3,
     return mat
 
 def contact_matrix_slim(trajectories, cutoff_Ang=3,
-                       **mdcontacts_kwargs):
+                        **kwargs_mdcontacts):
     r"""
     Return a matrix with the contact frequency for **all** possible contacts
     over all available frames
@@ -65,7 +65,7 @@ def contact_matrix_slim(trajectories, cutoff_Ang=3,
     n_frames_per_traj: int, default is 20
         Stride the trajectories so that, on average, this number of frames
         is used to compute the contacts
-    mdcontacts_kwargs
+    kwargs_mdcontacts
 
     Returns
     -------
@@ -79,7 +79,7 @@ def contact_matrix_slim(trajectories, cutoff_Ang=3,
     ctc_idxs = _np.vstack(_np.triu_indices_from(mat, k=0)).T
 
     actcs = trajs2ctcs(trajectories, top, ctc_idxs, stride=stride, chunksize=50,
-                       consolidate=True, ignore_nonprotein=False, **mdcontacts_kwargs)
+                       consolidate=True, ignore_nonprotein=False, **kwargs_mdcontacts)
 
     actcs = (actcs <= cutoff_Ang/10).mean(0)
     assert len(actcs)==len(ctc_idxs)
@@ -124,7 +124,7 @@ def xtcs2ctc_mat_dict(xtcs, top, list_ctc_cutoff_Ang,
                       chunksize=100,
                       n_jobs=1,
                       progressbar=False,
-                      **mdcontacts_kwargs):
+                      **kwargs_mdcontacts):
     """Returns the full contact map of residue-residue contacts from a list of trajectory files
 
     Parameters
@@ -158,7 +158,7 @@ def xtcs2ctc_mat_dict(xtcs, top, list_ctc_cutoff_Ang,
         iterfunct = lambda a : a
 
     ictc_mat_dicts_itimes = _Parallel(n_jobs=n_jobs)(_delayed(per_xtc_ctc_mat_dict)(top, itraj, list_ctc_cutoff_Ang, chunksize, stride, ii, res_COM_cutoff_Ang,
-                                                                               **mdcontacts_kwargs)
+                                                                                    **kwargs_mdcontacts)
                                             for ii, itraj in enumerate(iterfunct(xtcs)))
 
     ctc_maps = {key:[] for key in list_ctc_cutoff_Ang}
@@ -181,7 +181,7 @@ def xtcs2ctc_mat_dict(xtcs, top, list_ctc_cutoff_Ang,
 
 def per_xtc_ctc_mat_dict(top, itraj, list_ctc_cutoff_Ang, chunksize, stride,
                          traj_idx, res_COM_cutoff_Ang,
-                         **mdcontacts_kwargs):
+                         **kwargs_mdcontacts):
 
     from .actor_utils import igeom2mindist_COMdist_truncation
     iterate, inform = iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
@@ -198,7 +198,7 @@ def per_xtc_ctc_mat_dict(top, itraj, list_ctc_cutoff_Ang, chunksize, stride,
         ctcs_mins, ctc_residxs_pairs, COMs_under_cutoff_pair_idxs  = igeom2mindist_COMdist_truncation(igeom,
                                                                                                       res_COM_cutoff_Ang,
                                                                                                       CA_switch=True)
-        jctcs, jidx_pairs, j_atompairs = compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
+        jctcs, jidx_pairs, j_atompairs = compute_contacts(igeom, ctc_residxs_pairs, **kwargs_mdcontacts)
         # TODO do proper list comparison and do it only once
         assert len(jidx_pairs) == len(ctc_residxs_pairs)
         for icoff in list_ctc_cutoff_Ang:

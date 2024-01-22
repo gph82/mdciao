@@ -217,7 +217,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
                chunksize=1000, return_times_and_atoms=False,
                n_jobs=1,
                progressbar=False,
-               **mdcontacts_kwargs):
+               **kwargs_mdcontacts):
     """Time-traces of residue-residue distances from
     a list of trajectories
 
@@ -266,7 +266,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         iterfunct = lambda a : a
     assert isinstance(trajs,list) #otherwise we will iterate through the frames of a single traj
     ictcs_itimes_iaps = _Parallel(n_jobs=n_jobs)(_delayed(per_traj_ctc)(top, itraj, ctc_residxs_pairs, chunksize, stride, ii,
-                                                                        **mdcontacts_kwargs)
+                                                                        **kwargs_mdcontacts)
                                             for ii, itraj in enumerate(iterfunct(trajs)))
     ctcs = []
     times = []
@@ -290,7 +290,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 
 def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
                  traj_idx,
-                 **mdcontacts_kwargs):
+                 **kwargs_mdcontacts):
     r"""
     Wrapper for :obj:`mdtraj.contacts` for strided, chunked computation
     of contacts
@@ -298,7 +298,7 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
     Input can be directly :obj:`mdtraj.Trajectory` objects or
     trajectory files on disk (e.g. xtcs, dcs etc)
 
-    You can fine-tune the computation itself using mdcontacts_kwargs
+    You can fine-tune the computation itself using kwargs_mdcontacts
 
     Prints out progress report while working
 
@@ -316,12 +316,12 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
     traj_idx: int
         The index of the trajectory being computed. For completeness
         of the progress report
-    mdcontacts_kwargs:
+    kwargs_mdcontacts:
         Optional keyword arguments to pass to :obj:`mdtraj.contacts`
 
         Note:
         -----
-        If "scheme" is contained in mdcontacts_kwargs and scheme==COM,
+        If "scheme" is contained in kwargs_mdcontacts and scheme==COM,
         the center of mass will be computed
 
     Returns
@@ -350,11 +350,11 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
         inform(itraj, traj_idx, jj, running_f)
         itime.append(igeom.time)
             #TODO make lambda out of this if
-        if 'scheme' in mdcontacts_kwargs.keys() and mdcontacts_kwargs["scheme"].upper()=='COM':
+        if 'scheme' in kwargs_mdcontacts.keys() and kwargs_mdcontacts["scheme"].upper()== 'COM':
             jctcs = _mdcu.COM.geom2COMdist(igeom, ctc_residxs_pairs)
             j_atompairs = _np.full((len(jctcs), 2*len(ctc_residxs_pairs)),_np.nan)
         else:
-            jctcs, jidx_pairs, j_atompairs = _compute_contacts(igeom, ctc_residxs_pairs, **mdcontacts_kwargs)
+            jctcs, jidx_pairs, j_atompairs = _compute_contacts(igeom, ctc_residxs_pairs, **kwargs_mdcontacts)
             # TODO do proper list comparison and do it only once
             assert len(jidx_pairs) == len(ctc_residxs_pairs)
 
