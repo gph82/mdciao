@@ -36,7 +36,7 @@ from mdciao.utils.residue_and_atom import residues_from_descriptors
 
 from matplotlib import pyplot as _plt
 
-from tempfile import TemporaryDirectory as _TDir, TemporaryFile as _TFil
+from tempfile import TemporaryDirectory as _TDir, NamedTemporaryFile as _NamedTfile, TemporaryFile as _TFil
 
 import mdciao.utils.COM as mdcCOM
 
@@ -154,6 +154,81 @@ class Test_trajs2ctcs(TestBaseClassContacts):
 
     def test_one_traj_one_frame_pdb_just_runs(self):
         contacts.trajs2ctcs([self.pdb_file], self.top, self.ctc_idxs)
+
+
+class Test_per_traj_mindist_lower_bound(unittest.TestCase):
+
+    # We're repeating the same tests as Test_geom2max_residue_radius wrapped
+    # wrapped in the functionality of per_traj_mindist_lower_bound
+    def setUp(self) -> None:
+        pdb = "CRYST1   89.862   89.862  142.612  90.00  90.00  90.00 P 1           1 \n" \
+              "MODEL        0 \n" \
+              "ATOM      1  CA  GLU A  30      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      2  CB  GLU A  30      2.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      3  C   GLU A  30      10.000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      4  CA  VAL A  31      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      5  CB  VAL A  31      0.0000  5.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      6  C   VAL A  31      0.0000  10.000  0.0000  1.00  0.00           C \n" \
+              "ATOM      7  CA  TRP A  32      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      8  CB  TRP A  32      0.0000  0.0000  8.0000  1.00  0.00           C \n" \
+              "ATOM      9  C   TRP A  32      0.0000  0.0000  10.000  1.00  0.00           C \n" \
+              "TER      10      TRP A  32 "
+        with _NamedTfile(suffix=".pdb") as tf:
+            with open(tf.name, "w") as f:
+                f.write(pdb)
+            self.geom = md.load(tf.name)
+            self.geom = self.geom.join(self.geom)
+            self.geom._xyz[1, :, :] *= 10
+            self.geom.save("test.pdb")
+
+        # With the above geometry, it's easy to see that the COMs are, for x,y,z respectively
+        # GLU30 (0+2+10)/3 = 4
+        # VAL31 (0+5+10)/3 = 5
+        # TRP31 (0+8+10)/3 = 6
+        # And then the radii are, respectively
+        # GLU30 10 - 4 = 6
+        # VAL31 10 - 5 = 5 or 0 - 5 = 5
+        # TRP31  0 - 6 = -6 in abs 6
+        # Note that we have to multiply x .1 to be back in nm (pdb strg is in Ang)
+        # and that the second frame is the first multiplied by 10
+
+        # Check Test_geom2max_residue_radius on why these values
+        self.COMs = _np.array([[[0.4, 0., 0., ],
+                                [0., 0.5, 0.],
+                                [0., 0., 0.6]],
+                               [[4., 0., 0.],
+                                [0., 5., 0.],
+                                [0., 0., 6.]]])
+        self.maxRr = _np.array([6., 5., 6.])
+        self.COMd = _np.array([[0.64031242, 0.72111026, 0.78102497],
+                               [6.40312424, 7.21110255, 7.81024968]])
+        self.sum_maxR = _np.array([[6+5],[6+6],[5+6]]).squeeze()
+        self.lower_bound_t = self.COMd - self.sum_maxR
+        #print()
+        #print(self.lower_bound_t.round(2))
+    def test_works(self):
+        lower_bounds = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0,1],[0,2],[1,2]], 1000, 1, 0)
+        _np.testing.assert_array_almost_equal(lower_bounds, self.lower_bound_t.min(axis=0))
+
+    def test_works_timetrace(self):
+        lower_bounds_t = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0, 1], [0, 2], [1, 2]],
+                                                               1000, 1, 0,
+                                                               timetrace=True)
+
+        _np.testing.assert_array_almost_equal(lower_bounds_t, self.lower_bound_t)
+
+    def test_works_timetrace_ctc_cutoff_Ang(self):
+        lower_bounds_t_bool = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0, 1], [0, 2], [1, 2]],
+                                                               1000, 1, 0,
+                                                               timetrace=True,
+                                                               ctc_cutoff_Ang=-110 #it's weird it's negative but it's okay for tests
+                                                               )
+        # We can evaluate the expressions above to these numbers
+        ref_lower_bounds_t = _np.array([[-10.36 - 11.28 - 10.22],
+                                        [-4.6 - 4.79 - 3.19]]
+                                       )
+        _np.testing.assert_array_almost_equal(lower_bounds_t_bool, [1])
+
 
 
 class BaseClassForTestingAttributes(unittest.TestCase):

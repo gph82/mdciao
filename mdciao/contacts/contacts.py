@@ -372,6 +372,81 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 
     return ictcs, itime, iatps
 
+def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, stride,
+                                 traj_idx, timetrace=False,
+                                 ctc_cutoff_Ang=None,
+                                 verbose=True):
+    r"""
+    Strided, chunked computation of lower bounds for all-atom residue-residue distances.
+
+    Wraps around :obj:`mdciao.utils.COM.geom2COMdist` with the
+    option `low_mem=True`, which produces slightly lower lower-bounds.
+    See the documentation and benchmark info on the docstring of
+    that method.
+
+    Parameters
+    ----------
+    top : :obj:`~mdtraj.Topology`
+    itraj : :obj:`~mdtraj.Trajectory` or filename
+    ctc_residxs_pairs : iterable of pairs of residue indices
+        Pairs of residue indices for which lower bounds will be computed
+    chunksize : int
+        Size (in frames) of the "chunks" in which the contacts will be computed.
+        Decrease the chunksize if you run into memory errors
+    stride : int
+        Stride with which the contacts will be streamed over
+    traj_idx : int
+        The index of the trajectory being computed. For completeness
+        of the progress report
+    timetrace : bool, default is False
+        Instead of returning a single value for the lower bound
+        for each all-atom residue-residue distance for the all pairs
+        in `ctc_residxs_pairs`, return the full time-trace
+        of lower bounds for all pairs.
+    ctc_cutoff_Ang : float, default is None
+        When provided, instead of returning lower bound for each
+        all-atom residue-residue distance value,
+        apply a distance cutoff and return the
+        indices of the pairs of `ctc_residxs_pairs`
+        where the lower bound is smaller or equal.
+    verbose : float, default is True
+        Print progress information. If False,
+        nothing is printed.
+    Returns
+    -------
+    lower_bound : np.ndarray, 1D or 2D
+        1D np.ndarray of len(ctc_residxs_pairs) with
+        the lower bounds. If `timetrace`, then it has
+        shape (itraj.n_frames, len(ctc_residxs_pairs)).
+        In case a `ctc_cutoff_Ang` was provided,
+        then its 1D boolean of len(ctc_residxs_pairs).
+    """
+
+    iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
+    running_f = 0
+    if inform:
+        inform(itraj, traj_idx, 0, running_f)
+    lower_bound = []
+    for jj, igeom in enumerate(iterate(itraj)):
+        running_f += igeom.n_frames
+        if verbose:
+            inform(itraj, traj_idx, jj, running_f)
+        chunk_res = _mdcu.COM.geom2COMdist(igeom, ctc_residxs_pairs, subtract_max_radii=True,low_mem=True)
+        if ctc_cutoff_Ang is not None:
+            lower_bound.append(_np.flatnonzero(chunk_res.min(axis=0)<=(ctc_cutoff_Ang/10)))
+        else:
+            if timetrace:
+                lower_bound.append(chunk_res)
+            else:
+                lower_bound.append(chunk_res.min(axis=0))
+
+    if ctc_cutoff_Ang is not None:
+        lower_bound = _np.unique(_np.hstack(lower_bound))
+    else:
+        lower_bound = _np.vstack(lower_bound).squeeze()
+
+    return  lower_bound
+
 class _TimeTraces(object):
 
     def __init__(self, ctc_trajs,
