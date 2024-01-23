@@ -408,10 +408,12 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         all-atom residue-residue distance value,
         apply a distance cutoff and return the
         indices of the pairs of `ctc_residxs_pairs`
-        where the lower bound is smaller or equal.
+        where the lower bound is smaller or equal
+        than the cutoff at any point in `itraj`
     verbose : float, default is True
         Print progress information. If False,
         nothing is printed.
+
     Returns
     -------
     lower_bound : np.ndarray, 1D or 2D
@@ -419,7 +421,10 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         the lower bounds. If `timetrace`, then it has
         shape (itraj.n_frames, len(ctc_residxs_pairs)).
         In case a `ctc_cutoff_Ang` was provided,
-        then it's a 1D boolean of len(ctc_residxs_pairs).
+        then it's a 1D array with the indices of
+        `ctc_residxs_pairs` for which the lower bound
+        was found to be lower or equal than the cutoff
+        at any point of `itraj`.
     """
 
     iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
