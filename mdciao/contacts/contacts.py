@@ -374,7 +374,7 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 
 def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, stride,
                                  traj_idx, timetrace=False,
-                                 ctc_cutoff_Ang=None,
+                                 lb_cutoff_Ang=None,
                                  verbose=True):
     r"""
     Strided, chunked computation of lower bounds for all-atom residue-residue distances.
@@ -403,7 +403,7 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         for each all-atom residue-residue distance for the all pairs
         in `ctc_residxs_pairs`, return the full time-trace
         of lower bounds for all pairs.
-    ctc_cutoff_Ang : float, default is None
+    lb_cutoff_Ang : float, default is None
         When provided, instead of returning lower bound for each
         all-atom residue-residue distance value,
         apply a distance cutoff and return the
@@ -420,7 +420,7 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         1D np.ndarray of len(ctc_residxs_pairs) with
         the lower bounds. If `timetrace`, then it has
         shape (itraj.n_frames, len(ctc_residxs_pairs)).
-        In case a `ctc_cutoff_Ang` was provided,
+        In case a `lb_cutoff_Ang` was provided,
         then it's a 1D array with the indices of
         `ctc_residxs_pairs` for which the lower bound
         was found to be lower or equal than the cutoff
@@ -437,15 +437,15 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         if verbose:
             inform(itraj, traj_idx, jj, running_f)
         chunk_res = _mdcu.COM.geom2COMdist(igeom, ctc_residxs_pairs, subtract_max_radii=True,low_mem=True)
-        if ctc_cutoff_Ang is not None:
-            lower_bound.append(_np.flatnonzero(chunk_res.min(axis=0)<=(ctc_cutoff_Ang/10)))
+        if lb_cutoff_Ang is not None:
+            lower_bound.append(_np.flatnonzero(chunk_res.min(axis=0) <= (lb_cutoff_Ang / 10)))
         else:
             if timetrace:
                 lower_bound.append(chunk_res)
             else:
                 lower_bound.append(chunk_res.min(axis=0))
 
-    if ctc_cutoff_Ang is not None:
+    if lb_cutoff_Ang is not None:
         lower_bound = _np.unique(_np.hstack(lower_bound))
     else:
         lower_bound = _np.vstack(lower_bound).squeeze()

@@ -217,12 +217,12 @@ class Test_per_traj_mindist_lower_bound(unittest.TestCase):
 
         _np.testing.assert_array_almost_equal(lower_bounds_t, self.lower_bound_t)
 
-    def test_works_timetrace_ctc_cutoff_Ang(self):
+    def test_works_timetrace_lb_cutoff_Ang(self):
         lower_bounds_t_bool = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0, 1], [0, 2], [1, 2]],
-                                                               1000, 1, 0,
-                                                               timetrace=True,
-                                                               ctc_cutoff_Ang=-110 #it's weird it's negative but it's okay for tests
-                                                               )
+                                                                    1000, 1, 0,
+                                                                    timetrace=True,
+                                                                    lb_cutoff_Ang=-110  #it's weird it's negative but it's okay for tests
+                                                                    )
         # We can evaluate the expressions above to these numbers
         ref_lower_bounds_t = _np.array([[-10.36 - 11.28 - 10.22],
                                         [-4.6 - 4.79 - 3.19]]
