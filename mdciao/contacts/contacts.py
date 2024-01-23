@@ -228,7 +228,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         with the path to a file or an
         :obj:`~mdtraj.Trajectory` object.
     top : str or :py:class:`mdtraj.Topology`
-        Topology that matches :obj:xtcs
+        Topology that matches `trajs`.
     ctc_residxs_pairs : iterable
         List of (zero-indexed) residue pairs
     stride : int, default is 1
@@ -451,6 +451,100 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         lower_bound = _np.vstack(lower_bound).squeeze()
 
     return  lower_bound
+
+
+@_kwargs_subs(per_traj_mindist_lower_bound)
+def trajs2lower_bounds(trajs, top, ctc_residxs_pairs, stride=1,
+                       chunksize=1000, n_jobs=1, progressbar=False,
+                       low_mem_chunkfactor=.25,
+                       **kwargs_per_traj_mindist_lower_bound
+                       ):
+    """Return a lower bound for all-atom residue-residue distances
+    for each pair in `ctc_residxs_pairs`, for all trajectories in `trajs`.
+
+    Wraps around :obj:`mdciao.contacts.per_traj_mindist_lower_bound` which
+    uses :obj:`mdciao.utils.COM.geom2COMdist` with the options
+    `subtract_max_radii=True` and `low_mem=True`. Read more
+    there about how the lower bound is computed
+
+    Parameters
+    ----------
+    trajs : list
+        list of trajectories. Each item can be a str
+        with the path to a file or an
+        :obj:`~mdtraj.Trajectory` object.
+    top : str or :obj:`mdtraj.Topology`
+        Topology that matches `trajs`
+    ctc_residxs_pairs : iterable
+        List of (zero-indexed) residue pairs
+    stride : int, default is 1
+        Stride the trajectory data down by this value
+    chunksize : integer, default is 1000
+        How many frames will be read into memory for
+        computation of the contact time-traces. The higher the number,
+        the higher the memory requirements
+    n_jobs : int, default is 1
+        To how many processors to parallellize. The algorithm parallelizes
+        over the trajectories themselves, having 3 trajs and n_jobs=4
+        is equal to n_jobs=3
+    progressbar : bool, default is False
+        Use a fancy :obj:`tqdm.tqdm` progressbar
+    low_mem_chunkfactor : float, default is .25
+        In case a a first run raises a :obj:`MemoryError`,
+        catch it and try a second time with
+        the `chunksize` reduced by this factor. Not
+        guaranteed to work but might save ongoing
+        computations without much hassle.
+    kwargs_per_traj_mindist_lower_bound : dict
+        Optional arguments for
+        :obj:`~mdciao.contacts.per_traj_mindist_lower_bound`.
+        Please see the returned-value docstring on how
+        these optional parameters influence it.
+        The optional parameters of are:
+
+    Other Parameters
+    ----------------
+    %(substitute_kwargs)s
+
+
+    Returns
+    -------
+    lower_bounds_per_traj : list
+        A list of the per-traj lower bounds on
+        the all-atom residue-residue distances.
+        If `timetrace` is used each item of
+        the list is a time-dependent lower bound
+        per each residue pair of `ctc_residxs_pairs`.
+        If a `lb_cuoff_Ang` cutoff was provided,
+        the list is a per-trajectory list
+        of indices of `ctc_residxs_pairs`
+        in which the lower bound is equal or
+        smaller than the cutoff in that trajectory,
+        regardless of the value of `timetrace`.
+    """
+
+    if progressbar:
+        iterfunct = lambda a: _tqdm(a)
+    else:
+        iterfunct = lambda a: a
+    assert isinstance(trajs, list)  # otherwise we will iterate through the frames of a single traj
+    try:
+        lower_bounds_per_traj = _Parallel(n_jobs=n_jobs)(
+            _delayed(per_traj_mindist_lower_bound)(top, itraj, ctc_residxs_pairs, chunksize, stride, ii,
+                                                   **kwargs_per_traj_mindist_lower_bound)
+            for ii, itraj in enumerate(iterfunct(trajs)))
+    except MemoryError:
+        print("low memory variant")
+        lower_bounds_per_traj = _Parallel(n_jobs=n_jobs)(
+            _delayed(per_traj_mindist_lower_bound)(top, itraj, ctc_residxs_pairs, int(chunksize * low_mem_chunkfactor), stride, ii,
+                                                   **kwargs_per_traj_mindist_lower_bound)
+            for ii, itraj in enumerate(iterfunct(trajs)))
+    # assert all([_np.squeeze(lb.shape)==len(ctc_residxs_pairs) for lb in lower_bounds_per_traj]), (len(ctc_residxs_pairs), [lb.shape for lb in lower_bounds_per_traj])
+    # lower_bounds_per_traj = _np.vstack(lower_bounds_per_traj).min(axis=0)
+
+    return lower_bounds_per_traj
+
+    #return _np.unique(_np.hstack(lower_bounds_per_traj))
 
 class _TimeTraces(object):
 

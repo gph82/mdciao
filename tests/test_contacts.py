@@ -229,6 +229,31 @@ class Test_per_traj_mindist_lower_bound(unittest.TestCase):
                                        )
         _np.testing.assert_array_almost_equal(lower_bounds_t_bool, [1])
 
+    # Since trajs2lower_bounds is mainly a wrapper on per_traj_mindist_lower_bound
+    #  i'd rather test it here than have its own class
+    def test_trajs2lower_bounds(self):
+        list_of_lbs = contacts.trajs2lower_bounds([self.geom, self.geom[::-1]],
+                                                  self.geom.top, [[0, 1], [0, 2], [1, 2]],
+                                                  verbose=False)
+
+        _np.testing.assert_array_almost_equal(self.lower_bound_t.min(axis=0), list_of_lbs[0])
+        _np.testing.assert_array_almost_equal(self.lower_bound_t.min(axis=0), list_of_lbs[1])
+
+    def test_trajs2lower_bounds_timetrace(self):
+        list_of_lbs = contacts.trajs2lower_bounds([self.geom, self.geom[::-1]],
+                                                  self.geom.top, [[0, 1], [0, 2], [1, 2]],
+                                                  verbose=False, timetrace=True)
+
+        _np.testing.assert_array_almost_equal(self.lower_bound_t, list_of_lbs[0])
+        _np.testing.assert_array_almost_equal(self.lower_bound_t[::-1], list_of_lbs[1])
+
+    def test_trajs2lower_bounds_cutoff(self):
+        list_of_lbs = contacts.trajs2lower_bounds([self.geom, self.geom[::-1]],
+                                                  self.geom.top, [[0, 1], [0, 2], [1, 2]],
+                                                  verbose=False, lb_cutoff_Ang=-103) #it's weird it's negative but it's okay for tests
+
+        _np.testing.assert_array_almost_equal([0,1], list_of_lbs[0])
+        _np.testing.assert_array_almost_equal([0,1], list_of_lbs[1])
 
 
 class BaseClassForTestingAttributes(unittest.TestCase):
