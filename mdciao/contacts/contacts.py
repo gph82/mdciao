@@ -429,7 +429,7 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
 
     iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
     running_f = 0
-    if inform:
+    if verbose:
         inform(itraj, traj_idx, 0, running_f)
     lower_bound = []
     for jj, igeom in enumerate(iterate(itraj)):
