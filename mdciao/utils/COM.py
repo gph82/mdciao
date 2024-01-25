@@ -143,7 +143,6 @@ def geom2COMxyz(igeom, residue_idxs=None):
 
     """
 
-    #TODO check the behaviour of COMs always having the same shape
     if residue_idxs is None:
         residue_idxs=_np.arange(igeom.top.n_residues)
     masses = [_np.hstack([aa.element.mass for aa in rr.atoms]) for rr in
