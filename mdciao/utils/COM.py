@@ -17,7 +17,7 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True, pe
 
     The option `subtract_max_radii` can be used to produce a time-dependent lower bound
     on the distance between any atoms of each residue pair, i.e. a lower bound
-    on the pairwise-residue "mindist". This lower bound can be used by to discard
+    on the pairwise-residue "mindist". This lower bound can be used to discard
     any contact between some pairs residues in any frame of `geom`
     without having to compute all pairwise atom distances between the `residue_pairs`.
 
