@@ -124,8 +124,19 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True):
 
 def geom2COMxyz(igeom, residue_idxs=None):
     r"""
-    Returns the time trace of per-residue
-    center-of-masses (COMs) in cartesian coordinates
+    Returns the time-trace of per-residue center-of-masses (COMs)
+
+    Warning
+    -------
+    In cases where molecules are not "whole", some residues might be
+    split across the periodic boundaries, i.e. while all atoms are
+    within the periodic unit cell, a split-residue's fragments are scattered
+    in different places inside the cell. Then, the COM might
+    fall between these fragments, far away from any
+    of the residues atoms. In that case, the COM is meaningless.
+    Checking for split residues (any intra-residue atom-atom distance
+    larger than half the box size would be an indication)
+    would make the computation too slow.
 
     Parameters
     ----------
