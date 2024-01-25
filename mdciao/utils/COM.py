@@ -11,7 +11,7 @@ import numpy as _np
 from scipy.spatial.distance import pdist as _pdist
 
 
-def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True):
+def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True, periodic=False):
     r"""
     Returns the distances between pairs of residues' center-of-mass (COM)
 
@@ -59,16 +59,16 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True):
         percentage of the initial `residue_pairs`:
 
         * Using a cutoff of 1 Angstrom when thresholding the mindist
-          values obtained with `low_mem=False` discarded 99.5% of the original `residue_pairs`,
-          whereas using the `low_mem=True` values meant discarding "only" 99.3%.
+          values obtained with `low_mem=False` discarded 99.46% of the original `residue_pairs`,
+          whereas using the `low_mem=True` values meant discarding "only" 99.29%.
         * Using a cutoff of 6 Angstrom when thresholding the mindist
           values obtained with `low_mem=False` discarded 98.3% of the original `residue_pairs`,
           whereas using the `low_mem=True` values meant discarding "only" 98%.
 
         So there is still a huge reduction in the number of potential contact-pairs
-        when thresholding, from ca 100K residue pairs to to between 500 and 2K.
-        For this benchmark system, `low_mem=True` used
-        ~20GBs of memory and `low_mem=False` used ~25GB. There's a table included
+        when thresholding, from ca 100K residue pairs to between 500 and 2K.
+        For this benchmark system, `low_mem=True` used ~10GBs of memory
+        and `low_mem=False` used ~15GB. There's a table included
         as a comment in the source code of the method showing the benchmark numbers.
 
     Returns
@@ -85,18 +85,29 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True):
     n_unique_residues = len(residue_idxs_unique)
     pair_map = pair_map.reshape(len(residue_pairs),2)
 
-    COMs_xyz = geom2COMxyz(geom, residue_idxs=residue_idxs_unique)[:, residue_idxs_unique]
-
-    # Only do pdist of the needed residues
-    COMs_dist_triu = _np.array([_pdist(ixyz) for ixyz in COMs_xyz])
-
     # From the _pdist doc
     # The metric dist(u=X[i], v=X[j]) is computed and stored in entry m * i + j - ((i + 2) * (i + 1)) // 2.
     _pdist_ravel = lambda i, j : n_unique_residues * i + j - ((i + 2) * (i + 1)) // 2
     _pdist_idxs = _pdist_ravel(pair_map[:,0], pair_map[:,1])
 
-    # Grab only the _pdist_idxs
-    COM_dists_t = COMs_dist_triu[:,_pdist_idxs]
+    COMs_xyz = geom2COMxyz(geom, residue_idxs=residue_idxs_unique)[:, residue_idxs_unique]
+
+    # Only do pdist of the needed residues
+    if not periodic:
+        # Grab only the _pdist_idxs
+        COM_dists_t =  _np.array([_pdist(ixyz)[_pdist_idxs] for ixyz in COMs_xyz])
+    else:
+        sum_over_comps2 = None
+        for ii in range(3):
+            comp_dist = _np.array([_pdist(_np.array(ixyz,ndmin=2).T)[_pdist_idxs] for ixyz in COMs_xyz[:,:,ii]])
+            comp_len = _np.vstack([geom.unitcell_lengths[:,ii] for __ in range(comp_dist.shape[1])]).T
+            bool_mask = (comp_dist > (geom.unitcell_lengths[:, ii, _np.newaxis] * .5))
+            comp_dist[bool_mask] -= comp_len[bool_mask]
+            if sum_over_comps2 is None:
+                sum_over_comps2 = comp_dist**2
+            else:
+                sum_over_comps2 += comp_dist**2
+        COM_dists_t = _np.sqrt(sum_over_comps2)
 
     if subtract_max_radii:
         if low_mem:
@@ -107,17 +118,17 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True):
             max_radius_pairs = _np.array([res_max_radius[:, ii] + res_max_radius[:, jj] for ii, jj in pair_map]).T
 
         # Low mem vs high mem. 6000 frames, 106499 atoms
-        # peak memory: 22681.03 MiB, increment: 20894.39 MiB <-low mem
-        # peak memory: 32551.02 MiB, increment: 25883.46 MiB <-high mem
-        #|   cutoff |  #pairs lo-mem |  #pairs hi-mem |   t low-mem / s |   t hi-mem / s |   #pairs lo-mem as   |   #pairs hi-mem as   |   #pairs lo-mem as |
-        #|    nm    |                |                |                 |                |   % residue_pairs    |   % residue_pairs    |    % #pairs hi-mem |
-        #|---------:|---------------:|---------------:|----------------:|---------------:|---------------------:|---------------------:|------------------:|
-        #|      0.1 |            751 |            573 |            4.27 |           3.4  |                 0.71 |                 0.54 |             31.06 |
-        #|      0.2 |            963 |            770 |            5.32 |           4.22 |                 0.9  |                 0.72 |             25.06 |
-        #|      0.3 |           1198 |            979 |            6.24 |           5.18 |                 1.12 |                 0.92 |             22.37 |
-        #|      0.4 |           1479 |           1219 |            7.59 |           6.45 |                 1.39 |                 1.14 |             21.33 |
-        #|      0.5 |           1780 |           1496 |            9.41 |           7.54 |                 1.67 |                 1.4  |             18.98 |
-        #|      0.6 |           2117 |           1796 |           10.48 |           8.94 |                 1.99 |                 1.69 |             17.87 |
+        # peak memory: 22178.34 MiB, increment: 10344.77 MiB
+        # peak memory: 27577.62 MiB, increment: 15739.57 MiB <-high mem
+        #|    |   cutoff / nm |   #pairs lo-mem |   #pairs hi-mem |   t lo-mem / s |   t hi-mem / s |    #pairs lo-mem / |    #pairs hi-mem / |    #pairs lo-mem / |
+        #|    |               |                 |                 |                |                |    % residue_pairs |    % residue_pairs |    % #pairs hi-mem |
+        #|---:|--------------:|----------------:|----------------:|---------------:|---------------:|-------------------:|-------------------:|-------------------:|
+        #|  1 |           0.1 |             751 |             573 |           4.27 |           3.41 |               0.71 |               0.54 |             131.06 |
+        #|  2 |           0.2 |             963 |             770 |           5.21 |           4.31 |               0.9  |               0.72 |             125.06 |
+        #|  3 |           0.3 |            1198 |             979 |           6.33 |           5.21 |               1.12 |               0.92 |             122.37 |
+        #|  4 |           0.4 |            1479 |            1219 |           7.59 |           6.3  |               1.39 |               1.14 |             121.33 |
+        #|  5 |           0.5 |            1780 |            1496 |           9.05 |           7.43 |               1.67 |               1.4  |             118.98 |
+        #|  6 |           0.6 |            2117 |            1796 |          10.4  |           8.98 |               1.99 |               1.69 |             117.87 |
         COM_dists_t -= max_radius_pairs
 
     return COM_dists_t
