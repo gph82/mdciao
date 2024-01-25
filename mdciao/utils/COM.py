@@ -80,13 +80,17 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True, pe
         meaning the residue-spheres actually intersect at some point.
     """
 
-
+    residue_pairs = _np.array(residue_pairs)
+    residue_pairs.sort(axis=1)
+    assert all(residue_pairs[:, 0] < residue_pairs[:, 1]) #For scipy.pdist to work
     residue_idxs_unique, pair_map = _np.unique(residue_pairs, return_inverse=True)
     n_unique_residues = len(residue_idxs_unique)
     pair_map = pair_map.reshape(len(residue_pairs),2)
 
     # From the _pdist doc
-    # The metric dist(u=X[i], v=X[j]) is computed and stored in entry m * i + j - ((i + 2) * (i + 1)) // 2.
+    # For each i and j (where i<j<m),where m is the number of original observations.
+    # The metric dist(u=X[i], v=X[j]) is computed and stored in entry
+    #  m * i + j - ((i + 2) * (i + 1)) // 2.
     _pdist_ravel = lambda i, j : n_unique_residues * i + j - ((i + 2) * (i + 1)) // 2
     _pdist_idxs = _pdist_ravel(pair_map[:,0], pair_map[:,1])
 
