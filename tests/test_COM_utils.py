@@ -3,6 +3,7 @@ import tempfile
 import numpy as np
 
 from mdciao.utils.COM import *
+from mdciao.utils.COM import _unwrap, _per_residue_unwrapping
 import mdtraj as md
 import numpy as _np
 import unittest
@@ -65,7 +66,6 @@ class Test_geom2max_residue_radius(unittest.TestCase):
             self.geom = md.load(tf.name)
             self.geom = self.geom.join(self.geom)
             self.geom._xyz[1,:,:] *= 10
-            self.geom.save("test.pdb")
         # With the above geometry, it's easy to see that the COMs are, for x,y,z respectively
         # GLU30 (0+2+10)/3 = 4
         # VAL31 (0+5+10)/3 = 5
@@ -149,6 +149,19 @@ class Test_geom2max_residue_radius(unittest.TestCase):
 
 class TestUnwrapping(unittest.TestCase):
 
+    def setUp(self) -> None:
+        pdb = "CRYST1   100.00   100.00  100.000  90.00  90.00  90.00 P 1           1 \n" \
+              "MODEL        0 \n" \
+              "ATOM      1  CA  GLU A  30      5.0000  30.000  10.000  1.00  0.00           C \n" \
+              "ATOM      2  CB  GLU A  30      90.000  95.000  10.000  1.00  0.00           C \n" \
+              "ATOM      3  CA  VAL A  31      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      4  CB  VAL A  31      0.0000  5.0000  0.0000  1.00  0.00           C \n" \
+              "TER      10      TRP A  32 "
+        with tempfile.NamedTemporaryFile(suffix=".pdb") as tf:
+            with open(tf.name, "w") as f:
+                f.write(pdb)
+            self.geom = md.load(tf.name)
+
     def test_unwrap_coords(self):
         unitcell_lengths = _np.array([[10, 10, 10]])
 
@@ -163,6 +176,28 @@ class TestUnwrapping(unittest.TestCase):
         _np.testing.assert_array_equal(_unwrapped_coords,
                                        un_wrapped_coords_ref
                                        )
+
+    def test_unwrap_residues(self):
+        per_res_unwrapped = _per_residue_unwrapping(self.geom)
+
+        _np.testing.assert_array_equal(per_res_unwrapped.xyz, _np.array([[[.5, 3, 1],
+                                                                          [-1, -0.5, 1],
+                                                                          [0, 0, 0],
+                                                                          [0, .5, 0]]]))
+
+        assert per_res_unwrapped is not self.geom
+
+
+    def test_inplace_w_maxradii(self):
+        per_res_unwrapped = _per_residue_unwrapping(self.geom, inplace=True,
+                                                    max_res_radii_t=geom2max_residue_radius(self.geom))
+        _np.testing.assert_array_equal(per_res_unwrapped.xyz, _np.array([[[.5, 3, 1],
+                                                                          [-1, -0.5, 1],
+                                                                          [0, 0, 0],
+                                                                          [0, .5, 0]]]))
+
+        assert per_res_unwrapped is self.geom
+
 
 if __name__ == '__main__':
     unittest.main()

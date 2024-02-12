@@ -9,6 +9,8 @@ Functions related to Center-Of-Mass (COM) computations
 """
 import numpy as _np
 from scipy.spatial.distance import pdist as _pdist
+import mdtraj as _md
+from tqdm import tqdm as _tqdm
 
 
 def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True, periodic=False):
@@ -225,6 +227,102 @@ def geom2max_residue_radius(geom, residue_idxs=None, res_COMs=None) -> _np.ndarr
     r = _np.vstack(r).T
 
     return r
+
+
+def _per_residue_unwrapping(traj,
+                            max_res_radii_t=None, progressbar=False, inplace=False,
+                            unwrap_when_smaller_than=.4) -> _md.Trajectory:
+    r"""
+
+    Translate (if needed) atoms of a residue to a different periodic image to make the residue "whole"
+
+    Sometimes this is referred to as "unwrapping".
+    To decide whether a given residue needs unwrapping
+    in a given frame, the method checks if any of the residue's
+    atoms are further away from the residue COM than a half the
+    box dimensions. In theory, one would check the distance
+    per-dimension (distance in x > .5 * box_x,  in y > .5 box_y etc),
+    as in the minimum image convention, also taking into account
+    frame-dependent box dimensions. Practically, it's faster to
+    compare euclidean distance in 3D to the COM (i.e. the maximum
+    residue radius) against the smallest box length for all frames.
+    This might "overshoot" and try to unwrap a residue that
+    doesn't need unwrapping, with no other effect than
+    leaving that residues intact.
+
+    Ensuring unbroken (sometimes called "whole") residues,
+    even if that means having atoms of the same residue spread
+    across adjacent periodic images allows for the
+    computation of per-residue center-of-mass (COM) that
+    wont place COMs "in the middle the box" when a residue
+    has been split across the PBCs and "wrapped" into the box.
+
+    Note
+    ----
+    This method only makes **residues** whole, but not necessarily the
+    entire molecule itself, i.e. it is not :obj:`mdtraj.Trajectory.image_molecule`.
+    The molecule itself, i.e. the bonds between residues
+    might still be split across PBCs after running this method.
+    What this method guarantees is that residue COMs
+    have meaning and are placed at the center of the group of atoms that form
+    the "whole" residue. This is very useful as a preprocessing step to compute
+    lower bounds for residue distances under PBCs, because residue positions
+    and maximum residue radii are meaningful even if the COMs are spread across
+    different periodic images.
+
+    Parameters
+    ----------
+    traj : :obj:`~mdtraj.Trajectory`
+    max_res_radii_t : 2D np.ndarray, default is None
+        Optionally, pass here the value of
+        the residue radii before any unwrapping takes place,
+        else it will be computed on the fly.
+        Shape is (traj.n_frames, traj.n_residues).
+    progressbar : bool, default is False
+        Show progressbar.
+    inplace : bool, default is False
+        Change the coordinates of `traj`
+        inplace. Default (False) is to
+        return a new object and leave the
+        original `traj`  untouched.
+    unwrap_when_smaller_than : float, default is .4
+        Unwrap when the maximum residue radius
+        is larger than the minimum box length times
+        this factor. Flagging residues
+        that don't need unwrapping for unwrapping
+        doesn't have any effect
+
+    Returns
+    -------
+    out : :obj:`~mdtraj aj.Trajectory`
+        A new trajectory with unwrapped
+        residues or, if `inplace` was True,
+        an updated `traj` with the unwrapped residues.
+    """
+
+    if max_res_radii_t is None:
+        max_res_radii_t = geom2max_residue_radius(traj)
+    else:
+        assert max_res_radii_t.shape ==(traj.n_frames, traj.n_residues)
+    broken_res_bool = max_res_radii_t > (traj.unitcell_lengths.min() * unwrap_when_smaller_than)
+
+    if inplace:
+        outtraj = traj
+    else:
+        outtraj = _md.Trajectory(_np.copy(traj._xyz), traj.top, time=traj.time, unitcell_angles=traj.unitcell_angles, unitcell_lengths=traj.unitcell_lengths)
+
+    if broken_res_bool.any():
+        PB = _tqdm(total = broken_res_bool.sum(), disable=not progressbar)
+        for res_idx, res_bool in enumerate(broken_res_bool.T):
+            time_frames = _np.flatnonzero(res_bool)
+            if len(time_frames) > 0:
+                atoms = [aa.index for aa in traj.top.residue(res_idx).atoms]
+                whole_res_xyz_t = _unwrap(traj.xyz[time_frames][:, atoms, :], traj.unitcell_lengths[time_frames, :])
+                #print(res_idx, time_frames.shape)
+                for ff, ixyz in zip(time_frames, whole_res_xyz_t):
+                    outtraj._xyz[ff, atoms, :] = ixyz
+                PB.update(len(time_frames))
+    return outtraj
 
 _translations = _np.vstack(_np.vstack([[[(kk, jj, ii) for ii in range(-1,2)] for jj in range(-1,2)] for kk in range(-1,2)]))
 
