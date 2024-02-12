@@ -147,5 +147,22 @@ class Test_geom2max_residue_radius(unittest.TestCase):
         comDr = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]], subtract_max_radii=True, low_mem=False)
         _np.testing.assert_array_almost_equal(comDr, comD)  # the actual test
 
+class TestUnwrapping(unittest.TestCase):
+
+    def test_unwrap_coords(self):
+        unitcell_lengths = _np.array([[10, 10, 10]])
+
+
+        wrapped_coords = _np.array([[[.5, 3, 1], # <- This atom is closest to the center of the box, its coords won't change
+                                     [9, 9.5, 1]]])
+
+        un_wrapped_coords_ref = _np.array([[[.5, 3, 1],
+                                            [-1, -0.5, 1]]])
+
+        _unwrapped_coords = _unwrap(wrapped_coords, unitcell_lengths)
+        _np.testing.assert_array_equal(_unwrapped_coords,
+                                       un_wrapped_coords_ref
+                                       )
+
 if __name__ == '__main__':
     unittest.main()

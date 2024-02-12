@@ -225,3 +225,66 @@ def geom2max_residue_radius(geom, residue_idxs=None, res_COMs=None) -> _np.ndarr
     r = _np.vstack(r).T
 
     return r
+
+_translations = _np.vstack(_np.vstack([[[(kk, jj, ii) for ii in range(-1,2)] for jj in range(-1,2)] for kk in range(-1,2)]))
+
+def _unwrap(xyz_t, unitcell_lengths):
+    r"""
+
+    For a trajectory of xyz coordinates, typically from atoms
+    belonging to the same residue, apply, for each atom,
+    the periodic translation that places that atom in the
+    same periodic image as the rest of the atoms.
+
+    In 1D, a residue with 5 atoms is split across the
+    boundary:
+        |cde-----------ab|
+    This method picks the atom closest to the center of the box (e)
+    and finds, for the other atoms, which one of the periodic
+    translations, -1 * box_x, 0 * box_x, or +1 * box_x,
+    places each atom a,b,c,d the closet to e, regardless
+    of splitting the residues across the PBC
+    In this case, For c,d, the translation is "no translation",
+    i.e. 0 * box_x, whereas for a and b
+    it will be -1 * box_x, yielding
+      ab|cde-------------|
+    Once the translation has been decided, it is applied
+    on the coordinates and the coordinates returned.
+
+    For each frame, the frame-dependent `unitcell_lengths`
+    PBCs are taken into account.
+
+    Parameters
+    ----------
+    xyz_t : 3D np.ndarray
+        (n_frames, n_atoms, 3)
+    unitcell_lengths : 2D np.ndarray
+        (n_frames, 3)
+
+    Returns
+    -------
+    res_xyz_t : 3D np.ndarray
+        (n_frames, n_atoms, 3)
+    """
+    translations_vec = _translations * unitcell_lengths[:, _np.newaxis, :]
+    d2center = _np.linalg.norm(xyz_t - unitcell_lengths[:, _np.newaxis, :] / 2, axis=2)
+    most_centered_atom = d2center.argmin(axis=1)
+    xyz_best_centered_atom = _np.vstack([xyz_t[ii][jj] for ii, jj in enumerate(most_centered_atom)])
+    xyz_t -= xyz_best_centered_atom[:, _np.newaxis, :]
+    # Doing these two operations with integers hardly speeds up the computation
+    translated_coords = xyz_t[:, :, _np.newaxis, :] + translations_vec[:, _np.newaxis, :, :]
+    d2tran = _np.linalg.norm(translated_coords, axis=-1)
+    # Since we're only interested in the argmin we could've just computed
+    # the sum of the abs(components), which respects the order of values,
+    # but there's hardly any speedup
+    best_translation_idx_per_frame_per_atom = d2tran.argmin(axis=-1)
+
+    final_trans = []
+    # This loop could/should be optimized to vector operations but currently
+    # it's only %5 of compute time (cf the translated_coords + d2tran which is 70%)
+    for ii, row in enumerate(best_translation_idx_per_frame_per_atom):
+        final_trans.append(translations_vec[ii,row])
+    final_trans = _np.array(final_trans)
+    xyz_t += final_trans + xyz_best_centered_atom[:, _np.newaxis, :]
+    return xyz_t
+
