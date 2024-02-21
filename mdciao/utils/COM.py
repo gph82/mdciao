@@ -184,7 +184,16 @@ def geom2COMxyz(igeom, residue_idxs=None):
 
 def geom2max_residue_radius(geom, residue_idxs=None, res_COMs=None) -> _np.ndarray:
     r"""
-    Per-residue radius, i.e. the maximum distance between any atom of the residue and the residue's center of mass
+    Per-residue maximum radius, i.e. the maximum distance between any atom of the residue and the residue's center of mass
+
+    Warning
+    -------
+    No periodic-boundary-conditions are taken into account, i.e.
+    residues are assumed "whole" or "unwrapped", and then the mass-weighted
+    average of a residues's atoms' cartesian coordinates are computed. If your residues
+    are not "whole", i.e. atoms o the same residue, then the residue COM
+    might be meaningless (check the warning in :obj:`~mdciao.utils.COM.geom2COMxyz`)
+    and so will be the maximum residue radius.
 
     Parameters
     ----------
