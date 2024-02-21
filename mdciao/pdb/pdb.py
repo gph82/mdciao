@@ -96,9 +96,17 @@ def pdb2ref(pdb, url="https://data.rcsb.org/rest/v1/core/entry/",
         return
 
     print("Please cite the following 3rd party publication:")
-    print(" * "+ref["title"])
-    print("   "+ref["rcsb_authors"][0],"et al.,", ref["rcsb_journal_abbrev"], ref["year"])
-    print("   https://doi.org/"+ref["pdbx_database_id_doi"])
+    print( " * "+ref["title"])
+    line=f'   {ref["rcsb_authors"][0]} et al., {ref["rcsb_journal_abbrev"]}'
+    try:
+        line += f' {ref["year"]}'
+    except KeyError:
+        assert ref["rcsb_journal_abbrev"].lower() in ["To be published".lower()]
+    print(line)
+    try:
+        print("   https://doi.org/"+ref["pdbx_database_id_doi"])
+    except KeyError:
+        pass #what would be a good control here?
 
     return ref
 

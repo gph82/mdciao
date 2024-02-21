@@ -24,6 +24,13 @@ class Test_pdb2ref(unittest.TestCase):
         cite = pdb.pdb2ref("0SN6")
         assert cite is None
 
+    def test_work_with_to_be_published(self):
+        cite = pdb.pdb2ref("7dua")
+        assert isinstance(cite,dict)
+    def test_work_wo_doi(self):
+        cite = pdb.pdb2ref("6vg3")
+        assert isinstance(cite, dict)
+
 class Test_url2json(unittest.TestCase):
 
     def test_works(self):
