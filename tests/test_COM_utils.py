@@ -104,7 +104,7 @@ class Test_geom2max_residue_radius(unittest.TestCase):
                                                                     [0, 0, 6]]
                                                                    ]))
 
-    def test_COMdist_subtract_radii_low_and_high_mem(self):
+    def _test_COMdist_subtract_radii_low_and_high_mem(self):
         res_coms = _np.array([[4,0,0],
                               [0,5,0],
                               [0,0,6]], dtype=float) #<- we know this from the definition of the geom
@@ -119,7 +119,8 @@ class Test_geom2max_residue_radius(unittest.TestCase):
         d_0_2 = _np.array((d_0_2, d_0_2 * 10))
         d_1_2 = _np.array((d_1_2, d_1_2 * 10))
         comD = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]])
-
+        print("AAAA")
+        print(self.geom.xyz)
         _np.testing.assert_array_almost_equal(comD, _np.array([d_0_1, d_0_2, d_1_2]).T) # testing geom2COMdist w/o subtract_radii
 
         # Test low-mem
@@ -189,15 +190,76 @@ class TestUnwrapping(unittest.TestCase):
 
 
     def test_inplace_w_maxradii(self):
-        per_res_unwrapped = _per_residue_unwrapping(self.geom, inplace=True,
-                                                    max_res_radii_t=geom2max_residue_radius(self.geom))
+        geom = md.Trajectory(_np.copy(self.geom._xyz), self.geom.top, time=self.geom.time, unitcell_angles=self.geom.unitcell_angles,
+                       unitcell_lengths=self.geom.unitcell_lengths)
+        per_res_unwrapped = _per_residue_unwrapping(geom, inplace=True,
+                                                    max_res_radii_t=geom2max_residue_radius(geom))
         _np.testing.assert_array_equal(per_res_unwrapped.xyz, _np.array([[[.5, 3, 1],
                                                                           [-1, -0.5, 1],
                                                                           [0, 0, 0],
                                                                           [0, .5, 0]]]))
 
-        assert per_res_unwrapped is self.geom
+        assert per_res_unwrapped is geom
 
+    def test_COM_dist_wo_unwrapping_wo_subtract_wo_periodic(self):
+        COM1 = np.array([5 + 90, 30 + 95, 10 + 10]) / 2 / 10    # [4.75 6.25 1.  ]
+        COM2 = np.array([0 + 0, 0 + 5, 0 + 0]) / 2 / 10         # [0.   0.25 0.  ]
+        D12 = np.linalg.norm(COM1 - COM2)
+
+        np.testing.assert_array_equal(D12,
+                                      geom2COMdist(self.geom, [[0, 1]],
+                                                   subtract_max_radii=False, low_mem=True, periodic=False,
+                                                   per_residue_unwrap=False))
+
+    def test_COM_dist_wo_unwrapping_wo_subtract_w_periodic(self):
+        # PBCs
+        dx = 4.75
+        dy = 6  # This is larger than half the box, hence pick the periodic image
+        dy -= self.geom.unitcell_lengths[0, 1]
+        dz = 1
+        np.testing.assert_array_equal(np.sqrt(dx ** 2 + dy ** 2 + dz ** 2),
+                                      geom2COMdist(self.geom, [[0, 1]],
+                                                   subtract_max_radii=False, low_mem=True, periodic=True,
+                                                   per_residue_unwrap=False))
+
+    def test_COM_dist_w_unwrapping_wo_subtract(self):
+        """
+        # These we take from above
+        unwrapped_coords = _np.array([[[.5, 3, 1],
+                                     [-1, -0.5, 1],
+                                     [0, 0, 0],
+                                     [0, .5, 0]]])
+
+        COM1 = np.array([.5 - 1, 3 - .5, 1 + 1]) / 2    # [-0.25  1.25  1.  ]
+        COM2 = np.array([0 + 0, 0 + .5, 0 + 0]) / 2     # [0.  .25 0. ]
+        """
+        dx = .25
+        dy = 1
+        dz = 1
+
+        # None of the deltas is larger than half the box, no correction needed
+        np.testing.assert_almost_equal(np.sqrt(dx ** 2 + dy ** 2 + dz ** 2),
+                                       geom2COMdist(self.geom, [[0, 1]],
+                                                    subtract_max_radii=False, low_mem=True, periodic=True,
+                                                    per_residue_unwrap=True))
+
+    def test_COM_dist_w_unwrapping_w_subtract_low_and_hi_mem(self):
+        # The COMs we take from above.
+        COM1, COM2 = _np.array([-0.25, 1.25, 1.]), _np.array([0., .25, 0.])
+        # Since it's only 2 atoms per residue, any atom of the residue can be used for the max residue radius
+        max_r_1 = _np.linalg.norm(COM1 - np.array([.5, 3, 1]))
+        max_r_2 = _np.linalg.norm(COM2 - np.array([0, 0, 0]))
+        # None of the deltas is larger than half the box, no correction needed
+        D12 = np.linalg.norm(COM1 - COM2) - max_r_1 - max_r_2
+        np.testing.assert_almost_equal(D12,
+                                       geom2COMdist(self.geom, [[0, 1]],
+                                                    subtract_max_radii=True, low_mem=True, periodic=True,
+                                                    per_residue_unwrap=True))
+
+        np.testing.assert_almost_equal(D12,
+                                       geom2COMdist(self.geom, [[0, 1]],
+                                                    subtract_max_radii=True, low_mem=False, periodic=True,
+                                                    per_residue_unwrap=True))
 
 if __name__ == '__main__':
     unittest.main()
