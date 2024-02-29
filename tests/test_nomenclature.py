@@ -1230,6 +1230,18 @@ class Test_mdTrajectory_and_spreadsheets(unittest.TestCase):
                 read_pdb = nomenclature._Spreadsheets2mdTrajectory(f.name)
                 assert geom == read_pdb
 
+    def test_reading_and_writing_works_wo_unitcell_info(self):
+        for pdb in [examples.filenames.pdb_3SN6,
+                    examples.filenames.pdb_1U19,
+                    examples.filenames.pdb_3CAP,
+                    examples.filenames.pdb_3E8D]:
+            geom = md.load(pdb)
+            geom._unitcell_angles = None
+            geom._unitcell_lengths = None
+            with _NamedTemporaryFile(suffix="_pdb_as.xlsx") as f:
+                nomenclature._mdTrajectory2spreadsheets(geom,f.name)
+                read_pdb = nomenclature._Spreadsheets2mdTrajectory(f.name)
+                assert geom == read_pdb
 
 class Test_AlignerConsensus(unittest.TestCase):
 

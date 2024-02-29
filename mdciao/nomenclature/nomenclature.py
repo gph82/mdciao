@@ -34,7 +34,7 @@ from pandas import \
     DataFrame as _DataFrame, \
     ExcelWriter as _ExcelWriter
 
-from contextlib import contextmanager
+from contextlib import nullcontext as _nullcontext
 
 from collections import defaultdict as _defdict, namedtuple as _namedtuple
 
@@ -2932,13 +2932,14 @@ def _mdTopology2residueDF(top) -> _DataFrame:
 
 def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
     r"""
+    Transform the first frame (and only the first) of `traj` into a spreadsheet
 
     Parameters
     ----------
     traj : obj`:~mdtraj.Trajectory`
     dest : :obj:`~pandas.ExcelWriter` or str
         Either the open ExcelWriter object or,
-        if a string is passed, a the ExcelWriter
+        if a string is passed, an ExcelWriter
         object will be created on the fly
     kwargs_to_excel : keyword args for :obj:`pandas.DataFrame.to_excel`
         Can't contain sheet_name or index, will raise Exception
@@ -2946,19 +2947,17 @@ def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
     """
     topdf, bonds = traj.top.to_dataframe()
     bondsdf, xyzdf = _DataFrame(bonds), _DataFrame(traj.xyz[0])
-    unitcelldf = _DataFrame({"lengths": traj.unitcell_lengths[0],
-                             "angles": traj.unitcell_angles[0]})
-
-    # When dropping py36 support, use directly the contextlib.nullcontext for py37 and beyond
-    # slack FTW :https://stackoverflow.com/a/55902915
-    @contextmanager
-    def nullcontext(enter_result=None):
-        yield enter_result
+    if traj.unitcell_lengths is not None:
+        unitcelldf = _DataFrame({"lengths": traj.unitcell_lengths[0],
+                                 "angles": traj.unitcell_angles[0]})
+    else:
+        unitcelldf = _DataFrame({"lengths": [None, None, None],
+                                 "angles": [None, None, None]})
 
     if isinstance(dest, str):
         cm = _ExcelWriter(dest)
     else:
-        cm = nullcontext(dest)
+        cm = _nullcontext(dest)
 
     with cm as f:
         _DataFrame.to_excel(topdf, f, sheet_name="topology", index=False, **kwargs_to_excel)
@@ -2995,9 +2994,14 @@ def _Spreadsheets2mdTrajectory(source):
     idict["topology"].segmentID.fillna("", inplace=True)
     topology = _from_dataframe(idict["topology"], bonds=idict["bonds"].values)
     xyz = idict["xyz"].values
+    unitcell = {}
+    for key in ["angles", "lengths"]:
+        unitcell[key] = idict["unitcell"][key]
+        if len(idict["unitcell"][key])==0:
+            unitcell[key]=None
     geom = _md.Trajectory(xyz, topology,
-                          unitcell_angles=idict["unitcell"].angles,
-                          unitcell_lengths=idict["unitcell"].lengths)
+                          unitcell_angles=unitcell["angles"],
+                          unitcell_lengths=unitcell["lengths"])
     return geom
 
 
