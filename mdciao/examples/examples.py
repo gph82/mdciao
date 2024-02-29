@@ -504,7 +504,7 @@ def _unzip2dir(full_path_zipfile):
 
     return full_dir
 
-def _down_url_safely(url, chunk_size = 128, verbose=False):
+def _down_url_safely(url, chunk_size = 128, verbose=False, rename_to=None):
     r"""
     Downloads a file from a URL to a tmpfile and copies it to the current directory
 
@@ -514,14 +514,25 @@ def _down_url_safely(url, chunk_size = 128, verbose=False):
     ----------
     url
     chunk_size
+    verbose : bool
+        Be verbose
+    rename_to : str or None, defoult is None
+        Store the downloaded file locally
+        under a different name from the
+        one it has in the `url`
 
     Returns
     -------
-
+    filename : str
+        The full path to the downloaded filename
     """
     filename_orig = _path.basename(url)
-    filename_nonx = _recursive_prompt(filename_orig,
-                                      _path.splitext(filename_orig)[0],
+    if rename_to is None:
+        target_file = filename_orig
+    else:
+        target_file = rename_to
+    filename_nonx = _recursive_prompt(target_file,
+                                      _path.splitext(target_file)[0],
                                       is_file=True, verbose=True)
     r = _rget(url, stream=True)
     total_size_in_bytes = int(r.headers.get('content-length', 0))

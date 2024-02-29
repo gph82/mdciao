@@ -128,6 +128,14 @@ class Test_down_safely(unittest.TestCase):
                 os.chdir(td)
                 local_path = examples._down_url_safely("https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",verbose=True)
                 assert os.path.exists(local_path)
+    def test_different_name(self):
+        with TemporaryDirectory(suffix="_mdciao_test_down_safely") as td:
+            with remember_cwd():
+                os.chdir(td)
+                local_path = examples._down_url_safely("https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",verbose=True,
+                                                       rename_to="myfile.zip")
+                assert local_path.endswith("myfile.zip")
+                assert os.path.exists(local_path)
 
 class Test_fetch_example_data(unittest.TestCase):
 
