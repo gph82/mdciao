@@ -104,7 +104,7 @@ class Test_geom2max_residue_radius(unittest.TestCase):
                                                                     [0, 0, 6]]
                                                                    ]))
 
-    def _test_COMdist_subtract_radii_low_and_high_mem(self):
+    def test_COMdist_subtract_radii_low_and_high_mem(self):
         res_coms = _np.array([[4,0,0],
                               [0,5,0],
                               [0,0,6]], dtype=float) #<- we know this from the definition of the geom
@@ -118,25 +118,23 @@ class Test_geom2max_residue_radius(unittest.TestCase):
         d_0_1 = _np.array((d_0_1, d_0_1 * 10))
         d_0_2 = _np.array((d_0_2, d_0_2 * 10))
         d_1_2 = _np.array((d_1_2, d_1_2 * 10))
-        comD = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]])
-        print("AAAA")
-        print(self.geom.xyz)
+        comD = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]], periodic=False, per_residue_unwrap=False )
         _np.testing.assert_array_almost_equal(comD, _np.array([d_0_1, d_0_2, d_1_2]).T) # testing geom2COMdist w/o subtract_radii
 
         # Test low-mem
-        # We subtract the same max-radii by hand (which we now them as rrm from test_works)
+        # We subtract the same max-radii by hand (which we know as rrm from test_works)
         # for all frames of comD
         comD[:, 0] -= (6 + 5)
         comD[:, 1] -= (6 + 6)
         comD[:, 2] -= (5 + 6)
 
         # This tests low_mem
-        comDr = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]], subtract_max_radii=True)
+        comDr = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]], subtract_max_radii=True, periodic=False, per_residue_unwrap=False)
         _np.testing.assert_array_almost_equal(comDr, comD)  # the actual test
 
         # Test high_mem
-        comD = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]])
-        # We subtract the per-frame max-radii by hand (which we now them as rrm from test_works)
+        comD = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]],  periodic=False, per_residue_unwrap=False)
+        # We subtract the per-frame max-radii by hand (which we know as rrm from test_works)
         comD[0][0] -= (.6 + .5)
         comD[0][1] -= (.6 + .6)
         comD[0][2] -= (.5 + .6)
@@ -145,7 +143,7 @@ class Test_geom2max_residue_radius(unittest.TestCase):
         comD[1][2] -= (5 + 6)
 
         # This test high_mem
-        comDr = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]], subtract_max_radii=True, low_mem=False)
+        comDr = geom2COMdist(self.geom, [[0, 1], [0, 2], [1, 2]], subtract_max_radii=True, low_mem=False, periodic=False, per_residue_unwrap=False)
         _np.testing.assert_array_almost_equal(comDr, comD)  # the actual test
 
 class TestUnwrapping(unittest.TestCase):

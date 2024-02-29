@@ -12,22 +12,25 @@ from scipy.spatial.distance import pdist as _pdist
 import mdtraj as _md
 from tqdm import tqdm as _tqdm
 
-
-def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True, periodic=False):
+def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True,
+                 periodic=True, per_residue_unwrap=True) -> _np.ndarray:
     r"""
-    Returns the distances between pairs of residues' center-of-mass (COM)
+    Returns the time-trace of the distances between pairs of residues' centers-of-mass (COM)
 
     The option `subtract_max_radii` can be used to produce a time-dependent lower bound
     on the distance between any atoms of each residue pair, i.e. a lower bound
-    on the pairwise-residue "mindist". This lower bound can be used to discard
-    any contact between some pairs residues in any frame of `geom`
+    on the pairwise-residue distance. This lower bound can then be used to discard
+    any contact between some pairs residues in any frame of `geom`,
     without having to compute all pairwise atom distances between the `residue_pairs`.
+
+    Please see below the `periodic` and `per_residue_unwrap` for how periodic-boundary-conditions
+    affect this calculation.
 
     Parameters
     ----------
     geom: :obj:`mdtraj.Trajectory`
-    residue_pairs: iterable of integer pairs
-        pairs of residues by their zero-indexed serial indexes
+    residue_pairs: iterable of pairs of integers
+        zero-indexed pairs of residues
     subtract_max_radii : bool, default is False
         Subtract the sum of maximum radii (as computed by
         :obj:`~mdciao.utils.COM.geom2max_residue_radius`)
@@ -45,6 +48,23 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True, pe
         of the COM-distances, which is itself still a lower-bond.
         For the porpuses of cutoff-thresholding, this "overshooting"
         has little consequence, see the note below for a benchmark case.
+    periodic : bool, default is True
+        Compute COM distances under the minimum image convention.
+        Please see the warning in :obj:`~mdciao.utils.COM.COMs_xyz`
+        wrt residues being split across periodic boundaries into
+        adjacent periodic images and the impact on COM computation.
+    per_residue_unwrap : bool, default is True
+        Unwrap residues individually for the purpose of
+        computing the residue COM. This is to deal with
+        the warning in :obj:`~mdciao.utils.COM.geom2COMxyz`.
+        The original coordinates in `geom` remain unchanged.
+        Since periodic boundary conditions are necessarily
+        used when unwrapping, and the unwrapping doesn't make
+        the entire `geom` whole, but only residues, the method
+        will fail if `per_residue_unwrap` is True but `periodic` is False,
+        alerting the user of what they are trying to do. See the
+        note below for information on the overhead induced
+        by the `per_residue_unwrap`.
 
     Note
     ----
@@ -73,6 +93,31 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True, pe
         and `low_mem=False` used ~15GB. There's a table included
         as a comment in the source code of the method showing the benchmark numbers.
 
+    Note
+    ----
+        Just how much overhead the per-residue unwrapping adds is hard to know a-priori.
+        In our benchmark system, it can be between 5% or 25% of the overall computation time.
+        It simply depends on how many residues are split across PBCs in how many frames,
+        which depends highly on what post-processing steps the trajectory has undergone.
+        * The 5% overhead is when no residues have to be unwrapped because the pre-processing
+         has taken care of this, e.g. with `gmx trjconv -pbc whole`. The 5% is just the
+         time used to check whether the residues need to be unwrapped or not.
+        * The 25% overhead is for a plausible worst-case, when the split across PBCs
+         affects a high number of residues. The system is effectively halved at
+         the plane where most residues are affected simultaneously by the split.
+        * For the highly-constructed, and physically inplausible
+         situation where **all** are residues need to be unwrapped, the overhead is 70%.
+         This is very unlikely, because it implies that **all** residues have some atoms
+         just a few Angstrom away from the boundary
+
+        In essence, you can always leave `per_residue_unwrap=True` on unless significant slowdown
+        is noticed. Even better, if you notice a significant slowdown, why not pre-process
+        your trajectory to be whole and centered in the box (which is sometimes called
+        unwrapping), and then there's no need to use `per_residue_unwrap`. Note, even in that
+        case a decision needs to be made whether to use PBCs when computing distances
+        between residue COMs
+
+
     Returns
     -------
     COMs_array : np.ndarray of shape(geom.n_frames, len(res_pairs))
@@ -96,9 +141,17 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True, pe
     _pdist_ravel = lambda i, j : n_unique_residues * i + j - ((i + 2) * (i + 1)) // 2
     _pdist_idxs = _pdist_ravel(pair_map[:,0], pair_map[:,1])
 
-    COMs_xyz = geom2COMxyz(geom, residue_idxs=residue_idxs_unique)[:, residue_idxs_unique]
+    if per_residue_unwrap:
+        assert periodic, ValueError("Cannot unwrap residues if 'periodic' is set to False.")
+        # Per-residue per-frame unwraping
+        unwrapped_residue_geom = _per_residue_unwrapping(geom)
 
-    # Only do pdist of the needed residues
+    else:
+        unwrapped_residue_geom = geom
+    # This would be worth migrating to mdanalysis
+    # https://docs.mdanalysis.org/1.0.1/documentation_pages/core/groups.html#MDAnalysis.core.groups.ResidueGroup.center
+    COMs_xyz = geom2COMxyz(unwrapped_residue_geom, residue_idxs=residue_idxs_unique)[:, residue_idxs_unique]
+
     if not periodic:
         # Grab only the _pdist_idxs
         COM_dists_t =  _np.array([_pdist(ixyz)[_pdist_idxs] for ixyz in COMs_xyz])
@@ -117,10 +170,10 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True, pe
 
     if subtract_max_radii:
         if low_mem:
-            res_max_radius = geom2max_residue_radius(geom, residue_idxs_unique, res_COMs=COMs_xyz).max(0)
+            res_max_radius = geom2max_residue_radius(unwrapped_residue_geom, residue_idxs_unique, res_COMs=COMs_xyz).max(0)
             max_radius_pairs = _np.array([res_max_radius[ii] + res_max_radius[jj] for ii, jj in pair_map])
         else:
-            res_max_radius = geom2max_residue_radius(geom, residue_idxs_unique, res_COMs=COMs_xyz)
+            res_max_radius = geom2max_residue_radius(unwrapped_residue_geom, residue_idxs_unique, res_COMs=COMs_xyz)
             max_radius_pairs = _np.array([res_max_radius[:, ii] + res_max_radius[:, jj] for ii, jj in pair_map]).T
 
         # Low mem vs high mem. 6000 frames, 106499 atoms
