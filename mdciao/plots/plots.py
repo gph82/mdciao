@@ -358,7 +358,6 @@ def _sorting_schemes(freqs_by_sys_by_ctc, sort_by='mean',
         # Then sort, in case sort_by wasn't a list but an actual scheme (has its own method)
         kept_keys = _sorter_by_key_or_val(sort_by, dict_for_sorting[sort_by])
         if sort_by in ["mean", "std"]:
-            print("I'm here!!")
             kept_keys = kept_keys[::-1]
 
         excluded_ctc_keys = []
