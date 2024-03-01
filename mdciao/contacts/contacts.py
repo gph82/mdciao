@@ -375,14 +375,16 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, stride,
                                  traj_idx, timetrace=False,
                                  lb_cutoff_Ang=None,
-                                 verbose=True):
+                                 verbose=True,
+                                 periodic=True):
     r"""
     Strided, chunked computation of lower bounds for all-atom residue-residue distances.
 
-    Wraps around :obj:`mdciao.utils.COM.geom2COMdist` with the
-    option `low_mem=True`, which produces slightly lower lower-bounds.
-    See the documentation and benchmark info on the docstring of
-    that method.
+    The lower bounds are computed by subtrating residue-radii  from reside-residue
+    center-of-mass (COM) distances.
+
+    Check :obj:`mdciao.utils.COM.geom2COMdist` for relevant
+    Notes and Warnings regarding PBCs and the "unwrapping" of residues.
 
     Parameters
     ----------
@@ -413,6 +415,14 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
     verbose : float, default is True
         Print progress information. If False,
         nothing is printed.
+    periodic : bool, default is True
+        Use the minimum image convention when computing
+        the lower bounds. This will automatically "unwrap"
+        any residues split across PBCs for the purpose
+        of the calculation (`itraj` is left untouched).
+        If you turn this off, it is assumed that you are
+        not using periodic boundary conditions at all and
+        residues are necessarily whole (no checks are done).
 
     Returns
     -------
@@ -436,7 +446,7 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         running_f += igeom.n_frames
         if verbose:
             inform(itraj, traj_idx, jj, running_f)
-        chunk_res = _mdcu.COM.geom2COMdist(igeom, ctc_residxs_pairs, subtract_max_radii=True,low_mem=True)
+        chunk_res = _mdcu.COM.geom2COMdist(igeom, ctc_residxs_pairs, subtract_max_radii=True, low_mem=True, periodic=periodic,per_residue_unwrap=periodic)
         if lb_cutoff_Ang is not None:
             lower_bound.append(_np.flatnonzero(chunk_res.min(axis=0) <= (lb_cutoff_Ang / 10)))
         else:
@@ -448,7 +458,9 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
     if lb_cutoff_Ang is not None:
         lower_bound = _np.unique(_np.hstack(lower_bound))
     else:
-        lower_bound = _np.vstack(lower_bound).squeeze()
+        lower_bound = _np.vstack(lower_bound)
+        if not timetrace:
+            lower_bound = _np.vstack(lower_bound).min(axis=0)
 
     return  lower_bound
 

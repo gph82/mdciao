@@ -156,7 +156,7 @@ class Test_trajs2ctcs(TestBaseClassContacts):
         contacts.trajs2ctcs([self.pdb_file], self.top, self.ctc_idxs)
 
 
-class Test_per_traj_mindist_lower_bound(unittest.TestCase):
+class Test_per_traj_mindist_lower_bound_wo_periodic(unittest.TestCase):
 
     # We're repeating the same tests as Test_geom2max_residue_radius wrapped
     # wrapped in the functionality of per_traj_mindist_lower_bound
@@ -179,8 +179,6 @@ class Test_per_traj_mindist_lower_bound(unittest.TestCase):
             self.geom = md.load(tf.name)
             self.geom = self.geom.join(self.geom)
             self.geom._xyz[1, :, :] *= 10
-            self.geom.save("test.pdb")
-
         # With the above geometry, it's easy to see that the COMs are, for x,y,z respectively
         # GLU30 (0+2+10)/3 = 4
         # VAL31 (0+5+10)/3 = 5
@@ -207,12 +205,178 @@ class Test_per_traj_mindist_lower_bound(unittest.TestCase):
         #print()
         #print(self.lower_bound_t.round(2))
     def test_works(self):
-        lower_bounds = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0,1],[0,2],[1,2]], 1000, 1, 0)
+        lower_bounds = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0,1],[0,2],[1,2]], 1000, 1, 0, periodic=False)
         _np.testing.assert_array_almost_equal(lower_bounds, self.lower_bound_t.min(axis=0))
 
     def test_works_timetrace(self):
         lower_bounds_t = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0, 1], [0, 2], [1, 2]],
                                                                1000, 1, 0,
+                                                               timetrace=True, periodic=False)
+
+        _np.testing.assert_array_almost_equal(lower_bounds_t, self.lower_bound_t)
+
+    def test_works_timetrace_lb_cutoff_Ang(self):
+        lower_bounds_t_bool = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0, 1], [0, 2], [1, 2]],
+                                                                    1000, 1, 0,
+                                                                    timetrace=True,
+                                                                    lb_cutoff_Ang=-110 , #it's weird it's negative but it's okay for tests,
+                                                                    periodic = False
+                                                                    )
+        # We can evaluate the expressions above to these numbers
+        ref_lower_bounds_t = _np.array([[-10.36 - 11.28 - 10.22],
+                                        [-4.6 - 4.79 - 3.19]]
+                                       )
+        _np.testing.assert_array_almost_equal(lower_bounds_t_bool, [1])
+
+    # Since trajs2lower_bounds is mainly a wrapper on per_traj_mindist_lower_bound
+    #  i'd rather test it here than have its own class
+    def test_trajs2lower_bounds(self):
+        list_of_lbs = contacts.trajs2lower_bounds([self.geom, self.geom[::-1]],
+                                                  self.geom.top, [[0, 1], [0, 2], [1, 2]],
+                                                  periodic=False,
+                                                  verbose=False)
+
+        _np.testing.assert_array_almost_equal(self.lower_bound_t.min(axis=0), list_of_lbs[0])
+        _np.testing.assert_array_almost_equal(self.lower_bound_t.min(axis=0), list_of_lbs[1])
+
+    def test_trajs2lower_bounds_timetrace(self):
+        list_of_lbs = contacts.trajs2lower_bounds([self.geom, self.geom[::-1]],
+                                                  self.geom.top, [[0, 1], [0, 2], [1, 2]],
+                                                  periodic=False,
+                                                  verbose=False, timetrace=True)
+
+        _np.testing.assert_array_almost_equal(self.lower_bound_t, list_of_lbs[0])
+        _np.testing.assert_array_almost_equal(self.lower_bound_t[::-1], list_of_lbs[1])
+
+    def test_trajs2lower_bounds_cutoff(self):
+        list_of_lbs = contacts.trajs2lower_bounds([self.geom, self.geom[::-1]],
+                                                  self.geom.top, [[0, 1], [0, 2], [1, 2]],
+                                                  periodic=False,
+                                                  verbose=False, lb_cutoff_Ang=-103) #it's weird it's negative but it's okay for tests
+
+        _np.testing.assert_array_almost_equal([0,1], list_of_lbs[0])
+        _np.testing.assert_array_almost_equal([0,1], list_of_lbs[1])
+
+class Test_per_traj_mindist_lower_bound_w_periodic(unittest.TestCase):
+
+    # We're repeating the same tests as Test_geom2max_residue_radius wrapped
+    # wrapped in the functionality of per_traj_mindist_lower_bound
+
+    #
+    def setUp(self) -> None:
+        pdb = "CRYST1   101.00   101.00  101.000  90.00  90.00  90.00 P 1           1 \n" \
+              "MODEL        0 \n" \
+              "ATOM      1  CA  GLU A  30      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      2  CB  GLU A  30      2.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      3  C   GLU A  30      10.000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      4  CA  VAL A  31      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      5  CB  VAL A  31      0.0000  5.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      6  C   VAL A  31      0.0000  10.000  0.0000  1.00  0.00           C \n" \
+              "ATOM      7  CA  TRP A  32      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
+              "ATOM      8  CB  TRP A  32      0.0000  0.0000  8.0000  1.00  0.00           C \n" \
+              "ATOM      9  C   TRP A  32      0.0000  0.0000  10.000  1.00  0.00           C \n" \
+              "TER      10      TRP A  32 "
+        with _NamedTfile(suffix=".pdb") as tf:
+            with open(tf.name, "w") as f:
+                f.write(pdb)
+            self.geom = md.load(tf.name)
+            self.geom = self.geom.join(self.geom)
+            self.geom._xyz[1, :, :] *= 10
+
+        # With periodic cells above (101,101,101), the unwrapping of residues produces
+        # has an effec on the second frame, where coords have been *= 10. There,
+        # some atoms approach the boundary and hence are considered "split across PBCs"
+        # or "wrapped", s.t. the unwrapping changes their position:
+        self.geom_unwrapped =_mdcu.COM._per_residue_unwrapping(self.geom)
+        """
+        ATOM      1  CA  GLU A  30       0.000   0.000   0.000  1.00  0.00           C
+        ATOM      2  CB  GLU A  30       2.000   0.000   0.000  1.00  0.00           C
+        ATOM      3  C   GLU A  30      10.000   0.000   0.000  1.00  0.00           C
+        ATOM      4  CA  VAL A  31       0.000   0.000   0.000  1.00  0.00           C
+        ATOM      5  CB  VAL A  31       0.000   5.000   0.000  1.00  0.00           C
+        ATOM      6  C   VAL A  31       0.000  10.000   0.000  1.00  0.00           C
+        ATOM      7  CA  TRP A  32       0.000   0.000   0.000  1.00  0.00           C
+        ATOM      8  CB  TRP A  32       0.000   0.000   8.000  1.00  0.00           C
+        ATOM      9  C   TRP A  32       0.000   0.000  10.000  1.00  0.00           C
+        TER      10      TRP A  32
+        ENDMDL
+        MODEL        1
+        ATOM      1  CA  GLU A  30       0.000   0.000   0.000  1.00  0.00           C
+        ATOM      2  CB  GLU A  30      20.000   0.000   0.000  1.00  0.00           C
+        ATOM      3  C   GLU A  30      -1.000   0.000   0.000  1.00  0.00           C #100 was changed to -1 (100 - 101 = 1)
+        ATOM      4  CA  VAL A  31       0.000   0.000   0.000  1.00  0.00           C
+        ATOM      5  CB  VAL A  31       0.000  50.000   0.000  1.00  0.00           C
+        ATOM      6  C   VAL A  31       0.000 100.000   0.000  1.00  0.00           C
+        ATOM      7  CA  TRP A  32       0.000   0.000 101.000  1.00  0.00           C #0 was changed to 101 (0 + 101 = 101)
+        ATOM      8  CB  TRP A  32       0.000   0.000  80.000  1.00  0.00           C
+        ATOM      9  C   TRP A  32       0.000   0.000 100.000  1.00  0.00           C
+        TER   
+        """
+
+        # With the above geometry, it's easy to see that the COMs are, for x,y,z respectively
+        # Frame 1
+            # GLU30 (0+2+10)/3 = 4
+            # VAL31 (0+5+10)/3 = 5
+            # TRP31 (0+8+10)/3 = 6
+        # Frame 2
+            # GLU30 (0+20-1)/3     = 19/3  = 6.333333333333333
+            # VAL31 (0+50+100)/3   = 50
+            # TRP31 (101+80+100)/3 = 281/3 = 93.66666666666667
+        # And then the max radii are, respectively
+        # Frame 1
+            # GLU30 10 - 4 = 6
+            # VAL31 10 - 5 = 5 or 0 - 5 = 5
+            # TRP31  0 - 6 = 6
+        # Frame 2
+            # GLU30 6.333 - 20 = 13.666
+            # VAL31 100 - 50 = 50 or 0 - 50 = 50
+            # TRP31 93.666 - 80 = 13.666
+
+        # Note that we have to multiply x .1 to be back in nm (pdb strg is in Ang)
+        self.COMs = _np.array([[[4, 0, 0, ],
+                                [0, 5, 0],
+                                [0, 0., 6]],
+                               [[19 / 3, 0, 0],
+                                [0, 50, 0],
+                                [0, 0, 281 / 3]]] # [0, 0, 93.66666]
+                              )/10
+
+        # This essentially re-tests the setup
+        _np.testing.assert_array_almost_equal(self.COMs, _mdcu.COM.geom2COMxyz(self.geom_unwrapped))
+
+        self.max_radii = _np.abs(_np.array([[6, 5, 6],                       # [[0.6,       0.5, 0.6]
+                                            [19 / 3 - 20, 50, 281 / 3 - 80]] # [1.36666667, 5.,  1.36666667]]
+                                           )) / 10
+
+        # This essentially re-tests the setup
+        _np.testing.assert_array_almost_equal(self.max_radii, _mdcu.COM.geom2max_residue_radius(self.geom_unwrapped))
+
+
+
+        # Note the last z-coordinate is 93.666 which is closer to the other z-coordinates (0)
+        # via the minimum image convention at 93.6666 - 101 = -7.33333
+        self.COMd = _np.array([[0.64031242, 0.72111026, 0.78102497],  # # pdist(self.COMs[0])
+                               [5.0399515 , 0.96896279, 5.05349164]])  # pdist(self.COMs[1], where the z coordinate of the last residue has been changed to -7.3)
+
+        _np.testing.assert_array_almost_equal(self.COMd, _mdcu.COM.geom2COMdist(self.geom, [[0,1], [0,2], [1,2]]))
+
+        # We take the max of the max_radii for all frames
+        self.sum_maxR = _np.array([abs(19 / 3 - 20) + 50,                   # radii res0 + res1
+                                   abs(19 / 3 - 20) + abs(281 / 3 - 80),    # radii res0 + res2
+                                   50 + abs(281 / 3 - 80)                   # radii res1 + res2
+                                   ])/10
+        self.lower_bound_t = self.COMd - self.sum_maxR
+        # [[-5.72635425 -2.01222307 -5.5856417 ]
+        # [-1.32671517 -1.76437054 -1.31317503]]
+    def test_works(self):
+        lower_bounds = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0,1],[0,2],[1,2]], 1000, 1, 0,
+                                                             verbose=False)
+        _np.testing.assert_array_almost_equal(lower_bounds, self.lower_bound_t.min(axis=0))
+
+    def test_works_timetrace(self):
+        lower_bounds_t = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0, 1], [0, 2], [1, 2]],
+                                                               1000, 1, 0,
+                                                               verbose=False,
                                                                timetrace=True)
 
         _np.testing.assert_array_almost_equal(lower_bounds_t, self.lower_bound_t)
@@ -221,13 +385,13 @@ class Test_per_traj_mindist_lower_bound(unittest.TestCase):
         lower_bounds_t_bool = contacts.per_traj_mindist_lower_bound(self.geom.top, self.geom, [[0, 1], [0, 2], [1, 2]],
                                                                     1000, 1, 0,
                                                                     timetrace=True,
-                                                                    lb_cutoff_Ang=-110  #it's weird it's negative but it's okay for tests
+                                                                    verbose=False,
+                                                                    lb_cutoff_Ang=-57 , #it's weird it's negative but it's okay for tests,
                                                                     )
-        # We can evaluate the expressions above to these numbers
-        ref_lower_bounds_t = _np.array([[-10.36 - 11.28 - 10.22],
-                                        [-4.6 - 4.79 - 3.19]]
-                                       )
-        _np.testing.assert_array_almost_equal(lower_bounds_t_bool, [1])
+        # These are time-dep lower bounds
+        # [[-5.72635425 -2.01222307 -5.5856417 ]
+        # [-1.32671517 -1.76437054 -1.31317503]]
+        _np.testing.assert_array_almost_equal(lower_bounds_t_bool, [0])
 
     # Since trajs2lower_bounds is mainly a wrapper on per_traj_mindist_lower_bound
     #  i'd rather test it here than have its own class
@@ -250,10 +414,10 @@ class Test_per_traj_mindist_lower_bound(unittest.TestCase):
     def test_trajs2lower_bounds_cutoff(self):
         list_of_lbs = contacts.trajs2lower_bounds([self.geom, self.geom[::-1]],
                                                   self.geom.top, [[0, 1], [0, 2], [1, 2]],
-                                                  verbose=False, lb_cutoff_Ang=-103) #it's weird it's negative but it's okay for tests
+                                                  verbose=False, lb_cutoff_Ang=-57) #it's weird it's negative but it's okay for tests
 
-        _np.testing.assert_array_almost_equal([0,1], list_of_lbs[0])
-        _np.testing.assert_array_almost_equal([0,1], list_of_lbs[1])
+        _np.testing.assert_array_almost_equal([0], list_of_lbs[0])
+        _np.testing.assert_array_almost_equal([0], list_of_lbs[1])
 
 
 class BaseClassForTestingAttributes(unittest.TestCase):
