@@ -448,18 +448,18 @@ def _trajsNtop2xtcsNrefgeom(trajectories,topology):
 
     Parameters
     ----------
-    trajectories: check get_sorted_trajectories
+    trajectories: check get_trajectories_from_input
     topology : str, top
 
     Returns
     -------
     xtcs, refgeom
-    xtcs : whatever get_sorted_trajectories returns
+    xtcs : whatever get_trajectories_from_input returns
     refgeom : :obj:`mdtraj.Trajectory` object
 
     """
     # Inform about trajectories
-    xtcs = _mdcu.str_and_dict.get_sorted_trajectories(trajectories)
+    xtcs = _mdcu.str_and_dict.get_trajectories_from_input(trajectories)
     if topology is None:
         # TODO in case the xtc[0] is a pdb/grofile, it will be read one more time later
         refgeom = _load_any_geom(xtcs[0])[0]
@@ -633,16 +633,17 @@ def residue_neighborhoods(residues,
          * residues = '1,10-12,GLU*,GDP*,E30'
          Please refer to :obj:`mdciao.utils.residue_and_atom.rangeexpand_residues2residxs`
          for more info
-    trajectories : str, :obj:`mdtraj.Trajectory`, or None
+    trajectories : str, :obj:`mdtraj.Trajectory` or lists thereof
         The MD-trajectories to calculate the frequencies from.
         This input is pretty flexible. For more info check
-        :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
+        :obj:`mdciao.utils.str_and_dict.get_trajectories_from_input`.
         Accepted values are:
          * pattern, e.g. "*.ext"
          * one string containing a filename
          * list of filenames
          * one :obj:`mdtraj.Trajectory` object
          * list of :obj:`mdtraj.Trajectory` objects
+         * list mixing filenames and :obj:`mdtraj.Trajectory` objects
     topology : str or :obj:`~mdtraj.Trajectory`, default is None
         The topology associated with the :obj:`trajectories`
         If None, the topology of the first :obj:`trajectory` will
@@ -1150,16 +1151,17 @@ def interface(
 
     Parameters
     ----------
-    trajectories :
-        The MD-trajectories to calculate the frequencies
-        from. This input is pretty flexible. For more info check
-        :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
+    trajectories : str, :obj:`mdtraj.Trajectory` or lists thereof
+        The MD-trajectories to calculate the frequencies from.
+        This input is pretty flexible. For more info check
+        :obj:`mdciao.utils.str_and_dict.get_trajectories_from_input`.
         Accepted values are:
          * pattern, e.g. "*.ext"
          * one string containing a filename
          * list of filenames
-         * one :obj:`~mdtraj.Trajectory` object
-         * list of :obj:`~mdtraj.Trajectory` objects
+         * one :obj:`mdtraj.Trajectory` object
+         * list of :obj:`mdtraj.Trajectory` objects
+         * list mixing filenames and :obj:`mdtraj.Trajectory` objects
     topology : str or :obj:`~mdtraj.Trajectory`, default is None
         The topology associated with the :obj:`trajectories`
         If None, the topology of the first :obj:`trajectory` will
@@ -1670,16 +1672,17 @@ def sites(site_inputs,
         found in the topology will be discarded.
         See :obj:`mdciao.sites` for more info on
         the site format.
-    trajectories :
-        The MD-trajectories to calculate the frequencies
-        from. This input is pretty flexible. For more info check
-        :obj:`mdciao.utils.str_and_dict.get_sorted_trajectories`.
+    trajectories : str, :obj:`mdtraj.Trajectory` or lists thereof
+        The MD-trajectories to calculate the frequencies from.
+        This input is pretty flexible. For more info check
+        :obj:`mdciao.utils.str_and_dict.get_trajectories_from_input`.
         Accepted values are:
          * pattern, e.g. "*.ext"
          * one string containing a filename
          * list of filenames
-         * one :obj:`~mdtraj.Trajectory` object
-         * list of :obj:`~mdtraj.Trajectory` objects
+         * one :obj:`mdtraj.Trajectory` object
+         * list of :obj:`mdtraj.Trajectory` objects
+         * list mixing filenames and :obj:`mdtraj.Trajectory` objects
     topology : str or :obj:`~mdtraj.Trajectory`, default is None
         The topology associated with the :obj:`trajectories`
         If None, the topology of the first :obj:`trajectory` will

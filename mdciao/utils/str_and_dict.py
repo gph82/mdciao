@@ -99,31 +99,33 @@ def _kwargs_subs(funct_or_method, exclude=None):
     return _mpldocstring.Substitution(
         substitute_kwargs=_kwargs_docstring(funct_or_method, exclude=exclude))
 
-def get_sorted_trajectories(trajectories):
+def get_trajectories_from_input(trajectories):
     r"""
     Common parser for something that can be interpreted as a trajectory
 
     Parameters
     ----------
     trajectories: can be one of these things:
-        - pattern, e.g. "*.ext"
-        - one string containing a filename
-        - list of filenames
-        - one :obj:`mdtraj.Trajectory` object
-        - list of :obj:`mdtraj.Trajectory` objects
+        * pattern, e.g. "*.ext"
+        * one single string containing a filename
+        * one single :obj:`mdtraj.Trajectory` object
+        * one list containing
+         * just filenames
+         * just :obj:`mdtraj.Trajectory` objects
+         * a mix of filenames and :obj:`mdtraj.Trajectory` objects
 
     Returns
     -------
-        - for an input pattern, sorted trajectory filenames that match that pattern
-        - for filename, one list containing that filename
-        - for a list of filenames, a sorted list of filenames
-        - for one :obj:`mdtraj.Trajectory` object, a list containing that object
-        - list of :obj:`mdtraj.Trajectory` objects (i.e. does nothing)
-
+    outtrajs : list
+        A list of trajectories. This list can be, depending on the input:
+        * for an input pattern: sorted trajectory filenames that match that pattern
+        * for filename or an :obj:`mdtraj.Trajectory`:
+        one list containing that filename or :obj:`mdtraj.Trajectory` object
+        * for a list, that same list (i.e. nothing happens)
 
     """
     if isinstance(trajectories,str):
-        _trajectories = _glob(trajectories)
+        _trajectories = _natsorted(_glob(trajectories))
         if len(_trajectories)==0:
             raise FileNotFoundError("Couldn't find (or pattern-match) anything to '%s'.\n"
                                     "ls $CWD[%s]:\n%s:"%(trajectories,
@@ -132,15 +134,13 @@ def get_sorted_trajectories(trajectories):
         else:
             trajectories=_trajectories
 
-    if isinstance(trajectories[0],str):
-        xtcs = _natsorted(trajectories)
-    elif isinstance(trajectories, _md.Trajectory):
-        xtcs = [trajectories]
+    if type(trajectories) in [_md.Trajectory, str]:
+        outtrajs = [trajectories]
     else:
-        assert all([isinstance(itraj, _md.Trajectory) for itraj in trajectories])
-        xtcs = trajectories
+        assert all([type(itraj) in [_md.Trajectory, str] for itraj in trajectories])
+        outtrajs = trajectories
 
-    return xtcs
+    return outtrajs
 
 def inform_about_trajectories(trajectories, only_show_first_and_last=False):
     r"""

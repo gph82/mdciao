@@ -24,29 +24,29 @@ class Test_get_sorted_trajectories(unittest.TestCase):
         self.traj_reverse = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)[::-1]
 
     def test_glob_with_pattern(self):
-        str_and_dict.get_sorted_trajectories(path.join(test_filenames.example_path,"*.xtc"))
+        str_and_dict.get_trajectories_from_input(path.join(test_filenames.example_path, "*.xtc"))
 
     def test_glob_with_filename(self):
-        str_and_dict.get_sorted_trajectories(test_filenames.traj_xtc_stride_20)
+        str_and_dict.get_trajectories_from_input(test_filenames.traj_xtc_stride_20)
 
     def test_with_one_trajectory_object(self):
-        list_out = str_and_dict.get_sorted_trajectories(self.traj)
+        list_out = str_and_dict.get_trajectories_from_input(self.traj)
         assert len(list_out)==1
         assert isinstance(list_out[0], md.Trajectory)
 
     def test_with_trajectory_objects(self):
-        str_and_dict.get_sorted_trajectories([self.traj,
-                                 self.traj_reverse])
+        str_and_dict.get_trajectories_from_input([self.traj,
+                                                  self.traj_reverse])
 
 
     def test_fails_if_not_traj_at_all(self):
         with pytest.raises(FileNotFoundError):
-            str_and_dict.get_sorted_trajectories("bogus.xtc")
+            str_and_dict.get_trajectories_from_input("bogus.xtc")
 
     def test_fails_if_not_trajs(self):
         with pytest.raises(AssertionError):
-            str_and_dict.get_sorted_trajectories([self.traj,
-                                     1])
+            str_and_dict.get_trajectories_from_input([self.traj,
+                                                      1])
 
 
 class Test_inform_about_trajectories(unittest.TestCase):
