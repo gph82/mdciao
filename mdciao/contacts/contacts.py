@@ -5992,32 +5992,35 @@ class ContactGroup(object):
             Control what frames of the trajectory data
             gets used in the returned ContactGroups. Several modes
             of input are possible.
+                * integer `n`:
+                  select the first `n` frames
+                  of each trajectory. If `n` is negative,
+                  then select the last `n` frames of each
+                  trajectory. If a trajectory has
+                  less than `n` frames, all frames are selected.
+                * dict:
+                  keyed with trajectory indices, valued
+                  with a list of trajectory frames. E.g.
+                  if `frames = {2 : [101,100], 0: [10, 20]}`,
+                  then the new ContactGroup has two trajectories
+                  which consist of old trajectories
+                  2 and 0, with the frames 101,100 and 10,20,
+                  respectively. The output order corresponds
+                  the input order both in terms of keys and
+                  values of the input dictionary.
+                * list of pairs of integers:
+                  individual frames
+                  of individual trajectories merged into
+                  a single ContactGroup, e.g.
 
-            * integer `n`:
-              select the first `n` frames
-              of each trajectory. If `n` is negative,
-              then select the last `n` frames of each
-              trajectory. If a trajectory has
-              less than `n` frames, all frames are selected.
-            * dict:
-              keyed with trajectory indices, valued
-              with a list of trajectory frames. E.g.
-              if `frames = {2 : [101,100], 0: [10, 20]}`,
-              then the new ContactGroup has two trajectories
-              which consist of old trajectories
-              2 and 0, with the frames 101,100 and 10,20,
-              respectively. The output order corresponds
-              the input order both in terms of keys and
-              values of the input dictionary.
-            * list of pairs of integers :
-              individual frames
-              of individual trajectories merted into
-              a single ContactGroup, e.g.
-              [[ti,fj],[tk,fl],[tm,fn]] means the
-              new ContactGroup has three frames
-              * frame j of trajectory i
-              * frame k of trajectory l
-              * frame n of trajectory m
+                  >>> frames = [[i,j],
+                  >>>           [k,l],
+                  >>>           [m,n]]
+
+                  means the new ContactGroup has three frames
+                      * frame j of trajectory i
+                      * frame k of trajectory l
+                      * frame n of trajectory m
 
         Returns
         -------
@@ -6118,22 +6121,22 @@ class ContactGroup(object):
                             # name=self.name # Unsure about what's best here, keep it or modify it. It's not used anywhere
                             )
 
-    def to_new_ContactGroup(self,
-                            CSVexpression=None,
-                            residue_indices=None,
-                            allow_multiple_matches=False, merge=True,
-                            keep_interface=True,
-                            n_residues=1):
+    def select_by_residues(self,
+                           CSVexpression=None,
+                           residue_indices=None,
+                           allow_multiple_matches=False, merge=True,
+                           keep_interface=True,
+                           n_residues=1):
         r"""
-        Creates a new :obj:`ContactGroup` from this une using a CSV expression to filter for residues
+        Return a copy this :obj:`ContactGroup`, but with a sub-selection of :obj:`ContactGroup.contact_pairs` based on residues.
+        The returned :obj:`ContactGroup` has the same trajectories and frames as the original.
 
-        The filtering of ContactPairs against `CSVexpression` or `residue_indices`
-        can be such that:
+        The filtering of ContactPairs is done using `CSVexpression` or `residue_indices`
+        so that:
         * one residue match per ContactPair is enough, or
         * both residues of the ContactPair need to match
         for the ContactPair to be selected for the new ContactGroup.
         See `n_residues` for more info.
-
 
         Parameters
         ----------

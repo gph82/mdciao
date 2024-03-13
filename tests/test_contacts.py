@@ -1821,7 +1821,7 @@ class TestContactGroup(TestBaseClassContactGroup):
                 assert len(repframes)==len(RMSDd)==len(values)==len(trajs)==10
                 assert isinstance(trajs[0], md.Trajectory)
 
-    def test_to_new_ContactGroup_CSV(self):
+    def test_select_by_residues_CSV(self):
         CG = _mdcsites([{"name": "test_random",
                          "pairs": {"residx": [[100, 200],
                                               [100, 300],
@@ -1837,7 +1837,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         keys = [str(CG.top.residue(ii)) for ii in [200,10, 1]]
         CSV = ','.join(keys)
 
-        new_CG : contacts.ContactGroup = CG.to_new_ContactGroup(CSVexpression=CSV)
+        new_CG : contacts.ContactGroup = CG.select_by_residues(CSVexpression=CSV)
         assert new_CG.n_ctcs == 4
         assert new_CG._contacts[0] is CG._contacts[0]
         assert new_CG._contacts[1] is CG._contacts[2]
@@ -1845,7 +1845,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         assert new_CG._contacts[3] is CG._contacts[5]
         assert isinstance(new_CG,contacts.ContactGroup)
 
-        new_CG_dict = CG.to_new_ContactGroup(CSVexpression=CSV, merge=False)
+        new_CG_dict = CG.select_by_residues(CSVexpression=CSV, merge=False)
 
         self.assertSequenceEqual(list(new_CG_dict.keys()),CSV.split(","))
 
@@ -1860,7 +1860,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         assert new_CG_dict[keys[2]] is None
 
 
-    def test_to_new_ContactGroup_residue_indices(self):
+    def test_select_by_residues_residue_indices(self):
         CG = _mdcsites([{"name": "test_random",
                          "pairs": {"residx": [[100, 200],
                                               [100, 300],
@@ -1875,14 +1875,14 @@ class TestContactGroup(TestBaseClassContactGroup):
                        figures=False)["test_random"]
 
         residue_indices = [10, 40, 1]
-        new_CG : contacts.ContactGroup = CG.to_new_ContactGroup(residue_indices=residue_indices)
+        new_CG : contacts.ContactGroup = CG.select_by_residues(residue_indices=residue_indices)
         assert new_CG.n_ctcs == 3
         assert new_CG._contacts[0] is CG._contacts[2]
         assert new_CG._contacts[1] is CG._contacts[4]
         assert new_CG._contacts[2] is CG._contacts[5]
         assert isinstance(new_CG,contacts.ContactGroup)
 
-        new_CG_dict = CG.to_new_ContactGroup(residue_indices=residue_indices, merge=False)
+        new_CG_dict = CG.select_by_residues(residue_indices=residue_indices, merge=False)
         self.assertSequenceEqual(list(new_CG_dict.keys()),residue_indices)
         assert new_CG_dict[residue_indices[0]].n_ctcs == 2
         assert new_CG_dict[residue_indices[0]]._contacts[0] is CG._contacts[2]
@@ -1894,7 +1894,7 @@ class TestContactGroup(TestBaseClassContactGroup):
 
         assert new_CG_dict[residue_indices[2]] is None
 
-    def test_to_new_ContactGroup_residue_indices_n_residues_is_2(self):
+    def test_to_select_by_residues_residue_indices_n_residues_is_2(self):
         CG = _mdcsites([{"name": "test_random",
                          "pairs": {"residx": [[100, 200],
                                               [100, 300],
@@ -1910,7 +1910,7 @@ class TestContactGroup(TestBaseClassContactGroup):
                        figures=False)["test_random"]
 
         residue_indices = [10, 40, 20, 50]
-        new_CG : contacts.ContactGroup = CG.to_new_ContactGroup(residue_indices=residue_indices, n_residues=2)
+        new_CG : contacts.ContactGroup = CG.select_by_residues(residue_indices=residue_indices, n_residues=2)
 
         assert isinstance(new_CG, contacts.ContactGroup)
         assert new_CG.n_ctcs == 3
@@ -1919,7 +1919,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         assert new_CG._contacts[2] is CG._contacts[5]
 
 
-        new_CG_dict = CG.to_new_ContactGroup(residue_indices=residue_indices, merge=False, n_residues=2)
+        new_CG_dict = CG.select_by_residues(residue_indices=residue_indices, merge=False, n_residues=2)
         self.assertSequenceEqual(list(new_CG_dict.keys()),residue_indices)
         assert new_CG_dict[residue_indices[0]].n_ctcs == 1
         assert new_CG_dict[residue_indices[0]]._contacts[0] is CG._contacts[2]
