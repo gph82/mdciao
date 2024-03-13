@@ -1010,10 +1010,12 @@ class _ContactStrings(object):
         if self._trajs is None:
             trajlabels = ['traj %u' % ii for ii in range(self._n_trajs)]
         else:
-            if isinstance(self._trajs[0], _md.Trajectory):
-                trajlabels = ['mdtraj.%02u' % ii for ii in range(self._n_trajs)]
-            else:
-                trajlabels = [_path.splitext(ii)[0] for ii in self._trajs]
+            trajlabels = []
+            for ii, itraj in enumerate(self._trajs):
+                if isinstance(itraj, _md.Trajectory):
+                    trajlabels.append('mdtraj.%02u' % ii)
+                else:
+                    trajlabels.append(_path.splitext(itraj)[0])
 
         return trajlabels
 
@@ -2680,14 +2682,16 @@ class ContactGroup(object):
 
     @property
     def trajlabels(self) -> list:
-        r""" List of trajectory labels
+        r""" List of trajectory labels shared by all :obj:`ContactGroup.contact_pairs`.
 
-        If labels were not passed, then labels
-        like 'traj 0','traj 1' and so on are assigned.
-        If :obj:`~mdtraj.Trajectory` objects were passed,
-        then the "mdtraj" descriptor will be used
-        If filenames were passed, then the labels are the
-        filenames (basename, no files) without the extension
+        If :obj:`~mdtraj.Trajectory` objects were passed
+        originally to the underlying :obj:`ContactGroup.contact_pairs`,
+        then `["mdtraj.00", "mdtraj.01",...]` descriptors will be used.
+        If filenames were passed, then the `trajlabels` are the
+        filenames (basename, no files) without the extension.
+        If no labels and no trajectories were passed , then labels
+        like `["traj 0", "traj 1",...]` are used.
+
 
         >>> CG = mdciao.examples.ContactGroupL394()
         >>> CG.trajlabels
@@ -5978,6 +5982,142 @@ class ContactGroup(object):
             return_tuple += tuple([geoms])
         return return_tuple
 
+    def select_by_frames(self, frames) -> ContactPair:
+        r""" Return a copy this ContactGroup, but with a sub-selection of trajectories and frames.
+        The returned ContactGroup has the same ContactPairs as the original.
+
+        Parameters
+        ----------
+        frames : int, dict, or iterable of pairs
+            Control what frames of the trajectory data
+            gets used in the returned ContactGroups. Several modes
+            of input are possible.
+
+            * integer `n`:
+              select the first `n` frames
+              of each trajectory. If `n` is negative,
+              then select the last `n` frames of each
+              trajectory. If a trajectory has
+              less than `n` frames, all frames are selected.
+            * dict:
+              keyed with trajectory indices, valued
+              with a list of trajectory frames. E.g.
+              if `frames = {2 : [101,100], 0: [10, 20]}`,
+              then the new ContactGroup has two trajectories
+              which consist of old trajectories
+              2 and 0, with the frames 101,100 and 10,20,
+              respectively. The output order corresponds
+              the input order both in terms of keys and
+              values of the input dictionary.
+            * list of pairs of integers :
+              individual frames
+              of individual trajectories merted into
+              a single ContactGroup, e.g.
+              [[ti,fj],[tk,fl],[tm,fn]] means the
+              new ContactGroup has three frames
+              * frame j of trajectory i
+              * frame k of trajectory l
+              * frame n of trajectory m
+
+        Returns
+        -------
+        newCG : :obj:`ContactGroup`
+            A new ContactGroup, equivalent to the original
+            one but with only those trajectories and
+            frames selected by `frames`
+
+        Note
+        ----
+        Any trajectory filenames used to instantiate the original
+        ContactGroup, which are stored in :obj:`ContactGroup.trajlabels`,
+        are NOT passed onto the `newCG` returned by this method.
+        This is because frame-indices of the time-traces
+        contained in the `newCG` most likely do not correspond
+        to the frame-indices of the those original filenames. However,
+        the methods of `newCG` are not aware of this and things like
+        :obj:`ContactGroup.repframes` will return the wrong frames.
+        Hence, the `newCG` always gets :obj:`mdtraj.Trajectory` objects
+        as `traj` input and accordingly has `["mdtraj.00", "mdtraj.01"...]`
+        as `trajlabels`. The same principle applies to the order of
+        trajectories, i.e. if you reorder trajectories by passing
+        a dict to `frames`, the `newCG` is not aware of the fact
+        that these trajectories had a previous order. `newCG` has
+        them stored (and readily available) as :obj:`~mdtraj.Trajectory`
+        objects and calls them `["mdtraj.00", "mdtraj.01"...]`.
+
+        """
+        iCP : ContactPair = self.contact_pairs[0]
+        stack = False
+        if isinstance(frames, int):
+            if frames>0:
+                frames = {ii : _np.arange(iCP.n.n_frames[ii])[:frames] for ii in range(iCP.n.n_trajs)}
+            else:
+                frames = {ii: _np.arange(iCP.n.n_frames[ii])[frames:] for ii in range(iCP.n.n_trajs)}
+        elif isinstance(frames, dict):
+            pass
+        else:
+            stack=True
+            frames_df = _DF(_np.array(frames,ndmin=2), columns=["traj", "frame"], dtype=int)
+            frames = {}
+            original_idxs = []
+            for key, jdf in frames_df.groupby("traj"):
+                original_idxs.extend(jdf.index.values)
+                frames[key]=jdf.frame.values
+            idxs4resorting = _np.argsort(original_idxs)
+
+        new_traj_objects = []
+        for key, val in frames.items():
+            itraj = self.contact_pairs[0].time_traces.trajs[key]
+            if isinstance(itraj, _md.Trajectory):
+                new_traj_objects.append(itraj[val])
+            else:
+                if _path.exists(itraj):
+                    print(f"Re-loading {itraj} looking for frames {val[0]}...{val[-1]}, this might take a while.")
+                    itraj = _md.load(itraj, top=self.top)[val]
+                else:
+                    raise FileNotFoundError(
+                        "The file %s can't be found anymore" % itraj)
+                new_traj_objects.append(itraj)
+
+        new_time_arrays=[self.time_arrays[key][val] for key, val in frames.items()]
+        new_ctc_trajs =  [[_np.array(iCP.time_traces.ctc_trajs[key][val]) for key, val in frames.items()] for iCP in self.contact_pairs]
+        new_atom_pair_traces = [[None if iCP.time_traces.atom_pair_trajs is None
+                                 else [iCP.time_traces.atom_pair_trajs[key][val] for
+                                       key, val in frames.items()]][0] for iCP in self.contact_pairs]
+
+        if stack:
+            new_time_arrays = [_np.hstack(new_time_arrays)[idxs4resorting]]
+            new_ctc_trajs = [[_np.hstack(ittr)[idxs4resorting]] for ittr in new_ctc_trajs] # need to wrap each item as list [[]]
+            new_atom_pair_traces = [[_np.vstack(ittr)[idxs4resorting, :]] for ittr in new_atom_pair_traces] #need to wrap each item as list [[]]
+            unitcell_angles = _np.vstack([itraj.unitcell_angles for itraj in new_traj_objects])[idxs4resorting]
+            unitcell_lengths = _np.vstack([itraj.unitcell_lengths for itraj in new_traj_objects])
+            new_traj_objects = [
+                _md.Trajectory(_np.vstack([itraj.xyz for itraj in new_traj_objects])[idxs4resorting], self.top,
+                               unitcell_angles=unitcell_angles[idxs4resorting],
+                               unitcell_lengths=unitcell_lengths[idxs4resorting])]
+
+        new_contact_pairs = []
+        for ii, iCP in enumerate(self.contact_pairs):
+            new_contact_pairs.append(ContactPair(iCP.residues.idxs_pair,
+                                                 new_ctc_trajs[ii],
+                                                 new_time_arrays,
+                                                 top=iCP.top,
+                                                 trajs=new_traj_objects,
+                                                 atom_pair_trajs=new_atom_pair_traces[ii],
+                                                 fragment_idxs=iCP.fragments.idxs,
+                                                 fragment_names=iCP.fragments.names,
+                                                 fragment_colors=iCP.fragments.colors,
+                                                 anchor_residue_idx=iCP.residues.anchor_residue_index,
+                                                 consensus_labels=iCP.residues.consensus_labels,
+                                                 consensus_fragnames=iCP.fragments.consensus))
+        return ContactGroup(new_contact_pairs,
+                            neighbors_excluded=self.neighbors_excluded,
+                            max_cutoff_Ang=self.max_cutoff_Ang,
+                            interface_fragments=
+                            [self.interface_fragments if self.is_interface else None][0],
+                            # name=self.name # Unsure about what's best here, keep it or modify it. It's not used anywhere
+                            )
+
     def to_new_ContactGroup(self,
                             CSVexpression=None,
                             residue_indices=None,
@@ -6092,7 +6232,7 @@ class ContactGroup(object):
         CGs : dict
             The dictionary is keyed with each of the
             original :obj:`self.trajlabels`, and valued
-            with ContactGroups that consist that only contain
+            with ContactGroups that only contain
             information regarding that single trajectory.
 
         Note
@@ -6103,8 +6243,8 @@ class ContactGroup(object):
         containing pathnames, that name will coincide with he n-th
         original `trajlabel`. On the contrary, in case it contained
         a placeholder name created on-the-fly (e.g. 'mdtraj.01') because
-        no pathnames were originally known, but rather :obj:`mdtraj.Trajectories`
-        were passed as `trajs`, that placeholder-name gets re-setted
+        no pathnames were originally known, but rather :obj:`mdtraj.Trajectory` objects
+        were passed as `trajs`, that placeholder-name gets re-set
         to `mdtraj.00` since each *returned* `CG` only "knows" one
         `traj` and it's necessarily the first one.
         """

@@ -31,6 +31,8 @@ from mdciao.cli import sites as _mdcsites
 from pandas import DataFrame as _DF
 import pickle
 
+import io as _io, contextlib as _contextlib
+
 from mdciao.fragments import get_fragments
 from mdciao.utils.residue_and_atom import residues_from_descriptors
 
@@ -1965,6 +1967,206 @@ class TestContactGroup(TestBaseClassContactGroup):
                 _np.testing.assert_array_equal( CG._contacts[jj].time_traces.atom_pair_trajs[ii],
                                                iCG._contacts[jj].time_traces.atom_pair_trajs[0])
                 assert CG._contacts[jj].time_traces.trajs[ii] is iCG._contacts[jj].time_traces.trajs[0]
+
+class TestContactGroup_select_by_frames(TestBaseClassContacts):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestContactGroup_select_by_frames, cls).setUp(cls)
+        cls.second_traj = cls.traj[::-1][:20]
+        cls.trajs = [cls.traj, cls.second_traj]
+        b = _io.StringIO()
+        with _contextlib.redirect_stdout(b):
+            cls.CG : contacts.ContactGroup = _mdcli.sites([{"name": "test", "pairs":{"residx":[[100,200], [100,300]]}}],
+                                                          [cls.file_xtc, cls.second_traj],
+                                                          topology=cls.pdb_file,
+                                   no_disk=True, figures=False)["test"]
+        b.close()
+
+        cls.unchanged_propeties = ['consensus_labels',
+                                   'ctc_labels',
+                                   'ctc_labels_short',
+                                   'ctc_labels_w_fragments_short_AA',
+                                   'fragment_names_best',
+                                   'interface_fragments',
+                                   'interface_labels_consensus',
+                                   'interface_residue_names_w_best_fragments_short',
+                                   'interface_residxs',
+                                   'interface_reslabels_short',
+                                   'is_interface',
+                                   'is_neighborhood',
+                                   'max_cutoff_Ang',
+                                   'n_ctcs',
+                                   'n_trajs',
+                                   # 'name', unsure whether the name should be conserved
+                                   'neighbors_excluded',
+                                   'res_idxs_pairs',
+                                   'residue_names_long',
+                                   'residue_names_short',
+                                   'shared_anchor_residue_index',
+                                   #'trajlabels'
+                                   ]
+
+    def test_first_5(cls):
+        newCG = cls.CG.select_by_frames(5)
+        assert (newCG.n_ctcs == cls.CG.n_ctcs)
+        assert (newCG.n_trajs==cls.CG.n_trajs)
+        assert (newCG.top is cls.CG.top)
+        _np.testing.assert_equal(newCG.trajlabels, ["mdtraj.00","mdtraj.01"])
+        _np.testing.assert_equal(newCG.n_frames,[5,5])
+
+        #Blanket check for most array-like properties
+        for iattr in cls.unchanged_propeties:
+            _np.testing.assert_array_equal(getattr(newCG, iattr), getattr(cls.CG, iattr), iattr)
+
+        # Tests of the time array
+        _np.testing.assert_array_equal(newCG.time_arrays, [time[:5] for time in cls.CG.time_arrays])
+
+        # Test of the time-traces
+        for ii in range(newCG.n_trajs):
+            _np.testing.assert_array_equal([CP.time_traces.ctc_trajs[ii]       for CP in newCG.contact_pairs],
+                                           [CP.time_traces.ctc_trajs[ii][:5] for CP in cls.CG.contact_pairs])
+            _np.testing.assert_array_equal([CP.time_traces.atom_pair_trajs[ii]       for CP in newCG.contact_pairs],
+                                           [CP.time_traces.atom_pair_trajs[ii][:5] for CP in cls.CG.contact_pairs])
+            _np.testing.assert_array_equal([CP.time_traces.trajs[ii].xyz for CP in newCG.contact_pairs],
+                                           [cls.trajs[ii].xyz[:5] for _ in cls.CG.contact_pairs])
+
+
+    def test_last_5(cls):
+        newCG: contacts.ContactGroup = cls.CG.select_by_frames(-5)
+        assert (newCG.n_ctcs == cls.CG.n_ctcs)
+        assert (newCG.n_trajs == cls.CG.n_trajs)
+        assert (newCG.top is cls.CG.top)
+        _np.testing.assert_equal(newCG.trajlabels, ["mdtraj.00", "mdtraj.01"])
+        _np.testing.assert_equal(newCG.n_frames, [5, 5])
+
+        # Blanket check for most array-like properties
+        for iattr in cls.unchanged_propeties:
+            _np.testing.assert_array_equal(getattr(newCG, iattr), getattr(cls.CG, iattr), iattr)
+
+        # Tests of the time array
+        _np.testing.assert_array_equal(newCG.time_arrays, [time[-5:] for time in cls.CG.time_arrays])
+
+        # Test of the time-traces
+        for ii in range(newCG.n_trajs):
+            _np.testing.assert_array_equal([CP.time_traces.ctc_trajs[ii] for CP in newCG.contact_pairs],
+                                           [CP.time_traces.ctc_trajs[ii][-5:] for CP in cls.CG.contact_pairs])
+            _np.testing.assert_array_equal([CP.time_traces.atom_pair_trajs[ii] for CP in newCG.contact_pairs],
+                                           [CP.time_traces.atom_pair_trajs[ii][-5:] for CP in
+                                            cls.CG.contact_pairs])
+            _np.testing.assert_array_equal([CP.time_traces.trajs[ii].xyz for CP in newCG.contact_pairs],
+                                           [cls.trajs[ii].xyz[-5:] for _ in cls.CG.contact_pairs])
+
+
+
+    def test_frames_dictionary(cls):
+        newCG: contacts.ContactGroup = cls.CG.select_by_frames({1: [1, 2], 0: [4, 3]})
+        assert (newCG.n_ctcs == cls.CG.n_ctcs)
+        assert (newCG.n_trajs == cls.CG.n_trajs)
+        assert (newCG.top is cls.CG.top)
+        _np.testing.assert_equal(newCG.trajlabels, ["mdtraj.00", "mdtraj.01"])
+        _np.testing.assert_equal(newCG.n_frames, [2, 2])
+
+        # Blanket check for most array-like properties
+        for iattr in cls.unchanged_propeties:
+           _np.testing.assert_array_equal(getattr(newCG, iattr), getattr(cls.CG, iattr), iattr)
+
+        # Tests of the time array
+        _np.testing.assert_array_equal(newCG.time_arrays, [cls.CG.time_arrays[1][[1, 2]],
+                                                           cls.CG.time_arrays[0][[4, 3]]]
+                                       )
+
+        # Test of the time dependent stuff
+        # We can still iterate through CPs, but the inner implicit iteration has to go,
+        # since we've changed the order of the trajs, so we have to write it out explicitly
+        for ii in range(newCG.n_ctcs):
+            _np.testing.assert_array_equal(newCG.contact_pairs[ii].time_traces.ctc_trajs[0],
+                                           cls.CG.contact_pairs[ii].time_traces.ctc_trajs[1][[1, 2]])
+            _np.testing.assert_array_equal(newCG.contact_pairs[ii].time_traces.ctc_trajs[1],
+                                           cls.CG.contact_pairs[ii].time_traces.ctc_trajs[0][[4, 3]])
+
+            _np.testing.assert_array_equal(newCG.contact_pairs[ii].time_traces.atom_pair_trajs[0],
+                                           cls.CG.contact_pairs[ii].time_traces.atom_pair_trajs[1][[1, 2]])
+            _np.testing.assert_array_equal(newCG.contact_pairs[ii].time_traces.atom_pair_trajs[1],
+                                           cls.CG.contact_pairs[ii].time_traces.atom_pair_trajs[0][[4, 3]])
+
+            _np.testing.assert_array_equal(newCG.contact_pairs[ii].time_traces.trajs[0].xyz,
+                                           cls.trajs[1].xyz[[1, 2], :, :])
+            _np.testing.assert_array_equal(newCG.contact_pairs[ii].time_traces.trajs[1].xyz,
+                                           cls.trajs[0].xyz[[4, 3], :, :])
+
+
+    def test_frames_list_of_pairs(cls):
+
+        newCG: contacts.ContactGroup = cls.CG.select_by_frames([
+            [1, 2],
+            [0, 4],
+            [1, 1],
+            [0, 3],
+            [1, 0]
+        ])
+        test_traj = md.Trajectory(xyz=_np.array([cls.trajs[1][2].xyz.squeeze(),
+                                                 cls.trajs[0][4].xyz.squeeze(),
+                                                 cls.trajs[1][1].xyz.squeeze(),
+                                                 cls.trajs[0][3].xyz.squeeze(),
+                                                 cls.trajs[1][0].xyz.squeeze()]), topology=cls.CG.top,
+                                  time=_np.hstack([cls.trajs[1][2].time,
+                                                   cls.trajs[0][4].time,
+                                                   cls.trajs[1][1].time,
+                                                   cls.trajs[0][3].time,
+                                                   cls.trajs[1][0].time]),
+                                  unitcell_lengths=_np.array([cls.trajs[1][2].unitcell_lengths.squeeze(),
+                                                              cls.trajs[0][4].unitcell_lengths.squeeze(),
+                                                              cls.trajs[1][1].unitcell_lengths.squeeze(),
+                                                              cls.trajs[0][3].unitcell_lengths.squeeze(),
+                                                              cls.trajs[1][0].unitcell_lengths.squeeze()]),
+                                  unitcell_angles=_np.array([cls.trajs[1][2].unitcell_angles.squeeze(),
+                                                             cls.trajs[0][4].unitcell_angles.squeeze(),
+                                                             cls.trajs[1][1].unitcell_angles.squeeze(),
+                                                             cls.trajs[0][3].unitcell_angles.squeeze(),
+                                                             cls.trajs[1][0].unitcell_angles.squeeze()])
+                                   )
+        b = _io.StringIO()
+        with _contextlib.redirect_stdout(b):
+            ref_CG : contacts.ContactGroup = _mdcli.sites([{"name": "test", "pairs":{"residx":[[100,200], [100,300]]}}], test_traj,
+                                   no_disk=True, figures=False)["test"]
+        b.close()
+
+        assert (newCG.n_ctcs == cls.CG.n_ctcs)
+        assert (newCG.n_trajs == 1)
+        assert (newCG.trajlabels[0]=="mdtraj.00")
+        assert (newCG.top is cls.CG.top)
+
+        # Blanket check for most array-like properties
+        for iattr in cls.unchanged_propeties:
+            if iattr in ["n_trajs", "trajlabels"]: #trajlabels is checked couple of lines up
+                continue
+            _np.testing.assert_array_equal(getattr(newCG, iattr), getattr(cls.CG, iattr), iattr)
+
+        # Tests of the time array
+        _np.testing.assert_array_equal(newCG.time_arrays, ref_CG.time_arrays)
+        _np.testing.assert_array_equal(newCG.time_arrays, [test_traj.time])
+
+        # Tests of the unitcell
+        _np.testing.assert_array_equal(newCG.contact_pairs[0].time_traces.trajs[0].unitcell_lengths,
+                                       test_traj.unitcell_lengths)
+        _np.testing.assert_array_equal(newCG.contact_pairs[0].time_traces.trajs[0].unitcell_lengths,
+                                       ref_CG.contact_pairs[0].time_traces.trajs[0].unitcell_lengths)
+
+        _np.testing.assert_array_equal(newCG.contact_pairs[0].time_traces.trajs[0].unitcell_angles,
+                                       test_traj.unitcell_angles)
+        _np.testing.assert_array_equal(newCG.contact_pairs[0].time_traces.trajs[0].unitcell_angles,
+                                       ref_CG.contact_pairs[0].time_traces.trajs[0].unitcell_angles)
+
+
+        # Test of the time dependent stuff
+        for ii in range(newCG.n_trajs):
+            _np.testing.assert_array_equal([CP.time_traces.ctc_trajs[ii] for CP in newCG.contact_pairs],
+                                           [CP.time_traces.ctc_trajs[ii] for CP in ref_CG.contact_pairs])
+            _np.testing.assert_array_equal([CP.time_traces.atom_pair_trajs[ii] for CP in newCG.contact_pairs],
+                                           [CP.time_traces.atom_pair_trajs[ii] for CP in ref_CG.contact_pairs])
+            _np.testing.assert_array_equal([CP.time_traces.trajs[ii].xyz for CP in newCG.contact_pairs],
+                                           [CP.time_traces.trajs[ii].xyz for CP in ref_CG.contact_pairs])
 
 class TestContactGroupFrequencies(TestBaseClassContactGroup):
 
