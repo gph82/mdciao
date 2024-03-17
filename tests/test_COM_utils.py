@@ -43,7 +43,7 @@ class Test_COM_utils(unittest.TestCase):
         Dref = _np.vstack((_np.linalg.norm(self.COMS_mdtraj[:,0]-self.COMS_mdtraj[:,10], axis=1),
                            _np.linalg.norm(self.COMS_mdtraj[:,10]- self.COMS_mdtraj[:,20], axis=1))).T
         COMdist =  geom2COMdist(self.traj_5_frames, residue_pairs=res_pairs)
-        _np.testing.assert_allclose(Dref, COMdist)
+        _np.testing.assert_array_almost_equal(Dref, COMdist)
 
 class Test_geom2max_residue_radius(unittest.TestCase):
 

@@ -18,7 +18,7 @@ classifiers = [ "Development Status :: 4 - Beta",
 requires-python = ">=3.6"
 dependencies = [ "cython",
                  "numpy>=1.18.1",
-                 "mdtraj",
+                 "mdtraj>=1.9.8",
                  "astunparse; python_version!='3.8'",
                  "astunparse<1.6.3; python_version=='3.8'",
                  "pandas",
