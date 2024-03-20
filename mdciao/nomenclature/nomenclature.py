@@ -1513,15 +1513,15 @@ class AlignerConsensus(object):
                 raise ValueError("`maps` should contain either list, dicts, or %s objects, but found %s for key %s"%(LabelerConsensus, type(imap), key))
         self._maps = {key : {ii : lab for ii, lab in imap.items() if str(lab).lower()!="none"} for key, imap in self.maps.items()}
 
-        self._residxs = None
-        for key, imap in self.maps.items():
-            idf = _DataFrame([imap.values(), imap.keys()],
-                             index=["consensus", key]).T
-
-            if self._residxs is None:
-                self._residxs = idf
-            else:
-                self._residxs = self._residxs.merge(idf, how="outer")
+        #TODO consider using the "consensus" column directly as index
+        self._residxs = _DataFrame([{val : key for key, val in val.items()} for val in self.maps.values()],
+                              index=maps.keys())
+        if None in self._residxs.keys():
+            self._residxs.pop(None)
+        self._residxs = self._residxs.T
+        self._residxs["consensus"] = self._residxs.index.values
+        self._residxs=self._residxs[["consensus"]+[key for key in self._residxs.keys() if key !="consensus"]]
+        self._residxs.index = np.arange(len(self._residxs))
 
         sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)
         assert len(sorted_keys)==len(self._residxs["consensus"]),  (len(sorted_keys), len(self._residxs["consensus"]))
