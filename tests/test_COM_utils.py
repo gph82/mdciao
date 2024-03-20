@@ -35,8 +35,8 @@ class Test_COM_utils(unittest.TestCase):
         residue_idxs = [1, 3, 5, 7]
         COMSs_mine = geom2COMxyz(self.traj_5_frames, residue_idxs=residue_idxs)
 
-        _np.testing.assert_allclose(COMSs_mine[:, [residue_idxs]],
-                                    self.COMS_mdtraj[:,[residue_idxs]])
+        _np.testing.assert_allclose(COMSs_mine,
+                                    self.COMS_mdtraj[:,residue_idxs])
 
     def test_COMdist_works(self):
         res_pairs = [[0,10], [10,20]]
