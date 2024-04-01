@@ -1045,8 +1045,7 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
 
     """
     if isinstance(ixtc, _md.Trajectory):
-        # TODO it's time to use yield here, this is killing performance
-        iterate = lambda ixtc: [ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride], chunksize)]
+        iterate = lambda ixtc: (ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride], chunksize))
         inform = lambda ixtc, traj_idx, chunk_idx, running_f: \
             print("Streaming over trajectory object nr. %3u (%6u frames, %6u with stride %2u) in chunks of "
                   "%3u frames. Now at chunk nr %4u, frames so far %6u" %
