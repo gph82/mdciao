@@ -8,9 +8,9 @@ Functions related to Center-Of-Mass (COM) computations
 
 """
 import numpy as _np
-from scipy.spatial.distance import pdist as _pdist
 import mdtraj as _md
 from tqdm import tqdm as _tqdm
+from mdtraj.geometry.distance import compute_distances_core as _compute_distances_core
 
 def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True,
                  periodic=True, per_residue_unwrap=True) -> _np.ndarray:
@@ -128,18 +128,8 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True,
     """
 
     residue_pairs = _np.array(residue_pairs)
-    residue_pairs.sort(axis=1)
-    assert all(residue_pairs[:, 0] < residue_pairs[:, 1]) #For scipy.pdist to work
     residue_idxs_unique, pair_map = _np.unique(residue_pairs, return_inverse=True)
-    n_unique_residues = len(residue_idxs_unique)
     pair_map = pair_map.reshape(len(residue_pairs),2)
-
-    # From the _pdist doc
-    # For each i and j (where i<j<m),where m is the number of original observations.
-    # The metric dist(u=X[i], v=X[j]) is computed and stored in entry
-    #  m * i + j - ((i + 2) * (i + 1)) // 2.
-    _pdist_ravel = lambda i, j : n_unique_residues * i + j - ((i + 2) * (i + 1)) // 2
-    _pdist_idxs = _pdist_ravel(pair_map[:,0], pair_map[:,1])
 
     if per_residue_unwrap:
         assert periodic, ValueError("Cannot unwrap residues if 'periodic' is set to False.")
@@ -150,23 +140,13 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True,
         unwrapped_residue_geom = geom
     # This would be worth migrating to mdanalysis
     # https://docs.mdanalysis.org/1.0.1/documentation_pages/core/groups.html#MDAnalysis.core.groups.ResidueGroup.center
-    COMs_xyz = geom2COMxyz(unwrapped_residue_geom, residue_idxs=residue_idxs_unique)[:, residue_idxs_unique]
+    COMs_xyz = geom2COMxyz(unwrapped_residue_geom, residue_idxs=residue_idxs_unique)
 
-    if not periodic:
-        # Grab only the _pdist_idxs
-        COM_dists_t =  _np.array([_pdist(ixyz)[_pdist_idxs] for ixyz in COMs_xyz])
-    else:
-        sum_over_comps2 = None
-        for ii in range(3):
-            comp_dist = _np.array([_pdist(_np.array(ixyz,ndmin=2).T)[_pdist_idxs] for ixyz in COMs_xyz[:,:,ii]])
-            comp_len = _np.vstack([geom.unitcell_lengths[:,ii] for __ in range(comp_dist.shape[1])]).T
-            bool_mask = (comp_dist > (geom.unitcell_lengths[:, ii, _np.newaxis] * .5))
-            comp_dist[bool_mask] -= comp_len[bool_mask]
-            if sum_over_comps2 is None:
-                sum_over_comps2 = comp_dist**2
-            else:
-                sum_over_comps2 += comp_dist**2
-        COM_dists_t = _np.sqrt(sum_over_comps2)
+    COM_dists_t = _compute_distances_core(COMs_xyz,
+                                          pair_map,
+                                          unitcell_vectors=geom.unitcell_vectors,
+                                          periodic=periodic,
+                                          )
 
     if subtract_max_radii:
         if low_mem:
@@ -211,13 +191,11 @@ def geom2COMxyz(igeom, residue_idxs=None):
 
     residue_idxs : iterable, default is None
         Residues for which the center of mass will be computed. Default
-        is to compute all residues. The excluded residues will appear
-        as np.nans in the returned value, which has the same shape
-        regardless of the input
+        is to compute all residues.
 
     Returns
     -------
-    COMs : numpy.ndarray of shape (igeom.n_frames, igeom.n_residues,3)
+    COMs : numpy.ndarray of shape (igeom.n_frames, len(residue_idxs),3)
 
     """
 
@@ -225,11 +203,10 @@ def geom2COMxyz(igeom, residue_idxs=None):
         residue_idxs=_np.arange(igeom.top.n_residues)
     masses = [_np.hstack([aa.element.mass for aa in rr.atoms]) for rr in
               igeom.top.residues]
-    COMs_res_time_coords = _np.zeros((igeom.n_residues,igeom.n_frames,3))
-    COMs_res_time_coords[:,:,:] = _np.nan
-    COMs_res_time_coords[residue_idxs] = [_np.average(igeom.xyz[:, [aa.index for aa in igeom.top.residue(index).atoms], :], axis=1, weights=masses[index])
-                            for index in residue_idxs]
-    COMs_time_res_coords = _np.swapaxes(_np.array(COMs_res_time_coords),0,1)
+    COMs_res_time_coords = _np.array([_np.average(igeom.xyz[:, [aa.index for aa in igeom.top.residue(index).atoms], :],
+                                                  axis=1, weights=masses[index])
+                                      for index in residue_idxs])
+    COMs_time_res_coords = _np.swapaxes(_np.array(COMs_res_time_coords), 0, 1)
     return COMs_time_res_coords
 
 def geom2max_residue_radius(geom, residue_idxs=None, res_COMs=None) -> _np.ndarray:
@@ -274,7 +251,7 @@ def geom2max_residue_radius(geom, residue_idxs=None, res_COMs=None) -> _np.ndarr
             raise ValueError("If 'residue_idxs' is None, then 'res_COMs' has to be None as well.")
 
     if res_COMs is None:
-        res_COMs = geom2COMxyz(geom, residue_idxs=residue_idxs)[:, residue_idxs]
+        res_COMs = geom2COMxyz(geom, residue_idxs=residue_idxs)
     else:
         assert res_COMs.shape[0] == geom.n_frames
         assert res_COMs.shape[1] == len(residue_idxs)
