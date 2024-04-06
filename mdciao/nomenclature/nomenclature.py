@@ -1514,19 +1514,18 @@ class AlignerConsensus(object):
         self._maps = {key : {ii : lab for ii, lab in imap.items() if str(lab).lower()!="none"} for key, imap in self.maps.items()}
 
         #TODO consider using the "consensus" column directly as index
-        self._residxs = _DataFrame([{val : key for key, val in val.items()} for val in self.maps.values()],
-                              index=maps.keys())
+        self._residxs = _DataFrame([{val: key for key, val in val.items()} for val in self.maps.values()],
+                                   index=self.maps.keys())
         if None in self._residxs.keys():
             self._residxs.pop(None)
         self._residxs = self._residxs.T
         self._residxs["consensus"] = self._residxs.index.values
         self._residxs=self._residxs[["consensus"]+[key for key in self._residxs.keys() if key !="consensus"]]
-        self._residxs.index = _np.arange(len(self._residxs))
 
         sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)
         assert len(sorted_keys)==len(self._residxs["consensus"]),  (len(sorted_keys), len(self._residxs["consensus"]))
         self._residxs = self._residxs.sort_values("consensus", key=lambda col: col.map(lambda x: sorted_keys.index(x)))
-        self._residxs = self._residxs.reset_index(drop=True)
+        self._residxs.index = _np.arange(len(self._residxs))
 
         if self.tops is not None:
             self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
