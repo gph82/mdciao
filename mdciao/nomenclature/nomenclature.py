@@ -1521,7 +1521,7 @@ class AlignerConsensus(object):
         self._residxs = self._residxs.T
         self._residxs["consensus"] = self._residxs.index.values
         self._residxs=self._residxs[["consensus"]+[key for key in self._residxs.keys() if key !="consensus"]]
-        self._residxs.index = np.arange(len(self._residxs))
+        self._residxs.index = _np.arange(len(self._residxs))
 
         sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)
         assert len(sorted_keys)==len(self._residxs["consensus"]),  (len(sorted_keys), len(self._residxs["consensus"]))
