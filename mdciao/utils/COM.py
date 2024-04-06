@@ -46,7 +46,7 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True,
         when subtracting pairs of radii from the COM distances.
         This results in an even lower value for lower bound
         of the COM-distances, which is itself still a lower-bond.
-        For the porpuses of cutoff-thresholding, this "overshooting"
+        For the purposes of cutoff-thresholding, this "overshooting"
         has little consequence, see the note below for a benchmark case.
     periodic : bool, default is True
         Compute COM distances under the minimum image convention.
@@ -151,11 +151,12 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True,
     if subtract_max_radii:
         if low_mem:
             res_max_radius = geom2max_residue_radius(unwrapped_residue_geom, residue_idxs_unique, res_COMs=COMs_xyz).max(0)
-            max_radius_pairs = _np.array([res_max_radius[ii] + res_max_radius[jj] for ii, jj in pair_map])
+            max_radius_pairs = res_max_radius[pair_map].sum(1)
         else:
             res_max_radius = geom2max_residue_radius(unwrapped_residue_geom, residue_idxs_unique, res_COMs=COMs_xyz)
-            max_radius_pairs = _np.array([res_max_radius[:, ii] + res_max_radius[:, jj] for ii, jj in pair_map]).T
+            max_radius_pairs = res_max_radius[:, pair_map].sum(axis=-1)
 
+        # TODO update memory numbers
         # Low mem vs high mem. 6000 frames, 106499 atoms
         # peak memory: 22178.34 MiB, increment: 10344.77 MiB
         # peak memory: 27577.62 MiB, increment: 15739.57 MiB <-high mem
