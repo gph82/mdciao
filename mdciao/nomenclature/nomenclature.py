@@ -1531,7 +1531,10 @@ class AlignerConsensus(object):
             self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
             self._residxs = self._residxs.astype({key: "Int64" for key in self.keys})
             for key in self.keys:
-                not_nulls = ~self.residxs[key].isnull()
+                not_nulls = self.residxs[key].notnull()
+                #TODO check alternative for speedups
+                #self._AAresSeq.loc[not_nulls, key]=self.residxs[key][not_nulls].map(lambda ii : _mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),
+                #                                                          keep_index=True))
                 self._AAresSeq[key] = [[_mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),keep_index=True) if not_null else ii][0]
                                        for not_null, ii in zip(not_nulls, self.residxs[key])]
                 self._CAidxs[key] = [[self.tops[key].residue(ii).atom("CA").index if not_null else ii][0]
