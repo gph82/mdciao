@@ -267,6 +267,7 @@ def geom2max_residue_radius(geom, residue_idxs=None, res_COMs=None) -> _np.ndarr
 
 
 def _per_residue_unwrapping(traj,
+                            residue_idxs=None,
                             max_res_radii_t=None, progressbar=False, inplace=False,
                             unwrap_when_smaller_than=.4) -> _md.Trajectory:
     r"""
@@ -310,6 +311,9 @@ def _per_residue_unwrapping(traj,
     Parameters
     ----------
     traj : :obj:`~mdtraj.Trajectory`
+    residue_idxs : iterable of ints, default is None
+        Apply the method only to these residues. Default
+        is to apply it to all.
     max_res_radii_t : 2D np.ndarray, default is None
         Optionally, pass here the value of
         the residue radii before any unwrapping takes place,
@@ -336,13 +340,14 @@ def _per_residue_unwrapping(traj,
         residues or, if `inplace` was True,
         an updated `traj` with the unwrapped residues.
     """
-
+    if residue_idxs is None:
+        residue_idxs = _np.arange(traj.n_residues)
     if max_res_radii_t is None:
-        max_res_radii_t = geom2max_residue_radius(traj)
+        max_res_radii_t = geom2max_residue_radius(traj, residue_idxs=residue_idxs)
     else:
-        assert max_res_radii_t.shape ==(traj.n_frames, traj.n_residues)
+        assert max_res_radii_t.shape ==(traj.n_frames, len(residue_idxs))
     broken_res_bool = max_res_radii_t > (traj.unitcell_lengths.min() * unwrap_when_smaller_than)
-
+    assert broken_res_bool.shape == (traj.n_frames, len(residue_idxs)) #making extra sure nothing goes wrong here
     if inplace:
         outtraj = traj
     else:
@@ -350,7 +355,7 @@ def _per_residue_unwrapping(traj,
 
     if broken_res_bool.any():
         PB = _tqdm(total = broken_res_bool.sum(), disable=not progressbar)
-        for res_idx, res_bool in enumerate(broken_res_bool.T):
+        for res_idx, res_bool in zip(residue_idxs, broken_res_bool.T):
             time_frames = _np.flatnonzero(res_bool)
             if len(time_frames) > 0:
                 atoms = [aa.index for aa in traj.top.residue(res_idx).atoms]

@@ -155,7 +155,7 @@ class TestUnwrapping(unittest.TestCase):
               "ATOM      2  CB  GLU A  30      90.000  95.000  10.000  1.00  0.00           C \n" \
               "ATOM      3  CA  VAL A  31      0.0000  0.0000  0.0000  1.00  0.00           C \n" \
               "ATOM      4  CB  VAL A  31      0.0000  5.0000  0.0000  1.00  0.00           C \n" \
-              "TER      10      TRP A  32 "
+              "TER       4      VAL A  31 "
         with tempfile.NamedTemporaryFile(suffix=".pdb") as tf:
             with open(tf.name, "w") as f:
                 f.write(pdb)
@@ -186,6 +186,24 @@ class TestUnwrapping(unittest.TestCase):
 
         assert per_res_unwrapped is not self.geom
 
+    def test_unwrap_residues_residue_idxs(self):
+        # will leave geom untouched bc residue 1 does not need unwrapping
+        per_res_unwrapped = _per_residue_unwrapping(self.geom, residue_idxs=[1])
+
+        _np.testing.assert_array_equal(per_res_unwrapped.xyz, _np.array([[[.5, 3, 1],
+                                                                          [9, 9.5, 1],
+                                                                          [0, 0, 0],
+                                                                          [0, .5, 0]]]))
+
+        # will have only unwrapped residue 0
+        per_res_unwrapped = _per_residue_unwrapping(self.geom, residue_idxs=[0])
+
+        _np.testing.assert_array_equal(per_res_unwrapped.xyz, _np.array([[[.5, 3, 1],
+                                                                          [-1, -0.5, 1],
+                                                                          [0, 0, 0],
+                                                                          [0, .5, 0]]]))
+
+        assert per_res_unwrapped is not self.geom
 
     def test_inplace_w_maxradii(self):
         geom = md.Trajectory(_np.copy(self.geom._xyz), self.geom.top, time=self.geom.time, unitcell_angles=self.geom.unitcell_angles,
