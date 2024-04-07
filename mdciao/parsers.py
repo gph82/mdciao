@@ -463,13 +463,6 @@ def parser_for_rn():
     _parser_add_n_neighbors(parser)
     _parser_add_chunk(parser)
     _parser_add_smooth(parser)
-    parser.add_argument("--nlist_cutoff_Ang", type=float,
-                        help="Cutoff for the initial neighborlist. Only atoms that are \n"
-                             "within this distance in the original reference \n"
-                             "(the topology file) are considered potential neighbors \n"
-                             "of the --residues, s.t. non-necessary distances \n"
-                             " (e.g. between the receptor's N-terminus and G-protein) are not even computed. "
-                             "Default is 15 Angstrom.", default=15)
     _parser_add_fragments(parser)
     _parser_add_fragment_names(parser)
     _parser_add_no_frag(parser)
@@ -638,13 +631,6 @@ def parser_for_interface():
                         help="Do not show frequencies smaller than this. Default is 0.05. If you notice the output being "
                              "truncated at values much larger than this, but suspect that some contacts "
                              "are not being reported, increase the 'ctc_control' parameter")
-    parser.add_argument("-ic", "--interface_cutoff_Ang", type=float,
-                        help="The interface between both groups is defined as the set of group_1-group_2-"
-                             "distances that are within this "
-                             "cutoff in the reference topology. Otherwise, a large number of "
-                             "non-necessary distances (e.g. between N-terminus and G-protein) are computed. Default is 35. You "
-                             "can pass '0' to have no cutoff at all (include all possible interface contacts)",
-                        default=35)
     parser.add_argument('--cmap',type=str,help="The colormap for the contact matrix. Default is 'binary' which is "
                                                  "black and white, but you can choose anthing from here: "
                                                  "https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html",
