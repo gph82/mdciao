@@ -670,23 +670,6 @@ def parser_for_interface():
     _parser_add_repframes(parser)
     return parser
 
-def parser_for_contact_map():
-    parser = _parser_top_traj(description='Residue-residue contact-maps')
-
-    parser.add_argument("--list_ctc_cutoff_Ang", type=str,
-                        help="The cutoff distances between two residues for them to be considered in contact.",
-                        default='3')
-    _parser_add_stride(parser)
-    _parser_add_n_jobs(parser)
-    _parser_add_chunk(parser, default=100)
-    _parser_add_output_desc(parser,'is_interface')
-    _parser_add_output_dir(parser)
-    _parser_add_graphic_ext(parser)
-    _parser_add_graphic_dpi(parser)
-    _parser_add_scheme(parser)
-
-    return parser
-
 def parser_for_frag_overview():
     parser = argparse.ArgumentParser(description='Break a molecular topology into fragments using different heuristics.')
     parser.add_argument('-m','--methods', help='What methods to test. '

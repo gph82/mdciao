@@ -6,7 +6,6 @@ class TestParsersRun(unittest.TestCase):
     # This parsers will be tested anyway when testing the scripts,
     # but anyway, here we are
     def test_all(self):
-        parsers.parser_for_contact_map()
         parsers.parser_for_frag_overview()
         parsers.parser_for_GPCR_overview()
         parsers.parser_for_densities()
