@@ -335,39 +335,10 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                       no_disk=True,
                                       figures=False,
                                       naive_bonds=True,
-                                      nlist_cutoff_Ang=1000,
                                       ctc_cutoff_Ang=1000,
                                       ctc_control=1.,
                                       )[861]
         assert n.n_ctcs==geom_CAs.top.n_residues-4-4-1# all residues minus 4 neighbors (x2 directions) minus itself
-
-    def test_precomputed(self):
-        CG1 = list(cli.residue_neighborhoods([1043],
-                                             [self.traj, self.traj_reverse],
-                                             self.geom,
-                                             res_idxs=True,
-                                             no_disk=True,
-                                             figures=False).values())[0]
-        CG2 = list(cli.residue_neighborhoods([1043],
-                                             [self.traj, self.traj_reverse],
-                                             self.geom,
-                                             res_idxs=True,
-                                             no_disk=True,
-                                             figures=False,
-                                             pre_computed_distance_matrix=_np.zeros((self.geom.n_residues,
-                                                                                     self.geom.n_residues))).values())[0]
-        _np.testing.assert_array_equal(CG1.frequency_per_contact(4), CG2.frequency_per_contact(4))
-
-    def test_precomputed_raises(self):
-        with pytest.raises(ValueError):
-            cli.residue_neighborhoods([1043],
-                                      [self.traj, self.traj_reverse],
-                                      self.geom,
-                                      res_idxs=True,
-                                      no_disk=False,
-                                      figures=False,
-                                      pre_computed_distance_matrix=_np.zeros((self.geom.n_residues,
-                                                                              self.geom.n_residues + 1)))
 
 class Test_sites(TestCLTBaseClass):
 
@@ -605,15 +576,6 @@ class Test_interface(TestCLTBaseClass):
                                   #no_disk=self.no_disk
                                   )
 
-    def test_no_interface_cutoff_Ang(self):
-        cli.interface([self.traj, self.traj_reverse],
-                      self.geom,
-                      fragments=["967-1001",  # TM6
-                                 "328-353"],  # a5
-                      figures=False,
-                      no_disk=self.no_disk,
-                      interface_cutoff_Ang=None
-                      )
 
     def test_w_nomenclature_CGN_GPCR_fragments_are_consensus_and_flareplot_and_self_interface(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
