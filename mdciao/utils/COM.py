@@ -134,7 +134,7 @@ def geom2COMdist(geom, residue_pairs, subtract_max_radii=False, low_mem=True,
     if per_residue_unwrap:
         assert periodic, ValueError("Cannot unwrap residues if 'periodic' is set to False.")
         # Per-residue per-frame unwraping
-        unwrapped_residue_geom = _per_residue_unwrapping(geom)
+        unwrapped_residue_geom = _per_residue_unwrapping(geom,residue_idxs=residue_idxs_unique)
 
     else:
         unwrapped_residue_geom = geom
