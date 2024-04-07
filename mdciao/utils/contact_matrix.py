@@ -178,7 +178,7 @@ def xtcs2ctc_mat_dict(xtcs, top, list_ctc_cutoff_Ang,
 
 # TODO many of these could in principle be named tuples but IDK if
 # its worth the effort and documentation-sphinx headeach
-
+# TODO fully implement or get rid of this
 def per_xtc_ctc_mat_dict(top, itraj, list_ctc_cutoff_Ang, chunksize, stride,
                          traj_idx, res_COM_cutoff_Ang,
                          **kwargs_mdcontacts):
