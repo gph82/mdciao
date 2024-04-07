@@ -547,8 +547,7 @@ def residue_neighborhoods(residues,
                           ctc_control=5,
                           n_nearest=4,
                           scheme="closest-heavy",
-                          chunksize_in_frames=10000,
-                          nlist_cutoff_Ang=15,
+                          chunksize_in_frames=2000,
                           n_smooth_hw=0,
                           sort=True,
                           pbc=True,
@@ -583,7 +582,6 @@ def residue_neighborhoods(residues,
                           savetabs=True,
                           savetrajs=False,
                           figures=True,
-                          pre_computed_distance_matrix=None,
                           naive_bonds=False
                           ):
     r"""Per-residue neighborhoods based on contact frequencies between pairs
@@ -673,19 +671,8 @@ def residue_neighborhoods(residues,
         residues. Choices are {'ca', 'closest', 'closest-
         heavy', 'sidechain', 'sidechain-heavy'}. See
         :obj:`mdtraj.compute_distances` documentation for more info
-    chunksize_in_frames : int, default is 10000
-        Stream through the trajectory data in chunks of this many frames
-        Can lead to memory errors if :obj:`n_jobs` makes it so that
-        e.g. 4 trajectories of 10000 frames each are loaded to memory
-        and their residue-residue distances computed
-    nlist_cutoff_Ang : int, default is 15
-        Before computing the residue-residue distance for all frames,
-        neighbor-list is created, for each residue, that includes
-        the residues up to :obj:`nlist_cutoff_Ang` from the residue.
-        Increase this parameters (e.g. to 30) if you expect large conformational
-        changes and/or the geometry in :obj:`topology`. Setting
-        this cutoff to None is equivalent to using no cutoff,
-        i.e. all possible contacts are regarded
+    chunksize_in_frames : int, default is 2000
+        TODO
     n_smooth_hw: int, default is 0
         Plots of the time-traces will be smoothed using a window
         of 2*n_smooth_hw
@@ -823,10 +810,6 @@ def residue_neighborhoods(residues,
         figs, tables, trajs, nomenclature
     figures : bool, default is True
         Draw figures
-    pre_computed_distance_matrix : (m,m) np.ndarray, default is None
-        The distance matrix here will speed up the
-        pre-computing of likely neighbors. Usecase
-        are several API-calls following each other
     naive_bonds : bool, default is False
         If :obj:`top` doesn't automatically yield
         a list bonds between residues, build naive
@@ -910,40 +893,20 @@ def residue_neighborhoods(residues,
         fragment_idxs = [[_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair] for pair in ctc_idxs]
         ctc_idxs = [ctc_idxs[ii] for (ii,pair) in enumerate(fragment_idxs) if pair[0]!=pair[1]]
 
-    if nlist_cutoff_Ang is None:
-        nlist_cutoff_Ang = _np.inf
-    else:
-        print(
-            "\nPre-computing likely neighborhoods by reducing the neighbor-list\n"
-            "to those within %u Angstrom"%nlist_cutoff_Ang,
-            end=" ",flush=True)
-
-    if pre_computed_distance_matrix is not None:
-        if not pre_computed_distance_matrix.shape[0] == pre_computed_distance_matrix.shape[1] == refgeom.top.n_residues:
-            raise ValueError("Matrix doesn't have expected size (%u,%u), but shape (%u,%u)" % (refgeom.top.n_residues,
-                                                                                               refgeom.top.n_residues,
-                                                                                               pre_computed_distance_matrix.shape[0],
-                                                                                               pre_computed_distance_matrix.shape[1]))
-        ctcs = [_np.array([pre_computed_distance_matrix[ii][jj] for (ii, jj) in ctc_idxs], ndmin=2)]
-        print("using the pre_computed_contact_matrix...", end="",flush=True)
-        ctc_idxs=_np.array(ctc_idxs)
-    else:
-        print("in the first frame of reference geom\n'%s':..." % [topology or refgeom][0],
-              end="",
-              flush=True)
-        ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs), periodic=pbc)
-    print("done!")
-
-    ctc_idxs_small = _np.flatnonzero(ctcs[0] < nlist_cutoff_Ang / 10)
-    _, ctc_idxs_small = _md.compute_contacts(refgeom, ctc_idxs[ctc_idxs_small])
-    ctc_idxs_small = _mdcu.lists.unique_list_of_iterables_by_tuple_hashing(ctc_idxs_small)
-
-    print("From %u potential distances, the neighborhoods have been "
-          "reduced to only %u potential contacts.\n"
-          "If this number is still too high (i.e. the computation is too slow)"
-          ", consider using a smaller nlist_cutoff_Ang " % (
-              len(ctc_idxs), len(ctc_idxs_small)))
-
+    print(f"Performing a first pass on {len(ctc_idxs)} residue pairs to compute lower bounds\n"
+          f"on residue-residue distances via residue-COM distances.")
+    idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
+                                                            stride=stride,
+                                                            chunksize=chunksize_in_frames,
+                                                            n_jobs=n_jobs,
+                                                            progressbar=False,
+                                                            verbose=False,
+                                                            lb_cutoff_Ang=ctc_cutoff_Ang + 2.5
+                                                            )
+    idx_of_lower_lower_bounds = _np.unique(_np.hstack(idx_of_lower_lower_bounds))
+    ctc_idxs_small = _np.array(ctc_idxs)[idx_of_lower_lower_bounds]
+    print(f"Reduced to only {len(ctc_idxs_small)} residue pairs for the computation of actual residue-residue distances.")
+    print()
     ctcs_trajs, time_arrays, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                                                  chunksize=chunksize_in_frames,
                                                                  return_times_and_atoms=True,
@@ -1073,7 +1036,7 @@ def interface(
         GPCR_UniProt="None",
         CGN_UniProt="None",
         KLIFS_UniProtAC=None,
-        chunksize_in_frames=10000,
+        chunksize_in_frames=2000,
         ctc_cutoff_Ang=4,
         curve_color="auto",
         fragments='lig_resSeq+',
@@ -1081,7 +1044,6 @@ def interface(
         graphic_dpi=150,
         graphic_ext=".pdf",
         background=True,
-        interface_cutoff_Ang=35,
         ctc_control=50,
         n_smooth_hw=0,
         output_desc="interface",
@@ -1206,12 +1168,8 @@ def interface(
         the difference between UniProt Accession Code
         and UniProt entry name as explained
         `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
-    chunksize_in_frames : int, default is 10000
-        Stream through the trajectory data in chunks of this
-        many frames Can lead to memory errors if
-        :obj:`n_jobs` makes it so that e.g. 4 trajectories
-        of 10000 frames each are loaded to memory and their
-        residue-residue distances computed
+    chunksize_in_frames : int, default is 2000
+        TODO
     ctc_cutoff_Ang : float, default is 4
         Any residue-residue distance is considered a contact
         if d<=ctc_cutoff_Ang
@@ -1263,15 +1221,6 @@ def interface(
         * color-like: use this color for the background,
           can be: str, hex, rgba, anything
           `matplotlib.pyplot.colors` understands
-    interface_cutoff_Ang : float, default is 35
-        The interface between both groups is defined as the
-        set of group_1-group_2-distances that are within
-        this cutoff in the reference topology. Otherwise, a
-        large number of non-necessary distances (e.g.
-        between N-terminus and G-protein) are computed.
-        Default is 35. Setting this cutoff to None is
-        equivalent to using no cutoff,
-        i.e. all possible contacts are regarded
     ctc_control : int, default is 50
         Control the number of reported contacts. Can be an
         integer (keep the first n contacts) or a float
@@ -1436,23 +1385,21 @@ def interface(
         nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
 
-    print("\nComputing distances in the interface between fragments\n%s\nand\n%s"%
+    print("\nWill look for contacts in the interface between fragments\n%s\nand\n%s. "%
           ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
            '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]])))))
-    if interface_cutoff_Ang is None:
-        ctc_idxs_intf = ctc_idxs
-    else:
-        print("The interface is restricted to the residues within %3.1f "
-              "Angstrom of each other in the reference topology.\n"
-              "Computing interface..."%interface_cutoff_Ang, end="")
-        ctcs, ctc_idxs = _md.compute_contacts(refgeom[0], _np.vstack(ctc_idxs))
-        print("done!")
-        ctc_idxs_intf = ctc_idxs[_np.argwhere(ctcs[0] < interface_cutoff_Ang / 10).squeeze()]
-        print()
-        print(
-            "From %u potential group_1-group_2 distances, the interface was reduced to only %u potential contacts.\nIf this "
-            "number is still too high (i.e. the computation is too slow) consider using a smaller interface cutoff" % (
-            len(ctc_idxs), len(ctc_idxs_intf)))
+    print(f"Performing a first pass on the {len(ctc_idxs)} group_1-group_2 residue pairs to compute lower bounds\n"
+          f"on residue-residue distances via residue-COM distances.")
+    idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
+                                                            stride=stride,
+                                                            chunksize=chunksize_in_frames,
+                                                            n_jobs=n_jobs,
+                                                            progressbar=False,
+                                                            verbose=True,
+                                                            lb_cutoff_Ang=ctc_cutoff_Ang + 2.5 # IDK why the buffer but who cares
+                                                            )
+    ctc_idxs_intf = _np.array(ctc_idxs)[_np.unique(_np.hstack(idx_of_lower_lower_bounds))]
+    print(f"Reduced to only {len(ctc_idxs_intf)} residue pairs for the computation of actual residue-residue distances.")
     print()
     ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_intf,
                                  stride=stride, return_times_and_atoms=True,
@@ -1700,11 +1647,7 @@ def sites(site_inputs,
         heavy', 'sidechain', 'sidechain-heavy'}. See mdtraj
         documentation for more info
     chunksize_in_frames : int, default is 10000
-        Stream through the trajectory data in chunks of this
-        many frames Can lead to memory errors if
-        :obj:`n_jobs` makes it so that e.g. 4 trajectories
-        of 10000 frames each are loaded to memory and their
-        residue-residue distances computed
+        TODO
     n_smooth_hw : int, default is 0
         Plots of the time-traces will be smoothed using a
         window of 2*n_smooth_hw
