@@ -1402,7 +1402,7 @@ def interface(
                                                             chunksize=chunksize_in_frames,
                                                             n_jobs=n_jobs,
                                                             progressbar=False,
-                                                            verbose=True,
+                                                            verbose=False,
                                                             lb_cutoff_Ang=ctc_cutoff_Ang + 2.5, # IDK why the buffer but who cares
                                                             periodic=pbc,
                                                             )
