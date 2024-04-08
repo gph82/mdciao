@@ -679,7 +679,8 @@ def residue_neighborhoods(residues,
     sort : bool, default is True
         Sort the input :obj:`residues` according to their indices
     pbc : bool, default is True
-        Use periodic boundary conditions
+        Use periodic boundary conditions, i.e. the minimum image convention,
+        to compute distances.
     ylim_Ang : float, default is 15
         Limit in Angstrom of the y-axis of the time-traces.
         Default is 15. Switch to any other float or 'auto'
@@ -901,7 +902,8 @@ def residue_neighborhoods(residues,
                                                             n_jobs=n_jobs,
                                                             progressbar=False,
                                                             verbose=False,
-                                                            lb_cutoff_Ang=ctc_cutoff_Ang + 2.5
+                                                            lb_cutoff_Ang=ctc_cutoff_Ang + 2.5,
+                                                            periodic=pbc,
                                                             )
     idx_of_lower_lower_bounds = _np.unique(_np.hstack(idx_of_lower_lower_bounds))
     ctc_idxs_small = _np.array(ctc_idxs)[idx_of_lower_lower_bounds]
@@ -913,6 +915,7 @@ def residue_neighborhoods(residues,
                                                                  consolidate=False,
                                                                  n_jobs=n_jobs,
                                                                  scheme=scheme,
+                                                                 periodic=pbc,
                                                                  )
     print() # to make sure we don't overwrite output
     actcs = _np.vstack(ctcs_trajs)
@@ -1046,6 +1049,7 @@ def interface(
         background=True,
         ctc_control=50,
         n_smooth_hw=0,
+        pbc=True,
         output_desc="interface",
         output_dir=".",
         short_AA_names=False,
@@ -1229,6 +1233,9 @@ def interface(
     n_smooth_hw : int, default is 0
         Plots of the time-traces will be smoothed using a
         window of 2*n_smooth_hw
+    pbc : bool, default is True
+        Use periodic boundary conditions, i.e. the minimum image convention,
+        to compute distances.
     output_desc : str, default is 'interface'
         Descriptor for output files.
     output_dir : str, default is '.'
@@ -1396,19 +1403,21 @@ def interface(
                                                             n_jobs=n_jobs,
                                                             progressbar=False,
                                                             verbose=True,
-                                                            lb_cutoff_Ang=ctc_cutoff_Ang + 2.5 # IDK why the buffer but who cares
+                                                            lb_cutoff_Ang=ctc_cutoff_Ang + 2.5, # IDK why the buffer but who cares
+                                                            periodic=pbc,
                                                             )
     ctc_idxs_intf = _np.array(ctc_idxs)[_np.unique(_np.hstack(idx_of_lower_lower_bounds))]
     print(f"Reduced to only {len(ctc_idxs_intf)} residue pairs for the computation of actual residue-residue distances.")
     print()
     ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_intf,
-                                 stride=stride, return_times_and_atoms=True,
-                                 consolidate=False,
-                                 chunksize=chunksize_in_frames,
-                                 n_jobs=n_jobs,
-                                 progressbar=True,
-                                 scheme=scheme
-                                 )
+                                                     stride=stride, return_times_and_atoms=True,
+                                                     consolidate=False,
+                                                     chunksize=chunksize_in_frames,
+                                                     n_jobs=n_jobs,
+                                                     progressbar=True,
+                                                     scheme=scheme,
+                                                     periodic=pbc
+                                                     )
 
     # Stack all data
     actcs = _np.vstack(ctcs)
@@ -1652,7 +1661,8 @@ def sites(site_inputs,
         Plots of the time-traces will be smoothed using a
         window of 2*n_smooth_hw
     pbc : bool, default is True
-        Use periodic boundary conditions
+        Use periodic boundary conditions, i.e. the minimum image convention,
+        to compute distances.
     GPCR_UniProt : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         For GPCR nomenclature. If str, e.g. "adrb2_human".
         will try to locate a local filename or do a web lookup in the GPCRdb.
