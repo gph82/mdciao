@@ -1617,9 +1617,9 @@ def sites(site_inputs,
 
     Parameters
     ----------
-    site_inputs : list, default is None
-        List of sites to compute. Sites can be either
-        paths to site file(s) in json format or
+    site_inputs : dict or list of dicts
+        Site(s) to compute. A site can be either
+        a path to a site file in json format or
         directly a site dictionary. A site dictionary
         is something like {"name":"site",
                            "pairs":{"AAresSeq":["GLU30-ARG40",
@@ -1810,7 +1810,7 @@ def sites(site_inputs,
         savefigs  = False
         savetabs = False
         save_nomenclature_files = False
-
+    site_inputs = [[site_inputs] if not isinstance(site_inputs,list) else site_inputs][0]
     print("Will compute the sites\n %s\nin the trajectories:\n%s\n with a stride of %u frames.\n" % (
         "\n ".join([_mdcsites.site2str(ss) for ss in site_inputs]),
         _mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15),stride))
