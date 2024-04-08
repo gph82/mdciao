@@ -585,6 +585,7 @@ def parser_for_sites():
     _parser_add_no_frag(parser)
     #_parser_add_fragment_names(parser)
     _parser_add_cutoff(parser)
+    _parser_add_pbc(parser)
     _parser_add_t_unit(parser)
     _parser_add_graphic_ext(parser)
     _parser_add_curve_color(parser)
@@ -643,7 +644,7 @@ def parser_for_interface():
     _parser_add_n_jobs(parser)
     _parser_add_fragment_names(parser)
     _parser_add_no_frag(parser)
-
+    _parser_add_pbc(parser)
     _parser_add_nomenclature(parser)
     _parser_add_chunk(parser)
     _parser_add_output_desc(parser,'interface')
