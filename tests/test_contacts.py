@@ -15,6 +15,8 @@ from mdciao.contacts.contacts import \
     _linear_switchoff, \
     _delta_freq_pairs
 
+from itertools import combinations as _combinations
+
 import mdtraj as md
 import unittest
 from unittest.mock import Mock
@@ -258,6 +260,13 @@ class Test_per_traj_mindist_lower_bound_wo_periodic(unittest.TestCase):
 
         _np.testing.assert_array_almost_equal([0,1], list_of_lbs[0])
         _np.testing.assert_array_almost_equal([0,1], list_of_lbs[1])
+
+class Test_per_traj_mindist_lower_bound_actual_lb(unittest.TestCase):
+    geom=md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
+    all_pairs = list(_combinations(range(geom.n_residues), 2))
+    d = md.compute_contacts(geom, all_pairs, ignore_nonprotein=False)[0]
+    lower_bounds = contacts.per_traj_mindist_lower_bound(geom.top, geom, all_pairs, 100, 1, 0, verbose=False)
+    assert (lower_bounds<d).all()
 
 class Test_per_traj_mindist_lower_bound_w_periodic(unittest.TestCase):
 
