@@ -1231,7 +1231,7 @@ def interface(
         Control the number of reported contacts. Can be an
         integer (keep the first n contacts) or a float
         representing a fraction [0,1] of the total number of
-        contacts. Default is 5.
+        contacts. Default is 50.
     n_smooth_hw : int, default is 0
         Plots of the time-traces will be smoothed using a
         window of 2*n_smooth_hw
@@ -1291,9 +1291,9 @@ def interface(
         filenames) Defaults to :obj:`output_desc` if None is given
     min_freq : float, default is 0.1
         Do not show frequencies smaller than this. If you
-        notice the output being truncated a values too far
-        away from this, you need to increase the :obj:`ctc_control`
-        parameter
+        notice the output being truncated at values too far
+        above this value, you need to increase the :obj:`ctc_control`
+        parameter.
     contact_matrix : bool, default is True
         Produce a plot of the interface contact matrix
     cmap : str, default is 'binary'
