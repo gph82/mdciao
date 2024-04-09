@@ -692,7 +692,7 @@ def plot_unified_freq_dicts(freqs,
         ax.set_axisbelow(True)
         if sort_by == "std":
             _plt.plot([mean_std_by_ctc["std"][key] for key in sorted_ctc_keys],
-                      color='k', alpha=.25, ls=':')
+                      color='k', alpha=.25, ls=':', zorder=10)
 
         _plt.ylim(0, ylim)
         if title is not None:
