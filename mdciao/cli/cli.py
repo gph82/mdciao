@@ -977,7 +977,6 @@ def residue_neighborhoods(residues,
                                   switch_off_Ang=switch_off_Ang)
         if savefigs:
             overall_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
-            print("The following files have been created:")
             print(fn.fullpath_overall_fig)
 
     neighborhoods = {key:val for key, val in neighborhoods.items() if val is not None}
