@@ -966,6 +966,9 @@ def residue_neighborhoods(residues,
         print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
 
 
+    if any([savetabs,savefigs,savetrajs]):
+        print("The following files have been created:")
+
     if figures:
         overall_fig = _mdcplots.CG_panels(n_cols, neighborhoods, ctc_cutoff_Ang,
                                   distro=distro,
