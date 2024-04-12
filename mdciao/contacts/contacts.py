@@ -4286,7 +4286,7 @@ class ContactGroup(object):
 
         Hence, to control the number of shown contacts, you can control the
         you can use these parameters, sorted somewhat hierarchically
-         * sort
+         * sort_by
          * ctc_cutoff_ang
          * truncate_at_mean
          * zero_freq
@@ -4306,6 +4306,8 @@ class ContactGroup(object):
                 in this order. Indices are intended as
                 self.res_idxs_pairs indices.
                 All other parameters are ignored.
+             * str "numeric" or "residue"
+                Sort by ascending residue number
              * boolean False
                 Don't sort, i.e. use the original order
              * boolean True
@@ -4436,7 +4438,9 @@ class ContactGroup(object):
 
             order = order[:max_n+1]
             color = _mdcplots.color_dict_guesser(color, self.n_ctcs)
-
+        elif isinstance(sort_by, str) and sort_by in ["residue", "numeric"]:
+            order = _mdcu.str_and_dict.lexsort_ctc_labels([ictc.labels.w_fragments for ictc in self.contact_pairs])[1]
+            color = _mdcplots.color_dict_guesser(color, self.n_ctcs)
         elif _mdcu.lists.is_iterable(sort_by):
             order = _np.array([int(dd) for dd in sort_by])
             color = _mdcplots.color_dict_guesser(color, order)
