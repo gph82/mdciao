@@ -1399,13 +1399,14 @@ def interface(
            '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]])))))
     print(f"Performing a first pass on the {len(ctc_idxs)} group_1-group_2 residue pairs to compute lower bounds\n"
           f"on residue-residue distances via residue-COM distances.")
+    lb_cutoff_buffer_Ang = 2.5
     idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
                                                             stride=stride,
                                                             chunksize=chunksize_in_frames,
                                                             n_jobs=n_jobs,
                                                             progressbar=False,
                                                             verbose=False,
-                                                            lb_cutoff_Ang=ctc_cutoff_Ang + 2.5, # IDK why the buffer but who cares
+                                                            lb_cutoff_Ang=ctc_cutoff_Ang+ lb_cutoff_buffer_Ang, # This buffer will go into the ContactGroup's max_cutoff_Ang
                                                             periodic=pbc,
                                                             )
     ctc_idxs_intf = _np.array(ctc_idxs)[_np.unique(_np.hstack(idx_of_lower_lower_bounds))]
@@ -1456,6 +1457,7 @@ def interface(
             #print(ii, ifreq.round(2), cum_freq.round(2), (cum_freq.sum()/tot_freq*100).round(2))
 
     ctc_grp_intf = _mdcctcs.ContactGroup(ctc_objs,
+                                         max_cutoff_Ang=ctc_cutoff_Ang+lb_cutoff_buffer_Ang,
                                          interface_fragments=intf_frags_as_residxs,  # interface_residx_short,
                                          name=title)
     print()
