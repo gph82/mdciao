@@ -2574,7 +2574,7 @@ class ContactGroup(object):
             pass
         else:
             raise ValueError("Using a cutoff of %3.2f Ang. is forbidden because\n"
-                             " because this ContactGroup was instantiated with \n"
+                             " this ContactGroup was instantiated with \n"
                              "'max_cutoff_Ang = %3.2f' Ang."%(ctc_cutoff_Ang,self.max_cutoff_Ang))
 
     @property
