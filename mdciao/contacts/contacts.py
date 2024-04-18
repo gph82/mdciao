@@ -5192,6 +5192,9 @@ class ContactGroup(object):
                                  bookends=True,
                                  defrag=None,
                                  ctc_control=None,
+                                 sort_by="freq",
+                                 lower_cutoff_val=0,
+                                 n_smooth_hw=0
                                  ) -> tuple:
         r"""
         Per-trajectory time-traces of the formed contacts, shown as binary traces, i.e. formed or not formed.
@@ -5267,14 +5270,30 @@ class ContactGroup(object):
              * If float must be between [0,1]. It is interpreted
                as fraction of the total number of contacts to keep
                over all dataset, i.e. ctc_control=.75 means show contacts
-               until 75% of all aggregated frequency is shown.
+               until 75% of all aggregated frequency is shown. The aggregate
+               is computed on the frequencies that have not been
+               truncated by `lower_cutoff_val`.
              * If None show all contacts regardless of their
                frequency.
+             * This paramater will be ignored if `sort_by` is different
+               from "frequency", as it is only meaningful if contacts
+               are sorted in descending order of frequency.
             The difference between None and 1.0 (100% of overall frequency)
             is that `ctc_control` = None will still show zero-frequency
             contacts, whereas `ctc_control` = 1.0 won't,
             since 100% of overall frequency is achieved *without*
-            the zero-frequency contacts
+            the zero-frequency contacts.
+        sort_by : str, default is freq
+            Default is to sort contacts by descending
+            order of frequency. Alternatively,
+            you can sort them by residue number
+            by passing "residue" or "numeric" here
+        lower_cutoff_val : float, default is 0
+            Hide contacts with frequencies lower than
+            this value.
+        n_smooth_hw : int default is 0
+            Half-window size for a smoothing the time-traces before
+            computing the contact
 
         Returns
         -------
@@ -5298,8 +5317,29 @@ class ContactGroup(object):
 
         #Freqs
         overall_freqs = self.frequency_per_contact(ctc_cutoff_Ang)
+        good_idxs = _np.flatnonzero(overall_freqs>=lower_cutoff_val)
+        overall_freqs=overall_freqs[good_idxs]
         desc_order_of_freq = _np.argsort(overall_freqs)[::-1]
+        n_ctcs = len(good_idxs)
+
+        #Labels
+        ctc_labels = _np.array(
+            self.gen_ctc_labels(AA_format={True: "short", False: "long"}[shorten_AAs], fragments=not bool(defrag)))[good_idxs]
+
+        if anchor is not None:
+            idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys({key: None for key in ctc_labels}, anchor)
+            if len(_np.unique(deleted_half_keys)) > 1:
+                raise ValueError("The anchor patterns differ by key, this is strange: %s" % deleted_half_keys)
+            else:
+                ctc_labels = _np.array(list(idict.keys()))
+                anchor = _mdcu.str_and_dict.defrag_key(deleted_half_keys[0], defrag=defrag, sep=" ")
+
+        if sort_by in ["residue", "numeric"]:
+            desc_order_of_freq = _mdcu.str_and_dict.lexsort_ctc_labels(ctc_labels)[1]
+            ctc_control=None
         bintrajs =   self.binarize_trajs(ctc_cutoff_Ang, order="traj")
+        if n_smooth_hw>0:
+            bintrajs=[_np.array([_mdcu.lists.window_average_fast(bt,n_smooth_hw) for bt in bts.T]).T for bts in self.binarize_trajs(4, order="traj")]
         freqs_per_traj = self.frequency_per_traj(ctc_cutoff_Ang)
 
         #Time
@@ -5307,16 +5347,7 @@ class ContactGroup(object):
 
         # Figure
         cmap = _mplcolors.ListedColormap([[0, 0, 0, 0], color], N=2)
-        n_rows_per_panel = [self.n_ctcs if ctc_control is None else _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, overall_freqs[desc_order_of_freq])[0]][0]
-        ctc_labels = _np.array(
-            self.gen_ctc_labels(AA_format={True: "short", False: "long"}[shorten_AAs], fragments=not bool(defrag)))
-        if anchor is not None:
-            idict, deleted_half_keys = _mdcu.str_and_dict.delete_exp_in_keys({key : None for key in ctc_labels}, anchor)
-            if len(_np.unique(deleted_half_keys)) > 1:
-                raise ValueError("The anchor patterns differ by key, this is strange: %s" % deleted_half_keys)
-            else:
-                ctc_labels = _np.array(list(idict.keys()))
-                anchor = _mdcu.str_and_dict.defrag_key(deleted_half_keys[0], defrag=defrag, sep=" ")
+        n_rows_per_panel = [n_ctcs if ctc_control is None else _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, overall_freqs[desc_order_of_freq])[0]][0]
 
         if figsize is None:
             figsize = (panelwidth, n_rows_per_panel * inches_per_contact * self.n_trajs)
@@ -5326,7 +5357,7 @@ class ContactGroup(object):
                                                      overall_freqs[desc_order_of_freq[:n_rows_per_panel]])}
         plotted_bintrajs = []
         for ii, itraj in enumerate(bintrajs):
-            scaled_time_array = self.time_arrays[ii] * dt
+            scaled_time_array = _mdcu.lists.window_average_fast(self.time_arrays[ii],n_smooth_hw) * dt
             extent = [scaled_time_array[0], scaled_time_array[-1], n_rows_per_panel-.5, 0-.5]
 
             iax : _plt.Axes = myax[ii,0]
