@@ -3382,7 +3382,7 @@ class ContactGroup(object):
                 ctc_idxs.append([ii,_np.argwhere(pair==idx).squeeze()])
         return _np.vstack(ctc_idxs)
 
-    @_kwargs_subs(ContactPair.frequency_dict, exclude=["atom_types"])
+    #@_kwargs_subs(ContactPair.frequency_dict, exclude=["atom_types"])
     def frequency_dicts(self, ctc_cutoff_Ang,
                         sort_by_freq=False,
                         **kwargs):
