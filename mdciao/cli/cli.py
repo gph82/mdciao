@@ -1424,37 +1424,34 @@ def interface(
 
     # Stack all data
     actcs = _np.vstack(ctcs)
+    df = _mdcctcs.contacts._data2DataFrame(actcs, ctc_idxs_intf, refgeom.top, ctc_cutoff_Ang,
+                                           fragments_as_residue_idxs, fragment_names,
+                                           top2confrag, list(consensus_maps.values()),
+                                           keep_max_buffer_Ang=lb_cutoff_buffer_Ang)
+    n_ctcs =  _mdcu.lists._get_n_ctcs_from_freqs(ctc_control,df.freq)[0]
 
-    # Get frequencies so that we don't create unnecessary ctc objects
-    ctcs_bin = (actcs <= ctc_cutoff_Ang / 10).astype("int").sum(0)
-    ctc_frequency = ctcs_bin / actcs.shape[0]
-    tot_freq = ctc_frequency.sum()
-    order = _np.argsort(ctc_frequency)[::-1]
+    # Report n_ctcs and frequency summary leaving in the freqs < min_freq
+    _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(df.freq>min_freq)]),
+                                                 df[df.freq>0].freq.values, or_frac=.9, contact_list_above=False)
+    # Take freqs < min_freq out now
+    df = df[df.freq>min_freq]
+
     ctc_objs = []
-    n_ctcs =  _mdcu.lists._get_n_ctcs_from_freqs(ctc_control,ctc_frequency[order])[0]
-    #TODO still unsure about where it's best to put this
-    _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(ctc_frequency[order[:n_ctcs]]>min_freq)]), ctc_frequency[order], or_frac=.9)
-    for ii, idx in enumerate(order[:n_ctcs]):
-        ifreq = ctc_frequency[idx]
-        if ifreq > min_freq:
-            pair = ctc_idxs_intf[idx]
-            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, list(consensus_maps.values()),
-                                                                no_key=None) for idx in pair]
-            fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
-            ctc_objs.append(_mdcctcs.ContactPair(pair,
-                                                 [itraj[:, idx] for itraj in ctcs],
-                                                 times,
-                                                 top=refgeom.top,
-                                                 consensus_labels=consensus_labels,
-                                                 trajs=xtcs,
-                                                 fragment_idxs=fragment_idxs,
-                                                 fragment_names=[fragment_names[idx] for idx in fragment_idxs],
-                                                 consensus_fragnames=[top2confrag[idx] for idx in pair],
-                                                 atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in
-                                                                  at_pair_trajs]
-                                                 ))
-            cum_freq = ctc_frequency[order[:ii+1]].sum()
-            #print(ii, ifreq.round(2), cum_freq.round(2), (cum_freq.sum()/tot_freq*100).round(2))
+    for ii, irow in df.iterrows():
+        ctc_objs.append(_mdcctcs.ContactPair([irow.residx1, irow.residx2],
+                                             [itraj[:, irow.ctc_idx] for itraj in ctcs],
+                                             times,
+                                             top=refgeom.top,
+                                             consensus_labels=[irow.GRN1, irow.GRN2],
+                                             trajs=xtcs,
+                                             fragment_idxs=[irow.frag1, irow.frag2],
+                                             fragment_names=[irow.fragname1, irow.fragname2],
+                                             consensus_fragnames=[irow.GFN1, irow.GFN2],
+                                             atom_pair_trajs=[itraj[:, [irow.ctc_idx * 2, irow.ctc_idx * 2 + 1]] for
+                                                              itraj in
+                                                              at_pair_trajs]
+                                             ))
+
 
     ctc_grp_intf = _mdcctcs.ContactGroup(ctc_objs,
                                          max_cutoff_Ang=ctc_cutoff_Ang+lb_cutoff_buffer_Ang,
