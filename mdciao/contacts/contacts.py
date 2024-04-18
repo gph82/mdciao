@@ -156,7 +156,7 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
         * "residx2"
         * "fragname1"
         * "fragname2"
-        * "ctc_idxs"
+        * "ctc_idx"
         * "GRN1"
         * "GRN2"
         * "GFN1"
@@ -197,7 +197,7 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
               "residx1": pairs[:, 0], "residx2": pairs[:, 1],
               "fragname1": fragnames_1,
               "fragname2": fragnames_2,
-              "ctc_idxs": idxs,
+              "ctc_idx": idxs,
               "GRN1": consensus_labels_1,
               "GRN2": consensus_labels_2,
               "GFN1": consensus_fragments_1,
@@ -208,8 +208,8 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
     df.sort_values(["freq"], inplace=True, ascending=False, ignore_index=True)
     df.index += 1
     df["Sum"] = df["freq"].cumsum()
-    df["%Sum"] = (df["Sum"]/df["Sum"].max()*100).round().astype(int)
-    df["%Sum"] = df["%Sum"].map(lambda x: "%3u%%" % x)
+    df["%Sum"] = (df["Sum"]/df["Sum"].max()*100)
+    df["%Sum"] = df["%Sum"].map(lambda x: "%3.1f%%" % x)
 
     return df
 
