@@ -1458,7 +1458,7 @@ def interface(
                                          interface_fragments=intf_frags_as_residxs,  # interface_residx_short,
                                          name=title)
     print()
-    print(ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2}))
+    print(ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2, "%sum":2}).to_string(justify="center"))
     print()
     dfs = ctc_grp_intf.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                        list_by_interface=True,
