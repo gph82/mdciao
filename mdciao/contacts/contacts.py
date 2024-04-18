@@ -3699,7 +3699,8 @@ class ContactGroup(object):
         df : :obj:`pandas.DataFrame`
         """
         self._check_cutoff_ok(ctc_cutoff_Ang)
-        idicts = [ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, atom_types=atom_types, **ctc_fd_kwargs) for ictc in self.contact_pairs]
+        l1, l2 = _np.array([[len(ilab) for ilab in lab.split("-")] for lab in self.ctc_labels_w_fragments_short_AA]).max(axis=0).tolist()
+        idicts = [ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, atom_types=atom_types, fmt1=f"%-{l1}s", fmt2=f"%-{l2}s", **ctc_fd_kwargs) for ictc in self.contact_pairs]
         if atom_types is True:
             for jdict in idicts:
                 istr =  '%s' % (', '.join(['%3u%% %s' % (val * 100, key)
@@ -3715,6 +3716,7 @@ class ContactGroup(object):
                             ascending=False
                             )
         df2return = idf.join(_DF(idf["freq"].values.cumsum(), columns=["sum"]))
+        #df2return["%sum"]=df2return["sum"]/df2return["sum"].values[-1]*100 # The cumsum here might be confusing since some freqs < min_freqs have been left out
         return df2return
 
     def frequency_table(self, ctc_cutoff_Ang,
