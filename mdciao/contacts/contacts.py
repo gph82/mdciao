@@ -4387,7 +4387,8 @@ class ContactGroup(object):
 
         if xlim is not None:
             ax.set_xlim([-.5, xlim + 1 - .5])
-
+        else:
+            ax.set_xlim([-.5, len(ax.patches)+.5])
         if self.is_neighborhood:
             ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if plot_atomtypes:
