@@ -29,7 +29,8 @@ from mdciao.plots.plots import _add_grey_banded_bg, _color_tiler
 import mdciao.utils as _mdcu
 from mdciao.utils.str_and_dict import _kwargs_subs
 import mdciao.nomenclature as _mdcn
-from mdciao.nomenclature.nomenclature import _consensus_maps2consensus_frags
+from mdciao.nomenclature.nomenclature import _consensus_maps2consensus_frags,\
+    choose_between_consensus_dicts as _choose_between_consensus_dicts
 import mdciao.fragments as _mdcfr
 
 import mdciao.flare as _mdcflare
@@ -62,6 +63,157 @@ from joblib import \
     Parallel as _Parallel, \
     delayed as _delayed
 
+
+def _prettyprintDF(df, keys2print=["freq",
+                                   "contact",
+                                   "fragments",
+                                   "res_idxs",
+                                   "Sum",
+                                   "%Sum"]):
+    r"""
+    Pretty-print a frequency DataFrame
+
+    It somehow duplicate of ContactGroup.frequency_dataframe only this one is
+    created "top down", i.e. with all info before it's been split into
+    ContactPairs, whereas ContactGroup.frequency re-builds this info "bottom up"
+
+    This method can report frequencies even before the ContactGroup is instantiated
+
+    Parameters
+    ----------
+    df : :obj:`pandas.DataFrame`
+      Should come from the _data2DataFrame method
+
+    Returns
+    -------
+    None
+    """
+    fmt =  f'%-{max(df.index.map(lambda x : len(str(x))))}u:'
+    df.index = df.index.map(lambda x : fmt % x)
+    df["lab1"] = df["resSeq1"] + df["best1"].map(lambda x: f"@{str(x)}").replace("@None","")
+    df["lab2"] = df["resSeq2"] + df["best2"].map(lambda x: f"@{str(x)}").replace("@None","")
+    fmt1 = f'%-{max(df["lab1"].map(lambda x : len(x)))}s'
+    fmt2 = f'%-{max(df["lab2"].map(lambda x : len(x)))}s'
+    df["lab1"] = df["lab1"].map(lambda x: fmt1 % x)
+    df["lab2"] = df["lab2"].map(lambda x: fmt2 % x)
+    df["contact"] =df["lab1"]+" - "+df["lab2"]
+    df["fragments"] = df["frag1"].map(lambda x: "%5u" % x) + "-" + df["frag2"].map(lambda x: "%-5u" % x)
+    df["res_idxs"] = df["residx1"].map(lambda x: "%7u" % x) + "-" + df["residx2"].map(lambda x: "%-7u" % x)
+    print(df[keys2print].round({"freq": 2, "Sum": 2, "%Sum": 0}).to_string(justify="center", index=True))
+
+    return df
+
+def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragnames,
+                    top2confrag, consensus_maps,
+                    keep_max_buffer_Ang=2,
+                    ):
+    r"""
+
+    Creates the DF of non-zero frequencies up to 2 Angstrom more than the actual cutoff
+
+    Contains all per contact % per residue information as a table, should be increasingly used more across mdciao
+    to unify even more how tables are produced
+
+    In principle, the ContactGroup could be instantiated from here
+
+    Parameters
+    ----------
+    actcs : np.array of shape (n_total_frames, n_ctcs)
+        stacked distance values for all trajectories
+    residxs_pairs : np.array of shape (n_ctcs, 2)
+        The residue indices of the distances in `actcs`
+    top : :obj:`mdtraj.Topology`
+        The molecular topology
+    ctc_cutoff_Ang : float
+        The cutoff used to report and sort frequencies
+    fragments : list
+        List of iterables containing non-overlapping fragment definitions,
+        has to contain at least the residues in `residxs_pairs`
+    fragnames : list
+        List of strings of len(fragments)
+    top2confrag : np.array of len(top.residues)
+        Maps residue index to consensus fragment names, e.g.
+        ICL2 for when there arent consensus labels
+    consensus_maps : list
+        Each item is a gettable by residue index returning
+        the actual consensus label. Its a list so that
+        many mappables can be passed
+        Every residue index can have one label in one of
+        the maps None in the others
+    keep_max_buffer_Ang :
+        residxs_pairs with frequencies = 0 will be eliminated
+        from the final DataFrame
+    Returns
+    -------
+    df : :obj:`pandas.DataFrame`
+        Contains the keys:
+        * "freq"
+        * "resSeq1"
+        * "resSeq2"
+        * "frag1"
+        * "frag2"
+        * "residx1"
+        * "residx2"
+        * "fragname1"
+        * "fragname2"
+        * "ctc_idxs"
+        * "GRN1"
+        * "GRN2"
+        * "GFN1"
+        * "GFN2"
+        * "best1"
+        * "best2"
+
+    """
+
+    # Keep nonzero-freqs at ctc_cutoff_Ang+keep_max_buffer_Ang
+    ctc_freqs_buffer = (actcs <= (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10).astype("int").sum(0)
+    ctc_freqs_buffer = ctc_freqs_buffer / actcs.shape[0]
+    idxs = _np.flatnonzero(ctc_freqs_buffer > 0)
+
+    ctc_freqs = (actcs <= ctc_cutoff_Ang / 10).astype("int").sum(0) / actcs.shape[0]
+
+    pairs = _np.array(residxs_pairs, ndmin=2)[idxs, :]
+    frags = _np.array([[_mdcu.lists.in_what_fragment(idx, fragments) for idx in pair] for pair in pairs])
+    resSeqs = _np.array([[str(top.residue(idx)) for idx in pair] for pair in pairs])
+    consensus_labels_1 = [_choose_between_consensus_dicts(idx, consensus_maps, no_key=None)
+                          for idx in pairs[:, 0]]
+    consensus_labels_2 = [_choose_between_consensus_dicts(idx, consensus_maps, no_key=None)
+                          for idx in pairs[:, 1]]
+    consensus_fragments_1 = top2confrag[pairs[:, 0]]
+    consensus_fragments_2 = top2confrag[pairs[:, 1]]
+    fragnames_1 = _np.array(fragnames)[frags[:, 0]]
+    fragnames_2 = _np.array(fragnames)[frags[:, 1]]
+    best_1 = [_mdcu.str_and_dict.choose_options_descencing([cl, cf, fn]) for cl, cf, fn in zip(consensus_labels_1,
+                                                                                               consensus_fragments_1,
+                                                                                               fragnames_1)]
+    best_2 = [_mdcu.str_and_dict.choose_options_descencing([cl, cf, fn]) for cl, cf, fn in zip(consensus_labels_2,
+                                                                                               consensus_fragments_2,
+                                                                                               fragnames_2)]
+
+    df = _DF({"freq": ctc_freqs[idxs],
+              "resSeq1": resSeqs[:, 0], "resSeq2": resSeqs[:, 1],
+              "frag1": frags[:, 0], "frag2": frags[:, 1],
+              "residx1": pairs[:, 0], "residx2": pairs[:, 1],
+              "fragname1": fragnames_1,
+              "fragname2": fragnames_2,
+              "ctc_idxs": idxs,
+              "GRN1": consensus_labels_1,
+              "GRN2": consensus_labels_2,
+              "GFN1": consensus_fragments_1,
+              "GFN2": consensus_fragments_2,
+              "best1" : best_1,
+              "best2" : best_2
+              })
+    df.sort_values(["freq"], inplace=True, ascending=False, ignore_index=True)
+    df.index += 1
+    df["Sum"] = df["freq"].cumsum()
+    df["%Sum"] = (df["Sum"]/df["Sum"].max()*100).round().astype(int)
+    df["%Sum"] = df["%Sum"].map(lambda x: "%3u%%" % x)
+
+    return df
+
+#TODO consider deprecating
 def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                                                 residxs_pairs, top,
                                                 ctcs_kept=5,
