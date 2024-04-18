@@ -1805,13 +1805,11 @@ class ContactPair(object):
         """
         return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)))
 
-
+    #@_kwargs_subs(ContactPair.label_flex)
     def frequency_dict(self, ctc_cutoff_Ang,
                        switch_off_Ang=None,
-                       AA_format='short',
-                       split_label=True,
                        atom_types=False,
-                       defrag=None,
+                       **kwargs_label_flex,
                        ):
         """
         Returns the :obj:`frequency_overall_trajs` as a more informative
@@ -1821,32 +1819,29 @@ class ContactPair(object):
         ----------
         ctc_cutoff_Ang : float
             Cutoff in Angstrom. The comparison operator is "<="
-        AA_format : str, default is "short"
-            Amino-acid format ("E35" or "GLU25") for the value
-            fdict["label"]. Can also be "long" or "just_consensus"
-        split_label : bool, default is True
-            Split the labels so that stacked contact labels
-            become easier-to-read in plain ascii formats
-             - "E25@3.50____-    A35@4.50"
-             - "A30@longfrag-    A35@4.50
         atom_types : bool, default is false
             Include the relative frequency of atom-type-pairs
             involved in the contact
-        defrag : string, default is None
-            The character to use for deleting
-            (defragmenting) the fragment info,
-            e.g. "@" for turning "R30@3.51"
-            into "R30"
+
+        kwargs_label_flex : dict
+            Optional arguments for
+            :obj:`~mdciao.contacts.ContactPair.label_flex`.
+            The optional parameters of are:
+
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
+
         Returns
         -------
         fdict : dictionary
 
         """
 
-        label = self.label_flex(AA_format, split_label=split_label, defrag=defrag)
+        label = self.label_flex(**kwargs_label_flex)
 
         fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
-                "label":label.rstrip(" "),
+                "label":label,
                 "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)
                 }
 
