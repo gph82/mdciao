@@ -5662,7 +5662,7 @@ class ContactGroup(object):
                 a site, then :obj:`scheme` is set to 'all'
              * 'interface_sparse':
                 like 'interface', but using the input :obj:`fragments`
-                to break self.interface_fragments (which are only two, 
+                to break self.interface_fragments (which are only two,
                 by definition) further down into other fragments.
                 Of these, show only the ones where at least one residue
                 participates in the interface. If :obj:`fragments` is
@@ -7408,12 +7408,12 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
     if total_freq==0:
         print("No contacts formed at this frequency")
     else:
-        print("These %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u input contacts)" %
+        print("The following %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u contacts with nonzero frequency)." %
               (n_kept, captured_freq, _np.round(captured_freq / total_freq * 100), total_freq, len(ctc_freqs)))
         if or_frac is not None:
             idx = _mdcu.lists.idx_at_fraction(ctc_freqs, or_frac)
             print("As orientation value, the first %u ctcs already capture %3.1f%% of %3.2f." % (idx+1, or_frac * 100, total_freq))
-            print("The %u-th contact has a frequency of %4.2f"%(idx+1, ctc_freqs[idx]))
+            print("The %u-th contact has a frequency of %4.2f."%(idx+1, ctc_freqs[idx]))
             print()
 
 
