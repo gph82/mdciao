@@ -612,7 +612,6 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         lower_bound = _np.vstack(lower_bound)
         if not timetrace:
             lower_bound = _np.vstack(lower_bound).min(axis=0)
-
     return  lower_bound
 
 
@@ -696,19 +695,10 @@ def trajs2lower_bounds(trajs, top, ctc_residxs_pairs, stride=1,
             _delayed(per_traj_mindist_lower_bound)(top, itraj, ctc_residxs_pairs, chunksize, stride, ii,
                                                    **kwargs_per_traj_mindist_lower_bound)
             for ii, itraj in enumerate(iterfunct(trajs)))
-    except MemoryError:
-        print("low memory variant")
-        lower_bounds_per_traj = _Parallel(n_jobs=n_jobs)(
-            _delayed(per_traj_mindist_lower_bound)(top, itraj, ctc_residxs_pairs, int(chunksize * low_mem_chunkfactor), stride, ii,
-                                                   **kwargs_per_traj_mindist_lower_bound)
-            for ii, itraj in enumerate(iterfunct(trajs)))
-    # assert all([_np.squeeze(lb.shape)==len(ctc_residxs_pairs) for lb in lower_bounds_per_traj]), (len(ctc_residxs_pairs), [lb.shape for lb in lower_bounds_per_traj])
-    # lower_bounds_per_traj = _np.vstack(lower_bounds_per_traj).min(axis=0)
+    except MemoryError as ME:
+        raise(ME) #TODO raise an informative ValueError
 
     return lower_bounds_per_traj
-
-    #return _np.unique(_np.hstack(lower_bounds_per_traj))
-
 class _TimeTraces(object):
 
     def __init__(self, ctc_trajs,
