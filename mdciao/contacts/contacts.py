@@ -4259,6 +4259,7 @@ class ContactGroup(object):
                            sum_freqs=True,
                            total_freq=None,
                            defrag=None,
+                           cumsum=False,
                            ):
         r"""
         Plot a contact frequencies as a bar plot
@@ -4322,6 +4323,18 @@ class ContactGroup(object):
             Delete fragment labels from
             the residue labels, "G30@frag1"->"G30".
             If None, don't delete the fragment label
+        cumsum : bool, default is False
+            Plot the cumulative frequency (aka *cumsum*,
+            as in :obj:`numpy.cumsum`) as a faint dotted
+            line in the graph. This quantity:
+             * Is normalized to 1 s.t. the summed frequencies
+              numerically coincide with the y-axis limit
+             * Sums over all available frequencies in this :obj:`ContactGroup`,
+              regardless of the value of `truncate`, which hides some
+              of these. I.e. it might be that you don't
+              see the cummulative frequency fully arrive at 1
+              if some small contributions have been truncated
+
         Returns
         -------
         ax : :obj:`~matplotlib.axes.Axes`
@@ -4393,7 +4406,10 @@ class ContactGroup(object):
             ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor)
         if plot_atomtypes:
             self._add_hatching_by_atomtypes(ax, ctc_cutoff_Ang, display_order=order, switch_off_Ang=switch_off_Ang)
-
+        if cumsum:
+            cumsum = _np.cumsum(freqs[order])
+            cumsum/=cumsum[-1] * ax.get_ylim()[-1]
+            _plt.plot(cumsum, color='k', alpha=.25, ls=':', zorder=10)
         return ax
 
     def plot_violins(self,

@@ -2565,7 +2565,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_freqs_as_bars_just_runs(self):
         CG = self.CG_cp1_cp2
-        jax = CG.plot_freqs_as_bars(2, "test_site")
+        jax = CG.plot_freqs_as_bars(2, "test_site", cumsum=True)
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
