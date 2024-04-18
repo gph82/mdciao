@@ -63,9 +63,8 @@ from joblib import \
     Parallel as _Parallel, \
     delayed as _delayed
 
-
 def _prettyprintDF(df, keys2print=["freq",
-                                   "contact",
+                                   "label",
                                    "fragments",
                                    "res_idxs",
                                    "Sum",
@@ -96,7 +95,7 @@ def _prettyprintDF(df, keys2print=["freq",
     fmt2 = f'%-{max(df["lab2"].map(lambda x : len(x)))}s'
     df["lab1"] = df["lab1"].map(lambda x: fmt1 % x)
     df["lab2"] = df["lab2"].map(lambda x: fmt2 % x)
-    df["contact"] =df["lab1"]+" - "+df["lab2"]
+    df["label"] =df["lab1"]+" - "+df["lab2"]
     df["fragments"] = df["frag1"].map(lambda x: "%5u" % x) + "-" + df["frag2"].map(lambda x: "%-5u" % x)
     df["res_idxs"] = df["residx1"].map(lambda x: "%7u" % x) + "-" + df["residx2"].map(lambda x: "%-7u" % x)
     print(df[keys2print].round({"freq": 2, "Sum": 2, "%Sum": 0}).to_string(justify="center", index=True))
