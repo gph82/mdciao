@@ -1944,6 +1944,31 @@ class TestContactGroup(TestBaseClassContactGroup):
         assert new_CG_dict[residue_indices[3]].n_ctcs == 1
         assert new_CG_dict[residue_indices[3]]._contacts[0] is CG._contacts[5]
 
+    def test_to_select_by_residues_residue_pairs(self):
+        CG = _mdcsites([{"name": "test_random",
+                         "pairs": {"residx": [[100, 200],
+                                              [100, 300],
+                                              [10, 40], #2
+                                              [200, 50],
+                                              [20, 40], #4
+                                              [50, 20], #5
+                                              [70, 20]] # this last one woud've been pikced up if n_residues=1
+                                   }}],
+                       test_filenames.traj_xtc,
+                       test_filenames.top_pdb,
+                       no_disk=True,
+                       figures=False)["test_random"]
+
+        residue_pairs = [[10, 40], [200, 100], [10, 30]]
+
+        new_CG : contacts.ContactGroup = CG.select_by_residues(residue_pairs=residue_pairs)
+        assert isinstance(new_CG, contacts.ContactGroup)
+        assert new_CG.n_ctcs == 2
+        print(new_CG.res_idxs_pairs,"AAAA")
+        assert new_CG._contacts[0] is CG._contacts[2]
+        assert new_CG._contacts[1] is CG._contacts[0]
+
+
     def test_to_ContactGroups_per_traj(self):
         traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
         CG : contacts.ContactGroup = _mdcli.residue_neighborhoods("L394",[traj, traj[:-1]],figures=False, no_disk=True)[353]

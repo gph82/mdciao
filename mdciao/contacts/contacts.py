@@ -6321,6 +6321,7 @@ class ContactGroup(object):
     def select_by_residues(self,
                            CSVexpression=None,
                            residue_indices=None,
+                           residue_pairs=None,
                            allow_multiple_matches=False, merge=True,
                            keep_interface=True,
                            n_residues=1):
@@ -6328,12 +6329,14 @@ class ContactGroup(object):
         Return a copy this :obj:`ContactGroup`, but with a sub-selection of :obj:`ContactGroup.contact_pairs` based on residues.
         The returned :obj:`ContactGroup` has the same trajectories and frames as the original.
 
-        The filtering of ContactPairs is done using `CSVexpression` or `residue_indices`
+        The filtering of ContactPairs is done using `CSVexpression`, `residue_indices`, or `residue_pairs`
         so that:
         * one residue match per ContactPair is enough, or
         * both residues of the ContactPair need to match
         for the ContactPair to be selected for the new ContactGroup.
         See `n_residues` for more info.
+
+        `CSVexpression`, `residue_indices`, and `residue_pairs` are mutually exclusive, only one of them can be not None.
 
         Parameters
         ----------
@@ -6342,15 +6345,14 @@ class ContactGroup(object):
             the residue-pairs of :obj:`self` for the
             new :obj:`ContactGroup`. See
             :obj:`mdciao.utils.residue_and_atom.find_AA` for
-            the syntax of the expression. If
-            `CSVexpression` and `residue_indices`
-            are mutually exclusive, one of them
-            has to be None.
+            the syntax of the expression.
         residue_indices : list, default is None,
             Input your selection via zero-indexed residue indices
-            of `self.top`. `CSVexpression` and `residue_indices`
-            are mutually exclusive, one of them
-            has to be None.
+            of `self.top`.
+        residue_pairs : list, default is None
+            Input your selection via pairs of zero-indexed residue indices
+            of `self.top`. Sets `n_residues` automatically
+            to two.
         allow_multiple_matches : bool, default is False
             Fail if the substrings of the :obj:`CSVexpression`
             return more than one residue. Protects from over-grabbing
@@ -6371,8 +6373,8 @@ class ContactGroup(object):
             for the new ContactGroup. By default,
             one residue alone is enough. Using `n_residues` = 2
             selects only ContactPairs where
-            the both residues match against `CSVexpression`
-            or `residue_indices`. This is useful when
+            the both residues match against `CSVexpression`,
+            `residue_indices`, or `residue_pairs`. This is useful when
             trying to keep interface properties. Any `n_residues`
             value different from [1,2] will raise an error.
 
@@ -6395,11 +6397,17 @@ class ContactGroup(object):
                     _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
                     raise ValueError
             valid_matches = _np.unique(_np.hstack([match for match in matches if len(match)>0]))
-        else:
-            assert CSVexpression is None
+        elif residue_indices is not None:
+            assert residue_pairs is None
             keys = residue_indices
             matches = residue_indices
             valid_matches = residue_indices
+        elif residue_pairs is not None:
+            keys = residue_pairs
+            matches = [pair for pair in residue_pairs if any([len(set(pair).intersection(ri))==2 for ri in self.res_idxs_pairs])]
+            # The following assignments are just to keep the logic of "2 residues needed", but the matches have been made already
+            valid_matches = _np.unique(residue_pairs)
+            n_residues = 2
 
         matching_CPs = []
         second_condition = {1: lambda pair : True,
@@ -6408,10 +6416,14 @@ class ContactGroup(object):
             idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair, match)) > 0 and second_condition[n_residues](pair)]
             matching_CPs.append(idxs)
 
-
         if merge:
+            if residue_pairs is None:
+                CPs = [self.contact_pairs[ii] for ii in _np.unique(_np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0]))],
+            else:
+                CPs = [self.contact_pairs[ii] for ii in
+                       _np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0])]
             Ns = ContactGroup(
-                [self.contact_pairs[ii] for ii in _np.unique(_np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0]))],
+                CPs,
                 neighbors_excluded=self.neighbors_excluded,
                 max_cutoff_Ang=self.max_cutoff_Ang,
                 interface_fragments=[self.interface_fragments if keep_interface and self.is_interface else None][0]
