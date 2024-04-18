@@ -1857,7 +1857,7 @@ class ContactPair(object):
                                                                                          switch_off_Ang=switch_off_Ang)})
         return fdict
 
-    def label_flex(self, AA_format="short", split_label=True, defrag=None):
+    def label_flex(self, AA_format="short", split_label=True, defrag=None, fmt1="%-15s", fmt2="%-15s"):
         r"""
         A more flexible method to produce the label of this :obj:`ContactPair`
 
@@ -1876,6 +1876,12 @@ class ContactPair(object):
             Character to use when defragging the
             contact label. Default is to leave
             them as is, e.g. would be "@"
+        fmt1 : str, default is "%-15s"
+            Specify how the labels of res1 should formatted.
+            Only has effect if `split_label` is True
+        fmt2 : str, default is "%-15s"
+            Specify how the labels of res2 should formatted.
+            Only has effect if `split_label` is True
         Returns
         -------
         label : str
@@ -1897,7 +1903,8 @@ class ContactPair(object):
         if defrag is not None:
             label = _mdcu.str_and_dict.defrag_key(label,defrag=defrag, sep="-")
         if split_label:
-            label= '%-15s - %-15s'%tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
+            fmt = f"{fmt1} - {fmt2}"
+            label = fmt % tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
 
         return label
 
