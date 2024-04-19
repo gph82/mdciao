@@ -167,6 +167,7 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
     df : :obj:`pandas.DataFrame`
         Contains the keys:
         * "freq"
+        * "freq_buffer"
         * "resSeq1"
         * "resSeq2"
         * "frag1"
@@ -211,6 +212,7 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
                                                                                                fragnames_2)]
 
     df = _DF({"freq": ctc_freqs[idxs],
+              "freq_buffer" : ctc_freqs_buffer[idxs],
               "resSeq1": resSeqs[:, 0], "resSeq2": resSeqs[:, 1],
               "frag1": frags[:, 0], "frag2": frags[:, 1],
               "residx1": pairs[:, 0], "residx2": pairs[:, 1],
@@ -6475,7 +6477,7 @@ class ContactGroup(object):
 
         if merge:
             if residue_pairs is None:
-                CPs = [self.contact_pairs[ii] for ii in _np.unique(_np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0]))],
+                CPs = [self.contact_pairs[ii] for ii in _np.unique(_np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0]))]
             else:
                 CPs = [self.contact_pairs[ii] for ii in
                        _np.hstack([idxs for idxs in matching_CPs if len(idxs) > 0])]
@@ -7450,6 +7452,164 @@ def _sum_ctc_freqs_by_atom_type(atom_pairs, counts):
     for key, count in zip(atom_pairs, counts):
         dict_out[key] += count
     return dict_out
+
+
+def _Bs_per_pair_per_frame(n_pairs,
+                           n_atoms,
+                           target_method="per_traj_mindist_lower_bound",
+                           abcd_dict = None,
+                           ):
+    r"""
+    Predict the approximate memory usage when calling per_traj_mindist_lower_bound
+    with a given number of residue pairs
+
+    A power law was fitted to reproduce some benchmarking data. Please take the benchmark
+    as a quick-and-dirty way to roughly evaluate reasonable RAM consumption on the development machine.
+
+    Shows memory consumption (in MB) of per_traj_mindist_lower_bound (roughly estimated with %memit)
+    for different chunksizes (rows) vs different number of pairs (columns)
+
+    |      |   50 |   100 |   250 |   500 |   750 |   1000 |   2500 |   5000 |   7500 |   10000 |   25000 |   50000 |   100000 |   150000 |   200000 |   300000 |   400000 |   500000 |
+    |-----:|-----:|------:|------:|------:|------:|-------:|-------:|-------:|-------:|--------:|--------:|--------:|---------:|---------:|---------:|---------:|---------:|---------:|
+    |   10 |    0 |     0 |     0 |     0 |     0 |      0 |      0 |      0 |      0 |       0 |       0 |       0 |        0 |        1 |        1 |       24 |       22 |       64 |
+    |  100 |   22 |     2 |     9 |     0 |    25 |      0 |     59 |     59 |     32 |      22 |      45 |      53 |      133 |      159 |      233 |      449 |      403 |      448 |
+    |  500 |  197 |   197 |   197 |   197 |   197 |    197 |    197 |    197 |    197 |     235 |     320 |     456 |      780 |      918 |     1091 |     1898 |     3199 |     3614 |
+    | 1000 |  577 |   590 |   577 |   573 |   394 |    394 |    394 |    435 |    455 |     439 |     629 |     987 |     1526 |     2439 |     3029 |     4446 |     5995 |     7650 |
+    | 1500 |  692 |   640 |   606 |   606 |   696 |    796 |    626 |    670 |    744 |     751 |    1034 |    1643 |     2787 |     3392 |     5157 |     7405 |     9630 |    11949 |
+    | 2000 |  858 |   798 |   788 |   837 |   892 |    917 |    912 |    885 |    949 |     964 |    1493 |    2257 |     3610 |     4986 |     6489 |     9719 |    12787 |    15990 |
+    | 2500 | 1477 |  1046 |  1443 |  1401 |  1343 |   1415 |   1409 |   1387 |   1218 |    1393 |    1495 |    2821 |     4803 |     6188 |     8076 |    12416 |    15745 |    19428 |
+    | 3000 | 1579 |  1449 |  1405 |  1569 |  1643 |   1389 |   1447 |   1573 |   1415 |    1465 |    2254 |    3461 |     5133 |     7915 |    10211 |    14892 |    18873 |    23739 |
+    | 3500 | 1484 |  1622 |  1525 |  1528 |  1477 |   1481 |   1538 |   1617 |   1693 |    1831 |    2493 |    3847 |     6242 |     8884 |    11899 |    16750 |    22734 |    28083 |
+    | 4000 | 2316 |  2206 |  2198 |  2188 |  2228 |   2212 |   2256 |   2214 |   2208 |    2172 |    2675 |    4246 |     7206 |    10559 |    13591 |    19535 |    25670 |    32067 |
+
+
+    I stopped getting data at ca 30GB ram use. I get very similar numbers on a machine with much smaller RAM:
+    |      |   50 |   100 |   250 |   500 |   750 |   1000 |   2500 |
+    |-----:|-----:|------:|------:|------:|------:|-------:|-------:|
+    |   10 |   16 |    10 |     9 |    13 |    11 |      7 |     13 |
+    |  100 |   46 |    44 |    73 |   243 |   294 |    534 |    828 |
+    |  500 |  208 |   207 |   728 |  1508 |  2543 |   3093 |   4445 |
+    | 1000 |  437 |   511 |  1463 |  3533 |  5261 |   6477 |   8933 |
+    | 1500 |  666 |   781 |  2147 |  5400 |  7906 |   9333 |    nan |
+
+    If you divide the MBs by the number of pairs (each column divided by its column-label) and by the number of frames
+    (each row divided by its row-label) and * 1e6 (to get Bytes) you get a rough estimate for the rate
+    of Bytes/pair/frame at different chunksizes
+    >>> df = (((df/df.keys()).T/df.index.values).T*1e6).round().astype(int)
+    >>> df
+    |      |    50 |   100 |   250 |   500 |   750 |   1000 |   2500 |   5000 |   7500 |   10000 |   25000 |   50000 |   100000 |   150000 |   200000 |   300000 |   400000 |   500000 |
+    |-----:|------:|------:|------:|------:|------:|-------:|-------:|-------:|-------:|--------:|--------:|--------:|---------:|---------:|---------:|---------:|---------:|---------:|
+    |   10 |     0 |     0 |     0 |     0 |     0 |      0 |      0 |      0 |      0 |       0 |       0 |       0 |        0 |        1 |        1 |        8 |        6 |       13 |
+    |  100 |  4400 |   200 |   360 |     0 |   333 |      0 |    236 |    118 |     43 |      22 |      18 |      11 |       13 |       11 |       12 |       15 |       10 |        9 |
+    |  500 |  7880 |  3940 |  1576 |   788 |   525 |    394 |    158 |     79 |     53 |      47 |      26 |      18 |       16 |       12 |       11 |       13 |       16 |       14 |
+    | 1000 | 11540 |  5900 |  2308 |  1146 |   525 |    394 |    158 |     87 |     61 |      44 |      25 |      20 |       15 |       16 |       15 |       15 |       15 |       15 |
+    | 1500 |  9227 |  4267 |  1616 |   808 |   619 |    531 |    167 |     89 |     66 |      50 |      28 |      22 |       19 |       15 |       17 |       16 |       16 |       16 |
+    | 2000 |  8580 |  3990 |  1576 |   837 |   595 |    459 |    182 |     88 |     63 |      48 |      30 |      23 |       18 |       17 |       16 |       16 |       16 |       16 |
+    | 2500 | 11816 |  4184 |  2309 |  1121 |   716 |    566 |    225 |    111 |     65 |      56 |      24 |      23 |       19 |       17 |       16 |       17 |       16 |       16 |
+    | 3000 | 10527 |  4830 |  1873 |  1046 |   730 |    463 |    193 |    105 |     63 |      49 |      30 |      23 |       17 |       18 |       17 |       17 |       16 |       16 |
+    | 3500 |  8480 |  4634 |  1743 |   873 |   563 |    423 |    176 |     92 |     64 |      52 |      28 |      22 |       18 |       17 |       17 |       16 |       16 |       16 |
+    | 4000 | 11580 |  5515 |  2198 |  1094 |   743 |    553 |    226 |    111 |     74 |      54 |      27 |      21 |       18 |       18 |       17 |       16 |       16 |       16 |
+
+
+    For each column, the rates flatten out after a given chunksize (check with plot), so we take
+    the last row (rate at chunksize=4000) as a representative (and approximate upper bound) for all the rates of memory
+    consumption in Bytes/pair/frame for all chunksizes. With chunks < 500, numbers are unstable. Above 500, the
+    memory usage decays exponentially (check with plot) with increasing number of frames in the chunksize.
+    So, we will fit a power law to these rates. In the following table, the first column is the last row of
+    the table above, transposed.
+    >>> rates = pandas.DataFrame(df.loc[4000]).rename(columns={4000:"rate"})
+    >>> rates
+    |        |   rate |
+    |-------:|-------:|
+    |     50 |  11580 |
+    |    100 |   5515 |
+    |    250 |   2198 |
+    |    500 |   1094 |
+    |    750 |    743 |
+    |   1000 |    553 |
+    |   2500 |    226 |
+    |   5000 |    111 |
+    |   7500 |     74 |
+    |  10000 |     54 |
+    |  25000 |     27 |
+    |  50000 |     21 |
+    | 100000 |     18 |
+    | 150000 |     18 |
+    | 200000 |     17 |
+    | 300000 |     16 |
+    | 400000 |     16 |
+    | 500000 |     16 |
+
+    >>> x_data = np.array([key for key in rates.index if key>700])
+    >>> y_data = rates.loc[x_data]["rate"].values
+    >>> def power_law(x, a, b):
+    >>>     return a * x**b
+    >>> (a_fit, b_fit), covariance = curve_fit(power_law, x_data, y_data) #first estimate a, b
+    >>> def power_lawcd(x, a, b, c, d):
+    >>>     return a * (x-d)**b + c
+    >>> (a_fit, b_fit, c_fit, d_fit), covariance = curve_fit(power_lawcd, x_data, y_data, (a_fit, b_fit, 0, 0))
+    >>> fitted_y = power_lawcd(x_data, a_fit, b_fit, c_fit, d_fit)
+    >>> rates = rates.merge(pandas.DataFrame(fitted_y, index=x_data, columns=["fitted rate"]).round(),
+    >>>                     left_index=True, right_index=True, how="outer")
+    >>> rates
+    |        |   rate |   fitted rate |
+    |-------:|-------:|--------------:|
+    |     50 |  11580 |           nan |
+    |    100 |   5515 |           nan |
+    |    250 |   2198 |           nan |
+    |    500 |   1094 |           nan |
+    |    750 |    743 |           741 |
+    |   1000 |    553 |           558 |
+    |   2500 |    226 |           220 |
+    |   5000 |    111 |           110 |
+    |   7500 |     74 |            75 |
+    |  10000 |     54 |            59 |
+    |  25000 |     27 |            30 |
+    |  50000 |     21 |            22 |
+    | 100000 |     18 |            18 |
+    | 150000 |     18 |            16 |
+    | 200000 |     17 |            16 |
+    | 300000 |     16 |            15 |
+    | 400000 |     16 |            15 |
+    | 500000 |     16 |            15 |
+    >>> a_fit, b_fit, c_fit, d_fit
+    >>> 1530987.893341176, -1.133494754802762, 14.389340701059956, -105.70067382767489
+
+
+    Parameters
+    ----------
+    n_pairs : int
+    target_method : str, default is "per_traj_mindist_lower_bound"
+        Alternative: "md_compute_contacts"
+    a
+    b
+    c
+    d
+
+    Returns
+    -------
+    fitted_rate
+    """
+    params = {"per_traj_mindist_lower_bound": {"a": 1530987.893341176,
+                                               "b": -1.133494754802762,
+                                               "c": 14.389340701059956,
+                                               "d": -105.70067382767489},
+              "md_compute_contacts": {"a": 465978.7712266579,
+                                      "b": -1.1147571400358829,
+                                      "c": 256.72499289358495,
+                                      "d": -109.55496326974153}
+              }
+    if abcd_dict is None:
+        abcd_dict = params[target_method]
+
+    a, b, c, d = [abcd_dict[key] for key in "abcd"]
+    fitted_rate = a * (n_pairs - d) ** b + c
+    fitted_rate *= n_atoms
+    return fitted_rate
+
+def _target_chunksize(target_mem_in_GB, n_pairs, target_method):
+    MBs_per_frame_all_pairs = _Bs_per_pair_per_frame(n_pairs, target_method=target_method) * n_pairs / 1024 / 1024
+    return int(target_mem_in_GB * 1024 / MBs_per_frame_all_pairs)
 
 def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
     r"""
