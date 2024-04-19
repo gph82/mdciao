@@ -69,39 +69,58 @@ def _prettyprintDF(df, keys2print=["freq",
                                    "fragments",
                                    "res_idxs",
                                    "Sum",
-                                   "%Sum"]):
+                                   "%Sum"],
+                   extrakeys=None):
     r"""
-    Pretty-print a frequency DataFrame
+    Pretty-print a frequency DataFrame and add a few fields
 
     It somehow duplicate of ContactGroup.frequency_dataframe only this one is
     created "top down", i.e. with all info before it's been split into
-    ContactPairs, whereas ContactGroup.frequency re-builds this info "bottom up"
+    ContactPairs, whereas ContactGroup.frequency re-builds this info "bottom up".
 
-    This method can report frequencies even before the ContactGroup is instantiated
+    This way the method can report frequencies even before the ContactGroup is instantiated.
 
     Parameters
     ----------
     df : :obj:`pandas.DataFrame`
-      Should come from the _data2DataFrame method
-
+        Should come from the _data2DataFrame method
+    keys2print : list
+        Default keys to be printed
+    extrakeys : list, default is None
+        Instead of editing the full list
+        of `keys2print` you can add extra
+        ones here, which will be appended
+        to `keys2print`. If you want
+        a particular order edit `keys2print`
+        directly
     Returns
     -------
-    None
-    """
-    fmt =  f'%-{max(df.index.map(lambda x : len(str(x))))}u:'
-    df.index = df.index.map(lambda x : fmt % x)
-    df["lab1"] = df["resSeq1"] + df["best1"].map(lambda x: f"@{str(x)}").replace("@None","")
-    df["lab2"] = df["resSeq2"] + df["best2"].map(lambda x: f"@{str(x)}").replace("@None","")
-    fmt1 = f'%-{max(df["lab1"].map(lambda x : len(x)))}s'
-    fmt2 = f'%-{max(df["lab2"].map(lambda x : len(x)))}s'
-    df["lab1"] = df["lab1"].map(lambda x: fmt1 % x)
-    df["lab2"] = df["lab2"].map(lambda x: fmt2 % x)
-    df["label"] =df["lab1"]+" - "+df["lab2"]
-    df["fragments"] = df["frag1"].map(lambda x: "%5u" % x) + "-" + df["frag2"].map(lambda x: "%-5u" % x)
-    df["res_idxs"] = df["residx1"].map(lambda x: "%7u" % x) + "-" + df["residx2"].map(lambda x: "%-7u" % x)
-    print(df[keys2print].round({"freq": 2, "Sum": 2, "%Sum": 0}).to_string(justify="center", index=True))
+    pdf : :obj:`pandas.DataFrame`
+        Like `df` but with more new fields
+        * lab1
+        * lab2
+        * label
+        * fragments
+        * res_idxs
 
-    return df
+    """
+    _df = df.copy()
+    if extrakeys is not None:
+        keys2print+=extrakeys
+    #fmt =  f'%-{max(_df.index.map(lambda x : len(str(x))))}u:'
+    #_df.index = _df.index.map(lambda x : fmt % x)
+    _df["lab1"] = _df["resSeq1"] + _df["best1"].map(lambda x: f"@{str(x)}").replace("@None", "")
+    _df["lab2"] = _df["resSeq2"] + _df["best2"].map(lambda x: f"@{str(x)}").replace("@None", "")
+    fmt1 = f'%-{max(_df["lab1"].map(lambda x : len(x)))}s'
+    fmt2 = f'%-{max(_df["lab2"].map(lambda x : len(x)))}s'
+    _df["lab1"] = _df["lab1"].map(lambda x: fmt1 % x)
+    _df["lab2"] = _df["lab2"].map(lambda x: fmt2 % x)
+    _df["label"] = _df["lab1"] + " - " + _df["lab2"]
+    _df["fragments"] = _df["frag1"].map(lambda x: "%5u" % x) + "-" + _df["frag2"].map(lambda x: "%-5u" % x)
+    _df["res_idxs"] = _df["residx1"].map(lambda x: "%7u" % x) + "-" + _df["residx2"].map(lambda x: "%-7u" % x)
+    print(_df[keys2print].round({"freq": 2, "Sum": 2, "%Sum": 0}).to_string(justify="center", index=True))
+
+    return _df
 
 def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragnames,
                     top2confrag, consensus_maps,
