@@ -186,12 +186,9 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
 
     """
 
-    # Keep nonzero-freqs at ctc_cutoff_Ang+keep_max_buffer_Ang
-    ctc_freqs_buffer = (actcs <= (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10).astype("int").sum(0)
-    ctc_freqs_buffer = ctc_freqs_buffer / actcs.shape[0]
-    idxs = _np.flatnonzero(ctc_freqs_buffer > 0)
 
-    ctc_freqs = (actcs <= ctc_cutoff_Ang / 10).astype("int").sum(0) / actcs.shape[0]
+    ctc_freqs_buffer = _np.mean(actcs < (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, 0)
+    ctc_freqs = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
 
     pairs = _np.array(residxs_pairs, ndmin=2)[idxs, :]
     frags = _np.array([[_mdcu.lists.in_what_fragment(idx, fragments) for idx in pair] for pair in pairs])
@@ -210,7 +207,8 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
     best_2 = [_mdcu.str_and_dict.choose_options_descencing([cl, cf, fn]) for cl, cf, fn in zip(consensus_labels_2,
                                                                                                consensus_fragments_2,
                                                                                                fragnames_2)]
-
+    # Keep nonzero-freqs at ctc_cutoff_Ang+keep_max_buffer_Ang
+    idxs = _np.flatnonzero(ctc_freqs_buffer > 0)
     df = _DF({"freq": ctc_freqs[idxs],
               "freq_buffer" : ctc_freqs_buffer[idxs],
               "resSeq1": resSeqs[:, 0], "resSeq2": resSeqs[:, 1],
