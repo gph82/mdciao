@@ -165,9 +165,11 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
         from the final DataFrame
     switch_off_Ang :
         Use a linear switchoff function with this interval
+
     Returns
     -------
     df : :obj:`pandas.DataFrame`
+        Will be empty if no pairs have nonzero freqs at the buffer cutoff
         Contains the keys:
         * "freq"
         * "freq_buffer"
@@ -199,46 +201,51 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
 
     # Keep nonzero-freqs at ctc_cutoff_Ang+keep_max_buffer_Ang
     idxs = _np.flatnonzero(ctc_freqs_buffer > 0)
-    ctc_freqs = ctc_freqs[idxs]
-    ctc_freqs_buffer = ctc_freqs_buffer[idxs]
-    pairs = _np.array(residxs_pairs, ndmin=2)[idxs, :]
+    if len(idxs)>0:
+        ctc_freqs = ctc_freqs[idxs]
+        ctc_freqs_buffer = ctc_freqs_buffer[idxs]
+        pairs = _np.array(residxs_pairs, ndmin=2)[idxs, :]
 
-    frags = _np.array([[_mdcu.lists.in_what_fragment(idx, fragments) for idx in pair] for pair in pairs])
-    resSeqs = _np.array([[str(top.residue(idx)) for idx in pair] for pair in pairs])
-    consensus_labels_1 = [_choose_between_consensus_dicts(idx, consensus_maps, no_key=None)
-                          for idx in pairs[:, 0]]
-    consensus_labels_2 = [_choose_between_consensus_dicts(idx, consensus_maps, no_key=None)
-                          for idx in pairs[:, 1]]
-    consensus_fragments_1 = top2confrag[pairs[:, 0]]
-    consensus_fragments_2 = top2confrag[pairs[:, 1]]
-    fragnames_1 = _np.array(fragnames)[frags[:, 0]]
-    fragnames_2 = _np.array(fragnames)[frags[:, 1]]
-    best_1 = [_mdcu.str_and_dict.choose_options_descencing([cl, cf, fn]) for cl, cf, fn in zip(consensus_labels_1,
-                                                                                               consensus_fragments_1,
-                                                                                               fragnames_1)]
-    best_2 = [_mdcu.str_and_dict.choose_options_descencing([cl, cf, fn]) for cl, cf, fn in zip(consensus_labels_2,
-                                                                                               consensus_fragments_2,
-                                                                                               fragnames_2)]
-    df = _DF({"freq": ctc_freqs,
-              "freq_buffer": ctc_freqs_buffer,
-              "resSeq1": resSeqs[:, 0], "resSeq2": resSeqs[:, 1],
-              "frag1": frags[:, 0], "frag2": frags[:, 1],
-              "residx1": pairs[:, 0], "residx2": pairs[:, 1],
-              "fragname1": fragnames_1,
-              "fragname2": fragnames_2,
-              "ctc_idx": idxs,
-              "GRN1": consensus_labels_1,
-              "GRN2": consensus_labels_2,
-              "GFN1": consensus_fragments_1,
-              "GFN2": consensus_fragments_2,
-              "best1": best_1,
-              "best2": best_2
-              })
-    df.sort_values(["freq"], inplace=True, ascending=False, ignore_index=True)
-    df.index += 1
-    df["Sum"] = df["freq"].cumsum()
-    df["%Sum"] = (df["Sum"]/df["Sum"].max()*100)
-    df["%Sum"] = df["%Sum"].map(lambda x: "%3.1f%%" % x)
+        frags = _np.array([[_mdcu.lists.in_what_fragment(idx, fragments) for idx in pair] for pair in pairs])
+        resSeqs = _np.array([[str(top.residue(idx)) for idx in pair] for pair in pairs])
+        consensus_labels_1 = [_choose_between_consensus_dicts(idx, consensus_maps, no_key=None)
+                              for idx in pairs[:, 0]]
+        consensus_labels_2 = [_choose_between_consensus_dicts(idx, consensus_maps, no_key=None)
+                              for idx in pairs[:, 1]]
+        consensus_fragments_1 = top2confrag[pairs[:, 0]]
+        consensus_fragments_2 = top2confrag[pairs[:, 1]]
+        fragnames_1 = _np.array(fragnames)[frags[:, 0]]
+        fragnames_2 = _np.array(fragnames)[frags[:, 1]]
+        best_1 = [_mdcu.str_and_dict.choose_options_descencing([cl, cf, fn]) for cl, cf, fn in zip(consensus_labels_1,
+                                                                                                   consensus_fragments_1,
+                                                                                                   fragnames_1)]
+        best_2 = [_mdcu.str_and_dict.choose_options_descencing([cl, cf, fn]) for cl, cf, fn in zip(consensus_labels_2,
+                                                                                                   consensus_fragments_2,
+                                                                                                   fragnames_2)]
+        df = _DF({"freq": ctc_freqs,
+                  "freq_buffer": ctc_freqs_buffer,
+                  "resSeq1": resSeqs[:, 0], "resSeq2": resSeqs[:, 1],
+                  "frag1": frags[:, 0], "frag2": frags[:, 1],
+                  "residx1": pairs[:, 0], "residx2": pairs[:, 1],
+                  "fragname1": fragnames_1,
+                  "fragname2": fragnames_2,
+                  "ctc_idx": idxs,
+                  "GRN1": consensus_labels_1,
+                  "GRN2": consensus_labels_2,
+                  "GFN1": consensus_fragments_1,
+                  "GFN2": consensus_fragments_2,
+                  "best1": best_1,
+                  "best2": best_2
+                  })
+        df.sort_values(["freq"], inplace=True, ascending=False, ignore_index=True)
+        df.index += 1
+        df["Sum"] = df["freq"].cumsum()
+        df["%Sum"] = (df["Sum"]/df["Sum"].max()*100)
+        df["%Sum"] = df["%Sum"].map(lambda x: "%3.1f%%" % x)
+    else:
+        df = _DF(
+            columns=["freq", "freq_buffer", "resSeq1", "resSeq2", "frag1", "frag2", "residx1", "residx2", "fragname1",
+                     "fragname2", "ctc_idx", "GRN1", "GRN2", "GFN1", "GFN2", "best1", "best2"])
 
     return df
 
