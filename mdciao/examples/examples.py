@@ -237,7 +237,7 @@ def ContactGroupL394(**kwargs):
     Wraps around :obj:`mdciao.cli.residue_neighborhoods` and asks
     for the LEU394 neighborhood.
 
-    The input data is one very short (80 frames) version
+    The input data is one very short (56 frames) version
     of the MD trajectory shipped with mdciao, kindly provided by
     Dr. H. Batebi. See the online examples for more info.
 
