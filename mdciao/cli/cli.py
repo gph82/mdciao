@@ -966,8 +966,9 @@ def residue_neighborhoods(residues,
             print()
             _mdcctcs.contacts._contact_fraction_informer(len(idf),
                                                          idf[idf.freq > 0].freq.values, or_frac=.9)
-            print(neighborhoods[res_idx].frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2, "%sum": 2}).to_string(
-                justify="center"))
+            ndf = neighborhoods[res_idx].frequency_dataframe(ctc_cutoff_Ang)
+            ndf.index +=1
+            print(ndf.round({"freq": 2, "sum": 2}).to_string(justify="center"))
 
         except NotImplementedError as e:
             print(e)
