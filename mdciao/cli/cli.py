@@ -889,6 +889,10 @@ def residue_neighborhoods(residues,
         [[_np.sort([val, ii]) for ii in range(refgeom.top.n_residues) if ii not in nl[val] and ii != val] for val in
          res_idxs_list])
 
+    # Prune duplicates in the ctc_idxs (the res_idxs_list with itself generates duplicates)
+    assert (ctc_idxs[:,0]<ctc_idxs[:,1]).all()
+    ctc_idxs = _np.unique(ctc_idxs, axis=0)
+
     # Can we have same-fragment contacts
     if not allow_same_fragment_ctcs:
         fragment_idxs = [[_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair] for pair in ctc_idxs]
