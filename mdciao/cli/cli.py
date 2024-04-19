@@ -1523,7 +1523,7 @@ def interface(
                                         label_fontsize_factor=panelsize2font / panelsize,
                                         shorten_AAs=short_AA_names,
                                         truncate_at=min_freq,
-                                        total_freq=tot_freq
+                                        total_freq=df.freq.sum()
                                         )
 
         ctc_grp_intf.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
