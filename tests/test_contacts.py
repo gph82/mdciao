@@ -1124,11 +1124,11 @@ class TestContactPair(unittest.TestCase):
         #print(CP.top, CP.residues.idxs_pair)
         #print(CP.residues.names_short)
         #print([utils.residue_and_atom.find_AA(AA,top) for AA in CP.residues.names_short])
-        imap = {348:343,
+        imap = {347:342,
                 353:348}
         nCP : contacts.ContactPair = CP.retop(top,imap)
         # Test the residx
-        _np.testing.assert_array_equal(nCP.residues.idxs_pair,[343,348])
+        _np.testing.assert_array_equal(nCP.residues.idxs_pair,[348, 342])
 
         # Test the non-nested attributes
         for attr in [
@@ -1164,7 +1164,7 @@ class TestContactPair(unittest.TestCase):
         CP: contacts.ContactPair = CG._contacts[0]
 
         top = md.load(test_filenames.pdb_3SN6).top
-        imap = {348: 343,
+        imap = {347: 342,
                 353: 348}
         nCP: contacts.ContactPair = CP.retop(top, imap, deepcopy=True)
         for attr in [
