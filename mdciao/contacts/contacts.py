@@ -7464,7 +7464,7 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
             idx = _mdcu.lists.idx_at_fraction(ctc_freqs, or_frac)
             print("As orientation value, the first %u ctcs already capture %3.1f%% of %3.2f." % (idx+1, or_frac * 100, total_freq))
             print("The %u-th contact has a frequency of %4.2f."%(idx+1, ctc_freqs[idx]))
-            print()
+
 
 
 
