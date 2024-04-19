@@ -56,7 +56,8 @@ from pandas import \
     DataFrame as _DF, \
     ExcelWriter as _ExcelWriter, \
     unique as _pdunique, \
-    isna as _isna
+    isna as _isna, \
+    concat as _pdconcat
 
 
 from joblib import \
@@ -211,6 +212,43 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
     df["%Sum"] = df["%Sum"].map(lambda x: "%3.1f%%" % x)
 
     return df
+
+def _DataFrame2NeighborhoodDF(df, res_idx):
+    r"""
+    Prepare a frequency DataFrame for a residue neighborhood out of a DataFrame containing many other freqs.
+
+    Other minor rearrangements take also place
+    * make `res_idx` always be the first residue in the pair, i.e. residx1 is always=res_idx
+    * re-compute the Sum and the %Sum columns
+    * re-index to start at 1
+
+    Parameters
+    ----------
+    df : :obj:`pandas.DataFrame`
+        A frequency DataFrame coming from :obj:`_data2DataFrame`
+    res_idx : int
+        The residue index for which the neighborhood should be prepared
+
+    Returns
+    -------
+    ndf : :obj:`pandas.DataFrame`
+        A frequency DataFrame containing only those contacts where
+        residue :obj:`res_idx` appears
+
+    """
+    idf1 = df[df.residx1 == res_idx]
+    idf2 = df[df.residx2 == res_idx]
+    rename = {}
+    for key in ["resSeq", "frag", "residx", "fragname", "GRN", "GFN", "best"]:
+        rename.update({key + "1": key + "2", key + "2": key + "1"})
+    idf2 = idf2.rename(columns=rename)[idf1.keys()]
+    idf = _pdconcat((idf1, idf2))
+    idf.sort_values(["freq"], inplace=True, ascending=False, ignore_index=True)
+    idf.index += 1
+    idf["Sum"] = idf["freq"].cumsum()
+    idf["%Sum"] = (idf["Sum"] / idf["Sum"].max() * 100)
+    idf["%Sum"] = idf["%Sum"].map(lambda x: "%3.1f%%" % x)
+    return idf
 
 #TODO consider deprecating
 def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
@@ -1400,7 +1438,7 @@ class ContactPair(object):
              - :obj:`partner_residue_index` will contain the other index of :obj:`res_idx_pair`
             and other properties which depend on having defined an anchor and a partner
 
-            Furhtermore, if a topology is parsed as an argument:
+            Furthermore, if a topology is parsed as an argument:
              - :obj:`anchor_residue_name` will contain the anchor residue as an :obj:`mdtraj.core.Topology.Residue` object
              - :obj:`partner_residue_name` will contain the partner residue as an :obj:`mdtraj.core.Topology.Residue` object
         consensus_labels : iterable of strings, default is None
