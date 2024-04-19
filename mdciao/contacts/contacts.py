@@ -194,8 +194,8 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
         ctc_freqs_buffer = _np.mean(actcs < (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, 0)
         ctc_freqs = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
     else:
-        ctcs_freq_buffer = _np.mean(_linear_switchoff(actcs, (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, switch_off_Ang / 10),0)
-        ctcs_freq = _np.mean(_linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10), 0)
+        ctc_freqs_buffer = _np.mean(_linear_switchoff(actcs, (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, switch_off_Ang / 10),0)
+        ctc_freqs = _np.mean(_linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10), 0)
 
     # Keep nonzero-freqs at ctc_cutoff_Ang+keep_max_buffer_Ang
     idxs = _np.flatnonzero(ctc_freqs_buffer > 0)
