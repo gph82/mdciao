@@ -1209,15 +1209,15 @@ class TestContactPair(unittest.TestCase):
         CG = examples.ContactGroupL394()
         CP: contacts.ContactPair = CG._contacts[0]
 
-        self.assertEqual(CP.gen_label("short"),"R389-L394")
-        self.assertEqual(CP.gen_label("long") ,"ARG389-LEU394")
-        self.assertEqual(CP.gen_label("short",fragments=True), "R389@G.H5.21-L394@G.H5.26")
-        self.assertEqual(CP.gen_label("long",fragments=True) ,"ARG389@G.H5.21-LEU394@G.H5.26")
+        self.assertEqual(CP.gen_label("short"),"L394-L388")
+        self.assertEqual(CP.gen_label("long") ,"LEU394-LEU388")
+        self.assertEqual(CP.gen_label("short",fragments=True), "L394@G.H5.26-L388@G.H5.20")
+        self.assertEqual(CP.gen_label("long",fragments=True) ,"LEU394@G.H5.26-LEU388@G.H5.20")
 
-        self.assertEqual(CP.gen_label("short", delete_anchor=True), "R389")
-        self.assertEqual(CP.gen_label("long", delete_anchor=True), "ARG389")
-        self.assertEqual(CP.gen_label("short", fragments=True, delete_anchor=True), "R389@G.H5.21")
-        self.assertEqual(CP.gen_label("long", fragments=True, delete_anchor=True), "ARG389@G.H5.21")
+        self.assertEqual(CP.gen_label("short", delete_anchor=True), "L388")
+        self.assertEqual(CP.gen_label("long", delete_anchor=True), "LEU388")
+        self.assertEqual(CP.gen_label("short", fragments=True, delete_anchor=True), "L388@G.H5.20")
+        self.assertEqual(CP.gen_label("long", fragments=True, delete_anchor=True), "LEU388@G.H5.20")
         with self.assertRaises(ValueError):
             CP.gen_label("wrong")
 
