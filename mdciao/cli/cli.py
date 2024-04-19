@@ -938,12 +938,6 @@ def residue_neighborhoods(residues,
         # _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(idf.freq>0)]),
         #                                             idf[idf.freq > 0].freq.values, or_frac=.9)
         #_mdcctcs.contacts._prettyprintDF(neighborhood_DFs[ii])
-    """
-    if switch_off_Ang is None:
-        ctcs_freq = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
-    else:
-        ctcs_freq = _np.mean(_mdcctcs._linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10),0)
-    """
 
     # Create the neighborhoods as groups of ContactPair objects
     neighborhoods = {}

@@ -125,6 +125,7 @@ def _prettyprintDF(df, keys2print=["freq",
 def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragnames,
                     top2confrag, consensus_maps,
                     keep_max_buffer_Ang=2,
+                    switch_off_Ang=None,
                     ):
     r"""
 
@@ -162,6 +163,8 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
     keep_max_buffer_Ang :
         residxs_pairs with frequencies = 0 will be eliminated
         from the final DataFrame
+    switch_off_Ang :
+        Use a linear switchoff function with this interval
     Returns
     -------
     df : :obj:`pandas.DataFrame`
@@ -187,8 +190,13 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
     """
 
 
-    ctc_freqs_buffer = _np.mean(actcs < (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, 0)
-    ctc_freqs = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
+    if switch_off_Ang is None:
+        ctc_freqs_buffer = _np.mean(actcs < (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, 0)
+        ctc_freqs = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
+    else:
+        ctcs_freq_buffer = _np.mean(_linear_switchoff(actcs, (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, switch_off_Ang / 10),0)
+        ctcs_freq = _np.mean(_linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10), 0)
+
 
     pairs = _np.array(residxs_pairs, ndmin=2)[idxs, :]
     frags = _np.array([[_mdcu.lists.in_what_fragment(idx, fragments) for idx in pair] for pair in pairs])
