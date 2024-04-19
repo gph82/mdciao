@@ -1434,7 +1434,7 @@ def interface(
     _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(df.freq>min_freq)]),
                                                  df[df.freq>0].freq.values, or_frac=.9)
     # Take freqs < min_freq out now
-    df = df[df.freq>min_freq]
+    df = df[df.freq>min_freq][:n_ctcs]
 
     ctc_objs = []
     for ii, irow in df.iterrows():
