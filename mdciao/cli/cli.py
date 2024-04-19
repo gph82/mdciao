@@ -900,13 +900,14 @@ def residue_neighborhoods(residues,
 
     print(f"Performing a first pass on {len(ctc_idxs)} residue pairs to compute lower bounds\n"
           f"on residue-residue distances via residue-COM distances.")
+    lb_cutoff_buffer_Ang = 2.5
     idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
                                                             stride=stride,
                                                             chunksize=chunksize_in_frames,
                                                             n_jobs=n_jobs,
                                                             progressbar=False,
                                                             verbose=False,
-                                                            lb_cutoff_Ang=ctc_cutoff_Ang + 2.5,
+                                                            lb_cutoff_Ang=ctc_cutoff_Ang + lb_cutoff_buffer_Ang,
                                                             periodic=pbc,
                                                             )
     idx_of_lower_lower_bounds = _np.unique(_np.hstack(idx_of_lower_lower_bounds))
@@ -923,46 +924,62 @@ def residue_neighborhoods(residues,
                                                                  )
     print() # to make sure we don't overwrite output
     actcs = _np.vstack(ctcs_trajs)
+    df = _mdcctcs.contacts._data2DataFrame(actcs, ctc_idxs_small, refgeom.top, ctc_cutoff_Ang,
+                                           fragments_as_residue_idxs, fragment_names,
+                                           top2confrag, list(consensus_maps.values()),
+                                           keep_max_buffer_Ang=lb_cutoff_buffer_Ang)
+    neighborhood_DFs = {}
+    for ii in res_idxs_list:
+        idf = _mdcctcs.contacts._DataFrame2NeighborhoodDF(df, ii)
+        n_ctcs = _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, idf.freq)[0]
+        idf=idf[:n_ctcs] #need this step otherwise we get the "to be set on a copy of a slice from a DataFrame"
+        neighborhood_DFs[ii]=idf
+        # For debugging you can get an overview of the DF before the CG is created
+        # _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(idf.freq>0)]),
+        #                                             idf[idf.freq > 0].freq.values, or_frac=.9)
+        #_mdcctcs.contacts._prettyprintDF(neighborhood_DFs[ii])
+    """
     if switch_off_Ang is None:
-        ctcs_mean = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
+        ctcs_freq = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
     else:
-        ctcs_mean = _np.mean(_mdcctcs._linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10),0)
+        ctcs_freq = _np.mean(_mdcctcs._linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10),0)
+    """
 
-    final_look = _mdcctcs.select_and_report_residue_neighborhood_idxs(ctcs_mean, res_idxs_list,
-                                                                      fragments_as_residue_idxs, ctc_idxs_small,
-                                                                      refgeom.top,
-                                                                      interactive=False,
-                                                                      ctcs_kept=ctc_control)
-
-    # Create the neighborhoods as groups of contact_pair objects
+    # Create the neighborhoods as groups of ContactPair objects
     neighborhoods = {}
     empty_CGs = []
-    for res_idx, val in final_look.items():
+    for res_idx, idf in neighborhood_DFs.items():
         CPs = []
-        for idx in val:
-            pair = ctc_idxs_small[idx]
-            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, consensus_maps.values()) for idx in pair]
-            fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
-            CPs.append(_mdcctcs.ContactPair(pair,
-                                   [itraj[:, idx] for itraj in ctcs_trajs],
-                                   time_arrays,
-                                   top=refgeom.top,
-                                   anchor_residue_idx=res_idx,
-                                   consensus_labels=consensus_labels,
-                                   trajs=xtcs,
-                                   fragment_idxs=fragment_idxs,
-                                   consensus_fragnames=[top2confrag[idx] for idx in pair],
-                                   fragment_names=[fragment_names[idx] for idx in fragment_idxs],
-                                   fragment_colors=[fragment_colors[idx] for idx in fragment_idxs],
-                                   atom_pair_trajs=[itraj[:, [idx * 2, idx * 2 + 1]] for itraj in at_pair_trajs]
-                                   ))
+        for ii, irow in idf.iterrows():
+            CPs.append(_mdcctcs.ContactPair([irow.residx1, irow.residx2],
+                                            [itraj[:, irow.ctc_idx] for itraj in ctcs_trajs],
+                                            time_arrays,
+                                            top=refgeom.top,
+                                            anchor_residue_idx=res_idx,
+                                            consensus_labels=[irow.GRN1, irow.GRN2],
+                                            trajs=xtcs,
+                                            fragment_idxs=[[irow.frag1, irow.frag2]],
+                                            consensus_fragnames=[irow.GFN1, irow.GFN2],
+                                            fragment_names=[irow.fragname1, irow.fragname2],
+                                            fragment_colors=[fragment_colors[irow.frag1], fragment_colors[irow.frag2]],
+                                            atom_pair_trajs=[itraj[:, [irow.ctc_idx * 2, irow.ctc_idx * 2 + 1]] for
+                                                             itraj in
+                                                             at_pair_trajs],
+                                            ))
         try:
-            neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs, neighbors_excluded=n_nearest)
+            neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs, neighbors_excluded=n_nearest,
+                                                           max_cutoff_Ang=ctc_cutoff_Ang + lb_cutoff_buffer_Ang)
+            print()
+            _mdcctcs.contacts._contact_fraction_informer(len(idf),
+                                                         idf[idf.freq > 0].freq.values, or_frac=.9)
+            print(neighborhoods[res_idx].frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2, "%sum": 2}).to_string(
+                justify="center"))
+
         except NotImplementedError as e:
             print(e)
             empty_CGs.append(res_idx)
             neighborhoods[res_idx] = None
-    if len(empty_CGs) == len(final_look):
+    if len(empty_CGs) == len(neighborhood_DFs):
         print("No residues have any neighbors at %2.1f Ang. No output produced." % ctc_cutoff_Ang)
         return
     elif len(empty_CGs)>0:
