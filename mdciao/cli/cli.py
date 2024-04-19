@@ -931,20 +931,20 @@ def residue_neighborhoods(residues,
     neighborhood_DFs = {}
     for ii in res_idxs_list:
         idf = _mdcctcs.contacts._DataFrame2NeighborhoodDF(df, ii)
-        n_ctcs = _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, idf.freq)[0]
-        idf=idf[:n_ctcs] #need this step otherwise we get the "to be set on a copy of a slice from a DataFrame"
         neighborhood_DFs[ii]=idf
         # For debugging you can get an overview of the DF before the CG is created
+        #  n_ctcs = _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, idf.freq)[0]
         # _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(idf.freq>0)]),
         #                                             idf[idf.freq > 0].freq.values, or_frac=.9)
-        #_mdcctcs.contacts._prettyprintDF(neighborhood_DFs[ii])
+        #_mdcctcs.contacts._prettyprintDF(idf)
 
     # Create the neighborhoods as groups of ContactPair objects
     neighborhoods = {}
     empty_CGs = []
     for res_idx, idf in neighborhood_DFs.items():
         CPs = []
-        for ii, irow in idf.iterrows():
+        n_ctcs = _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, idf.freq)[0]
+        for ii, irow in idf[:n_ctcs].iterrows():
             CPs.append(_mdcctcs.ContactPair([irow.residx1, irow.residx2],
                                             [itraj[:, irow.ctc_idx] for itraj in ctcs_trajs],
                                             time_arrays,
@@ -964,8 +964,7 @@ def residue_neighborhoods(residues,
             neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs, neighbors_excluded=n_nearest,
                                                            max_cutoff_Ang=ctc_cutoff_Ang + lb_cutoff_buffer_Ang)
             print()
-            _mdcctcs.contacts._contact_fraction_informer(len(idf),
-                                                         idf[idf.freq > 0].freq.values, or_frac=.9)
+            _mdcctcs.contacts._contact_fraction_informer(len(CPs),idf[idf.freq > 0].freq.values, or_frac=.9)
             ndf = neighborhoods[res_idx].frequency_dataframe(ctc_cutoff_Ang)
             ndf.index +=1
             print(ndf.round({"freq": 2, "sum": 2}).to_string(justify="center"))
