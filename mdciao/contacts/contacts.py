@@ -197,8 +197,12 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
         ctcs_freq_buffer = _np.mean(_linear_switchoff(actcs, (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, switch_off_Ang / 10),0)
         ctcs_freq = _np.mean(_linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10), 0)
 
-
+    # Keep nonzero-freqs at ctc_cutoff_Ang+keep_max_buffer_Ang
+    idxs = _np.flatnonzero(ctc_freqs_buffer > 0)
+    ctc_freqs = ctc_freqs[idxs]
+    ctc_freqs_buffer = ctc_freqs_buffer[idxs]
     pairs = _np.array(residxs_pairs, ndmin=2)[idxs, :]
+
     frags = _np.array([[_mdcu.lists.in_what_fragment(idx, fragments) for idx in pair] for pair in pairs])
     resSeqs = _np.array([[str(top.residue(idx)) for idx in pair] for pair in pairs])
     consensus_labels_1 = [_choose_between_consensus_dicts(idx, consensus_maps, no_key=None)
@@ -215,10 +219,8 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
     best_2 = [_mdcu.str_and_dict.choose_options_descencing([cl, cf, fn]) for cl, cf, fn in zip(consensus_labels_2,
                                                                                                consensus_fragments_2,
                                                                                                fragnames_2)]
-    # Keep nonzero-freqs at ctc_cutoff_Ang+keep_max_buffer_Ang
-    idxs = _np.flatnonzero(ctc_freqs_buffer > 0)
-    df = _DF({"freq": ctc_freqs[idxs],
-              "freq_buffer" : ctc_freqs_buffer[idxs],
+    df = _DF({"freq": ctc_freqs,
+              "freq_buffer": ctc_freqs_buffer,
               "resSeq1": resSeqs[:, 0], "resSeq2": resSeqs[:, 1],
               "frag1": frags[:, 0], "frag2": frags[:, 1],
               "residx1": pairs[:, 0], "residx2": pairs[:, 1],
@@ -229,8 +231,8 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
               "GRN2": consensus_labels_2,
               "GFN1": consensus_fragments_1,
               "GFN2": consensus_fragments_2,
-              "best1" : best_1,
-              "best2" : best_2
+              "best1": best_1,
+              "best2": best_2
               })
     df.sort_values(["freq"], inplace=True, ascending=False, ignore_index=True)
     df.index += 1
