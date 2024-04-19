@@ -4545,7 +4545,7 @@ class ContactGroup(object):
              * str "numeric" or "residue"
                 Sort by ascending residue number
              * boolean False
-                Don't sort, i.e. use the original order
+                Don't sort, i.e. use the order in `self.contact_pairs`
              * boolean True
                 Sort. There's two options for sorting, depending
                 on the value of ctc_cutoff_Ang (more below)
