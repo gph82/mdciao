@@ -862,10 +862,10 @@ class TestContactPair(unittest.TestCase):
         idict = cpt.frequency_dict(21)
         assert idict["freq"] == _np.mean([1, 1, 1] + [1, 1, 0, 0])
         assert idict["residue idxs"] == "0 1"
-        assert idict["label"] == ('%-15s - %-15s' % (0, 1)).rstrip(" "), idict["label"]
+        assert idict["label"] == ('%-15s - %-15s' % (0, 1)), idict["label"]
 
         idict = cpt.frequency_dict(21, AA_format="long")
-        assert idict["label"] == ('%-15s - %-15s' % (0, 1)).rstrip(" "), idict["label"]
+        assert idict["label"] == ('%-15s - %-15s' % (0, 1)), idict["label"]
 
         idict = cpt.frequency_dict(21, split_label=False)
         assert idict["label"] == "0-1"
@@ -878,10 +878,10 @@ class TestContactPair(unittest.TestCase):
                                    )
         idict = cpt.frequency_dict(21)
         self.assertEqual(idict["label"],
-                         ('%-15s - %-15s' % ("0@fragA", "1@fragB")).rstrip(" "))
+                         ('%-15s - %-15s' % ("0@fragA", "1@fragB")))
 
         idict = cpt.frequency_dict(21, AA_format="long")
-        assert idict["label"] == ('%-15s - %-15s' % ("0@fragA", "1@fragB")).rstrip(" ")
+        assert idict["label"] == ('%-15s - %-15s' % ("0@fragA", "1@fragB"))
         idict = cpt.frequency_dict(21, split_label=False)
         assert idict["label"] == '0@fragA-1@fragB'
 
