@@ -2,8 +2,7 @@
 import mdtraj as md
 import unittest
 import numpy as _np
-from unittest.mock import patch
-import mock
+from unittest import mock
 
 from mdciao import fragments as mdcfragments
 # I'm importing the private variable for testing other stuff, not to test the variable itself
@@ -13,9 +12,6 @@ from mdciao.examples import filenames as test_filenames
 from mdciao.examples import CGNLabeler_gnas2_human, GPCRLabeler_ardb2_human
 from mdciao.utils.sequence import top2seq
 from mdciao.nomenclature.nomenclature import _consensus_maps2consensus_frags
-import pytest
-
-
 
 class Test_overview(unittest.TestCase):
 
@@ -47,7 +43,7 @@ class Test_print_frag(unittest.TestCase):
          mdcfragments.print_frag(0, self.geom.top, self.fragments[0], fragment_desc="blob")
 
     def test_raises(self):
-        with pytest.raises(Exception):
+        with self.assertRaises(Exception):
              mdcfragments.print_frag(0, "self.geom.top", self.fragments[0])
 
     def test_returns(self):
@@ -151,19 +147,19 @@ class Test_get_fragments_methods(unittest.TestCase):
         self.assertEqual(len(nonefrags),1)
 
     def test_dont_know_method(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             mdcfragments.get_fragments(self.geom.top,
                                        method='xyz')
 
     @unittest.skip("Undecided whether to never implement this or not")
     def test_molecule_raises_not_imp(self):
-        with pytest.raises(NotImplementedError):
+        with self.assertRaises(NotImplementedError):
             mdcfragments.get_fragments(self.geom.top,
                                        method="molecules")
 
     @unittest.skip("Undecided whether to never implement this or not")
     def test_molecule_resSeqplus_raises_not_imp(self):
-        with pytest.raises(NotImplementedError):
+        with self.assertRaises(NotImplementedError):
             mdcfragments.get_fragments(self.geom.top,
                                        method="molecules_resSeq+")
 
@@ -199,7 +195,7 @@ class Test_get_fragments_other_options(unittest.TestCase):
         assert _np.allclose(by_bonds[2], [7])
 
         # Checking for error from the overlapping ids in the argument "join_fragments"
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             mdcfragments.get_fragments(self.geom.top,
                                        join_fragments=[[1, 2], [2, 3]],
                                        verbose=True,

@@ -1,6 +1,5 @@
 import unittest
 import numpy as _np
-import pytest
 from mdciao.examples import filenames as test_filenames
 
 
@@ -59,10 +58,10 @@ class Test_in_what_fragment(unittest.TestCase):
 
     def test_should_be_integer(self):
         # Check that it fails when input is not an index
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             lists.in_what_fragment([1],[[1, 2], [3, 4, 5, 6.6]])
 
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             lists.in_what_fragment([1], [[1, 2], [3, 4, 5, 6.6, "A"]])
 
 class Test_does_not_contain_strings(unittest.TestCase):
@@ -119,11 +118,11 @@ class Test_assert_min_len(unittest.TestCase):
         lists.assert_min_len([['a', 'b'], ['c', 'd'],[1, 2]])
 
     def test_assert_min_len_failed_assertion_just_works(self):
-       with pytest.raises(AssertionError):
+       with self.assertRaises(AssertionError):
            lists.assert_min_len([[1]])
 
     def test_assert_min_len_failed_assertion_works_empty_list(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             lists.assert_min_len([[1,2],[]])
 
     def test_assert_min_length_min_len_works(self):
@@ -137,11 +136,11 @@ class Test_assert_no_intersection(unittest.TestCase):
         lists.assert_no_intersection([[], [3, 3]])
 
     def test_failed_assertion_just_works(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             lists.assert_no_intersection([[1,2,3],[3,3]])
 
     def test_assert_no_intersection_empty_lists(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             lists.assert_no_intersection([[], []])
 
 class Test_window_average_fast(unittest.TestCase):
@@ -170,13 +169,13 @@ class Test_join_lists(unittest.TestCase):
 
 
     def test_fails_overalpping_idxs(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             in_lists = [[0, 1], [2, 3], [4, 5], [6, 7]]
             lists.join_lists(in_lists, [[1, 2],
                                   [2, 3]])
 
     def test_fails_no_minlen_list2join(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             in_lists = [[0, 1], [2, 3], [4, 5], [6, 7]]
             lists.join_lists(in_lists, [[0],[1,2]])
 
@@ -189,7 +188,7 @@ class Test_put_this_idx_first_in_pair(unittest.TestCase):
         assert (lists.put_this_idx_first_in_pair("first", ["last", "first"]) == ["first", "last"])
 
     def test_put_this_idx_first_in_pair_exception(self):
-        with pytest.raises(Exception):
+        with self.assertRaises(Exception):
             lists.put_this_idx_first_in_pair(99, [10, 20])
 
 class Test_rewarp(unittest.TestCase):

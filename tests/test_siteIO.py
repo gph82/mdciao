@@ -1,7 +1,6 @@
 import unittest
 from mdciao.examples import filenames as test_filenames
 from mdciao.sites import siteIO
-import pytest
 
 import numpy as _np
 import mdtraj as _md
@@ -82,7 +81,7 @@ class Test_x2site(unittest.TestCase):
         print(site)
 
     def test_raises(self):
-        with pytest.raises(KeyError):
+        with self.assertRaises(KeyError):
              mdciao.sites.x2site({"fonds":
                 {"residx": [
                     [353, 972],
@@ -175,9 +174,9 @@ class Test_dat2site(unittest.TestCase):
         ]}, "name": "tip.json as plain ascii with residx"}
                              )
     def test_Valuerror(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             siteIO.dat2site(test_filenames.tip_residx_dat, fmt="AAresSeq")
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             siteIO.dat2site(test_filenames.tip_dat, fmt="residx")
 
 
