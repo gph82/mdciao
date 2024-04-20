@@ -1877,7 +1877,7 @@ class ContactPair(object):
                        ):
         """
         Returns the :obj:`frequency_overall_trajs` as a more informative
-        dictionary with keys "freq", "residue idxs", "label"
+        dictionary with keys "freq", "residues", "fragments", "label"
 
         Parameters
         ----------
@@ -1906,8 +1906,10 @@ class ContactPair(object):
 
         fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
                 "label":label,
-                "residue idxs": '%u %u' % tuple(self.residues.idxs_pair)
-                }
+                 #TODO passs fmt indicators here so that padding occurs for all entries of th CG
+                "residues": '%u - %u' % tuple(self.residues.idxs_pair)}
+        if self.fragments.idxs is not None:
+            fdict.update({"fragments" :  '%u - %u' % tuple(self.fragments.idxs)})
 
         if atom_types:
             fdict.update({"by_atomtypes" :
