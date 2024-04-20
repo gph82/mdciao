@@ -6731,11 +6731,12 @@ class ContactGroup(object):
         return dict_out
     """
 
+    @_kwargs_subs(_mdcplots.plot_matrix, exclude=["transpose"])
     def plot_interface_frequency_matrix(self, ctc_cutoff_Ang,
                                         switch_off_Ang=None,
                                         transpose=False,
                                         label_type='best',
-                                        **plot_mat_kwargs,
+                                        **kwargs_plot_matrix,
                                         ):
         r"""
         Plot the :obj:`interface_frequency_matrix`
@@ -6759,8 +6760,13 @@ class ContactGroup(object):
             Alternatives are "residue" or "consensus", but "consensus" alone
             might lead to empty labels since it is not guaranteed
             that all residues of the interface have consensus labels
-        plot_mat_kwargs: see :obj:`plot_mat`
-            pixelsize, transpose, grid, cmap, colorbar
+        kwargs_plot_matrix: dict, default is None
+            Optional keyword arguments for :obj:`mdciao.plots.plot_matrix`,
+            listed below.
+
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
 
         Returns
         -------
@@ -6781,7 +6787,7 @@ class ContactGroup(object):
 
         iax, __ = _mdcplots.plot_matrix(mat, labels,
                                         transpose=transpose,
-                                        **plot_mat_kwargs,
+                                        **kwargs_plot_matrix,
                                         )
         return iax.figure, iax
 
