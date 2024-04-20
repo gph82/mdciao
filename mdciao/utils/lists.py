@@ -521,8 +521,11 @@ def _get_n_ctcs_from_freqs(ctc_control, ctc_freqs):
     ----------
     ctc_control : int or float
         * If int:
-          Keep these many contacts, i.e.
-          return ctc_control directly
+          Keep these many contacts.
+          If there aren't these many contacts
+          in the `ctc_freqs` take however
+          many there are, i.e. return
+          the min(n_ctcs, n_nonzero_freqs).
         * If float:
           Interpret ctcs_freq control as
           a fraction [0,1] and return
@@ -546,7 +549,7 @@ def _get_n_ctcs_from_freqs(ctc_control, ctc_freqs):
     or_fraction_needed = True
     total_n_ctcs = _np.array(ctc_freqs).sum()
     if isinstance(ctc_control, int):
-        n_ctcs = int(ctc_control)
+        n_ctcs = _np.min([int(ctc_control), _np.sum(ctc_freqs>0)])
     else:
         if total_n_ctcs > 0:
             n_ctcs = idx_at_fraction(ctc_freqs, ctc_control) + 1
