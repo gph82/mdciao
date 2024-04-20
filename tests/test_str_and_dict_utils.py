@@ -9,8 +9,6 @@ from mdciao.utils import str_and_dict
 
 from tempfile import TemporaryDirectory as _TDir
 
-import pytest
-
 import io as _io, contextlib as _contextlib
 
 from pandas import \
@@ -40,11 +38,11 @@ class Test_get_sorted_trajectories(unittest.TestCase):
 
 
     def test_fails_if_not_traj_at_all(self):
-        with pytest.raises(FileNotFoundError):
+        with self.assertRaises(FileNotFoundError):
             str_and_dict.get_trajectories_from_input("bogus.xtc")
 
     def test_fails_if_not_trajs(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             str_and_dict.get_trajectories_from_input([self.traj,
                                                       1])
 
@@ -56,7 +54,7 @@ class Test_inform_about_trajectories(unittest.TestCase):
         self.traj_reverse = md.load(test_filenames.traj_xtc_stride_20, top=self.geom.top)[::-1]
 
     def test_fails_no_list(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             str_and_dict.inform_about_trajectories(test_filenames.traj_xtc_stride_20)
 
     def test_list_of_files(self):
@@ -232,7 +230,7 @@ class Test_unify_freq_dicts(unittest.TestCase):
         assert out_dict["prot"]["ALA40-GLU30"] == 0  # from K40A
 
     def test_basic_exclude(self):
-        with pytest.raises(NotImplementedError):
+        with self.assertRaises(NotImplementedError):
             out_dict = str_and_dict.unify_freq_dicts(self.freq_dicts,
                                         exclude=["LYS6"], #to check that is just a pattern matching, not full str match
                                     key_separator=None)
@@ -797,7 +795,7 @@ class Test_FilenameGenerator(unittest.TestCase):
         self.assertEqual(fn.fname_timetrace_fig("traj1"),'beta2_Gs.traj1.time_trace@3.5_Ang.png')
 
     def test_table_ext_None_raises(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             fn = str_and_dict.FilenameGenerator("beta2 Gs",3.5,"project","png",None,150,"ps")
 
     def test_keeps_svg(self):

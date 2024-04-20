@@ -5,9 +5,6 @@ from mdciao.examples import filenames as test_filenames
 from pandas import DataFrame as _DF
 from mdciao.fragments import get_fragments
 from mdciao.utils import sequence
-import pytest
-
-
 
 class Test_print_verbose_dataframe(unittest.TestCase):
 
@@ -139,9 +136,9 @@ class Test_my_bioalign(unittest.TestCase):
         _np.testing.assert_array_equal(algnmt[1],res2)
 
     def test_raises(self):
-        with pytest.raises(NotImplementedError):
+        with self.assertRaises(NotImplementedError):
             sequence.my_bioalign(None, None, method="other")
-        with pytest.raises(NotImplementedError):
+        with self.assertRaises(NotImplementedError):
             sequence.my_bioalign(None, None, extend_gap_score=10)
 
 class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
