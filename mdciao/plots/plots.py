@@ -1981,6 +1981,7 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                                              )
                     if verbose:
                         print()
+                        print(f"{ihood.name.capitalize()}:")
                         print(ihood.frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}))
                         print()
 
