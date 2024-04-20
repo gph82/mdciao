@@ -92,7 +92,10 @@ def pdb2ref(pdb, url="https://data.rcsb.org/rest/v1/core/entry/",
     try:
         ref = ref["rcsb_primary_citation"]
     except KeyError:
-        print(url,":", ref["message"])
+        try:
+            print(url,":", ref["message"])
+        except KeyError:
+            print(url, ":", "no primary citation")
         return
 
     print("Please cite the following 3rd party publication:")
