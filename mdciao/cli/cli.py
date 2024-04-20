@@ -1473,18 +1473,23 @@ def interface(
                                          interface_fragments=intf_frags_as_residxs,  # interface_residx_short,
                                          name=title)
     print()
-    print(ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang).round({"freq":2, "sum":2, "%sum":2}).to_string(justify="center"))
+    idf = ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang)
+    idf.index += 1
+    print(idf.round({"freq": 2, "sum": 2}).to_string(justify="center"))
     print()
     dfs = ctc_grp_intf.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                        list_by_interface=True,
                                                        return_as_dataframe=True,
                                                        sort_by_freq=sort_by_av_ctcs)
-    print(dfs[0].round({"freq":2}))
-    print()
-    print(dfs[1].round({"freq":2}))
+    for idf in dfs:
+        idf.index += 1
+        print(idf.round({"freq":2}))
+        print()
+
+    if any([savetabs,savefigs,savetrajs]):
+        print("The following files have been created:")
 
     if savetabs:
-        print("The following files have been created:")
         ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_excel, sort_by_freq=sort_by_av_ctcs)
         print(fn.fullpath_overall_excel)
         ctc_grp_intf.frequency_table(ctc_cutoff_Ang, fn.fullpath_overall_dat, atom_types=True)
