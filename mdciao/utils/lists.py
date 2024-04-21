@@ -510,7 +510,7 @@ def idx_at_fraction(val_desc_order, frac):
     return _np.flatnonzero(normalized_cumsum>=frac)[0]
 
 
-def _get_n_ctcs_from_freqs(ctc_control, ctc_freqs):
+def _get_n_ctcs_from_freqs(ctc_control, ctc_freqs, min_freq=0.01):
     r"""
     Helper method to understand what :obj:`ctc_control` is meant to do with :obj:`ctc_freqs`
 
@@ -535,6 +535,8 @@ def _get_n_ctcs_from_freqs(ctc_control, ctc_freqs):
           Check :obj:`idx_at_fraction` for more info
     ctc_freqs : iterable
         Floats in descending order
+    min_freq : float
+        The minimum frequency to be considered non-zero
     Returns
     -------
     n_ctcs : int
@@ -547,9 +549,9 @@ def _get_n_ctcs_from_freqs(ctc_control, ctc_freqs):
         anyways)
     """
     or_fraction_needed = True
-    total_n_ctcs = _np.array(ctc_freqs).sum()
+    total_n_ctcs = _np.array(ctc_freqs[ctc_freqs>min_freq]).sum()
     if isinstance(ctc_control, int):
-        n_ctcs = _np.min([int(ctc_control), _np.sum(ctc_freqs>0)])
+        n_ctcs = _np.min([int(ctc_control), _np.sum(ctc_freqs>min_freq)])
     else:
         if total_n_ctcs > 0:
             n_ctcs = idx_at_fraction(ctc_freqs, ctc_control) + 1
