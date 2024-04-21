@@ -41,18 +41,20 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 
  mdc_neighborhoods.py prot.pdb traj.xtc --residues L394
  [...]
- #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
- 1:     0.96   LEU394-ARG389       0-0         353-348        30     0.96
- 2:     0.92   LEU394-LEU388       0-0         353-347        29     1.88
- 3:     0.79   LEU394-LEU230       0-0         353-957        51     2.67
- 4:     0.71   LEU394-ARG385       0-0         353-344        26     3.38
- 5:     0.50   LEU394-LYS270       0-0         353-972        65     3.88
- These 5 contacts capture 3.88 (~90%) of the total frequency 4.31 (over 74 input contacts)
- [...]
+ The following 5 contacts capture 3.88 (~90%) of the total frequency 4.31 (over 7 contacts with nonzero frequency).
+ As orientation value, the first 5 ctcs already capture 90.0% of 4.31.
+ The 5-th contact has a frequency of 0.50.
+    freq          label            residues  fragments   sum
+ 1  0.96  L394@frag0 - R389@frag0  353 - 348    0 - 0   0.96
+ 2  0.92  L394@frag0 - L388@frag0  353 - 347    0 - 0   1.88
+ 3  0.79  L394@frag0 - L230@frag3  353 - 957    0 - 3   2.67
+ 4  0.71  L394@frag0 - R385@frag0  353 - 344    0 - 0   3.38
+ 5  0.50  L394@frag0 - K270@frag3  353 - 972    0 - 3   3.88
  The following files have been created:
  ./neighborhood.overall@4.0_Ang.pdf
- ./neighborhood.LEU394@4.0_Ang.dat
- ./neighborhood.LEU394.time_trace@4.0_Ang.pdf
+ ./neighborhood.LEU394@frag0@4.0_Ang.dat
+ ./neighborhood.LEU394@frag0.time_trace@4.0_Ang.pdf
+
 
 You can also invoke::
 

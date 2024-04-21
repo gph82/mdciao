@@ -17,13 +17,30 @@ Installation via package manager
 
 We recommend you install ``mdciao`` via the `pip <https://pypi.org/project/pip/>`_ Python package installer::
 
- pip install mdciao
+ >>> pip install mdciao
 
+Getting started
+~~~~~~~~~~~~~~~
 For the impatient, you can directly issue afterwards::
 
- mdc_examples
+ >>> mdc_examples.py
 
-for built-in command-line examples to choose from. For a bit more of context, check the :ref:`CLI Tutorial`, the :ref:`API Jupyter Notebook Tutorial`, and the :ref:`Jupyter Notebook Gallery` for real-life, more elaborated notebooks.
+for built-in command-line examples to choose from. For live Jupyter notebooks with examples for scripting and API calls, type::
+
+ >>> mdc_notebooks.py
+ >>> cd mdciao_notebooks
+ >>> ls -1
+ Tutorial.ipynb
+ MSA_via_Consensus_Labels.ipynb
+ Missing_Contacts.ipynb
+ Manuscript.ipynb
+ Flareplot_Schemes.ipynb
+ EGFR_Kinase_Inhibitors.ipynb
+ Comparing_CGs_Flares.ipynb
+ Comparing_CGs_Bars.ipynb
+
+
+Alternatively, check the :ref:`CLI Tutorial`, the :ref:`API Jupyter Notebook Tutorial`, and the :ref:`Jupyter Notebook Gallery`.
 
 .. note::
  As almost any Python module, ``mdciao`` comes with some dependencies that will be installed along when installing ``mdciao``. If you don't want ``mdciao`` to alter the existing python installation, we highly recommend to create a separate, virtual python environment to install ``mdciao`` into. More info on how to do this in the note about the `Python interpreter and environment`_.
@@ -83,7 +100,7 @@ Operating systems and Python versions
 -------------------------------------
 ``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and MacOs. Tested python versions are:
 
-* GNU/Linux: 3.7, 3.8, 3.9, 3.10
+* GNU/Linux: 3.7, 3.8, 3.9, 3.10, 3.11
 * MacOs: 3.7, 3.8, 3.9
 
 So everything should work *out of the box* in these conditions. Please see this warning_ for problems during installation from source.
