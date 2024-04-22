@@ -380,7 +380,6 @@ class TestLabelerGPCR_local(unittest.TestCase):
 
     # The setup is in itself a test
     def setUp(self):
-        self._geom_3SN6 = md.load(test_filenames.pdb_3SN6)
         self.tmpdir = mkdtemp("_test_mdciao_GPCR_local")
         self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(
             test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
