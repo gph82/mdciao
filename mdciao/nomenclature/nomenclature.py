@@ -3143,7 +3143,8 @@ class _KLIFSDataFrame(_KDF):
                    "PDB_geom": None}
 
         for key in argdict.keys():
-            argdict[key] = kwargs.pop(key)
+            if key in kwargs.keys():
+                argdict[key] = kwargs.pop(key)
 
         super().__init__(*args, **kwargs)
 
