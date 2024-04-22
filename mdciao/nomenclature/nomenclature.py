@@ -1294,7 +1294,7 @@ class LabelerGPCR(LabelerGPCRdb):
 
    Note
    ----
-   Not all schemes might work work for all methods
+   Not all schemes might work for all methods
    of this class. In particular, fragmentation
    heuristics are derived from 3.50(x50)-type
    formats. Other class A schemes
@@ -1856,11 +1856,11 @@ def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, d
     if keys is None:
         keys = [key for key in df.keys() if key != filter_on]
 
+    df = df[[filter_on] + keys]
     if patterns is not None:
         matching_keys = _mdcu.str_and_dict.fnmatch_ex(patterns, df[filter_on])
         matches = df[filter_on].map(lambda x: x in matching_keys)
         df = df[matches]
-    df = df[[filter_on]+keys]
 
     if select_keys:
         df = df[[key for key in df.keys() if not all(df[key].isna())]]
