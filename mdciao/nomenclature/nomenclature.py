@@ -1152,24 +1152,26 @@ class LabelerGPCRdb(LabelerConsensus):
         ----------
         UniProt_name : str
             Descriptor by which to find the generic residue labels,
-            it gets directly passed to :obj:`GPCRdb_finder`,
-            which can handle three cases of `UniProt_name` being:
+            it gets directly passed to :obj:`GPCRdb_finder`, which
+            operates in the following order:
 
-            * Uniprot Accession Code, e.g. 'adrb2_human'. Then this happens:
+            * First, try `UniProt_name`, as path to an existing file
+              on disk. This is done ignoring the values of
+              `local_path` and `format`. Supported formats are
+              are spreadsheet ('adrb2_human.xlsx'), or `pandas binary ('adrb2_human.pkl')
+              <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_pickle.html>`_.
+              Please note that loading pickled data from untrusted sources can be
+              unsafe. See `here <https://docs.python.org/3/library/pickle.html>`_.
 
-                * look for the files 'adrb2_human.txt' or 'adrb2_human.xlsx'
-                  in `local_path` (see `format` for more info)
-                * if none of these files can be found and `try_web_lookup`
-                  is True, then 'adrb2_human' is looked up online in the GPCRdb
+            * If the above step doesn't find anything locally, then merge the
+              `local_path` and the `UniProt_name` using the `format`. E.g.
+              if `UniProt_name='adrb2_human'` and `local_path='my_nomenclature_files`
+              then the method looks for 'my_nomenclature_files/adrb2_human.xlsx'
 
-            * Full path to an existing file containing the nomenclature,
-              e.g. '/abs/path/to/some/dir/adrb2_human.txt' (or adrb2_human.xlsx).
-              Then this happens:
-
-                * `local_path` gets overridden with '/abs/path/to/some/dir/'
-                *  if none of these files can be found and `try_web_lookup` is True, then
-                  'gnas2_human' is looked up online in the GPCRdb
-
+            * If none of these files can be found then 'adrb2_human'
+              is looked up online in the GPCRdb, unless `try_web_lookup` is False.
+            Note
+            ----
             Please note the difference between UniProt Accession Code
             and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_.
         scheme : str, default is 'display_generic_number'
@@ -1195,7 +1197,10 @@ class LabelerGPCRdb(LabelerConsensus):
             is passed to :obj:`GPCRdb_finder`.
         format : str, default is "%s.xlsx"
             How to construct a filename out of
-            :obj:`UniProt_name`
+            `UniProt_name`. Alternative is "%s.pkl"
+            for pandas pickle format. Please note
+            that loading pickled data from untrusted sources can be
+            unsafe. See `here <https://docs.python.org/3/library/pickle.html>`_.
         verbose : bool, default is True
             Be verbose. Gets passed to :obj:`GPCRdb_finder`
         try_web_lookup : bool, default is True
