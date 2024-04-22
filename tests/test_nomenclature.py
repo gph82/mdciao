@@ -88,10 +88,22 @@ class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
 
 class Test_GPCRdb_finder(unittest.TestCase):
 
-    def test_works_locally(self):
+    def test_works_locally_xlsx(self):
         df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
                                                    try_web_lookup=False,
                                                    )
+
+        assert isinstance(df, DataFrame)
+        assert isinstance(filename, str)
+        _np.testing.assert_array_equal(list(df.keys())[:3], nomenclature._GPCR_mandatory_fields)
+        assert any([key in df.keys() for key in nomenclature._GPCR_mandatory_fields])  # at least one scheme
+
+    def test_works_locally_pkl(self):
+        with _NamedTemporaryFile(suffix=".pkl") as named_pickle:
+            read_excel(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx).to_pickle(named_pickle.name)
+            df, filename = nomenclature._GPCRdb_finder(named_pickle.name,
+                                                       try_web_lookup=False,
+                                                       )
 
         assert isinstance(df, DataFrame)
         assert isinstance(filename, str)
@@ -181,7 +193,6 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
                                     "TM2": ["T66", "V67"]})
 
     def test_table2B_by_AAcode_already_DF(self):
-        from pandas import read_excel
         df = read_excel(self.file, header=0, engine="openpyxl")
 
         table2GPCR = nomenclature._GPCRdbDataFrame2conlabs(tablefile=df)

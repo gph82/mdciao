@@ -22,6 +22,7 @@
 
 import mdtraj as _md
 import numpy as _np
+from pandas import read_pickle as _read_pickle
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
@@ -124,7 +125,7 @@ def _GPCRdbDataFrame2conlabs(tablefile,
     else:
         return AA2conlab
 
-
+#TODO deprecate?
 def _PDB_finder(PDB_code, local_path='.',
                 try_web_lookup=True,
                 verbose=True):
@@ -281,16 +282,18 @@ def _GPCRdb_finder(descriptor,
         Anything that can be used to find the needed
         information, locally or online:
          * a UniProt name, e.g. 'adrb2_human', 'gnas2_human'
-         * a full local filename, e.g. `my_consensus.txt` or
-          `path/to/my_consensus.txt`
+         * a full local filename, e.g. `my_consensus.xlsx` or
+          `path/to/my_consensus.xlsx`
          * the "basename" filename, e.g. 'adrb2_human' if
           'adrb2_human.xlsx' exists on `local_path`
           (see below `format`)
         All these ways of doing the same thing (descriptor, basename, fullname,
         localpath, fullpath) are for compatibility with other methods.
-    format : str, default is "%s.xlsx".
+    format : str, default is "%s.xlsx", alternative can be "%s.pkl"
         If `descriptor` is not readable directly,
-        try to find "descriptor.xlsx" locally on :obj:`local_path`
+        try to find "descriptor.xlsx" locally on :obj:`local_path`.
+        Please note that loading pickled data from untrusted sources can be
+        unsafe. See `here <https://docs.python.org/3/library/pickle.html>`_.
     local_path : str, default is "."
         If `descriptor` doesn't find the file locally,
         then try "local_path/descriptor" before trying online
@@ -320,11 +323,20 @@ def _GPCRdb_finder(descriptor,
     GPCRmd = "https://gpcrdb.org/services/residues/extended"
     url = "%s/%s" % (GPCRmd, descriptor.lower())
 
-    local_lookup_lambda = lambda fullpath: _read_excel(fullpath,
-                                                       engine="openpyxl",
-                                                       usecols=lambda x: x.lower() != "unnamed: 0",
-                                                       converters={key: str for key in _GPCR_available_schemes},
-                                                       ).replace({_np.nan: None})
+    if fullpath.endswith(".xlsx"):
+        local_lookup_lambda = lambda fullpath: _read_excel(fullpath,
+                                                           engine="openpyxl",
+                                                           usecols=lambda x: x.lower() != "unnamed: 0",
+                                                           converters={key: str for key in _GPCR_available_schemes},
+                                                           ).replace({_np.nan: None})
+    elif fullpath.endswith(".pkl"):
+        def local_lookup_lambda(fullpath): # not really a lambda anymore
+            idf = _read_pickle(fullpath).replace({_np.nan: None})
+            for key in list(idf.keys()):
+                if key.lower() == "unnamed: 0":
+                    idf.pop(key)
+            return idf
+
     web_looukup_lambda = lambda url: _GPCRdb_web_lookup(url, verbose=verbose)
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
