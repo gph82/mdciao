@@ -3283,7 +3283,8 @@ def _KLIFS_finder(UniProtAC,
                   try_web_lookup=True,
                   verbose=True,
                   dont_fail=False,
-                  write_to_disk=False):
+                  write_to_disk=False,
+                  read_PDB=True):
     r"""Look up, first locally, then online for the 85-pocket-residues numbering scheme as found in
     the `Kinase–Ligand Interaction Fingerprints and Structure <https://klifs.net/>`_
     return them as a :obj:`~pandas.DataFrame`.
@@ -3292,7 +3293,7 @@ def _KLIFS_finder(UniProtAC,
 
     When reading from disk, the method _read_excel_as_KDF is used,
     which automatically populates attributes DF.UniProtAC, DF.PDB_code
-    and DF.PDB_geom.
+    and, optionally, DF.PDB_geom.
 
     Internally, this method wraps around :obj:`_finder_writer`
 
@@ -3316,12 +3317,19 @@ def _KLIFS_finder(UniProtAC,
         a workflow and simply return None
     write_to_disk : bool, default is False
         Save the data to disk
-
+    read_PDB : bool, default is True
+        If False, don't read the PDB geometry from the
+        extra-sheets of the Excel file in case the method
+        is reading from a local file. The PDB_id will
+        still be stored in the returned DataFrame.PDB_id attribute.
+        This makes the method more faster and lighter
+        when the PDB geoms are not really needed.
     Returns
     -------
     DF : :obj:`~pandas.DataFrame`
         Contains the KLIFS consensus nomenclature, and
-        some extra attributes like DF.UniProtAC, DF.PDB_code, DF.PDB_geom
+        some extra attributes like DF.UniProtAC, DF.PDB_code,
+        and optinally DF.PDB_geom.
         If the lookup wasn't successful this will be a ValueError
     return_name : str
         The URL or local path to
@@ -3337,7 +3345,7 @@ def _KLIFS_finder(UniProtAC,
     KLIFS_API = "https://klifs.net/api"
     url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
 
-    local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath)
+    local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath, read_PDB=read_PDB)
 
     web_looukup_lambda = lambda url: _KLIFS_web_lookup(UniProtAC, verbose=verbose, url=url, timeout=15)
     return _finder_writer(fullpath, local_lookup_lambda,

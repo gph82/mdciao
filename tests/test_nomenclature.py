@@ -1177,17 +1177,22 @@ class Test_KLIFS_finder(unittest.TestCase):
         assert df.PDB_geom == self.geom
 
     def test_finds_local_with_explicit_filename(self):
-        with _NamedTemporaryFile(suffix=".xslxs") as f:
-        #with _TDir(suffix="_mdciao_test") as tdir:
+        with _NamedTemporaryFile(suffix=".xlxs") as f:
             copy(test_filenames.KLIFS_P31751_xlsx, f.name)
-            #full_path_local_filename = path.join(tdir, "very_specific.xlsx")
-            #self.KLIFS_df.to_excel(full_path_local_filename)
             df, filename = nomenclature._KLIFS_finder(f.name)
             assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.UniProtAC == self.KLIFS_df.UniProtAC
             assert df.PDB_geom == self.geom
 
+    def test_finds_local_with_explicit_filename_no_PDB(self):
+        with _NamedTemporaryFile(suffix=".xlxs") as f:
+            copy(test_filenames.KLIFS_P31751_xlsx, f.name)
+            df, filename = nomenclature._KLIFS_finder(f.name, read_PDB=False)
+            assert df.PDB_id == self.KLIFS_df.PDB_id
+            assert df.PDB_id == self.KLIFS_df.PDB_id
+            assert df.UniProtAC == self.KLIFS_df.UniProtAC
+            assert df.PDB_geom is None
 
 class TestLabelerKLIFS(unittest.TestCase):
 
