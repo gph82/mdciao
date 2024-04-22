@@ -3295,7 +3295,7 @@ def _KLIFS_finder(UniProtAC,
                   verbose=True,
                   dont_fail=False,
                   write_to_disk=False,
-                  read_PDB=True):
+                  read_PDB_geom=True):
     r"""Look up, first locally, then online for the 85-pocket-residues numbering scheme as found in
     the `Kinase–Ligand Interaction Fingerprints and Structure <https://klifs.net/>`_
     return them as a :obj:`~pandas.DataFrame`.
@@ -3328,7 +3328,7 @@ def _KLIFS_finder(UniProtAC,
         a workflow and simply return None
     write_to_disk : bool, default is False
         Save the data to disk
-    read_PDB : bool, default is True
+    read_PDB_geom : bool, default is True
         If False, don't read the PDB geometry from the
         extra-sheets of the Excel file in case the method
         is reading from a local file. The PDB_id will
@@ -3356,7 +3356,7 @@ def _KLIFS_finder(UniProtAC,
     KLIFS_API = "https://klifs.net/api"
     url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
 
-    local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath, read_PDB=read_PDB)
+    local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath, read_PDB_geom=read_PDB_geom)
 
     web_looukup_lambda = lambda url: _KLIFS_web_lookup(UniProtAC, verbose=verbose, url=url, timeout=15)
     return _finder_writer(fullpath, local_lookup_lambda,
@@ -3367,7 +3367,7 @@ def _KLIFS_finder(UniProtAC,
                           write_to_disk=write_to_disk)
 
 
-def _read_excel_as_KDF(fullpath, read_PDB=True):
+def _read_excel_as_KDF(fullpath, read_PDB_geom=True):
     r"""
     Instantiate a :obj:`_KLIFSDataFrame` from an :obj:`_KLIFSDataFrame` Excel
 
@@ -3377,7 +3377,7 @@ def _read_excel_as_KDF(fullpath, read_PDB=True):
     ----------
     fullpath : str
         Path to the Excel file
-    read_PDB : bool, default is True
+    read_PDB_geom : bool, default is True
         If False, don't read the PDB geometry from the
         extra-sheets of the Excel file. The PDB_id will
         still be stored in the returned DataFrame.PDB_id attribute.
@@ -3388,7 +3388,7 @@ def _read_excel_as_KDF(fullpath, read_PDB=True):
     df : :obj:`_KLIFSDataFrame`
 
     """
-    if read_PDB:
+    if read_PDB_geom:
         idict = _read_excel(fullpath,
                             None,
                             engine="openpyxl")

@@ -1114,7 +1114,7 @@ class Test_KLIFSDataFrame(unittest.TestCase):
 
     def setUp(self):
         self.df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx)
-        self.df_no_geom = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, read_PDB=False)
+        self.df_no_geom = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, read_PDB_geom=False)
         self.geom = md.load(test_filenames.pdb_3E8D)
 
     def test_just_works(self):
@@ -1195,7 +1195,7 @@ class Test_KLIFS_finder(unittest.TestCase):
     def test_finds_local_with_explicit_filename_no_PDB(self):
         with _NamedTemporaryFile(suffix=".xlxs") as f:
             copy(test_filenames.KLIFS_P31751_xlsx, f.name)
-            df, filename = nomenclature._KLIFS_finder(f.name, read_PDB=False)
+            df, filename = nomenclature._KLIFS_finder(f.name, read_PDB_geom=False)
             assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.UniProtAC == self.KLIFS_df.UniProtAC
