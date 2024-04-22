@@ -1135,6 +1135,13 @@ class Test_KLIFSDataFrame(unittest.TestCase):
             assert isinstance(df_dict["P31751_3E8D"], DataFrame)
             assert nomenclature._Spreadsheets2mdTrajectory(df_dict)==self.geom
 
+    def test_write_to_excel_no_PDB_geom(self):
+        with _NamedTemporaryFile(suffix=".xlsx") as f:
+            self.df.to_excel(f.name, save_PDB_geom=False)
+            df_dict = read_excel(f.name, None)
+            assert len(df_dict) == 1
+            assert isinstance(df_dict["P31751_3E8D"], DataFrame)
+
 
 class Test_KLIFS_web_lookup(unittest.TestCase):
 

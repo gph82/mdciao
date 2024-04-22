@@ -3152,8 +3152,8 @@ class _KLIFSDataFrame(_KDF):
         for key, val in argdict.items():
             setattr(self, key, val)
 
-    def to_excel(self, excel_writer, **kwargs):
-        r""" Like :obj:`~pandas.DataFrame.to_excel` but saves also the PDB topology and coordinates
+    def to_excel(self, excel_writer, save_PDB_geom=True, **kwargs):
+        r""" Like :obj:`~pandas.DataFrame.to_excel`, but can save also the PDB topology and coordinates if present.
 
         Also, the attributes self.UniProtAC and self.PDB_id are saved into
         the first sheet's name, e.g. as "P31751_3e8d" and can be recovered
@@ -3162,14 +3162,25 @@ class _KLIFSDataFrame(_KDF):
         The other sheets are called "topology", "bonds", "unitcell", and "xyz"
 
         If :obj:kwargs contains arguments "sheet_name", "index",
-        an Exception will be thrown. """
+        an Exception will be thrown. 
+        
+        Parameters
+        ----------
+        save_PDB_geom : bool, default is True
+            In case self.PDB_geom is not None, by default 
+            the method will write the PDB topology and coordinates 
+            into extra sheets of the spreadsheets. 
+            You can turn this off with this parameter.
+        """
+
 
         with _ExcelWriter(excel_writer) as writer:
             _DataFrame.to_excel(self, writer,
                                 index=False,
                                 sheet_name="%s_%s" % (self.UniProtAC, self.PDB_id),
                                 **kwargs)
-            _mdTrajectory2spreadsheets(self.PDB_geom, writer, **kwargs)
+            if self.PDB_geom is not None and save_PDB_geom:
+                _mdTrajectory2spreadsheets(self.PDB_geom, writer, **kwargs)
 
 
 def _KLIFS_web_lookup(UniProtAC,
