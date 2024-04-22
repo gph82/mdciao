@@ -384,10 +384,10 @@ class TestLabelerGPCR_local(unittest.TestCase):
         self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(
             test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
         shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx, self._GPCRmd_B2AR_nomenclature_test_xlsx)
-        self.GPCR_local_w_pdb = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
-                                                         try_web_lookup=False,
-                                                         local_path=self.tmpdir,
-                                                         )
+        self.GPCR_local = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
+                                                   try_web_lookup=False,
+                                                   local_path=self.tmpdir,
+                                                   )
         # Check the excel and construct this
         self.conlab_frag_dicts = {"BW":
                                       {'TM1': ['1.25', '1.26'],
@@ -404,66 +404,66 @@ class TestLabelerGPCR_local(unittest.TestCase):
         shutil.rmtree(self.tmpdir)
 
     def test_correct_files(self):
-        _np.testing.assert_equal(self.GPCR_local_w_pdb.tablefile,
+        _np.testing.assert_equal(self.GPCR_local.tablefile,
                                  self._GPCRmd_B2AR_nomenclature_test_xlsx)
     def test_dataframe(self):
-        self.assertIsInstance(self.GPCR_local_w_pdb.dataframe, DataFrame)
-        self.assertSequenceEqual(list(self.GPCR_local_w_pdb.dataframe.keys()),
+        self.assertIsInstance(self.GPCR_local.dataframe, DataFrame)
+        self.assertSequenceEqual(list(self.GPCR_local.dataframe.keys()),
                                  nomenclature._GPCR_mandatory_fields + nomenclature._GPCR_available_schemes)
 
     def test_correct_residue_dicts(self):
-        if self.GPCR_local_w_pdb._conlab_column == "BW":
-            _np.testing.assert_equal(self.GPCR_local_w_pdb.conlab2AA["1.25"], "Q26")
-            _np.testing.assert_equal(self.GPCR_local_w_pdb.AA2conlab["Q26"], "1.25")
-        elif self.GPCR_local_w_pdb._conlab_column == "display_generic_number":
-            _np.testing.assert_equal(self.GPCR_local_w_pdb.conlab2AA["1.25x25"], "Q26")
-            _np.testing.assert_equal(self.GPCR_local_w_pdb.AA2conlab["Q26"], "1.25x25")
+        if self.GPCR_local._conlab_column == "BW":
+            _np.testing.assert_equal(self.GPCR_local.conlab2AA["1.25"], "Q26")
+            _np.testing.assert_equal(self.GPCR_local.AA2conlab["Q26"], "1.25")
+        elif self.GPCR_local._conlab_column == "display_generic_number":
+            _np.testing.assert_equal(self.GPCR_local.conlab2AA["1.25x25"], "Q26")
+            _np.testing.assert_equal(self.GPCR_local.AA2conlab["Q26"], "1.25x25")
         else:
-            raise ValueError("no tests written for %s yet" % (self.GPCR_local_w_pdb._conlab_column))
+            raise ValueError("no tests written for %s yet" % (self.GPCR_local._conlab_column))
 
     def test_correct_fragments_dict(self):
         # Test "fragments" dictionary SMH
-        self.assertIsInstance(self.GPCR_local_w_pdb.fragments, dict)
-        assert all([len(ii) > 0 for ii in self.GPCR_local_w_pdb.fragments.values()])
-        self.assertEqual(self.GPCR_local_w_pdb.fragments["ICL1"][0], "E62")
-        self.assertSequenceEqual(list(self.GPCR_local_w_pdb.fragments.keys()),
+        self.assertIsInstance(self.GPCR_local.fragments, dict)
+        assert all([len(ii) > 0 for ii in self.GPCR_local.fragments.values()])
+        self.assertEqual(self.GPCR_local.fragments["ICL1"][0], "E62")
+        self.assertSequenceEqual(list(self.GPCR_local.fragments.keys()),
                                  ["TM1", "ICL1", "TM2"])
 
     def test_correct_fragments_as_conlabs_dict(self):
         # Test "fragments_as_conslabs" dictionary SMH
-        self.assertIsInstance(self.GPCR_local_w_pdb.fragments_as_conlabs, dict)
-        assert all([len(ii) > 0 for ii in self.GPCR_local_w_pdb.fragments_as_conlabs.values()])
-        self.assertSequenceEqual(list(self.GPCR_local_w_pdb.fragments_as_conlabs.keys()),
+        self.assertIsInstance(self.GPCR_local.fragments_as_conlabs, dict)
+        assert all([len(ii) > 0 for ii in self.GPCR_local.fragments_as_conlabs.values()])
+        self.assertSequenceEqual(list(self.GPCR_local.fragments_as_conlabs.keys()),
                                  ["TM1", "ICL1", "TM2"])
-        self.assertDictEqual(self.GPCR_local_w_pdb.fragments_as_conlabs,
-                             self.conlab_frag_dicts[self.GPCR_local_w_pdb._conlab_column])
+        self.assertDictEqual(self.GPCR_local.fragments_as_conlabs,
+                             self.conlab_frag_dicts[self.GPCR_local._conlab_column])
 
     def test_correct_fragment_names(self):
-        self.assertSequenceEqual(self.GPCR_local_w_pdb.fragment_names,
-                                 list(self.GPCR_local_w_pdb.fragments.keys()))
+        self.assertSequenceEqual(self.GPCR_local.fragment_names,
+                                 list(self.GPCR_local.fragments.keys()))
 
     def test_fragments_as_idxs(self):
-        frags_as_idsx = self.GPCR_local_w_pdb.fragments_as_idxs
+        frags_as_idsx = self.GPCR_local.fragments_as_idxs
         self.assertSequenceEqual([len(ifrag) for ifrag in frags_as_idsx],
-                                 [len(ifrag) for ifrag in self.GPCR_local_w_pdb.fragments])
+                                 [len(ifrag) for ifrag in self.GPCR_local.fragments])
         self.assertSequenceEqual(list(frags_as_idsx.keys()),
-                                 self.GPCR_local_w_pdb.fragment_names)
+                                 self.GPCR_local.fragment_names)
 
     # These tests only test it runs, not that the alignment is correct
     #  those checks are done in sequence tests
     def test_aligntop_with_self(self):
-        top2self, self2top = self.GPCR_local_w_pdb.aligntop(self.GPCR_local_w_pdb.seq)
+        top2self, self2top = self.GPCR_local.aligntop(self.GPCR_local.seq)
         self.assertDictEqual(top2self, self2top)
-        self.assertIsInstance(self.GPCR_local_w_pdb.most_recent_alignment, DataFrame)
+        self.assertIsInstance(self.GPCR_local.most_recent_alignment, DataFrame)
 
     def test_aligntop_with_self_residxs(self):
-        top2self, self2top = self.GPCR_local_w_pdb.aligntop(self.GPCR_local_w_pdb.seq, restrict_to_residxs=[2, 3], min_seqID_rate=0)
+        top2self, self2top = self.GPCR_local.aligntop(self.GPCR_local.seq, restrict_to_residxs=[2, 3], min_seqID_rate=0)
         self.assertDictEqual(top2self, self2top)
         self.assertTrue(all([key in [2, 3] for key in top2self.keys()]))
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
 
     def test_uniprot_name(self):
-        self.assertEqual(self.GPCR_local_w_pdb.UniProt_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
+        self.assertEqual(self.GPCR_local.UniProt_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
 
 class Test_aligntop_full(unittest.TestCase):
     # Has to be done with full GPCR nomencl, not with small one
