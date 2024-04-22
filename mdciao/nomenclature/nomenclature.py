@@ -3143,9 +3143,7 @@ class _KLIFSDataFrame(_KDF):
                    "PDB_geom": None}
 
         for key in argdict.keys():
-            val = kwargs.get(key)
-            if val is not None:
-                argdict[key] = kwargs.pop(key)
+            argdict[key] = kwargs.pop(key)
 
         super().__init__(*args, **kwargs)
 
