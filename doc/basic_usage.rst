@@ -25,16 +25,14 @@ This basic command::
 will print the following to the terminal (some headers have been left out)::
 
  ...
- #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
- 1:     0.96   LEU394-ARG389       0-0         353-348        30     0.96
- 2:     0.92   LEU394-LEU388       0-0         353-347        29     1.88
- 3:     0.79   LEU394-LEU230       0-0         353-957        51     2.67
- 4:     0.71   LEU394-ARG385       0-0         353-344        26     3.38
- 5:     0.50   LEU394-LYS270       0-0         353-972        65     3.88
- These 5 contacts capture 3.88 (~90%) of the total frequency 4.31 (over 74 input contacts)
- As orientation value, the first 5 ctcs already capture 90.0% of 4.31.
- The 5-th contact has a frequency of 0.50
-
+ The following 5 contacts capture 3.88 (~90%) of the total frequency 4.31 (over 7 contacts with nonzero frequency).
+ [...]
+    freq    label      residues  fragments   sum
+ 1  0.96  L394 - R389  353 - 348    0 - 0   0.96
+ 2  0.92  L394 - L388  353 - 347    0 - 0   1.88
+ 3  0.79  L394 - L230  353 - 957    0 - 0   2.67
+ 4  0.71  L394 - R385  353 - 344    0 - 0   3.38
+ 5  0.50  L394 - K270  353 - 972    0 - 0   3.88
  The following files have been created:
  ./neighborhood.overall@4.0_Ang.pdf
  ./neighborhood.LEU394@4.0_Ang.dat

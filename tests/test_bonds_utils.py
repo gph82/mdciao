@@ -3,9 +3,6 @@ import unittest
 import numpy as _np
 from mdciao.examples import filenames as test_filenames
 from mdciao.utils import bonds
-import pytest
-
-
 
 class Test_top2residue_bond_matrix(unittest.TestCase):
 
@@ -39,7 +36,7 @@ class Test_top2residue_bond_matrix(unittest.TestCase):
         assert (bonds.top2residue_bond_matrix(self.geom_force_resSeq_breaks.top, force_resSeq_breaks=True) == res_bond_matrix).all()
 
     def test_no_bonds_fails(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             bonds.top2residue_bond_matrix(self.geom_no_bonds.top)
 
     def test_no_bonds_creates(self):

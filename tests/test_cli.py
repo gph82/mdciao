@@ -3,9 +3,6 @@ import unittest
 from mdciao.examples import filenames as test_filenames
 from mdciao.utils import str_and_dict
 
-
-import pytest
-
 #see https://stackoverflow.com/questions/169070/how-do-i-write-a-decorator-that-restores-the-cwd
 import contextlib
 @contextlib.contextmanager
@@ -46,9 +43,7 @@ from mdciao.parsers import \
 
 from tempfile import TemporaryDirectory
 
-from unittest.mock import patch
-from mock import mock
-
+from unittest import mock
 from pandas import \
     unique as _pandasunique
 
@@ -141,7 +136,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         super(Test_residue_neighborhood, cls).setUpClass()
         cls.no_disk = True  # doesn't seem to speed things up much
 
-    @patch('builtins.input', lambda *args: '4')
+    @mock.patch('builtins.input', lambda *args: '4')
     def test_neighborhoods_no_disk_works(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             with remember_cwd():
@@ -155,7 +150,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                               )
                 assert len(os.listdir(".")) == 0
 
-    @patch('builtins.input', lambda *args: '4')
+    @mock.patch('builtins.input', lambda *args: '4')
     def test_neighborhoods(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             input_values = (val for val in ["1.0"])
@@ -245,7 +240,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
                                                      no_disk=self.no_disk)
 
     def test_wrong_input_resSeq_idxs(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
                 cli.residue_neighborhoods("AX*",
                                           [self.traj, self.traj_reverse],
@@ -316,7 +311,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             top = self.geom[0]
             top.top._bonds = []
-            with pytest.raises(ValueError):
+            with self.assertRaises(ValueError):
                 cli.residue_neighborhoods("R131",
                                           [self.traj, self.traj_reverse],
                                           top,
@@ -324,7 +319,7 @@ class Test_residue_neighborhood(TestCLTBaseClass):
     def test_naive_bonds_CAs(self):
         geom_CAs = self.geom[0].atom_slice(self.geom[0].top.select("name CA"))
         print(geom_CAs)
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             cli.residue_neighborhoods("R131",
                                       [geom_CAs],
                                       no_disk=True,
@@ -734,12 +729,12 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
                                  fragnames)
 
     def test_csv_wrong_nr_raises(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             fragnames = cli._parse_fragment_naming_options("TM1,TM2", self.fragments)
             self.assertSequenceEqual(["TM1", "TM2", "ICL3", "H8"],
                                      fragnames)
     def test_danger_raises(self):
-        with pytest.raises(NotImplementedError):
+        with self.assertRaises(NotImplementedError):
             cli._parse_fragment_naming_options("TM1,danger", self.fragments)
 
 class Test_parse_parse_coloring_options(unittest.TestCase):
@@ -761,7 +756,7 @@ class Test_parse_parse_coloring_options(unittest.TestCase):
         self.assertSequenceEqual(["pink", "salmon"], color)
 
     def test_raises(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             color = cli._parse_coloring_options(["pink", "salmon"],3)
 
 class Test_color_schemes(unittest.TestCase):
@@ -813,7 +808,7 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
         cli._fragment_overview(a, "GPCR")
 
     def test_raises(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             cli._fragment_overview(None, "BWx")
 
     def test_AAs(self):

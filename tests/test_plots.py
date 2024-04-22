@@ -1,6 +1,5 @@
 import unittest
 import numpy as _np
-import pytest
 
 from matplotlib import pyplot as _plt, cm as _cm
 from matplotlib.colors import is_color_like, to_rgb
@@ -38,7 +37,7 @@ class TestPlotContactMatrix(unittest.TestCase):
 
         mat = _np.linspace(0,1,6).reshape(2,3)
         labels = [[1,2],["A","B"]]
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             plots.plot_matrix(mat, labels)
 
 

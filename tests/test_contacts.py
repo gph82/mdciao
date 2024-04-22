@@ -21,11 +21,10 @@ import mdtraj as md
 import unittest
 from unittest.mock import Mock
 import numpy as _np
-import mock
+from unittest import mock
 from os import path
 from scipy.spatial.distance import cdist
 from mdciao.examples import filenames as test_filenames
-import pytest
 from mdciao import contacts
 from mdciao import examples
 from mdciao import nomenclature
@@ -458,12 +457,12 @@ class TestTimeTraces(BaseClassForTestingAttributes):
         assert all([itraj == jtraj for itraj, jtraj in zip(cott.trajs, self.trajs)])
 
     def test_fails_because_wrong_atom_trajs(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             _TimeTraces(self.ctc_trajs, [self.trajs[0].time,
                                                   self.trajs[1].time],
                                  self.trajs, [[[0, 1]], [0, 1]])
 
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             _TimeTraces(self.ctc_trajs, [self.trajs[0].time,
                                                   self.trajs[1].time],
                                  self.trajs, [[[0, 1, 1]], [0, 1]])
@@ -623,7 +622,7 @@ class TestNeighborhoodNames(unittest.TestCase):
         assert cnns.partner_fragment == "fragA"
 
     def test_raises(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             _NeighborhoodNames(Residues([10, 20], ["GLU25", "ALA35"]),
                                _Fragments([0, 1],
                                                             ["fragA", "fragB"],
@@ -861,7 +860,7 @@ class TestContactPair(unittest.TestCase):
 
         idict = cpt.frequency_dict(21)
         assert idict["freq"] == _np.mean([1, 1, 1] + [1, 1, 0, 0])
-        assert idict["residue idxs"] == "0 1"
+        assert idict["residues"] == "0 - 1"
         assert idict["label"] == ('%-15s - %-15s' % (0, 1)), idict["label"]
 
         idict = cpt.frequency_dict(21, AA_format="long")
@@ -902,7 +901,7 @@ class TestContactPair(unittest.TestCase):
                                    [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
                                    [[0, 1, 2], [0, 1, 2, 3]],
                                    )
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             idict = cpt.frequency_dict(21,
                                        split_label=False,
                                        AA_format="just_consensus")
@@ -944,7 +943,7 @@ class TestContactPair(unittest.TestCase):
                                    [[1.0, 1.1, 1.3], [2.0, 2.1, 2.3, 2.4]],
                                    [[0, 1, 2], [0, 1, 2, 3]],
                                    )
-        with pytest.raises((AssertionError, ValueError)):
+        with self.assertRaises((AssertionError, ValueError)):
             cpt.count_formed_atom_pairs(21)
 
     def test_overall_stacked_formed_atoms(self):
@@ -991,7 +990,7 @@ class TestContactPair(unittest.TestCase):
                                        [[10, 21], [10, 21], [10, 20], [11, 20]]
                                    ]
                                    )
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             cpt.relative_frequency_of_formed_atom_pairs_overall_trajs(21)
 
     def test_frequency_dict_formed_atom_pairs_overall_trajs(self):
@@ -1086,7 +1085,7 @@ class TestContactPair(unittest.TestCase):
 
         CP.plot_timetrace(ctc_cutoff_Ang=2, shorten_AAs=True, ylim_Ang="auto")
 
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             CP.plot_timetrace(ylim_Ang="max")
 
     def test_plot_distance_distribution(self):
@@ -1495,7 +1494,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         assert self.CG_cp1_wtop_cp2_wtop.topology is self.CG_cp1_wtop_cp2_wtop.top is self.top
 
     def test_works_minimal_top_raises(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             contacts.ContactGroup([self.cp1, self.cp2], top=self.top)
 
     def test_n_properties(self):
@@ -1511,7 +1510,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_array_equal([1], CG.time_arrays[1])
 
     def test_wrong_top_raises(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             contacts.ContactGroup([self.cp1_wtop, self.cp2_wtop,
                                    self.cp3_wtop_other])
 
@@ -1623,7 +1622,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(CG.fragment_names_best[1], ["3.50", "5.50"])
 
     def test_consensus_labels_wrong_raises(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,
                                    self.cp3_wtop_and_wrong_conslabs])
@@ -1631,17 +1630,17 @@ class TestContactGroup(TestBaseClassContactGroup):
     def test_neighborhoods_raises(self):
         CG = self.CG_cp1_cp2
         _np.testing.assert_equal(CG.shared_anchor_residue_index, None)
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG.anchor_res_and_fragment_str
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG.anchor_res_and_fragment_str_short
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG.partner_res_and_fragment_labels
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG.anchor_fragment_color
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG.partner_res_and_fragment_labels
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG.partner_res_and_fragment_labels_short
 
     def test_neighborhoods(self):
@@ -1754,7 +1753,7 @@ class TestContactGroup(TestBaseClassContactGroup):
         _np.testing.assert_array_equal(CG.interface_residue_names_w_best_fragments_short, [[], []])
         _np.testing.assert_array_equal(CG.interface_reslabels_short, [[], []])
         _np.testing.assert_array_equal(CG.interface_labels_consensus, [[], []])
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG.plot_interface_frequency_matrix(None)
         assert CG.interface_frequency_matrix(None) is None
 
@@ -2301,7 +2300,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_dict_by_consensus_labels_fails(self):
         CG = self.CG
 
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG.frequency_dict_by_consensus_labels(2)
 
     def test_frequency_dict_by_consensus_labels(self):
@@ -2346,7 +2345,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                     self.cp2_wtop_and_conslabs,
                                     self.cp3_wtop_and_conslabs])
-        with pytest.raises(NotImplementedError):
+        with self.assertRaises(NotImplementedError):
             CG.frequency_dict_by_consensus_labels(2, sort_by_interface=True)
 
     def test_frequency_as_contact_matrix(self):
@@ -2624,7 +2623,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         _plt.close("all")
 
     def test_plot_freqs_as_bars_no_neighborhood_fails(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG = self.CG_cp1_cp2
             CG.plot_freqs_as_bars(2,)
 
@@ -2739,7 +2738,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_neighborhood_raises(self):
         CG = self.CG_cp1_cp2
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             CG.plot_neighborhood_freqs(2)
 
     def test_plot_neighborhood_works_minimal(self):
@@ -2952,7 +2951,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
                                                       label_type="consensus")
         ifig, iax = I.plot_interface_frequency_matrix(2,
                                                       label_type="residue")
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             I.plot_interface_frequency_matrix(2,
                                               label_type="blergh")
         _plt.close("all")
@@ -3075,7 +3074,7 @@ class TestContactGroupTrajdicts(TestBaseClassContactGroup):
 
     def test_to_per_traj_dicts_for_saving_with_tunits_raises(self):
         CG = self.CG
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving(t_unit="fs")
 
 class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
@@ -3146,7 +3145,7 @@ class TestContactGroupBintrajdicts(TestBaseClassContactGroup):
 
     def test_to_per_traj_dicts_for_saving_bintrajs_tunits_raises(self):
         CG = self.CG
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             list_of_dicts = CG._to_per_traj_dicts_for_saving_bintrajs(2.5, t_unit="fs")
 
 class TestContactGroupSavetrajs(TestBaseClassContactGroup):
@@ -3240,14 +3239,14 @@ class TestContactGroupInterface(TestBaseClassContactGroup):
         # TODO here in case i need extra stuff, otherwise
 
     def test_instantiates_raises_duplicates(self):
-        with pytest.raises(AssertionError) as e:
+        with self.assertRaises(AssertionError) as e:
             I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                        self.cp2_wtop_and_conslabs,
                                        self.cp4_wtop_and_conslabs],
                                       interface_fragments = [[0, 0],
                                                          [1, 2]])
 
-        with pytest.raises(AssertionError) as e:
+        with self.assertRaises(AssertionError) as e:
             I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                        self.cp2_wtop_and_conslabs,
                                        self.cp4_wtop_and_conslabs],

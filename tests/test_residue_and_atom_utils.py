@@ -5,11 +5,9 @@ from mdciao.examples import filenames as test_filenames
 from mdciao.utils import residue_and_atom
 from mdciao.utils.sequence import top2seq
 import mdciao.fragments as _mdcfrg
-import pytest
 import io
 from contextlib import redirect_stdout
-from unittest.mock import patch
-import mock
+from unittest import mock
 import mdtraj as _md
 import numpy as _np
 
@@ -41,12 +39,12 @@ class Test_find_by_AA(unittest.TestCase):
     # TODO use wildcards and extra dicts to test the new findAAsdd
     @unittest.skip("findAA does not raise anymore")
     def test_malformed_input(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             residue_and_atom.find_AA("GLUTAMINE", self.geom.top)
 
     @unittest.skip("findAA does not raise anymore")
     def test_malformed_code(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             residue_and_atom.find_AA("ARGI200", self.geom.top)
 
     def test_ambiguity(self):
@@ -165,14 +163,14 @@ class Test_residues_from_descriptors_no_ambiguity(unittest.TestCase):
 
     def test_overlaping_frags(self):
         residues = ["GLU30"]
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             residue_and_atom.residues_from_descriptors(residues, [np.arange(self.geom.n_residues),
                                                                   [np.arange(self.geom.n_residues)]],
                                                        self.geom.top)
 
     def test_not_in_fragment(self):
         residues = ["GLU30"]
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             residue_and_atom.residues_from_descriptors(residues, [np.arange(3, 5)],
                                                        self.geom.top)
 
@@ -211,23 +209,23 @@ class Test_residues_from_descriptors(unittest.TestCase):
     def test_default_fragment_idx_is_none_ans_should_be_int(self):
         input_values = (val for val in ["A"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            with pytest.raises((ValueError, AssertionError)):
+            with self.assertRaises((ValueError, AssertionError)):
                 residue_and_atom.residues_from_descriptors("GLU30", self.by_bonds_geom2frags, self.geom2frags.top)
 
         input_values = (val for val in ["xyz"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            with pytest.raises((ValueError, AssertionError)):
+            with self.assertRaises((ValueError, AssertionError)):
                 residue_and_atom.residues_from_descriptors(30, self.by_bonds_geom2frags, self.geom2frags.top)
 
     def test_default_fragment_idx_is_none_ans_should_be_in_list(self):
         input_values = (val for val in ["123"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            with pytest.raises((ValueError, AssertionError)):
+            with self.assertRaises((ValueError, AssertionError)):
                 residue_and_atom.residues_from_descriptors("GLU30", self.by_bonds_geom2frags, self.geom2frags.top)
 
         input_values = (val for val in ["123"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            with pytest.raises((ValueError, AssertionError)):
+            with self.assertRaises((ValueError, AssertionError)):
                 residue_and_atom.residues_from_descriptors("30", self.by_bonds_geom2frags, self.geom2frags.top)
 
     def test_default_fragment_idx_is_passed(self):
@@ -242,12 +240,12 @@ class Test_residues_from_descriptors(unittest.TestCase):
         self.assertSequenceEqual([4, 4], fragidx)
 
     def test_default_fragment_idx_is_passed_special_case(self):
-        with pytest.raises((ValueError, AssertionError)):
+        with self.assertRaises((ValueError, AssertionError)):
             residue_and_atom.residues_from_descriptors("GLU30", self.by_bonds_geom2frags,
                                                        self.geom2frags.top,
                                                        pick_this_fragment_by_default=99)
 
-        with pytest.raises((ValueError, AssertionError)):
+        with self.assertRaises((ValueError, AssertionError)):
             residue_and_atom.residues_from_descriptors(30, self.by_bonds_geom2frags,
                                                        self.geom2frags.top,
                                                        pick_this_fragment_by_default=99)
@@ -365,21 +363,21 @@ class Test_rangeexpand_residues2residxs(unittest.TestCase):
         np.testing.assert_array_equal(expanded_range, [6])
 
     def test_rangeexpand_raises_on_empty_range(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             expanded_range = residue_and_atom.rangeexpand_residues2residxs("50-60",
                                                                            self.fragments,
                                                                            self.top,
                                                                            )
 
     def test_rangeexpand_raises_on_empty_wildcard(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             expanded_range = residue_and_atom.rangeexpand_residues2residxs("ARG*",
                                                                            self.fragments,
                                                                            self.top,
                                                                            )
 
     def test_rangeexpand_w_ints_fails_as_resSeq(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             residue_and_atom.rangeexpand_residues2residxs([0, 10, 20],
                                                           self.fragments,
                                                           self.top,
@@ -444,7 +442,7 @@ class Test_find_CA(unittest.TestCase):
         assert CA.name == "O"
 
     def test_raises(self):
-        with pytest.raises(NotImplementedError):
+        with self.assertRaises(NotImplementedError):
             CA = residue_and_atom.find_CA(self.top.residue(10), CA_name="CX")
 
 

@@ -8,7 +8,6 @@ import shutil
 from urllib.error import HTTPError
 from shutil import copy
 
-import pytest
 from mdciao import nomenclature
 # It's a sign of bad design to have to import these private methods here
 # for testing, they should be tested by the methods using them or
@@ -23,7 +22,7 @@ from mdciao.utils.sequence import top2seq
 from mdciao.utils.residue_and_atom import shorten_AA
 from mdciao.fragments import get_fragments, fragment_slice
 
-import mock
+from unittest import mock
 
 from pandas import DataFrame, read_excel
 
@@ -70,7 +69,7 @@ class Test_PDB_finder(unittest.TestCase):
         assert "http" in filename
 
     def test_fails_bc_no_online_access(self):
-        with pytest.raises((OSError, FileNotFoundError)):
+        with self.assertRaises((OSError, FileNotFoundError)):
             nomenclature._PDB_finder("3SN6",
                                      try_web_lookup=False)
 
@@ -82,7 +81,7 @@ class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
         assert isinstance(DF, DataFrame)
 
     def test_wrong_code(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             raise nomenclature._GPCRdb_web_lookup("https://gpcrdb.org/services/residues/extended/adrb_beta2")
 
 
@@ -121,7 +120,7 @@ class Test_GPCRdb_finder(unittest.TestCase):
         assert any([key in df.keys() for key in nomenclature._GPCR_mandatory_fields])
 
     def test_raises_not_find_locally(self):
-        with pytest.raises(FileNotFoundError):
+        with self.assertRaises(FileNotFoundError):
             nomenclature._GPCRdb_finder("B2AR",
                                         try_web_lookup=False
                                         )
@@ -135,7 +134,7 @@ class Test_GPCRdb_finder(unittest.TestCase):
         assert isinstance(filename, str)
 
     def test_raises_not_find_online(self):
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             nomenclature._GPCRdb_finder("B2AR",
                                         )
 
@@ -298,7 +297,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         map = [None for ii in range(200)]
         map[164] = "G.hfs2.02"  # I know this a priori using find_AA
         map[165] = "G.hfs2.02"
-        with pytest.raises(ValueError):
+        with self.assertRaises(ValueError):
             self.cgn_local.conlab2residx(self.top, map=map)
 
     def test_top2frags_just_passes(self):
@@ -341,7 +340,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     def test_top2frags_defs_are_broken_in_frags_bad_input(self):
         input_values = (val for val in ["0-3"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
-            with pytest.raises(ValueError):
+            with self.assertRaises(ValueError):
                 self.cgn_local.top2frags(self.top,
                                          fragments=[_np.arange(0, 10),
                                                     _np.arange(10, 15),
@@ -637,7 +636,7 @@ class Test_choose_between_consensus_dicts(unittest.TestCase):
         assert str == "NAtest"
 
     def test_raises(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             nomenclature.choose_between_consensus_dicts(1,
                                                         [{1: "BW1"},
                                                          {1: "CGN1"}],
@@ -665,7 +664,7 @@ class Test_map2defs(unittest.TestCase):
         _np.testing.assert_equal(len(map2defs), 3)
 
     def test_works_wo_dot_raises(self):
-        with pytest.raises(AssertionError):
+        with self.assertRaises(AssertionError):
             nomenclature._map2defs(self.cons_list_wo_dots)
 
 
@@ -708,7 +707,6 @@ class Test_guess_by_nomenclature(unittest.TestCase):
         cls.fragments = get_fragments(cls.top)
 
     def test_works_on_enter(self):
-        import mock
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,
@@ -720,7 +718,6 @@ class Test_guess_by_nomenclature(unittest.TestCase):
             self.assertEqual(answer, "4")
 
     def test_works_return_answer_as_list(self):
-        import mock
         input_values = (val for val in [""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
             answer = nomenclature.guess_by_nomenclature(self.GPCR_local_w_pdb,

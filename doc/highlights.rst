@@ -153,19 +153,17 @@ Highlights
 
    >>> mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --GPCR adrb2_human --CGN GNAS2_HUMAN -t "3SN6 beta2AR-Galpha interface" -ni
    ...
-   These 50 contacts capture 35.56 (~96%) of the total frequency 36.88 (over 20307 input contacts)
+   The following 50 contacts capture 35.56 (~96%) of the total frequency 36.88 (over 75 contacts with nonzero frequency).
    As orientation value, the first 44 ctcs already capture 90.0% of 36.88.
-   The 44-th contact has a frequency of 0.42
-
-       freq                         label residue idxs    sum
-   1.00   R385@G.H5.17    - Q229@5.68x68      344 956   1.00
-   1.00   D381@G.H5.13    - Q229@5.68x68      340 956   2.00
-   1.00   Q384@G.H5.16    - I135@3.54x54      343 865   3.00
-   1.00   D381@G.H5.13    - K232@5.71x71      340 959   4.00
-   0.99   T350@G.h4s6.03  - R239@ICL3         309 966   4.99
-   0.98   E392@G.H5.24    - T274@6.36x36      351 976   5.97
-   0.96   R385@G.H5.17    - K232@5.71x71      344 959   6.93
-
+   The 44-th contact has a frequency of 0.42.
+       freq              label               residues  fragments   sum
+   1   1.00  R385@G.H5.17   - Q229@5.68x68   344 - 956    0 - 3    1.00
+   2   1.00  Q384@G.H5.16   - I135@3.54x54   343 - 865    0 - 3    2.00
+   3   1.00  D381@G.H5.13   - Q229@5.68x68   340 - 956    0 - 3    3.00
+   4   1.00  D381@G.H5.13   - K232@5.71x71   340 - 959    0 - 3    4.00
+   5   0.99  T350@G.h4s6.03 - R239@ICL3      309 - 966    0 - 3    4.99
+   6   0.98  E392@G.H5.24   - T274@6.36x36   351 - 976    0 - 3    5.97
+   7   0.96  R385@G.H5.17   - K232@5.71x71   344 - 959    0 - 3    6.93
    ...
    The following files have been created:
    ./interface.overall@4.0_Ang.xlsx
@@ -276,11 +274,13 @@ Highlights
 
    >>> mdc_neighborhoods.py 3SN6.pdb 3SN6.pdb -r R131 -o 3SN6 -nf -o 3SN6.X
    ...
-   #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
-   1:     1.00   ARG131-TYR391       0-0        1007-345        14     1.00
-   2:     1.00   ARG131-TYR326       0-0        1007-1174      111     2.00
-   3:     1.00   ARG131-ILE278       0-0        1007-1126       97     3.00
-   These 3 contacts capture 3.00 (~100%) of the total frequency 3.00 (over 120 contacts)
+   The following 3 contacts capture 3.00 (~100%) of the total frequency 3.00 (over 3 contacts with nonzero frequency).
+   As orientation value, the first 3 ctcs already capture 90.0% of 3.00.
+   The 3-th contact has a frequency of 1.00.
+      freq    label       residues   fragments  sum
+   1   1.0  R131 - I278  1007 - 1126    0 - 0   1.0
+   2   1.0  R131 - Y326  1007 - 1174    0 - 0   2.0
+   3   1.0  R131 - Y391   1007 - 345    0 - 0   3.0
    ...
    The following files have been created:
    ...
@@ -290,12 +290,13 @@ Highlights
 
    >>> mdc_neighborhoods.py prot.pdb traj.xtc -r R131 -nf -o 3SN6.MD
    ...
-   #idx   freq      contact       fragments     res_idxs      ctc_idx  Sum
-   1:     0.88   ARG131-TYR391       0-0         861-350        11     0.88
-   2:     0.69   ARG131-TYR326       0-0         861-1028       95     1.56
-   3:     0.44   ARG131-TYR219       0-0         861-946        65     2.00
-   4:     0.12   ARG131-ILE278       0-0         861-980        84     2.12
-   These 4 contacts capture 2.12 (~100%) of the total frequency 2.12 (over 104 input contacts)
+   The following 4 contacts capture 2.12 (~100%) of the total frequency 2.12 (over 5 contacts with nonzero frequency).
+   ...
+   freq    label       residues  fragments   sum
+   1  0.88  R131 - Y391   861 - 350    0 - 0   0.88
+   2  0.69  R131 - Y326  861 - 1028    0 - 0   1.56
+   3  0.44  R131 - Y219   861 - 946    0 - 0   2.00
+   4  0.12  R131 - I278   861 - 980    0 - 0   2.12
    ...
    The following files have been created:
    ...
