@@ -1114,12 +1114,18 @@ class Test_KLIFSDataFrame(unittest.TestCase):
 
     def setUp(self):
         self.df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx)
+        self.df_no_geom = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, read_PDB=False)
         self.geom = md.load(test_filenames.pdb_3E8D)
 
     def test_just_works(self):
         assert self.df.PDB_id == "3E8D"
         assert self.df.UniProtAC == "P31751"
         assert self.df.PDB_geom == self.geom
+
+    def test_just_works_no_pdb(self):
+        assert self.df_no_geom.PDB_id == "3E8D"
+        assert self.df_no_geom.UniProtAC == "P31751"
+        assert self.df_no_geom.PDB_geom is None
 
     def test_write_to_excel(self):
         with _NamedTemporaryFile(suffix=".xlsx") as f:

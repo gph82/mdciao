@@ -33,7 +33,8 @@ from pandas import \
     read_excel as _read_excel, \
     read_csv as _read_csv, \
     DataFrame as _DataFrame, \
-    ExcelWriter as _ExcelWriter
+    ExcelWriter as _ExcelWriter, \
+    ExcelFile as _ExcelFile
 
 from contextlib import nullcontext as _nullcontext
 
@@ -3347,9 +3348,9 @@ def _KLIFS_finder(UniProtAC,
                           write_to_disk=write_to_disk)
 
 
-def _read_excel_as_KDF(fullpath):
+def _read_excel_as_KDF(fullpath, read_PDB=True):
     r"""
-    Read a KLIFS Excel file and return a :obj:`_KLIFSDataFrame`
+    Instantiate a :obj:`_KLIFSDataFrame` from an :obj:`_KLIFSDataFrame` Excel
 
     The PDB geom is instantiated from the extra-sheets of the Excel file
 
@@ -3357,21 +3358,38 @@ def _read_excel_as_KDF(fullpath):
     ----------
     fullpath : str
         Path to the Excel file
-
+    read_PDB : bool, default is True
+        If False, don't read the PDB geometry from the
+        extra-sheets of the Excel file. The PDB_id will
+        still be stored in the returned DataFrame.PDB_id attribute.
+        This makes the method more faster and lighter
+        when the PDB geoms are not really needed.
     Returns
     -------
     df : :obj:`_KLIFSDataFrame`
 
     """
-    idict = _read_excel(fullpath,
-                        None,
-                        engine="openpyxl")
-    assert len(idict) == 5
-    keys = list(idict.keys())
-    UniProtAC, PDB_id = keys[0].split("_")
-    geom = _Spreadsheets2mdTrajectory(idict)
-    df = _KLIFSDataFrame(idict[keys[0]].replace({_np.nan: None}),
-                         UniProtAC=UniProtAC, PDB_id=PDB_id, PDB_geom=geom)
+    if read_PDB:
+        idict = _read_excel(fullpath,
+                            None,
+                            engine="openpyxl")
+        assert len(idict) == 5
+        geom = _Spreadsheets2mdTrajectory(idict)
+        keys = list(idict.keys())
+        UniProtAC, PDB_id = keys[0].split("_")
+        df = _KLIFSDataFrame(idict[keys[0]].replace({_np.nan: None}),
+                             UniProtAC=UniProtAC, PDB_id=PDB_id, PDB_geom=geom)
+    else:
+        idict = _read_excel(fullpath,
+                            0,
+                            engine="openpyxl")
+        with _ExcelFile(fullpath) as f:
+            key = f.sheet_names[0]
+        idict = {key : idict}
+        UniProtAC, PDB_id = key.split("_")
+        df = _KLIFSDataFrame(idict[key].replace({_np.nan: None}),
+                             UniProtAC=UniProtAC, PDB_id=PDB_id)
+
     return df
 
 
