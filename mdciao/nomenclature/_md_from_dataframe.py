@@ -25,11 +25,9 @@
 #    modified version of the one found in the original MDTraj
 #    Python Library, whose original authors and copyright
 #    holders are listed below.
-
-#    The modifications consist in a bugfix that adds a third condition
-#    to force new residue creation. A pull request has been already
-#    opened upstream and hopefully soon this file won't be needed
 #
+#    The modifications are:
+#    * Pass the chainID when adding a new chain from the dataframe
 ##############################################################################
 
 
@@ -56,8 +54,8 @@
 ##############################################################################
 
 # opened issues for this:
-# https://github.com/mdtraj/mdtraj/issues/1569
-# https://github.com/mdtraj/mdtraj/pull/1740
+# https://github.com/mdtraj/mdtraj/pull/1740 (merged)
+# https://github.com/mdtraj/mdtraj/pull/1879 (WIP)
 # Further reading
 # https://www.oreilly.com/library/view/understanding-open-source/0596005814/ch03.html
 # https://tldrlegal.com/license/gnu-lesser-general-public-license-v3-(lgpl-3)
@@ -150,7 +148,7 @@ def from_dataframe(atoms, bonds=None):
         if atom['chainID'] != previous_chainID:
             previous_chainID = atom['chainID']
 
-            c = out.add_chain()
+            c = out.add_chain(chain_id=atom.get("chain_id")) # Fallback to None if "chain_id" is absent from atom.keys()
 
         if atom['resSeq'] != previous_resSeq or atom['resName'] != previous_resName or c.n_atoms == 0:
             previous_resSeq = atom['resSeq']
