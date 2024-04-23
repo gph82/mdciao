@@ -2930,6 +2930,7 @@ def _mdTopology2residueDF(top) -> _DataFrame:
     "Sequence_Index" : rr.resSeq
     "AAresSeq": shorten_AA(rr, substitute_fail="X", keep_index=True)
     "chain_index ": rr.chain.index
+    "chain_id" : rr.chain.chain_id
 
     Parameters
     ----------
@@ -2946,7 +2947,8 @@ def _mdTopology2residueDF(top) -> _DataFrame:
                        "code": rr.code,
                        "Sequence_Index": rr.resSeq,
                        "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True),
-                       "chain_index": rr.chain.index})
+                       "chain_index": rr.chain.index,
+                       "chain_id" : rr.chain.chain_id})
     return _DataFrame(for_DF)
 
 

@@ -1014,15 +1014,15 @@ class Test_UniProtACtoPDBs(unittest.TestCase):
 class Test_mdTopology2DF(unittest.TestCase):
     def test_just_works(self):
         top = md.load(examples.filenames.small_monomer).top
-        self.assertListEqual(['   serial_index residue  code  Sequence_Index AAresSeq  chain_index',
-                              "0             0     GLU     E              30      E30            0",
-                              "1             1     VAL     V              31      V31            0",
-                              "2             2     TRP     W              32      W32            0",
-                              "3             3     ILE     I              26      I26            1",
-                              "4             4     GLU     E              27      E27            1",
-                              "5             5     LYS     K              29      K29            1",
-                              "6             6     P0G  None             381     X381            2",
-                              "7             7     GDP  None             382     X382            2"],
+        self.assertListEqual(["   serial_index residue  code  Sequence_Index AAresSeq  chain_index chain_id",
+                              "0             0     GLU     E              30      E30            0        A",
+                              "1             1     VAL     V              31      V31            0        A",
+                              "2             2     TRP     W              32      W32            0        A",
+                              "3             3     ILE     I              26      I26            1        C",
+                              "4             4     GLU     E              27      E27            1        C",
+                              "5             5     LYS     K              29      K29            1        C",
+                              "6             6     P0G  None             381     X381            2        G",
+                              "7             7     GDP  None             382     X382            2        G"],
                              nomenclature._mdTopology2residueDF(top).to_string().splitlines())
 
 
