@@ -2970,6 +2970,7 @@ def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
 
     """
     topdf, bonds = traj.top.to_dataframe()
+    topdf["chain_id"] = [aa.residue.chain.chain_id for aa in traj.top.atoms] #Maybe open a PR on this at mdtraj?
     bondsdf, xyzdf = _DataFrame(bonds), _DataFrame(traj.xyz[0])
     if traj.unitcell_lengths is not None:
         unitcelldf = _DataFrame({"lengths": traj.unitcell_lengths[0],
