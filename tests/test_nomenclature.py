@@ -1112,16 +1112,19 @@ class Test_KLIFSDataFrame(unittest.TestCase):
     def setUp(self):
         self.df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx)
         self.df_no_geom = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, read_PDB_geom=False)
-        self.geom = md.load(test_filenames.pdb_3E8D)
 
     def test_just_works(self):
         assert self.df.PDB_id == "3E8D"
         assert self.df.UniProtAC == "P31751"
-        assert self.df.PDB_geom == self.geom
+        assert self.df.kinase_ID == 2
+        assert self.df.structure_ID == 1904
+
 
     def test_just_works_no_pdb(self):
         assert self.df_no_geom.PDB_id == "3E8D"
         assert self.df_no_geom.UniProtAC == "P31751"
+        assert self.df.kinase_ID == 2
+        assert self.df.structure_ID == 1904
         assert self.df_no_geom.PDB_geom is None
 
     def test_write_to_excel(self):
@@ -1129,15 +1132,22 @@ class Test_KLIFSDataFrame(unittest.TestCase):
             self.df.to_excel(f.name)
             df_dict = read_excel(f.name, None)
             assert len(df_dict) == 5
-            assert isinstance(df_dict["P31751_3E8D"], DataFrame)
-            assert nomenclature._Spreadsheets2mdTrajectory(df_dict)==self.geom
+            assert isinstance(df_dict["2_P31751_3E8D_1904"], DataFrame)
+            assert nomenclature._Spreadsheets2mdTrajectory(df_dict)==self.df.PDB_geom
 
     def test_write_to_excel_no_PDB_geom(self):
         with _NamedTemporaryFile(suffix=".xlsx") as f:
             self.df.to_excel(f.name, save_PDB_geom=False)
             df_dict = read_excel(f.name, None)
             assert len(df_dict) == 1
-            assert isinstance(df_dict["P31751_3E8D"], DataFrame)
+            assert isinstance(df_dict["2_P31751_3E8D_1904"], DataFrame)
+
+    def test_write_to_excel_no_df_no_geom(self):
+        with _NamedTemporaryFile(suffix=".xlsx") as f:
+            self.df_no_geom.to_excel(f.name)
+            df_dict = read_excel(f.name, None)
+            assert len(df_dict) == 1
+            assert isinstance(df_dict["2_P31751_3E8D_1904"], DataFrame)
 
 
 class Test_KLIFS_web_lookup(unittest.TestCase):
@@ -1180,19 +1190,26 @@ class Test_KLIFS_finder(unittest.TestCase):
         # This acts as test_find_online
         self.UniProtAC = "P31751"
         self.KLIFS_df = nomenclature._KLIFS_finder(self.UniProtAC)[0]
-        self.geom = md.load(test_filenames.pdb_3E8D)
+        self.geom = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx).PDB_geom
 
     def test_finds_online(self):
         assert isinstance(self.KLIFS_df, nomenclature._KLIFSDataFrame)
         assert self.KLIFS_df.PDB_id == "3E8D"
         assert self.KLIFS_df.UniProtAC == "P31751"
+        assert self.KLIFS_df.kinase_ID == 2
+        assert self.KLIFS_df.structure_ID == 1904
         assert self.KLIFS_df.PDB_geom == self.geom
+
 
     def test_finds_local_with_uniprot(self):
         df, filename = nomenclature._KLIFS_finder(self.UniProtAC, try_web_lookup=False,
                                                   local_path=test_filenames.nomenclature_path)
         assert df.PDB_id == self.KLIFS_df.PDB_id
         assert df.UniProtAC == self.KLIFS_df.UniProtAC
+        assert df.PDB_id == "3E8D"
+        assert df.UniProtAC == "P31751"
+        assert df.kinase_ID == 2
+        assert df.structure_ID == 1904
         assert df.PDB_geom == self.geom
 
     def test_finds_local_with_explicit_filename(self):
@@ -1200,14 +1217,13 @@ class Test_KLIFS_finder(unittest.TestCase):
             copy(test_filenames.KLIFS_P31751_xlsx, f.name)
             df, filename = nomenclature._KLIFS_finder(f.name)
             assert df.PDB_id == self.KLIFS_df.PDB_id
-            assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.UniProtAC == self.KLIFS_df.UniProtAC
             assert df.PDB_geom == self.geom
 
     def test_finds_local_with_explicit_filename_no_PDB(self):
         with _NamedTemporaryFile(suffix=".xlxs") as f:
             copy(test_filenames.KLIFS_P31751_xlsx, f.name)
-            df, filename = nomenclature._KLIFS_finder(f.name, read_PDB_geom=False)
+            df, filename = nomenclature._KLIFS_finder(f.name, keep_PDB_geom=False)
             assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.PDB_id == self.KLIFS_df.PDB_id
             assert df.UniProtAC == self.KLIFS_df.UniProtAC
@@ -1249,13 +1265,6 @@ class TestLabelerKLIFS(unittest.TestCase):
                               'xDFG': [146, 147, 148, 149],
                               'a.l': [150, 151]})
 
-    def test_KLIFs_fragmentation(self):
-        self.geom = md.load(test_filenames.pdb_3E8D)
-
-        frags = self.KLIFS.top2frags(self.geom.top)
-
-        # The pdb of geom and the pdb of self.KLIFS is the same pdb
-        self.assertDictEqual(frags, self.KLIFS.fragments_as_idxs)
 
 class Test_mdTrajectory_and_spreadsheets(unittest.TestCase):
 
