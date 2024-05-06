@@ -1156,8 +1156,23 @@ class Test_read_excel_as_KDF(unittest.TestCase):
         df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx)
         assert isinstance(df, nomenclature._KLIFSDataFrame)
 
-        geom = md.load(test_filenames.pdb_3E8D)
-        assert geom == df.PDB_geom
+    def test_reads_no_PDB_when_PDB_present(self):
+        df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, read_PDB_geom=False)
+        with _NamedTemporaryFile(suffix=".xlsx") as f:
+            df.to_excel(f.name)
+            df2 = nomenclature._read_excel_as_KDF(f.name, read_PDB_geom=False)
+        assert df2.PDB_id == "3E8D"
+        assert df2.UniProtAC == "P31751"
+        assert df2.kinase_ID == 2
+        assert df2.structure_ID == 1904
+        assert df2.PDB_geom is None
+
+    def test_reads_no_PDB_when_PDB_present_raises(self):
+        df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, read_PDB_geom=False)
+        with _NamedTemporaryFile(suffix=".xlsx") as f:
+            df.to_excel(f.name)
+            with self.assertRaises(ValueError):
+                df2 = nomenclature._read_excel_as_KDF(f.name)
 
 
 class Test_KLIFS_finder(unittest.TestCase):

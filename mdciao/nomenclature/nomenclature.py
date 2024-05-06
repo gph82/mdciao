@@ -3488,7 +3488,12 @@ def _read_excel_as_KDF(fullpath, read_PDB_geom=True):
         extra-sheets of the Excel file. The PDB_id will
         still be stored in the returned DataFrame.PDB_id attribute.
         This makes the method more faster and lighter
-        when the PDB geoms are not really needed.
+        when the PDB geoms are not really needed. If `read_PDB_geom`
+        is True but the `fullpath` doesn't contain the necessary
+        extra sheets to instantiate the PDB geometry, the
+        method will fail. (This forces the user to be aware
+        of which nomenclature files have been stored w/ and w/o
+        the PDB geoms).
     Returns
     -------
     df : :obj:`_KLIFSDataFrame`
@@ -3498,12 +3503,17 @@ def _read_excel_as_KDF(fullpath, read_PDB_geom=True):
         idict = _read_excel(fullpath,
                             None,
                             engine="openpyxl")
-        assert len(idict) == 5
+        if len(idict) < 5:
+            raise ValueError(f"Not enough sheets in {fullpath} to instantiate a PDB geometry.\n"
+                             "Re-run with 'read_PDB_geom=False' or re-generate the file with\n"
+                             "the 'keep_PDB_geom=True' option.")
         geom = _Spreadsheets2mdTrajectory(idict)
         keys = list(idict.keys())
-        UniProtAC, PDB_id = keys[0].split("_")
+        kinase_ID, UniProtAC, PDB_id, structure_ID = keys[0].split("_")
         df = _KLIFSDataFrame(idict[keys[0]].replace({_np.nan: None}),
-                             UniProtAC=UniProtAC, PDB_id=PDB_id, PDB_geom=geom)
+                             UniProtAC=UniProtAC,
+                             PDB_id=PDB_id, PDB_geom=geom,
+                             kinase_ID=int(kinase_ID), structure_ID=int(structure_ID))
     else:
         idict = _read_excel(fullpath,
                             0,
@@ -3511,9 +3521,11 @@ def _read_excel_as_KDF(fullpath, read_PDB_geom=True):
         with _ExcelFile(fullpath) as f:
             key = f.sheet_names[0]
         idict = {key : idict}
-        UniProtAC, PDB_id = key.split("_")
+        kinase_ID, UniProtAC, PDB_id, structure_ID = key.split("_")
         df = _KLIFSDataFrame(idict[key].replace({_np.nan: None}),
-                             UniProtAC=UniProtAC, PDB_id=PDB_id)
+                             UniProtAC=UniProtAC,
+                             PDB_id=PDB_id, PDB_geom=None,
+                             kinase_ID=int(kinase_ID), structure_ID=int(structure_ID))
 
     return df
 
