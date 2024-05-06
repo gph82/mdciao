@@ -3112,7 +3112,7 @@ class _KDF(_DataFrame):
     """
 
     # normal properties
-    _metadata = ["UniProtAC", "PDB_id", "PDB_geom"]
+    _metadata = ["UniProtAC", "PDB_id", "PDB_geom", "kinase_ID", "structure_ID"]
 
     @property
     def _constructor(self):
