@@ -232,12 +232,12 @@ def alignment_result_to_list_of_dicts(ialg,
     ialg: namedtuple
         See return value of obj:`my_bioalign`
         for more info
-    topology_0: :obj:`~mdtraj.Topology` object, default is None
-    topology_1: :obj:`~mdtraj.Topology` object, default is None
-    seq_0_res_idxs:
+        seq_0_res_idxs:
         Zero-indexed residue indices of whatever was in seq_0
     seq_1_res_idxs:
         Zero-indexed residue indices of whatever was in seq_1
+    topology_0: :obj:`~mdtraj.Topology` object, default is None
+    topology_1: :obj:`~mdtraj.Topology` object, default is None
     key_AA_code_seq_0 : str, default is AA_0
         The key under which the residues one-letter code will
         be shown (=the column title in a :obj:`DataFrame`
