@@ -3123,29 +3123,39 @@ class _KLIFSDataFrame(_KDF):
     r"""
     Sub-class of an :obj:`~pandas.DataFrame` to include KLIFS-associated metadata as attributes.
 
-    Simply pass arguments e.g. 'UniProtAC=P31751', PDB_id="3e8d",
-    and PDB_geom=geom (an :obj:`~mdtraj.Trajectory`) and then will
-    be accessible via self.UniProtAC, self.PDB_id and self.PDB_geom
+    Passing named arguments, e.g.
+     * kinase_ID=2
+     * UniProtAC='P31751'
+     * PDB_id="3e8d"
+     * structure_ID=1904
+     * PDB_geom=geom (an :obj:`~mdtraj.Trajectory`)
+
+    will make them be accessible via self.kinase_ID, self.UniProtAC, self.PDB_id, self.structure_ID, and self.PDB_geom,
 
     Note that no checks are done to see if these arguments are of the expected class.
 
     Implements its own :obj:`~pandas.DataFrame.to_excel`
-    s.t. the attributes self.UniProtAC, self.PDB_id are saved
-    into the sheet name, e.g. as "P31751_3e8d" and can be
-    recovered upon reading an Excel file from disk.
-    self.PDB_geom is also stored as extra sheets in the
-    same file, s.t. when reading that Excel File using
-    :obj:`_read_excel_as_KDF`, self.PDB_geom is re-instantiated
-    as well as a :obj:`~mdtraj.Trajectory`.
+    s.t. the attributes are not lost when writing an Excel file.
+
+    The first sheet's name is kinase_ID_UniProtAC_PDB_id_structure_ID (e.g.
+    "2_P31751_3e8d_1904"), s.t. the attributes can be recovered upon reading from disk.
+    The attributes are written in that order regardless of how you passed them initially.
+    Since self.PDB_geom is also stored as extra sheets in the
+    same file, reading that Excel File using :obj:`_read_excel_as_KDF`, re-instantiates
+    self.PDB_geom an :obj:`~mdtraj.Trajectory`.
 
     Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
     for more info
     """
 
     def __init__(self, *args, **kwargs):
-        argdict = {"UniProtAC": None,
-                   "PDB_id": None,
-                   "PDB_geom": None}
+        argdict = {
+            "kinase_ID": None,
+            "UniProtAC": None,
+            "PDB_id": None,
+            "structure_ID": None,
+            "PDB_geom": None
+        }
 
         for key in argdict.keys():
             if key in kwargs.keys():
@@ -3159,8 +3169,8 @@ class _KLIFSDataFrame(_KDF):
     def to_excel(self, excel_writer, save_PDB_geom=True, **kwargs):
         r""" Like :obj:`~pandas.DataFrame.to_excel`, but can save also the PDB topology and coordinates if present.
 
-        Also, the attributes self.UniProtAC and self.PDB_id are saved into
-        the first sheet's name, e.g. as "P31751_3e8d" and can be recovered
+        Also, the attributes self.kinase_ID, self.UniProtAC, self.PDB_id, self.structure_ID
+        are saved into the first sheet's name, e.g. as "2_P31751_3e8d_1904" and can be recovered
         upon reading an Excel file from disk.
 
         The other sheets are called "topology", "bonds", "unitcell", and "xyz"
@@ -3181,7 +3191,7 @@ class _KLIFSDataFrame(_KDF):
         with _ExcelWriter(excel_writer) as writer:
             _DataFrame.to_excel(self, writer,
                                 index=False,
-                                sheet_name="%s_%s" % (self.UniProtAC, self.PDB_id),
+                                sheet_name="%s_%s_%s_%s" % (self.kinase_ID, self.UniProtAC, self.PDB_id, self.structure_ID),
                                 **kwargs)
             if self.PDB_geom is not None and save_PDB_geom:
                 _mdTrajectory2spreadsheets(self.PDB_geom, writer, **kwargs)
