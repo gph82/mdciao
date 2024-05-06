@@ -648,6 +648,11 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         If you turn this off, it is assumed that you are
         not using periodic boundary conditions at all and
         residues are necessarily whole (no checks are done).
+        If no unitcell is information is present, e.g.
+        `itraj.unitcell_lengths` is None, `perioidic` is set
+        automatically to False and no unwrapping takes place
+        It is assumed that `itraj` is already unwrapped
+        if you don't provide unitcell information.
 
     Returns
     -------
@@ -667,6 +672,8 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
     if verbose:
         inform(itraj, traj_idx, 0, running_f)
     lower_bound = []
+    if itraj.unitcell_lengths is None:
+        periodic=False
     for jj, igeom in enumerate(iterate(itraj)):
         running_f += igeom.n_frames
         if verbose:
