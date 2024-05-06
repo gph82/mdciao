@@ -3334,12 +3334,15 @@ def _KLIFS_structure_ID2nomenclDF(structure_ID, KLIFS_API="https://klifs.net/api
     return nomencl
 
 def _KLIFS_structure_ID2Trajectory(structure_ID, KLIFS_API="https://klifs.net/api",
-                                   timeout=5, chain_id=True) -> _md.Trajectory:
+                                   timeout=5) -> _md.Trajectory:
     r"""
 
-    Get a single-chain Trajectory from a KLIFS structure_ID via web lookup.
+    Get an :obj:`~mdtraj.Trajectory` from a KLIFS structure_ID via web lookup.
 
-    https://klifs.net/swagger/#/Structures/get_structure_get_protein
+    The trajectory contains contains the kinase and other chains associated to
+    the kinase in the original PDB, according to https://klifs.net/swagger/#/Structures/get_structure_get_pdb_complex
+    that means "the full structure (including solvent, cofactors, ligands, etc.) in PDB format"
+
 
     Parameters
     ----------
@@ -3347,51 +3350,22 @@ def _KLIFS_structure_ID2Trajectory(structure_ID, KLIFS_API="https://klifs.net/ap
         The KLIFS structure ID
     KLIFS_API : str, default is "https://klifs.net/api"
     timeout : int , default is 5
-    chain_id : bool, int or str, default is True
-        If True, lookup the chain_id associated with this
-        `structure_ID` in KLIFS and place it in the
-        chain_id attribute of the returned Trajectory.
-        If int or str, simply place this value as chain_id of
-        of the returned Trajectory. If False or None, leave it
-        empty.
 
     Returns
     -------
     traj : :obj:`mdtraj.Trajectory`
         Consists of one single chain containing the kinase
 
-    Note
-    ----
-    Internally, a temporary klifs_content.mol2 file is downloaded and read
-    with mdtraj. There's an ad-hoc correction of the residues' resSeq
-    attribute since its read and written into the residue's name
     """
 
-    url = "%s/structure_get_protein?structure_ID=%s" % (KLIFS_API, structure_ID)
+    url = "%s/structure_get_pdb_complex?structure_ID=%s" % (KLIFS_API, structure_ID)
     #print(url)
     with _requests.get(url, timeout=timeout) as resp:
-        with _NamedTemporaryFile(suffix=".mol2") as f:
+        with _NamedTemporaryFile(suffix=".pdb") as f:
             with open(f.name, "w") as f2:
                 f2.writelines(resp.text)
             traj = _md.load(f.name)
-            assert traj.top.n_chains == 1
 
-    if isinstance(chain_id, bool):
-        if chain_id:
-            with _requests.get(f"https://klifs.net/api/structure_list?structure_ID={structure_ID}", timeout=timeout) as resp:
-                data = resp.json()
-            assert len(data)==1
-            traj.top._chains[0].chain_id = str(data[0]["chain"])
-    elif chain_id is not None:
-        traj.top._chains[0].chain_id = str(chain_id)
-
-    # ad-hoc hack bc this mol2 is not read properly by mdtraj
-    assert all(
-        [rr.resSeq for rr in traj.top.residues] == _np.arange(traj.top.n_residues) + 1)
-    assert all([not rr.name.isalpha() for rr in traj.top.residues])
-    for rr in traj.top.residues:
-        rr.resSeq = int(rr.name[3:])
-        rr.name = rr.name[:3]
     return traj
 
 def _KLIFS_finder(UniProtAC,
