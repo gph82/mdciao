@@ -3201,11 +3201,11 @@ def _KLIFS_web_lookup(UniProtAC,
                       KLIFS_API="https://klifs.net/api",
                       timeout=5,
                       verbose=True,
-                      keep_PDB_geom=True):
+                      keep_PDB_geom=True) -> _KLIFSDataFrame:
     r"""
     Lookup the best PDB-match on `KLIFS <https://klifs.net/>`_ for a given UniProt accession code
     and return a :obj:`~pandas.DataFrame` with the PDB-sequence, the residue-pocket nomenclature and
-    the PDB-residues indices matching the :obj:`UniprotAC`
+    the PDB-residues indices matching the :obj:`UniprotAC`.
 
     Note that:
         * Lookup will fail if there's more than one kinase_ID for the UniProtAC
@@ -3227,6 +3227,10 @@ def _KLIFS_web_lookup(UniProtAC,
         The database API, check https://klifs.net/swagger/ for documentation
     verbose : bool, default is True
         Currently unused
+    keep_PDB_geom : bool, default is True
+        Do not append the PDB geometry of the kinase and other chains associated to the kinase
+        in the best PDB-match to the returned DataFrame.
+
     Returns
     -------
     PDB_DF : :obj:`~pandas.DataFrame`
@@ -3334,7 +3338,7 @@ def _KLIFS_structure_ID2Trajectory(structure_ID, KLIFS_API="https://klifs.net/ap
 
     Get an :obj:`~mdtraj.Trajectory` from a KLIFS structure_ID via web lookup.
 
-    The trajectory contains contains the kinase and other chains associated to
+    The trajectory contains the kinase and other chains associated to
     the kinase in the original PDB, according to https://klifs.net/swagger/#/Structures/get_structure_get_pdb_complex
     that means "the full structure (including solvent, cofactors, ligands, etc.) in PDB format"
 
@@ -3370,7 +3374,7 @@ def _KLIFS_finder(UniProtAC,
                   verbose=True,
                   dont_fail=False,
                   write_to_disk=False,
-                  read_PDB_geom=True):
+                  keep_PDB_geom=True):
     r"""Look up, first locally, then online for the 85-pocket-residues numbering scheme as found in
     the `Kinase–Ligand Interaction Fingerprints and Structure <https://klifs.net/>`_
     return them as a :obj:`~pandas.DataFrame`.
@@ -3381,7 +3385,7 @@ def _KLIFS_finder(UniProtAC,
     which automatically populates attributes DF.UniProtAC, DF.PDB_code
     and, optionally, DF.PDB_geom.
 
-    Internally, this method wraps around :obj:`_finder_writer`
+    Internally, this method wraps around :obj:`_KLIFS_web_lookup` and :obj:`_read_excel_as_KDF`
 
     Parameters
     ----------
@@ -3403,19 +3407,22 @@ def _KLIFS_finder(UniProtAC,
         a workflow and simply return None
     write_to_disk : bool, default is False
         Save the data to disk
-    read_PDB_geom : bool, default is True
-        If False, don't read the PDB geometry from the
-        extra-sheets of the Excel file in case the method
-        is reading from a local file. The PDB_id will
-        still be stored in the returned DataFrame.PDB_id attribute.
-        This makes the method more faster and lighter
-        when the PDB geoms are not really needed.
+    keep_PDB_geom : bool, default is True
+        If False, don't store the PDB geom in returned DataFrame
+        when looking online or locally. For online lookups, the geom will have
+        been downloaded and used though, it's
+        just not stored as extra sheets in the returned DataFrame,
+        making the method faster and lighter when the PDB geoms
+        are not really needed. For local lookups, if the local filed
+        was stored w/o the geom in the extra sheets and you are reading
+        from the with this parameter set to True, you'll get an error.
+
     Returns
     -------
     DF : :obj:`~pandas.DataFrame`
         Contains the KLIFS consensus nomenclature, and
-        some extra attributes like DF.UniProtAC, DF.PDB_code,
-        and optinally DF.PDB_geom.
+        some extra attributes like DF.UniProtAC, DF.PDB_code, DF.structure_ID,
+        DF.kinase_ID, and optionally DF.PDB_geom.
         If the lookup wasn't successful this will be a ValueError
     return_name : str
         The URL or local path to
@@ -3431,7 +3438,7 @@ def _KLIFS_finder(UniProtAC,
     KLIFS_API = "https://klifs.net/api"
     url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
 
-    local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath, read_PDB_geom=keep_PDB_geom)
+    local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath, keep_PDB_geom=keep_PDB_geom)
 
     web_looukup_lambda = lambda url: _KLIFS_web_lookup(UniProtAC, verbose=verbose, timeout=15, keep_PDB_geom=keep_PDB_geom)
     return _finder_writer(fullpath, local_lookup_lambda,
@@ -3442,7 +3449,7 @@ def _KLIFS_finder(UniProtAC,
                           write_to_disk=write_to_disk)
 
 
-def _read_excel_as_KDF(fullpath, read_PDB_geom=True):
+def _read_excel_as_KDF(fullpath, keep_PDB_geom=True):
     r"""
     Instantiate a :obj:`_KLIFSDataFrame` from an :obj:`_KLIFSDataFrame` Excel
 
@@ -3452,7 +3459,7 @@ def _read_excel_as_KDF(fullpath, read_PDB_geom=True):
     ----------
     fullpath : str
         Path to the Excel file
-    read_PDB_geom : bool, default is True
+    keep_PDB_geom : bool, default is True
         If False, don't read the PDB geometry from the
         extra-sheets of the Excel file. The PDB_id will
         still be stored in the returned DataFrame.PDB_id attribute.
@@ -3468,13 +3475,13 @@ def _read_excel_as_KDF(fullpath, read_PDB_geom=True):
     df : :obj:`_KLIFSDataFrame`
 
     """
-    if read_PDB_geom:
+    if keep_PDB_geom:
         idict = _read_excel(fullpath,
                             None,
                             engine="openpyxl")
         if len(idict) < 5:
             raise ValueError(f"Not enough sheets in {fullpath} to instantiate a PDB geometry.\n"
-                             "Re-run with 'read_PDB_geom=False' or re-generate the file with\n"
+                             "Re-run with 'keep_PDB_geom=False' or re-generate the file with\n"
                              "the 'keep_PDB_geom=True' option.")
         geom = _Spreadsheets2mdTrajectory(idict)
         keys = list(idict.keys())
@@ -3512,9 +3519,10 @@ class LabelerKLIFS(LabelerConsensus):
      * Query `KLIFS <https://klifs.net/>`_ again for that structure/PDB
        and get their 85 pocket residue indices (in that specific PDB file)
        and their consensus names.
-     * Query `UniProtKB <https://www.uniprot.org/>`_ on that PDB for
-       the chainID and residue info associated with that UniProt accession code.
-     * Query `RCSB PDB <https://rcsb.org/>`_ and get the geometry.
+     * Get a geometry contains the kinase and other chains associated to
+       the kinase in the original PDB, according to `the docs <https://klifs.net/swagger/#/Structures/get_structure_get_pdb_complex>`_ ,
+       that means "the full structure (including solvent, cofactors, ligands, etc.) in PDB format"
+
     All the above information is stored in this object and accessible via
     its attributes, check their individual documentation for more info.
 
@@ -3554,7 +3562,8 @@ class LabelerKLIFS(LabelerConsensus):
                  format="KLIFS_%s.xlsx",
                  verbose=True,
                  try_web_lookup=True,
-                 write_to_disk=False):
+                 write_to_disk=False,
+                 keep_PDB_geom=True):
 
         r"""
 
@@ -3593,7 +3602,16 @@ class LabelerKLIFS(LabelerConsensus):
             fail. This what the :obj:`format` parameter is for
         write_to_disk : bool, default is False
             Save an excel file with the nomenclature
-            information
+            information.
+        keep_PDB_geom : bool, default is True
+            If False, don't store the PDB geom in returned DataFrame
+            when looking online or locally. For online lookups, the
+            geom will have been downloaded and used though, it's
+            just not stored as extra sheets in the returned DataFrame,
+            making the method faster and lighter when the PDB geoms
+            are not really needed. For local lookups, if the local file
+            was stored w/o the geom in the extra sheets and you are reading
+            from the file with this parameter set to True, you'll get an error.
         """
 
         self._conlab_column = "KLIFS"
@@ -3602,12 +3620,14 @@ class LabelerKLIFS(LabelerConsensus):
                                                          local_path=local_path,
                                                          try_web_lookup=try_web_lookup,
                                                          verbose=verbose,
-                                                         write_to_disk=write_to_disk
+                                                         write_to_disk=write_to_disk,
+                                                         keep_PDB_geom=keep_PDB_geom
+
                                                          )
 
         # TODO this works also for CGN, we could make a method out of this
         self._AA2conlab = {}
-        for __, row in self.dataframe[self.dataframe.UniProtAC_res.astype(bool)].iterrows():
+        for __, row in self.dataframe[self.dataframe.Sequence_Index.astype(bool)].iterrows():
             key = "%s%u" % (row.residue, row.Sequence_Index)
             assert key not in self._AA2conlab
             self._AA2conlab[key] = row[self._conlab_column]

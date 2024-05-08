@@ -1111,7 +1111,7 @@ class Test_KLIFSDataFrame(unittest.TestCase):
 
     def setUp(self):
         self.df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx)
-        self.df_no_geom = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, read_PDB_geom=False)
+        self.df_no_geom = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, keep_PDB_geom=False)
 
     def test_just_works(self):
         assert self.df.PDB_id == "3E8D"
@@ -1167,10 +1167,10 @@ class Test_read_excel_as_KDF(unittest.TestCase):
         assert isinstance(df, nomenclature._KLIFSDataFrame)
 
     def test_reads_no_PDB_when_PDB_present(self):
-        df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, read_PDB_geom=False)
+        df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, keep_PDB_geom=False)
         with _NamedTemporaryFile(suffix=".xlsx") as f:
             df.to_excel(f.name)
-            df2 = nomenclature._read_excel_as_KDF(f.name, read_PDB_geom=False)
+            df2 = nomenclature._read_excel_as_KDF(f.name, keep_PDB_geom=False)
         assert df2.PDB_id == "3E8D"
         assert df2.UniProtAC == "P31751"
         assert df2.kinase_ID == 2
@@ -1178,7 +1178,7 @@ class Test_read_excel_as_KDF(unittest.TestCase):
         assert df2.PDB_geom is None
 
     def test_reads_no_PDB_when_PDB_present_raises(self):
-        df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, read_PDB_geom=False)
+        df = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx, keep_PDB_geom=False)
         with _NamedTemporaryFile(suffix=".xlsx") as f:
             df.to_excel(f.name)
             with self.assertRaises(ValueError):
