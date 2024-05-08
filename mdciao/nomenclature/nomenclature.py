@@ -695,9 +695,9 @@ class LabelerConsensus(object):
 
         # In principle I'm introducing this only for KLIFS, could be for all nomenclatures
         if self._conlab_column == "KLIFS":
-            chain_id = self.dataframe.chain_index[_np.hstack(list(self.fragments_as_idxs.values()))].unique()
+            chain_id = self.dataframe.chain_id[_np.hstack(list(self.fragments_as_idxs.values()))].unique()
             assert len(chain_id) == 1
-            seq_1_res_idxs = self.dataframe[self.dataframe.chain_index == chain_id[0]].index
+            seq_1_res_idxs = self.dataframe[self.dataframe.chain_id == chain_id[0]].index
         else:
             seq_1_res_idxs = None
         df = _mdcu.sequence.align_tops_or_seqs(top,
