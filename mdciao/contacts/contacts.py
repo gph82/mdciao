@@ -672,12 +672,13 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
     if verbose:
         inform(itraj, traj_idx, 0, running_f)
     lower_bound = []
-    if itraj.unitcell_lengths is None:
-        periodic=False
+
     for jj, igeom in enumerate(iterate(itraj)):
         running_f += igeom.n_frames
         if verbose:
             inform(itraj, traj_idx, jj, running_f)
+        if igeom.unitcell_lengths is None and jj==0:    #run only on first loop
+            periodic = False
         chunk_res = _mdcu.COM.geom2COMdist(igeom, ctc_residxs_pairs, subtract_max_radii=True, low_mem=True, periodic=periodic,per_residue_unwrap=periodic)
         if lb_cutoff_Ang is not None:
             lower_bound.append(_np.flatnonzero(chunk_res.min(axis=0) <= (lb_cutoff_Ang / 10)))
