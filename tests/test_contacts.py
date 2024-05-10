@@ -31,6 +31,7 @@ from mdciao import nomenclature
 from mdciao.cli import sites as _mdcsites
 from pandas import DataFrame as _DF
 import pickle
+import sys as _sys, platform as _platform
 
 import io as _io, contextlib as _contextlib
 
@@ -2708,6 +2709,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs])
         ifig, iax = CG.plot_freqs_as_flareplot(10,)
 
+    @unittest.skipIf(_sys.version.startswith("3.7") and _platform.system().lower()=="darwin", "Random segfaults. Python 3.7 on MacOs is not officially supported anyways.")
     def test_plot_freqs_as_flareplot_just_runs_w_options(self):
         # This is just to test that it runs without error
         # the minimal examples here cannot test the full flareplot
