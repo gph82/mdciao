@@ -68,7 +68,7 @@ jobs:
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
         pytest -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         #directory: ./coverage/reports/
