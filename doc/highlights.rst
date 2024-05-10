@@ -20,7 +20,7 @@ Highlights
   |nbspc|
 .. _consensus_HL:
 
-* *automagically* map and incorporate consensus nomenclature to the analysis, either from local files or over the network in the `GPRC.db <https://gpcrdb.org/>`_ and from `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_::
+* *automagically* map and incorporate consensus nomenclature to the analysis, either from local files or over the network in the `GPRC.db <https://gpcrdb.org/>`_ and/or `KLIFS <https://klifs.net/>`_::
 
    ...
    No local file ./adrb2_human.xlsx found, checking online in
@@ -30,31 +30,28 @@ Highlights
       Nucleic Acids Research 49, D335--D343
       https://doi.org/10.1093/nar/gkaa1080
    For more information, call mdciao.nomenclature.references()
-   done without 404, continuing.
-   GPCR-labels align best with fragments: [3] (first-last: GLU30-LEU340).
+   The GPCR-labels align best with fragments: [3] (first-last: GLU30-LEU340).
    Mapping the GPCR fragments onto your topology:
-       TM1 with     32 AAs    GLU30@1.29x29   (   760) -    PHE61@1.60x60   (791   ) (TM1)
-      ICL1 with      4 AAs    GLU62@12.48x48  (   792) -    GLN65@12.51x51  (795   ) (ICL1)
-       TM2 with     32 AAs    THR66@2.37x37   (   796) -    LYS97@2.68x67   (827   ) (TM2)
-      ECL1 with      4 AAs    MET98@23.49x49  (   828) -   PHE101@23.52x52  (831   ) (ECL1)
-       TM3 with     36 AAs   GLY102@3.21x21   (   832) -   SER137@3.56x56   (867   ) (TM3)
-      ICL2 with      8 AAs   PRO138@34.50x50  (   868) -   LEU145@34.57x57  (875   ) (ICL2)
-       TM4 with     27 AAs   THR146@4.38x38   (   876) -   HIS172@4.64x64   (902   ) (TM4)
-      ECL2 with     20 AAs   TRP173           (   903) -   THR195           (922   ) (ECL2)  resSeq jumps
-       TM5 with     42 AAs   ASN196@5.35x36   (   923) -   GLU237@5.76x76   (964   ) (TM5)
-      ICL3 with      2 AAs   GLY238           (   965) -   ARG239           (966   ) (ICL3)
-       TM6 with     35 AAs   CYS265@6.27x27   (   967) -   GLN299@6.61x61   (1001  ) (TM6)
-      ECL3 with      4 AAs   ASP300           (  1002) -   ILE303           (1005  ) (ECL3)
-       TM7 with     25 AAs   ARG304@7.31x30   (  1006) -   ARG328@7.55x55   (1030  ) (TM7)
-        H8 with     12 AAs   SER329@8.47x47   (  1031) -   LEU340@8.58x58   (1042  ) (H8)
+       TM1 with     32 AAs    GLU30@1.29x29   ( 760) -    PHE61@1.60x60   (791 ) (TM1)
+      ICL1 with      4 AAs    GLU62@12.48x48  ( 792) -    GLN65@12.51x51  (795 ) (ICL1)
+       TM2 with     32 AAs    THR66@2.37x37   ( 796) -    LYS97@2.68x67   (827 ) (TM2)
+      ECL1 with      4 AAs    MET98@23.49x49  ( 828) -   PHE101@23.52x52  (831 ) (ECL1)
+       TM3 with     36 AAs   GLY102@3.21x21   ( 832) -   SER137@3.56x56   (867 ) (TM3)
+      ICL2 with      8 AAs   PRO138@34.50x50  ( 868) -   LEU145@34.57x57  (875 ) (ICL2)
+       TM4 with     27 AAs   THR146@4.38x38   ( 876) -   HIS172@4.64x64   (902 ) (TM4)
+      ECL2 with     20 AAs   TRP173           ( 903) -   THR195           (922 ) (ECL2)  resSeq jumps
+       TM5 with     42 AAs   ASN196@5.35x36   ( 923) -   GLU237@5.76x76   (964 ) (TM5)
+      ICL3 with      2 AAs   GLY238           ( 965) -   ARG239           (966 ) (ICL3)
+       TM6 with     35 AAs   CYS265@6.27x27   ( 967) -   GLN299@6.61x61   (1001) (TM6)
+      ECL3 with      4 AAs   ASP300           (1002) -   ILE303           (1005) (ECL3)
+       TM7 with     25 AAs   ARG304@7.31x30   (1006) -   ARG328@7.55x55   (1030) (TM7)
+        H8 with     12 AAs   SER329@8.47x47   (1031) -   LEU340@8.58x58   (1042) (H8)
    ...
-   ...
-   Using CGN-nomenclature, please cite
+   Please cite the following reference to the CGN nomenclature:
     * Flock et al, (2015) Universal allosteric mechanism for G$\alpha$ activation by GPCRs
       Nature 2015 524:7564 524, 173--179
       https://doi.org/10.1038/nature14663
-   No local file ./gnas2_human.xlsx found, checking online in
-   https://gpcrdb.org/services/residues/extended/gnas2_human ...done!
+   For more information, call mdciao.nomenclature.references()
    The CGN-labels align best with fragments: [0] (first-last: LEU4-LEU394).
    Mapping the CGN fragments onto your topology:
       G.HN with     33 AAs     LEU4@G.HN.10   (   0) -    VAL36@G.HN.53   (32  ) (G.HN)

@@ -27,7 +27,7 @@ Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the 
 * Kinases, via their `85 pocket-residue numbering scheme <https://doi.org/10.1021/JM400378W>`_.
 
 by either using local files or on-the-fly lookups of the `GPCRdb <https://gpcrdb.org/>`_
-and/or `<https://www.mrc-lmb.cam.ac.uk/CGN/>`_ and/or `KLIFS <https://klifs.net/>`_, respectively.
+and/or `KLIFS <https://klifs.net/>`_.
 
 Basic Principle
 ---------------

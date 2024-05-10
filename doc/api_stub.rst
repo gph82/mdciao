@@ -12,4 +12,4 @@ Check the :ref:`API Reference` page for the full API documentation.
 
 .. _api_note:
 .. note::
-   Whereas the command-line-tools tend to be more stable, the API might experience some changes until the first major release.
+   Whereas the command-line-tools tend to be more stable, the API might experience some minor changes until the first major release.
