@@ -45,7 +45,7 @@ System Requirements
 ``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and MacOs. Tested python versions are:
 
 * GNU/Linux: 3.7, 3.8, 3.9, 3.10, 3.11
-* MacOs: 3.7, 3.8, 3.9
+* MacOs: 3.8, 3.9, 3.10, 3.11. Python 3.7 is unofficially supported on MacOs, but there are some segmentation faults (`which wont fix <https://github.com/mdtraj/mdtraj/issues/1574>`_) when using `md.compute_dssp <https://github.com/mdtraj/mdtraj/issues/1473>`_ which make the CI tests fail.
 
 So everything should work *out of the box* in these conditions.
 
