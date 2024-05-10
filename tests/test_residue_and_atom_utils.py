@@ -555,6 +555,7 @@ class Test_get_SS(unittest.TestCase):
         assert from_tuple is False
         self.assertListEqual(ss_array, [1, 2, 3, 4])
 
+    @unittest.skipIf(_sys.version.startswith("3.7") and _platform.system().lower()=="darwin", "Random segfaults. Python 3.7 on MacOs is not officially supported anyways.")
     def test_traj(self):
         traj = _md.load(test_filenames.actor_pdb)
         from_tuple, ss_array = residue_and_atom.get_SS(traj)
@@ -568,6 +569,7 @@ class Test_get_SS(unittest.TestCase):
         ss_ref = _md.compute_dssp(_md.load(test_filenames.actor_pdb))[0]
         _np.testing.assert_array_equal(ss_array, ss_ref)
 
+    @unittest.skipIf(_sys.version.startswith("3.7") and _platform.system().lower()=="darwin", "Random segfaults. Python 3.7 on MacOs is not officially supported anyways.")
     def test_read_w_top(self):
         from_tuple, ss_array = residue_and_atom.get_SS(test_filenames.traj_xtc, top=test_filenames.top_pdb)
         assert from_tuple is False
