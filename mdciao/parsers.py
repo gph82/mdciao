@@ -115,7 +115,7 @@ def _parser_add_stride(parser,
 def _parser_add_chunk(parser,help="Trajectories are read in chunks of this size. "
                                   "Helps with big files and/or large number of contacts"
                                   " when you run into memory problems. Default is %s",
-                      default=10000):
+                      default=2000):
     parser.add_argument("--chunksize_in_frames", type=int,
                         help=help%default,
                         default=default)

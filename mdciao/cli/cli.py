@@ -672,7 +672,8 @@ def residue_neighborhoods(residues,
         heavy', 'sidechain', 'sidechain-heavy'}. See
         :obj:`mdtraj.compute_distances` documentation for more info
     chunksize_in_frames : int, default is 2000
-        TODO
+        Stream through the trajectories in chunks
+        of this size.
     n_smooth_hw: int, default is 0
         Plots of the time-traces will be smoothed using a window
         of 2*n_smooth_hw
@@ -1190,7 +1191,8 @@ def interface(
         and UniProt entry name as explained
         `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     chunksize_in_frames : int, default is 2000
-        TODO
+        Stream through the trajectories in chunks
+        of this size.
     ctc_cutoff_Ang : float, default is 4
         Any residue-residue distance is considered a contact
         if d<=ctc_cutoff_Ang
@@ -1599,7 +1601,7 @@ def sites(site_inputs,
           ctc_cutoff_Ang=4,
           stride=1,
           scheme="closest-heavy",
-          chunksize_in_frames=10000,
+          chunksize_in_frames=2000,
           n_smooth_hw=0,
           pbc=True,
           GPCR_UniProt="None",
@@ -1676,8 +1678,9 @@ def sites(site_inputs,
         residues. Choices are {'ca', 'closest', 'closest-
         heavy', 'sidechain', 'sidechain-heavy'}. See mdtraj
         documentation for more info
-    chunksize_in_frames : int, default is 10000
-        TODO
+    chunksize_in_frames : int, default is 2000
+        Stream through the trajectories in chunks
+        of this size.
     n_smooth_hw : int, default is 0
         Plots of the time-traces will be smoothed using a
         window of 2*n_smooth_hw
