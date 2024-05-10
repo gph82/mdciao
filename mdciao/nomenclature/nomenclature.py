@@ -231,8 +231,12 @@ def _finder_writer(full_local_path,
                 print(", checking online in\n%s ..." % full_web_address, end="")
             try:
                 _DF = web2DF_lambda(full_web_address)
-                if verbose:
-                    print("done without 404, continuing.")
+                # web2DF_lambda wraps around _GPCRdb_web_lookup or _KLIFS_web_lookup, both of which
+                # have their own printout of "done w/o 404", controlled
+                # by the same "verbose" value used to call finder_writer, so we don't need
+                # this here (might change if the methods ever become public)
+                #if verbose:
+                #    print("done without 404, continuing.")
             except Exception as e:
                 print('Error getting or processing the web lookup:', e)
                 _DF = e
