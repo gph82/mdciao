@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Python [3.7,3.8,3.9] MacOs
+name: Python [3.7,3.8,3.9,3.10,3.11] MacOs
 
 on:
   push:
@@ -23,7 +23,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9, '3.10', '3.11']
+        # Proposed workaround for legacy versions, see
+        # https://github.com/actions/setup-python/issues/856 and
+        # https://github.com/actions/runner-images/issues/9770#issuecomment-2085623315
+        exclude:  # Python < v3.8 does not support Apple Silicon ARM64.
+          - python-version: "3.7"
+            os: macos-latest
+        include:  # So run those legacy versions on Intel CPUs.
+          - python-version: "3.7"
+            os: macos-13
 
     steps:
     - uses: actions/checkout@v4
