@@ -10,6 +10,8 @@ from contextlib import redirect_stdout
 from unittest import mock
 import mdtraj as _md
 import numpy as _np
+import sys as _sys
+import platform as _platform
 
 
 class Test_find_by_AA(unittest.TestCase):
@@ -559,6 +561,7 @@ class Test_get_SS(unittest.TestCase):
         assert from_tuple is False
         ss_ref = _md.compute_dssp(traj)[0]
 
+    @unittest.skipIf(_sys.version.startswith("3.7") and _platform.system().lower()=="darwin") #py37 on macos is not officially supported anyways
     def test_read_wo_top(self):
         from_tuple, ss_array = residue_and_atom.get_SS(test_filenames.actor_pdb)
         assert from_tuple is False
