@@ -340,9 +340,9 @@ def _GPCRdb_finder(descriptor,
                     idf.pop(key)
             return idf
 
-    web_looukup_lambda = lambda url: _GPCRdb_web_lookup(url, verbose=verbose)
+    web_lookup_lambda = lambda url: _GPCRdb_web_lookup(url, verbose=verbose)
     return _finder_writer(fullpath, local_lookup_lambda,
-                          url, web_looukup_lambda,
+                          url, web_lookup_lambda,
                           try_web_lookup=try_web_lookup,
                           verbose=verbose,
                           dont_fail=dont_fail,
