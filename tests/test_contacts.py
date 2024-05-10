@@ -2709,7 +2709,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs])
         ifig, iax = CG.plot_freqs_as_flareplot(10,)
 
-    @unittest.skipIf(_sys.version.startswith("3.7") and _platform.system().lower()=="darwin", "Random segfaults. Python 3.7 on MacOs is not officially supported anyways.")
+    @unittest.skipIf(_sys.version.startswith("3.7") and _platform.system().lower()=="darwin", "Random segfaults when using md.compute_dssp on Python 3.7 on MacOs. See https://github.com/mdtraj/mdtraj/issues/1574")
     def test_plot_freqs_as_flareplot_just_runs_w_options(self):
         # This is just to test that it runs without error
         # the minimal examples here cannot test the full flareplot
