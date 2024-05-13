@@ -885,7 +885,7 @@ def compare_groups_of_contacts(groups,
             if distro:
                 idict = ifile.distribution_dicts(AA_format=AA_format,
                                                  split_label=False,
-                                                 bins=_np.max([20, (_np.sqrt(ifile.n_frames_total) / 2).round().astype(int)]))
+                                                 bins="auto")
             else:
                 assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a `ctc_cutoff_Ang` parameter"
                 if not interface:
