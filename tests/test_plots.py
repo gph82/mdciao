@@ -1,7 +1,7 @@
 import unittest
 import numpy as _np
 
-from matplotlib import pyplot as _plt, cm as _cm
+from matplotlib import pyplot as _plt, colormaps as _cm
 from matplotlib.colors import is_color_like, to_rgb
 
 import mdciao.contacts
@@ -672,21 +672,21 @@ class Test_colormaps(unittest.TestCase):
     def test_color_dict_guesser_None(self):
         colors = color_dict_guesser(None, ["sys1", "sys2", "sys3"])
         colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
-        ref_color = _np.array(list(_cm.get_cmap("tab10")([0,1,2])))[:,:-1]
+        ref_color = _np.array(list(_cm["tab10"]([0,1,2])))[:,:-1]
         _np.testing.assert_array_equal(colors_rgb_array, ref_color)
         self.assertListEqual(list(colors.keys()), ["sys1","sys2","sys3"])
 
     def test_color_dict_guesser_cmap(self):
         colors = color_dict_guesser("Set2", ["sys1", "sys2", "sys3"])
         colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
-        ref_color = _np.array(list(_cm.get_cmap("Set2")([0, 1, 2])))[:, :-1]
+        ref_color = _np.array(list(_cm["Set2"]([0, 1, 2])))[:, :-1]
         _np.testing.assert_array_equal(colors_rgb_array, ref_color)
         self.assertListEqual(list(colors.keys()), ["sys1", "sys2", "sys3"])
 
     def test_color_dict_guesser_cmap_n(self):
         colors = color_dict_guesser("Set2", 3)
         colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
-        ref_color = _np.array(list(_cm.get_cmap("Set2")([0, 1, 2])))[:, :-1]
+        ref_color = _np.array(list(_cm["Set2"]([0, 1, 2])))[:, :-1]
         _np.testing.assert_array_equal(colors_rgb_array, ref_color)
         self.assertListEqual(list(colors.keys()), [0, 1, 2])
 
