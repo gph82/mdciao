@@ -725,6 +725,8 @@ def compare_groups_of_contacts(groups,
                                title='comparison',
                                distro=False,
                                interface=False,
+                               n_cols=1,
+                               sharex = False,
                                **kwargs_plot_unified_freq_dicts,
                                ):
     r"""
@@ -830,6 +832,15 @@ def compare_groups_of_contacts(groups,
         residue participates in. See below 'sort_by'
         for how these residues get sorted
         within their respective interface fragments.
+    n_cols : int, default is 1
+        Only has effect if `distro` is True. The number
+        of columns in the multi-panel figure with the
+        per-contact distributions.
+    sharex : bool, or string, default is False
+        Only has effect if `distro` is True.
+        Can be True or "col", for sharing the x-axis
+        across columns. See :obj:`~matplotlib.pyplot.subplots`
+        for more info. Only has an effect if `ax` is None.
     kwargs_plot_unified_freq_dicts : dict
         Optional arguments for
         :obj:`~mdciao.plots.plot_unified_freq_dicts`.
@@ -923,7 +934,9 @@ def compare_groups_of_contacts(groups,
                                               ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               fontsize=fontsize,
                                               ax_array=ax,
-                                              **kwargs_plot_unified_freq_dicts)
+                                              n_cols=n_cols,
+                                              sharex=sharex,
+                                              )
         if anchor is not None:
             title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
         myfig.suptitle(title, y=1, va="bottom", fontsize=_rcParams["font.size"]*2)
