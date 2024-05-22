@@ -1115,7 +1115,7 @@ def add_hover_ctc_labels(ax, ctc_mat,
     cursor.connect("add", lambda sel: sel.annotation.set_text(labels[sel.target.index]))
 """
 
-def _add_grey_banded_bg(ax, n):
+def _add_grey_banded_bg(ax, n, horizontal=False):
     r"""
     Add a backdrop of gray bands that alternate with the white background
 
@@ -1130,13 +1130,19 @@ def _add_grey_banded_bg(ax, n):
         i.e. if n=10 five alternating gray bands
         will be added to the :obj:`axis`,
         visually framing 10 ContactGroups
+    horizontal : bool, default is False
+        If True, the bands are added horizontally
+        instead of vertically.
 
     Returns
     -------
     None
     """
     for ii in _np.arange(n)[::2]:
-        ax.axvspan(ii - .5, ii + .5, color="lightgray", alpha=.25, zorder=-10)
+        if not horizontal:
+            ax.axvspan(ii - .5, ii + .5, color="lightgray", alpha=.25, zorder=-10)
+        else:
+            ax.axhspan(ii - .5, ii + .5, color="lightgray", alpha=.25, zorder=-10)
 
 
 def _offset_dict(keys, wpad=.2, width=None):
