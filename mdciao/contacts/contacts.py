@@ -700,7 +700,6 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
 @_kwargs_subs(per_traj_mindist_lower_bound)
 def trajs2lower_bounds(trajs, top, ctc_residxs_pairs, stride=1,
                        chunksize=1000, n_jobs=1, progressbar=False,
-                       low_mem_chunkfactor=.25,
                        **kwargs_per_traj_mindist_lower_bound
                        ):
     """Return a lower bound for all-atom residue-residue distances
@@ -733,12 +732,6 @@ def trajs2lower_bounds(trajs, top, ctc_residxs_pairs, stride=1,
         is equal to n_jobs=3
     progressbar : bool, default is False
         Use a fancy :obj:`tqdm.tqdm` progressbar
-    low_mem_chunkfactor : float, default is .25
-        In case a a first run raises a :obj:`MemoryError`,
-        catch it and try a second time with
-        the `chunksize` reduced by this factor. Not
-        guaranteed to work but might save ongoing
-        computations without much hassle.
     kwargs_per_traj_mindist_lower_bound : dict
         Optional arguments for
         :obj:`~mdciao.contacts.per_traj_mindist_lower_bound`.
