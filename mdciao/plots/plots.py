@@ -44,6 +44,10 @@ from collections import defaultdict as _defdict
 
 import mdtraj as _md
 
+import matplotlib.transforms as _transforms
+
+from pandas import DataFrame as _DataFrame
+
 _metric_types_for_sorting = frozenset(["mean", "std", "numeric", "residue", "keep"])
 
 def plot_w_smoothing_auto(y, ax=None, label=None, color=None, x=None, background=True, n_smooth_hw=0, ls="-"):
@@ -494,8 +498,6 @@ def plot_unified_freq_dicts(freqs,
         is considered an identity, s.t. contacts with values e.g. .95
         can also be removed
         TODO consider merging both identity parameters into one that is None or float
-    ylim : float, default is 1
-        The limit on the y-axis
     assign_w_color : boolean, default is False
         Color the text of the contact-labels according to
         the following criterion.
@@ -565,8 +567,8 @@ def plot_unified_freq_dicts(freqs,
                          lower_cutoff_val=lower_cutoff_val,
                          remove_identities=remove_identities,
                          identity_cutoff=identity_cutoff)
-
-    ylim = _np.max([ylim, _np.ceil(_np.hstack([list(val.values()) for val in freqs_by_sys_by_ctc.values()]).max())])
+    _df = _DataFrame(freqs_by_sys_by_ctc)
+    within_01 = _df.values.min()>=0 and _df.values.max() <= 1
 
     # Prepare the dict
     if colordict is None:
@@ -632,75 +634,71 @@ def plot_unified_freq_dicts(freqs,
                           color=colordict[skey],
                           label=label,
                           )
-
-
             _plt.legend(ncol=_np.ceil(len(system_keys) / legend_rows).astype(int))
 
     if vertical_plot:
         for ii, key in enumerate(sorted_ctc_keys):
             # 1) centered in the middle of the bar, since plt.bar(align="center")
             # 2) displaced by one half width*nbars
-            iix = ii \
-                  - width / 2 \
-                  + len(freqs_by_sys_by_ctc) * width / 2
-            _plt.text(0 - .05, iix, key,
+            iix = ii
+            txt = _mdcu.str_and_dict.latex_superscript_fragments(key)
+            _plt.text(0 - .05, iix, txt,
                       ha="right",
+                      va="center_baseline",
                       #rotation=45,
                       )
         _plt.yticks([])
-        _plt.xlim(0, ylim)
-        _plt.ylim(0 - width, ii + width * len(freqs_by_sys_by_ctc))
-        _plt.xticks([0, .25, .50, .75, 1])
+        _plt.ylim(-.5, ii +.5)
+        if within_01:
+            _plt.xlim((0,1))
         ax.grid(axis="x", ls=":", color="k", zorder=-10)
+        _add_grey_banded_bg(ax, len(sorted_ctc_keys), horizontal=True)
         ax.set_axisbelow(True)
         _plt.gca().invert_yaxis()
 
         if sort_by == "std":
             _plt.plot([mean_std_by_ctc["std"][key] for key in sorted_ctc_keys],
-                      _np.arange(len(sorted_ctc_keys)), color='k', alpha=.25, ls=':')
-
+                      _np.arange(len(sorted_ctc_keys)), color='k', alpha=.25, ls=':', zorder=10)
+        ax.axvline(0,color="k")
     else:
+        trans = _transforms.blended_transform_factory(ax.transData, ax.transAxes)
         for ii, key in enumerate(sorted_ctc_keys):
             # 1) centered (ha="left") in the middle of the bar, since plt.bar(align="center")
             # 2) slight correction of half-a-fontsize to the left
-            # 3) slight correction of one-a-fontsize upwards
             xt = ii - _rcParams["font.size"] / _points2dataunits(ax)[0] / 2
-            yt =  ylim + _rcParams["font.size"] / _points2dataunits(ax)[1] #_np.diff(ax.get_ylim())*.05
+            yt =  1.05
             txt = _mdcu.str_and_dict.latex_superscript_fragments(key)
             txt = winners[key][0] + txt
             _plt.text(xt, yt,
                       txt,
-                      #ha="center",
                       ha='left',
+                      va="bottom",
                       rotation=45,
-                      color=winners[key][1]
+                      color=winners[key][1],
+                      transform=trans,
                       )
             #_plt.gca().axvline(iix) (visual aid)
         _plt.xticks(_np.arange(len(sorted_ctc_keys)),[])
 
         _plt.xlim(-.5, ii +.5)
+        if within_01:
+            _plt.ylim(0, 1)
         _ax = ax.twiny()
         _ax.set_xlim(ax.get_xlim())
         _plt.xticks(ax.get_xticks(), [])
         _plt.sca(ax)
-        if ylim<=1:
-            yticks = [0, .25, .50, .75, 1]
-        else:
-            yticks = _np.arange(0,_np.ceil(ylim),.50)
-        _plt.yticks(yticks)
         ax.grid(axis="y", ls=":", color="k", zorder=-10)
         ax.set_axisbelow(True)
         if sort_by == "std":
             _plt.plot([mean_std_by_ctc["std"][key] for key in sorted_ctc_keys],
                       color='k', alpha=.25, ls=':', zorder=10)
 
-        _plt.ylim(0, ylim)
         if title is not None:
             ax.set_title(_mdcu.str_and_dict.replace4latex(title),
                          pad=_titlepadding_in_points_no_clashes_w_texts(ax)
                          )
         _add_grey_banded_bg(ax, len(sorted_ctc_keys))
-
+        ax.axhline(0, color="k")
     # Create a by-state dictionary explaining the plot
     out_dict = {key:{ss: val[ss] for ss in sorted_ctc_keys} for key, val in freqs_by_sys_by_ctc.items()}
     for key2 in ["mean", "std"]:
