@@ -950,7 +950,7 @@ def _label2componentsdict(istr,sep="-",defrag="@",
 
     return bits
 
-def splitlabel(label, sep="-", defrag="@"):
+def splitlabel(label, sep="-", defrag="@", dont_split=None):
     r"""
     Split a contact label. Analogous to label.split(sep) but more robust
     because fragment names can contain the separator character.
@@ -976,7 +976,12 @@ def splitlabel(label, sep="-", defrag="@"):
         The character that separates pairs of labels
     defrag : char, default is "@"
         The character that separates residues form their host fragment
-
+    dont_split : list, default is None
+        The strings in this list won't be separated
+        even if they contain the separator. If the user
+        knows that residue names like the ion "Cl-" or the
+        ligand "DRG-1" might come up, they can "protect" them
+        from splitting via this list.
     Returns
     -------
     split : list
@@ -984,7 +989,7 @@ def splitlabel(label, sep="-", defrag="@"):
         but the separator is ignored in the fragment labels.
     """
 
-    bits = _label2componentsdict(label,sep=sep,defrag=defrag)
+    bits = _label2componentsdict(label,sep=sep,defrag=defrag, dont_split=dont_split)
 
     split = [bits["res1"]]
     if "frag1" in bits.keys():
