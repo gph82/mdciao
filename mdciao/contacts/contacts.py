@@ -3776,7 +3776,8 @@ class ContactGroup(object):
         df : :obj:`pandas.DataFrame`
         """
         self._check_cutoff_ok(ctc_cutoff_Ang)
-        l1, l2 = _np.array([[len(ilab) for ilab in lab.split("-")] for lab in self.ctc_labels_w_fragments_short_AA]).max(axis=0).tolist()
+        dont_split=[ires for ires in _np.unique(_np.vstack([self.residue_names_long, self.residue_names_short])) if "-" in ires]
+        l1, l2 = _np.array([[len(ilab) for ilab in _mdcu.str_and_dict.splitlabel(lab,dont_split=dont_split)] for lab in self.ctc_labels_w_fragments_short_AA]).max(axis=0).tolist()
         idicts = [ictc.frequency_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, atom_types=atom_types, fmt1=f"%-{l1}s", fmt2=f"%-{l2}s", **ctc_fd_kwargs) for ictc in self.contact_pairs]
         if atom_types is True:
             for jdict in idicts:
