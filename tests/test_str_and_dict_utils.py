@@ -696,6 +696,25 @@ class Test_label2componentsdict(unittest.TestCase):
                              str_and_dict._label2componentsdict(self.w[12]),
                              self.w[11])
 
+    def test_dont_split(self):
+        label = "K417@RBD-Cl-1115@ions"
+        # wrong behavior
+        self.assertDictEqual({'res1': 'K417',
+                              'frag1': 'RBD-Cl',  # wrong frag1
+                              'res2': '1115',  # wrong res2
+                              'frag2': 'ions'
+                              },
+                             str_and_dict._label2componentsdict(label),
+                             label)
+        # right behavior
+        self.assertDictEqual({'res1': 'K417',
+                              'frag1': 'RBD',  # right frag1
+                              'res2': 'Cl-1115',  # right res2
+                              'frag2': 'ions'
+                              },
+                             str_and_dict._label2componentsdict(label, dont_split=["Cl-1115"]),
+                             label)
+
 class Test_splitlabel(unittest.TestCase):
 
     def setUp(self):

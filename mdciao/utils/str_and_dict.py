@@ -842,6 +842,7 @@ def _latex_superscript_one_fragment(label, defrag="@"):
         return words[0]+"$^{%s}$" %replace4latex(words[1], enclose_pure_text=True).replace("$","")
 
 def _label2componentsdict(istr,sep="-",defrag="@",
+                          dont_split=None,
                           assume_ctc_label=True):
     r"""
     Identify the components of label like 'residue1@frag1-residue2@frag2' and return them as dictionary
@@ -869,6 +870,12 @@ def _label2componentsdict(istr,sep="-",defrag="@",
         The character that separates pairs of labels
     defrag : char, default is "@"
         The character that separates residues form their host fragment
+    dont_split : list, default is None
+        The strings in this list won't be separated
+        even if they contain the separator. If the user
+        knows that residue names like the ion "Cl-" or the
+        ligand "DRG-1" might come up, they can "protect" them
+        from splitting via this list.
     assume_ctc_label : bool, default is True
         In special cases of the form 'res1@frag1-r2', assume
         this is a contact label, i.e. 'r2' does not
@@ -885,7 +892,9 @@ def _label2componentsdict(istr,sep="-",defrag="@",
                                      "instead %s (%u) %s (%u)"%(sep,len(sep),defrag,len(defrag))
 
     bits = {}
-
+    if dont_split is not None:
+        rep_dict = {val : val.replace(sep,"{}") for val in dont_split} # alt use a random string
+        istr = replace_w_dict(istr,rep_dict)
     if defrag not in istr:
         for ii, ires in enumerate(istr.split(sep),start=1):
             bits["res%u"%ii]=ires
@@ -936,7 +945,8 @@ def _label2componentsdict(istr,sep="-",defrag="@",
                         bits["res%u"%r]=ires
                         f+=1
                         r+=1
-
+    for key in bits.keys():
+        bits[key] = bits[key].replace("{}",sep) #no need for full replacement dictonary
 
     return bits
 
