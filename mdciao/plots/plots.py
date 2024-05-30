@@ -984,7 +984,7 @@ def compare_groups_of_contacts(groups,
             kwargs_plot_unified_freq_dicts["remove_identities"] = False
 
         if ctc_cutoff_Ang is not None:
-            title = title+'@%2.1f AA'%ctc_cutoff_Ang
+            title = _mdcu.str_and_dict.replace4latex(title+'@%2.1f AA'%ctc_cutoff_Ang)
         if anchor is not None:
             title+="\n%s and " % _mdcu.str_and_dict.latex_superscript_fragments(anchor)
 
