@@ -126,10 +126,11 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
                     top2confrag, consensus_maps,
                     keep_max_buffer_Ang=2,
                     switch_off_Ang=None,
+                    min_freq_buffer=1e-3
                     ):
     r"""
 
-    Creates the DF of non-zero frequencies up to 2 Angstrom more than the actual cutoff
+    Creates the DF of non-zero frequencies up to a buffer (default 2 Angstrom) more than the actual cutoff
 
     Contains all per contact % per residue information as a table, should be increasingly used more across mdciao
     to unify even more how tables are produced
@@ -160,12 +161,13 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
         many mappables can be passed
         Every residue index can have one label in one of
         the maps None in the others
-    keep_max_buffer_Ang :
-        residxs_pairs with frequencies = 0 will be eliminated
+    keep_max_buffer_Ang : float, default is 2
+        residxs_pairs with frequencies <  `min_freq_buffer` will be eliminated
         from the final DataFrame
-    switch_off_Ang :
+    switch_off_Ang : bool, default is False
         Use a linear switchoff function with this interval
-
+    min_freq_buffer : float, default is 1e-3
+        The cutoff for buffer frequencies
     Returns
     -------
     df : :obj:`pandas.DataFrame`
@@ -193,14 +195,14 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
 
 
     if switch_off_Ang is None:
-        ctc_freqs_buffer = _np.mean(actcs < (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, 0)
-        ctc_freqs = _np.mean(actcs < ctc_cutoff_Ang / 10, 0)
+        ctc_freqs_buffer = _np.mean(actcs <= (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, 0)
+        ctc_freqs = _np.mean(actcs <= ctc_cutoff_Ang / 10, 0)
     else:
         ctc_freqs_buffer = _np.mean(_linear_switchoff(actcs, (ctc_cutoff_Ang + keep_max_buffer_Ang) / 10, switch_off_Ang / 10),0)
         ctc_freqs = _np.mean(_linear_switchoff(actcs, ctc_cutoff_Ang / 10, switch_off_Ang / 10), 0)
 
     # Keep nonzero-freqs at ctc_cutoff_Ang+keep_max_buffer_Ang
-    idxs = _np.flatnonzero(ctc_freqs_buffer > 0)
+    idxs = _np.flatnonzero(ctc_freqs_buffer >= min_freq_buffer)
     if len(idxs)>0:
         ctc_freqs = ctc_freqs[idxs]
         ctc_freqs_buffer = ctc_freqs_buffer[idxs]
