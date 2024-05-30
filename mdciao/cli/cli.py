@@ -1995,7 +1995,7 @@ def compare(datasets, graphic_ext=".pdf", output_desc="freq_comparison", pop=Fal
     kwargs : dict
         Optional arguments for
         :obj:`~mdciao.plots.compare_groups_of_contacts`,
-        which can be any of the following:
+        which are listed below:
 
     Other Parameters
     ----------------
