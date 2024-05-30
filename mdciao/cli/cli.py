@@ -686,27 +686,29 @@ def residue_neighborhoods(residues,
         Limit in Angstrom of the y-axis of the time-traces.
         Default is 15. Switch to any other float or 'auto'
         for automatic scaling
-    fragments : list, default is ["lig_resSeq+"]
-        Fragment control. For compatibility reasons, it has
-        to be a list, even if it only has one element.
-        There exist several input modes:
+    fragments : str, list, None, default is "lig_resSeq+"
+        Topology fragments. There exist several input modes:
 
-        * ["consensus"] : use things like "TM*" or "G.H*", i.e.
-         GPCR or CGN-sub-subunit labels.
-        * List of len 1 with some fragmentation heuristic, e.g.
-         ["lig_resSeq+"]. will use the default of
-         :obj:`mdciao.fragments.get_fragments`. See there for
-         info on defaults and other heuristics.
+        * Name of a fragmentation heuristic, e.g.
+          "lig_resSeq+", which is the default of
+          and usually yields good results. See
+          :obj:`mdciao.fragments.get_fragments`
+          for more info on defaults and other heuristics.
         * List of len N that can mix different possibilities:
+
           * iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
           * ranges expressed as integer strings, "20-30"
           * ranges expressed as residue descriptors ["GLU30-LEU40"]
-        Numeric expressions are interepreted as zero-indexed and unique
+
+        * "consensus" : use things like "TM*" or "G.H*", i.e.
+          GPCR or CGN-sub-subunit labels.
+
+        Numeric expressions are interpreted as zero-indexed and unique
         residue serial indices, i.e. 30-40 does not necessarily equate
         "GLU30-LEU40" unless serial and sequence index coincide.
         If there's more than one "GLU30", the user gets asked to
-        disambiguate. The resulting fragments need not cover all of the topology,
-        they only need to not overlap.
+        disambiguate. The resulting fragments need not cover
+        all of the topology, they only need to not overlap.
     fragment_names : string or list of strings, default is ""
         If string, it has to be a list of comma-separated values.
         If you want unnamed fragments, use None, "None", or "".
