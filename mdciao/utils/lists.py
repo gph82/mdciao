@@ -554,7 +554,7 @@ def _get_n_ctcs_from_freqs(ctc_control, ctc_freqs, min_freq=0.01):
         n_ctcs = _np.min([int(ctc_control), _np.sum(ctc_freqs>min_freq)])
     else:
         if total_n_ctcs > 0:
-            n_ctcs = idx_at_fraction(ctc_freqs, ctc_control) + 1
+            n_ctcs = idx_at_fraction(ctc_freqs[ctc_freqs>min_freq], ctc_control) + 1
             or_fraction_needed = False
         else:
             n_ctcs = 0
