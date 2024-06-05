@@ -232,6 +232,7 @@ def compute_contacts(
 
         residue_pairs = np.array(filtered_residue_pairs)
         distances = md.compute_distances(traj, atom_pairs, periodic=periodic)
+        aa_pairs = [[pair] * traj.n_frames for pair in atom_pairs]
 
     elif scheme in ["closest", "closest-heavy", "sidechain", "sidechain-heavy"]:
         if scheme == "closest":
