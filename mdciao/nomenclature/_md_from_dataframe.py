@@ -26,18 +26,23 @@
 #    Python Library, whose original authors and copyright
 #    holders are listed below.
 #
-#    The modifications are:
-#    * Pass the chainID when adding a new chain from the dataframe
+#    The modifications consist in
+#    * making "from_dataframe" a standalone method (not a class method of topology)
+#    * passing the chainID when adding a new chain from the dataframe
+#    * needed imports
+#    and are marked with the comment '#mdciao' in the file.
+#    The modifications were applied on mdtraj release v1.10.0rc1
+#    commit 4c9bb6e8bc7d6e86890ff0d57814c3c76f7cf792
 ##############################################################################
 
 
 ##############################################################################
 # MDTraj: A Python Library for Loading, Saving, and Manipulating
 #         Molecular Dynamics Trajectories.
-# Copyright 2012-2013 Stanford University and the Authors
+# Copyright 2012-2014 Stanford University and the Authors
 #
-# Authors: Christian Schwantes
-# Contributors: Robert McGibbon
+# Authors: Peter Eastman, Robert McGibbon
+# Contributors: Kyle A. Beauchamp, Matthew Harrigan, Carlos Xavier Hernandez
 #
 # MDTraj is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
@@ -51,6 +56,28 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
+#
+# Portions of this code originate from the OpenMM molecular simulation
+# toolkit, copyright (c) 2012 Stanford University and Peter Eastman. Those
+# portions are distributed under the following terms:
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+# USE OR OTHER DEALINGS IN THE SOFTWARE.
 ##############################################################################
 
 # opened issues for this:
@@ -62,29 +89,27 @@
 # http://oss-watch.ac.uk/resources/lgpl
 # https://www.gnu.org/licenses/gpl-faq.html#AllCompatibility
 
-##############################################################################
-# Imports
-##############################################################################
-
-from __future__ import print_function, division
-
 import itertools
-import numpy as np
 import os
+import warnings
 import xml.etree.ElementTree as etree
 from collections import namedtuple
 
+import numpy as np
+
 from mdtraj.core import element as elem
-from mdtraj.core.residue_names import (_PROTEIN_RESIDUES, _WATER_RESIDUES,
-                                       _AMINO_ACID_CODES)
+from mdtraj.core.residue_names import (
+    _AMINO_ACID_CODES,
+    _PROTEIN_RESIDUES,
+    _WATER_RESIDUES,
+)
 from mdtraj.core.selection import parse_selection
-from mdtraj.utils import ilen, import_, ensure_type
-from mdtraj.utils.six import string_types
+from mdtraj.utils import ensure_type, ilen, import_
 from mdtraj.utils.singleton import Singleton
 
-from mdtraj.core.topology import Atom, float_to_bond_type
-
-def from_dataframe(atoms, bonds=None):
+from mdtraj import Topology #mdciao
+from mdtraj.core.topology import Atom, float_to_bond_type #mdciao
+def from_dataframe(atoms, bonds=None): #mdciao
     """Create a mdtraj topology from a pandas data frame
 
     Parameters
@@ -109,31 +134,39 @@ def from_dataframe(atoms, bonds=None):
     --------
     create_standard_bonds
     """
-    pd = import_('pandas')
+    pd = import_("pandas")
 
     if bonds is None:
         bonds = np.zeros([0, 4], dtype=float)
 
-    for col in ["name", "element", "resSeq",
-                "resName", "chainID", "serial"]:
+    for col in [
+        "name",
+        "element",
+        "resSeq",
+        "resName",
+        "chainID",
+        "serial",
+    ]:
         if col not in atoms.columns:
-            raise ValueError('dataframe must have column %s' % col)
+            raise ValueError("dataframe must have column %s" % col)
 
     if "segmentID" not in atoms.columns:
         atoms["segmentID"] = ""
 
-    from mdtraj import Topology
     out = Topology()
     if not isinstance(atoms, pd.DataFrame):
-        raise TypeError('atoms must be an instance of pandas.DataFrame. '
-                        'You supplied a %s' % type(atoms))
+        raise TypeError(
+            "atoms must be an instance of pandas.DataFrame. " "You supplied a %s" % type(atoms),
+        )
     if not isinstance(bonds, np.ndarray):
-        raise TypeError('bonds must be an instance of numpy.ndarray. '
-                        'You supplied a %s' % type(bonds))
+        raise TypeError(
+            "bonds must be an instance of numpy.ndarray. " "You supplied a %s" % type(bonds),
+        )
 
     if not np.all(np.arange(len(atoms)) == atoms.index):
-        raise ValueError('atoms must be uniquely numbered '
-                         'starting from zero.')
+        raise ValueError(
+            "atoms must be uniquely numbered " "starting from zero.",
+        )
     out._atoms = [None for i in range(len(atoms))]
 
     c = None
@@ -142,22 +175,31 @@ def from_dataframe(atoms, bonds=None):
     previous_resName = None
     previous_resSeq = None
     for atom_index, atom in atoms.iterrows():
-
         int(atom_index)  # Fixes bizarre hashing issue on Py3K.  See #545
 
-        if atom['chainID'] != previous_chainID:
-            previous_chainID = atom['chainID']
+        if atom["chainID"] != previous_chainID:
+            previous_chainID = atom["chainID"]
 
-            c = out.add_chain(chain_id=atom.get("chain_id")) # Fallback to None if "chain_id" is absent from atom.keys()
+            c = out.add_chain(chain_id=atom.get("chain_id"))  # mdciao: fallback to None if "chain_id" is absent from atom.keys()
 
-        if atom['resSeq'] != previous_resSeq or atom['resName'] != previous_resName or c.n_atoms == 0:
-            previous_resSeq = atom['resSeq']
-            previous_resName = atom['resName']
+        if atom["resSeq"] != previous_resSeq or atom["resName"] != previous_resName or c.n_atoms == 0:
+            previous_resSeq = atom["resSeq"]
+            previous_resName = atom["resName"]
 
-            r = out.add_residue(atom['resName'], c, atom['resSeq'], atom['segmentID'])
+            r = out.add_residue(
+                atom["resName"],
+                c,
+                atom["resSeq"],
+                atom["segmentID"],
+            )
 
-        a = Atom(atom['name'], elem.get_by_symbol(atom['element']),
-                 atom_index, r, serial=atom['serial'])
+        a = Atom(
+            atom["name"],
+            elem.get_by_symbol(atom["element"]),
+            atom_index,
+            r,
+            serial=atom["serial"],
+        )
         out._atoms[atom_index] = a
         r._atoms.append(a)
 
