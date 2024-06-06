@@ -1198,8 +1198,23 @@ class Test_KLIFS_finder(unittest.TestCase):
         assert self.KLIFS_df.UniProtAC == "P31751"
         assert self.KLIFS_df.kinase_ID == 2
         assert self.KLIFS_df.structure_ID == 1904
-        assert self.KLIFS_df.PDB_geom == self.geom
-
+        try:
+            assert self.KLIFS_df.PDB_geom == self.geom
+        except AssertionError:
+            # Versions of mdtraj prior to 1.10.0 duplicated some bonds (https://github.com/mdtraj/mdtraj/pull/1849)
+            # when reading from pdb file (_KLIFS_finder <-  _KLIFS_web_lookup <- _KLIFS_structure_ID2Trajectory).
+            # But py37 (which is currently supported by mdcioo)
+            # doesn't update to mdtraj 1.10.0, so we need to de-duplicate these bonds
+            # (only here and only for testing purposes) before comparing to the topology
+            # created by _read_excel_as_KDF <- _Spreadsheets2mdTrajectory <- from_dataframe
+            import sys
+            assert sys.version_info[0]==3 and sys.version_info[1]==7
+            _bonds = []
+            for b1 in self.KLIFS_df.PDB_geom.top._bonds:
+                if b1 not in _bonds:
+                    _bonds.append(b1)
+            self.KLIFS_df.PDB_geom.top._bonds = _bonds
+            assert self.KLIFS_df.PDB_geom == self.geom
 
     def test_finds_local_with_uniprot(self):
         df, filename = nomenclature._KLIFS_finder(self.UniProtAC, try_web_lookup=False,
