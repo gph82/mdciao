@@ -25,7 +25,7 @@
 #    modified version of the one found in the original MDTraj
 #    Python Library, whose original authors and copyright
 #    holders are listed below.
-
+#
 #    The modifications consist in including the indices
 #    of the closest atom-pairs in the returned values. The
 #    modified lines are in the return value documentation for `atom_pairs`
@@ -54,6 +54,13 @@
 # License along with MDTraj. If not, see <http://www.gnu.org/licenses/>.
 ##############################################################################
 
+# opened an issue for this:
+# https://github.com/mdtraj/mdtraj/issues/1569
+# Further reading
+# https://www.oreilly.com/library/view/understanding-open-source/0596005814/ch03.html
+# https://tldrlegal.com/license/gnu-lesser-general-public-license-v3-(lgpl-3)
+# http://oss-watch.ac.uk/resources/lgpl
+#https://www.gnu.org/licenses/gpl-faq.html#AllCompatibility
 
 import itertools
 
