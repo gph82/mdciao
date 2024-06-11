@@ -1919,8 +1919,7 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
               plot_atomtypes=False,
               switch_off_Ang=0,
               panelsize=4,
-              panelsize2font=3.5,
-              verbose=False):
+              panelsize2font=3.5):
     r"""
     One figure with each obj:`~mdciao.contacts.ContactGroup` as individual panel
 
@@ -1956,8 +1955,6 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
         The default fontsize for the figure
         is panelsize*panelsize2font. 3.5
         seems to produce good spacing among labels
-    verbose: bool, default is False
-        Be verbose
 
     Returns
     -------
@@ -2007,11 +2004,6 @@ def CG_panels(n_cols, CG_dict, ctc_cutoff_Ang,
                                              shorten_AAs=short_AA_names,
                                              plot_atomtypes=plot_atomtypes,
                                              )
-                    if verbose:
-                        print()
-                        print(f"{ihood.name.capitalize()}:")
-                        print(ihood.frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}))
-                        print()
 
     if not distro:
         non_nan_rightermost_patches = [[p for p in jax.patches if not _np.isnan(p.get_x())][-1] for jax in

@@ -1920,8 +1920,7 @@ def sites(site_inputs,
         overall_fig = _mdcplots.CG_panels(4, site_as_gc, ctc_cutoff_Ang,
                                    distro=distro,
                                    short_AA_names=short_AA_names,
-                                   plot_atomtypes=plot_atomtypes,
-                                   verbose=True)
+                                   plot_atomtypes=plot_atomtypes)
         overall_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
     if scheme!="closest-heavy":
