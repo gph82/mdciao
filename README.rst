@@ -73,7 +73,6 @@ This is an informal list of known issues and TODOs:
  * keeping vs reporting contacts: a design choice has to be made wrt to the effect of ctc_cutoff_Ang on a ContactGroup:
    If a given cutoff makes a ContactPair have freq=0, should the CP be kept in the CG, simply not reported? There's now a branch for that: https://github.com/gph82/mdciao/tree/buffer_neighborhood
  * overhaul the "printing" system with proper logging and warnings (perhaps use `loguru <https://github.com/Delgan/loguru>`_)
- * progressbar not very informative for one chunked trajectory or parallel runs
  * the affiliation of a residue to a fragment is done as "res@frag" on the string output and res^frag in figures, this implementation is simply using replace("@","^"), could be better
  * parallel execution with memory mdtraj.Trajectory objects should be better
  * harmonize documentation API cli methods (mdciao.cli) and the CLI scripts (mdc_*)
