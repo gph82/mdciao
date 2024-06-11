@@ -635,8 +635,9 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, stride,
                                  traj_idx, timetrace=False,
                                  lb_cutoff_Ang=None,
-                                 verbose=True,
-                                 periodic=True):
+                                 periodic=True,
+                                 progressbar_dict=None, nchars_fname=None
+                                 ):
     r"""
     Strided, chunked computation of lower bounds for all-atom residue-residue distances.
 
@@ -672,9 +673,6 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         indices of the pairs of `ctc_residxs_pairs`
         where the lower bound is smaller or equal
         than the cutoff at any point in `itraj`
-    verbose : float, default is True
-        Print progress information. If False,
-        nothing is printed.
     periodic : bool, default is True
         Use the minimum image convention when computing
         the lower bounds. This will automatically "unwrap"
@@ -688,6 +686,16 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         automatically to False and no unwrapping takes place
         It is assumed that `itraj` is already unwrapped
         if you don't provide unitcell information.
+    progressbar_dict : dict, default is None
+        A managed dictionary containing managed variables that allow
+        concurrent threads to report their progress when :obj:`mdciao.contacts.trajs2ctcs`
+        has been called with more than one cpu. If None, no progress
+        will be reported
+    nchars_fname : int, default is None
+        The number of characters for the filename field used
+        by the progressbar. By default it adjusts automatically,
+        but it can be fixed here in case you want to use the
+        same field width for many files.
 
     Returns
     -------
@@ -702,16 +710,24 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
         at any point of `itraj`.
     """
 
-    iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
+    iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top,
+                                                                    nchars_fname=nchars_fname)
     running_f = 0
-    if verbose:
-        inform(itraj, traj_idx, 0, running_f)
+
+    if progressbar_dict is not None:
+        assert any(progressbar_dict["indices_of_free_pbars"]), ValueError("At least one of the indices should be free, else one shouldn't be entering this method!")
+        for string_idx, ival in enumerate(progressbar_dict["indices_of_free_pbars"]):
+            if ival:
+                progressbar_dict["indices_of_free_pbars"][string_idx] = False
+                break
+        progressbar_dict["pbars"][string_idx] = inform(itraj, traj_idx, 0, running_f) #+ f" @{string_idx}"
+
     lower_bound = []
 
     for jj, igeom in enumerate(iterate(itraj)):
         running_f += igeom.n_frames
-        if verbose:
-            inform(itraj, traj_idx, jj, running_f)
+        if progressbar_dict is not None:
+            progressbar_dict["pbars"][string_idx] = inform(itraj, traj_idx, jj, running_f) #+ f" @{string_idx}"
         if igeom.unitcell_lengths is None and jj==0:    #run only on first loop
             periodic = False
         chunk_res = _mdcu.COM.geom2COMdist(igeom, ctc_residxs_pairs, subtract_max_radii=True, low_mem=True, periodic=periodic,per_residue_unwrap=periodic)
@@ -722,6 +738,14 @@ def per_traj_mindist_lower_bound(top, itraj, ctc_residxs_pairs, chunksize, strid
                 lower_bound.append(chunk_res)
             else:
                 lower_bound.append(chunk_res.min(axis=0))
+        if progressbar_dict is not None:
+            progressbar_dict["n_frames_done"] += igeom.n_frames
+
+    if progressbar_dict is not None:
+        progressbar_dict["n_trajs_done"] += 1
+        progressbar_dict["pbars"][string_idx] += " (done)"
+        progressbar_dict["indices_of_free_pbars"][string_idx] = True
+        progressbar_dict["pbars"][0] = _progress_dict2infoline(progressbar_dict)
 
     if lb_cutoff_Ang is not None:
         lower_bound = _np.unique(_np.hstack(lower_bound))
