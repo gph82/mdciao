@@ -350,6 +350,7 @@ def _sorting_schemes(freqs_by_sys_by_ctc, sort_by='mean',
         dict_for_sorting["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
 
     # First, get rid of non-list keys in case sort_by is a list (we do it here instead of its own method)
+    # TODO consider moving this inside _sorter_by_key_or_val
     if isinstance(sort_by, list):
         if not set(sort_by).intersection(all_ctc_keys):
             raise ValueError(f"The 'sort_by' list '{sort_by}' doesn't contain "
@@ -1488,11 +1489,13 @@ def compare_violins(groups,
         If True, the contacts where
         freq[sys][ctc] >= :obj:`identity_cutoff`
         across all systems will not be plotted
-        nor considered in the sum over contacts
+        nor considered in the sum over contacts.
+        Only has an effect if `ctc_cutoff_Ang` is not None.
     identity_cutoff : float, default is 1
         If :obj:`remove_identities`, use this value to define what
         is considered an identity, s.t. contacts with values e.g. .95
-        can also be removed
+        can also be removed.
+        Only has an effect if `ctc_cutoff_Ang` is not None.
     representatives : anything (bool, int, dict, list) default is None
         Plot, with a small dot on top of the violins,
         the values of the residue-residue distances of representative
