@@ -7706,7 +7706,7 @@ def _target_chunksize(target_mem_in_GB, n_pairs, target_method):
     MBs_per_frame_all_pairs = _Bs_per_pair_per_frame(n_pairs, target_method=target_method) * n_pairs / 1024 / 1024
     return int(target_mem_in_GB * 1024 / MBs_per_frame_all_pairs)
 
-def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
+def _contact_fraction_informer(n_kept, ctc_freqs, ctc_cutoff_Ang, or_frac=.9):
     r"""
     Return the fraction of the sum(ctc_freqs) kept by using the first :obj:`n_kept` contacts
 
@@ -7716,6 +7716,10 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
         The number of contacts kept
     ctc_freqs : array-like of floats
         The frequencies in descending order
+    ctc_cutoff_Ang : float
+        The cutoff at which the `ctc_freqs`
+        have been computed, for printing
+        purposes.
     or_frac : float, default is .9
         Orientation fraction, i.e. print how many contacts
         would be needed to capture this fraction of the
@@ -7732,8 +7736,8 @@ def _contact_fraction_informer(n_kept, ctc_freqs, or_frac=.9):
     if total_freq==0:
         print("No contacts formed at this frequency")
     else:
-        print("The following %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u contacts with nonzero frequency)." %
-              (n_kept, captured_freq, _np.round(captured_freq / total_freq * 100), total_freq, len(ctc_freqs)))
+        print("The following %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u contacts with nonzero frequency at %3.2f Angstrom)." %
+              (n_kept, captured_freq, _np.round(captured_freq / total_freq * 100), total_freq, len(ctc_freqs), ctc_cutoff_Ang))
         if or_frac is not None:
             idx = _mdcu.lists.idx_at_fraction(ctc_freqs, or_frac)
             print("As orientation value, the first %u ctcs already capture %3.1f%% of %3.2f." % (idx+1, or_frac * 100, total_freq))
