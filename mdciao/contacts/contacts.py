@@ -790,7 +790,7 @@ def trajs2lower_bounds(trajs, top, ctc_residxs_pairs, stride=1,
         over the trajectories themselves, having 3 trajs and n_jobs=4
         is equal to n_jobs=3
     progressbar : bool, default is False
-        Use a fancy :obj:`tqdm.tqdm` progressbar
+        Report progress as the computation advances.
     kwargs_per_traj_mindist_lower_bound : dict
         Optional arguments for
         :obj:`~mdciao.contacts.per_traj_mindist_lower_bound`.
@@ -819,16 +819,27 @@ def trajs2lower_bounds(trajs, top, ctc_residxs_pairs, stride=1,
         regardless of the value of `timetrace`.
     """
 
-    if progressbar:
-        iterfunct = lambda a: _tqdm(a)
-    else:
-        iterfunct = lambda a: a
     assert isinstance(trajs, list)  # otherwise we will iterate through the frames of a single traj
     try:
+        n_jobs = _np.min((n_jobs, len(trajs)))
+        counters = {"n_trajs_total": len(trajs), "n_trajs_done": 0, "n_frames_done": 0, "start_time": _time(),
+                    "n_jobs": n_jobs}
+        progressbar_dict, thread, exit_event = _prepare_progressbar_thread(counters, progressbar)
+        nchars_fname = _np.max([len(str(itraj)) for itraj in trajs])
+
+
         lower_bounds_per_traj = _Parallel(n_jobs=n_jobs)(
             _delayed(per_traj_mindist_lower_bound)(top, itraj, ctc_residxs_pairs, chunksize, stride, ii,
+                                                   progressbar_dict=progressbar_dict,nchars_fname=nchars_fname,
                                                    **kwargs_per_traj_mindist_lower_bound)
-            for ii, itraj in enumerate(iterfunct(trajs)))
+            for ii, itraj in enumerate(trajs))
+        if progressbar:
+            exit_event.set()
+            thread.join()
+        else:
+            counters.update(
+                {"n_trajs_done": len(trajs), "n_frames_done": None})
+            print(_progress_dict2infoline(counters, first_update_after=0))
     except MemoryError as ME:
         raise(ME) #TODO raise an informative ValueError
 
