@@ -1639,6 +1639,7 @@ def sites(site_inputs,
           savetrajs=False,
           figures=True,
           plot_timedep=True,
+          progressbar=True,
           ):
     r"""
 
@@ -1822,6 +1823,9 @@ def sites(site_inputs,
         Draw figures
     plot_timedep : bool, default is True
         Plot time-traces of the contacts
+    progressbar : bool, default is True
+        Report progress as the computation advances.
+
     Returns
     -------
     CG_site : dictionary
@@ -1873,10 +1877,10 @@ def sites(site_inputs,
                                                   _mdcu.lists.in_what_fragment(idx,fragments_as_residue_idxs),
                                                   consensus_maps=consensus_maps, table=True))
     ctcs, time_array, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
-                                       chunksize=chunksize_in_frames,
-                                       return_times_and_atoms=True, consolidate=False, periodic=pbc,
-                                       scheme=scheme,
-                                       n_jobs=n_jobs)
+                                                          chunksize=chunksize_in_frames,
+                                                          return_times_and_atoms=True, consolidate=False, periodic=pbc,
+                                                          scheme=scheme,
+                                                          n_jobs=n_jobs, progressbar=progressbar)
 
     # Abstract each site to a group of contacts and fragments
     site_as_gc = {}
