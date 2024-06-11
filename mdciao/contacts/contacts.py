@@ -45,7 +45,8 @@ from collections import \
     defaultdict as _defdict, \
     Counter as _col_Counter
 
-from tqdm import tqdm as _tqdm
+from ._progress import _prepare_progressbar_thread, _progress_dict2infoline
+from time import time as _time
 
 from matplotlib import \
     pyplot as _plt,\
@@ -517,7 +518,8 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 
 @_kwargs_subs(_compute_contacts, exclude=["contacts"])
 def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
-                 traj_idx,
+                 traj_idx, progressbar_dict=None,
+                 nchars_fname=None,
                  **kwargs_mdcontacts):
     r"""
     Wrapper for :obj:`mdtraj.compute_contacts` for strided, chunked computation of contacts.
@@ -543,8 +545,13 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
     traj_idx: int
         The index of the trajectory being computed. For completeness
         of the progress report
+    progressbar_dict : dict, default is None
+        A managed dictionary containing managed variables that allow
+        concurrent threads to report their progress when :obj:`mdciao.contacts.trajs2ctcs`
+        has been called with more than one cpu. If None, no progress
+        will be reported.
     kwargs_mdcontacts:
-        Optional keyword arguments to pass to :obj:`mdtraj.contacts`
+        Optional keyword arguments to pass to :obj:`mdtraj.contacts`.
 
         Note:
         -----
@@ -573,13 +580,22 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
     """
     # The creation of lambdas managing the file(xtc,pdb) vs traj case
     # elsewhere allows to keep the code here simple
-    iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top)
+    iterate, inform = _mdcu.str_and_dict.iterate_and_inform_lambdas(itraj, chunksize, stride=stride, top=top, nchars_fname=nchars_fname)
     ictcs, itime, iaps = [],[],[]
     running_f = 0
-    inform(itraj, traj_idx, 0, running_f)
+
+    if progressbar_dict is not None:
+        assert any(progressbar_dict["indices_of_free_pbars"]), ValueError("At least one of the indices should be free, else one shouldn't be entering this method!")
+        for string_idx, ival in enumerate(progressbar_dict["indices_of_free_pbars"]):
+            if ival:
+                progressbar_dict["indices_of_free_pbars"][string_idx] = False
+                break
+        progressbar_dict["pbars"][string_idx] = inform(itraj, traj_idx, 0, running_f) #+ f" @{string_idx}"
+
     for jj, igeom in enumerate(iterate(itraj)):
         running_f += igeom.n_frames
-        inform(itraj, traj_idx, jj, running_f)
+        if progressbar_dict is not None:
+            progressbar_dict["pbars"][string_idx] = inform(itraj, traj_idx, jj, running_f) #+ f" @{string_idx}"
         itime.append(igeom.time)
             #TODO make lambda out of this if
         if 'scheme' in kwargs_mdcontacts.keys() and kwargs_mdcontacts["scheme"].upper()== 'COM':
@@ -592,6 +608,15 @@ def per_traj_ctc(top, itraj, ctc_residxs_pairs, chunksize, stride,
 
         ictcs.append(jctcs)
         iaps.append(j_atompairs)
+        if progressbar_dict is not None:
+            progressbar_dict["n_frames_done"] += igeom.n_frames
+
+    if progressbar_dict is not None:
+        progressbar_dict["n_trajs_done"] +=1
+        progressbar_dict["pbars"][string_idx] += " (done)"
+        progressbar_dict["indices_of_free_pbars"][string_idx] = True
+        progressbar_dict["pbars"][0] = _progress_dict2infoline(progressbar_dict)
+
 
     itime = _np.hstack(itime)
     ictcs = _np.vstack(ictcs)
