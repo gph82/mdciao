@@ -477,9 +477,7 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
         over the trajectories themeselves, having 3 trajs and n_jobs=4
         is equal t n_jobs=3
     progressbar : bool, default is False
-        Use a fancy :obj:`tqdm.tqdm` progressbar
-
-
+        Report progress as the computation advances.
 
     Returns
     -------
@@ -488,14 +486,24 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 
     """
 
-    if progressbar:
-        iterfunct = lambda a : _tqdm(a)
-    else:
-        iterfunct = lambda a : a
     assert isinstance(trajs,list) #otherwise we will iterate through the frames of a single traj
+    n_jobs = _np.min((n_jobs, len(trajs)))
+    counters = {"n_trajs_total": len(trajs), "n_trajs_done": 0, "n_frames_done": 0, "start_time": _time(), "n_jobs":n_jobs}
+    progressbar_dict, thread, exit_event = _prepare_progressbar_thread(counters, progressbar)
+    nchars_frame = _np.max([len(str(itraj)) for itraj in trajs])
+
     ictcs_itimes_iaps = _Parallel(n_jobs=n_jobs)(_delayed(per_traj_ctc)(top, itraj, ctc_residxs_pairs, chunksize, stride, ii,
+                                                                        progressbar_dict=progressbar_dict,
+                                                                        nchars_fname=nchars_frame,
                                                                         **kwargs_mdcontacts)
-                                            for ii, itraj in enumerate(iterfunct(trajs)))
+                                            for ii, itraj in enumerate(trajs))
+    if progressbar:
+        exit_event.set()
+        thread.join()
+    else:
+        counters.update({"n_trajs_done": len(trajs), "n_frames_done": _np.sum([len(itraj[0]) for itraj in ictcs_itimes_iaps])})
+        print(_progress_dict2infoline(counters, first_update_after=0))
+
     ctcs = []
     times = []
     aps = []
