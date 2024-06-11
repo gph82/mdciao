@@ -1453,6 +1453,7 @@ def interface(
                                            fragments_as_residue_idxs, fragment_names,
                                            top2confrag, list(consensus_maps.values()),
                                            keep_max_buffer_Ang=lb_cutoff_buffer_Ang)
+    # The reporting is
     n_ctcs =  _mdcu.lists._get_n_ctcs_from_freqs(ctc_control,df.freq)[0]
 
     # Report n_ctcs and frequency summary leaving in the freqs < min_freq
@@ -1860,10 +1861,15 @@ def sites(site_inputs,
                                                              default_fragment_index=default_fragment_index,
                                                              fragment_names=fragment_names)
     if None in ctc_idxs_small:
-        print("Some definitions of the 'site_inputs' contain one or more residue(s) not found in the input topology.\n"
-              "These sites have been discarded and won't appear in the output: ")
+        print("Some definitions of the 'site_inputs' contain one or more residues not found in the input topology.")
+        if not allow_partial_sites:
+            print("Please read the documentation for the 'allow_partial_sites' parameter.")
         ctc_idxs_small, site_maps, _sites, discarded = _mdcsites.discard_empty_sites(ctc_idxs_small,site_maps, sites, allow_partial_sites=allow_partial_sites)
+        preface=True
         for ii in discarded["full"]:
+            if preface:
+                print("The following sites have been discarded and won't appear in the output: ")
+                preface=False
             print(" * site '%s' (idx %u)"%(sites[ii]["name"],ii))
         if len(_sites)==0:
             raise ValueError("No site(s) could be constructed, please check the above messages and your review your site(s)' definitions.")
@@ -1906,25 +1912,29 @@ def sites(site_inputs,
                                                #colors=[fragcolors[idx] for idx in idxs]
                                                ))
         site_as_gc[key] = _mdcctcs.ContactGroup(site_as_gc[key], name="site '%s'"%key)
-    overall_fig = _mdcplots.CG_panels(4, site_as_gc, ctc_cutoff_Ang,
-                               distro=distro,
-                               short_AA_names=short_AA_names,
-                               plot_atomtypes=plot_atomtypes,
-                               verbose=True)
+        print()
+        print(f"{site_as_gc[key].name.capitalize()}:")
+        print(site_as_gc[key].frequency_dataframe(ctc_cutoff_Ang).round({"freq": 2, "sum": 2}))
+        print()
+    if figures:
+        overall_fig = _mdcplots.CG_panels(4, site_as_gc, ctc_cutoff_Ang,
+                                   distro=distro,
+                                   short_AA_names=short_AA_names,
+                                   plot_atomtypes=plot_atomtypes,
+                                   verbose=True)
+        overall_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
     if scheme!="closest-heavy":
         scheme_desc='%s.'%scheme
     else:
         scheme_desc=''
-
-    overall_fig.tight_layout(h_pad=2, w_pad=0, pad=0)
     if any([savetabs,savefigs,savetrajs]):
         print("The following files have been created:")
 
     if savefigs:
         overall_fig.savefig(fn.fullpath_overall_fig, dpi=graphic_dpi)
         print(fn.fullpath_overall_fig)
-    _plt.close(overall_fig)
+        _plt.close(overall_fig)
 
     for site_name, isite_nh in site_as_gc.items():
         if savetabs:
