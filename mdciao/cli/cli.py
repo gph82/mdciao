@@ -969,7 +969,7 @@ def residue_neighborhoods(residues,
                                             ))
         try:
             neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs, neighbors_excluded=n_nearest,
-                                                           max_cutoff_Ang=ctc_cutoff_Ang + lb_cutoff_buffer_Ang)
+                                                           max_cutoff_Ang=ctc_cutoff_Ang)
             print()
             print(f"{neighborhoods[res_idx].anchor_res_and_fragment_str_short}:")
             _mdcctcs.contacts._contact_fraction_informer(len(CPs),idf[idf.freq > 0].freq.values, ctc_cutoff_Ang, or_frac=.9)
@@ -1479,7 +1479,7 @@ def interface(
 
 
     ctc_grp_intf = _mdcctcs.ContactGroup(ctc_objs,
-                                         max_cutoff_Ang=ctc_cutoff_Ang+lb_cutoff_buffer_Ang,
+                                         max_cutoff_Ang=ctc_cutoff_Ang,
                                          interface_fragments=intf_frags_as_residxs,  # interface_residx_short,
                                          name=title)
     print()
