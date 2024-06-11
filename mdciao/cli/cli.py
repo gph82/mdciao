@@ -971,7 +971,8 @@ def residue_neighborhoods(residues,
             neighborhoods[res_idx] = _mdcctcs.ContactGroup(CPs, neighbors_excluded=n_nearest,
                                                            max_cutoff_Ang=ctc_cutoff_Ang + lb_cutoff_buffer_Ang)
             print()
-            _mdcctcs.contacts._contact_fraction_informer(len(CPs),idf[idf.freq > 0].freq.values, or_frac=.9)
+            print(f"{neighborhoods[res_idx].anchor_res_and_fragment_str_short}:")
+            _mdcctcs.contacts._contact_fraction_informer(len(CPs),idf[idf.freq > 0].freq.values, ctc_cutoff_Ang, or_frac=.9)
             ndf = neighborhoods[res_idx].frequency_dataframe(ctc_cutoff_Ang)
             ndf.index +=1
             print(ndf.round({"freq": 2, "sum": 2}).to_string(justify="center"))
@@ -1456,7 +1457,7 @@ def interface(
 
     # Report n_ctcs and frequency summary leaving in the freqs < min_freq
     _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(df.freq>min_freq)]),
-                                                 df[df.freq>0].freq.values, or_frac=.9)
+                                                 df[df.freq>0].freq.values, ctc_cutoff_Ang, or_frac=.9, )
     # Take freqs < min_freq out now
     df = df[df.freq>min_freq][:n_ctcs]
 
