@@ -26,10 +26,14 @@
 #    Python Library, whose original authors and copyright
 #    holders are listed below.
 #
-#    The modifications consist in including the indices
-#    of the closest atom-pairs in the returned values. The
-#    modified lines are in the return value documentation for `atom_pairs`
-#    and otherwise marked with the comment '#mdciao' in the file.
+#    The modifications consist in:
+#    1. including the indices of the closest atom-pairs in the returned values.
+#    2. adapting sidechain-heavy for the cases of hydrogen-less glycines.
+#
+#    The modified lines are in the documentation for the returned value `atom_pairs`
+#    and `scheme='sidechain-heavy'`, and elsewhere marked with the comment
+#    '#mdciao' in the file.
+#
 #    The modifications were applied on mdtraj release v1.10.0rc1
 #    commit 4c9bb6e8bc7d6e86890ff0d57814c3c76f7cf792
 ##############################################################################
@@ -103,6 +107,9 @@ def compute_contacts(
                 two atoms in residue sidechains
             'sidechain-heavy' : distance is the closest distance between
                 any two non-hydrogen atoms in residue sidechains
+                For glycine, 'sidechain-heavy' try to fall back
+                first to to sidechain hydrogens and if none are present
+                to any atom of the glycine.
     ignore_nonprotein : bool
         When using `contact==all`, don't compute contacts between
         "residues" which are not protein (i.e. do not contain an alpha
@@ -262,7 +269,8 @@ def compute_contacts(
                 warnings.warn(
                     "selected topology includes at least one glycine residue, which has no heavy "
                     "atoms in its sidechain. The distances involving glycine residues will be "
-                    "computed using the sidechain hydrogen instead.",
+                    "computed using the sidechain hydrogen instead. If no sidechain hydrogen is present," #mdciao
+                    " all glycine atoms will be used." #mdciao
                 )
 
             residue_membership = [
@@ -273,7 +281,9 @@ def compute_contacts(
                         if atom.is_sidechain and not (atom.element == element.hydrogen)
                     ]
                     if not residue.name == "GLY"
-                    else [atom.index for atom in residue.atoms if atom.is_sidechain]
+                    else [[atom.index for atom in residue.atoms if atom.is_sidechain]
+                          if len([atom.index for atom in residue.atoms if atom.is_sidechain]) > 0 #mdciao
+                          else [atom.index for atom in residue.atoms]][0] #mdciao
                 )
                 for residue in traj.topology.residues
             ]
