@@ -1702,7 +1702,7 @@ def _sorter_by_key_or_val(sort_by, indict):
 
     Parameters
     ----------
-    sort_by : str
+    sort_by : str, list
         Currently, can be
         * "residue" or "numeric", i.e.
           sort by ascending value(s) of the
@@ -1715,6 +1715,10 @@ def _sorter_by_key_or_val(sort_by, indict):
           by the values of the `indict`
         * "keep"
           keep the order of the keys
+        * a list of contact labels.
+          The returned `ordered_keys` will be the
+          intersection of `sort_by` and `indict.keys()`,
+          sorted wrt to `sort_by`
     indict : dict
         The dictionary to be
         sorted according to
@@ -1729,7 +1733,14 @@ def _sorter_by_key_or_val(sort_by, indict):
     """
     all_ctc_keys= list(indict.keys())
 
-    if sort_by in ["residue", "numeric"]:
+    # First,
+    if isinstance(sort_by, list):
+        if not set(sort_by).intersection(all_ctc_keys):
+            raise ValueError(f"The 'sort_by' list '{sort_by}' doesn't contain "
+                             f"any of the available contact pairs '{all_ctc_keys}'")
+        ordered_keys = [key for key in sort_by if key in all_ctc_keys]
+
+    elif sort_by in ["residue", "numeric"]:
         numeric_keys, non_numeric_keys = [], []
         for key in all_ctc_keys:
             try:
