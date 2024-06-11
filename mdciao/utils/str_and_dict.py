@@ -1026,7 +1026,7 @@ def intblocks_in_str(istr):
     except KeyError as e:
         raise ValueError(f"'{istr}' doesn't contain any integers!")
 
-def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
+def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None, nchars_fname=None):
     r"""
     Given a trajectory (as object or file), returns
     a strided, chunked iterator and function for progress report
@@ -1040,6 +1040,10 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
         The stride with which to iterate over the trajectory
     top:  str (filename) or :obj:`mdtraj.Topology`
         If :obj:`ixtc` is a filename, the topology needed to read it
+    nchars_fname : int, default is None
+        The number of characters for the filename field. By default
+        it adjusts automatically, but it can be fixed here in case
+        you want to use the same field width for many files.
 
     Returns
     -------
@@ -1050,7 +1054,7 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
         strided, chunked iterator over :obj:`ixtc`
 
     inform: lambda(ixtc, traj_idx, chunk_idx, running_f)
-        iterator that prints out streaming progress for every iteration
+        iterator that returns a string informing on streaming progress for every iteration
 
     Note
     ----
@@ -1062,21 +1066,19 @@ def iterate_and_inform_lambdas(ixtc,chunksize, stride=1, top=None):
     if isinstance(ixtc, _md.Trajectory):
         iterate = lambda ixtc: (ixtc[idxs] for idxs in re_warp(_np.arange(ixtc.n_frames)[::stride], chunksize))
         inform = lambda ixtc, traj_idx, chunk_idx, running_f: \
-            print("Streaming over trajectory object nr. %3u (%6u frames, %6u with stride %2u) in chunks of "
-                  "%3u frames. Now at chunk nr %4u, frames so far %6u" %
-                  (traj_idx, ixtc.n_frames, _np.ceil(ixtc.n_frames/stride), stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
+            f"Streaming over trajectory object nr. {traj_idx :4} ({ixtc.n_frames :6} frames, {_np.ceil(ixtc.n_frames/stride) : 6} with stride {stride :2}) in chunks of {chunksize :6} frames. Now at chunk nr {chunk_idx :4}, frames so far {running_f :6}"
     elif ixtc.endswith(".pdb") or ixtc.endswith(".pdb.gz") or ixtc.endswith(".gro"):
+        if nchars_fname is None:
+            nchars_fname = len(ixtc)
         iterate =  lambda ixtc: [_md.load(ixtc)[::stride]]
         inform  =  lambda ixtc, traj_idx, chunk_idx, running_f: \
-            print("Loaded %20s (nr. %3u) in full, using stride %2u but ignoring chunksize of "
-                  "%6u frames. This number should always be 0 : %4u. Total frames loaded %6u" %
-                  (ixtc, traj_idx, stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
+            f"Loaded {ixtc :{nchars_fname}} (nr. {traj_idx :4}) in full, using stride {stride :2} but ignoring chunksize of {chunksize :6} frames. Total frames loaded {running_f :6}."
     else:
+        if nchars_fname is None:
+            nchars_fname = len(ixtc)
         iterate = lambda ixtc: _md.iterload(ixtc, top=top, stride=stride, chunk=int(_np.round(chunksize / stride)))
         inform = lambda ixtc, traj_idx, chunk_idx, running_f: \
-            print("Streaming %20s (nr. %3u) with stride %2u in chunks of "
-                  "%6u frames. Now at chunk nr %4u, frames so far %6u" %
-                  (ixtc, traj_idx, stride, chunksize, chunk_idx, running_f), end="\r", flush=True)
+            f"Streaming {ixtc :{nchars_fname}} (nr. {traj_idx :4}) with stride {stride :2} in chunks of {chunksize :6} frames. Now at chunk nr {chunk_idx :4}, frames so far {running_f :6}."
     return iterate, inform
 
 def choose_options_descencing(options,
