@@ -290,7 +290,7 @@ def _DataFrame2NeighborhoodDF(df, res_idx):
     return idf
 
 #TODO consider deprecating
-def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
+def select_and_report_residue_neighborhood_idxs(ctc_freqs, ctc_cutoff_Ang, res_idxs, fragments,
                                                 residxs_pairs, top,
                                                 ctcs_kept=5,
                                                 restrict_to_resSeq=None,
@@ -310,6 +310,8 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
     ----------
     ctc_freqs: iterable of floats
         Contact frequencies between 0 and 1
+    ctc_cutoff_Ang : float
+        Cutoff at which `ctc_freqs` were obtained.
     res_idxs: list of integers
         list of residue idxs for which one wants to extract the neighborhoods
     fragments: iterable of integers
@@ -390,8 +392,9 @@ def select_and_report_residue_neighborhood_idxs(ctc_freqs, res_idxs, fragments,
                 print_if_v("%-6s %3.2f %8s-%-8s %5u-%-5u %7u-%-7u %5u     %3.2f" % (
                  '%u:' % (ii + 1), ifreq, top.residue(idx1), top.residue(idx2), frg1, frg2, idx1, idx2, oo, isum))
             if n_ctcs>0 and verbose:
-                _contact_fraction_informer(_np.min([ii+1, len(order_mask)]), ctc_freqs[order_mask], or_frac={True:  fraction,
-                                                                                                             False:     None}[_fraction])
+                _contact_fraction_informer(_np.min([ii+1, len(order_mask)]), ctc_freqs[order_mask], ctc_cutoff_Ang,
+                                           or_frac={True:  fraction,
+                                                    False:     None}[_fraction])
             else:
                 print_if_v("No contacts here!")
             if interactive:

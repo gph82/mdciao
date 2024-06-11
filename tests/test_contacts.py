@@ -1270,6 +1270,7 @@ class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
         self.residxs, self.fragidxs = residues_from_descriptors(self.residues,
                                                                 self.fragments,
                                                                 self.geom.top)
+        self.ctc_cutoff_Ang = 3
 
     def test_select_and_report_residue_neighborhood_idxs_just_works(self):
         ctc_freqs = [1, .5]
@@ -1277,7 +1278,7 @@ class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
 
         input_values = (val for val in ["1", "2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
-            per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freqs, self.residxs,
+            per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freqs, self.ctc_cutoff_Ang, self.residxs,
                                                                             self.fragments, ctc_residxs_pairs,
                                                                             self.geom.top,
                                                                             interactive=True)
@@ -1290,7 +1291,7 @@ class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
 
         input_values = (val for val in ["2"])
         with mock.patch('builtins.input', lambda *x: next(input_values)):  # Checking against the input 1 and 1
-            per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freqs, self.residxs,
+            per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freqs, self.ctc_cutoff_Ang, self.residxs,
                                                                             self.fragments, ctc_residxs_pairs,
                                                                             self.geom.top,
                                                                             restrict_to_resSeq=[31],
@@ -1304,7 +1305,7 @@ class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
 
         input_values = (val for val in ["", ""])
         with mock.patch('builtins.input', lambda *x: next(input_values)):
-            per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.residxs,
+            per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.ctc_cutoff_Ang, self.residxs,
                                                                             self.fragments, ctc_residxs_pairs,
                                                                             self.geom.top,
                                                                             interactive=True)
@@ -1313,7 +1314,7 @@ class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
     def test_select_and_report_residue_neighborhood_idxs_no_interactive(self):
         ctc_freq = [1.,.5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
-        per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.residxs,
+        per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.ctc_cutoff_Ang, self.residxs,
                                                                         self.fragments, ctc_residxs_pairs,
                                                                         self.geom.top,
                                                                         interactive=False)
@@ -1324,7 +1325,7 @@ class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
         ctc_freq = [1.,.5]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
 
-        per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.residxs,
+        per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.ctc_cutoff_Ang, self.residxs,
                                                                         self.fragments, ctc_residxs_pairs,
                                                                         self.geom.top,
                                                                         ctcs_kept=.5, restrict_to_resSeq=None,
@@ -1336,7 +1337,7 @@ class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
         ctc_freq = [0, 0]
         ctc_residxs_pairs = [[0, 1], [2, 1]]
 
-        per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.residxs,
+        per_residx_ctc_idxs = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.ctc_cutoff_Ang, self.residxs,
                                                                         self.fragments, ctc_residxs_pairs,
                                                                         self.geom.top,
                                                                         ctcs_kept=.5, restrict_to_resSeq=None,
@@ -1351,7 +1352,7 @@ class Test_select_and_report_residue_neighborhood_idxs(unittest.TestCase):
             resname2residx, resname2fragidx = residues_from_descriptors("GLU30", self.fragments,
                                                                         self.geom.top)
 
-            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, resname2residx,
+            ctc_freq = contacts.select_and_report_residue_neighborhood_idxs(ctc_freq, self.ctc_cutoff_Ang, resname2residx,
                                                                             self.fragments, per_residx_ctc_idxs,
                                                                             self.geom.top,
                                                                             ctcs_kept=5, restrict_to_resSeq=None,
