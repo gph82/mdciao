@@ -28,10 +28,10 @@
 #
 #    The modifications consist in:
 #    1. including the indices of the closest atom-pairs in the returned values.
-#    2. adapting sidechain-heavy for the cases of hydrogen-less glycines.
+#    2. adapting 'sidechain' and 'sidechain-heavy' schemes for the cases of hydrogen-less glycines.
 #
 #    The modified lines are in the documentation for the returned value `atom_pairs`
-#    and `scheme='sidechain-heavy'`, and elsewhere marked with the comment
+#    and the 'sidechain' and 'sidechain-heavy', and elsewhere marked with the comment
 #    '#mdciao' in the file.
 #
 #    The modifications were applied on mdtraj release v1.10.0rc1
@@ -104,11 +104,13 @@ def compute_contacts(
             'closest-heavy' : distance is the closest distance between
                 any two non-hydrogen atoms in the residues
             'sidechain' : distance is the closest distance between any
-                two atoms in residue sidechains
+                two atoms in residue sidechains. For glycine,
+                'sidechain' try to use sidechain hydrogens first
+                 and if none are present fall back to any atom of the glycine.
             'sidechain-heavy' : distance is the closest distance between
                 any two non-hydrogen atoms in residue sidechains
                 For glycine, 'sidechain-heavy' try to fall back
-                first to to sidechain hydrogens and if none are present
+                first to sidechain hydrogens and if none are present
                 to any atom of the glycine.
     ignore_nonprotein : bool
         When using `contact==all`, don't compute contacts between
@@ -258,9 +260,25 @@ def compute_contacts(
                 for residue in traj.topology.residues
             ]
         elif scheme == "sidechain":
-            residue_membership = [
-                [atom.index for atom in residue.atoms if atom.is_sidechain] for residue in traj.topology.residues
-            ]
+            if "GLY" in [residue.name for residue in traj.topology.residues]: #mdciao
+                import warnings #mdciao
+
+                warnings.warn( #mdciao
+                    "selected topology includes at least one glycine residue. Where no sidechain hydrogen " #mdciao
+                    "is present, the distances involving glycine residues will be " #mdciao
+                    "computed using the all glycine atoms."  # mdciao
+                ) #mdciao
+            residue_membership = [ #mdciao
+                [ #mdciao
+                    atom.index for atom in residue.atoms #mdciao
+                    if atom.is_sidechain #mdciao
+                ]
+                if not residue.name=="GLY" #mdciao
+                else [[atom.index for atom in residue.atoms if atom.is_sidechain] #mdciao
+                      if len([atom.index for atom in residue.atoms if atom.is_sidechain]) > 0 #mdciao
+                      else [atom.index for atom in residue.atoms]][0] #mdciao
+                for residue in traj.topology.residues #mdciao
+            ] #mdciao
         elif scheme == "sidechain-heavy":
             # then remove the hydrogens from the above list
             if "GLY" in [residue.name for residue in traj.topology.residues]:
