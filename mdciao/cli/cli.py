@@ -1099,7 +1099,8 @@ def interface(
         savetrajs=False,
         figures=True,
         self_interface=False,
-        n_repframes=1
+        n_repframes=1,
+        progressbar=True,
 ):
     r"""Contact-frequencies between two groups of residues
 
@@ -1361,6 +1362,8 @@ def interface(
         mode and call :obj:`mdciao.contacts.ContactGroup.n_repframes`
         with `show_violins=True`. A value of 0 means don't write
         any such .pdb file. Max value of 50 frames is enforced.
+    progressbar : bool, default is True
+        Report progress as the computation advances.
 
 
     Returns
@@ -1420,27 +1423,25 @@ def interface(
     print("\nWill look for contacts in the interface between fragments\n%s\nand\n%s. "%
           ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
            '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]])))))
-    print(f"Performing a first pass on the {len(ctc_idxs)} group_1-group_2 residue pairs to compute lower bounds\n"
+    print(f"Performing a first pass on the {len(ctc_idxs)} group_1-group_2 residue pairs to compute lower bounds "
           f"on residue-residue distances via residue-COM distances.")
     lb_cutoff_buffer_Ang = 2.5
     idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
                                                             stride=stride,
                                                             chunksize=chunksize_in_frames,
                                                             n_jobs=n_jobs,
-                                                            progressbar=False,
-                                                            verbose=False,
-                                                            lb_cutoff_Ang=ctc_cutoff_Ang+ lb_cutoff_buffer_Ang, # This buffer will go into the ContactGroup's max_cutoff_Ang
+                                                            progressbar=progressbar,
+                                                            lb_cutoff_Ang=ctc_cutoff_Ang+ lb_cutoff_buffer_Ang, # This buffer allows for some debugging before truncating to ctc_control
                                                             periodic=pbc,
                                                             )
     ctc_idxs_intf = _np.array(ctc_idxs)[_np.unique(_np.hstack(idx_of_lower_lower_bounds))]
-    print(f"Reduced to only {len(ctc_idxs_intf)} residue pairs for the computation of actual residue-residue distances.")
-    print()
+    print(f"Reduced to only {len(ctc_idxs_intf)} residue pairs for the computation of actual residue-residue distances:")
     ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_intf,
                                                      stride=stride, return_times_and_atoms=True,
                                                      consolidate=False,
                                                      chunksize=chunksize_in_frames,
                                                      n_jobs=n_jobs,
-                                                     progressbar=True,
+                                                     progressbar=progressbar,
                                                      scheme=scheme,
                                                      periodic=pbc
                                                      )
