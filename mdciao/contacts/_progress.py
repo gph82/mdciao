@@ -121,7 +121,11 @@ def _progress_dict2infoline(idict, first_update_after=1.5) -> str:
         trajs_per_s = ''
         frames_per_s = ''
     else:
-        frames_per_s = int(_np.round(idict['n_frames_done'] / elapsed))
+        try:
+            frames_per_s = int(_np.round(idict['n_frames_done'] / elapsed))
+        except TypeError:
+            frames_per_s = ''
+            idict["n_frames_done"] = ''
         trajs_per_s = int(_np.round(idict['n_trajs_done'] / elapsed))
         try:
             avg_t_traj = elapsed / idict['n_trajs_done']
