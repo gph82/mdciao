@@ -582,7 +582,8 @@ def residue_neighborhoods(residues,
                           savetabs=True,
                           savetrajs=False,
                           figures=True,
-                          naive_bonds=False
+                          naive_bonds=False,
+                          progressbar=True,
                           ):
     r"""Per-residue neighborhoods based on contact frequencies between pairs
     of residues.
@@ -820,6 +821,9 @@ def residue_neighborhoods(residues,
         (=linear) bonds using :obj:`mdciao.utils.bonds.top2residue_bond_matrix_naive`
         These bonds are needed to exclude bonded neighbors
         using :obj:`n_nearest`
+    progressbar : bool, default is True
+        Report progress as the computation advances.
+
     Returns
     -------
     neighborhoods : dict
@@ -901,22 +905,21 @@ def residue_neighborhoods(residues,
         fragment_idxs = [[_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair] for pair in ctc_idxs]
         ctc_idxs = [ctc_idxs[ii] for (ii,pair) in enumerate(fragment_idxs) if pair[0]!=pair[1]]
 
-    print(f"Performing a first pass on {len(ctc_idxs)} residue pairs to compute lower bounds\n"
-          f"on residue-residue distances via residue-COM distances.")
+    print(f"\nPerforming a first pass on {len(ctc_idxs)} residue pairs to compute lower bounds "
+          f"on residue-residue distances via residue-COM distances:")
     lb_cutoff_buffer_Ang = 2.5
     idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
                                                             stride=stride,
                                                             chunksize=chunksize_in_frames,
                                                             n_jobs=n_jobs,
-                                                            progressbar=False,
-                                                            verbose=False,
+                                                            progressbar=progressbar,
                                                             lb_cutoff_Ang=ctc_cutoff_Ang + lb_cutoff_buffer_Ang,
                                                             periodic=pbc,
                                                             )
     idx_of_lower_lower_bounds = _np.unique(_np.hstack(idx_of_lower_lower_bounds))
     ctc_idxs_small = _np.array(ctc_idxs)[idx_of_lower_lower_bounds]
-    print(f"Reduced to only {len(ctc_idxs_small)} residue pairs for the computation of actual residue-residue distances.")
-    print()
+
+    print(f"\nReduced to only {len(ctc_idxs_small)} residue pairs for the computation of actual residue-residue distances:")
     ctcs_trajs, time_arrays, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                                                  chunksize=chunksize_in_frames,
                                                                  return_times_and_atoms=True,
@@ -924,6 +927,7 @@ def residue_neighborhoods(residues,
                                                                  n_jobs=n_jobs,
                                                                  scheme=scheme,
                                                                  periodic=pbc,
+                                                                 progressbar=progressbar,
                                                                  )
     print() # to make sure we don't overwrite output
     actcs = _np.vstack(ctcs_trajs)
