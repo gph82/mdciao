@@ -1152,8 +1152,16 @@ class Test_KLIFSDataFrame(unittest.TestCase):
 
 class Test_KLIFS_web_lookup(unittest.TestCase):
 
-    def test_just_works(self):
-        KLIFS_df = nomenclature._KLIFS_web_lookup("P31751")
+    def test_works_UniProtAC(self):
+        KLIFS_df = nomenclature._KLIFS_web_lookup("UniProtAC:P31751")
+        assert isinstance(KLIFS_df, nomenclature._KLIFSDataFrame)
+
+    def test_works_structure_ID(self):
+        KLIFS_df = nomenclature._KLIFS_web_lookup("structure_ID:1904")
+        assert isinstance(KLIFS_df, nomenclature._KLIFSDataFrame)
+
+    def test_works_kinase_ID(self):
+        KLIFS_df = nomenclature._KLIFS_web_lookup("kinase_ID:2")
         assert isinstance(KLIFS_df, nomenclature._KLIFSDataFrame)
 
     def test_wrong(self):

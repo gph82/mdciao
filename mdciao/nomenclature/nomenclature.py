@@ -3204,22 +3204,34 @@ class _KLIFSDataFrame(_KDF):
                 _mdTrajectory2spreadsheets(self.PDB_geom, writer, **kwargs)
 
 
-def _KLIFS_web_lookup(UniProtAC,
+def _KLIFS_web_lookup(KLIFS_string,
                       KLIFS_API="https://klifs.net/api",
                       timeout=5,
                       verbose=True,
                       keep_PDB_geom=True) -> _KLIFSDataFrame:
     r"""
-    Lookup the best PDB-match on `KLIFS <https://klifs.net/>`_ for a given UniProt accession code
-    and return a :obj:`~pandas.DataFrame` with the PDB-sequence, the residue-pocket nomenclature and
-    the PDB-residues indices matching the :obj:`UniprotAC`.
+    Lookup the best PDB-match on `KLIFS <https://klifs.net/>`_
+    and return a :obj:`~pandas.DataFrame` with the PDB-sequence,
+    the residue-pocket nomenclature and the PDB-residues
+    indices matching the `KLIFS_string`.
+
+    Because the labels are provided on a per-structure (PDB)
+    basis, but there's many structures (PDBs) per kinase,
+    there's several ways to specify what set of labels
+    the user wants.
+
+    To familiarize yourself with KLIFS and ways to get information
+    from KLIFS, check https://klifs.net/swagger
 
     Note that:
-        * Lookup will fail if there's more than one kinase_ID for the UniProtAC
-        * The PDB with best KLIFS quality score will be picked
+        * Lookup will fail if there's KLIFS_string is ambiguous,
+          e.g. one UniProt Accession Code yields more than one kinase ID
+        * If a kinase ID is provided, the PDB with best KLIFS
+          quality score will be picked
         * The returned object is a subclass of :obj:`~pandas.DataFrame`
-          with the extra attributes df.UniProtAC, df.PDB_id, df.PDB_geom
-          an wrapper around df.write_excel that stores df.UniProtAC and df.PDB_id
+          with the extra attributes df.kinase_ID, df.UniProtAC,
+          df.structure_ID, df.PDB_geom and df.PDB_id. It also has
+          a wrapper around df.write_excel that stores that information
           into the spreadsheet's sheet name. Check :obj:`_KLIFSDataFrame` for
           more info.
         * Since KLIFS works with specific structure_IDs, we store the associated
@@ -3228,19 +3240,29 @@ def _KLIFS_web_lookup(UniProtAC,
 
     Parameters
     ----------
-    UniProtAC : string
-        UniProt accession code
+    KLIFS_string : str
+       A string by formatted "key:value" which
+       ultimately leads to a given KLIFS entry
+       Acceptable keys and values for `KLIFS_string` are:
+        * "UniProtAC", e.g. "UniProtAC:P31751"
+        * "kinase_ID", e.g. "kinase_ID:2"
+        * "structure_ID", e.g. "structure_ID:1904"
+       Any of the above keys will yield the same `KLIFS_DF`, since
+       the UniProtAC can be used to lookup the kinase_ID, and
+       the kinase_ID automatically picks the best structure_ID (PDB),
+       but the user can specify directly the kinase_ID or the structure_ID.
     KLIFS_API : str, default is "https://klifs.net/api"
         The database API, check https://klifs.net/swagger/ for documentation
     verbose : bool, default is True
         Currently unused
     keep_PDB_geom : bool, default is True
-        Do not append the PDB geometry of the kinase and other chains associated to the kinase
+        Do not append the PDB geometry of the kinase
+        and other chains associated to the kinase
         in the best PDB-match to the returned DataFrame.
 
     Returns
     -------
-    PDB_DF : :obj:`~pandas.DataFrame`
+    KLIFS_DF : :obj:`~pandas.DataFrame`
         A subclass of :obj:`~pandas.DataFrame` with
         three extra attributes df.UniProtAC, df.PDB_id, df.PDB_geom
         Will be a ValueError if the lookup was unsuccessful. The
@@ -3253,59 +3275,100 @@ def _KLIFS_web_lookup(UniProtAC,
         API.
 
     """
+    if ":" not in KLIFS_string or KLIFS_string.split(":")[0] not in ["UniProtAC", "kinase_ID", "structure_ID"]:
+        return ValueError("Malformed KLIFS_string, it should be 'key:value', e.g.: 'UniProtAC:P31751', 'kinase_ID:2', or 'structure_ID:1904'")
 
-    url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
-    #print(url)
-    with _requests.get(url, timeout=timeout) as resp1:
-        if resp1.ok:
-            ACjson = resp1.json()
-        else:
-            return ValueError('url : "%s", UniProt Accession Code: "%s" error : "%s"' % (url, UniProtAC, resp1.text))
+    lookup_key, lookup_value = KLIFS_string.split(":")
 
-    if len(ACjson) > 1:
-        raise(ValueError("More than one 'kinase_ID's were found to match %s: %s ",
-                         (UniProtAC, [entry["kinase_ID"] for entry in ACjson])))
+    IDs = {"UniProtAC": None,
+           "kinase_ID": None,
+           "structure_ID": None}
 
-    ACjson = ACjson[0]
+    # Most upstream is lookup by UniProtAC
+    if lookup_key=="UniProtAC":
+        IDs["UniProtAC"]=lookup_value
+        url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, IDs["UniProtAC"])
+        #print(url)
+        with _requests.get(url, timeout=timeout) as resp1:
+            if resp1.ok:
+                ACjson = resp1.json()
+            else:
+                return ValueError('url : "%s", UniProt Accession Code: "%s" error : "%s"' % (url, lookup_value, resp1.text))
+
+        if len(ACjson) > 1:
+            raise(ValueError("More than one 'kinase_ID's were found to match %s: %s ",
+                             (lookup_value, [entry["kinase_ID"] for entry in ACjson])))
+
+        ACjson = ACjson[0]
+        kinase_ID = ACjson["kinase_ID"]
+
+        # We update these to force the next block (lookup by kinase_ID)
+        lookup_key, lookup_value = "kinase_ID", kinase_ID
+
+    # We enter here if the UniProtAC yielded a kinase_ID or if the user provided one directly
+    if lookup_key=="kinase_ID":
+        IDs["kinase_ID"] = int(lookup_value)
+        url1 = "%s/structures_list?kinase_ID=%s" % (KLIFS_API, IDs["kinase_ID"])
+        print(url1)
+        with _requests.get(url1, timeout=timeout) as resp2:
+            if not resp2.ok:
+                return ValueError(f"'{lookup_value}' doesn't seem like a valid 'kinase_ID'.")
+            PDBs = _DataFrame(resp2.json())
+
+        # Sort via quality score
+            PDBs.sort_values("quality_score", ascending=False, inplace=True)
+            best_PDB, IDs["structure_ID"], chain = PDBs[["pdb", "structure_ID", "chain"]].values[0]
+            best_PDB = best_PDB.upper()
+
+    elif lookup_key=="structure_ID":
+        IDs["structure_ID"] = int(lookup_value)
+        if IDs["kinase_ID"] is None: #means also no UniProtAC
+            with _requests.get("https://klifs.net/api/structure_list?structure_ID=%u"%IDs["structure_ID"]) as resp2:
+                infos = resp2.json()
+                assert len(infos) == 1
+                IDs["kinase_ID"], chain, best_PDB = infos[0]["kinase_ID"], infos[0]["chain"], infos[0]['pdb'].upper()
+
+    # Retrive the UniProtAC in case so far we haven't (we can't get this far w/o kinase_ID
+    if IDs["UniProtAC"] is None:
+        IDs["UniProtAC"] = _KLIFS_kinase_ID2UniProt(IDs["kinase_ID"])
     if verbose:
         print("done!")
+
     print("Please cite the following reference to the KLIF structural database:")
     lit = Literature()
     print(_format_cite(lit.site_KLIFS))
     print("For more information, call mdciao.nomenclature.references()")
-    kinase_ID = ACjson["kinase_ID"]
-    url1 = "%s/structures_list?kinase_ID=%s" % (KLIFS_API, kinase_ID)
-    #print(url1)
-    with _requests.get(url1, timeout=timeout) as resp2:
-        PDBs = _DataFrame(resp2.json())
-
-    # Sort via quality score
-    PDBs.sort_values("quality_score", ascending=False, inplace=True)
-    best_PDB, structure_ID, chain = PDBs[["pdb", "structure_ID", "chain"]].values[0]
-    best_PDB = best_PDB.upper()
 
     # Get the residues
-    nomencl = _KLIFS_structure_ID2nomenclDF(structure_ID, timeout=timeout)
+    nomencl = _KLIFS_structure_ID2nomenclDF(IDs["structure_ID"], timeout=timeout)
 
     # Get the geometry
-    geom = _KLIFS_structure_ID2Trajectory(structure_ID, timeout=timeout)
+    geom = _KLIFS_structure_ID2Trajectory(IDs["structure_ID"], timeout=timeout)
 
     # Get the PDB as DF
     PDB_DF = _mdTopology2residueDF(geom.top)
     assert chain in PDB_DF.chain_id.unique()
+
     # Merge the topology DF and the nomenclDF
     PDB_DF = PDB_DF.merge(nomencl, left_on="Sequence_Index", right_on="Xray_position", how="outer").replace(_np.nan,
                                                                                                             None)
     PDB_DF = PDB_DF[["residue", "code", "Sequence_Index", "AAresSeq", "chain_id", "KLIFS_pocket_index", "KLIFS"]]
 
     PDB_DF = _KLIFSDataFrame(PDB_DF,
-                             kinase_ID=int(kinase_ID), structure_ID=int(structure_ID),
-                             UniProtAC=UniProtAC, PDB_id=best_PDB,
+                             kinase_ID=int(IDs["kinase_ID"]), structure_ID=int(IDs["structure_ID"]),
+                             UniProtAC= IDs["UniProtAC"], PDB_id=best_PDB,
                              PDB_geom={True: geom,
                                        False: None}[keep_PDB_geom]
                              )
 
     return PDB_DF
+
+def _KLIFS_kinase_ID2UniProt(kinase_ID, KLIFS_API="https://klifs.net/api", timeout=5, ):
+    url2 = "%s/kinase_information?kinase_ID=%s" % (KLIFS_API, kinase_ID)
+    with _requests.get(url2, timeout=timeout) as resp2:
+        infos = resp2.json()
+        assert len(infos) == 1
+        return infos[0]["uniprot"]
 
 def _KLIFS_structure_ID2nomenclDF(structure_ID, KLIFS_API="https://klifs.net/api", timeout=5) -> _DataFrame:
     """
