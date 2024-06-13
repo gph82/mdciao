@@ -750,7 +750,7 @@ def parser_for_KLIFS_overview():
                                                  "This nomenclature can be read locally or over the network from the "
                                                  "KLIFS database." )
 
-    parser.add_argument("KLISFS_string_or_excelfile", type=str,
+    parser.add_argument("KLIFS_string_or_excelfile", type=str,
                         help="Get KLIFS definitions from here. A string,  "
                              "e.g. P31751 to construct a path to a an Excel File 'KLIFS_P31751.xlsx', "
                              "or an Excel File directly. If nothing is found locally, there will be a web-lookup "
