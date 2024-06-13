@@ -246,10 +246,12 @@ def _parser_add_nomenclature(parser):
                              "then do a web-lookup on the fly on the GPCRdb. See https://gpcrdb.org/services/ for more details."
                              "Default is None.",
                         default='None')
-    parser.add_argument("-KLIFS","--KLIFS_UniProtAC", type=str,
-                        help="Look for Kinase consensus nomenclature, KLIFS, using this UniProt Accession Code, "
+    parser.add_argument("-KLIFS","--KLIFS_string", type=str,
+                        help="Look for Kinase consensus nomenclature, KLIFS, using this string. "
                              "e.g. P31751. First, try locally with 'KLIFS_P31751.xlsx' (or a full path to the file), "
-                             "then do a web-lookup on the fly on KLIFS. See https://klifs.net/ for more details.",
+                             "then do a web-lookup on the fly on KLIFS. For web-lookups, the string has to be "
+                             " formatted as key:value, eg. 'UniProtAC:P31751'. See the online documentation on "
+                             "mdciao's LabelerKLIFS object and also https://klifs.net/ for more details.",
                         default="None",
                              )
     parser.add_argument("--save_nomenclature",dest='save_nomenclature_files',action="store_true",
@@ -748,11 +750,13 @@ def parser_for_KLIFS_overview():
                                                  "This nomenclature can be read locally or over the network from the "
                                                  "KLIFS database." )
 
-    parser.add_argument("UniProtAC_or_excelfile", type=str,
-                        help="Get KLIFS definitions from here. A UniProt accession code, "
-                             "e.g. P31751 or a path to a an Excel File 'KLIFS_P31751.xlsx'."
-                             "If nothing is found locally, there will be a web-lookup "
-                             "in KLIFS, see https://klifs.net .",
+    parser.add_argument("KLISFS_string_or_excelfile", type=str,
+                        help="Get KLIFS definitions from here. A string,  "
+                             "e.g. P31751 to construct a path to a an Excel File 'KLIFS_P31751.xlsx', "
+                             "or an Excel File directly. If nothing is found locally, there will be a web-lookup "
+                             " For web-lookups, the string has to be formatted as key:value, eg. 'UniProtAC:P31751'. "
+                             "See the online documentation on mdciao's LabelerKLIFS object "
+                             "and also https://klifs.net/ for more details.",
                         action=Populate_input_Action,
                              )
     parser.add_argument("-t", '--topology', type=str, help='Topology file', default=None)
