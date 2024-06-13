@@ -559,7 +559,7 @@ def residue_neighborhoods(residues,
                           table_ext=".dat",
                           GPCR_UniProt=None,
                           CGN_UniProt=None,
-                          KLIFS_UniProtAC=None,
+                          KLIFS_string=None,
                           output_dir='.',
                           output_desc='neighborhood',
                           t_unit='ns',
@@ -743,12 +743,26 @@ def residue_neighborhoods(residues,
         in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
-    KLIFS_UniProtAC : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
-        Uniprot Accession Code for kinase KLIFS nomenclature. If str, e.g. "P31751",
-        try to locate a local filename or do a web lookup in the GPCRdb.
-        If :obj:`mdciao.nomenclature.LabelerKLIFS`, use this object directly
-        (allows for object re-use when in API mode). See :obj:`mdciao.nomenclature`
-        for more info and references. Please note
+    KLIFS_string : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
+        String for kinase KLIFS nomenclature. First, try to locate a local
+        file that directly has the `KLIFS_string` as a name. If that fails, then
+        combine the filename-format expected by :obj:`mdciao.nomenclature.LabelerKLIFS`
+        with `KLIFS_string` to construct a filename and check again.
+        If that doesn't work, then go online to contact the KLIFS database.
+
+        For the online lookup in the KLIFS database, the string
+        has to be formatted "key:value", which ultimately leads to a given KLIFS entry.
+        Acceptable keys and values for `KLIFS_string` are:
+            * "UniProtAC", e.g. "UniProtAC:P31751"
+            * "kinase_ID", e.g. "kinase_ID:2"
+            * "structure_ID", e.g. "structure_ID:1904", e.g. "P31751",
+        Please check the documentation on :obj:`mdciao.nomenclature.LabelerKLIFS`
+        for a more elaborate explanation on when to pick one of these key:value
+        pairs.
+
+        Finally, if `KLIFS_string` is an :obj:`mdciao.nomenclature.LabelerKLIFS`,
+        use this object directly (allows for object re-use when in API mode).
+        See :obj:`mdciao.nomenclature` for more info and references. Alos, please note
         the difference between UniProt Accession Code
         and UniProt entry name as explained
         `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
@@ -861,7 +875,7 @@ def residue_neighborhoods(residues,
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
                                                                    midstring=mid_string, GPCR_UniProt=GPCR_UniProt,
-                                                                   CGN_UniProt=CGN_UniProt, KLIFS_string=KLIFS_UniProtAC,
+                                                                   CGN_UniProt=CGN_UniProt, KLIFS_string=KLIFS_string,
                                                                    save_nomenclature_files=save_nomenclature_files,
                                                                    accept_guess=accept_guess,
                                                                    fragment_names=fragment_names,
