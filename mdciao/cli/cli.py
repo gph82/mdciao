@@ -2146,7 +2146,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_UniProt=None, 
 def residue_selection(expression,
                       top, GPCR_UniProt=None,
                       CGN_UniProt=None,
-                      KLIFS_UniProtAC=None,
+                      KLIFS_string=None,
                       save_nomenclature_files=False,
                       accept_guess=False,
                       fragments=None):
@@ -2177,6 +2177,30 @@ def residue_selection(expression,
         in the GPCRdb. If :obj:`mdciao.nomenclature.LabelerCGN`, use this object directly
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
+    KLIFS_string : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
+        String for kinase KLIFS nomenclature. First, try to locate a local
+        file that directly has the `KLIFS_string` as a name. If that fails, then
+        combine the filename-format expected by :obj:`mdciao.nomenclature.LabelerKLIFS`
+        with `KLIFS_string` to construct a filename and check again.
+        If that doesn't work, then go online to contact the KLIFS database.
+
+        For the online lookup in the KLIFS database, the string
+        has to be formatted "key:value", which ultimately leads to a given KLIFS entry.
+        Acceptable keys and values for `KLIFS_string` are:
+            * "UniProtAC", e.g. "UniProtAC:P31751"
+            * "kinase_ID", e.g. "kinase_ID:2"
+            * "structure_ID", e.g. "structure_ID:1904", e.g. "P31751",
+        Please check the documentation on :obj:`mdciao.nomenclature.LabelerKLIFS`
+        for a more elaborate explanation on when to pick one of these key:value
+        pairs.
+
+        Finally, if `KLIFS_string` is an :obj:`mdciao.nomenclature.LabelerKLIFS`,
+        use this object directly (allows for object re-use when in API mode).
+        See :obj:`mdciao.nomenclature` for more info and references. Alos, please note
+        the difference between UniProt Accession Code
+        and UniProt entry name as explained
+        `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+
     save_nomenclature_files : bool, default is False
         Save available nomenclature definitions to disk so :
     accept_guess : bool, default is False
@@ -2233,7 +2257,7 @@ def residue_selection(expression,
     res_idxs_list, consensus_maps, __ = _res_resolver(expression, _top, _frags,
                                                       midstring="Your selection '%s' yields:" % expression,
                                                       GPCR_UniProt=GPCR_UniProt, CGN_UniProt=CGN_UniProt,
-                                                      KLIFS_string=KLIFS_UniProtAC,
+                                                      KLIFS_string=KLIFS_string,
                                                       save_nomenclature_files=save_nomenclature_files,
                                                       accept_guess=accept_guess,
                                                       just_inform=True)
