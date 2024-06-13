@@ -1196,8 +1196,8 @@ class Test_read_excel_as_KDF(unittest.TestCase):
 class Test_KLIFS_finder(unittest.TestCase):
     def setUp(self):
         # This acts as test_find_online
-        self.UniProtAC = "P31751"
-        self.KLIFS_df = nomenclature._KLIFS_finder(self.UniProtAC)[0]
+        self.KLIFS_string = "UniProtAC:P31751"
+        self.KLIFS_df = nomenclature._KLIFS_finder(self.KLIFS_string)[0]
         self.geom = nomenclature._read_excel_as_KDF(test_filenames.KLIFS_P31751_xlsx).PDB_geom
 
     def test_finds_online(self):
@@ -1225,7 +1225,7 @@ class Test_KLIFS_finder(unittest.TestCase):
             assert self.KLIFS_df.PDB_geom == self.geom
 
     def test_finds_local_with_uniprot(self):
-        df, filename = nomenclature._KLIFS_finder(self.UniProtAC, try_web_lookup=False,
+        df, filename = nomenclature._KLIFS_finder("P31751", try_web_lookup=False,
                                                   local_path=test_filenames.nomenclature_path)
         assert df.PDB_id == self.KLIFS_df.PDB_id
         assert df.UniProtAC == self.KLIFS_df.UniProtAC

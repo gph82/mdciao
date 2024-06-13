@@ -3241,7 +3241,7 @@ def _KLIFS_web_lookup(KLIFS_string,
     Parameters
     ----------
     KLIFS_string : str
-       A string by formatted "key:value" which
+       A string formatted "key:value" which
        ultimately leads to a given KLIFS entry
        Acceptable keys and values for `KLIFS_string` are:
         * "UniProtAC", e.g. "UniProtAC:P31751"
@@ -3437,7 +3437,7 @@ def _KLIFS_structure_ID2Trajectory(structure_ID, KLIFS_API="https://klifs.net/ap
 
     return traj
 
-def _KLIFS_finder(UniProtAC,
+def _KLIFS_finder(KLIFS_string,
                   format='KLIFS_%s.xlsx',
                   local_path='.',
                   try_web_lookup=True,
@@ -3459,14 +3459,30 @@ def _KLIFS_finder(UniProtAC,
 
     Parameters
     ----------
-    UniProtAC : str
-       UniProt Accession Code, e.g. P31751 or
-       filename e.g. 'KLIFS_P31751.xlsx'
-    format : str
-        A format string that turns the :obj:`identifier`
-        into a filename for local lookup, in case the
-        user has custom filenames, e.g. KLIFS_P31751.xlsx
-    local_path : str
+    KLIFS_string : str
+        A string with a KLIFS identifier to be processed,
+        or a filename for local lookup.
+        If string, it has to be formatted "key:value" which
+        ultimately leads to a given KLIFS entry
+        Acceptable keys and values for `KLIFS_string` are:
+         * "UniProtAC", e.g. "UniProtAC:P31751"
+         * "kinase_ID", e.g. "kinase_ID:2"
+         * "structure_ID", e.g. "structure_ID:1904"
+        Any of the above keys will yield the same `KLIFS_DF`, since
+        the UniProtAC can be used to lookup the kinase_ID, and
+        the kinase_ID automatically picks the best structure_ID (PDB),
+        but the user can specify directly the kinase_ID or the structure_ID.
+        If filename, anthing pointint to valid file works,
+        e.g. 'KLIFS_P31751.xlsx' for local lookup.
+    format : str, default is 'KLIFS_%s.xlsx'
+        A format string that turns the
+        `KLIFS_string` directly into a filename
+        for local lookup, in case the
+        user has custom filenames, e.g. if
+        the `KLIFS_string="P31751"` then this
+         format specifier will turn it into
+         `KLIFS_P31751.xlsx.`
+    local_path : str, default is '.'
         The local path to the local KLIFS data file
     try_web_lookup : bool, default is True
         If the local lookup fails, go online
@@ -3499,18 +3515,18 @@ def _KLIFS_finder(UniProtAC,
         the file that was used
     """
 
-    if _path.exists(UniProtAC):
-        fullpath = UniProtAC
+    if _path.exists(KLIFS_string):
+        fullpath = KLIFS_string
         try_web_lookup = False
     else:
-        xlsxname = format % UniProtAC
+        xlsxname = format % KLIFS_string
         fullpath = _path.join(local_path, xlsxname)
     KLIFS_API = "https://klifs.net/api"
-    url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, UniProtAC)
+    url = "%s/kinase_ID?kinase_name=%s" % (KLIFS_API, KLIFS_string)
 
     local_lookup_lambda = lambda fullpath: _read_excel_as_KDF(fullpath, keep_PDB_geom=keep_PDB_geom)
 
-    web_looukup_lambda = lambda url: _KLIFS_web_lookup(UniProtAC, verbose=verbose, timeout=15, keep_PDB_geom=keep_PDB_geom)
+    web_looukup_lambda = lambda url: _KLIFS_web_lookup(KLIFS_string, verbose=verbose, timeout=15, keep_PDB_geom=keep_PDB_geom)
     return _finder_writer(fullpath, local_lookup_lambda,
                           url, web_looukup_lambda,
                           try_web_lookup=try_web_lookup,
