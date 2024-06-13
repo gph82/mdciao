@@ -861,7 +861,7 @@ def residue_neighborhoods(residues,
                  "\n" % (residues,n_nearest)
     res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
                                                                    midstring=mid_string, GPCR_UniProt=GPCR_UniProt,
-                                                                   CGN_UniProt=CGN_UniProt, KLIFS_UniProtAC=KLIFS_UniProtAC,
+                                                                   CGN_UniProt=CGN_UniProt, KLIFS_string=KLIFS_UniProtAC,
                                                                    save_nomenclature_files=save_nomenclature_files,
                                                                    accept_guess=accept_guess,
                                                                    fragment_names=fragment_names,
@@ -2105,12 +2105,12 @@ def pdb(code,
 
     return _mdcpdb.pdb2traj(code, filename=filename, verbose=verbose,url=url)
 
-def _res_resolver(res_range, top, fragments, midstring=None, GPCR_UniProt=None, CGN_UniProt=None, KLIFS_UniProtAC=None,
+def _res_resolver(res_range, top, fragments, midstring=None, GPCR_UniProt=None, CGN_UniProt=None, KLIFS_string=None,
                   save_nomenclature_files=False, accept_guess=False, **rangeexpand_residues2residxs_kwargs):
 
     option_dict = {"GPCR": GPCR_UniProt,
                    "CGN": CGN_UniProt,
-                   "KLIFS": KLIFS_UniProtAC}
+                   "KLIFS": KLIFS_string}
 
     option_dict = {key : val for key, val in option_dict.items() if not str(val).lower()=="none"}
     #print(option_dict)
@@ -2233,7 +2233,7 @@ def residue_selection(expression,
     res_idxs_list, consensus_maps, __ = _res_resolver(expression, _top, _frags,
                                                       midstring="Your selection '%s' yields:" % expression,
                                                       GPCR_UniProt=GPCR_UniProt, CGN_UniProt=CGN_UniProt,
-                                                      KLIFS_UniProtAC=KLIFS_UniProtAC,
+                                                      KLIFS_string=KLIFS_UniProtAC,
                                                       save_nomenclature_files=save_nomenclature_files,
                                                       accept_guess=accept_guess,
                                                       just_inform=True)
