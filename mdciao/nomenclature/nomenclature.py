@@ -3598,14 +3598,29 @@ class LabelerKLIFS(LabelerConsensus):
     The residue notation is obtained from the
     `Kinase–Ligand Interaction Fingerprints and Structure database, KLIFS <https://klifs.net/>`_.
 
-    The online lookup logic, implemented by the low-level method :obj:`_KLIFS_web_lookup`, is:
+    Since the KLIFS database serves residue labels associated with specific PDBs,
+    and there is more than one PDB per kinase, the lookup logic, implemented
+    by the low-level method :obj:`_KLIFS_web_lookup`, allows for some flexibility
+    in the input:
+     * Query via a UniProt Accession Code, which yields a kinase ID (which are
+       internal to KLIFS), which has quality-scored PDBs associated to it
+       and then get labels from the highest-scored PDB
+       (which has a unique structure ID internal to KLIFS).
+       Please note the difference between UniProt Accession Code
+       and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_.
+     * Skip the first step and query directly via a KLIFS kinase ID. From
+       that kinase ID, follow the same logic as above to get the associated
+       highest-scored PDB (and its KLIFS structure ID) and then get the labels.
+     * Skip the first and second step and query directly via KLIFS structure ID,
+       and get the labels from the PDB associted to it, regardless of its score.
+    Please see the docstring on `KLIFS_string` on how to choose between the
+    above strategies.
 
-     * Query `KLIFS <https://klifs.net/>`_ with the UniProt accession code and
-       get best structure match (highest KLIFS score) and its associated PDB.
-     * Query `KLIFS <https://klifs.net/>`_ again for that structure/PDB
-       and get their 85 pocket residue indices (in that specific PDB file)
+    Once the PDB and structure ID have been determined, then this method also
+
+     * gets the 85 pocket residue indices (in that specific PDB file)
        and their consensus names.
-     * Get a geometry contains the kinase and other chains associated to
+     * gets a geometry containing the kinase and other chains associated to
        the kinase in the original PDB, according to `the docs <https://klifs.net/swagger/#/Structures/get_structure_get_pdb_complex>`_ ,
        that means "the full structure (including solvent, cofactors, ligands, etc.) in PDB format"
 
@@ -3614,13 +3629,13 @@ class LabelerKLIFS(LabelerConsensus):
 
     The local lookup logic, implemented by the low-level method :obj:`_KLIFS_finder`, is:
 
-     * Use the :obj:`UniProtAC` directly or in combination with :obj:`format` ="KLIFS_%s.xlsx"
-       and :obj:`local_path` to locate a local excel file. That excel file has been
-       generated previously by calling :obj:`LabelerKLIFS` with :obj:`write_to_disk=True`
-       or by using the :obj:`LabelerKLIFS.dataframe.to_excel` method of an
-       already instantiated :obj:`LabelerKLIFS` object. That Excel file will
+     * Use the `KLIFS_string` directly or in combination with `format`="KLIFS_%s.xlsx"
+       and `local_path` to locate a local excel file. That excel file has been
+       generated previously by calling `LabelerKLIFS` with `write_to_disk=True`
+       or by using the `LabelerKLIFS.dataframe.to_excel` method of an
+       already instantiated `LabelerKLIFS` object. That Excel file will
        contain, apart from the nomenclature, all other attributes, including
-       the PDB geometry, needed to re-generate the  :obj:`LabelerKLIFS` locally.
+       the PDB geometry, needed to re-generate the  `LabelerKLIFS` locally.
        An example Excel file has been distributed with mdciao and you can find it with:
 
        >>> import mdciao
@@ -3643,7 +3658,7 @@ class LabelerKLIFS(LabelerConsensus):
 
     """
 
-    def __init__(self, UniProtAC,
+    def __init__(self, KLIFS_string,
                  local_path=".",
                  format="KLIFS_%s.xlsx",
                  verbose=True,
@@ -3655,37 +3670,53 @@ class LabelerKLIFS(LabelerConsensus):
 
         Parameters
         ----------
-        UniProtAC : str
-            UniProt Accession Code, e.g. P31751
-            it gets directly passed to :obj:`_KLIFS_finder`
-            Can be anything that can be used to try and find
-            the needed information, locally or online:
-             * a UniProt Accession Code, e.g. 'P31751'
-             * a full local filename, e.g. 'KLIFS_P31751.xlsx'
-            Please note the difference between UniProt Accession Code
-            and UniProt entry name as explained `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_.
+        KLIFS_string : str
+            A string with a KLIFS identifier to be processed,
+            or a filename for local lookup.
+            If string, it has to be formatted "key:value" which
+            ultimately leads to a given KLIFS entry (see above)
+            Acceptable keys and values for `KLIFS_string` are:
+
+            * "UniProtAC", e.g. "UniProtAC:P31751"
+            * "kinase_ID", e.g. "kinase_ID:2"
+            * "structure_ID", e.g. "structure_ID:1904"
+
+            Any of the above keys will yield the same labels, since
+            the UniProtAC can be used to look up the kinase_ID, and
+            the kinase_ID automatically picks the best structure_ID (PDB),
+            but the user can choose to specify directly the kinase_ID or the structure_ID.
+
+            If a local file is to be used instead of online lookup,
+            anything pointing to a valid file works,
+            e.g. 'KLIFS_P31751.xlsx'.
+
+            Finally, when the above fails, it will try to construct
+            a file by combining `KLIFS_string` with the `format`
+            and `local_path` arguments
+
         local_path : str, default is "."
-            Since the :obj:`UniProtAC` is turned into
-            a filename in case it's a descriptor,
-            this is the local path where to (potentially) look for files.
-            In case :obj:`UniProtAC` is just a filename,
-            we can turn it into a full path to
-            a local file using this parameter, which
-            is passed to :obj:`_KLIFS_finder`
-            and :obj:`LabelerConsensus`. Note that this
-            optional parameter is here for compatibility
+            Since the `KLIFS_string` can be a filename
+            (or turned into one, see above), this is the local path
+            where to (potentially) look for files.
+            Note that this optional parameter
+            is here for compatibility
             reasons with other methods and might disappear
             in the future.
-        format : str, default is "KLIFS_%s.xlsx"
-            How to construct a filename out of
-            :obj:`UniProtAC`
+        format : str, default is 'KLIFS_%s.xlsx'
+            A format string that turns the
+            `KLIFS_string` directly into a filename
+            for local lookup, in case the
+            user has custom filenames, e.g. if
+            the `KLIFS_string="P31751"` then this
+            format specifier will turn it into
+            `KLIFS_P31751.xlsx.`
         verbose : bool, default is True
             Be verbose. Gets passed to :obj:`_KLIFS_finder`
         try_web_lookup : bool, default is True
-            Try a web lookup on the KLIFS of the :obj:`UniProtAC`.
-            If :obj:`UniProtAC` is e.g. "KLIFS_P31751.xlsx",
+            Try a web lookup on the KLIFS via `KLIFS_string`.
+            If `KLIFS_string` is e.g. "KLIFS_P31751.xlsx",
             including the extension "xslx", then the lookup will
-            fail. This what the :obj:`format` parameter is for
+            fail. This what the `format` parameter is for
         write_to_disk : bool, default is False
             Save an excel file with the nomenclature
             information.
@@ -3701,7 +3732,7 @@ class LabelerKLIFS(LabelerConsensus):
         """
 
         self._conlab_column = "KLIFS"
-        self._dataframe, self._tablefile = _KLIFS_finder(UniProtAC,
+        self._dataframe, self._tablefile = _KLIFS_finder(KLIFS_string,
                                                          format=format,
                                                          local_path=local_path,
                                                          try_web_lookup=try_web_lookup,
