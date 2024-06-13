@@ -1,7 +1,7 @@
 ##############################################################################
 #    This file is part of mdciao.
 #    
-#    Copyright 2020 Charité Universitätsmedizin Berlin and the Authors
+#    Copyright 2024 Charité Universitätsmedizin Berlin and the Authors
 #
 #    Authors: Guillermo Pérez-Hernandez
 #    Contributors:
