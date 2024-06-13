@@ -66,6 +66,29 @@ Status
 ``mdciao`` is approaching its first major release, so less changes in the API and CLI calls are expected. For more info on semantic versioning please check
 `the semver page <https://semver.org/#spec-item-4>`_.
 
+Scope
+======
+``mdciao`` originated as a loose collection of CLI scripts used in our lab to streamline contact-frequency analysis of MD simulations with `mdtraj <https://mdtraj.org/>`_,
+which is doing a lot of the heavy work under the hood of ``mdciao``. The goal was to take the less scripting-affine
+lab members from their raw data to informative graphs about the general vicinity of *their* residues
+of interest without much hassle. From there, it grew to incorporate many of the things routinely done in the lab
+(with a focus on GPCRs and G proteins) and ultimately a package available for third-party use was made.
+
+The main publications which have driven the development of ``mdciao`` are:
+ * Function and dynamics of the intrinsically disordered carboxyl terminus of β2 adrenergic receptor.
+    | Heng, J., Hu, Y., Pérez-Hernández, G. et al.
+    | Nat Commun 14, 2005 (2023).
+    | https://doi.org/10.1038/s41467-023-37233-1
+ * Time-resolved cryo-EM of G-protein activation by a GPCR.
+    | Papasergi-Scott, M.M., Pérez-Hernández, G., Batebi, H. et al.
+    | Nature 629, 1182–1191 (2024).
+    | https://doi.org/10.1038/s41586-024-07153-1
+ * Mechanistic insights into G-protein coupling with an agonist-bound G-protein-coupled receptor.
+    | Batebi, H., Pérez-Hernández, G., Rahman, S.N. et al.
+    | Nat Struct Mol Biol (2024).
+    | https://doi.org/10.1038/s41594-024-01334-2
+
+
 TODOs
 =====
 This is an informal list of known issues and TODOs:
