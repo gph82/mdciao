@@ -14,7 +14,7 @@ mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation D
 .. figure:: imgs/distro_and_violin.png
    :scale: 25%
 
-.. figure:: doc/imgs/timedep_ctc_matrix.png
+.. figure:: imgs/timedep_ctc_matrix.png
    :scale: 55%
 
 .. _my-reference-label:
