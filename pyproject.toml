@@ -19,6 +19,7 @@ requires-python = ">=3.6"
 dependencies = [ "cython",
                  "numpy>=1.18.1",
                  "mdtraj>=1.9.8",
+                 "mdtraj>=1.10.0"; python_version>='3.12'",
                  "astunparse; python_version!='3.8'",
                  "astunparse<1.6.3; python_version=='3.8'",
                  "pandas",
