@@ -229,6 +229,31 @@ class ExamplesCLTs(object):
         if self.test:
             return CP
 
+@_contextlib.contextmanager
+def _linkorcopy2TDir(suffix, filelist):
+    r"""
+    Context manager to wraps around :obj:`tempfile.TemporaryDirectory` and link (or copy) the files from `filelist` there
+
+    If an "Invalid cross-device link" is found, it copies instead of links the file
+
+    Parameters
+    ----------
+    suffix : string
+        passed do :obj:`tempfile.TemporaryDirectory`
+    filelist : list
+        The list of files to be copied to the TemporaryDirectory
+
+    Returns
+    -------
+    None
+    """
+    with _TDir(suffix=suffix) as t:
+        for fn in filelist:
+            try:
+                _link(fn, _path.join(t, _path.basename(fn)))
+            except OSError:
+                _shcopy(fn, _path.join(t, _path.basename(fn)))
+        yield t
 
 def ContactGroupL394(**kwargs):
     r"""
@@ -251,13 +276,11 @@ def ContactGroupL394(**kwargs):
     CG : a :obj:`~mdciao.contacts.ContactGroup`
 
     """
-    # TODO make a method out of this link+cd_tmpdir+return
-    with _TDir(suffix="_mdciao_example_CG") as t:
-        for fn in [filenames.traj_xtc,
-                   filenames.top_pdb,
-                   filenames.adrb2_human_xlsx, filenames.gnas2_human_xlsx]:
-            _link(fn, _path.join(t, _path.basename(fn)))
-
+    with _linkorcopy2TDir("_mdciao_example_CG",
+                          [filenames.traj_xtc,
+                           filenames.top_pdb,
+                           filenames.adrb2_human_xlsx,
+                           filenames.gnas2_human_xlsx]) as t:
         with remember_cwd():
             _chdir(t)
             b = _io.StringIO()
@@ -603,10 +626,7 @@ def Interface_B2AR_Gas(**kwargs):
 
 def KLIFSLabeler_P31751() -> _LabelerKLIFS:
     r"""Build an :obj:`~mdciao.nomenclature.LabelerKLIFS` with the KLIFS_P31751.xlsx and 3E8D.pdb.gz.pdb files shipped with mdciao"""
-    with _TDir(suffix="_mdciao_example_KLIFS") as t:
-        for fn in [filenames.KLIFS_P31751_xlsx, filenames.pdb_3E8D]:
-            _link(fn, _path.join(t, _path.basename(fn)))
-
+    with _linkorcopy2TDir("_mdciao_example_KLIFS", [filenames.KLIFS_P31751_xlsx, filenames.pdb_3E8D]) as t:
         with remember_cwd():
             _chdir(t)
             return _LabelerKLIFS("P31751", try_web_lookup=False)
