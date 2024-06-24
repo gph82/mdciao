@@ -1817,8 +1817,12 @@ class TestContactGroup(TestBaseClassContactGroup):
     def test_repframe_w_traj_violines_many_frames_just_runs(self):
         CG = examples.ContactGroupL394()
         with _TDir(suffix="_mdciao_example_CG") as t:
-            examples.examples._link(test_filenames.traj_xtc,
-                                    examples.examples._path.join(t, examples.examples._path.basename(test_filenames.traj_xtc)))
+            try:
+                examples.examples._link(test_filenames.traj_xtc,
+                                        examples.examples._path.join(t, examples.examples._path.basename(test_filenames.traj_xtc)))
+            except OSError:
+                examples.examples._shcopy(test_filenames.traj_xtc,
+                                          examples.examples._path.join(t, examples.examples._path.basename(test_filenames.traj_xtc)))
             with examples.examples.remember_cwd():
                 examples.examples._chdir(t)
                 repframes, RMSDd, values, trajs = CG.repframes(show_violins=True, return_traj=True, n_frames=10)
