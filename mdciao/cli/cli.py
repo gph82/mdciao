@@ -843,6 +843,8 @@ def residue_neighborhoods(residues,
     neighborhoods : dict
         Keyed by unique, zero-indexed residue indices, valued with
         :obj:`mdciao.contacts.ContactGroup` objects
+        If no contacts have been found, returns None.
+
     """
 
     # Input control residues
@@ -932,7 +934,9 @@ def residue_neighborhoods(residues,
                                                             )
     idx_of_lower_lower_bounds = _np.unique(_np.hstack(idx_of_lower_lower_bounds))
     ctc_idxs_small = _np.array(ctc_idxs)[idx_of_lower_lower_bounds]
-
+    if len(ctc_idxs_small)==0:
+        print("No residues have any neighbors at %2.1f Ang. No output produced." % ctc_cutoff_Ang)
+        return {idx : None for idx in res_idxs_list}
     print(f"\nReduced to only {len(ctc_idxs_small)} residue pairs for the computation of actual residue-residue distances:")
     ctcs_trajs, time_arrays, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
                                                                  chunksize=chunksize_in_frames,
@@ -1400,6 +1404,7 @@ def interface(
     CG_interface : :obj:`mdciao.contacts.ContactGroup`
         The object containing the :obj:`mdciao.contacts.ContactPair`
         objects tha conform the interface.
+        If no contacts have been found, returns None.
 
     """
     if str(title).lower()=="none":
@@ -1464,6 +1469,9 @@ def interface(
                                                             periodic=pbc,
                                                             )
     ctc_idxs_intf = _np.array(ctc_idxs)[_np.unique(_np.hstack(idx_of_lower_lower_bounds))]
+    if len(ctc_idxs_intf)==0:
+        print("No contacts found at %2.1f Ang. No output produced." % ctc_cutoff_Ang)
+        return
     print(f"Reduced to only {len(ctc_idxs_intf)} residue pairs for the computation of actual residue-residue distances:")
     ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_intf,
                                                      stride=stride, return_times_and_atoms=True,
