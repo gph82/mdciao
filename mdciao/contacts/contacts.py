@@ -1943,54 +1943,6 @@ class ContactPair(object):
         """
         return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)))
 
-    #@_kwargs_subs(ContactPair.label_flex)
-    def frequency_dict(self, ctc_cutoff_Ang,
-                       switch_off_Ang=None,
-                       atom_types=False,
-                       **kwargs_label_flex,
-                       ):
-        """
-        Returns the :obj:`frequency_overall_trajs` as a more informative
-        dictionary with keys "freq", "residues", "fragments", "label"
-
-        Parameters
-        ----------
-        ctc_cutoff_Ang : float
-            Cutoff in Angstrom. The comparison operator is "<="
-        atom_types : bool, default is false
-            Include the relative frequency of atom-type-pairs
-            involved in the contact
-
-        kwargs_label_flex : dict
-            Optional arguments for
-            :obj:`~mdciao.contacts.ContactPair.label_flex`.
-            The optional parameters of are:
-
-        Other Parameters
-        ----------------
-        %(substitute_kwargs)s
-
-        Returns
-        -------
-        fdict : dictionary
-
-        """
-
-        label = self.label_flex(**kwargs_label_flex)
-
-        fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
-                "label":label,
-                 #TODO passs fmt indicators here so that padding occurs for all entries of th CG
-                "residues": '%u - %u' % tuple(self.residues.idxs_pair)}
-        if self.fragments.idxs is not None:
-            fdict.update({"fragments" :  '%u - %u' % tuple(self.fragments.idxs)})
-
-        if atom_types:
-            fdict.update({"by_atomtypes" :
-                              self.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,
-                                                                                         switch_off_Ang=switch_off_Ang)})
-        return fdict
-
     def label_flex(self, AA_format="short", split_label=True, defrag=None, fmt1="%-15s", fmt2="%-15s"):
         r"""
         A more flexible method to produce the label of this :obj:`ContactPair`
@@ -2096,6 +2048,55 @@ class ContactPair(object):
                     label = self.neighborhood.partner_residue_name
 
         return label
+
+    @_kwargs_subs(label_flex)
+    def frequency_dict(self, ctc_cutoff_Ang,
+                       switch_off_Ang=None,
+                       atom_types=False,
+                       **kwargs_label_flex,
+                       ):
+        """
+        Returns the :obj:`frequency_overall_trajs` as a more informative
+        dictionary with keys "freq", "residues", "fragments", "label"
+
+        Parameters
+        ----------
+        ctc_cutoff_Ang : float
+            Cutoff in Angstrom. The comparison operator is "<="
+        switch_off_Ang : float, default is None
+            TODO
+        atom_types : bool, default is false
+            Include the relative frequency of atom-type-pairs
+            involved in the contact
+        kwargs_label_flex : dict
+            Optional arguments for
+            :obj:`~mdciao.contacts.ContactPair.label_flex`.
+            The optional parameters of are:
+
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
+
+        Returns
+        -------
+        fdict : dictionary
+
+        """
+
+        label = self.label_flex(**kwargs_label_flex)
+
+        fdict = {"freq":self.frequency_overall_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang),
+                "label":label,
+                 #TODO passs fmt indicators here so that padding occurs for all entries of th CG
+                "residues": '%u - %u' % tuple(self.residues.idxs_pair)}
+        if self.fragments.idxs is not None:
+            fdict.update({"fragments" :  '%u - %u' % tuple(self.fragments.idxs)})
+
+        if atom_types:
+            fdict.update({"by_atomtypes" :
+                              self.relative_frequency_of_formed_atom_pairs_overall_trajs(ctc_cutoff_Ang,
+                                                                                         switch_off_Ang=switch_off_Ang)})
+        return fdict
 
     def distro_overall_trajs(self, bins=10):
         """
@@ -2228,7 +2229,6 @@ class ContactPair(object):
             keys = _np.array([keys[ii] for ii in _np.argsort(counts)[::-1]])
             counts = sorted(counts)[::-1]
         return keys, counts
-
 
     def relative_frequency_of_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang,
                                                               switch_off_Ang=None,
