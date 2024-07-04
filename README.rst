@@ -42,13 +42,34 @@ Currently, docs are hosted at `<http://proteinformatics.org/mdciao/>`_, but this
 
 System Requirements
 ===================
-``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions?query=workflow%3A%22Python+package%22>`_ for GNU/Linux and MacOs. Tested python versions are:
+``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions>`_ for GNU/Linux and MacOs. Tested Python versions are:
 
 * GNU/Linux: 3.7, 3.8, 3.9, 3.10, 3.11
 * MacOs: 3.7, 3.8, 3.9, 3.10, 3.11. For Python 3.7, four CI-tests involving `mdtraj.compute_dssp <https://www.mdtraj.org/1.9.8.dev0/api/generated/mdtraj.compute_dssp.html?highlight=dssp#mdtraj.compute_dssp>`_ ,
 are skipped because of a hard to repdroduce, random segmentation fault, which apparently wont fix, see here `<https://github.com/mdtraj/mdtraj/issues/1574>`_ and  `here <https://github.com/mdtraj/mdtraj/issues/1473>`_.
 
 So everything should work *out of the box* in these conditions.
+
+.. admonition:: Python 3.12 users
+
+   If you try to install on Python 3.12, you will get a dependency error, because
+
+   * the module ``bezier`` `requires Numpy >= 2.0 for Python 3.12 <https://github.com/dhermes/bezier/releases/tag/2024.6.20>`_, but
+   * the module ``mdtraj`` `has pinned Numpy <= 2.0 <https://github.com/mdtraj/mdtraj/issues/1873/>`_.
+
+   Still, you can install mdciao in Python 3.12 **if you don't mind a somewhat inconsistent environment**:
+
+   >>> pip install bezier
+   >>> pip install mdtraj --use-deprecated=legacy-resolver
+   >>> pip install mdciao --use-deprecated=legacy-resolver
+
+   What we are doing is installing ``bezier`` normally (using ``numpy>=2.0``) and then installing ``mdtraj`` using ``pip``'s legacy resolver, which will install ``numpy-1.26.4`` even if that yields an inconsistent environment. You will get the notification:
+
+   >>> ERROR: pip's legacy dependency resolver does not consider dependency conflicts when selecting packages. This behaviour is the source of the following dependency conflicts.
+   >>> mdtraj 1.10.0 requires numpy<2.0.0a0,>=1.23, but you'll have numpy 2.0.0 which is incompatible.
+
+   Since ``mdciao`` installs and passes the CI-tests for Python 3.12 in such an environment, you can use it **at your own risk**. Please report on any issues you might find. Please note that the ``--use-deprecated=legacy-resolver`` option `might not be available in the future <https://pip.pypa.io/en/stable/user_guide/#deprecation-timeline>`_.
+
 
 Authors
 =======
