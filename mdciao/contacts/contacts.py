@@ -2276,6 +2276,10 @@ class ContactPair(object):
                 atom_pairs = ['-'.join([str(ii) for ii in key]) for key in atom_pairs_as_atoms]
             else:
                 atom_pairs = ['-'.join([ii.name for ii in key]) for key in atom_pairs_as_atoms]
+            atom_pairs_table = "\n".join([f"{val :2} atom-pairs named '{key}'" for key, val in _col_Counter(atom_pairs).items()])
+            assert len(_np.unique(atom_pairs))==len(atom_pairs), (f"There are duplicate atom-pair names:\n{atom_pairs_table}.\n"
+                                                                  f"This method cannot work unless atom-pair names are unique.\n"
+                                                                  f"Please rename the atoms of one or both residues with unique atom names.")
             return {key:count/_np.sum(counts) for key, count in zip(atom_pairs, counts)
                     if count/_np.sum(counts)>min_freq}
 
