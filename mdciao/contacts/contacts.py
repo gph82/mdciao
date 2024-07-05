@@ -979,8 +979,8 @@ class Residues(object):
         self._partner_residue = None
         if self._anchor_residue_index is not None:
             assert self._anchor_residue_index in self.idxs_pair
-            self._anchor_index = int(_np.argwhere(self.idxs_pair == self.anchor_residue_index))
-            self._partner_index = int(_np.argwhere(self.idxs_pair != self.anchor_residue_index))
+            self._anchor_index = int(_np.flatnonzero(self.idxs_pair == self.anchor_residue_index).squeeze())
+            self._partner_index = int(_np.flatnonzero(self.idxs_pair != self.anchor_residue_index).squeeze())
             self._partner_residue_index = self.idxs_pair[self.partner_index]
             if top is not None:
                 self._anchor_residue =  top.residue(self.anchor_residue_index)
@@ -3533,7 +3533,7 @@ class ContactGroup(object):
         ctc_idxs = []
         for ii, pair in enumerate(self.res_idxs_pairs):
             if idx in pair:
-                ctc_idxs.append([ii,_np.argwhere(pair==idx).squeeze()])
+                ctc_idxs.append([ii,_np.flatnonzero(pair==idx).squeeze()])
         return _np.vstack(ctc_idxs)
 
     #@_kwargs_subs(ContactPair.frequency_dict, exclude=["atom_types"])
@@ -5668,7 +5668,7 @@ class ContactGroup(object):
         freqs = _np.array([j for idict in frq_dict_list for j in idict.values()])
 
         # Truncate
-        label_bars = [label_bars[ii] for ii in _np.argwhere(freqs>truncate_at).squeeze()]
+        label_bars = [label_bars[ii] for ii in _np.flatnonzero(freqs>truncate_at)]
         freqs = freqs[freqs>truncate_at]
 
         xvec = _np.arange(len(freqs))

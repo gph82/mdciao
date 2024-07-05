@@ -753,7 +753,7 @@ def _dih_idxs_for_residue(res_idxs, geom):
     quad_idxs_2_res_idxs = {key:_angle_quadruplet2residx(val, geom.top, max_residues_per_quad=2) for key, val in quads.items()}
     dict_out = {}
     for ii in res_idxs:
-        quad_idx = {key:_np.argwhere(val==ii).squeeze() for key, val in quad_idxs_2_res_idxs.items()}
+        quad_idx = {key:_np.flatnonzero(val==ii) for key, val in quad_idxs_2_res_idxs.items()}
         dict_out[ii] = {key:quads[key][val] for key, val in quad_idx.items() if _np.size(val)>0}
     return dict_out
 

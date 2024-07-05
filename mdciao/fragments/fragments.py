@@ -353,7 +353,7 @@ def get_fragments(top,
                 print("The fragment breaker %s appears nowhere" % breaker)
                 # raise ValueError
             else:
-                idx_split = _np.argwhere(idx ==_np.array(fragments[ifrag])).squeeze()
+                idx_split = _np.flatnonzero(idx ==_np.array(fragments[ifrag])).squeeze()
                 #print('%s (index %s) found in position %s of frag %s%s' % (breaker, idx, idx_split, ifrag, fragments[ifrag]))
                 subfrags = [fragments[ifrag][:idx_split], fragments[ifrag][idx_split:]]
                 print("New fragments after breaker %s:" % breaker)

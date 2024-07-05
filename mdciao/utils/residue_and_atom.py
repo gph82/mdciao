@@ -140,10 +140,10 @@ def residues_from_descriptors(residue_descriptors,
             if str(answer).isdigit():
                 answer = int(answer)
                 assert answer in cand_fragments
-                idxs_w_answer = _np.argwhere([answer == ii for ii in cand_fragments]).squeeze()
+                idxs_w_answer = _np.flatnonzero([answer == ii for ii in cand_fragments])
                 cands = cands[idxs_w_answer]
             elif '.' in str(answer) and answer in cand_chars:
-                idx_w_answer = _np.argwhere([answer == ii for ii in cand_chars]).squeeze()
+                idx_w_answer = _np.flatnonzero([answer == ii for ii in cand_chars])
                 answer = cand_fragments[idx_w_answer]
                 cands = cands[idx_w_answer]
             else:

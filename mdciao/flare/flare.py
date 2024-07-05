@@ -378,7 +378,7 @@ def freqs2flare(freqs, res_idxs_pairs,
 
     # All formed contacts
     ctcs_averaged = _np.average(freqs, axis=0)
-    idxs_of_formed_contacts = _np.argwhere(_np.abs(ctcs_averaged)>freq_cutoff).squeeze()
+    idxs_of_formed_contacts = _np.flatnonzero(_np.abs(ctcs_averaged)>freq_cutoff)
     plot_this_pair_lambda = _futils.should_this_residue_pair_get_a_curve(residues_as_fragments,
                                                                          select_residxs=select_residxs,
                                                                          mute_fragments=mute_fragments,
