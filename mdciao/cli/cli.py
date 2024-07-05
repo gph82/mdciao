@@ -667,6 +667,11 @@ def residue_neighborhoods(residues,
         contacts. Default is 5.
     n_nearest : int, default is 4
         Exclude these many bonded neighbors for each residue
+    min_freq : float, default is 0.01
+        Do not show frequencies smaller than this. If you
+        notice the output being truncated at values too far
+        above this value, you need to increase the :obj:`ctc_control`
+        parameter.
     scheme : str, default is 'closest-heavy'
         Type of scheme for computing distance between
         residues. Choices are {'ca', 'closest', 'closest-
@@ -1239,7 +1244,7 @@ def interface(
     curve_color : str, default is 'auto'
         Type of color used for the curves. Alternatives are
         "P" or "H"
- fragments : str, list, None, default is "lig_resSeq+"
+    fragments : str, list, None, default is "lig_resSeq+"
         Topology fragments. There exist several input modes:
 
         * Name of a fragmentation heuristic, e.g.
@@ -1690,9 +1695,12 @@ def sites(site_inputs,
         Site(s) to compute. A site can be either
         a path to a site file in json format or
         directly a site dictionary. A site dictionary
-        is something like {"name":"site",
-                           "pairs":{"AAresSeq":["GLU30-ARG40",
-                                                "LYS31-W70"]}}
+        is something like
+
+        >>> {"name":"site",
+        >>>  "pairs":{"AAresSeq":["GLU30-ARG40",
+        >>>                       "LYS31-W70"]}}
+
         Any site containing a residue that can't be
         found in the topology will be discarded.
         See :obj:`mdciao.sites` for more info on
