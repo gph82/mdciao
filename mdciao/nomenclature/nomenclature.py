@@ -656,7 +656,7 @@ class LabelerConsensus(object):
             be verbose
 
         Returns
-        ------
+        -------
         top2self : dict
             Maps indices of `top` to indices
             of this objects self.seq
