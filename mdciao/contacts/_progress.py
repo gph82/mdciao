@@ -172,13 +172,14 @@ def _progressbardict2thread(progressbar_dict, sleep_between_updates=1, overwrite
     _signal.signal(_signal.SIGINT, handle_kb_interrupt)
 
     if _is_notebook():
+        widg_len = max([len(bar) + 5 for bar in progressbar_dict["pbars"]])
         progress = _ipywidgets.Textarea(value="\n".join(progressbar_dict["pbars"]), rows=len(progressbar_dict["pbars"]),
-                                        layout=_ipywidgets.Layout(width=f'{max([len(bar) + 5 for bar in progressbar_dict["pbars"]])}ch'),
+                                        layout=_ipywidgets.Layout(width=f'{widg_len}ch'),
                                         style={'font-size': f'{16}em'}
                                         )
 
         # Somewhat from here https://github.com/jupyter-widgets/ipywidgets/issues/2206#issuecomment-483246874
-        _display(_ipywidgets.HTML("<style> .no-border textarea { border: none; resize: none} </style>"))
+        _display(_ipywidgets.HTML("<style> .no-border textarea { border: none; resize: none; min-width: %uch} </style>"%widg_len))
         progress.add_class("no-border")
         def work(progress):
             while not exit_event.is_set():
