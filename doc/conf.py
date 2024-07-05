@@ -77,7 +77,7 @@ numfig_format = {'figure': 'Fig. %s'}
 #html_theme = 'alabaster'
 #html_theme = 'nature'
 html_theme = 'sphinx_rtd_theme'
-html_logo = 'imgs/mdciao.logo.svg'
+html_logo = 'imgs/mdciao.logo.png'
 html_theme_options = {
     'logo_only': False,
     'display_version': True,
