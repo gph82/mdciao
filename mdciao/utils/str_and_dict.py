@@ -22,7 +22,8 @@ from os import path as _path, listdir as _ls
 import re as _re
 from collections import defaultdict as _defdict
 from natsort import natsorted as _natsorted
-from inspect import signature as _signature
+from inspect import signature as _signature, getfullargspec as _getfullargspec
+
 import docstring_parser as _dsp
 try:
     from matplotlib import docstring as _mpldocstring
@@ -37,8 +38,10 @@ tunit2tunit = {"ps":  {"ps": 1, "ns": 1e-3, "mus": 1e-6, "ms":1e-9},
                 "ms":  {"ps": 1e9, "ns": 1e6,  "mus": 1e3,  "ms":1},
                }
 
-def _kwargs_docstring(obj, exclude=None):
+def _kwargs_docstring(obj, exclude=None) -> str:
     r""" Return the formatted docstring of a callable object's keyword arguments.
+
+    Also returns the docstring for the `obj`'s **kwargs in case obj also has **kwargs itself.
 
     Parameters
     ----------
@@ -52,27 +55,59 @@ def _kwargs_docstring(obj, exclude=None):
     Returns
     -------
     docstring :  str
+        A string with the docstring of obj and obj's inherited
+        **kwargs. The docstring is formatted with tabs and linebreaaks
+        already.
     """
+
+    # Get the info
     sig = _signature(obj)
-    dp = _dsp.parse(obj.__doc__)
-    params = ""
+    fas = _getfullargspec(obj)
+    ds_params = _dsp.parse(obj.__doc__).params
+
     if exclude is None:
         exclude=[]
-    for p in dp.params:
-        for arg in p.arg_name.replace(" ", "").split(","):
-            if arg in sig.parameters.keys() and (
-                    "=" in str(sig.parameters[arg]) or sig.parameters[arg].kind.value == 3) \
-                    and arg not in exclude:
-                #if params=="":
-                #    first_tab=""
-                #else:
-                #    first_tab="\t"
 
-                line = f"{p.arg_name} : {p.type_name}\n"
-                line += ''.join(['\t%s\n' % (desc) for desc in p.description.splitlines()])
-                params += line.expandtabs(4)
-                break
+    to_add_idxs = {"own":[], "**kwargs" : []}
+    to_add_names = {"own" : [], "**kwargs" : []}
+    #Iterate over the parameters inferred via docstring only
+    for ii, par in enumerate(ds_params):
+        if par.arg_name not in exclude+[fas.varkw]:
+
+            # First case: we're adding the method's own optional parameters
+            # These satisfy that 1.1) they are in the signature
+            if par.arg_name in sig.parameters.keys():
+                # and 1.2) they're optional
+                if "=" in str(sig.parameters[par.arg_name]) or sig.parameters[par.arg_name].kind.value == 3:
+                    # and 1.3) they have not been added before.
+                    # This excludes inherited **kwargs that have been added to the obj's docstring and
+                    # have the same name as one of the method's own kwargs. These will most likely have been exlucded
+                    # via the exclude param of the decorator
+                    if par.arg_name not in to_add_names["own"]:
+                        to_add_idxs["own"].append(ii)
+                        to_add_names["own"].append(par.arg_name)
+            # Second case: we're adding the method's inherited kwargs, we check that
+            # 2.1) they're NOT in the signature (hence the else)
+            else:
+                assert fas.varkw is not None # 2.2) we actually have **kwargs in obj
+                assert all([ii>jj for jj in to_add_idxs["own"]]) # 2.3) this kwarg comes after the 'own' kwargs in the docstring
+                to_add_idxs["**kwargs"].append(ii)
+                to_add_names["**kwargs"].append(par.arg_name)
+
+    picked_params =  [ds_params[ii] for ii in to_add_idxs["own"]+to_add_idxs["**kwargs"]]
+    pikced_params_names = to_add_names["own"]+to_add_names["**kwargs"]
+
+    # Check the above case-logic hasn't lead to dupes, bhould be covered by 1.3), but still
+    assert len(pikced_params_names)==len(_np.unique(pikced_params_names)), (obj, sig, to_add_names, pikced_params_names)
+
+    # Time to patch the docstring together
+    params = ""
+    for par in picked_params:
+        line = f"{par.arg_name} : {par.type_name}\n"
+        line += ''.join(['\t%s\n' % (desc) for desc in par.description.splitlines()])
+        params += line.expandtabs(4)
     assert params != ''
+
     return params
 
 def _kwargs_subs(funct_or_method, exclude=None):
