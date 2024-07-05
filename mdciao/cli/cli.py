@@ -547,6 +547,7 @@ def residue_neighborhoods(residues,
                           ctc_control=5,
                           n_nearest=4,
                           scheme="closest-heavy",
+                          min_freq=0.01,
                           chunksize_in_frames=2000,
                           n_smooth_hw=0,
                           sort=True,
@@ -973,7 +974,7 @@ def residue_neighborhoods(residues,
     empty_CGs = []
     for res_idx, idf in neighborhood_DFs.items():
         CPs = []
-        n_ctcs = _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, idf.freq)[0]
+        n_ctcs = _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, idf.freq, min_freq=min_freq)[0]
         for ii, irow in idf[:n_ctcs].iterrows():
             CPs.append(_mdcctcs.ContactPair([irow.residx1, irow.residx2],
                                             [itraj[:, irow.ctc_idx] for itraj in ctcs_trajs],
