@@ -3817,6 +3817,7 @@ class ContactGroup(object):
             dict_out = _dict_out
         return dict_out
 
+    @_kwargs_subs(ContactPair.frequency_dict, exclude=["switch_off_Ang", "atom_types"])
     def frequency_dataframe(self, ctc_cutoff_Ang,
                             switch_off_Ang=None,
                             atom_types=False,
@@ -3824,11 +3825,7 @@ class ContactGroup(object):
                             **ctc_fd_kwargs):
         r"""
         Output a formatted dataframe with fields "label", "freq" and "sum", optionally
-        dis-aggregated by type of contact in "by_atomtypes"
-
-        Note
-        ----
-        The contacts in the table are sorted by their order in the instantiation
+        dis-aggregated by type of contact by atom types
 
         Parameters
         ----------
@@ -3842,11 +3839,14 @@ class ContactGroup(object):
         sort_by_freq : bool, default is False
             Sort by descending frequency value,
             default is to keep the order of
-            :obj:`self.contact_pairs`
+            `self.contact_pairs`
         ctc_fd_kwargs: named optional arguments
-            Check :obj:`ContactPair.frequency_dict` for more info on e.g
-            AA_format='short' and or split_label
+            Optional parameters for :obj:`mdciao.ContactPair.frequency_dict`,
+            which are listed below.
 
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
 
         Returns
         -------
