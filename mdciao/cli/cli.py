@@ -1496,7 +1496,7 @@ def interface(
                                            top2confrag, list(consensus_maps.values()),
                                            keep_max_buffer_Ang=lb_cutoff_buffer_Ang)
     # The reporting is
-    n_ctcs =  _mdcu.lists._get_n_ctcs_from_freqs(ctc_control,df.freq)[0]
+    n_ctcs =  _mdcu.lists._get_n_ctcs_from_freqs(ctc_control,df.freq, min_freq=min_freq)[0]
 
     # Report n_ctcs and frequency summary leaving in the freqs < min_freq
     _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(df.freq>min_freq)]),
