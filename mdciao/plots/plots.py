@@ -393,7 +393,6 @@ def plot_unified_freq_dicts(freqs,
                             remove_identities=False,
                             vertical_plot=False,
                             identity_cutoff=1,
-                            ylim=1,
                             assign_w_color=False,
                             title=None,
                             legend_rows=4,
@@ -981,8 +980,10 @@ def compare_groups_of_contacts(groups,
                                                 per_residue=per_residue,
                                                 defrag=defrag)
         if per_residue or interface:
-            kwargs_plot_unified_freq_dicts["ylim"]= _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
+            ylim = _np.max([_np.max(list(ifreqs.values())) for ifreqs in freqs.values()])
             kwargs_plot_unified_freq_dicts["remove_identities"] = False
+        else:
+            ylim = None
 
         if ctc_cutoff_Ang is not None:
             title = _mdcu.str_and_dict.replace4latex(title+'@%2.1f AA'%ctc_cutoff_Ang)

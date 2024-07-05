@@ -138,24 +138,17 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
         #myfig.savefig("10.test_vert.std.png", bbox_inches="tight")
         _plt.close("all")
 
-    def test_plot_unified_freq_dicts_ylim(self):
-        myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
-                                                  {"CG1":"r", "CG1copy":"b"}, ylim=2.25)
-
-        #myfig.savefig("11.test_ylim.png", bbox_inches="tight")
-        _plt.close("all")
-
     def test_plot_unified_freq_dicts_ax(self):
         _plt.figure()
         ax = _plt.gca()
         myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1":self.CG1_freqdict, "CG1copy":self.CG1_freqdict},
-                                                  {"CG1":"r", "CG1copy":"b"}, ylim=2.25, ax=ax)
+                                                  {"CG1":"r", "CG1copy":"b"}, ax=ax)
         assert myax is ax
         _plt.close("all")
 
     def test_plot_unified_freq_dictsfigsize_None(self):
         myfig, myax, __ = plots.plot_unified_freq_dicts({"CG1": self.CG1_freqdict, "CG1copy": self.CG1_freqdict},
-                                                        {"CG1": "r", "CG1copy": "b"}, ylim=2.25,
+                                                        {"CG1": "r", "CG1copy": "b"},
                                                         figsize=None)
         _plt.close("all")
 
