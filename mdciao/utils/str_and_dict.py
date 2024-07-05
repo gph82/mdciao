@@ -125,7 +125,6 @@ def _kwargs_subs(funct_or_method, exclude=None):
         matching those in `exclude` will be excluded from
         the returned docstring.
 
-
     Returns
     -------
     dec : mpldocstring.Substitution object
@@ -308,7 +307,6 @@ def unify_freq_dicts(freqs,
     freqs:  dictionary of dictionaries, e.g.:
         {A:{key1:valA1, key2:valA2, key3:valA3},
          B:{            key2:valB2, key3:valB3}}
-
     key_separator: str, default is "-"
         Specify how residues are separated in the contact
         label, eg. "GLU30-LYS40".
@@ -317,11 +315,9 @@ def unify_freq_dicts(freqs,
         equal to "LYS40-GLU30". Use "", "none" or None to differentiate.
         It will also be passed to :obj:`defrag_key` in case
         :obj:`defrag` is not None.
-
     exclude: list, default is None
          keys containing these strings will be excluded.
          NOTE: This is not implemented yet, will raise an error
-
     replacement_dict: dict, default is {}
         all keys/strings will be subjected to replacements following this
         dictionary, st. "GLH30" is "GLU30" if replacement_dict is {"GLH":"GLU"}
