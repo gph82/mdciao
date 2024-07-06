@@ -119,12 +119,16 @@ def _progress_dict2infoline(idict, first_update_after=1.5) -> str:
         elapsed = 'hh:mm:ss'
         remaining = 'hh:mm:ss'
         trajs_per_s = ''
-        frames_per_s = ''
     else:
         try:
-            frames_per_s = int(_np.round(idict['n_frames_done'] / elapsed))
+            # Only recompute frames_per_s if more frames have been processed
+            # Otherwise if n_frames_done stays the same but the clock is counting,
+            # then frames_per_sec necesarily decreases
+            if idict["n_frames_done"]>idict["n_frames_done_prev"]:
+                idict["frames_per_s"] = int(_np.round(idict['n_frames_done'] / elapsed))
+                idict["n_frames_done_prev"]=idict["n_frames_done"]
         except TypeError:
-            frames_per_s = ''
+            idict["frames_per_s"] = ''
             idict["n_frames_done"] = ''
         trajs_per_s = int(_np.round(idict['n_trajs_done'] / elapsed))
         try:
@@ -138,7 +142,7 @@ def _progress_dict2infoline(idict, first_update_after=1.5) -> str:
            f"Elapsed time: {str(elapsed) :>8}. " \
            f"Remaining time ~ {str(remaining) :>8}. " \
            f"Trajs/s: {trajs_per_s  :4}. " \
-           f"Frames/s: {frames_per_s :4}."
+           f"Frames/s: {idict['frames_per_s'] :4}."
 
 def _progressbardict2thread(progressbar_dict, sleep_between_updates=1, overwrite=True):
     r"""
@@ -277,6 +281,7 @@ def _prepare_progressbar_thread(progressbar_dict, progressbar):
         progressbar dict. These fields are.
         * "n_trajs_total"
         * "n_trajs_done"
+        * "n_trajs_done_prev"
         * "n_frames_done"
         * "start_time"
         * "n_jobs"
