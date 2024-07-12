@@ -491,7 +491,9 @@ def trajs2ctcs(trajs, top, ctc_residxs_pairs, stride=1, consolidate=True,
 
     assert isinstance(trajs,list) #otherwise we will iterate through the frames of a single traj
     n_jobs = _np.min((n_jobs, len(trajs)))
-    counters = {"n_trajs_total": len(trajs), "n_trajs_done": 0, "n_frames_done": 0, "start_time": _time(), "n_jobs":n_jobs}
+    counters = {"n_trajs_total": len(trajs), "n_trajs_done": 0, "n_frames_done": 0, "n_frames_done_prev" : -1,
+                "frames_per_s" : "",
+                "start_time": _time(), "n_jobs":n_jobs}
     progressbar_dict, thread, exit_event = _prepare_progressbar_thread(counters, progressbar)
     nchars_frame = _np.max([len(str(itraj)) for itraj in trajs])
 
@@ -825,7 +827,8 @@ def trajs2lower_bounds(trajs, top, ctc_residxs_pairs, stride=1,
     assert isinstance(trajs, list)  # otherwise we will iterate through the frames of a single traj
     try:
         n_jobs = _np.min((n_jobs, len(trajs)))
-        counters = {"n_trajs_total": len(trajs), "n_trajs_done": 0, "n_frames_done": 0, "start_time": _time(),
+        counters = {"n_trajs_total": len(trajs), "n_trajs_done": 0, "n_frames_done": 0, "n_frames_done_prev" : -1, "start_time": _time(),
+                    "frames_per_s": "",
                     "n_jobs": n_jobs}
         progressbar_dict, thread, exit_event = _prepare_progressbar_thread(counters, progressbar)
         nchars_fname = _np.max([len(str(itraj)) for itraj in trajs])
