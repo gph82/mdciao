@@ -169,11 +169,6 @@ def _progressbardict2thread(progressbar_dict, sleep_between_updates=1, overwrite
         An event that can be used
         as flag for when to stop updating
     """
-    # Prepare threading
-    exit_event = _threading.Event()
-    def handle_kb_interrupt(sig, frame):
-        exit_event.set()
-    _signal.signal(_signal.SIGINT, handle_kb_interrupt)
 
     if _is_notebook():
         widg_len = max([len(bar) + 5 for bar in progressbar_dict["pbars"]])
@@ -217,6 +212,14 @@ def _progressbardict2thread(progressbar_dict, sleep_between_updates=1, overwrite
                 progressbar_dict["pbars"][0] = _progress_dict2infoline(progressbar_dict)
                 _print_w_option_to_overwrite(progressbar_dict["pbars"], overwrite=overwrite)
         thread = _threading.Thread(target=work, args=(progress,))
+
+    exit_event = _threading.Event()
+    def handle_kb_interrupt(sig, frame):
+        exit_event.set()
+        thread.join()
+        raise KeyboardInterrupt
+
+    _signal.signal(_signal.SIGINT, handle_kb_interrupt)
 
     return thread, exit_event
 
