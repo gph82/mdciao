@@ -27,7 +27,7 @@ from copy import deepcopy as _dcopy
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
-
+_allowed_site_schemes = ("AAresSeq","residx", "consensus")
 def x2site(site, fmt="AAresSeq"):
     """
     Return a site dictionary from a dict or an ascii file
@@ -70,7 +70,7 @@ def x2site(site, fmt="AAresSeq"):
 
     try:
         bondtype = list(idict["pairs"].keys())
-        assert len(bondtype)==1 and bondtype[0] in ["AAresSeq","residx"]
+        assert len(bondtype)==1 and bondtype[0] in _allowed_site_schemes
         bondtype = bondtype[0]
         pairs = idict["pairs"][bondtype]
         if isinstance(pairs[0][0],str):  # can only be str separated by "-"
@@ -106,6 +106,7 @@ def x2site(site, fmt="AAresSeq"):
 def sites_to_res_pairs(site_dicts, top,
                        fragments=None,
                        default_fragment_index=None,
+                       consensus_maps=None,
                        **get_fragments_kwargs,
                        ):
     r"""Return the pairs of res_idxs needed to compute the contacts contained in the input sites.
@@ -161,6 +162,24 @@ def sites_to_res_pairs(site_dicts, top,
                                                                                                  pick_this_fragment_by_default=default_fragment_index)[0]
             elif bond_type=="residx":
                 get_pair_lambda = lambda bond: bond
+            elif bond_type=="consensus":
+                if consensus_maps is None:
+                    raise ValueError("Can't use consensus labels in the site definitions if no consensus maps are passed.\n"
+                                     "Please provide GPCR, CGN, or KLIFS consensus labeling to use "
+                                     "the 'consensus' way of defining a site.")
+                key2res = {key: {label: ii for ii, label in enumerate(val) if str(label).lower()!="none"} for key, val in consensus_maps.items()}
+                def get_pair_lambda(bond):
+                    res_out = []
+                    for desc in bond:
+                        res = [cm.get(desc,None) for cm in key2res.values()]
+                        res = [rr for rr in res if rr is not None]
+                        if len(res)==0:
+                            raise ValueError(f"The consensus descriptor {desc} didn't "
+                                             f"yield any matches on {list(consensus_maps.keys())} labels.")
+                        else:
+                            res_out.append(res[0])
+                    return res_out
+
             for bond in bonds:
                 pair = tuple(list(get_pair_lambda(bond))+list(bond))
                 if pair not in res_idxs_pairs:
@@ -268,17 +287,27 @@ def dat2site(dat,comment="#",
 
     Parameters
     ----------
-    dat : str,
+    dat : str
         path to a file
     comment : str, default is "#"
         Ignore lines starting with
         the characters in this string
     fmt: str, default is "AAresSeq"
         The expected format of the file.
-        'AAresSeq' means that the pairs
-        are understood as AA-names
-        followed by a sequence index:
-        "GLU30-ARG131".
+        Can be:
+        * 'AAresSeq':
+         pairs are understood as AA-names
+         followed by a sequence index, e.g.
+        "GLU30-ARG131"
+        * 'residx':
+         pairs are understood as zero-indexed
+         serial residue indices "30-400", in case
+         those are the indices that correspond to
+         GLU30 and ARG131
+        * 'consensus':
+         pairs are understood as pairs of consensus
+         labels for the GPCR, CGN or KLIFS nomenclature,
+         e.g. "3.50-2.66".
 
     -------
     site : a dictionary
@@ -293,7 +322,7 @@ def dat2site(dat,comment="#",
     if lines[0].strip(" ").startswith("#"):
         name = lines[0].split("#")[1].strip(" ")
         offset +=1
-    assert fmt in ["AAresSeq", "residx"], NotImplementedError("Only [AAresSeq, residx] are implemented for 'fmt' at the moment, can't do '%s'"%(fmt))
+    assert fmt in _allowed_site_schemes, NotImplementedError(f"Only {_allowed_site_schemes} are implemented for 'fmt' at the moment, can't do '%s'"%(fmt))
     site={"pairs":{fmt:[]}}
     for ii, line in enumerate(lines[offset:]):
         if line.strip(" ")[0] not in comment:

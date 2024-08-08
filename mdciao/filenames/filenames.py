@@ -101,6 +101,7 @@ class FileNames(object):
         self.tip_json = _path.join(self.json_path,"tip.json")
         self.tip_dat= _path.join(self.json_path,"tip.dat")
         self.tip_residx_dat= _path.join(self.json_path,"tip_residx.dat")
+        self.tip_consensus_dat = _path.join(self.json_path,"tip_consensus.dat")
 
         #zip
         self.zipfile_two_empties = _path.join(self.example_path,"two_empty_files.zip")

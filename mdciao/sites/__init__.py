@@ -43,56 +43,76 @@ format is used:
 
 Sites can also be used inside the Python script/session
 by using dictionaries, e.g.::
-   my_site = {"name":"interesting contacts",
-              "pairs":{"AAresSeq":[
-                        "L394-K270",
-                        "D381-Q229",
-                        "Q384-Q229",
-                        "R385-Q229",
-                        "D381-K232",
-                        "Q384-I135"
-                        ]}}
-Or ::
-   my_site = {"name":"interesting contacts",
-              "pairs":{"AAresSeq":[
-                        ["L394","K270"],
-                        ["D381","Q229"],
-                        ["Q384","Q229"],
-                        ["R385","Q229"],
-                        ["D381","K232"],
-                        ["Q384","I135"]
-                        ]}}
+       my_site = {"name":"interesting contacts",
+                  "pairs":{"AAresSeq":[
+                            "L394-K270",
+                            "D381-Q229",
+                            "Q384-Q229",
+                            "R385-Q229",
+                            "D381-K232",
+                            "Q384-I135"
+                            ]}}
+
+Or: ::
+
+       my_site = {"name":"interesting contacts",
+                  "pairs":{"AAresSeq":[
+                            ["L394","K270"],
+                            ["D381","Q229"],
+                            ["Q384","Q229"],
+                            ["R385","Q229"],
+                            ["D381","K232"],
+                            ["Q384","I135"]
+                            ]}}
 
 You can specify the "pairs" as "AAresSeq" (like above)
 or as zero-indexed residue serial indices using "residx"::
-   my_site = {"name":"interesting contacts",
-              "pairs":{"residx":[
-                        "353-972",
-                        "340-956",
-                        "343-956",
-                        "344-956",
-                        "340-959",
-                        "343-865"
-                        ]}}
+       my_site = {"name":"interesting contacts",
+                  "pairs":{"residx":[
+                            "353-972",
+                            "340-956",
+                            "343-956",
+                            "344-956",
+                            "340-959",
+                            "343-865"
+                            ]}}
 
 In this last case, you can also directly use pairs of integers,
 instead of strings::
-  my_site = {"name":"interesting contacts",
-             "pairs":{"residx":[
-                      [353,972],
-                      [340,956],
-                      [343,956],
-                      [344,956],
-                      [340,959],
-                      [343,865],
-                      ]}}
+      my_site = {"name":"interesting contacts",
+                 "pairs":{"residx":[
+                          [353,972],
+                          [340,956],
+                          [343,956],
+                          [344,956],
+                          [340,959],
+                          [343,865],
+                          ]}}
 
-Using "AAresSeq" makes site-definitions
+Finally, you can also use consensus labels, such as "3.50" or "G.H5.26"
+if you specificy the "pairs" as "consensus"::
+    my_site = {"name":"interesting contacts",
+               "pairs": {"consensus": [
+                         "G.H5.26-6.32x32",
+                         "G.H5.13-5.68x68",
+                         "G.H5.16-5.68x68",
+                         "G.H5.17-5.68x68",
+                         "G.H5.13-5.71x71",
+                         "G.H5.16-3.54x54"
+                ]}}
+
+although, in order to work with consensus definitions,
+you will need to have passed consensus
+information (GPCR, CGN or KLIFS) in one way or another.
+
+Using "AAresSeq" or "consensus" makes site-definitions
 portable of across topologies:
-e.g. "L394" will be picked regardless of the actual
-residue index. This can be problematic if
+e.g. "L394" or "G.H5.26" will be picked regardless of the actual
+residue index.
+
+Not that "AAresSeq" will have trouble working  if
 there's duplicates (e.g. "ALA150" appears two times
-in 3SN6). "residx" avoid this, but first the user
+in 3SN6). You can use "residx" to avoid this, but first the user
 needs to find out which residue index they are interested
 in. mdciao offers several ways to do this. From the CLI
 you can use:
