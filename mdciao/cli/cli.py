@@ -384,7 +384,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
             fname = _path.join(fn.output_dir, iname)
             ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
             ifig.savefig(fname, bbox_inches="tight", dpi=fn.graphic_dpi)
-            _plt.close(ifig)
+            #_plt.close(ifig)
             print(fname)
 
     # even if no figures were produced or saved, we can still save the trajs
@@ -1692,18 +1692,45 @@ def sites(site_inputs,
 
     Parameters
     ----------
-    site_inputs : dict or list of dicts
+    site_inputs : dict or path to file, or list thereof
         Site(s) to compute. A site can be either
         a path to a site file in json format or
         directly a site dictionary. A site dictionary
         is something like
 
-        >>> {"name":"site",
-        >>>  "pairs":{"AAresSeq":["GLU30-ARG40",
-        >>>                       "LYS31-W70"]}}
+        >>> {"name": "interesting contacts",
+        >>>  "pairs": {"AAresSeq": ["L394-K270",
+        >>>                         "D381-Q229"]}}
 
         Any site containing a residue that can't be
         found in the topology will be discarded.
+        The list in "pairs" can be specified as:
+         * 'AAresSeq':
+          >>> {"name": "interesting contacts",
+          >>>  "pairs": {"AAresSeq": ["L394-K270",
+          >>>                         "D381-Q229"]}}
+          The 'AAresSeq' definitions are transferable to
+          another system where the same aminoacids are
+          present, regardless of their actual zero-indexing.
+         * 'residx':
+          >>> {"name": "interesting contacts",
+          >>>  "pairs": {"residx":[[353,972],
+          >>>                      [340,956]]}}
+          The 'pairs' definitions are only transferable
+          across systems as long both systems share the same
+          zero-indexing scheme.
+         * 'consensus'
+          >>> {"name": "interesting contacts",
+          >>>  "pairs": {"consensus": ["G.H5.26-6.32x32",
+          >>>                          "G.H5.13-5.68x68"]}}
+          The 'consensus' definitions are transferable to
+          another system, even if the selected aminoacids are
+          different. Please note, in order
+          to use 'consenus' definitions, you need
+          to pass at least one (or more) of the `GPCR_UniProt`,
+          `CGN_UniProt` or `KLIFS_string` arguments, else
+          there is no way to know to which residues the labels
+          belong to.
         See :obj:`mdciao.sites` for more info on
         the site format.
     trajectories : str, :obj:`mdtraj.Trajectory` or lists thereof
@@ -1758,28 +1785,28 @@ def sites(site_inputs,
         (allows for object re-use when in API mode)
         See :obj:`mdciao.nomenclature` for more info and references.
     KLIFS_string : str or :obj:`mdciao.nomenclature.LabelerKLIFS`, default is None
-            String for kinase KLIFS nomenclature. First, try to locate a local
-            file that directly has the `KLIFS_string` as a name. If that fails, then
-            combine the filename-format expected by :obj:`mdciao.nomenclature.LabelerKLIFS`
-            with `KLIFS_string` to construct a filename and check again.
-            If that doesn't work, then go online to contact the KLIFS database.
+        String for kinase KLIFS nomenclature. First, try to locate a local
+        file that directly has the `KLIFS_string` as a name. If that fails, then
+        combine the filename-format expected by :obj:`mdciao.nomenclature.LabelerKLIFS`
+        with `KLIFS_string` to construct a filename and check again.
+        If that doesn't work, then go online to contact the KLIFS database.
 
-            For the online lookup in the KLIFS database, the string
-            has to be formatted "key:value", which ultimately leads to a given KLIFS entry.
-            Acceptable keys and values for `KLIFS_string` are:
-                * "UniProtAC", e.g. "UniProtAC:P31751"
-                * "kinase_ID", e.g. "kinase_ID:2"
-                * "structure_ID", e.g. "structure_ID:1904", e.g. "P31751",
-            Please check the documentation on :obj:`mdciao.nomenclature.LabelerKLIFS`
-            for a more elaborate explanation on when to pick one of these key:value
-            pairs.
+        For the online lookup in the KLIFS database, the string
+        has to be formatted "key:value", which ultimately leads to a given KLIFS entry.
+        Acceptable keys and values for `KLIFS_string` are:
+            * "UniProtAC", e.g. "UniProtAC:P31751"
+            * "kinase_ID", e.g. "kinase_ID:2"
+            * "structure_ID", e.g. "structure_ID:1904", e.g. "P31751",
+        Please check the documentation on :obj:`mdciao.nomenclature.LabelerKLIFS`
+        for a more elaborate explanation on when to pick one of these key:value
+        pairs.
 
-            Finally, if `KLIFS_string` is an :obj:`mdciao.nomenclature.LabelerKLIFS`,
-            use this object directly (allows for object re-use when in API mode).
-            See :obj:`mdciao.nomenclature` for more info and references. Alos, please note
-            the difference between UniProt Accession Code
-            and UniProt entry name as explained
-            `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+        Finally, if `KLIFS_string` is an :obj:`mdciao.nomenclature.LabelerKLIFS`,
+        use this object directly (allows for object re-use when in API mode).
+        See :obj:`mdciao.nomenclature` for more info and references. Alos, please note
+        the difference between UniProt Accession Code
+        and UniProt entry name as explained
+        `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     fragments : str, list, None, default is "lig_resSeq+"
         Topology fragments. There exist several input modes:
 
@@ -1918,6 +1945,7 @@ def sites(site_inputs,
     ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
                                                              fragments=fragments_as_residue_idxs,
                                                              default_fragment_index=default_fragment_index,
+                                                             consensus_maps=[consensus_maps if len(consensus_maps)>0 else None][0],
                                                              fragment_names=fragment_names)
     if None in ctc_idxs_small:
         print("Some definitions of the 'site_inputs' contain one or more residues not found in the input topology.")
@@ -2186,7 +2214,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_UniProt=None, 
 
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
                                                                         pick_this_fragment_by_default=None,
-                                                                        additional_resnaming_dicts=consensus_maps,
+                                                                        additional_resnaming_dicts=[consensus_maps if len(consensus_maps)>0 else None][0],
                                                                         **rangeexpand_residues2residxs_kwargs,
                                                                         )
 

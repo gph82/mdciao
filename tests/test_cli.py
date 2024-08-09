@@ -1,5 +1,7 @@
 import mdtraj as md
 import unittest
+
+import mdciao.contacts
 from mdciao.examples import filenames as test_filenames
 from mdciao.utils import str_and_dict
 
@@ -441,6 +443,24 @@ class Test_sites(TestCLTBaseClass):
             assert output_sites["site3"]
             assert output_sites["site3"].n_ctcs == 1
             _np.testing.assert_array_equal(output_sites["site3"].res_idxs_pairs[0], [ 69, 852])
+
+    def test_sites_consensus(self):
+        res = cli.sites([test_filenames.tip_consensus_json],
+                        [self.traj],
+                        self.geom,
+                        GPCR_UniProt=test_filenames.adrb2_human_xlsx,
+                        CGN_UniProt=test_filenames.gnas2_human_xlsx,
+                        no_disk=True, figures=False, accept_guess=True)
+        res : mdciao.contacts.ContactGroup = res["interesting contacts"]
+        self.assertSequenceEqual(res.ctc_labels_w_fragments_short_AA,
+                                 ['L394@G.H5.26-K270@6.32x32',
+                                  'D381@G.H5.13-Q229@5.68x68',
+                                  'Q384@G.H5.16-Q229@5.68x68',
+                                  'R385@G.H5.17-Q229@5.68x68',
+                                  'D381@G.H5.13-K232@5.71x71',
+                                  'Q384@G.H5.16-I135@3.54x54']
+                                 )
+
 
 class Test_interface(TestCLTBaseClass):
 

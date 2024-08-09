@@ -173,6 +173,18 @@ class Test_dat2site(unittest.TestCase):
             "343-865"
         ]}, "name": "tip.json as plain ascii with residx"}
                              )
+    def test_works_consensus(self):
+        site = siteIO.dat2site(test_filenames.tip_consensus_dat,fmt="consensus")
+        print(site)
+        self.assertDictEqual(site, {"pairs": {"consensus": [
+            "G.H5.26-6.32x32",
+            "G.H5.13-5.68x68",
+            "G.H5.16-5.68x68",
+            "G.H5.17-5.68x68",
+            "G.H5.13-5.71x71",
+            "G.H5.16-3.54x54"
+        ]}, "name": "tip.json as plain ascii with consensus"}
+                             )
     def test_Valuerror(self):
         with self.assertRaises(ValueError):
             siteIO.dat2site(test_filenames.tip_residx_dat, fmt="AAresSeq")
@@ -191,7 +203,7 @@ class Test_site2str(unittest.TestCase):
         with _np.testing.assert_raises(ValueError):
             mdciao.sites.site2str([1])
 
-class Test_sites_to_ctc_idxs(unittest.TestCase):
+class Test_sites_to_res_pairs(unittest.TestCase):
     def setUp(self):
         self.GDP_json = test_filenames.GDP_json
         self.geom = _md.load(test_filenames.actor_pdb)
@@ -223,6 +235,27 @@ class Test_sites_to_ctc_idxs(unittest.TestCase):
         _np.testing.assert_array_equal(ctc_idxs, [[None,None],
                                                   [None,None]])
         self.assertListEqual(site_maps, [[0],[1],[0]])
+
+    def test_consensus(self):
+        ctc_idxs, site_maps = mdciao.sites.sites_to_res_pairs([{"name": "interesting contacts",
+                                                                "pairs": {"consensus": [
+                                                                    "G.H5.26-6.32x32"]}}], self.geom.top,
+                                                              consensus_maps={"GPCR": [None, "6.32x32"],
+                                                                              "CGN": ["G.H5.26"]})
+        _np.testing.assert_array_equal(ctc_idxs, [[0,1]])
+        _np.testing.assert_array_equal(site_maps, [[0]])
+    def test_consensus_fails_no_consensus_passed(self):
+        with self.assertRaises(ValueError):
+            mdciao.sites.sites_to_res_pairs([{"name":"interesting contacts",
+                                              "pairs": {"consensus": [
+                                                  "G.H5.26-6.32x32"]}}], self.geom.top)
+
+    def test_consensus_fails_no_label_present(self):
+        with self.assertRaises(ValueError):
+            mdciao.sites.sites_to_res_pairs([{"name":"interesting contacts",
+                                              "pairs": {"consensus": [
+                                                  "G.H5.26-6.32x32"]}}], self.geom.top,
+                                            consensus_maps={"GPCR":[None, "6.32x32"]})
 
 class Test_discard_empty_sites(unittest.TestCase):
 

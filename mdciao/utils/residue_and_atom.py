@@ -246,8 +246,13 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
                         if idesc not in [None,""]:
                             print("Trying with '%s'"%idesc)
                             residues_from_descriptors(idesc, fragments,top, just_inform=True)
-                    raise ValueError("The input range of residues contains '%s' which "
-                                     "returns an untreatable range %s!\nCheck the above list for help." % (r, for_extending))
+                    if "." in r and residues_from_descriptors_kwargs.get("additional_resnaming_dicts", None) is None:
+                        raise ValueError(f"The input range of residues contains a consensus label '{r}' which "
+                                         "can't be resolved if no consensus information (GPCR, CGN, KLIFS) is passed. ")
+                    else:
+                        raise ValueError("The input range of residues contains '%s' which "
+                                         "returns an untreatable range %s!\nCheck the above list for help." % (
+                                         r, for_extending))
                 if is_range:  # it was a pair
                     assert len(for_extending)==2
                     for_extending = _np.arange(for_extending[0],

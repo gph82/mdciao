@@ -821,7 +821,7 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
     # Get the fragment idxs of all residues in this fragment
     ifrags = [_mdcu.lists.in_what_fragment(idx, fragments) for idx in sub_frag]
 
-    frag_cands = [ifrag for ifrag in _pandas_unique(ifrags) if ifrag is not None]
+    frag_cands = [ifrag for ifrag in _pandas_unique(_np.array(ifrags)) if ifrag is not None]
     if prompt:
         was_subfragment = len(frag_cands) <= 1
         if not was_subfragment:

@@ -1953,9 +1953,13 @@ class ContactPair(object):
         Parameters
         ----------
         AA_format : str, default is "short"
-            Amino-acid format for the label, can
-            be "short" (A35@4.50), "long" (ALA35@4.50),
-            or "just_consensus" (4.50)
+            Amino-acid format for the label, can be
+             * short: A35@4.55
+             * "long": ALA35@4.50
+             * "just_consensus": 4.50
+             * "try_consensus":  4.50 if consensus labeling is present,
+               else default to "short"
+
         split_label : bool, default is True
             Split the labels so that stacked contact labels
             become easier-to-read in plain ascii formats
@@ -1966,10 +1970,10 @@ class ContactPair(object):
             contact label. Default is to leave
             them as is, e.g. would be "@"
         fmt1 : str, default is "%-15s"
-            Specify how the labels of res1 should formatted.
+            Specify how the labels of res1 should be formatted.
             Only has effect if `split_label` is True
         fmt2 : str, default is "%-15s"
-            Specify how the labels of res2 should formatted.
+            Specify how the labels of res2 should be formatted.
             Only has effect if `split_label` is True
         Returns
         -------
@@ -1980,13 +1984,25 @@ class ContactPair(object):
             label = self.labels.w_fragments_short_AA
         elif AA_format== 'long':
             label = self.labels.w_fragments
-        elif AA_format== 'just_consensus':
+        elif AA_format.endswith('_consensus'):
             #TODO where do we put this assertion?
             if None in self._attribute_residues.consensus_labels:
-                raise ValueError("Residues %s don't have both consensus labels:%s" % (
-                    self._attribute_residues.names_short,
-                    self._attribute_residues.consensus_labels))
-            label = self.labels.just_consensus
+                if AA_format.startswith("just_"):
+                    raise ValueError("Residues %s don't have both consensus labels:%s. \n Try setting `AA_format='try_consensus'`" % (
+                        self._attribute_residues.names_short,
+                        self._attribute_residues.consensus_labels))
+                elif AA_format.startswith("try_"):
+                    cands = _mdcu.str_and_dict.splitlabel(self.labels.w_fragments_short_AA)
+                    label=[]
+                    for ii, lab in enumerate(self._attribute_residues.consensus_labels):
+                        if lab is None:
+                            label.append(cands[ii])
+                        else:
+                            label.append(lab)
+                    label="-".join(label)
+            else:
+                label = self.labels.just_consensus
+
         else:
             raise ValueError(AA_format)
         if defrag is not None:

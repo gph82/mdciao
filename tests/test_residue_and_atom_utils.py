@@ -393,6 +393,14 @@ class Test_rangeexpand_residues2residxs(unittest.TestCase):
                                                                        )
         np.testing.assert_array_equal(expanded_range, [0, 10, 20])
 
+    def test_rangeexpand_raises_if_no_consensus(self):
+        with self.assertRaises(ValueError):
+            residue_and_atom.rangeexpand_residues2residxs("3.50",
+                                                          self.fragments,
+                                                          self.top,
+                                                          )
+
+
 
 class Test_parse_and_list_AAs_input(unittest.TestCase):
     def setUp(self):
