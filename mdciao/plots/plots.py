@@ -38,6 +38,13 @@ from mpl_toolkits.axes_grid1 import \
 
 import mdciao.utils as _mdcu
 
+from mdciao.nomenclature.nomenclature import _sort_all_consensus_labels
+# The above line introduces a dependency of 'plots' on 'nomenclature', which were
+# uncoupled so far. The alternative would be to put '_sort_all_consensus_labels'
+# into 'utils.str_and_dict' (since it's essentially string operations).
+# However, as plotting methods become increasing nomenclature-aware, such a
+# plots -> nomenclature dependency will likely come in the future
+
 from os import path as _path
 
 from collections import defaultdict as _defdict
@@ -48,7 +55,7 @@ import matplotlib.transforms as _transforms
 
 from pandas import DataFrame as _DataFrame
 
-_metric_types_for_sorting = frozenset(["mean", "std", "numeric", "residue", "keep"])
+_schemes_for_sorting = frozenset(["mean", "std", "numeric", "residue", "keep", "consensus"])
 
 def plot_w_smoothing_auto(y, ax=None, label=None, color=None, x=None, background=True, n_smooth_hw=0, ls="-"):
     r"""
@@ -290,6 +297,7 @@ def _pop_keys_by_scheme(sort_by, freqs_by_sys_by_ctc, mean_std_by_ctc,
     drop_below["numeric"] = drop_below["mean"]
     drop_below["residue"] = drop_below["mean"]
     drop_below["list"]    = drop_below["mean"]
+    drop_below["consensus"] = drop_below["mean"]
 
     drop_above = lambda ctc: all([idict[ctc] >= identity_cutoff for idict in freqs_by_sys_by_ctc.values()]) \
                              and remove_identities
@@ -344,7 +352,7 @@ def _sorting_schemes(freqs_by_sys_by_ctc, sort_by='mean',
         assert len(all_ctc_keys) == len(list(freqs_by_sys_by_ctc[sk].keys())), ValueError("This is not a unified dictionary")
 
     # 0. Compute means and stds for everybody
-    dict_for_sorting = {key: {key : None for key in all_ctc_keys} for key in list(_metric_types_for_sorting)+["list"]}
+    dict_for_sorting = {key: {key : None for key in all_ctc_keys} for key in list(_schemes_for_sorting) + ["list"]}
     for key in all_ctc_keys:
         dict_for_sorting["std"][key] = _np.std([idict[key] for idict in freqs_by_sys_by_ctc.values()])
         dict_for_sorting["mean"][key] = _np.mean([idict[key] for idict in freqs_by_sys_by_ctc.values()])
@@ -358,7 +366,7 @@ def _sorting_schemes(freqs_by_sys_by_ctc, sort_by='mean',
         kept_keys = [key for key in sort_by if key in all_ctc_keys] #setops don't conserve order
         excluded_ctc_keys = [key for key in all_ctc_keys if key not in kept_keys] #setops don't conserve order
         sort_by = "list"
-    elif sort_by in _metric_types_for_sorting:
+    elif sort_by in _schemes_for_sorting:
 
         # Then sort, in case sort_by wasn't a list but an actual scheme (has its own method)
         kept_keys = _sorter_by_key_or_val(sort_by, dict_for_sorting[sort_by])
@@ -367,7 +375,7 @@ def _sorting_schemes(freqs_by_sys_by_ctc, sort_by='mean',
 
         excluded_ctc_keys = []
     else:
-        raise ValueError(f"Argument 'sort_by' has to be one of {list(_metric_types_for_sorting)}, but not '{sort_by}'")
+        raise ValueError(f"Argument 'sort_by' has to be one of {list(_schemes_for_sorting)}, but not '{sort_by}'")
 
     freqs_by_sys_by_ctc = {skey : {key : sval[key] for key in kept_keys} for skey, sval in freqs_by_sys_by_ctc.items()}
 
@@ -1757,6 +1765,8 @@ def _sorter_by_key_or_val(sort_by, indict):
         # In[5]: natsorted(["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"])
         # Out[5]: ['0-10', '0-20', 'ALA', 'ALA30-GLU40', 'ALA30-GLU50', 'GLU5-ALA20']
         # -> we would want ['0-10', '0-20', 'GLU5-ALA20', 'ALA30-GLU40', 'ALA30-GLU50', 'ALA']
+    elif sort_by == "consensus":
+        ordered_keys = _sort_all_consensus_labels(all_ctc_keys)
     elif sort_by in ["mean", "std"]:
         ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
     elif sort_by == "keep":
