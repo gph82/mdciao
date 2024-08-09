@@ -2214,7 +2214,7 @@ def _res_resolver(res_range, top, fragments, midstring=None, GPCR_UniProt=None, 
 
     res_idxs_list = _mdcu.residue_and_atom.rangeexpand_residues2residxs(res_range, fragments, top,
                                                                         pick_this_fragment_by_default=None,
-                                                                        additional_resnaming_dicts=consensus_maps,
+                                                                        additional_resnaming_dicts=[consensus_maps if len(consensus_maps)>0 else None][0],
                                                                         **rangeexpand_residues2residxs_kwargs,
                                                                         )
 
