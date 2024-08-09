@@ -384,7 +384,7 @@ def _manage_timedep_ploting_and_saving_options(ctc_grp,
             fname = _path.join(fn.output_dir, iname)
             ifig.axes[0].set_title("%s" % title) # TODO consider firstname lastname
             ifig.savefig(fname, bbox_inches="tight", dpi=fn.graphic_dpi)
-            _plt.close(ifig)
+            #_plt.close(ifig)
             print(fname)
 
     # even if no figures were produced or saved, we can still save the trajs
