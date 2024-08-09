@@ -2305,7 +2305,7 @@ def _map2defs(cons_list, splitchar="."):
 def _sort_consensus_labels(subset, sorted_superset,
                            append_diffset=True):
     r"""
-    Sort consensus labels (GPCR or CGN)
+    Sort consensus labels (GPCR, CGN, KLIFS)
 
     Parameters
     ----------

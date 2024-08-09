@@ -989,7 +989,7 @@ def splitlabel(label, sep="-", defrag="@", dont_split=None):
     Parameters
     ----------
     label : str
-        Can be of any of these forms:
+        Can be any of these forms:
          * res1
          * res1@frag1
          * res1@frag1-res2

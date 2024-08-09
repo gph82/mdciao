@@ -281,7 +281,7 @@ def in_what_fragment(residx,
     Returns
     -------
     integer or string
-        returns the name(if names is provided) otherwise returns index of the "fragment"
+        returns the name (if names is provided) otherwise returns index of the "fragment"
         in which the residue index appears
 
     """
