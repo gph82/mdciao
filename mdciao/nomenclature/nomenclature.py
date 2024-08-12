@@ -1549,7 +1549,7 @@ class AlignerConsensus(object):
         self._residxs["consensus"] = self._residxs.index.values
         self._residxs=self._residxs[["consensus"]+[key for key in self._residxs.keys() if key !="consensus"]]
 
-        sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)
+        sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)[0]
         assert len(sorted_keys)==len(self._residxs["consensus"]),  (len(sorted_keys), len(self._residxs["consensus"]))
         self._residxs = self._residxs.sort_values("consensus", key=lambda col: col.map(lambda x: sorted_keys.index(x)))
         self._residxs.index = _np.arange(len(self._residxs))
@@ -2428,7 +2428,7 @@ def _conslabel2fraglabel(labelres, defrag="@", prefix_GPCR=True):
         label = _GPCR_num2lett[label]
     return label
 
-def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN","KLIFS"], ):
+def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN","KLIFS"], return_argsort=False):
     r"""
     Sort a mix of consensus labels GPCR, CGN, KLIFS
 
@@ -2442,7 +2442,7 @@ def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN",
         end of `sorted_labels` unless
         explicitly deactivated with
         `append_diffset`.
-        append_diffset : bool, default is True
+    append_diffset : bool, default is True
         Append the non-consensus labels
         at the end of `sorted_labels`
     order : list
@@ -2458,6 +2458,11 @@ def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN",
     -------
     sorted_labels : list
         Sorted consensus labels
+    sorted_indices : 1D _np.ndarray
+        The indices of `labels` that return
+        the sorted `soted_labels`. Depending
+        on `append_diffset` it will contain
+        (or not) all indices of `labels`
     """
 
     lambdas = {"GPCR":  lambda labels: _sort_GPCR_consensus_labels(labels, append_diffset=False),
@@ -2470,7 +2475,10 @@ def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN",
     if append_diffset:
         sorted_labels += [lab for lab in labels if lab not in sorted_labels]
 
-    return sorted_labels
+    sorted_indices = [_np.flatnonzero(lab==_np.array(labels)) for lab in sorted_labels]
+    sorted_indices = _np.hstack([si for si in sorted_indices if len(si)>0]).squeeze()
+
+    return sorted_labels, sorted_indices
 
 _GPCR_num2lett = {
     "1": "TM1 ",
