@@ -2486,8 +2486,14 @@ def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN",
     if append_diffset:
         sorted_labels += [lab for lab in labels if lab not in sorted_labels]
 
-    sorted_indices = [_np.flatnonzero(lab==_np.array(labels)) for lab in sorted_labels]
-    sorted_indices = _np.hstack([si for si in sorted_indices if len(si)>0]).squeeze()
+    # Handle duplicates by including their indices only once (else _np.flatnonzero returns all indices all the time)
+    sorted_indices = []
+    for lab in sorted_labels:
+        for ii in _np.flatnonzero(lab == _np.array(labels)):
+            if ii not in sorted_indices:
+                sorted_indices.append(ii)
+    sorted_indices = _np.array(sorted_indices, ndmin=1)
+    assert sorted_indices.ndim==1
 
     return sorted_labels, sorted_indices
 
