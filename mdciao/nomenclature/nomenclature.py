@@ -2310,7 +2310,9 @@ def _sort_consensus_labels(subset, sorted_superset,
     Parameters
     ----------
     subset : iterable
-        list with the names (type str) to be ordered
+        list with the names (type str) to be ordered.
+        If duplicates are present, they will also appear
+        as duplicates in `fragnames_out`
     sorted_superset : iterable
         list with names in the desired order. Is a superset
         of :obj:`subset`
@@ -2320,7 +2322,11 @@ def _sort_consensus_labels(subset, sorted_superset,
 
     Returns
     -------
-    fragnames_out
+    fragnames_out: list
+        List with the labels of `subset` sorted according
+        to some `sorted_superset` and potentially other
+        labels not contained in the `sorted_superset` appended
+        at the end.
     """
 
     by_frags = _defdict(dict)
@@ -2345,6 +2351,11 @@ def _sort_consensus_labels(subset, sorted_superset,
     if append_diffset:
         labs_out += [item for item in subset if item not in labs_out]
 
+    # Recover the duplicates
+    order = []
+    for lab in labs_out:
+        order.extend(_np.flatnonzero(_np.array(subset)==lab))
+    labs_out = [subset[oo] for oo in order]
     return labs_out
 
 
