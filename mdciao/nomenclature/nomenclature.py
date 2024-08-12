@@ -2471,7 +2471,7 @@ def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN",
         Sorted consensus labels
     sorted_indices : 1D _np.ndarray
         The indices of `labels` that return
-        the sorted `soted_labels`. Depending
+        the sorted `sorted_labels`. Depending
         on `append_diffset` it will contain
         (or not) all indices of `labels`
     """
@@ -3807,3 +3807,80 @@ class LabelerKLIFS(LabelerConsensus):
         """
 
         return self._fragments_as_idxs
+
+def _lexsort_consensus_ctc_labels(labels, reverse = False, columns = [0, 1], sep = "-") -> tuple:
+    r"""
+    Sort contact-labels in ascending order of resSeq using both columns
+
+    Wraps around :obj:`_sort_all_consensus_labels` with some string handling.
+
+    It will also work with contact-labels consisting of only one residue,
+    e.g. in the cases where the "anchor" has been deleted or the frequencies
+    have been aggregated to per-residue frequencies
+
+    >>> labels = ['3.50-G.H5.23',
+    >>>           '3.50-7.53',
+    >>>           '3.50-2.39',
+    >>>           '4.50-6.60',
+    >>>           '3.50-5.58']
+    >>> sorted_labels, order = _lexsort_consensus_ctc_labels(labels)
+    >>> sorted_labels
+    >>> labels = ['3.50-2.39',
+    >>>           '3.50-5.58',
+    >>>           '3.50-7.53',
+    >>>           '3.50-G.H5.23',
+    >>>           '4.50-6.60']
+
+
+    Parameters
+    ----------
+    labels : list or np.ndarray
+        Strings describing the contact
+        residues using consensus labels only.
+        Labels can be just one residue "3.50" or
+        both "3.50-2.50", but not 'mixed', as in
+        >>> labels = ["3.50", "3.50-2.50"]
+        Full labels, e.g. "GLU30@3.50", or non-consensus
+        labels, e.g. "frag1", will be sorted last.
+    reverse : bool, default is False
+        If True, sort in descending
+        order, instead of ascending
+    columns : list
+        The order of the columns,
+        e.g. [0,1] means sort first
+        by first column (idx 0),
+        then by second column (idx 1).
+    sep : char, default is "-"
+        The character to use
+        when separating the
+        contact label into both residues
+
+    Returns
+    -------
+    sorted_labels : list
+        The sorted contact labels
+    order : 1D np.ndarray
+        The indices of `ctc_labels` that
+        sort it into `sorted_labels`
+    """
+    split_labels = [_mdcu.str_and_dict.splitlabel(lab, sep=sep) for lab in labels]
+
+    if not any([all([len(lab) == 1 for lab in split_labels]),
+                all([len(lab) == 2 for lab in split_labels])]):
+        raise ValueError(f"Labels have to be all single ('3.50') or double ('3.50-2.50'), but not mixed {labels}")
+    split_labels = _np.vstack(split_labels)
+    if split_labels.ndim == 1:
+        order = _sort_all_consensus_labels(split_labels())[1]
+    elif split_labels.ndim ==2:
+        #There's other ways but this was easy to set up
+        lexsort = {key : val[columns[1]].to_dict() for key, val in _DataFrame(split_labels).groupby(by=columns[0])}
+        order = []
+        for key1 in _sort_all_consensus_labels(list(lexsort.keys()))[0]:
+            for key2 in _sort_all_consensus_labels(list(lexsort[key1].values()))[0]:
+                order.extend(_np.flatnonzero(_np.array(labels) == sep.join(_np.array([key1, key2])[columns])))
+    else:
+        raise ValueError
+
+    if reverse:
+        order = order[::-1]
+    return [labels[ii] for ii in order], order

@@ -861,7 +861,7 @@ class Test_sort_consensus_labels(unittest.TestCase):
         _np.testing.assert_array_equal(
             [
              "G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20",
-             'αC.25', 'αD.55', 'a.l.85', 
+             'αC.25', 'αD.55', 'a.l.85',
              "2.50", "3.50", "H8.1", "H8.10"],
             sorted)
 
@@ -887,6 +887,74 @@ class Test_sort_consensus_labels(unittest.TestCase):
              4, 11, 2,
              3, 5, 6, 7, 8],
             sorted_indices)
+
+class Test_lexsort_consensus_ctc_labels(unittest.TestCase):
+
+    """
+    (,
+ [2, 4, 1, 0, 3])
+
+    """
+
+    def test_lexsort_works(self):
+        labels = ['3.50-G.H5.23',
+                  '3.50-7.53',
+                  "3.50-frag1",
+                  '3.50-2.39',
+                  '4.50-6.60',
+                  '3.50-5.58']
+        sorted_labels, order = nomenclature._lexsort_consensus_ctc_labels(labels)
+        self.assertListEqual(sorted_labels,
+                             ['3.50-2.39',
+                              '3.50-5.58',
+                              '3.50-7.53',
+                              '3.50-G.H5.23',
+                              "3.50-frag1",
+                              '4.50-6.60'])
+        self.assertListEqual(order,
+                             [3, 5, 1, 0, 2, 4])
+
+    def test_lexsort_works_reverse(self):
+        labels = ['3.50-G.H5.23',
+                  '3.50-7.53',
+                  "3.50-frag1",
+                  '3.50-2.39',
+                  '4.50-6.60',
+                  '3.50-5.58']
+        sorted_labels, order = nomenclature._lexsort_consensus_ctc_labels(labels, reverse=True)
+        self.assertListEqual(sorted_labels,
+                             ['4.50-6.60',
+                              '3.50-frag1',
+                              '3.50-G.H5.23',
+                              '3.50-7.53',
+                              '3.50-5.58',
+                              '3.50-2.39'])
+        self.assertListEqual(order,
+                             [4, 2, 0, 1, 5, 3])
+
+    def test_lexsort_works_raises(self):
+        with self.assertRaises(ValueError):
+            nomenclature._lexsort_consensus_ctc_labels(['3.50-G.H5.23', '3.50'])
+
+    def test_lexsort_works_second_column(self):
+        labels = ['3.50-G.H5.23',
+                  '3.50-7.53',
+                  "3.50-frag1",
+                  '3.50-2.39',
+                  '4.50-6.60',
+                  '3.50-5.58']
+        sorted_labels, order = nomenclature._lexsort_consensus_ctc_labels(labels, columns=[1,0])
+        self.assertListEqual(sorted_labels,
+                             ['3.50-2.39',
+                              '3.50-5.58',
+                              '4.50-6.60',
+                              '3.50-7.53',
+                              '3.50-G.H5.23',
+                              "3.50-frag1",
+                              ])
+        self.assertListEqual(order,
+                             [3, 5, 4, 1, 0, 2])
+
 
 class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 
