@@ -918,7 +918,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
         if fragment_input.lower()=="consensus":
             user_wants_consensus = True
             method = 'resSeq+'
-            fragments_as_residue_idxs = get_fragments(top, method='resSeq+',
+            fragments_as_residue_idxs = get_fragments(top, method=method,
                                                       verbose=False)
         elif fragment_input in _allowed_fragment_methods:
             method = fragment_input
