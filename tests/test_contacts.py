@@ -1110,7 +1110,7 @@ class TestContactPair(unittest.TestCase):
     def test_retop(self):
         CG = examples.ContactGroupL394()
 
-        CP : contacts.ContactPair = CG._contacts[0]
+        CP : contacts.ContactPair = CG.contact_pairs[0]
 
         top = md.load(test_filenames.pdb_3SN6).top
         #print(CP.top, CP.residues.idxs_pair)
@@ -1153,7 +1153,7 @@ class TestContactPair(unittest.TestCase):
     def test_retop_deepcopy(self):
         CG = examples.ContactGroupL394()
 
-        CP: contacts.ContactPair = CG._contacts[0]
+        CP: contacts.ContactPair = CG.contact_pairs[0]
 
         top = md.load(test_filenames.pdb_3SN6).top
         imap = {347: 342,
@@ -1182,7 +1182,7 @@ class TestContactPair(unittest.TestCase):
 
     def test_serialize_as_dict(self):
         CG = examples.ContactGroupL394()
-        CP: contacts.ContactPair = CG._contacts[0]
+        CP: contacts.ContactPair = CG.contact_pairs[0]
         sCP = CP._serialized_as_dict()
 
         assert sCP["residues.idxs_pair"] is CP.residues.idxs_pair
@@ -1199,7 +1199,7 @@ class TestContactPair(unittest.TestCase):
 
     def test_gen_labels(self):
         CG = examples.ContactGroupL394()
-        CP: contacts.ContactPair = CG._contacts[0]
+        CP: contacts.ContactPair = CG.contact_pairs[0]
 
         self.assertEqual(CP.gen_label("short"),"L394-L388")
         self.assertEqual(CP.gen_label("long") ,"LEU394-LEU388")
@@ -1850,10 +1850,10 @@ class TestContactGroup(TestBaseClassContactGroup):
 
         new_CG : contacts.ContactGroup = CG.select_by_residues(CSVexpression=CSV)
         assert new_CG.n_ctcs == 4
-        assert new_CG._contacts[0] is CG._contacts[0]
-        assert new_CG._contacts[1] is CG._contacts[2]
-        assert new_CG._contacts[2] is CG._contacts[3]
-        assert new_CG._contacts[3] is CG._contacts[5]
+        assert new_CG.contact_pairs[0] is CG.contact_pairs[0]
+        assert new_CG.contact_pairs[1] is CG.contact_pairs[2]
+        assert new_CG.contact_pairs[2] is CG.contact_pairs[3]
+        assert new_CG.contact_pairs[3] is CG.contact_pairs[5]
         assert isinstance(new_CG,contacts.ContactGroup)
 
         new_CG_dict = CG.select_by_residues(CSVexpression=CSV, merge=False)
@@ -1861,12 +1861,12 @@ class TestContactGroup(TestBaseClassContactGroup):
         self.assertSequenceEqual(list(new_CG_dict.keys()),CSV.split(","))
 
         assert new_CG_dict[keys[0]].n_ctcs == 2
-        assert new_CG_dict[keys[0]]._contacts[0] is CG._contacts[0]
-        assert new_CG_dict[keys[0]]._contacts[1] is CG._contacts[3]
+        assert new_CG_dict[keys[0]].contact_pairs[0] is CG.contact_pairs[0]
+        assert new_CG_dict[keys[0]].contact_pairs[1] is CG.contact_pairs[3]
 
         assert new_CG_dict[keys[1]].n_ctcs == 2
-        assert new_CG_dict[keys[1]]._contacts[0] is CG._contacts[2]
-        assert new_CG_dict[keys[1]]._contacts[1] is CG._contacts[5]
+        assert new_CG_dict[keys[1]].contact_pairs[0] is CG.contact_pairs[2]
+        assert new_CG_dict[keys[1]].contact_pairs[1] is CG.contact_pairs[5]
 
         assert new_CG_dict[keys[2]] is None
 
@@ -1888,20 +1888,20 @@ class TestContactGroup(TestBaseClassContactGroup):
         residue_indices = [10, 40, 1]
         new_CG : contacts.ContactGroup = CG.select_by_residues(residue_indices=residue_indices)
         assert new_CG.n_ctcs == 3
-        assert new_CG._contacts[0] is CG._contacts[2]
-        assert new_CG._contacts[1] is CG._contacts[4]
-        assert new_CG._contacts[2] is CG._contacts[5]
+        assert new_CG.contact_pairs[0] is CG.contact_pairs[2]
+        assert new_CG.contact_pairs[1] is CG.contact_pairs[4]
+        assert new_CG.contact_pairs[2] is CG.contact_pairs[5]
         assert isinstance(new_CG,contacts.ContactGroup)
 
         new_CG_dict = CG.select_by_residues(residue_indices=residue_indices, merge=False)
         self.assertSequenceEqual(list(new_CG_dict.keys()),residue_indices)
         assert new_CG_dict[residue_indices[0]].n_ctcs == 2
-        assert new_CG_dict[residue_indices[0]]._contacts[0] is CG._contacts[2]
-        assert new_CG_dict[residue_indices[0]]._contacts[1] is CG._contacts[5]
+        assert new_CG_dict[residue_indices[0]].contact_pairs[0] is CG.contact_pairs[2]
+        assert new_CG_dict[residue_indices[0]].contact_pairs[1] is CG.contact_pairs[5]
 
         assert new_CG_dict[residue_indices[1]].n_ctcs == 2
-        assert new_CG_dict[residue_indices[1]]._contacts[0] is CG._contacts[2]
-        assert new_CG_dict[residue_indices[1]]._contacts[1] is CG._contacts[4]
+        assert new_CG_dict[residue_indices[1]].contact_pairs[0] is CG.contact_pairs[2]
+        assert new_CG_dict[residue_indices[1]].contact_pairs[1] is CG.contact_pairs[4]
 
         assert new_CG_dict[residue_indices[2]] is None
 
@@ -1925,26 +1925,26 @@ class TestContactGroup(TestBaseClassContactGroup):
 
         assert isinstance(new_CG, contacts.ContactGroup)
         assert new_CG.n_ctcs == 3
-        assert new_CG._contacts[0] is CG._contacts[2]
-        assert new_CG._contacts[1] is CG._contacts[4]
-        assert new_CG._contacts[2] is CG._contacts[5]
+        assert new_CG.contact_pairs[0] is CG.contact_pairs[2]
+        assert new_CG.contact_pairs[1] is CG.contact_pairs[4]
+        assert new_CG.contact_pairs[2] is CG.contact_pairs[5]
 
 
         new_CG_dict = CG.select_by_residues(residue_indices=residue_indices, merge=False, n_residues=2)
         self.assertSequenceEqual(list(new_CG_dict.keys()),residue_indices)
         assert new_CG_dict[residue_indices[0]].n_ctcs == 1
-        assert new_CG_dict[residue_indices[0]]._contacts[0] is CG._contacts[2]
+        assert new_CG_dict[residue_indices[0]].contact_pairs[0] is CG.contact_pairs[2]
 
         assert new_CG_dict[residue_indices[1]].n_ctcs == 2
-        assert new_CG_dict[residue_indices[1]]._contacts[0] is CG._contacts[2]
-        assert new_CG_dict[residue_indices[1]]._contacts[1] is CG._contacts[4]
+        assert new_CG_dict[residue_indices[1]].contact_pairs[0] is CG.contact_pairs[2]
+        assert new_CG_dict[residue_indices[1]].contact_pairs[1] is CG.contact_pairs[4]
 
         assert new_CG_dict[residue_indices[2]].n_ctcs == 2
-        assert new_CG_dict[residue_indices[2]]._contacts[0] is CG._contacts[4]
-        assert new_CG_dict[residue_indices[2]]._contacts[1] is CG._contacts[5]
+        assert new_CG_dict[residue_indices[2]].contact_pairs[0] is CG.contact_pairs[4]
+        assert new_CG_dict[residue_indices[2]].contact_pairs[1] is CG.contact_pairs[5]
 
         assert new_CG_dict[residue_indices[3]].n_ctcs == 1
-        assert new_CG_dict[residue_indices[3]]._contacts[0] is CG._contacts[5]
+        assert new_CG_dict[residue_indices[3]].contact_pairs[0] is CG.contact_pairs[5]
 
     def test_to_select_by_residues_residue_pairs(self):
         CG = _mdcsites([{"name": "test_random",
@@ -1966,8 +1966,8 @@ class TestContactGroup(TestBaseClassContactGroup):
         new_CG : contacts.ContactGroup = CG.select_by_residues(residue_pairs=residue_pairs)
         assert isinstance(new_CG, contacts.ContactGroup)
         assert new_CG.n_ctcs == 2
-        assert new_CG._contacts[0] is CG._contacts[2]
-        assert new_CG._contacts[1] is CG._contacts[0]
+        assert new_CG.contact_pairs[0] is CG.contact_pairs[2]
+        assert new_CG.contact_pairs[1] is CG.contact_pairs[0]
 
         def test_to_select_by_residues_consensus(self):
             CG = examples.ContactGroupL394()
@@ -1975,7 +1975,7 @@ class TestContactGroup(TestBaseClassContactGroup):
             new_CG : contacts.ContactGroup = CG.select_by_residues("G.H.21")
             assert isinstance(new_CG, contacts.ContactGroup)
             assert new_CG.n_ctcs == 1
-            assert new_CG._contacts[0] is CG._contacts[1]
+            assert new_CG.contact_pairs[0] is CG.contact_pairs[1]
 
 
     def test_to_ContactGroups_per_traj(self):
@@ -2005,11 +2005,11 @@ class TestContactGroup(TestBaseClassContactGroup):
             _np.testing.assert_array_equal(iCG.trajlabels[0], 'mdtraj.00')
 
             for jj in range(CG.n_ctcs):
-                _np.testing.assert_array_equal( CG._contacts[jj].time_traces.ctc_trajs[ii],
-                                               iCG._contacts[jj].time_traces.ctc_trajs[0])
-                _np.testing.assert_array_equal( CG._contacts[jj].time_traces.atom_pair_trajs[ii],
-                                               iCG._contacts[jj].time_traces.atom_pair_trajs[0])
-                assert CG._contacts[jj].time_traces.trajs[ii] is iCG._contacts[jj].time_traces.trajs[0]
+                _np.testing.assert_array_equal( CG.contact_pairs[jj].time_traces.ctc_trajs[ii],
+                                               iCG.contact_pairs[jj].time_traces.ctc_trajs[0])
+                _np.testing.assert_array_equal( CG.contact_pairs[jj].time_traces.atom_pair_trajs[ii],
+                                               iCG.contact_pairs[jj].time_traces.atom_pair_trajs[0])
+                assert CG.contact_pairs[jj].time_traces.trajs[ii] is iCG.contact_pairs[jj].time_traces.trajs[0]
 
 class TestContactGroup_select_by_frames(TestBaseClassContacts):
 
@@ -2816,7 +2816,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         # are uniquelly associated with the ContactPair
 
         # reverse the ContactPairs s.t. the frequences are in ascending (unusual) order
-        CG =  contacts.ContactGroup(self.CG_cp1_cp2_both_w_anchor_and_frags._contacts[::-1],
+        CG =  contacts.ContactGroup(self.CG_cp1_cp2_both_w_anchor_and_frags.contact_pairs[::-1],
                                     neighbors_excluded=0)
 
         figs = CG.plot_timedep_ctcs(ctc_cutoff_Ang=2)
