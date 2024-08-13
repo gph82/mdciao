@@ -874,7 +874,7 @@ def residue_neighborhoods(residues,
     print("Will compute contact frequencies for (%u items):\n%s"
           "\n with a stride of %u frames" % (len(xtcs),_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    fragments_as_residue_idxs = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)[0]
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
