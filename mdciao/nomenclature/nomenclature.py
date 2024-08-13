@@ -2514,7 +2514,7 @@ _GPCR_num2lett = {
     "8": "H8",
 }
 
-_GPCR_fragments = ["NT",
+_GPCR_fragments = ("NT",
                    "1", "TM1 ",
                    "12", "ICL1",
                    "2", "TM2",
@@ -2530,9 +2530,9 @@ _GPCR_fragments = ["NT",
                    "7", "TM7",
                    "78",
                    "8", "H8",
-                   "CT"]
+                   "CT")
 
-_CGN_fragments = ['G.HN',
+_CGN_fragments = ('G.HN',
                   'G.hns1',
                   'G.S1',
                   'G.s1h1',
@@ -2568,9 +2568,9 @@ _CGN_fragments = ['G.HN',
                   'G.h4s6',
                   'G.S6',
                   'G.s6h5',
-                  'G.H5']
+                  'G.H5')
 
-_KLIFS_fragments = ['I',
+_KLIFS_fragments = ('I',
                     'g.l',
                     'II',
                     'III',
@@ -2588,7 +2588,7 @@ _KLIFS_fragments = ['I',
                     'VII',
                     'VIII',
                     'xDFG',
-                    'a.l']
+                    'a.l')
 
 
 _GPCR_mandatory_fields = ["protein_segment",
