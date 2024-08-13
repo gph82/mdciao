@@ -1948,17 +1948,17 @@ class ContactPair(object):
 
     def label_flex(self, AA_format="short", pad_label=True, defrag=None, fmt1="%-15s", fmt2="%-15s"):
         r"""
-        A more flexible method to produce the label of this :obj:`ContactPair`
+        A more flexible method to produce the label of this `ContactPair`
 
         Parameters
         ----------
         AA_format : str, default is "short"
             Amino-acid format for the label, can be
-             * short: A35@4.55
+             * "short": A35@4.55
              * "long": ALA35@4.50
-             * "just_consensus": 4.50
-             * "try_consensus":  4.50 if consensus labeling is present,
-               else default to "short"
+             * "just_consensus": 4.50 if consensus labels are present, else fail
+             * "try_consensus":  4.50 if consensus labels are present, else
+              fallback to "short"
 
         pad_label : bool, default is True
             Pad the labels with whitespace so that stacked contact labels
@@ -1979,7 +1979,7 @@ class ContactPair(object):
         -------
         label : str
         """
-
+        _allowed_AAformats = ["short", "long", "try_consensus", "just_consensus"]
         if AA_format== 'short':
             label = self.labels.w_fragments_short_AA
         elif AA_format== 'long':
@@ -1988,7 +1988,8 @@ class ContactPair(object):
             #TODO where do we put this assertion?
             if None in self._attribute_residues.consensus_labels:
                 if AA_format.startswith("just_"):
-                    raise ValueError("Residues %s don't have both consensus labels:%s. \n Try setting `AA_format='try_consensus'`" % (
+                    raise ValueError("Residues %s don't have both consensus labels:%s. "
+                                     "\n Try setting `AA_format='try_consensus'`" % (
                         self._attribute_residues.names_short,
                         self._attribute_residues.consensus_labels))
                 elif AA_format.startswith("try_"):
@@ -2002,9 +2003,9 @@ class ContactPair(object):
                     label="-".join(label)
             else:
                 label = self.labels.just_consensus
-
         else:
-            raise ValueError(AA_format)
+            raise ValueError(f"The method got AA_format='{AA_format}', "
+                             f"but the only allowed values for 'AA_format' are {_allowed_AAformats}.")
         if defrag is not None:
             label = _mdcu.str_and_dict.defrag_key(label,defrag=defrag, sep="-")
         if pad_label:
