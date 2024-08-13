@@ -38,9 +38,9 @@ from mpl_toolkits.axes_grid1 import \
 
 import mdciao.utils as _mdcu
 
-from mdciao.nomenclature.nomenclature import _sort_all_consensus_labels
+from mdciao.nomenclature.nomenclature import _lexsort_consensus_ctc_labels
 # The above line introduces a dependency of 'plots' on 'nomenclature', which were
-# uncoupled so far. The alternative would be to put '_sort_all_consensus_labels'
+# uncoupled so far. The alternative would be to put '_lexsort_consensus_ctc_labels'
 # into 'utils.str_and_dict' (since it's essentially string operations).
 # However, as plotting methods become increasing nomenclature-aware, such a
 # plots -> nomenclature dependency will likely come in the future
@@ -1710,7 +1710,7 @@ def _sorter_by_key_or_val(sort_by, indict):
 
     The rules might use just the keys or just the values of the dict
 
-    The indict is left unaltered.
+    The `indict` is left unaltered.
 
     Parameters
     ----------
@@ -1727,6 +1727,8 @@ def _sorter_by_key_or_val(sort_by, indict):
           by the values of the `indict`
         * "keep"
           keep the order of the keys
+        * "consensus"
+          Sort following consensus nomenclature
         * a list of contact labels.
           The returned `ordered_keys` will be the
           intersection of `sort_by` and `indict.keys()`,
@@ -1766,7 +1768,7 @@ def _sorter_by_key_or_val(sort_by, indict):
         # Out[5]: ['0-10', '0-20', 'ALA', 'ALA30-GLU40', 'ALA30-GLU50', 'GLU5-ALA20']
         # -> we would want ['0-10', '0-20', 'GLU5-ALA20', 'ALA30-GLU40', 'ALA30-GLU50', 'ALA']
     elif sort_by == "consensus":
-        ordered_keys = _sort_all_consensus_labels(all_ctc_keys)
+        ordered_keys = _lexsort_consensus_ctc_labels(all_ctc_keys)[0]
     elif sort_by in ["mean", "std"]:
         ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
     elif sort_by == "keep":
