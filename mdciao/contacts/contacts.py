@@ -2025,18 +2025,34 @@ class ContactPair(object):
         Parameters
         ----------
         AA_format : str, default is "short"
-            Alternative is "long" ("E30" vs "GLU30")
+            Options are:
+             * "short": "E30@3.50"
+             * "long": GLU30@3.50
+             * "just_consensus": 3.50, fail if none is found
+             * "try_consensus":  3.50, fallback to "short" if none is found
         fragments : bool, default is False
             Include fragment information
             Will get the "best" information
             available, ie consensus>fragname>fragindex
+            When trying to get consensus labels,
+            this option is ignored, s.t. the full
+            "E30@3.50" is returned regardless.
         delete_anchor : bool, default is False
             Delete the anchor from the label
 
         Returns
         -------
+        label : str
+            The contact label, containing
+            both or only one residue, depending on
+            the value of `delete_anchor`.
 
         """
+        _allowed_AAformats = ["short", "long", "try_consensus", "just_consensus"]
+        if AA_format not in _allowed_AAformats:
+            raise ValueError(f"The method got AA_format='{AA_format}', "
+                             f"but the only allowed values for 'AA_format' are {_allowed_AAformats}.")
+
         if self.neighborhood is None and delete_anchor:
             delete_anchor  = False
             print("ContactPair.gen_label() can't use `delete_anchor=True`, this is not a neighborhood.\n"
@@ -2053,8 +2069,8 @@ class ContactPair(object):
                     label = self.labels.w_fragments
                 else:
                     label = self.labels.no_fragments
-            else:
-                raise ValueError(AA_format)
+            elif AA_format in ["try_consensus", "just_consensus"]:
+                label = self.label_flex(AA_format=AA_format, pad_label=False)
         else:
             if AA_format == "short":
                 if fragments:
@@ -2066,7 +2082,9 @@ class ContactPair(object):
                     label = self.neighborhood.partner_res_and_fragment_str
                 else:
                     label = self.neighborhood.partner_residue_name
-
+            elif AA_format in ["try_consensus", "just_consensus"]:
+                label = self.label_flex(AA_format=AA_format, pad_label=False)
+                label = _mdcu.str_and_dict.splitlabel(label)[self.residues.anchor_index]
         return label
 
     @_kwargs_subs(label_flex)
