@@ -174,7 +174,6 @@ def get_fragments(top,
     ----------
     top : :obj:`~mdtraj.Topology` or str
         When str, path to filename
-
     method : str, default is 'lig_resSeq+'
         The method passed will be the basis for creating fragments. Check the following options
         with the example sequence
@@ -244,7 +243,7 @@ def get_fragments(top,
         additional arguments, see :obj:`~mdciao.residue_and_atom.residues_from_descriptors`
 
     Other Parameters
-    ---------------
+    ----------------
     %(substitute_kwargs)s
 
     Returns
