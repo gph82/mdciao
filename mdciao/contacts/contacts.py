@@ -5706,7 +5706,7 @@ class ContactGroup(object):
         frq_dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                              switch_off_Ang=switch_off_Ang,
                                                              sort_by_freq=sort_by_freq,
-                                                             shorten_AAs=shorten_AAs,
+                                                             AA_format=["short" if shorten_AAs else "long"][0],
                                                              list_by_interface=list_by_interface)
 
         # TODO the method plot_freqs_as_bars is very similar but
