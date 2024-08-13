@@ -627,15 +627,22 @@ def top2lsd(top, substitute_fail="X",
     ----------
     top : :obj:`~mdtraj.Topology`
     substitute_fail : str, None, int, default is "X"
-        If there is no .code  attribute, different options are there
+        If there is no .code  attribute, there are different options
         depending on the value of this parameter
          * None : throw an exception when no short code is found (default)
          * 'long' : keep the residue's long name, i.e. do nothing
          * 'c': any alphabetic character, as long as it is of len=1
          * 0 : the first alphabetic character in the residue's name
     extra_columns : dictionary of indexables
-        Any other column you want to
-        include in the :obj:`~pandas.DataFrame`
+        Any other columns you want to
+        include in the :obj:`~pandas.DataFrame`, e.g.
+        {"GPCR" : [None, None,...,3.50, 3.51...],
+         "CGN"  : [G.H5.25, None, None, ...]}
+         If the values are lists, they sould be
+         len=top.n_residues, if dicts, the dicts
+         don't need to cover all residues of `top`, e.g.
+        {"GPCR" : {200 : "3.50", 201 : "3.51"},
+         "CGN"  : {0 : "G.H5.25"}}
 
     Returns
     -------
