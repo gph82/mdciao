@@ -911,7 +911,7 @@ def compare_groups_of_contacts(groups,
                                               pad_label=False)
                 else:
                     idict = ifile.frequency_sum_per_residue_names(ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                                  shorten_AAs=[True if AA_format=="short" else False][0],
+                                                                  AA_format=AA_format,
                                                                   list_by_interface=True)
 
         else:
