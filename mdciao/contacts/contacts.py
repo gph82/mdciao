@@ -1946,7 +1946,7 @@ class ContactPair(object):
         """
         return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)))
 
-    def label_flex(self, AA_format="short", split_label=True, defrag=None, fmt1="%-15s", fmt2="%-15s"):
+    def label_flex(self, AA_format="short", pad_label=True, defrag=None, fmt1="%-15s", fmt2="%-15s"):
         r"""
         A more flexible method to produce the label of this :obj:`ContactPair`
 
@@ -1960,8 +1960,8 @@ class ContactPair(object):
              * "try_consensus":  4.50 if consensus labeling is present,
                else default to "short"
 
-        split_label : bool, default is True
-            Split the labels so that stacked contact labels
+        pad_label : bool, default is True
+            Pad the labels with whitespace so that stacked contact labels
             become easier-to-read in plain ascii formats
              - "E25@3.50____-    A35@4.50"
              - "A30@longfrag-    A35@4.50
@@ -1971,10 +1971,10 @@ class ContactPair(object):
             them as is, e.g. would be "@"
         fmt1 : str, default is "%-15s"
             Specify how the labels of res1 should be formatted.
-            Only has effect if `split_label` is True
+            Only has effect if `pad_label` is True
         fmt2 : str, default is "%-15s"
             Specify how the labels of res2 should be formatted.
-            Only has effect if `split_label` is True
+            Only has effect if `pad_label` is True
         Returns
         -------
         label : str
@@ -2007,7 +2007,7 @@ class ContactPair(object):
             raise ValueError(AA_format)
         if defrag is not None:
             label = _mdcu.str_and_dict.defrag_key(label,defrag=defrag, sep="-")
-        if split_label:
+        if pad_label:
             fmt = f"{fmt1} - {fmt2}"
             label = fmt % tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
 
@@ -3945,7 +3945,7 @@ class ContactGroup(object):
         """
 
         if _path.splitext(str(fname))[1] in [".xlsx"]:
-            freq_dataframe_kwargs["split_label"] = False
+            freq_dataframe_kwargs["pad_label"] = False
             main_DF = self.frequency_dataframe(ctc_cutoff_Ang,
                                                switch_off_Ang=switch_off_Ang,
                                                **freq_dataframe_kwargs)
@@ -3956,7 +3956,7 @@ class ContactGroup(object):
                                                         return_as_dataframe=True)
             self.frequency_spreadsheet(main_DF,idfs,ctc_cutoff_Ang,fname)
         else:
-            freq_dataframe_kwargs["split_label"] = True
+            freq_dataframe_kwargs["pad_label"] = True
             main_DF = self.frequency_dataframe(ctc_cutoff_Ang,
                                                switch_off_Ang=switch_off_Ang,
                                                **freq_dataframe_kwargs)

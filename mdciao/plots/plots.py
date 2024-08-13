@@ -901,14 +901,14 @@ def compare_groups_of_contacts(groups,
         elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
             if distro:
                 idict = ifile.distribution_dicts(AA_format=AA_format,
-                                                 split_label=False,
+                                                 pad_label=False,
                                                  bins="auto")
             else:
                 assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a `ctc_cutoff_Ang` parameter"
                 if not interface:
                     idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               AA_format=AA_format,
-                                              split_label=False)
+                                              pad_label=False)
                 else:
                     idict = ifile.frequency_sum_per_residue_names(ctc_cutoff_Ang=ctc_cutoff_Ang,
                                                                   shorten_AAs=[True if AA_format=="short" else False][0],
