@@ -27,6 +27,8 @@ from copy import deepcopy as _dcopy
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
+from mdciao.utils.str_and_dict import _kwargs_subs
+
 _allowed_site_schemes = ("AAresSeq","residx", "consensus")
 def x2site(site, fmt="AAresSeq"):
     """
@@ -103,6 +105,7 @@ def x2site(site, fmt="AAresSeq"):
 
     return idict
 
+@_kwargs_subs(_mdcfrg.get_fragments)
 def sites_to_res_pairs(site_dicts, top,
                        fragments=None,
                        default_fragment_index=None,
@@ -116,8 +119,8 @@ def sites_to_res_pairs(site_dicts, top,
 
     Note
     ----
-    Any residue not found in :obj:`top` is assigned
-    a 'None' in the returned :obj:`res_idx_pairs`.
+    Any residue not found in `top` is assigned
+    a 'None' in the returned `res_idx_pairs`.
 
     Parameters
     ----------
@@ -135,8 +138,17 @@ def sites_to_res_pairs(site_dicts, top,
         a dimer, pass which fragment/monomer should be chosen
         by default. The default behaviour (None)
         will prompt the user when necessary
-    get_fragments_kwargs :
-        see :obj:`fragments.get_fragments`
+    consensus_maps : dict, default is None
+        Dictionary of consensus maps, i.e.
+        keyed with nomenclature type (GPCR,CGN,KLIFS)
+        and valued with lists of len top.n_residues
+    get_fragments_kwargs : dict
+        Optional arguments for :obj:`~mdciao.fragments.get_fragments`.
+        The optional parameters of are:
+
+    Other Parameters
+    ----------------
+    %(substitute_kwargs)s
 
     Returns
     -------
@@ -167,6 +179,7 @@ def sites_to_res_pairs(site_dicts, top,
                     raise ValueError("Can't use consensus labels in the site definitions if no consensus maps are passed.\n"
                                      "Please provide GPCR, CGN, or KLIFS consensus labeling to use "
                                      "the 'consensus' way of defining a site.")
+                assert all([len(val)==top.n_residues for val in consensus_maps.values()])
                 key2res = {key: {label: ii for ii, label in enumerate(val) if str(label).lower()!="none"} for key, val in consensus_maps.items()}
                 def get_pair_lambda(bond):
                     res_out = []
@@ -174,10 +187,11 @@ def sites_to_res_pairs(site_dicts, top,
                         res = [cm.get(desc,None) for cm in key2res.values()]
                         res = [rr for rr in res if rr is not None]
                         if len(res)==0:
-                            raise ValueError(f"The consensus descriptor {desc} didn't "
-                                             f"yield any matches on {list(consensus_maps.keys())} labels.")
-                        else:
+                            res_out.append(None)
+                        elif len(res)==1:
                             res_out.append(res[0])
+                        else:
+                            raise ValueError(res)
                     return res_out
 
             for bond in bonds:
