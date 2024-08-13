@@ -6530,8 +6530,8 @@ class ContactGroup(object):
                            keep_interface=True,
                            n_residues=1):
         r"""
-        Return a copy this :obj:`ContactGroup`, but with a sub-selection of :obj:`ContactGroup.contact_pairs` based on residues.
-        The returned :obj:`ContactGroup` has the same trajectories and frames as the original.
+        Return a copy this `ContactGroup`, but with a sub-selection of `ContactGroup.contact_pairs` based on residues.
+        The returned `ContactGroup` has the same trajectories and frames as the original.
 
         The filtering of ContactPairs is done using `CSVexpression`, `residue_indices`, or `residue_pairs`
         so that:
@@ -6545,9 +6545,9 @@ class ContactGroup(object):
         Parameters
         ----------
         CSVexpression : str or None, default is None
-            CSV expression like "GLU30,K*" to select
+            CSV expression like "GLU30,K*,3.50" to select
             the residue-pairs of :obj:`self` for the
-            new :obj:`ContactGroup`. See
+            new `ContactGroup`. See
             :obj:`mdciao.utils.residue_and_atom.find_AA` for
             the syntax of the expression.
         residue_indices : list, default is None,
@@ -6564,9 +6564,9 @@ class ContactGroup(object):
             used, since `residue_indices` matches are unique
         merge : bool, default is True
             Merge the selected residue-pairs into
-            one single :obj:`ContactGroup`. If False
+            one single `ContactGroup`. If False
             every sub-string of :obj:`CSVexpression`
-            returns its own :obj:`ContactGroup`
+            returns its own `ContactGroup`
         keep_interface : bool, default is True
             If self.is_interface and `merge` are
             both True, then returned ContactGroup
@@ -6584,10 +6584,10 @@ class ContactGroup(object):
 
         Returns
         -------
-        newCG : :obj:`ContactGroup` or dict
+        newCG : `ContactGroup` or dict
             If dict, it's keyed with substrings of
-            :obj:`CSVexpression` and valued with
-            :obj:`ContactGroups`
+            `CSVexpression` and valued with
+            `ContactGroups`
         """
         assert n_residues in [1,2]
         if CSVexpression is not None:
@@ -6595,7 +6595,8 @@ class ContactGroup(object):
             keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
             matches = []
             for exp in keys:
-                matches.append(_mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top))
+                matches.append(_mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top,
+                                                              extra_columns={"consensus" : self.residx2consensuslabel}))
                 if not allow_multiple_matches and len(matches[-1])>1:
                     print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
                     _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)

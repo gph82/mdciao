@@ -1966,9 +1966,16 @@ class TestContactGroup(TestBaseClassContactGroup):
         new_CG : contacts.ContactGroup = CG.select_by_residues(residue_pairs=residue_pairs)
         assert isinstance(new_CG, contacts.ContactGroup)
         assert new_CG.n_ctcs == 2
-        print(new_CG.res_idxs_pairs,"AAAA")
         assert new_CG._contacts[0] is CG._contacts[2]
         assert new_CG._contacts[1] is CG._contacts[0]
+
+        def test_to_select_by_residues_consensus(self):
+            CG = examples.ContactGroupL394()
+
+            new_CG : contacts.ContactGroup = CG.select_by_residues("G.H.21")
+            assert isinstance(new_CG, contacts.ContactGroup)
+            assert new_CG.n_ctcs == 1
+            assert new_CG._contacts[0] is CG._contacts[1]
 
 
     def test_to_ContactGroups_per_traj(self):
