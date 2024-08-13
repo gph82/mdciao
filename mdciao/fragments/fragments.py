@@ -1019,12 +1019,12 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
                             verbose=False,
                             answers=None):
     r"""
-    Input a dictionary of fragment definitions, keyed by
-    whatever and valued with residue idxs and prompt
-    the user how to re-group them
+    Re-group fragment definitions into new fragment groups.
+    By default it prompts the user unless the `answers` are provided directly.
 
-    It wraps around :obj:`_match_dict_by_patterns`
-    under the hood
+    It can expand numerical ranges, e.g. "1-3" to [1,2,3] and
+    use string pattern matching as done by
+    :obj:`~mdciao.str_and_dict.match_dict_by_patterns`
 
     TODO: refactor into str_and_dict_utils
     TODO: It will be mostly used with fragments so it's better here for the API? IDK
@@ -1032,25 +1032,30 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
     Parameters
     ----------
     frag_defs_dict : dict
-        Fragment definitions in residue idxs
+        Fragment definitions as iterable
+        of residue idxs. Fragments can overlap,
+        e.g. one can have fragments corresponding
+        to chains in the pdb-file mixed
+        with consensus fragments (TM1, TM2, etc).
     ng : int, default is 2
-        wanted number of groups
+        wanted number of groups of fragments
     answers : list, default is None
-        List of strings. If provided,
-        the items of this list will
-        be passed as answers to the prompt
-        asking for fragment choice. None and
+        List of len `ng`. Each item
+        can contain either string
+        expressions like "TM*,-H8",
+         or "1-6" or an explicit list
+        of integers. These items
+        will be passed as answers to the prompt
+        asking for `ng` fragment choices.
 
     Returns
     -------
-    groups_as_residue_idxs, groups_as_keys
-
     groups_as_residue_idxs : list of len ng
         Contains ng arrays with the concatenated
         and sorted residues in each group
     groups_as_keys : list of len ng
         Contains ng lists with the keys
-        of :obj:`frag_defs_dict` in each of groups
+        of `frag_defs_dict` in each of groups
     """
 
     groups_as_keys = []
@@ -1058,22 +1063,40 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
     _answers = [None]*ng
     if answers is not None:
         for ii, ians in enumerate(answers):
-            if isinstance(ians,str):
-                _answers[ii]=ians
+            if ians is not None:
+                if not isinstance(ians,str):
+                    _answers[ii]=",".join([str(ii) for ii in ians])
+                else:
+                    _answers[ii]=ians
     answers = _answers
 
     if verbose:
         for key, val in frag_defs_dict.items():
             print("%s: %u-%u"%(key, val[0],val[-1]))
     for ii in range(1, ng + 1):
-        print("group %u: " % ii, end='')
+        print("Select group %u: " % ii, end='')
         if answers[ii-1] is None:
+            print("\nInput a list of comma-separated expressions. Please note:")
             answer = input(
-                "Input a list of comma-separated posix-expressions.\n"
-                "Prepend with '-' to exclude, e.g. 'TM*,-TM2,H8' to grab all TMs and H8, but exclude TM2)\n").replace(
+                " - to select topology fragments, use integer indices, e.g. '0,1,4'. "
+                "Ranges are also allowed, e.g. '0-3' instead of '0,1,2,3'.\n"
+                " - to select consensus fragments, use string descriptors like 'TM1'. "
+                "Posix expressions like '*' or '?' are allowed, e.g. 'TM*' for all TMs.\n"
+                " - to exclude some fragments, prepend with '-', e.g. 'TM*,-TM2,H8' to select all TMs and H8, excluding TM2.\n").replace(
                 " ", "").strip("'").strip('"')
+            print("group %u: " % ii, end='')
         else:
             answer = answers[ii-1]
+
+        # Expand ranges if necessary
+        expanded_answer = []
+        for ii in answer.split(","):
+            if "-" in ii and ii[0]!="-" and ii.replace("-","").isnumeric():
+                expanded_answer.extend([str(ii) for ii in _mdcu.lists.rangeexpand(ii)])
+            else:
+                expanded_answer.append(str(ii))
+        answer = ",".join(expanded_answer)
+
         igroup, res_idxs_in_group = _mdcu.str_and_dict.match_dict_by_patterns(answer, frag_defs_dict)
         groups_as_keys.append([ilab for ilab in frag_defs_dict.keys() if ilab in igroup])
         groups_as_residue_idxs.append(sorted(res_idxs_in_group))

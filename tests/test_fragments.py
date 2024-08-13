@@ -352,7 +352,7 @@ class Test_frag_dict_2_frag_groups(unittest.TestCase):
             self.assertSequenceEqual(groups_as_residue_idxs[1],[6,7])
 
     def test_works_with_answers(self):
-        input_vaules = ["TM*,-TM2", "H8"]
+        input_values = ["TM*,-TM2", "H8"]
         groups_as_residue_idxs, \
         groups_as_keys, \
          = mdcfragments.frag_dict_2_frag_groups({"TM1": [0, 1],
@@ -360,13 +360,50 @@ class Test_frag_dict_2_frag_groups(unittest.TestCase):
                                                  "TM3": [4, 5],
                                                  "H8": [6, 7]},
                                                 verbose=True,
-                                                answers=input_vaules
+                                                answers=input_values
                                                 )
         self.assertSequenceEqual(groups_as_keys[0],["TM1","TM3"])
         self.assertSequenceEqual(groups_as_keys[1],["H8"])
 
         self.assertSequenceEqual(groups_as_residue_idxs[0],[0,1,4,5])
         self.assertSequenceEqual(groups_as_residue_idxs[1],[6,7])
+
+    def test_works_with_non_string_answers(self):
+        input_values = ["TM*,-TM2", [2]]
+        groups_as_residue_idxs, \
+            groups_as_keys, \
+            = mdcfragments.frag_dict_2_frag_groups({"TM1": [0, 1],
+                                                    "TM2": [2, 3],
+                                                    "TM3": [4, 5],
+                                                    "H8": [6, 7],
+                                                    "2":[8, 9]},
+                                                   verbose=True,
+                                                   answers=input_values
+                                                   )
+        self.assertSequenceEqual(groups_as_keys[0], ["TM1", "TM3"])
+        self.assertSequenceEqual(groups_as_keys[1], ["2"])
+
+        self.assertSequenceEqual(groups_as_residue_idxs[0], [0, 1, 4, 5])
+        self.assertSequenceEqual(groups_as_residue_idxs[1], [8,9])
+    def test_works_with_string_ranges(self):
+        input_values = ["TM*,-TM2", "2-3"]
+        groups_as_residue_idxs, \
+            groups_as_keys, \
+            = mdcfragments.frag_dict_2_frag_groups({"TM1": [0, 1],
+                                                    "TM2": [2, 3],
+                                                    "TM3": [4, 5],
+                                                    "H8": [6, 7],
+                                                    "2":[8, 9],
+                                                    "3": [10, 11],
+                                                    "4": [12,13]},
+                                                   verbose=True,
+                                                   answers=input_values
+                                                   )
+        self.assertSequenceEqual(groups_as_keys[0], ["TM1", "TM3"])
+        self.assertSequenceEqual(groups_as_keys[1], ["2","3"])
+
+        self.assertSequenceEqual(groups_as_residue_idxs[0], [0, 1, 4, 5])
+        self.assertSequenceEqual(groups_as_residue_idxs[1], [8,9, 10, 11])
 
 
 class Test_frag_list_2_frag_groups(unittest.TestCase):
