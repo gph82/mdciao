@@ -1017,7 +1017,8 @@ def frag_list_2_frag_groups(frag_list,
 
 def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
                             verbose=False,
-                            answers=None):
+                            answers=None,
+                            fail_on_empty=True):
     r"""
     Re-group fragment definitions into new fragment groups.
     By default it prompts the user unless the `answers` are provided directly.
@@ -1025,6 +1026,9 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
     It can expand numerical ranges, e.g. "1-3" to [1,2,3] and
     use string pattern matching as done by
     :obj:`~mdciao.str_and_dict.match_dict_by_patterns`
+
+    Unless specifically turned off, the method will fail
+    if any one of the `answers` yields no fragment groups.
 
     TODO: refactor into str_and_dict_utils
     TODO: It will be mostly used with fragments so it's better here for the API? IDK
@@ -1098,6 +1102,9 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
         answer = ",".join(expanded_answer)
 
         igroup, res_idxs_in_group = _mdcu.str_and_dict.match_dict_by_patterns(answer, frag_defs_dict)
+        if len(igroup)==0 and fail_on_empty:
+            raise ValueError(f"The expression '{answer}' doesn't yield any fragments. "
+                             "Set 'fail_on_empty=False' if you know what you're doing.")
         groups_as_keys.append([ilab for ilab in frag_defs_dict.keys() if ilab in igroup])
         groups_as_residue_idxs.append(sorted(res_idxs_in_group))
         print(', '.join(groups_as_keys[-1]))
