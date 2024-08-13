@@ -2219,6 +2219,7 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         cls.intf = examples.examples.Interface_B2AR_Gas(GPCR_UniProt = cls.GPCR,
                                                          CGN_UniProt = cls.CGN)
         cls.total_intf_freq_at_3 = cls.intf.frequency_per_contact(3.0).sum()
+        cls.L394 = examples.ContactGroupL394(GPCR_UniProt=None)
         assert cls.total_intf_freq_at_3 > 0
     def test_frequency_dicts(self):
         CG = self.CG
@@ -2278,6 +2279,26 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(freq_dict["V31@fragB"], 2 / 5)
         _np.testing.assert_equal(freq_dict["W32@fragC"], 1 / 5)
 
+    def test_frequency_per_residue_name_consensus(self):
+        CG = self.L394
+        """
+        ['L394@G.H5.26, 
+         'L388@G.H5.20',
+         'R389@G.H5.21', 
+         'L230@frag3',
+         'R385@G.H5.17',
+         'K270@frag3']
+        """
+        freq_dict = CG.frequency_sum_per_residue_names(4, AA_format="try_consensus")[0]
+        assert len(freq_dict) == 6
+        _np.testing.assert_equal(freq_dict["G.H5.26"], CG.select_by_residues("L394").frequency_per_contact(4).sum())
+        _np.testing.assert_equal(freq_dict["G.H5.20"], CG.select_by_residues("L388").frequency_per_contact(4).sum())
+        _np.testing.assert_equal(freq_dict["L230@frag3"], CG.select_by_residues("L230").frequency_per_contact(4).sum())
+        _np.testing.assert_equal(freq_dict["G.H5.17"], CG.select_by_residues("R385").frequency_per_contact(4).sum())
+        _np.testing.assert_equal(freq_dict["K270@frag3"], CG.select_by_residues("K270").frequency_per_contact(4).sum())
+
+
+
     def test_frequency_per_residue_name_no_sort(self):
         CG = self.CG
         freq_dict = CG.frequency_sum_per_residue_names(2, sort_by_freq=False)[0]
@@ -2297,6 +2318,11 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
                                                                  2 / 5,
                                                                  1 / 5])
 
+    def test_frequency_per_residue_name_consensus(self):
+        CG = self.CG
+        freq_dict = CG.frequency_sum_per_residue_names(2,
+                                                       return_as_dataframe=True)[0]
+        assert len(freq_dict) == 3
 
     def test_frequency_dict_by_consensus_labels_fails(self):
         CG = self.CG

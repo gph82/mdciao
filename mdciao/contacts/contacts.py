@@ -3710,7 +3710,7 @@ class ContactGroup(object):
     def frequency_sum_per_residue_names(self, ctc_cutoff_Ang,
                                         switch_off_Ang=None,
                                         sort_by_freq=True,
-                                        shorten_AAs=True,
+                                        AA_format="short",
                                         list_by_interface=False,
                                         return_as_dataframe=False,
                                         ):
@@ -3733,8 +3733,12 @@ class ContactGroup(object):
             :obj:`self.interface_residxs` for more info.
             If False, residues are in ascending order
             of residue indices
-        shorten_AAs : bool, default is True
-            Use E30 instead of GLU30
+        AA_format : str, default is 'short'
+            Use E30@3.50 instead of GLU30@3.50.
+            Alternatives are:
+             * "long": GLU30@3.50
+             * "just_consensus": 3.50, fail if none is found
+             * "try_consensus":  3.50, fallback to "short" if none is found
         list_by_interface : bool, default is False
             group the freq_dict by interface residues.
             Only has an effect if self.is_interface
@@ -3759,7 +3763,14 @@ class ContactGroup(object):
 
         # Use the residue@frag representation but avoid empty fragments
         list_out = []
-        residx2resnamefragnamebest = self.residx2resnamefragnamebest(shorten_AAs=shorten_AAs)
+        if "consensus" not in AA_format:
+            residx2resnamefragnamebest = self.residx2resnamefragnamebest(shorten_AAs=[True if AA_format=="short" else False][0])
+        else:
+            residx2resnamefragnamebest = {}
+            for lab, pair in zip(self.gen_ctc_labels(AA_format=AA_format),
+                                 self.res_idxs_pairs):
+                residx2resnamefragnamebest.update({key : val for key, val in zip(pair,
+                                                                                 _mdcu.str_and_dict.splitlabel(lab))})
         for ifreq in freqs:
             idict = {}
             for idx, val in ifreq.items():
