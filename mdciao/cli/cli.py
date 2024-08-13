@@ -155,7 +155,8 @@ def _parse_consensus_option(option, consensus_type,
         LC_out = option
 
     if isinstance(LC_out, _mdcnomenc.LabelerConsensus):
-        answer = _mdcnomenc.guess_by_nomenclature(LC_out, top, fragments, consensus_type,
+        answer = _mdcnomenc.guess_by_nomenclature(LC_out, top,
+                                                  fragments=fragments, nomenclature_name=consensus_type,
                                                   accept_guess=accept_guess,
                                                   # verbose=True
                                                   )
