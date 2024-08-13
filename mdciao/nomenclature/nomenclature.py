@@ -3868,9 +3868,9 @@ def _lexsort_consensus_ctc_labels(labels, reverse = False, columns = [0, 1], sep
     if not any([all([len(lab) == 1 for lab in split_labels]),
                 all([len(lab) == 2 for lab in split_labels])]):
         raise ValueError(f"Labels have to be all single ('3.50') or double ('3.50-2.50'), but not mixed {labels}")
-    split_labels = _np.vstack(split_labels)
+    split_labels = _np.vstack(split_labels).squeeze()
     if split_labels.ndim == 1:
-        order = _sort_all_consensus_labels(split_labels())[1]
+        order = _sort_all_consensus_labels(split_labels)[1]
     elif split_labels.ndim ==2:
         #There's other ways but this was easy to set up
         lexsort = {key : val[columns[1]].to_dict() for key, val in _DataFrame(split_labels).groupby(by=columns[0])}
