@@ -2340,8 +2340,8 @@ def residue_selection(expression,
 
     if fragments is None:
         fragments = [_signature(_mdcfrg.get_fragments).parameters["method"].default]
-    _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
-                                                                   _top, verbose=True)
+    _frags = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
+                                                                   _top, verbose=True)[0]
     res_idxs_list, consensus_maps, __ = _res_resolver(expression, _top, _frags,
                                                       midstring="Your selection '%s' yields:" % expression,
                                                       GPCR_UniProt=GPCR_UniProt, CGN_UniProt=CGN_UniProt,
