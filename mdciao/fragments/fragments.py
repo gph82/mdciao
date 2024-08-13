@@ -837,7 +837,7 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
                 if n_in_fragment < len(fragments[jj]):
                     istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
                 print(istr)
-            answr = input("Input the idxs of the fragments where ECL2 can be found %s  (fmt = 1 or 1-4, or 1,3):" % fragname)
+            answr = input(f"Input the idxs of the fragments where {fragname} can be found %s  (fmt = 1 or 1-4, or 1,3):")
             answr = _mdcu.lists.rangeexpand(answr)
             if not all([idx in frag_cands for idx in answr]):
                 raise ValueError(f"Cannot keep fragment {set(answr).difference(frag_cands)}, "
