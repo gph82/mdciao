@@ -643,29 +643,29 @@ class Test_choose_between_consensus_dicts(unittest.TestCase):
                                                         )
 
 
-class Test_map2defs(unittest.TestCase):
+class Test_conlabs2confrags(unittest.TestCase):
     def setUp(self):
         self.cons_list = ['3.67', 'G.H5.1', 'G.H5.6', '5.69']
         self.cons_list_w_Nones = ['3.67', None, None, 'G.H5.1', 'G.H5.6', '5.69']
         self.cons_list_wo_dots = ['367', None, None, 'G.H5.1', 'G.H5.6', '5.69']
 
     def test_works(self):
-        map2defs = nomenclature._map2defs(self.cons_list)
+        map2defs = nomenclature.conlabs2confrags(self.cons_list)
         assert _np.array_equal(map2defs['3'], [0])
         assert _np.array_equal(map2defs['G.H5'], [1, 2])
         assert _np.array_equal(map2defs['5'], [3])
         _np.testing.assert_equal(len(map2defs), 3)
 
     def test_works_w_Nones(self):
-        map2defs = nomenclature._map2defs(self.cons_list_w_Nones)
+        map2defs = nomenclature.conlabs2confrags(self.cons_list_w_Nones)
         assert _np.array_equal(map2defs['3'], [0])
         assert _np.array_equal(map2defs['G.H5'], [3, 4])
         assert _np.array_equal(map2defs['5'], [5])
         _np.testing.assert_equal(len(map2defs), 3)
 
     def test_works_wo_dot_raises(self):
-        with self.assertRaises(AssertionError):
-            nomenclature._map2defs(self.cons_list_wo_dots)
+        with self.assertRaises(ValueError):
+            nomenclature.conlabs2confrags(self.cons_list_wo_dots)
 
 
 class Test_fill_CGN_gaps(unittest.TestCase):

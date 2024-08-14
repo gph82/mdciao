@@ -1961,7 +1961,7 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
         The same as the input :obj:`consensus_list` with guessed missing entries
     """
 
-    defs = _map2defs(consensus_list)
+    defs = conlabs2confrags(consensus_list)
     # todo decrease verbosity
     # Iterate over fragments
     for frag_key, conlabs in defs.items():
@@ -2259,47 +2259,40 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
     return answer
 
 
-def _map2defs(cons_list, splitchar="."):
+def conlabs2confrags(conlabs, splitchar="."):
     r"""
     Subdomain definitions form a list of consensus labels.
 
     The indices of the list are interpreted as residue indices
-    in the topology used to generate :obj:`cons_list`
-    in the first place, e.g. by using :obj:`nomenclature_utils._top2consensus_map`
+    in the topology used to generate `cons_list`
+    in the first place, e.g. by using :obj:`mdciao.nomenclature.LabelerConsensus.top2labels`
 
-    Note:
-    -----
-    The method will guess automagically whether this is a CGN or GPCR label by
-    checking the type of the first character (numeric is GPCR, 3.50, alpha is CGN, G.H5.1)
 
     Parameters
     ----------
-    cons_list: list
-        Contains consensus labels for a given topology, s.t. indices of
+    conlabs: list
+        Consensus labels for a given topology, s.t. indices of
         the list map to residue indices of a given topology, s.t.
         cons_list[10] has the consensus label of top.residue(10)
     splitchar : str, default is "."
         The character to use to get the subdomain labels from the
         consensus labels, e.g. "3" from "3.50" or "G.H5" from "G.H5.1"
+        If a label of `cons_list` doesn't have a `splitchar` in
+        it, an Exception is thrown (this is a suspicious case)
     Returns
     -------
     defs : dictionary
         dictionary keyed with subdomain-names and valued with arrays of residue indices
     """
-    defs = _defdict(list)
-    for ii, key in enumerate(cons_list):
-        if str(key).lower() != "none":
-            assert splitchar in _mdcu.lists.force_iterable(key), "Consensus keys have to have a '%s'-character" \
-                                                                 " in them, but '%s' (type %s) hasn't" % (
-                                                                     splitchar, str(key), type(key))
-            if key[0].isnumeric():  # it means it is GPCR
-                new_key = key.split(splitchar)[0]
-            elif key[0].isalpha():  # it means it CGN
-                new_key = '.'.join(key.split(splitchar)[:-1])
-            else:
-                raise Exception([ii, splitchar])
-            defs[new_key].append(ii)
-    return {key: _np.array(val) for key, val in defs.items()}
+    bad_labels = [val for val in conlabs if splitchar not in str(val) and str(val).lower() != "none"]
+    if len(bad_labels)>0:
+        raise ValueError(f"Some labels of 'cons_list' don't have '{splitchar}' in them. "
+                         f"Are you sure these are valid consensus labels(e.g. '3.50' or 'G.H5.26'?:\n{bad_labels}")
+    df = _DataFrame(conlabs, columns=["conlab"])
+    conlab2confrag = lambda x: str(x)[::-1].split(splitchar, 1)[-1][::-1]
+    df["frag"] = df.conlab.map(conlab2confrag)
+    consensus_frags = {key: val.index.values for key, val in df.groupby("frag") if str(key).lower() != "none"}
+    return {key: _np.array(val) for key, val in consensus_frags.items()}
 
 
 def _sort_consensus_labels(subset, sorted_superset,

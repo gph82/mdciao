@@ -38,6 +38,7 @@ Functions
     guess_by_nomenclature
     matching_fragments
     references
+    conlabs2confrags
 
 References
 ==========
