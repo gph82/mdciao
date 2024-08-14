@@ -656,6 +656,13 @@ class Test_conlabs2confrags(unittest.TestCase):
         assert _np.array_equal(map2defs['5'], [3])
         _np.testing.assert_equal(len(map2defs), 3)
 
+    def test_works_replaces(self):
+        map2defs = nomenclature.conlabs2confrags(self.cons_list, replace_GPCR_frags=True)
+        assert _np.array_equal(map2defs['TM3'], [0])
+        assert _np.array_equal(map2defs['G.H5'], [1, 2])
+        assert _np.array_equal(map2defs['TM5'], [3])
+        _np.testing.assert_equal(len(map2defs), 3)
+
     def test_works_w_Nones(self):
         map2defs = nomenclature.conlabs2confrags(self.cons_list_w_Nones)
         assert _np.array_equal(map2defs['3'], [0])

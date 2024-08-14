@@ -2259,7 +2259,7 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
     return answer
 
 
-def conlabs2confrags(conlabs, splitchar="."):
+def conlabs2confrags(conlabs, splitchar=".", replace_GPCR_frags=False):
     r"""
     Subdomain definitions form a list of consensus labels.
 
@@ -2279,6 +2279,9 @@ def conlabs2confrags(conlabs, splitchar="."):
         consensus labels, e.g. "3" from "3.50" or "G.H5" from "G.H5.1"
         If a label of `cons_list` doesn't have a `splitchar` in
         it, an Exception is thrown (this is a suspicious case)
+    replace_GPCR_frags : bool, default is False
+        If True, will replace the fragment labels coming from GPCR
+        conlabs like "34.50" or "7.49" to "ICL2" or "TM7", respectively.
     Returns
     -------
     defs : dictionary
@@ -2292,6 +2295,9 @@ def conlabs2confrags(conlabs, splitchar="."):
     conlab2confrag = lambda x: str(x)[::-1].split(splitchar, 1)[-1][::-1]
     df["frag"] = df.conlab.map(conlab2confrag)
     consensus_frags = {key: val.index.values for key, val in df.groupby("frag") if str(key).lower() != "none"}
+    if replace_GPCR_frags:
+        consensus_frags = {_GPCR_num2lett.get(key, key): val for key, val in consensus_frags.items()}
+
     return {key: _np.array(val) for key, val in consensus_frags.items()}
 
 
