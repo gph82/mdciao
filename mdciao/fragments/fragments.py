@@ -856,7 +856,8 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     Try to understand how the user wants to fragment the topology
     Pretty flexible
 
-    Check also :obj:`rangeexpand` to understand the expressions
+    Check also :obj:`mdciao.utils.residue_and_atom.rangeexpand_residues2residxs`
+    to understand the expressions.
 
 
     Parameters
@@ -926,7 +927,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
                                                       verbose=False)
         else:
             raise ValueError(f"The 'fragments' string has to be one of {['consensus']+_allowed_fragment_methods}, but "
-                             f"the provided string was {fragment_input}")
+                             f"the provided string was {fragment_input}.")
     else:
         method = "user input by residue array or range"
         fragments_as_residue_idxs = []
@@ -935,13 +936,13 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
             if not isinstance(fri,str):
                 fragments_as_residue_idxs.append(fri)
             else:
-                fragments_as_residue_idxs.append(
-                    _mdcu.residue_and_atom.rangeexpand_residues2residxs(fri,
+                ifrag  =  _mdcu.residue_and_atom.rangeexpand_residues2residxs(fri,
                                                                         temp_fragments,
                                                                         top,
                                                                         interpret_as_res_idxs=fri.replace("-","").replace(",","").isnumeric(),
                                                                         extra_string_info="\nThis fragmentation is only for disambiguation purposes:"
-                                                                        ))
+                                                                        )
+                fragments_as_residue_idxs.append(sorted(ifrag))
         if len(fragment_input)==1:
             assert isinstance(fragment_input[0],str)
             method += " with only one fragment provided (all other residues are fragment 2)"
