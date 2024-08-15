@@ -458,12 +458,12 @@ class LabelerConsensus(object):
     At the moment child classes are
 
      * :obj:`LabelerGPCR` for GPCR-notation, this can be:
-       * structure based schemes (Gloriam et al)
-       * sequence based schemes
-         * Class-A: Ballesteros-Weinstein
-         * Class-B: Wootten
-         * Class-C: Pin
-         * Class-F: Wang
+      * structure based schemes, by Gloriam et al
+      * sequence based schemes
+       * Class-A: Ballesteros-Weinstein
+       * Class-B: Wootten
+       * Class-C: Pin
+       * Class-F: Wang
      * :obj:`LabelerCGN` for Common-Gprotein-nomenclature (CGN)
      * :obj:`LabelerKLIFS` for Kinase-Ligand Interaction notation of the 85 pocket-residues of kinases
 
@@ -884,8 +884,9 @@ class LabelerConsensus(object):
 
         Parameters
         ----------
-        top :
-            :obj:`~mdtraj.Topology` object
+        top : :obj:`~mdtraj.Topology` object or str
+            The topology as an object or a path
+            to a filename, e.g. a pdb file.
         allow_nonmatch : bool, default is True
             Use consensus labels for non-matching positions
             in case the non-matches have equal lengths
@@ -917,6 +918,8 @@ class LabelerConsensus(object):
         map : list
             List of len = top.n_residues with the consensus labels
         """
+        if isinstance(top, str):
+            top = _md.load(top).top
         self.aligntop(top, min_seqID_rate=min_seqID_rate, **aligntop_kwargs)
         out_list = _alignment_df2_conslist(self.most_recent_alignment, allow_nonmatch=allow_nonmatch)
         out_list = out_list + [None for __ in range(top.n_residues - len(out_list))]

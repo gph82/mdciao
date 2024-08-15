@@ -379,6 +379,10 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         labels = self.cgn_local.top2labels(self.top)
         self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
 
+    def test_reads_pdb_for_top(self):
+        labels = self.cgn_local.top2labels(test_filenames.pdb_3SN6)
+        self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
+
     def test_hole_in_subdomain(self):
         frags = self.cgn_local.top2frags(self.top)
         a5_w_hole_idxs = frags["G.H5"][:5]+frags["G.H5"][-5:]
