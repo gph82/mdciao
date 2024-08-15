@@ -1102,8 +1102,8 @@ def interface(
         trajectories,
         topology=None,
         fragments='lig_resSeq+',
-        frag_idxs_group_1=None,
-        frag_idxs_group_2=None,
+        interface_selection_1=None,
+        interface_selection_2=None,
         AA_selection=None,
         GPCR_UniProt="None",
         CGN_UniProt="None",
@@ -1159,8 +1159,8 @@ def interface(
     are separate, i.e. there might be six chains but
     one can specify to compute the interface between
     chains [0,1] vs [2,3]. Read more in the
-    documentation for `fragments`, `frag_idxs_group_1`,
-    and `frag_idxs_group_2`.
+    documentation for `fragments`, `interface_selection_1`,
+    and `interface_selection_2`.
 
     One can further refine the fragment selection
     with an aminoacid (AA) selection using
@@ -1253,26 +1253,44 @@ def interface(
         regardless of having passed "consensus" here. I.e., you can
         use `fragments='chains'` to divide the topology for representation
         and residue-tagging purposes but then define the interface as:
-        >>> frag_idxs_group_1="TM3"
-        >>> frag_idxs_group_2="TM2"
+        >>> interface_selection_1="TM3"
+        >>> interface_selection_2="TM2"
         to compute the interface of TM3 vs TM2 in a GPCR. For
         this mode of selection to work, the only condition is that the consensus
         labels have been provided via `GPCR_Uniprot`,
         `CGN_UniProt` or `KLIFS_string` (see below).
-    frag_idxs_group_1 : NoneType, default is None
-        Indices of the fragments that belong to the group_1.
-        Strings can be CSVs and include ranges, e.g. '1,3-4',
-        or be consensus labels "TM*,-TM6".
-        Defaults to None which will prompt the user of
-        information, except when only two fragments are
-        present. Then it defaults to [0]
-    frag_idxs_group_2 : NoneType, default is None
-        Indices of the fragments that belong to the group_2.
-        Strings can be CSVs and include ranges, e.g. '1,3-4',
-        or be consensus labels "TM*,-TM6".
-        Defaults to None which will prompt the user of
-        information, except when only two fragments are
-        present. Then it defaults to [1]
+    interface_selection_1 : str or list, default is None
+        Selection of the `fragments` that belong to one
+        side of the interface. Strings can be CSVs
+        and include:
+         * ranges, e.g. '1,3-4'
+         * wildcards, e.g. "TM*" or "G.H.??"
+         * exclusions, e.g. "TM*,-TM6" (all TMs except TM6)
+        The default is to prompt the user for
+        information, except when:
+         * `fragments` yielded only one fragment that
+           **doesn't** cover the whole topology. Then
+           all othe residues are put into a second
+           fragment and then the interface is computed
+           between these two fragments.
+         * `fragments` yielded just two fragments. Then
+           the interface is computed between these two fragments.
+    interface_selection_2 : str or list, default is None
+        Selection of the `fragments` that belong to the other
+        side of the interface. Strings can be CSVs
+        and include:
+         * ranges, e.g. '1,3-4'
+         * wildcards, e.g. "TM*" or "G.H.??"
+         * exclusions, e.g. "TM*,-TM6" (all TMs except TM6)
+        The default is to prompt the user for
+        information, except when:
+         * `fragments` yielded only one fragment that
+           **doesn't** cover the whole topology. Then
+           all othe residues are put into a second
+           fragment and then the interface is computed
+           between these two fragments.
+         * `fragments` yielded just two fragments. Then
+           the interface is computed between these two fragments.
     AA_selection : str or list, default is None
         Whatever the fragment definition and fragment selection
         has been, one can further refine the list of
@@ -1515,14 +1533,14 @@ def interface(
     fragments_as_residue_idxs, fragment_names, _, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
         refgeom.top, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_string, accept_guess, save_nomenclature_files)
     fragments_as_residue_idxs_d = {str(ii) : val for ii, val in enumerate(fragments_as_residue_idxs)}
-    if len(fragments_as_residue_idxs)==2 and frag_idxs_group_1 is None and frag_idxs_group_2 is None:
-        frag_idxs_group_1, frag_idxs_group_2 =[0], [1]
+    if len(fragments_as_residue_idxs)==2 and interface_selection_1 is None and interface_selection_2 is None:
+        interface_selection_1, interface_selection_2 =[0], [1]
     else:
         fragments_as_residue_idxs_d.update(consensus_frags)
 
     intf_frags_as_residxs, \
         intf_frags_as_str_or_keys = _mdcfrg.frag_dict_2_frag_groups(fragments_as_residue_idxs_d, ng=2,
-                                                                    answers=[frag_idxs_group_1, frag_idxs_group_2],
+                                                                    answers=[interface_selection_1, interface_selection_2],
                                                                     )
 
     intersect = list(set(intf_frags_as_residxs[0]).intersection(intf_frags_as_residxs[1]))
