@@ -1101,6 +1101,7 @@ def residue_neighborhoods(residues,
 def interface(
         trajectories,
         topology=None,
+        fragments='lig_resSeq+',
         frag_idxs_group_1=None,
         frag_idxs_group_2=None,
         AA_selection=None,
@@ -1110,7 +1111,6 @@ def interface(
         chunksize_in_frames=2000,
         ctc_cutoff_Ang=4,
         curve_color="auto",
-        fragments='lig_resSeq+',
         fragment_names="",
         graphic_dpi=150,
         graphic_ext=".pdf",
@@ -1148,12 +1148,25 @@ def interface(
 ):
     r"""Contact-frequencies between two groups of residues
 
-    The groups of residues can be defined directly
-    by using residue indices or by defining molecular fragments
-    and using these definitions as a shorthand to address
-    large sub-domains of the molecular topology. See in particular
-    the documentation for `fragments`, `frag_idxs_group_1`
-    `frag_idxs_group_2`.
+    The two groups of residues can be defined directly:
+
+     * by using specific residue indices or ranges
+     * by using defined molecular fragments,
+       chains defined in the topology or pdb-file.
+     * by guessing molecular fragments, using some
+       fragmentation heuristic.
+    The fragment definition and the fragment selection
+    are separate, i.e. there might be six chains but
+    one can specify to compute the interface between
+    chains [0,1] vs [2,3]. Read more in the
+    documentation for `fragments`, `frag_idxs_group_1`,
+    and `frag_idxs_group_2`.
+
+    One can further refine the fragment selection
+    with an aminoacid (AA) selection using
+    `AA_selection`, to further specify the residues
+    of interest if the fragment definitions are too broad.
+    See the docstring for more info.
 
     Typically, the two groups of residues conforming both
     sides of the interface, also called interface members,
@@ -1204,6 +1217,48 @@ def interface(
         be used, i.e. when no :obj:`topology` is passed, the first
         :obj:`trajectory` has to be either a .gro or .pdb file, or
         an :obj:`~mdtraj.Trajectory` object
+    fragments : str, list, None, default is "lig_resSeq+"
+        How to fragment the topology. Will be used for:
+
+         * tagging of residues, e.g. "GLU30@frag1"
+         * disambiguation of residues, e.g. more than one
+           "GLU30" exists.
+         * grouping of residues in graphical
+           representations, e.g. flareplots
+         * defining the interface fragments
+        There exist several input modes:
+
+         * A single string with the name of a
+           fragmentation heuristic, e.g.
+           "lig_resSeq+", which is the default
+           and usually yields good results. See
+           :obj:`mdciao.fragments.get_fragments`
+           for more info on defaults and other heuristics.
+         * A list of definitions. Each entry of this list can be:
+
+          * an iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
+          * a range expressed as an integer string, "20-30"
+          * a ranges expressed as residue descriptors "GLU30-LEU40"
+          * A special string, "consensus", to use consensus
+          subdomains, like "TM1" or "G.H5", as fragment definitions.
+
+        Numeric expressions are interpreted as zero-indexed and unique
+        residue serial indices, i.e. 30-40 does not necessarily equate
+        "GLU30-LEU40" unless serial and sequence index coincide.
+        If there's more than one "GLU30", the user gets asked to
+        disambiguate.
+
+        Please note, since fragment definiton and fragment selection are
+        separate, one can use consensus definitions to define the interface
+        regardless of having passed "consensus" here. I.e., you can
+        use `fragments='chains'` to divide the topology for representation
+        and residue-tagging purposes but then define the interface as:
+        >>> frag_idxs_group_1="TM3"
+        >>> frag_idxs_group_2="TM2"
+        to compute the interface of TM3 vs TM2 in a GPCR. For
+        this mode of selection to work, the only condition is that the consensus
+        labels have been provided via `GPCR_Uniprot`,
+        `CGN_UniProt` or `KLIFS_string` (see below).
     frag_idxs_group_1 : NoneType, default is None
         Indices of the fragments that belong to the group_1.
         Strings can be CSVs and include ranges, e.g. '1,3-4',
@@ -1286,7 +1341,7 @@ def interface(
         See :obj:`mdciao.nomenclature` for more info and references. Alos, please note
         the difference between UniProt Accession Code
         and UniProt entry name as explained
-            `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+        `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     chunksize_in_frames : int, default is 2000
         Stream through the trajectories in chunks
         of this size.
@@ -1296,29 +1351,6 @@ def interface(
     curve_color : str, default is 'auto'
         Type of color used for the curves. Alternatives are
         "P" or "H"
-    fragments : str, list, None, default is "lig_resSeq+"
-        Topology fragments. There exist several input modes:
-
-        * Name of a fragmentation heuristic, e.g.
-          "lig_resSeq+", which is the default of
-          and usually yields good results. See
-          :obj:`mdciao.fragments.get_fragments`
-          for more info on defaults and other heuristics.
-        * List of len N that can mix different possibilities:
-
-          * iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
-          * ranges expressed as integer strings, "20-30"
-          * ranges expressed as residue descriptors ["GLU30-LEU40"]
-
-        * "consensus" : use things like "TM*" or "G.H*", i.e.
-          GPCR or CGN-sub-subunit labels.
-
-        Numeric expressions are interpreted as zero-indexed and unique
-        residue serial indices, i.e. 30-40 does not necessarily equate
-        "GLU30-LEU40" unless serial and sequence index coincide.
-        If there's more than one "GLU30", the user gets asked to
-        disambiguate. The resulting fragments need not cover
-        all of the topology, they only need to not overlap.
     fragment_names : str or list, default is ''
         If string, it has to be a list of comma-separated
         values. If you want unnamed fragments, use None,
@@ -1480,17 +1512,19 @@ def interface(
     print("Will compute contact frequencies for trajectories:\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs, fragment_names, user_wants_consensus, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
+    fragments_as_residue_idxs, fragment_names, _, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
         refgeom.top, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_string, accept_guess, save_nomenclature_files)
-    if user_wants_consensus:
-        intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2, answers=[frag_idxs_group_1, frag_idxs_group_2])
-
+    fragments_as_residue_idxs_d = {str(ii) : val for ii, val in enumerate(fragments_as_residue_idxs)}
+    if len(fragments_as_residue_idxs)==2 and frag_idxs_group_1 is None and frag_idxs_group_2 is None:
+        frag_idxs_group_1, frag_idxs_group_2 =[0], [1]
     else:
-        intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys   = _mdcfrg.frag_list_2_frag_groups(fragments_as_residue_idxs,
-                                                               frag_idxs_group_1, frag_idxs_group_2,
-                                                               )
+        fragments_as_residue_idxs_d.update(consensus_frags)
+
+    intf_frags_as_residxs, \
+        intf_frags_as_str_or_keys = _mdcfrg.frag_dict_2_frag_groups(fragments_as_residue_idxs_d, ng=2,
+                                                                    answers=[frag_idxs_group_1, frag_idxs_group_2],
+                                                                    )
+
     intersect = list(set(intf_frags_as_residxs[0]).intersection(intf_frags_as_residxs[1]))
     if len(intersect) > 0:
         if self_interface:
