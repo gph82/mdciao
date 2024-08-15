@@ -5798,16 +5798,17 @@ class ContactGroup(object):
                 labels (strings) themselves. They
                 need to be "gettable" by residue index, i.e.
                 dict, list or array. Typically, one
-                generates these maps by using the top2labels
-                method of the LabelerConsensus object
-             * :obj:`LabelerConsensus`-objects
+                generates these maps by using
+                :obj:`mdciao.nomenclature.LabelerConsensus.top2labels`.
+             * :obj:`mdciao.nomenclature.LabelerConsensus`-objects
                 When these objects are passed, their
-                top2labels and top2fragments methods are
+                :obj:`mdciao.nomenclature.LabelerConsensus.top2labels` and
+                :obj:`mdciao.nomenclature.LabelerConsensus.top2fragments` are
                 called on-the-fly, generating not only
                 the consensus labels but also the consensus
                 fragments (i.e. subdomains) to further fragment
                 the topology into sub-domains, like TM6 or G.H5.
-                If :obj:`fragments` are parsed, they will be
+                If `fragments` are parsed, they will be
                 made compatible with the consensus fragments.
             If you want the consensus labels but not
             the sub-fragmentation, simply use the first option.
