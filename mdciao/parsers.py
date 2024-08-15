@@ -620,12 +620,12 @@ def parser_for_interface():
                                           '"min_freq". ')
 
     _parser_add_fragments(parser)
-    parser.add_argument("-fg1","--frag_idxs_group_1", type=str,
-                        help="Indices of the fragments that belong to the group_1, as CSVs or range, e.g. '1,3-4'. "
+    parser.add_argument("-isel1","--interface_selection_1", type=str,
+                        help="Indices of the fragments that belong to the one side of the interface, as CSVs or range, e.g. '1,3-4'. "
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [0]", default=None)
-    parser.add_argument("-fg2","--frag_idxs_group_2", type=str,
-                        help="Indices of the fragments that belong to the group_2, as CSVs or range, e.g. '1,3-4'. "
+    parser.add_argument("-isel2","--interface_selection_2", type=str,
+                        help="Indices of the fragments that belong to the other side of the interface, as CSVs or range, e.g. '1,3-4'. "
                              "Defaults to None which will prompt the user of information, except when "
                              "only two fragments are present. Then it defaults to [1]", default=None)
     _parser_add_cutoff(parser)

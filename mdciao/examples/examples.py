@@ -124,8 +124,8 @@ class ExamplesCLTs(object):
     def mdc_interface(self):
         return ["mdc_interface.py ",
                 "%s %s" % (self.pdb, self.xtc),
-                " --frag_idxs_group_1 0-2",
-                " --frag_idxs_group_2 3",
+                " --interface_selection_1 0-2",
+                " --interface_selection_2 3",
                 " --ctc_control 20",
                 " --GPCR_UniProt %s" % self.GPCRlabs_file,
                 " --CGN_UniProt %s" % self.CGN_file,
@@ -609,8 +609,8 @@ def Interface_B2AR_Gas(**kwargs):
                               "GPCR_UniProt": GPCRLabeler_ardb2_human(),
                               "CGN_UniProt": CGNLabeler_gnas2_human(),
                               "no_disk": True,
-                              "frag_idxs_group_1":[0],
-                              "frag_idxs_group_2":[3],
+                              "interface_selection_1":[0],
+                              "interface_selection_2":[3],
                               "ctc_control":1.0,
                               "accept_guess": True}
             for key, val in kwargs.items():
