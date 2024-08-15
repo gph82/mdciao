@@ -102,16 +102,13 @@ def _parse_consensus_option(option, consensus_type,
            full of Nones is returned
          * str
           The needed identifier to instantiate an
-          `LabelerGPCR`, :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
-          Examples would be a `UniProt_name`, a `ref_PDB`, or
-          an `UniProt_AC`
-          respectively
-         * :obj:`LabelerConsensus`
-          An already instantiated :obj:`LabelerGPCR`,
-          :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
+          `LabelerGPCR`, `LabelerCGN` or `LabelerKLIFS` object.
+         * a `LabelerConsensus` object
+          An already instantiated `LabelerGPCR`,
+          `LabelerCGN` or `LabelerKLIFS` object.
           The method then does nothing. Usecase are repeated
-          calls to any of the methods in :obj:`command_line_tools`
-          without each call instantiating its own :obj:`LabelerConsensus`
+          calls to any of the methods in `mdciao.cli`
+          without each call instantiating its own `LabelerConsensus`
         * iterable
           An  iterable (list, dict, array) mapping
           residue indices of 'top` to consensus labels.
