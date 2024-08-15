@@ -453,6 +453,16 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
           made available via `molSSI <https://covid.molssi.org//simulations/#foldinghome-simulations-of-the-sars-cov-2-spike-rbd-bound-to-human-ace2>`_.
           (1 npy file with interfaces for 4 setups and one sample trajectory file, ca 35 MB)
 
+         * ghrelin@ghsr : https://proteinformatics.uni-leipzig.de/mdciao/ghrelin_receptor.zip
+          Growth hormone secretagogue receptor type 1, ghrelin receptor for short, bound
+          to ghrelin. Provided kindly by Dr. Alexander Vogel (1 traj, ca. 10 MB, 411 frames, dt = 100ns)
+          For the associated publication see here:
+
+           * Analysis of the Dynamics of the Human Growth Hormone Secretagogue Receptor Reveals Insights into the Energy Landscape of the Molecule
+              A. A. Smith, E. M. Pacull, S. Stecher, P. W. Hildebrand, A. Vogel, D. Huster,
+              Angew. Chem. Int. Ed. 2023, 62, e202302003.
+
+
     unzip : bool, default is True
         Try unzipping the file after downloading
 
