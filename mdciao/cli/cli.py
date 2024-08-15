@@ -1632,8 +1632,14 @@ def interface(
             print(fn.fullpath_matrix)
 
         if flareplot:
+            consensus_maps_ = []
+            for key in ["GPCR", "CGN", "KLIFS"]:
+                if key in consensus_labelers.keys():
+                    consensus_maps_.append(consensus_labelers[key])
+                elif key in consensus_maps.keys():
+                    consensus_maps_.append(consensus_maps[key])
             ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
-                                                             consensus_maps=consensus_labelers.values(),
+                                                             consensus_maps=consensus_maps_,
                                                              SS=refgeom,
                                                              fragment_names=fragment_names,
                                                              fragments=fragments_as_residue_idxs,
