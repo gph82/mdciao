@@ -1103,6 +1103,7 @@ def interface(
         topology=None,
         frag_idxs_group_1=None,
         frag_idxs_group_2=None,
+        AA_selection=None,
         GPCR_UniProt="None",
         CGN_UniProt="None",
         KLIFS_string=None,
@@ -1161,12 +1162,12 @@ def interface(
     in a receptor--G-protein complex, one partner is
     the receptor and the other partner is the G-protein.
 
-    By default, mdciao.cli.interface doesn't allow interface
-    members to share residues. However, sometimes it's
+    This is why mdciao.cli.interface doesn't allow interface
+    members to share residues by default. However, sometimes it's
     useful to allow it because the contacts of one fragment
-    with itself (the self-contacts) are also important.
-    E.g. the C-terminus of a receptor interfacing with
-    the entire receptor, **including the C-terminus**.
+    with itself are also important. E.g. the
+    C-terminus of a receptor interfacing with
+    the entire receptor, **including the C-terminus itself**.
     To allow for this behaviour, use `self_interface` = True,
     and possibly increase `n_nearest`, since otherwise
     neighboring residues of the shared set (e.g. C-terminus)
@@ -1174,13 +1175,14 @@ def interface(
 
     Finally, the interface strength, defined as the
     per-residue sum of contacts participating in
-    the interface, is written as the `bfactor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_
+    the interface, is written as the
+    `bfactor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_
     in a .pdb file called (for the default `ctc_cutoff_Ang`=4)
     'interface.overall@4.0_Ang.as_bfactors.pdb'. You
     can see an example of how to use this file (e.g. with
     VMD) in the online documentation. The structures, i.e.
     frames, in that .pdb-file are chosen using the
-    method :obj:`mdciao.contacts.ContactGroup.n_repframes`.
+    method :obj:`mdciao.contacts.ContactGroup.repframes` .
     See below the parameter `n_repframes` for more info.
 
     Parameters
@@ -1216,6 +1218,37 @@ def interface(
         Defaults to None which will prompt the user of
         information, except when only two fragments are
         present. Then it defaults to [1]
+    AA_selection : str or list, default is None
+        Whatever the fragment definition and fragment selection
+        has been, one can further refine the list of
+        potential residue pairs by making a per aminoacid (AA)
+        selection here. E.g., if one has selected the interface
+        to be "TM3" vs "TM2", but wants to select only some
+        regions of those helices, one can pass here an `AA_selection`.
+        This can be a string or a list of len two:
+
+         * A string leads to a boolean "or" selection, i.e. keep
+           residue pair [ii,jj] if either ii **or** jj
+           match `AA_selection`. E.g.
+
+           >>> AA_selection = "3.45-3.55"
+
+           is equivalent of "3.45-3.55" vs "TM2" contacts
+         * A list of len two leads to a boolean "and" selection, i.e. keep
+           residue pair [ii,jj] if ii **and** jj
+           match `AA_selection`. E.g.
+
+           >>> AA_selection = ["3.45-3.55","2.45-2.55"]
+
+           is equivalent of "3.45-3.55" vs "2.45-2.55" contacts
+
+        In principle, one could use
+
+        >>> fragments = ["3.45-3.55","2.45-2.55"]
+
+        and get the same contacts, but this would then exclude all other
+        residues of the topology from being tagged with fragment
+        and or consensus labels.
     GPCR_UniProt : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         For GPCR nomenclature. If str, e.g. "adrb2_human".
         will try to locate a local filename or do a web lookup in the GPCRdb.
@@ -1481,6 +1514,25 @@ def interface(
     print("\nWill look for contacts in the interface between fragments\n%s\nand\n%s. "%
           ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
            '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]])))))
+
+    # Sub-select at the AA-level #TODO consider making method out of this
+    if AA_selection is not None:
+        if isinstance(AA_selection, str):
+            lambda_sel = lambda pair, sel: _np.in1d(pair, sel).any()
+        elif isinstance(AA_selection, list) and len(AA_selection)==2:
+            lambda_sel = lambda pair, sel: _np.in1d(pair, sel).all()
+            AA_selection = ",".join(AA_selection)
+        else:
+            raise ValueError(f"'AA_selection'  as to be a sting or a list of len 2, "
+                             f"but your input is a {type(AA_selection).__name__} of len {len(AA_selection)}.")
+        sel = _mdcu.residue_and_atom.rangeexpand_residues2residxs(AA_selection,
+                                                                  fragments_as_residue_idxs,
+                                                                  refgeom.top,
+                                                                  fragment_names=fragment_names,
+                                                                  additional_resnaming_dicts=consensus_maps)
+        print(f"Excluding residue pairs not involving residues '{AA_selection}' ({len(sel)} AAs).")
+        ctc_idxs = [pair for pair in ctc_idxs if lambda_sel(pair, sel)]
+
     print(f"Performing a first pass on the {len(ctc_idxs)} group_1-group_2 residue pairs to compute lower bounds "
           f"on residue-residue distances via residue-COM distances.")
     lb_cutoff_buffer_Ang = 2.5
