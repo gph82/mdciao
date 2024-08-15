@@ -2580,9 +2580,8 @@ def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_Uni
                                                           accept_guess=accept_guess,
                                                           save_nomenclature_files=save_nomenclature_files)
     # pop out the Nones of the maps
-    consensus_maps = {key : consensus_maps[key] for key in consensus_labelers.keys()}
+    consensus_maps = {key : val for key, val in consensus_maps.items() if not all(_np.array(val)==None)}
     top2confrag = _np.full(top.n_residues, None)
     for key, val in consensus_frags.items():
         top2confrag[val] = key
-
     return fragments_as_residue_idxs, fragment_names, user_wants_consensus, consensus_labelers, consensus_maps, consensus_frags, top2confrag
