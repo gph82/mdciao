@@ -189,6 +189,24 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                       accept_guess=False,
                                                       save_nomenclature_files=False,
                                                       verbose=True):
+    r"""
+
+    The consensus frags will be inferred
+    from true ConsensusLabelers objects or from lists of consensus labels
+
+    Parameters
+    ----------
+    option_dict
+    top
+    fragments_as_residue_idxs
+    accept_guess
+    save_nomenclature_files
+    verbose
+
+    Returns
+    -------
+
+    """
     consensus_frags, consensus_maps, consensus_labelers = {}, {}, {}
     for key, option in option_dict.items():
         map_CL, CL = _parse_consensus_option(option, key, top, fragments_as_residue_idxs,
@@ -208,6 +226,8 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                   verbose=verbose or not accept_guess))
                 if not accept_guess:
                     input("Hit enter to continue!\n")
+        elif not all([str(val).lower()=="none" for val in map_CL]):
+            consensus_frags.update(_mdcnomenc.conlabs2confrags(map_CL, replace_GPCR_frags=[key=="GPCR"]))
     _mdcu.lists.assert_no_intersection(list(consensus_frags.values()),"consensus fragment")
 
     return consensus_frags, consensus_maps, consensus_labelers
