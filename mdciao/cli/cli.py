@@ -1711,7 +1711,7 @@ def interface(
                                                  ax=histoax[1],
                                                  list_by_interface=True,
                                                  label_fontsize_factor=panelsize2font / panelsize,
-                                                 truncate_at=.05,
+                                                 lower_cutoff_val=.05,
                                                  shorten_AAs=short_AA_names,
                                                  sort_by_freq=sort_by_av_ctcs,
                                                  )

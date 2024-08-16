@@ -5655,7 +5655,7 @@ class ContactGroup(object):
                                     ax=None,
                                     shorten_AAs=False,
                                     label_fontsize_factor=1,
-                                    truncate_at=0,
+                                    lower_cutoff_val=0,
                                     bar_width_in_inches=.75,
                                     list_by_interface=False,
                                     sort_by_freq=True,
@@ -5680,7 +5680,7 @@ class ContactGroup(object):
         label_fontsize_factor : float, default is 1
             Some control over fontsizes when plotting a high
             number of bars
-        truncate_at : float, default is 0
+        lower_cutoff_val : float, default is 0
             Do not show sums of freqs lower than this value
         bar_width_in_inches : float, default is .75
             If no :obj:`ax` is parsed, this controls that the
@@ -5717,8 +5717,8 @@ class ContactGroup(object):
         freqs = _np.array([j for idict in frq_dict_list for j in idict.values()])
 
         # Truncate
-        label_bars = [label_bars[ii] for ii in _np.flatnonzero(freqs>truncate_at)]
-        freqs = freqs[freqs>truncate_at]
+        label_bars = [label_bars[ii] for ii in _np.flatnonzero(freqs > lower_cutoff_val)]
+        freqs = freqs[freqs > lower_cutoff_val]
 
         xvec = _np.arange(len(freqs))
         if ax is None:
@@ -5748,7 +5748,7 @@ class ContactGroup(object):
             ax.set_xlim([-.5, xmax + 1 - .5])
 
         if list_by_interface and interface_vline:
-            xpos = len([ifreq for ifreq in frq_dict_list[0].values() if ifreq >truncate_at])
+            xpos = len([ifreq for ifreq in frq_dict_list[0].values() if ifreq > lower_cutoff_val])
             ax.axvline(xpos - .5, color="lightgray", linestyle="--", zorder=-1)
         return ax
 
