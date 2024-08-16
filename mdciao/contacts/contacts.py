@@ -4457,7 +4457,7 @@ class ContactGroup(object):
                            color="tab:blue",
                            shorten_AAs=False,
                            label_fontsize_factor=1,
-                           truncate_at=None,
+                           lower_cutoff_val=None,
                            plot_atomtypes=False,
                            sort_by_freq=False,
                            sum_freqs=True,
@@ -4500,7 +4500,7 @@ class ContactGroup(object):
         label_fontsize_factor : float, default is 1
             Labels will be written in a fontsize
             rcParams["font.size"] * label_fontsize_factor
-        truncate_at : float, default is None
+        lower_cutoff_val : float, default is None
             Only plot frequencies above this value. Default
             is to plot all
         plot_atomtypes : bool, default is False
@@ -4562,7 +4562,7 @@ class ContactGroup(object):
         ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
                                                      ax=ax,
                                                      color=color,
-                                                     lower_cutoff_val=truncate_at)
+                                                     lower_cutoff_val=lower_cutoff_val)
 
         label_bars = [ictc.labels.w_fragments for ictc in self.contact_pairs]
         if shorten_AAs:
@@ -4950,7 +4950,7 @@ class ContactGroup(object):
                                      ax=ax,
                                      xlim=xmax,
                                      shorten_AAs=shorten_AAs,
-                                     truncate_at=None,
+                                     lower_cutoff_val=None,
                                      plot_atomtypes=plot_atomtypes,
                                      sort_by_freq=sort_by_freq,
                                      switch_off_Ang=switch_off_Ang,

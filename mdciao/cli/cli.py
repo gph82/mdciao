@@ -1702,7 +1702,7 @@ def interface(
                                         xlim=_np.min((n_ctcs, ctc_grp_intf.n_ctcs)),
                                         label_fontsize_factor=panelsize2font / panelsize,
                                         shorten_AAs=short_AA_names,
-                                        truncate_at=min_freq,
+                                        lower_cutoff_val=min_freq,
                                         total_freq=df.freq.sum()
                                         )
 
