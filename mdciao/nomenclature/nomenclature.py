@@ -1029,17 +1029,22 @@ class LabelerConsensus(object):
         top:
             :obj:`~mdtraj.Topology` or path to topology file (e.g. a pdb)
         fragments: iterable of integers, default is None
-            The user can parse an existing list of fragment-definitions
-            (via residue idxs) to check if the newly found, consensus
-            definitions (`defs`) clash with the input in `fragments`.
-            *Clash* means that the `defs` would span over more
-            than one of the fragments in defined in `fragments`.
+            Any useful fragment definition as lists of residue indices.
+            Useful means:
+
+            * Help with the alignment needed for consensus fragment definition.
+              Look at :obj:`LabelerConsensus.aligntop` and its `fragments`
+              and `min_seqID_rate` parameters.
+            * Check if the newly found, consensus fragment definitions (`defs`)
+              clash with the input in `fragments`. Clash* means that
+              the `defs` would span over more than
+              one of the fragments in defined in `fragments`.
 
             An interactive prompt will ask the user which fragments to
             keep in case of clashes.
 
             Check the method :obj:`~mdciao.fragments.check_if_fragment_clashes`
-            for more info
+            for more info.
         min_seqID_rate : float, default is .5
             With big topologies, like a receptor-Gprotein system,
             the "brute-force" alignment method
