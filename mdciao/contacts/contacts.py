@@ -4254,6 +4254,7 @@ class ContactGroup(object):
 
         if consensus_labelers is not None:
             consensus_maps, consensus_frags = _consensus_maps2consensus_frags(self.top, consensus_labelers,
+                                                                              fragments=fragments,
                                                                               verbose=verbose)
             if len(consensus_frags) > 0:
                 fragments, fragment_names = _mdcfr.mix_fragments(self.top.n_residues - 1,
