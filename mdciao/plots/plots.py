@@ -1366,7 +1366,7 @@ def compare_violins(groups,
     matching their contact labels, since the residue indices
     might differ across :obj:`groups`. To achieve this:
         * "K30-D40" is considered equivalent to "D40-D30",
-          use :obj:`key_separator` to change this.
+          use `key_separator` to change this.
         * "K30-D40" is considered equivalent to "K30-E40"
           if a :obj:`mutations_dict={"E40":"D40"}` is passed
         * "K30@3.50-D40" is considered equivalent to "K30-D40"
@@ -1448,46 +1448,51 @@ def compare_violins(groups,
         to least "formed" on the right of the plot.
         However, for each residue pair, this mean is
         an average over the distance in all
-        the different :obj:`groups`, so some
+        the different `groups`, so some
         heterogeneity is expected. Alternatively,
         you can sort using the contact labels,
         regardless of the distance values. Note
         that for this, string comparisons between
         contact-labels will take place. and that
-        contact-labels are altered by :obj:`key_separator`
-        to unify across different :obj:`groups`
-        Try setting :obj:`key_separator` to None
+        contact-labels are altered by `key_separator`
+        to unify across different `groups`
+        Try setting `key_separator` to None
         if you see unexpected behavior, although
         though this might have other side effects,
-        (see obj:~`mdciao.utils.str_and_dict.unify_freq_dicts`)
-        :obj:`sort_by` can be a:
-            * str : 'residue'
-              Sort by ascending residue sequence index (resSeq),
-              which will be inferred from each contact label,
-              e.g. 30 for "GLU30@3.50". See :obj:`~mdciao.contacts.ContactGroup.gen_ctc_labels`
-              for more info on how they are generated.
-              Internally, the order is generated via
-              :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`.
-              If you want to reverse or alter this
-              ascending default order, we recommend using
-              :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`
-              **before** calling :obj:`compare_violins` and use
-              its output (sorted_ctc_labels) as a list
-              argument for :obj:`sort_by`. Also note that
-              residue indices as contained in
-              :obj:`~mdciao.contacts.ContactGroup.res_idx_pairs`
+        (see :obj:`~mdciao.utils.str_and_dict.unify_freq_dicts`)
+        `sort_by` can be a:
+            * str : 'residue' or 'numeric'
+               Sort by ascending residue sequence index (resSeq),
+               which will be inferred from each contact label,
+               e.g. 30 for "GLU30@3.50". See :obj:`~mdciao.contacts.ContactGroup.gen_ctc_labels`
+               for more info on how they are generated.
+               Internally, the order is generated via
+               :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`.
+               If you want to reverse or alter this
+               ascending default order, we recommend using
+               :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`
+               **before** calling :obj:`compare_violins` and use
+               its output (`labels`) as a list
+               argument for `sort_by`. Also note that
+               residue indices as contained in
+               :obj:`~mdciao.contacts.ContactGroup.res_idx_pairs`
+            * str : 'keep'
+               Sort using the same order of the labels as in
+               the first contact group
+            * str : 'consensus'
+               Sort following consensus nomenclature (GPCR, CGN or KLIFS)
             * list : a list of contact labels,
-              eg. ["GLU30-ALA30", "ARG131@3.50-TYR20"].
-              Only these residue pairs (in this order)
-              will be shown, regardless of what other
-              pairs are contained in the :obj:`groups`. It
-              assumes the user knows what contacts
-              are present and can come up with a meaningful
-              list. Not all labels need to be in all
-              :obj:`groups` nor do all :obj:`groups`
-              have to contain all labels, but at least
-              one label needs to match, otherwise the
-              method will fail
+               eg. ["GLU30-ALA30", "ARG131@3.50-TYR20"].
+               Only these residue pairs (in this order)
+               will be shown, regardless of what other
+               pairs are contained in the `groups`. It
+               assumes the user knows what contacts
+               are present and can come up with a meaningful
+               list. Not all labels need to be in all
+               `groups` nor do all `groups`
+               have to contain all labels, but at least
+               one label needs to match, otherwise the
+               method will fail
     zero_freq : float, default is 1e-2
         Frequencies below this number will
         be considered zero and not shown it they are
@@ -1506,37 +1511,41 @@ def compare_violins(groups,
         can also be removed.
         Only has an effect if `ctc_cutoff_Ang` is not None.
     representatives : anything (bool, int, dict, list) default is None
-        Plot, with a small dot on top of the violins,
-        the values of the residue-residue distances of representative
-        geometries. The representative geometries can be parsed
-        directly as a dict of :obj:`~mdtraj.Trajectory` objects,
-        or extracted on-the-fly by calling the :obj:`mdciao.contacts.ContactGroup.repframes`
-        method of each of the `groups`. Check the docs of
-        :obj:`mdciao.contacts.ContactGroup.repframes` to find out what is meant
-        with "representative".
+        Include information about representative values in the
+        plot. This can be done in several ways. Easiest
+        is to let this method call :obj:`mdciao.contacts.ContactGroup.repframes`
+        internally. This will locate representative frames, extract
+        their residue-residue distance values and plot them as small dots
+        on top of the violins. When possible, also the geometries corresponding
+        to these frames will be returned. Alternatively, the user
+        can directly input a dictionary of  :obj:`~mdtraj.Trajectory` objects
+        (representative or not) for which the residue-residue distance values
+        will be computed and plotted. Check the docs of
+        :obj:`mdciao.contacts.ContactGroup.repframes` to find out
+        what is meant with "representative".
         This is what each type of input does:
 
         * boolean True:
-          Calls :obj:`mdciao.ContactGroup.repframes` with the
-          method's default parameters and plots the result
+           Calls :obj:`mdciao.ContactGroup.repframes` with the
+           method's default parameters.
         * int > 0:
-          Calls :obj:`mdciao.ContactGroup.repframes` with the
-          parameter `n_frames` set to this integer. This parameter
-          controls how many representatives are extracted and
-          subsequently plotted.
+           Calls :obj:`mdciao.ContactGroup.repframes` with the
+           parameter `n_frames` set to this integer. This parameter
+           controls how many representatives are extracted and
+           subsequently plotted.
         * dict of parameters:
-          A dictionary with explict values for the optional
-          parameters of :obj:`mdciao.contacts.ContactGroup.repframes`,
-          usually `n_frames` (an int) and `scheme`, ("mean" or "mode"),
-          depending what you mean with "representative". Check the method's
-          documentation for more info.
+           A dictionary with explict values for the optional
+           parameters of :obj:`mdciao.contacts.ContactGroup.repframes`,
+           usually `n_frames` (an int) and `scheme`, ("mean" or "mode"),
+           depending what you mean with "representative". Check the method's
+           documentation for more info.
         * dict of :obj:`~mdtraj.Trajectory` objects:
-          Has to have the same keys as `groups`. No checks are done
-          whether these objects match the actual molecular topologies
-          of `groups`, so beware of potential mismatches here.
-          Typically, these frames come from having used
-          :obj:`mdciao.contacts.ContactGroup.repframes` with
-          `return_traj`=True.
+           Has to have the same keys as `groups`. No checks are done
+           whether these objects match the actual molecular topologies
+           of `groups`, so beware of potential mismatches here.
+           Typically, these frames come from having used
+           :obj:`mdciao.contacts.ContactGroup.repframes` with
+           `return_traj`=True.
         * dict of dicts containing values
           #TODO not implemented yet
 
@@ -1547,6 +1556,12 @@ def compare_violins(groups,
     labels : list
         The list of plotted labels,
         in the order they are plotted
+    repframes : dict
+        Will only be returned if
+        `representatives` was not None.
+        The representative frames for
+        each `group` according to the
+        parameters of `representatives`
     """
     _fontsize=_rcParams["font.size"]
     _rcParams["font.size"] = fontsize
@@ -1559,6 +1574,7 @@ def compare_violins(groups,
     else:
         _groups = groups
     repframes_per_sys_per_ctc = {}
+    reptraj_per_sys_per_ctc = {}
     for syskey, group in _groups.items():
         labels = group.gen_ctc_labels(AA_format=AA_format,
                                       fragments=[True if defrag is None else False][0],
@@ -1570,22 +1586,41 @@ def compare_violins(groups,
             freqs_per_sys_per_ctc[syskey] = {key:freq for key, freq in zip(labels, group.frequency_per_contact(ctc_cutoff_Ang))}
 
         if bool(representatives):
+            #Tune the kwargs on a per-case basis then call repframes only once,
+            # wrapped in the try block for when there's no files
+            repframes_kwargs = {"ctc_cutoff_Ang": ctc_cutoff_Ang,
+                                "return_traj": True}
             # Do we have representatives?
             if isinstance(representatives, bool):
-                d = group.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang)[2]
+                pass
             if isinstance(representatives, int) and representatives>0:
-                d = group.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, n_frames=representatives)[2].T
+                repframes_kwargs.update({"n_frames" : representatives,
+                                         "verbose" : False})
             if isinstance(representatives, dict) and len(representatives)>0:
                 if syskey not in representatives.keys() :
+                    representatives.update(repframes_kwargs)
                     representatives.pop("ctc_cutoff_ang", None)
                     representatives.pop("show_violins", None)
-                    d = group.repframes(**representatives)[2].T
+                    representatives["return_traj"] = True
                 else:
                     assert isinstance(representatives[syskey], _md.Trajectory)
                     d = _md.compute_contacts(representatives[syskey], contacts=group.res_idxs_pairs)[0].T
+                    traj = representatives[syskey]
+                    repframes_kwargs = None
+
+            if repframes_kwargs is not None:
+                try:
+                    __, __, d, traj = group.repframes(**repframes_kwargs)
+                except FileNotFoundError as e:
+                    print(e)
+                    repframes_kwargs["return_traj"] = False
+                    __, __, d = group.repframes(**repframes_kwargs)
+                    traj = None
+                d = d.T.squeeze()
+
             repframes_per_sys_per_ctc[syskey] = {key: val * 10 for key, val in
                                                  zip(labels, d)}
-
+            reptraj_per_sys_per_ctc[syskey]=traj
     representatives = bool(representatives)
     # Unify data
     data4violins_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(data4violins_per_sys_per_ctc,
@@ -1701,7 +1736,10 @@ def compare_violins(groups,
     myfig.tight_layout()
 
     _rcParams["font.size"] = _fontsize
-    return myfig, iax, list(key2ii.keys())
+    if repframes_per_sys_per_ctc != {}:
+        return myfig, iax, list(key2ii.keys()), reptraj_per_sys_per_ctc
+    else:
+        return myfig, iax, list(key2ii.keys())
 
 
 def _sorter_by_key_or_val(sort_by, indict):
