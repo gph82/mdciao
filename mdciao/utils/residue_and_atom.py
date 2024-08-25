@@ -19,6 +19,7 @@ from mdciao.utils.lists import in_what_N_fragments as _in_what_N_fragments, forc
 from mdciao.utils.str_and_dict import _kwargs_subs
 from collections import Counter as _Counter
 from pandas import DataFrame as _DF
+from collections import defaultdict as _defdict
 
 def residues_from_descriptors(residue_descriptors,
                               fragments, top,
@@ -267,6 +268,31 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
 
     residxs_out = _pandas_unique(residxs_out)
     return residxs_out
+
+def _top2AAmap(top):
+    r"""
+
+    Return a dictionary mapping AA expresions (GLU30, E30) to topology indices, for easier grabbing
+
+    Maybe use with find_AA at some point
+
+    Parameters
+    ----------
+    top : :obj:`mdtraj.Topology`
+
+    Returns
+    -------
+    AA_dict : dict
+        Keys are residue short and long codes (GLU30, E30) or
+        long codes for nonstandard AAs (GTP365). Values
+        are lists, since one topology might have more
+        than one residue labeled E30
+    """
+    AA_dict = _defdict(list)
+    [AA_dict[str(rr)].append(rr.index) for rr in top.residues]
+    [AA_dict[shorten_AA(rr, keep_index=True, substitute_fail='long')].append(rr.index) for rr
+     in top.residues]
+    return {key : _np.unique(val).tolist() for key, val in AA_dict.items()}
 
 def int_from_AA_code(key):
     """

@@ -59,6 +59,50 @@ class Test_find_by_AA(unittest.TestCase):
         np.testing.assert_array_equal(residue_and_atom.find_AA("28", self.geom2frags.top), [5, 13])
 
 
+class Test_top2AAmap(unittest.TestCase):
+
+    def setUp(self):
+        self.geom = md.load(test_filenames.small_monomer)
+        self.geom2frags = md.load(test_filenames.small_dimer)
+
+    def test_works(self):
+        AA = residue_and_atom._top2AAmap(self.geom.top)
+        test_dict = {"GLU30": [0],
+                     "VAL31": [1],
+                     "TRP32": [2],
+                     "ILE26": [3],
+                     "GLU27": [4],
+                     "LYS29": [5],
+                     "P0G381": [6],
+                     "GDP382": [7]}
+        test_dict.update({"E30": [0],
+                          "V31": [1],
+                          "W32": [2],
+                          "I26": [3],
+                          "E27": [4],
+                          "K29": [5]})
+        self.assertDictEqual(AA, test_dict
+                             )
+
+    def test_works_dimer(self):
+        AA = residue_and_atom._top2AAmap(self.geom2frags.top)
+        test_dict = {"GLU30": [0, 8],
+                     "VAL31": [1, 9],
+                     "TRP32": [2, 10],
+                     "ILE26": [3, 11],
+                     "GLU27": [4, 12],
+                     "LYS28": [5, 13],
+                     "P0G381": [6, 14],
+                     "GDP382": [7, 15]}
+        test_dict.update({"E30": [0, 8],
+                          "V31": [1, 9],
+                          "W32": [2, 10],
+                          "I26": [3, 11],
+                          "E27": [4, 12],
+                          "K28": [5, 13]})
+        self.assertDictEqual(AA, test_dict)
+
+
 class Test_int_from_AA_code(unittest.TestCase):
     def test_int_from_AA_code(self):
         assert (residue_and_atom.int_from_AA_code("GLU30") == 30)
