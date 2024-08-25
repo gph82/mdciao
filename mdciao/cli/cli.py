@@ -2111,7 +2111,7 @@ def sites(site_inputs,
         site_as_gc[key] = []
         for idx in imap:
             pair = ctc_idxs_small[idx]
-            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, list(consensus_maps.values())) for idx in pair]
+            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, list(consensus_maps.values()), no_key=None) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             site_as_gc[key].append(_mdcctcs.ContactPair(pair,
                                                [itraj[:, idx] for itraj in ctcs],

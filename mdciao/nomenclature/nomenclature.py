@@ -2020,10 +2020,10 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
 
 def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     """
-    Choose the best consensus label for a given :obj:`idx` in case
-    there are more than one consensus(es) at play (e.g. GPCR and CGN).
+    Choose the best consensus label for a given `idx` in case
+    there are more than one consensus(es) at play (e.g. GPCR, CGN, KLIFS).
 
-    Wil raise error if both dictionaries have a consensus label for
+    Wil raise error if more than one dictionary has a consensus label for
     the same index (unusual case)
 
     Parameters
@@ -2031,15 +2031,18 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     idx : int
         index for which the relabeling is needed
     consensus_maps : list
-        The items in the list should be "gettable" by using :obj:`idx`,
+        The items in the list should be "gettable" by using `idx`,
         either by being lists, arrays, or dicts, s.t.,
         the corresponding value should be the label.
     no_key : str
-        output message if there is no label for the residue idx in any of the dictionaries.
-
+        Output string if there is no label for the
+        residue `idx` in any of the dictionaries.
+        Mighg be removed in the future, since currently
+        all calls to this method use no_key=None,
+        since no method uses "NA" anymore
     Returns
     -------
-    string
+    string: str
         label of the residue idx if present else :obj:`no_key`
 
     """
