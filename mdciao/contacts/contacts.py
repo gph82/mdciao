@@ -6378,7 +6378,7 @@ class ContactGroup(object):
                     if _path.exists(reptraj):
                         geoms.append(_md.load(reptraj, top=self.top,frame=frame_idx))
                     else:
-                        raise FileNotFoundError("The file %s can't be found anymore. Is this an `mdciao.examples` object?"%reptraj)
+                        raise FileNotFoundError(f"The file '{reptraj}' can't be found anymore. Is this an `mdciao.examples` object?")
                 else:
                     geoms.append(reptraj[frame_idx])
             return_tuple += tuple([geoms])
