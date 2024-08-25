@@ -632,6 +632,7 @@ class LabelerConsensus(object):
             Note
             ----
             `fragments` only has an effect if both
+
              * the `top` is an actual :obj:`~mdtraj.Topology` carrying the sequence
               indices, since if `top` is a sequence
               string, then there's no fragmentation heuristic possible.
@@ -648,8 +649,8 @@ class LabelerConsensus(object):
             heuristic (this might change in the future).
             **To explicitly circumvent this forced fragmentation
             and subsequent check, use `fragments=False`.
-            This will simply use the first alignment that comes out of
-            :obj:`mdciao.utils.sequence.my_bioalign`, regardless
+            This will simply use the first alignment that comes out of**
+            :obj:`mdciao.utils.sequence.my_bioalign` **, regardless
             of there being other, equally scored, alignments and potential
             clashes with sensitive fragmentations.**
         verbose: boolean, default is False
