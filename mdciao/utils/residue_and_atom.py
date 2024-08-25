@@ -16,7 +16,7 @@ from fnmatch import filter as _fn_filter
 import numpy as _np
 from  pandas import unique as _pandas_unique
 from mdciao.utils.lists import in_what_N_fragments as _in_what_N_fragments, force_iterable as _force_iterable
-from mdciao.utils.str_and_dict import _kwargs_subs
+from mdciao.utils.str_and_dict import _kwargs_subs, match_dict_by_patterns as _match_dict_by_patterns
 from collections import Counter as _Counter
 from pandas import DataFrame as _DF
 from collections import defaultdict as _defdict
@@ -169,7 +169,7 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     Generalized range-expander from residue descriptors.
 
     Residue descriptors can be anything that :obj:`find_AA` understands.
-    Expanding a range means getting "2-5,7" as input and returning "2,3,4,5,7"
+    Expanding a range means getting "2-5,7" as input and returning "2,3,4,5,7".
 
     To dis-ambiguate descriptors, a fragment definition and a topology are needed
 
@@ -184,12 +184,17 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     The input (= compressed range) is very flexible and accepts
     mixed descriptors and wildcards, eg: GLU*,ARG*,GDP*,LEU394,380-385 is a valid range.
 
-    Wildcards use the full resnames, i.e. E* is NOT equivalent to GLU*
+    Expressions starting with "-", e.g. are exclusions, s.t. "GLU*,-GLU30" will
+    select all GLUs except GLU30.
+
+    Wildcards use the full resnames, i.e. "E*" is NOT equivalent to "GLU*"
+
+    Expressions leading to empty ranges raise ValueError.
 
     Be aware, though, that wildcards are very powerful and easily "grab" a lot of
     residues, leading to long calculations and large outputs.
 
-    See :obj:`find_AA` for more on residue descriptors
+    See :obj:`find_AA` for more on residue descriptors.
 
     Parameters
     ----------
@@ -214,20 +219,21 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     residxs_out = list of unique residue indices
     """
     residxs_out = []
-    #print("For the range", range_as_str)
+    AA_dict_for_exclusion, exclude = _top2AAmap(top), []
     if not isinstance(range_as_str,str):
         range_as_str = _force_iterable(range_as_str)
         assert all([isinstance(ii,(int,_np.int64)) for ii in range_as_str]),(range_as_str,[type(ii)  for ii in range_as_str])
         range_as_str= ','.join([str(ii) for ii in range_as_str])
     for r in [r for r in range_as_str.split(',') if r!=""]:
-        assert not r.startswith("-")
-        if "*" in r or "?" in r:
-            assert "-" not in r
-            filtered = find_AA(r, top, extra_columns= residues_from_descriptors_kwargs.get("additional_resnaming_dicts"))
-            if len(filtered)==0:
-                raise ValueError("The input range contains '%s' which "
-                                 "returns no residues!"%r)
-            residxs_out.extend(filtered)
+        if "*" in r or "?" in r or r.startswith("-"):
+            if r.startswith("-"):
+                exclude.extend(_match_dict_by_patterns(r[1:], AA_dict_for_exclusion)[1])
+            else:
+                filtered = find_AA(r, top, extra_columns= residues_from_descriptors_kwargs.get("additional_resnaming_dicts"))
+                if len(filtered)==0:
+                    raise ValueError("The input range contains '%s' which "
+                                     "returns no residues!"%r)
+                residxs_out.extend(filtered)
         else:
             resnames = r.split('-')
             is_range = "-" in r
@@ -262,6 +268,10 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
                     pass
 
             residxs_out.extend(for_extending)
+
+    # Exclude the exclusions
+    exclude = _np.unique(exclude)
+    residxs_out=[rr for rr in residxs_out if rr not in exclude]
 
     if sort:
         residxs_out = sorted(residxs_out)

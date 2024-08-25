@@ -378,6 +378,12 @@ class Test_rangeexpand_residues2residxs(unittest.TestCase):
                                                                        self.top)
         np.testing.assert_array_equal(expanded_range, [0, 4])
 
+    def test_exlusions(self):
+        expanded_range = residue_and_atom.rangeexpand_residues2residxs("GLU*,-GLU30",
+                                                                       self.fragments,
+                                                                       self.top)
+        np.testing.assert_array_equal(expanded_range, [4])
+
     def test_rangeexpand_res_idxs(self):
         expanded_range = residue_and_atom.rangeexpand_residues2residxs("2-4,6",
                                                                        self.fragments,
