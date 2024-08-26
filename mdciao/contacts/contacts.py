@@ -7894,9 +7894,6 @@ def _full_color_list(top, df, colors=None) -> _DF:
 
     The main idea is to incorporate per-residue color values
 
-    Main ideas:
-     * Create
-
     Parameters
     ----------
     top : :obj:`~mdtraj.Topology`
@@ -7925,13 +7922,21 @@ def _full_color_list(top, df, colors=None) -> _DF:
     if colors is None:
         _colors = list(_mdcplots.color_dict_guesser("tab10", _np.arange(len(frags_from_df))).values())
         jdf["frag_color"] = list(_mdcflare._utils.col_list_from_input_and_fragments(_colors, frags_from_df))
+        one_intf_frag = _np.unique(jdf["interface fragment"])
+        if len(one_intf_frag)==1:
+            assert jdf["self interface residx"].any(), ValueError("If there's only one interface fragment, "
+                                                                  "then there should be some shared residues between interface members")
+        #For the purposes of the flareplot we'll split the shared residxs
+        jdf.loc[jdf["self interface residx"], "interface fragment"] = {1 : 0,
+                                                                       0 : 1}[one_intf_frag[0]]
+
     else:
         jdf["frag_color"] = list(_mdcflare._utils.col_list_from_input_and_fragments(colors, frags_from_df))
 
     if "interface fragment" in df.keys():
-        # TODO do this from self.interface_indices
-        intf_from_df = [_np.flatnonzero(df["interface fragment"] == ii) for ii in
-                        df[~df["interface fragment"].isnull()]["interface fragment"].unique()]
+        # TODO do this from self.interface_indices or with groupby
+        intf_from_df = [_np.flatnonzero(jdf["interface fragment"] == ii) for ii in
+                        jdf[~jdf["interface fragment"].isnull()]["interface fragment"].unique()]
         intf_colors = [None] * top.n_residues
         if colors is None:
             if len(frags_from_df)==1: #means no fragments, TODO think about other way of infering this
