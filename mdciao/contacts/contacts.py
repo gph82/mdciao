@@ -6003,6 +6003,10 @@ class ContactGroup(object):
         for ii in [0, 1]:
             [list_of_dicts[res].update({"interface fragment":ii}) for res in self.interface_fragments[ii]]
             [list_of_dicts[res].update({"interface residx": ii}) for res in self.interface_residxs[ii]]
+        # Account for residues in both interface members
+        self_interface = _np.intersect1d(self.interface_fragments[0], self.interface_fragments[1])
+        for ii in range(self.top.n_residues):
+                list_of_dicts[ii].update({"self interface residx": [True if ii in self_interface else False][0]})
 
         if consensus_maps is not None:
             consensus_maps, consensus_frags = _consensus_maps2consensus_frags(self.top, consensus_maps, verbose=verbose, fragments=fragments)
