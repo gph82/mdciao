@@ -2535,18 +2535,19 @@ class ContactGroup(object):
         Parameters
         ----------
         list_of_contact_objects : list
-            list of :obj:`ContactPair` objects
+            List of :obj:`ContactPair` objects.
+            Will be accesseible at :obj:`ContactGroup.contact_pairs`.
         interface_fragments : list of two iterables of indexes, default is None
             An interface is defined by two
             groups of residue indices.
 
             This input doesn't need to have all
             or any of the residue indices in
-            :obj:`res_idxs_pairs`.
+            `res_idxs_pairs`.
 
-            This input will be will be used to group
+            This input will be used to group
             the object's own residue idxs present in
-            :obj:`residxs_pairs` into the two groups
+            `residxs_pairs` into the two groups
             of the interface. These two groups
             will be accessible through the
             attribute self.interface_residxs
@@ -2557,15 +2558,15 @@ class ContactGroup(object):
             The molecular topology associated
             with this object. Normally, the
             default behaviour is enough. It checks whether all
-            ContactPairs of :obj:`list_of_contact_objects`
+            ContactPairs of `list_of_contact_objects`
             share the same self.top and use that one.
             If they have different topologies, the
             method fails, since you can't instantiate
-            a ContactGroup with ContactPairs from different.
+            a ContactGroup with ContactPairs from different topologies.
             In case the ContactPairs don't have
             any topology at all (self.top is None for all ContactPairs)
-            you can pass one here. Or, if the have one, and you
-            pass one here, it will be checked that :obj:`top` provided
+            you can pass one here. Or, if they have one, and you
+            pass one here, it will be checked that `top` provided
             here coincides with the ContactPairs' shared topology
         name : string, default is None
             Optional name you want to give this object,
@@ -2575,7 +2576,7 @@ class ContactGroup(object):
         neighbors_excluded : int, default is None
             The neighbors excluded when creating
             the underlying ContactPairs passed in
-            :obj:`list_of_contact_objects`
+            `list_of_contact_objects`
         max_cutoff_Ang : float, default is None
             Operations involving cutoffs higher
             than this will be forbidden and will
