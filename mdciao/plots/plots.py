@@ -725,7 +725,6 @@ def compare_groups_of_contacts(groups,
                                fontsize=16,
                                anchor=None,
                                plot_singles=False,
-                               exclude=None,
                                ctc_cutoff_Ang=None,
                                AA_format='short',
                                defrag='@',
@@ -810,10 +809,6 @@ def compare_groups_of_contacts(groups,
         plotted separately. The labels used will have been already
         "mutated" using :obj:`mutations_dict` and "anchored" using
         :obj:`anchor`. This plot is temporary and cannot be saved
-    exclude : list, default is None
-        keys containing these strings will be excluded.
-        NOTE: This is not implemented yet, will raise an error
-    ctc_cutoff_Ang : float, default is None
         Needed value to compute frequencies on-the-fly
         if the input was using :obj:`ContactGroup` objects
     AA_format : str, default is "short"
@@ -937,7 +932,7 @@ def compare_groups_of_contacts(groups,
         freqs[key] = idict
 
     if distro:
-        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, is_freq=False)
+        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, defrag=defrag, is_freq=False)
         myfig, __ = plot_unified_distro_dicts(freqs, colors=colors,
                                               ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               fontsize=fontsize,
@@ -972,7 +967,7 @@ def compare_groups_of_contacts(groups,
             myfig.tight_layout()
 
         if interface:
-            freqs = [_mdcu.str_and_dict.unify_freq_dicts({key : val[ii] for key, val in freqs.items()}, exclude,
+            freqs = [_mdcu.str_and_dict.unify_freq_dicts({key : val[ii] for key, val in freqs.items()},
                                                           per_residue=False,
                                                           defrag=defrag) for ii in [0,1]]
             by_interface_sorted_keys = [_sorting_schemes(idict, sort_by=kwargs_plot_unified_freq_dicts.get("sort_by", "mean"),
@@ -984,7 +979,7 @@ def compare_groups_of_contacts(groups,
                 freqs[0][key].update(freqs[1][key])
             freqs = freqs[0]
         else:
-            freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude,
+            freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs,
                                                 per_residue=per_residue,
                                                 defrag=defrag)
         if per_residue or interface:
