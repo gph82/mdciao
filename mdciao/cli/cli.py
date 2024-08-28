@@ -1671,7 +1671,7 @@ def interface(
         print(fn.fullpath_overall_dat)
         if n_repframes>0:
             n_repframes = _np.min((n_repframes,50))
-            repframes_geom = ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, return_traj=True, n_frames=n_repframes, verbose=False)[-1]
+            repframes_geom = ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, return_traj=True, n_frames=n_repframes, verbose=False)[-1][0]
             repframes_geom = _md.Trajectory([geom.xyz[0] for geom in repframes_geom], topology=repframes_geom[0].top,
                                             unitcell_angles=[geom.unitcell_angles[0] for geom in repframes_geom],
                                             unitcell_lengths=[geom.unitcell_lengths[0] for geom in repframes_geom],
@@ -1744,7 +1744,7 @@ def interface(
                     consensus_maps_.append(consensus_maps[key])
             ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
                                                              consensus_maps=consensus_maps_,
-                                                             SS=refgeom,
+                                                             SS= ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, return_traj=True, n_frames=1, verbose=False)[-1],
                                                              fragment_names=fragment_names,
                                                              fragments=fragments_as_residue_idxs,
                                                              )
