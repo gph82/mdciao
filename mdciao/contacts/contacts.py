@@ -4157,7 +4157,7 @@ class ContactGroup(object):
 
         Frequencies of :obj:`self.frequency_per_contact`
         get coarse-grained into fragments. Fragment
-        definitions come from :obj:`fragments` and/or
+        definitions come from `fragments` and/or
         from the :obj:`consensus_labelers`. These
         definitions need to contain all residues
         in self.res_idxs_pairs
@@ -4166,7 +4166,7 @@ class ContactGroup(object):
         definitions get spliced together using
         :obj:`~mdciao.fragments.splice_orphan_fragments`.
         This might lead to sub-sets of the input
-        :obj:`fragments` getting re-labeled as "subfrags"
+        `fragments` getting re-labeled as "subfrags"
         and residues not defined anywhere being labelled
         "orphans". This leads to cumbersome
         fragment names (and can change in the future),
@@ -5782,12 +5782,14 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang : float
             The cutoff to use
-        fragments : list of iterables, default is None
+        fragments : string or list of iterables, default is None
             The way the topology is fragmented. Default
             is to put all residues in one fragment. This
             optarg can modify the behaviour of scheme='all',
-            since residues absent from :obj:`fragments`
-            will not be plotted, see below.
+            since residues absent from `fragments`
+            will not be plotted, see below. If string,
+            it will be passed as `method` to :obj:mdciao.fragments.get_fragments`,
+            to get the fragments on the fly.
         fragment_names : list of strings, default is None
             The fragment names, at least len(fragments)
         fragment_colors : None or list of color-likes
@@ -5864,15 +5866,15 @@ class ContactGroup(object):
                 only work if self.is_interface is True
              * 'auto'
                 Uses :obj:`self.is_interface` to decide. If True,
-                :obj:`scheme` is set to 'interface'.
+                `scheme` is set to 'interface'.
                 If False, e.g. a residue neighborhood or
-                a site, then :obj:`scheme` is set to 'all'
+                a site, then `scheme` is set to 'all'
              * 'interface_sparse':
-                like 'interface', but using the input :obj:`fragments`
+                like 'interface', but using the input `fragments`
                 to break self.interface_fragments (which are only two,
                 by definition) further down into other fragments.
                 Of these, show only the ones where at least one residue
-                participates in the interface. If :obj:`fragments` is
+                participates in the interface. If `fragments` is
                 None, `scheme='interface'` and `scheme='interface_sparse'`
                 are the same thing.
              * 'residues':
@@ -5884,8 +5886,8 @@ class ContactGroup(object):
                 like 'interface_sparse', but
                 leaving out sub-domains not participating
                 in the interface with any contacts.For this,
-                the :obj:`consensus_maps` need to
-                be actual :obj:`LabelerConsensus`-objects
+                the `consensus_maps` need to
+                be actual `LabelerConsensus`-objects
         kwargs_freqs2flare: dict
             Optional keyword arguments for :obj:`mdciao.flare.freqs2flare`.
             Note that many of these kwargs will be overwritten internally
@@ -5907,7 +5909,17 @@ class ContactGroup(object):
         -------
         ifig : :obj:`~matplotlib.figure.Figure`
         ax : :obj:`~matplotlib.axes.Axes`
+        flareplot_attrs : dict
+            Flareplot attributes as dictionary containing
+            matplotlib objects (texts, dots, curves etc)
+            for further manipulation and fine tuning
+            of the plot if necessary. See the returned
+            values of :obj:`mdciao.flare.freqs2flare`
+            for more information.
         """
+
+        if isinstance(fragments, str):
+            fragments = _mdcfr.get_fragments(self.top, fragments, verbose=True)
 
         # We need three (!) methods to guess around the fragments/names/colors...this is bad but "easier" to debug
         df = self._args2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose=False)
@@ -5940,7 +5952,7 @@ class ContactGroup(object):
             _mdcflare._utils.change_axlims_and_resize_Texts(iax, outer_r_in_data_units)
         ifig = iax.figure
         #ifig.tight_layout()
-        return ifig, iax
+        return ifig, iax, flareplot_attrs
 
     def _args2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose) -> _DF:
         r"""

@@ -2740,7 +2740,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         # the minimal examples here cannot test the full flareplot
         # TODO add full-fledged example here?
         CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs])
-        ifig, iax = CG.plot_freqs_as_flareplot(10,)
+        ifig, iax, flareplot_attrs = CG.plot_freqs_as_flareplot(10,)
 
     @unittest.skipIf(_sys.version.startswith("3.7") and _platform.system().lower()=="darwin", "Random segfaults when using md.compute_dssp on Python 3.7 on MacOs. See https://github.com/mdtraj/mdtraj/issues/1574")
     def test_plot_freqs_as_flareplot_just_runs_w_options(self):
@@ -2749,7 +2749,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         # TODO add full-fledged example here?
         CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs],
                                    top=self.top)
-        ifig, iax = CG.plot_freqs_as_flareplot(10,SS=self.geom)
+        ifig, iax, flareplot_attrs = CG.plot_freqs_as_flareplot(10, SS=self.geom)
         ifig.tight_layout()
         _plt.close("all")
         #ifig.savefig("test.pdf")
@@ -2757,16 +2757,16 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
     def test_plot_freqs_as_flareplot_just_runs_w_consensus_maps(self):
         CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs],
                                    top=self.top)
-        ifig, iax = CG.plot_freqs_as_flareplot(10,SS=self.geom,
-                                               consensus_maps=[["GPH"]*self.top.n_residues])
+        ifig, iax, flareplot_attrs = CG.plot_freqs_as_flareplot(10, SS=self.geom,
+                                                                consensus_maps=[["GPH"] * self.top.n_residues])
         ifig.tight_layout()
         _plt.close("all")
 
     def test_plot_freqs_as_flareplot_just_runs_w_SS_array(self):
         CG = contacts.ContactGroup([self.cp1_wtop_and_conslabs,self.cp2_wtop_and_conslabs, self.cp3_wtop_and_conslabs],
                                    top=self.top)
-        ifig, iax = CG.plot_freqs_as_flareplot(10,
-                                              SS=_np.array(["H"]*self.top.n_residues))
+        ifig, iax, flareplot_attrs = CG.plot_freqs_as_flareplot(10,
+                                                                SS=_np.array(["H"] * self.top.n_residues))
         ifig.tight_layout()
         _plt.close("all")
 
