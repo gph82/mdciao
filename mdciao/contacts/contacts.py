@@ -6261,13 +6261,13 @@ class ContactGroup(object):
         Please note that "representative" can have other meanings
         in other contexts. Here, it's just a way to pick a frames/geometries
         that will most likely resemble most of what
-        is also seen in the distributions, barplots and flareplots.
+        is also seen in the distributions, barplots, violinplots, and flareplots.
 
         Please also note that minimizing **averages** has its own
         limitations and might not always yield the best result,
         However, it is the easiest and quickest to implement.
         Feel free to use any of Sklearn's great regression tools
-        under constraints to get a better "representative"
+        under constraints to get a better "representative".
 
         Parameters
         ----------
@@ -6277,8 +6277,8 @@ class ContactGroup(object):
               to the most likely distance, i.e.
               to the mode, i.e. to the
               distance values at which
-              the distributions (:obj:`plot_distance_distributions`)
-              peak. You can check the modes in
+              the distributions (:obj:`plot_distance_distributions` or :obj:`plot_violins`)
+              peak. You can check the mode values in
               :obj:`~mdciao.contacts.ContactGroup.modes`
             * "mean" : minimize average distance
               to the mean values of the distances
@@ -6317,21 +6317,23 @@ class ContactGroup(object):
         Returns
         -------
         frames : list
-            A list of :obj:`n_frames` tuples,
-            each tuple containing the traj_idx
-            and the frame_idx that minimize
-            RMSDd
+            A list of `n_frames` tuples,
+            each tuple containing the trajectory
+            and frame index that minimize
+            RMSDd.
         RMSDd : np.ndarray
             A 1D array containing the root-mean-square-deviation
             (in Angstrom) over distances (not positions)
-            of the returned :obj:`frames` to the
-            computed :obj:`reference`. This mean
-            is weighted by the contact frequencies
-            in case a :obj:`ctc_cutoff_Ang` was given.
-            Should always be in ascending order
+            of the returned `frames` to the
+            computed reference as specified by the `scheme`.
+            This mean is weighted by the contact frequencies
+            in case a `ctc_cutoff_Ang` was given.
+            Should always be in ascending order, i.e.
+            the `frames` are sorted from closest to furthest
+            to the reference.
         values : np.ndarray
             A 2D array of shape(n_frames, n_ctcs) containing
-            the distance values of the :obj:`frames` in
+            the distance values of the `frames` in
             Angstrom
         trajs : list
             A list of :obj:`~mdtraj.Trajectory` objects
