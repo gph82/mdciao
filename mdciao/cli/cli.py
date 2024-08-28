@@ -1742,12 +1742,14 @@ def interface(
                     consensus_maps_.append(consensus_labelers[key])
                 elif key in consensus_maps.keys():
                     consensus_maps_.append(consensus_maps[key])
-            ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
-                                                             consensus_maps=consensus_maps_,
-                                                             SS= ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, return_traj=True, n_frames=1, verbose=False)[-1],
-                                                             fragment_names=fragment_names,
-                                                             fragments=fragments_as_residue_idxs,
-                                                             )
+            ifig, iax, _ = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
+                                                                consensus_maps=consensus_maps_,
+                                                                SS=ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                                                          return_traj=True, n_frames=1,
+                                                                                          verbose=False)[-1][0],
+                                                                fragment_names=fragment_names,
+                                                                fragments=fragments_as_residue_idxs,
+                                                                )
             ifig.tight_layout()
             if savefigs:
                 ifig.savefig(fn.fullpath_flare_vec, bbox_inches="tight")
