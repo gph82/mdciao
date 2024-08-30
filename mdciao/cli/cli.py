@@ -1496,7 +1496,7 @@ def interface(
         in the interface are, on average over all pairs,
         at a distance close to the most-likely the residue-residue
         distances over all data. This has some caveats,
-        expressed in the documentation of :obj:`mdciao.contacts.ContactGroup.n_repframes`.
+        expressed in the documentation of :obj:`mdciao.contacts.ContactGroup.repframes`.
         To check what frames have been chosen as
         representative, it is better to run mdciao in API
         mode and call :obj:`mdciao.contacts.ContactGroup.n_repframes`
@@ -1671,7 +1671,7 @@ def interface(
         print(fn.fullpath_overall_dat)
         if n_repframes>0:
             n_repframes = _np.min((n_repframes,50))
-            repframes_geom = ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, return_traj=True, n_frames=n_repframes, verbose=False)[-1][0]
+            repframes_geom = ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, return_traj=True, n_frames=n_repframes, verbose=False)[-1]
             repframes_geom = _md.Trajectory([geom.xyz[0] for geom in repframes_geom], topology=repframes_geom[0].top,
                                             unitcell_angles=[geom.unitcell_angles[0] for geom in repframes_geom],
                                             unitcell_lengths=[geom.unitcell_lengths[0] for geom in repframes_geom],

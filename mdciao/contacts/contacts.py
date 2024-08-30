@@ -6347,9 +6347,9 @@ class ContactGroup(object):
             A 2D array of shape(n_frames, n_ctcs) containing
             the distance values of the `frames` in
             Angstrom
-        trajs : list
-            A list of :obj:`~mdtraj.Trajectory` objects
-            Only if return_traj=True
+        trajs : :obj:`~mdtraj.Trajectory`
+            An :obj:`~mdtraj.Trajectory` with `n_frames`
+            frames. Only if `return_traj`=True
         """
 
         all_ds = self.stacked_time_traces
@@ -6396,7 +6396,10 @@ class ContactGroup(object):
                     print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
                 if isinstance(reptraj, str):
                     if _path.exists(reptraj):
-                        geoms.append(_md.load(reptraj, top=self.top,frame=frame_idx))
+                        if len(geoms) == 0:
+                            geoms = _md.load(reptraj, top=self.top,frame=frame_idx)
+                        else:
+                            geoms = geoms.join(_md.load(reptraj, top=self.top, frame=frame_idx))
                     else:
                         raise FileNotFoundError(f"The file '{reptraj}' can't be found anymore. Is this an `mdciao.examples` object?")
                 else:
