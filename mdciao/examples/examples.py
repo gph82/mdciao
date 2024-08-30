@@ -407,12 +407,12 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
     r""" Download the example data as zipfile and unzip it to the working directory.
 
     This data is used in the notebooks:
-     * Manuscript.ipynb (b2ar@Gs)
-     * Tutorial.ipynb (b2ar@Gs)
-     * Missing_Contacts.ipynb (b2ar@Gs)
-     * EGFR Kinase Inhibitors.ipynb (EGFR)
-     * Comparing_CGs_Bars.ipyn (cov19)
-     * Comparing_CGs_Flares.ipynb (cov19)
+     * 08.Manuscript.ipynb (b2ar@Gs)
+     * 01.Tutorial.ipynb (b2ar@Gs)
+     * 02.Missing_Contacts.ipynb (b2ar@Gs)
+     * 07.EGFR Kinase Inhibitors.ipynb (EGFR)
+     * 03.Comparing_CGs_Bars.ipyn (cov19)
+     * 04.Comparing_CGs_Flares.ipynb (cov19)
     which can all be run locally issuing,
     from the CLI:
 
@@ -458,10 +458,18 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
           to ghrelin. Provided kindly by Dr. Alexander Vogel (1 traj, ca. 10 MB, 411 frames, dt = 100ns)
           For the associated publication see here:
 
-           * Analysis of the Dynamics of the Human Growth Hormone Secretagogue Receptor Reveals Insights into the Energy Landscape of the Molecule
+           * Analysis of the Dynamics of the Human Growth Hormone Secretagogue Receptor Reveals Insights
+             into the Energy Landscape of the Molecule
               A. A. Smith, E. M. Pacull, S. Stecher, P. W. Hildebrand, A. Vogel, D. Huster,
               Angew. Chem. Int. Ed. 2023, 62, e202302003.
 
+         * Y1 : https://proteinformatics.uni-leipzig.de/mdciao/y1_apo.zip
+          Neuropeptide Y receptor type 1, Y1 receptor for short, in apo form.
+          Provided kindly by Dr. Alexander Vogel (1 traj, ca. 11 MB, 528 frames, dt = 50ns)
+          For the associated publication see here:
+           * Towards Probing Conformational States of Y2 Receptor Using Hyperpolarized 129Xe NMR.
+             Schmidt, P.; Vogel, A.; Schwarze, B.; Seufert, F.; Licha, K.; Wycisk, V.; Kilian, W.; Hildebrand, P.W.; Mitschang, L.
+             Molecules 2023, 28, 1424. [https://doi.org/10.3390/molecules28031424]()
 
     unzip : bool, default is True
         Try unzipping the file after downloading
@@ -476,7 +484,9 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
     alias2url = {"b2ar@Gs": "https://proteinformatics.uni-leipzig.de//mdciao/mdciao_example.zip",
                  "EGFR": "https://proteinformatics.uni-leipzig.de/mdciao/example_kinases.zip",
                  "cov19" : "https://proteinformatics.uni-leipzig.de/mdciao/example_cov19.zip",
-                 "test": "https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip"}
+                 "test": "https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",
+                 "ghrelin@ghsr" : "https://proteinformatics.uni-leipzig.de/mdciao/ghrelin_receptor.zip",
+                 "y1_apo" : "https://proteinformatics.uni-leipzig.de/mdciao/y1_apo.zip"}
 
     if alias_or_url in alias2url.keys():
         url = alias2url[alias_or_url]
