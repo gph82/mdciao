@@ -197,6 +197,43 @@ class Test_fetch_example_data(unittest.TestCase):
                 assert len(files) == 1
                 assert files[0] == "mdciao_test_small.zip"
 
+
+    def test_alias_unzip_to_otherfile(self):
+        with TemporaryDirectory(suffix="_mdciao_test_fetch") as td:
+            with remember_cwd():
+                os.chdir(td)
+                local_path = examples.fetch_example_data("test",
+                                                         unzip="unzip_here")
+                assert os.path.exists(local_path)
+                # assert os.path.exists((os.path.splitext(local_path))[0])
+                files = os.listdir(td)
+                assert len(files) == 2
+                assert files[0] == "unzip_here.zip"
+                assert files[1] == "unzip_here"
+                extracted = os.listdir(files[1])
+                assert extracted[0] == "A.dat"
+                assert extracted[1] == "B.dat"
+
+
+    def test_skip_on_existing(self):
+        with TemporaryDirectory(suffix="_mdciao_test_fetch") as td:
+            with remember_cwd():
+                os.chdir(td)
+                local_path = examples.fetch_example_data("test",
+                                                         unzip=False)
+                assert os.path.exists(local_path)
+                # assert os.path.exists((os.path.splitext(local_path))[0])
+                files = os.listdir(td)
+                assert len(files) == 1
+                assert files[0] == "mdciao_test_small.zip"
+                # Create a fake file to test it doesn't ovewrite
+                with open("mdciao_test_small.zip", "w") as f:
+                    f.write("Won't be overwrriten")
+                local_path = examples.fetch_example_data("test",
+                                                         unzip=False, skip_on_existing=True)
+                assert open("mdciao_test_small.zip").read() == "Won't be overwrriten"
+
+
 class Test_notebooks(unittest.TestCase):
 
     def test_just_works(self):

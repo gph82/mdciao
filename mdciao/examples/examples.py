@@ -414,16 +414,26 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
 
 
 def fetch_example_data(alias_or_url="b2ar@Gs",
-                       unzip=True):
-    r""" Download the example data as zipfile and unzip it to the working directory.
+                       unzip=True,
+                       skip_on_existing=False):
+    r""" Download example data as zipfile and unzip it to the working directory.
+
+    The available datasets are (see below for full info)
+     * 'b2ar@Gs'
+     * 'EGFR'
+     * 'cov19'
+     * 'ghrelin@ghsr'
+     * 'mor@muor'
 
     This data is used in the notebooks:
-     * 08.Manuscript.ipynb (b2ar@Gs)
      * 01.Tutorial.ipynb (b2ar@Gs)
      * 02.Missing_Contacts.ipynb (b2ar@Gs)
-     * 07.EGFR Kinase Inhibitors.ipynb (EGFR)
      * 03.Comparing_CGs_Bars.ipyn (cov19)
      * 04.Comparing_CGs_Flares.ipynb (cov19)
+     * 07.EGFR Kinase Inhibitors.ipynb (EGFR)
+     * 08.Manuscript.ipynb (b2ar@Gs)
+     * 09.Consensus_labels.ipynb (ghrelin@ghsr)
+
     which can all be run locally issuing,
     from the CLI:
 
@@ -435,9 +445,12 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
 
     Note
     ----
-    New filenames for the downloaded file, and the resulting folder
-    will be generated to avoid overwriting. No files will
-    be overwritten when extracting.
+    By default, a zipfile is downloaded and then extracted
+    to a directory with its own name. If these files already
+    exist, the user will be prompted for new filenames
+    s.t. no files are ever overwritten when extracting. Use
+    `unzip` to change filenames a priory and `skip_on_existing`
+    to simply skip either the downloading or the unzipping.
 
     Parameters
     ----------
@@ -466,24 +479,43 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
 
          * ghrelin@ghsr : https://proteinformatics.uni-leipzig.de/mdciao/ghrelin_receptor.zip
           Growth hormone secretagogue receptor type 1, ghrelin receptor for short, bound
-          to ghrelin. Provided kindly by Dr. Alexander Vogel (1 traj, ca. 10 MB, 411 frames, dt = 100ns)
+          to ghrelin. Provided kindly by Dr. Alexander Vogel (1 traj, ca. 10 MB, 411 frames, dt = 100ns).
           For the associated publication see here:
 
-           * Analysis of the Dynamics of the Human Growth Hormone Secretagogue Receptor Reveals Insights
-             into the Energy Landscape of the Molecule
-              A. A. Smith, E. M. Pacull, S. Stecher, P. W. Hildebrand, A. Vogel, D. Huster,
-              Angew. Chem. Int. Ed. 2023, 62, e202302003.
+           * Analysis of the Dynamics of the Human Growth Hormone Secretagogue Receptor Reveals Insights into the Energy Landscape of the Molecule
+             A. A. Smith, E. M. Pacull, S. Stecher, P. W. Hildebrand, A. Vogel, D. Huster
+             Angew. Chem. Int. Ed. 2023, 62, e202302003
 
          * Y1 : https://proteinformatics.uni-leipzig.de/mdciao/y1_apo.zip
           Neuropeptide Y receptor type 1, Y1 receptor for short, in apo form.
           Provided kindly by Dr. Alexander Vogel (1 traj, ca. 11 MB, 528 frames, dt = 50ns)
           For the associated publication see here:
+
            * Towards Probing Conformational States of Y2 Receptor Using Hyperpolarized 129Xe NMR.
              Schmidt, P.; Vogel, A.; Schwarze, B.; Seufert, F.; Licha, K.; Wycisk, V.; Kilian, W.; Hildebrand, P.W.; Mitschang, L.
-             Molecules 2023, 28, 1424. [https://doi.org/10.3390/molecules28031424]()
+             Molecules 2023, 28, 1424. [](https://doi.org/10.3390/molecules28031424)
 
-    unzip : bool, default is True
-        Try unzipping the file after downloading
+         * mor@muor : https://proteinformatics.uni-leipzig.de/mdciao/muor_199.zip
+          Active mu-opioid receptor bound to the agonist morphine (1 traj, ca. 7 MB, 400 frames, dt = 100ns).
+          Kindly made available for this purpose by the GPCRmd. The GPCRmd's simulation
+          report can be found [https://www.gpcrmd.org/dynadb/dynamics/id/199/](here) ,
+          the original publication is:
+
+           * Dynamic and Kinetic Elements of µ-Opioid Receptor Functional Selectivity.
+             Kapoor, A., Martinez-Rosell, G., Provasi, D. et al.
+             Sci Rep 7, 11255 (2017). [](https://doi.org/10.1038/s41598-017-11483-8)
+
+    unzip : bool, or str, default is True
+        Try unzipping the file after downloading. If string,
+        the url will be downloaded to this filename and then
+        unzipped to a folder with this name
+        in the working directory, regardless of the
+        zipfile's name and internal structure.
+    skip_on_existing : bool, default is False
+        In case of finding existing files and directories
+        skip the downloading and unzipping steps.
+        This allows for re-runs w/o being prompted
+        for new filenames to avoid overwriting.
 
     Returns
     -------
@@ -497,6 +529,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
                  "cov19" : "https://proteinformatics.uni-leipzig.de/mdciao/example_cov19.zip",
                  "test": "https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",
                  "ghrelin@ghsr" : "https://proteinformatics.uni-leipzig.de/mdciao/ghrelin_receptor.zip",
+                 "mor@muor" : "https://proteinformatics.uni-leipzig.de/mdciao/muor_199.zip",
                  "y1_apo" : "https://proteinformatics.uni-leipzig.de/mdciao/y1_apo.zip"}
 
     if alias_or_url in alias2url.keys():
@@ -505,7 +538,9 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
         url = alias_or_url
     else:
         raise ValueError("Cannot find %s in the known aliases or in the known urls:\n%s" % (alias_or_url, alias2url))
-    downed_file_full = _down_url_safely(url)
+    downed_file_full = _down_url_safely(url,
+                                        rename_to=[None if isinstance(unzip,bool) else f"{_path.splitext(unzip)[0]}.zip"][0],
+                                        skip_on_existing=skip_on_existing)
     if unzip:
         return _unzip2dir(downed_file_full)
     else:
