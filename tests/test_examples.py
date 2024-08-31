@@ -120,6 +120,13 @@ class Test_recursive_funct(unittest.TestCase):
                 with self.assertRaises(RecursionError):
                     examples._recursive_prompt("test_00.dat", "test", is_file=True)
 
+    def test_skip_on_existing(self):
+        with TemporaryDirectory(suffix="_mdciao_test_recursive") as td:
+            with remember_cwd():
+                os.chdir(td)
+                open("test.00.dat", "w").close()
+                examples._recursive_prompt("test_00.dat", "test", is_file=True, skip_on_existing=True)
+
 class Test_down_safely(unittest.TestCase):
 
     def test_just_works(self):

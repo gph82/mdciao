@@ -340,10 +340,9 @@ def notebooks(folder ="mdciao_notebooks"):
 
     return dest
 
-def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False):
+def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False, skip_on_existing=False):
     r"""
     Ensure input_path doesn't exist and keep generating/prompting for alternative filenames/dirnames
-
 
     Poorman's attempt at actually a good recursive function, but does its job.
     A maximum recursion depth of 50 is hard-coded
@@ -358,16 +357,26 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
     count : int, default is 0
         Where in the recursion we are
     verbose : bool, default is False
-    is_file : book, default is False
+    is_file : bool, default is False
         Name-generating is different for folders than
         from files:
         * mdciao_notebook -> mdciao_notebook_00
         * mdciao_example.zip -> mdciao_example_00.zip
-
+    skip_on_existing : bool, default is False
+        If the `input_path` is found, instead of
+        prompting for a new path, simply skip this
+        method and return the `input_path` without
+        doing anything.
     Returns
     -------
     nox_path : str
-        A newly created, previosuly non-existent path
+        By default, `new_path` is a newly created,
+        previously non-existent path. If the
+        `input_path` existed, the default is to create
+        a `new_path`, unless `skip_on_existing` was set
+        to True, in which case nothing happens and the
+        existing `input_path` is returned without
+        doing anything.
 
     """
 
@@ -377,6 +386,8 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
     while _path.exists(input_path):
         if verbose:
             print("%s exists" % input_path)
+            if skip_on_existing:
+                break
         input_path = _path.join(cwd, pattern) + "_%02u" % count
         if is_file:
             input_path += ext
