@@ -144,6 +144,18 @@ class Test_down_safely(unittest.TestCase):
                 assert local_path.endswith("myfile.zip")
                 assert os.path.exists(local_path)
 
+    def test_skip_on_existing(self):
+        with TemporaryDirectory(suffix="_mdciao_test_down_safely") as td:
+            with remember_cwd():
+                os.chdir(td)
+                with open("mdciao_test_small.zip","w") as f:
+                    f.write("Won't be overwrriten")
+                local_path = examples._down_url_safely("https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",
+                                                       verbose=True, skip_on_existing=True)
+                assert open("mdciao_test_small.zip").read() == "Won't be overwrriten"
+                assert local_path.endswith("mdciao_test_small.zip")
+                assert os.path.exists(local_path)
+
 class Test_fetch_example_data(unittest.TestCase):
 
     def test_just_works(self):

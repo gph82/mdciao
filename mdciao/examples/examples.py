@@ -558,7 +558,7 @@ def _unzip2dir(full_path_zipfile):
 
     return full_dir
 
-def _down_url_safely(url, chunk_size = 128, verbose=False, rename_to=None):
+def _down_url_safely(url, chunk_size = 128, verbose=False, rename_to=None, skip_on_existing=False):
     r"""
     Downloads a file from a URL to a tmpfile and copies it to the current directory
 
@@ -587,22 +587,25 @@ def _down_url_safely(url, chunk_size = 128, verbose=False, rename_to=None):
         target_file = rename_to
     filename_nonx = _recursive_prompt(target_file,
                                       _path.splitext(target_file)[0],
-                                      is_file=True, verbose=True)
-    r = _rget(url, stream=True)
-    total_size_in_bytes = int(r.headers.get('content-length', 0))
-    pb = _tqdma(total=total_size_in_bytes,
-                desc="Downloading %s to %s" % (filename_orig, _path.basename(filename_nonx)))
-    with _TDir(suffix="_mdciao_download") as t:
-        _filename = _path.join(t,_path.basename(filename_nonx))
-        with open(_filename, 'wb') as fd:
-            r.iter_content()
-            for chunk in r.iter_content(chunk_size=chunk_size):
-                fd.write(chunk)
-                pb.update(128)
-        pb.close()
-        if verbose:
-            print("Dowloaded file %s"%filename_nonx)
-        _shcopy(_filename,filename_nonx)
+                                      is_file=True, verbose=True, skip_on_existing=skip_on_existing)
+    if _path.exists(filename_nonx) and skip_on_existing:
+        pass
+    else:
+        r = _rget(url, stream=True)
+        total_size_in_bytes = int(r.headers.get('content-length', 0))
+        pb = _tqdma(total=total_size_in_bytes,
+                    desc="Downloading %s to %s" % (filename_orig, _path.basename(filename_nonx)))
+        with _TDir(suffix="_mdciao_download") as t:
+            _filename = _path.join(t,_path.basename(filename_nonx))
+            with open(_filename, 'wb') as fd:
+                r.iter_content()
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    fd.write(chunk)
+                    pb.update(128)
+            pb.close()
+            if verbose:
+                print("Dowloaded file %s"%filename_nonx)
+            _shcopy(_filename,filename_nonx)
 
     return filename_nonx
 
