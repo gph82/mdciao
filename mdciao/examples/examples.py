@@ -459,7 +459,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
         Currently, these are the available aliases and their urls
          * b2ar@Gs : https://proteinformatics.uni-leipzig.de/mdciao/mdciao_example.zip
           Beta 2 adrenergic receptor in complex with Gs-protein. Provided
-          kindly by H. Batebi (1 traj, ca. 10 MB, 280 frames, dt = 10 ps)
+          kindly by Dr. H. Batebi (1 traj, ca. 10 MB, 280 frames, dt = 10 ps)
 
          * EGFR : http://proteinformatics.uni-leipzig.de/mdciao/example_kinases.zip
           Epidermal Growth Factor Receptor (EGFR) in complex with
@@ -479,7 +479,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
 
          * ghrelin@ghsr : https://proteinformatics.uni-leipzig.de/mdciao/ghrelin_receptor.zip
           Growth hormone secretagogue receptor type 1, ghrelin receptor for short, bound
-          to ghrelin. Provided kindly by Dr. Alexander Vogel (1 traj, ca. 10 MB, 411 frames, dt = 100ns).
+          to ghrelin. Provided kindly by Dr. A. Vogel (1 traj, ca. 10 MB, 411 frames, dt = 100ns).
           For the associated publication see here:
 
            * Analysis of the Dynamics of the Human Growth Hormone Secretagogue Receptor Reveals Insights into the Energy Landscape of the Molecule
@@ -488,7 +488,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
 
          * Y1 : https://proteinformatics.uni-leipzig.de/mdciao/y1_apo.zip
           Neuropeptide Y receptor type 1, Y1 receptor for short, in apo form.
-          Provided kindly by Dr. Alexander Vogel (1 traj, ca. 11 MB, 528 frames, dt = 50ns)
+          Provided kindly by Dr. A. Vogel (1 traj, ca. 11 MB, 528 frames, dt = 50ns)
           For the associated publication see here:
 
            * Towards Probing Conformational States of Y2 Receptor Using Hyperpolarized 129Xe NMR.
