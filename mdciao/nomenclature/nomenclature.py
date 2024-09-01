@@ -31,7 +31,6 @@ from mdciao.utils.str_and_dict import _kwargs_subs
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 
 from pandas import \
-    read_json as _read_json, \
     read_excel as _read_excel, \
     read_csv as _read_csv, \
     DataFrame as _DataFrame, \
@@ -383,7 +382,7 @@ def _GPCRdb_web_lookup(url, verbose=True,
         DFout = ValueError('Contacted %s url successfully (no 404),\n'
                            'but Uniprot name %s yields nothing' % (url, UniProt_name))
     else:
-        df = _read_json(a.text)
+        df = _DataFrame(a.json())
         mydict = df.T.to_dict()
         for key, val in mydict.items():
             try:
