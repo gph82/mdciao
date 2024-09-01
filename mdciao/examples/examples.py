@@ -424,6 +424,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
      * 'cov19'
      * 'ghrelin@ghsr'
      * 'mor@muor'
+     * 'Y1'
 
     This data is used in the notebooks:
      * 01.Tutorial.ipynb (b2ar@Gs)
@@ -432,7 +433,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
      * 04.Comparing_CGs_Flares.ipynb (cov19)
      * 07.EGFR Kinase Inhibitors.ipynb (EGFR)
      * 08.Manuscript.ipynb (b2ar@Gs)
-     * 09.Consensus_labels.ipynb (ghrelin@ghsr)
+     * 09.Consensus_labels.ipynb (ghrelin@ghsr,b2ar@Gs,mor@muor,Y1)
 
     which can all be run locally issuing,
     from the CLI:
