@@ -554,7 +554,7 @@ def _unzip2dir(full_path_zipfile):
     The folder's full path is kept, including zipfile's name minus the .zip extension
 
     Background: "mdciao_example.zip" was zipped in origin with this structure:
-     * mdciao_example/prot.pdb
+     * mdciao_example/top.pdb
      * mdciao_example/traj.xtc
 
     However, it might have been renamed to "mdciao_example_05.zip" when auto-downloading.
