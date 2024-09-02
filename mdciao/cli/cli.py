@@ -1542,7 +1542,7 @@ def interface(
         intf_frags_as_str_or_keys = _mdcfrg.frag_dict_2_frag_groups(fragments_as_residue_idxs_d, ng=2,
                                                                     answers=[interface_selection_1, interface_selection_2],
                                                                     )
-
+    intf_frags_as_residxs = [_np.unique(ifrg) for ifrg in intf_frags_as_residxs]
     intersect = list(set(intf_frags_as_residxs[0]).intersection(intf_frags_as_residxs[1]))
     if len(intersect) > 0:
         if self_interface:
