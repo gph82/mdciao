@@ -13,7 +13,7 @@ The notebooks can be accessed locally by issuing::
 
 from the CLI. This will create a local "sandboxed" copy of the notebooks,
 which you can modify and play around with without breaking
-the original notebooks. Note: all notebooks except the last two.
+the original notebooks. Note: the Covid notebooks are not shipped with `mdciao`.
 
 Tutorials
 ---------
