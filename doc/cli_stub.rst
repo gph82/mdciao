@@ -48,4 +48,4 @@ What these tools do is:
 * mdc_residues
     Find residues in an input topology using Unix filename pattern matching. Example :ref:`here <residues_HL>`.
 
-You can see their documentation by using the ``-h`` flag when invoking them from the command line, keep reading the ref:`Highlights` or the :ref:`CLI Reference`.
+You can see their documentation by using the ``-h`` flag when invoking them from the command line, keep reading the :ref:`Highlights` or the :ref:`CLI Reference`.
