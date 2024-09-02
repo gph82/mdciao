@@ -1591,9 +1591,12 @@ def interface(
 
     # Create a neighborlist
     if n_nearest>0:
-        print("Excluding contacts between %u nearest neighbors"%n_nearest)
         nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
+        if len(ctc_idxs)!=last_n_ctcs:
+            print(f"\nExcluding contacts between {n_nearest} nearest neighbors reduces from {last_n_ctcs} to {len(ctc_idxs)} residue pairs. "
+                  f"Use 'n_nearest' to control this ({last_n_ctcs-len(ctc_idxs)} residue pairs discarded).")
+            last_n_ctcs=len(ctc_idxs)
 
     print("\nWill look for contacts in the interface between fragments\n%s\nand\n%s. "%
           ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
@@ -1614,10 +1617,12 @@ def interface(
                                                                   refgeom.top,
                                                                   fragment_names=fragment_names,
                                                                   additional_resnaming_dicts=consensus_maps)
-        print(f"Excluding residue pairs not involving residues '{AA_selection}' ({len(sel)} AAs).")
         ctc_idxs = [pair for pair in ctc_idxs if lambda_sel(pair, sel)]
-
-    print(f"Performing a first pass on the {len(ctc_idxs)} group_1-group_2 residue pairs to compute lower bounds "
+        if len(ctc_idxs)!=last_n_ctcs:
+            print(f"\nExcluding residue pairs not involving residues '{AA_selection}' ({len(sel)} AAs) "
+                  f"reduces from {last_n_ctcs} to {len(ctc_idxs)} residue pairs.")
+            last_n_ctcs = len(ctc_idxs)
+    print(f"\nPerforming a first pass on the {last_n_ctcs} group_1-group_2 residue pairs to compute lower bounds "
           f"on residue-residue distances via residue-COM distances.")
     lb_cutoff_buffer_Ang = 2.5
     idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
@@ -1632,7 +1637,7 @@ def interface(
     if len(ctc_idxs_intf)==0:
         print("No contacts found at %2.1f Ang. No output produced." % ctc_cutoff_Ang)
         return
-    print(f"Reduced to only {len(ctc_idxs_intf)} residue pairs for the computation of actual residue-residue distances:")
+    print(f"Reduced to only {len(ctc_idxs_intf)} (from {last_n_ctcs}) residue pairs for the computation of actual residue-residue distances:")
     ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_intf,
                                                      stride=stride, return_times_and_atoms=True,
                                                      consolidate=False,
