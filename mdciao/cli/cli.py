@@ -1152,9 +1152,12 @@ def interface(
 
      * by using specific residue indices or ranges
      * by using defined molecular fragments,
-       chains defined in the topology or pdb-file.
+       e.g. chains defined in the topology or pdb-file.
      * by guessing molecular fragments, using some
        fragmentation heuristic.
+     * by guessing molecular fragments, using a consensus
+       nomenclature like GPCR, CGN or KLIFS generic residue
+       numbering.
     The fragment definition and the fragment selection
     are separate, i.e. there might be six chains but
     one can specify to compute the interface between
@@ -1163,8 +1166,8 @@ def interface(
     and `interface_selection_2`.
 
     One can further refine the fragment selection
-    with an aminoacid (AA) selection using
-    `AA_selection`, to further specify the residues
+    at the level of single aminoacids (AAs) using
+    `AA_selection`. This can fine-tune the residues
     of interest if the fragment definitions are too broad.
     See the docstring for more info.
 
@@ -1175,16 +1178,31 @@ def interface(
     in a receptor--G-protein complex, one partner is
     the receptor and the other partner is the G-protein.
 
-    This is why mdciao.cli.interface doesn't allow interface
-    members to share residues by default. However, sometimes it's
-    useful to allow it because the contacts of one fragment
-    with itself are also important. E.g. the
-    C-terminus of a receptor interfacing with
-    the entire receptor, **including the C-terminus itself**.
-    To allow for this behaviour, use `self_interface` = True,
-    and possibly increase `n_nearest`, since otherwise
-    neighboring residues of the shared set (e.g. C-terminus)
+    Note
+    ----
+    If your definitions of `interface_selection_1` and
+    `interface_selection_2` lead to some overlap between
+    the interface members (see below), mdciao's default
+    is to ignore contact pairs within the same fragment.
+    E.g., in the context of a GPCR, computing
+    "TM3" vs "TM*" ("TM3" vs "all TMs") won't include
+    TM3-TM3 contacts by default. To include these
+    (or equivalent) contacts set `self_interface` = True.
+
+    Another example could be computing the interface of the
+    C-terminus of a receptor with the entire receptor,
+    where it might be useful to  including the contacts of
+    the C-terminus with itself.
+
+    When using `self_interface` = True, it's advisable to
+    increase `n_nearest`, since otherwise neighboring
+    residues of the shared set (the TM3-TM3 or the Cterm-Cterm)
     will always appear as formed.
+
+    See the documentation on `fragments`,
+    `interface_selection_1`, `interface_selection_2`,
+    `AA_selection`, `n_nearest` and `self_interface`.
+
 
     Finally, the interface strength, defined as the
     per-residue sum of contacts participating in
@@ -1242,7 +1260,7 @@ def interface(
           * A special string, "consensus", to use consensus
           subdomains, like "TM1" or "G.H5", as fragment definitions.
 
-        Numeric expressions are interpreted as zero-indexed and unique
+        Numeric expressions are interpreted as zero-indexed, unique
         residue serial indices, i.e. 30-40 does not necessarily equate
         "GLU30-LEU40" unless serial and sequence index coincide.
         If there's more than one "GLU30", the user gets asked to
@@ -1253,8 +1271,10 @@ def interface(
         regardless of having passed "consensus" here. I.e., you can
         use `fragments='chains'` to divide the topology for representation
         and residue-tagging purposes but then define the interface as:
+
         >>> interface_selection_1="TM3"
         >>> interface_selection_2="TM2"
+
         to compute the interface of TM3 vs TM2 in a GPCR. For
         this mode of selection to work, the only condition is that the consensus
         labels have been provided via `GPCR_Uniprot`,
@@ -1266,7 +1286,7 @@ def interface(
          * ranges, e.g. '1,3-4'
          * wildcards, e.g. "TM*" or "G.H.??"
          * exclusions, e.g. "TM*,-TM6" (all TMs except TM6)
-        The default is to prompt the user for
+        The default (None) is to prompt the user for
         information, except when:
          * `fragments` yielded only one fragment that
            **doesn't** cover the whole topology. Then
@@ -1282,7 +1302,7 @@ def interface(
          * ranges, e.g. '1,3-4'
          * wildcards, e.g. "TM*" or "G.H.??"
          * exclusions, e.g. "TM*,-TM6" (all TMs except TM6)
-        The default is to prompt the user for
+        The default (None) is to prompt the user for
         information, except when:
          * `fragments` yielded only one fragment that
            **doesn't** cover the whole topology. Then
@@ -1294,11 +1314,17 @@ def interface(
     AA_selection : str or list, default is None
         Whatever the fragment definition and fragment selection
         has been, one can further refine the list of
-        potential residue pairs by making a per aminoacid (AA)
-        selection here. E.g., if one has selected the interface
-        to be "TM3" vs "TM2", but wants to select only some
-        regions of those helices, one can pass here an `AA_selection`.
-        This can be a string or a list of len two:
+        potential residue pairs by making a selection at
+        the level of single aminoacids (AAs).
+        E.g., if (like above) one has selected the interface
+        to be "TM3" vs "TM2",
+
+        >>> interface_selection_1="TM3"
+        >>> interface_selection_2="TM2"
+
+        but wants to select only some regions of those helices,
+        one can pass here an `AA_selection`.
+        This can be a string or a list of two items:
 
          * A string leads to a boolean "or" selection, i.e. keep
            residue pair [ii,jj] if either ii **or** jj
@@ -1307,21 +1333,30 @@ def interface(
            >>> AA_selection = "3.45-3.55"
 
            is equivalent of "3.45-3.55" vs "TM2" contacts
-         * A list of len two leads to a boolean "and" selection, i.e. keep
+         * A list of with two items (each a string expression)
+           leads to a boolean "and" selection, i.e. keep
            residue pair [ii,jj] if ii **and** jj
            match `AA_selection`. E.g.
 
            >>> AA_selection = ["3.45-3.55","2.45-2.55"]
 
-           is equivalent of "3.45-3.55" vs "2.45-2.55" contacts
+           is equivalent of "3.45-3.55" vs "2.45-2.55" contacts.
 
-        In principle, one could use
+        The strings for the selection are interpreted by
+        :obj:`~mdciao.utils.residue_and_atom.rangeexpand_residues2residxs`,
+        so read there for more info on what expressions are allowed,
+        like mixed descriptors and wildcards, eg: "GLU*,ARG*,GDP*,LEU394,GLU30-ARG50".
+        are valid.
 
-        >>> fragments = ["3.45-3.55","2.45-2.55"]
+        Finally, CSVs are interpreted as boolean "or", i.e.:
 
-        and get the same contacts, but this would then exclude all other
-        residues of the topology from being tagged with fragment
-        and or consensus labels.
+        >>> AA_selection = "GLU30,TRP50"
+
+        will select pairs that contain GLU30 **or** TRP50. If you
+        are sure about your residue pair selection, i.e. you
+        have a very specific list of residue-pairs you want
+        to compute, use :obj:`mdciao.cli.sites`.
+
     GPCR_UniProt : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         For GPCR nomenclature. If str, e.g. "adrb2_human".
         will try to locate a local filename or do a web lookup in the GPCRdb.
@@ -1544,18 +1579,15 @@ def interface(
                                                                     )
     intf_frags_as_residxs = [_np.unique(ifrg) for ifrg in intf_frags_as_residxs]
     intersect = list(set(intf_frags_as_residxs[0]).intersection(intf_frags_as_residxs[1]))
-    if len(intersect) > 0:
-        if self_interface:
-            ctc_idxs = _mdcu.lists.unique_product_w_intersection(intf_frags_as_residxs[0], intf_frags_as_residxs[1])
-        else:
-            raise AssertionError("Some residues appear in both members of the interface, but this"
-                                 " behavior is blocked by default.\nIf you are sure this"
-                                 " is correct, unblock this option with 'self_interface=True'.\n"
-                                 "The residues are %s" % intersect)
-    else:
-        ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
-         # Remove self-contacts
-        ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
+    ctc_idxs = _mdcu.lists.unique_product_w_intersection(intf_frags_as_residxs[0], intf_frags_as_residxs[1])
+    last_n_ctcs = len(ctc_idxs)
+    if len(intersect)>0 and not self_interface:
+        ctc_idxs = [pair for pair in ctc_idxs if not _np.in1d(pair, intersect).all()]
+        if len(ctc_idxs)!=last_n_ctcs:
+            print()
+            print(f"\nExcluding contacts within the same members of the interface reduces from {last_n_ctcs} to {len(ctc_idxs)} residue pairs. "
+                  f"Use 'self_interface=True' to keep these {last_n_ctcs-len(ctc_idxs)} discarded pairs.")
+            last_n_ctcs = len(ctc_idxs)
 
     # Create a neighborlist
     if n_nearest>0:
