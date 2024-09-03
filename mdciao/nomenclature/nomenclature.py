@@ -1494,7 +1494,7 @@ class AlignerConsensus(object):
 
             * Type :obj:`~mdciao.nomenclature.LabelerGPCR`, :obj:`~mdciao.nomenclature.LabelerCGN`,
               or :obj:`~mdciao.nomenclature.LabelerKLIFS`
-             Recommended option, the most succint and versatile.
+             Recommended option, the most succinct and versatile.
              Pass this object and the maps will get created
              internally on-the-fly either by
              calling :obj:`~mdciao.nomenclature.LabelerGPCR.AA2conlab`
@@ -1840,7 +1840,7 @@ def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, d
     Parameters
     ----------
     df : :obj:`~pandas.DataFrame` or None
-        The dataframe to be filter by matching `patterns` and `keys`.
+        The dataframe to be filtered by matching `patterns` and `keys`.
         If None, the method simply returns None.
     patterns : str, default is None
         A list in CSV-format of patterns to be matched
