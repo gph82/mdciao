@@ -326,8 +326,8 @@ def _GPCRdb_finder(descriptor,
     else:
         xlsxname = format % descriptor
         fullpath = _path.join(local_path, xlsxname)
-    GPCRmd = "https://gpcrdb.org/services/residues/extended"
-    url = "%s/%s" % (GPCRmd, descriptor.lower())
+    GPCRdb = "https://gpcrdb.org/services/residues/extended"
+    url = "%s/%s" % (GPCRdb, descriptor.lower())
 
     if fullpath.endswith(".xlsx"):
         local_lookup_lambda = lambda fullpath: _read_excel(fullpath,

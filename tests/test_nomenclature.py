@@ -74,7 +74,7 @@ class Test_PDB_finder(unittest.TestCase):
                                      try_web_lookup=False)
 
 
-class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
+class Test_GPCRdb_lookup_GPCR(unittest.TestCase):
 
     def test_works(self):
         DF = nomenclature._GPCRdb_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
@@ -88,7 +88,7 @@ class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
 class Test_GPCRdb_finder(unittest.TestCase):
 
     def test_works_locally_xlsx(self):
-        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
+        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx,
                                                    try_web_lookup=False,
                                                    )
 
@@ -99,7 +99,7 @@ class Test_GPCRdb_finder(unittest.TestCase):
 
     def test_works_locally_pkl(self):
         with _NamedTemporaryFile(suffix=".pkl") as named_pickle:
-            read_excel(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx).to_pickle(named_pickle.name)
+            read_excel(test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx).to_pickle(named_pickle.name)
             df, filename = nomenclature._GPCRdb_finder(named_pickle.name,
                                                        try_web_lookup=False,
                                                        )
@@ -146,7 +146,7 @@ class Test_GPCRdb_finder(unittest.TestCase):
         assert isinstance(filename, str)
 
     def test_wont_fail_if_found_online_and_write_to_disk(self):
-        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
+        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx,
                                                    try_web_lookup=False,
                                                    write_to_disk=True,
                                                    )
@@ -159,7 +159,7 @@ class Test_GPCRdb_finder(unittest.TestCase):
 
 class Test_table2GPCR_by_AAcode(unittest.TestCase):
     def setUp(self):
-        self.file = test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx
+        self.file = test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx
 
     def test_just_works(self):
         table2GPCR = nomenclature._GPCRdbDataFrame2conlabs(tablefile=self.file)
@@ -395,10 +395,10 @@ class TestLabelerGPCR_local(unittest.TestCase):
     # The setup is in itself a test
     def setUp(self):
         self.tmpdir = mkdtemp("_test_mdciao_GPCR_local")
-        self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(
-            test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
-        shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx, self._GPCRmd_B2AR_nomenclature_test_xlsx)
-        self.GPCR_local = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
+        self._GPCRdb_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(
+            test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx))
+        shutil.copy(test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx, self._GPCRdb_B2AR_nomenclature_test_xlsx)
+        self.GPCR_local = nomenclature.LabelerGPCR(self._GPCRdb_B2AR_nomenclature_test_xlsx,
                                                    try_web_lookup=False,
                                                    local_path=self.tmpdir,
                                                    )
@@ -419,7 +419,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
 
     def test_correct_files(self):
         _np.testing.assert_equal(self.GPCR_local.tablefile,
-                                 self._GPCRmd_B2AR_nomenclature_test_xlsx)
+                                 self._GPCRdb_B2AR_nomenclature_test_xlsx)
     def test_dataframe(self):
         self.assertIsInstance(self.GPCR_local.dataframe, DataFrame)
         self.assertSequenceEqual(list(self.GPCR_local.dataframe.keys()),
@@ -477,7 +477,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
 
     def test_uniprot_name(self):
-        self.assertEqual(self.GPCR_local.UniProt_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
+        self.assertEqual(self.GPCR_local.UniProt_name, self._GPCRdb_B2AR_nomenclature_test_xlsx)
 
 class Test_aligntop_full(unittest.TestCase):
     # Has to be done with full GPCR nomencl, not with small one

@@ -89,7 +89,7 @@ class FileNames(object):
 
         # nomenclature
         self.gnas2_human_xlsx = _path.join(self.nomenclature_path, "gnas2_human.xlsx")
-        self.GPCRmd_B2AR_nomenclature_test_xlsx = _path.join(self.nomenclature_path,"GPCRmd_B2AR_nomenclature_test.xlsx")
+        self.GPCRdb_B2AR_nomenclature_test_xlsx = _path.join(self.nomenclature_path, "GPCRdb_B2AR_nomenclature_test.xlsx")
         self.pdb_3SN6_mut = _path.join(self.nomenclature_path, "3SN6_GLU10GLX.pdb.gz")
         self.adrb2_human_xlsx = _path.join(self.nomenclature_path,"adrb2_human.xlsx")
         self.nomenclature_bib = _path.join(self.nomenclature_path,"nomenclature.bib")
