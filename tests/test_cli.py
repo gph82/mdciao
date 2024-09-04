@@ -473,8 +473,8 @@ class Test_interface(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             cli.interface([self.traj, self.traj_reverse],
                           self.geom,
-                          frag_idxs_group_1=[0],
-                          frag_idxs_group_2=[1],
+                          interface_selection_1=[0],
+                          interface_selection_2=[1],
                           output_dir=tmpdir,
                           flareplot=True,
                           no_disk=self.no_disk
@@ -483,13 +483,13 @@ class Test_interface(TestCLTBaseClass):
     def test_no_top(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             cli.interface([self.traj, self.traj_reverse],
-                          frag_idxs_group_1=[0],
-                          frag_idxs_group_2=[1],
+                          interface_selection_1=[0],
+                          interface_selection_2=[1],
                           output_dir=tmpdir,
                           flareplot=False,
                           plot_timedep=False,
                           no_disk = self.no_disk
-            )
+                          )
 
     def test_interface_wo_frag_idxs_groups(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
@@ -527,8 +527,8 @@ class Test_interface(TestCLTBaseClass):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             cli.interface([self.traj, self.traj_reverse],
                           self.geom,
-                          frag_idxs_group_1=[0],
-                          frag_idxs_group_2=[1],
+                          interface_selection_1=[0],
+                          interface_selection_2=[1],
                           output_dir=tmpdir,
                           fragments=["0-5",
                                      "6-10"],
@@ -607,10 +607,82 @@ class Test_interface(TestCLTBaseClass):
                               CGN_UniProt="gnas2_human",
                               GPCR_UniProt="adrb2_human",
                               accept_guess=True,
-                              frag_idxs_group_1='TM6',
-                              frag_idxs_group_2='TM5,TM6',
+                              interface_selection_1='TM6',
+                              interface_selection_2='TM5,TM6',
                               self_interface=True,
                               )
+
+    def test_w_nomenclature_CGN_GPCR_fragments_are_consensus_and_flareplot_and_AA_selection_OR(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            shutil.copy(test_filenames.gnas2_human_xlsx, tmpdir)
+            shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
+            with remember_cwd():
+                os.chdir(tmpdir)
+                intf = cli.interface([self.traj, self.traj_reverse],
+                                     self.geom,
+                                     ctc_cutoff_Ang=5,
+                                     n_nearest=4,
+                                     output_dir=tmpdir,
+                                     fragments=["consensus"],
+                                     CGN_UniProt="gnas2_human",
+                                     GPCR_UniProt="adrb2_human",
+                                     accept_guess=True,
+                                     interface_selection_1='TM6',
+                                     interface_selection_2='TM5',
+                                     self_interface=True,
+                                     AA_selection="5.50x50-5.55x55"
+                                     )
+            TM5 = ["5.50x50", "5.51x51", "5.52x52", "5.53x53", "5.54x54", "5.55x55"]
+            assert all ([lab[1] in TM5 for lab in  intf.consensus_labels]), intf.consensus_labels
+            _plt.close("all")
+
+    def test_w_nomenclature_CGN_GPCR_fragments_are_consensus_and_flareplot_and_AA_selection_AND(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            shutil.copy(test_filenames.gnas2_human_xlsx, tmpdir)
+            shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
+            with remember_cwd():
+                intf = cli.interface([self.traj, self.traj_reverse],
+                                     self.geom,
+                                     ctc_cutoff_Ang=5,
+                                     n_nearest=4,
+                                     output_dir=tmpdir,
+                                     fragments=["consensus"],
+                                     CGN_UniProt="gnas2_human",
+                                     GPCR_UniProt="adrb2_human",
+                                     accept_guess=True,
+                                     interface_selection_1='TM6',
+                                     interface_selection_2='TM5',
+                                     self_interface=True,
+                                     AA_selection=["5.50x50-5.55x55", "6.45x45,6.49x49"]
+                                     )
+            TM5 = ["5.50x50", "5.51x51", "5.52x52", "5.53x53", "5.54x54", "5.55x55"]
+            assert all ([lab[1] in TM5 for lab in  intf.consensus_labels]), intf.consensus_labels
+            assert all ([lab[0] in ["6.45x45","6.49x49"] for lab in  intf.consensus_labels]), intf.consensus_labels
+            _plt.close("all")
+
+    def test_w_nomenclature_CGN_GPCR_fragments_are_consensus_and_flareplot_and_AA_selection_raises(self):
+        with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
+            shutil.copy(test_filenames.gnas2_human_xlsx, tmpdir)
+            shutil.copy(test_filenames.adrb2_human_xlsx, tmpdir)
+            with remember_cwd():
+                with self.assertRaises(ValueError):
+                    intf = cli.interface([self.traj, self.traj_reverse],
+                                         self.geom,
+                                         ctc_cutoff_Ang=5,
+                                         n_nearest=4,
+                                         output_dir=tmpdir,
+                                         fragments=["consensus"],
+                                         CGN_UniProt="gnas2_human",
+                                         GPCR_UniProt="adrb2_human",
+                                         accept_guess=True,
+                                         interface_selection_1='TM6',
+                                         interface_selection_2='TM5',
+                                         self_interface=True,
+                                         AA_selection=["5.50x50-5.55x55,6.45x45,6.49x49"]
+                                         )
+
+
+
 
 class Test_pdb(TestCLTBaseClass):
 

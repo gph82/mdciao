@@ -183,13 +183,14 @@ def freqs2flare(freqs, res_idxs_pairs,
          simultaneously.
     SS : any, default is None
         Can be several things:
-        * Array containing secondary structure (ss) information to
-          be included in the flareplot. Indexed by residue index,
-          i.e. it can also be a dictionary as long as
-          SS[idx] returns the SS for residue with that residue idx
-        * Path to filename, will be passed to
-        :obj:`mdciao.utils.residue_and_atom.get_SS`, check
-        the docs there
+
+         * Array containing secondary structure (ss) information to
+           be included in the flareplot. Indexed by residue index,
+           i.e. it can also be a dictionary as long as
+           SS[idx] returns the SS for residue with that residue idx
+         * Path to filename, will be passed to
+           :obj:`mdciao.utils.residue_and_atom.get_SS`, check
+           the docs there
     panelsize: float, default is 10
         Size in inches of the panel (=figsize in matplotlib).
         Will be ignored if a pre-existing axis object is parsed
@@ -293,9 +294,9 @@ def freqs2flare(freqs, res_idxs_pairs,
         You can do ax.figure.savefig("figure.png") to
         save the figure. Checkout
         :obj:`~matplotlib.figure.Figure.savefig` for more options
-
-    plotted_pairs : 2D np.ndarray
-
+    plotted_pairs : 1D np.ndarray
+        The indices of `res_idxs_pairs`
+        that have been plotted.
     plot_attribs : dict
         Objects of the plot if the user wants
         to manipulate them further or re-use

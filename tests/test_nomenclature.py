@@ -74,7 +74,7 @@ class Test_PDB_finder(unittest.TestCase):
                                      try_web_lookup=False)
 
 
-class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
+class Test_GPCRdb_lookup_GPCR(unittest.TestCase):
 
     def test_works(self):
         DF = nomenclature._GPCRdb_web_lookup("https://gpcrdb.org/services/residues/extended/adrb2_human")
@@ -88,7 +88,7 @@ class Test_GPCRmd_lookup_GPCR(unittest.TestCase):
 class Test_GPCRdb_finder(unittest.TestCase):
 
     def test_works_locally_xlsx(self):
-        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
+        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx,
                                                    try_web_lookup=False,
                                                    )
 
@@ -99,7 +99,7 @@ class Test_GPCRdb_finder(unittest.TestCase):
 
     def test_works_locally_pkl(self):
         with _NamedTemporaryFile(suffix=".pkl") as named_pickle:
-            read_excel(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx).to_pickle(named_pickle.name)
+            read_excel(test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx).to_pickle(named_pickle.name)
             df, filename = nomenclature._GPCRdb_finder(named_pickle.name,
                                                        try_web_lookup=False,
                                                        )
@@ -146,7 +146,7 @@ class Test_GPCRdb_finder(unittest.TestCase):
         assert isinstance(filename, str)
 
     def test_wont_fail_if_found_online_and_write_to_disk(self):
-        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx,
+        df, filename = nomenclature._GPCRdb_finder(test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx,
                                                    try_web_lookup=False,
                                                    write_to_disk=True,
                                                    )
@@ -159,7 +159,7 @@ class Test_GPCRdb_finder(unittest.TestCase):
 
 class Test_table2GPCR_by_AAcode(unittest.TestCase):
     def setUp(self):
-        self.file = test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx
+        self.file = test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx
 
     def test_just_works(self):
         table2GPCR = nomenclature._GPCRdbDataFrame2conlabs(tablefile=self.file)
@@ -379,6 +379,10 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         labels = self.cgn_local.top2labels(self.top)
         self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
 
+    def test_reads_pdb_for_top(self):
+        labels = self.cgn_local.top2labels(test_filenames.pdb_3SN6)
+        self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
+
     def test_hole_in_subdomain(self):
         frags = self.cgn_local.top2frags(self.top)
         a5_w_hole_idxs = frags["G.H5"][:5]+frags["G.H5"][-5:]
@@ -391,10 +395,10 @@ class TestLabelerGPCR_local(unittest.TestCase):
     # The setup is in itself a test
     def setUp(self):
         self.tmpdir = mkdtemp("_test_mdciao_GPCR_local")
-        self._GPCRmd_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(
-            test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx))
-        shutil.copy(test_filenames.GPCRmd_B2AR_nomenclature_test_xlsx, self._GPCRmd_B2AR_nomenclature_test_xlsx)
-        self.GPCR_local = nomenclature.LabelerGPCR(self._GPCRmd_B2AR_nomenclature_test_xlsx,
+        self._GPCRdb_B2AR_nomenclature_test_xlsx = path.join(self.tmpdir, path.basename(
+            test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx))
+        shutil.copy(test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx, self._GPCRdb_B2AR_nomenclature_test_xlsx)
+        self.GPCR_local = nomenclature.LabelerGPCR(self._GPCRdb_B2AR_nomenclature_test_xlsx,
                                                    try_web_lookup=False,
                                                    local_path=self.tmpdir,
                                                    )
@@ -415,7 +419,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
 
     def test_correct_files(self):
         _np.testing.assert_equal(self.GPCR_local.tablefile,
-                                 self._GPCRmd_B2AR_nomenclature_test_xlsx)
+                                 self._GPCRdb_B2AR_nomenclature_test_xlsx)
     def test_dataframe(self):
         self.assertIsInstance(self.GPCR_local.dataframe, DataFrame)
         self.assertSequenceEqual(list(self.GPCR_local.dataframe.keys()),
@@ -473,7 +477,7 @@ class TestLabelerGPCR_local(unittest.TestCase):
         self.assertTrue(all([val in [2, 3] for val in top2self.values()]))
 
     def test_uniprot_name(self):
-        self.assertEqual(self.GPCR_local.UniProt_name, self._GPCRmd_B2AR_nomenclature_test_xlsx)
+        self.assertEqual(self.GPCR_local.UniProt_name, self._GPCRdb_B2AR_nomenclature_test_xlsx)
 
 class Test_aligntop_full(unittest.TestCase):
     # Has to be done with full GPCR nomencl, not with small one
@@ -643,29 +647,36 @@ class Test_choose_between_consensus_dicts(unittest.TestCase):
                                                         )
 
 
-class Test_map2defs(unittest.TestCase):
+class Test_conlabs2confrags(unittest.TestCase):
     def setUp(self):
         self.cons_list = ['3.67', 'G.H5.1', 'G.H5.6', '5.69']
         self.cons_list_w_Nones = ['3.67', None, None, 'G.H5.1', 'G.H5.6', '5.69']
         self.cons_list_wo_dots = ['367', None, None, 'G.H5.1', 'G.H5.6', '5.69']
 
     def test_works(self):
-        map2defs = nomenclature._map2defs(self.cons_list)
+        map2defs = nomenclature.conlabs2confrags(self.cons_list)
         assert _np.array_equal(map2defs['3'], [0])
         assert _np.array_equal(map2defs['G.H5'], [1, 2])
         assert _np.array_equal(map2defs['5'], [3])
         _np.testing.assert_equal(len(map2defs), 3)
 
+    def test_works_replaces(self):
+        map2defs = nomenclature.conlabs2confrags(self.cons_list, replace_GPCR_frags=True)
+        assert _np.array_equal(map2defs['TM3'], [0])
+        assert _np.array_equal(map2defs['G.H5'], [1, 2])
+        assert _np.array_equal(map2defs['TM5'], [3])
+        _np.testing.assert_equal(len(map2defs), 3)
+
     def test_works_w_Nones(self):
-        map2defs = nomenclature._map2defs(self.cons_list_w_Nones)
+        map2defs = nomenclature.conlabs2confrags(self.cons_list_w_Nones)
         assert _np.array_equal(map2defs['3'], [0])
         assert _np.array_equal(map2defs['G.H5'], [3, 4])
         assert _np.array_equal(map2defs['5'], [5])
         _np.testing.assert_equal(len(map2defs), 3)
 
     def test_works_wo_dot_raises(self):
-        with self.assertRaises(AssertionError):
-            nomenclature._map2defs(self.cons_list_wo_dots)
+        with self.assertRaises(ValueError):
+            nomenclature.conlabs2confrags(self.cons_list_wo_dots)
 
 
 class Test_fill_CGN_gaps(unittest.TestCase):
@@ -857,16 +868,22 @@ class Test_sort_consensus_labels(unittest.TestCase):
                                        sorted)
 
     def test_sort_all_consensus_labels(self):
-        sorted = nomenclature._sort_all_consensus_labels(self.tosort, append_diffset=False, order = ["CGN","KLIFS", "GPCR"])
+        sorted, sorted_indices = nomenclature._sort_all_consensus_labels(self.tosort, append_diffset=False, order = ["CGN","KLIFS", "GPCR"])
         _np.testing.assert_array_equal(
             [
              "G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20",
-             'αC.25', 'αD.55', 'a.l.85', 
+             'αC.25', 'αD.55', 'a.l.85',
              "2.50", "3.50", "H8.1", "H8.10"],
             sorted)
 
+        _np.testing.assert_array_equal(
+            [9, 0, 10, 1,
+             4, 11, 2,
+             8, 7, 6, 3],
+            sorted_indices)
+
     def test_sort_all_consensus_labels_append(self):
-        sorted = nomenclature._sort_all_consensus_labels(self.tosort, append_diffset=True,
+        sorted, sorted_indices = nomenclature._sort_all_consensus_labels(self.tosort, append_diffset=True,
                                                          order=["CGN", "KLIFS"])
         _np.testing.assert_array_equal(
             [
@@ -875,6 +892,80 @@ class Test_sort_consensus_labels(unittest.TestCase):
                 "H8.10", "V34", "H8.1", "3.50", "2.50"
                  ],
             sorted)
+
+        _np.testing.assert_array_equal(
+            [9, 0, 10, 1,
+             4, 11, 2,
+             3, 5, 6, 7, 8],
+            sorted_indices)
+
+class Test_lexsort_consensus_ctc_labels(unittest.TestCase):
+
+    """
+    (,
+ [2, 4, 1, 0, 3])
+
+    """
+
+    def test_lexsort_works(self):
+        labels = ['3.50-G.H5.23',
+                  '3.50-7.53',
+                  "3.50-frag1",
+                  '3.50-2.39',
+                  '4.50-6.60',
+                  '3.50-5.58']
+        sorted_labels, order = nomenclature._lexsort_consensus_ctc_labels(labels)
+        self.assertListEqual(sorted_labels,
+                             ['3.50-2.39',
+                              '3.50-5.58',
+                              '3.50-7.53',
+                              '3.50-G.H5.23',
+                              "3.50-frag1",
+                              '4.50-6.60'])
+        self.assertListEqual(order,
+                             [3, 5, 1, 0, 2, 4])
+
+    def test_lexsort_works_reverse(self):
+        labels = ['3.50-G.H5.23',
+                  '3.50-7.53',
+                  "3.50-frag1",
+                  '3.50-2.39',
+                  '4.50-6.60',
+                  '3.50-5.58']
+        sorted_labels, order = nomenclature._lexsort_consensus_ctc_labels(labels, reverse=True)
+        self.assertListEqual(sorted_labels,
+                             ['4.50-6.60',
+                              '3.50-frag1',
+                              '3.50-G.H5.23',
+                              '3.50-7.53',
+                              '3.50-5.58',
+                              '3.50-2.39'])
+        self.assertListEqual(order,
+                             [4, 2, 0, 1, 5, 3])
+
+    def test_lexsort_works_raises(self):
+        with self.assertRaises(ValueError):
+            nomenclature._lexsort_consensus_ctc_labels(['3.50-G.H5.23', '3.50'])
+
+    def test_lexsort_works_second_column(self):
+        labels = ['3.50-G.H5.23',
+                  '3.50-7.53',
+                  "3.50-frag1",
+                  '3.50-2.39',
+                  '4.50-6.60',
+                  '3.50-5.58']
+        sorted_labels, order = nomenclature._lexsort_consensus_ctc_labels(labels, columns=[1,0])
+        self.assertListEqual(sorted_labels,
+                             ['3.50-2.39',
+                              '3.50-5.58',
+                              '4.50-6.60',
+                              '3.50-7.53',
+                              '3.50-G.H5.23',
+                              "3.50-frag1",
+                              ])
+        self.assertListEqual(order,
+                             [3, 5, 4, 1, 0, 2])
+
 
 class Test_compatible_consensus_fragments(TestClassSetUpTearDown_CGN_local):
 

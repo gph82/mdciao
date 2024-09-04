@@ -124,8 +124,8 @@ class ExamplesCLTs(object):
     def mdc_interface(self):
         return ["mdc_interface.py ",
                 "%s %s" % (self.pdb, self.xtc),
-                " --frag_idxs_group_1 0-2",
-                " --frag_idxs_group_2 3",
+                " --interface_selection_1 0-2",
+                " --interface_selection_2 3",
                 " --ctc_control 20",
                 " --GPCR_UniProt %s" % self.GPCRlabs_file,
                 " --CGN_UniProt %s" % self.CGN_file,
@@ -340,10 +340,9 @@ def notebooks(folder ="mdciao_notebooks"):
 
     return dest
 
-def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False):
+def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False, skip_on_existing=False):
     r"""
     Ensure input_path doesn't exist and keep generating/prompting for alternative filenames/dirnames
-
 
     Poorman's attempt at actually a good recursive function, but does its job.
     A maximum recursion depth of 50 is hard-coded
@@ -358,16 +357,26 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
     count : int, default is 0
         Where in the recursion we are
     verbose : bool, default is False
-    is_file : book, default is False
+    is_file : bool, default is False
         Name-generating is different for folders than
         from files:
         * mdciao_notebook -> mdciao_notebook_00
         * mdciao_example.zip -> mdciao_example_00.zip
-
+    skip_on_existing : bool, default is False
+        If the `input_path` is found, instead of
+        prompting for a new path, simply skip this
+        method and return the `input_path` without
+        doing anything.
     Returns
     -------
     nox_path : str
-        A newly created, previosuly non-existent path
+        By default, `new_path` is a newly created,
+        previously non-existent path. If the
+        `input_path` existed, the default is to create
+        a `new_path`, unless `skip_on_existing` was set
+        to True, in which case nothing happens and the
+        existing `input_path` is returned without
+        doing anything.
 
     """
 
@@ -377,6 +386,8 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
     while _path.exists(input_path):
         if verbose:
             print("%s exists" % input_path)
+            if skip_on_existing:
+                break
         input_path = _path.join(cwd, pattern) + "_%02u" % count
         if is_file:
             input_path += ext
@@ -403,16 +414,27 @@ def _recursive_prompt(input_path, pattern, count=1, verbose=False, is_file=False
 
 
 def fetch_example_data(alias_or_url="b2ar@Gs",
-                       unzip=True):
-    r""" Download the example data as zipfile and unzip it to the working directory.
+                       unzip=True,
+                       skip_on_existing=False):
+    r""" Download example data as zipfile and unzip it to the working directory.
+
+    The available datasets are (see below for full info)
+     * 'b2ar@Gs'
+     * 'EGFR'
+     * 'cov19'
+     * 'ghrelin@ghsr'
+     * 'mor@muor'
+     * 'Y1'
 
     This data is used in the notebooks:
-     * Manuscript.ipynb (b2ar@Gs)
-     * Tutorial.ipynb (b2ar@Gs)
-     * Missing_Contacts.ipynb (b2ar@Gs)
-     * EGFR Kinase Inhibitors.ipynb (EGFR)
-     * Comparing_CGs_Bars.ipyn (cov19)
-     * Comparing_CGs_Flares.ipynb (cov19)
+     * 01.Tutorial.ipynb (b2ar@Gs)
+     * 02.Missing_Contacts.ipynb (b2ar@Gs)
+     * 03.Comparing_CGs_Bars.ipyn (cov19)
+     * 04.Comparing_CGs_Flares.ipynb (cov19)
+     * 07.EGFR Kinase Inhibitors.ipynb (EGFR)
+     * 08.Manuscript.ipynb (b2ar@Gs)
+     * 09.Consensus_labels.ipynb (ghrelin@ghsr,b2ar@Gs,mor@muor,Y1)
+
     which can all be run locally issuing,
     from the CLI:
 
@@ -424,9 +446,12 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
 
     Note
     ----
-    New filenames for the downloaded file, and the resulting folder
-    will be generated to avoid overwriting. No files will
-    be overwritten when extracting.
+    By default, a zipfile is downloaded and then extracted
+    to a directory with its own name. If these files already
+    exist, the user will be prompted for new filenames
+    s.t. no files are ever overwritten when extracting. Use
+    `unzip` to change filenames a priory and `skip_on_existing`
+    to simply skip either the downloading or the unzipping.
 
     Parameters
     ----------
@@ -435,7 +460,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
         Currently, these are the available aliases and their urls
          * b2ar@Gs : https://proteinformatics.uni-leipzig.de/mdciao/mdciao_example.zip
           Beta 2 adrenergic receptor in complex with Gs-protein. Provided
-          kindly by H. Batebi (1 traj, ca. 10 MB, 280 frames, dt = 10 ps)
+          kindly by Dr. H. Batebi (1 traj, ca. 10 MB, 280 frames, dt = 10 ps)
 
          * EGFR : http://proteinformatics.uni-leipzig.de/mdciao/example_kinases.zip
           Epidermal Growth Factor Receptor (EGFR) in complex with
@@ -453,8 +478,45 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
           made available via `molSSI <https://covid.molssi.org//simulations/#foldinghome-simulations-of-the-sars-cov-2-spike-rbd-bound-to-human-ace2>`_.
           (1 npy file with interfaces for 4 setups and one sample trajectory file, ca 35 MB)
 
-    unzip : bool, default is True
-        Try unzipping the file after downloading
+         * ghrelin@ghsr : https://proteinformatics.uni-leipzig.de/mdciao/ghrelin_receptor.zip
+          Growth hormone secretagogue receptor type 1, ghrelin receptor for short, bound
+          to ghrelin. Provided kindly by Dr. A. Vogel (1 traj, ca. 10 MB, 411 frames, dt = 100ns).
+          For the associated publication see here:
+
+           * Analysis of the Dynamics of the Human Growth Hormone Secretagogue Receptor Reveals Insights into the Energy Landscape of the Molecule
+             A. A. Smith, E. M. Pacull, S. Stecher, P. W. Hildebrand, A. Vogel, D. Huster
+             Angew. Chem. Int. Ed. 2023, 62, e202302003
+
+         * Y1 : https://proteinformatics.uni-leipzig.de/mdciao/y1_apo.zip
+          Neuropeptide Y receptor type 1, Y1 receptor for short, in apo form.
+          Provided kindly by Dr. A. Vogel (1 traj, ca. 11 MB, 528 frames, dt = 50ns)
+          For the associated publication see here:
+
+           * Towards Probing Conformational States of Y2 Receptor Using Hyperpolarized 129Xe NMR.
+             Schmidt, P.; Vogel, A.; Schwarze, B.; Seufert, F.; Licha, K.; Wycisk, V.; Kilian, W.; Hildebrand, P.W.; Mitschang, L.
+             Molecules 2023, 28, 1424. [](https://doi.org/10.3390/molecules28031424)
+
+         * mor@muor : https://proteinformatics.uni-leipzig.de/mdciao/muor_199.zip
+          Active mu-opioid receptor bound to the agonist morphine (1 traj, ca. 7 MB, 400 frames, dt = 100ns).
+          Kindly made available for this purpose by the GPCRmd. The GPCRmd's simulation
+          report can be found [https://www.gpcrmd.org/dynadb/dynamics/id/199/](here) ,
+          the original publication is:
+
+           * Dynamic and Kinetic Elements of µ-Opioid Receptor Functional Selectivity.
+             Kapoor, A., Martinez-Rosell, G., Provasi, D. et al.
+             Sci Rep 7, 11255 (2017). [](https://doi.org/10.1038/s41598-017-11483-8)
+
+    unzip : bool, or str, default is True
+        Try unzipping the file after downloading. If string,
+        the url will be downloaded to this filename and then
+        unzipped to a folder with this name
+        in the working directory, regardless of the
+        zipfile's name and internal structure.
+    skip_on_existing : bool, default is False
+        In case of finding existing files and directories
+        skip the downloading and unzipping steps.
+        This allows for re-runs w/o being prompted
+        for new filenames to avoid overwriting.
 
     Returns
     -------
@@ -466,7 +528,10 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
     alias2url = {"b2ar@Gs": "https://proteinformatics.uni-leipzig.de//mdciao/mdciao_example.zip",
                  "EGFR": "https://proteinformatics.uni-leipzig.de/mdciao/example_kinases.zip",
                  "cov19" : "https://proteinformatics.uni-leipzig.de/mdciao/example_cov19.zip",
-                 "test": "https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip"}
+                 "test": "https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",
+                 "ghrelin@ghsr" : "https://proteinformatics.uni-leipzig.de/mdciao/ghrelin_receptor.zip",
+                 "mor@muor" : "https://proteinformatics.uni-leipzig.de/mdciao/muor_199.zip",
+                 "y1_apo" : "https://proteinformatics.uni-leipzig.de/mdciao/y1_apo.zip"}
 
     if alias_or_url in alias2url.keys():
         url = alias2url[alias_or_url]
@@ -474,7 +539,9 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
         url = alias_or_url
     else:
         raise ValueError("Cannot find %s in the known aliases or in the known urls:\n%s" % (alias_or_url, alias2url))
-    downed_file_full = _down_url_safely(url)
+    downed_file_full = _down_url_safely(url,
+                                        rename_to=[None if isinstance(unzip,bool) else f"{_path.splitext(unzip)[0]}.zip"][0],
+                                        skip_on_existing=skip_on_existing)
     if unzip:
         return _unzip2dir(downed_file_full)
     else:
@@ -487,7 +554,7 @@ def _unzip2dir(full_path_zipfile):
     The folder's full path is kept, including zipfile's name minus the .zip extension
 
     Background: "mdciao_example.zip" was zipped in origin with this structure:
-     * mdciao_example/prot.pdb
+     * mdciao_example/top.pdb
      * mdciao_example/traj.xtc
 
     However, it might have been renamed to "mdciao_example_05.zip" when auto-downloading.
@@ -527,7 +594,7 @@ def _unzip2dir(full_path_zipfile):
 
     return full_dir
 
-def _down_url_safely(url, chunk_size = 128, verbose=False, rename_to=None):
+def _down_url_safely(url, chunk_size = 128, verbose=False, rename_to=None, skip_on_existing=False):
     r"""
     Downloads a file from a URL to a tmpfile and copies it to the current directory
 
@@ -556,22 +623,25 @@ def _down_url_safely(url, chunk_size = 128, verbose=False, rename_to=None):
         target_file = rename_to
     filename_nonx = _recursive_prompt(target_file,
                                       _path.splitext(target_file)[0],
-                                      is_file=True, verbose=True)
-    r = _rget(url, stream=True)
-    total_size_in_bytes = int(r.headers.get('content-length', 0))
-    pb = _tqdma(total=total_size_in_bytes,
-                desc="Downloading %s to %s" % (filename_orig, _path.basename(filename_nonx)))
-    with _TDir(suffix="_mdciao_download") as t:
-        _filename = _path.join(t,_path.basename(filename_nonx))
-        with open(_filename, 'wb') as fd:
-            r.iter_content()
-            for chunk in r.iter_content(chunk_size=chunk_size):
-                fd.write(chunk)
-                pb.update(128)
-        pb.close()
-        if verbose:
-            print("Dowloaded file %s"%filename_nonx)
-        _shcopy(_filename,filename_nonx)
+                                      is_file=True, verbose=True, skip_on_existing=skip_on_existing)
+    if _path.exists(filename_nonx) and skip_on_existing:
+        pass
+    else:
+        r = _rget(url, stream=True)
+        total_size_in_bytes = int(r.headers.get('content-length', 0))
+        pb = _tqdma(total=total_size_in_bytes,
+                    desc="Downloading %s to %s" % (filename_orig, _path.basename(filename_nonx)))
+        with _TDir(suffix="_mdciao_download") as t:
+            _filename = _path.join(t,_path.basename(filename_nonx))
+            with open(_filename, 'wb') as fd:
+                r.iter_content()
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    fd.write(chunk)
+                    pb.update(128)
+            pb.close()
+            if verbose:
+                print("Dowloaded file %s"%filename_nonx)
+            _shcopy(_filename,filename_nonx)
 
     return filename_nonx
 
@@ -609,8 +679,8 @@ def Interface_B2AR_Gas(**kwargs):
                               "GPCR_UniProt": GPCRLabeler_ardb2_human(),
                               "CGN_UniProt": CGNLabeler_gnas2_human(),
                               "no_disk": True,
-                              "frag_idxs_group_1":[0],
-                              "frag_idxs_group_2":[3],
+                              "interface_selection_1":[0],
+                              "interface_selection_2":[3],
                               "ctc_control":1.0,
                               "accept_guess": True}
             for key, val in kwargs.items():

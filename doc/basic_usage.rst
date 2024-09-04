@@ -19,7 +19,7 @@ Below you will find a very simple example of how to use ``mdciao`` from the comm
 
 This basic command::
 
- mdc_neighborhoods.py prot.pdb traj.xtc --residues L394 -nf #nf: don't use fragments
+ mdc_neighborhoods.py top.pdb traj.xtc --residues L394 -nf #nf: don't use fragments
 
 
 will print the following to the terminal (some headers have been left out)::

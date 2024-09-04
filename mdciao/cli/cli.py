@@ -102,16 +102,13 @@ def _parse_consensus_option(option, consensus_type,
            full of Nones is returned
          * str
           The needed identifier to instantiate an
-          `LabelerGPCR`, :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
-          Examples would be a `UniProt_name`, a `ref_PDB`, or
-          an `UniProt_AC`
-          respectively
-         * :obj:`LabelerConsensus`
-          An already instantiated :obj:`LabelerGPCR`,
-          :obj:`LabelerCGN` or :obj:`LabelerKLIFS` object.
+          `LabelerGPCR`, `LabelerCGN` or `LabelerKLIFS` object.
+         * a `LabelerConsensus` object
+          An already instantiated `LabelerGPCR`,
+          `LabelerCGN` or `LabelerKLIFS` object.
           The method then does nothing. Usecase are repeated
-          calls to any of the methods in :obj:`command_line_tools`
-          without each call instantiating its own :obj:`LabelerConsensus`
+          calls to any of the methods in `mdciao.cli`
+          without each call instantiating its own `LabelerConsensus`
         * iterable
           An  iterable (list, dict, array) mapping
           residue indices of 'top` to consensus labels.
@@ -155,7 +152,8 @@ def _parse_consensus_option(option, consensus_type,
         LC_out = option
 
     if isinstance(LC_out, _mdcnomenc.LabelerConsensus):
-        answer = _mdcnomenc.guess_by_nomenclature(LC_out, top, fragments, consensus_type,
+        answer = _mdcnomenc.guess_by_nomenclature(LC_out, top,
+                                                  fragments=fragments, nomenclature_name=consensus_type,
                                                   accept_guess=accept_guess,
                                                   # verbose=True
                                                   )
@@ -191,6 +189,24 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                       accept_guess=False,
                                                       save_nomenclature_files=False,
                                                       verbose=True):
+    r"""
+
+    The consensus frags will be inferred
+    from true ConsensusLabelers objects or from lists of consensus labels
+
+    Parameters
+    ----------
+    option_dict
+    top
+    fragments_as_residue_idxs
+    accept_guess
+    save_nomenclature_files
+    verbose
+
+    Returns
+    -------
+
+    """
     consensus_frags, consensus_maps, consensus_labelers = {}, {}, {}
     for key, option in option_dict.items():
         map_CL, CL = _parse_consensus_option(option, key, top, fragments_as_residue_idxs,
@@ -210,6 +226,8 @@ def _parse_consensus_options_and_return_fragment_defs(option_dict, top,
                                                   verbose=verbose or not accept_guess))
                 if not accept_guess:
                     input("Hit enter to continue!\n")
+        elif not all([str(val).lower()=="none" for val in map_CL]):
+            consensus_frags.update(_mdcnomenc.conlabs2confrags(map_CL, replace_GPCR_frags=[key=="GPCR"]))
     _mdcu.lists.assert_no_intersection(list(consensus_frags.values()),"consensus fragment")
 
     return consensus_frags, consensus_maps, consensus_labelers
@@ -873,7 +891,7 @@ def residue_neighborhoods(residues,
     print("Will compute contact frequencies for (%u items):\n%s"
           "\n with a stride of %u frames" % (len(xtcs),_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)
+    fragments_as_residue_idxs = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)[0]
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
@@ -1083,15 +1101,16 @@ def residue_neighborhoods(residues,
 def interface(
         trajectories,
         topology=None,
-        frag_idxs_group_1=None,
-        frag_idxs_group_2=None,
+        fragments='lig_resSeq+',
+        interface_selection_1=None,
+        interface_selection_2=None,
+        AA_selection=None,
         GPCR_UniProt="None",
         CGN_UniProt="None",
         KLIFS_string=None,
         chunksize_in_frames=2000,
         ctc_cutoff_Ang=4,
         curve_color="auto",
-        fragments='lig_resSeq+',
         fragment_names="",
         graphic_dpi=150,
         graphic_ext=".pdf",
@@ -1129,12 +1148,28 @@ def interface(
 ):
     r"""Contact-frequencies between two groups of residues
 
-    The groups of residues can be defined directly
-    by using residue indices or by defining molecular fragments
-    and using these definitions as a shorthand to address
-    large sub-domains of the molecular topology. See in particular
-    the documentation for `fragments`, `frag_idxs_group_1`
-    `frag_idxs_group_2`.
+    The two groups of residues can be defined directly:
+
+     * by using specific residue indices or ranges
+     * by using defined molecular fragments,
+       e.g. chains defined in the topology or pdb-file.
+     * by guessing molecular fragments, using some
+       fragmentation heuristic.
+     * by guessing molecular fragments, using a consensus
+       nomenclature like GPCR, CGN or KLIFS generic residue
+       numbering.
+    The fragment definition and the fragment selection
+    are separate, i.e. there might be six chains but
+    one can specify to compute the interface between
+    chains [0,1] vs [2,3]. Read more in the
+    documentation for `fragments`, `interface_selection_1`,
+    and `interface_selection_2`.
+
+    One can further refine the fragment selection
+    at the level of single aminoacids (AAs) using
+    `AA_selection`. This can fine-tune the residues
+    of interest if the fragment definitions are too broad.
+    See the docstring for more info.
 
     Typically, the two groups of residues conforming both
     sides of the interface, also called interface members,
@@ -1143,26 +1178,42 @@ def interface(
     in a receptor--G-protein complex, one partner is
     the receptor and the other partner is the G-protein.
 
-    By default, mdciao.cli.interface doesn't allow interface
-    members to share residues. However, sometimes it's
-    useful to allow it because the contacts of one fragment
-    with itself (the self-contacts) are also important.
-    E.g. the C-terminus of a receptor interfacing with
-    the entire receptor, **including the C-terminus**.
-    To allow for this behaviour, use `self_interface` = True,
-    and possibly increase `n_nearest`, since otherwise
-    neighboring residues of the shared set (e.g. C-terminus)
+    Note
+    ----
+    If your definitions of `interface_selection_1` and
+    `interface_selection_2` lead to some overlap between
+    the interface members (see below), mdciao's default
+    is to ignore contact pairs within the same fragment.
+    E.g., in the context of a GPCR, computing
+    "TM3" vs "TM*" ("TM3" vs "all TMs") won't include
+    TM3-TM3 contacts by default. To include these
+    (or equivalent) contacts set `self_interface` = True.
+
+    Another example could be computing the interface of the
+    C-terminus of a receptor with the entire receptor,
+    where it might be useful to  including the contacts of
+    the C-terminus with itself.
+
+    When using `self_interface` = True, it's advisable to
+    increase `n_nearest`, since otherwise neighboring
+    residues of the shared set (the TM3-TM3 or the Cterm-Cterm)
     will always appear as formed.
+
+    See the documentation on `fragments`,
+    `interface_selection_1`, `interface_selection_2`,
+    `AA_selection`, `n_nearest` and `self_interface`.
+
 
     Finally, the interface strength, defined as the
     per-residue sum of contacts participating in
-    the interface, is written as the `bfactor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_
+    the interface, is written as the
+    `bfactor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_
     in a .pdb file called (for the default `ctc_cutoff_Ang`=4)
     'interface.overall@4.0_Ang.as_bfactors.pdb'. You
     can see an example of how to use this file (e.g. with
     VMD) in the online documentation. The structures, i.e.
     frames, in that .pdb-file are chosen using the
-    method :obj:`mdciao.contacts.ContactGroup.n_repframes`.
+    method :obj:`mdciao.contacts.ContactGroup.repframes` .
     See below the parameter `n_repframes` for more info.
 
     Parameters
@@ -1184,20 +1235,128 @@ def interface(
         be used, i.e. when no :obj:`topology` is passed, the first
         :obj:`trajectory` has to be either a .gro or .pdb file, or
         an :obj:`~mdtraj.Trajectory` object
-    frag_idxs_group_1 : NoneType, default is None
-        Indices of the fragments that belong to the group_1.
-        Strings can be CSVs and include ranges, e.g. '1,3-4',
-        or be consensus labels "TM*,-TM6".
-        Defaults to None which will prompt the user of
-        information, except when only two fragments are
-        present. Then it defaults to [0]
-    frag_idxs_group_2 : NoneType, default is None
-        Indices of the fragments that belong to the group_2.
-        Strings can be CSVs and include ranges, e.g. '1,3-4',
-        or be consensus labels "TM*,-TM6".
-        Defaults to None which will prompt the user of
-        information, except when only two fragments are
-        present. Then it defaults to [1]
+    fragments : str, list, None, default is "lig_resSeq+"
+        How to fragment the topology. Will be used for:
+
+         * tagging of residues, e.g. "GLU30@frag1"
+         * disambiguation of residues, e.g. more than one
+           "GLU30" exists.
+         * grouping of residues in graphical
+           representations, e.g. flareplots
+         * defining the interface fragments
+        There exist several input modes:
+
+         * A single string with the name of a
+           fragmentation heuristic, e.g.
+           "lig_resSeq+", which is the default
+           and usually yields good results. See
+           :obj:`mdciao.fragments.get_fragments`
+           for more info on defaults and other heuristics.
+         * A list of definitions. Each entry of this list can be:
+
+          * an iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
+          * a range expressed as an integer string, "20-30"
+          * a ranges expressed as residue descriptors "GLU30-LEU40"
+          * A special string, "consensus", to use consensus
+          subdomains, like "TM1" or "G.H5", as fragment definitions.
+
+        Numeric expressions are interpreted as zero-indexed, unique
+        residue serial indices, i.e. 30-40 does not necessarily equate
+        "GLU30-LEU40" unless serial and sequence index coincide.
+        If there's more than one "GLU30", the user gets asked to
+        disambiguate.
+
+        Please note, since fragment definiton and fragment selection are
+        separate, one can use consensus definitions to define the interface
+        regardless of having passed "consensus" here. I.e., you can
+        use `fragments='chains'` to divide the topology for representation
+        and residue-tagging purposes but then define the interface as:
+
+        >>> interface_selection_1="TM3"
+        >>> interface_selection_2="TM2"
+
+        to compute the interface of TM3 vs TM2 in a GPCR. For
+        this mode of selection to work, the only condition is that the consensus
+        labels have been provided via `GPCR_Uniprot`,
+        `CGN_UniProt` or `KLIFS_string` (see below).
+    interface_selection_1 : str or list, default is None
+        Selection of the `fragments` that belong to one
+        side of the interface. Strings can be CSVs
+        and include:
+         * ranges, e.g. '1,3-4'
+         * wildcards, e.g. "TM*" or "G.H.??"
+         * exclusions, e.g. "TM*,-TM6" (all TMs except TM6)
+        The default (None) is to prompt the user for
+        information, except when:
+         * `fragments` yielded only one fragment that
+           **doesn't** cover the whole topology. Then
+           all othe residues are put into a second
+           fragment and then the interface is computed
+           between these two fragments.
+         * `fragments` yielded just two fragments. Then
+           the interface is computed between these two fragments.
+    interface_selection_2 : str or list, default is None
+        Selection of the `fragments` that belong to the other
+        side of the interface. Strings can be CSVs
+        and include:
+         * ranges, e.g. '1,3-4'
+         * wildcards, e.g. "TM*" or "G.H.??"
+         * exclusions, e.g. "TM*,-TM6" (all TMs except TM6)
+        The default (None) is to prompt the user for
+        information, except when:
+         * `fragments` yielded only one fragment that
+           **doesn't** cover the whole topology. Then
+           all othe residues are put into a second
+           fragment and then the interface is computed
+           between these two fragments.
+         * `fragments` yielded just two fragments. Then
+           the interface is computed between these two fragments.
+    AA_selection : str or list, default is None
+        Whatever the fragment definition and fragment selection
+        has been, one can further refine the list of
+        potential residue pairs by making a selection at
+        the level of single aminoacids (AAs).
+        E.g., if (like above) one has selected the interface
+        to be "TM3" vs "TM2",
+
+        >>> interface_selection_1="TM3"
+        >>> interface_selection_2="TM2"
+
+        but wants to select only some regions of those helices,
+        one can pass here an `AA_selection`.
+        This can be a string or a list of two items:
+
+         * A string leads to a boolean "or" selection, i.e. keep
+           residue pair [ii,jj] if either ii **or** jj
+           match `AA_selection`. E.g.
+
+           >>> AA_selection = "3.45-3.55"
+
+           is equivalent of "3.45-3.55" vs "TM2" contacts
+         * A list of with two items (each a string expression)
+           leads to a boolean "and" selection, i.e. keep
+           residue pair [ii,jj] if ii **and** jj
+           match `AA_selection`. E.g.
+
+           >>> AA_selection = ["3.45-3.55","2.45-2.55"]
+
+           is equivalent of "3.45-3.55" vs "2.45-2.55" contacts.
+
+        The strings for the selection are interpreted by
+        :obj:`~mdciao.utils.residue_and_atom.rangeexpand_residues2residxs`,
+        so read there for more info on what expressions are allowed,
+        like mixed descriptors and wildcards, eg: "GLU*,ARG*,GDP*,LEU394,GLU30-ARG50".
+        are valid.
+
+        Finally, CSVs are interpreted as boolean "or", i.e.:
+
+        >>> AA_selection = "GLU30,TRP50"
+
+        will select pairs that contain GLU30 **or** TRP50. If you
+        are sure about your residue pair selection, i.e. you
+        have a very specific list of residue-pairs you want
+        to compute, use :obj:`mdciao.cli.sites`.
+
     GPCR_UniProt : str or :obj:`mdciao.nomenclature.LabelerGPCR`, default is None
         For GPCR nomenclature. If str, e.g. "adrb2_human".
         will try to locate a local filename or do a web lookup in the GPCRdb.
@@ -1235,7 +1394,7 @@ def interface(
         See :obj:`mdciao.nomenclature` for more info and references. Alos, please note
         the difference between UniProt Accession Code
         and UniProt entry name as explained
-            `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
+        `here <https://www.uniprot.org/help/difference%5Faccession%5Fentryname>`_ .
     chunksize_in_frames : int, default is 2000
         Stream through the trajectories in chunks
         of this size.
@@ -1245,29 +1404,6 @@ def interface(
     curve_color : str, default is 'auto'
         Type of color used for the curves. Alternatives are
         "P" or "H"
-    fragments : str, list, None, default is "lig_resSeq+"
-        Topology fragments. There exist several input modes:
-
-        * Name of a fragmentation heuristic, e.g.
-          "lig_resSeq+", which is the default of
-          and usually yields good results. See
-          :obj:`mdciao.fragments.get_fragments`
-          for more info on defaults and other heuristics.
-        * List of len N that can mix different possibilities:
-
-          * iterable of integers (lists or np.arrays, e.g. np.arange(20,30)
-          * ranges expressed as integer strings, "20-30"
-          * ranges expressed as residue descriptors ["GLU30-LEU40"]
-
-        * "consensus" : use things like "TM*" or "G.H*", i.e.
-          GPCR or CGN-sub-subunit labels.
-
-        Numeric expressions are interpreted as zero-indexed and unique
-        residue serial indices, i.e. 30-40 does not necessarily equate
-        "GLU30-LEU40" unless serial and sequence index coincide.
-        If there's more than one "GLU30", the user gets asked to
-        disambiguate. The resulting fragments need not cover
-        all of the topology, they only need to not overlap.
     fragment_names : str or list, default is ''
         If string, it has to be a list of comma-separated
         values. If you want unnamed fragments, use None,
@@ -1395,7 +1531,7 @@ def interface(
         in the interface are, on average over all pairs,
         at a distance close to the most-likely the residue-residue
         distances over all data. This has some caveats,
-        expressed in the documentation of :obj:`mdciao.contacts.ContactGroup.n_repframes`.
+        expressed in the documentation of :obj:`mdciao.contacts.ContactGroup.repframes`.
         To check what frames have been chosen as
         representative, it is better to run mdciao in API
         mode and call :obj:`mdciao.contacts.ContactGroup.n_repframes`
@@ -1429,41 +1565,64 @@ def interface(
     print("Will compute contact frequencies for trajectories:\n%s"
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs, fragment_names, user_wants_consensus, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
+    fragments_as_residue_idxs, fragment_names, _, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
         refgeom.top, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_string, accept_guess, save_nomenclature_files)
-    if user_wants_consensus:
-        intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys  = _mdcfrg.frag_dict_2_frag_groups(consensus_frags, ng=2, answers=[frag_idxs_group_1, frag_idxs_group_2])
+    fragments_as_residue_idxs_d = {str(ii) : val for ii, val in enumerate(fragments_as_residue_idxs)}
+    if len(fragments_as_residue_idxs)==2 and interface_selection_1 is None and interface_selection_2 is None:
+        interface_selection_1, interface_selection_2 =[0], [1]
+    else:
+        fragments_as_residue_idxs_d.update(consensus_frags)
 
-    else:
-        intf_frags_as_residxs, \
-        intf_frags_as_str_or_keys   = _mdcfrg.frag_list_2_frag_groups(fragments_as_residue_idxs,
-                                                               frag_idxs_group_1, frag_idxs_group_2,
-                                                               )
+    intf_frags_as_residxs, \
+        intf_frags_as_str_or_keys = _mdcfrg.frag_dict_2_frag_groups(fragments_as_residue_idxs_d, ng=2,
+                                                                    answers=[interface_selection_1, interface_selection_2],
+                                                                    )
+    intf_frags_as_residxs = [_np.unique(ifrg) for ifrg in intf_frags_as_residxs]
     intersect = list(set(intf_frags_as_residxs[0]).intersection(intf_frags_as_residxs[1]))
-    if len(intersect) > 0:
-        if self_interface:
-            ctc_idxs = _mdcu.lists.unique_product_w_intersection(intf_frags_as_residxs[0], intf_frags_as_residxs[1])
-        else:
-            raise AssertionError("Some residues appear in both members of the interface, but this"
-                                 " behavior is blocked by default.\nIf you are sure this"
-                                 " is correct, unblock this option with 'self_interface=True'.\n"
-                                 "The residues are %s" % intersect)
-    else:
-        ctc_idxs = _np.vstack(list(_iterpd(intf_frags_as_residxs[0], intf_frags_as_residxs[1])))
-         # Remove self-contacts
-        ctc_idxs = _np.vstack([pair for pair in ctc_idxs if pair[0]!=pair[1]])
+    ctc_idxs = _mdcu.lists.unique_product_w_intersection(intf_frags_as_residxs[0], intf_frags_as_residxs[1])
+    last_n_ctcs = len(ctc_idxs)
+    if len(intersect)>0 and not self_interface:
+        ctc_idxs = [pair for pair in ctc_idxs if not _np.in1d(pair, intersect).all()]
+        if len(ctc_idxs)!=last_n_ctcs:
+            print()
+            print(f"\nExcluding contacts within the same members of the interface reduces from {last_n_ctcs} to {len(ctc_idxs)} residue pairs. "
+                  f"Use 'self_interface=True' to keep these {last_n_ctcs-len(ctc_idxs)} discarded pairs.")
+            last_n_ctcs = len(ctc_idxs)
 
     # Create a neighborlist
     if n_nearest>0:
-        print("Excluding contacts between %u nearest neighbors"%n_nearest)
         nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
+        if len(ctc_idxs)!=last_n_ctcs:
+            print(f"\nExcluding contacts between {n_nearest} nearest neighbors reduces from {last_n_ctcs} to {len(ctc_idxs)} residue pairs. "
+                  f"Use 'n_nearest' to control this ({last_n_ctcs-len(ctc_idxs)} residue pairs discarded).")
+            last_n_ctcs=len(ctc_idxs)
 
     print("\nWill look for contacts in the interface between fragments\n%s\nand\n%s. "%
           ('\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[0]]))),
            '\n'.join(_twrap(', '.join(['%s' % gg for gg in intf_frags_as_str_or_keys[1]])))))
-    print(f"Performing a first pass on the {len(ctc_idxs)} group_1-group_2 residue pairs to compute lower bounds "
+
+    # Sub-select at the AA-level #TODO consider making method out of this
+    if AA_selection is not None:
+        if isinstance(AA_selection, str):
+            lambda_sel = lambda pair, sel: _np.in1d(pair, sel).any()
+        elif isinstance(AA_selection, list) and len(AA_selection)==2:
+            lambda_sel = lambda pair, sel: _np.in1d(pair, sel).all()
+            AA_selection = ",".join(AA_selection)
+        else:
+            raise ValueError(f"'AA_selection'  as to be a sting or a list of len 2, "
+                             f"but your input is a {type(AA_selection).__name__} of len {len(AA_selection)}.")
+        sel = _mdcu.residue_and_atom.rangeexpand_residues2residxs(AA_selection,
+                                                                  fragments_as_residue_idxs,
+                                                                  refgeom.top,
+                                                                  fragment_names=fragment_names,
+                                                                  additional_resnaming_dicts=consensus_maps)
+        ctc_idxs = [pair for pair in ctc_idxs if lambda_sel(pair, sel)]
+        if len(ctc_idxs)!=last_n_ctcs:
+            print(f"\nExcluding residue pairs not involving residues '{AA_selection}' ({len(sel)} AAs) "
+                  f"reduces from {last_n_ctcs} to {len(ctc_idxs)} residue pairs.")
+            last_n_ctcs = len(ctc_idxs)
+    print(f"\nPerforming a first pass on the {last_n_ctcs} group_1-group_2 residue pairs to compute lower bounds "
           f"on residue-residue distances via residue-COM distances.")
     lb_cutoff_buffer_Ang = 2.5
     idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
@@ -1478,7 +1637,7 @@ def interface(
     if len(ctc_idxs_intf)==0:
         print("No contacts found at %2.1f Ang. No output produced." % ctc_cutoff_Ang)
         return
-    print(f"Reduced to only {len(ctc_idxs_intf)} residue pairs for the computation of actual residue-residue distances:")
+    print(f"Reduced to only {len(ctc_idxs_intf)} (from {last_n_ctcs}) residue pairs for the computation of actual residue-residue distances:")
     ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_intf,
                                                      stride=stride, return_times_and_atoms=True,
                                                      consolidate=False,
@@ -1580,7 +1739,7 @@ def interface(
                                         xlim=_np.min((n_ctcs, ctc_grp_intf.n_ctcs)),
                                         label_fontsize_factor=panelsize2font / panelsize,
                                         shorten_AAs=short_AA_names,
-                                        truncate_at=min_freq,
+                                        lower_cutoff_val=min_freq,
                                         total_freq=df.freq.sum()
                                         )
 
@@ -1589,7 +1748,7 @@ def interface(
                                                  ax=histoax[1],
                                                  list_by_interface=True,
                                                  label_fontsize_factor=panelsize2font / panelsize,
-                                                 truncate_at=.05,
+                                                 lower_cutoff_val=.05,
                                                  shorten_AAs=short_AA_names,
                                                  sort_by_freq=sort_by_av_ctcs,
                                                  )
@@ -1614,12 +1773,20 @@ def interface(
             print(fn.fullpath_matrix)
 
         if flareplot:
-            ifig, iax = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
-                                                             consensus_maps=consensus_labelers.values(),
-                                                             SS=refgeom,
-                                                             fragment_names=fragment_names,
-                                                             fragments=fragments_as_residue_idxs,
-                                                             )
+            consensus_maps_ = []
+            for key in ["GPCR", "CGN", "KLIFS"]:
+                if key in consensus_labelers.keys():
+                    consensus_maps_.append(consensus_labelers[key])
+                elif key in consensus_maps.keys():
+                    consensus_maps_.append(consensus_maps[key])
+            ifig, iax, _ = ctc_grp_intf.plot_freqs_as_flareplot(ctc_cutoff_Ang,
+                                                                consensus_maps=consensus_maps_,
+                                                                SS=ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang,
+                                                                                          return_traj=True, n_frames=1,
+                                                                                          verbose=False)[-1][0],
+                                                                fragment_names=fragment_names,
+                                                                fragments=fragments_as_residue_idxs,
+                                                                )
             ifig.tight_layout()
             if savefigs:
                 ifig.savefig(fn.fullpath_flare_vec, bbox_inches="tight")
@@ -1983,7 +2150,7 @@ def sites(site_inputs,
         site_as_gc[key] = []
         for idx in imap:
             pair = ctc_idxs_small[idx]
-            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, list(consensus_maps.values())) for idx in pair]
+            consensus_labels = [_mdcnomenc.choose_between_consensus_dicts(idx, list(consensus_maps.values()), no_key=None) for idx in pair]
             fragment_idxs = [_mdcu.lists.in_what_fragment(idx, fragments_as_residue_idxs) for idx in pair]
             site_as_gc[key].append(_mdcctcs.ContactPair(pair,
                                                [itraj[:, idx] for itraj in ctcs],
@@ -2339,8 +2506,8 @@ def residue_selection(expression,
 
     if fragments is None:
         fragments = [_signature(_mdcfrg.get_fragments).parameters["method"].default]
-    _frags, __ = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
-                                                                   _top, verbose=True)
+    _frags = _mdcfrg.fragments._fragments_strings_to_fragments(_mdcu.lists.force_iterable(fragments),
+                                                                   _top, verbose=True)[0]
     res_idxs_list, consensus_maps, __ = _res_resolver(expression, _top, _frags,
                                                       midstring="Your selection '%s' yields:" % expression,
                                                       GPCR_UniProt=GPCR_UniProt, CGN_UniProt=CGN_UniProt,
@@ -2452,9 +2619,8 @@ def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_Uni
                                                           accept_guess=accept_guess,
                                                           save_nomenclature_files=save_nomenclature_files)
     # pop out the Nones of the maps
-    consensus_maps = {key : consensus_maps[key] for key in consensus_labelers.keys()}
+    consensus_maps = {key : val for key, val in consensus_maps.items() if not all(_np.array(val)==None)}
     top2confrag = _np.full(top.n_residues, None)
     for key, val in consensus_frags.items():
         top2confrag[val] = key
-
     return fragments_as_residue_idxs, fragment_names, user_wants_consensus, consensus_labelers, consensus_maps, consensus_frags, top2confrag

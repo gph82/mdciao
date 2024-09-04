@@ -1946,22 +1946,22 @@ class ContactPair(object):
         """
         return _np.mean(_np.hstack(self.binarize_trajs(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)))
 
-    def label_flex(self, AA_format="short", split_label=True, defrag=None, fmt1="%-15s", fmt2="%-15s"):
+    def label_flex(self, AA_format="short", pad_label=True, defrag=None, fmt1="%-15s", fmt2="%-15s"):
         r"""
-        A more flexible method to produce the label of this :obj:`ContactPair`
+        A more flexible method to produce the label of this `ContactPair`
 
         Parameters
         ----------
         AA_format : str, default is "short"
             Amino-acid format for the label, can be
-             * short: A35@4.55
+             * "short": A35@4.55
              * "long": ALA35@4.50
-             * "just_consensus": 4.50
-             * "try_consensus":  4.50 if consensus labeling is present,
-               else default to "short"
+             * "just_consensus": 4.50 if consensus labels are present, else fail
+             * "try_consensus":  4.50 if consensus labels are present, else
+              fallback to "short"
 
-        split_label : bool, default is True
-            Split the labels so that stacked contact labels
+        pad_label : bool, default is True
+            Pad the labels with whitespace so that stacked contact labels
             become easier-to-read in plain ascii formats
              - "E25@3.50____-    A35@4.50"
              - "A30@longfrag-    A35@4.50
@@ -1971,15 +1971,15 @@ class ContactPair(object):
             them as is, e.g. would be "@"
         fmt1 : str, default is "%-15s"
             Specify how the labels of res1 should be formatted.
-            Only has effect if `split_label` is True
+            Only has effect if `pad_label` is True
         fmt2 : str, default is "%-15s"
             Specify how the labels of res2 should be formatted.
-            Only has effect if `split_label` is True
+            Only has effect if `pad_label` is True
         Returns
         -------
         label : str
         """
-
+        _allowed_AAformats = ["short", "long", "try_consensus", "just_consensus"]
         if AA_format== 'short':
             label = self.labels.w_fragments_short_AA
         elif AA_format== 'long':
@@ -1988,7 +1988,8 @@ class ContactPair(object):
             #TODO where do we put this assertion?
             if None in self._attribute_residues.consensus_labels:
                 if AA_format.startswith("just_"):
-                    raise ValueError("Residues %s don't have both consensus labels:%s. \n Try setting `AA_format='try_consensus'`" % (
+                    raise ValueError("Residues %s don't have both consensus labels:%s. "
+                                     "\n Try setting `AA_format='try_consensus'`" % (
                         self._attribute_residues.names_short,
                         self._attribute_residues.consensus_labels))
                 elif AA_format.startswith("try_"):
@@ -2002,12 +2003,12 @@ class ContactPair(object):
                     label="-".join(label)
             else:
                 label = self.labels.just_consensus
-
         else:
-            raise ValueError(AA_format)
+            raise ValueError(f"The method got AA_format='{AA_format}', "
+                             f"but the only allowed values for 'AA_format' are {_allowed_AAformats}.")
         if defrag is not None:
             label = _mdcu.str_and_dict.defrag_key(label,defrag=defrag, sep="-")
-        if split_label:
+        if pad_label:
             fmt = f"{fmt1} - {fmt2}"
             label = fmt % tuple(_mdcu.str_and_dict.splitlabel(label, '-'))
 
@@ -2024,18 +2025,34 @@ class ContactPair(object):
         Parameters
         ----------
         AA_format : str, default is "short"
-            Alternative is "long" ("E30" vs "GLU30")
+            Options are:
+             * "short": "E30@3.50"
+             * "long": GLU30@3.50
+             * "just_consensus": 3.50, fail if none is found
+             * "try_consensus":  3.50, fallback to "short" if none is found
         fragments : bool, default is False
             Include fragment information
             Will get the "best" information
             available, ie consensus>fragname>fragindex
+            When trying to get consensus labels,
+            this option is ignored, s.t. the full
+            "E30@3.50" is returned regardless.
         delete_anchor : bool, default is False
             Delete the anchor from the label
 
         Returns
         -------
+        label : str
+            The contact label, containing
+            both or only one residue, depending on
+            the value of `delete_anchor`.
 
         """
+        _allowed_AAformats = ["short", "long", "try_consensus", "just_consensus"]
+        if AA_format not in _allowed_AAformats:
+            raise ValueError(f"The method got AA_format='{AA_format}', "
+                             f"but the only allowed values for 'AA_format' are {_allowed_AAformats}.")
+
         if self.neighborhood is None and delete_anchor:
             delete_anchor  = False
             print("ContactPair.gen_label() can't use `delete_anchor=True`, this is not a neighborhood.\n"
@@ -2052,8 +2069,8 @@ class ContactPair(object):
                     label = self.labels.w_fragments
                 else:
                     label = self.labels.no_fragments
-            else:
-                raise ValueError(AA_format)
+            elif AA_format in ["try_consensus", "just_consensus"]:
+                label = self.label_flex(AA_format=AA_format, pad_label=False)
         else:
             if AA_format == "short":
                 if fragments:
@@ -2065,7 +2082,9 @@ class ContactPair(object):
                     label = self.neighborhood.partner_res_and_fragment_str
                 else:
                     label = self.neighborhood.partner_residue_name
-
+            elif AA_format in ["try_consensus", "just_consensus"]:
+                label = self.label_flex(AA_format=AA_format, pad_label=False)
+                label = _mdcu.str_and_dict.splitlabel(label)[self.residues.anchor_index]
         return label
 
     @_kwargs_subs(label_flex)
@@ -2516,18 +2535,19 @@ class ContactGroup(object):
         Parameters
         ----------
         list_of_contact_objects : list
-            list of :obj:`ContactPair` objects
+            List of :obj:`ContactPair` objects.
+            Will be accesseible at :obj:`ContactGroup.contact_pairs`.
         interface_fragments : list of two iterables of indexes, default is None
             An interface is defined by two
             groups of residue indices.
 
             This input doesn't need to have all
             or any of the residue indices in
-            :obj:`res_idxs_pairs`.
+            `res_idxs_pairs`.
 
-            This input will be will be used to group
+            This input will be used to group
             the object's own residue idxs present in
-            :obj:`residxs_pairs` into the two groups
+            `residxs_pairs` into the two groups
             of the interface. These two groups
             will be accessible through the
             attribute self.interface_residxs
@@ -2538,15 +2558,15 @@ class ContactGroup(object):
             The molecular topology associated
             with this object. Normally, the
             default behaviour is enough. It checks whether all
-            ContactPairs of :obj:`list_of_contact_objects`
+            ContactPairs of `list_of_contact_objects`
             share the same self.top and use that one.
             If they have different topologies, the
             method fails, since you can't instantiate
-            a ContactGroup with ContactPairs from different.
+            a ContactGroup with ContactPairs from different topologies.
             In case the ContactPairs don't have
             any topology at all (self.top is None for all ContactPairs)
-            you can pass one here. Or, if the have one, and you
-            pass one here, it will be checked that :obj:`top` provided
+            you can pass one here. Or, if they have one, and you
+            pass one here, it will be checked that `top` provided
             here coincides with the ContactPairs' shared topology
         name : string, default is None
             Optional name you want to give this object,
@@ -2556,7 +2576,7 @@ class ContactGroup(object):
         neighbors_excluded : int, default is None
             The neighbors excluded when creating
             the underlying ContactPairs passed in
-            :obj:`list_of_contact_objects`
+            `list_of_contact_objects`
         max_cutoff_Ang : float, default is None
             Operations involving cutoffs higher
             than this will be forbidden and will
@@ -3691,7 +3711,7 @@ class ContactGroup(object):
     def frequency_sum_per_residue_names(self, ctc_cutoff_Ang,
                                         switch_off_Ang=None,
                                         sort_by_freq=True,
-                                        shorten_AAs=True,
+                                        AA_format="short",
                                         list_by_interface=False,
                                         return_as_dataframe=False,
                                         ):
@@ -3714,8 +3734,12 @@ class ContactGroup(object):
             :obj:`self.interface_residxs` for more info.
             If False, residues are in ascending order
             of residue indices
-        shorten_AAs : bool, default is True
-            Use E30 instead of GLU30
+        AA_format : str, default is 'short'
+            Use E30@3.50 instead of GLU30@3.50.
+            Alternatives are:
+             * "long": GLU30@3.50
+             * "just_consensus": 3.50, fail if none is found
+             * "try_consensus":  3.50, fallback to "short" if none is found
         list_by_interface : bool, default is False
             group the freq_dict by interface residues.
             Only has an effect if self.is_interface
@@ -3740,7 +3764,14 @@ class ContactGroup(object):
 
         # Use the residue@frag representation but avoid empty fragments
         list_out = []
-        residx2resnamefragnamebest = self.residx2resnamefragnamebest(shorten_AAs=shorten_AAs)
+        if "consensus" not in AA_format:
+            residx2resnamefragnamebest = self.residx2resnamefragnamebest(shorten_AAs=[True if AA_format=="short" else False][0])
+        else:
+            residx2resnamefragnamebest = {}
+            for lab, pair in zip(self.gen_ctc_labels(AA_format=AA_format),
+                                 self.res_idxs_pairs):
+                residx2resnamefragnamebest.update({key : val for key, val in zip(pair,
+                                                                                 _mdcu.str_and_dict.splitlabel(lab))})
         for ifreq in freqs:
             idict = {}
             for idx, val in ifreq.items():
@@ -3945,7 +3976,7 @@ class ContactGroup(object):
         """
 
         if _path.splitext(str(fname))[1] in [".xlsx"]:
-            freq_dataframe_kwargs["split_label"] = False
+            freq_dataframe_kwargs["pad_label"] = False
             main_DF = self.frequency_dataframe(ctc_cutoff_Ang,
                                                switch_off_Ang=switch_off_Ang,
                                                **freq_dataframe_kwargs)
@@ -3956,7 +3987,7 @@ class ContactGroup(object):
                                                         return_as_dataframe=True)
             self.frequency_spreadsheet(main_DF,idfs,ctc_cutoff_Ang,fname)
         else:
-            freq_dataframe_kwargs["split_label"] = True
+            freq_dataframe_kwargs["pad_label"] = True
             main_DF = self.frequency_dataframe(ctc_cutoff_Ang,
                                                switch_off_Ang=switch_off_Ang,
                                                **freq_dataframe_kwargs)
@@ -4126,7 +4157,7 @@ class ContactGroup(object):
 
         Frequencies of :obj:`self.frequency_per_contact`
         get coarse-grained into fragments. Fragment
-        definitions come from :obj:`fragments` and/or
+        definitions come from `fragments` and/or
         from the :obj:`consensus_labelers`. These
         definitions need to contain all residues
         in self.res_idxs_pairs
@@ -4135,7 +4166,7 @@ class ContactGroup(object):
         definitions get spliced together using
         :obj:`~mdciao.fragments.splice_orphan_fragments`.
         This might lead to sub-sets of the input
-        :obj:`fragments` getting re-labeled as "subfrags"
+        `fragments` getting re-labeled as "subfrags"
         and residues not defined anywhere being labelled
         "orphans". This leads to cumbersome
         fragment names (and can change in the future),
@@ -4224,6 +4255,7 @@ class ContactGroup(object):
 
         if consensus_labelers is not None:
             consensus_maps, consensus_frags = _consensus_maps2consensus_frags(self.top, consensus_labelers,
+                                                                              fragments=fragments,
                                                                               verbose=verbose)
             if len(consensus_frags) > 0:
                 fragments, fragment_names = _mdcfr.mix_fragments(self.top.n_residues - 1,
@@ -4427,7 +4459,7 @@ class ContactGroup(object):
                            color="tab:blue",
                            shorten_AAs=False,
                            label_fontsize_factor=1,
-                           truncate_at=None,
+                           lower_cutoff_val=None,
                            plot_atomtypes=False,
                            sort_by_freq=False,
                            sum_freqs=True,
@@ -4470,7 +4502,7 @@ class ContactGroup(object):
         label_fontsize_factor : float, default is 1
             Labels will be written in a fontsize
             rcParams["font.size"] * label_fontsize_factor
-        truncate_at : float, default is None
+        lower_cutoff_val : float, default is None
             Only plot frequencies above this value. Default
             is to plot all
         plot_atomtypes : bool, default is False
@@ -4532,7 +4564,7 @@ class ContactGroup(object):
         ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
                                                      ax=ax,
                                                      color=color,
-                                                     lower_cutoff_val=truncate_at)
+                                                     lower_cutoff_val=lower_cutoff_val)
 
         label_bars = [ictc.labels.w_fragments for ictc in self.contact_pairs]
         if shorten_AAs:
@@ -4920,7 +4952,7 @@ class ContactGroup(object):
                                      ax=ax,
                                      xlim=xmax,
                                      shorten_AAs=shorten_AAs,
-                                     truncate_at=None,
+                                     lower_cutoff_val=None,
                                      plot_atomtypes=plot_atomtypes,
                                      sort_by_freq=sort_by_freq,
                                      switch_off_Ang=switch_off_Ang,
@@ -5625,7 +5657,7 @@ class ContactGroup(object):
                                     ax=None,
                                     shorten_AAs=False,
                                     label_fontsize_factor=1,
-                                    truncate_at=0,
+                                    lower_cutoff_val=0,
                                     bar_width_in_inches=.75,
                                     list_by_interface=False,
                                     sort_by_freq=True,
@@ -5650,7 +5682,7 @@ class ContactGroup(object):
         label_fontsize_factor : float, default is 1
             Some control over fontsizes when plotting a high
             number of bars
-        truncate_at : float, default is 0
+        lower_cutoff_val : float, default is 0
             Do not show sums of freqs lower than this value
         bar_width_in_inches : float, default is .75
             If no :obj:`ax` is parsed, this controls that the
@@ -5676,7 +5708,7 @@ class ContactGroup(object):
         frq_dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                              switch_off_Ang=switch_off_Ang,
                                                              sort_by_freq=sort_by_freq,
-                                                             shorten_AAs=shorten_AAs,
+                                                             AA_format=["short" if shorten_AAs else "long"][0],
                                                              list_by_interface=list_by_interface)
 
         # TODO the method plot_freqs_as_bars is very similar but
@@ -5687,8 +5719,8 @@ class ContactGroup(object):
         freqs = _np.array([j for idict in frq_dict_list for j in idict.values()])
 
         # Truncate
-        label_bars = [label_bars[ii] for ii in _np.flatnonzero(freqs>truncate_at)]
-        freqs = freqs[freqs>truncate_at]
+        label_bars = [label_bars[ii] for ii in _np.flatnonzero(freqs > lower_cutoff_val)]
+        freqs = freqs[freqs > lower_cutoff_val]
 
         xvec = _np.arange(len(freqs))
         if ax is None:
@@ -5718,7 +5750,7 @@ class ContactGroup(object):
             ax.set_xlim([-.5, xmax + 1 - .5])
 
         if list_by_interface and interface_vline:
-            xpos = len([ifreq for ifreq in frq_dict_list[0].values() if ifreq >truncate_at])
+            xpos = len([ifreq for ifreq in frq_dict_list[0].values() if ifreq > lower_cutoff_val])
             ax.axvline(xpos - .5, color="lightgray", linestyle="--", zorder=-1)
         return ax
 
@@ -5750,12 +5782,14 @@ class ContactGroup(object):
         ----------
         ctc_cutoff_Ang : float
             The cutoff to use
-        fragments : list of iterables, default is None
+        fragments : string or list of iterables, default is None
             The way the topology is fragmented. Default
             is to put all residues in one fragment. This
             optarg can modify the behaviour of scheme='all',
-            since residues absent from :obj:`fragments`
-            will not be plotted, see below.
+            since residues absent from `fragments`
+            will not be plotted, see below. If string,
+            it will be passed as `method` to :obj:mdciao.fragments.get_fragments`,
+            to get the fragments on the fly.
         fragment_names : list of strings, default is None
             The fragment names, at least len(fragments)
         fragment_colors : None or list of color-likes
@@ -5768,16 +5802,17 @@ class ContactGroup(object):
                 labels (strings) themselves. They
                 need to be "gettable" by residue index, i.e.
                 dict, list or array. Typically, one
-                generates these maps by using the top2labels
-                method of the LabelerConsensus object
-             * :obj:`LabelerConsensus`-objects
+                generates these maps by using
+                :obj:`mdciao.nomenclature.LabelerConsensus.top2labels`.
+             * :obj:`mdciao.nomenclature.LabelerConsensus`-objects
                 When these objects are passed, their
-                top2labels and top2fragments methods are
+                :obj:`mdciao.nomenclature.LabelerConsensus.top2labels` and
+                :obj:`mdciao.nomenclature.LabelerConsensus.top2fragments` are
                 called on-the-fly, generating not only
                 the consensus labels but also the consensus
                 fragments (i.e. subdomains) to further fragment
                 the topology into sub-domains, like TM6 or G.H5.
-                If :obj:`fragments` are parsed, they will be
+                If `fragments` are parsed, they will be
                 made compatible with the consensus fragments.
             If you want the consensus labels but not
             the sub-fragmentation, simply use the first option.
@@ -5831,15 +5866,15 @@ class ContactGroup(object):
                 only work if self.is_interface is True
              * 'auto'
                 Uses :obj:`self.is_interface` to decide. If True,
-                :obj:`scheme` is set to 'interface'.
+                `scheme` is set to 'interface'.
                 If False, e.g. a residue neighborhood or
-                a site, then :obj:`scheme` is set to 'all'
+                a site, then `scheme` is set to 'all'
              * 'interface_sparse':
-                like 'interface', but using the input :obj:`fragments`
+                like 'interface', but using the input `fragments`
                 to break self.interface_fragments (which are only two,
                 by definition) further down into other fragments.
                 Of these, show only the ones where at least one residue
-                participates in the interface. If :obj:`fragments` is
+                participates in the interface. If `fragments` is
                 None, `scheme='interface'` and `scheme='interface_sparse'`
                 are the same thing.
              * 'residues':
@@ -5851,8 +5886,8 @@ class ContactGroup(object):
                 like 'interface_sparse', but
                 leaving out sub-domains not participating
                 in the interface with any contacts.For this,
-                the :obj:`consensus_maps` need to
-                be actual :obj:`LabelerConsensus`-objects
+                the `consensus_maps` need to
+                be actual `LabelerConsensus`-objects
         kwargs_freqs2flare: dict
             Optional keyword arguments for :obj:`mdciao.flare.freqs2flare`.
             Note that many of these kwargs will be overwritten internally
@@ -5874,7 +5909,17 @@ class ContactGroup(object):
         -------
         ifig : :obj:`~matplotlib.figure.Figure`
         ax : :obj:`~matplotlib.axes.Axes`
+        flareplot_attrs : dict
+            Flareplot attributes as dictionary containing
+            matplotlib objects (texts, dots, curves etc)
+            for further manipulation and fine tuning
+            of the plot if necessary. See the returned
+            values of :obj:`mdciao.flare.freqs2flare`
+            for more information.
         """
+
+        if isinstance(fragments, str):
+            fragments = _mdcfr.get_fragments(self.top, fragments, verbose=True)
 
         # We need three (!) methods to guess around the fragments/names/colors...this is bad but "easier" to debug
         df = self._args2df(ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose=False)
@@ -5907,7 +5952,7 @@ class ContactGroup(object):
             _mdcflare._utils.change_axlims_and_resize_Texts(iax, outer_r_in_data_units)
         ifig = iax.figure
         #ifig.tight_layout()
-        return ifig, iax
+        return ifig, iax, flareplot_attrs
 
     def _args2df(self, ctc_cutoff_Ang, fragments, fragment_names, consensus_maps, verbose) -> _DF:
         r"""
@@ -5971,6 +6016,10 @@ class ContactGroup(object):
         for ii in [0, 1]:
             [list_of_dicts[res].update({"interface fragment":ii}) for res in self.interface_fragments[ii]]
             [list_of_dicts[res].update({"interface residx": ii}) for res in self.interface_residxs[ii]]
+        # Account for residues in both interface members
+        self_interface = _np.intersect1d(self.interface_fragments[0], self.interface_fragments[1])
+        for ii in range(self.top.n_residues):
+                list_of_dicts[ii].update({"self interface residx": [True if ii in self_interface else False][0]})
 
         if consensus_maps is not None:
             consensus_maps, consensus_frags = _consensus_maps2consensus_frags(self.top, consensus_maps, verbose=verbose, fragments=fragments)
@@ -6224,13 +6273,13 @@ class ContactGroup(object):
         Please note that "representative" can have other meanings
         in other contexts. Here, it's just a way to pick a frames/geometries
         that will most likely resemble most of what
-        is also seen in the distributions, barplots and flareplots.
+        is also seen in the distributions, barplots, violinplots, and flareplots.
 
         Please also note that minimizing **averages** has its own
         limitations and might not always yield the best result,
         However, it is the easiest and quickest to implement.
         Feel free to use any of Sklearn's great regression tools
-        under constraints to get a better "representative"
+        under constraints to get a better "representative".
 
         Parameters
         ----------
@@ -6240,8 +6289,8 @@ class ContactGroup(object):
               to the most likely distance, i.e.
               to the mode, i.e. to the
               distance values at which
-              the distributions (:obj:`plot_distance_distributions`)
-              peak. You can check the modes in
+              the distributions (:obj:`plot_distance_distributions` or :obj:`plot_violins`)
+              peak. You can check the mode values in
               :obj:`~mdciao.contacts.ContactGroup.modes`
             * "mean" : minimize average distance
               to the mean values of the distances
@@ -6280,25 +6329,27 @@ class ContactGroup(object):
         Returns
         -------
         frames : list
-            A list of :obj:`n_frames` tuples,
-            each tuple containing the traj_idx
-            and the frame_idx that minimize
-            RMSDd
+            A list of `n_frames` tuples,
+            each tuple containing the trajectory
+            and frame index that minimize
+            RMSDd.
         RMSDd : np.ndarray
             A 1D array containing the root-mean-square-deviation
             (in Angstrom) over distances (not positions)
-            of the returned :obj:`frames` to the
-            computed :obj:`reference`. This mean
-            is weighted by the contact frequencies
-            in case a :obj:`ctc_cutoff_Ang` was given.
-            Should always be in ascending order
+            of the returned `frames` to the
+            computed reference as specified by the `scheme`.
+            This mean is weighted by the contact frequencies
+            in case a `ctc_cutoff_Ang` was given.
+            Should always be in ascending order, i.e.
+            the `frames` are sorted from closest to furthest
+            to the reference.
         values : np.ndarray
             A 2D array of shape(n_frames, n_ctcs) containing
-            the distance values of the :obj:`frames` in
+            the distance values of the `frames` in
             Angstrom
-        trajs : list
-            A list of :obj:`~mdtraj.Trajectory` objects
-            Only if return_traj=True
+        trajs : :obj:`~mdtraj.Trajectory`
+            An :obj:`~mdtraj.Trajectory` with `n_frames`
+            frames. Only if `return_traj`=True
         """
 
         all_ds = self.stacked_time_traces
@@ -6345,9 +6396,12 @@ class ContactGroup(object):
                     print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
                 if isinstance(reptraj, str):
                     if _path.exists(reptraj):
-                        geoms.append(_md.load(reptraj, top=self.top,frame=frame_idx))
+                        if len(geoms) == 0:
+                            geoms = _md.load(reptraj, top=self.top,frame=frame_idx)
+                        else:
+                            geoms = geoms.join(_md.load(reptraj, top=self.top, frame=frame_idx))
                     else:
-                        raise FileNotFoundError("The file %s can't be found anymore. Is this an `mdciao.examples` object?"%reptraj)
+                        raise FileNotFoundError(f"The file '{reptraj}' can't be found anymore. Is this an `mdciao.examples` object?")
                 else:
                     geoms.append(reptraj[frame_idx])
             return_tuple += tuple([geoms])
@@ -6500,8 +6554,8 @@ class ContactGroup(object):
                            keep_interface=True,
                            n_residues=1):
         r"""
-        Return a copy this :obj:`ContactGroup`, but with a sub-selection of :obj:`ContactGroup.contact_pairs` based on residues.
-        The returned :obj:`ContactGroup` has the same trajectories and frames as the original.
+        Return a copy this `ContactGroup`, but with a sub-selection of `ContactGroup.contact_pairs` based on residues.
+        The returned `ContactGroup` has the same trajectories and frames as the original.
 
         The filtering of ContactPairs is done using `CSVexpression`, `residue_indices`, or `residue_pairs`
         so that:
@@ -6515,9 +6569,9 @@ class ContactGroup(object):
         Parameters
         ----------
         CSVexpression : str or None, default is None
-            CSV expression like "GLU30,K*" to select
+            CSV expression like "GLU30,K*,3.50" to select
             the residue-pairs of :obj:`self` for the
-            new :obj:`ContactGroup`. See
+            new `ContactGroup`. See
             :obj:`mdciao.utils.residue_and_atom.find_AA` for
             the syntax of the expression.
         residue_indices : list, default is None,
@@ -6534,9 +6588,9 @@ class ContactGroup(object):
             used, since `residue_indices` matches are unique
         merge : bool, default is True
             Merge the selected residue-pairs into
-            one single :obj:`ContactGroup`. If False
+            one single `ContactGroup`. If False
             every sub-string of :obj:`CSVexpression`
-            returns its own :obj:`ContactGroup`
+            returns its own `ContactGroup`
         keep_interface : bool, default is True
             If self.is_interface and `merge` are
             both True, then returned ContactGroup
@@ -6554,10 +6608,10 @@ class ContactGroup(object):
 
         Returns
         -------
-        newCG : :obj:`ContactGroup` or dict
+        newCG : `ContactGroup` or dict
             If dict, it's keyed with substrings of
-            :obj:`CSVexpression` and valued with
-            :obj:`ContactGroups`
+            `CSVexpression` and valued with
+            `ContactGroups`
         """
         assert n_residues in [1,2]
         if CSVexpression is not None:
@@ -6565,7 +6619,8 @@ class ContactGroup(object):
             keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
             matches = []
             for exp in keys:
-                matches.append(_mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top))
+                matches.append(_mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top,
+                                                              extra_columns={"consensus" : self.residx2consensuslabel}))
                 if not allow_multiple_matches and len(matches[-1])>1:
                     print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
                     _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
@@ -7856,9 +7911,6 @@ def _full_color_list(top, df, colors=None) -> _DF:
 
     The main idea is to incorporate per-residue color values
 
-    Main ideas:
-     * Create
-
     Parameters
     ----------
     top : :obj:`~mdtraj.Topology`
@@ -7887,13 +7939,22 @@ def _full_color_list(top, df, colors=None) -> _DF:
     if colors is None:
         _colors = list(_mdcplots.color_dict_guesser("tab10", _np.arange(len(frags_from_df))).values())
         jdf["frag_color"] = list(_mdcflare._utils.col_list_from_input_and_fragments(_colors, frags_from_df))
+        if "interface fragment" in df.keys():
+            one_intf_frag = _np.unique(jdf["interface fragment"])
+            if len(one_intf_frag)==1:
+                assert jdf["self interface residx"].any(), ValueError("If there's only one interface fragment, "
+                                                                      "then there should be some shared residues between interface members")
+            #For the purposes of the flareplot we'll split the shared residxs
+            jdf.loc[jdf["self interface residx"], "interface fragment"] = {1 : 0,
+                                                                           0 : 1}[one_intf_frag[0]]
+
     else:
         jdf["frag_color"] = list(_mdcflare._utils.col_list_from_input_and_fragments(colors, frags_from_df))
 
     if "interface fragment" in df.keys():
-        # TODO do this from self.interface_indices
-        intf_from_df = [_np.flatnonzero(df["interface fragment"] == ii) for ii in
-                        df[~df["interface fragment"].isnull()]["interface fragment"].unique()]
+        # TODO do this from self.interface_indices or with groupby
+        intf_from_df = [_np.flatnonzero(jdf["interface fragment"] == ii) for ii in
+                        jdf[~jdf["interface fragment"].isnull()]["interface fragment"].unique()]
         intf_colors = [None] * top.n_residues
         if colors is None:
             if len(frags_from_df)==1: #means no fragments, TODO think about other way of infering this

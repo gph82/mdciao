@@ -38,9 +38,9 @@ from mpl_toolkits.axes_grid1 import \
 
 import mdciao.utils as _mdcu
 
-from mdciao.nomenclature.nomenclature import _sort_all_consensus_labels
+from mdciao.nomenclature.nomenclature import _lexsort_consensus_ctc_labels
 # The above line introduces a dependency of 'plots' on 'nomenclature', which were
-# uncoupled so far. The alternative would be to put '_sort_all_consensus_labels'
+# uncoupled so far. The alternative would be to put '_lexsort_consensus_ctc_labels'
 # into 'utils.str_and_dict' (since it's essentially string operations).
 # However, as plotting methods become increasing nomenclature-aware, such a
 # plots -> nomenclature dependency will likely come in the future
@@ -725,7 +725,6 @@ def compare_groups_of_contacts(groups,
                                fontsize=16,
                                anchor=None,
                                plot_singles=False,
-                               exclude=None,
                                ctc_cutoff_Ang=None,
                                AA_format='short',
                                defrag='@',
@@ -810,10 +809,6 @@ def compare_groups_of_contacts(groups,
         plotted separately. The labels used will have been already
         "mutated" using :obj:`mutations_dict` and "anchored" using
         :obj:`anchor`. This plot is temporary and cannot be saved
-    exclude : list, default is None
-        keys containing these strings will be excluded.
-        NOTE: This is not implemented yet, will raise an error
-    ctc_cutoff_Ang : float, default is None
         Needed value to compute frequencies on-the-fly
         if the input was using :obj:`ContactGroup` objects
     AA_format : str, default is "short"
@@ -901,17 +896,17 @@ def compare_groups_of_contacts(groups,
         elif all([istr in str(type(ifile)) for istr in ["mdciao", "contacts", "ContactGroup"]]):
             if distro:
                 idict = ifile.distribution_dicts(AA_format=AA_format,
-                                                 split_label=False,
+                                                 pad_label=False,
                                                  bins="auto")
             else:
                 assert ctc_cutoff_Ang is not None, "Cannot provide a ContatGroup object without a `ctc_cutoff_Ang` parameter"
                 if not interface:
                     idict = ifile.frequency_dicts(ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               AA_format=AA_format,
-                                              split_label=False)
+                                              pad_label=False)
                 else:
                     idict = ifile.frequency_sum_per_residue_names(ctc_cutoff_Ang=ctc_cutoff_Ang,
-                                                                  shorten_AAs=[True if AA_format=="short" else False][0],
+                                                                  AA_format=AA_format,
                                                                   list_by_interface=True)
 
         else:
@@ -937,7 +932,7 @@ def compare_groups_of_contacts(groups,
         freqs[key] = idict
 
     if distro:
-        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude, defrag=defrag, is_freq=False)
+        freqs  = _mdcu.str_and_dict.unify_freq_dicts(freqs, defrag=defrag, is_freq=False)
         myfig, __ = plot_unified_distro_dicts(freqs, colors=colors,
                                               ctc_cutoff_Ang=ctc_cutoff_Ang,
                                               fontsize=fontsize,
@@ -972,7 +967,7 @@ def compare_groups_of_contacts(groups,
             myfig.tight_layout()
 
         if interface:
-            freqs = [_mdcu.str_and_dict.unify_freq_dicts({key : val[ii] for key, val in freqs.items()}, exclude,
+            freqs = [_mdcu.str_and_dict.unify_freq_dicts({key : val[ii] for key, val in freqs.items()},
                                                           per_residue=False,
                                                           defrag=defrag) for ii in [0,1]]
             by_interface_sorted_keys = [_sorting_schemes(idict, sort_by=kwargs_plot_unified_freq_dicts.get("sort_by", "mean"),
@@ -984,7 +979,7 @@ def compare_groups_of_contacts(groups,
                 freqs[0][key].update(freqs[1][key])
             freqs = freqs[0]
         else:
-            freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs, exclude,
+            freqs = _mdcu.str_and_dict.unify_freq_dicts(freqs,
                                                 per_residue=per_residue,
                                                 defrag=defrag)
         if per_residue or interface:
@@ -1366,7 +1361,7 @@ def compare_violins(groups,
     matching their contact labels, since the residue indices
     might differ across :obj:`groups`. To achieve this:
         * "K30-D40" is considered equivalent to "D40-D30",
-          use :obj:`key_separator` to change this.
+          use `key_separator` to change this.
         * "K30-D40" is considered equivalent to "K30-E40"
           if a :obj:`mutations_dict={"E40":"D40"}` is passed
         * "K30@3.50-D40" is considered equivalent to "K30-D40"
@@ -1448,46 +1443,51 @@ def compare_violins(groups,
         to least "formed" on the right of the plot.
         However, for each residue pair, this mean is
         an average over the distance in all
-        the different :obj:`groups`, so some
+        the different `groups`, so some
         heterogeneity is expected. Alternatively,
         you can sort using the contact labels,
         regardless of the distance values. Note
         that for this, string comparisons between
         contact-labels will take place. and that
-        contact-labels are altered by :obj:`key_separator`
-        to unify across different :obj:`groups`
-        Try setting :obj:`key_separator` to None
+        contact-labels are altered by `key_separator`
+        to unify across different `groups`
+        Try setting `key_separator` to None
         if you see unexpected behavior, although
         though this might have other side effects,
-        (see obj:~`mdciao.utils.str_and_dict.unify_freq_dicts`)
-        :obj:`sort_by` can be a:
-            * str : 'residue'
-              Sort by ascending residue sequence index (resSeq),
-              which will be inferred from each contact label,
-              e.g. 30 for "GLU30@3.50". See :obj:`~mdciao.contacts.ContactGroup.gen_ctc_labels`
-              for more info on how they are generated.
-              Internally, the order is generated via
-              :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`.
-              If you want to reverse or alter this
-              ascending default order, we recommend using
-              :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`
-              **before** calling :obj:`compare_violins` and use
-              its output (sorted_ctc_labels) as a list
-              argument for :obj:`sort_by`. Also note that
-              residue indices as contained in
-              :obj:`~mdciao.contacts.ContactGroup.res_idx_pairs`
+        (see :obj:`~mdciao.utils.str_and_dict.unify_freq_dicts`)
+        `sort_by` can be a:
+            * str : 'residue' or 'numeric'
+               Sort by ascending residue sequence index (resSeq),
+               which will be inferred from each contact label,
+               e.g. 30 for "GLU30@3.50". See :obj:`~mdciao.contacts.ContactGroup.gen_ctc_labels`
+               for more info on how they are generated.
+               Internally, the order is generated via
+               :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`.
+               If you want to reverse or alter this
+               ascending default order, we recommend using
+               :obj:`~mdciao.utils.str_and_dict.lexsort_ctc_labels`
+               **before** calling :obj:`compare_violins` and use
+               its output (`labels`) as a list
+               argument for `sort_by`. Also note that
+               residue indices as contained in
+               :obj:`~mdciao.contacts.ContactGroup.res_idx_pairs`
+            * str : 'keep'
+               Sort using the same order of the labels as in
+               the first contact group
+            * str : 'consensus'
+               Sort following consensus nomenclature (GPCR, CGN or KLIFS)
             * list : a list of contact labels,
-              eg. ["GLU30-ALA30", "ARG131@3.50-TYR20"].
-              Only these residue pairs (in this order)
-              will be shown, regardless of what other
-              pairs are contained in the :obj:`groups`. It
-              assumes the user knows what contacts
-              are present and can come up with a meaningful
-              list. Not all labels need to be in all
-              :obj:`groups` nor do all :obj:`groups`
-              have to contain all labels, but at least
-              one label needs to match, otherwise the
-              method will fail
+               eg. ["GLU30-ALA30", "ARG131@3.50-TYR20"].
+               Only these residue pairs (in this order)
+               will be shown, regardless of what other
+               pairs are contained in the `groups`. It
+               assumes the user knows what contacts
+               are present and can come up with a meaningful
+               list. Not all labels need to be in all
+               `groups` nor do all `groups`
+               have to contain all labels, but at least
+               one label needs to match, otherwise the
+               method will fail
     zero_freq : float, default is 1e-2
         Frequencies below this number will
         be considered zero and not shown it they are
@@ -1506,37 +1506,41 @@ def compare_violins(groups,
         can also be removed.
         Only has an effect if `ctc_cutoff_Ang` is not None.
     representatives : anything (bool, int, dict, list) default is None
-        Plot, with a small dot on top of the violins,
-        the values of the residue-residue distances of representative
-        geometries. The representative geometries can be parsed
-        directly as a dict of :obj:`~mdtraj.Trajectory` objects,
-        or extracted on-the-fly by calling the :obj:`mdciao.contacts.ContactGroup.repframes`
-        method of each of the `groups`. Check the docs of
-        :obj:`mdciao.contacts.ContactGroup.repframes` to find out what is meant
-        with "representative".
+        Include information about representative values in the
+        plot. This can be done in several ways. Easiest
+        is to let this method call :obj:`mdciao.contacts.ContactGroup.repframes`
+        internally. This will locate representative frames, extract
+        their residue-residue distance values and plot them as small dots
+        on top of the violins. When possible, also the geometries corresponding
+        to these frames will be returned. Alternatively, the user
+        can directly input a dictionary of  :obj:`~mdtraj.Trajectory` objects
+        (representative or not) for which the residue-residue distance values
+        will be computed and plotted. Check the docs of
+        :obj:`mdciao.contacts.ContactGroup.repframes` to find out
+        what is meant with "representative".
         This is what each type of input does:
 
         * boolean True:
-          Calls :obj:`mdciao.ContactGroup.repframes` with the
-          method's default parameters and plots the result
+           Calls :obj:`mdciao.ContactGroup.repframes` with the
+           method's default parameters.
         * int > 0:
-          Calls :obj:`mdciao.ContactGroup.repframes` with the
-          parameter `n_frames` set to this integer. This parameter
-          controls how many representatives are extracted and
-          subsequently plotted.
+           Calls :obj:`mdciao.ContactGroup.repframes` with the
+           parameter `n_frames` set to this integer. This parameter
+           controls how many representatives are extracted and
+           subsequently plotted.
         * dict of parameters:
-          A dictionary with explict values for the optional
-          parameters of :obj:`mdciao.contacts.ContactGroup.repframes`,
-          usually `n_frames` (an int) and `scheme`, ("mean" or "mode"),
-          depending what you mean with "representative". Check the method's
-          documentation for more info.
+           A dictionary with explict values for the optional
+           parameters of :obj:`mdciao.contacts.ContactGroup.repframes`,
+           usually `n_frames` (an int) and `scheme`, ("mean" or "mode"),
+           depending what you mean with "representative". Check the method's
+           documentation for more info.
         * dict of :obj:`~mdtraj.Trajectory` objects:
-          Has to have the same keys as `groups`. No checks are done
-          whether these objects match the actual molecular topologies
-          of `groups`, so beware of potential mismatches here.
-          Typically, these frames come from having used
-          :obj:`mdciao.contacts.ContactGroup.repframes` with
-          `return_traj`=True.
+           Has to have the same keys as `groups`. No checks are done
+           whether these objects match the actual molecular topologies
+           of `groups`, so beware of potential mismatches here.
+           Typically, these frames come from having used
+           :obj:`mdciao.contacts.ContactGroup.repframes` with
+           `return_traj`=True.
         * dict of dicts containing values
           #TODO not implemented yet
 
@@ -1547,6 +1551,12 @@ def compare_violins(groups,
     labels : list
         The list of plotted labels,
         in the order they are plotted
+    repframes : dict
+        Will only be returned if
+        `representatives` was not None.
+        The representative frames for
+        each `group` according to the
+        parameters of `representatives`
     """
     _fontsize=_rcParams["font.size"]
     _rcParams["font.size"] = fontsize
@@ -1559,6 +1569,7 @@ def compare_violins(groups,
     else:
         _groups = groups
     repframes_per_sys_per_ctc = {}
+    reptraj_per_sys_per_ctc = {}
     for syskey, group in _groups.items():
         labels = group.gen_ctc_labels(AA_format=AA_format,
                                       fragments=[True if defrag is None else False][0],
@@ -1570,22 +1581,41 @@ def compare_violins(groups,
             freqs_per_sys_per_ctc[syskey] = {key:freq for key, freq in zip(labels, group.frequency_per_contact(ctc_cutoff_Ang))}
 
         if bool(representatives):
+            #Tune the kwargs on a per-case basis then call repframes only once,
+            # wrapped in the try block for when there's no files
+            repframes_kwargs = {"ctc_cutoff_Ang": ctc_cutoff_Ang,
+                                "return_traj": True}
             # Do we have representatives?
             if isinstance(representatives, bool):
-                d = group.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang)[2]
+                pass
             if isinstance(representatives, int) and representatives>0:
-                d = group.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, n_frames=representatives)[2].T
+                repframes_kwargs.update({"n_frames" : representatives,
+                                         "verbose" : False})
             if isinstance(representatives, dict) and len(representatives)>0:
                 if syskey not in representatives.keys() :
+                    representatives.update(repframes_kwargs)
                     representatives.pop("ctc_cutoff_ang", None)
                     representatives.pop("show_violins", None)
-                    d = group.repframes(**representatives)[2].T
+                    representatives["return_traj"] = True
                 else:
                     assert isinstance(representatives[syskey], _md.Trajectory)
                     d = _md.compute_contacts(representatives[syskey], contacts=group.res_idxs_pairs)[0].T
+                    traj = representatives[syskey]
+                    repframes_kwargs = None
+
+            if repframes_kwargs is not None:
+                try:
+                    __, __, d, traj = group.repframes(**repframes_kwargs)
+                except FileNotFoundError as e:
+                    print(e)
+                    repframes_kwargs["return_traj"] = False
+                    __, __, d = group.repframes(**repframes_kwargs)
+                    traj = None
+                d = d.T.squeeze()
+
             repframes_per_sys_per_ctc[syskey] = {key: val * 10 for key, val in
                                                  zip(labels, d)}
-
+            reptraj_per_sys_per_ctc[syskey]=traj
     representatives = bool(representatives)
     # Unify data
     data4violins_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(data4violins_per_sys_per_ctc,
@@ -1701,7 +1731,10 @@ def compare_violins(groups,
     myfig.tight_layout()
 
     _rcParams["font.size"] = _fontsize
-    return myfig, iax, list(key2ii.keys())
+    if repframes_per_sys_per_ctc != {}:
+        return myfig, iax, list(key2ii.keys()), reptraj_per_sys_per_ctc
+    else:
+        return myfig, iax, list(key2ii.keys())
 
 
 def _sorter_by_key_or_val(sort_by, indict):
@@ -1710,7 +1743,7 @@ def _sorter_by_key_or_val(sort_by, indict):
 
     The rules might use just the keys or just the values of the dict
 
-    The indict is left unaltered.
+    The `indict` is left unaltered.
 
     Parameters
     ----------
@@ -1727,6 +1760,8 @@ def _sorter_by_key_or_val(sort_by, indict):
           by the values of the `indict`
         * "keep"
           keep the order of the keys
+        * "consensus"
+          Sort following consensus nomenclature
         * a list of contact labels.
           The returned `ordered_keys` will be the
           intersection of `sort_by` and `indict.keys()`,
@@ -1766,7 +1801,7 @@ def _sorter_by_key_or_val(sort_by, indict):
         # Out[5]: ['0-10', '0-20', 'ALA', 'ALA30-GLU40', 'ALA30-GLU50', 'GLU5-ALA20']
         # -> we would want ['0-10', '0-20', 'GLU5-ALA20', 'ALA30-GLU40', 'ALA30-GLU50', 'ALA']
     elif sort_by == "consensus":
-        ordered_keys = _sort_all_consensus_labels(all_ctc_keys)
+        ordered_keys = _lexsort_consensus_ctc_labels(all_ctc_keys)[0]
     elif sort_by in ["mean", "std"]:
         ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
     elif sort_by == "keep":

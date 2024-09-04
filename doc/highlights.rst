@@ -8,7 +8,7 @@ Highlights
 .. _`initial example`:
 * paper-ready tables and figures from the command line::
 
-   mdc_neighborhoods.py prot.pdb traj.xtc -r L394 --GPCR adrb2_human --CGN gnas2_human -ni -at #ni: not interactive, at: show atom-types
+   mdc_neighborhoods.py top.pdb traj.xtc -r L394 --GPCR adrb2_human --CGN gnas2_human -ni -at #ni: not interactive, at: show atom-types
 
   .. figure:: imgs/bars_and_PDF.png
       :scale: 40%
@@ -78,7 +78,7 @@ Highlights
   - *G.HN.** : CGN-nomenclature for the :math:`G\alpha_N`-subunit
  You can check your selection **before** running a computation by using ``mdc_residues.py``::
 
-  >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* prot.pdb --GPCR adrb2_human --CGN GNAS2_HUMAN -ni
+  >>> mdc_residues.py GLU*,P0G,380-394,G.HN.* top.pdb --GPCR adrb2_human --CGN GNAS2_HUMAN -ni
   Your selection 'GLU*,P0G,380-394,G.HN.*' yields:
      residue      residx    fragment      resSeq        GPCR         CGN
        GLU10           6           0          10        None     G.HN.27
@@ -148,7 +148,7 @@ Highlights
 
 * use fragment definitions --like the ones above, ``0`` for the :math:`G\alpha`-unit and ``3`` for the receptor-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
 
-   >>> mdc_interface.py prot.pdb traj.xtc -fg1 0 -fg2 3 --GPCR adrb2_human --CGN GNAS2_HUMAN -t "3SN6 beta2AR-Galpha interface" -ni
+   >>> mdc_interface.py top.pdb traj.xtc -fg1 0 -fg2 3 --GPCR adrb2_human --CGN GNAS2_HUMAN -t "3SN6 beta2AR-Galpha interface" -ni
    ...
    The following 50 contacts capture 35.56 (~96%) of the total frequency 36.88 (over 75 contacts with nonzero frequency).
    As orientation value, the first 44 ctcs already capture 90.0% of 36.88.
@@ -239,7 +239,7 @@ Highlights
 
   The command::
 
-   >>> mdc_sites.py prot.pdb traj.xtc --site tip.json -at -nf -sa #sa: short AA-names
+   >>> mdc_sites.py top.pdb traj.xtc --site tip.json -at -nf -sa #sa: short AA-names
    ...
    The following files have been created:
    ./sites.overall@4.0_Ang.pdf
@@ -285,7 +285,7 @@ Highlights
 
   Now we use ``mdc_neighborhoods.py`` on our data::
 
-   >>> mdc_neighborhoods.py prot.pdb traj.xtc -r R131 -nf -o 3SN6.MD
+   >>> mdc_neighborhoods.py top.pdb traj.xtc -r R131 -nf -o 3SN6.MD
    ...
    The following 4 contacts capture 2.12 (~100%) of the total frequency 2.12 (over 5 contacts with nonzero frequency).
    ...

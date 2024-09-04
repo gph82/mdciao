@@ -120,6 +120,13 @@ class Test_recursive_funct(unittest.TestCase):
                 with self.assertRaises(RecursionError):
                     examples._recursive_prompt("test_00.dat", "test", is_file=True)
 
+    def test_skip_on_existing(self):
+        with TemporaryDirectory(suffix="_mdciao_test_recursive") as td:
+            with remember_cwd():
+                os.chdir(td)
+                open("test.00.dat", "w").close()
+                examples._recursive_prompt("test_00.dat", "test", is_file=True, skip_on_existing=True)
+
 class Test_down_safely(unittest.TestCase):
 
     def test_just_works(self):
@@ -135,6 +142,18 @@ class Test_down_safely(unittest.TestCase):
                 local_path = examples._down_url_safely("https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",verbose=True,
                                                        rename_to="myfile.zip")
                 assert local_path.endswith("myfile.zip")
+                assert os.path.exists(local_path)
+
+    def test_skip_on_existing(self):
+        with TemporaryDirectory(suffix="_mdciao_test_down_safely") as td:
+            with remember_cwd():
+                os.chdir(td)
+                with open("mdciao_test_small.zip","w") as f:
+                    f.write("Won't be overwrriten")
+                local_path = examples._down_url_safely("https://proteinformatics.uni-leipzig.de/mdciao/mdciao_test_small.zip",
+                                                       verbose=True, skip_on_existing=True)
+                assert open("mdciao_test_small.zip").read() == "Won't be overwrriten"
+                assert local_path.endswith("mdciao_test_small.zip")
                 assert os.path.exists(local_path)
 
 class Test_fetch_example_data(unittest.TestCase):
@@ -177,6 +196,43 @@ class Test_fetch_example_data(unittest.TestCase):
                 files = os.listdir(td)
                 assert len(files) == 1
                 assert files[0] == "mdciao_test_small.zip"
+
+
+    def test_alias_unzip_to_otherfile(self):
+        with TemporaryDirectory(suffix="_mdciao_test_fetch") as td:
+            with remember_cwd():
+                os.chdir(td)
+                local_path = examples.fetch_example_data("test",
+                                                         unzip="unzip_here")
+                assert os.path.exists(local_path)
+                # assert os.path.exists((os.path.splitext(local_path))[0])
+                files = os.listdir(td)
+                assert len(files) == 2
+                assert files[0] == "unzip_here.zip"
+                assert files[1] == "unzip_here"
+                extracted = sorted(os.listdir(files[1]))
+                assert extracted[0] == "A.dat"
+                assert extracted[1] == "B.dat"
+
+
+    def test_skip_on_existing(self):
+        with TemporaryDirectory(suffix="_mdciao_test_fetch") as td:
+            with remember_cwd():
+                os.chdir(td)
+                local_path = examples.fetch_example_data("test",
+                                                         unzip=False)
+                assert os.path.exists(local_path)
+                # assert os.path.exists((os.path.splitext(local_path))[0])
+                files = os.listdir(td)
+                assert len(files) == 1
+                assert files[0] == "mdciao_test_small.zip"
+                # Create a fake file to test it doesn't ovewrite
+                with open("mdciao_test_small.zip", "w") as f:
+                    f.write("Won't be overwrriten")
+                local_path = examples.fetch_example_data("test",
+                                                         unzip=False, skip_on_existing=True)
+                assert open("mdciao_test_small.zip").read() == "Won't be overwrriten"
+
 
 class Test_notebooks(unittest.TestCase):
 

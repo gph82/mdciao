@@ -208,7 +208,8 @@ class Test_sites_to_res_pairs(unittest.TestCase):
         self.GDP_json = test_filenames.GDP_json
         self.geom = _md.load(test_filenames.actor_pdb)
         self.fragments = mdciao.fragments.get_fragments(self.geom.top)
-
+        self.GPCR_map = mdciao.examples.GPCRLabeler_ardb2_human().top2labels(self.geom.top)
+        self.CGN_map = mdciao.examples.CGNLabeler_gnas2_human().top2labels(self.geom.top)
     def test_the_idxs_work_no_frags(self):
         site = mdciao.sites.x2site(self.GDP_json)
         ctc_idxs, __ = mdciao.sites.sites_to_res_pairs([site], self.geom.top)
@@ -240,9 +241,9 @@ class Test_sites_to_res_pairs(unittest.TestCase):
         ctc_idxs, site_maps = mdciao.sites.sites_to_res_pairs([{"name": "interesting contacts",
                                                                 "pairs": {"consensus": [
                                                                     "G.H5.26-6.32x32"]}}], self.geom.top,
-                                                              consensus_maps={"GPCR": [None, "6.32x32"],
-                                                                              "CGN": ["G.H5.26"]})
-        _np.testing.assert_array_equal(ctc_idxs, [[0,1]])
+                                                              consensus_maps={"GPCR": self.GPCR_map,
+                                                                              "CGN": self.CGN_map})
+        _np.testing.assert_array_equal(ctc_idxs, [[659, 209]])
         _np.testing.assert_array_equal(site_maps, [[0]])
     def test_consensus_fails_no_consensus_passed(self):
         with self.assertRaises(ValueError):
@@ -250,12 +251,13 @@ class Test_sites_to_res_pairs(unittest.TestCase):
                                               "pairs": {"consensus": [
                                                   "G.H5.26-6.32x32"]}}], self.geom.top)
 
-    def test_consensus_fails_no_label_present(self):
-        with self.assertRaises(ValueError):
-            mdciao.sites.sites_to_res_pairs([{"name":"interesting contacts",
+    def test_consensus_no_label_present(self):
+        ctc_idxs, site_maps = mdciao.sites.sites_to_res_pairs([{"name":"interesting contacts",
                                               "pairs": {"consensus": [
                                                   "G.H5.26-6.32x32"]}}], self.geom.top,
-                                            consensus_maps={"GPCR":[None, "6.32x32"]})
+                                            consensus_maps={"GPCR":self.GPCR_map})
+        _np.testing.assert_array_equal(ctc_idxs, [[None, 209]])
+        _np.testing.assert_array_equal(site_maps, [[0]])
 
 class Test_discard_empty_sites(unittest.TestCase):
 

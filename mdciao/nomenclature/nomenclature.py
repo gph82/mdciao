@@ -31,7 +31,6 @@ from mdciao.utils.str_and_dict import _kwargs_subs
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 
 from pandas import \
-    read_json as _read_json, \
     read_excel as _read_excel, \
     read_csv as _read_csv, \
     DataFrame as _DataFrame, \
@@ -327,8 +326,8 @@ def _GPCRdb_finder(descriptor,
     else:
         xlsxname = format % descriptor
         fullpath = _path.join(local_path, xlsxname)
-    GPCRmd = "https://gpcrdb.org/services/residues/extended"
-    url = "%s/%s" % (GPCRmd, descriptor.lower())
+    GPCRdb = "https://gpcrdb.org/services/residues/extended"
+    url = "%s/%s" % (GPCRdb, descriptor.lower())
 
     if fullpath.endswith(".xlsx"):
         local_lookup_lambda = lambda fullpath: _read_excel(fullpath,
@@ -383,7 +382,7 @@ def _GPCRdb_web_lookup(url, verbose=True,
         DFout = ValueError('Contacted %s url successfully (no 404),\n'
                            'but Uniprot name %s yields nothing' % (url, UniProt_name))
     else:
-        df = _read_json(a.text)
+        df = _DataFrame(a.json())
         mydict = df.T.to_dict()
         for key, val in mydict.items():
             try:
@@ -458,12 +457,12 @@ class LabelerConsensus(object):
     At the moment child classes are
 
      * :obj:`LabelerGPCR` for GPCR-notation, this can be:
-       * structure based schemes (Gloriam et al)
-       * sequence based schemes
-         * Class-A: Ballesteros-Weinstein
-         * Class-B: Wootten
-         * Class-C: Pin
-         * Class-F: Wang
+      * structure based schemes, by Gloriam et al
+      * sequence based schemes
+       * Class-A: Ballesteros-Weinstein
+       * Class-B: Wootten
+       * Class-C: Pin
+       * Class-F: Wang
      * :obj:`LabelerCGN` for Common-Gprotein-nomenclature (CGN)
      * :obj:`LabelerKLIFS` for Kinase-Ligand Interaction notation of the 85 pocket-residues of kinases
 
@@ -632,6 +631,7 @@ class LabelerConsensus(object):
             Note
             ----
             `fragments` only has an effect if both
+
              * the `top` is an actual :obj:`~mdtraj.Topology` carrying the sequence
               indices, since if `top` is a sequence
               string, then there's no fragmentation heuristic possible.
@@ -648,8 +648,8 @@ class LabelerConsensus(object):
             heuristic (this might change in the future).
             **To explicitly circumvent this forced fragmentation
             and subsequent check, use `fragments=False`.
-            This will simply use the first alignment that comes out of
-            :obj:`mdciao.utils.sequence.my_bioalign`, regardless
+            This will simply use the first alignment that comes out of**
+            :obj:`mdciao.utils.sequence.my_bioalign` **, regardless
             of there being other, equally scored, alignments and potential
             clashes with sensitive fragmentations.**
         verbose: boolean, default is False
@@ -884,8 +884,9 @@ class LabelerConsensus(object):
 
         Parameters
         ----------
-        top :
-            :obj:`~mdtraj.Topology` object
+        top : :obj:`~mdtraj.Topology` object or str
+            The topology as an object or a path
+            to a filename, e.g. a pdb file.
         allow_nonmatch : bool, default is True
             Use consensus labels for non-matching positions
             in case the non-matches have equal lengths
@@ -917,6 +918,8 @@ class LabelerConsensus(object):
         map : list
             List of len = top.n_residues with the consensus labels
         """
+        if isinstance(top, str):
+            top = _md.load(top).top
         self.aligntop(top, min_seqID_rate=min_seqID_rate, **aligntop_kwargs)
         out_list = _alignment_df2_conslist(self.most_recent_alignment, allow_nonmatch=allow_nonmatch)
         out_list = out_list + [None for __ in range(top.n_residues - len(out_list))]
@@ -1026,17 +1029,22 @@ class LabelerConsensus(object):
         top:
             :obj:`~mdtraj.Topology` or path to topology file (e.g. a pdb)
         fragments: iterable of integers, default is None
-            The user can parse an existing list of fragment-definitions
-            (via residue idxs) to check if the newly found, consensus
-            definitions (`defs`) clash with the input in `fragments`.
-            *Clash* means that the `defs` would span over more
-            than one of the fragments in defined in `fragments`.
+            Any useful fragment definition as lists of residue indices.
+            Useful means:
+
+            * Help with the alignment needed for consensus fragment definition.
+              Look at :obj:`LabelerConsensus.aligntop` and its `fragments`
+              and `min_seqID_rate` parameters.
+            * Check if the newly found, consensus fragment definitions (`defs`)
+              clash with the input in `fragments`. Clash* means that
+              the `defs` would span over more than
+              one of the fragments in defined in `fragments`.
 
             An interactive prompt will ask the user which fragments to
             keep in case of clashes.
 
             Check the method :obj:`~mdciao.fragments.check_if_fragment_clashes`
-            for more info
+            for more info.
         min_seqID_rate : float, default is .5
             With big topologies, like a receptor-Gprotein system,
             the "brute-force" alignment method
@@ -1486,7 +1494,7 @@ class AlignerConsensus(object):
 
             * Type :obj:`~mdciao.nomenclature.LabelerGPCR`, :obj:`~mdciao.nomenclature.LabelerCGN`,
               or :obj:`~mdciao.nomenclature.LabelerKLIFS`
-             Recommended option, the most succint and versatile.
+             Recommended option, the most succinct and versatile.
              Pass this object and the maps will get created
              internally on-the-fly either by
              calling :obj:`~mdciao.nomenclature.LabelerGPCR.AA2conlab`
@@ -1549,7 +1557,7 @@ class AlignerConsensus(object):
         self._residxs["consensus"] = self._residxs.index.values
         self._residxs=self._residxs[["consensus"]+[key for key in self._residxs.keys() if key !="consensus"]]
 
-        sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)
+        sorted_keys = _sort_all_consensus_labels(self._residxs["consensus"], append_diffset=False)[0]
         assert len(sorted_keys)==len(self._residxs["consensus"]),  (len(sorted_keys), len(self._residxs["consensus"]))
         self._residxs = self._residxs.sort_values("consensus", key=lambda col: col.map(lambda x: sorted_keys.index(x)))
         self._residxs.index = _np.arange(len(self._residxs))
@@ -1832,7 +1840,7 @@ def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, d
     Parameters
     ----------
     df : :obj:`~pandas.DataFrame` or None
-        The dataframe to be filter by matching `patterns` and `keys`.
+        The dataframe to be filtered by matching `patterns` and `keys`.
         If None, the method simply returns None.
     patterns : str, default is None
         A list in CSV-format of patterns to be matched
@@ -1961,7 +1969,7 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
         The same as the input :obj:`consensus_list` with guessed missing entries
     """
 
-    defs = _map2defs(consensus_list)
+    defs = conlabs2confrags(consensus_list)
     # todo decrease verbosity
     # Iterate over fragments
     for frag_key, conlabs in defs.items():
@@ -2011,10 +2019,10 @@ def _fill_consensus_gaps(consensus_list, top, verbose=False):
 
 def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     """
-    Choose the best consensus label for a given :obj:`idx` in case
-    there are more than one consensus(es) at play (e.g. GPCR and CGN).
+    Choose the best consensus label for a given `idx` in case
+    there are more than one consensus(es) at play (e.g. GPCR, CGN, KLIFS).
 
-    Wil raise error if both dictionaries have a consensus label for
+    Wil raise error if more than one dictionary has a consensus label for
     the same index (unusual case)
 
     Parameters
@@ -2022,15 +2030,18 @@ def choose_between_consensus_dicts(idx, consensus_maps, no_key="NA"):
     idx : int
         index for which the relabeling is needed
     consensus_maps : list
-        The items in the list should be "gettable" by using :obj:`idx`,
+        The items in the list should be "gettable" by using `idx`,
         either by being lists, arrays, or dicts, s.t.,
         the corresponding value should be the label.
     no_key : str
-        output message if there is no label for the residue idx in any of the dictionaries.
-
+        Output string if there is no label for the
+        residue `idx` in any of the dictionaries.
+        Mighg be removed in the future, since currently
+        all calls to this method use no_key=None,
+        since no method uses "NA" anymore
     Returns
     -------
-    string
+    string: str
         label of the residue idx if present else :obj:`no_key`
 
     """
@@ -2259,47 +2270,46 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
     return answer
 
 
-def _map2defs(cons_list, splitchar="."):
+def conlabs2confrags(conlabs, splitchar=".", replace_GPCR_frags=False):
     r"""
     Subdomain definitions form a list of consensus labels.
 
     The indices of the list are interpreted as residue indices
-    in the topology used to generate :obj:`cons_list`
-    in the first place, e.g. by using :obj:`nomenclature_utils._top2consensus_map`
+    in the topology used to generate `cons_list`
+    in the first place, e.g. by using :obj:`mdciao.nomenclature.LabelerConsensus.top2labels`
 
-    Note:
-    -----
-    The method will guess automagically whether this is a CGN or GPCR label by
-    checking the type of the first character (numeric is GPCR, 3.50, alpha is CGN, G.H5.1)
 
     Parameters
     ----------
-    cons_list: list
-        Contains consensus labels for a given topology, s.t. indices of
+    conlabs: list
+        Consensus labels for a given topology, s.t. indices of
         the list map to residue indices of a given topology, s.t.
         cons_list[10] has the consensus label of top.residue(10)
     splitchar : str, default is "."
         The character to use to get the subdomain labels from the
         consensus labels, e.g. "3" from "3.50" or "G.H5" from "G.H5.1"
+        If a label of `cons_list` doesn't have a `splitchar` in
+        it, an Exception is thrown (this is a suspicious case)
+    replace_GPCR_frags : bool, default is False
+        If True, will replace the fragment labels coming from GPCR
+        conlabs like "34.50" or "7.49" to "ICL2" or "TM7", respectively.
     Returns
     -------
     defs : dictionary
         dictionary keyed with subdomain-names and valued with arrays of residue indices
     """
-    defs = _defdict(list)
-    for ii, key in enumerate(cons_list):
-        if str(key).lower() != "none":
-            assert splitchar in _mdcu.lists.force_iterable(key), "Consensus keys have to have a '%s'-character" \
-                                                                 " in them, but '%s' (type %s) hasn't" % (
-                                                                     splitchar, str(key), type(key))
-            if key[0].isnumeric():  # it means it is GPCR
-                new_key = key.split(splitchar)[0]
-            elif key[0].isalpha():  # it means it CGN
-                new_key = '.'.join(key.split(splitchar)[:-1])
-            else:
-                raise Exception([ii, splitchar])
-            defs[new_key].append(ii)
-    return {key: _np.array(val) for key, val in defs.items()}
+    bad_labels = [val for val in conlabs if splitchar not in str(val) and str(val).lower() != "none"]
+    if len(bad_labels)>0:
+        raise ValueError(f"Some labels of 'cons_list' don't have '{splitchar}' in them. "
+                         f"Are you sure these are valid consensus labels(e.g. '3.50' or 'G.H5.26'?:\n{bad_labels}")
+    df = _DataFrame(conlabs, columns=["conlab"])
+    conlab2confrag = lambda x: str(x)[::-1].split(splitchar, 1)[-1][::-1]
+    df["frag"] = df.conlab.map(conlab2confrag)
+    consensus_frags = {key: val.index.values for key, val in df.groupby("frag") if str(key).lower() != "none"}
+    if replace_GPCR_frags:
+        consensus_frags = {_GPCR_num2lett.get(key, key): val for key, val in consensus_frags.items()}
+
+    return {key: _np.array(val) for key, val in consensus_frags.items()}
 
 
 def _sort_consensus_labels(subset, sorted_superset,
@@ -2310,7 +2320,9 @@ def _sort_consensus_labels(subset, sorted_superset,
     Parameters
     ----------
     subset : iterable
-        list with the names (type str) to be ordered
+        list with the names (type str) to be ordered.
+        If duplicates are present, they will also appear
+        as duplicates in `fragnames_out`
     sorted_superset : iterable
         list with names in the desired order. Is a superset
         of :obj:`subset`
@@ -2320,7 +2332,11 @@ def _sort_consensus_labels(subset, sorted_superset,
 
     Returns
     -------
-    fragnames_out
+    fragnames_out: list
+        List with the labels of `subset` sorted according
+        to some `sorted_superset` and potentially other
+        labels not contained in the `sorted_superset` appended
+        at the end.
     """
 
     by_frags = _defdict(dict)
@@ -2345,6 +2361,11 @@ def _sort_consensus_labels(subset, sorted_superset,
     if append_diffset:
         labs_out += [item for item in subset if item not in labs_out]
 
+    # Recover the duplicates
+    order = []
+    for lab in labs_out:
+        order.extend(_np.flatnonzero(_np.array(subset)==lab))
+    labs_out = [subset[oo] for oo in order]
     return labs_out
 
 
@@ -2428,7 +2449,7 @@ def _conslabel2fraglabel(labelres, defrag="@", prefix_GPCR=True):
         label = _GPCR_num2lett[label]
     return label
 
-def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN","KLIFS"], ):
+def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN","KLIFS"]):
     r"""
     Sort a mix of consensus labels GPCR, CGN, KLIFS
 
@@ -2442,7 +2463,7 @@ def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN",
         end of `sorted_labels` unless
         explicitly deactivated with
         `append_diffset`.
-        append_diffset : bool, default is True
+    append_diffset : bool, default is True
         Append the non-consensus labels
         at the end of `sorted_labels`
     order : list
@@ -2458,6 +2479,11 @@ def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN",
     -------
     sorted_labels : list
         Sorted consensus labels
+    sorted_indices : 1D _np.ndarray
+        The indices of `labels` that return
+        the sorted `sorted_labels`. Depending
+        on `append_diffset` it will contain
+        (or not) all indices of `labels`
     """
 
     lambdas = {"GPCR":  lambda labels: _sort_GPCR_consensus_labels(labels, append_diffset=False),
@@ -2470,7 +2496,16 @@ def _sort_all_consensus_labels(labels, append_diffset=True, order=["GPCR","CGN",
     if append_diffset:
         sorted_labels += [lab for lab in labels if lab not in sorted_labels]
 
-    return sorted_labels
+    # Handle duplicates by including their indices only once (else _np.flatnonzero returns all indices all the time)
+    sorted_indices = []
+    for lab in sorted_labels:
+        for ii in _np.flatnonzero(lab == _np.array(labels)):
+            if ii not in sorted_indices:
+                sorted_indices.append(ii)
+    sorted_indices = _np.array(sorted_indices, ndmin=1)
+    assert sorted_indices.ndim==1
+
+    return sorted_labels, sorted_indices
 
 _GPCR_num2lett = {
     "1": "TM1 ",
@@ -2489,7 +2524,7 @@ _GPCR_num2lett = {
     "8": "H8",
 }
 
-_GPCR_fragments = ["NT",
+_GPCR_fragments = ("NT",
                    "1", "TM1 ",
                    "12", "ICL1",
                    "2", "TM2",
@@ -2505,9 +2540,9 @@ _GPCR_fragments = ["NT",
                    "7", "TM7",
                    "78",
                    "8", "H8",
-                   "CT"]
+                   "CT")
 
-_CGN_fragments = ['G.HN',
+_CGN_fragments = ('G.HN',
                   'G.hns1',
                   'G.S1',
                   'G.s1h1',
@@ -2543,9 +2578,9 @@ _CGN_fragments = ['G.HN',
                   'G.h4s6',
                   'G.S6',
                   'G.s6h5',
-                  'G.H5']
+                  'G.H5')
 
-_KLIFS_fragments = ['I',
+_KLIFS_fragments = ('I',
                     'g.l',
                     'II',
                     'III',
@@ -2563,7 +2598,7 @@ _KLIFS_fragments = ['I',
                     'VII',
                     'VIII',
                     'xDFG',
-                    'a.l']
+                    'a.l')
 
 
 _GPCR_mandatory_fields = ["protein_segment",
@@ -3782,3 +3817,80 @@ class LabelerKLIFS(LabelerConsensus):
         """
 
         return self._fragments_as_idxs
+
+def _lexsort_consensus_ctc_labels(labels, reverse = False, columns = [0, 1], sep = "-") -> tuple:
+    r"""
+    Sort contact-labels in ascending order of resSeq using both columns
+
+    Wraps around :obj:`_sort_all_consensus_labels` with some string handling.
+
+    It will also work with contact-labels consisting of only one residue,
+    e.g. in the cases where the "anchor" has been deleted or the frequencies
+    have been aggregated to per-residue frequencies
+
+    >>> labels = ['3.50-G.H5.23',
+    >>>           '3.50-7.53',
+    >>>           '3.50-2.39',
+    >>>           '4.50-6.60',
+    >>>           '3.50-5.58']
+    >>> sorted_labels, order = _lexsort_consensus_ctc_labels(labels)
+    >>> sorted_labels
+    >>> labels = ['3.50-2.39',
+    >>>           '3.50-5.58',
+    >>>           '3.50-7.53',
+    >>>           '3.50-G.H5.23',
+    >>>           '4.50-6.60']
+
+
+    Parameters
+    ----------
+    labels : list or np.ndarray
+        Strings describing the contact
+        residues using consensus labels only.
+        Labels can be just one residue "3.50" or
+        both "3.50-2.50", but not 'mixed', as in
+        >>> labels = ["3.50", "3.50-2.50"]
+        Full labels, e.g. "GLU30@3.50", or non-consensus
+        labels, e.g. "frag1", will be sorted last.
+    reverse : bool, default is False
+        If True, sort in descending
+        order, instead of ascending
+    columns : list
+        The order of the columns,
+        e.g. [0,1] means sort first
+        by first column (idx 0),
+        then by second column (idx 1).
+    sep : char, default is "-"
+        The character to use
+        when separating the
+        contact label into both residues
+
+    Returns
+    -------
+    sorted_labels : list
+        The sorted contact labels
+    order : 1D np.ndarray
+        The indices of `ctc_labels` that
+        sort it into `sorted_labels`
+    """
+    split_labels = [_mdcu.str_and_dict.splitlabel(lab, sep=sep) for lab in labels]
+
+    if not any([all([len(lab) == 1 for lab in split_labels]),
+                all([len(lab) == 2 for lab in split_labels])]):
+        raise ValueError(f"Labels have to be all single ('3.50') or double ('3.50-2.50'), but not mixed {labels}")
+    split_labels = _np.vstack(split_labels).squeeze()
+    if split_labels.ndim == 1:
+        order = _sort_all_consensus_labels(split_labels)[1]
+    elif split_labels.ndim ==2:
+        #There's other ways but this was easy to set up
+        lexsort = {key : val[columns[1]].to_dict() for key, val in _DataFrame(split_labels).groupby(by=columns[0])}
+        order = []
+        for key1 in _sort_all_consensus_labels(list(lexsort.keys()))[0]:
+            for key2 in _sort_all_consensus_labels(list(lexsort[key1].values()))[0]:
+                order.extend(_np.flatnonzero(_np.array(labels) == sep.join(_np.array([key1, key2])[columns])))
+    else:
+        raise ValueError
+
+    if reverse:
+        order = order[::-1]
+    return [labels[ii] for ii in order], order
