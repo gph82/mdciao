@@ -779,7 +779,7 @@ def _ls_AA_in_df(AA_patt, df):
     from fnmatch import fnmatch as _fnmatch
     _AA = str(AA_patt)
     match = lambda val : _fnmatch(val,_AA)
-    idxs = _np.flatnonzero(df.applymap(lambda val: str(val)).applymap(match).values.any(1)).tolist()
+    idxs = _np.flatnonzero(df.map(lambda val: str(val)).map(match).values.any(1)).tolist()
     return idxs
 
 def get_SS(SS,top=None):
