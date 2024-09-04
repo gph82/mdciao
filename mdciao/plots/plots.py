@@ -710,7 +710,7 @@ def plot_unified_freq_dicts(freqs,
     # Create a by-state dictionary explaining the plot
     out_dict = {key:{ss: val[ss] for ss in sorted_ctc_keys} for key, val in freqs_by_sys_by_ctc.items()}
     for key2 in ["mean", "std"]:
-        out_dict[key2] = {key : _np.round(val) for key, val in mean_std_by_ctc[key2].items()}
+        out_dict[key2] = {key : _np.round(val,2) for key, val in mean_std_by_ctc[key2].items()}
 
     _rcParams["font.size"] = _fontsize
     return myfig, _plt.gca(),  out_dict
