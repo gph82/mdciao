@@ -276,7 +276,7 @@ def rangeexpand_residues2residxs(range_as_str, fragments, top,
     if sort:
         residxs_out = sorted(residxs_out)
 
-    residxs_out = _pandas_unique(residxs_out)
+    residxs_out = _pandas_unique(_np.array(residxs_out))
     return residxs_out
 
 def _top2AAmap(top):
