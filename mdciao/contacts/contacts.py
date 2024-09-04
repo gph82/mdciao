@@ -6404,7 +6404,7 @@ class ContactGroup(object):
                         raise FileNotFoundError(f"The file '{reptraj}' can't be found anymore. Is this an `mdciao.examples` object?")
                 else:
                     geoms.append(reptraj[frame_idx])
-            return_tuple += tuple([geoms])
+            return_tuple = tuple([*return_tuple, geoms])
         return return_tuple
 
     def select_by_frames(self, frames) -> ContactPair:
