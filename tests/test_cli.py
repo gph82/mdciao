@@ -701,14 +701,14 @@ class Test_parse_consensus_option(unittest.TestCase):
         residx2conlab= cli._parse_consensus_option(None, None, self.geom.top,
                                                    None,
                                                    )
-        assert _pandasunique(residx2conlab)[0] is None
+        assert _pandasunique(_np.array(residx2conlab))[0] is None
 
     def test_empty_w_return(self):
         residx2conlab, lblr  = cli._parse_consensus_option(None, None, self.geom.top,
                                                            None,
                                                            return_Labeler=True)
         assert lblr is None
-        assert _pandasunique(residx2conlab)[0] is None
+        assert _pandasunique(_np.array(residx2conlab))[0] is None
 
     def test_with_GPCR(self):
         fragments = mdcfragments.get_fragments(self.geom.top)
