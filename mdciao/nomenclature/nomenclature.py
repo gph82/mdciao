@@ -1825,7 +1825,11 @@ class AlignerConsensus(object):
         df = _DataFrame(match, dtype=int)
 
         if not absolute:
-            df = df.map(lambda x: "%u%%" % x)
+            try:
+                df = df.map(lambda x: "%u%%" % x)
+            except AttributeError:
+                # Needed for py37 and py38
+                df = df.applymap(lambda x: "%u%%" % x)
 
         return df
 
