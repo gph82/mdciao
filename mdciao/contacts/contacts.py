@@ -6396,14 +6396,15 @@ class ContactGroup(object):
                     print("Returning frame %u of traj nr. %u: %s"%(frame_idx, traj_idx, reptraj))
                 if isinstance(reptraj, str):
                     if _path.exists(reptraj):
-                        if len(geoms) == 0:
-                            geoms = _md.load(reptraj, top=self.top,frame=frame_idx)
-                        else:
-                            geoms = geoms.join(_md.load(reptraj, top=self.top, frame=frame_idx))
+                        geom = _md.load(reptraj, top=self.top,frame=frame_idx)
                     else:
                         raise FileNotFoundError(f"The file '{reptraj}' can't be found anymore. Is this an `mdciao.examples` object?")
                 else:
-                    geoms.append(reptraj[frame_idx])
+                    geom = reptraj[frame_idx]
+                if len(geoms)==0:
+                    geoms = geom
+                else:
+                    geoms = geoms.join(geom)
             return_tuple = tuple([*return_tuple, geoms])
         return return_tuple
 
