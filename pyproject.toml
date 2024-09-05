@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mdciao"
-version = "0.0.8"
+version = "0.0.9"
 authors = [{name = "Guillermo Perez-Hernandez", email = "guillermo.perez@charite.de"}]
 description = "mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data"
 classifiers = [ "Development Status :: 4 - Beta",
