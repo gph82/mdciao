@@ -424,7 +424,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
      * 'cov19'
      * 'ghrelin@ghsr'
      * 'mor@muor'
-     * 'Y1'
+     * 'y1_apo'
 
     This data is used in the notebooks:
      * 01.Tutorial.ipynb (b2ar@Gs)
@@ -433,7 +433,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
      * 04.Comparing_CGs_Flares.ipynb (cov19)
      * 07.EGFR Kinase Inhibitors.ipynb (EGFR)
      * 08.Manuscript.ipynb (b2ar@Gs)
-     * 09.Consensus_labels.ipynb (ghrelin@ghsr,b2ar@Gs,mor@muor,Y1)
+     * 09.Consensus_labels.ipynb (ghrelin@ghsr,b2ar@Gs,mor@muor,y1_apo)
 
     which can all be run locally issuing,
     from the CLI:
@@ -485,26 +485,26 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
 
            * Analysis of the Dynamics of the Human Growth Hormone Secretagogue Receptor Reveals Insights into the Energy Landscape of the Molecule
              A. A. Smith, E. M. Pacull, S. Stecher, P. W. Hildebrand, A. Vogel, D. Huster
-             Angew. Chem. Int. Ed. 2023, 62, e202302003
+             Angew. Chem. Int. Ed. 2023, 62, e202302003 `<https://doi.org/10.1002/anie.202302003>`_
 
-         * Y1 : https://proteinformatics.uni-leipzig.de/mdciao/y1_apo.zip
+         * y1_apo : https://proteinformatics.uni-leipzig.de/mdciao/y1_apo.zip
           Neuropeptide Y receptor type 1, Y1 receptor for short, in apo form.
           Provided kindly by Dr. A. Vogel (1 traj, ca. 11 MB, 528 frames, dt = 50ns)
           For the associated publication see here:
 
            * Towards Probing Conformational States of Y2 Receptor Using Hyperpolarized 129Xe NMR.
              Schmidt, P.; Vogel, A.; Schwarze, B.; Seufert, F.; Licha, K.; Wycisk, V.; Kilian, W.; Hildebrand, P.W.; Mitschang, L.
-             Molecules 2023, 28, 1424. [](https://doi.org/10.3390/molecules28031424)
+             Molecules 2023, 28, 1424. `<https://doi.org/10.3390/molecules28031424>`_
 
          * mor@muor : https://proteinformatics.uni-leipzig.de/mdciao/muor_199.zip
           Active mu-opioid receptor bound to the agonist morphine (1 traj, ca. 7 MB, 400 frames, dt = 100ns).
           Kindly made available for this purpose by the GPCRmd. The GPCRmd's simulation
-          report can be found [https://www.gpcrmd.org/dynadb/dynamics/id/199/](here) ,
+          report can be found `here <https://www.gpcrmd.org/dynadb/dynamics/id/199/>`_ ,
           the original publication is:
 
            * Dynamic and Kinetic Elements of µ-Opioid Receptor Functional Selectivity.
              Kapoor, A., Martinez-Rosell, G., Provasi, D. et al.
-             Sci Rep 7, 11255 (2017). [](https://doi.org/10.1038/s41598-017-11483-8)
+             Sci Rep 7, 11255 (2017). `<https://doi.org/10.1038/s41598-017-11483-8>`_
 
     unzip : bool, or str, default is True
         Try unzipping the file after downloading. If string,
