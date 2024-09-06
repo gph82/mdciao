@@ -3,17 +3,16 @@ mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation D
 
 |Pip Package| |Python Package| |MacOs Package| |Coverage| |DOI| |License|
 
-..
-   figure:: doc/imgs/banner.png
+.. figure:: doc/imgs/banner.png
    :scale: 33%
-..
-   figure:: doc/imgs/distro_and_violin.png
+
+.. figure:: doc/imgs/distro_and_violin.png
    :scale: 25%
-..
-   figure:: doc/imgs/timedep_ctc_matrix.png
+
+.. figure:: doc/imgs/timedep_ctc_matrix.png
    :scale: 55%
-..
-   figure:: doc/imgs/interface.combined.png
+
+.. figure:: doc/imgs/interface.combined.png
    :scale: 33%
 
 ``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an API to construct your own analysis workflow.
