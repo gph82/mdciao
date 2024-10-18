@@ -1049,7 +1049,7 @@ def fontsize_apply(axA, axB):
         fs = _np.round(txt.get_fontsize(), 2)
         txt.set_fontsize(fs2type[fs])
 
-def add_aura(xy, aura, ax, r=1, fragment_lenghts=None, width=.10, subtract_baseline=True,
+def add_aura(xy, aura, ax, r=1, fragment_lengths=None, width=.10, subtract_baseline=True,
              colors=None,
              lines=False):
     r"""
@@ -1066,7 +1066,7 @@ def add_aura(xy, aura, ax, r=1, fragment_lenghts=None, width=.10, subtract_basel
         or e.g. deltas thereof, i.e. containing
         negative values.
         The indices of `aura` are indices of
-        `xy`, s.t. the have to
+        `xy`, s.t. they have to
         be in the interval [0,len(xy)]
         If `xy` has been "sparsed"
         somehow, `aura` needs also
@@ -1079,7 +1079,7 @@ def add_aura(xy, aura, ax, r=1, fragment_lenghts=None, width=.10, subtract_basel
         The width of the aura, in units of :obj:`r`
         The maximum aura value will always appear
         at r+r*width
-    fragment_lenghts : iterable of ints, default is None
+    fragment_lengths : iterable of ints, default is None
         How the :obj:`xy` is divided into fragments.
         if None, defaults to [len(xy)]
     subtract_baseline : bool, default is True
@@ -1109,9 +1109,9 @@ def add_aura(xy, aura, ax, r=1, fragment_lenghts=None, width=.10, subtract_basel
         The new maximum radius, i.e. (1+width)*r
     """
 
-    if fragment_lenghts is None:
-        fragment_lenghts = [len(xy)]
-    assert len(aura) == len(xy) == sum(fragment_lenghts)
+    if fragment_lengths is None:
+        fragment_lengths = [len(xy)]
+    assert len(aura) == len(xy) == sum(fragment_lengths)
     aura = _np.array(aura,dtype=float)
     if any([a<0 for a in aura]):
         subtract_baseline = False
@@ -1125,11 +1125,11 @@ def add_aura(xy, aura, ax, r=1, fragment_lenghts=None, width=.10, subtract_basel
     aura *= r * width
     r -= aura.min()
 
-    col_list = col_list_from_input_and_fragments(colors, [_np.arange(l) for l in fragment_lenghts],alpha=.80)
+    col_list = col_list_from_input_and_fragments(colors, [_np.arange(l) for l in fragment_lengths], alpha=.80)
 
     artists = []
     aura_iter = iter(aura)
-    for jj, ixy in enumerate(_re_warp(xy, fragment_lenghts)):
+    for jj, ixy in enumerate(_re_warp(xy, fragment_lengths)):
         base, top, segments = [], [], []
         for ii, (x, y) in enumerate(ixy):
             theta = _np.arctan2(y, x)
