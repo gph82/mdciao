@@ -1147,7 +1147,7 @@ def add_aura(xy, aura, ax, r=1, fragment_lengths=None, width=.10, subtract_basel
         poly = _np.vstack((base, top[::-1]))
         # ax.scatter(base[:,0],base[:,1],color="r",zorder=100)
         # ax.scatter(top[:,0],top[:,1],color="g",zorder=100)
-        if lines:
+        if lines or len(base)==len(top)==len(ixy)==1: #Fragments of len(1) (e.g. ligands) get a line instead of poly
             artists.append(_LCol(segments, color=col_list[jj]))
         else:
             artists.append(_PG(poly, alpha=.80, color=col_list[jj],lw=0))
