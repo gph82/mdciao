@@ -2511,6 +2511,28 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         assert delta[tuple([2,3])]==-.60
         assert delta[tuple([2,4])]==1
 
+    def test_frequency_delta_low_level_mapB2A(self):
+        from mdciao.contacts.contacts import _delta_freq_pairs
+        mapB2A = {10 : 0,
+                  #11 : 1, #One pair will be lost
+                  22 : 2,
+                  44 : 4
+                  }
+        delta, pairs = _delta_freq_pairs([1., .60, 1], [[0, 1],
+                                                      [2, 3],
+                                                      [0, 2]],
+                                         [.25, .50, 1], [[10, 11],
+                                                         [22, 10],
+                                                         [44, 22]],
+                                         mapB2A=mapB2A)
+
+        assert len(delta)==len(pairs)==4
+        delta = {tuple(pp):dd for dd, pp in zip(delta,pairs)}
+        assert delta[tuple([0,1])]==-1 #bc we're ignoring the .25 bc 11 :1 is not in the map
+        assert delta[tuple([0,2])]==.50-1
+        assert delta[tuple([2,3])]==-.60
+        assert delta[tuple([2,4])]==1
+
     def test_frequency_delta(self):
         CG1 = examples.ContactGroupL394(ctc_cutoff_Ang=3.5)
         CG2 = examples.ContactGroupL394(ctc_cutoff_Ang=5)

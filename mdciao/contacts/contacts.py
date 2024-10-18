@@ -7874,26 +7874,55 @@ def _mapatoms(top0, top1,resmapping, atom0idx2atom_name):
     return atom0idx2atom1idx
 
 
-def _delta_freq_pairs(freqsA, pairsA, freqsB, pairsB):
+def _delta_freq_pairs(freqsA, pairsA, freqsB, pairsB, mapB2A=None):
     r"""
     Lower level method to run :obj:`ContactGroup.frequency_delta` in way that's easy to test
 
+    The delta is computed as freqsB-freqsA to represent the change from "A" to "B", as in
+    "B" is final/product state, "A" is initial/reactant state
+
     TODO: this could be done in a million different ways (e.g. also with pandas), I just
     don't want to think about it much now
+
     Parameters
     ----------
     freqsA
     pairsA
     freqsB
     pairsB
+    mapB2A : dict
+        Maps indices of `pairsB` to
+        indices of `pairsA`, in case A and B
+        are different topologies. Pairs of `pairsB`
+        not having both indices present in mapB2A.keys()
+        (i.e. residues of B not present in A)
+        will be ignored, which is equivalent to having
+        theirs `freqsB`-value set to zero. As a consequence,
+        the delta freqB-freqA for that pair which (is
+        missing from mapB2A) will appear as -freqA
+        in the returned values.
 
     Returns
     -------
-
+    delta : 1D np.ndarray
+        An array with the freqB-freqA values for all pairs present,
+        either in pairsA or pairsB
+    pairs : 2D np.ndarray
     """
     assert len(freqsA)==len(pairsA)
     assert len(freqsB)==len(pairsB)
     delta = _defdict(list)
+    if mapB2A is not None:
+        _freqsB, _pairsB = [], []
+        for freq, pair in zip(freqsB, pairsB):
+            #print(pair,  all([ii in mapB2A.keys() for ii in pair]))
+            if all([ii in mapB2A.keys() for ii in pair]):
+                _freqsB.append(freq)
+                _pairsB.append([mapB2A[ii] for ii in pair])
+
+        freqsB = _freqsB
+        pairsB = _pairsB
+
     for sign, (freqs, pairs) in zip([-1, +1], [[freqsA, pairsA],
                                                [freqsB, pairsB]]):
         for freq, pair in zip(freqs,pairs):
