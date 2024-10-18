@@ -206,7 +206,7 @@ class Test_fetch_example_data(unittest.TestCase):
                                                          unzip="unzip_here")
                 assert os.path.exists(local_path)
                 # assert os.path.exists((os.path.splitext(local_path))[0])
-                files = os.listdir(td)
+                files = sorted(os.listdir(td))
                 assert len(files) == 2
                 assert files[0] == "unzip_here.zip"
                 assert files[1] == "unzip_here"
