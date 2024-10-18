@@ -4298,18 +4298,18 @@ class ContactGroup(object):
                                              zip([_fragment_names if fragment_names is None else fragment_names][0],
                                                  fragments)}
 
-    def frequency_delta(self, otherCG,ctc_cutoff_Ang):
+    def frequency_delta(self, otherCG, ctc_cutoff_Ang, residuemap=None):
         r"""
-        Compute per-contact frequency differences between :obj:`self` and some other :obj:`ContactGroup`
+        Compute per-contact frequency differences between `self` and some other :obj:`ContactGroup`
 
         The difference is defined as
 
             :math:`\Delta_{AB} = freq_B - freq_A`,
 
-        i.e. the delta that occurs upon "reacting" from :obj:`self` to :obj:`otherCG`
+        i.e. the delta that occurs upon "reacting" from `self` to `otherCG`
 
         No sanity checks are performed, residue indices are assumed to have the same
-        meaning in both :obj:`self` and :obj:`otherCG`
+        meaning in both `self` and `otherCG`, unless `residuemap` is provided.
 
         Parameters
         ----------
@@ -4317,6 +4317,19 @@ class ContactGroup(object):
             The ContactGroup to compute the difference with
         ctc_cutoff_Ang : float
             The cutoff to use to compute the frequencies
+        residuemap : dict
+            Maps residue indices of `otherCG` to
+            residue indices of self, in case self and
+            are different topologies.
+
+            >>> residuemap[0]=20
+
+            Means the residue with the index 0 in `otherCG` is
+            the residue with the index 20 in this ContactGroup. (self)
+
+            Residues of `otherCG` absent of `residuemap`
+            are un-mappable to self and thus their associated
+            frequencies ignored, so beware of incomplete maps.
 
         Returns
         -------
@@ -4327,8 +4340,8 @@ class ContactGroup(object):
             The res_idxs_pairs for the :obj:`delta_freq`
             values
         """
-        return _delta_freq_pairs(    self.frequency_per_contact(ctc_cutoff_Ang),   self.res_idxs_pairs,
-                                 otherCG.frequency_per_contact(ctc_cutoff_Ang), otherCG.res_idxs_pairs)
+        return _delta_freq_pairs(self.frequency_per_contact(ctc_cutoff_Ang), self.res_idxs_pairs,
+                                 otherCG.frequency_per_contact(ctc_cutoff_Ang), otherCG.res_idxs_pairs, mapB2A=residuemap)
 
     @_kwargs_subs(ContactPair.relative_frequency_of_formed_atom_pairs_overall_trajs)
     def relative_frequency_formed_atom_pairs_overall_trajs(self, ctc_cutoff_Ang, switch_off_Ang=None, **kwargs) -> list:
