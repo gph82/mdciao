@@ -161,10 +161,10 @@ def get_trajectories_from_input(trajectories):
     if isinstance(trajectories,str):
         _trajectories = _natsorted(_glob(trajectories))
         if len(_trajectories)==0:
-            raise FileNotFoundError("Couldn't find (or pattern-match) anything to '%s'.\n"
-                                    "ls $CWD[%s]:\n%s:"%(trajectories,
-                                                         _path.abspath(_path.curdir),
-                                                         "\n".join(sorted(_ls(_path.curdir)))))
+            nl = 'n' # https://stackoverflow.com/a/44780467
+            raise FileNotFoundError(f"Couldn't find (or pattern-match) anything to '{trajectories}'.\n"
+                                    f"ls $CWD[{_path.abspath(_path.curdir)}]:\n"
+                                    f"{nl.join(sorted(_ls(_path.curdir)))}")
         else:
             trajectories=_trajectories
 
