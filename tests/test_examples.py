@@ -208,9 +208,9 @@ class Test_fetch_example_data(unittest.TestCase):
                 # assert os.path.exists((os.path.splitext(local_path))[0])
                 files = sorted(os.listdir(td))
                 assert len(files) == 2
-                assert files[0] == "unzip_here.zip"
-                assert files[1] == "unzip_here"
-                extracted = sorted(os.listdir(files[1]))
+                assert files[0] == "unzip_here"
+                assert files[1] == "unzip_here.zip"
+                extracted = sorted(os.listdir(files[0]))
                 assert extracted[0] == "A.dat"
                 assert extracted[1] == "B.dat"
 
