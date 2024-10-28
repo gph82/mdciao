@@ -7829,7 +7829,7 @@ def _contact_fraction_informer(n_kept, ctc_freqs, ctc_cutoff_Ang, or_frac=.9):
     captured_freq = ctc_freqs[:n_kept].sum()
     total_freq = ctc_freqs.sum()
     if total_freq==0:
-        print("No contacts formed at this frequency")
+        print(f"No contacts formed at a cutoff of {ctc_cutoff_Ang} Angstrom.")
     else:
         print("The following %u contacts capture %4.2f (~%u%%) of the total frequency %4.2f (over %u contacts with nonzero frequency at %3.2f Angstrom)." %
               (n_kept, captured_freq, _np.round(captured_freq / total_freq * 100), total_freq, len(ctc_freqs), ctc_cutoff_Ang))
