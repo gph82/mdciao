@@ -623,6 +623,21 @@ class Test_splice_fragments(unittest.TestCase):
                                         [12, 13, 14]])
         self.assertListEqual(newnames, ["A", "orphan_0", "B", "orphan_1", "C"])
 
+    def test_works_naming_and_start(self):
+        fragments = [[0, 1, 2, 3],
+                     [6, 7, 8],
+                     [12, 13, 14]]
+        fragnames = ["A", "B", "C"]
+        newfrags, newnames = mdcfragments.splice_orphan_fragments(fragments, fragnames, orphan_name='orphan_%u', start=10)
+
+        self.assertListEqual(newfrags, [[0, 1, 2, 3],
+                                        [4, 5],
+                                        [6, 7, 8],
+                                        [9, 10, 11],
+                                        [12, 13, 14]],
+                            )
+        self.assertListEqual(newnames, ["A", "orphan_10", "B", "orphan_11", "C"])
+
     def test_nmax(self):
         fragments = [[0, 1, 2, 3],
                      [6, 7, 8],

@@ -1126,12 +1126,13 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
 
 def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
                             orphan_name="?",
+                            start=0,
                             other_fragments=None):
     r"""
     Return a fragment list where residues not present in :obj:`fragments` are
     now new interstitial ('orphan') fragments.
 
-    "not-present" means outside of the ranges of each fragment, s.t.
+    "not-present" means outside the ranges of each fragment, s.t.
     an existing fragment like [0,1,5,6] is actually considered [0,1,2,3,4,5,6]
 
     Parameters
@@ -1149,6 +1150,9 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
         If the str contains a '%' character
         it will be used as a format identifier
         to use as orphan_name%ii
+    start : int, default is 0
+        What index to use as the first index
+        in case one uses the orphan_name%ii formatting.
     other_fragments : dict, default is None
         A second set of fragment-definitions.
         If these other fragments are contained
@@ -1187,7 +1191,7 @@ def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
             # The orphans have to be split using the limits of the other_fragments
             orphans = _break_fragments([frag[0] for frag in other_fragments.values()], orphans)
         if '%' in orphan_name:
-            orphans_labels = [orphan_name%ii for ii, __ in enumerate(orphans)]
+            orphans_labels = [orphan_name%ii for ii, __ in enumerate(orphans, start=start)]
         else:
             orphans_labels = [orphan_name for __ in orphans]
         # The idea is that now orphans could be supersets of existing
