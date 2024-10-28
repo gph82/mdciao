@@ -2218,7 +2218,7 @@ def guess_by_nomenclature(CLin, top, fragments=None, nomenclature_name=None,
         then None will be returned. If `return_residue_idxs`
         is True, then the indices will be actual residue indices,
         and not fragment indices (see the note below for more).
-        If return_str is True, the the answer is returned
+        If return_str is True, the answer is returned
         as a string of comma-separated-values.
     Note
     ----
