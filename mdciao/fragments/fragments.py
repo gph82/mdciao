@@ -39,7 +39,8 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                idx2label=None,
                just_return_string=False,
                resSeq_jumps=True,
-               label_width=10,
+               residue_string_width=10,
+               fragment_string_width=6,
                **print_kwargs):
     """Pretty-printing of fragments of an :obj:`mtraj.topology`
 
@@ -58,11 +59,14 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
         Pass along any consensus labels here
     resSeq_jumps : bool, default is True
         Inform whether the fragment contains jumps in the resSeq
-    label_width : int, default is 10
+    residue_string_width : int, default is 10
         The width in characters given
-        to the label descriptor. You can set this to zero
-        if you know :obj:`idx2label` is None for all
+        to the residue descriptor. You can set this to zero
+        if you know `idx2label` is None for all
         printed lines
+    fragment_string_width = int, default is 6
+        The width in characters given
+        to the fragment name.
     just_return_string : bool, default is False
         Instead of printing, just return the string
     print_kwargs:
@@ -74,7 +78,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
 
     """
     maplabel_first, maplabel_last = "", ""
-    labfmt = "%-"+"%us"%label_width
+    #labfmt = "%-" +"%us" % residue_string_width
     try:
         if idx2label is not None:
             maplabel_first = _mdcu.str_and_dict.choose_options_descencing([idx2label[fragment[0]]],
@@ -88,6 +92,14 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
             rfirst, rlast = [top[ii] for ii in [fragment[0], fragment[-1]]]
         rfirst_index, rlast_index = [fragment[0],fragment[-1]]
 
+        fstr = f"{fragment_desc} {frag_idx :{fragment_string_width}} with {len(fragment) :6} AAs "
+        r1str = f"{str(rfirst):>8}{maplabel_first:<{residue_string_width}} ({rfirst_index:4})"
+        r2str = f"{str(rlast) :>8}{maplabel_last :<{residue_string_width}} ({rlast_index :<4})"  # TODO finish making an f-string out of this!!
+        lstr = f" ({frag_idx})"
+        istr = fstr+r1str+" - "+r2str+lstr
+
+        """
+        # Leaving this here for a while
         labfirst = "%8s%-10s" % (rfirst, maplabel_first)
         lablast = "%8s%-10s" % (rlast, maplabel_last)
         istr = "%s %6s with %6u AAs %8s%s (%4u) - %8s%s (%-4u) (%s) " % \
@@ -99,7 +111,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
                 rlast, labfmt%maplabel_last,
                 rlast_index,
                 str(frag_idx))
-
+        """
         if isinstance(top,_md.Topology) and  rlast.resSeq - rfirst.resSeq != len(fragment) - 1:
             # print(ii, rj.resSeq-ri.resSeq, len(iseg)-1)
             istr += ' resSeq jumps'
@@ -331,7 +343,7 @@ def get_fragments(top,
     # Inform of the first result
     if verbose:
         print("Auto-detected fragments with method '%s'"%str(method))
-        print_fragments(fragments,top,label_width=0)
+        print_fragments(fragments,top, residue_string_width=0)
     # Join if necessary
     if join_fragments is not None:
         fragments = _mdcu.lists.join_lists(fragments, join_fragments)
@@ -832,7 +844,7 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
                 istr = print_frag(jj, top, fragments[jj],
                                   fragment_desc="   input fragment",
                                   just_return_string=True,
-                                  label_width=0)
+                                  residue_string_width=0)
                 n_in_fragment = len(_np.intersect1d(sub_frag, fragments[jj]))
                 if n_in_fragment < len(fragments[jj]):
                     istr += "%u residues outside %s" % (len(fragments[jj]) - n_in_fragment, fragname)
@@ -959,7 +971,7 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
     if verbose:
         print("Using method '%s' these fragments were found" % method)
         for ii, ifrag in enumerate(fragments_as_residue_idxs):
-            print_frag(ii, top, ifrag, label_width=0)
+            print_frag(ii, top, ifrag, residue_string_width=0)
 
     return fragments_as_residue_idxs, user_wants_consensus
 
