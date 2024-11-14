@@ -5979,8 +5979,6 @@ class ContactGroup(object):
 
         If no fragments are given, one single fragment containing all residues will be created
 
-        If fragments but no fragment_names are given, fragments get the names frag 0, frag 1 etc
-
         Note
         ----
         The logic to populate the above optargs is split across
@@ -6015,7 +6013,7 @@ class ContactGroup(object):
                         list_of_dicts[idx]["frag"]=ii
 
                         if fragment_names is None:
-                            list_of_dicts[idx]["fragname"]="frag %u"%ii
+                            list_of_dicts[idx]["fragname"]=None
                         else:
                             list_of_dicts[idx]["fragname"]=fragment_names[ii]
                     except IndexError:
