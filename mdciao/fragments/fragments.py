@@ -124,7 +124,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
         print(istr, **print_kwargs)
 
 @_kwargs_subs(print_frag)
-def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
+def print_fragments(fragments, top, fragment_names=None, max_lines=40, **print_frag_kwargs):
     """Inform about fragments, very thinly wrapping around :obj:`print_frag`
 
     Parameters
@@ -135,6 +135,10 @@ def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
     max_lines : int, default is 40
         Maximum number of lines to print. E.g. if 40,
         first 20 and last 20 will be printed
+    fragment_names : list, default is None
+        List of fragment names to use when printing.
+        Will be asserted as equal in length to
+        `fragments`
     print_frag_kwargs : dict
         Optional keyword args for :obj:`print_frag`,
         as listed below
@@ -151,7 +155,11 @@ def print_fragments(fragments, top, max_lines=40, **print_frag_kwargs):
 
     """
     if isinstance(fragments,list):
-        _fragments = {ii:val for ii, val in enumerate(fragments)}
+        if fragment_names is None:
+            _fragments = {ii:val for ii, val in enumerate(fragments)}
+        else:
+            assert len(fragment_names)==len(fragments), (len(fragment_names),len(fragments))
+            _fragments = {key : val for key, val in zip(fragment_names, fragments)}
     else:
         _fragments = {key:val for key, val in fragments.items()}
     frag_list = []

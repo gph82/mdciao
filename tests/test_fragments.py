@@ -67,6 +67,13 @@ class Test_print_fragments(unittest.TestCase):
         printed_list = mdcfragments.print_fragments(self.fragments, self.geom.top)
         assert all([isinstance(item,str) for item in printed_list])
         assert len(printed_list)==len(self.fragments)
+
+    def test_lists_w_names(self):
+        fragment_names = ["A", "B", "C", "D", "E"]
+        printed_list = mdcfragments.print_fragments(self.fragments, self.geom.top, fragment_names=fragment_names)
+        assert all([isinstance(item,str) for item in printed_list])
+        assert len(printed_list)==len(self.fragments)
+        assert all([line.startswith(f"fragment {ii}") for ii, line in zip(fragment_names, printed_list)])
     def test_dict(self):
         frags = {"A":self.fragments[0],
                  "B":self.fragments[1]}
