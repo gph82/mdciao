@@ -1781,7 +1781,7 @@ def interface(
                                                                 SS=ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang,
                                                                                           return_traj=True, n_frames=1,
                                                                                           verbose=False)[-1][0],
-                                                                fragment_names=fragment_names,
+                                                                fragment_names=[None if all([fn is None for fn in fragment_names]) else fragment_names][0],
                                                                 fragments=fragments_as_residue_idxs,
                                                                 )
             ifig.tight_layout()
