@@ -803,8 +803,14 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
                           [6,7]]
     def test_empty_str(self):
         fragnames = cli._parse_fragment_naming_options("", self.fragments)
+        self.assertSequenceEqual([None, None, None, None],
+                                 fragnames)
+
+    def test_auto(self):
+        fragnames = cli._parse_fragment_naming_options("auto", self.fragments)
         self.assertSequenceEqual(["frag0","frag1","frag2","frag3"],
                                  fragnames)
+
 
     def test_None(self):
         fragnames = cli._parse_fragment_naming_options("None", self.fragments)
@@ -825,9 +831,6 @@ class Test_parse_fragment_naming_options(unittest.TestCase):
             fragnames = cli._parse_fragment_naming_options("TM1,TM2", self.fragments)
             self.assertSequenceEqual(["TM1", "TM2", "ICL3", "H8"],
                                      fragnames)
-    def test_danger_raises(self):
-        with self.assertRaises(NotImplementedError):
-            cli._parse_fragment_naming_options("TM1,danger", self.fragments)
 
 class Test_parse_parse_coloring_options(unittest.TestCase):
 

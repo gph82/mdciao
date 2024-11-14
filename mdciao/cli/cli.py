@@ -244,10 +244,10 @@ def _parse_fragment_naming_options(fragment_names, fragments):
         command line option --fragment_names,
         see :obj:`parsers._parser_add_fragment_names. Can be different
         things:
-        * "" : fragment names will be named frag0,frag1,frag2 ... as needed
+        * "auto" : fragment names will be named frag0,frag1,frag2 ... as needed
         * None, "None","none": fragment names will be None
         * comma-separated values, with as many values
-        as fragments are in :obj:`fragments:
+        as fragments are in `fragments`
         If list, we do nothing (for compatibility with API use of CLI tools)
     fragments: list
         existing fragment definitions (iterables of residue indices)
@@ -257,8 +257,6 @@ def _parse_fragment_naming_options(fragment_names, fragments):
     Returns
     -------
     fragment_names : list of strings
-
-    fragments : list of fragments (only case "danger" was used, deprecated
     """
     #TODO fragment naming should be handled at the object level?
 
@@ -267,23 +265,19 @@ def _parse_fragment_naming_options(fragment_names, fragments):
             fragments), "Mismatch between nr. fragments and fragment names %s vs %s (%s)" % (
             len(fragments), len(fragment_names), fragment_names)
         return fragment_names
-    if fragment_names == '':
+    if fragment_names == 'auto':
         fragment_names = ['frag%u' % ii for ii in range(len(fragments))]
-    elif str(fragment_names).lower()=="none":
+    elif str(fragment_names).lower()=="none" or fragment_names=="":
         fragment_names = [None for __ in fragments]
     else:
         #TODO get rid of this danger nonsens
         assert isinstance(fragment_names, str), "Argument --names invalid: %s" % fragment_names
-        if 'danger' not in fragment_names.lower():
-            fragment_names = [ff.strip(" ") for ff in fragment_names.split(",")]
-            assert len(fragment_names) == len(
-                fragments), "Mismatch between nr. fragments and fragment names %s vs %s (%s)" % (
-                len(fragments), len(fragment_names), fragment_names)
-            return fragment_names
+        fragment_names = [ff.strip(" ") for ff in fragment_names.split(",")]
+        assert len(fragment_names) == len(
+            fragments), "Mismatch between nr. fragments and fragment names %s vs %s (%s)" % (
+            len(fragments), len(fragment_names), fragment_names)
+        return fragment_names
 
-        elif 'danger' in fragment_names.lower():
-            raise NotImplementedError
-            # browse older version to see what was here
 
     return fragment_names
 
