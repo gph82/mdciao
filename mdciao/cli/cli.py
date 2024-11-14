@@ -2605,7 +2605,8 @@ def _parse_fragdefs_fragnames_consensus(top, fragments, fragment_names, GPCR_Uni
         index of :obj:`top` to their consensus
         fragment name
     """
-    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, top, verbose=True)
+    fragments_as_residue_idxs, user_wants_consensus = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, top, verbose=True,
+                                                                                                        fragment_names=fragment_names)
     if user_wants_consensus and all([str(cons).lower() == 'none' for cons in [GPCR_UniProt, CGN_UniProt, KLIFS_string]]):
         raise ValueError(
             "User wants to define interface fragments using consensus labels, but no consensus labels were provided via the 'CGN_UniProt' or the 'GPCR_UniProt' arguments.")
