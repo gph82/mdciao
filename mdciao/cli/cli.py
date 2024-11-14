@@ -566,7 +566,7 @@ def residue_neighborhoods(residues,
                           pbc=True,
                           ylim_Ang=15,
                           fragments="lig_resSeq+",
-                          fragment_names="",
+                          fragment_names="auto",
                           fragment_colors=None,
                           graphic_ext=".pdf",
                           table_ext=".dat",
@@ -728,14 +728,14 @@ def residue_neighborhoods(residues,
         If there's more than one "GLU30", the user gets asked to
         disambiguate. The resulting fragments need not cover
         all of the topology, they only need to not overlap.
-    fragment_names : string or list of strings, default is ""
-        If string, it has to be a list of comma-separated values.
-        If you want unnamed fragments, use None, "None", or "".
-        Has to contain names for all fragments that result from
-        :obj:`fragments` or more.
-        mdciao wil try to use :obj:`replace4latex`
-        to generate LaTeX expressions from stuff like "Galpha"
-        You can use fragment_names="None" or "" to avoid using fragment names
+    fragment_names : string, list of strings, or None. Default is "auto".
+        The default "auto" names fragments "frag0", "frag1" up
+        however many fragments there are. If string and not "auto",
+        it has to be a list of comma-separated values, with enough
+        names for however many fragments there are.
+        mdciao will use :obj:`mdciao.utils.str_and_dict.replace4latex`
+        to try to generate LaTeX expressions from stuff like "Galpha".
+        You can use None or "" to avoid using fragment names.
     fragment_colors : None, boolean or list, default is None
         Assign colors to fragments. These colors will be used
         to color-code the frequency bars. If True, colors
