@@ -169,6 +169,7 @@ def _parse_consensus_option(option, consensus_type,
                                         # interactivity
                                         restrict_to_residxs=restrict_to_residxs,
                                         autofill_consensus=True,
+                                        fragments=fragments,
                                         #    verbose=True,
                                         )
         print()
