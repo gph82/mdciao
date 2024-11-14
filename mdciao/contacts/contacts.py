@@ -6100,8 +6100,7 @@ class ContactGroup(object):
 
         kwargs = {
             "fragments": fragments,
-            "fragment_names": fcdf[~fcdf["fragname"].isnull()]["fragname"].unique()
-
+            "fragment_names": [None if fcdf["fragname"].isnull().all() else fcdf[~fcdf["fragname"].isnull()]["fragname"].unique()][0]
         }
         if "textlabels" in fcdf.keys():
             kwargs.update({"textlabels": fcdf.textlabels.values.tolist()})
