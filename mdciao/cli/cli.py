@@ -1105,7 +1105,7 @@ def interface(
         chunksize_in_frames=2000,
         ctc_cutoff_Ang=4,
         curve_color="auto",
-        fragment_names="",
+        fragment_names=None,
         graphic_dpi=150,
         graphic_ext=".pdf",
         background=True,
@@ -1398,15 +1398,14 @@ def interface(
     curve_color : str, default is 'auto'
         Type of color used for the curves. Alternatives are
         "P" or "H"
-    fragment_names : str or list, default is ''
-        If string, it has to be a list of comma-separated
-        values. If you want unnamed fragments, use None,
-        "None", or "". Has to contain names for all
-        fragments that result from :obj:`fragments` or more.
-        mdciao wil try to use :obj:`replace4latex` to
-        generate LaTeX expressions from stuff like "Galpha"
-        You can use fragment_names="None" or "" to avoid
-        using fragment names
+    fragment_names : string, list of strings, or None. Default is None.
+        Default is not to use fragment names. Otherwise, you can pass
+        a string of comma-separated values or a list of fragment names.
+        You have to provide as many names as there are fragments. The
+        special string "auto" names fragments "frag0", "frag1" up
+        to the number of fragments.
+        mdciao will use :obj:`mdciao.utils.str_and_dict.replace4latex`
+        to try to generate LaTeX expressions from stuff like "Galpha".
     graphic_dpi : int, default is 150
         Dots per Inch (DPI) of the graphic output. Only has
         an effect for bitmap outputs.
@@ -1561,7 +1560,11 @@ def interface(
 
     fragments_as_residue_idxs, fragment_names, _, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
         refgeom.top, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_string, accept_guess, save_nomenclature_files)
-    fragments_as_residue_idxs_d = {str(ii) : val for ii, val in enumerate(fragments_as_residue_idxs)}
+    if fragment_names is None or all([fn is None for fn in fragment_names]): #adapt to _parse_fragment_naming_options
+        fragments_as_residue_idxs_d = {str(ii) : val for ii, val in enumerate(fragments_as_residue_idxs)}
+    else:
+        fragments_as_residue_idxs_d = {key : val for key, val in zip(fragment_names, fragments_as_residue_idxs)}
+        fragments_as_residue_idxs_d.update({str(ii) : val for ii, val in enumerate(fragments_as_residue_idxs)})
     if len(fragments_as_residue_idxs)==2 and interface_selection_1 is None and interface_selection_2 is None:
         interface_selection_1, interface_selection_2 =[0], [1]
     else:
