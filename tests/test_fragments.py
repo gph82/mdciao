@@ -290,7 +290,17 @@ class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
 
     def test_other_method(self):
         fragments, conlab = _fragments_strings_to_fragments("resSeq",
-                                                            self.top)
+                                                            self.top, verbose=True)
+        [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
+                                                                  self.fragments_by_resSeq)]
+        assert not conlab
+
+    def test_print_using_names(self):
+        fragments, conlab = _fragments_strings_to_fragments("resSeq",
+                                                            self.top,
+                                                            fragment_names=["rs1", "rs2","rs3","rs4","rs5",
+                                                                            "rs6", "rs7","rs8","rs9","rs10"],
+                                                            verbose=True)
         [_np.testing.assert_array_equal(ii, jj) for ii, jj in zip(fragments,
                                                                   self.fragments_by_resSeq)]
         assert not conlab

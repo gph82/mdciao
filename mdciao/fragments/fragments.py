@@ -441,7 +441,6 @@ def fragment_slice(traj : _md.Trajectory, fragments, keys_or_idxs=None, verbose=
         The fragment definitions as residue indices.
         Can be as a list or as a dict, e.g. the output of
         :obj:`mdciao.fragments.get_fragments` (list) or
-        :obj:`mdciao.nomenclature.LabelerGPCR.top2frags` (dict)
         :obj:`mdciao.nomenclature.LabelerGPCR.top2frags` (dict) or
         as a string, e.g. "chains", in which case it will be
         passed to :obj:`mdciao.fragments.get_fragments` (list)
@@ -879,7 +878,7 @@ def check_if_fragment_clashes(sub_frag, fragname, fragments, top,
     else:
         return len(frag_cands) <= 1, sub_frag, frag_cands
 
-def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
+def _fragments_strings_to_fragments(fragment_input, top, verbose=False, fragment_names=None):
     r"""
 
     Try to understand how the user wants to fragment the topology
@@ -925,10 +924,17 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
           This type of input appears in the output as
           'user input by residue array or range'.
     top : :obj:`~mdtraj.Topology`
+    fragment_names : list, or "auto", default is None
+        The name of the fragments. Used only for
+        printing to stdout if verbose=True. It will
+        be asserted as the equal length
+        of `fragments_as_residue_idxs`
+        (the returned value, see below)
 
     Returns
     -------
     fragments_as_residue_idxs : list
+        The list of fragments, resulting from the `fragment_input`
     user_wants_consensus : boolean
 
     """
@@ -984,11 +990,16 @@ def _fragments_strings_to_fragments(fragment_input, top, verbose=False):
                   "the geometry (total n_residues %u) that have been deleted %s " % (
                   ii, top.n_residues, set(ifrag).difference(range(top.n_residues))))
             fragments_as_residue_idxs[ii]=[jj for jj in ifrag if jj<top.n_residues]
-
     if verbose:
         print("Using method '%s' these fragments were found" % method)
-        for ii, ifrag in enumerate(fragments_as_residue_idxs):
-            print_frag(ii, top, ifrag, residue_string_width=0)
+        if fragment_names in [None, "auto"]:
+            fragment_names = _np.arange(len(fragments_as_residue_idxs))
+        else:
+            assert len(fragment_names)==len(fragments_as_residue_idxs), (len(fragment_names), len(fragments_as_residue_idxs), fragment_names)
+
+        fsw = max([len(str(fn)) for fn in fragment_names])
+        print_fragments(fragments_as_residue_idxs, top,
+                        fragment_names=fragment_names, fragment_string_width=fsw, residue_string_width=0)
 
     return fragments_as_residue_idxs, user_wants_consensus
 
