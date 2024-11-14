@@ -1825,7 +1825,7 @@ def sites(site_inputs,
           fragments='lig_resSeq+',
           allow_partial_sites=False,
           default_fragment_index=None,
-          fragment_names="",
+          fragment_names=None,
           output_dir='.',
           graphic_ext=".pdf",
           t_unit='ns',
@@ -2000,15 +2000,14 @@ def sites(site_inputs,
         a dimer, pass which fragment/monomer should be chosen
         by default. The default behaviour (None)
         will prompt the user when necessary
-    fragment_names : str or list, default is ''
-        If string, it has to be a list of comma-separated
-        values. If you want unnamed fragments, use None,
-        "None", or "". Has to contain names for all
-        fragments that result from :obj:`fragments` or more.
-        mdciao wil try to use :obj:`replace4latex` to
-        generate LaTeX expressions from stuff like "Galpha"
-        You can use fragment_names="None" or "" to avoid
-        using fragment names
+    fragment_names : string, list of strings, or None. Default is None.
+        Default is not to use fragment names. Otherwise, you can pass
+        a string of comma-separated values or a list of fragment names.
+        You have to provide as many names as there are fragments. The
+        special string "auto" names fragments "frag0", "frag1" up
+        to the number of fragments.
+        mdciao will use :obj:`mdciao.utils.str_and_dict.replace4latex`
+        to try to generate LaTeX expressions from stuff like "Galpha".
     allow_partial_sites : bool, default is False
         If False, a single missing residue is enough to
         discard an entire site. If True,
