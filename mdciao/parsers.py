@@ -312,10 +312,11 @@ def _parser_add_sites(parser):
 
 def _parser_add_fragment_names(parser):
     parser.add_argument('--fragment_names', type=str,
-                        help="Name of the fragments. Leave empty if you want them automatically named."
+                        help="Name of the fragments. Default is to name them automatically."
                              " Otherwise, give a quoted list of strings separated by commas, e.g. "
-                             "'TM1, TM2, TM3,'",
-                        default="")
+                             "'TM1, TM2, TM3,'"
+                             "Use 'None' to avoid naming them altogether.",
+                        default="auto")
 
 def _int_or_float_type(val):
     r"""Do nothing or cast the str to int or float """
