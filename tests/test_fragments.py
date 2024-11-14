@@ -814,5 +814,15 @@ class Test_fragment_slice(unittest.TestCase):
         assert str(new_geom.top.residue(0)) == "ALA2"
         assert str(new_geom.top.residue(66)) == "CYSG68"
         assert str(new_geom.top.residue(67)) == "P0G395"
+
+    def test_heuristic(self):
+        new_geom = mdcfragments.fragment_slice(self.geom,'lig_resSeq+', [0])
+        new_frags = mdcfragments.get_fragments(new_geom.top)
+        assert new_geom.n_residues == 281
+        assert len(new_frags) == 1
+        assert len(new_frags[0]) == 281
+        assert str(new_geom.top.residue(0)) == "GLU30"
+        assert str(new_geom.top.residue(280)) == "CYSP341"
+
 if __name__ == '__main__':
     unittest.main()

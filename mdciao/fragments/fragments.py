@@ -414,8 +414,7 @@ def _break_fragments(breakers, fragments):
                 fragments = fragments[:ifrag] + subfrags + fragments[ifrag + 1:]
     return fragments
 
-#TODO use this throught the code instead of the python explicit way
-def fragment_slice(traj : _md.Trajectory, fragments, keys_or_idxs=None) -> _md.Trajectory:
+def fragment_slice(traj : _md.Trajectory, fragments, keys_or_idxs=None, verbose=True) -> _md.Trajectory:
     r"""
 
     Slice a geometry using arbitrary fragment definitions, a la :obj:`mdtraj.Trajectory.atom_slice`
@@ -430,17 +429,25 @@ def fragment_slice(traj : _md.Trajectory, fragments, keys_or_idxs=None) -> _md.T
     ----------
     traj : :obj:`mdtraj.Trajectory`
         The trajectory to slice
-    fragments : list or dict
+    fragments : list, dict, or str
         The fragment definitions as residue indices.
         Can be as a list or as a dict, e.g. the output of
         :obj:`mdciao.fragments.get_fragments` (list) or
         :obj:`mdciao.nomenclature.LabelerGPCR.top2frags` (dict)
+        :obj:`mdciao.nomenclature.LabelerGPCR.top2frags` (dict) or
+        as a string, e.g. "chains", in which case it will be
+        passed to :obj:`mdciao.fragments.get_fragments` (list)
+        to generate the fragments on the fly.
     keys_or_idxs : iterable or None
         The keys or indices of the
         fragments to slice to, i.e.
         to keep. If None
         all fragments are used
-        as a selection
+        as a selection.
+    verbose : bool, default is True
+        Be verbose when extracting fragments, only
+        applies if `fragments` is a string.
+
 
     Returns
     -------
@@ -449,6 +456,8 @@ def fragment_slice(traj : _md.Trajectory, fragments, keys_or_idxs=None) -> _md.T
         atoms present in the selected fragments
 
     """
+    if isinstance(fragments,str):
+        fragments = get_fragments(traj.top,fragments,verbose=verbose)
 
     if keys_or_idxs is None:
         if isinstance(fragments,dict):
