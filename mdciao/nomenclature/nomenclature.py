@@ -807,7 +807,8 @@ class LabelerConsensus(object):
                                       confragidxs]
                         if not set(self.fragments[confraglab]).issuperset(confragAAs):
                             confrags_compatible_with_frags = False
-                            only_in_top = set(confragAAs).difference(self.fragments[confraglab])
+                            only_in_top = list(set(confragAAs).difference(self.fragments[confraglab]))
+                            only_in_top = [only_in_top[idx] for idx in _np.argsort([_mdcu.residue_and_atom.int_from_AA_code(key) for key in only_in_top])]
                             current_clashing_confrag = f"=> {confraglab} is not compatible with alignment '{ii}'. "
                             current_clashing_residues = f"The following residues of your input `top` seem to be the problem: {only_in_top}. "
                             istr = current_clashing_confrag+current_clashing_residues
@@ -818,7 +819,7 @@ class LabelerConsensus(object):
                             elif ii==len(df)-1:
                                 istr += f"This was the last available alignment."
                             if not verbose:
-                                istr += f" Re-rerun with `verbose=True` to show the problematic part of this alignment here."
+                                istr += f" Re-rerun 'mdciao.nomenclature.{type(self).__name__}.aligntop' with `verbose=True` to show the problematic part of this alignment here."
 
                             _mdcu.str_and_dict.print_wrap(istr)
                             break
