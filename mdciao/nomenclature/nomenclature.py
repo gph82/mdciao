@@ -2542,8 +2542,8 @@ _GPCR_num2lett = {
     "8": "H8",
 }
 
-_GPCR_fragments = ("NT",
-                   "1", "TM1 ",
+_GPCR_fragments = ("NT", "N-term",
+                   "1", "TM1",
                    "12", "ICL1",
                    "2", "TM2",
                    "23", "ECL1",
@@ -2558,7 +2558,7 @@ _GPCR_fragments = ("NT",
                    "7", "TM7",
                    "78",
                    "8", "H8",
-                   "CT")
+                   "CT","C-term")
 
 _CGN_fragments = ('G.HN',
                   'G.hns1',
