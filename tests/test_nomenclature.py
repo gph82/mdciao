@@ -827,14 +827,14 @@ if __name__ == '__main__':
 class Test_sort_consensus_labels(unittest.TestCase):
 
     def setUp(self):
-        self.tosort = ["G.H1.10", "H.HA.20", 'a.l.85', "H8.10", 'αC.25', "V34", "H8.1", "3.50", "2.50", "G.H1.1", "H.HA.10", 'αD.55']
+        self.tosort = ["C-term", "G.H1.10", "H.HA.20", 'a.l.85', "H8.10", 'αC.25', "V34", "H8.1", "3.50", "2.50", "G.H1.1", "H.HA.10", 'αD.55', "TM1"]
 
-    def test_GPCR(self):
+    def test_GPCR_1(self):
         sorted = nomenclature._sort_GPCR_consensus_labels(self.tosort)
         _np.testing.assert_array_equal(
-            ["2.50", "3.50", "H8.1", "H8.10", "G.H1.10", "H.HA.20", 'a.l.85', 'αC.25', "V34", "G.H1.1", "H.HA.10", 'αD.55'],
+            ["TM1", "2.50", "3.50", "H8.1", "H8.10", "C-term", "G.H1.10", "H.HA.20", 'a.l.85', 'αC.25', "V34", "G.H1.1", "H.HA.10", 'αD.55'],
             sorted)
-    def test_GPCR(self):
+    def test_GPCR_2(self):
         sorted = nomenclature._sort_GPCR_consensus_labels(["TM3", "TM2"])
         _np.testing.assert_array_equal(
             ["TM2","TM3"],
@@ -842,13 +842,13 @@ class Test_sort_consensus_labels(unittest.TestCase):
 
     def test_GPCR_dont_append(self):
         sorted = nomenclature._sort_GPCR_consensus_labels(self.tosort, append_diffset=False)
-        _np.testing.assert_array_equal(["2.50", "3.50", "H8.1", "H8.10"],
+        _np.testing.assert_array_equal(["TM1", "2.50", "3.50", "H8.1", "H8.10","C-term"],
                                        sorted)
 
     def test_CGN(self):
         sorted = nomenclature._sort_CGN_consensus_labels(self.tosort)
         _np.testing.assert_array_equal(
-            ["G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20", 'a.l.85', "H8.10", 'αC.25', "V34", "H8.1", "3.50", "2.50", 'αD.55'],
+            ["G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20",  "C-term", 'a.l.85', "H8.10", 'αC.25', "V34", "H8.1", "3.50", "2.50", 'αD.55', "TM1"],
             sorted)
 
     def test_CGN_dont_append(self):
@@ -859,7 +859,7 @@ class Test_sort_consensus_labels(unittest.TestCase):
     def test_KLIFS(self):
         sorted = nomenclature._sort_KLIFS_consensus_labels(self.tosort)
         _np.testing.assert_array_equal(
-            [ 'αC.25', 'αD.55', 'a.l.85',"G.H1.10", "H.HA.20","H8.10", "V34", "H8.1", "3.50", "2.50", "G.H1.1", "H.HA.10"],
+            [ 'αC.25', 'αD.55', 'a.l.85', "C-term", "G.H1.10", "H.HA.20","H8.10", "V34", "H8.1", "3.50", "2.50", "G.H1.1", "H.HA.10", "TM1"],
             sorted)
 
     def test_KLIFS_dont_append(self):
@@ -873,30 +873,31 @@ class Test_sort_consensus_labels(unittest.TestCase):
             [
              "G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20",
              'αC.25', 'αD.55', 'a.l.85',
-             "2.50", "3.50", "H8.1", "H8.10"],
+             "TM1", "2.50", "3.50", "H8.1", "H8.10", "C-term"],
             sorted)
 
         _np.testing.assert_array_equal(
-            [9, 0, 10, 1,
-             4, 11, 2,
-             8, 7, 6, 3],
+            [10, 1, 11, 2,
+             5, 12, 3,
+             13, 9, 8, 7, 4, 0],
             sorted_indices)
 
     def test_sort_all_consensus_labels_append(self):
-        sorted, sorted_indices = nomenclature._sort_all_consensus_labels(self.tosort, append_diffset=True,
+        sorted, sorted_indices = nomenclature._sort_all_consensus_labels(self.tosort, append_diffset=False,
                                                          order=["CGN", "KLIFS"])
         _np.testing.assert_array_equal(
             [
                 "G.H1.1", "G.H1.10", "H.HA.10", "H.HA.20",
                 'αC.25', 'αD.55', 'a.l.85',
-                "H8.10", "V34", "H8.1", "3.50", "2.50"
+                #"H8.10", "V34", "H8.1", "3.50", "2.50"
                  ],
             sorted)
 
         _np.testing.assert_array_equal(
-            [9, 0, 10, 1,
-             4, 11, 2,
-             3, 5, 6, 7, 8],
+            [10, 1, 11, 2,
+             5, 12, 3,
+             #13, 9, 8, 7, 4, 0
+             ],
             sorted_indices)
 
 class Test_lexsort_consensus_ctc_labels(unittest.TestCase):

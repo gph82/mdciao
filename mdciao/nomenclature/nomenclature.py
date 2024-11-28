@@ -371,32 +371,13 @@ def _GPCRdb_web_lookup(url, verbose=True,
     UniProt_name = url.split("/")[-1]
     a = _requests.get(url, timeout=timeout)
 
-    return_fields = ["protein_segment",
-                     "AAresSeq",
-                     "display_generic_number"]
-    pop_fields = ["sequence_number", "amino_acid", "alternative_generic_numbers"]
-    # TODO use _url2json here
     if verbose:
         print("done!")
     if a.text == '[]':
         DFout = ValueError('Contacted %s url successfully (no 404),\n'
                            'but Uniprot name %s yields nothing' % (url, UniProt_name))
     else:
-        df = _DataFrame(a.json())
-        mydict = df.T.to_dict()
-        for key, val in mydict.items():
-            try:
-                val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
-                if "alternative_generic_numbers" in val.keys():
-                    for idict in val["alternative_generic_numbers"]:
-                        # print(key, idict["scheme"], idict["label"])
-                        val[idict["scheme"]] = idict["label"]
-            except IndexError:
-                pass
-
-        DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
-        return_fields += [key for key in DFout.keys() if key not in return_fields + pop_fields]
-        DFout = DFout[return_fields]
+        DFout = _GPCRdbJSON2DF(a.json())
         print("Please cite the following reference to the GPCRdb:")
         lit = Literature()
         print(_format_cite(lit.site_GPCRdb))
@@ -407,6 +388,38 @@ def _GPCRdb_web_lookup(url, verbose=True,
 
     return DFout
 
+def _GPCRdbJSON2DF(jlist : list):
+    r"""
+
+    Parameters
+    ----------
+    jlist : list
+        A list of dictionaries, typically coming from
+        * requests.get(url).json() where url is a GPCRdb url
+        * json.load(f) where f is an open file handle of a json file
+    -------
+
+    """
+    df = _DataFrame(jlist)
+    return_fields = ["protein_segment",
+                     "AAresSeq",
+                     "display_generic_number"]
+    pop_fields = ["sequence_number", "amino_acid", "alternative_generic_numbers"]
+    mydict = df.T.to_dict()
+    for key, val in mydict.items():
+        try:
+            val["AAresSeq"] = '%s%s' % (val["amino_acid"], val["sequence_number"])
+            if "alternative_generic_numbers" in val.keys():
+                for idict in val["alternative_generic_numbers"]:
+                    # print(key, idict["scheme"], idict["label"])
+                    val[idict["scheme"]] = idict["label"]
+        except IndexError:
+            pass
+
+    DFout = _DataFrame.from_dict(mydict, orient="index").replace({_np.nan: None})
+    return_fields += [key for key in DFout.keys() if key not in return_fields + pop_fields]
+    DFout = DFout[return_fields]
+    return DFout
 
 def _md_load_rcsb(PDB,
                   web_address="https://files.rcsb.org/download",
@@ -794,7 +807,8 @@ class LabelerConsensus(object):
                                       confragidxs]
                         if not set(self.fragments[confraglab]).issuperset(confragAAs):
                             confrags_compatible_with_frags = False
-                            only_in_top = set(confragAAs).difference(self.fragments[confraglab])
+                            only_in_top = list(set(confragAAs).difference(self.fragments[confraglab]))
+                            only_in_top = [only_in_top[idx] for idx in _np.argsort([_mdcu.residue_and_atom.int_from_AA_code(key) for key in only_in_top])]
                             current_clashing_confrag = f"=> {confraglab} is not compatible with alignment '{ii}'. "
                             current_clashing_residues = f"The following residues of your input `top` seem to be the problem: {only_in_top}. "
                             istr = current_clashing_confrag+current_clashing_residues
@@ -805,7 +819,7 @@ class LabelerConsensus(object):
                             elif ii==len(df)-1:
                                 istr += f"This was the last available alignment."
                             if not verbose:
-                                istr += f" Re-rerun with `verbose=True` to show the problematic part of this alignment here."
+                                istr += f" Re-rerun 'mdciao.nomenclature.{type(self).__name__}.aligntop' with `verbose=True` to show the problematic part of this alignment here."
 
                             _mdcu.str_and_dict.print_wrap(istr)
                             break
@@ -2528,8 +2542,8 @@ _GPCR_num2lett = {
     "8": "H8",
 }
 
-_GPCR_fragments = ("NT",
-                   "1", "TM1 ",
+_GPCR_fragments = ("NT", "N-term",
+                   "1", "TM1",
                    "12", "ICL1",
                    "2", "TM2",
                    "23", "ECL1",
@@ -2544,7 +2558,7 @@ _GPCR_fragments = ("NT",
                    "7", "TM7",
                    "78",
                    "8", "H8",
-                   "CT")
+                   "CT","C-term")
 
 _CGN_fragments = ('G.HN',
                   'G.hns1',
