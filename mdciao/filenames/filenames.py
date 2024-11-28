@@ -69,6 +69,10 @@ class FileNames(object):
         self.small_monomer_LYS99 = _path.join(self.bogus_pdb_path,
                                              "2_3AA_chains_and_two_ligs_monomer.LYS29toLYS99.pdb")
 
+        # protein, non-protein and GLY residues to check residue memberships
+        self.VAL_GLY_P0G_w_Hs = _path.join(self.bogus_pdb_path,
+                                           "VAL_GLY_P0G_w_Hs.pdb")
+
         self.actor_pdb = _path.join(self.example_path,"prot1.pdb.gz")
 
         self.ions_and_water = _path.join(self.bogus_pdb_path, "water_and_ions.pdb.gz")

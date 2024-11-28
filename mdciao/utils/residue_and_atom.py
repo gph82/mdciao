@@ -524,7 +524,79 @@ for _key in _AA_types.keys():
     # the str().split(.) is an ugly hack for building the docs, smh the dict gets turned into a named tuple
     _AA_types[_key] += ' '+" ".join([str(_AMINO_ACID_CODES[_AA]).split(".")[-1] for _AA in _AA_types[_key].split()])
 _res2restype = {aa:key for key, val in _AA_types.items() for aa in val.split()}
-_res2restype
+
+def _residue_sidechain_membership(scheme,residue):
+    r"""
+    Which atoms of a `residue` should be considered when using `schemes` involving the sidechain.
+
+    Handles cases such as GLYs (no sidechain) or non-protein residues gracefully by always returning atom indices.
+
+    In GLYs:
+     * `sidechain` chooses the sidechain Hydrogens if they're present,
+     else it falls back to all other available atoms, including hydrogen.
+
+     * `sidechain-heavy` also chooses the sidechain Hydrogens if they're present,
+     else it falls back to all other available atoms, excluding hydrogen.
+
+    This means that, when sidechain Hydrogens are present, `sidechain` and
+    `sidechain-heavy` yield the same result, as currently implemented by
+    mdtraj.
+
+    For non-protein residues, `sidechain` chooses all atoms, including
+    hydrogens, and `sidechain-heavy` all except hydrogens.
+
+    This way, a minimum distance can always be computed by
+    w/o breaking the flow of _md_compute_contacts.compute_contacts
+
+    Parameters
+    ----------
+    scheme : str
+        Has to be either "sidechain" or "sidechain-heavy"
+    residue : mdtraj.core.topology.Residue
+        The residue for which atom indices should be
+        returned for a given `scheme`
+
+    Returns
+    -------
+    memb : list
+        List of the atom indices in `residue` that
+        should be considered when using a given
+        `scheme`. Will fall back to available
+        (heavy)atoms in special cases such as Glycines
+        or residues for which `residue.is_protein` is False,
+        like ligands and nucleotides.
+    """
+    if scheme == "sidechain":
+        if residue.is_protein:
+            if residue.name == "GLY":
+                memb = [atom.index for atom in residue.atoms if atom.is_sidechain]
+                if len(memb) == 0: #This is the case of GLY not having Hs in the topology
+                    memb = [atom.index for atom in residue.atoms]
+            else:
+                memb = [atom.index for atom in residue.atoms if atom.is_sidechain]
+        else:
+            memb = [atom.index for atom in residue.atoms]
+    elif scheme == "sidechain-heavy":
+        if residue.is_protein:
+            if residue.name == "GLY":
+                memb = [atom.index for atom in residue.atoms if atom.is_sidechain]
+                if len(memb) == 0: #This is the case of GLY not having Hs in the topology
+                    memb = [atom.index for atom in residue.atoms if not atom.element == _md.core.element.hydrogen]
+            else:
+                memb = [
+                    atom.index
+                    for atom in residue.atoms
+                    if atom.is_sidechain and not (atom.element == _md.core.element.hydrogen)
+                ]
+        else:
+            memb = [
+                atom.index
+                for atom in residue.atoms
+                if not (atom.element == _md.core.element.hydrogen)
+            ]
+    else:
+        raise NotImplementedError("`scheme` has to be 'sidechain' or 'sidechain-heavy'")
+    return memb
 
 def AAtype(res,
            return_color=False,

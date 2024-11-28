@@ -666,3 +666,135 @@ class Test_residue2residuetype(unittest.TestCase):
         self.assertListEqual(types, self.type_reference)
         cols = [residue_and_atom.AAtype(rr, return_color=True) for rr in self.seq]
         self.assertListEqual(cols, self.color_reference)
+
+class Test_residue_sidechain_membership(unittest.TestCase):
+
+    def setUp(self):
+        self.geom = md.load(test_filenames.VAL_GLY_P0G_w_Hs)
+
+    """
+    geom = md.load("data/bogus_pdb/VAL_GLY_P0G_w_Hs.pdb")
+    lines = [line for line in open("data/bogus_pdb/VAL_GLY_P0G_w_Hs.pdb").read().splitlines() if
+             not line.startswith("TER")]
+    assert len(lines) == geom.n_atoms
+    for aa, line in zip(geom.top.atoms, lines):
+        print(line, aa.is_sidechain, aa.is_backbone)
+    --------------------------------------------------------------------------------------
+    ATOM      0  N   VAL A  31      49.360  64.960 116.690  1.00  0.00           N   False
+    ATOM      1  H   VAL A  31      49.650  65.420 117.520  1.00  0.00           H   False
+    ATOM      2  CA  VAL A  31      49.840  65.530 115.470  1.00  0.00           C   False
+    ATOM      3  HA  VAL A  31      48.900  65.640 114.960  1.00  0.00           H   False
+    ATOM      4  CB  VAL A  31      50.510  66.900 115.740  1.00  0.00           C   True
+    ATOM      5  HB  VAL A  31      51.430  66.670 116.320  1.00  0.00           H   True
+    ATOM      6  CG1 VAL A  31      50.820  67.630 114.460  1.00  0.00           C   True
+    ATOM      7 HG11 VAL A  31      51.800  67.280 114.050  1.00  0.00           H   True
+    ATOM      8 HG12 VAL A  31      51.030  68.710 114.650  1.00  0.00           H   True
+    ATOM      9 HG13 VAL A  31      50.090  67.510 113.630  1.00  0.00           H   True
+    ATOM     10  CG2 VAL A  31      49.520  67.750 116.550  1.00  0.00           C   True
+    ATOM     11 HG21 VAL A  31      48.570  67.820 115.990  1.00  0.00           H   True
+    ATOM     12 HG22 VAL A  31      49.930  68.790 116.630  1.00  0.00           H   True
+    ATOM     13 HG23 VAL A  31      49.400  67.350 117.580  1.00  0.00           H   True
+    ATOM     14  C   VAL A  31      50.720  64.670 114.570  1.00  0.00           C   False
+    ATOM     15  O   VAL A  31      50.420  64.450 113.380  1.00  0.00           O   False
+    --------------------------------------------------------------------------------------    
+    ATOM     16  N   GLY A  35      49.400  63.240 110.830  1.00  0.00           N   False
+    ATOM     17  H   GLY A  35      49.600  63.550 111.760  1.00  0.00           H   False
+    ATOM     18  CA  GLY A  35      50.120  63.830 109.740  1.00  0.00           C   False
+    ATOM     19  HA3 GLY A  35      50.830  64.590 110.020  1.00  0.00           H   True
+    ATOM     20  HA2 GLY A  35      49.390  64.230 109.040  1.00  0.00           H   True
+    ATOM     21  C   GLY A  35      50.880  62.830 108.880  1.00  0.00           C   False
+    ATOM     22  O   GLY A  35      50.940  62.830 107.650  1.00  0.00           O   False
+    --------------------------------------------------------------------------------------    
+    ATOM     23  C1  P0G A 395      55.900  43.680 112.170  1.00  0.00           C   False
+    ATOM     24  C2  P0G A 395      58.490  41.940 110.230  1.00  0.00           C   False
+    ATOM     25  C3  P0G A 395      60.650  43.450 110.260  1.00  0.00           C   False
+    ATOM     26  C7  P0G A 395      58.180  45.440 114.540  1.00  0.00           C   False
+    ATOM     27  C8  P0G A 395      59.260  45.910 113.740  1.00  0.00           C   False
+    ATOM     28  C9  P0G A 395      57.210  44.650 114.000  1.00  0.00           C   False
+    ATOM     39  C10 P0G A 395      59.280  45.560 112.380  1.00  0.00           C   False
+    ATOM     30  C11 P0G A 395      62.580  40.320 104.130  1.00  0.00           C   False
+    ATOM     31  C12 P0G A 395      61.610  41.280 104.550  1.00  0.00           C   False
+    ATOM     32  C13 P0G A 395      63.890  41.680 108.780  1.00  0.00           C   False
+    ATOM     33  C14 P0G A 395      60.020  42.410 107.350  1.00  0.00           C   False
+    ATOM     34  C15 P0G A 395      58.330  44.490 110.400  1.00  0.00           C   False
+    ATOM     35  C19 P0G A 395      65.010  40.860 108.300  1.00  0.00           C   False
+    ATOM     36  C20 P0G A 395      57.180  44.410 112.630  1.00  0.00           C   False
+    ATOM     37  C21 P0G A 395      63.790  40.170 104.890  1.00  0.00           C   False
+    ATOM     38  C22 P0G A 395      58.250  44.750 111.830  1.00  0.00           C   False
+    ATOM     49  C23 P0G A 395      61.900  41.950 105.770  1.00  0.00           C   False
+    ATOM     40  C24 P0G A 395      63.880  40.750 106.140  1.00  0.00           C   False
+    ATOM     41  C25 P0G A 395      62.970  41.650 106.610  1.00  0.00           C   False
+    ATOM     42  C26 P0G A 395      60.910  43.020 106.210  1.00  0.00           C   False
+    ATOM     43  C27 P0G A 395      59.190  43.280 109.830  1.00  0.00           C   False
+    ATOM     44  N16 P0G A 395      59.180  43.390 108.340  1.00  0.00           N   False
+    ATOM     45  N17 P0G A 395      64.960  40.390 107.070  1.00  0.00           N   False
+    ATOM     46  O4  P0G A 395      65.940  40.640 109.040  1.00  0.00           O   False
+    ATOM     47  O5  P0G A 395      64.730  39.190 104.500  1.00  0.00           O   False
+    ATOM     48  O6  P0G A 395      60.150  43.630 105.200  1.00  0.00           O   False
+    ATOM     49  O18 P0G A 395      63.100  42.350 107.750  1.00  0.00           O   False
+    ATOM     50  H11 P0G A 395      55.770  43.630 111.070  1.00  0.00           H   False
+    ATOM     51  H12 P0G A 395      55.010  44.170 112.640  1.00  0.00           H   False
+    ATOM     52  H13 P0G A 395      55.950  42.660 112.600  1.00  0.00           H   False
+    ATOM     53  H21 P0G A 395      58.930  41.520 111.160  1.00  0.00           H   False
+    ATOM     54  H22 P0G A 395      58.700  41.270 109.370  1.00  0.00           H   False
+    ATOM     55  H23 P0G A 395      57.430  42.080 110.540  1.00  0.00           H   False
+    ATOM     56  H31 P0G A 395      61.260  44.330 109.960  1.00  0.00           H   False
+    ATOM     57  H32 P0G A 395      61.140  42.510 109.900  1.00  0.00           H   False
+    ATOM     58  H33 P0G A 395      60.670  43.370 111.370  1.00  0.00           H   False
+    ATOM     69  H7  P0G A 395      58.190  45.580 115.610  1.00  0.00           H   False
+    ATOM     60  H8  P0G A 395      60.000  46.540 114.210  1.00  0.00           H   False
+    ATOM     61  H9  P0G A 395      56.320  44.380 114.550  1.00  0.00           H   False
+    ATOM     62  H10 P0G A 395      60.140  45.910 111.820  1.00  0.00           H   False
+    ATOM     63  H1  P0G A 395      62.450  39.810 103.190  1.00  0.00           H   False
+    ATOM     64  H2  P0G A 395      60.720  41.480 103.970  1.00  0.00           H   False
+    ATOM     65  H3  P0G A 395      64.190  42.450 109.510  1.00  0.00           H   False
+    ATOM     66  H4  P0G A 395      63.250  41.010 109.400  1.00  0.00           H   False
+    ATOM     67  H41 P0G A 395      60.640  41.780 108.010  1.00  0.00           H   False
+    ATOM     68  H42 P0G A 395      59.210  41.790 106.920  1.00  0.00           H   False
+    ATOM     79  H51 P0G A 395      58.860  45.390 109.990  1.00  0.00           H   False
+    ATOM     70  H52 P0G A 395      57.330  44.550 109.910  1.00  0.00           H   False
+    ATOM     71  H26 P0G A 395      61.440  43.890 106.660  1.00  0.00           H   False
+    ATOM     72  H16 P0G A 395      58.230  43.370 108.010  1.00  0.00           H   False
+    ATOM     73  H44 P0G A 395      59.600  44.270 108.090  1.00  0.00           H   False
+    ATOM     74  H17 P0G A 395      65.690  39.790 106.760  1.00  0.00           H   False
+    ATOM     75  H5  P0G A 395      64.760  39.110 103.540  1.00  0.00           H   False
+    ATOM     76  H6  P0G A 395      59.250  43.300 105.190  1.00  0.00           H   False
+    """
+    def test_sidechain_VAL(self):
+        memb = residue_and_atom._residue_sidechain_membership("sidechain",self.geom.top.residue(0))
+        self.assertListEqual(memb, np.arange(4,13+1).tolist())
+
+    def test_sidechain_GLY(self):
+        memb = residue_and_atom._residue_sidechain_membership("sidechain",self.geom.top.residue(1))
+        self.assertListEqual(memb, [19,20])
+
+    def test_sidechain_GLY_no_Hs_present(self):
+        GLY = self.geom.atom_slice(self.geom.top.select("resname GLY and not sidechain"))
+        memb = residue_and_atom._residue_sidechain_membership("sidechain",GLY.top.residue(0))
+        self.assertListEqual(memb, [0,1,2,3,4])
+
+    def test_sidechain_no_protein(self):
+        memb = residue_and_atom._residue_sidechain_membership("sidechain",self.geom.top.residue(2))
+        self.assertListEqual(memb, np.arange(23,76+1).tolist())
+
+    def test_sidechain_heavy_VAL(self):
+        memb = residue_and_atom._residue_sidechain_membership("sidechain-heavy",self.geom.top.residue(0))
+        self.assertListEqual(memb, [4,6,10])
+
+    def test_sidechain_heavy_GLY(self):
+        memb = residue_and_atom._residue_sidechain_membership("sidechain-heavy",self.geom.top.residue(1))
+        self.assertListEqual(memb, [19,20])
+
+    def test_sidechain_heavy_GLY_no_Hs_present(self):
+        GLY = self.geom.atom_slice(self.geom.top.select("resname GLY and not sidechain"))
+        memb = residue_and_atom._residue_sidechain_membership("sidechain-heavy",GLY.top.residue(0))
+        self.assertListEqual(memb, [0,2,3,4])
+
+    def test_sidechain_heavy_no_protein(self):
+        memb = residue_and_atom._residue_sidechain_membership("sidechain-heavy",self.geom.top.residue(2))
+        self.assertListEqual(memb, np.arange(23,49+1).tolist())
+
+    def test_raises(self):
+        with self.assertRaises(NotImplementedError):
+            residue_and_atom._residue_sidechain_membership("bogus_scheme", self.geom.top.residue(2))
+
