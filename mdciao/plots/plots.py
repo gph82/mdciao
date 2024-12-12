@@ -1016,11 +1016,14 @@ def color_dict_guesser(colors, keys):
     ----------
     colors : None, str, list or dict
         * None: use the first :obj:`n` "tab10" colors, where
-          n is determined by :obj:`keys`
+          n is determined by :obj:`keys`. If len(keys) > 10,
+          use "tab20".
         * str: name of the matplotlib colormap to interpolate to :obj:`n` colors.
           Can be qualitative like "Set2" or "tab20" or
           quantitative like "viridis" or "Reds". For more info see:
           https://matplotlib.org/stable/tutorials/colors/colormaps.html
+          If a string is explicitly provided, e.g. "tab10", then the
+          "tab10" colors will be repeated as many times needed to cover all `keys`
         * list: list of colors (["r","g","b"])
           Turn this list into a dictionary keyed with :obj:`keys`
     keys : int or list
@@ -1041,7 +1044,10 @@ def color_dict_guesser(colors, keys):
     if isinstance(colors,dict):
         assert all([key in colors.keys() for key in key_list])
     elif colors is None:
-        return {key: val for key, val in zip(key_list, _colorstring.split(","))}
+        clist = _colorstring.split(",")
+        if len(clist)< len(key_list):
+            clist = _try_colormap_string("tab20", len(key_list))
+        return {key: val for key, val in zip(key_list, clist)}
     elif isinstance(colors,str):
         if _is_colormapstring(colors):
             return {key: color for key, color in zip(key_list,_try_colormap_string(colors,len(key_list)))}
@@ -1379,9 +1385,8 @@ def compare_violins(groups,
           same keys as :obj:`groups`.
         * If str, it has to be a case-sensitive colormap-name of matplotlib:
           https://matplotlib.org/stable/tutorials/colors/colormaps.html
-        * If None, the 'tab10' colormap (tableau) is chosen
-        TODO: I could set the default to "tab10", but then it'd
-        be hard coded in a lot places
+        * If None, the 'tab10' colormap (tableau) is chosen if 10 or less
+          colors are needed, and 'tab20' if more than 10 are needed.
     ctc_cutoff_Ang : float, default is None
         If provided, draw a horizontal line across the panel
         at this distance value.

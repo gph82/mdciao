@@ -669,6 +669,13 @@ class Test_colormaps(unittest.TestCase):
         _np.testing.assert_array_equal(colors_rgb_array, ref_color)
         self.assertListEqual(list(colors.keys()), ["sys1","sys2","sys3"])
 
+    def test_color_dict_guesser_more_N_than_default(self):
+        colors = color_dict_guesser(None, 15)
+        colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
+        ref_color = _np.array(list(_cm["tab20"]([_np.arange(15)]))).squeeze()[:,:3]
+        _np.testing.assert_array_equal(colors_rgb_array, ref_color)
+        self.assertListEqual(list(colors.keys()), _np.arange(15).tolist())
+
     def test_color_dict_guesser_cmap(self):
         colors = color_dict_guesser("Set2", ["sys1", "sys2", "sys3"])
         colors_rgb_array = _np.vstack([to_rgb(col) for key, col in colors.items()])
