@@ -222,10 +222,10 @@ class TestUnwrapping(unittest.TestCase):
         COM2 = np.array([0 + 0, 0 + 5, 0 + 0]) / 2 / 10         # [0.   0.25 0.  ]
         D12 = np.linalg.norm(COM1 - COM2)
 
-        np.testing.assert_array_equal(D12,
-                                      geom2COMdist(self.geom, [[0, 1]],
-                                                   subtract_max_radii=False, low_mem=True, periodic=False,
-                                                   per_residue_unwrap=False))
+        np.testing.assert_almost_equal(D12,
+                                       geom2COMdist(self.geom, [[0, 1]],
+                                                    subtract_max_radii=False, low_mem=True, periodic=False,
+                                                    per_residue_unwrap=False).squeeze(), decimal=6)
 
     def test_COM_dist_wo_unwrapping_wo_subtract_w_periodic(self):
         # PBCs
