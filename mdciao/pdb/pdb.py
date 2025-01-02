@@ -22,7 +22,7 @@
 
 import requests as _requests
 
-from mdtraj import load_pdb as _load_pdb
+from mdtraj import load as _mdload
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from shutil import copy as _copy, copyfileobj as _copyfileobj
 try:
@@ -121,15 +121,24 @@ def pdb2traj(code,
     r""" Return a :obj:`~mdtraj.Trajectory` from a four-letter PDB code via RCSB PDB lookup
 
     Thinly wraps around :obj:`mdtraj.load_pdb`, printing the corresponding citation.
-    Will return None if lookup fails
+
+    Will look up .pdb and .cif files (in that order) and return None the lookup fails
 
     Parameters
     ----------
     code : str
         four-letter code, e.g. 3SN6
-    filename : str, default is None
-        if str, save to this file,
-        eventually overwriting
+    filename : str, or True, default is None
+        * If str, save to this filename. The
+          filename's extension can be used to
+          force conversion into another format,
+          i.e. the PDB ID might be accessible
+          only as a CIF-file, but can be converted
+          to .pdb on the fly.
+        * If True, keep the original RCSB filename.
+
+        Files are overwritten without checking
+        if file exists.
     verbose : bool, default is False
     url : str, default is 'https://files.rcsb.org/download'
         base URL for lookups
@@ -139,34 +148,39 @@ def pdb2traj(code,
     traj : :obj:`~mdtraj.Trajectory` or None
 
     """
-    url1 = "%s/%s.pdb" % (url.strip("/"),code.strip("/"))
 
     #TODO use print_v elsewhere
     print_v = lambda s, **kwargs: [print(s, **kwargs) if verbose else None][0]
-    print_v("Checking %s" % url1, end=" ...", flush=True)
-    geom = None
-    # From https://docs.python.org/3/howto/urllib2.html#fetching-urls
-    try:
-        with _urlopen(url1) as response:
-            if response.status == 200:
-                with _NamedTemporaryFile(delete=True) as tmp_file:
-                    _copyfileobj(response, tmp_file, length=_COPY_BUFSIZE*2)
-                    geom = _load_pdb(tmp_file.name)
-                    if filename is not None:
-                        print_v("Saving to %s..." % filename, end="", flush=True)
-                        if filename.lower().endswith(".pdb"):
-                            _copy(tmp_file.name, filename)
-                        else:
-                            geom.save(filename)
-                        print_v(filename)
-            else:
-                raise _URLError(response.reason,filename=url1)
+    for ext in ["pdb","cif"]:
+        geom = None
+        url1 = f"{url.strip('/')}/{code}.{ext}"
+        print_v("Checking %s" % url1, end=" ...", flush=True)
+        # From https://docs.python.org/3/howto/urllib2.html#fetching-urls
+        try:
+            with _urlopen(url1) as response:
+                if response.status == 200:
+                    with _NamedTemporaryFile(delete=True, suffix=f".{ext}") as tmp_file:
+                        _copyfileobj(response, tmp_file, length=_COPY_BUFSIZE*2)
+                        geom = _mdload(tmp_file.name)
+                        if filename is not None:
+                            if isinstance(filename, bool) and filename:
+                                filename = f"{code}.{ext}"
+
+                            print_v("Saving to %s..." % filename, end="", flush=True)
+                            if filename.lower().endswith(f".{ext}"):
+                                _copy(tmp_file.name, filename)
+                            else:
+                                geom.save(filename)
+                            print_v(filename)
+                else:
+                    raise _URLError(response.reason,filename=url1)
 
 
-    except (_HTTPError, _URLError) as e:
-        print(url1, ":", e)
+        except (_HTTPError, _URLError) as e:
+            print(url1, ":", e)
 
-    if geom is not None:
-        pdb2ref(code)
+        if geom is not None:
+            pdb2ref(code)
+            break
 
     return geom
