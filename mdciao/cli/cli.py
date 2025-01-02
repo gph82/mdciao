@@ -636,7 +636,7 @@ def residue_neighborhoods(residues,
         This input is pretty flexible wrt to strings and numbers,
         which are interpreted as sequence indices unless
         :obj:`res_idxs` is True
-        Valid inputs are are:
+        Valid inputs are:
          * residues = [1,10,11,12]
          * residues = '1,10,11,12'
          * residues = '1,10-12'
