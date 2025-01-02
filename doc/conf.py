@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'mdciao'
-copyright = '2019-2024, Guillermo Perez-Hernandez'
+copyright = '2019-2025, Guillermo Perez-Hernandez'
 author = 'Guillermo Perez-Hernandez'
 
 
