@@ -44,21 +44,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest pytest-cov pytest-xdist
-    - name: Install package Python lt 3.12
-      if: matrix.python-version != '3.12' 
+    - name: Install package
       run: |
         pip install --upgrade pip
         pip install --upgrade setuptools
         pip install -e .
-        pip freeze
-    - name: Install package Python eq 3.12
-      if: matrix.python-version == '3.12' 
-      run: |
-        pip install --upgrade pip
-        pip install --upgrade setuptools
-        pip install bezier
-        pip install mdtraj --use-deprecated=legacy-resolver
-        pip install -e . --use-deprecated=legacy-resolver
         pip freeze
     - name: Test with pytest and coverage macos
       continue-on-error: true

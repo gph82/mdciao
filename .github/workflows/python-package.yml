@@ -40,21 +40,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest pytest-cov pytest-xdist
     - name: Install package Python
-      #if: matrix.python-version != '3.12' 
       run: |
         pip install --upgrade pip
         pip install --upgrade setuptools
         pip install -e .
         pip freeze
-    #- name: Install package Python eq 3.12
-    #  if: matrix.python-version == '3.12' 
-    #  run: |
-    #    pip install --upgrade pip
-    #    pip install --upgrade setuptools
-    #    pip install bezier
-    #    pip install mdtraj --use-deprecated=legacy-resolver
-    #    pip install -e . --use-deprecated=legacy-resolver
-    #    pip freeze
     - name: Test with pytest and coverage Linux 8 threads
       run: |
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
