@@ -54,9 +54,11 @@ class Test_ExamplesCLTs(unittest.TestCase):
             CP = self.xCLTs.run("mdc_neighborhoods",
                                 # show=True
                                 )
-            print([iCP.stdout.decode().splitlines() for iCP in CP])
-            print([iCP.stderr.decode().splitlines() for iCP in CP])
-        assert _np.unique([iCP.returncode for iCP in CP]) == 0, ([iCP.stdout.decode().splitlines() for iCP in CP]+[iCP.stderr.decode().splitlines() for iCP in CP])
+            for iCP in CP:
+                print(iCP.stdout.decode())
+            for iCP in CP:
+                print(iCP.stderr.decode())
+        assert _np.unique([iCP.returncode for iCP in CP]) == 0, ([iCP.stdout.decode() for iCP in CP]+[iCP.stderr.decode() for iCP in CP])
 
     def test_mdc_interface(self):
         with remember_cwd():
