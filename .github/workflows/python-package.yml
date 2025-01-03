@@ -48,25 +48,22 @@ jobs:
     - name: If Python is 3.7 install dependencies in conda base environment
       if: ${{ matrix.python-version == '3.7' }}
       run: |
-        source activate base
-        python -m pip install --upgrade pip
-        pip install pytest pytest-cov pytest-xdist
+        conda run --live-stream -n base python -m pip install --upgrade pip
+        conda run --live-stream -n base pip install pytest pytest-cov pytest-xdist
       shell: bash
     - name: If Python is 3.7 install package in conda base environment
       if: ${{ matrix.python-version == '3.7' }}
       run: |
-        source activate base
-        pip install --upgrade pip
-        pip install --upgrade setuptools
-        pip install -e .
-        pip freeze
+        conda run --live-stream -n base pip install --upgrade pip
+        conda run --live-stream -n base pip install --upgrade setuptools
+        conda run --live-stream -n base pip install -e .
+        conda run --live-stream -n base pip freeze
       shell: bash
     - name: If Python is 3.7 test with pytest and coverage Linux 8 threads in conda base environment
       if: ${{ matrix.python-version == '3.7' }}
       run: |
-        source activate base
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
-        pytest -n 8 -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
+        conda run --live-stream --live-stream -n base pytest -n 8 -v -s --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
       shell: bash
       #### End Python 3.7 block
     - name: If Python != 3.7 install dependencies normally
