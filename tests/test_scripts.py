@@ -44,6 +44,8 @@ class Test_ExamplesCLTs(unittest.TestCase):
             CP = self.xCLTs.run("mdc_sites",
                                 # show=True
                                 )
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
         assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
     def test_mdc_neighborhood(self):
@@ -52,6 +54,8 @@ class Test_ExamplesCLTs(unittest.TestCase):
             CP = self.xCLTs.run("mdc_neighborhoods",
                                 # show=True
                                 )
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
         assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
     def test_mdc_interface(self):
@@ -60,6 +64,8 @@ class Test_ExamplesCLTs(unittest.TestCase):
             CP = self.xCLTs.run("mdc_interface",
                                 # show=True
                                 )
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
         assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
     def test_mdc_fragments(self):
@@ -68,6 +74,8 @@ class Test_ExamplesCLTs(unittest.TestCase):
             CP = self.xCLTs.run("mdc_fragments",
                                 # show=True
                                 )
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
         assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
     def test_mdc_BW(self):
@@ -76,6 +84,8 @@ class Test_ExamplesCLTs(unittest.TestCase):
             CP = self.xCLTs.run("mdc_GPCR_overview",
                                 # show=True
                                 )
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
         assert _np.unique([iCP.returncode for iCP in CP]) == 0, CP
 
     def test_mdc_CGN(self):
@@ -84,6 +94,8 @@ class Test_ExamplesCLTs(unittest.TestCase):
             CP = self.xCLTs.run("mdc_CGN_overview",
                                 # show=True
                                 )
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
         assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
     def test_mdc_pdb(self):
@@ -92,24 +104,32 @@ class Test_ExamplesCLTs(unittest.TestCase):
             CP = self.xCLTs.run("mdc_pdb",
                                 # show=True
                                 )
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
         assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
     def test_mdc_compare(self):
         with remember_cwd():
             os.chdir(self.tmpdir)
             CP = self.xCLTs.run("mdc_compare")
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
             assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
     def test_mdc_residues(self):
         with remember_cwd():
             os.chdir(self.tmpdir)
             CP = self.xCLTs.run("mdc_residues")
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
             assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
     def test_mdc_notebooks(self):
         with remember_cwd():
             os.chdir(self.tmpdir)
             CP = self.xCLTs.run("mdc_notebooks")
+            print([iCP.stdout.decode().splitlines() for iCP in CP])
+            print([iCP.stderr.decode().splitlines() for iCP in CP])
             assert _np.unique([iCP.returncode for iCP in CP]) == 0
 
 

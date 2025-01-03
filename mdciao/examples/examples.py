@@ -225,7 +225,7 @@ class ExamplesCLTs(object):
         oneline = self._join_args(clt)
         CP = []
         for line in oneline.split("\n\n"):
-            CP.append(_run(line.split()))
+            CP.append(_run(line.split(), capture_output=True))
         if self.test:
             return CP
 
