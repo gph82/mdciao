@@ -6,7 +6,7 @@ from mdciao import contacts
 from tempfile import mkdtemp
 import contextlib
 import numpy as _np
-
+import multiprocessing
 
 @contextlib.contextmanager
 def remember_cwd():
@@ -136,4 +136,7 @@ class Test_ExamplesCLTs(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    # Not future proof (py314) but might work
+    # https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+    multiprocessing.set_start_method('fork')  # Use 'fork' for better compatibility with macOS
     unittest.main()
