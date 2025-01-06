@@ -82,6 +82,9 @@ class FileNames(object):
         self.rcsb_1U19_pdb = _path.join(self.RCSB_pdb_path, "1u19.pdb.gz")
         self.rcsb_3SN6_pdb = _path.join(self.RCSB_pdb_path, "3SN6.pdb.gz")
         self.rcsb_3E8D_pdb = _path.join(self.RCSB_pdb_path, "3E8D.pdb.gz")
+        # RCSB-mmCIFs
+        self.rcsb_8E0G_cif = _path.join(self.RCSB_pdb_path, "8E0G.cif.gz")
+
 
         # Traj
         self.top_pdb = _path.join(self.example_path,"gs-b2ar.noH.pdb")
