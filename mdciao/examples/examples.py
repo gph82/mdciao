@@ -85,8 +85,8 @@ class ExamplesCLTs(object):
         self.KLIFSlabs_file = filenames.KLIFS_P31751_xlsx
         self.CGN_file = filenames.gnas2_human_xlsx
         self.sitefile = filenames.tip_json
-        self.pdb_3SN6 = filenames.pdb_3SN6
-        self.KLIFS_pdb = filenames.pdb_3E8D
+        self.pdb_3SN6 = filenames.rcsb_3SN6_pdb
+        self.KLIFS_pdb = filenames.rcsb_3E8D_pdb
 
         self.test = test
         cwd = _getcwd()
@@ -696,15 +696,15 @@ def Interface_B2AR_Gas(**kwargs):
 
 def KLIFSLabeler_P31751() -> _LabelerKLIFS:
     r"""Build an :obj:`~mdciao.nomenclature.LabelerKLIFS` with the KLIFS_P31751.xlsx and 3E8D.pdb.gz.pdb files shipped with mdciao"""
-    with _linkorcopy2TDir("_mdciao_example_KLIFS", [filenames.KLIFS_P31751_xlsx, filenames.pdb_3E8D]) as t:
+    with _linkorcopy2TDir("_mdciao_example_KLIFS", [filenames.KLIFS_P31751_xlsx, filenames.rcsb_3E8D_pdb]) as t:
         with remember_cwd():
             _chdir(t)
             return _LabelerKLIFS("P31751", try_web_lookup=False)
 
 def AlignerConsensus_B2AR_HUMAN_vs_OPSD_BOVIN() -> _AlignerConsensus:
     r""" Build an :obj:`mdciao.nomenclature.AlignerConsensus` for the B2AR in 3SN6 and the OPS in 3CAP"""
-    g3SN6 = _md.load(filenames.pdb_3SN6)
-    g3CAP = _md.load(filenames.pdb_3CAP)
+    g3SN6 = _md.load(filenames.rcsb_3SN6_pdb)
+    g3CAP = _md.load(filenames.rcsb_3CAP_pdb)
 
     GPCR_b2ar = GPCRLabeler_ardb2_human()
     GPCR_ops = _LabelerGPCR("OPSD_BOVIN")

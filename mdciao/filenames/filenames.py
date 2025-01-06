@@ -77,11 +77,11 @@ class FileNames(object):
 
         self.ions_and_water = _path.join(self.bogus_pdb_path, "water_and_ions.pdb.gz")
 
-        # Pure-PDBs
-        self.pdb_3CAP = _path.join(self.RCSB_pdb_path, "3cap.pdb.gz")
-        self.pdb_1U19 = _path.join(self.RCSB_pdb_path, "1u19.pdb.gz")
-        self.pdb_3SN6 = _path.join(self.RCSB_pdb_path, "3SN6.pdb.gz")
-        self.pdb_3E8D = _path.join(self.RCSB_pdb_path, "3E8D.pdb.gz")
+        # RCSB-PDBs
+        self.rcsb_3CAP_pdb = _path.join(self.RCSB_pdb_path, "3cap.pdb.gz")
+        self.rcsb_1U19_pdb = _path.join(self.RCSB_pdb_path, "1u19.pdb.gz")
+        self.rcsb_3SN6_pdb = _path.join(self.RCSB_pdb_path, "3SN6.pdb.gz")
+        self.rcsb_3E8D_pdb = _path.join(self.RCSB_pdb_path, "3E8D.pdb.gz")
 
         # Traj
         self.top_pdb = _path.join(self.example_path,"gs-b2ar.noH.pdb")

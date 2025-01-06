@@ -69,8 +69,8 @@ class Test_maptops(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.top1 = md.load(test_filenames.pdb_3CAP).top
-        cls.top2 = md.load(test_filenames.pdb_1U19).top
+        cls.top1 = md.load(test_filenames.rcsb_3CAP_pdb).top
+        cls.top2 = md.load(test_filenames.rcsb_1U19_pdb).top
 
     def test_works(self):
         top12top2, top22top1 = sequence.maptops(self.top1, self.top2)
@@ -188,8 +188,8 @@ class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
         _np.testing.assert_equal(_np.unique(df["fullname_1"]),"~")
 
     def test_works_3CAP_vs_1U19_just_runs(self):
-        geom_3CAP = md.load(test_filenames.pdb_3CAP)
-        geom_1U19 = md.load(test_filenames.pdb_1U19)
+        geom_3CAP = md.load(test_filenames.rcsb_3CAP_pdb)
+        geom_1U19 = md.load(test_filenames.rcsb_1U19_pdb)
 
         frag_3CAP = get_fragments(geom_3CAP.top,
                                   verbose=True,
@@ -220,8 +220,8 @@ class Test_alignment_result_to_list_of_dicts(unittest.TestCase):
 class Test_superpose_w_CA_align(unittest.TestCase):
 
     def test_works(self):
-        geom_3CAP = md.load(test_filenames.pdb_3CAP)
-        geom_1U19 = md.load(test_filenames.pdb_1U19)
+        geom_3CAP = md.load(test_filenames.rcsb_3CAP_pdb)
+        geom_1U19 = md.load(test_filenames.rcsb_1U19_pdb)
         sequence.superpose_w_CA_align(geom_3CAP,geom_1U19,verbose=True)
 
 

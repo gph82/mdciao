@@ -1112,7 +1112,7 @@ class TestContactPair(unittest.TestCase):
 
         CP : contacts.ContactPair = CG.contact_pairs[0]
 
-        top = md.load(test_filenames.pdb_3SN6).top
+        top = md.load(test_filenames.rcsb_3SN6_pdb).top
         #print(CP.top, CP.residues.idxs_pair)
         #print(CP.residues.names_short)
         #print([utils.residue_and_atom.find_AA(AA,top) for AA in CP.residues.names_short])
@@ -1155,7 +1155,7 @@ class TestContactPair(unittest.TestCase):
 
         CP: contacts.ContactPair = CG.contact_pairs[0]
 
-        top = md.load(test_filenames.pdb_3SN6).top
+        top = md.load(test_filenames.rcsb_3SN6_pdb).top
         imap = {347: 342,
                 353: 348}
         nCP: contacts.ContactPair = CP.retop(top, imap, deepcopy=True)
@@ -3481,7 +3481,7 @@ class Test_retop_CG(unittest.TestCase):
                                 no_disk=True,
                                 figures=False
                                 )
-        top3SN6 = md.load(test_filenames.pdb_3SN6)
+        top3SN6 = md.load(test_filenames.rcsb_3SN6_pdb)
         df = _mdcu.sequence.align_tops_or_seqs(intf.top, top3SN6.top,
                                                       #verbose=True,
                                                       return_DF=True)[0]

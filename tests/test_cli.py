@@ -899,7 +899,7 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
     def test_GPCR_url(self):
         a = parser_for_GPCR_overview()
         a = a.parse_args(["adrb2_human"])
-        a.__setattr__("topology",test_filenames.pdb_3SN6)
+        a.__setattr__("topology", test_filenames.rcsb_3SN6_pdb)
         cli._fragment_overview(a, "GPCR")
 
     def test_raises(self):

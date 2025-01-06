@@ -165,7 +165,7 @@ class Test_shorten_AA(unittest.TestCase):
 
 class Test_atom_type(unittest.TestCase):
     def test_works(self):
-        top = md.load(test_filenames.pdb_3CAP).top
+        top = md.load(test_filenames.rcsb_3CAP_pdb).top
         atoms_BB = [aa for aa in top.residue(0).atoms if aa.is_backbone]
         atoms_SC = [aa for aa in top.residue(0).atoms if aa.is_sidechain]
         atoms_X = [aa for aa in top.atoms if not aa.is_backbone and not aa.is_sidechain]
@@ -482,7 +482,7 @@ class Test_parse_and_list_AAs_input(unittest.TestCase):
 
 class Test_find_CA(unittest.TestCase):
     def setUp(self):
-        self.geom = md.load(test_filenames.pdb_3SN6)
+        self.geom = md.load(test_filenames.rcsb_3SN6_pdb)
         self.top = self.geom.top
 
     def test_works(self):

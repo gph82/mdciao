@@ -227,7 +227,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
     def setUp(self):
         self.tmpdir = mkdtemp("_test_mdciao_CGN_local")
         self._gnas2_human_file = path.join(self.tmpdir, path.basename(test_filenames.gnas2_human_xlsx))
-        self.geom = md.load(test_filenames.pdb_3SN6)
+        self.geom = md.load(test_filenames.rcsb_3SN6_pdb)
         self.top = self.geom.top
         shutil.copy(test_filenames.gnas2_human_xlsx, self._gnas2_human_file)
         self.cgn_local = nomenclature.LabelerCGN("gnas2_human",
@@ -380,7 +380,7 @@ class TestLabelerCGN_local(TestClassSetUpTearDown_CGN_local):
         self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
 
     def test_reads_pdb_for_top(self):
-        labels = self.cgn_local.top2labels(test_filenames.pdb_3SN6)
+        labels = self.cgn_local.top2labels(test_filenames.rcsb_3SN6_pdb)
         self.assertListEqual(labels, self.cgn_local.most_recent_top2labels)
 
     def test_hole_in_subdomain(self):
@@ -484,7 +484,7 @@ class Test_aligntop_full(unittest.TestCase):
 
     def setUp(self):
         self.GPCR = examples.GPCRLabeler_ardb2_human()
-        self.geom = md.load(examples.filenames.pdb_3SN6)
+        self.geom = md.load(examples.filenames.rcsb_3SN6_pdb)
         self.frags = get_fragments(self.geom.top) # receptor is idx 4
         self.anchors = {"1.50x50": 'N51',  # Anchor residues
                         "2.50x50": 'D79',
@@ -681,7 +681,7 @@ class Test_conlabs2confrags(unittest.TestCase):
 
 class Test_fill_CGN_gaps(unittest.TestCase):
     def setUp(self):
-        self.top_3SN6 = md.load(test_filenames.pdb_3SN6).top
+        self.top_3SN6 = md.load(test_filenames.rcsb_3SN6_pdb).top
         self.top_mut = md.load(test_filenames.pdb_3SN6_mut).top
         self.cons_list_out = ['G.HN.26', 'G.HN.27', 'G.HN.28', 'G.HN.29', 'G.HN.30']
         self.cons_list_in = ['G.HN.26', None, 'G.HN.28', 'G.HN.29', 'G.HN.30']
@@ -714,7 +714,7 @@ class Test_guess_by_nomenclature(unittest.TestCase):
                                                         local_path=test_filenames.RCSB_pdb_path,
                                                         format="%s",
                                                         )
-        cls.top = md.load(test_filenames.pdb_3SN6).top
+        cls.top = md.load(test_filenames.rcsb_3SN6_pdb).top
         cls.fragments = get_fragments(cls.top)
 
     def test_works_on_enter(self):
@@ -769,7 +769,7 @@ class Test_matching_fragments(unittest.TestCase):
                                                         local_path=test_filenames.RCSB_pdb_path,
                                                         format="%s",
                                                         )
-        cls.top = md.load(test_filenames.pdb_3SN6).top
+        cls.top = md.load(test_filenames.rcsb_3SN6_pdb).top
         cls.fragments = get_fragments(cls.top, verbose=False)
 
     def test_finds_frags(self):
@@ -1128,7 +1128,7 @@ class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
                                    {'key': 'Resolution', 'value': '3.20 A'},
                                    {'key': 'Chains',
                                     'value': 'B=2-340'}]}  # <---- For some reason GLN1 is not considered in this entry as belonging to the beta sub-unit
-        top = md.load(examples.filenames.pdb_3SN6).top
+        top = md.load(examples.filenames.rcsb_3SN6_pdb).top
         res_idxs = nomenclature._residx_from_UniProtPDBEntry_and_top(PDBentry, top)
 
         """
@@ -1154,7 +1154,7 @@ class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
                                    {'key': 'Resolution', 'value': '2.70 A'},
                                    {'key': 'Chains', 'value': 'A/B=146-480'}]}
 
-        top = md.load(examples.filenames.pdb_3E8D).top
+        top = md.load(examples.filenames.rcsb_3E8D_pdb).top
         res_idxs = nomenclature._residx_from_UniProtPDBEntry_and_top(PDBentry, top)
 
         """
@@ -1180,7 +1180,7 @@ class Test_residx_from_UniProtPDBEntry_and_top(unittest.TestCase):
                                    {'key': 'Resolution', 'value': '2.70 A'},
                                    {'key': 'Chains', 'value': 'A/B=146-480'}]}
 
-        top = md.load(examples.filenames.pdb_3E8D).top
+        top = md.load(examples.filenames.rcsb_3E8D_pdb).top
         res_idxs = nomenclature._residx_from_UniProtPDBEntry_and_top(PDBentry, top, target_resSeqs=[rr.resSeq for rr in top.chain(1).residues])
 
         """
@@ -1384,10 +1384,10 @@ class TestLabelerKLIFS(unittest.TestCase):
 class Test_mdTrajectory_and_spreadsheets(unittest.TestCase):
 
     def test_reading_and_writing_works(self):
-        for pdb in [examples.filenames.pdb_3SN6,
-                    examples.filenames.pdb_1U19,
-                    examples.filenames.pdb_3CAP,
-                    examples.filenames.pdb_3E8D]:
+        for pdb in [examples.filenames.rcsb_3SN6_pdb,
+                    examples.filenames.rcsb_1U19_pdb,
+                    examples.filenames.rcsb_3CAP_pdb,
+                    examples.filenames.rcsb_3E8D_pdb]:
             geom = md.load(pdb)
             with _NamedTemporaryFile(suffix="_pdb_as.xlsx") as f:
                 nomenclature._mdTrajectory2spreadsheets(geom,f.name)
@@ -1395,10 +1395,10 @@ class Test_mdTrajectory_and_spreadsheets(unittest.TestCase):
                 assert geom == read_pdb
 
     def test_reading_and_writing_works_wo_unitcell_info(self):
-        for pdb in [examples.filenames.pdb_3SN6,
-                    examples.filenames.pdb_1U19,
-                    examples.filenames.pdb_3CAP,
-                    examples.filenames.pdb_3E8D]:
+        for pdb in [examples.filenames.rcsb_3SN6_pdb,
+                    examples.filenames.rcsb_1U19_pdb,
+                    examples.filenames.rcsb_3CAP_pdb,
+                    examples.filenames.rcsb_3E8D_pdb]:
             geom = md.load(pdb)
             geom._unitcell_angles = None
             geom._unitcell_lengths = None
@@ -1411,9 +1411,9 @@ class Test_AlignerConsensus(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.geom_3SN6 = md.load(test_filenames.pdb_3SN6)
-        cls.geom_3CAP = md.load(test_filenames.pdb_3CAP)
-        cls.geom_1U19 = md.load(test_filenames.pdb_1U19)
+        cls.geom_3SN6 = md.load(test_filenames.rcsb_3SN6_pdb)
+        cls.geom_3CAP = md.load(test_filenames.rcsb_3CAP_pdb)
+        cls.geom_1U19 = md.load(test_filenames.rcsb_1U19_pdb)
 
         cls.CL_adrb2_human = nomenclature.LabelerGPCR(test_filenames.adrb2_human_xlsx)
         cls.CL_opsd_bovin = nomenclature.LabelerGPCR("opsd_bovin")
