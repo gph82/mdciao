@@ -2,9 +2,10 @@ import unittest
 
 from tempfile import TemporaryDirectory as _TD
 import os
-from mdciao.examples.examples import remember_cwd
-
-
+from mdciao.examples.examples import remember_cwd, filenames
+from Bio.PDB import MMCIFParser, MMCIF2Dict
+import gzip, shutil
+from scipy.spatial.distance import cdist
 
 from mdciao import pdb
 class Test_pdb2ref(unittest.TestCase):
@@ -58,12 +59,12 @@ class Test_pdb2traj(unittest.TestCase):
                 pdb.pdb2traj("3SN6",fname)
                 assert os.path.exists(fname)
 
-    def test_saves_cif(self):
+    def test_gets_cif(self):
         with _TD(suffix="_test_mdciao_pdb2traj") as tmpdir:
             with remember_cwd():
                 os.chdir(tmpdir)
-                fname = "7K00.cif"
-                pdb.pdb2traj("7K00", fname)
+                fname = "3SN6.cif"
+                pdb.pdb2traj("3SN6", fname, cif_first=True)
                 assert os.path.exists(fname)
 
     def test_auto_filename(self):
@@ -77,9 +78,46 @@ class Test_pdb2traj(unittest.TestCase):
         with _TD(suffix="_test_mdciao_pdb2traj") as tmpdir:
             with remember_cwd():
                 os.chdir(tmpdir)
-                pdb.pdb2traj("7K00", "7K00.pdb")
-                assert os.path.exists("7K00.pdb")
+                fname = "3SN6.pdb"
+                pdb.pdb2traj("3SN6", fname, cif_first=True)
+                assert os.path.exists(fname)
 
 
     def test_wrong_url(self):
         pdb.pdb2traj("3SNXX")
+
+class Test_BiopythonPDB(unittest.TestCase):
+
+    def test_BIOStructure2MDTrajectory(self):
+        #implicitly also test BIOStructure2pdbfile
+        ungzipped = os.path.basename(filenames.rcsb_8E0G_cif).replace(".cif.gz",".cif")
+        #https://docs.python.org/3/library/gzip.html#examples-of-usage
+        with _TD(suffix="_test_mdciao_pdb2traj") as tmpdir:
+            with remember_cwd():
+                os.chdir(tmpdir)
+                with gzip.open(filenames.rcsb_8E0G_cif, 'rb') as f_in:
+                    with open(ungzipped, 'wb') as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+                structure = MMCIFParser().get_structure(ungzipped, ungzipped)
+                geom = pdb.pdb._BIOStructure2MDTrajectory(structure, cif_dict=MMCIF2Dict.MMCIF2Dict(ungzipped))
+
+        # Replicate what _BIOStructure2pdbfile will do with disordered_select_A=True
+        [atom.disordered_select("A") for atom in structure.get_atoms() if atom.is_disordered()]
+        structure_atoms = list(structure.get_atoms())
+        assert geom.n_atoms == len(structure_atoms)
+        assert geom.n_residues == len(list(structure.get_residues()))
+        assert geom.n_chains == len(list(structure.get_chains()))
+        import numpy as np
+
+        # Match atom order via coordinates
+        bio_coords = np.array([aa.get_coord() / 10 for aa in structure_atoms])
+        md_coords = geom.xyz.squeeze()
+        d = cdist(md_coords, bio_coords)
+        argmin = d.argmin(axis=1)
+        dmin = d.min(axis=1)
+        assert all(dmin<=1e-4)
+
+        # Same coords
+        np.testing.assert_array_almost_equal(bio_coords[argmin], md_coords)
+        # Same atom name
+        assert all([aa.name==bb.name for aa,bb in zip(geom.top.atoms, np.array(structure_atoms)[argmin])])
