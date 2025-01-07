@@ -157,7 +157,7 @@ def _progressbardict2thread(progressbar_dict, sleep_between_updates=1, overwrite
     overwrite : bool, default is True
         Whether to overwrite the output or not. Assumes the
         number of lines needed to be overwritten is
-        the same as the lines to be writting.
+        the same as the lines to be writing.
 
     Returns
     -------
