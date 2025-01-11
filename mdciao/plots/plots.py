@@ -61,7 +61,7 @@ def plot_w_smoothing_auto(y, ax=None, label=None, color=None, x=None, background
     r"""
     A wrapper around :obj:`matplotlib.pyplot.plot` that allows
     to add a smoothing window (or not). See
-    :obj:`window_average_fast` for more details
+    :obj:`mdciao.utils.lists.window_average_fast` for more details
 
     Parameters
     ----------

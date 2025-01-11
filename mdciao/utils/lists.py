@@ -191,14 +191,15 @@ def unique_list_of_iterables_by_tuple_hashing(ilist, return_idxs=False,
 
 def window_average_fast(input_array_y, half_window_size=2):
     """
-    Returns the moving average using np.convolve
+    Returns the moving average using :obj:`numpy.convolve`
+
     Parameters
     ----------
     input_array_y : array
-                    numpy array for which moving average should be calculated
+            numpy array for which moving average should be calculated
     half_window_size : int
-                        the actual window size will be 2 * half_window_size + 1.
-                        Example- when half window size = 2, moving average calculation will use window=5
+            the actual window size will be 2 * half_window_size + 1.
+            Example- when half window size = 2, moving average calculation will use window=5
     Returns
     -------
     array
