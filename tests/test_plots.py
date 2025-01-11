@@ -432,7 +432,7 @@ class Test_compare_groups_of_contacts(unittest.TestCase):
 class test_histogram_w_smoothing_auto(unittest.TestCase):
 
     def test_just_runs_all(self):
-        ax = plots.histogram_w_smoothing_auto(_np.random.randn(200), bins=20, maxcount=3.14)
+        ax = plots.plot_histogram_w_smoothing_auto(_np.random.randn(200), bins=20, maxcount=3.14)
         for line in ax.lines:
             y = line.get_xydata()[:,1]
             assert y.max()==3.14

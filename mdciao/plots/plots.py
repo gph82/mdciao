@@ -155,10 +155,10 @@ def plot_w_smoothing_auto(y, ax=None, label=None, color=None, x=None, background
     return line2D
 
 
-def histogram_w_smoothing_auto(data, bins=10, ax=None,
-                               smooth_bw=True, background=True, fill_below=True,
-                               color=None, label=None,
-                               alpha_below=.25, maxcount=False) -> _plt.Axes:
+def plot_histogram_w_smoothing_auto(data, bins=10, ax=None,
+                                    smooth_bw=True, background=True, fill_below=True,
+                                    color=None, label=None,
+                                    alpha_below=.25, maxcount=False) -> _plt.Axes:
     r"""
     Plot a histogram of `data` with possibilities of smoothing and filling the area below
 

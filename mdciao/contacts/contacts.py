@@ -2422,7 +2422,7 @@ class ContactPair(object):
         ax.set_xlim([self.time_min * dt, self.time_max * dt])
         ax.set_ylim([0, ax.get_ylim()[1]])
 
-    @_kwargs_subs(_mdcplots.histogram_w_smoothing_auto, exclude=["label"])
+    @_kwargs_subs(_mdcplots.plot_histogram_w_smoothing_auto, exclude=["label"])
     def plot_distance_distribution(self, label=None, shorten_AAs=False, defrag=None, ctc_cutoff_Ang=None,
                                    delete_anchor=False, xlim=None, **kwargs_histogram_w_smoothing_auto) -> _plt.Axes:
         r"""Plot the distance distribution of this ContactPair
@@ -2474,9 +2474,9 @@ class ContactPair(object):
             if ctc_cutoff_Ang is not None:
                 label += " (%u%%)" % (self.frequency_overall_trajs(ctc_cutoff_Ang) * 100)
 
-        ax = _mdcplots.histogram_w_smoothing_auto(self.stacked_time_traces * 10,
-                                                  label=label,
-                                                  **kwargs_histogram_w_smoothing_auto)
+        ax = _mdcplots.plot_histogram_w_smoothing_auto(self.stacked_time_traces * 10,
+                                                       label=label,
+                                                       **kwargs_histogram_w_smoothing_auto)
 
         if ctc_cutoff_Ang and not any([_mdcplots.plots._is_axvline(line, ctc_cutoff_Ang) for line in ax.lines]):
             ax.axvline(ctc_cutoff_Ang, color="k", ls="--", zorder=-1)
