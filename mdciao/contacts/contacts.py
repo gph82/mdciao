@@ -6628,31 +6628,37 @@ class ContactGroup(object):
         if CSVexpression is not None:
             assert residue_indices is None
             keys = [exp.strip(" ") for exp in CSVexpression.split(",")]
-            matches = []
+            matching_res_idxs = []
             for exp in keys:
-                matches.append(_mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top,
+                matching_res_idxs.append(_mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top,
                                                               extra_columns={"consensus" : self.residx2consensuslabel}))
-                if not allow_multiple_matches and len(matches[-1])>1:
+                if not allow_multiple_matches and len(matching_res_idxs[-1])>1:
                     print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
                     _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
                     raise ValueError
-            valid_matches = _np.unique(_np.hstack([match for match in matches if len(match)>0]))
+            valid_matches = _np.unique(_np.hstack([match for match in matching_res_idxs if len(match)>0]))
         elif residue_indices is not None:
             assert residue_pairs is None
             keys = residue_indices
-            matches = residue_indices
+            matching_res_idxs = residue_indices
             valid_matches = residue_indices
         elif residue_pairs is not None:
             keys = residue_pairs
-            matches = [pair for pair in residue_pairs if any([len(set(pair).intersection(ri))==2 for ri in self.res_idxs_pairs])]
+            matching_res_idxs = [pair for pair in residue_pairs if any([len(set(pair).intersection(ri))==2 for ri in self.res_idxs_pairs])]
             # The following assignments are just to keep the logic of "2 residues needed", but the matches have been made already
             valid_matches = _np.unique(residue_pairs)
             n_residues = 2
 
+        unique_matching_residxs = _np.unique(_np.hstack(matching_res_idxs))
+        if len(set(_np.unique(self.res_idxs_pairs)).intersection(unique_matching_residxs))==0:
+            raise ValueError(f"Your selection matches these residues:'{[self.top.residue(ii) for ii in unique_matching_residxs]}'"
+                             f", but none of these residues appear in any pair of 'self.residx_pairs'.")
+                             #f"\n{[self.top.residue(ii) for ii in _np.unique(self.res_idxs_pairs)]}") a bit too much maybe
+
         matching_CPs = []
         second_condition = {1: lambda pair : True,
                             2: lambda pair : len(_np.intersect1d(pair, valid_matches))>=2}
-        for key, match in zip(keys, matches):
+        for key, match in zip(keys, matching_res_idxs):
             idxs = [idx for idx, pair in enumerate(self.res_idxs_pairs) if len(_np.intersect1d(pair, match)) > 0 and second_condition[n_residues](pair)]
             matching_CPs.append(idxs)
 
