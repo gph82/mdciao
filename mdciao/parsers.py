@@ -341,7 +341,7 @@ def _bool_or_color_like(val):
         val, type(val))
     return val
 
-def _parser_add_ctc_control(parser, default=5):
+def _parser_add_ctc_control(parser, default=6):
     parser.add_argument("-cc", "--ctc_control", type=_int_or_float_type,
                         help="Control the number of reported contacts. "
                              "Can be an integer (keep the first n contacts) or "
