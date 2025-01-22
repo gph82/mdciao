@@ -555,7 +555,7 @@ def residue_neighborhoods(residues,
                           trajectories,
                           topology=None,
                           res_idxs=False,
-                          ctc_cutoff_Ang=4,
+                          ctc_cutoff_Ang=4.5,
                           stride=1,
                           ctc_control=5,
                           n_nearest=4,
@@ -670,8 +670,9 @@ def residue_neighborhoods(residues,
          * zero-indexed, residue serial indices or
          * residue sequence, e.g. 30 in GLU30, this is called 'resSeq'
          in an :obj:`mdtraj.core.Residue`-object
-    ctc_cutoff_Ang : float, default is 4
-        Any residue-residue distance is considered a contact if d<=ctc_cutoff_Ang
+    ctc_cutoff_Ang : float, default is 4.5
+        Any residue-residue distance is considered a contact
+        if d<=ctc_cutoff_Ang
     stride : int, default is 1
         Stride the input data by this number of frames
     ctc_control : int or float, default is 5
@@ -1104,7 +1105,7 @@ def interface(
         CGN_UniProt="None",
         KLIFS_string=None,
         chunksize_in_frames=2000,
-        ctc_cutoff_Ang=4,
+        ctc_cutoff_Ang=4.5,
         curve_color="auto",
         fragment_names=None,
         graphic_dpi=150,
@@ -1393,7 +1394,7 @@ def interface(
     chunksize_in_frames : int, default is 2000
         Stream through the trajectories in chunks
         of this size.
-    ctc_cutoff_Ang : float, default is 4
+    ctc_cutoff_Ang : float, default is 4.5
         Any residue-residue distance is considered a contact
         if d<=ctc_cutoff_Ang
     curve_color : str, default is 'auto'
@@ -1814,7 +1815,7 @@ def interface(
 def sites(site_inputs,
           trajectories,
           topology=None,
-          ctc_cutoff_Ang=4,
+          ctc_cutoff_Ang=4.5,
           stride=1,
           scheme="closest-heavy",
           chunksize_in_frames=2000,
@@ -1915,7 +1916,7 @@ def sites(site_inputs,
         be used, i.e. when no :obj:`topology` is passed, the first
         :obj:`trajectory` has to be either a .gro or .pdb file, or
         an :obj:`~mdtraj.Trajectory` object
-    ctc_cutoff_Ang : float, default is 4
+    ctc_cutoff_Ang : float, default is 4.5
         Any residue-residue distance is considered a contact
         if d<=ctc_cutoff_Ang
     stride : int, default is 1
