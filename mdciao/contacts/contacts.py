@@ -3494,6 +3494,11 @@ class ContactGroup(object):
         if all([ictc.top is None for ictc in self.contact_pairs]):
             return None
 
+        #First try the quickest (and likeliest) which is all CPs point to the same object
+        top_id = _np.unique([id(ictc.top) for ictc in self.contact_pairs])
+        if len(top_id)==1:
+            return self.contact_pairs[0].top
+        # More than one ID? Still the tops could be the same (but the control is slow)
         top = _np.unique([ictc.top.__hash__() for ictc in self.contact_pairs])
         if len(top)==1:
             return self.contact_pairs[0].top
