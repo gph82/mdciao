@@ -140,8 +140,7 @@ class Test_assert_no_intersection(unittest.TestCase):
             lists.assert_no_intersection([[1,2,3],[3,3]])
 
     def test_assert_no_intersection_empty_lists(self):
-        with self.assertRaises(AssertionError):
-            lists.assert_no_intersection([[], []])
+        lists.assert_no_intersection([[], []])
 
 class Test_window_average_fast(unittest.TestCase):
     def test_window_average_fast_just_works(self):

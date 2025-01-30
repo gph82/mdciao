@@ -410,6 +410,10 @@ def assert_no_intersection(list_of_lists_of_integers, word='iterables'):
     Parameters
     ----------
     list_of_lists_of_integers : list of lists
+        Empty lists are considered not
+        intersecting and won't raise AssertionError,
+        though this is an interesting read:
+        https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html"
 
     Returns
     -------
@@ -417,7 +421,8 @@ def assert_no_intersection(list_of_lists_of_integers, word='iterables'):
     """
 
     unraveled = [[(ii, jj) for jj in ifrag] for ii, ifrag in enumerate(list_of_lists_of_integers) if len(ifrag)>0]
-    assert len(unraveled)!=0, ("All lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html")
+    if len(unraveled)==0:
+        return
 
     # Check whether there could be any intersection at all before going intersection hunting
     # Note that duplicated elements will be flagged here, even though they don't represent an intersection
