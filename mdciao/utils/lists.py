@@ -405,32 +405,44 @@ def join_lists(lists, idxs_of_lists_to_join):
     return lists
 
 def assert_no_intersection(list_of_lists_of_integers, word='iterables'):
-    """
-    Checks if two or more lists contain the same integer
+    r""" Assert if two or more lists contain the same integer(s)
+
     Parameters
     ----------
     list_of_lists_of_integers : list of lists
 
     Returns
     -------
-    Prints assertion message if inner lists have the same integer, else no output
-
+    Raises AssertionError if inner lists have the same integer, else no output
     """
-    # Looping here because the number of fragments will never become too large
-    # Also of interest
-    # len(f1),len(f2)
-    # (196, 709)
-    # %timeit np.intersect1d(f1,f2);
-    # 24.4 µs ± 1.47 µs per loop (mean ± std. dev. of 7 runs, 10000 loops each)
 
-    # %timeit set(f1).intersection(f2);
-    # 84.9 µs ± 1.95 µs per loop (mean ± std. dev. of 7 runs, 10000 loops each)
+    unraveled = [[(ii, jj) for jj in ifrag] for ii, ifrag in enumerate(list_of_lists_of_integers) if len(ifrag)>0]
+    assert len(unraveled)!=0, ("All lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html")
 
-    for ii, jj in _np.vstack(_np.triu_indices(len(list_of_lists_of_integers), k=1)).T:
-        l1, l2 = list_of_lists_of_integers[ii], list_of_lists_of_integers[jj]
-        assert len(l1) != 0 or len(l2) != 0, (l1,l2, "Both lists are empty! See https://www.coopertoons.com/education/emptyclass_intersection/emptyclass_union_intersection.html")
-        assert len(_np.intersect1d(l1, l2)) == 0, 'input %s %u and %u have these elements ' \
-                                                          'in common: %s:\n%s\nvs\n%s'%(word, ii, jj, set(l1).intersection(l2), l1, l2)
+    # Check whether there could be any intersection at all before going intersection hunting
+    # Note that duplicated elements will be flagged here, even though they don't represent an intersection
+    stacked = _np.vstack(unraveled)
+    if len(stacked)==len(_np.unique(stacked[:,1])):
+        pass
+    else:
+        frags_per_res = _defdict(list)
+        for ifrag, ires in stacked:
+            frags_per_res[ires].append(ifrag)
+        frags_per_res = {key : _np.unique(val) for key, val in frags_per_res.items()}
+        intersections = _defdict(list)
+
+        [intersections[tuple(val)].append(key) for key, val in frags_per_res.items() if len(val) > 1]
+        if len(intersections)!=0:
+            print("Raising AssertionError because:")
+            for intfrgs, intrsct in intersections.items():
+                print(f" - Input {word} "+", ".join([str(ii) for ii in intfrgs])+
+                      f" have {len(intrsct)} elements in common. See below for full list.")
+            for intfrgs, intrsct in intersections.items():
+                print()
+                print(f" - Intersection of {word}: " + ", ".join([str(ii) for ii in intfrgs]) +":\n"
+                      f"{intrsct}:\n" + "\nvs\n".join(
+                    [f"{ii}: "+ str(list_of_lists_of_integers[ii]) for ii in intfrgs]))
+            raise AssertionError
 
 def put_this_idx_first_in_pair(idx, pair):
     """
