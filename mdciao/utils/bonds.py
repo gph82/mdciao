@@ -106,7 +106,7 @@ def _residue_bond_matrix_to_triu_bonds(residue_bond_matrix):
             bonds.append([ii, jj])
     return bonds
 
-def bonded_neighborlist_from_top(top, n=1, verbose=False):
+def bonded_neighborlist_from_top(top, n=1, residue_indices=None, verbose=False):
     """
     Bonded neighbors of all the residues in the topology file.
 
@@ -117,6 +117,12 @@ def bonded_neighborlist_from_top(top, n=1, verbose=False):
         Number of bonded neighbors considered, i.e.
         A-B-C has only [B] as neighbors if :obj:`n` = 1,
         but [B,C] if :obj:`n` = 2
+    residue_indices : iterable, default is None
+        Compute the neighborlists only
+        for these indices. None computes
+        neighbors all indices. The returned
+        `neighborlist` will have empty-lists
+        for items not present in `residue_indices`.
 
     Returns
     -------
@@ -127,12 +133,10 @@ def bonded_neighborlist_from_top(top, n=1, verbose=False):
     """
 
     residue_bond_matrix = top2residue_bond_matrix(top,verbose=verbose)
-    return neighborlists_from_adjacency_matrix(residue_bond_matrix, n)
+    return neighborlists_from_adjacency_matrix(residue_bond_matrix, n, indices=residue_indices)
 
-#todo this is very slow and a bit of overkill if one is only interested in the
-#neighbors of one particular residue
-# Do it graph-thetically, ideally
-def neighborlists_from_adjacency_matrix(mat, n):
+# Still very cumbersome but faster than original
+def neighborlists_from_adjacency_matrix(mat, n, indices=None):
     r"""
     Return neighborlists from an adjacency matrix.
 
@@ -143,7 +147,16 @@ def neighborlists_from_adjacency_matrix(mat, n):
     mat : 2D _np.array, square matrix (M,M)
         Adjacency matrix, can be symmetric or not
     n : int
-        Connectedness.
+        Connectedness. The special case of
+        n=0 returns no neighbors (not even
+        the index with itself)
+    indices : iterable, default is None
+        Compute the neighborlists only
+        for these indices. None computes
+        neighbors all indices. The returned
+        `neighborlist` will have empty-lists
+        for items not present in `indices`.
+
 
     Returns
     -------
@@ -152,28 +165,44 @@ def neighborlists_from_adjacency_matrix(mat, n):
         contains the indices of the nodes
         separated from the i-ith node by
         a maximum of :obj:`n` jumps. The indices
-        are always in ascending order
+        are always in ascending order. For items
+        not present in `indices`, empty lists
+        will be returned.
     """
+
+    if n==0:
+        return [[] for ii in range(mat.shape[0])]
+
+    if indices is None:
+        indices = _np.arange(mat.shape[0])
+
     neighbor_list = [[ii] for ii in range(mat.shape[0])]
+
     for kk in range(n):
         for ridx, ilist in enumerate(neighbor_list):
-            new_neighborlist = [ii for ii in ilist]
-            for rn in ilist:
-                row = mat[rn]
-                bonded = _np.flatnonzero(row)
-                toadd = [nn for nn in bonded if nn not in ilist and nn != ridx]
-                if len(toadd):
-                    # print("neighbor %u adds new neighbor %s:"%(rn, toadd))
-                    new_neighborlist += toadd
-                    # print("so that the new neighborlist is: %s"%new_neighborlist)
+            if ridx not in indices:
+                neighbor_list[ridx]=[]
+            else:
+                new_neighborlist = [ii for ii in ilist]
+                for rn in ilist:
+                    row = mat[rn]
+                    bonded = _np.flatnonzero(row)
+                    toadd = [nn for nn in bonded if nn not in ilist and nn != ridx]
+                    if len(toadd):
+                        # print("neighbor %u adds new neighbor %s:"%(rn, toadd))
+                        new_neighborlist += toadd
+                        # print("so that the new neighborlist is: %s"%new_neighborlist)
 
-            neighbor_list[ridx] = [ii for ii in _np.unique(new_neighborlist) if ii != ridx]
-            # break
+                neighbor_list[ridx] = [ii for ii in _np.unique(new_neighborlist) if ii != ridx]
+
+    neighbor_list = [_np.unique(nl).tolist() for nl in neighbor_list]
 
     # Check that the neighborlist works both ways
     for ii, ilist in enumerate(neighbor_list):
-        for nn in ilist:
-            assert ii in neighbor_list[nn]
+            for nn in ilist:
+                if nn in indices:
+                    assert ii in neighbor_list[nn]
+
 
     return neighbor_list
 

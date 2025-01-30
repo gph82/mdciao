@@ -117,8 +117,21 @@ class Test_neighborlists_from_adjacency_matrix(unittest.TestCase):
             []          # 7
         ]
 
+        nl_2_0 = [
+            [1, 2],     # 0
+            [], # 1
+            [], # 2
+            [], # 3
+            [], # 4
+            [], # 5
+            [], # 6
+            []  # 7
+        ]
+
         self.assertListEqual(nl_1, bonds.neighborlists_from_adjacency_matrix(mat,1))
         self.assertListEqual(nl_2, bonds.neighborlists_from_adjacency_matrix(mat,2))
+        self.assertListEqual(nl_2_0,
+                              bonds.neighborlists_from_adjacency_matrix(mat, 2, indices=[0]))
 
 class Test_connected_sets(unittest.TestCase):
 
