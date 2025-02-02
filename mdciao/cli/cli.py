@@ -557,7 +557,7 @@ def residue_neighborhoods(residues,
                           res_idxs=False,
                           ctc_cutoff_Ang=4.5,
                           stride=1,
-                          ctc_control=5,
+                          ctc_control=6,
                           n_nearest=4,
                           scheme="closest-heavy",
                           min_freq=0.01,
@@ -675,11 +675,11 @@ def residue_neighborhoods(residues,
         if d<=ctc_cutoff_Ang
     stride : int, default is 1
         Stride the input data by this number of frames
-    ctc_control : int or float, default is 5
+    ctc_control : int or float, default is 6
         Control the number of reported contacts. Can be an
         integer (keep the first n contacts) or a float
         representing a fraction [0,1] of the total number of
-        contacts. Default is 5.
+        contacts. Default is 6.
     n_nearest : int, default is 4
         Exclude these many bonded neighbors for each residue
     min_freq : float, default is 0.01
@@ -1187,7 +1187,7 @@ def interface(
 
     Another example could be computing the interface of the
     C-terminus of a receptor with the entire receptor,
-    where it might be useful to  including the contacts of
+    where it might be useful to include the contacts of
     the C-terminus with itself.
 
     When using `self_interface` = True, it's advisable to
