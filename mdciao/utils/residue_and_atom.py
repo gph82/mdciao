@@ -342,6 +342,10 @@ def name_from_AA(key) -> str:
 
     if isinstance(key, _md.core.topology.Residue):
         name = key.name
+    # CPs w/o topology will have purely numeric residue names, bc. these
+    # are derived from the residue indices
+    elif key.isnumeric():
+        name = key
     else:
         rev_key = key[::-1]
         # Iterate from tail to head and break at the first alphabetic char
