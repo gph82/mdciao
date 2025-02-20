@@ -2739,15 +2739,14 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_violins_options4(self):
         CG = examples.ContactGroupL394()
-        iax, order = CG.plot_violins(sort_by=2,
+        iax, order = CG.plot_violins(sort_by=3,
                                      shorten_AAs=True,
                                      stride=2,
                                      )
         #ax.figure.savefig("test.png")
         assert isinstance(iax, _plt.Axes)
         assert isinstance(order, _np.ndarray)
-        _np.testing.assert_array_equal(order, [1, 0])
-        _np.testing.assert_array_equal([1, 0],CG.means.argsort()[:2])
+        _np.testing.assert_array_equal(order, CG.means.argsort()[:3])
         #_plt.savefig("test.png")
         _plt.close("all")
 
