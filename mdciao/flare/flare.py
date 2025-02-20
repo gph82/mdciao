@@ -1037,7 +1037,7 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
     res = _chord_diagram(sparse_mat,
                          chord_colors="gray",
                          order=order,
-                         names=[replace4latex(str(ifrag)) for ifrag in non_zero_fragment_names],
+                         names=[[replace4latex(str(ifrag)) for ifrag in non_zero_fragment_names] if non_zero_fragment_names is not None else None][0],
                          colors=non_zero_fragment_colors,
                          ax=ax,
                          extent=extent)
