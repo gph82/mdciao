@@ -476,7 +476,7 @@ def fetch_example_data(alias_or_url="b2ar@Gs",
           of mdciao.contacts.ContactGroup-objects stored as npy files.
           Original data generated at the Chodera Lab by Ivy Zhang,
           made available via `molSSI <https://covid.molssi.org//simulations/#foldinghome-simulations-of-the-sars-cov-2-spike-rbd-bound-to-human-ace2>`_.
-          (1 npy file with interfaces for 4 setups and one sample trajectory file, ca 35 MB)
+          (1 npy file with interfaces for 4 setups and one sample trajectory file, ca 42 MB)
 
          * ghrelin@ghsr : https://proteinformatics.uni-leipzig.de/mdciao/ghrelin_receptor.zip
           Growth hormone secretagogue receptor type 1, ghrelin receptor for short, bound

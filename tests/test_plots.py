@@ -169,7 +169,7 @@ class Test_plot_unified_freq_dicts(unittest.TestCase):
 
     def test_sort_by_keys(self):
         neigh : mdciao.contacts.ContactGroup = ContactGroupL394()
-        freqs = neigh.frequency_dicts(4)
+        freqs = neigh.frequency_dicts(4.5)
         # The following list, test_list
         # * reverses the order
         # * deletes the most frequent one (the last one) "R389@G.H5.21    - L394@G.H5.26"
