@@ -2084,7 +2084,7 @@ class ContactPair(object):
                     label = self.neighborhood.partner_residue_name
             elif AA_format in ["try_consensus", "just_consensus"]:
                 label = self.label_flex(AA_format=AA_format, pad_label=False)
-                label = _mdcu.str_and_dict.splitlabel(label)[self.residues.anchor_index]
+                label = _mdcu.str_and_dict.splitlabel(label)[self.residues.partner_index]
         return label
 
     @_kwargs_subs(label_flex)
