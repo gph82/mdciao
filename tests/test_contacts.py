@@ -1110,17 +1110,17 @@ class TestContactPair(unittest.TestCase):
     def test_retop(self):
         CG = examples.ContactGroupL394()
 
-        CP : contacts.ContactPair = CG.contact_pairs[0]
+        CP : contacts.ContactPair = CG.contact_pairs[2]
 
         top = md.load(test_filenames.rcsb_3SN6_pdb).top
         #print(CP.top, CP.residues.idxs_pair)
         #print(CP.residues.names_short)
         #print([utils.residue_and_atom.find_AA(AA,top) for AA in CP.residues.names_short])
-        imap = {347:342,
-                353:348}
+        imap = {353: 348,
+                344: 339}
         nCP : contacts.ContactPair = CP.retop(top,imap)
         # Test the residx
-        _np.testing.assert_array_equal(nCP.residues.idxs_pair,[348, 342])
+        _np.testing.assert_array_equal(nCP.residues.idxs_pair,[348, 339])
 
         # Test the non-nested attributes
         for attr in [
@@ -1153,11 +1153,11 @@ class TestContactPair(unittest.TestCase):
     def test_retop_deepcopy(self):
         CG = examples.ContactGroupL394()
 
-        CP: contacts.ContactPair = CG.contact_pairs[0]
+        CP: contacts.ContactPair = CG.contact_pairs[2]
 
         top = md.load(test_filenames.rcsb_3SN6_pdb).top
-        imap = {347: 342,
-                353: 348}
+        imap = {353: 348,
+                344: 339}
         nCP: contacts.ContactPair = CP.retop(top, imap, deepcopy=True)
         for attr in [
             "time_traces.trajs",
