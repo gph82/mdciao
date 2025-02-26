@@ -31,7 +31,7 @@ a  = parser.parse_args()
 #_inform_of_parser(parser)
 
 if not a.fragmentify:
-    a.fragment_names="None"
+    a.fragment_names=None
 
 # Make a dictionary out ot of it and pop the positional keywords
 b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
