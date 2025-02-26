@@ -44,19 +44,20 @@ and calculates the  time-traces of residue-residue distances, and from there, **
 
  mdc_neighborhoods.py top.pdb traj.xtc --residues L394
  [...]
- The following 5 contacts capture 3.88 (~90%) of the total frequency 4.31 (over 7 contacts with nonzero frequency).
- As orientation value, the first 5 ctcs already capture 90.0% of 4.31.
- The 5-th contact has a frequency of 0.50.
+ The following 6 contacts capture 5.26 (~97%) of the total frequency 5.43 (over 9 contacts with nonzero frequency at 4.50 Angstrom).
+ As orientation value, the first 6 ctcs already capture 90.0% of 5.43.
+ The 6-th contact has a frequency of 0.52.
     freq          label            residues  fragments   sum
- 1  0.96  L394@frag0 - R389@frag0  353 - 348    0 - 0   0.96
- 2  0.92  L394@frag0 - L388@frag0  353 - 347    0 - 0   1.88
- 3  0.79  L394@frag0 - L230@frag3  353 - 957    0 - 3   2.67
- 4  0.71  L394@frag0 - R385@frag0  353 - 344    0 - 0   3.38
- 5  0.50  L394@frag0 - K270@frag3  353 - 972    0 - 3   3.88
+ 1  1.00  L394@frag0 - L388@frag0  353 - 347    0 - 0   1.00
+ 2  1.00  L394@frag0 - R389@frag0  353 - 348    0 - 0   2.00
+ 3  0.97  L394@frag0 - L230@frag3  353 - 957    0 - 3   2.97
+ 4  0.97  L394@frag0 - R385@frag0  353 - 344    0 - 0   3.94
+ 5  0.80  L394@frag0 - I233@frag3  353 - 960    0 - 3   4.74
+ 6  0.52  L394@frag0 - K270@frag3  353 - 972    0 - 3   5.26
  The following files have been created:
- ./neighborhood.overall@4.0_Ang.pdf
- ./neighborhood.LEU394@frag0@4.0_Ang.dat
- ./neighborhood.LEU394@frag0.time_trace@4.0_Ang.pdf
+ ./neighborhood.overall@4.5_Ang.pdf
+ ./neighborhood.LEU394@frag0@4.5_Ang.dat
+ ./neighborhood.LEU394@frag0.time_trace@4.5_Ang.pdf
 
 
 You can also invoke::
@@ -75,8 +76,8 @@ for live Jupyter notebooks play around with. These are shown in the :ref:`Jupyte
  A note of caution regarding the above definitions for *contact* and *frequency*:
 
  * the kinetic information is averaged out. Contacts quickly breaking and forming and contacts that break (or form) only once **will have the same frequency** as long as the **fraction of total time** they are formed is the same. For analysis taking kinetics into account, use. e.g. `pyemma <http://mdtraj.org>`_.
- * The sharp, "distance-only" cutoff can sometimes over- or under-represent some interaction types. Modules like `get_contacts <https://github.com/getcontacts/getcontacts>`_ capture these interactions better, and have a ton of other features features.
- * Frequencies are just **averages** over the input data. In some cases, *simply* computing averages is a bad idea. The user is `responsible for deciding over what data to average <https://en.wikipedia.org/wiki/Garbage_in,_garbage_out>`_. For example, if your data is highly heterogenous you might want to `cluster <https://manual.gromacs.org/documentation/2018/onlinehelp/gmx-cluster.html>`_ your data into into ``cluster1.xtc``, ``cluster.2.xtc`` etc and then do a per-cluster analysis with ``mdciao``
+ * The sharp, "distance-only" cutoff can sometimes over- or under-represent some interaction types. Modules like `get_contacts <https://github.com/getcontacts/getcontacts>`_ or `ProLIF <https://prolif.readthedocs.io/en/stable/>`_ and the `PLIP webserver <https://plip-tool.biotec.tu-dresden.de/plip-web/plip/index>`_ have individual geometric definitions for each interaction type.
+ * Frequencies are just **averages** over the input data. In some cases, *simply* computing averages is a bad idea. The user is `responsible for deciding over what data to average <https://en.wikipedia.org/wiki/Garbage_in,_garbage_out>`_. For example, if your data is highly heterogenous you might want to `cluster <https://manual.gromacs.org/documentation/2018/onlinehelp/gmx-cluster.html>`_ your data into into ``cluster1.xtc``, ``cluster.2.xtc`` etc and then do a per-cluster analysis with ``mdciao``. Same applies to single frames i.e. PDB files, where the word "frequency" doesn't make any sense.
 
  These issues (if/when they arise) can be spotted easily by looking at the time-traces and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
 

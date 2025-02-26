@@ -41,9 +41,9 @@ Highlights
        TM4 with     27 AAs   THR146@4.38x38   ( 876) -   HIS172@4.64x64   (902 ) (TM4)
       ECL2 with     20 AAs   TRP173           ( 903) -   THR195           (922 ) (ECL2)  resSeq jumps
        TM5 with     42 AAs   ASN196@5.35x36   ( 923) -   GLU237@5.76x76   (964 ) (TM5)
-      ICL3 with      2 AAs   GLY238           ( 965) -   ARG239           (966 ) (ICL3)
-       TM6 with     35 AAs   CYS265@6.27x27   ( 967) -   GLN299@6.61x61   (1001) (TM6)
-      ECL3 with      4 AAs   ASP300           (1002) -   ILE303           (1005) (ECL3)
+      ICL3 with      1 AAs   GLY238           ( 965) -   ARG239           (966 ) (ICL3)
+       TM5 with     35 AAs   CYS265@6.27x27   ( 967) -   GLN299@6.61x61   (1001) (TM6)
+      ECL2 with      4 AAs   ASP300           (1002) -   ILE303           (1005) (ECL3)
        TM7 with     25 AAs   ARG304@7.31x30   (1006) -   ARG328@7.55x55   (1030) (TM7)
         H8 with     12 AAs   SER329@8.47x47   (1031) -   LEU340@8.58x58   (1042) (H8)
    ...
@@ -148,54 +148,55 @@ Highlights
 
 * use fragment definitions --like the ones above, ``0`` for the :math:`G\alpha`-unit and ``3`` for the receptor-- to compute interfaces in an automated way, i.e. without having to specifying individual residues::
 
-   >>> mdc_interface.py top.pdb traj.xtc -fg1 0 -fg2 3 --GPCR adrb2_human --CGN GNAS2_HUMAN -t "3SN6 beta2AR-Galpha interface" -ni
+   >>> mdc_interface.py top.pdb traj.xtc -isel1 0 -isel2 3 --GPCR adrb2_human --CGN gnas2_human -t "3SN6 beta2AR-Galpha interface" -ni
    ...
-   The following 50 contacts capture 35.56 (~96%) of the total frequency 36.88 (over 75 contacts with nonzero frequency).
-   As orientation value, the first 44 ctcs already capture 90.0% of 36.88.
-   The 44-th contact has a frequency of 0.42.
-       freq              label               residues  fragments   sum
-   1   1.00  R385@G.H5.17   - Q229@5.68x68   344 - 956    0 - 3    1.00
-   2   1.00  Q384@G.H5.16   - I135@3.54x54   343 - 865    0 - 3    2.00
-   3   1.00  D381@G.H5.13   - Q229@5.68x68   340 - 956    0 - 3    3.00
-   4   1.00  D381@G.H5.13   - K232@5.71x71   340 - 959    0 - 3    4.00
-   5   0.99  T350@G.h4s6.03 - R239@ICL3      309 - 966    0 - 3    4.99
-   6   0.98  E392@G.H5.24   - T274@6.36x36   351 - 976    0 - 3    5.97
-   7   0.96  R385@G.H5.17   - K232@5.71x71   344 - 959    0 - 3    6.93
-   ...
-   The following files have been created:
-   ./interface.overall@4.0_Ang.xlsx
-   ./interface.overall@4.0_Ang.dat
-   ./interface.overall@4.0_Ang.as_bfactors.pdb
-   ./interface.overall@4.0_Ang.pdf
-   ./interface.matrix@4.0_Ang.pdf
-   ./interface.flare@4.0_Ang.pdf
-   ./interface.time_trace@4.0_Ang.pdf
+   The following 50 contacts capture 45.66 (~91%) of the total frequency 50.28 (over 107 contacts with nonzero frequency at 4.50 Angstrom).
+   As orientation value, the first 50 ctcs already capture 90.0% of 50.28.
+   The 50-th contact has a frequency of 0.52.
 
- .. figure:: imgs/interface.matrix@4.0_Ang.Fig.4.png
+       freq              label               residues  fragments   sum
+   1   1.00  R385@G.H5.17   - K232@5.71x71   344 - 959    0 - 3    1.00
+   2   1.00  V217@G.S3.01   - F139@34.51x51  183 - 869    0 - 3    2.00
+   3   1.00  R385@G.H5.17   - Q229@5.68x68   344 - 956    0 - 3    3.00
+   4   1.00  D381@G.H5.13   - Q229@5.68x68   340 - 956    0 - 3    4.00
+   5   1.00  E392@G.H5.24   - T274@6.36x36   351 - 976    0 - 3    5.00
+   6   1.00  Y358@G.h4s6.20 - S236@5.75x75   317 - 963    0 - 3    6.00
+   7   1.00  D381@G.H5.13   - K232@5.71x71   340 - 959    0 - 3    7.00
+   ...
+   ./interface.overall@4.5_Ang.xlsx
+   ./interface.overall@4.5_Ang.dat
+   ./interface.overall@4.5_Ang.as_bfactors.pdb
+   ./interface.overall@4.5_Ang.pdf
+   ./interface.matrix@4.5_Ang.pdf
+   ./interface.flare@4.5_Ang.pdf
+   ./interface.time_trace@4.5_Ang.pdf
+
+
+ .. figure:: imgs/interface.matrix@4.5_Ang.Fig.4.png
       :scale: 25%
       :align: left
       :name: interface_matrix
 
-      [``interface.matrix@4.0_Ang.pdf``](click to enlarge). Interface contact matrix between the β2AR receptor and the α-unit of the G-protein, using a cutoff of 4.0 Å. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor and G-protein. Please note: this is **not a symmetric** contact-matrix. The y-axis shows residues in the G\α-unit and the x-axis in the receptor.
+      [``interface.matrix@4.5_Ang.pdf``](click to enlarge). Interface contact matrix between the β2AR receptor and the α-unit of the G-protein, using a cutoff of 4.5 Å. The labelling incorporates consensus nomenclature to identify positions and domains of both receptor and G-protein. Please note: this is **not a symmetric** contact-matrix. The y-axis shows residues in the G\α-unit and the x-axis in the receptor.
 
 * Since :numref:`interface_matrix` is bound to incorporate a lot of blank pixels, ``mdciao`` will also produce sparse plots and figures that highlight the formed contacts only:
 
- .. figure:: imgs/interface.overall@4.0_Ang.Fig.5.png
+ .. figure:: imgs/interface.overall@4.5_Ang.Fig.5.png
       :scale: 15%
       :align: left
       :name: interface_bars
 
 
-      [``interface.overall@4.0_Ang.pdf``](click to enlarge) **Upper panel**: most frequent contacts sorted by frequency, i.e. for each non-empty pixel of :numref:`interface_matrix`, there is a bar shown. **Lower panel**: per-residue aggregated contact-frequencies, showing each residue's average participation in the interface (same info will be written to `interface.overall@4.0_Ang.xlsx`). Also, the number of shown contacts/bars can be controlled either with the `--ctc_control` and/or `--min_freq` parameters of `mdc_interface.py`.
+      [``interface.overall@4.5_Ang.pdf``](click to enlarge) **Upper panel**: most frequent contacts sorted by frequency, i.e. for each non-empty pixel of :numref:`interface_matrix`, there is a bar shown. **Lower panel**: per-residue aggregated contact-frequencies, showing each residue's average participation in the interface (same info will be written to `interface.overall@4.5_Ang.xlsx`). Also, the number of shown contacts/bars can be controlled either with the `--ctc_control` and/or `--min_freq` parameters of `mdc_interface.py`.
 
 * A very convenient way to incorporate the molecular topology into the visualization of contact frequencies are the so-called `FlarePlots <https://github.com/GPCRviz/flareplot>`_ (cool live-demo `here <https://gpcrviz.github.io/flareplot/>`_). These show the molecular topology (residues, fragments) on a circle with curves connecting the residues for which a given frequency has been computed. ``mdciao`` has its own flareplot implementation in the :obj:`mdciao.flare` module, that can also coarse-grain `flareplots to the molecular fragments <https://proteinformatics.uni-leipzig.de/mdciao/notebooks/Flareplot_Schemes.html#Coarse-Graning-Flareplots:-Chord-Diagrams>`_.  The `mdc_interface.py example`_ above will generates a flareplot by default:
 
- .. figure:: imgs/interface.flare@4.0_Ang.small.png
+ .. figure:: imgs/interface.flare@4.5_Ang.small.png
       :scale: 70%
       :align: left
       :name: fig_flare
 
-      [``interface.flare@4.0_Ang.pdf``](click to enlarge) FlarePlot of the frequencies shown in the figures :numref:`interface_matrix` and :numref:`interface_bars`. Residues are shown as dots on a circumference, split into fragments following any available labelling information. The contact frequencies are represented as lines connecting these dots/residues, with the line-opacity proportional to the frequencie's value. The secondary stucture of each residue is also included as color-coded letters: H(elix), B(eta), C(oil). We can clearly see the :math:`G\alpha_5`-subunit in contact with the receptor's TM3, ICL2, and TM5-ICL3-TM6 regions. Note that this plot is always produced as .pdf to be able to zoom into it as much as needed.
+      [``interface.flare@4.5_Ang.pdf``](click to enlarge) FlarePlot of the frequencies shown in the figures :numref:`interface_matrix` and :numref:`interface_bars`. Residues are shown as dots on a circumference, split into fragments following any available labelling information. The contact frequencies are represented as lines connecting these dots/residues, with the line-opacity proportional to the frequencie's value. The secondary stucture of each residue is also included as color-coded letters: H(elix), B(eta), C(oil). We can clearly see the :math:`G\alpha_5`-subunit in contact with the receptor's TM3, ICL2, and TM5-ICL3-TM6 regions. Note that this plot is always produced as .pdf to be able to zoom into it as much as needed.
 
 * Similar to how the flareplot (:numref:`fig_flare`) is mapping contact-frequencies (:numref:`interface_bars`, upper panel) onto the molecular topology, the next figure maps the **lower** panel :numref:`interface_bars` on the molecular geometry. It simply puts the values shown there in the `temperature factor <http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM>`_  of a pdb file, representing the calculated interface as a *heatmap*, which can be visualized in VMD using the `Beta coloring <https://www.ks.uiuc.edu/Research/vmd/vmd-1.7.1/ug/node74.html>`_.
 
@@ -205,11 +206,11 @@ Highlights
       :name: fig_interface_strength
 
 
-      [``interface.overall@4.0_Ang.as_bfactors.pdb``](click to enlarge) 3D visualization of the interface as heatmap (blue-green-red) using `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_. We clearly see the regions noted in :numref:`fig_flare` (TM5-ICL3-TM6 and :math:`G\alpha_5`-subunit) in particular the **residues** of :numref:`interface_bars` (lower panel) light up. This heatmap is overlaid on structures representative of the interface, and have been selected using the :obj:`mdciao.contacts.ContactGroup.repframes` method. Please note, for the homepage-banner (red-blue heatmap), the ``signed_colors`` argument has been used when calling the :obj:`mdciao.flare.freqs2flare` method of the API. At the moment this is not possible just by using ``mdc_interface.py``, sorry!
+      [``interface.overall@4.5_Ang.as_bfactors.pdb``](click to enlarge) 3D visualization of the interface as heatmap (blue-green-red) using `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_. We clearly see the regions noted in :numref:`fig_flare` (TM5-ICL3-TM6 and :math:`G\alpha_5`-subunit) in particular the **residues** of :numref:`interface_bars` (lower panel) light up. This heatmap is overlaid on structures representative of the interface, and have been selected using the :obj:`mdciao.contacts.ContactGroup.repframes` method. Please note, for the homepage-banner (red-blue heatmap), the ``signed_colors`` argument has been used when calling the :obj:`mdciao.flare.freqs2flare` method of the API. At the moment this is not possible just by using ``mdc_interface.py``, sorry!
 
  You can use this snippet to generate a VMD `visualiazation state` file, ``view_mdciao_interface.vmd`` to view the heatmap::
 
-   echo 'mol new ./interface.overall@4.0_Ang.as_bfactors.pdb
+   echo 'mol new ./interface.overall@4.5_Ang.as_bfactors.pdb
          mol modstyle 0 0 NewCartoon
          mol modcolor 0 0 Beta
          color scale method BGR ' > view_mdciao_interface.vmd
@@ -242,17 +243,17 @@ Highlights
    >>> mdc_sites.py top.pdb traj.xtc --site tip.json -at -nf -sa #sa: short AA-names
    ...
    The following files have been created:
-   ./sites.overall@4.0_Ang.pdf
+   ./sites.overall@4.5_Ang.pdf
    ...
 
   generates the following figure (tables are generated but not shown). The option ``-at`` (``--atomtypes``) generates the patterns ("hatching") of the bars. They indicate what atom types (sidechain or backbone) are responsible for the contact:
 
- .. figure:: imgs/sites.overall@4.0_Ang.Fig.6.png
+ .. figure:: imgs/sites.overall@4.5_Ang.Fig.6.png
       :scale: 50%
       :align: left
       :name: sites_freq
 
-      [``sites.overall@4.0_Ang.pdf``](click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.uni-leipzig.de/mdsrv.html?load=file://base/mdciao/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
+      [``sites.overall@4.5_Ang.pdf``](click to enlarge) Contact frequencies of the residue pairs specified in the file `tip.json`, shown with the contact type indicated by the stripes on the bars. Use e.g. the `3D-visualisation <http://proteinformatics.uni-leipzig.de/mdsrv.html?load=file://base/mdciao/gs-b2ar.ngl>`_ to check how "L394-K270" switches between SC-SC and SC-BB.
 
  |nbspc|
 .. _comparison_HL:
@@ -271,43 +272,49 @@ Highlights
 
    >>> mdc_neighborhoods.py 3SN6.pdb 3SN6.pdb -r R131 -o 3SN6 -nf -o 3SN6.X
    ...
-   The following 3 contacts capture 3.00 (~100%) of the total frequency 3.00 (over 3 contacts with nonzero frequency).
-   As orientation value, the first 3 ctcs already capture 90.0% of 3.00.
-   The 3-th contact has a frequency of 1.00.
+   The following 5 contacts capture 5.00 (~100%) of the total frequency 5.00 (over 5 contacts with nonzero frequency at 4.50 Angstrom).
+   As orientation value, the first 5 ctcs already capture 90.0% of 5.00.
+   The 5-th contact has a frequency of 1.00.
       freq    label       residues   fragments  sum
-   1   1.0  R131 - I278  1007 - 1126    0 - 0   1.0
-   2   1.0  R131 - Y326  1007 - 1174    0 - 0   2.0
-   3   1.0  R131 - Y391   1007 - 345    0 - 0   3.0
-   ...
+   1   1.0  R131 - Y326  1007 - 1174    0 - 0   1.0
+   2   1.0  R131 - Y391   1007 - 345    0 - 0   2.0
+   3   1.0  R131 - V222  1007 - 1095    0 - 0   3.0
+   4   1.0  R131 - Y219  1007 - 1092    0 - 0   4.0
+   5   1.0  R131 - I278  1007 - 1126    0 - 0   5.0
    The following files have been created:
-   ...
-   ./3SN6.X.ARG131@4.0_Ang.dat
+   ./3SN6.X.ARG131@4.5_Ang.dat
+
 
   Now we use ``mdc_neighborhoods.py`` on our data::
 
    >>> mdc_neighborhoods.py top.pdb traj.xtc -r R131 -nf -o 3SN6.MD
    ...
-   The following 4 contacts capture 2.12 (~100%) of the total frequency 2.12 (over 5 contacts with nonzero frequency).
-   ...
-   freq    label       residues  fragments   sum
-   1  0.88  R131 - Y391   861 - 350    0 - 0   0.88
-   2  0.69  R131 - Y326  861 - 1028    0 - 0   1.56
-   3  0.44  R131 - Y219   861 - 946    0 - 0   2.00
-   4  0.12  R131 - I278   861 - 980    0 - 0   2.12
+   The following 6 contacts capture 3.15 (~99%) of the total frequency 3.17 (over 7 contacts with nonzero frequency at 4.50 Angstrom).
+   As orientation value, the first 4 ctcs already capture 90.0% of 3.17.
+   The 4-th contact has a frequency of 0.39.
+      freq    label       residues  fragments   sum
+   1  0.99  R131 - Y391   861 - 350    0 - 0   0.99
+   2  0.94  R131 - Y326  861 - 1028    0 - 0   1.92
+   3  0.76  R131 - Y219   861 - 946    0 - 0   2.69
+   4  0.39  R131 - I278   861 - 980    0 - 0   3.07
+   5  0.05  R131 - I325  861 - 1027    0 - 0   3.12
+   6  0.02  R131 - I72    861 - 802    0 - 0   3.15
+
    ...
    The following files have been created:
    ...
-   ./3SN6.MD.ARG131@4.0_Ang.dat
+   ./3SN6.MD.ARG131@4.5_Ang.dat
 
  Please note that we have omitted most of the terminal output, and that we have used the option ``-o`` to label output-files differently: ``3SN6.X`` and ``3SN6.MD``. Now we compare both these outputs::
 
-   >>> mdc_compare.py 3SN6.X.ARG131@4.0_Ang.dat 3SN6.MD.ARG131@4.0_Ang.dat -k Xray,MD -t "3SN6 cutoff 4AA" -a R131
+   >>> mdc_compare.py 3SN6.X.ARG131@4.5_Ang.dat 3SN6.MD.ARG131@4.5_Ang.dat -k Xray,MD -t "3SN6 cutoff 4.5AA" -a R131
    These interactions are not shared:
-   Y219
-   Their cumulative ctc freq is 0.44.
+   I325, I72, V222
+   Their cumulative ctc freq is 1.07.
    Created files
    freq_comparison.pdf
    freq_comparison.xlsx
+
 
 
  .. figure:: imgs/freq_comparison.png
@@ -315,5 +322,5 @@ Highlights
       :align: left
       :name: comparisonfig
 
-      [``freq_comparison.pdf``]Neighborhood comparison for R131 between our MD simulations and the original 3SN6 crystal structure. We can see how the neighborhood *relaxes* and changes.  Some close residues, in particular I278, move further than 4 Ang away from R131. Analogously, we see how Y219 also enters the neighborhood. You can see these residues highlighted in the `3D visualization`_. We have used a custom title and custom keys for clarity of the figure (options ``-t`` and ``-k``). Also, since all contact labels share the 'R131'  label, we can remove it with the ``-a`` (anchor residue).
+      [``freq_comparison.pdf``]Neighborhood comparison for R131 between our MD simulations and the original 3SN6 crystal structure. We can see how the neighborhood *relaxes* and changes.  Some close residues, in particular I278, move further than 4.5 Å away from R131. You can see these residues highlighted in the `3D visualization`_. We have used a custom title and custom keys for clarity of the figure (options ``-t`` and ``-k``). Also, since all contact labels share the 'R131'  label, we can remove it with the ``-a`` (anchor residue).
 
