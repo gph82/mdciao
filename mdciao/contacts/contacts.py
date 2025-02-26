@@ -3929,6 +3929,7 @@ class ContactGroup(object):
         #df2return["%sum"]=df2return["sum"]/df2return["sum"].values[-1]*100 # The cumsum here might be confusing since some freqs < min_freqs have been left out
         return df2return
 
+    @_kwargs_subs(frequency_dataframe)
     def frequency_table(self, ctc_cutoff_Ang,
                         fname,
                         switch_off_Ang=None,
@@ -3971,7 +3972,12 @@ class ContactGroup(object):
             within each member of the interface, as returned
             by self.interface_residxs
         freq_dataframe_kwargs : dict
-            Optional parameters for :obj:`self.frequency_dataframe`
+            Optional parameters for :obj:`self.frequency_dataframe`,
+            which are listed below.
+
+        Other Parameters
+        ----------------
+        %(substitute_kwargs)s
 
         Returns
         -------
