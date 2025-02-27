@@ -108,3 +108,45 @@ except ImportError:
     import pkg_resources
     version = pkg_resources.get_distribution("mdciao").version
 copybutton_prompt_text = ">>> "
+
+def rename_thumbnails(*args):
+    """
+    # This re-reads the notebooks to extract cell count (code and markup)
+    # takes a bit longer, but might come in handy for specifying thumbnails
+    # using cell idx rather than figure index
+    import json
+    with open("02.Missing_Contacts.ipynb", 'r') as f:
+        notebook_data = json.load(f)
+    notebook_data.keys()
+    idxs = {}
+    for ii, cc in enumerate(notebook_data["cells"]):
+        if cc["cell_type"] == "code":
+            idxs[cc["execution_count"]] = ii
+    """
+    from glob import glob
+    from natsort import natsorted
+    from sphinx.util import logging
+    import shutil
+    logger = logging.getLogger(__name__)
+    fig_idxs = {"02.Missing_Contacts": 1,
+                "03.Comparing_CGs_Bars": -1,
+                "04.Comparing_CGs_Flares": -1,
+                "05.Flareplot_Schemes": -3,
+                "07.EGFR_Kinase_Inhibitors": -1,
+                "08.Manuscript": -1,
+                "09.Consensus_Labels": 3}
+    for nb_basename, fig_idx in fig_idxs.items():
+        exp = f"_build/html/_images/notebooks_{nb_basename}_*_*.png" #doctrees/nbsphinx seems to be created already after "html-page-context"
+        cands = [ff for ff in natsorted(glob(exp)) if not ff.endswith("selected_thumbnail.png")]
+        #logger.info(f"Picking nr {fig_idx} from available files:"+"\n"+"\n".join(cands))
+        source_name = cands[fig_idx]
+        target_name = f"_build/html/_images/notebooks_{nb_basename}_selected_thumbnail.png"
+        #logger.info(f"Will copy {source_name} to {target_name}")
+        shutil.copy(source_name, target_name)
+
+def setup(app):
+    # Connect to the 'build-finished' event
+    app.connect('build-finished', rename_thumbnails) # needs to run twice until I find a new event, perhaps html-page-context
+
+
+
