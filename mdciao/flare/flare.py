@@ -25,6 +25,7 @@ from . import _utils as _futils
 from mdciao.plots.plots import _points2dataunits
 from mdciao.utils.str_and_dict import replace4latex
 from mdciao.utils.residue_and_atom import get_SS as _get_SS
+from mdciao.utils.lists import find_parent_list as _find_parent_list
 from mpl_chord_diagram import chord_diagram as _chord_diagram
 from collections import namedtuple as _namedtuple
 
@@ -362,6 +363,8 @@ def freqs2flare(freqs, res_idxs_pairs,
                                        )
         xy += center
     else:
+        if isinstance(colors,list) and len(fragments)==len(colors):
+            colors=[colors[ii] for ii in _find_parent_list(residues_as_fragments, fragments)[0]]
         ax, xy, plot_attribs = circle_plot_residues(residues_as_fragments,
                                                     fontsize=fontsize,
                                                     colors=colors,
@@ -463,7 +466,7 @@ def circle_plot_residues(fragments,
             Use this color for all residues
         * iterable (array or list, not dict)
             len(colors) has to be either len(fragments) or
-            sum([len(frag) for frag in fragments)
+            sum([len(frag) for frag in fragments])
             In the first case, it's expanded to assign
             each residue in fragment the same color
             In the second case, since each residue in
