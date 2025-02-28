@@ -136,11 +136,11 @@ def rename_thumbnails(*args):
                 "08.Manuscript": -1,
                 "09.Consensus_Labels": 3}
     for nb_basename, fig_idx in fig_idxs.items():
-        exp = f"_build/html/_images/notebooks_{nb_basename}_*_*.png" #doctrees/nbsphinx seems to be created already after "html-page-context"
+        exp = f"_build/doctrees/nbsphinx/notebooks_{nb_basename}_*_*.png" #doctrees/nbsphinx seems to be created already after "html-page-context"
         cands = [ff for ff in natsorted(glob(exp)) if not ff.endswith("selected_thumbnail.png")]
         #logger.info(f"Picking nr {fig_idx} from available files:"+"\n"+"\n".join(cands))
         source_name = cands[fig_idx]
-        target_name = f"_build/html/_images/notebooks_{nb_basename}_selected_thumbnail.png"
+        target_name = f"_build/doctrees/nbsphinx/notebooks_{nb_basename}_selected_thumbnail.png"
         #logger.info(f"Will copy {source_name} to {target_name}")
         shutil.copy(source_name, target_name)
 
