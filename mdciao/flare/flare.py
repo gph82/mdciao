@@ -64,7 +64,8 @@ def freqs2flare(freqs, res_idxs_pairs,
                 signed_colors=None,
                 subplot=False,
                 aura=None,
-                coarse_grain=False
+                coarse_grain=False,
+                normalize_to_sigma=False,
                 ):
     r"""
     Plot contact frequencies as `flare plots`.
@@ -287,6 +288,12 @@ def freqs2flare(freqs, res_idxs_pairs,
         frequencies and show them as a chord-diagram
         wrapping around :obj:`~mdciao.flare.freqs2chord`
         Check there for more info
+    normalize_to_sigma : bool or float, default is False
+        Only used if `coarse_grain` is True.
+        Allows for scaling the arc occupied by the
+        chords to a particular sigma value. This
+        is explained in detail in the documentation of
+        :obj:`~mdciao.flare.freqs2chord`.
 
     Returns
     -------
@@ -341,7 +348,7 @@ def freqs2flare(freqs, res_idxs_pairs,
         fragment_colors = [fragment_colors[residx2markeridx[ff[0]]] for ff in residues_as_fragments]
         return freqs2chord(_np.average(freqs, axis=0), res_idxs_pairs, residues_as_fragments,
                            fragment_names=fragment_names,fragment_colors=fragment_colors,
-                           panelsize=panelsize,ax=ax
+                           panelsize=panelsize,ax=ax, normalize_to_sigma=normalize_to_sigma,
                            )
 
     if plot_curves_only:
@@ -941,13 +948,13 @@ def freqs2chord(freqs, res_idxs_pairs, fragments,
     normalize_to_sigma : float, default is None
         If a float is provided, then the arcs
         of the chord-diagram can occupy the
-        full 360% degrees of the circumference if,
+        full 360° degrees of the circumference if,
         and only if, the sum over all per-fragment
         contacts (Sigma) aggregates to `normalize_sigma`.
         If they aggregate to a smaller value, then
         they will occupy a proportionately smaller
         portion of the circumference. If they aggregate
-        to a larger value, then a error will be thrown.
+        to a larger value, then an error will be thrown.
         The default behavior (None) is to always occupy
         the full 360°, but this makes it hard to
         compare across different chord-diagrams for systems
