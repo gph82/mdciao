@@ -98,8 +98,8 @@ def _parser_add_topology(parser):
 def _parser_add_cutoff(parser):
     parser.add_argument("--ctc_cutoff_Ang", "-co", type=float,
                         help="The cutoff distance between two residues for them to be considered in contact. "
-                             "Default is 4 Angstrom.",
-                        default=4)
+                             "Default is 4.5 Angstrom.",
+                        default=4.5)
 
 def _parser_add_n_neighbors(parser, default=4):
     parser.add_argument("--n_nearest","-nn", type=int,
@@ -341,7 +341,7 @@ def _bool_or_color_like(val):
         val, type(val))
     return val
 
-def _parser_add_ctc_control(parser, default=5):
+def _parser_add_ctc_control(parser, default=6):
     parser.add_argument("-cc", "--ctc_control", type=_int_or_float_type,
                         help="Control the number of reported contacts. "
                              "Can be an integer (keep the first n contacts) or "

@@ -1110,17 +1110,17 @@ class TestContactPair(unittest.TestCase):
     def test_retop(self):
         CG = examples.ContactGroupL394()
 
-        CP : contacts.ContactPair = CG.contact_pairs[0]
+        CP : contacts.ContactPair = CG.contact_pairs[2]
 
         top = md.load(test_filenames.rcsb_3SN6_pdb).top
         #print(CP.top, CP.residues.idxs_pair)
         #print(CP.residues.names_short)
         #print([utils.residue_and_atom.find_AA(AA,top) for AA in CP.residues.names_short])
-        imap = {347:342,
-                353:348}
+        imap = {353: 348,
+                344: 339}
         nCP : contacts.ContactPair = CP.retop(top,imap)
         # Test the residx
-        _np.testing.assert_array_equal(nCP.residues.idxs_pair,[348, 342])
+        _np.testing.assert_array_equal(nCP.residues.idxs_pair,[348, 339])
 
         # Test the non-nested attributes
         for attr in [
@@ -1153,11 +1153,11 @@ class TestContactPair(unittest.TestCase):
     def test_retop_deepcopy(self):
         CG = examples.ContactGroupL394()
 
-        CP: contacts.ContactPair = CG.contact_pairs[0]
+        CP: contacts.ContactPair = CG.contact_pairs[2]
 
         top = md.load(test_filenames.rcsb_3SN6_pdb).top
-        imap = {347: 342,
-                353: 348}
+        imap = {353: 348,
+                344: 339}
         nCP: contacts.ContactPair = CP.retop(top, imap, deepcopy=True)
         for attr in [
             "time_traces.trajs",
@@ -1199,19 +1199,19 @@ class TestContactPair(unittest.TestCase):
 
     def test_gen_labels(self):
         CG = examples.ContactGroupL394()
-        CP: contacts.ContactPair = CG.contact_pairs[0]
+        CP: contacts.ContactPair = CG.contact_pairs[-1]
 
-        self.assertEqual(CP.gen_label("short"),"L394-L388")
-        self.assertEqual(CP.gen_label("long") ,"LEU394-LEU388")
-        self.assertEqual(CP.gen_label("short",fragments=True), "L394@G.H5.26-L388@G.H5.20")
-        self.assertEqual(CP.gen_label("long",fragments=True) ,"LEU394@G.H5.26-LEU388@G.H5.20")
-        self.assertEqual(CP.gen_label("just_consensus") ,"G.H5.26-G.H5.20")
+        self.assertEqual(CP.gen_label("short"),"L394-K270")
+        self.assertEqual(CP.gen_label("long") ,"LEU394-LYS270")
+        self.assertEqual(CP.gen_label("short",fragments=True), "L394@G.H5.26-K270@6.32x32")
+        self.assertEqual(CP.gen_label("long",fragments=True) ,"LEU394@G.H5.26-LYS270@6.32x32")
+        self.assertEqual(CP.gen_label("just_consensus") ,"G.H5.26-6.32x32")
 
-        self.assertEqual(CP.gen_label("short", delete_anchor=True), "L388")
-        self.assertEqual(CP.gen_label("long", delete_anchor=True), "LEU388")
-        self.assertEqual(CP.gen_label("short", fragments=True, delete_anchor=True), "L388@G.H5.20")
-        self.assertEqual(CP.gen_label("long", fragments=True, delete_anchor=True), "LEU388@G.H5.20")
-        self.assertEqual(CP.gen_label("just_consensus", delete_anchor=True) ,"G.H5.26")
+        self.assertEqual(CP.gen_label("short", delete_anchor=True), "K270")
+        self.assertEqual(CP.gen_label("long", delete_anchor=True), "LYS270")
+        self.assertEqual(CP.gen_label("short", fragments=True, delete_anchor=True), "K270@6.32x32")
+        self.assertEqual(CP.gen_label("long", fragments=True, delete_anchor=True), "LYS270@6.32x32")
+        self.assertEqual(CP.gen_label("just_consensus", delete_anchor=True) ,"6.32x32")
 
         with self.assertRaises(ValueError):
             CP.gen_label("wrong")
@@ -2739,15 +2739,14 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_violins_options4(self):
         CG = examples.ContactGroupL394()
-        iax, order = CG.plot_violins(sort_by=2,
+        iax, order = CG.plot_violins(sort_by=3,
                                      shorten_AAs=True,
                                      stride=2,
                                      )
         #ax.figure.savefig("test.png")
         assert isinstance(iax, _plt.Axes)
         assert isinstance(order, _np.ndarray)
-        _np.testing.assert_array_equal(order, [1, 0])
-        _np.testing.assert_array_equal([1, 0],CG.means.argsort()[:2])
+        _np.testing.assert_array_equal(order, CG.means.argsort()[:3])
         #_plt.savefig("test.png")
         _plt.close("all")
 

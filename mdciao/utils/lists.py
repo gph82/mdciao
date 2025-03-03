@@ -260,7 +260,7 @@ def in_what_N_fragments(idxs, fragment_list):
     # TODO: consider refactoring the loop into the function call (avoid iterating over function calls)
     assert all([does_not_contain_strings(ifrag) for ifrag in fragment_list]), ("Input 'fragment_list'  cannot contain strings")
 
-    result = (_np.vstack([_np.in1d(idxs, iseg) for ii, iseg in enumerate(fragment_list)])).T
+    result = (_np.vstack([_np.isin(idxs, iseg) for ii, iseg in enumerate(fragment_list)])).T
     return [_np.flatnonzero(row) for row in result]
 
 def in_what_fragment(residx,
