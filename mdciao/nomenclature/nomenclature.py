@@ -2790,7 +2790,7 @@ def _consensus_maps2consensus_frags(top, consensus_info, verbose=True, fragments
 
 
 class Literature():
-    r"""Quick access to the some of the references used by :obj:`nomenclature`"""
+    r"""Quick access to some of the references used by :obj:`nomenclature`"""
 
     # TODO this could be fine tuned but ATM its better to have all top-level attrs
     def __init__(self):
@@ -2812,7 +2812,8 @@ class Literature():
             "site_UniProt": "Bateman2021",
             "site_KLIFS": "Kanev2021",
             "scheme_KLIFS1": "VanLinden2014",
-            "scheme_KLIFS2": "Kooistra2016"
+            "scheme_KLIFS2": "Kooistra2016",
+            "scheme_GAIN" : "Seufert2025",
         }
 
         arts = _parse_bib()
