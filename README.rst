@@ -86,6 +86,10 @@ The main publications which have driven the development of ``mdciao`` are:
     | Batebi, H., Pérez-Hernández, G., Rahman, S.N. et al.
     | Nat Struct Mol Biol (2024).
     | https://doi.org/10.1038/s41594-024-01334-2
+ * Generic residue numbering of the GAIN domain of adhesion GPCRs.
+    | Seufert, F., Pérez-Hernández, G., Pándy-Szekeres, G. et al.
+    | Nat Commun 16, 246 (2025).
+    | https://doi.org/10.1038/s41467-024-55466-6
 
 
 TODOs
