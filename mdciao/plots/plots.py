@@ -1389,7 +1389,10 @@ def compare_violins(groups,
           colors are needed, and 'tab20' if more than 10 are needed.
     ctc_cutoff_Ang : float, default is None
         If provided, draw a horizontal line across the panel
-        at this distance value.
+        at this distance value. It will also be used by
+        `representatives` to be passed onto
+        :obj:`mdciao.contacts.ContactGroup.repframes`,
+        see below for more info.
     fontsize : int, default is 16
         Will be used in :obj:`~matplotlib.rcParams` ["font.size"]
     panelheight_inches : int, default is 5
@@ -1510,7 +1513,7 @@ def compare_violins(groups,
         is considered an identity, s.t. contacts with values e.g. .95
         can also be removed.
         Only has an effect if `ctc_cutoff_Ang` is not None.
-    representatives : anything (bool, int, dict, list) default is None
+    representatives : bool, int, dict,  default is None
         Include information about representative values in the
         plot. This can be done in several ways. Easiest
         is to let this method call :obj:`mdciao.contacts.ContactGroup.repframes`
@@ -1520,9 +1523,16 @@ def compare_violins(groups,
         to these frames will be returned. Alternatively, the user
         can directly input a dictionary of  :obj:`~mdtraj.Trajectory` objects
         (representative or not) for which the residue-residue distance values
-        will be computed and plotted. Check the docs of
-        :obj:`mdciao.contacts.ContactGroup.repframes` to find out
+        will be computed and plotted, or even more direct, input a number
+        of values (representative or not) to be plotted.
+        This last type of input (dictionary with :obj:`~mdtraj.Trajectory`
+        objects or arrays of values) can be 1) mixed (some groups get values, some
+        trajectories) and 2) incomplete (groups w/o entry in `representatives`
+        simply won't get "dots" shown).
+
+        Check the docs of :obj:`mdciao.contacts.ContactGroup.repframes` to find out
         what is meant with "representative".
+
         This is what each type of input does:
 
         * boolean True:
@@ -1537,17 +1547,25 @@ def compare_violins(groups,
            A dictionary with explict values for the optional
            parameters of :obj:`mdciao.contacts.ContactGroup.repframes`,
            usually `n_frames` (an int) and `scheme`, ("mean" or "mode"),
-           depending what you mean with "representative". Check the method's
-           documentation for more info.
+           depending on what you mean with "representative". Check the method's
+           documentation for more info. The value passed as `ctc_cutoff_Ang`
+           will also be passed.
         * dict of :obj:`~mdtraj.Trajectory` objects:
            Has to have the same keys as `groups`. No checks are done
            whether these objects match the actual molecular topologies
            of `groups`, so beware of potential mismatches here.
            Typically, these frames come from having used
            :obj:`mdciao.contacts.ContactGroup.repframes` with
-           `return_traj`=True.
-        * dict of dicts containing values
-          #TODO not implemented yet
+           `return_traj`=True
+        * dict containing np.ndarrays of shape (M, N):
+           M is the number of values and N is the
+           number of contacts. M can have different values
+           for each of the `groups` and N needs match `n_ctcs`
+           of each `group` and be in the same order as
+           of the `group.res_idxs_pairs`. Rearrangements
+           due to `sort_by` will sort this array
+           automatically, it just has to be in the order of `residxs_pairs`
+           initially (no other checks are done).
 
     Returns
     -------
@@ -1585,30 +1603,46 @@ def compare_violins(groups,
         if ctc_cutoff_Ang is not None:
             freqs_per_sys_per_ctc[syskey] = {key:freq for key, freq in zip(labels, group.frequency_per_contact(ctc_cutoff_Ang))}
 
+        d = None
         if bool(representatives):
             #Tune the kwargs on a per-case basis then call repframes only once,
             # wrapped in the try block for when there's no files
             repframes_kwargs = {"ctc_cutoff_Ang": ctc_cutoff_Ang,
                                 "return_traj": True}
-            # Do we have representatives?
-            if isinstance(representatives, bool):
+
+            # Do we have representatives at all?
+            if isinstance(representatives, bool): #If its a bool and it evaluated above to True, then its True
+                # Use se repframe_kwargs as above and take repframes's default, whatever they happen to be
                 pass
-            if isinstance(representatives, int) and representatives>0:
+            elif isinstance(representatives, int) and representatives>0:
                 repframes_kwargs.update({"n_frames" : representatives,
                                          "verbose" : False})
-            if isinstance(representatives, dict) and len(representatives)>0:
-                if syskey not in representatives.keys() :
-                    representatives.update(repframes_kwargs)
-                    representatives.pop("ctc_cutoff_ang", None)
-                    representatives.pop("show_violins", None)
-                    representatives["return_traj"] = True
+
+            elif isinstance(representatives, dict) and len(representatives)>0:
+
+                if all([key not in representatives.keys() for key in  _groups.keys()]):
+                    # Not one single key of `groups` is in the representatives-> It is  repframes_kwargs
+                    # Merge it w/ the above repframes_kwargs
+                    repframes_kwargs = {**representatives,**repframes_kwargs}
+                    #repframes_kwargs.pop("ctc_cutoff_ang", None) #Unsure why we were popping this?
+                    repframes_kwargs.pop("show_violins", None) #making sure we don't show violins
+                elif syskey not in representatives.keys():
+                    #Something was passed for other syskeys, not for this paticular one tho
+                    traj = None
+                    repframes_kwargs = None
                 else:
-                    assert isinstance(representatives[syskey], _md.Trajectory)
-                    d = _md.compute_contacts(representatives[syskey], contacts=group.res_idxs_pairs)[0].T
+                    #we have something that requires no further operation,
+                    # either a traj object or the values themselves
+                    if isinstance(representatives[syskey], _md.Trajectory):
+                        d = _md.compute_contacts(representatives[syskey], contacts=group.res_idxs_pairs)[0].T
+                    elif representatives[syskey] is not False: #bool check on an array, which is the last possible case here
+                        assert representatives[syskey].shape[1]==len(group.res_idxs_pairs)
+                        d = _np.array(representatives[syskey]).T
                     traj = representatives[syskey]
                     repframes_kwargs = None
 
             if repframes_kwargs is not None:
+                # Means there's a need to call repframes to populate d and traj
                 try:
                     __, __, d, traj = group.repframes(**repframes_kwargs)
                 except FileNotFoundError as e:
@@ -1618,10 +1652,12 @@ def compare_violins(groups,
                     traj = None
                 d = d.T.squeeze()
 
-            repframes_per_sys_per_ctc[syskey] = {key: val * 10 for key, val in
-                                                 zip(labels, d)}
-            reptraj_per_sys_per_ctc[syskey]=traj
-    representatives = bool(representatives)
+            reptraj_per_sys_per_ctc[syskey] = traj
+
+            if d is not None:
+                repframes_per_sys_per_ctc[syskey] = {key: val * 10 for key, val in
+                                                     zip(labels, d)}
+
     # Unify data
     data4violins_per_sys_per_ctc = _mdcu.str_and_dict.unify_freq_dicts(data4violins_per_sys_per_ctc,
                                                                        replacement_dict=mutations_dict,
@@ -1701,7 +1737,7 @@ def compare_violins(groups,
         _plt.plot(_np.nan, _np.nan, "d",color=colordict[syskey],
                   #alpha=vio.get_alpha()*1.5,
                   label=_mdcu.str_and_dict.replace4latex(syskey))
-        if representatives:
+        if representatives and syskey in repframes_per_sys_per_ctc.keys():
             irep = _np.vstack([val for key, val in repframes_per_sys_per_ctc[syskey].items() if val is not _np.nan and key in key2ii.keys()])
             _plt.plot(positions, irep, "o ",
                       ms=2.5,
