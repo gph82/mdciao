@@ -1257,6 +1257,11 @@ class LabelerGPCRdb(LabelerConsensus):
                                                           verbose=verbose,
                                                           write_to_disk=write_to_disk
                                                           )
+
+        # Check for GPS in the middle of S14
+        assert self._dataframe[self._dataframe.protein_segment == "B.S14"].index.diff().fillna(1).unique() == 1, (
+            ValueError("S14 of the GAIN Domain is interrupted by the GPS, this type of S14 is not yet implemented"))
+
         self._AA2conlab, self._fragments = _GPCRdbDataFrame2conlabs(self.dataframe, scheme=scheme,
                                                                     return_fragments=True)
 
