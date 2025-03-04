@@ -1581,6 +1581,8 @@ def interface(
     ctc_idxs = _mdcu.lists.unique_product_w_intersection(intf_frags_as_residxs[0], intf_frags_as_residxs[1])
     last_n_ctcs = len(ctc_idxs)
     if len(intersect)>0 and not self_interface:
+        #Eliminate this from the definition
+        intf_frags_as_residxs[-1]=list(set(intf_frags_as_residxs[-1]).difference(intersect))
         ctc_idxs = [pair for pair in ctc_idxs if not _np.in1d(pair, intersect).all()]
         if len(ctc_idxs)!=last_n_ctcs:
             print()
