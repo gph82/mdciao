@@ -384,6 +384,9 @@ def _GPCRdb_web_lookup(url, verbose=True,
         if "BW" not in DFout.keys(): #then we're in CGN territory
             print("Please cite the following reference to the CGN nomenclature:")
             print(_format_cite(lit.scheme_CGN))
+        if DFout.display_generic_number.map(lambda x : str(x)[0] in ["A","B"]).any():
+            print("Please cite the following reference to the GAIN nomenclature:")
+            print(_format_cite(lit.scheme_GAIN))
         print("For more information, call mdciao.nomenclature.references()")
 
     return DFout
