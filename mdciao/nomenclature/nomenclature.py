@@ -1117,9 +1117,11 @@ class LabelerConsensus(object):
         for key, res_idxs in new_defs.items():
             defs[key] = res_idxs
 
+        fsw = max([len(str(fn)) for fn in defs.keys()])
         for ii, (key, res_idxs) in enumerate(defs.items()):
             istr = _mdcfrg.print_frag(key, top, res_idxs, fragment_desc='',
                                       idx2label=map_conlab,
+                                      fragment_string_width=fsw,
                                       just_return_string=True)
             if verbose:
                 print(istr)
