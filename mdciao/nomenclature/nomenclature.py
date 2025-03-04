@@ -2773,7 +2773,7 @@ _GAIN_fragments = (
  #'B.s14gps'
 )
 
-_GPCR_fragments += _GAIN_fragments
+_GPCR_fragments = _GAIN_fragments + _GPCR_fragments
 
 _GPCR_mandatory_fields = ["protein_segment",
                           "AAresSeq",
