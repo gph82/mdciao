@@ -1590,6 +1590,12 @@ def interface(
                   f"Use 'self_interface=True' to keep these {last_n_ctcs-len(ctc_idxs)} discarded pairs.")
             last_n_ctcs = len(ctc_idxs)
 
+    # Once the ctc_idxs are computed and contain the self-contacts, we can
+    # remove the overlap between the interface definitions
+    # leaving the residues appearing in both sets (the intersection) in the first
+    # intf_frags_as_residx only
+    intf_frags_as_residxs[-1] = list(set(intf_frags_as_residxs[-1]).difference(intersect))
+
     # Create a neighborlist
     if n_nearest>0:
         nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
@@ -1683,7 +1689,7 @@ def interface(
 
     ctc_grp_intf = _mdcctcs.ContactGroup(ctc_objs,
                                          max_cutoff_Ang=ctc_cutoff_Ang,
-                                         interface_fragments=intf_frags_as_residxs,  # interface_residx_short,
+                                         interface_fragments=intf_frags_as_residxs,
                                          name=title)
     print()
     idf = ctc_grp_intf.frequency_dataframe(ctc_cutoff_Ang)
