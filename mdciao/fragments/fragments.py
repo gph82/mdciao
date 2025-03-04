@@ -26,6 +26,7 @@ from mdtraj.core.residue_names import _PROTEIN_RESIDUES
 import mdciao.utils as _mdcu
 from pandas import unique as _pandas_unique
 from mdciao.utils.str_and_dict import _kwargs_subs
+from textwrap import wrap as _twrap
 
 _allowed_fragment_methods = ['chains',
                              'resSeq',
@@ -1148,8 +1149,7 @@ def frag_dict_2_frag_groups(frag_defs_dict, ng=2,
                              "Set 'fail_on_empty=False' if you know what you're doing.")
         groups_as_keys.append([ilab for ilab in frag_defs_dict.keys() if ilab in igroup])
         groups_as_residue_idxs.append(sorted(res_idxs_in_group))
-        print(', '.join(groups_as_keys[-1]))
-
+        print("\n".join(_twrap(', '.join(groups_as_keys[-1]))))
     return groups_as_residue_idxs, groups_as_keys
 
 def splice_orphan_fragments(fragments, fragnames, highest_res_idx=None,
