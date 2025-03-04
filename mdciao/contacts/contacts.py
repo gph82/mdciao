@@ -5772,10 +5772,18 @@ class ContactGroup(object):
 
         if xmax is not None:
             ax.set_xlim([-.5, xmax + 1 - .5])
+        else:
+            ax.set_xlim(-.5 + ax.dataLim.intervalx[0], ax.dataLim.intervalx[1] +.5)
+            #ax.set_xlim([-.5 +xvec[0], xvec[-1]+.5]) #this is equivalent to the above, I think
+
 
         if list_by_interface and interface_vline:
             xpos = len([ifreq for ifreq in frq_dict_list[0].values() if ifreq > lower_cutoff_val])
             ax.axvline(xpos - .5, color="lightgray", linestyle="--", zorder=-1)
+
+        # These should be happening automatically
+        ax.set_ylim(ax.dataLim.intervaly)
+        ax.figure.tight_layout()
         return ax
 
     @_kwargs_subs(_mdcflare.freqs2flare, exclude=["fragments", "SS", "fragment_names", "colors", "top"])
