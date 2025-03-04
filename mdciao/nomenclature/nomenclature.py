@@ -1300,8 +1300,10 @@ class LabelerGPCR(LabelerGPCRdb):
 
     This is based on the awesome GPCRdb REST-API.
 
-    The generic residue labels are called indistinctly "consensus labels"
-    or simply "nomenclature" throughout mdciao.
+    The generic residue labels are called indistinctly "consensus labels",
+    "generic residue numbers" or simply "nomenclature" throughout mdciao.
+
+    The GPCRdb provides both TM-domain and GAIN-domain labels for adhesion GPCRs (aGPCRs, see below).
 
     The `GPCRdb <https://gpcrdb.org/>`_ offers different schemes for GPCR labels:
 
@@ -1334,6 +1336,11 @@ class LabelerGPCR(LabelerGPCRdb):
           Wu et al, (2014) Structure of a class C GPCR metabotropic glutamate receptor 1 bound to an allosteric modulator
           Science 344, 58--64
           https://doi.org/10.1126/science.1249489
+
+       * structure based scheme for the GAIN domain (GPCR autoproteolysis inducing) of adhesion GPCRs (aGPCRs, class B2):
+        * Seufert et al, (2025) Generic residue numbering of the GAIN domain of adhesion GPCRs.
+          Nature Communications  16, 246 (2025).
+          https://doi.org/10.1038/s41467-024-55466-6
 
    Note
    ----
