@@ -17,13 +17,17 @@ mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation D
 
 ``mdciao`` is a Python module that provides quick, "one-shot" command-line tools to analyze molecular simulation data using residue-residue distances. ``mdciao`` tries to automate as much as possible for non-experienced users while remaining highly customizable for advanced users, by exposing an API to construct your own analysis workflow.
 
-Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org>`_ for visualizaton. It tries to automatically use the consensus nomenclature for
+Under the hood, the module `mdtraj <https://mdtraj.org/>`_ is doing most of the computation and handling of molecular information, using `BioPython <https://biopython.org/>`_ for sequence alignment, `pandas <pandas.pydata.org/>`_ for many table and IO related operations, and `matplotlib <https://matplotlib.org>`_ for visualization. It tries to automatically use the consensus nomenclature for
 
-* GPCRs, e.g. `Ballesteros-Weinstein-Numbering <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_ or structure-based schemes by `Gloriam et al <https://doi.org/10.1016/j.tips.2014.11.001>`_,
-* G-proteins, via `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_, and
-* Kinases, via their `85 pocket-residue numbering scheme <https://doi.org/10.1021/JM400378W>`_.
+* GPCRs
+    * via `Ballesteros-Weinstein-Numbering <https://www.sciencedirect.com/science/article/pii/S1043947105800497>`_ or structure-based schemes by `Gloriam et al <https://doi.org/10.1016/j.tips.2014.11.001>`_ for the receptor's TM domain, or
+    * via generic-residue-numbering for the GAIN domain of `adhesion GPCRs <https://doi.org/10.1038/s41467-024-55466-6>`_
+* G-proteins
+    * via `Common G-alpha Numbering (CGN) <https://www.mrc-lmb.cam.ac.uk/CGN/faq.html>`_
+* Kinases
+    * via their `85 pocket-residue numbering scheme <https://doi.org/10.1021/JM400378W>`_
 
-by either using local files or on-the-fly lookups of the `GPCRdb <https://gpcrdb.org/>`_
+using local files or on-the-fly lookups of the `GPCRdb <https://gpcrdb.org/>`_
 and/or `KLIFS <https://klifs.net/>`_.
 
 Licenses
