@@ -1257,7 +1257,8 @@ class LabelerGPCRdb(LabelerConsensus):
                                                           verbose=verbose,
                                                           write_to_disk=write_to_disk
                                                           )
-
+        # Re-introduce the "." in the GPS label
+        self._dataframe = self._dataframe.replace("B.GPS-2","B.GPS.-2").replace("B.GPS-1","B.GPS.-1").replace("B.GPS+1","B.GPS.+1")
         # Check for GPS in the middle of S14
         if "B.S14" in self.dataframe.protein_segment.values:
             assert self.dataframe[self.dataframe.protein_segment == "B.S14"].index.diff().fillna(1).unique() == 1, (
