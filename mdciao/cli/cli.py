@@ -541,7 +541,10 @@ def _fragment_overview(a,labtype):
             idf = _DF.from_dict({"residue"  : frag,
                                  "consensus": obj.fragments_as_conlabs[key]})
 
-            textblocks = [['%-25s'%iline for iline in idf.loc[idxs].to_string().splitlines()] for idxs in _mdcu.lists.re_warp(_np.arange(len(idf)),10)]
+            n_warp = 10
+            if len(idf)/n_warp > 5:
+                n_warp = _np.floor(len(idf)/6).astype(int)
+            textblocks = [['%-25s'%iline for iline in idf.loc[idxs].to_string().splitlines()] for idxs in _mdcu.lists.re_warp(_np.arange(len(idf)),n_warp)]
             for ii in range(len(textblocks[0])):
                 line = ''
                 for tb in textblocks:
