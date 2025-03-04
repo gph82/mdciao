@@ -2771,6 +2771,7 @@ _GAIN_fragments = (
  'B.gpss14',
  'B.S14',
  #'B.s14gps'
+ 'B.s14tm1'
 )
 
 _GPCR_fragments = _GAIN_fragments + _GPCR_fragments
