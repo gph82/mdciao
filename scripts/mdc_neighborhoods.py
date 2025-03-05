@@ -42,5 +42,4 @@ if __name__ == '__main__':
     if sys.platform == 'darwin':
         multiprocessing.set_start_method('spawn')
 
-    # Call the method
     out_dict = residue_neighborhoods(a.residues, a.trajectories, **b)

@@ -22,6 +22,7 @@
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
 
+import sys, multiprocessing
 from mdciao.cli import interface
 from mdciao.parsers import parser_for_interface
 parser = parser_for_interface()
@@ -37,4 +38,8 @@ b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
 for key in ["trajectories", "fragmentify"]:
     b.pop(key)
 
-neighborhood = interface(a.trajectories,**b)
+
+if __name__ == '__main__':
+    if sys.platform == 'darwin':
+        multiprocessing.set_start_method('spawn')
+    intf = interface(a.trajectories, **b)

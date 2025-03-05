@@ -21,7 +21,7 @@
 #    You should have received a copy of the GNU Lesser General Public License
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
-
+import sys, multiprocessing
 from mdciao.cli import sites
 from mdciao.parsers import parser_for_sites
 
@@ -38,4 +38,7 @@ b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
 for key in ["trajectories","site_files","fragmentify"]:
     b.pop(key)
 
-sites(a.site_files, a.trajectories,**b)
+if __name__ == '__main__':
+    if sys.platform == 'darwin':
+        multiprocessing.set_start_method('spawn')
+    mysites = sites(a.site_files, a.trajectories,**b)
