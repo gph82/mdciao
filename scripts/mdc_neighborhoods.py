@@ -22,6 +22,14 @@
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
 import sys
+import multiprocessing
+if __name__ == '__main__':
+    print("I am in main!!!!!")
+    if sys.platform == 'darwin':
+        print("I set the spawn method!!!!!!")
+        multiprocessing.freeze_support()
+        multiprocessing.set_start_method('spawn')
+        
 from mdciao.parsers import parser_for_rn, _inform_of_parser
 from mdciao.cli import residue_neighborhoods
 
@@ -39,8 +47,3 @@ for key in ["trajectories","residues", "fragmentify"]:
         
 # Call the method
 out_dict = residue_neighborhoods(a.residues, a.trajectories, **b)
-
-if __name__ == '__main__':
-    if sys.platform == 'darwin':
-        print("I set the spawn method!!!!!!")
-        multiprocessing.set_start_method('spawn')

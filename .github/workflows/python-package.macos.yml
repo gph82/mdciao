@@ -51,7 +51,10 @@ jobs:
         pip install -e .
         pip freeze
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
-        pytest -k test_sort_by_keys -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
+        echo -e "Before direct script is run"
+        mdc_neighborhoods.py tests/data/examples/gs-b2ar.noH.pdb tests/data/examples/gs-b2ar.noH.stride.5.xtc --residues L394 
+        echo -e "After"
+        #pytest -k test_mdc_neighborhood -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
