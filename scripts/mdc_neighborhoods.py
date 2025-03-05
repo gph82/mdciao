@@ -21,7 +21,7 @@
 #    You should have received a copy of the GNU Lesser General Public License
 #    along with mdciao.  If not, see <https://www.gnu.org/licenses/>.
 ##############################################################################
-
+import sys
 from mdciao.parsers import parser_for_rn, _inform_of_parser
 from mdciao.cli import residue_neighborhoods
 
@@ -36,8 +36,11 @@ if not a.fragmentify:
 b = {key:getattr(a,key) for key in dir(a) if not key.startswith("_")}
 for key in ["trajectories","residues", "fragmentify"]:
     b.pop(key)
-
-
-
+        
 # Call the method
 out_dict = residue_neighborhoods(a.residues, a.trajectories, **b)
+
+if __name__ == '__main__':
+    if sys.platform == 'darwin':
+        print("I set the spawn method!!!!!!")
+        multiprocessing.set_start_method('spawn')
