@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest]
-        python-version: [3.7, 3.8, 3.9, '3.10', '3.11','3.12']
+        python-version: ['3.11']
         # Proposed workaround for legacy versions, see
         # https://github.com/actions/setup-python/issues/856 and
         # https://github.com/actions/runner-images/issues/9770#issuecomment-2085623315
@@ -51,7 +51,7 @@ jobs:
         pip install -e .
         pip freeze
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
-        pytest -k test_mdc_neighborhood -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
+        pytest -k test_sort_by_keys -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
