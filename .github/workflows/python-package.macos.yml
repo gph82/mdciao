@@ -53,7 +53,7 @@ jobs:
     - name: Pytest and coverage
       run: |        
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
-        pytest -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
+        pytest --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc -n 8
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
