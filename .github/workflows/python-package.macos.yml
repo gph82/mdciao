@@ -50,8 +50,10 @@ jobs:
         pip install --upgrade setuptools
         pip install -e .
         pip freeze
+    - name: Pytest and coverage
+      run: |        
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
-        pytest -k test_mdc_neighborhood -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
+        pytest -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
