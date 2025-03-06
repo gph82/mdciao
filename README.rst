@@ -76,6 +76,9 @@ Please cite:
     | Guillermo Pérez-Hernández, Peter-Werner Hildebrand
     | bioRxiv 2022.07.15.500163
     | https://doi.org/10.1101/2022.07.15.500163
+ * mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data
+    | Guillermo Pérez-Hernández, Peter-Werner Hildebrand
+    | PLOS Computational Biology, 2025 (accepted, will supersede the bioRxiv reference)
 
 Scope
 ======
