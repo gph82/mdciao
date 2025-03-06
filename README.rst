@@ -34,7 +34,7 @@ Licenses
 ========
 * ``mdciao`` is licensed under the `GNU Lesser General Public License v3.0 or later <https://www.gnu.org/licenses/lgpl-3.0-standalone.html>`_ (``LGPL-3.0-or-later``, see the LICENSE.txt).
 
-* ``mdciao`` uses a modified version of the method `mdtraj.compute_contacts <https://github.com/mdtraj/mdtraj/blob/70a94ff87a6c4223ca1be78c752ef3ef452d3d44/mdtraj/geometry/contact.py#L42>`_  of `mdtraj <https://mdtraj.org/>`_. This modified version is published along with ``mdciao`` and can be found in `contacts/_md_compute_contacts.py <mdciao/contacts/_md_compute_contacts.py>`_. Please see that file for details on the modifications.
+* ``mdciao`` uses a modified version of the method `mdtraj.compute_contacts <https://github.com/mdtraj/mdtraj/blob/70a94ff87a6c4223ca1be78c752ef3ef452d3d44/mdtraj/geometry/contact.py#L42>`_  of `mdtraj <https://mdtraj.org/>`__. This modified version is published along with ``mdciao`` and can be found in `contacts/_md_compute_contacts.py <mdciao/contacts/_md_compute_contacts.py>`_. Please see that file for details on the modifications.
 
 * Modules used by ``mdciao`` have different licenses. You can check any module's license in your Python environment using `pip-licenses <https://github.com/raimon49/pip-licenses>`_:
 
@@ -42,7 +42,7 @@ Licenses
 
 Documentation
 =============
-Currently, docs are hosted at `<http://proteinformatics.org/mdciao/>`_, but this can change in the future.
+Currently, docs are hosted at `<https://mdciao.org>`_.
 
 System Requirements
 ===================
@@ -62,7 +62,7 @@ So everything should work *out of the box* in these conditions.
    >>> BEZIER_NO_EXTENSION="True" BEZIER_IGNORE_VERSION_CHECK="True" pip install bezier
    >>> pip install mdciao
 
-   You can check what these do `here <https://bezier.readthedocs.io/en/stable/development.html#environment-variables>`_.
+   You can check what these variables do `here <https://bezier.readthedocs.io/en/stable/development.html#environment-variables>`__.
 
    Since ``mdciao`` installs and passes the CI-tests for Python 3.13 in such an environment, you can use it **at your own risk**. Please report on any issues you might find.
 
@@ -82,7 +82,7 @@ Please cite:
 
 Scope
 ======
-``mdciao`` originated as a loose collection of CLI scripts used in our lab to streamline contact-frequency analysis of MD simulations with `mdtraj <https://mdtraj.org/>`_,
+``mdciao`` originated as a loose collection of CLI scripts used in our lab to streamline contact-frequency analysis of MD simulations with `mdtraj <https://mdtraj.org/>`__,
 which is doing a lot of the heavy work under the hood of ``mdciao``. The goal was to take the less scripting-affine
 lab members from their raw data to informative graphs about the general vicinity of *their* residues
 of interest without much hassle. From there, it grew to incorporate many of the things routinely done in the lab
@@ -106,10 +106,10 @@ The main publications which have driven the development of ``mdciao`` are:
     | Nat Commun 16, 246 (2025).
     | https://doi.org/10.1038/s41467-024-55466-6
 
-
 TODOs
 =====
-You can find an informal list of TODOs and known issues `here <https://github.com/gph82/mdciao/blob/master/doc/TODOs.rst>`_.
+You can find an informal list of TODOs and known issues `here <https://github.com/gph82/mdciao/blob/master/doc/TODOs.rst>`__.
+
 
 .. |Pip Package| image::
    https://badge.fury.io/py/mdciao.svg
