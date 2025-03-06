@@ -49,7 +49,7 @@ content-type = "text/x-rst"
 
 [project.urls]
 Homepage = "https://github.com/gph82/mdciao"
-docs = "http://proteinformatics.org/mdciao"
+docs = "https://mdciao.org"
 
 #[project.scripts]
 #mdc_neighborhoods = "mdciao.scripts:mdc_neighborhoods.py"
