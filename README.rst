@@ -77,11 +77,6 @@ Please cite:
     | bioRxiv 2022.07.15.500163
     | https://doi.org/10.1101/2022.07.15.500163
 
-Status
-======
-``mdciao`` is approaching its first major release, so less changes in the API and CLI calls are expected. For more info on semantic versioning please check
-`the semver page <https://semver.org/#spec-item-4>`_.
-
 Scope
 ======
 ``mdciao`` originated as a loose collection of CLI scripts used in our lab to streamline contact-frequency analysis of MD simulations with `mdtraj <https://mdtraj.org/>`_,
