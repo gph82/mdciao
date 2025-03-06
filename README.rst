@@ -57,12 +57,12 @@ So everything should work *out of the box* in these conditions.
 
    Python 3.13 support is unofficial, because the module ``bezier`` `currently requires python <=3.12 <https://github.com/dhermes/bezier>`_.
 
-   Still, you can install mdciao in Python 3.13 if you install ``bezier`` previously with this flag:
+   Still, you can install mdciao in Python 3.13 if you install ``bezier`` previously with these environment variables:
 
    >>> BEZIER_NO_EXTENSION="True" BEZIER_IGNORE_VERSION_CHECK="True" pip install bezier
    >>> pip install mdciao
 
-   You can check what these environment variables do `here <https://bezier.readthedocs.io/en/stable/development.html#environment-variables>`_.
+   You can check what these do `here <https://bezier.readthedocs.io/en/stable/development.html#environment-variables>`_.
 
    Since ``mdciao`` installs and passes the CI-tests for Python 3.13 in such an environment, you can use it **at your own risk**. Please report on any issues you might find.
 
