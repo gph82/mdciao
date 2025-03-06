@@ -1736,7 +1736,7 @@ def compare_violins(groups,
             vio.set_color(colordict[syskey])
         _plt.plot(_np.nan, _np.nan, "d",color=colordict[syskey],
                   #alpha=vio.get_alpha()*1.5,
-                  label=_mdcu.str_and_dict.replace4latex(syskey))
+                  label=_mdcu.str_and_dict.replace4latex(str(syskey)))
         if representatives and syskey in repframes_per_sys_per_ctc.keys():
             irep = _np.vstack([val for key, val in repframes_per_sys_per_ctc[syskey].items() if val is not _np.nan and key in key2ii.keys()])
             _plt.plot(positions, irep, "o ",
