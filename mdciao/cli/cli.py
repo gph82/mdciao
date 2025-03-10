@@ -1758,7 +1758,7 @@ def interface(
                                                  label_fontsize_factor=panelsize2font / panelsize,
                                                  lower_cutoff_val=.05,
                                                  shorten_AAs=short_AA_names,
-                                                 sort_by_freq=sort_by_av_ctcs,
+                                                 sort_by=["freq" if sort_by_av_ctcs else None][0],
                                                  )
         histofig.tight_layout(h_pad=2, w_pad=0, pad=0)
 
