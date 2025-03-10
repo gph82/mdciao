@@ -1700,7 +1700,7 @@ def interface(
     dfs = ctc_grp_intf.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                        list_by_interface=True,
                                                        return_as_dataframe=True,
-                                                       sort_by_freq=sort_by_av_ctcs)
+                                                       sort_by=["freq" if sort_by_av_ctcs else None][0])
     for idf in dfs:
         idf.index += 1
         print(idf.round({"freq":2}))
