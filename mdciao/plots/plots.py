@@ -369,7 +369,7 @@ def _sorting_schemes(freqs_by_sys_by_ctc, sort_by='mean',
     elif sort_by in _schemes_for_sorting:
 
         # Then sort, in case sort_by wasn't a list but an actual scheme (has its own method)
-        kept_keys = _sorter_by_key_or_val(sort_by, dict_for_sorting[sort_by])
+        kept_keys = _sorter_by_key_or_val(sort_by, dict_for_sorting[sort_by])[0]
         if sort_by in ["mean", "std"]:
             kept_keys = kept_keys[::-1]
 
@@ -1713,7 +1713,7 @@ def compare_violins(groups,
 
     # Prepare the dict
     colordict = color_dict_guesser(colors, all_sys_keys)
-    sorted_keys = _sorter_by_key_or_val(sort_by, means_per_ctc_across_sys)
+    sorted_keys = _sorter_by_key_or_val(sort_by, means_per_ctc_across_sys)[0]
     key2ii = {key : ii for ii, key in enumerate(sorted_keys)}
     delta, width = _offset_dict(list(_groups.keys()))
 
@@ -1851,7 +1851,7 @@ def _sorter_by_key_or_val(sort_by, indict):
         ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
     elif sort_by == "keep":
         ordered_keys = all_ctc_keys
-    return ordered_keys
+    return ordered_keys, [key2origidx[key] for key in ordered_keys]
 
 def add_tilted_labels_to_patches(ax, labels,
                                  label_fontsize_factor=1,
