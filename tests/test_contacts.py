@@ -2304,6 +2304,10 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
         _np.testing.assert_equal(freq_dict["G.H5.17"], CG.select_by_residues("R385").frequency_per_contact(4).sum())
         _np.testing.assert_equal(freq_dict["K270@frag3"], CG.select_by_residues("K270").frequency_per_contact(4).sum())
 
+    def test_frequency_per_residue_name_consensus_raises_on_sort_numeric(self):
+        with self.assertRaises(NotImplementedError):
+            self.L394.frequency_sum_per_residue_names(4, AA_format="try_consensus",
+                                               sort_by="numeric")[0]
 
 
     def test_frequency_per_residue_name_no_sort(self):

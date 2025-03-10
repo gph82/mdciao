@@ -3746,7 +3746,8 @@ class ContactGroup(object):
                recompute new frequencies and sort the contacts
                in ascending order
             * `sort_by`='residue' or 'numeric'
-               Sort by ascending residue number
+               Sort by ascending residue number. Currently
+               limited to `AA_format`="short" or "long" (see below).
         AA_format : str, default is 'short'
             Use E30@3.50 instead of GLU30@3.50.
             Alternatives are:
@@ -3793,6 +3794,9 @@ class ContactGroup(object):
             if sort_by == "freq":
                 idict = {key : idict[key] for key in _sorter_by_key_or_val("mean", idict, reverse=True)[0]}
             elif sort_by in ["residue", "numeric"]:
+                if "consensus" in AA_format:
+                    raise NotImplementedError(f"Sorting by 'residue' or 'numeric' currently limited to "
+                                              f"`AA_format`='short' or 'long', not '{AA_format}'.")
                 idict = {key :idict[key] for key in _sorter_by_key_or_val("residue", idict)[0]}
             elif sort_by is None:
                 pass
