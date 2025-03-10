@@ -1778,7 +1778,7 @@ def compare_violins(groups,
         return myfig, iax, list(key2ii.keys())
 
 
-def _sorter_by_key_or_val(sort_by, indict):
+def _sorter_by_key_or_val(sort_by, indict, reverse=False):
     r"""
     Helper method to sort the keys of a dictionary according to some rules
 
@@ -1798,7 +1798,9 @@ def _sorter_by_key_or_val(sort_by, indict):
           will be sorted alphabetically at the end.
         * "mean" or "std"
           sort the dict ascending,
-          by the values of the `indict`
+          by the values of the `indict`.
+          If you want descending order,
+          use `reverse`=True, see below.
         * "keep"
           keep the order of the keys
         * "consensus"
@@ -1814,6 +1816,11 @@ def _sorter_by_key_or_val(sort_by, indict):
         It's assumed that the keys
         are contact labels with
         "-" as the separator
+    reverse : bool, default is False
+        Reverse the sorting order,
+        i.e. sort by descending order
+        of values. Only applies when `sort_by`
+        is "mean" or "std"
     Returns
     -------
     ordered_keys : list
@@ -1848,7 +1855,7 @@ def _sorter_by_key_or_val(sort_by, indict):
     elif sort_by == "consensus":
         ordered_keys = _lexsort_consensus_ctc_labels(all_ctc_keys)[0]
     elif sort_by in ["mean", "std"]:
-        ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
+        ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict, reverse=reverse).keys())
     elif sort_by == "keep":
         ordered_keys = all_ctc_keys
     return ordered_keys, [key2origidx[key] for key in ordered_keys]

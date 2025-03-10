@@ -651,7 +651,32 @@ class Test_sorter_by_key_or_val(unittest.TestCase):
         """
         self.assertListEqual(sorting_order, [0, 2, 3, 7, 1, 8, 4, 5, 6])
 
+    def test_mean_reverse(self):
+        sorted_keys, sorting_order = plots.plots._sorter_by_key_or_val("mean", self.indict, reverse=True)
 
+        self.assertListEqual(sorted_keys,
+                             list({'R131-E392': 4.1,
+                                   'K270-L394': 4.68,
+                                   'T274-L393': 4.95,
+                                   'T274-E392': 5.73,
+                                   'P138-M386': 6.85,
+                                   'V222-L393': 6.92,
+                                   'Q142-I382': 7.73,
+                                   'T68-R389': 7.77,
+                                   'Y141-R389': 8.02,
+                                   }.keys())[::-1])
+        """
+        self.indict = {'R131-E392': 4.1,    #0
+                       'P138-M386': 6.85,   #1
+                       'K270-L394': 4.68,   #2
+                       'T274-L393': 4.95,   #3
+                       'Q142-I382': 7.73,   #4
+                       'T68-R389': 7.77,    #5
+                       'Y141-R389': 8.02,   #6
+                       'T274-E392': 5.73,   #7
+                       'V222-L393': 6.92}   #8
+        """
+        self.assertListEqual(sorting_order, [0, 2, 3, 7, 1, 8, 4, 5, 6][::-1])
     def test_some_non_numeric(self):
         sorted_keys, sorting_order = plots.plots._sorter_by_key_or_val("numeric",
                                                                        {key : None for key in ["0-20", "0-10", "ALA30-GLU50", "ALA30-GLU40", "ALA", "GLU5-ALA20"]})
