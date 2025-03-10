@@ -3733,7 +3733,7 @@ class ContactGroup(object):
         switch_off_Ang : float, default is None
             TODO
         sort_by : str or None, default is None
-            The frequencies are by default plotted in the order
+            The frequencies are returned by default in the order
             in which the :obj:`ContactPair`-objects are stored
             in the :obj:`ContactGroup.contact_pairs`.
             This order depends on the ctc_cutoff_Ang originally
