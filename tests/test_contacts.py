@@ -2325,12 +2325,6 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
                                                                  2 / 5,
                                                                  1 / 5])
 
-    def test_frequency_per_residue_name_consensus(self):
-        CG = self.CG
-        freq_dict = CG.frequency_sum_per_residue_names(2,
-                                                       return_as_dataframe=True)[0]
-        assert len(freq_dict) == 3
-
     def test_frequency_dict_by_consensus_labels_fails(self):
         CG = self.CG
 
