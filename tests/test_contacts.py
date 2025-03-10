@@ -2665,7 +2665,7 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
 
     def test_plot_freqs_as_bars_display_sort(self):
         CG = self.CG_cp1_cp2
-        CG.plot_freqs_as_bars(2, "test_site", sort_by_freq=True)
+        CG.plot_freqs_as_bars(2, "test_site", sort_by="freq")
 
 
     def test_plot_freqs_as_bars_total_freq(self):
