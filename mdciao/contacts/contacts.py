@@ -3670,7 +3670,7 @@ class ContactGroup(object):
                                            return_array=False):
         r"""
         Dictionary of aggregated :obj:`frequency_per_contact` per residue indices
-        Values over 1 are possible, example if [0,1], [0,2]
+        Values larger than 1 are possible, example if [0,1], [0,2]
         are always formed (=1) freqs_dict[0]=2
 
         Parameters
@@ -3687,7 +3687,8 @@ class ContactGroup(object):
             :obj:`return_array` is False
         return_array : bool, default is False
             If True, the return value is not a dict
-            but an array of len(self.top.n_residues)
+            but an array of len(self.top.n_residues).
+            In this case, `sort_by_freq` doesn't have any effect.
 
         Returns
         -------
