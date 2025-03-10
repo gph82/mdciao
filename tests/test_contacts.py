@@ -2975,6 +2975,12 @@ class TestContactGroupPlots(TestBaseClassContactGroup):
         assert isinstance(jax, _plt.Axes)
         _plt.close("all")
 
+    def test_plot_frequency_sums_as_bars_sort_by(self):
+        CG = self.CG_cp1_cp2_both_w_anchor_and_frags
+        jax = CG.plot_frequency_sums_as_bars(2.0, "test", xmax=4, sort_by="residue")
+        assert isinstance(jax, _plt.Axes)
+        _plt.close("all")
+
     def test_plot_interface_frequency_matrix(self):
         I = contacts.ContactGroup([self.cp1_wtop_and_conslabs,
                                    self.cp2_wtop_and_conslabs,

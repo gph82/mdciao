@@ -5723,7 +5723,7 @@ class ContactGroup(object):
                                     lower_cutoff_val=0,
                                     bar_width_in_inches=.75,
                                     list_by_interface=False,
-                                    sort_by_freq=True,
+                                    sort_by="freq",
                                     interface_vline=False):
         r"""
         Bar plot with per-residue sums of frequencies (called \Sigma in mdciao)
@@ -5756,8 +5756,21 @@ class ContactGroup(object):
             the subplot
         list_by_interface : boolean, default is True
             Separate residues by interface
-        sort_by_freq : boolean, default is True
-            Sort sums of freqs in descending order
+        sort_by : str or None, default is None
+            The frequencies are by default plotted in the order
+            in which the :obj:`ContactPair`-objects are stored
+            in the :obj:`ContactGroup.contact_pairs`.
+            This order depends on the ctc_cutoff_Ang originally
+            used to instantiate this :obj:`ContactGroup`
+            You can re-sort them for display purposes,
+            leaving the original order untouched, via:
+
+            * `sort_by`='freq'
+               Use the `ctc_cutoff_Ang` provided here to
+               recompute new frequencies and sort the contacts
+               in ascending order
+            * `sort_by`='residue' or 'numeric'
+               Sort by ascending residue number
         interface_vline : bool, default is False
             Plot a vertical line visually separating both interfaces
 
@@ -5770,7 +5783,7 @@ class ContactGroup(object):
         # Base list of dicts
         frq_dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                              switch_off_Ang=switch_off_Ang,
-                                                             sort_by_freq=sort_by_freq,
+                                                             sort_by=sort_by,
                                                              AA_format=["short" if shorten_AAs else "long"][0],
                                                              list_by_interface=list_by_interface)
 
