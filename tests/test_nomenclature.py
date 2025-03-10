@@ -157,7 +157,7 @@ class Test_GPCRdb_finder(unittest.TestCase):
         assert any([key in df.keys() for key in nomenclature._GPCR_mandatory_fields])  # at least one scheme
 
 
-class Test_table2GPCR_by_AAcode(unittest.TestCase):
+class Test_GPCRdbDataFrame2conlabs(unittest.TestCase):
     def setUp(self):
         self.file = test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx
 
@@ -183,7 +183,7 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
                               67: '2.38',
                               })
 
-    def test_table2GPCR_by_AAcode_return_fragments(self):
+    def test_GPCRdbDataFrame2conlabs_by_AAcode_return_fragments(self):
         table2GPCR, defs = nomenclature._GPCRdbDataFrame2conlabs(tablefile=self.file,
                                                                  return_fragments=True)
 
