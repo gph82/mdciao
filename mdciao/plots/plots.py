@@ -1818,9 +1818,13 @@ def _sorter_by_key_or_val(sort_by, indict):
     -------
     ordered_keys : list
         The list of sorted keys
+    order : list
+        The indices of the keys in
+        `indict` as they appear in
+        `ordered_keys`
     """
     all_ctc_keys= list(indict.keys())
-
+    key2origidx = {key : ii for ii, key in enumerate(all_ctc_keys)}
     # First,
     if isinstance(sort_by, list):
         if not set(sort_by).intersection(all_ctc_keys):
