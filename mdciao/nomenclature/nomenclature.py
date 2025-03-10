@@ -70,9 +70,9 @@ def _GPCRdbDataFrame2conlabs(tablefile,
     Parameters
     ----------
     tablefile : xlsx file or pandas dataframe
-        GPCR generic residue numbering in excel format
+        GPCR generic residue numbering in Excel format
     scheme : str, default is "BW"
-        The numbering scheme to choose. The available
+        The numbering scheme to choose for the TM bundle. The available
         schemes depend on what was in the original
         :obj:`tablefile`. The options may include
         * "generic_display_number" (the one chosen by the GPCRdb)
@@ -2563,23 +2563,23 @@ _GPCR_num2lett = {
     "8": "H8",
 }
 
-_GPCR_fragments = ("NT", "N-term",
-                   "1", "TM1",
-                   "12", "ICL1",
-                   "2", "TM2",
-                   "23", "ECL1",
-                   "3", "TM3",
-                   "34", "ICL2",
-                   "4", "TM4",
-                   "45", "ECL2",
-                   "5", "TM5",
-                   "56", "ICL3",
-                   "6", "TM6",
-                   "67", "ECL3",
-                   "7", "TM7",
-                   "78",
-                   "8", "H8",
-                   "CT","C-term")
+_GPCR_TM_fragments = ("NT", "N-term",
+                      "1", "TM1",
+                      "12", "ICL1",
+                      "2", "TM2",
+                      "23", "ECL1",
+                      "3", "TM3",
+                      "34", "ICL2",
+                      "4", "TM4",
+                      "45", "ECL2",
+                      "5", "TM5",
+                      "56", "ICL3",
+                      "6", "TM6",
+                      "67", "ECL3",
+                      "7", "TM7",
+                      "78",
+                      "8", "H8",
+                      "CT", "C-term")
 
 _CGN_fragments = ('G.HN',
                   'G.hns1',
@@ -2639,7 +2639,7 @@ _KLIFS_fragments = ('I',
                     'xDFG',
                     'a.l')
 
-_GAIN_fragments = (
+_GPCR_GAIN_fragments = (
  'A.H1',
  #'A.D1',
  #'A.d1h2',
@@ -2774,7 +2774,7 @@ _GAIN_fragments = (
  'B.s14tm1'
 )
 
-_GPCR_fragments = _GAIN_fragments + _GPCR_fragments
+_GPCR_fragments = _GPCR_GAIN_fragments + _GPCR_TM_fragments
 
 _GPCR_mandatory_fields = ["protein_segment",
                           "AAresSeq",
