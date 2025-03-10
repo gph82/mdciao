@@ -1190,7 +1190,9 @@ class LabelerGPCRdb(LabelerConsensus):
                  verbose=True,
                  try_web_lookup=True,
                  # todo write to disk should be moved to the superclass at some point
-                 write_to_disk=False):
+                 write_to_disk=False,
+                 GPS_cleaved=False
+                 ):
         r"""
 
         Parameters
@@ -1256,6 +1258,13 @@ class LabelerGPCRdb(LabelerConsensus):
         write_to_disk : bool, default is False
             Save an Excel file with the nomenclature
             information
+        GPS_cleaved : bool, default is False
+            If True, split the GPS-fragment into two fragments
+            between GPS.-1 and GPS+1, s.t. they get treated
+            as different fragments: ["GPS.-2", "GPS.-1"] and
+            the cleaved GPS ["GPSc.+1"]. This resembles
+            better the situation in which the last part of the GAIN
+            domain (GPS.+1 and then S14) have been actually cleaved
         """
 
         self._dataframe, self._tablefile = _GPCRdb_finder(UniProt_name,
@@ -1267,6 +1276,11 @@ class LabelerGPCRdb(LabelerConsensus):
                                                           )
         # Re-introduce the "." in the GPS label
         self._dataframe = self._dataframe.replace("B.GPS-2", "B.GPS.-2").replace("B.GPS-1", "B.GPS.-1").replace("B.GPS+1", "B.GPS.+1")
+
+        # Cleave the GPS if needed
+        if GPS_cleaved:
+            self._dataframe = self._dataframe.replace("B.GPS.+1","B.GPSc.+1")
+            self._dataframe.loc[self._dataframe.display_generic_number == "B.GPSc.+1", "protein_segment"] = "B.GPSc"
 
         # Check for GPS in the middle of S14
         if "B.S14" in self.dataframe.protein_segment.values:
@@ -2778,6 +2792,7 @@ _GPCR_GAIN_fragments = (
  'B.s13gps',
  'B.s13s14',
  'B.GPS',
+ 'B.GPSc',
  'B.gpss14',
  'B.S14',
  #'B.s14gps'

@@ -164,7 +164,7 @@ class Test_GPCRdbDataFrame2conlabs_aGPCR(unittest.TestCase):
         pass
         CL = nomenclature.LabelerGPCRdb(self.file)
 
-    def test_works_scheme_BW(self):
+    def test_scheme_BW(self):
         CL_generic = nomenclature.LabelerGPCRdb(self.file)
         CL_BW = nomenclature.LabelerGPCRdb(self.file, scheme="BW")
         self.assertDictEqual(CL_generic.fragments, CL_BW.fragments)
@@ -178,6 +178,12 @@ class Test_GPCRdbDataFrame2conlabs_aGPCR(unittest.TestCase):
         generic_GAIN_conlab = {key : val for key, val in CL_generic.AA2conlab.items() if key[0] in ["A","B"]}
         BW_GAIN_conlab = {key: val for key, val in CL_generic.AA2conlab.items() if key[0] in ["A", "B"]}
         self.assertDictEqual(generic_GAIN_conlab, BW_GAIN_conlab)
+
+
+    def test_GPS_cleaved(self):
+        CL = nomenclature.LabelerGPCRdb(self.file, GPS_cleaved=True)
+        assert "B.GPS"  in CL.fragment_names
+        assert "B.GPSc" in CL.fragment_names
 
 
 class Test_GPCRdbDataFrame2conlabs(unittest.TestCase):
