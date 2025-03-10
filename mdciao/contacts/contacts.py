@@ -4013,7 +4013,7 @@ class ContactGroup(object):
                                                **freq_dataframe_kwargs)
             idfs = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                         switch_off_Ang=switch_off_Ang,
-                                                        sort_by_freq=sort_by_freq,
+                                                        sort_by=["freq" if sort_by_freq else None][0],
                                                         list_by_interface=write_interface,
                                                         return_as_dataframe=True)
             self.frequency_spreadsheet(main_DF,idfs,ctc_cutoff_Ang,fname)
