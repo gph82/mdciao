@@ -3716,7 +3716,7 @@ class ContactGroup(object):
 
     def frequency_sum_per_residue_names(self, ctc_cutoff_Ang,
                                         switch_off_Ang=None,
-                                        sort_by_freq=True,
+                                        sort_by="freq",
                                         AA_format="short",
                                         list_by_interface=False,
                                         return_as_dataframe=False,
@@ -3724,7 +3724,7 @@ class ContactGroup(object):
         r"""
         Aggregate the frequencies of :obj:`frequency_per_contact` by residue name,
         using the most informative names possible,
-        see :obj:`self.residx2resnamefragnamebest` for more info on this
+        see :obj:`residx2resnamefragnamebest` for more info on this
 
         Parameters
         ----------
@@ -3732,14 +3732,21 @@ class ContactGroup(object):
             The cutoff to use
         switch_off_Ang : float, default is None
             TODO
-        sort_by_freq : bool, default is True
-            Sort by descending order of frequencies.
-            If :obj:`list_by_interface` is True,
-            then sorting will be descending within
-            each member of the interface, see
-            :obj:`self.interface_residxs` for more info.
-            If False, residues are in ascending order
-            of residue indices
+        sort_by : str or None, default is None
+            The frequencies are by default plotted in the order
+            in which the :obj:`ContactPair`-objects are stored
+            in the :obj:`ContactGroup.contact_pairs`.
+            This order depends on the ctc_cutoff_Ang originally
+            used to instantiate this :obj:`ContactGroup`
+            You can re-sort them for display purposes,
+            leaving the original order untouched, via:
+
+            * `sort_by`='freq'
+               Use the `ctc_cutoff_Ang` provided here to
+               recompute new frequencies and sort the contacts
+               in ascending order
+            * `sort_by`='residue' or 'numeric'
+               Sort by ascending residue number
         AA_format : str, default is 'short'
             Use E30@3.50 instead of GLU30@3.50.
             Alternatives are:
@@ -3760,7 +3767,7 @@ class ContactGroup(object):
             (False) is to be of len=1
 
         """
-        freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, sort_by_freq=sort_by_freq)
+        freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)
 
         if list_by_interface and self.is_interface:
                 freqs = [{idx:val for idx, val in freqs.items() if idx in iint} for iint in self.interface_residxs]
@@ -3783,6 +3790,14 @@ class ContactGroup(object):
             for idx, val in ifreq.items():
                 key = residx2resnamefragnamebest[idx]
                 idict[key] = val
+            if sort_by == "freq":
+                idict = {key : idict[key] for key in _sorter_by_key_or_val("mean", idict, reverse=True)[0]}
+            elif sort_by in ["residue", "numeric"]:
+                idict = {key :idict[key] for key in _sorter_by_key_or_val("residue", idict)[0]}
+            elif sort_by is None:
+                pass
+            else:
+                raise ValueError(f"sort_by should be either {['freq', 'residue', 'numeric', None]} but not {sort_by}")
             list_out.append(idict)
 
         if return_as_dataframe:
