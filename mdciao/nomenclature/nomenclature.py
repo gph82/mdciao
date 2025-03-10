@@ -106,6 +106,14 @@ def _GPCRdbDataFrame2conlabs(tablefile,
     assert scheme in df.keys(), ValueError("'%s' isn't an available scheme.\nAvailable schemes are %s" % (
         scheme, [key for key in df.keys() if key in _GPCR_available_schemes + ["display_generic_number"]]))
     AA2conlab = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
+    dgn_other = df[df[scheme].isna() & ~df["display_generic_number"].isna()][["AAresSeq", "display_generic_number"]]
+    if len(dgn_other)>0:
+        AA2dgn = {key: str(val) for key, val in df[["AAresSeq", "display_generic_number"]].values}
+        for ii, key in enumerate(AA2conlab.keys()):
+            if str(AA2conlab[key]) == "None" and AA2dgn.get(key,None) is not None:
+                AA2conlab[key]=AA2dgn[key]
+        #print(f"Some labels of the 'display_generic_number' column would be lost by choosing scheme='{scheme}'.")
+
     # Locate definition lines and use their indices
     fragments = _defdict(list)
 
@@ -1246,7 +1254,7 @@ class LabelerGPCRdb(LabelerConsensus):
             including the extension "xslx", then the lookup will
             fail. This what the `format` parameter is for
         write_to_disk : bool, default is False
-            Save an excel file with the nomenclature
+            Save an Excel file with the nomenclature
             information
         """
 
@@ -1258,7 +1266,8 @@ class LabelerGPCRdb(LabelerConsensus):
                                                           write_to_disk=write_to_disk
                                                           )
         # Re-introduce the "." in the GPS label
-        self._dataframe = self._dataframe.replace("B.GPS-2","B.GPS.-2").replace("B.GPS-1","B.GPS.-1").replace("B.GPS+1","B.GPS.+1")
+        self._dataframe = self._dataframe.replace("B.GPS-2", "B.GPS.-2").replace("B.GPS-1", "B.GPS.-1").replace("B.GPS+1", "B.GPS.+1")
+
         # Check for GPS in the middle of S14
         if "B.S14" in self.dataframe.protein_segment.values:
             assert self.dataframe[self.dataframe.protein_segment == "B.S14"].index.diff().fillna(1).unique() == 1, (
