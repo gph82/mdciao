@@ -161,7 +161,6 @@ class Test_GPCRdbDataFrame2conlabs_aGPCR(unittest.TestCase):
         self.file = test_filenames.agrg1_human_xlsx
 
     def test_works(self):
-        pass
         CL = nomenclature.LabelerGPCRdb(self.file)
 
     def test_scheme_BW(self):
@@ -185,6 +184,11 @@ class Test_GPCRdbDataFrame2conlabs_aGPCR(unittest.TestCase):
         assert "B.GPS"  in CL.fragment_names
         assert "B.GPSc" in CL.fragment_names
 
+    def test_top2domains(self):
+        CL = nomenclature.LabelerGPCR(test_filenames.adrb2_human_xlsx)
+        domains = CL.top2domains(test_filenames.actor_pdb)
+        assert len(domains[0])==0 #no GAIN domain
+        self.assertListEqual(domains[1], list(range(0,279+1)))
 
 class Test_GPCRdbDataFrame2conlabs(unittest.TestCase):
     def setUp(self):

@@ -1381,6 +1381,38 @@ class LabelerGPCR(LabelerGPCRdb):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @_kwargs_subs(LabelerConsensus.top2frags)
+    def top2domains(self, top, **top2frags_kwargs):
+        r"""
+        Like :obj:`top2frags` but for separating a GPCR into GAIN and TM domains.
+
+        As in :obj:`top2frags`, regions of the topology withoug
+        generic residue labels (e.g. ligands or other
+        components) are left out of the returned domains.
+
+        Parameters
+        ----------
+        top:
+            :obj:`~mdtraj.Topology` or path to topology file (e.g. a pdb)
+        %(substitute_kwargs)s
+
+        Returns
+        -------
+        domains : list
+            A list of two lists, each one containing the
+            residue indices of the GAIN domain and
+            of the TM domain, in that order. Empty list(s)
+            represent missing domains.
+        """
+
+        dict = self.top2frags(top, **top2frags_kwargs)
+
+        domains = [[val for key, val in dict.items() if key[0] in ["A","B"]],
+                   [val for key, val in dict.items() if key[0] not in ["A", "B"]]]
+        domains = [[_np.hstack(dd).tolist() if len(dd)>0 else dd][0] for dd in domains]
+
+        return domains
+
 class LabelerCGN(LabelerGPCRdb):
     r"""
     Obtain and manipulate G-protein generic residue numbering, i.e. 'Common Gα Numbering', CGN[1]
