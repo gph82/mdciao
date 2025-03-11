@@ -2289,20 +2289,26 @@ class TestContactGroupFrequencies(TestBaseClassContactGroup):
     def test_frequency_per_residue_name_consensus(self):
         CG = self.L394
         """
-        ['L394@G.H5.26, 
-         'L388@G.H5.20',
-         'R389@G.H5.21', 
-         'L230@frag3',
-         'R385@G.H5.17',
-         'K270@frag3']
+        In [3]: CG.frequency_sum_per_residue_names(4.5)
+        Out[3]: 
+        [{'L394@G.H5.26': 5.214285714285714,
+          'L388@G.H5.20': 1.0,
+          'R389@G.H5.21': 1.0,
+          'R385@G.H5.17': 0.9821428571428571,
+          'L230@frag3': 0.9464285714285714,
+          'I233@frag3': 0.8035714285714286,
+          'K270@frag3': 0.48214285714285715}]
         """
-        freq_dict = CG.frequency_sum_per_residue_names(4, AA_format="try_consensus")[0]
-        assert len(freq_dict) == 6
-        _np.testing.assert_equal(freq_dict["G.H5.26"], CG.select_by_residues("L394").frequency_per_contact(4).sum())
-        _np.testing.assert_equal(freq_dict["G.H5.20"], CG.select_by_residues("L388").frequency_per_contact(4).sum())
-        _np.testing.assert_equal(freq_dict["L230@frag3"], CG.select_by_residues("L230").frequency_per_contact(4).sum())
-        _np.testing.assert_equal(freq_dict["G.H5.17"], CG.select_by_residues("R385").frequency_per_contact(4).sum())
-        _np.testing.assert_equal(freq_dict["K270@frag3"], CG.select_by_residues("K270").frequency_per_contact(4).sum())
+        freq_dict = CG.frequency_sum_per_residue_names(4.5, AA_format="try_consensus")[0]
+        self.assertDictEqual(freq_dict, {
+            'G.H5.26': CG.select_by_residues("L394").frequency_per_contact(4.5).sum(),
+            'G.H5.20': CG.select_by_residues("L388").frequency_per_contact(4.5).sum(),
+            'G.H5.21': CG.select_by_residues("R389").frequency_per_contact(4.5).sum(),
+            'G.H5.17': CG.select_by_residues("R385").frequency_per_contact(4.5).sum(),
+            'L230@frag3': CG.select_by_residues("L230").frequency_per_contact(4.5).sum(),
+            'I233@frag3': CG.select_by_residues("I233").frequency_per_contact(4.5).sum(),
+            'K270@frag3': CG.select_by_residues("K270").frequency_per_contact(4.5).sum()
+        })
 
     def test_frequency_per_residue_name_consensus_raises_on_sort_numeric(self):
         with self.assertRaises(NotImplementedError):
