@@ -1030,7 +1030,6 @@ class LabelerConsensus(object):
                     out_dict[imap] = ii
         return out_dict
 
-    # TODO return atoms
     def top2frags(self, top,
                   fragments=None,
                   min_seqID_rate=.5,
