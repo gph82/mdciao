@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest]
-        python-version: ['3.11']
+        python-version: [3.7, 3.8, 3.9, '3.10', '3.11','3.12', '3.13']
         # Proposed workaround for legacy versions, see
         # https://github.com/actions/setup-python/issues/856 and
         # https://github.com/actions/runner-images/issues/9770#issuecomment-2085623315
@@ -44,17 +44,20 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pytest pytest-cov pytest-xdist
+    - name: If python 3.13 install bezier separately
+      if: ${{ matrix.python-version == '3.13' }}
+      run: |
+        BEZIER_NO_EXTENSION="True" BEZIER_IGNORE_VERSION_CHECK="True" pip install bezier
     - name: Install package
       run: |
         pip install --upgrade pip
         pip install --upgrade setuptools
         pip install -e .
         pip freeze
+    - name: Pytest and coverage
+      run: |        
         echo -e '[run]\nomit = *dihedrals.py,*contact_matrix.py' > .coveragerc
-        echo -e "Before direct script is run"
-        mdc_neighborhoods.py tests/data/examples/gs-b2ar.noH.pdb tests/data/examples/gs-b2ar.noH.stride.5.xtc --residues L394 
-        echo -e "After"
-        #pytest -k test_mdc_neighborhood -vs --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc
+        pytest --cov=./ --cov-report=xml --disable-warnings --cov-config=.coveragerc -n 8
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:

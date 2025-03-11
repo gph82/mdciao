@@ -1584,7 +1584,7 @@ def interface(
     ctc_idxs = _mdcu.lists.unique_product_w_intersection(intf_frags_as_residxs[0], intf_frags_as_residxs[1])
     last_n_ctcs = len(ctc_idxs)
     if len(intersect)>0 and not self_interface:
-        ctc_idxs = [pair for pair in ctc_idxs if not _np.in1d(pair, intersect).all()]
+        ctc_idxs = [pair for pair in ctc_idxs if not _np.isin(pair, intersect).all()]
         if len(ctc_idxs)!=last_n_ctcs:
             print()
             print(f"\nExcluding contacts within the same members of the interface reduces from {last_n_ctcs} to {len(ctc_idxs)} residue pairs. "
@@ -1613,9 +1613,9 @@ def interface(
     # Sub-select at the AA-level #TODO consider making method out of this
     if AA_selection is not None:
         if isinstance(AA_selection, str):
-            lambda_sel = lambda pair, sel: _np.in1d(pair, sel).any()
+            lambda_sel = lambda pair, sel: _np.isin(pair, sel).any()
         elif isinstance(AA_selection, list) and len(AA_selection)==2:
-            lambda_sel = lambda pair, sel: _np.in1d(pair, sel).all()
+            lambda_sel = lambda pair, sel: _np.isin(pair, sel).all()
             AA_selection = ",".join(AA_selection)
         else:
             raise ValueError(f"'AA_selection'  as to be a sting or a list of len 2, "

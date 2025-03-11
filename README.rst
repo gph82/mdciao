@@ -53,6 +53,19 @@ System Requirements
 
 So everything should work *out of the box* in these conditions.
 
+.. admonition:: Python 3.13 users
+
+   Python 3.13 support is unofficial, because the module ``bezier`` `currently requires python <=3.12 <https://github.com/dhermes/bezier>`_.
+
+   Still, you can install mdciao in Python 3.13 if you install ``bezier`` previously with these environment variables:
+
+   >>> BEZIER_NO_EXTENSION="True" BEZIER_IGNORE_VERSION_CHECK="True" pip install bezier
+   >>> pip install mdciao
+
+   You can check what these do `here <https://bezier.readthedocs.io/en/stable/development.html#environment-variables>`_.
+
+   Since ``mdciao`` installs and passes the CI-tests for Python 3.13 in such an environment, you can use it **at your own risk**. Please report on any issues you might find.
+
 Authors
 =======
 ``mdciao`` is written and maintained by Guillermo Pérez-Hernández (`ORCID <http://orcid.org/0000-0002-9287-8704>`_) currently at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_ in the
@@ -63,11 +76,9 @@ Please cite:
     | Guillermo Pérez-Hernández, Peter-Werner Hildebrand
     | bioRxiv 2022.07.15.500163
     | https://doi.org/10.1101/2022.07.15.500163
-
-Status
-======
-``mdciao`` is approaching its first major release, so less changes in the API and CLI calls are expected. For more info on semantic versioning please check
-`the semver page <https://semver.org/#spec-item-4>`_.
+ * mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data
+    | Guillermo Pérez-Hernández, Peter-Werner Hildebrand
+    | PLOS Computational Biology, 2025 (accepted, will supersede the bioRxiv reference)
 
 Scope
 ======
