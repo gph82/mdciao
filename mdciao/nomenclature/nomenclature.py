@@ -70,9 +70,9 @@ def _GPCRdbDataFrame2conlabs(tablefile,
     Parameters
     ----------
     tablefile : xlsx file or pandas dataframe
-        GPCR generic residue numbering in excel format
+        GPCR generic residue numbering in Excel format
     scheme : str, default is "BW"
-        The numbering scheme to choose. The available
+        The numbering scheme to choose for the TM bundle. The available
         schemes depend on what was in the original
         :obj:`tablefile`. The options may include
         * "generic_display_number" (the one chosen by the GPCRdb)
@@ -106,6 +106,14 @@ def _GPCRdbDataFrame2conlabs(tablefile,
     assert scheme in df.keys(), ValueError("'%s' isn't an available scheme.\nAvailable schemes are %s" % (
         scheme, [key for key in df.keys() if key in _GPCR_available_schemes + ["display_generic_number"]]))
     AA2conlab = {key: str(val) for key, val in df[["AAresSeq", scheme]].values}
+    dgn_other = df[df[scheme].isna() & ~df["display_generic_number"].isna()][["AAresSeq", "display_generic_number"]]
+    if len(dgn_other)>0:
+        AA2dgn = {key: str(val) for key, val in df[["AAresSeq", "display_generic_number"]].values}
+        for ii, key in enumerate(AA2conlab.keys()):
+            if str(AA2conlab[key]) == "None" and AA2dgn.get(key,None) is not None:
+                AA2conlab[key]=AA2dgn[key]
+        #print(f"Some labels of the 'display_generic_number' column would be lost by choosing scheme='{scheme}'.")
+
     # Locate definition lines and use their indices
     fragments = _defdict(list)
 
@@ -1182,7 +1190,9 @@ class LabelerGPCRdb(LabelerConsensus):
                  verbose=True,
                  try_web_lookup=True,
                  # todo write to disk should be moved to the superclass at some point
-                 write_to_disk=False):
+                 write_to_disk=False,
+                 GPS_cleaved=False
+                 ):
         r"""
 
         Parameters
@@ -1246,8 +1256,15 @@ class LabelerGPCRdb(LabelerConsensus):
             including the extension "xslx", then the lookup will
             fail. This what the `format` parameter is for
         write_to_disk : bool, default is False
-            Save an excel file with the nomenclature
+            Save an Excel file with the nomenclature
             information
+        GPS_cleaved : bool, default is False
+            If True, split the GPS-fragment into two fragments
+            between GPS.-1 and GPS+1, s.t. they get treated
+            as different fragments: ["GPS.-2", "GPS.-1"] and
+            the cleaved GPS ["GPSc.+1"]. This resembles
+            better the situation in which the last part of the GAIN
+            domain (GPS.+1 and then S14) have been actually cleaved
         """
 
         self._dataframe, self._tablefile = _GPCRdb_finder(UniProt_name,
@@ -1258,11 +1275,18 @@ class LabelerGPCRdb(LabelerConsensus):
                                                           write_to_disk=write_to_disk
                                                           )
         # Re-introduce the "." in the GPS label
-        self._dataframe = self._dataframe.replace("B.GPS-2","B.GPS.-2").replace("B.GPS-1","B.GPS.-1").replace("B.GPS+1","B.GPS.+1")
+        self._dataframe = self._dataframe.replace("B.GPS-2", "B.GPS.-2").replace("B.GPS-1", "B.GPS.-1").replace("B.GPS+1", "B.GPS.+1")
+
+        # Cleave the GPS if needed
+        if GPS_cleaved:
+            self._dataframe = self._dataframe.replace("B.GPS.+1","B.GPSc.+1")
+            self._dataframe.loc[self._dataframe.display_generic_number == "B.GPSc.+1", "protein_segment"] = "B.GPSc"
+
         # Check for GPS in the middle of S14
         if "B.S14" in self.dataframe.protein_segment.values:
-            assert self.dataframe[self.dataframe.protein_segment == "B.S14"].index.diff().fillna(1).unique() == 1, (
-                NotImplementedError("S14 of the GAIN Domain is interrupted by the GPS, this type of S14 is not yet implemented."))
+
+            assert _np.unique(_np.diff(self.dataframe[self.dataframe.protein_segment == "B.S14"].index)).squeeze()== 1, \
+                (NotImplementedError("S14 of the GAIN Domain is interrupted by the GPS, this type of S14 is not yet implemented."))
         self._AA2conlab, self._fragments = _GPCRdbDataFrame2conlabs(self.dataframe, scheme=scheme,
                                                                     return_fragments=True)
 
@@ -2563,23 +2587,23 @@ _GPCR_num2lett = {
     "8": "H8",
 }
 
-_GPCR_fragments = ("NT", "N-term",
-                   "1", "TM1",
-                   "12", "ICL1",
-                   "2", "TM2",
-                   "23", "ECL1",
-                   "3", "TM3",
-                   "34", "ICL2",
-                   "4", "TM4",
-                   "45", "ECL2",
-                   "5", "TM5",
-                   "56", "ICL3",
-                   "6", "TM6",
-                   "67", "ECL3",
-                   "7", "TM7",
-                   "78",
-                   "8", "H8",
-                   "CT","C-term")
+_GPCR_TM_fragments = ("NT", "N-term",
+                      "1", "TM1",
+                      "12", "ICL1",
+                      "2", "TM2",
+                      "23", "ECL1",
+                      "3", "TM3",
+                      "34", "ICL2",
+                      "4", "TM4",
+                      "45", "ECL2",
+                      "5", "TM5",
+                      "56", "ICL3",
+                      "6", "TM6",
+                      "67", "ECL3",
+                      "7", "TM7",
+                      "78",
+                      "8", "H8",
+                      "CT", "C-term")
 
 _CGN_fragments = ('G.HN',
                   'G.hns1',
@@ -2639,7 +2663,7 @@ _KLIFS_fragments = ('I',
                     'xDFG',
                     'a.l')
 
-_GAIN_fragments = (
+_GPCR_GAIN_fragments = (
  'A.H1',
  #'A.D1',
  #'A.d1h2',
@@ -2768,13 +2792,14 @@ _GAIN_fragments = (
  'B.s13gps',
  'B.s13s14',
  'B.GPS',
+ 'B.GPSc',
  'B.gpss14',
  'B.S14',
  #'B.s14gps'
  'B.s14tm1'
 )
 
-_GPCR_fragments = _GAIN_fragments + _GPCR_fragments
+_GPCR_fragments = _GPCR_GAIN_fragments + _GPCR_TM_fragments
 
 _GPCR_mandatory_fields = ["protein_segment",
                           "AAresSeq",

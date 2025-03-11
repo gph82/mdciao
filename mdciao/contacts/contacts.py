@@ -25,7 +25,7 @@ import mdtraj as _md
 from os import path as _path
 
 import mdciao.plots as _mdcplots
-from mdciao.plots.plots import _add_grey_banded_bg, _color_tiler
+from mdciao.plots.plots import _add_grey_banded_bg, _color_tiler, _sorter_by_key_or_val
 import mdciao.utils as _mdcu
 from mdciao.utils.str_and_dict import _kwargs_subs
 import mdciao.nomenclature as _mdcn
@@ -3670,7 +3670,7 @@ class ContactGroup(object):
                                            return_array=False):
         r"""
         Dictionary of aggregated :obj:`frequency_per_contact` per residue indices
-        Values over 1 are possible, example if [0,1], [0,2]
+        Values larger than 1 are possible, example if [0,1], [0,2]
         are always formed (=1) freqs_dict[0]=2
 
         Parameters
@@ -3687,7 +3687,8 @@ class ContactGroup(object):
             :obj:`return_array` is False
         return_array : bool, default is False
             If True, the return value is not a dict
-            but an array of len(self.top.n_residues)
+            but an array of len(self.top.n_residues).
+            In this case, `sort_by_freq` doesn't have any effect.
 
         Returns
         -------
@@ -3715,7 +3716,7 @@ class ContactGroup(object):
 
     def frequency_sum_per_residue_names(self, ctc_cutoff_Ang,
                                         switch_off_Ang=None,
-                                        sort_by_freq=True,
+                                        sort_by="freq",
                                         AA_format="short",
                                         list_by_interface=False,
                                         return_as_dataframe=False,
@@ -3723,7 +3724,7 @@ class ContactGroup(object):
         r"""
         Aggregate the frequencies of :obj:`frequency_per_contact` by residue name,
         using the most informative names possible,
-        see :obj:`self.residx2resnamefragnamebest` for more info on this
+        see :obj:`residx2resnamefragnamebest` for more info on this
 
         Parameters
         ----------
@@ -3731,14 +3732,22 @@ class ContactGroup(object):
             The cutoff to use
         switch_off_Ang : float, default is None
             TODO
-        sort_by_freq : bool, default is True
-            Sort by descending order of frequencies.
-            If :obj:`list_by_interface` is True,
-            then sorting will be descending within
-            each member of the interface, see
-            :obj:`self.interface_residxs` for more info.
-            If False, residues are in ascending order
-            of residue indices
+        sort_by : str or None, default is None
+            The frequencies are returned by default in the order
+            in which the :obj:`ContactPair`-objects are stored
+            in the :obj:`ContactGroup.contact_pairs`.
+            This order depends on the ctc_cutoff_Ang originally
+            used to instantiate this :obj:`ContactGroup`
+            You can re-sort them for display purposes,
+            leaving the original order untouched, via:
+
+            * `sort_by`='freq'
+               Use the `ctc_cutoff_Ang` provided here to
+               recompute new frequencies and sort the contacts
+               in ascending order
+            * `sort_by`='residue' or 'numeric'
+               Sort by ascending residue number. Currently
+               limited to `AA_format`="short" or "long" (see below).
         AA_format : str, default is 'short'
             Use E30@3.50 instead of GLU30@3.50.
             Alternatives are:
@@ -3759,7 +3768,7 @@ class ContactGroup(object):
             (False) is to be of len=1
 
         """
-        freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang, sort_by_freq=sort_by_freq)
+        freqs = self.frequency_sum_per_residue_idx_dict(ctc_cutoff_Ang, switch_off_Ang=switch_off_Ang)
 
         if list_by_interface and self.is_interface:
                 freqs = [{idx:val for idx, val in freqs.items() if idx in iint} for iint in self.interface_residxs]
@@ -3782,6 +3791,17 @@ class ContactGroup(object):
             for idx, val in ifreq.items():
                 key = residx2resnamefragnamebest[idx]
                 idict[key] = val
+            if sort_by == "freq":
+                idict = {key : idict[key] for key in _sorter_by_key_or_val("mean", idict, reverse=True)[0]}
+            elif sort_by in ["residue", "numeric"]:
+                if "consensus" in AA_format:
+                    raise NotImplementedError(f"Sorting by 'residue' or 'numeric' currently limited to "
+                                              f"`AA_format`='short' or 'long', not '{AA_format}'.")
+                idict = {key :idict[key] for key in _sorter_by_key_or_val("residue", idict)[0]}
+            elif sort_by is None:
+                pass
+            else:
+                raise ValueError(f"sort_by should be either {['freq', 'residue', 'numeric', None]} but not {sort_by}")
             list_out.append(idict)
 
         if return_as_dataframe:
@@ -3993,7 +4013,7 @@ class ContactGroup(object):
                                                **freq_dataframe_kwargs)
             idfs = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                         switch_off_Ang=switch_off_Ang,
-                                                        sort_by_freq=sort_by_freq,
+                                                        sort_by=["freq" if sort_by_freq else None][0],
                                                         list_by_interface=write_interface,
                                                         return_as_dataframe=True)
             self.frequency_spreadsheet(main_DF,idfs,ctc_cutoff_Ang,fname)
@@ -4485,7 +4505,7 @@ class ContactGroup(object):
                            label_fontsize_factor=1,
                            lower_cutoff_val=None,
                            plot_atomtypes=False,
-                           sort_by_freq=False,
+                           sort_by=None,
                            sum_freqs=True,
                            total_freq=None,
                            defrag=None,
@@ -4532,14 +4552,21 @@ class ContactGroup(object):
         plot_atomtypes : bool, default is False
             Use stripe-patterns to inform about the
             types of interactions (sidechain, backbone, etc)
-        sort_by_freq : boolean, default is False
+        sort_by : str or None, default is None
             The frequencies are by default plotted in the order
             in which the :obj:`ContactPair`-objects are stored
-            in the :obj:`ContactGroup`-object's _contact_pairs
+            in the :obj:`ContactGroup.contact_pairs`.
             This order depends on the ctc_cutoff_Ang originally
-            used to instantiate this :obj:`ContactPair`
-            If True, you can re-sort them with this cutoff for
-            display purposes only (the original order is untouched)
+            used to instantiate this :obj:`ContactGroup`
+            You can re-sort them for display purposes,
+            leaving the original order untouched, via:
+
+            * `sort_by`='freq'
+               Use the `ctc_cutoff_Ang` provided here to
+               recompute new frequencies and sort the contacts
+               in ascending order
+            * `sort_by`='residue' or 'numeric'
+               Sort by ascending residue number
         sum_freqs : bool, default is True
             Inform, in the legend and in the title,
             about the sum of frequencies/bar-heights
@@ -4580,17 +4607,22 @@ class ContactGroup(object):
         freqs = self.frequency_per_contact(ctc_cutoff_Ang,
                                            switch_off_Ang=switch_off_Ang,
                                            )
-        if sort_by_freq:
+        label_bars = [ictc.labels.w_fragments for ictc in self.contact_pairs]
+
+        if sort_by=="freq":
             order = _np.argsort(freqs)[::-1]
-        else:
+        elif sort_by in ["residue", "numeric"]:
+            order = _sorter_by_key_or_val("residue", {key : val for key, val in zip(label_bars, freqs)})[1]
+        elif sort_by is None:
             order = _np.arange(len(freqs))
+        else:
+            raise ValueError(f"sort_by should be either {['freq','residue','numeric',None]} but not {sort_by}")
         color = [list(_mdcplots.color_dict_guesser(color, order).values())[oo] for oo in order]
         ax = _mdcplots.plots._plot_freqbars_baseplot(freqs[order],
                                                      ax=ax,
                                                      color=color,
                                                      lower_cutoff_val=lower_cutoff_val)
 
-        label_bars = [ictc.labels.w_fragments for ictc in self.contact_pairs]
         if shorten_AAs:
             label_bars = [ictc.labels.w_fragments_short_AA for ictc in self.contact_pairs]
 
@@ -4917,7 +4949,7 @@ class ContactGroup(object):
                                 label_fontsize_factor=1,
                                 sum_freqs=True,
                                 plot_atomtypes=False,
-                                sort_by_freq=False):
+                                sort_by=None):
         r"""
         Wrapper around :obj:`ContactGroup.plot_freqs_as_bars`
         for plotting neighborhoods
@@ -4956,14 +4988,21 @@ class ContactGroup(object):
         plot_atomtypes : bool, default is False
             Add stripes to frequency bars to include
             the atom-types (backbone, sidechain, etc)
-        sort_by_freq : boolean, default is False
+        sort_by : str or None, default is None
             The frequencies are by default plotted in the order
             in which the :obj:`ContactPair`-objects are stored
-            in the :obj:`ContactGroup`-object's _contact_pairs
+            in the :obj:`ContactGroup.contact_pairs`.
             This order depends on the ctc_cutoff_Ang originally
-            used to instantiate this :obj:`ContactPair`
-            If True, you can re-sort them with this cutoff for
-            display purposes only (the original order is untouched)
+            used to instantiate this :obj:`ContactGroup`
+            You can re-sort them for display purposes,
+            leaving the original order untouched, via:
+
+            * `sort_by`='freq'
+               Use the `ctc_cutoff_Ang` provided here to
+               recompute new frequencies and sort the contacts
+               in ascending order
+            * `sort_by`='residue' or 'numeric'
+               Sort by ascending residue number
 
         Returns
         -------
@@ -4978,7 +5017,7 @@ class ContactGroup(object):
                                      shorten_AAs=shorten_AAs,
                                      lower_cutoff_val=None,
                                      plot_atomtypes=plot_atomtypes,
-                                     sort_by_freq=sort_by_freq,
+                                     sort_by=sort_by,
                                      switch_off_Ang=switch_off_Ang,
                                      label_fontsize_factor=label_fontsize_factor,
                                      color=color,
@@ -5684,7 +5723,7 @@ class ContactGroup(object):
                                     lower_cutoff_val=0,
                                     bar_width_in_inches=.75,
                                     list_by_interface=False,
-                                    sort_by_freq=True,
+                                    sort_by="freq",
                                     interface_vline=False):
         r"""
         Bar plot with per-residue sums of frequencies (called \Sigma in mdciao)
@@ -5717,8 +5756,21 @@ class ContactGroup(object):
             the subplot
         list_by_interface : boolean, default is True
             Separate residues by interface
-        sort_by_freq : boolean, default is True
-            Sort sums of freqs in descending order
+        sort_by : str or None, default is None
+            The frequencies are by default plotted in the order
+            in which the :obj:`ContactPair`-objects are stored
+            in the :obj:`ContactGroup.contact_pairs`.
+            This order depends on the ctc_cutoff_Ang originally
+            used to instantiate this :obj:`ContactGroup`
+            You can re-sort them for display purposes,
+            leaving the original order untouched, via:
+
+            * `sort_by`='freq'
+               Use the `ctc_cutoff_Ang` provided here to
+               recompute new frequencies and sort the contacts
+               in ascending order
+            * `sort_by`='residue' or 'numeric'
+               Sort by ascending residue number
         interface_vline : bool, default is False
             Plot a vertical line visually separating both interfaces
 
@@ -5731,7 +5783,7 @@ class ContactGroup(object):
         # Base list of dicts
         frq_dict_list = self.frequency_sum_per_residue_names(ctc_cutoff_Ang,
                                                              switch_off_Ang=switch_off_Ang,
-                                                             sort_by_freq=sort_by_freq,
+                                                             sort_by=sort_by,
                                                              AA_format=["short" if shorten_AAs else "long"][0],
                                                              list_by_interface=list_by_interface)
 

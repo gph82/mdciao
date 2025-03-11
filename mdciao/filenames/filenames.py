@@ -101,6 +101,7 @@ class FileNames(object):
         self.adrb2_human_xlsx = _path.join(self.nomenclature_path,"adrb2_human.xlsx")
         self.nomenclature_bib = _path.join(self.nomenclature_path,"nomenclature.bib")
         self.KLIFS_P31751_xlsx = _path.join(self.nomenclature_path, "KLIFS_P31751.xlsx")
+        self.agrg1_human_xlsx = _path.join(self.nomenclature_path, "agrg1_human.xlsx")
 
         #json
         self.GDP_json = _path.join(self.json_path,"GDP.json")

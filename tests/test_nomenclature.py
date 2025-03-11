@@ -156,8 +156,37 @@ class Test_GPCRdb_finder(unittest.TestCase):
         _np.testing.assert_array_equal(list(df.keys())[:3], nomenclature._GPCR_mandatory_fields)
         assert any([key in df.keys() for key in nomenclature._GPCR_mandatory_fields])  # at least one scheme
 
+class Test_GPCRdbDataFrame2conlabs_aGPCR(unittest.TestCase):
+    def setUp(self):
+        self.file = test_filenames.agrg1_human_xlsx
 
-class Test_table2GPCR_by_AAcode(unittest.TestCase):
+    def test_works(self):
+        pass
+        CL = nomenclature.LabelerGPCRdb(self.file)
+
+    def test_scheme_BW(self):
+        CL_generic = nomenclature.LabelerGPCRdb(self.file)
+        CL_BW = nomenclature.LabelerGPCRdb(self.file, scheme="BW")
+        self.assertDictEqual(CL_generic.fragments, CL_BW.fragments)
+
+        #self.assertDictEqual(CL_generic.AA2conlab, CL_BW.AA2conlab)
+        # This assertion will fail because some residues of the TM bundle have different labels
+        # on display_generic_number and BW, e.g 1.32x32 vs 1.28 on D396
+        # protein_segment AAresSeq display_generic_number    BW Wootten   Pin  Wang Fungal GPCRdb(A) GPCRdb(B) GPCRdb(C) GPCRdb(F) GPCRdb(D) Oliveira     BS
+        #             TM1     D396                1.32x32  1.28    1.32  1.32  1.25   1.30   1.28x28   1.32x32   1.32x32   1.25x25   1.30x30      108  I:-05
+        # We thus only test the GAIN domain
+        generic_GAIN_conlab = {key : val for key, val in CL_generic.AA2conlab.items() if key[0] in ["A","B"]}
+        BW_GAIN_conlab = {key: val for key, val in CL_generic.AA2conlab.items() if key[0] in ["A", "B"]}
+        self.assertDictEqual(generic_GAIN_conlab, BW_GAIN_conlab)
+
+
+    def test_GPS_cleaved(self):
+        CL = nomenclature.LabelerGPCRdb(self.file, GPS_cleaved=True)
+        assert "B.GPS"  in CL.fragment_names
+        assert "B.GPSc" in CL.fragment_names
+
+
+class Test_GPCRdbDataFrame2conlabs(unittest.TestCase):
     def setUp(self):
         self.file = test_filenames.GPCRdb_B2AR_nomenclature_test_xlsx
 
@@ -183,7 +212,7 @@ class Test_table2GPCR_by_AAcode(unittest.TestCase):
                               67: '2.38',
                               })
 
-    def test_table2GPCR_by_AAcode_return_fragments(self):
+    def test_GPCRdbDataFrame2conlabs_by_AAcode_return_fragments(self):
         table2GPCR, defs = nomenclature._GPCRdbDataFrame2conlabs(tablefile=self.file,
                                                                  return_fragments=True)
 

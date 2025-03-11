@@ -497,7 +497,7 @@ def sum_dict_per_residue(idict, sep):
     return {key:_np.sum(val) for key, val in out_dict.items()}
 
 def sort_dict_by_asc_values(idict, reverse=False):
-    r""" Sort a dictionary by values
+    r""" Sort a dictionary by ascending values
 
     Parameters
     ----------
@@ -505,7 +505,7 @@ def sort_dict_by_asc_values(idict, reverse=False):
         Input dictionary
     reverse : bool, default is False
         Reverse the sorting order,
-        i.e. sort by ascending order
+        i.e. sort by descending order
         of values
 
     Returns

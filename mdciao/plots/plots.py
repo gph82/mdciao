@@ -369,7 +369,7 @@ def _sorting_schemes(freqs_by_sys_by_ctc, sort_by='mean',
     elif sort_by in _schemes_for_sorting:
 
         # Then sort, in case sort_by wasn't a list but an actual scheme (has its own method)
-        kept_keys = _sorter_by_key_or_val(sort_by, dict_for_sorting[sort_by])
+        kept_keys = _sorter_by_key_or_val(sort_by, dict_for_sorting[sort_by])[0]
         if sort_by in ["mean", "std"]:
             kept_keys = kept_keys[::-1]
 
@@ -1713,7 +1713,7 @@ def compare_violins(groups,
 
     # Prepare the dict
     colordict = color_dict_guesser(colors, all_sys_keys)
-    sorted_keys = _sorter_by_key_or_val(sort_by, means_per_ctc_across_sys)
+    sorted_keys = _sorter_by_key_or_val(sort_by, means_per_ctc_across_sys)[0]
     key2ii = {key : ii for ii, key in enumerate(sorted_keys)}
     delta, width = _offset_dict(list(_groups.keys()))
 
@@ -1736,7 +1736,7 @@ def compare_violins(groups,
             vio.set_color(colordict[syskey])
         _plt.plot(_np.nan, _np.nan, "d",color=colordict[syskey],
                   #alpha=vio.get_alpha()*1.5,
-                  label=_mdcu.str_and_dict.replace4latex(syskey))
+                  label=_mdcu.str_and_dict.replace4latex(str(syskey)))
         if representatives and syskey in repframes_per_sys_per_ctc.keys():
             irep = _np.vstack([val for key, val in repframes_per_sys_per_ctc[syskey].items() if val is not _np.nan and key in key2ii.keys()])
             _plt.plot(positions, irep, "o ",
@@ -1778,7 +1778,7 @@ def compare_violins(groups,
         return myfig, iax, list(key2ii.keys())
 
 
-def _sorter_by_key_or_val(sort_by, indict):
+def _sorter_by_key_or_val(sort_by, indict, reverse=False):
     r"""
     Helper method to sort the keys of a dictionary according to some rules
 
@@ -1798,7 +1798,9 @@ def _sorter_by_key_or_val(sort_by, indict):
           will be sorted alphabetically at the end.
         * "mean" or "std"
           sort the dict ascending,
-          by the values of the `indict`
+          by the values of the `indict`.
+          If you want descending order,
+          use `reverse`=True, see below.
         * "keep"
           keep the order of the keys
         * "consensus"
@@ -1814,13 +1816,22 @@ def _sorter_by_key_or_val(sort_by, indict):
         It's assumed that the keys
         are contact labels with
         "-" as the separator
+    reverse : bool, default is False
+        Reverse the sorting order,
+        i.e. sort by descending order
+        of values. Only applies when `sort_by`
+        is "mean" or "std"
     Returns
     -------
     ordered_keys : list
         The list of sorted keys
+    order : list
+        The indices of the keys in
+        `indict` as they appear in
+        `ordered_keys`
     """
     all_ctc_keys= list(indict.keys())
-
+    key2origidx = {key : ii for ii, key in enumerate(all_ctc_keys)}
     # First,
     if isinstance(sort_by, list):
         if not set(sort_by).intersection(all_ctc_keys):
@@ -1844,10 +1855,10 @@ def _sorter_by_key_or_val(sort_by, indict):
     elif sort_by == "consensus":
         ordered_keys = _lexsort_consensus_ctc_labels(all_ctc_keys)[0]
     elif sort_by in ["mean", "std"]:
-        ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict).keys())
+        ordered_keys = list(_mdcu.str_and_dict.sort_dict_by_asc_values(indict, reverse=reverse).keys())
     elif sort_by == "keep":
         ordered_keys = all_ctc_keys
-    return ordered_keys
+    return ordered_keys, [key2origidx[key] for key in ordered_keys]
 
 def add_tilted_labels_to_patches(ax, labels,
                                  label_fontsize_factor=1,
