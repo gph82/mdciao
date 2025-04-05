@@ -5544,7 +5544,7 @@ class ContactGroup(object):
                truncated by `lower_cutoff_val`.
              * If None show all contacts regardless of their
                frequency.
-             * This paramater will be ignored if `sort_by` is different
+             * This parameter will be ignored if `sort_by` is different
                from "frequency", as it is only meaningful if contacts
                are sorted in descending order of frequency.
             The difference between None and 1.0 (100% of overall frequency)
@@ -5552,7 +5552,7 @@ class ContactGroup(object):
             contacts, whereas `ctc_control` = 1.0 won't,
             since 100% of overall frequency is achieved *without*
             the zero-frequency contacts.
-        sort_by : str, default is freq
+        sort_by : str, default is 'freq'
             Default is to sort contacts by descending
             order of frequency. Alternatively,
             you can sort them by residue number
