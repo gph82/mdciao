@@ -13,7 +13,7 @@ from scipy.sparse.csgraph import connected_components as _concom
 
 def connected_sets(mat):
     r"""
-    Return the connected components/sets of a an adjacency matrix
+    Return the connected components/sets of an adjacency matrix
 
     Uses :obj:`~scipy.sparse.csgraph.connected_components`
     under the hood with directed=False
@@ -39,7 +39,8 @@ def connected_sets(mat):
 def top2residue_bond_matrix(top,
                             force_resSeq_breaks=False,
                             verbose=True,
-                            create_standard_bonds=False):
+                            create_standard_bonds=False,
+                            bond_titrable_residues=True):
     r"""Return a symmetric residue-residue bond matrix from a :obj:`~mdtraj.Topology`.
 
     The bonds used are those found in :obj:`~mdtraj.Topology.bonds`
@@ -57,13 +58,29 @@ def top2residue_bond_matrix(top,
         :obj:`~mdtraj.Topology.create_standard_bonds`
         needs chain information to avoid creating
         bonds between residues that follow one another
+    bond_titrable_residues : bool, default is True.
+        Handle the gromacs-type constant-ph, titratable,
+        residues 'ARGT', 'ASPT', 'GLUT', 'HSPT', 'LYST',
+        since they don't get all bonds in
+        :obj:`mdtraj.core.Topology.create_standard_bonds`
+        Note that this is only for the purposes of the returned
+        `residue_bond_matrix`, s.t. the `top.bonds` attribute
+        itself is unaltered, i.e. this operation leaves
+        no trace and does not change the topology. Also
+        note that standard protonated residues, e.g. "GLH", are accepted
+        `by mdtraj as standard <https://github.com/mdtraj/mdtraj/issues/1855>`_ .
+
     Returns
     -------
     residue_bond_matrix : 2D np.ndarray
         Returns a symmetric adjacency matrix with entries ij=1 and ji=1,
         if there is a bond between residue i and residue j.
     """
-
+    _titratable_res = {'ARGT': 'ARG',
+                       'ASPT': 'ASP',
+                       'GLUT': 'GLU',
+                       'HSPT': 'HIS',
+                       'LYST': 'LYS'}
     if len(top._bonds) == 0:
         if create_standard_bonds:
             top.create_standard_bonds()
@@ -77,8 +94,20 @@ def top2residue_bond_matrix(top,
                              "   atom-types.\n"
                              "Please read the docs of the different options for potential pitfalls and risks!")
 
+    n_trs = sum([res.name in _titratable_res.keys() for res in top.residues])
+    if n_trs >0 and bond_titrable_residues:
+        _top = top.copy()
+        for res in _top.residues:
+            if res.name in _titratable_res.keys():
+                setattr(res,"name", _titratable_res[res.name])
+        _top.create_standard_bonds()
+        _tr_bonds = list(set(_top.bonds).difference(top.bonds))
+        if verbose:
+            print(f"{len(_tr_bonds)} new bonds added from {n_trs} titratable residues." )
+    else:
+        _tr_bonds = []
     residue_bond_matrix = _np.zeros((top.n_residues, top.n_residues), dtype=int)
-    for ibond in top._bonds:
+    for ibond in top._bonds+_tr_bonds:
         r1, r2 = ibond.atom1.residue.index, ibond.atom2.residue.index
         rSeq1, rSeq2 = ibond.atom1.residue.resSeq, ibond.atom2.residue.resSeq
         residue_bond_matrix[r1, r2] = 1
@@ -127,7 +156,7 @@ def bonded_neighborlist_from_top(top, n=1, residue_indices=None, verbose=False):
     Returns
     -------
     neighbor_list : list of lists
-        Lisf of len top.n_residues. The i-th  list
+        List of len top.n_residues. The i-th  list
         contains the :obj:`n` -bonded neighbors of
         the i-th residue, in ascending order
     """
