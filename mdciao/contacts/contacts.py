@@ -2378,7 +2378,7 @@ class ContactPair(object):
         valid_cutoff = ctc_cutoff_Ang is not None and ctc_cutoff_Ang > 0
 
         color_scheme = _color_tiler(color_scheme, self.n.n_trajs )
-        ax.set_ylabel('D / $\\AA$', rotation=90)
+        ax.set_ylabel('D / Å', rotation=90)
         if isinstance(ylim_Ang, (int, float)):
             ax.set_ylim([0, ylim_Ang])
         elif isinstance(ylim_Ang, str) and ylim_Ang.lower() == 'auto':
@@ -2483,7 +2483,7 @@ class ContactPair(object):
 
         if xlim is not None:
             ax.set_xlim(xlim)
-        ax.set_xlabel("D / $\AA$")
+        ax.set_xlabel("D / Å")
         ax.set_ylabel("counts ")
         #ax.set_ylim(0, max(ax.get_ylim()[1],h.max()+1))
         ax.legend()
@@ -4930,7 +4930,7 @@ class ContactGroup(object):
         ax.set_xlim([-.5, xmax - .5])
 
         #_plt.ylim(0)
-        _plt.ylabel("D / $\\AA$")
+        _plt.ylabel("D / Å")
 
         if self.is_neighborhood:
             ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor,loc="best")
@@ -5236,7 +5236,7 @@ class ContactGroup(object):
 
         title_str = "Distance distribution(s) for %s"%_mdcu.str_and_dict.latex_superscript_fragments(title)
         if ctc_cutoff_Ang is not None:
-            title_str += "\nresidues within %2.1f $\AA$"%(ctc_cutoff_Ang)
+            title_str += "\nresidues within %2.1f Å"%(ctc_cutoff_Ang)
             ax.axvline(ctc_cutoff_Ang, color="k", ls="--", zorder=-1)
         if self.neighbors_excluded not in [None,0]:
             title_str += "\n%u nearest bonded neighbors excluded" % (self.neighbors_excluded)
@@ -5254,7 +5254,7 @@ class ContactGroup(object):
         if xlim is not None:
             ax.set_xlim(xlim)
 
-        ax.set_xlabel("D / $\AA$")
+        ax.set_xlabel("D / Å")
         ax.set_ylabel("counts ")
         ax.set_ylim([0, ax.get_ylim()[1]])
         ax.legend(fontsize=_rcParams["font.size"] * label_fontsize_factor / self.n_ctcs ** .25,
@@ -5438,7 +5438,7 @@ class ContactGroup(object):
             _mdcplots.plot_w_smoothing_auto(n_ctcs_t, ax=iax, label=traj_name, color=next(icol), x=itime * dt, background=background,
                                             n_smooth_hw=n_smooth_hw)
 
-        iax.set_ylabel('$\sum$ [ctcs < %s $\AA$]'%(ctc_cutoff_Ang))
+        iax.set_ylabel('$\sum$ [ctcs < %s Å]'%(ctc_cutoff_Ang))
         iax.set_xlabel('t / %s'%t_unit)
         iax.set_xlim([self.time_min*dt,self.time_max*dt])
         iax.set_ylim([0,iax.get_ylim()[1]])
@@ -5698,7 +5698,7 @@ class ContactGroup(object):
                 if ii==0:
                     iax.text(
                         1, y_max,
-                        "$\downarrow$ freq@%3.1f $\\AA\downarrow$"%ctc_cutoff_Ang,
+                        "$\downarrow$ freq@%3.1f Å$\downarrow$"%ctc_cutoff_Ang,
                         va="top",
                         transform=iax.transAxes,
                         ha='left')
@@ -5812,7 +5812,7 @@ class ContactGroup(object):
 
         # Cosmetics
         ax.set_title(
-            "Average nr. contacts @%2.1f $\AA$ \nper residue of '%s'"
+            "Average nr. contacts @%2.1f Å \nper residue of '%s'"
             % (ctc_cutoff_Ang, _mdcu.str_and_dict.replace4latex(title_str)))
 
         _mdcplots.add_tilted_labels_to_patches(ax,

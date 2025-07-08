@@ -1332,7 +1332,7 @@ def plot_unified_distro_dicts(distros,
 
         if ctc_cutoff_Ang is not None:
             iax.axvline(ctc_cutoff_Ang, zorder=10,alpha=.5, color="k",ls=":")
-        iax.set_xlabel("D / $\AA$")
+        iax.set_xlabel("D / Å")
         iax.legend(ncol=_np.ceil(len(system_keys) / legend_rows).astype(int))
         iax.set_ylim([0,1.1])
     myfig.tight_layout()
@@ -1762,7 +1762,7 @@ def compare_violins(groups,
                 rotation_mode="anchor"
                 )
     iax.set_xlim([0-.5,len(key2ii)-.5])
-    iax.set_ylabel("D / $\AA$")
+    iax.set_ylabel("D / Å")
     if ymax is not None:
         iax.set_ylim([iax.get_ylim()[0], ymax])
 
