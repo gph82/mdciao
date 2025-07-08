@@ -274,7 +274,7 @@ def contact_map(
         iax = next(axiter)
         av = _np.sum(val,0)/n_frames
         iax.imshow(av)
-        iax.set_title("overall@%2.1f$\\AA$"%key)
+        iax.set_title("overall@%2.1fÅ"%key)
         for ii in range(n_cols):
             try:
                 iax = next(axiter)
