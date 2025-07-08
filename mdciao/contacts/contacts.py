@@ -6704,9 +6704,10 @@ class ContactGroup(object):
                 matching_res_idxs.append(_mdcu.residue_and_atom.find_AA(exp.strip(" "), self.top,
                                                               extra_columns={"consensus" : self.residx2consensuslabel}))
                 if not allow_multiple_matches and len(matching_res_idxs[-1])>1:
-                    print("The expression '%s' finds multiple matches, but only one is allowed" % exp)
+                    emsg = f"The expression '{exp}' finds multiple matches, but only one is allowed. See the docs on `allow_multiple_matches` to avoid this error."
+                    print(emsg)
                     _mdcu.residue_and_atom.parse_and_list_AAs_input(exp, self.top)
-                    raise ValueError
+                    raise ValueError(emsg)
             valid_matches = _np.unique(_np.hstack([match for match in matching_res_idxs if len(match)>0]))
         elif residue_indices is not None:
             assert residue_pairs is None
