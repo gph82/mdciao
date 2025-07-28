@@ -20,6 +20,7 @@ Functions
 import numpy as _np
 from pandas import DataFrame as _DF
 from .lists import contiguous_ranges as _cranges
+from .residue_and_atom import shorten_AA as _shorten_AA
 import pandas as _pd
 from IPython.display import display as _display
 from collections import namedtuple as _namedtuple
@@ -98,8 +99,7 @@ def top2seq(top, replacement_letter="X"):
     seq : str of len top.n_residues
     """
     assert len(replacement_letter)==1
-
-    return ''.join([str(rr.code).replace("None",replacement_letter) for rr in top.residues])
+    return ''.join([_shorten_AA(rr, substitute_fail=replacement_letter) for rr in top.residues])
 
 def my_bioalign(seq1, seq2,
                 method="global",
