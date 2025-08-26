@@ -83,23 +83,31 @@ def print_verbose_dataframe(df):
                             'display.width', 1000):
         _display(df)
 
-def top2seq(top, replacement_letter="X"):
+from mdciao.utils.str_and_dict import _kwargs_subs
+@_kwargs_subs(_shorten_AA)
+def top2seq(top, **kwargs_shorten_AA):
     r"""
     Return the AA sequence of :obj:`top` as a string
+
+    For cases where there are no short codes (e.g. nucleotides), see
+    the use of the kwargs_shorten_AA
 
     Parameters
     ----------
     top : :obj:`mdtraj.Topology`
-    replacement_letter : str, default is "X"
-        If the AA has no one-letter-code,
-        return this letter instead has to be a str of len(1)
+    kwargs_shorten_AA:
+        Optional parameters for :obj:`~mdciao.utils.residue_and_atom.shorten_AAs`,
+        which are listed below
+
+    Other Parameters
+    ---------------
+    %(substitute_kwargs)s
 
     Returns
     -------
     seq : str of len top.n_residues
     """
-    assert len(replacement_letter)==1
-    return ''.join([_shorten_AA(rr, substitute_fail=replacement_letter) for rr in top.residues])
+    return ''.join([_shorten_AA(rr, **kwargs_shorten_AA) for rr in top.residues])
 
 def my_bioalign(seq1, seq2,
                 method="global",
