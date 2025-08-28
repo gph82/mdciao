@@ -84,30 +84,35 @@ def print_verbose_dataframe(df):
         _display(df)
 
 from mdciao.utils.str_and_dict import _kwargs_subs
-@_kwargs_subs(_shorten_AA)
-def top2seq(top, **kwargs_shorten_AA):
+def top2seq(top, substitute_fail="X"):
     r"""
     Return the AA sequence of :obj:`top` as a string
 
-    For cases where there are no short codes (e.g. nucleotides), see
-    the use of the kwargs_shorten_AA
+    For cases where there are no short codes (e.g. nucleotides), see `substitute_fail`
 
     Parameters
     ----------
     top : :obj:`mdtraj.Topology`
-    kwargs_shorten_AA:
-        Optional parameters for :obj:`~mdciao.utils.residue_and_atom.shorten_AAs`,
-        which are listed below
+    substitute_fail : str, default is "X"
+        If a residue has no .code  attribute, there are different options
+        depending on the value of this parameter:
 
-    Other Parameters
-    ---------------
-    %(substitute_kwargs)s
+        * None : throw an exception when no short code is found (default)
+        * 'c': any alphabetic character, as long as it is of len=1
+        * 0 : the first alphabetic character in the residue's name
+
+        Note that, even if this method wraps around
+        :obj:`~mdciao.utils.residue_and_atom.shorten_AA`
+        and shares the parameter `substitute_fail` with it, you cannot pass
+        `substitute_fail`="long" here.
 
     Returns
     -------
-    seq : str of len top.n_residues
+    seq : str
+        Sequence as a string of len top.n_residues
     """
-    return ''.join([_shorten_AA(rr, **kwargs_shorten_AA) for rr in top.residues])
+    assert substitute_fail.lower()!="long", ValueError('Cannot pass `substitute_fail`="long" here!')
+    return ''.join([_shorten_AA(rr, substitute_fail=substitute_fail, keep_index=False) for rr in top.residues])
 
 def my_bioalign(seq1, seq2,
                 method="global",
