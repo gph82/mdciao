@@ -83,7 +83,6 @@ def print_verbose_dataframe(df):
                             'display.width', 1000):
         _display(df)
 
-from mdciao.utils.str_and_dict import _kwargs_subs
 def top2seq(top, substitute_fail="X"):
     r"""
     Return the AA sequence of :obj:`top` as a string
@@ -111,7 +110,7 @@ def top2seq(top, substitute_fail="X"):
     seq : str
         Sequence as a string of len top.n_residues
     """
-    assert substitute_fail.lower()!="long", ValueError('Cannot pass `substitute_fail`="long" here!')
+    assert str(substitute_fail).lower()!="long", ValueError('Cannot pass `substitute_fail`="long" here!')
     return ''.join([_shorten_AA(rr, substitute_fail=substitute_fail, keep_index=False) for rr in top.residues])
 
 def my_bioalign(seq1, seq2,
