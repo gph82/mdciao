@@ -162,6 +162,9 @@ class Test_shorten_AA(unittest.TestCase):
         assert (residue_and_atom.shorten_AA("GLU30", keep_index=True) == 'E30')
         assert (residue_and_atom.shorten_AA("glu30", substitute_fail='E', keep_index=True) == 'E30')
 
+    def test_short_AA_wo_index(self):
+        assert (residue_and_atom.shorten_AA("GLU", keep_index=True) == 'E')
+
 
 class Test_atom_type(unittest.TestCase):
     def test_works(self):

@@ -359,7 +359,9 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
     r"""
     Return the short name of an AA, e.g. TRP30 to W by trying to
     use either the :obj:`mdtraj.Topology.Residue.code` attribute
-    or :obj:`mdtraj` internals AA dictionary
+    or :obj:`mdtraj` internals AA dictionary.
+
+    Also work for residue strings w/o number, i.e. TRP to W.
 
     Parameters
     ----------
@@ -389,7 +391,10 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
         if name.isnumeric():
             res = name
         else:
-            res = '%s%u' % ([name if len(name) == 1 else _AMINO_ACID_CODES.get(name)][0], int_from_AA_code(AA))
+            res = str([name if len(name) == 1 else _AMINO_ACID_CODES.get(name)][0])
+            idx = int_from_AA_code(AA)
+            if idx is not None:
+                res += str(idx)
     else:
         res = '%s%u'%(AA.code,AA.resSeq)
 
@@ -412,6 +417,7 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
     if keep_index:
         return res
     else:
+        #Weird edge case: what happens if the name is just a number "700" and the keep_index is False?
         return name_from_AA(res)
 
 def atom_type(aa, no_BB_no_SC='X'):
