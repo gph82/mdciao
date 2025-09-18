@@ -233,6 +233,21 @@ class Test_AlignmentDataframe(unittest.TestCase):
         df = sequence.AlignmentDataFrame({"A": [1, 2, 3], "B": [4, 5, 6], "C": [7, 8, 9]},alignment_score=1)
         assert df.alignment_score == 1
         assert df[["A", "B"]].alignment_score == 1
+        self.assertDictEqual(df.colmap, {key: key for key in ["AA_0",
+                                                              "AA_1",
+                                                              "resSeq_0",
+                                                              "idx_0",
+                                                              "idx_1",
+                                                              'fullname_0',
+                                                              'fullname_1']})
+
+    def test_just_colmap_is_there(self):
+        #     Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
+        # for more info
+        df = sequence.AlignmentDataFrame({"A": [1, 2, 3], "B": [4, 5, 6], "C": [7, 8, 9]},alignment_score=1, colmap={"idx_0" : "idx_Ecoli"})
+        assert df.alignment_score == 1
+        assert df[["A", "B"]].alignment_score == 1
+        assert df.colmap["idx_0"]=="idx_Ecoli"
 
 if __name__ == '__main__':
     unittest.main()

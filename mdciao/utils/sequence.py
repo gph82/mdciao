@@ -30,16 +30,16 @@ from Bio import Align as _BioAlign
 # See "Define original properties" https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
 class _ADF(_DF):
     r"""
-    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score as metadata.
+    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score and the column key-map as metadata.
 
-    It can be then accessed via self.alignment_score and is preserved downstream
+    They can be then accessed via self.alignment_score, self.colmap and are preserved downstream
 
     Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
     for more info
     """
 
     # normal properties
-    _metadata = ["alignment_score"]
+    _metadata = ["alignment_score", "colmap"]
 
     @property
     def _constructor(self):
@@ -48,11 +48,11 @@ class _ADF(_DF):
 
 class AlignmentDataFrame(_ADF):
     r"""
-    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score as metadata.
+    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score and the column key-map as metadata.
 
-    Simply pass it as argument ' alignment_score=1' and it:
-     * can be then accessed via self.alignment_score and
-     * it is preserved downstream after operating on the df
+    Simply pass them as arguments 'alignment_score=1, colmap={"idx_0" : "idx_Ecoli", ...} ' and they:
+     * can be then accessed via self.alignment_score and self.colmap
+     * are preserved downstream after operating on the df
 
     Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
     for more info
@@ -62,8 +62,25 @@ class AlignmentDataFrame(_ADF):
         alignment_score = kwargs.get("alignment_score")
         if alignment_score is not None:
             kwargs.pop("alignment_score")
+
+        # This is the list that's the default in  :obj:`~mdciao.utils.sequence.alignment_result_to_list_of_dicts`
+        colmap_keys =  [
+            "AA_0",
+            "AA_1",
+            "resSeq_0",
+            "idx_0",
+            "idx_1",
+            'fullname_0',
+            'fullname_1',
+        ]
+        colmap = {key: key for key in colmap_keys}
+        for key, val in kwargs.pop("colmap",{}).items():
+            assert key in colmap.keys(), ValueError(f"Cannot pass a 'colmap' with a key '{key}' that isn't in '{colmap_keys}'")
+            colmap[key] = val
+
         super().__init__(*args,**kwargs)
         self.alignment_score = alignment_score
+        self.colmap = colmap
 
 def print_verbose_dataframe(df):
     r"""
