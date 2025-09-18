@@ -745,8 +745,8 @@ class LabelerConsensus(object):
 
 
             idf = _mdcu.sequence.AlignmentDataFrame(idf.merge(_DataFrame(
-                {"idx_0": _np.arange(len(topidx2conlab)),
-                 "conlab": topidx2conlab}), how="left", on="idx_0"), #.replace(_np.nan, None)
+                {idf.colmap["idx_0"]: _np.arange(len(topidx2conlab)),
+                 "conlab": topidx2conlab}), how="left", on=idf.colmap["idx_0"]), #.replace(_np.nan, None)
                 alignment_score=idf.alignment_score)
             # .replace has ffil problem with pandas < 1.5, not with > 2. allowing
             idf.conlab = [[val if val is not _np.nan else None][0] for val in idf.conlab.values]
@@ -802,8 +802,8 @@ class LabelerConsensus(object):
 
                         if verbose:
                             _mdcu.sequence.print_verbose_dataframe(
-                                idf[idf[idf.idx_0.values == confragidxs[0]].index[0] - 1 - 5:
-                                    idf[idf.idx_0.values == confragidxs[-1]].index[0] + 2 +5]
+                                idf[idf[idf[idf.colmap["idx_0"]].values == confragidxs[0]].index[0] - 1 - 5:
+                                    idf[idf[idf.colmap["idx_0"]].values == confragidxs[-1]].index[0] + 2 +5]
                             )
 
 
@@ -2015,7 +2015,7 @@ def _alignment_df2_conslist(alignment_as_df,
         _df = alignment_as_df
     _df = _df[_df["match"]]
 
-    out_list[_df["idx_0"].values.astype(int)] = _df["conlab"].values
+    out_list[_df[_df.colmap["idx_0"]].values.astype(int)] = _df["conlab"].values
     return out_list.tolist()
 
 
