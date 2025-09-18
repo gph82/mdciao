@@ -65,7 +65,7 @@ def print_frag(frag_idx, top, fragment, fragment_desc='fragment',
         to the residue descriptor. You can set this to zero
         if you know `idx2label` is None for all
         printed lines
-    fragment_string_width = int, default is 6
+    fragment_string_width : int, default is 6
         The width in characters given
         to the fragment name.
     just_return_string : bool, default is False
