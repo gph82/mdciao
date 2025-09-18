@@ -503,8 +503,8 @@ def df2maps(df, allow_nonmatch=True):
     else:
         _df = df
 
-    top0_to_top1 = {key: val for key, val in zip(_df[_df["match"] == True]["idx_0"].to_list(),
-                                                 _df[_df["match"] == True]["idx_1"].to_list())}
+    top0_to_top1 = {key: val for key, val in zip(_df[_df["match"] == True][_df.colmap["idx_0"]].to_list(),
+                                                 _df[_df["match"] == True][_df.colmap["idx_1"]].to_list())}
 
     top1_to_top0 = {val:key for key, val in top0_to_top1.items()}
 
@@ -551,8 +551,8 @@ def re_match_df(df):
         for rr in match_ranges[False]:
             try:
                 if all(_df.loc[[rr[0] - 1, rr[-1] + 1]]["match"]) and \
-                        all(["-" not in df[key].values[rr] for key in ["AA_0",
-                                                                   "AA_1"]]):  # this checks for no insertions in the alignment ("=equal length ranges")
+                        all(["-" not in df[df.colmap[key]].values[rr] for key in ["AA_0",
+                                                                                  "AA_1"]]):  # this checks for no insertions in the alignment ("=equal length ranges")
                     _df.loc[rr, "match"] = True
             except KeyError:
                 continue
