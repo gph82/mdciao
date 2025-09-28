@@ -157,7 +157,7 @@ def plot_w_smoothing_auto(y, ax=None, label=None, color=None, x=None, background
 
 def plot_histogram_w_smoothing_auto(data, bins=10, ax=None,
                                     smooth_bw=True, background=True, fill_below=True,
-                                    color=None, label=None,
+                                    color=None, label=None, bincount=False,
                                     alpha_below=.25, maxcount=False) -> _plt.Axes:
     r"""
     Plot a histogram of `data` with possibilities of smoothing and filling the area below
@@ -202,8 +202,18 @@ def plot_histogram_w_smoothing_auto(data, bins=10, ax=None,
     label : str or None, default is None
         The label for the data, which will
         be shown in the legend
+    bincount : bool, default is False
+        For when `data` is integer-valued,
+        e.g. number of contacts. Uses :obj:`numpy.bincount`
+        and :obj:`matplotlib.pyplot.barplot` to draw
+        the histogram. The parameter `bins` is not
+        used in this case and the smoothing might
+        or might not make sense in these cases,
+        so use `smooth_bw` wisely. Also note,
+        if the `data` is not integer type (or cannot be cast to safely),
+        :obj:`numpy.bincount` will throw a TypeError.
     alpha_below : float, default is .25
-        The are below the curve will
+        The area below the curve will
         be filled with this alpha (transparency)
         value. Only has an effect if `fill_below`
         is True
@@ -226,7 +236,13 @@ def plot_histogram_w_smoothing_auto(data, bins=10, ax=None,
     if ax is None:
         ax = _plt.gca()
 
-    h, bin_edges = _np.histogram(data, bins=bins)
+    if bincount:
+        h = _np.bincount(data-data.min())
+        first_nonzero_idx = _np.flatnonzero(h)[0]
+        bin_edges = _np.arange(first_nonzero_idx, len(h)+1)+data.min()
+        h = h[first_nonzero_idx:]
+    else:
+        h, bin_edges = _np.histogram(data, bins=bins, density=True)
     if maxcount:
         h = h/h.max() * maxcount # multiply by boolean if True means multiply by one, if scalar by the value
     x = (bin_edges[:-1] + bin_edges[1:]) / 2
@@ -243,13 +259,20 @@ def plot_histogram_w_smoothing_auto(data, bins=10, ax=None,
         line = ax.plot(xs, ys, label=label, color=color)[0]
         if fill_below:
             ax.fill_between(xs, ys, alpha=.1, color=line.get_color())
+        # Define color beforehand instead 2x2 if-else
+        _color = [line.get_color() if [isinstance(background,bool) and background] else background][0]
         if background:
-            if isinstance(background, bool):
-                ax.plot(x, h, alpha=.25, color=line.get_color(), zorder=-10)
+            if bincount:
+                ax.bar(x=bin_edges[:-1], height=h, width=_np.diff(bin_edges)[0] / 3,
+                       alpha=.25, zorder=-10, color=_color)
             else:
-                ax.plot(x, h, alpha=.25, color=background, zorder=-10)
+                ax.plot(x, h, alpha=.25,  zorder=-10, color=_color)
     else:
-        line = ax.plot(x, h, label=label, color=color)[0]
+        if bincount:
+            line = list(ax.bar(x=bin_edges[:-1], height=h, width=_np.diff(bin_edges)[0]/3, color=color, label=label))[0]
+            line.get_color = line.get_facecolor  # monkeypatching FTW
+        else:
+            line = ax.plot(x, h, label=label, color=color)[0]
         if fill_below:
             ax.fill_between(x, h, alpha=alpha_below, color=line.get_color())
     if label is not None:
