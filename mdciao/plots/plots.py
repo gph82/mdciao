@@ -237,9 +237,9 @@ def plot_histogram_w_smoothing_auto(data, bins=10, ax=None,
         ax = _plt.gca()
 
     if bincount:
-        h = _np.bincount(data-data.min())
+        h = _np.bincount(data-_np.min(data))
         first_nonzero_idx = _np.flatnonzero(h)[0]
-        bin_edges = _np.arange(first_nonzero_idx, len(h)+1)+data.min()
+        bin_edges = _np.arange(first_nonzero_idx, len(h)+1)+_np.min(data)
         h = h[first_nonzero_idx:]
     else:
         h, bin_edges = _np.histogram(data, bins=bins, density=True)
