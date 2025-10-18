@@ -1916,13 +1916,23 @@ class AlignerConsensus(object):
 
         return df
 
-def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, dropna=True, filter_on="index") -> _DataFrame:
+def trim(df: _DataFrame, patterns=None, keys=None,
+         drop_rows_how="any", drop_columns_how=None,
+         drop_order="rows_first", filter_on="consensus", verbose=False) -> _DataFrame:
     r"""
-    Row-filter an :obj:`~pandas.DataFrame` by patterns in the values and column-filter by keys in the column names
 
-    Filtering means:
-     * don't include rows where None or Nans appear (except if relax=True)
-     * include  anything that matches `patterns`
+    Trim a :obj:`~pandas.DataFrame` using patterns. Can prioritize keeping positions (rows) over sequences (columns) or vice versa.
+
+    Specialized tools (e.g. trimAl, ClipKIT, Gblocks) exist for alignment trimming,
+    optimizing it based on gap frequency, sequence occupancy, or phylogenetic informativeness
+    and other criteria. 
+    
+    This method is deliberately more rudimentary: it simply looks at occupancy 
+    and drops rows and/or columns in a pandas-affine way, sidestepping other heuristics.
+    
+    Since the order in which rows and/or columns are dropped matters when trimming, 
+    it is worth exploring the example scenarios of the note below and get an idea of
+    what the method actually does.
 
     Parameters
     ----------
@@ -1932,49 +1942,197 @@ def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, d
     patterns : str, default is None
         A list in CSV-format of patterns to be matched
         by the consensus labels. Matches are done using
-        Unix filename pattern matching, and are allows
+        Unix filename pattern matching, and allows
         for exclusion, e.g. "3.*,-3.5*." will include all
         residues in TM3 except those in the segment 3.50...3.59
     keys : list, default is None
         If only a sub-set of columns need to match,
         provide them here as list of strings. If
         None, all columns (except `filter_on`) will be used.
-    select_keys : bool, default is False
-        Use the `patterns` not only to select
-        for rows but also to select for columns, i.e.
-        for keys. Keys (=columns) not featuring
-        any `patterns` will be dropped.
-    dropna : bool, default is True
-        Use :obj:`~pandas.Dataframe.dropna` row-wise
-        before returning
-     filter_on : str, default is 'index'
+    drop_rows_how :  None or str ('any' or 'all'), default is 'any'.
+        Strategy to drop rows using occupancy as criterion.
+        If None, no rows are dropped based on occupancy.
+        Else, rows will be dropped by passing this
+        as `how` to :obj:`~pandas.Dataframe.dropna` .
+        See the note below for more information.
+    drop_columns_how : None or str ('any' or 'all'), default is None
+        Strategy to drop columns using occupancy as criterion.
+        If None, no columns are dropped based on occupancy.
+        Else, columns will be dropped by passing this
+        as `how` to :obj:`~pandas.Dataframe.dropna` .
+        This argument can help locate unusable columns
+        for a given pattern.
+        See the note below for more information.
+    drop_order : str, default is "rows_first"
+        Only has an effect when both `drop_rows` and `drop_columns` are not None.
+        Determines the order of operations, which critcally influences
+        the outocome. E.g. an entire column filled NaNs means
+        dropping all rows, in the default case,
+        unless you drop that column before (using `drop_order="columns_first")
+        and then you check for rows with NaNs.
+        See the note for more info.
+    filter_on : str, default is 'consensus'
         The column of `df` on which the `patterns`
-        will be used for a match
+        will be used for a match using `patterns`.
 
     Returns
     -------
     df : :obj:`~pandas.DataFrame`
-        Will only have `filter_on`+`keys` as columns
+        Will only have `filter_on` and `keys` as columns
+
+    Note
+    ----
+    We show some scenarios starting from an aligment table that looks like this:
+
+    >>> AC.residxs
+    |    |   consensus |   seqA |   seqB |   seqC |   seqD |
+    |----|-------------|--------|--------|--------|--------|
+    |  0 |        6.49 |      0 |      1 |     10 |     20 |
+    |  1 |        6.50 |      1 |      2 |     11 |    nan |
+    |  2 |        6.51 |      2 |      3 |    nan |    nan |
+    |  3 |        6.52 |      3 |    nan |    nan |    nan |
+
+    Note that the alignment index is the vertical axis
+    (rows) and the sequences (that are usually lines, e.g. `.fasta` files)
+    are represented as columns. Hence, the word 'column' and 'sequence'
+    are used interchangeably.
+
+    The first step is to match consensus labels against `patterns`,
+    dropping rows outside the selection. After this, `drop_rows`
+    and `drop_columns` take effect.
+
+    * The default behavior is to drop row-wise after pattern matching,
+      using :obj:`~pandas.DataFrame.dropna` .
+
+        >>> trim(AC.residxs, patterns="6.49,6.50,6.51")
+        |    |   consensus |   seqA |   seqB |   seqC |   seqD |
+        |----|-------------|--------|--------|--------|--------|
+        |  0 |        6.49 |      0 |      1 |     10 |     20 |
+      Row `6.52` did not match `patterns`, so it was dropped in the first step,
+      and rows `6.50` and `6.51`, although matching, had at least one NaN,
+      so they have been dropped, because of the default `drop_rows='any'`.
+
+    * If you want to keep the rows even with some NaNs, use `drop_rows=None`.
+      Together with the default `drop_columns=None` it means the table
+      will be returned as is, only patter-matched to `patterns`:
+
+        >>> trim(AC.residxs, patterns="6.49,6.50,6.51", drop_rows_how=None)
+        |    |   consensus |   seqA |   seqB |   seqC |   seqD |
+        |----|-------------|--------|--------|--------|--------|
+        |  0 |        6.49 |      0 |      1 |     10 |     20 |
+        |  1 |        6.50 |      1 |      2 |     11 |    nan |
+        |  2 |        6.51 |      2 |      3 |    nan |    nan |
+      This keeps everything visible. While this selection will
+      not be usable downstream across all sequences, it's useful
+      for getting an idea of where the missing values are, what rows and columns
+      are the "worst offenders" and so on.
+
+    * If we update the selection pattern to `"6.50,6.51"` and leave the parameters unchanged, then:
+
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how=None)
+        |    |   consensus |   seqA |   seqB |   seqC |   seqD |
+        |----|-------------|--------|--------|--------|--------|
+        |  1 |        6.50 |      1 |      2 |     11 |    nan |
+        |  2 |        6.51 |      2 |      3 |    nan |    nan |
+
+       Now we have two columns with NaNs, `seqC` and `seqD`.
+       If we trim with `drop_columns="any"`, we don't really
+       differentiate between the fully unusable `seqD` and
+       the partially usable `seqC`:
+
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how=None, drop_columns_how='any')
+        |    |   consensus |   seqA |   seqB |
+        |----|-------------|--------|--------|
+        |  1 |        6.50 |      1 |      2 |
+        |  2 |        6.51 |      2 |      3 |
+
+       This is one way to arrive at a fully usable selection.
+       The more conservative `drop_columns="all"` allows to keep the `seqC`
+       for further inspection and decision-making about what to trim (more on this below):
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how=None, drop_columns_how='all')
+        |    |   consensus |   seqA |   seqB |   seqC |
+        |----|-------------|--------|--------|--------|
+        |  1 |        6.50 |      1 |      2 |     11 |
+        |  2 |        6.51 |      2 |      3 |    nan |
+
+       Note that because of `drop_rows=None`, we're only
+       droping columns, s.t. the `drop_first` parameter does not have
+       effect. If we change it to `drop_rows="any"`, the order is critical, because:
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how="any", drop_columns_how='all')
+
+       yields an empty dataframe, because all rows matching "6.50,6.51" contain
+       at least one NaN, s.t. nothing survives. Unless, we change
+       the default from `drop_first="rows"` to `drop_first="columns"`. Then:
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how="any", drop_columns_how='all', drop_order="columns_first")
+        |    |   consensus |   seqA |   seqB |   seqC |
+        |----|-------------|--------|--------|--------|
+        |  1 |         6.50 |      1 |      2 |     11 |
+
+       This is also a usable selection, but we prioritized rows over columns.
+    Final thoughts:
+      * Without knowing the topology of the table and the intention
+        of the user, it is not trivial to predicit which
+        combination of parameters will be most helpful.
+      * In some cases, losing a column is out of the question,
+        because each column is associated with a dataset that needs to
+        be analyzed downstream, so you have to give up rows until you
+        arrive at a usable selection.
+      * Conversely, you might be in a sequence-rich situation where
+        you are using the alignment precisely to find out which sequences
+        are not worth keeping for the analysis downstream, because they
+        force you to use very few rows for the sake of covering all columns.
+      * Finally, there are combinations of parameters that yield equivalent
+        results depending on the alignment table and the selection pattern.
     """
+
     if df is None:
         return None
+
     if keys is None:
         keys = [key for key in df.keys() if key != filter_on]
-
     df = df[[filter_on] + keys]
+
     if patterns is not None:
         matching_keys = _mdcu.str_and_dict.fnmatch_ex(patterns, df[filter_on])
-        matches = df[filter_on].map(lambda x: x in matching_keys)
+        matches = df[filter_on].isin(matching_keys)
         df = df[matches]
 
-    if select_keys:
-        df = df[[key for key in df.keys() if not all(df[key].isna())]]
-    if dropna:
-        df = df.dropna()
+    if verbose:
+        print(f"Matching {filter_on!r} before dropping anything:")
+        _mdcu.sequence.print_verbose_dataframe(df)
+
+    if drop_order == "rows_first":
+        if verbose:
+            print(f"Keep is {drop_order!r}, i.e. dropping rows with {drop_rows_how!r} before dropping columns with {drop_columns_how!r}")
+        if isinstance(drop_rows_how, str):
+            df = df.dropna(how=drop_rows_how, axis="index")
+            if verbose:
+                print("After dropping rows:")
+                _mdcu.sequence.print_verbose_dataframe(df)
+        if isinstance(drop_columns_how, str):
+            df = df.dropna(how=drop_columns_how, axis="columns")
+            if verbose:
+                print("After dropping columns:")
+                _mdcu.sequence.print_verbose_dataframe(df)
+    elif drop_order == "columns_first":
+        if verbose:
+            print(f"Keep is {drop_order!r}, i.e. dropping columns with {drop_columns_how!r} before dropping rows with {drop_rows_how!r}")
+        if isinstance(drop_columns_how, str):
+            df = df.dropna(how=drop_columns_how, axis="columns")
+            if verbose:
+                print("After dropping columns:")
+                _mdcu.sequence.print_verbose_dataframe(df)
+        if isinstance(drop_rows_how, str):
+            df = df.dropna(how=drop_rows_how, axis="index")
+            if verbose:
+                print("After dropping rows:")
+                _mdcu.sequence.print_verbose_dataframe(df)
+    else:
+        raise ValueError(f"`drop_order` has to be either 'rows_first' or 'columns_first', not {drop_order!r}")
 
     # Try to return integers when possible
     try:
-        df = df.astype({key:int for key in df.keys() if key!=filter_on})
+        df = df.map(lambda x: [int(x) if x is not None and str(x).isdigit() else x][0])
     except (ValueError, TypeError) as e:
         pass
     return df
