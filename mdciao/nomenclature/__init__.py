@@ -39,6 +39,7 @@ Functions
     matching_fragments
     references
     conlabs2confrags
+    trim
 
 References
 ==========
