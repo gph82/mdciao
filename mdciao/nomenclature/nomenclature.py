@@ -1636,7 +1636,11 @@ def trim(df: _DataFrame, patterns=None, keys=None,
 
     # Try to return integers when possible
     try:
-        df = df.map(lambda x: [int(x) if x is not None and str(x).isdigit() else x][0])
+        if hasattr(df,"map"):
+            df = df.map(lambda x: [int(x) if x is not None and str(x).isdigit() else x][0])
+        else:
+            #TODO this is for pandas <2.1.0 and py38, which mdciao will deprecate soon
+            df = df.applymap(lambda x: [int(x) if x is not None and str(x).isdigit() else x][0])
     except (ValueError, TypeError) as e:
         pass
     return df
