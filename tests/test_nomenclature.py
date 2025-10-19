@@ -1627,7 +1627,7 @@ class Test_AlignerConsensus(unittest.TestCase):
                          )
 
     def test_missing(self):
-        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=True)
+        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", drop_rows_how="any")
         self.assertEqual(matches.to_string(),
                          "    consensus  3CAP  1U19\n"
                          #"102   3.50x50  R135    <NA>\n"
@@ -1640,7 +1640,7 @@ class Test_AlignerConsensus(unittest.TestCase):
                          )
 
     def test_missing_False(self):
-        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=False)
+        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", drop_rows_how=None)
         self.assertEqual(matches.to_string(),
                          "    consensus  3CAP  1U19\n"
                          "102   3.50x50  R135  <NA>\n"
@@ -1666,7 +1666,7 @@ class Test_AlignerConsensus(unittest.TestCase):
         maps = self.AC_maps_w_tops.maps
         maps["3CAP"] = {key : val for key, val in maps["3CAP"].items() if not val.startswith("3.")} #pop TM3 out of the 3CAP's map
         AC = nomenclature.AlignerConsensus(maps)
-        matches = AC.AAresSeq_match("3.5*", select_keys=True)
+        matches = AC.AAresSeq_match("3.5*", drop_columns_how='any', drop_order="columns_first")
         self.assertEqual(matches.to_string(),
                          '    consensus  3SN6\n'
                          '102   3.50x50  R131\n'
@@ -1691,6 +1691,24 @@ class Test_AlignerConsensus(unittest.TestCase):
                          "3CAP     7     2\n" \
                          "3SN6     2     7", df.to_string())
 
+def docstring2cmdblocks(method):
+    inblock = False
+    blocks = []
+    for line in method.__doc__.splitlines():
+        if line.strip().startswith(">>>"):
+            # print(line)
+            inblock = True
+            padding = line.split(">>>")[0]
+            block = []
+        if inblock:
+            if line.startswith(padding):
+                block.append(line.strip())
+            else:
+                inblock = False
+                blocks.append(block)
+                # print(block)
+    return blocks
+
 class Test_trim(unittest.TestCase):
 
     @classmethod
@@ -1698,25 +1716,13 @@ class Test_trim(unittest.TestCase):
         # The test of this class is its own documentation. I would rather use
         # doctest directly but string comparison to will be finicky anyway so
         # I'm rolling my own here.
-        inblock = False
-        blocks = []
-        for line in nomenclature.trim.__doc__.splitlines():
-            if line.strip().startswith(">>>"):
-                #print(line)
-                inblock = True
-                padding = line.split(">>>")[0]
-                block = []
-            if inblock:
-                if line.startswith(padding):
-                    block.append(line.strip())
-                else:
-                    inblock = False
-                    blocks.append(block)
-                    #print(block)
+        blocks = docstring2cmdblocks(nomenclature.trim)
 
         cls.cmds, cls.dataframes = [], []
         for block in blocks:
-            cls.cmds.append(block[0].strip())
+            bcmds = [l.strip() for l in block if l.strip().startswith(">>>")]
+            assert len(bcmds)==1
+            cls.cmds.append(bcmds[0])
             if len(block)>1:
                 _block = [l.replace(" ", "").split("|")[2:-1] for l in block if l.startswith("| ")]
                 idf = DataFrame(_block[1:],
