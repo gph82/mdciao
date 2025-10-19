@@ -1734,51 +1734,88 @@ class AlignerConsensus(object):
 
     >>> AC.AAresSeq_match("5.*")
         consensus   OPS  B2AR  MUOR
-    167   5.35x36  N200  N196  E229
-    168   5.36x37  E201  Q197  N230
-    169   5.37x38  S202  A198  L231
+    164   5.35x36  N200  N196  E229
+    165   5.36x37  E201  Q197  N230
+    166   5.37x38  S202  A198  L231
+    167   5.38x39  F203  Y199  L232
+    168   5.39x40  V204  A200  K233
     ..        ...   ...   ...   ...
-    198   5.66x66  K231  K227  K260
-    199   5.67x67  E232  R228  S261
-    200   5.68x68  A233  Q229  V262
+    193   5.64x64  T229  E225  R258
+    194   5.65x65  V230  A226  L259
+    195   5.66x66  K231  K227  K260
+    196   5.67x67  E232  R228  S261
+    197   5.68x68  A233  Q229  V262
+
 
     But you can get relax the match and get an overview of missing
-    residues using `omit_missing=False`:
+    residues using `drop_rows_how=None`:
 
-    >>> AC.AAresSeq_match("5.*", omit_missing=False)
+    >>> AC.AAresSeq_match("5.*", drop_rows_how=None)
         consensus   OPS  B2AR  MUOR
-    162   5.30x31   NaN   NaN  P224
-    163   5.31x32   NaN   NaN  T225
-    164   5.32x33   NaN   NaN  W226
-    165   5.33x34   NaN   NaN  Y227
-    166   5.34x35  N199   NaN  W228
-    167   5.35x36  N200  N196  E229
+    159   5.30x31  <NA>  <NA>  P224
+    160   5.31x32  <NA>  <NA>  T225
+    161   5.32x33  <NA>  <NA>  W226
+    162   5.33x34  <NA>  <NA>  Y227
+    163   5.34x35  N199  <NA>  W228
+    164   5.35x36  N200  N196  E229
     ..        ...   ...   ...   ...
-    200   5.68x68  A233  Q229  V262
-    201   5.69x69  A234  L230   NaN
-    202   5.70x70  A235  Q231   NaN
-    203   5.71x71  Q236  K232   NaN
-    204   5.72x72  Q237  I233   NaN
-    205   5.73x73   NaN  D234   NaN
-    206   5.74x74   NaN  K235   NaN
-    207   5.75x75   NaN  S236   NaN
-    208   5.76x76   NaN  E237   NaN
+    196   5.67x67  E232  R228  S261
+    197   5.68x68  A233  Q229  V262
+    198   5.69x69  A234  L230  <NA>
+    199   5.70x70  A235  Q231  <NA>
+    200   5.71x71  Q236  K232  <NA>
+    201   5.72x72  Q237  I233  <NA>
+    202   5.73x73  <NA>  D234  <NA>
+    203   5.74x74  <NA>  K235  <NA>
+    204   5.75x75  <NA>  S236  <NA>
+    205   5.76x76  <NA>  E237  <NA>
 
     Here, we see e.g. that "MUOR" has more residues present at
     the beginning of TM5 (first row, from P224@5.30x31 on) and also that
     e.g. "B2AR" has the longest TM5 (last row, until E237@5.76x76).
 
-    Finally, instead of selecting for labels,
-    you can also select for systems, i.e. "Show me the systems that
-    have my selection labels". Here, we ask what systems have '5.70...5.79' residues:
+    Note that the default is to drop rows containing NaNs
+    while keeping columns, but you can turn that logic around.
+    You can use a label-pattern to select for systems, i.e. "Show me
+    the systems that have my selection labels".
+    Here, we ask what systems have '5.70...5.79' residues.
+    We start by showing the whole table:
 
-    >>> AC.AAresSeq_match("5.7*", select_keys=True)
+    >>> AC.AAresSeq_match("5.7*", drop_columns_how=None, drop_rows_how=None)
+        consensus   OPS  B2AR  MUOR
+    199   5.70x70  A235  Q231  <NA>
+    200   5.71x71  Q236  K232  <NA>
+    201   5.72x72  Q237  I233  <NA>
+    202   5.73x73  <NA>  D234  <NA>
+    203   5.74x74  <NA>  K235  <NA>
+    204   5.75x75  <NA>  S236  <NA>
+    205   5.76x76  <NA>  E237  <NA>
+
+    And now can decide how to drop, e.g. dropping any column
+    that has any NaN:
+
+    >>> AC.AAresSeq_match("5.7*", drop_columns_how="any", drop_order="columns_first")
+        consensus  B2AR
+    199   5.70x70  Q231
+    200   5.71x71  K232
+    201   5.72x72  I233
+    202   5.73x73  D234
+    203   5.74x74  K235
+    204   5.75x75  S236
+    205   5.76x76  E237
+
+    The "any" scheme aggresively trims columns, yielding a larger label selection.
+    Another approach is to "give up" some rows and try to keep more columns, by
+    making the column-dropping criterion harder via the "all" scheme
+
+    >>> AC.AAresSeq_match("5.7*", drop_columns_how="all", drop_order="columns_first")
         consensus   OPS  B2AR
-    202   5.70x70  A235  Q231
-    203   5.71x71  Q236  K232
-    204   5.72x72  Q237  I233
+    199   5.70x70  A235  Q231
+    200   5.71x71  Q236  K232
+    201   5.72x72  Q237  I233
 
-    You notice the "MUOR"-column is missing, because it doesn't have '5.7*' residues
+    Take a look ot the documentation of the :obj:`mdciao.nomenclature.trim` method
+    for other scenarios.
 
     """
 
@@ -1955,111 +1992,62 @@ class AlignerConsensus(object):
         """
         return self._AAresSeq
 
-    def residxs_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
+    @_kwargs_subs(trim, exclude=["filter_on"])
+    def residxs_match(self, patterns=None, **trim_kwargs) -> _DataFrame:
         r"""
         Filter the `self.residxs` by rows and columns.
 
-        You can filter by consensus label using `patterns` and by system using `keys`.
+        Thinly wraps around :obj:`mdciao.nomenclature.trim`, see the note there for extensive info.
 
         By default, rows where None, or NaNs are present are excluded.
 
         Parameters
         ----------
-        patterns : str, default is None
-            A list in CSV-format of patterns to be matched
-            by the consensus labels. Matches are done using
-            Unix filename pattern matching, and are allows
-            for exclusion, e.g. "3.*,-3.5*." will include all
-            residues in TM3 except those in the segment 3.50...3.59
-        keys : list, default is None
-            If only a sub-set of columns need to match,
-            provide them here as list of strings. If
-            None, all columns will be used.
-        select_keys : bool, default is False
-            Use the `patterns` not only to select
-            for rows but also to select for columns, i.e.
-            for keys. Keys (=columns) not featuring
-            any `patterns` will be dropped.
-        omit_missing : bool, default is True
-            Omit rows with missing values.
+        %(substitute_kwargs)s
 
         Returns
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.residxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
-                             filter_on="consensus")
+        return trim(self.residxs, patterns=patterns, filter_on="consensus", **trim_kwargs)
 
-    def AAresSeq_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
+    @_kwargs_subs(trim, exclude=["filter_on"])
+    def AAresSeq_match(self,  patterns=None, **trim_kwargs) -> _DataFrame:
         r"""
         Filter the `self.AAresSeq` by rows and columns.
 
-        You can filter by consensus label using `patterns` and by system using `keys`.
+        Thinly wraps around :obj:`mdciao.nomenclature.trim`, see the note there for extensive info.
 
         By default, rows where None, or NaNs are present are excluded.
 
         Parameters
         ----------
-        patterns : str, default is None
-            A list in CSV-format of patterns to be matched
-            by the consensus labels. Matches are done using
-            Unix filename pattern matching, and are allows
-            for exclusion, e.g. "3.*,-3.5*." will include all
-            residues in TM3 except those in the segment 3.50...3.59
-        keys : list, default is None
-            If only a sub-set of columns need to match,
-            provide them here as list of strings. If
-            None, all columns will be used.
-        select_keys : bool, default is False
-            Use the `patterns` not only to select
-            for rows but also to select for columns, i.e.
-            for keys. Keys (=columns) not featuring
-            any `patterns` will be dropped.
-        omit_missing : bool, default is True
-            Omit rows with missing values,
+        %(substitute_kwargs)s
 
         Returns
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.AAresSeq, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
-                             filter_on="consensus")
+        return trim(self.AAresSeq,  patterns=patterns, filter_on="consensus", **trim_kwargs)
 
-    def CAidxs_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
+    @_kwargs_subs(trim, exclude=["filter_on"])
+    def CAidxs_match(self,  patterns=None, **trim_kwargs) -> _DataFrame:
         r"""
         Filter the `self.CAidxs` by rows and columns.
 
-        You can filter by consensus label using `patterns` and by system using `keys`.
+        Thinly wraps around :obj:`mdciao.nomenclature.trim`, see the note there for extensive info.
 
         By default, rows where None, or NaNs are present are excluded.
 
         Parameters
         ----------
-        patterns : str, default is None
-            A list in CSV-format of patterns to be matched
-            by the consensus labels. Matches are done using
-            Unix filename pattern matching, and are allows
-            for exclusion, e.g. "3.*,-3.5*." will include all
-            residues in TM3 except those in the segment 3.50...3.59H8
-             * "G.S*" will include all beta-sheets
-        keys : list, default is None
-            If only a sub-set of columns need to match,
-            provide them here as list of strings. If
-            None, all columns (except `filter_on`) will be used.
-        select_keys : bool, default is False
-            Use the `patterns` not only to select
-            for rows but also to select for columns, i.e.
-            for keys. Keys (=columns) not featuring
-            any `patterns` will be dropped.
-        omit_missing : bool, default is True
-            Omit rows with missing values
+        %(substitute_kwargs)s
 
         Returns
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.CAidxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
-                             filter_on="consensus")
+        return trim(self.CAidxs,  patterns=patterns, filter_on="consensus", **trim_kwargs)
 
     def sequence_match(self,patterns=None, absolute=False)-> _DataFrame:
         r"""Matrix with the percentage of sequence identity within the set of the residues sharing consensus labels
