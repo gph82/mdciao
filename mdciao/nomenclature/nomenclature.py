@@ -2314,7 +2314,7 @@ def trim(df: _DataFrame, patterns=None, keys=None,
 
     if drop_order == "rows_first":
         if verbose:
-            print(f"Keep is {drop_order!r}, i.e. dropping rows with {drop_rows_how!r} before dropping columns with {drop_columns_how!r}")
+            print(f"`drop_order` is {drop_order!r}, i.e. dropping rows with {drop_rows_how!r} before dropping columns with {drop_columns_how!r}")
         if isinstance(drop_rows_how, str):
             df = df.dropna(how=drop_rows_how, axis="index")
             if verbose:
@@ -2327,7 +2327,7 @@ def trim(df: _DataFrame, patterns=None, keys=None,
                 _mdcu.sequence.print_verbose_dataframe(df)
     elif drop_order == "columns_first":
         if verbose:
-            print(f"Keep is {drop_order!r}, i.e. dropping columns with {drop_columns_how!r} before dropping rows with {drop_rows_how!r}")
+            print(f"`drop_order` is {drop_order!r}, i.e. dropping columns with {drop_columns_how!r} before dropping rows with {drop_rows_how!r}")
         if isinstance(drop_columns_how, str):
             df = df.dropna(how=drop_columns_how, axis="columns")
             if verbose:
