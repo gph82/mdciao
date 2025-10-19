@@ -1701,7 +1701,7 @@ def docstring2cmdblocks(method):
             padding = line.split(">>>")[0]
             block = []
         if inblock:
-            if line.startswith(padding):
+            if len(line.strip())> 0 and line.startswith(padding):
                 block.append(line.strip())
             else:
                 inblock = False
