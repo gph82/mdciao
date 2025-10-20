@@ -1738,12 +1738,12 @@ class Test_trim(unittest.TestCase):
         cls.blocks=blocks
 
     def block2testdf(self, cmd):
-        assert cmd.removeprefix(">>>").strip().startswith("trim")
+        assert _remove_prefix_compat(cmd, ">>>").strip().startswith("trim")
         params = cmd.split("(", 1)[1].strip().rstrip(")")
         # print(cmd)
         assert params.startswith("AC.residxs, ")
         params = {keyval.split("=")[0]: keyval.split("=")[1].strip("'").strip('"') for keyval in
-                  params.removeprefix("AC.residxs, ").split(", ")}
+                  _remove_prefix_compat(params, "AC.residxs, ").split(", ")}
         params = {key: [None if str(val).strip().lower() == "none" else val][0] for key, val in params.items()}
         # print(params)
         test_df = nomenclature.trim(self.dataframes[0], verbose=True, **params)
@@ -1751,7 +1751,7 @@ class Test_trim(unittest.TestCase):
 
     def test_setup_correct(self):
         assert len(self.dataframes)==8
-        assert self.cmds[0].removeprefix(">>>").strip() == "AC.residxs"
+        assert _remove_prefix_compat(self.cmds[0], ">>>").strip() == "AC.residxs"
         assert all([cmd.startswith(">>>") for cmd in self.cmds])
         assert all([isinstance(idf, DataFrame) for idf in self.dataframes])
 
@@ -1765,3 +1765,12 @@ class Test_trim(unittest.TestCase):
                 print(doc_df)
                 print(test_df)
                 raise e
+def _remove_prefix_compat(istr, prefix):
+    # TODO remove after dropping py38 comp
+    try:
+        return istr.removeprefix(prefix)
+    except AttributeError:
+        if istr.startswith(prefix):
+            return istr[len(prefix):]
+        else:
+            return istr
