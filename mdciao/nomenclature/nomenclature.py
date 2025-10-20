@@ -1808,7 +1808,7 @@ class AlignerConsensus(object):
 
     """
 
-    def __init__(self, maps, tops=None):
+    def __init__(self, maps, tops=None, progressbar=False):
         r"""
 
         Parameters
@@ -1856,6 +1856,10 @@ class AlignerConsensus(object):
             respectively (otherwise these methods return None).
             If `tops` is present, self.keys will be in
             the same order as they appear in `tops`.
+
+        progressbar : bool, default is False
+            Whether to show a progressbar or not
+
         """
         self._tops = tops
         # we keep the order of keys if top is present
@@ -1897,7 +1901,7 @@ class AlignerConsensus(object):
         if self.tops is not None:
             self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
             self._residxs = self._residxs.astype({key: "Int64" for key in self.keys})
-            for key in self.keys:
+            for ii, key in _tqdm(enumerate(self.keys), disable= not progressbar, total=len(self.keys)):
                 not_nulls = self.residxs[key].notnull()
                 #TODO check alternative for speedups
                 #self._AAresSeq.loc[not_nulls, key]=self.residxs[key][not_nulls].map(lambda ii : _mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),
@@ -2364,8 +2368,8 @@ def _alignment_df2_conslist(alignment_as_df,
     -------
     consensus_labels : list
         List of consensus labels (when available, else None)
-         up to the highest residue idx in "idx_0"
-         of the alignment DF
+        up to the highest residue idx in "idx_0"
+        of the alignment DF
     """
 
     n_residues = _np.max([int(ival) for ival in alignment_as_df["idx_0"].values if str(ival).isdigit()])
@@ -3626,7 +3630,7 @@ def _Spreadsheets2mdTrajectory(source):
     Parameters
     ----------
     source : dict or str
-        A dictionary of :obj:`~pandas.Dataframe`
+        A dictionary of :obj:`~pandas.DataFrame`
         or a filename of an ExcelFile. It
         has to contain the keys or sheet names
         "topology", "bonds", "xyz" and "unitcell",
