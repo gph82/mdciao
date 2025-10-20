@@ -26,6 +26,8 @@ from unittest import mock
 
 from pandas import DataFrame, read_excel
 
+from pandas.testing import assert_frame_equal
+
 
 class Test_md_load_rcsb(unittest.TestCase):
 
@@ -1625,7 +1627,7 @@ class Test_AlignerConsensus(unittest.TestCase):
                          )
 
     def test_missing(self):
-        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=True)
+        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", drop_rows_how="any")
         self.assertEqual(matches.to_string(),
                          "    consensus  3CAP  1U19\n"
                          #"102   3.50x50  R135    <NA>\n"
@@ -1638,7 +1640,7 @@ class Test_AlignerConsensus(unittest.TestCase):
                          )
 
     def test_missing_False(self):
-        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=False)
+        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", drop_rows_how=None)
         self.assertEqual(matches.to_string(),
                          "    consensus  3CAP  1U19\n"
                          "102   3.50x50  R135  <NA>\n"
@@ -1664,7 +1666,7 @@ class Test_AlignerConsensus(unittest.TestCase):
         maps = self.AC_maps_w_tops.maps
         maps["3CAP"] = {key : val for key, val in maps["3CAP"].items() if not val.startswith("3.")} #pop TM3 out of the 3CAP's map
         AC = nomenclature.AlignerConsensus(maps)
-        matches = AC.AAresSeq_match("3.5*", select_keys=True)
+        matches = AC.AAresSeq_match("3.5*", drop_columns_how='any', drop_order="columns_first")
         self.assertEqual(matches.to_string(),
                          '    consensus  3SN6\n'
                          '102   3.50x50  R131\n'
@@ -1688,3 +1690,87 @@ class Test_AlignerConsensus(unittest.TestCase):
         self.assertEqual("      3CAP  3SN6\n" \
                          "3CAP     7     2\n" \
                          "3SN6     2     7", df.to_string())
+
+def docstring2cmdblocks(method):
+    inblock = False
+    blocks = []
+    for line in method.__doc__.splitlines():
+        if line.strip().startswith(">>>"):
+            # print(line)
+            inblock = True
+            padding = line.split(">>>")[0]
+            block = []
+        if inblock:
+            if len(line.strip())> 0 and line.startswith(padding):
+                block.append(line.strip())
+            else:
+                inblock = False
+                blocks.append(block)
+                # print(block)
+    return blocks
+
+class Test_trim(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # The test of this class is its own documentation. I would rather use
+        # doctest directly but string comparison to will be finicky anyway so
+        # I'm rolling my own here.
+        blocks = docstring2cmdblocks(nomenclature.trim)
+
+        cls.cmds, cls.dataframes = [], []
+        for block in blocks:
+            bcmds = [l.strip() for l in block if l.strip().startswith(">>>")]
+            assert len(bcmds)==1
+            cls.cmds.append(bcmds[0])
+            if len(block)>1:
+                _block = [l.replace(" ", "").split("|")[2:-1] for l in block if l.startswith("| ")]
+                idf = DataFrame(_block[1:],
+                                columns=_block[0],
+                                index=[int(l.replace(" ", "").split("|")[1]) for l in block[2:] if l.startswith("| ")])
+                idf = idf.replace("nan", None)
+                idf = idf.applymap(lambda x: [int(x) if x is not None and str(x).isdigit() else x][0])
+                cls.dataframes.append(idf)
+            else:
+                from pandas import RangeIndex
+                cls.dataframes.append(DataFrame(index=RangeIndex(0), columns=[]))
+
+        cls.blocks=blocks
+
+    def block2testdf(self, cmd):
+        assert _remove_prefix_compat(cmd, ">>>").strip().startswith("trim")
+        params = cmd.split("(", 1)[1].strip().rstrip(")")
+        # print(cmd)
+        assert params.startswith("AC.residxs, ")
+        params = {keyval.split("=")[0]: keyval.split("=")[1].strip("'").strip('"') for keyval in
+                  _remove_prefix_compat(params, "AC.residxs, ").split(", ")}
+        params = {key: [None if str(val).strip().lower() == "none" else val][0] for key, val in params.items()}
+        # print(params)
+        test_df = nomenclature.trim(self.dataframes[0], verbose=True, **params)
+        return test_df
+
+    def test_setup_correct(self):
+        assert len(self.dataframes)==8
+        assert _remove_prefix_compat(self.cmds[0], ">>>").strip() == "AC.residxs"
+        assert all([cmd.startswith(">>>") for cmd in self.cmds])
+        assert all([isinstance(idf, DataFrame) for idf in self.dataframes])
+
+    def test_works(self):
+        for cmd, test_df in zip(self.cmds[1:], self.dataframes[1:]):
+            doc_df = self.block2testdf(cmd)
+            try:
+                assert_frame_equal(doc_df, test_df, check_dtype=False)
+            except AssertionError as e:
+                print(f"Failed at cmd {cmd!r}")
+                print(doc_df)
+                print(test_df)
+                raise e
+def _remove_prefix_compat(istr, prefix):
+    # TODO remove after dropping py38 comp
+    try:
+        return istr.removeprefix(prefix)
+    except AttributeError:
+        if istr.startswith(prefix):
+            return istr[len(prefix):]
+        else:
+            return istr
