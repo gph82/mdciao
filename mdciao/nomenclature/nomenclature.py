@@ -1566,7 +1566,7 @@ def trim(df: _DataFrame, patterns=None, keys=None,
         >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how="any", drop_columns_how='all', drop_order="columns_first")
         |    |   consensus |   seqA |   seqB |   seqC |
         |----|-------------|--------|--------|--------|
-        |  1 |         6.50 |      1 |      2 |     11 |
+        |  1 |        6.50 |      1 |      2 |     11 |
 
        This is also a usable selection, but we prioritized rows over columns.
     Final thoughts:
