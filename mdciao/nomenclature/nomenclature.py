@@ -1474,6 +1474,8 @@ def trim(df: _DataFrame, patterns=None, keys=None,
     filter_on : str, default is 'consensus'
         The column of `df` on which the `patterns`
         will be used for a match using `patterns`.
+    verbose: bool, default is False
+        Be very verbose, helps when deciding trimming stragegies
 
     Returns
     -------
