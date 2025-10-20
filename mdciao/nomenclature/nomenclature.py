@@ -912,15 +912,6 @@ class LabelerConsensus(object):
              * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
             will be relabeled as
              * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
-        min_seqID_rate : float, default is .5
-            With big topologies and many fragments,
-            the alignment method (:obj:`mdciao.sequence.my_bioalign`)
-            sometimes yields sub-optimal results. A value
-            :obj:`min_seqID_rate` >0, e.g. .5 means that a pre-alignment
-            takes place to populate :obj:`restrict_to_residxs`
-            with indices of those the fragments
-            (:obj:`mdciao.fragments.get_fragments` defaults)
-            with more than 50%% alignment in the pre-alignment.
         aligntop_kwargs : dict
             Optional parameters for :obj:`~mdciao.nomenclature.LabelerConsensus.aligntop`,
             which are listed below
