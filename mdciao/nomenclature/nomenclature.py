@@ -1855,7 +1855,9 @@ class AlignerConsensus(object):
             and :obj:`~mdciao.nomenclature.AlignerConsensus.residxs`,
             respectively (otherwise these methods return None).
             If `tops` is present, self.keys will be in
-            the same order as they appear in `tops`.
+            the same order as they appear in `tops`. If you provide
+            tops with residues lacking one-letter codes or Cɑ-atoms,
+            the object will not initialize.
 
         progressbar : bool, default is False
             Whether to show a progressbar or not
@@ -1898,7 +1900,15 @@ class AlignerConsensus(object):
         self._residxs = self._residxs.sort_values("consensus", key=lambda col: col.map(lambda x: sorted_keys.index(x)))
         self._residxs.index = _np.arange(len(self._residxs))
 
+        def _error_mssg(missing_what, ii, key, nsuch):
+            estr = f"Some residues are missing {missing_what:<17} in the {ii:6}-ith topology, keyed {str(key)!r}. "
+            estr += f"There are {nsuch:6} such topologies so far."
+            return estr
+
         if self.tops is not None:
+            err_msg = []
+            _tops_missing_CAs = []
+            _tops_bad_AA_codes = []
             self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
             self._residxs = self._residxs.astype({key: "Int64" for key in self.keys})
             for ii, key in _tqdm(enumerate(self.keys), disable= not progressbar, total=len(self.keys)):
@@ -1906,12 +1916,34 @@ class AlignerConsensus(object):
                 #TODO check alternative for speedups
                 #self._AAresSeq.loc[not_nulls, key]=self.residxs[key][not_nulls].map(lambda ii : _mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),
                 #                                                          keep_index=True))
-                self._AAresSeq[key] = [[_mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),keep_index=True) if not_null else ii][0]
+                try:
+                    self._AAresSeq[key] = [[_mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),keep_index=True) if not_null else ii][0]
                                        for not_null, ii in zip(not_nulls, self.residxs[key])]
-                self._CAidxs[key] = [[self.tops[key].residue(ii).atom("CA").index if not_null else ii][0]
-                                     for not_null, ii in zip(not_nulls, self.residxs[key])]
+                except KeyError as e:
+                    _tops_bad_AA_codes.append(key)
+                    print(_error_mssg("one-letter codes", ii, key, len(_tops_bad_AA_codes)), flush=True)
+
+                try:
+                    self._CAidxs[key] = [[self.tops[key].residue(ii).atom("CA").index if not_null else ii][0]
+                                         for not_null, ii in zip(not_nulls, self.residxs[key])]
+                except KeyError as e:
+                    _tops_missing_CAs.append(key)
+                    print(_error_mssg("Cɑ-atoms", ii, key, len(_tops_missing_CAs)), flush=True)
                 self._maps[key] = {val : key for ii, (not_null, (key, val)) in enumerate(zip(not_nulls, self.AAresSeq[["consensus", key]].values)) if
                                                 not_null}
+            if len(_tops_missing_CAs) > 0:
+                err_msg.append(
+                    f"{len(_tops_missing_CAs):3} out of the {len(tops):3} topologies provided in `tops` "
+                    f"contain residues with consensus labels but lacking Cɑ-atoms:\n" \
+                    f"{_tops_missing_CAs}")
+            if len(_tops_bad_AA_codes) > 0:
+                err_msg.append(
+                    f"{len(_tops_bad_AA_codes):3} out of the {len(tops):3} topologies provided in `tops` "
+                    f"contain residues with consensus labels but lacking one-letter residue codes:\n"
+                    f"{_tops_bad_AA_codes}")
+            if len(err_msg)>0:
+                raise ValueError("\n".join(err_msg+[f"\nThe {self.__class__.__name__!r} cannot function with "
+                                                    f"these topologies and thus it was not constructed.\n"]))
 
             self._CAidxs = self._CAidxs.astype({key: "Int64" for key in self.keys})
         else:
