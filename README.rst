@@ -48,8 +48,8 @@ System Requirements
 ===================
 ``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions>`_ for GNU/Linux and MacOs. Tested Python versions are:
 
-* GNU/Linux: 3.7, 3.8, 3.9, 3.10, 3.11, 3.12
-* MacOs: 3.7, 3.8, 3.9, 3.10, 3.11, 3.12. For Python 3.7, four CI-tests involving `mdtraj.compute_dssp <https://www.mdtraj.org/1.9.8.dev0/api/generated/mdtraj.compute_dssp.html?highlight=dssp#mdtraj.compute_dssp>`_ , are skipped because of a hard to reproduce, random segmentation fault, which apparently wont fix, see here `<https://github.com/mdtraj/mdtraj/issues/1574>`_ and  `here <https://github.com/mdtraj/mdtraj/issues/1473>`_.
+* GNU/Linux: 3.8, 3.9, 3.10, 3.11, 3.12
+* MacOs: 3.8, 3.9, 3.10, 3.11, 3.12.
 
 So everything should work *out of the box* in these conditions.
 

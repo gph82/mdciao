@@ -7,7 +7,7 @@ name = "mdciao"
 version = "1.0.0"
 authors = [{name = "Guillermo Perez-Hernandez", email = "guillermo.perez@charite.de"}]
 description = "mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data"
-classifiers = [ "Development Status :: 4 - Beta",
+classifiers = [ "Development Status :: 5 - Production/Stable",
                 "Programming Language :: Python :: 3",
                 "Operating System :: OS Independent",
                 "Intended Audience :: Science/Research",
@@ -15,7 +15,7 @@ classifiers = [ "Development Status :: 4 - Beta",
                 "Topic :: Scientific/Engineering :: Chemistry",
                 "Topic :: Scientific/Engineering :: Bio-Informatics",
                 "Topic :: Scientific/Engineering :: Visualization",]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [ "cython",
                  "numpy<2; python_version<='3.9'",
                  "numpy>=1.18.1",
@@ -24,14 +24,11 @@ dependencies = [ "cython",
                  "astunparse; python_version!='3.8'",
                  "astunparse<1.6.3; python_version=='3.8'",
                  "pandas",
-                 "matplotlib<=3.5.3; python_version<'3.8'",
-                 "scipy<=1.9.0; python_version<='3.8'",
+                 "matplotlib",
                  "scipy",
                  "joblib",
                  "openpyxl",
                  "biopython>=1.77",
-                 "ipython<=8.12; python_version<='3.8'",
-                 "ipython==7.*; python_version=='3.7'",
                  "ipython",
                  "XlsxWriter",
                  "requests",
