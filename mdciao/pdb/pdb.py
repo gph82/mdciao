@@ -26,10 +26,7 @@ from mdtraj import load_pdb as _mdloadpdb
 from Bio import PDB as _PDB
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from shutil import copy as _copy, copyfileobj as _copyfileobj
-try:
-    from shutil import COPY_BUFSIZE as _COPY_BUFSIZE
-except ImportError:
-    _COPY_BUFSIZE =  1024 * 64 #py37 shutil has this buffersize hard-coded 256 * 64, i'm setting 1024 * 64 across the board
+from shutil import COPY_BUFSIZE as _COPY_BUFSIZE
 
 from urllib.error import HTTPError as _HTTPError, URLError as _URLError
 from urllib.request import urlopen as _urlopen
@@ -118,7 +115,8 @@ def pdb2traj(code,
              filename=None,
              verbose=True,
              url="https://files.rcsb.org/download/",
-             cif_first=False
+             cif_first=False,
+             cif_mdtraj = True,
              ):
     r""" Return a :obj:`~mdtraj.Trajectory` from a four-letter PDB code via RCSB PDB lookup
 
@@ -163,6 +161,9 @@ def pdb2traj(code,
         base URL for lookups
     cif_first : boolean, default is False
         Try to get the .cif-file first instead of the .pdb-file
+    cif_mdtraj : bool, default is True
+        Try to use mdtraj's cif-loader (new versions)
+
     Returns
     -------
     traj : :obj:`~mdtraj.Trajectory` or None
@@ -185,9 +186,12 @@ def pdb2traj(code,
                         if ext=="pdb":
                             geom = _mdloadpdb(tmp_file.name)
                         elif ext=="cif":
-                            structure = _PDB.MMCIFParser().get_structure(tmp_file.name, tmp_file.name)
-                            cif_dict = _PDB.MMCIF2Dict.MMCIF2Dict(tmp_file.name)
-                            geom = _BIOStructure2MDTrajectory(structure,cif_dict=cif_dict)
+                            if cif_mdtraj:
+                                geom = _mdloadcif(tmp_file.name)
+                            else:
+                                structure = _PDB.MMCIFParser().get_structure(tmp_file.name, tmp_file.name)
+                                cif_dict = _PDB.MMCIF2Dict.MMCIF2Dict(tmp_file.name)
+                                geom = _BIOStructure2MDTrajectory(structure,cif_dict=cif_dict)
                         if filename is not None:
                             if isinstance(filename, bool) and filename:
                                 filename = f"{code}.{ext}"
