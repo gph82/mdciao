@@ -90,7 +90,7 @@ class Test_pdb2traj(unittest.TestCase):
     def test_mdtraj_cif(self):
         import sys
         if sys.version_info.minor<=10:
-            with self.assertRaises():
+            with self.assertRaises(ValueError):
                 traj = pdb.pdb2traj("4V6X")
         else:
             traj = pdb.pdb2traj("4V6X")
