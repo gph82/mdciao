@@ -303,4 +303,4 @@ def _BIOStructure2MDTrajectory(structure, cif_dict=None):
     """
     with _NamedTemporaryFile(delete=True, suffix=".pdb") as tmp_file:
         _BIOStructure2pdbfile(structure, tmp_file.name, cif_dict=cif_dict, disordered_select_A=True)
-        return _mdloadpdb(tmp_file.name)
+        return _mdload_frame(tmp_file.name,0)
