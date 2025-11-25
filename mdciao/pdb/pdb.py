@@ -21,7 +21,14 @@
 ##############################################################################
 
 import requests as _requests
-from mdtraj import load_frame as _mdload_frame, _version as _mdversion
+from mdtraj import load_frame as _mdload_frame
+try:
+    from mdtraj import _version as _mdversion
+    _mdver = _mdversion.get_versions()['version']
+except ImportError:
+    from mdtraj import version as _version
+    _mdver = _version.version
+
 from platform import python_version as _python_version
 
 from Bio import PDB as _PDB
@@ -197,7 +204,7 @@ def pdb2traj(code,
                                 try:
                                     geom = _mdload_frame(tmp_file.name,0)
                                 except ModuleNotFoundError as e:
-                                    raise ValueError(f"\nYou cannot use 'cif_mdtraj'=True with mdtraj version < 1.11.10. Currently you are using mdtraj {_mdversion.get_versions()['version']}. "
+                                    raise ValueError(f"\nYou cannot use 'cif_mdtraj'=True with mdtraj version < 1.11.10. Currently you are using mdtraj {_mdver}. "
                                                      f"\nNote that mdtraj version >= 1.11.10 requires python > 3.11. Currently you are using pytyhon {_python_version()}.")
 
                             else:
