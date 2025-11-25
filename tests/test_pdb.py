@@ -3,6 +3,7 @@ import unittest
 from tempfile import TemporaryDirectory as _TD
 import os
 from mdciao.examples.examples import remember_cwd, filenames
+import mdtraj as md
 from Bio.PDB import MMCIFParser, MMCIF2Dict
 import gzip, shutil
 from scipy.spatial.distance import cdist
@@ -85,6 +86,16 @@ class Test_pdb2traj(unittest.TestCase):
 
     def test_wrong_url(self):
         pdb.pdb2traj("3SNXX")
+
+    def test_mdtraj_cif(self):
+        import sys
+        if sys.version_info.minor<=10:
+            with self.assertRaises():
+                traj = pdb.pdb2traj("4V6X")
+        else:
+            traj = pdb.pdb2traj("4V6X")
+        assert isinstance(traj, md.Trajectory)
+
 
 class Test_BiopythonPDB(unittest.TestCase):
 
