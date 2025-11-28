@@ -94,7 +94,7 @@ class Test_pdb2traj(unittest.TestCase):
                 traj = pdb.pdb2traj("4V6X")
         else:
             traj = pdb.pdb2traj("4V6X")
-        assert isinstance(traj, md.Trajectory)
+            assert isinstance(traj, md.Trajectory)
 
 
 class Test_BiopythonPDB(unittest.TestCase):
