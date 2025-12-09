@@ -48,8 +48,8 @@ System Requirements
 ===================
 ``mdciao`` is developed in GNU/Linux, and CI-tested via `github actions <https://github.com/gph82/mdciao/actions>`_ for GNU/Linux and MacOs. Tested Python versions are:
 
-* GNU/Linux: 3.7, 3.8, 3.9, 3.10, 3.11, 3.12
-* MacOs: 3.7, 3.8, 3.9, 3.10, 3.11, 3.12. For Python 3.7, four CI-tests involving `mdtraj.compute_dssp <https://www.mdtraj.org/1.9.8.dev0/api/generated/mdtraj.compute_dssp.html?highlight=dssp#mdtraj.compute_dssp>`_ , are skipped because of a hard to reproduce, random segmentation fault, which apparently wont fix, see here `<https://github.com/mdtraj/mdtraj/issues/1574>`_ and  `here <https://github.com/mdtraj/mdtraj/issues/1473>`_.
+* GNU/Linux: 3.8, 3.9, 3.10, 3.11, 3.12
+* MacOs: 3.8, 3.9, 3.10, 3.11, 3.12.
 
 So everything should work *out of the box* in these conditions.
 
@@ -73,12 +73,9 @@ Authors
 
 Please cite:
  * mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data
-    | Guillermo Pérez-Hernández, Peter-Werner Hildebrand
-    | bioRxiv 2022.07.15.500163
-    | https://doi.org/10.1101/2022.07.15.500163
- * mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data
-    | Guillermo Pérez-Hernández, Peter-Werner Hildebrand
-    | PLOS Computational Biology, 2025 (accepted, will supersede the bioRxiv reference)
+    | Guillermo Pérez-Hernández, Peter W. Hildebrand
+    | PLoS Comput Biol 21(4): e1012837.
+    | https://doi.org/10.1371/journal.pcbi.1012837
 
 Scope
 ======

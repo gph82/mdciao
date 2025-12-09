@@ -437,6 +437,12 @@ class test_histogram_w_smoothing_auto(unittest.TestCase):
             y = line.get_xydata()[:,1]
             assert y.max()==3.14
 
+    def test_just_runs_all_bincount(self):
+        ax = plots.plot_histogram_w_smoothing_auto(_np.random.randint(200, size=100), bincount=True, maxcount=3.14)
+        for line in ax.lines:
+            y = line.get_xydata()[:, 1]
+            assert y.max() == 3.14
+
 
 class Test_plot_w_smoothing_auto(unittest.TestCase):
 

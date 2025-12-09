@@ -38,22 +38,15 @@ from pandas import \
     ExcelFile as _ExcelFile
 
 from contextlib import nullcontext as _nullcontext
-
 from collections import defaultdict as _defdict, namedtuple as _namedtuple
-
 from textwrap import wrap as _twrap
-
 from mdciao.filenames import FileNames as _FN
-
 from os import path as _path
-
 import requests as _requests
-
 from natsort import natsorted as _natsorted
-
 from string import ascii_uppercase as _ascii_uppercase
-
 from inspect import signature as _signature
+from tqdm.auto import tqdm as _tqdm
 
 _filenames = _FN()
 _AA_chars_no_X = [char for char in _md.core.residue_names._AMINO_ACID_CODES.values() if char not in ["X", None]]

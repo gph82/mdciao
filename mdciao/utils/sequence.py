@@ -20,6 +20,7 @@ Functions
 import numpy as _np
 from pandas import DataFrame as _DF
 from .lists import contiguous_ranges as _cranges
+from .residue_and_atom import shorten_AA as _shorten_AA
 import pandas as _pd
 from IPython.display import display as _display
 from collections import namedtuple as _namedtuple
@@ -82,24 +83,35 @@ def print_verbose_dataframe(df):
                             'display.width', 1000):
         _display(df)
 
-def top2seq(top, replacement_letter="X"):
+def top2seq(top, substitute_fail="X"):
     r"""
     Return the AA sequence of :obj:`top` as a string
+
+    For cases where there are no short codes (e.g. nucleotides), see `substitute_fail`
 
     Parameters
     ----------
     top : :obj:`mdtraj.Topology`
-    replacement_letter : str, default is "X"
-        If the AA has no one-letter-code,
-        return this letter instead has to be a str of len(1)
+    substitute_fail : str, default is "X"
+        If a residue has no .code  attribute, there are different options
+        depending on the value of this parameter:
+
+        * None : throw an exception when no short code is found (default)
+        * 'c': any alphabetic character, as long as it is of len=1
+        * 0 : the first alphabetic character in the residue's name
+
+        Note that, even if this method wraps around
+        :obj:`~mdciao.utils.residue_and_atom.shorten_AA`
+        and shares the parameter `substitute_fail` with it, you cannot pass
+        `substitute_fail`="long" here.
 
     Returns
     -------
-    seq : str of len top.n_residues
+    seq : str
+        Sequence as a string of len top.n_residues
     """
-    assert len(replacement_letter)==1
-
-    return ''.join([str(rr.code).replace("None",replacement_letter) for rr in top.residues])
+    assert str(substitute_fail).lower()!="long", ValueError('Cannot pass `substitute_fail`="long" here!')
+    return ''.join([_shorten_AA(rr, substitute_fail=substitute_fail, keep_index=False) for rr in top.residues])
 
 def my_bioalign(seq1, seq2,
                 method="global",

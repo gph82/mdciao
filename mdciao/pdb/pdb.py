@@ -21,15 +21,20 @@
 ##############################################################################
 
 import requests as _requests
+from mdtraj import load_frame as _mdload_frame
+try:
+    from mdtraj import _version as _mdversion
+    _mdver = _mdversion.get_versions()['version']
+except ImportError:
+    from mdtraj import version as _version
+    _mdver = _version.version
 
-from mdtraj import load_pdb as _mdloadpdb
+from platform import python_version as _python_version
+
 from Bio import PDB as _PDB
 from tempfile import NamedTemporaryFile as _NamedTemporaryFile
 from shutil import copy as _copy, copyfileobj as _copyfileobj
-try:
-    from shutil import COPY_BUFSIZE as _COPY_BUFSIZE
-except ImportError:
-    _COPY_BUFSIZE =  1024 * 64 #py37 shutil has this buffersize hard-coded 256 * 64, i'm setting 1024 * 64 across the board
+from shutil import COPY_BUFSIZE as _COPY_BUFSIZE
 
 from urllib.error import HTTPError as _HTTPError, URLError as _URLError
 from urllib.request import urlopen as _urlopen
@@ -118,7 +123,8 @@ def pdb2traj(code,
              filename=None,
              verbose=True,
              url="https://files.rcsb.org/download/",
-             cif_first=False
+             cif_first=False,
+             cif_mdtraj = True,
              ):
     r""" Return a :obj:`~mdtraj.Trajectory` from a four-letter PDB code via RCSB PDB lookup
 
@@ -128,8 +134,11 @@ def pdb2traj(code,
 
     Note
     ----
-    Since mdtraj does not read mmCIFs natively (uses openmm to read them),
-    mdciao opts to stay inside the existing dependencies and use BioPython's
+    mdtraj ported the mmCIF reader capability from OpenMM in v 1.11.0
+    `in June 2025 <https://github.com/mdtraj/mdtraj/pull/2004>`_, which it requires
+    python >= 3.11. This method tries to use mdtraj for .cif-files by default,
+    raising a ValueError if this is not possible. The error suggests to set
+    `cif_mdtraj=False`, which then uses BioPython's
     `PDB.MMCIFParser <https://biopython.org/docs/dev/api/Bio.PDB.MMCIFParser.html>`_ . and
     `PDB.MMCIF2Dict <https://biopython.org/docs/dev/api/Bio.PDB.MMCIF2Dict.html>`_ modules
     to read .cif-files. The conversion to .pdb is done by writing to a temporary .pdb-file
@@ -160,9 +169,15 @@ def pdb2traj(code,
         if file exists.
     verbose : bool, default is False
     url : str, default is 'https://files.rcsb.org/download'
-        base URL for lookups
+        Base URL for lookups.
     cif_first : boolean, default is False
         Try to get the .cif-file first instead of the .pdb-file
+    cif_mdtraj : bool, default is True
+        Try to use mdtraj's ported cif-loader, which is available
+        from mdtraj v 1.11.0 (June 24, 2025) onward, which requires
+        python >= 3.11. Else use the BioPython parsers, which
+        will fail for some PDBs, e.g. 4V6X.
+
     Returns
     -------
     traj : :obj:`~mdtraj.Trajectory` or None
@@ -182,12 +197,20 @@ def pdb2traj(code,
                 if response.status == 200:
                     with _NamedTemporaryFile(delete=True, suffix=f".{ext}") as tmp_file:
                         _copyfileobj(response, tmp_file, length=_COPY_BUFSIZE*2)
-                        if ext=="pdb":
-                            geom = _mdloadpdb(tmp_file.name)
+                        if ext == "pdb":
+                            geom = _mdload_frame(tmp_file.name, 0)
                         elif ext=="cif":
-                            structure = _PDB.MMCIFParser().get_structure(tmp_file.name, tmp_file.name)
-                            cif_dict = _PDB.MMCIF2Dict.MMCIF2Dict(tmp_file.name)
-                            geom = _BIOStructure2MDTrajectory(structure,cif_dict=cif_dict)
+                            if cif_mdtraj:
+                                try:
+                                    geom = _mdload_frame(tmp_file.name,0)
+                                except ModuleNotFoundError as e:
+                                    raise ValueError(f"\nYou cannot use 'cif_mdtraj'=True with mdtraj version < 1.11.10. Currently you are using mdtraj {_mdver}. "
+                                                     f"\nNote that mdtraj version >= 1.11.10 requires python > 3.11. Currently you are using pytyhon {_python_version()}.")
+
+                            else:
+                                structure = _PDB.MMCIFParser().get_structure(tmp_file.name, tmp_file.name)
+                                cif_dict = _PDB.MMCIF2Dict.MMCIF2Dict(tmp_file.name)
+                                geom = _BIOStructure2MDTrajectory(structure,cif_dict=cif_dict)
                         if filename is not None:
                             if isinstance(filename, bool) and filename:
                                 filename = f"{code}.{ext}"
@@ -287,4 +310,4 @@ def _BIOStructure2MDTrajectory(structure, cif_dict=None):
     """
     with _NamedTemporaryFile(delete=True, suffix=".pdb") as tmp_file:
         _BIOStructure2pdbfile(structure, tmp_file.name, cif_dict=cif_dict, disordered_select_A=True)
-        return _mdloadpdb(tmp_file.name)
+        return _mdload_frame(tmp_file.name,0)

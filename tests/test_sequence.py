@@ -22,7 +22,7 @@ class Test_top2seq(unittest.TestCase):
         _np.testing.assert_array_equal("EVWIEKXX",seq)
     def test_other_letter(self):
         top = md.load(test_filenames.small_monomer).top
-        seq = sequence.top2seq(top, replacement_letter="Y")
+        seq = sequence.top2seq(top, substitute_fail="Y")
         _np.testing.assert_array_equal("EVWIEKYY", seq)
 
 class Test_align_tops(unittest.TestCase):
