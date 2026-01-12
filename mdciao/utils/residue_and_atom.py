@@ -401,7 +401,7 @@ def shorten_AA(AA, substitute_fail=None, keep_index=False):
     #print(res, AA, substitute_fail)
     if "none" in str(res).lower():
         if substitute_fail is None:
-            raise KeyError("There is no short version for your input %s (%s)"%(AA, type(AA)))
+            raise KeyError(f"There is no short version for your input residue {AA}, {type(AA)}, {AA.name}")
         elif isinstance(substitute_fail,str):
             if substitute_fail.lower()=="long":
                 res = str(AA)
