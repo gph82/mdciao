@@ -32,6 +32,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
+    "sphinx.ext.todo",
     "sphinxarg.ext",
     "sphinx.ext.intersphinx",
     'sphinx_copybutton',
@@ -139,6 +140,9 @@ def rename_thumbnails(*args):
         exp = f"_build/doctrees/nbsphinx/notebooks_{nb_basename}_*_*.png" #doctrees/nbsphinx seems to be created already after "html-page-context"
         cands = [ff for ff in natsorted(glob(exp)) if not ff.endswith("selected_thumbnail.png")]
         #logger.info(f"Picking nr {fig_idx} from available files:"+"\n"+"\n".join(cands))
+        if not cands:
+            logger.warning(f"No thumbnails found for {nb_basename}")
+            continue
         source_name = cands[fig_idx]
         target_name = f"_build/doctrees/nbsphinx/notebooks_{nb_basename}_selected_thumbnail.png"
         #logger.info(f"Will copy {source_name} to {target_name}")
