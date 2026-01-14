@@ -9,10 +9,6 @@ maps between topologies etc)
 
 .. currentmodule:: mdciao.utils.sequence
 
-
-Functions
-=========
-
 .. autosummary::
    :toctree: generated/
 
@@ -48,14 +44,34 @@ class _ADF(_DF):
 
 class AlignmentDataFrame(_ADF):
     r"""
-    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score and the column key-map as metadata.
+    Sub-class of :obj:`~pandas.DataFrame` to include the alignment_score and the column key-map as metadata.
 
-    Simply pass them as arguments 'alignment_score=1, colmap={"idx_0" : "idx_Ecoli", ...} ' and they:
-     * can be then accessed via self.alignment_score and self.colmap
-     * are preserved downstream after operating on the df
+    Users should not instantiate this class directly, it is constructed
+    internally by mdciao when needed.
 
-    Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
-    for more info
+    The metadata attributes are stored as `self.alignment_score` and `self.colmap`.
+
+    If colmap is left to its default, it gets instantiated
+    the defaults of :obj:`alignment_result_to_list_of_dicts`
+
+    >>> {'AA_0' : 'AA_0',
+    >>>  'resSeq_0' : 'resSeq_0',
+    >>>  'idx_0' : 'idx_0',
+    >>>  'fullname_0' : 'fullname_0',
+    >>>  'idx_1' : 'idx_1',
+    >>>  'AA_1' : 'AA_1',
+    >>>  'fullname_1' : 'fullname_1'}
+
+    Else, it will be whatever map was passed, e.g:
+
+    >>> {'AA_0' : 'AA_WT',
+    >>>  'resSeq_0' : 'resSeq_WT',
+    >>>  'idx_0' : 'idx_WT',
+    >>>  'fullname_0' : 'fullname_WT',
+    >>>  'idx_1' : 'idx_MUT',
+    >>>  'AA_1' : 'AA_MUT',
+    >>>  'fullname_1' : 'fullname_MUT'}
+
     """
 
     def __init__(self,*args,**kwargs):
@@ -63,24 +79,16 @@ class AlignmentDataFrame(_ADF):
         if alignment_score is not None:
             kwargs.pop("alignment_score")
 
-        # This is the list that's the default in  :obj:`~mdciao.utils.sequence.alignment_result_to_list_of_dicts`
-        colmap_keys =  [
-            "AA_0",
-            "AA_1",
-            "resSeq_0",
-            "idx_0",
-            "idx_1",
-            'fullname_0',
-            'fullname_1',
-        ]
-        colmap = {key: key for key in colmap_keys}
+        _colmap_keys = _get_colmap_keys()
+        colmap = {key: key for key in _colmap_keys}
         for key, val in kwargs.pop("colmap",{}).items():
-            assert key in colmap.keys(), ValueError(f"Cannot pass a 'colmap' with a key '{key}' that isn't in '{colmap_keys}'")
+            assert key in colmap.keys(), ValueError(f"Cannot pass a 'colmap' with a key '{key}' that isn't in '{_colmap_keys}'")
             colmap[key] = val
 
         super().__init__(*args,**kwargs)
         self.alignment_score = alignment_score
         self.colmap = colmap
+        self.rename(columns=colmap,inplace=True)
 
 def _get_colmap_keys():
     r"""
