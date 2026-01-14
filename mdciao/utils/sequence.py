@@ -374,6 +374,7 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
                        seq_0_res_idxs=None,
                        seq_1_res_idxs=None,
                        return_DF=True,
+                       ADF_colmap=None,
                        verbose=False,
                        ):
     r""" Align two sequence-containing objects, i.e. strings and/or
@@ -404,6 +405,30 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
     return_DF : bool, default is True
         If False, a list of alignment dictionaries instead
         of :obj:`AlignmentDataFrame` s will be returned
+    ADF_colmap : dict or list, default is None
+        Only has effect if `return_DF` is True. Then, the names
+        of the columns of the returned :obj:`AlignmentDataFrame`
+        can have arbitrary names and be more informative.
+        If dictionary, you can perform fine-grained subsitutions, e.g.
+
+        >>> ADF_colmap = {"idx_0" : "seq_index_WT",
+        >>>               "idx_1" : "seq_index_MUT"}
+
+        If a list, e.g
+
+        >>> ADF_colmap = ["WT", "MUT"]
+
+        then "WT" and "MUT" are used as suffixes to re-map
+        the available keys, automatically building this map:
+
+        >>> {'AA_0' : 'AA_WT',
+        >>>  'resSeq_0' : 'resSeq_WT',
+        >>>  'idx_0' : 'idx_WT',
+        >>>  'fullname_0' : 'fullname_WT',
+        >>>  'idx_1' : 'idx_MUT',
+        >>>  'AA_1' : 'AA_MUT',
+        >>>  'fullname_1' : 'fullname_MUT'}
+
     verbose : bool, default is False
 
     Returns
@@ -460,7 +485,15 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
                                                    ) for aa in alignments]
 
     if return_DF:
-        return [AlignmentDataFrame(aa, alignment_score=score) for aa, score in zip(lists_of_lists_of_align_dicts,
+        _colmap_keys = _get_colmap_keys()
+        if ADF_colmap is None:
+            ADF_colmap = {}
+        elif isinstance(ADF_colmap, list):
+            assert len(ADF_colmap)==2, ValueError(f"The `ADF_colmap` should be of len two, but your input is len {len(ADF_colmap)}")
+            k0, k1 = ADF_colmap
+            ADF_colmap = {key : f"{key.split('_')[0]}_{k0}" for key in _colmap_keys if key.endswith("_0")}
+            ADF_colmap.update({key: f"{key.split('_')[0]}_{k1}" for key in _colmap_keys if key.endswith("_1")})
+        return [AlignmentDataFrame(aa, alignment_score=score, colmap=ADF_colmap) for aa, score in zip(lists_of_lists_of_align_dicts,
                                                                                   scores)]
     else:
         return lists_of_lists_of_align_dicts
