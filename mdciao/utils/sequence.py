@@ -25,7 +25,7 @@ import pandas as _pd
 from IPython.display import display as _display
 from collections import namedtuple as _namedtuple
 from Bio import Align as _BioAlign
-
+from inspect import signature as _signature
 
 # See "Define original properties" https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
 class _ADF(_DF):
@@ -81,6 +81,26 @@ class AlignmentDataFrame(_ADF):
         super().__init__(*args,**kwargs)
         self.alignment_score = alignment_score
         self.colmap = colmap
+
+def _get_colmap_keys():
+    r"""
+    Grab default values in :obj:`~mdciao.utils.sequence.alignment_result_to_list_of_dicts`
+
+    Returns
+    -------
+    colmap_keys : list
+
+    """
+    sig = _signature(alignment_result_to_list_of_dicts)
+    _colmap_keys = [sig.parameters.get(key).default for key in ["key_AA_code_seq_0",
+                                                                "key_resSeq_seq_0",
+                                                                "key_idx_seq_0",
+                                                                "key_full_resname_seq_0",
+                                                                "key_idx_seq_1",
+                                                                "key_AA_code_seq_1",
+                                                                "key_full_resname_seq_1"
+                                                                ]]
+    return _colmap_keys
 
 def print_verbose_dataframe(df):
     r"""
