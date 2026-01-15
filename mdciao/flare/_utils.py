@@ -648,13 +648,13 @@ def change_axlims_and_resize_Texts(iax, new_r, center=[0, 0]):
     -------
 
     """
-    old_d_x = _np.abs(_np.diff(iax.get_xlim()))
-    old_d_y = _np.abs(_np.diff(iax.get_ylim()))
+    old_d_x = _np.abs(_np.diff(iax.get_xlim()))[0]
+    old_d_y = _np.abs(_np.diff(iax.get_ylim()))[0]
     assert iax.get_aspect()==1
     assert old_d_x==old_d_y
     iax.set_xlim([center[0] - new_r, center[0] + new_r])
     iax.set_ylim([center[1] - new_r, center[1] + new_r])
-    new_d = _np.abs(_np.diff(iax.get_xlim()))
+    new_d = _np.abs(_np.diff(iax.get_xlim()))[0]
     [lab.set_fontsize(lab.get_fontsize() * (old_d_x / new_d)) for lab in iax.texts]
 
 def cart2pol(x, y):
