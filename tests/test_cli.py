@@ -138,39 +138,33 @@ class Test_residue_neighborhood(TestCLTBaseClass):
         super(Test_residue_neighborhood, cls).setUpClass()
         cls.no_disk = True  # doesn't seem to speed things up much
 
-    @mock.patch('builtins.input', lambda *args: '4')
-    def test_neighborhoods_no_disk_works(self):
+    @mock.patch('builtins.input', side_effects=1)
+    def test_neighborhoods_no_disk_works(self, mock_input):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
             with remember_cwd():
                 os.chdir(tmpdir)
-                input_values = (val for val in ["1.0"])
-                with mock.patch('builtins.input', lambda *x: next(input_values)):
-                    cli.residue_neighborhoods("200,395",
-                                              self.traj,
-                                              self.geom,
-                                              no_disk=True
-                                              )
+                cli.residue_neighborhoods("200,395",
+                                          self.traj,
+                                          self.geom,
+                                          no_disk=True
+                                          )
                 assert len(os.listdir(".")) == 0
 
-    @mock.patch('builtins.input', lambda *args: '4')
-    def test_neighborhoods(self):
+    @mock.patch('builtins.input', side_effects=1)
+    def test_neighborhoods(self, mock_input):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in ["1.0"])
-            with mock.patch('builtins.input', lambda *x: next(input_values)):
-                cli.residue_neighborhoods("200,395",
-                                          [self.traj, self.traj_reverse],
-                                          self.geom,
-                                          output_dir=tmpdir,
-                                          no_disk=self.no_disk)
-
-    def test_no_top(self):
+            cli.residue_neighborhoods("200,395",
+                                      [self.traj, self.traj_reverse],
+                                      self.geom,
+                                      output_dir=tmpdir,
+                                      no_disk=self.no_disk)
+    @mock.patch('builtins.input', side_effects=1)
+    def test_no_top(self, mock_input):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:
-            input_values = (val for val in ["1.0"])
-            with mock.patch('builtins.input', lambda *x: next(input_values)):
-                cli.residue_neighborhoods("200,395",
-                                          self.geom,
-                                          output_dir=tmpdir,
-                                          no_disk=self.no_disk)
+            cli.residue_neighborhoods("200,395",
+                                      self.geom,
+                                      output_dir=tmpdir,
+                                      no_disk=self.no_disk)
 
     def test_res_idxs(self):
         with TemporaryDirectory(suffix='_test_mdciao') as tmpdir:

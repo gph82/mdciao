@@ -724,29 +724,29 @@ class LabelerConsensus(object):
             seq_1_res_idxs = self.dataframe[self.dataframe.chain_id == chain_id[0]].index
         else:
             seq_1_res_idxs = None
-        df = _mdcu.sequence.align_tops_or_seqs(top,
-                                               self.seq,
-                                               seq_0_res_idxs=restrict_to_residxs,
-                                               seq_1_res_idxs=seq_1_res_idxs,
-                                               return_DF=True,
-                                               verbose=verbose,
-                                               )
+        algs_as_dfs = _mdcu.sequence.align_tops_or_seqs(top,
+                                                        self.seq,
+                                                        seq_0_res_idxs=restrict_to_residxs,
+                                                        seq_1_res_idxs=seq_1_res_idxs,
+                                                        return_DF=True,
+                                                        verbose=verbose,
+                                                        )
         consfrags = []
         # For clever alternatives https://stackoverflow.com/a/3844832
-        for ii, idf in enumerate(df):
+        for ii, idf in enumerate(algs_as_dfs):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
             consfrags.append(self._selfmap2frags(self2top))
-        n_alignments=len(df)
+        n_alignments=len(algs_as_dfs)
         frags_already_printed = False
-        for ii, idf in enumerate(df):
+        for ii, idf in enumerate(algs_as_dfs):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
             topidx2conlab = _np.full([len(top) if isinstance(top,str) else top.n_residues][0], None)
             topidx2conlab[list(top2self.keys())] = self.dataframe.iloc[list(top2self.values())][self._conlab_column]
 
 
             idf = _mdcu.sequence.AlignmentDataFrame(idf.merge(_DataFrame(
-                {"idx_0": _np.arange(len(topidx2conlab)),
-                 "conlab": topidx2conlab}), how="left", on="idx_0"), #.replace(_np.nan, None)
+                {idf.colmap["idx_0"]: _np.arange(len(topidx2conlab)),
+                 "conlab": topidx2conlab}), how="left", on=idf.colmap["idx_0"]), #.replace(_np.nan, None)
                 alignment_score=idf.alignment_score)
             # .replace has ffil problem with pandas < 1.5, not with > 2. allowing
             idf.conlab = [[val if val is not _np.nan else None][0] for val in idf.conlab.values]
@@ -802,8 +802,8 @@ class LabelerConsensus(object):
 
                         if verbose:
                             _mdcu.sequence.print_verbose_dataframe(
-                                idf[idf[idf.idx_0.values == confragidxs[0]].index[0] - 1 - 5:
-                                    idf[idf.idx_0.values == confragidxs[-1]].index[0] + 2 +5]
+                                idf[idf[idf[idf.colmap["idx_0"]].values == confragidxs[0]].index[0] - 1 - 5:
+                                    idf[idf[idf.colmap["idx_0"]].values == confragidxs[-1]].index[0] + 2 +5]
                             )
 
 
@@ -817,10 +817,10 @@ class LabelerConsensus(object):
                             current_clashing_residues = f"The following residues of your input `top` seem to be the problem: {only_in_top}. "
                             istr = current_clashing_confrag+current_clashing_residues
 
-                            if ii<len(df)-1:
+                            if ii<len(algs_as_dfs)-1:
                                     istr += f"Moving to the next equally scored alignment" \
                                             f" (score={idf.alignment_score:.2f}) to check if these clashes disappear."
-                            elif ii==len(df)-1:
+                            elif ii==len(algs_as_dfs)-1:
                                 istr += f"This was the last available alignment."
                             if not verbose:
                                 istr += f" Re-rerun 'mdciao.nomenclature.{type(self).__name__}.aligntop' with `verbose=True` to show the problematic part of this alignment here."
@@ -2015,7 +2015,7 @@ def _alignment_df2_conslist(alignment_as_df,
         _df = alignment_as_df
     _df = _df[_df["match"]]
 
-    out_list[_df["idx_0"].values.astype(int)] = _df["conlab"].values
+    out_list[_df[_df.colmap["idx_0"]].values.astype(int)] = _df["conlab"].values
     return out_list.tolist()
 
 

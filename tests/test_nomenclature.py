@@ -18,7 +18,7 @@ from mdciao.nomenclature import nomenclature
 from mdciao.examples import filenames as test_filenames
 from mdciao.utils.lists import assert_no_intersection
 from mdciao import examples
-from mdciao.utils.sequence import top2seq
+from mdciao.utils.sequence import top2seq, AlignmentDataFrame
 from mdciao.utils.residue_and_atom import shorten_AA
 from mdciao.fragments import get_fragments, fragment_slice
 
@@ -1064,7 +1064,7 @@ class Test_alignment_df2_conslist(unittest.TestCase):
              "conlab": "3.52",
              },
         ]
-        cls.df = DataFrame(cls.list_of_dicts)
+        cls.df = AlignmentDataFrame(cls.list_of_dicts)
         # cls.consensus_dict = {"GLU0": "3.50",
         #                      "ARG1": "3.51",
         #                      "PHE2": "3.52"}

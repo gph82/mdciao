@@ -38,6 +38,32 @@ class Test_align_tops(unittest.TestCase):
         assert df.alignment_score == top.n_residues
         #sequence.print_verbose_dataframe(df)
 
+    def test_works_w_itself_colmap_dict(self):
+        top = md.load(test_filenames.small_monomer).top
+        df = sequence.align_tops_or_seqs(top, top, ADF_colmap={"idx_0": "idx_WT", "idx_1": "idx_MUT"})[0]
+        assert isinstance(df, _DF)
+        assert isinstance(df, sequence.AlignmentDataFrame)
+        assert df.alignment_score == top.n_residues
+        assert "idx_WT" in df.columns
+        assert "idx_MUT" in df.columns
+        assert "idx_0" not in df.columns
+        assert "idx_1" not in df.columns
+        #sequence.print_verbose_dataframe(df)
+
+    def test_works_w_itself_colmap_list(self):
+        top = md.load(test_filenames.small_monomer).top
+        df = sequence.align_tops_or_seqs(top, top, ADF_colmap=["WT", "MUT"])[0]
+        assert isinstance(df, _DF)
+        assert isinstance(df, sequence.AlignmentDataFrame)
+        assert df.alignment_score == top.n_residues
+        assert "idx_WT" in df.columns
+        assert "idx_MUT" in df.columns
+        assert "idx_0" not in df.columns
+        assert "idx_1" not in df.columns
+        #sequence.print_verbose_dataframe(df)
+        assert set(df.columns) == set(['AA_WT', 'resSeq_WT', 'idx_WT', 'fullname_WT',
+                                       'idx_MUT', 'AA_MUT', 'fullname_MUT']+["match"])
+
     def test_works_w_itself_list(self):
         top = md.load(test_filenames.small_monomer).top
         df = sequence.align_tops_or_seqs(top, top, return_DF=False)[0]
@@ -233,6 +259,21 @@ class Test_AlignmentDataframe(unittest.TestCase):
         df = sequence.AlignmentDataFrame({"A": [1, 2, 3], "B": [4, 5, 6], "C": [7, 8, 9]},alignment_score=1)
         assert df.alignment_score == 1
         assert df[["A", "B"]].alignment_score == 1
+        self.assertDictEqual(df.colmap, {key: key for key in ["AA_0",
+                                                              "AA_1",
+                                                              "resSeq_0",
+                                                              "idx_0",
+                                                              "idx_1",
+                                                              'fullname_0',
+                                                              'fullname_1']})
+
+    def test_just_colmap_is_there(self):
+        #     Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
+        # for more info
+        df = sequence.AlignmentDataFrame({"A": [1, 2, 3], "B": [4, 5, 6], "C": [7, 8, 9]},alignment_score=1, colmap={"idx_0" : "idx_Ecoli"})
+        assert df.alignment_score == 1
+        assert df[["A", "B"]].alignment_score == 1
+        assert df.colmap["idx_0"]=="idx_Ecoli"
 
 if __name__ == '__main__':
     unittest.main()
