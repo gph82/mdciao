@@ -983,7 +983,7 @@ def compare_groups_of_contacts(groups,
                                         fontsize=fontsize,
                                         **kwargs_plot_unified_freq_dicts)
                 if anchor is not None:
-                    _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim())) * .05, 1.05,
+                    _plt.gca().text(0 - _np.abs(_np.diff(_plt.gca().get_xlim()))[0] * .05, 1.05,
                                     "%s and:" % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
                                     ha="right", va="bottom")
 
