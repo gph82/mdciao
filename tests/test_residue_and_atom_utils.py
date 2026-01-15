@@ -358,14 +358,12 @@ class Test_residues_from_descriptors(unittest.TestCase):
                                                    additional_resnaming_dicts=consensus_dicts,
                                                    pick_this_fragment_by_default=0
                                                    )
-
-    def test_answer_letters(self):
+    @mock.patch('builtins.input', side_effects=["0.0", "4.0"])
+    def test_answer_letters(self, mock_input):
         residues = ["GLU30", "TRP32"]
-        input_values = (val for val in ["0.0", "4.0"])
-        with mock.patch('builtins.input', lambda *x: next(input_values)):
-            residue_and_atom.residues_from_descriptors(residues, self.by_bonds_geom2frags,
-                                                       self.geom2frags.top,
-                                                       )
+        residue_and_atom.residues_from_descriptors(residues, self.by_bonds_geom2frags,
+                                                   self.geom2frags.top,
+                                                   )
 
 
 class Test_rangeexpand_residues2residxs(unittest.TestCase):
