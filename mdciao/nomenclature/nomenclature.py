@@ -606,18 +606,16 @@ class LabelerConsensus(object):
         ----------
         top : :obj:`~mdtraj.Topology` object or string
         restrict_to_residxs : iterable of integers, default is None
-            Use only these residues for alignment and labelling purposes.
-            Helps "guide" the alignment method. E.g., for big topologies
-            the the alignment might find some small matches somewhere
-            and, in some corner cases, match those instead of the
-            desired ones. Here, one can pass residues indices
-            defining the topology segment wherein the match should
-            be contained to.
+            Use only these residues for alignment and labelling.
+            This helps "guide" the alignment method. For large topologies,
+            the alignment might otherwise find small, unintended matches.
+            By passing residue indices here, you can define the topology
+            segment in which the match should be contained.
         min_seqID_rate : float, default .5
             With big topologies and many fragments,
             the alignment method (:obj:`mdciao.sequence.my_bioalign`)
             sometimes yields sub-optimal results. A value
-            :obj:`min_seqID_rate` >0, e.g. .5 means that a pre-alignment
+            :obj:`min_seqID_rate` > 0, e.g. .5 means that a pre-alignment
             takes place to populate :obj:`restrict_to_residxs`
             with indices of those the fragments
             (:obj:`mdciao.fragments.get_fragments` defaults)
@@ -862,7 +860,7 @@ class LabelerConsensus(object):
 
         return top2self, self2top
 
-    @_kwargs_subs(aligntop)
+    @_kwargs_subs(aligntop, exclude=['min_seqID_rate'])
     def top2labels(self, top,
                    allow_nonmatch=True,
                    autofill_consensus=True,
@@ -914,15 +912,6 @@ class LabelerConsensus(object):
              * ['G.H5.25', 'G.H5.26', None, 'G.H.28']
             will be relabeled as
              * ['G.H5.25', 'G.H5.26', 'G.H.27', 'G.H.28']
-        min_seqID_rate : float, default is .5
-            With big topologies and many fragments,
-            the alignment method (:obj:`mdciao.sequence.my_bioalign`)
-            sometimes yields sub-optimal results. A value
-            :obj:`min_seqID_rate` >0, e.g. .5 means that a pre-alignment
-            takes place to populate :obj:`restrict_to_residxs`
-            with indices of those the fragments
-            (:obj:`mdciao.fragments.get_fragments` defaults)
-            with more than 50%% alignment in the pre-alignment.
         aligntop_kwargs : dict
             Optional parameters for :obj:`~mdciao.nomenclature.LabelerConsensus.aligntop`,
             which are listed below
@@ -1427,6 +1416,235 @@ class LabelerCGN(LabelerGPCRdb):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, scheme="display_generic_number", **kwargs)
 
+def trim(df: _DataFrame, patterns=None, keys=None,
+         drop_rows_how="any", drop_columns_how=None,
+         drop_order="rows_first", filter_on="consensus", verbose=False) -> _DataFrame:
+    r"""
+
+    Trim a :obj:`~pandas.DataFrame` using patterns. Can prioritize keeping positions (rows) over sequences (columns) or vice versa.
+
+    Specialized tools (e.g. trimAl, ClipKIT, Gblocks) exist for alignment trimming,
+    optimizing it based on gap frequency, sequence occupancy, or phylogenetic informativeness
+    and other criteria.
+
+    This method is deliberately more rudimentary: it simply looks at occupancy
+    and drops rows and/or columns in a pandas-affine way, sidestepping other heuristics.
+
+    Since the order in which rows and/or columns are dropped matters when trimming,
+    it is worth exploring the example scenarios of the note below and get an idea of
+    what the method actually does.
+
+    Parameters
+    ----------
+    df : :obj:`~pandas.DataFrame` or None
+        The dataframe to be filtered by matching `patterns` and `keys`.
+        If None, the method simply returns None.
+    patterns : str, default is None
+        A list in CSV-format of patterns to be matched
+        by the consensus labels. Matches are done using
+        Unix filename pattern matching, and allows
+        for exclusion, e.g. "3.*,-3.5*." will include all
+        residues in TM3 except those in the segment 3.50...3.59
+    keys : list, default is None
+        If only a sub-set of columns need to match,
+        provide them here as list of strings. If
+        None, all columns (except `filter_on`) will be used.
+    drop_rows_how :  None or str ('any' or 'all'), default is 'any'.
+        Strategy to drop rows using occupancy as criterion.
+        If None, no rows are dropped based on occupancy.
+        Else, rows will be dropped by passing this
+        as `how` to :obj:`~pandas.DataFrame.dropna` .
+        See the note below for more information.
+    drop_columns_how : None or str ('any' or 'all'), default is None
+        Strategy to drop columns using occupancy as criterion.
+        If None, no columns are dropped based on occupancy.
+        Else, columns will be dropped by passing this
+        as `how` to :obj:`~pandas.DataFrame.dropna` .
+        This argument can help locate unusable columns
+        for a given pattern.
+        See the note below for more information.
+    drop_order : str, default is "rows_first"
+        Only has an effect when both `drop_rows` and `drop_columns` are not None.
+        Determines the order of operations, which critcally influences
+        the outocome. E.g. an entire column filled NaNs means
+        dropping all rows, in the default case,
+        unless you drop that column before (using `drop_order="columns_first")
+        and then you check for rows with NaNs.
+        See the note for more info.
+    filter_on : str, default is 'consensus'
+        The column of `df` on which the `patterns`
+        will be used for a match using `patterns`.
+    verbose: bool, default is False
+        Be very verbose, helps when deciding trimming stragegies
+
+    Returns
+    -------
+    df : :obj:`~pandas.DataFrame`
+        Will only have `filter_on` and `keys` as columns
+
+    Note
+    ----
+    We show some scenarios starting from an aligment table that looks like this:
+
+    >>> AC.residxs
+    |    |   consensus |   seqA |   seqB |   seqC |   seqD |
+    |----|-------------|--------|--------|--------|--------|
+    |  0 |        6.49 |      0 |      1 |     10 |     20 |
+    |  1 |        6.50 |      1 |      2 |     11 |    nan |
+    |  2 |        6.51 |      2 |      3 |    nan |    nan |
+    |  3 |        6.52 |      3 |    nan |    nan |    nan |
+
+    Note that the alignment index is the vertical axis
+    (rows) and the sequences (that are usually lines, e.g. `.fasta` files)
+    are represented as columns. Hence, the word 'column' and 'sequence'
+    are used interchangeably.
+
+    The first step is to match consensus labels against `patterns`,
+    dropping rows outside the selection. After this, `drop_rows`
+    and `drop_columns` take effect.
+
+    * The default behavior is to drop row-wise after pattern matching,
+      using :obj:`~pandas.DataFrame.dropna` .
+
+        >>> trim(AC.residxs, patterns="6.49,6.50,6.51")
+        |    |   consensus |   seqA |   seqB |   seqC |   seqD |
+        |----|-------------|--------|--------|--------|--------|
+        |  0 |        6.49 |      0 |      1 |     10 |     20 |
+      Row `6.52` did not match `patterns`, so it was dropped in the first step,
+      and rows `6.50` and `6.51`, although matching, had at least one NaN,
+      so they have been dropped, because of the default `drop_rows='any'`.
+
+    * If you want to keep the rows even with some NaNs, use `drop_rows=None`.
+      Together with the default `drop_columns=None` it means the table
+      will be returned as is, only patter-matched to `patterns`:
+
+        >>> trim(AC.residxs, patterns="6.49,6.50,6.51", drop_rows_how=None)
+        |    |   consensus |   seqA |   seqB |   seqC |   seqD |
+        |----|-------------|--------|--------|--------|--------|
+        |  0 |        6.49 |      0 |      1 |     10 |     20 |
+        |  1 |        6.50 |      1 |      2 |     11 |    nan |
+        |  2 |        6.51 |      2 |      3 |    nan |    nan |
+      This keeps everything visible. While this selection will
+      not be usable downstream across all sequences, it's useful
+      for getting an idea of where the missing values are, what rows and columns
+      are the "worst offenders" and so on.
+
+    * If we update the selection pattern to `"6.50,6.51"` and leave the parameters unchanged, then:
+
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how=None)
+        |    |   consensus |   seqA |   seqB |   seqC |   seqD |
+        |----|-------------|--------|--------|--------|--------|
+        |  1 |        6.50 |      1 |      2 |     11 |    nan |
+        |  2 |        6.51 |      2 |      3 |    nan |    nan |
+
+       Now we have two columns with NaNs, `seqC` and `seqD`.
+       If we trim with `drop_columns="any"`, we don't really
+       differentiate between the fully unusable `seqD` and
+       the partially usable `seqC`:
+
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how=None, drop_columns_how='any')
+        |    |   consensus |   seqA |   seqB |
+        |----|-------------|--------|--------|
+        |  1 |        6.50 |      1 |      2 |
+        |  2 |        6.51 |      2 |      3 |
+
+       This is one way to arrive at a fully usable selection.
+       The more conservative `drop_columns="all"` allows to keep the `seqC`
+       for further inspection and decision-making about what to trim (more on this below):
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how=None, drop_columns_how='all')
+        |    |   consensus |   seqA |   seqB |   seqC |
+        |----|-------------|--------|--------|--------|
+        |  1 |        6.50 |      1 |      2 |     11 |
+        |  2 |        6.51 |      2 |      3 |    nan |
+
+       Note that because of `drop_rows=None`, we're only
+       droping columns, s.t. the `drop_order` parameter does not have
+       effect. If we change it to `drop_rows="any"`, the order is critical, because:
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how="any", drop_columns_how='all')
+
+       yields an empty dataframe, because all rows matching "6.50,6.51" contain
+       at least one NaN, s.t. nothing survives. Unless, we change
+       the default from `drop_order="rows_first"` to `drop_order="columns_first"`. Then:
+        >>> trim(AC.residxs, patterns="6.50,6.51", drop_rows_how="any", drop_columns_how='all', drop_order="columns_first")
+        |    |   consensus |   seqA |   seqB |   seqC |
+        |----|-------------|--------|--------|--------|
+        |  1 |        6.50 |      1 |      2 |     11 |
+
+       This is also a usable selection, but we prioritized rows over columns.
+    Final thoughts:
+      * Without knowing the topology of the table and the intention
+        of the user, it is not trivial to predicit which
+        combination of parameters will be most helpful.
+      * In some cases, losing a column is out of the question,
+        because each column is associated with a dataset that needs to
+        be analyzed downstream, so you have to give up rows until you
+        arrive at a usable selection.
+      * Conversely, you might be in a sequence-rich situation where
+        you are using the alignment precisely to find out which sequences
+        are not worth keeping for the analysis downstream, because they
+        force you to use very few rows for the sake of covering all columns.
+      * Finally, there are combinations of parameters that yield equivalent
+        results depending on the alignment table and the selection pattern.
+    """
+
+    if df is None:
+        return None
+
+    if keys is None:
+        keys = [key for key in df.keys() if key != filter_on]
+    df = df[[filter_on] + keys]
+
+    if patterns is not None:
+        matching_keys = _mdcu.str_and_dict.fnmatch_ex(patterns, df[filter_on])
+        matches = df[filter_on].isin(matching_keys)
+        df = df[matches]
+
+    if verbose:
+        print(f"Matching {filter_on!r} before dropping anything:")
+        _mdcu.sequence.print_verbose_dataframe(df)
+
+    if drop_order == "rows_first":
+        if verbose:
+            print(
+                f"Keep is {drop_order!r}, i.e. dropping rows with {drop_rows_how!r} before dropping columns with {drop_columns_how!r}")
+        if isinstance(drop_rows_how, str):
+            df = df.dropna(how=drop_rows_how, axis="index")
+            if verbose:
+                print("After dropping rows:")
+                _mdcu.sequence.print_verbose_dataframe(df)
+        if isinstance(drop_columns_how, str):
+            df = df.dropna(how=drop_columns_how, axis="columns")
+            if verbose:
+                print("After dropping columns:")
+                _mdcu.sequence.print_verbose_dataframe(df)
+    elif drop_order == "columns_first":
+        if verbose:
+            print(
+                f"Keep is {drop_order!r}, i.e. dropping columns with {drop_columns_how!r} before dropping rows with {drop_rows_how!r}")
+        if isinstance(drop_columns_how, str):
+            df = df.dropna(how=drop_columns_how, axis="columns")
+            if verbose:
+                print("After dropping columns:")
+                _mdcu.sequence.print_verbose_dataframe(df)
+        if isinstance(drop_rows_how, str):
+            df = df.dropna(how=drop_rows_how, axis="index")
+            if verbose:
+                print("After dropping rows:")
+                _mdcu.sequence.print_verbose_dataframe(df)
+    else:
+        raise ValueError(f"`drop_order` has to be either 'rows_first' or 'columns_first', not {drop_order!r}")
+
+    # Try to return integers when possible
+    try:
+        if hasattr(df,"map"):
+            df = df.map(lambda x: [int(x) if x is not None and str(x).isdigit() else x][0])
+        else:
+            #TODO this is for pandas <2.1.0 and py38, which mdciao will deprecate soon
+            df = df.applymap(lambda x: [int(x) if x is not None and str(x).isdigit() else x][0])
+    except (ValueError, TypeError) as e:
+        pass
+    return df
+
 class AlignerConsensus(object):
     """Use consensus labels for multiple sequence alignment.
 
@@ -1511,55 +1729,92 @@ class AlignerConsensus(object):
 
     >>> AC.AAresSeq_match("5.*")
         consensus   OPS  B2AR  MUOR
-    167   5.35x36  N200  N196  E229
-    168   5.36x37  E201  Q197  N230
-    169   5.37x38  S202  A198  L231
+    164   5.35x36  N200  N196  E229
+    165   5.36x37  E201  Q197  N230
+    166   5.37x38  S202  A198  L231
+    167   5.38x39  F203  Y199  L232
+    168   5.39x40  V204  A200  K233
     ..        ...   ...   ...   ...
-    198   5.66x66  K231  K227  K260
-    199   5.67x67  E232  R228  S261
-    200   5.68x68  A233  Q229  V262
+    193   5.64x64  T229  E225  R258
+    194   5.65x65  V230  A226  L259
+    195   5.66x66  K231  K227  K260
+    196   5.67x67  E232  R228  S261
+    197   5.68x68  A233  Q229  V262
+
 
     But you can get relax the match and get an overview of missing
-    residues using `omit_missing=False`:
+    residues using `drop_rows_how=None`:
 
-    >>> AC.AAresSeq_match("5.*", omit_missing=False)
+    >>> AC.AAresSeq_match("5.*", drop_rows_how=None)
         consensus   OPS  B2AR  MUOR
-    162   5.30x31   NaN   NaN  P224
-    163   5.31x32   NaN   NaN  T225
-    164   5.32x33   NaN   NaN  W226
-    165   5.33x34   NaN   NaN  Y227
-    166   5.34x35  N199   NaN  W228
-    167   5.35x36  N200  N196  E229
+    159   5.30x31  <NA>  <NA>  P224
+    160   5.31x32  <NA>  <NA>  T225
+    161   5.32x33  <NA>  <NA>  W226
+    162   5.33x34  <NA>  <NA>  Y227
+    163   5.34x35  N199  <NA>  W228
+    164   5.35x36  N200  N196  E229
     ..        ...   ...   ...   ...
-    200   5.68x68  A233  Q229  V262
-    201   5.69x69  A234  L230   NaN
-    202   5.70x70  A235  Q231   NaN
-    203   5.71x71  Q236  K232   NaN
-    204   5.72x72  Q237  I233   NaN
-    205   5.73x73   NaN  D234   NaN
-    206   5.74x74   NaN  K235   NaN
-    207   5.75x75   NaN  S236   NaN
-    208   5.76x76   NaN  E237   NaN
+    196   5.67x67  E232  R228  S261
+    197   5.68x68  A233  Q229  V262
+    198   5.69x69  A234  L230  <NA>
+    199   5.70x70  A235  Q231  <NA>
+    200   5.71x71  Q236  K232  <NA>
+    201   5.72x72  Q237  I233  <NA>
+    202   5.73x73  <NA>  D234  <NA>
+    203   5.74x74  <NA>  K235  <NA>
+    204   5.75x75  <NA>  S236  <NA>
+    205   5.76x76  <NA>  E237  <NA>
 
     Here, we see e.g. that "MUOR" has more residues present at
     the beginning of TM5 (first row, from P224@5.30x31 on) and also that
     e.g. "B2AR" has the longest TM5 (last row, until E237@5.76x76).
 
-    Finally, instead of selecting for labels,
-    you can also select for systems, i.e. "Show me the systems that
-    have my selection labels". Here, we ask what systems have '5.70...5.79' residues:
+    Note that the default is to drop rows containing NaNs
+    while keeping columns, but you can turn that logic around.
+    You can use a label-pattern to select for systems, i.e. "Show me
+    the systems that have my selection labels".
+    Here, we ask what systems have '5.70...5.79' residues.
+    We start by showing the whole table:
 
-    >>> AC.AAresSeq_match("5.7*", select_keys=True)
+    >>> AC.AAresSeq_match("5.7*", drop_columns_how=None, drop_rows_how=None)
+        consensus   OPS  B2AR  MUOR
+    199   5.70x70  A235  Q231  <NA>
+    200   5.71x71  Q236  K232  <NA>
+    201   5.72x72  Q237  I233  <NA>
+    202   5.73x73  <NA>  D234  <NA>
+    203   5.74x74  <NA>  K235  <NA>
+    204   5.75x75  <NA>  S236  <NA>
+    205   5.76x76  <NA>  E237  <NA>
+
+    And now can decide how to drop, e.g. dropping any column
+    that has any NaN:
+
+    >>> AC.AAresSeq_match("5.7*", drop_columns_how="any", drop_order="columns_first")
+        consensus  B2AR
+    199   5.70x70  Q231
+    200   5.71x71  K232
+    201   5.72x72  I233
+    202   5.73x73  D234
+    203   5.74x74  K235
+    204   5.75x75  S236
+    205   5.76x76  E237
+
+    The "any" scheme aggresively trims columns, yielding a larger label selection.
+    Another approach is to "give up" some rows and try to keep more columns, by
+    making the column-dropping criterion harder via the "all" scheme
+
+    >>> AC.AAresSeq_match("5.7*", drop_columns_how="all", drop_order="columns_first")
         consensus   OPS  B2AR
-    202   5.70x70  A235  Q231
-    203   5.71x71  Q236  K232
-    204   5.72x72  Q237  I233
+    199   5.70x70  A235  Q231
+    200   5.71x71  Q236  K232
+    201   5.72x72  Q237  I233
 
-    You notice the "MUOR"-column is missing, because it doesn't have '5.7*' residues
+    Take a look ot the documentation of the :obj:`mdciao.nomenclature.trim` method
+    for other scenarios.
 
     """
 
-    def __init__(self, maps, tops=None):
+    def __init__(self, maps, tops=None, progressbar=False):
         r"""
 
         Parameters
@@ -1606,7 +1861,13 @@ class AlignerConsensus(object):
             and :obj:`~mdciao.nomenclature.AlignerConsensus.residxs`,
             respectively (otherwise these methods return None).
             If `tops` is present, self.keys will be in
-            the same order as they appear in `tops`.
+            the same order as they appear in `tops`. If you provide
+            tops with residues lacking one-letter codes or Cɑ-atoms,
+            the object will not initialize.
+
+        progressbar : bool, default is False
+            Whether to show a progressbar or not
+
         """
         self._tops = tops
         # we keep the order of keys if top is present
@@ -1645,20 +1906,50 @@ class AlignerConsensus(object):
         self._residxs = self._residxs.sort_values("consensus", key=lambda col: col.map(lambda x: sorted_keys.index(x)))
         self._residxs.index = _np.arange(len(self._residxs))
 
+        def _error_mssg(missing_what, ii, key, nsuch):
+            estr = f"Some residues are missing {missing_what:<17} in the {ii:6}-ith topology, keyed {str(key)!r}. "
+            estr += f"There are {nsuch:6} such topologies so far."
+            return estr
+
         if self.tops is not None:
+            err_msg = []
+            _tops_missing_CAs = []
+            _tops_bad_AA_codes = []
             self._AAresSeq, self._CAidxs = self.residxs.copy(), self.residxs.copy()
             self._residxs = self._residxs.astype({key: "Int64" for key in self.keys})
-            for key in self.keys:
+            for ii, key in _tqdm(enumerate(self.keys), disable = not progressbar, total=len(self.keys)):
                 not_nulls = self.residxs[key].notnull()
                 #TODO check alternative for speedups
                 #self._AAresSeq.loc[not_nulls, key]=self.residxs[key][not_nulls].map(lambda ii : _mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),
                 #                                                          keep_index=True))
-                self._AAresSeq[key] = [[_mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),keep_index=True) if not_null else ii][0]
+                try:
+                    self._AAresSeq[key] = [[_mdcu.residue_and_atom.shorten_AA(self.tops[key].residue(ii),keep_index=True) if not_null else ii][0]
                                        for not_null, ii in zip(not_nulls, self.residxs[key])]
-                self._CAidxs[key] = [[self.tops[key].residue(ii).atom("CA").index if not_null else ii][0]
-                                     for not_null, ii in zip(not_nulls, self.residxs[key])]
+                except KeyError as e:
+                    _tops_bad_AA_codes.append(key)
+                    print(_error_mssg("one-letter codes", ii, key, len(_tops_bad_AA_codes)), flush=True)
+
+                try:
+                    self._CAidxs[key] = [[self.tops[key].residue(ii).atom("CA").index if not_null else ii][0]
+                                         for not_null, ii in zip(not_nulls, self.residxs[key])]
+                except KeyError as e:
+                    _tops_missing_CAs.append(key)
+                    print(_error_mssg("Cɑ-atoms", ii, key, len(_tops_missing_CAs)), flush=True)
                 self._maps[key] = {val : key for ii, (not_null, (key, val)) in enumerate(zip(not_nulls, self.AAresSeq[["consensus", key]].values)) if
                                                 not_null}
+            if len(_tops_missing_CAs) > 0:
+                err_msg.append(
+                    f"{len(_tops_missing_CAs):3} out of the {len(tops):3} topologies provided in `tops` "
+                    f"contain residues with consensus labels but lacking Cɑ-atoms:\n" \
+                    f"{_tops_missing_CAs}")
+            if len(_tops_bad_AA_codes) > 0:
+                err_msg.append(
+                    f"{len(_tops_bad_AA_codes):3} out of the {len(tops):3} topologies provided in `tops` "
+                    f"contain residues with consensus labels but lacking one-letter residue codes:\n"
+                    f"{_tops_bad_AA_codes}")
+            if len(err_msg)>0:
+                raise ValueError("\n".join(err_msg+[f"\nThe {self.__class__.__name__!r} cannot function with "
+                                                    f"these topologies and thus it was not constructed.\n"]))
 
             self._CAidxs = self._CAidxs.astype({key: "Int64" for key in self.keys})
         else:
@@ -1732,111 +2023,62 @@ class AlignerConsensus(object):
         """
         return self._AAresSeq
 
-    def residxs_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
+    @_kwargs_subs(trim, exclude=["filter_on"])
+    def residxs_match(self, patterns=None, **trim_kwargs) -> _DataFrame:
         r"""
         Filter the `self.residxs` by rows and columns.
 
-        You can filter by consensus label using `patterns` and by system using `keys`.
+        Thinly wraps around :obj:`mdciao.nomenclature.trim`, see the note there for extensive info.
 
         By default, rows where None, or NaNs are present are excluded.
 
         Parameters
         ----------
-        patterns : str, default is None
-            A list in CSV-format of patterns to be matched
-            by the consensus labels. Matches are done using
-            Unix filename pattern matching, and are allows
-            for exclusion, e.g. "3.*,-3.5*." will include all
-            residues in TM3 except those in the segment 3.50...3.59
-        keys : list, default is None
-            If only a sub-set of columns need to match,
-            provide them here as list of strings. If
-            None, all columns will be used.
-        select_keys : bool, default is False
-            Use the `patterns` not only to select
-            for rows but also to select for columns, i.e.
-            for keys. Keys (=columns) not featuring
-            any `patterns` will be dropped.
-        omit_missing : bool, default is True
-            Omit rows with missing values.
+        %(substitute_kwargs)s
 
         Returns
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.residxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
-                             filter_on="consensus")
+        return trim(self.residxs, patterns=patterns, filter_on="consensus", **trim_kwargs)
 
-    def AAresSeq_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
+    @_kwargs_subs(trim, exclude=["filter_on"])
+    def AAresSeq_match(self,  patterns=None, **trim_kwargs) -> _DataFrame:
         r"""
         Filter the `self.AAresSeq` by rows and columns.
 
-        You can filter by consensus label using `patterns` and by system using `keys`.
+        Thinly wraps around :obj:`mdciao.nomenclature.trim`, see the note there for extensive info.
 
         By default, rows where None, or NaNs are present are excluded.
 
         Parameters
         ----------
-        patterns : str, default is None
-            A list in CSV-format of patterns to be matched
-            by the consensus labels. Matches are done using
-            Unix filename pattern matching, and are allows
-            for exclusion, e.g. "3.*,-3.5*." will include all
-            residues in TM3 except those in the segment 3.50...3.59
-        keys : list, default is None
-            If only a sub-set of columns need to match,
-            provide them here as list of strings. If
-            None, all columns will be used.
-        select_keys : bool, default is False
-            Use the `patterns` not only to select
-            for rows but also to select for columns, i.e.
-            for keys. Keys (=columns) not featuring
-            any `patterns` will be dropped.
-        omit_missing : bool, default is True
-            Omit rows with missing values,
+        %(substitute_kwargs)s
 
         Returns
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.AAresSeq, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
-                             filter_on="consensus")
+        return trim(self.AAresSeq,  patterns=patterns, filter_on="consensus", **trim_kwargs)
 
-    def CAidxs_match(self, patterns=None, keys=None, omit_missing=True, select_keys=False) -> _DataFrame:
+    @_kwargs_subs(trim, exclude=["filter_on"])
+    def CAidxs_match(self,  patterns=None, **trim_kwargs) -> _DataFrame:
         r"""
         Filter the `self.CAidxs` by rows and columns.
 
-        You can filter by consensus label using `patterns` and by system using `keys`.
+        Thinly wraps around :obj:`mdciao.nomenclature.trim`, see the note there for extensive info.
 
         By default, rows where None, or NaNs are present are excluded.
 
         Parameters
         ----------
-        patterns : str, default is None
-            A list in CSV-format of patterns to be matched
-            by the consensus labels. Matches are done using
-            Unix filename pattern matching, and are allows
-            for exclusion, e.g. "3.*,-3.5*." will include all
-            residues in TM3 except those in the segment 3.50...3.59H8
-             * "G.S*" will include all beta-sheets
-        keys : list, default is None
-            If only a sub-set of columns need to match,
-            provide them here as list of strings. If
-            None, all columns (except `filter_on`) will be used.
-        select_keys : bool, default is False
-            Use the `patterns` not only to select
-            for rows but also to select for columns, i.e.
-            for keys. Keys (=columns) not featuring
-            any `patterns` will be dropped.
-        omit_missing : bool, default is True
-            Omit rows with missing values
+        %(substitute_kwargs)s
 
         Returns
         -------
         df : :obj:`~pandas.DataFrame`
         """
-        return _only_matches(self.CAidxs, patterns=patterns, keys=keys, select_keys=select_keys, dropna=omit_missing,
-                             filter_on="consensus")
+        return trim(self.CAidxs,  patterns=patterns, filter_on="consensus", **trim_kwargs)
 
     def sequence_match(self,patterns=None, absolute=False)-> _DataFrame:
         r"""Matrix with the percentage of sequence identity within the set of the residues sharing consensus labels
@@ -1916,68 +2158,6 @@ class AlignerConsensus(object):
 
         return df
 
-def _only_matches(df: _DataFrame, patterns=None, keys=None, select_keys=False, dropna=True, filter_on="index") -> _DataFrame:
-    r"""
-    Row-filter an :obj:`~pandas.DataFrame` by patterns in the values and column-filter by keys in the column names
-
-    Filtering means:
-     * don't include rows where None or Nans appear (except if relax=True)
-     * include  anything that matches `patterns`
-
-    Parameters
-    ----------
-    df : :obj:`~pandas.DataFrame` or None
-        The dataframe to be filtered by matching `patterns` and `keys`.
-        If None, the method simply returns None.
-    patterns : str, default is None
-        A list in CSV-format of patterns to be matched
-        by the consensus labels. Matches are done using
-        Unix filename pattern matching, and are allows
-        for exclusion, e.g. "3.*,-3.5*." will include all
-        residues in TM3 except those in the segment 3.50...3.59
-    keys : list, default is None
-        If only a sub-set of columns need to match,
-        provide them here as list of strings. If
-        None, all columns (except `filter_on`) will be used.
-    select_keys : bool, default is False
-        Use the `patterns` not only to select
-        for rows but also to select for columns, i.e.
-        for keys. Keys (=columns) not featuring
-        any `patterns` will be dropped.
-    dropna : bool, default is True
-        Use :obj:`~pandas.Dataframe.dropna` row-wise
-        before returning
-     filter_on : str, default is 'index'
-        The column of `df` on which the `patterns`
-        will be used for a match
-
-    Returns
-    -------
-    df : :obj:`~pandas.DataFrame`
-        Will only have `filter_on`+`keys` as columns
-    """
-    if df is None:
-        return None
-    if keys is None:
-        keys = [key for key in df.keys() if key != filter_on]
-
-    df = df[[filter_on] + keys]
-    if patterns is not None:
-        matching_keys = _mdcu.str_and_dict.fnmatch_ex(patterns, df[filter_on])
-        matches = df[filter_on].map(lambda x: x in matching_keys)
-        df = df[matches]
-
-    if select_keys:
-        df = df[[key for key in df.keys() if not all(df[key].isna())]]
-    if dropna:
-        df = df.dropna()
-
-    # Try to return integers when possible
-    try:
-        df = df.astype({key:int for key in df.keys() if key!=filter_on})
-    except (ValueError, TypeError) as e:
-        pass
-    return df
 
 
 def _alignment_df2_conslist(alignment_as_df,
@@ -2002,8 +2182,8 @@ def _alignment_df2_conslist(alignment_as_df,
     -------
     consensus_labels : list
         List of consensus labels (when available, else None)
-         up to the highest residue idx in "idx_0"
-         of the alignment DF
+        up to the highest residue idx in "idx_0"
+        of the alignment DF
     """
 
     n_residues = _np.max([int(ival) for ival in alignment_as_df["idx_0"].values if str(ival).isdigit()])
@@ -3264,7 +3444,7 @@ def _Spreadsheets2mdTrajectory(source):
     Parameters
     ----------
     source : dict or str
-        A dictionary of :obj:`~pandas.Dataframe`
+        A dictionary of :obj:`~pandas.DataFrame`
         or a filename of an ExcelFile. It
         has to contain the keys or sheet names
         "topology", "bonds", "xyz" and "unitcell",
