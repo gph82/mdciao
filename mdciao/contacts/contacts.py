@@ -6365,7 +6365,8 @@ class ContactGroup(object):
         Parameters
         ----------
         scheme : str, default is "mode"
-            Two options:
+            Several options:
+
             * "mode" : minimize average distance
               to the most likely distance, i.e.
               to the mode, i.e. to the
@@ -6379,11 +6380,12 @@ class ContactGroup(object):
               :obj:`~mdciao.contacts.ContactGroup.means`
             * "min" : minimize average distance
               to the minimum values of the distances
-              You can check the means in
+              You can check the values in
               :obj:`~mdciao.contacts.ContactGroup.minima`
             * "max" : minimize average distance
               to the maximum values of the distances
-              You can check the means in
+              You can check the values
+               in
               :obj:`~mdciao.contacts.ContactGroup.maxima`
         ctc_cutoff_Ang : float, default is None
             THIS IS EXPERIMENTAL
