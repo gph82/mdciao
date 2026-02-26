@@ -22,9 +22,13 @@ from mdciao.utils.sequence import top2seq, AlignmentDataFrame
 from mdciao.utils.residue_and_atom import shorten_AA
 from mdciao.fragments import get_fragments, fragment_slice
 
+from io import StringIO
+
 from unittest import mock
 
-from pandas import DataFrame, read_excel
+from pandas import DataFrame, read_excel, read_csv
+
+from pandas.testing import assert_frame_equal
 
 
 class Test_md_load_rcsb(unittest.TestCase):
@@ -1639,16 +1643,18 @@ class Test_AlignerConsensus(unittest.TestCase):
 
     def test_missing_False(self):
         matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=False)
-        self.assertEqual(matches.to_string(),
-                         "    consensus  3CAP  1U19\n"
-                         "102   3.50x50  R135  <NA>\n"
-                         "103   3.51x51  Y136  Y136\n"
-                         "104   3.52x52  V137  V137\n"
-                         "105   3.53x53  V138  V138\n"
-                         "106   3.54x54  V139  V139\n"
-                         "107   3.55x55  C140  C140\n"
-                         "108   3.56x56  K141  K141"
-                         )
+        ref_tab = """\
+            consensus  3CAP  1U19
+        102   3.50x50  R135  <NA>
+        103   3.51x51  Y136  Y136
+        104   3.52x52  V137  V137
+        105   3.53x53  V138  V138
+        106   3.54x54  V139  V139
+        107   3.55x55  C140  C140
+        108   3.56x56  K141  K141
+        """
+        ref_df = read_csv(StringIO(ref_tab), sep=r"\s+", engine="python", index_col=0)
+        assert_frame_equal(ref_df, matches)
 
     def test_nones(self):
         assert self.AC_maps_no_tops.CAidxs_match() is None
