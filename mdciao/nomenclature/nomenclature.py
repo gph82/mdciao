@@ -22,7 +22,6 @@
 
 import mdtraj as _md
 import numpy as _np
-from pandas import read_pickle as _read_pickle
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
@@ -35,7 +34,9 @@ from pandas import \
     read_csv as _read_csv, \
     DataFrame as _DataFrame, \
     ExcelWriter as _ExcelWriter, \
-    ExcelFile as _ExcelFile
+    ExcelFile as _ExcelFile, \
+    read_pickle as _read_pickle, \
+    isna as _pdisna
 
 from contextlib import nullcontext as _nullcontext
 from collections import defaultdict as _defdict, namedtuple as _namedtuple
@@ -503,7 +504,7 @@ class LabelerConsensus(object):
     def seq(self):
         r""" The reference sequence in :obj:`dataframe`"""
         return ''.join(
-            [_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe.AAresSeq.values.squeeze()])
+            [_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe.AAresSeq.astype("object").values.squeeze()])
 
     @property
     def conlab2AA(self):
@@ -746,10 +747,9 @@ class LabelerConsensus(object):
 
             idf = _mdcu.sequence.AlignmentDataFrame(idf.merge(_DataFrame(
                 {idf.colmap["idx_0"]: _np.arange(len(topidx2conlab)),
-                 "conlab": topidx2conlab}), how="left", on=idf.colmap["idx_0"]), #.replace(_np.nan, None)
+                 "conlab": topidx2conlab}), how="left", on=idf.colmap["idx_0"]),
                 alignment_score=idf.alignment_score)
-            # .replace has ffil problem with pandas < 1.5, not with > 2. allowing
-            idf.conlab = [[val if val is not _np.nan else None][0] for val in idf.conlab.values]
+            idf.conlab = idf.conlab.astype("object").mask(_pdisna(idf.conlab), None)
 
             if isinstance(top, str) or str(_frag_str).lower() in ["none", "false"] or n_alignments == 1:
                 confrags_compatible_with_frags = True
