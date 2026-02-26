@@ -249,6 +249,8 @@ def _data2DataFrame(actcs, residxs_pairs, top, ctc_cutoff_Ang, fragments, fragna
         df = _DF(
             columns=["freq", "freq_buffer", "resSeq1", "resSeq2", "frag1", "frag2", "residx1", "residx2", "fragname1",
                      "fragname2", "ctc_idx", "GRN1", "GRN2", "GFN1", "GFN2", "best1", "best2"])
+    for key in ["GFN1","GFN2", "GRN1","GRN2", "fragname1", "fragname2", "best1", "best2"]:
+        df[key] = df[key].astype("object").mask(_isna(df[key]), None)
 
     return df
 
