@@ -3285,7 +3285,7 @@ def _Spreadsheets2mdTrajectory(source):
         idict = _read_excel(source,
                             None,
                             engine="openpyxl")
-    idict["topology"].segmentID.fillna("", inplace=True)
+    idict["topology"].segmentID = idict["topology"].segmentID.astype("object").mask(_pdisna(idict["topology"].segmentID), "")
     topology = _from_dataframe(idict["topology"], bonds=idict["bonds"].values)
     xyz = idict["xyz"].values
     unitcell = {}
