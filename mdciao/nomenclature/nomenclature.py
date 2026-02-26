@@ -2389,7 +2389,7 @@ def conlabs2confrags(conlabs, splitchar=".", replace_GPCR_frags=False):
     if len(bad_labels)>0:
         raise ValueError(f"Some labels of 'cons_list' don't have '{splitchar}' in them. "
                          f"Are you sure these are valid consensus labels(e.g. '3.50' or 'G.H5.26'?:\n{bad_labels}")
-    df = _DataFrame(conlabs, columns=["conlab"])
+    df = _DataFrame(conlabs, columns=["conlab"], dtype="object")
     conlab2confrag = lambda x: str(x)[::-1].split(splitchar, 1)[-1][::-1]
     df["frag"] = df.conlab.map(conlab2confrag)
     consensus_frags = {key: val.index.values for key, val in df.groupby("frag") if str(key).lower() != "none"}
@@ -3218,7 +3218,9 @@ def _mdTopology2residueDF(top) -> _DataFrame:
                        "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True),
                        "chain_index": rr.chain.index,
                        "chain_id" : rr.chain.chain_id})
-    return _DataFrame(for_DF)
+    _DF = _DataFrame(for_DF).astype({"code": "object"})
+    _DF["code"] = _DF["code"].mask(_pdisna(_DF["code"]), None)
+    return _DF
 
 
 def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
