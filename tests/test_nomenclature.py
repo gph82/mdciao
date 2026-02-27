@@ -1644,7 +1644,7 @@ class Test_AlignerConsensus(unittest.TestCase):
                          )
 
     def test_missing_False(self):
-        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", omit_missing=False)
+        matches = self.AC_list_missing_350.AAresSeq_match("3.5*", drop_rows_how=None)
         ref_tab = """\
             consensus  3CAP  1U19
         102   3.50x50  R135  <NA>
