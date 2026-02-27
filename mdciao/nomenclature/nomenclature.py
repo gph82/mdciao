@@ -22,7 +22,6 @@
 
 import mdtraj as _md
 import numpy as _np
-from pandas import read_pickle as _read_pickle
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
@@ -35,7 +34,9 @@ from pandas import \
     read_csv as _read_csv, \
     DataFrame as _DataFrame, \
     ExcelWriter as _ExcelWriter, \
-    ExcelFile as _ExcelFile
+    ExcelFile as _ExcelFile, \
+    read_pickle as _read_pickle, \
+    isna as _pdisna
 
 from contextlib import nullcontext as _nullcontext
 from collections import defaultdict as _defdict, namedtuple as _namedtuple
@@ -503,7 +504,7 @@ class LabelerConsensus(object):
     def seq(self):
         r""" The reference sequence in :obj:`dataframe`"""
         return ''.join(
-            [_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe.AAresSeq.values.squeeze()])
+            [_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe.AAresSeq.astype("object").values.squeeze()])
 
     @property
     def conlab2AA(self):
@@ -744,10 +745,9 @@ class LabelerConsensus(object):
 
             idf = _mdcu.sequence.AlignmentDataFrame(idf.merge(_DataFrame(
                 {idf.colmap["idx_0"]: _np.arange(len(topidx2conlab)),
-                 "conlab": topidx2conlab}), how="left", on=idf.colmap["idx_0"]), #.replace(_np.nan, None)
+                 "conlab": topidx2conlab}), how="left", on=idf.colmap["idx_0"]),
                 alignment_score=idf.alignment_score)
-            # .replace has ffil problem with pandas < 1.5, not with > 2. allowing
-            idf.conlab = [[val if val is not _np.nan else None][0] for val in idf.conlab.values]
+            idf.conlab = idf.conlab.astype("object").mask(_pdisna(idf.conlab), None)
 
             if isinstance(top, str) or str(_frag_str).lower() in ["none", "false"] or n_alignments == 1:
                 confrags_compatible_with_frags = True
@@ -2569,7 +2569,7 @@ def conlabs2confrags(conlabs, splitchar=".", replace_GPCR_frags=False):
     if len(bad_labels)>0:
         raise ValueError(f"Some labels of 'cons_list' don't have '{splitchar}' in them. "
                          f"Are you sure these are valid consensus labels(e.g. '3.50' or 'G.H5.26'?:\n{bad_labels}")
-    df = _DataFrame(conlabs, columns=["conlab"])
+    df = _DataFrame(conlabs, columns=["conlab"], dtype="object")
     conlab2confrag = lambda x: str(x)[::-1].split(splitchar, 1)[-1][::-1]
     df["frag"] = df.conlab.map(conlab2confrag)
     consensus_frags = {key: val.index.values for key, val in df.groupby("frag") if str(key).lower() != "none"}
@@ -3398,7 +3398,9 @@ def _mdTopology2residueDF(top) -> _DataFrame:
                        "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True),
                        "chain_index": rr.chain.index,
                        "chain_id" : rr.chain.chain_id})
-    return _DataFrame(for_DF)
+    _DF = _DataFrame(for_DF).astype({"code": "object"})
+    _DF["code"] = _DF["code"].mask(_pdisna(_DF["code"]), None)
+    return _DF
 
 
 def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
@@ -3463,7 +3465,7 @@ def _Spreadsheets2mdTrajectory(source):
         idict = _read_excel(source,
                             None,
                             engine="openpyxl")
-    idict["topology"].segmentID.fillna("", inplace=True)
+    idict["topology"].segmentID = idict["topology"].segmentID.astype("object").mask(_pdisna(idict["topology"].segmentID), "")
     topology = _from_dataframe(idict["topology"], bonds=idict["bonds"].values)
     xyz = idict["xyz"].values
     unitcell = {}
