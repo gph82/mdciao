@@ -1387,18 +1387,18 @@ def assign_fragments(res_idxs, fragments, raise_on_missing=True):
 
     Returns
     -------
-    frag_idxs : np.array
+    frag_idxs : np.ndarray
         Array with the indices of
-        :obj:`fragments` where each
-        residue of :obj:`res_isxs`
+        `fragments` where each
+        residue of `res_idxs`
         appears
-    res_idxs : np.array
+    res_idxs : np.ndarray
         If all residues were
-        found in :obj:`fragments`,
+        found in `fragments`,
         then this is a copy of the
         input array. If some didn't
         appear anywhere, but
-        :obj:`raise_on_missing` was
+        `raise_on_missing` was
         False, the missing residues
         have been deleted
     """
@@ -1406,7 +1406,8 @@ def assign_fragments(res_idxs, fragments, raise_on_missing=True):
     _mdcu.lists.assert_no_intersection(fragments, word="fragments")
     frag_idxs = _mdcu.lists.in_what_N_fragments(res_idxs, fragments)
     orphans = _np.flatnonzero([len(par) == 0 for par in frag_idxs])
-    frag_idxs = [[int(ii) if len(ii)>0 else ii][0] for ii in frag_idxs]
+    assert all([len(ii)<=1 for ii in frag_idxs]) #Should be True since we assert_no_intersection
+    frag_idxs = [(int(ii[0]) if len(ii)!=0 else ii) for ii in frag_idxs]
     if len(orphans)>0:
         if raise_on_missing:
             raise ValueError("residues %s don't appear in any 'fragments'. "

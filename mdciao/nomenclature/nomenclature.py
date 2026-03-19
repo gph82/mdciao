@@ -22,7 +22,6 @@
 
 import mdtraj as _md
 import numpy as _np
-from pandas import read_pickle as _read_pickle
 
 import mdciao.fragments as _mdcfrg
 import mdciao.utils as _mdcu
@@ -35,7 +34,9 @@ from pandas import \
     read_csv as _read_csv, \
     DataFrame as _DataFrame, \
     ExcelWriter as _ExcelWriter, \
-    ExcelFile as _ExcelFile
+    ExcelFile as _ExcelFile, \
+    read_pickle as _read_pickle, \
+    isna as _pdisna
 
 from contextlib import nullcontext as _nullcontext
 from collections import defaultdict as _defdict, namedtuple as _namedtuple
@@ -503,7 +504,7 @@ class LabelerConsensus(object):
     def seq(self):
         r""" The reference sequence in :obj:`dataframe`"""
         return ''.join(
-            [_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe.AAresSeq.values.squeeze()])
+            [_mdcu.residue_and_atom.name_from_AA(val) for val in self.dataframe.AAresSeq.astype("object").values.squeeze()])
 
     @property
     def conlab2AA(self):
@@ -724,32 +725,31 @@ class LabelerConsensus(object):
             seq_1_res_idxs = self.dataframe[self.dataframe.chain_id == chain_id[0]].index
         else:
             seq_1_res_idxs = None
-        df = _mdcu.sequence.align_tops_or_seqs(top,
-                                               self.seq,
-                                               seq_0_res_idxs=restrict_to_residxs,
-                                               seq_1_res_idxs=seq_1_res_idxs,
-                                               return_DF=True,
-                                               verbose=verbose,
-                                               )
+        algs_as_dfs = _mdcu.sequence.align_tops_or_seqs(top,
+                                                        self.seq,
+                                                        seq_0_res_idxs=restrict_to_residxs,
+                                                        seq_1_res_idxs=seq_1_res_idxs,
+                                                        return_DF=True,
+                                                        verbose=verbose,
+                                                        )
         consfrags = []
         # For clever alternatives https://stackoverflow.com/a/3844832
-        for ii, idf in enumerate(df):
+        for ii, idf in enumerate(algs_as_dfs):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
             consfrags.append(self._selfmap2frags(self2top))
-        n_alignments=len(df)
+        n_alignments=len(algs_as_dfs)
         frags_already_printed = False
-        for ii, idf in enumerate(df):
+        for ii, idf in enumerate(algs_as_dfs):
             top2self, self2top = _mdcu.sequence.df2maps(idf)
             topidx2conlab = _np.full([len(top) if isinstance(top,str) else top.n_residues][0], None)
             topidx2conlab[list(top2self.keys())] = self.dataframe.iloc[list(top2self.values())][self._conlab_column]
 
 
             idf = _mdcu.sequence.AlignmentDataFrame(idf.merge(_DataFrame(
-                {"idx_0": _np.arange(len(topidx2conlab)),
-                 "conlab": topidx2conlab}), how="left", on="idx_0"), #.replace(_np.nan, None)
+                {idf.colmap["idx_0"]: _np.arange(len(topidx2conlab)),
+                 "conlab": topidx2conlab}), how="left", on=idf.colmap["idx_0"]),
                 alignment_score=idf.alignment_score)
-            # .replace has ffil problem with pandas < 1.5, not with > 2. allowing
-            idf.conlab = [[val if val is not _np.nan else None][0] for val in idf.conlab.values]
+            idf.conlab = idf.conlab.astype("object").mask(_pdisna(idf.conlab), None)
 
             if isinstance(top, str) or str(_frag_str).lower() in ["none", "false"] or n_alignments == 1:
                 confrags_compatible_with_frags = True
@@ -802,8 +802,8 @@ class LabelerConsensus(object):
 
                         if verbose:
                             _mdcu.sequence.print_verbose_dataframe(
-                                idf[idf[idf.idx_0.values == confragidxs[0]].index[0] - 1 - 5:
-                                    idf[idf.idx_0.values == confragidxs[-1]].index[0] + 2 +5]
+                                idf[idf[idf[idf.colmap["idx_0"]].values == confragidxs[0]].index[0] - 1 - 5:
+                                    idf[idf[idf.colmap["idx_0"]].values == confragidxs[-1]].index[0] + 2 +5]
                             )
 
 
@@ -817,10 +817,10 @@ class LabelerConsensus(object):
                             current_clashing_residues = f"The following residues of your input `top` seem to be the problem: {only_in_top}. "
                             istr = current_clashing_confrag+current_clashing_residues
 
-                            if ii<len(df)-1:
+                            if ii<len(algs_as_dfs)-1:
                                     istr += f"Moving to the next equally scored alignment" \
                                             f" (score={idf.alignment_score:.2f}) to check if these clashes disappear."
-                            elif ii==len(df)-1:
+                            elif ii==len(algs_as_dfs)-1:
                                 istr += f"This was the last available alignment."
                             if not verbose:
                                 istr += f" Re-rerun 'mdciao.nomenclature.{type(self).__name__}.aligntop' with `verbose=True` to show the problematic part of this alignment here."
@@ -2015,7 +2015,7 @@ def _alignment_df2_conslist(alignment_as_df,
         _df = alignment_as_df
     _df = _df[_df["match"]]
 
-    out_list[_df["idx_0"].values.astype(int)] = _df["conlab"].values
+    out_list[_df[_df.colmap["idx_0"]].values.astype(int)] = _df["conlab"].values
     return out_list.tolist()
 
 
@@ -2389,7 +2389,7 @@ def conlabs2confrags(conlabs, splitchar=".", replace_GPCR_frags=False):
     if len(bad_labels)>0:
         raise ValueError(f"Some labels of 'cons_list' don't have '{splitchar}' in them. "
                          f"Are you sure these are valid consensus labels(e.g. '3.50' or 'G.H5.26'?:\n{bad_labels}")
-    df = _DataFrame(conlabs, columns=["conlab"])
+    df = _DataFrame(conlabs, columns=["conlab"], dtype="object")
     conlab2confrag = lambda x: str(x)[::-1].split(splitchar, 1)[-1][::-1]
     df["frag"] = df.conlab.map(conlab2confrag)
     consensus_frags = {key: val.index.values for key, val in df.groupby("frag") if str(key).lower() != "none"}
@@ -3218,7 +3218,9 @@ def _mdTopology2residueDF(top) -> _DataFrame:
                        "AAresSeq": _mdcu.residue_and_atom.shorten_AA(rr, substitute_fail="X", keep_index=True),
                        "chain_index": rr.chain.index,
                        "chain_id" : rr.chain.chain_id})
-    return _DataFrame(for_DF)
+    _DF = _DataFrame(for_DF).astype({"code": "object"})
+    _DF["code"] = _DF["code"].mask(_pdisna(_DF["code"]), None)
+    return _DF
 
 
 def _mdTrajectory2spreadsheets(traj, dest, **kwargs_to_excel):
@@ -3283,7 +3285,7 @@ def _Spreadsheets2mdTrajectory(source):
         idict = _read_excel(source,
                             None,
                             engine="openpyxl")
-    idict["topology"].segmentID.fillna("", inplace=True)
+    idict["topology"].segmentID = idict["topology"].segmentID.astype("object").mask(_pdisna(idict["topology"].segmentID), "")
     topology = _from_dataframe(idict["topology"], bonds=idict["bonds"].values)
     xyz = idict["xyz"].values
     unitcell = {}

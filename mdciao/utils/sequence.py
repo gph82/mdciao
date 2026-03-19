@@ -9,10 +9,6 @@ maps between topologies etc)
 
 .. currentmodule:: mdciao.utils.sequence
 
-
-Functions
-=========
-
 .. autosummary::
    :toctree: generated/
 
@@ -25,21 +21,21 @@ import pandas as _pd
 from IPython.display import display as _display
 from collections import namedtuple as _namedtuple
 from Bio import Align as _BioAlign
-
+from inspect import signature as _signature
 
 # See "Define original properties" https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
 class _ADF(_DF):
     r"""
-    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score as metadata.
+    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score and the column key-map as metadata.
 
-    It can be then accessed via self.alignment_score and is preserved downstream
+    They can be then accessed via self.alignment_score, self.colmap and are preserved downstream
 
     Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
     for more info
     """
 
     # normal properties
-    _metadata = ["alignment_score"]
+    _metadata = ["alignment_score", "colmap"]
 
     @property
     def _constructor(self):
@@ -48,22 +44,71 @@ class _ADF(_DF):
 
 class AlignmentDataFrame(_ADF):
     r"""
-    Sub-class of an :obj:`~pandas.DataFrame` to include the alignment_score as metadata.
+    Sub-class of :obj:`~pandas.DataFrame` to include the alignment_score and the column key-map as metadata.
 
-    Simply pass it as argument ' alignment_score=1' and it:
-     * can be then accessed via self.alignment_score and
-     * it is preserved downstream after operating on the df
+    Users should not instantiate this class directly, it is constructed
+    internally by mdciao when needed.
 
-    Check https://pandas.pydata.org/pandas-docs/stable/development/extending.html#define-original-properties
-    for more info
+    The metadata attributes are stored as `self.alignment_score` and `self.colmap`.
+
+    If colmap is left to its default, it gets instantiated
+    the defaults of :obj:`alignment_result_to_list_of_dicts`
+
+    >>> {'AA_0' : 'AA_0',
+    >>>  'resSeq_0' : 'resSeq_0',
+    >>>  'idx_0' : 'idx_0',
+    >>>  'fullname_0' : 'fullname_0',
+    >>>  'idx_1' : 'idx_1',
+    >>>  'AA_1' : 'AA_1',
+    >>>  'fullname_1' : 'fullname_1'}
+
+    Else, it will be whatever map was passed, e.g:
+
+    >>> {'AA_0' : 'AA_WT',
+    >>>  'resSeq_0' : 'resSeq_WT',
+    >>>  'idx_0' : 'idx_WT',
+    >>>  'fullname_0' : 'fullname_WT',
+    >>>  'idx_1' : 'idx_MUT',
+    >>>  'AA_1' : 'AA_MUT',
+    >>>  'fullname_1' : 'fullname_MUT'}
+
     """
 
     def __init__(self,*args,**kwargs):
         alignment_score = kwargs.get("alignment_score")
         if alignment_score is not None:
             kwargs.pop("alignment_score")
+
+        _colmap_keys = _get_colmap_keys()
+        colmap = {key: key for key in _colmap_keys}
+        for key, val in kwargs.pop("colmap",{}).items():
+            assert key in colmap.keys(), ValueError(f"Cannot pass a 'colmap' with a key '{key}' that isn't in '{_colmap_keys}'")
+            colmap[key] = val
+
         super().__init__(*args,**kwargs)
         self.alignment_score = alignment_score
+        self.colmap = colmap
+        self.rename(columns=colmap,inplace=True)
+
+def _get_colmap_keys():
+    r"""
+    Grab default values in :obj:`~mdciao.utils.sequence.alignment_result_to_list_of_dicts`
+
+    Returns
+    -------
+    colmap_keys : list
+
+    """
+    sig = _signature(alignment_result_to_list_of_dicts)
+    _colmap_keys = [sig.parameters.get(key).default for key in ["key_AA_code_seq_0",
+                                                                "key_resSeq_seq_0",
+                                                                "key_idx_seq_0",
+                                                                "key_full_resname_seq_0",
+                                                                "key_idx_seq_1",
+                                                                "key_AA_code_seq_1",
+                                                                "key_full_resname_seq_1"
+                                                                ]]
+    return _colmap_keys
 
 def print_verbose_dataframe(df):
     r"""
@@ -329,6 +374,7 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
                        seq_0_res_idxs=None,
                        seq_1_res_idxs=None,
                        return_DF=True,
+                       ADF_colmap=None,
                        verbose=False,
                        ):
     r""" Align two sequence-containing objects, i.e. strings and/or
@@ -359,6 +405,30 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
     return_DF : bool, default is True
         If False, a list of alignment dictionaries instead
         of :obj:`AlignmentDataFrame` s will be returned
+    ADF_colmap : dict or list, default is None
+        Only has effect if `return_DF` is True. Then, the names
+        of the columns of the returned :obj:`AlignmentDataFrame`
+        can have arbitrary names and be more informative.
+        If dictionary, you can perform fine-grained subsitutions, e.g.
+
+        >>> ADF_colmap = {"idx_0" : "seq_index_WT",
+        >>>               "idx_1" : "seq_index_MUT"}
+
+        If a list, e.g
+
+        >>> ADF_colmap = ["WT", "MUT"]
+
+        then "WT" and "MUT" are used as suffixes to re-map
+        the available keys, automatically building this map:
+
+        >>> {'AA_0' : 'AA_WT',
+        >>>  'resSeq_0' : 'resSeq_WT',
+        >>>  'idx_0' : 'idx_WT',
+        >>>  'fullname_0' : 'fullname_WT',
+        >>>  'idx_1' : 'idx_MUT',
+        >>>  'AA_1' : 'AA_MUT',
+        >>>  'fullname_1' : 'fullname_MUT'}
+
     verbose : bool, default is False
 
     Returns
@@ -415,7 +485,15 @@ def align_tops_or_seqs(top0, top1, substitutions=None,
                                                    ) for aa in alignments]
 
     if return_DF:
-        return [AlignmentDataFrame(aa, alignment_score=score) for aa, score in zip(lists_of_lists_of_align_dicts,
+        _colmap_keys = _get_colmap_keys()
+        if ADF_colmap is None:
+            ADF_colmap = {}
+        elif isinstance(ADF_colmap, list):
+            assert len(ADF_colmap)==2, ValueError(f"The `ADF_colmap` should be of len two, but your input is len {len(ADF_colmap)}")
+            k0, k1 = ADF_colmap
+            ADF_colmap = {key : f"{key.split('_')[0]}_{k0}" for key in _colmap_keys if key.endswith("_0")}
+            ADF_colmap.update({key: f"{key.split('_')[0]}_{k1}" for key in _colmap_keys if key.endswith("_1")})
+        return [AlignmentDataFrame(aa, alignment_score=score, colmap=ADF_colmap) for aa, score in zip(lists_of_lists_of_align_dicts,
                                                                                   scores)]
     else:
         return lists_of_lists_of_align_dicts
@@ -486,8 +564,8 @@ def df2maps(df, allow_nonmatch=True):
     else:
         _df = df
 
-    top0_to_top1 = {key: val for key, val in zip(_df[_df["match"] == True]["idx_0"].to_list(),
-                                                 _df[_df["match"] == True]["idx_1"].to_list())}
+    top0_to_top1 = {key: val for key, val in zip(_df[_df["match"] == True][_df.colmap["idx_0"]].to_list(),
+                                                 _df[_df["match"] == True][_df.colmap["idx_1"]].to_list())}
 
     top1_to_top0 = {val:key for key, val in top0_to_top1.items()}
 
@@ -534,8 +612,8 @@ def re_match_df(df):
         for rr in match_ranges[False]:
             try:
                 if all(_df.loc[[rr[0] - 1, rr[-1] + 1]]["match"]) and \
-                        all(["-" not in df[key].values[rr] for key in ["AA_0",
-                                                                   "AA_1"]]):  # this checks for no insertions in the alignment ("=equal length ranges")
+                        all(["-" not in df[df.colmap[key]].values[rr] for key in ["AA_0",
+                                                                                  "AA_1"]]):  # this checks for no insertions in the alignment ("=equal length ranges")
                     _df.loc[rr, "match"] = True
             except KeyError:
                 continue

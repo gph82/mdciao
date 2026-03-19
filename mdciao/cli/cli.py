@@ -980,7 +980,7 @@ def residue_neighborhoods(residues,
     for ii in res_idxs_list:
         idf = _mdcctcs.contacts._DataFrame2NeighborhoodDF(df, ii)
         neighborhood_DFs[ii]=idf
-        # For debugging you can get an overview of the DF before the CG is created
+        # For debuging you can get an overview of the DF before the CG is created
         #  n_ctcs = _mdcu.lists._get_n_ctcs_from_freqs(ctc_control, idf.freq)[0]
         # _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(idf.freq>0)]),
         #                                             idf[idf.freq > 0].freq.values, or_frac=.9)
