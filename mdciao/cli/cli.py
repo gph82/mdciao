@@ -2574,8 +2574,8 @@ def fragment_overview(topology,
 
     Parameters
     ----------
-    topology :  :obj:`mdtraj.Topology`
-        The moleculr topology to fragment
+    topology :  :obj:`mdtraj.Topology` or string
+        The topology itself or a path to a topology file
     methods : str or list of strings
         method(s) to be used for obtaining fragments
     AAs : list, default is None
