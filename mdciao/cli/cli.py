@@ -489,7 +489,7 @@ def _get_none_aware_unitcell_attrs(geom_list, unitcell_attr_name):
 
 
 
-def _trajsNtop2xtcsNrefgeom(trajectories,topology):
+def _trajsNtop2xtcsNreftop(trajectories, topology):
     r"""
     Inform about trajs and load necessary tops in different scenarios
 
@@ -910,7 +910,7 @@ def residue_neighborhoods(residues,
         return None
 
     _offer_to_create_dir(output_dir)
-    xtcs, reftop = _trajsNtop2xtcsNrefgeom(trajectories, topology)
+    xtcs, reftop = _trajsNtop2xtcsNreftop(trajectories, topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
                                               graphic_ext, table_ext, graphic_dpi, t_unit)
     if no_disk:
@@ -1585,7 +1585,7 @@ def interface(
         title = output_desc
 
     _offer_to_create_dir(output_dir)
-    xtcs, reftop = _trajsNtop2xtcsNrefgeom(trajectories,topology)
+    xtcs, reftop = _trajsNtop2xtcsNreftop(trajectories, topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir,
                                               graphic_ext, table_ext, graphic_dpi,t_unit)
     if no_disk:
@@ -2133,7 +2133,7 @@ def sites(site_inputs,
 
     ylim_Ang = float(ylim_Ang)
     _offer_to_create_dir(output_dir)
-    xtcs, reftop = _trajsNtop2xtcsNrefgeom(trajectories, topology)
+    xtcs, reftop = _trajsNtop2xtcsNreftop(trajectories, topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
                                               graphic_ext, table_ext, graphic_dpi, t_unit)
     if no_disk:
