@@ -500,19 +500,19 @@ def _trajsNtop2xtcsNrefgeom(trajectories,topology):
 
     Returns
     -------
-    xtcs, refgeom
+    xtcs, reftop
     xtcs : whatever get_trajectories_from_input returns
-    refgeom : :obj:`mdtraj.Trajectory` object
+    reftop : :obj:`mdtraj.Topology` object
 
     """
     # Inform about trajectories
     xtcs = _mdcu.str_and_dict.get_trajectories_from_input(trajectories)
     if topology is None:
         # TODO in case the xtc[0] is a pdb/grofile, it will be read one more time later
-        refgeom = _load_any_geom(xtcs[0])[0]
+        reftop = _load_any_geom(xtcs[0]).top
     else:
-        refgeom = _load_any_geom(topology)
-    return xtcs,refgeom
+        reftop = _mdcu.residue_and_atom._load_any_top(topology)
+    return xtcs, reftop
 
 def _fragment_overview(a,labtype):
     r"""
