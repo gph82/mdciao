@@ -725,7 +725,8 @@ def overview(topology,
 
     Parameters
     ----------
-    topology :  :obj:`mdtraj.Topology`
+    topology :  :obj:`mdtraj.Topology` or string
+        The topology itself or a path to a topology file
     methods : str or list of strings
         method(s) to be used for obtaining fragments
     AAs : list, default is None
@@ -750,17 +751,19 @@ def overview(topology,
         try_methods = methods
 
     fragments_out = {}
+
+    # Read topology once for all methods
+    _topology = _mdcu.residue_and_atom._load_any_top(topology)
     for method in try_methods:
         try:
-            fragments_out[method] = get_fragments(topology,
-                                                  method=method)
+            fragments_out[method] = get_fragments(_topology, method=method)
         except Exception as e:
             print("The method %s did not work:"%method)
             print(e)
             print()
         print()
 
-    _mdcu.residue_and_atom.parse_and_list_AAs_input(AAs, topology)
+    _mdcu.residue_and_atom.parse_and_list_AAs_input(AAs, _topology)
 
     return fragments_out
 
