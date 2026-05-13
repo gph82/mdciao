@@ -1752,9 +1752,9 @@ def interface(
             n_repframes = _np.min((n_repframes,50))
             repframes_geom = ctc_grp_intf.repframes(ctc_cutoff_Ang=ctc_cutoff_Ang, return_traj=True, n_frames=n_repframes, verbose=False)[-1]
             repframes_geom = _md.Trajectory([geom.xyz[0] for geom in repframes_geom], topology=repframes_geom[0].top,
-                                            unitcell_angles=[geom.unitcell_angles[0] for geom in repframes_geom],
-                                            unitcell_lengths=[geom.unitcell_lengths[0] for geom in repframes_geom],
-                                            time=[geom.time[0] for geom in repframes_geom])
+                                            time=[geom.time[0] for geom in repframes_geom],
+                                            unitcell_angles=_get_none_aware_unitcell_attrs(repframes_geom, "unitcell_angles"),
+                                            unitcell_lengths=_get_none_aware_unitcell_attrs(repframes_geom, "unitcell_lengths"))
 
             ctc_grp_intf.frequency_to_bfactor(ctc_cutoff_Ang, fn.fullpath_pdb, repframes_geom,
                                           # interface_sign=True,
