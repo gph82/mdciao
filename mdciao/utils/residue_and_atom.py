@@ -935,14 +935,14 @@ def get_SS(SS,top=None):
 def _load_any_top(top):
     r"""
 
-    Return an :obj:`mdtraj.Topology` from either a topology object or a topology-containing file
+    Return an :obj:`mdtraj.Topology` from either an topology/trajectory object or a topology-containing file
 
     Includes an if-statement for loading .prmtop files
 
     Parameters
     ----------
-    top : :obj:`mdtraj.Topology` or string
-        Either a trajectory object or path to a topology file
+    top : :obj:`mdtraj.Topology`, obj:`mdtraj.Trajectory` or string
+        Either a topology-containig mdtraj object or path to a topology file
 
     Returns
     -------
@@ -950,6 +950,8 @@ def _load_any_top(top):
     """
     if isinstance(top, _md.Topology):
         return top
+    if isinstance(top, _md.Trajectory):
+        return top.top
     else:
         if _splitext(top)[1]==".prmtop":
             return _md.load_prmtop(top)

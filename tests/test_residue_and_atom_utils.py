@@ -807,6 +807,11 @@ class Test_load_any_top(unittest.TestCase):
         result = residue_and_atom._load_any_top(test_filenames.small_dimer)
         assert result==top
 
+    def test_geom(self):
+        geom = _md.load(test_filenames.small_dimer)
+        result = residue_and_atom._load_any_top(test_filenames.small_dimer)
+        assert result==geom.top
+
     def test_prmtop_path(self):
         result = residue_and_atom._load_any_top(test_filenames.small_dimer)
         assert isinstance(result,_md.Topology)
