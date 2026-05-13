@@ -789,6 +789,19 @@ class Test_load_any_geom(unittest.TestCase):
         geomout = cli._load_any_geom(geom)
         self.assertIs(geom, geomout)
 
+class Test_get_none_aware_unitcell_attrs(unittest.TestCase):
+
+    def test_no_Nones(self):
+        traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
+        result = cli._get_none_aware_unitcell_attrs([traj], "unitcell_angles")
+        _np.testing.assert_equal(result, [traj.unitcell_angles])
+
+    def test_Nones(self):
+        traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
+        traj.unitcell_angles = None
+        result = cli._get_none_aware_unitcell_attrs([traj], "unitcell_angles")
+        _np.testing.assert_equal(result,None)
+
 class Test_parse_fragment_naming_options(unittest.TestCase):
     def setUp(self):
         self.fragments = [[0,1],

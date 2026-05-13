@@ -455,6 +455,40 @@ def _load_any_geom(geom):
 
     return outgeom
 
+def _get_none_aware_unitcell_attrs(geom_list, unitcell_attr_name):
+    r"""
+
+    Return unitcell attributes from list of geometries, or None if all are None.
+
+    Note
+    -----
+    If the list of unitcell attributes mixes Nones and not Nones,
+    the list will be returned as is. This might lead to downstream errors
+    if a new:obj:`~mdtraj.Trajectory` is to be built, but it's not
+    this method's scope to test for that. Downstream hanldes should
+    capture that error. This private method is currently only used
+    in one very specific case
+
+    Parameters
+    ----------
+    geom_list : list of :obj:`mdtraj.Trajectory` objects
+    unitcell_attr_name : str
+        The unitcell attribute name, e.g.
+        "unitcell_angles" or "unitcell_lengths"
+
+    Returns
+    -------
+    unitcell_attrs : None or list
+        If all the retrieved attributes of `geom_list` are None,
+        return None, else return them as they were.
+    """
+    unitcell_attrs = [(_np.squeeze(getattr(geom, unitcell_attr_name)) if getattr(geom, unitcell_attr_name) is not None else None) for geom in
+                       geom_list]
+
+    return (None if all([ua is None for ua in unitcell_attrs]) else unitcell_attrs)
+
+
+
 def _trajsNtop2xtcsNrefgeom(trajectories,topology):
     r"""
     Inform about trajs and load necessary tops in different scenarios
