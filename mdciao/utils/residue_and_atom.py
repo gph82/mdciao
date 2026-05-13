@@ -20,6 +20,7 @@ from mdciao.utils.str_and_dict import _kwargs_subs, match_dict_by_patterns as _m
 from collections import Counter as _Counter
 from pandas import DataFrame as _DF
 from collections import defaultdict as _defdict
+from os.path import splitext as _splitext
 
 def residues_from_descriptors(residue_descriptors,
                               fragments, top,
@@ -929,3 +930,28 @@ def get_SS(SS,top=None):
         ss_array = SS
 
     return from_tuple, ss_array
+
+#This would need to be close to _load_any_geom in cli but here it is for now
+def _load_any_top(top):
+    r"""
+
+    Return an :obj:`mdtraj.Topology` from either a topology object or a topology-containing file
+
+    Includes an if-statement for loading .prmtop files
+
+    Parameters
+    ----------
+    top : :obj:`mdtraj.Topology` or string
+        Either a trajectory object or path to a topology file
+
+    Returns
+    -------
+    top : :obj:`mdtraj.Topology`
+    """
+    if isinstance(top, _md.Topology):
+        return top
+    else:
+        if _splitext(top)[1]==".prmtop":
+            return _md.load_prmtop(top)
+    # Ensure we always try to return something, let it fail as mdtraj would
+    return _md.load(top).top

@@ -58,13 +58,16 @@ class FileNames(object):
         self.nomenclature_path = _path.join(self.test_data_path,"nomenclature")
         self.json_path = _path.join(self.test_data_path,"json")
 
-        # pdbs for testing
+        # pdbs and prmtop for testing
         self.small_monomer = _path.join(self.bogus_pdb_path,
                                        "2_3AA_chains_and_two_ligs_monomer.pdb")
         self.file_for_no_bonds_gro = _path.join(self.bogus_pdb_path,
                                        "2_3AA_chains_and_two_ligs_monomer.gro")
         self.small_dimer = _path.join(self.bogus_pdb_path,
                                      "2_3AA_chains_and_two_ligs_dimer.pdb")
+        # prmtop from the above w/o the ligands
+        self.small_dimer_no_ligs_prmtop = _path.join(self.bogus_pdb_path,
+                                                     "2_3AA_chains_monomer.prmtop")
         # Force a break in the resSeq
         self.small_monomer_LYS99 = _path.join(self.bogus_pdb_path,
                                              "2_3AA_chains_and_two_ligs_monomer.LYS29toLYS99.pdb")

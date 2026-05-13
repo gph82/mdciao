@@ -796,3 +796,17 @@ class Test_residue_sidechain_membership(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             residue_and_atom._residue_sidechain_membership("bogus_scheme", self.geom.top.residue(2))
 
+class Test_load_any_top(unittest.TestCase):
+
+    def test_pdb_path(self):
+        result = residue_and_atom._load_any_top(test_filenames.small_dimer)
+        assert isinstance(result,_md.Topology)
+
+    def test_top(self):
+        top = _md.load(test_filenames.small_dimer).top
+        result = residue_and_atom._load_any_top(test_filenames.small_dimer)
+        assert result==top
+
+    def test_prmtop_path(self):
+        result = residue_and_atom._load_any_top(test_filenames.small_dimer)
+        assert isinstance(result,_md.Topology)
