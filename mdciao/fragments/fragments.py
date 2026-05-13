@@ -277,8 +277,7 @@ def get_fragments(top,
 
     _assert_method_allowed(method)
     salt = [ss.lower() for ss in salt]
-    if isinstance(top, str):
-        top = _md.load(top).top
+    top = _mdcu.residue_and_atom._load_any_top(top)
 
     # Auto detect fragments by resSeq
     fragments_resSeq = _get_fragments_by_jumps_in_sequence([rr.resSeq for rr in top.residues])[0]
