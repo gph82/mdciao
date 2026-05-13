@@ -911,6 +911,7 @@ def residue_neighborhoods(residues,
 
     _offer_to_create_dir(output_dir)
     xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories, topology)
+    reftop = refgeom.top
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
                                               graphic_ext, table_ext, graphic_dpi, t_unit)
     if no_disk:
@@ -924,7 +925,7 @@ def residue_neighborhoods(residues,
     print("Will compute contact frequencies for (%u items):\n%s"
           "\n with a stride of %u frames" % (len(xtcs),_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
-    fragments_as_residue_idxs = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, refgeom.top, verbose=True)[0]
+    fragments_as_residue_idxs = _mdcfrg.fragments._fragments_strings_to_fragments(fragments, reftop, verbose=True)[0]
     fragment_names = _parse_fragment_naming_options(fragment_names, fragments_as_residue_idxs)
     fragment_colors = _parse_coloring_options(fragment_colors,len(fragment_names))
 
@@ -932,7 +933,7 @@ def residue_neighborhoods(residues,
     mid_string = "\nWill compute neighborhoods for the residues\n" \
                  "%s\nexcluding %u nearest neighbors" \
                  "\n" % (residues,n_nearest)
-    res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, refgeom.top, fragments_as_residue_idxs,
+    res_idxs_list, consensus_maps, consensus_frags = _res_resolver(residues, reftop, fragments_as_residue_idxs,
                                                                    midstring=mid_string, GPCR_UniProt=GPCR_UniProt,
                                                                    CGN_UniProt=CGN_UniProt, KLIFS_string=KLIFS_string,
                                                                    save_nomenclature_files=save_nomenclature_files,
@@ -940,23 +941,23 @@ def residue_neighborhoods(residues,
                                                                    fragment_names=fragment_names,
                                                                    interpret_as_res_idxs=res_idxs, sort=sort)
 
-    top2confrag = _np.full(refgeom.top.n_residues, None)
+    top2confrag = _np.full(reftop.n_residues, None)
     for key, val in consensus_frags.items():
         top2confrag[val] = key
 
     # Create a neighborlist
     if n_nearest == 0:
-        nl = [[]]*refgeom.top.n_residues
+        nl = [[]]*reftop.n_residues
     else:
         try:
-            nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
+            nl = _mdcu.bonds.bonded_neighborlist_from_top(reftop, n=n_nearest)
         except ValueError as e:
             if naive_bonds:
                 print("Creating a naive linear bond-list: residue 'n' will be considered bonded to its \n"
                       "adjacent 'n+1' and 'n-1' residues. Additionally, these bond-breaks will enforced:")
                 print(" * between non-protein residues")
                 print(" * between the above '%s' fragment definitions"%fragments)
-                mat = _mdcu.bonds.top2residue_bond_matrix_naive(refgeom.top, fragments=fragments_as_residue_idxs)
+                mat = _mdcu.bonds.top2residue_bond_matrix_naive(reftop, fragments=fragments_as_residue_idxs)
                 nl = _mdcu.bonds.neighborlists_from_adjacency_matrix(mat, n_nearest)
             else:
                 print(e)
@@ -966,7 +967,7 @@ def residue_neighborhoods(residues,
 
     # Use it to prune the contact indices
     ctc_idxs = _np.vstack(
-        [[_np.sort([val, ii]) for ii in range(refgeom.top.n_residues) if ii not in nl[val] and ii != val] for val in
+        [[_np.sort([val, ii]) for ii in range(reftop.n_residues) if ii not in nl[val] and ii != val] for val in
          res_idxs_list])
 
     # Prune duplicates in the ctc_idxs (the res_idxs_list with itself generates duplicates)
@@ -981,7 +982,7 @@ def residue_neighborhoods(residues,
     print(f"\nPerforming a first pass on {len(ctc_idxs)} residue pairs to compute lower bounds "
           f"on residue-residue distances via residue-COM distances:")
     lb_cutoff_buffer_Ang = 2.5
-    idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
+    idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, reftop, ctc_idxs,
                                                             stride=stride,
                                                             chunksize=chunksize_in_frames,
                                                             n_jobs=n_jobs,
@@ -995,7 +996,7 @@ def residue_neighborhoods(residues,
         print("No residues have any neighbors at %2.1f Ang. No output produced." % ctc_cutoff_Ang)
         return {idx : None for idx in res_idxs_list}
     print(f"\nReduced to only {len(ctc_idxs_small)} residue pairs for the computation of actual residue-residue distances:")
-    ctcs_trajs, time_arrays, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+    ctcs_trajs, time_arrays, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, reftop, ctc_idxs_small, stride=stride,
                                                                  chunksize=chunksize_in_frames,
                                                                  return_times_and_atoms=True,
                                                                  consolidate=False,
@@ -1006,7 +1007,7 @@ def residue_neighborhoods(residues,
                                                                  )
     print() # to make sure we don't overwrite output
     actcs = _np.vstack(ctcs_trajs)
-    df = _mdcctcs.contacts._data2DataFrame(actcs, ctc_idxs_small, refgeom.top, ctc_cutoff_Ang,
+    df = _mdcctcs.contacts._data2DataFrame(actcs, ctc_idxs_small, reftop, ctc_cutoff_Ang,
                                            fragments_as_residue_idxs, fragment_names,
                                            top2confrag, list(consensus_maps.values()),
                                            keep_max_buffer_Ang=lb_cutoff_buffer_Ang)
@@ -1030,7 +1031,7 @@ def residue_neighborhoods(residues,
             CPs.append(_mdcctcs.ContactPair([irow.residx1, irow.residx2],
                                             [itraj[:, irow.ctc_idx] for itraj in ctcs_trajs],
                                             time_arrays,
-                                            top=refgeom.top,
+                                            top=reftop,
                                             anchor_residue_idx=res_idx,
                                             consensus_labels=[irow.GRN1, irow.GRN2],
                                             trajs=xtcs,
@@ -1061,7 +1062,7 @@ def residue_neighborhoods(residues,
         return
     elif len(empty_CGs)>0:
         print("The following residues have no neighbors at %2.1f Ang, their frequency histograms will be empty"%ctc_cutoff_Ang)
-        print("\n".join([str(refgeom.top.residue(ii)) for ii in empty_CGs]))
+        print("\n".join([str(reftop.residue(ii)) for ii in empty_CGs]))
 
 
     if any([savetabs,savefigs,savetrajs]):
@@ -1586,6 +1587,7 @@ def interface(
 
     _offer_to_create_dir(output_dir)
     xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories,topology)
+    reftop = refgeom.top
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir,
                                               graphic_ext, table_ext, graphic_dpi,t_unit)
     if no_disk:
@@ -1598,7 +1600,7 @@ def interface(
           "\n with a stride of %u frames" % (_mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15), stride))
 
     fragments_as_residue_idxs, fragment_names, _, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
-        refgeom.top, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_string, accept_guess, save_nomenclature_files)
+        reftop, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_string, accept_guess, save_nomenclature_files)
     if fragment_names is None or all([fn is None for fn in fragment_names]): #adapt to _parse_fragment_naming_options
         fragments_as_residue_idxs_d = {str(ii) : val for ii, val in enumerate(fragments_as_residue_idxs)}
     else:
@@ -1633,7 +1635,7 @@ def interface(
 
     # Create a neighborlist
     if n_nearest>0:
-        nl = _mdcu.bonds.bonded_neighborlist_from_top(refgeom.top, n=n_nearest)
+        nl = _mdcu.bonds.bonded_neighborlist_from_top(reftop, n=n_nearest)
         ctc_idxs = _np.vstack([(ii,jj) for ii,jj in ctc_idxs if jj not in nl[ii]])
         if len(ctc_idxs)!=last_n_ctcs:
             print(f"\nExcluding contacts between {n_nearest} nearest neighbors reduces from {last_n_ctcs} to {len(ctc_idxs)} residue pairs. "
@@ -1656,7 +1658,7 @@ def interface(
                              f"but your input is a {type(AA_selection).__name__} of len {len(AA_selection)}.")
         sel = _mdcu.residue_and_atom.rangeexpand_residues2residxs(AA_selection,
                                                                   fragments_as_residue_idxs,
-                                                                  refgeom.top,
+                                                                  reftop,
                                                                   fragment_names=fragment_names,
                                                                   additional_resnaming_dicts=consensus_maps)
         ctc_idxs = [pair for pair in ctc_idxs if lambda_sel(pair, sel)]
@@ -1667,7 +1669,7 @@ def interface(
     print(f"\nPerforming a first pass on the {last_n_ctcs} group_1-group_2 residue pairs to compute lower bounds "
           f"on residue-residue distances via residue-COM distances.")
     lb_cutoff_buffer_Ang = 2.5
-    idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, refgeom.top, ctc_idxs,
+    idx_of_lower_lower_bounds = _mdcctcs.trajs2lower_bounds(xtcs, reftop, ctc_idxs,
                                                             stride=stride,
                                                             chunksize=chunksize_in_frames,
                                                             n_jobs=n_jobs,
@@ -1680,7 +1682,7 @@ def interface(
         print("No contacts found at %2.1f Ang. No output produced." % ctc_cutoff_Ang)
         return
     print(f"Reduced to only {len(ctc_idxs_intf)} (from {last_n_ctcs}) residue pairs for the computation of actual residue-residue distances:")
-    ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_intf,
+    ctcs, times, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, reftop, ctc_idxs_intf,
                                                      stride=stride, return_times_and_atoms=True,
                                                      consolidate=False,
                                                      chunksize=chunksize_in_frames,
@@ -1692,7 +1694,7 @@ def interface(
 
     # Stack all data
     actcs = _np.vstack(ctcs)
-    df = _mdcctcs.contacts._data2DataFrame(actcs, ctc_idxs_intf, refgeom.top, ctc_cutoff_Ang,
+    df = _mdcctcs.contacts._data2DataFrame(actcs, ctc_idxs_intf, reftop, ctc_cutoff_Ang,
                                            fragments_as_residue_idxs, fragment_names,
                                            top2confrag, list(consensus_maps.values()),
                                            keep_max_buffer_Ang=lb_cutoff_buffer_Ang)
@@ -1710,7 +1712,7 @@ def interface(
         ctc_objs.append(_mdcctcs.ContactPair([irow.residx1, irow.residx2],
                                              [itraj[:, irow.ctc_idx] for itraj in ctcs],
                                              times,
-                                             top=refgeom.top,
+                                             top=reftop,
                                              consensus_labels=[irow.GRN1, irow.GRN2],
                                              trajs=xtcs,
                                              fragment_idxs=[irow.frag1, irow.frag2],
@@ -2134,6 +2136,7 @@ def sites(site_inputs,
     ylim_Ang = float(ylim_Ang)
     _offer_to_create_dir(output_dir)
     xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories, topology)
+    reftop = refgeom.top
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
                                               graphic_ext, table_ext, graphic_dpi, t_unit)
     if no_disk:
@@ -2147,10 +2150,10 @@ def sites(site_inputs,
         _mdcu.str_and_dict.inform_about_trajectories(xtcs, only_show_first_and_last=15),stride))
 
     fragments_as_residue_idxs, fragment_names, __, consensus_labelers, consensus_maps, consensus_frags, top2confrag = _parse_fragdefs_fragnames_consensus(
-        refgeom.top, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_string, accept_guess, save_nomenclature_files)
+        reftop, fragments, fragment_names, GPCR_UniProt, CGN_UniProt, KLIFS_string, accept_guess, save_nomenclature_files)
 
     sites = [_mdcsites.x2site(ff) for ff in site_inputs]
-    ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, refgeom.top,
+    ctc_idxs_small, site_maps = _mdcsites.sites_to_res_pairs(sites, reftop,
                                                              fragments=fragments_as_residue_idxs,
                                                              default_fragment_index=default_fragment_index,
                                                              consensus_maps=[consensus_maps if len(consensus_maps)>0 else None][0],
@@ -2175,10 +2178,10 @@ def sites(site_inputs,
     header = "  ".join(["%10s"%head for head in "residue  residx fragment  resSeq".split()+list(consensus_maps.keys())])
     print(header)
     for idx in _np.unique(ctc_idxs_small):
-        print(_mdcu.residue_and_atom.residue_line("",refgeom.top.residue(idx),
+        print(_mdcu.residue_and_atom.residue_line("",reftop.residue(idx),
                                                   _mdcu.lists.in_what_fragment(idx,fragments_as_residue_idxs),
                                                   consensus_maps=consensus_maps, table=True))
-    ctcs, time_array, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, refgeom.top, ctc_idxs_small, stride=stride,
+    ctcs, time_array, at_pair_trajs = _mdcctcs.trajs2ctcs(xtcs, reftop, ctc_idxs_small, stride=stride,
                                                           chunksize=chunksize_in_frames,
                                                           return_times_and_atoms=True, consolidate=False, periodic=pbc,
                                                           scheme=scheme,
@@ -2196,7 +2199,7 @@ def sites(site_inputs,
             site_as_gc[key].append(_mdcctcs.ContactPair(pair,
                                                [itraj[:, idx] for itraj in ctcs],
                                                time_array,
-                                               top=refgeom.top,
+                                               top=reftop,
                                                consensus_labels=consensus_labels,
                                                trajs=xtcs,
                                                fragment_idxs=fragment_idxs,
