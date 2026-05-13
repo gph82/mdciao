@@ -910,8 +910,7 @@ def residue_neighborhoods(residues,
         return None
 
     _offer_to_create_dir(output_dir)
-    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories, topology)
-    reftop = refgeom.top
+    xtcs, reftop = _trajsNtop2xtcsNrefgeom(trajectories, topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
                                               graphic_ext, table_ext, graphic_dpi, t_unit)
     if no_disk:
@@ -1586,8 +1585,7 @@ def interface(
         title = output_desc
 
     _offer_to_create_dir(output_dir)
-    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories,topology)
-    reftop = refgeom.top
+    xtcs, reftop = _trajsNtop2xtcsNrefgeom(trajectories,topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc,ctc_cutoff_Ang,output_dir,
                                               graphic_ext, table_ext, graphic_dpi,t_unit)
     if no_disk:
@@ -2135,8 +2133,7 @@ def sites(site_inputs,
 
     ylim_Ang = float(ylim_Ang)
     _offer_to_create_dir(output_dir)
-    xtcs, refgeom = _trajsNtop2xtcsNrefgeom(trajectories, topology)
-    reftop = refgeom.top
+    xtcs, reftop = _trajsNtop2xtcsNrefgeom(trajectories, topology)
     fn = _mdcu.str_and_dict.FilenameGenerator(output_desc, ctc_cutoff_Ang, output_dir,
                                               graphic_ext, table_ext, graphic_dpi, t_unit)
     if no_disk:
