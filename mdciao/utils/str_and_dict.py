@@ -376,8 +376,8 @@ def unify_freq_dicts(freqs,
                 not_shared += list(set(idict1.keys()).difference(idict2.keys()))
                 shared += list(set(idict1.keys()).intersection(idict2.keys()))
 
-    shared = list(_np.unique(shared))
-    not_shared = list(_np.unique(not_shared))
+    shared = _np.unique(shared).astype(str).tolist()
+    not_shared = _np.unique(not_shared).astype(str).tolist()
     all_keys = shared + not_shared
     # Prune keys we're not interested in
     excluded = []
