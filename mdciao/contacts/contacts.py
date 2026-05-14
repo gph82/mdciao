@@ -6313,7 +6313,7 @@ class ContactGroup(object):
     @property
     def modes(self):
         r"""
-        Per-contact `modes <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ over all distance time-traces
+        Likeliest per-distance `mode <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ over all distance time-traces.
 
         Note
         ----
@@ -6350,8 +6350,8 @@ class ContactGroup(object):
         Find representative frames for this :obj:`ContactGroup`
 
         A "representative frame" means, in this context, a frame
-        that minimizes **the average distance** to the modes (or means)
-        of the residue-residue distances contained in this object.
+        that minimizes the **average deviation** of each residue-residue
+        distance from its typical value (mode or mean).
 
         Please note that "representative" can have other meanings
         in other contexts. Here, it's just a way to pick a frames/geometries
