@@ -23,7 +23,7 @@
 ##############################################################################
 
 from mdciao.parsers import parser_for_GPCR_overview
-from mdciao.cli.cli import _fragment_overview
+from mdciao.cli.cli import _consensus_fragment_overview
 parser = parser_for_GPCR_overview()
 a  = parser.parse_args()
-_fragment_overview(a,"GPCR")
+_consensus_fragment_overview(a, "GPCR")

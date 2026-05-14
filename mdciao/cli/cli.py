@@ -514,7 +514,7 @@ def _trajsNtop2xtcsNreftop(trajectories, topology):
         reftop = _mdcu.residue_and_atom._load_any_top(topology)
     return xtcs, reftop
 
-def _fragment_overview(a,labtype):
+def _consensus_fragment_overview(a, labtype):
     r"""
     provide the CLTs GPCR_overview and CGN_overview and KLIFS_overview
 
