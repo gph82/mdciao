@@ -951,7 +951,7 @@ def _label2componentsdict(istr,sep="-",defrag="@",
                         bits["frag%u"%f]=iw
                         f+=1
                     elif sep in iw and assume_ctc_label:
-                        ires, ifrag = [jw[::-1] for jw in iw[::-1].split(sep, 1)]
+                        ires, ifrag = iw.rsplit(sep, 1)[::-1]
                         if "res1" in bits.keys():
                             if "frag1" in bits.keys():
                                 bits["frag%u"%f]=iw
@@ -971,7 +971,7 @@ def _label2componentsdict(istr,sep="-",defrag="@",
                         bits["res%u"%r]=iw.split(defrag)[0]
                         r+=1
                     else:
-                        ires, ifrag = [jw[::-1] for jw in iw[::-1][1:].split(sep, 1)]
+                        ires, ifrag = iw.rsplit(sep, 1)[::-1]
                         bits["frag%u"%f]=ifrag
                         bits["res%u"%r]=ires
                         f+=1
