@@ -725,9 +725,9 @@ def replace4latex(istr,
     bits = [bit for bit in _re.split("(?i)(%s)" % pattern, istr.replace("\n", " ? ")) if len(bit) > 0]
     for ii in range(len(bits)):
         if bits[ii].lower() in symbols:
-            bits[ii] = "$\%s$" % bits[ii]
+            bits[ii] = r"$\%s$" % bits[ii]
         elif any([ss == bits[ii] for ss in sindex]):
-            bits[ii] = "$%s$" % bits[ii]
+            bits[ii] = r"$%s$" % bits[ii]
         elif any([ss in bits[ii] for ss in sindex]):
             ibit = bits[ii]
             if any([ibit.count(ss)>1 for ss in sindex]):
@@ -739,10 +739,10 @@ def replace4latex(istr,
                 if word.isnumeric() or word.isalpha() or "." in word and word not in sindex: #Also gets 3.50
                     words[ww] = "{%s}" % word
             ibit = "".join(words)
-            bits[ii] = "$\mathrm{%s}$" % ibit
+            bits[ii] = r"$\mathrm{%s}$" % ibit
         else:
             if enclose_pure_text and any([c.isalpha()  for c in bits[ii]]):
-                bits[ii] = "$\mathrm{%s}$" % bits[ii]
+                bits[ii] = r"$\mathrm{%s}$" % bits[ii]
 
     return "".join(bits).replace("$$", "").replace(" ? ","\n")
 
@@ -814,7 +814,7 @@ def latex_mathmode(istr, enclose=True):
     istr : string
     """
     output = []
-    exp = "(%s)" % "|".join(["\%s" % ss if ss == "^" else "%s" % ss for ss in _symbols])
+    exp = "(%s)" % "|".join([r"\%s" % ss if ss == "^" else "%s" % ss for ss in _symbols])
     for word in _re.split(exp, istr):
         if len(word) > 0:
             if word in _symbols:
