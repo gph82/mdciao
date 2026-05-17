@@ -971,7 +971,7 @@ def _label2componentsdict(istr,sep="-",defrag="@",
                         bits["res%u"%r]=iw.split(defrag)[0]
                         r+=1
                     else:
-                        ires, ifrag = iw.rsplit(sep, 1)[::-1]
+                        ires, ifrag = iw[:-1].rsplit(sep, 1)[::-1]
                         bits["frag%u"%f]=ifrag
                         bits["res%u"%r]=ires
                         f+=1
