@@ -732,7 +732,7 @@ def replace4latex(istr,
             ibit = bits[ii]
             if any([ibit.count(ss)>1 for ss in sindex]):
                 continue
-            words = [word for word in _re.split("(%s)" % "|".join(["\%s" % ss for ss in sindex]), ibit)
+            words = [word for word in _re.split("(%s)" % "|".join([r"\%s" % ss for ss in sindex]), ibit)
                      if len(word) > 0]
             for ww in range(len(words)):
                 word = words[ww]
