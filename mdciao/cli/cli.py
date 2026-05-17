@@ -1768,7 +1768,9 @@ def interface(
         panelsize = 4
         panelsize2font = 3.5
         fudge = 7
-        histofig, histoax = _plt.subplots(n_rows, n_cols, sharex=True, sharey=False,
+        histofig, histoax = _plt.subplots(n_rows, n_cols,
+                                          # sharex=True, problematic in some cases
+                                          sharey=False,
                                           figsize=(n_cols * panelsize * _np.ceil(ctc_grp_intf.n_ctcs/fudge),
                                                   n_rows * panelsize),
                                           )
