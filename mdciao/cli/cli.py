@@ -1703,6 +1703,8 @@ def interface(
     # Report n_ctcs and frequency summary leaving in the freqs < min_freq
     _mdcctcs.contacts._contact_fraction_informer(_np.min([n_ctcs, _np.sum(df.freq>min_freq)]),
                                                  df[df.freq>0].freq.values, ctc_cutoff_Ang, or_frac=.9, )
+    # Greedy contact frequency sum
+    greedy_total_freq = df.freq.sum()
     # Take freqs < min_freq out now
     df = df[df.freq>min_freq][:n_ctcs]
 
@@ -1785,7 +1787,7 @@ def interface(
                                         label_fontsize_factor=panelsize2font / panelsize,
                                         shorten_AAs=short_AA_names,
                                         lower_cutoff_val=min_freq,
-                                        total_freq=df.freq.sum()
+                                        total_freq=greedy_total_freq
                                         )
 
         ctc_grp_intf.plot_frequency_sums_as_bars(ctc_cutoff_Ang,
