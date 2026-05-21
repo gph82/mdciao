@@ -56,6 +56,7 @@ def re_warp(array_in, lengths):
     -------
     warped: list
     """
+    #check np.split and related methods
 
     if _np.ndim(lengths)==0:
         lengths = [lengths] * int(_np.ceil(len(array_in) / lengths))
