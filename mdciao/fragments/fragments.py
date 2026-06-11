@@ -190,7 +190,11 @@ def get_fragments(top,
     Group residues of a molecular topology into fragments using different methods.
 
     Water and ions get their own fragment by default except for the methods
-    None, chains, and any method involving bonds
+    None, chains, and any method involving bonds. This 'extraction' of
+    water and ions takes place after the `method` has been applied, and
+    may lead (in some edge cases) to gaps within one fragment. These
+    discontinuous fragments are split at the discontinuity to avoid
+    'interstitial' fragments.
 
     Parameters
     ----------
@@ -217,13 +221,13 @@ def get_fragments(top,
 
             […A27][Lig28],[K29,…,W40],[D45,…,W50],[CYSP51],[GDP52]
 
-            notice that because phosphorylated CYSP51 didn't get a
+            notice that because phosphorylated/palmitoylated CYSP51 didn't get a
             bond in the topology, it's considered a ligand
 
         - 'resSeq_bonds'
             breaks at resSeq jumps and at missing bonds
         - 'lig_resSeq+'
-            Like resSeq+ but put's any non-AA residue into it's own fragment.
+            Like resSeq+ but puts any non-AA residue into its own fragment.
             […A27][Lig28],[K29,…,W40],[D45,…,W50,CYSP51],[GDP52]
             Also check :obj:`maxjump`
         - 'chains'
@@ -247,14 +251,11 @@ def get_fragments(top,
         Be verbose
     salt : list, default is ["Na+","Cl+", "NA","CL"]
         Residues that match these residue names and
-        have only one atom will be put together
-        in the last fragment. Use salt = []
-        to deactivate. Doesn't apply for methods
-        involving bonds or None and chains
+        have only one atom will be put together.
+        Doesn't apply for methods 'None' and 'chains'
     water : bool, default is True
         Put water on its own fragment.
-        Doesn't apply for methods
-        involving bonds or None and chains
+        Doesn't apply for methods 'None' and 'chains'
     maxjump : int or None, default is 500
         The maximum allowed positive sequence-jump
         in the 'resSeq+' methods, i.e. don't
@@ -272,7 +273,9 @@ def get_fragments(top,
     -------
     List of integer arrays
         Each array within the list has the residue indices of each fragment.
-        These fragments do not have overlap. Their union contains all indices
+        They are sorted in ascending order of the first residue in the fragment.
+        They don't overlap with each other, contain no gaps,
+        and their union contains all indices.
 
     """
 
@@ -347,7 +350,13 @@ def get_fragments(top,
             fragments = _dry_fragments(fragments, top)
         fragments = _bland_fragments(fragments, top, salt)
 
-    fragments = [fragments[ii] for ii in _np.argsort([ifrag[0] for ifrag in fragments])]
+    # Enforce gap-less fragments
+    _frags = []
+    for fr in fragments:
+        _frags.extend(_get_fragments_by_jumps_in_sequence(fr)[1])
+    fragments = _frags
+
+    fragments = [_np.array(fragments[ii], dtype=int).tolist() for ii in _np.argsort([ifrag[0] for ifrag in fragments])]
 
     # Inform of the first result
     if verbose:
@@ -603,7 +612,7 @@ def match_fragments(seq0, seq1,
         are not affected by this.
     verbose : bool, default is False
         Be verbose, affects all methods
-        called by the this method as well.
+        called by this method as well.
 
     Returns
     -------
