@@ -789,6 +789,19 @@ class Test_load_any_geom(unittest.TestCase):
         geomout = cli._load_any_geom(geom)
         self.assertIs(geom, geomout)
 
+class Test_get_none_aware_unitcell_attrs(unittest.TestCase):
+
+    def test_no_Nones(self):
+        traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
+        result = cli._get_none_aware_unitcell_attrs([traj], "unitcell_angles")
+        _np.testing.assert_equal(result, [traj.unitcell_angles])
+
+    def test_Nones(self):
+        traj = md.load(test_filenames.traj_xtc_stride_20, top=test_filenames.top_pdb)
+        traj.unitcell_angles = None
+        result = cli._get_none_aware_unitcell_attrs([traj], "unitcell_angles")
+        _np.testing.assert_equal(result,None)
+
 class Test_parse_fragment_naming_options(unittest.TestCase):
     def setUp(self):
         self.fragments = [[0,1],
@@ -881,24 +894,24 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
                 a = parser_for_CGN_overview()
                 a = a.parse_args([path_to_gnas2_human])
                 a.__setattr__("topology",test_filenames.top_pdb)
-                cli._fragment_overview(a, "CGN")
+                cli._consensus_fragment_overview(a, "CGN")
 
     def test_GPCR_paths_and_verbose(self):
         a = parser_for_GPCR_overview()
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("print_conlab",True)
         a.__setattr__("topology",test_filenames.top_pdb)
-        cli._fragment_overview(a, "GPCR")
+        cli._consensus_fragment_overview(a, "GPCR")
 
     def test_GPCR_url(self):
         a = parser_for_GPCR_overview()
         a = a.parse_args(["adrb2_human"])
         a.__setattr__("topology", test_filenames.rcsb_3SN6_pdb)
-        cli._fragment_overview(a, "GPCR")
+        cli._consensus_fragment_overview(a, "GPCR")
 
     def test_raises(self):
         with self.assertRaises(ValueError):
-            cli._fragment_overview(None, "BWx")
+            cli._consensus_fragment_overview(None, "BWx")
 
     def test_AAs(self):
         a = parser_for_CGN_overview()
@@ -906,20 +919,20 @@ class Test_fragment_overview_Nomenclature(unittest.TestCase):
                           ])
         a.__setattr__("AAs","LEU394,LEU395")
         a.__setattr__("topology",test_filenames.top_pdb)
-        cli._fragment_overview(a, "CGN")
+        cli._consensus_fragment_overview(a, "CGN")
 
     def test_labels(self):
         a = parser_for_GPCR_overview()
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("topology",test_filenames.top_pdb)
         a.__setattr__("labels","3.50")
-        cli._fragment_overview(a, "GPCR")
+        cli._consensus_fragment_overview(a, "GPCR")
 
     def test_no_top(self):
         a = parser_for_GPCR_overview()
         a = a.parse_args([test_filenames.adrb2_human_xlsx])
         a.__setattr__("labels","3.50")
-        cli._fragment_overview(a, "GPCR")
+        cli._consensus_fragment_overview(a, "GPCR")
 
 class Test_compare(unittest.TestCase):
 

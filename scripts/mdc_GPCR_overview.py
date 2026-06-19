@@ -4,8 +4,9 @@
 #    This file is part of mdciao.
 #    
 #    Copyright 2025 Charité Universitätsmedizin Berlin and the Authors
+#    Copyright 2026 Guillermo Pérez-Hernández
 #
-#    Authors: Guillermo Pérez-Hernandez
+#    Authors: Guillermo Pérez-Hernández
 #    Contributors:
 #
 #    mdciao is free software: you can redistribute it and/or modify
@@ -23,7 +24,7 @@
 ##############################################################################
 
 from mdciao.parsers import parser_for_GPCR_overview
-from mdciao.cli.cli import _fragment_overview
+from mdciao.cli.cli import _consensus_fragment_overview
 parser = parser_for_GPCR_overview()
 a  = parser.parse_args()
-_fragment_overview(a,"GPCR")
+_consensus_fragment_overview(a, "GPCR")

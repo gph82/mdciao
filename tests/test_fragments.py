@@ -271,6 +271,38 @@ class Test_get_fragments_other_options(unittest.TestCase):
         assert len(frags[1])==5
         assert len(frags[2])==10
 
+    def test_ions_and_water_discontinous(self):
+        geom = md.load(test_filenames.ions_and_water)
+        [setattr(rr, "resSeq", rr.index + 1) for rr in geom.top.residues] # needed for the test to work
+        """ For this geom
+        geom mdciao.fragments.get_fragments(geom.top)
+        Auto-detected fragments with method 'lig_resSeq+'
+        fragment      0 with      4 AAs     ACE1 (   0) -     ILE4 (3   ) (0)
+        fragment      1 with      5 AAs     HOH5 (   4) -     HOH9 (8   ) (1)
+        fragment      2 with     10 AAs     NA10 (   9) -     CL19 (18  ) (2)
+        """
+        # Now we stack them
+        geom = geom.stack(geom.atom_slice(geom.top.select("protein")))
+        [setattr(rr, "resSeq", rr.index + 1) for rr in geom.top.residues]
+        """This would be the old behaviour
+        mdciao.fragments.get_fragments(geom.top)
+        Auto-detected fragments with method 'lig_resSeq+'
+        fragment      0 with      8 AAs     ACE1 (   0) -    ILE23 (22  ) (0) resSeq jumps
+        fragment      1 with      5 AAs     HOH5 (   4) -     HOH9 (8   ) (1)
+        fragment      2 with     10 AAs     NA10 (   9) -     CL19 (18  ) (2)
+        """
+        # The first fragment has a gap (8 AAs but resSeq jumps 1 to 23
+        frags = mdcfragments.get_fragments(geom.top)
+        """ Should be
+        Auto-detected fragments with method 'lig_resSeq+'
+        fragment      0 with      4 AAs     ACE1 (   0) -     ILE4 (3   ) (0)
+        fragment      1 with      5 AAs     HOH5 (   4) -     HOH9 (8   ) (1)
+        fragment      2 with     10 AAs     NA10 (   9) -     CL19 (18  ) (2)
+        fragment      3 with      4 AAs    ACE20 (  19) -    ILE23 (22  ) (3)
+        """
+        assert len(frags)==4
+        self.assertListEqual([len(fr) for fr in frags], [4,5,10,4])
+
 class Test_list_of_fragments_strings_to_fragments(unittest.TestCase):
 
     def setUp(self):

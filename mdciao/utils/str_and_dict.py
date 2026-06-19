@@ -376,8 +376,8 @@ def unify_freq_dicts(freqs,
                 not_shared += list(set(idict1.keys()).difference(idict2.keys()))
                 shared += list(set(idict1.keys()).intersection(idict2.keys()))
 
-    shared = list(_np.unique(shared))
-    not_shared = list(_np.unique(not_shared))
+    shared = _np.unique(shared).astype(str).tolist()
+    not_shared = _np.unique(not_shared).astype(str).tolist()
     all_keys = shared + not_shared
     # Prune keys we're not interested in
     excluded = []
@@ -725,24 +725,24 @@ def replace4latex(istr,
     bits = [bit for bit in _re.split("(?i)(%s)" % pattern, istr.replace("\n", " ? ")) if len(bit) > 0]
     for ii in range(len(bits)):
         if bits[ii].lower() in symbols:
-            bits[ii] = "$\%s$" % bits[ii]
+            bits[ii] = r"$\%s$" % bits[ii]
         elif any([ss == bits[ii] for ss in sindex]):
-            bits[ii] = "$%s$" % bits[ii]
+            bits[ii] = r"$%s$" % bits[ii]
         elif any([ss in bits[ii] for ss in sindex]):
             ibit = bits[ii]
             if any([ibit.count(ss)>1 for ss in sindex]):
                 continue
-            words = [word for word in _re.split("(%s)" % "|".join(["\%s" % ss for ss in sindex]), ibit)
+            words = [word for word in _re.split("(%s)" % "|".join([r"\%s" % ss for ss in sindex]), ibit)
                      if len(word) > 0]
             for ww in range(len(words)):
                 word = words[ww]
                 if word.isnumeric() or word.isalpha() or "." in word and word not in sindex: #Also gets 3.50
                     words[ww] = "{%s}" % word
             ibit = "".join(words)
-            bits[ii] = "$\mathrm{%s}$" % ibit
+            bits[ii] = r"$\mathrm{%s}$" % ibit
         else:
             if enclose_pure_text and any([c.isalpha()  for c in bits[ii]]):
-                bits[ii] = "$\mathrm{%s}$" % bits[ii]
+                bits[ii] = r"$\mathrm{%s}$" % bits[ii]
 
     return "".join(bits).replace("$$", "").replace(" ? ","\n")
 
@@ -814,7 +814,7 @@ def latex_mathmode(istr, enclose=True):
     istr : string
     """
     output = []
-    exp = "(%s)" % "|".join(["\%s" % ss if ss == "^" else "%s" % ss for ss in _symbols])
+    exp = "(%s)" % "|".join([r"\%s" % ss if ss == "^" else "%s" % ss for ss in _symbols])
     for word in _re.split(exp, istr):
         if len(word) > 0:
             if word in _symbols:
@@ -951,7 +951,7 @@ def _label2componentsdict(istr,sep="-",defrag="@",
                         bits["frag%u"%f]=iw
                         f+=1
                     elif sep in iw and assume_ctc_label:
-                        ires, ifrag = [jw[::-1] for jw in iw[::-1].split(sep, 1)]
+                        ires, ifrag = iw.rsplit(sep, 1)[::-1]
                         if "res1" in bits.keys():
                             if "frag1" in bits.keys():
                                 bits["frag%u"%f]=iw
@@ -971,7 +971,7 @@ def _label2componentsdict(istr,sep="-",defrag="@",
                         bits["res%u"%r]=iw.split(defrag)[0]
                         r+=1
                     else:
-                        ires, ifrag = [jw[::-1] for jw in iw[::-1][1:].split(sep, 1)]
+                        ires, ifrag = iw[:-1].rsplit(sep, 1)[::-1]
                         bits["frag%u"%f]=ifrag
                         bits["res%u"%r]=ires
                         f+=1

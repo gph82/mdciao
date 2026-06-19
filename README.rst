@@ -68,8 +68,11 @@ So everything should work *out of the box* in these conditions.
 
 Authors
 =======
-``mdciao`` is written and maintained by Guillermo Pérez-Hernández (`ORCID <http://orcid.org/0000-0002-9287-8704>`_) currently at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_ in the
-`Charité Universitäsmedizin Berlin <https://www.charite.de/>`_.
+``mdciao`` is written and maintained by `Guillermo Pérez-Hernández <https://gph82.github.io>`_ |orcid_icon|
+
+Development of ``mdciao`` took place at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_,
+`Charité Universitätsmedizin Berlin <https://www.charite.de/>`_.
+
 
 Please cite:
  * mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data
@@ -131,4 +134,9 @@ You can find an informal list of TODOs and known issues `here <https://github.co
    https://zenodo.org/badge/DOI/10.5281/zenodo.5643177.svg
    :target: https://doi.org/10.5281/zenodo.5643177
 
-
+.. |orcid_icon|  image::
+   https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png
+   :width: 16
+   :height: 16
+   :target: https://orcid.org/0000-0002-9287-8704
+   :alt: https://orcid.org/0000-0002-9287-8704

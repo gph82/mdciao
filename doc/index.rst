@@ -85,6 +85,28 @@ for live Jupyter notebooks play around with. These are shown in the :ref:`Jupyte
 
  These issues (if/when they arise) can be spotted easily by looking at the time-traces and informed decisions can be made wrt to parameters like the cutt-off value, number of contacts displayed and many others.
 
+Authors
+-------
+``mdciao`` is written and maintained by
+`Guillermo Pérez-Hernández <https://gph82.github.io>`_ |orcid_icon|
+
+Development of ``mdciao`` took place at the `Institute of Medical Physics and Biophysics <https://biophysik.charite.de/ueber_das_institut/team/>`_,
+`Charité Universitätsmedizin Berlin <https://www.charite.de/>`_.
+
+Please cite:
+ * mdciao: Accessible Analysis and Visualization of Molecular Dynamics Simulation Data
+    | Guillermo Pérez-Hernández, Peter W. Hildebrand
+    | PLoS Comput Biol 21(4): e1012837.
+    | https://doi.org/10.1371/journal.pcbi.1012837
+
+Development
+-----------
+``mdciao`` is developed at
+`github.com/gph82/mdciao <https://github.com/gph82/mdciao>`_,
+where you can find the latest source code, fixes, features,
+and issue tracker. The repository contains updates not yet
+available in the latest release.
+
 .. |Pip Package| image::
    https://badge.fury.io/py/mdciao.svg
    :target: https://badge.fury.io/py/mdciao
@@ -107,6 +129,13 @@ for live Jupyter notebooks play around with. These are shown in the :ref:`Jupyte
 .. |DOI| image::
    https://zenodo.org/badge/DOI/10.5281/zenodo.5643177.svg
    :target: https://doi.org/10.5281/zenodo.5643177
+
+.. |orcid_icon|  image::
+   https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png
+   :width: 16
+   :height: 16
+   :target: https://orcid.org/0000-0002-9287-8704
+   :alt: https://orcid.org/0000-0002-9287-8704
 
 .. there's this issue about the self-referencing TOC that I cannot solve
 .. https://github.com/sphinx-doc/sphinx/issues/4602

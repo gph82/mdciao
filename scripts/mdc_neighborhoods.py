@@ -4,8 +4,9 @@
 #    This file is part of mdciao.
 #    
 #    Copyright 2025 Charité Universitätsmedizin Berlin and the Authors
+#    Copyright 2026 Guillermo Pérez-Hernández
 #
-#    Authors: Guillermo Pérez-Hernandez
+#    Authors: Guillermo Pérez-Hernández
 #    Contributors:
 #
 #    mdciao is free software: you can redistribute it and/or modify

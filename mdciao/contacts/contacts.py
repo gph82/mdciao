@@ -2,8 +2,9 @@
 #    This file is part of mdciao.
 #    
 #    Copyright 2025 Charité Universitätsmedizin Berlin and the Authors
+#    Copyright 2026 Guillermo Pérez-Hernández
 #
-#    Authors: Guillermo Pérez-Hernandez
+#    Authors: Guillermo Pérez-Hernández
 #    Contributors:
 #
 #    mdciao is free software: you can redistribute it and/or modify
@@ -5440,7 +5441,7 @@ class ContactGroup(object):
             _mdcplots.plot_w_smoothing_auto(n_ctcs_t, ax=iax, label=traj_name, color=next(icol), x=itime * dt, background=background,
                                             n_smooth_hw=n_smooth_hw)
 
-        iax.set_ylabel('$\sum$ [ctcs < %s Å]'%(ctc_cutoff_Ang))
+        iax.set_ylabel(r'$\sum$ [ctcs < %s Å]'%(ctc_cutoff_Ang))
         iax.set_xlabel('t / %s'%t_unit)
         iax.set_xlim([self.time_min*dt,self.time_max*dt])
         iax.set_ylim([0,iax.get_ylim()[1]])
@@ -5657,7 +5658,7 @@ class ContactGroup(object):
                 if anchor is not None:
                     iax.text(
                         0, y_max,
-                        "$\downarrow$ %s and$\downarrow$   " % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
+                        r"$\downarrow$ %s and$\downarrow$   " % _mdcu.str_and_dict.latex_superscript_fragments(anchor),
                         va="top",
                         transform=iax.transAxes,
                         ha='right')
@@ -5700,7 +5701,7 @@ class ContactGroup(object):
                 if ii==0:
                     iax.text(
                         1, y_max,
-                        "$\downarrow$ freq@%3.1f Å$\downarrow$"%ctc_cutoff_Ang,
+                        r"$\downarrow$ freq@%3.1f Å$\downarrow$"%ctc_cutoff_Ang,
                         va="top",
                         transform=iax.transAxes,
                         ha='left')
@@ -6313,7 +6314,7 @@ class ContactGroup(object):
     @property
     def modes(self):
         r"""
-        Per-contact `modes <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ over all distance time-traces
+        Likeliest per-distance `mode <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ over all distance time-traces.
 
         Note
         ----
@@ -6350,8 +6351,8 @@ class ContactGroup(object):
         Find representative frames for this :obj:`ContactGroup`
 
         A "representative frame" means, in this context, a frame
-        that minimizes **the average distance** to the modes (or means)
-        of the residue-residue distances contained in this object.
+        that minimizes the **average deviation** of each residue-residue
+        distance from its typical value (mode or mean).
 
         Please note that "representative" can have other meanings
         in other contexts. Here, it's just a way to pick a frames/geometries

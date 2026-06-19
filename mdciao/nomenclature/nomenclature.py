@@ -2,8 +2,9 @@
 #    This file is part of mdciao.
 #    
 #    Copyright 2025 Charité Universitätsmedizin Berlin and the Authors
+#    Copyright 2026 Guillermo Pérez-Hernández
 #
-#    Authors: Guillermo Pérez-Hernandez
+#    Authors: Guillermo Pérez-Hernández
 #    Contributors:
 #
 #    mdciao is free software: you can redistribute it and/or modify
@@ -1368,7 +1369,7 @@ class LabelerGPCR(LabelerGPCRdb):
         r"""
         Like :obj:`top2frags` but for separating a GPCR into GAIN and TM domains.
 
-        As in :obj:`top2frags`, regions of the topology withoug
+        As in :obj:`top2frags`, regions of the topology without
         generic residue labels (e.g. ligands or other
         components) are left out of the returned domains.
 
